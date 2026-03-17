@@ -6,6 +6,7 @@ plugins {
 dependencies {
     implementation(libs.android.gradlePlugin)
     implementation(libs.kotlin.gradlePlugin)
+    implementation(libs.ktlint.gradle)
     compileOnly(libs.compose.compiler.gradle.plugin)
     compileOnly("org.jetbrains.kotlin:kotlin-serialization:${libs.versions.kotlin.get()}")
 }
@@ -47,6 +48,10 @@ gradlePlugin {
         register("androidApplication") {
             id = "afternote.android.application"
             implementationClass = "AndroidApplicationConventionPlugin"
+        }
+        register("androidLint") {
+            id = "afternote.android.lint"
+            implementationClass = "AndroidLintConventionPlugin"
         }
     }
 }

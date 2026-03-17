@@ -9,6 +9,7 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
             pluginManager.apply("com.android.application")
             pluginManager.apply("org.jetbrains.kotlin.plugin.compose")
             pluginManager.apply("afternote.android.hilt")
+            pluginManager.apply("afternote.android.lint")
 
             extensions.configure<ApplicationExtension> {
                 configureAndroidCommon(this) // 기본 뼈대

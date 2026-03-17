@@ -9,6 +9,7 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
         with(target) {
             // 1. 안드로이드 라이브러리 플러그인 적용
             pluginManager.apply("com.android.library")
+            pluginManager.apply("afternote.android.lint")
 
             extensions.configure<LibraryExtension> {
                 configureAndroidCommon(this)
