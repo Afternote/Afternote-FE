@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Ktlint
-        uses: scayle/action-ktlint@v3
+        uses: ScaCap/action-ktlint@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review # PR 리뷰 댓글로 표시
@@ -40,14 +40,13 @@ jobs:
           cache: 'gradle'
 
       - name: Run Android Lint
-        # 모든 모듈의 린트를 실행하여 XML 리포트 생성
         run: ./gradlew lintDebug --continue --parallel
 
       - name: Report Android Lint (Reviewdog)
         if: always()
-        uses: reviewdog/action-android-lint@v1
+        uses: dvdandroid/action-android-lint@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
           level: warning
-          pattern: "**/lint-results-debug.xml"
+          lint_xml_file: app/build/reports/lint-results-debug.xml
