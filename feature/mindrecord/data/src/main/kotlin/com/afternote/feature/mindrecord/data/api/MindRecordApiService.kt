@@ -9,17 +9,14 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 
 interface MindRecordApiService {
-
     @GET("mind-records/list")
     suspend fun getMindRecords(
         @Query("type") type: MindRecordType,
         @Query("view") view: MindRecordViewType,
         @Query("year") year: Int?,
-        @Query("month") month: Int?
+        @Query("month") month: Int?,
     ): BaseResponse<MindRecordResponse>
 
     @GET("daily-question")
     suspend fun getDailyQuestion(): DailyQuestionResponse
-
-
 }
