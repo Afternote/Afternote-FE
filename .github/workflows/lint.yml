@@ -1,39 +1,37 @@
 name: Static Analysis (Reviewdog)
 
-permissions:
-  contents: read
-  pull-requests: write # PR에 댓글을 쓰기 위한 필수 권한
-
 on:
   pull_request:
     branches: [main, develop]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
-  # 1. Ktlint: checkstyle 형식으로 출력하여 Reviewdog에 전달
   ktlint:
+    name: Check Code Quality (Ktlint)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-          cache: 'gradle'
+      - name: Clone repo
+        uses: actions/checkout@v4
 
-      - name: Run Ktlint with Reviewdog
-        uses: reviewdog/action-ktlint@v1
+      - name: Run Ktlint
+        uses: scayle/action-ktlint@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-pr-review # PR 리뷰 댓글로 달기
-          level: error
-          ktlint_flags: "--android" # Android 스타일 가이드 준수
+          reporter: github-pr-review # PR 리뷰 댓글로 표시
+          android: true # Android 스타일 가이드 준수
+          fail_on_error: true # 에러 발견 시 빌드 실패
+          level: warning # Warning 이상은 댓글로 표시
 
-  # 2. Android Lint: XML 리포트를 파싱하여 Reviewdog에 전달
   android-lint:
+    name: Check Project Issues (Android Lint)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Clone repo
+        uses: actions/checkout@v4
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -42,13 +40,14 @@ jobs:
           cache: 'gradle'
 
       - name: Run Android Lint
-        # 모든 모듈의 린트를 실행 (XML 리포트 생성)
+        # 모든 모듈의 린트를 실행하여 XML 리포트 생성
         run: ./gradlew lintDebug --continue --parallel
 
-      - name: Android Lint Reporter (Reviewdog)
+      - name: Report Android Lint (Reviewdog)
+        if: always()
         uses: reviewdog/action-android-lint@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
-          level: warning # Warning 이상은 모두 댓글로 표시
-          pattern: "**/lint-results-debug.xml" # 멀티 모듈 리포트 전체 탐색
+          level: warning
+          pattern: "**/lint-results-debug.xml"
