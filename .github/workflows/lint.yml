@@ -1,0 +1,52 @@
+name: Static Analysis (Reviewdog)
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  ktlint:
+    name: Check Code Quality (Ktlint)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v4
+
+      - name: Run Ktlint
+        uses: ScaCap/action-ktlint@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-review # PR 리뷰 댓글로 표시
+          android: true # Android 스타일 가이드 준수
+          fail_on_error: true # 에러 발견 시 빌드 실패
+          level: warning # Warning 이상은 댓글로 표시
+
+  android-lint:
+    name: Check Project Issues (Android Lint)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Run Android Lint
+        run: ./gradlew lintDebug --continue --parallel
+
+      - name: Report Android Lint (Reviewdog)
+        if: always()
+        uses: dvdandroid/action-android-lint@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-review
+          level: warning
+          lint_xml_file: app/build/reports/lint-results-debug.xml
