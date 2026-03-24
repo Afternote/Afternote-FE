@@ -1,16 +1,14 @@
 plugins {
-    id("java-library")
-    alias(libs.plugins.jetbrains.kotlin.jvm)
+    id("afternote.android.library")
+    id("afternote.android.hilt")
 }
-java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-}
-kotlin {
-    compilerOptions {
-        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
-    }
+
+android {
+    // 모듈의 고유 패키지 명칭
+    namespace = "com.afternote.feature.afternote.domain"
 }
 dependencies {
-    implementation(libs.javax.inject)
+//    implementation(libs.javax.inject)
+    implementation(projects.core.model)
+    implementation(projects.core.common)
 }

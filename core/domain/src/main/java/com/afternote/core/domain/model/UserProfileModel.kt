@@ -1,6 +1,6 @@
 package com.afternote.core.domain.model
 
-data class UserProfile(
+data class UserProfileModel(
     val name: String,
     val email: String,
     val phone: String?,

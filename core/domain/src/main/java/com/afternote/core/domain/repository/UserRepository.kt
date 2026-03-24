@@ -2,7 +2,7 @@ package com.afternote.core.domain.repository
 
 import com.afternote.core.domain.model.ReceiverDailyQuestionsResult
 import com.afternote.core.domain.model.ReceiverMindRecordsResult
-import com.afternote.core.domain.model.UserProfile
+import com.afternote.core.domain.model.UserProfileModel
 import com.afternote.core.domain.model.setting.DeliveryCondition
 import com.afternote.core.domain.model.setting.DeliveryConditionType
 import com.afternote.core.domain.model.setting.PushSettings
@@ -13,14 +13,14 @@ import com.afternote.core.domain.model.setting.ReceiverListItem
  * User 도메인 Repository 인터페이스. (스웨거 기준)
  */
 interface UserRepository {
-    suspend fun getMyProfile(userId: Long): Result<UserProfile>
+    suspend fun getMyProfile(userId: Long): Result<UserProfileModel>
 
     suspend fun updateMyProfile(
         userId: Long,
         name: String?,
         phone: String?,
         profileImageUrl: String?,
-    ): Result<UserProfile>
+    ): Result<UserProfileModel>
 
     /**
      * DELETE /users/me — 회원 탈퇴. 로그인한 사용자의 계정을 삭제합니다. 모든 데이터가 영구 삭제되며 복구할 수 없습니다.
