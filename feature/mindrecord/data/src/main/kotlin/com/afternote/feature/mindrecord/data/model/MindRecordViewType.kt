@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 enum class MindRecordViewType {
     @SerialName("LIST")
     LIST,
+
     @SerialName("CALENDAR")
-    CALENDAR
+    CALENDAR,
 }

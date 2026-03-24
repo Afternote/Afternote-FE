@@ -13,6 +13,5 @@ android {
 }
 
 dependencies {
-    implementation(projects.feature.afternote.data) // 예시
-    // implementation(projects.feature.login)
+    implementation(projects.core.ui)
 }
