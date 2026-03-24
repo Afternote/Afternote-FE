@@ -21,7 +21,7 @@ fun TopBar(modifier: Modifier = Modifier) {
     TopAppBar(
         navigationIcon = {
             Image(
-                painter = painterResource(R.drawable.logo),
+                painter = painterResource(R.drawable.core_ui_logo),
                 contentDescription = null,
                 modifier = Modifier.size(90.dp),
             )
@@ -30,7 +30,7 @@ fun TopBar(modifier: Modifier = Modifier) {
         actions = {
             Row {
                 Image(
-                    painter = painterResource(R.drawable.user),
+                    painter = painterResource(R.drawable.core_ui_user),
                     contentDescription = null,
                     modifier = Modifier.size(30.dp),
                 )
@@ -38,7 +38,7 @@ fun TopBar(modifier: Modifier = Modifier) {
                 Spacer(modifier = Modifier.width(15.dp))
 
                 Image(
-                    painter = painterResource(R.drawable.settings),
+                    painter = painterResource(R.drawable.core_ui_settings),
                     contentDescription = null,
                     modifier = Modifier.size(30.dp),
                 )

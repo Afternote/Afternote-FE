@@ -16,13 +16,13 @@ import com.afternote.core.ui.TopBar
 fun HomeScreen(modifier: Modifier = Modifier) {
     Scaffold(
         modifier = modifier,
-        topBar = { TopBar() }
+        topBar = { TopBar() },
     ) { paddingValues ->
         Column(modifier = Modifier.padding(paddingValues).padding(horizontal = 22.5.dp)) {
             Text(
                 text = "나의 기록",
                 fontSize = 28.sp,
-                fontWeight = FontWeight.Normal
+                fontWeight = FontWeight.Normal,
             )
         }
     }
@@ -30,6 +30,6 @@ fun HomeScreen(modifier: Modifier = Modifier) {
 
 @Preview
 @Composable
-private fun HomeScreenPreview(){
+private fun HomeScreenPreview() {
     HomeScreen()
 }

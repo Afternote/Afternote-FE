@@ -7,8 +7,10 @@ import kotlinx.serialization.Serializable
 enum class MindRecordType {
     @SerialName("DAILY_QUESTION")
     DAILY_QUESTION,
+
     @SerialName("DIARY")
     DIARY,
+
     @SerialName("DEEP_THOUGHT")
-    DEEP_THOUGHT
+    DEEP_THOUGHT,
 }
