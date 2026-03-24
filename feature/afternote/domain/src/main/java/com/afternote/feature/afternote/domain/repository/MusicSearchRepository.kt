@@ -1,4 +1,4 @@
-package com.kuit.afternote.feature.afternote.domain.repository
+package com.afternote.feature.afternote.domain.repository
 
 import com.afternote.feature.afternote.domain.model.playlist.SearchedSong
 

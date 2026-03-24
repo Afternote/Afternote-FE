@@ -1,4 +1,4 @@
-package com.kuit.afternote.feature.afternote.domain.usecase
+package com.afternote.feature.afternote.domain.usecase
 
 import com.afternote.feature.afternote.domain.model.input.CreateSocialInput
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
