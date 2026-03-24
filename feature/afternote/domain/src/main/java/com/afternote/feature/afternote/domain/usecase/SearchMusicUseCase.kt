@@ -1,4 +1,4 @@
-package com.kuit.afternote.feature.afternote.domain.usecase
+package com.afternote.feature.afternote.domain.usecase
 
 import com.afternote.feature.afternote.domain.model.playlist.SearchedSong
 import com.kuit.afternote.feature.afternote.domain.repository.MusicSearchRepository

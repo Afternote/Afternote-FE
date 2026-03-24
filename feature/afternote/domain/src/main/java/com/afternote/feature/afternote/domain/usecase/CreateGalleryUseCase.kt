@@ -9,7 +9,7 @@ import javax.inject.Inject
  *
  * POST /api/afternotes (category = GALLERY)
  */
-class CreateGalleryAfternoteUseCase
+class CreateGalleryUseCase
     @Inject
     constructor(
         private val repository: AfternoteRepository,

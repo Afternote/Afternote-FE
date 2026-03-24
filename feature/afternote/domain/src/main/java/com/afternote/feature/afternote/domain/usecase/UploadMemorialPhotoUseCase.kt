@@ -14,5 +14,5 @@ class UploadMemorialPhotoUseCase
     constructor(
         private val photoUploadRepository: PhotoUploadRepository,
     ) {
-        suspend operator fun invoke(uriString: String): Result<String> = photoUploadRepository.upload(uriString, DIRECTORY_AFTERNOTES)
+        suspend operator fun invoke(uriString: String) = photoUploadRepository.upload(uriString, DIRECTORY_AFTERNOTES)
     }

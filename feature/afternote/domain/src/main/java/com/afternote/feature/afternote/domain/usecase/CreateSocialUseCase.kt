@@ -9,7 +9,7 @@ import javax.inject.Inject
  *
  * POST /api/afternotes (category = SOCIAL)
  */
-class CreateSocialAfternoteUseCase
+class CreateSocialUseCase
     @Inject
     constructor(
         private val repository: AfternoteRepository,

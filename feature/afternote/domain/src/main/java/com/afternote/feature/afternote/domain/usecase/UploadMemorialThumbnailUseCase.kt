@@ -12,5 +12,5 @@ class UploadMemorialThumbnailUseCase
     constructor(
         private val repository: MemorialThumbnailUploadRepository,
     ) {
-        suspend operator fun invoke(jpegBytes: ByteArray): Result<String> = repository.uploadThumbnail(jpegBytes)
+        suspend operator fun invoke(jpegBytes: ByteArray) = repository.uploadThumbnail(jpegBytes)
     }

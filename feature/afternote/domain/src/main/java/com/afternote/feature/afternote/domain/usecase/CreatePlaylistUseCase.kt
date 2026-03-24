@@ -9,7 +9,7 @@ import javax.inject.Inject
  *
  * POST /api/afternotes (category = PLAYLIST)
  */
-class CreatePlaylistAfternoteUseCase
+class CreatePlaylistUseCase
     @Inject
     constructor(
         private val repository: AfternoteRepository,

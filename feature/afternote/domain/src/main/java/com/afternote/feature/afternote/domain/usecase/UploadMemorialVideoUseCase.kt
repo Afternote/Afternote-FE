@@ -12,5 +12,5 @@ class UploadMemorialVideoUseCase
     constructor(
         private val repository: MemorialVideoUploadRepository,
     ) {
-        suspend operator fun invoke(contentUriString: String): Result<String> = repository.uploadVideo(contentUriString)
+        suspend operator fun invoke(contentUriString: String) = repository.uploadVideo(contentUriString)
     }

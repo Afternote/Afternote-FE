@@ -8,10 +8,10 @@ import javax.inject.Inject
  *
  * DELETE /api/afternotes/{afternoteId}
  */
-class DeleteAfternoteUseCase
+class DeleteUseCase
     @Inject
     constructor(
         private val repository: AfternoteRepository,
     ) {
-        suspend operator fun invoke(afternoteId: Long): Result<Unit> = repository.delete(id = afternoteId)
+        suspend operator fun invoke(id: Long): Result<Unit> = repository.delete(id = id)
     }

@@ -1,4 +1,4 @@
-package com.kuit.afternote.feature.afternote.domain.usecase
+package com.afternote.feature.afternote.domain.usecase
 
 import com.afternote.feature.afternote.domain.model.ListPage
 import com.afternote.feature.afternote.domain.model.input.GetListPageInput
@@ -10,7 +10,7 @@ import javax.inject.Inject
  *
  * GET /afternotes?category=&page=&size=
  */
-class GetAfternotesUseCase
+class GetListUseCase
     @Inject
     constructor(
         private val repository: AfternoteRepository,
