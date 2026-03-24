@@ -2,6 +2,11 @@ package com.afternote.feature.afternote.domain.model
 
 import com.afternote.feature.afternote.domain.AfternoteServiceType
 
+data class ListPage(
+    val items: List<Item>,
+    val hasNext: Boolean,
+)
+
 /**
  * 애프터노트 아이템 도메인 모델
  *
@@ -30,4 +35,9 @@ data class ItemProcessing(
     val informationMethod: String = "",
     val methods: List<ProcessingMethod> = emptyList(),
     val galleryMethods: List<ProcessingMethod> = emptyList(),
+)
+
+data class ProcessingMethod(
+    val id: String,
+    val text: String,
 )

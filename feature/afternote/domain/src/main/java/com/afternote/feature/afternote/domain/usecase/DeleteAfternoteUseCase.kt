@@ -13,5 +13,5 @@ class DeleteAfternoteUseCase
     constructor(
         private val repository: AfternoteRepository,
     ) {
-        suspend operator fun invoke(afternoteId: Long): Result<Unit> = repository.deleteAfternote(afternoteId = afternoteId)
+        suspend operator fun invoke(afternoteId: Long): Result<Unit> = repository.delete(id = afternoteId)
     }

@@ -1,4 +1,10 @@
-package com.afternote.feature.afternote.domain.model.playlist
+package com.afternote.feature.afternote.domain.model.input
+
+data class CreatePlaylistInput(
+    val title: String,
+    val playlist: PlaylistInput,
+    val receiverIds: List<Long> = emptyList(),
+)
 
 data class PlaylistInput(
     val profilePhoto: String? = null,

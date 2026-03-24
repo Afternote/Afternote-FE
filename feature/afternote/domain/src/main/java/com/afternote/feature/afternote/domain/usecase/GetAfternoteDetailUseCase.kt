@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.domain.usecase
 
-import com.afternote.core.domain.model.ReceiverListItem
+import com.afternote.core.domain.model.setting.ReceiverListItem
 import com.afternote.core.domain.usecase.GetReceiversUseCase
 import com.afternote.core.domain.usecase.GetUserIdUseCase
 import com.afternote.feature.afternote.domain.model.Detail
@@ -22,7 +22,7 @@ class GetAfternoteDetailUseCase
         private val getUserIdUseCase: GetUserIdUseCase,
     ) {
         suspend operator fun invoke(afternoteId: Long): Result<Detail> {
-            val detailResult = repository.getAfternoteDetail(afternoteId = afternoteId)
+            val detailResult = repository.getDetail(id = afternoteId)
             val detail = detailResult.getOrElse { return detailResult }
             val userId = getUserIdUseCase() ?: return detailResult
             val receiversListResult = getReceiversUseCase(userId = userId)

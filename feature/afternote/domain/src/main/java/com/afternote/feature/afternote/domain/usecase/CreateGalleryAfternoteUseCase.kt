@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.domain.usecase
 
-import com.afternote.feature.afternote.domain.model.CreateGalleryInput
+import com.afternote.feature.afternote.domain.model.input.CreateGalleryInput
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
 import javax.inject.Inject
 
