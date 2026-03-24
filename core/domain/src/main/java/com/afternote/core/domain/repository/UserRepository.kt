@@ -1,13 +1,13 @@
 package com.afternote.core.domain.repository
 
-import com.afternote.core.domain.model.DeliveryCondition
-import com.afternote.core.domain.model.DeliveryConditionType
-import com.afternote.core.domain.model.PushSettings
 import com.afternote.core.domain.model.ReceiverDailyQuestionsResult
-import com.afternote.core.domain.model.ReceiverDetail
-import com.afternote.core.domain.model.ReceiverListItem
 import com.afternote.core.domain.model.ReceiverMindRecordsResult
 import com.afternote.core.domain.model.UserProfile
+import com.afternote.core.domain.model.setting.DeliveryCondition
+import com.afternote.core.domain.model.setting.DeliveryConditionType
+import com.afternote.core.domain.model.setting.PushSettings
+import com.afternote.core.domain.model.setting.ReceiverDetail
+import com.afternote.core.domain.model.setting.ReceiverListItem
 
 /**
  * User 도메인 Repository 인터페이스. (스웨거 기준)

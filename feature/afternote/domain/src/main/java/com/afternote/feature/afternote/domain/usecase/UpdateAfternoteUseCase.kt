@@ -1,6 +1,6 @@
 package com.kuit.afternote.feature.afternote.domain.usecase
 
-import com.kuit.afternote.feature.afternote.domain.model.UpdateRequestInput
+import com.afternote.feature.afternote.domain.model.UpdateAfternoteInput
 import com.kuit.afternote.feature.afternote.domain.repository.AfternoteRepository
 import javax.inject.Inject
 
@@ -16,7 +16,7 @@ class UpdateAfternoteUseCase
     ) {
         suspend operator fun invoke(
             afternoteId: Long,
-            body: UpdateRequestInput,
+            body: UpdateAfternoteInput,
         ): Result<Long> =
             repository.updateAfternote(
                 afternoteId = afternoteId,

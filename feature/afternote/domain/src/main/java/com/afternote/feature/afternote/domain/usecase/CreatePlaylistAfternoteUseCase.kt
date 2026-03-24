@@ -1,6 +1,6 @@
 package com.kuit.afternote.feature.afternote.domain.usecase
 
-import com.kuit.afternote.feature.afternote.domain.model.playlist.CreatePlaylistInput
+import com.afternote.feature.afternote.domain.model.playlist.CreatePlaylistInput
 import com.kuit.afternote.feature.afternote.domain.repository.AfternoteRepository
 import javax.inject.Inject
 

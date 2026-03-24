@@ -1,8 +1,7 @@
 package com.afternote.feature.afternote.domain.model
 
 import com.afternote.feature.afternote.domain.AfternoteServiceType
-import com.kuit.afternote.feature.afternote.domain.model.DetailReceiver
-import com.kuit.afternote.feature.afternote.domain.model.playlist.PlaylistDetail
+import com.afternote.feature.afternote.domain.model.playlist.PlaylistDetail
 
 /**
  * 애프터노트 상세 도메인 모델.
@@ -39,4 +38,15 @@ data class DetailProcessing(
     val method: String?,
     val actions: List<String>,
     val leaveMessage: String?,
+)
+
+/**
+ * 갤러리 카테고리의 수신자 정보.
+ * receiverId: from API; name/relation may be resolved from GET /users/receivers when API returns only IDs.
+ */
+data class DetailReceiver(
+    val receiverId: Long? = null,
+    val name: String,
+    val relation: String,
+    val phone: String,
 )

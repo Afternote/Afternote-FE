@@ -1,7 +1,17 @@
-package com.afternote.feature.afternote.domain.model
+package com.kuit.afternote.feature.afternote.domain.model
 
 import com.afternote.feature.afternote.domain.AfternoteServiceType
-import com.kuit.afternote.feature.afternote.domain.model.ProcessingMethod
+
+/**
+ * One page of afternotes from GET /afternotes.
+ *
+ * @param items Items for this page
+ * @param hasNext Whether more pages are available
+ */
+data class PagedAfternotes(
+    val items: List<Item>,
+    val hasNext: Boolean,
+)
 
 /**
  * 애프터노트 아이템 도메인 모델

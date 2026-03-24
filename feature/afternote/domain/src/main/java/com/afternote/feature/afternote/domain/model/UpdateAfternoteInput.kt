@@ -1,8 +1,9 @@
-package com.kuit.afternote.feature.afternote.domain.model
+package com.afternote.feature.afternote.domain.model
 
-import com.kuit.afternote.feature.afternote.domain.model.playlist.PlaylistInput
+import com.afternote.feature.afternote.domain.model.playlist.PlaylistInput
 
-data class UpdateRequestInput(
+// AfternoteRepository.updateAfternote() 인자
+data class UpdateAfternoteInput(
     val category: String,
     val title: String,
     val processMethod: String? = null,

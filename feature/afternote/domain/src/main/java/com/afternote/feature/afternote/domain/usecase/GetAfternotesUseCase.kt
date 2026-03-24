@@ -1,6 +1,6 @@
 package com.kuit.afternote.feature.afternote.domain.usecase
 
-import com.kuit.afternote.feature.afternote.domain.model.GetAfternotesInput
+import com.afternote.feature.afternote.domain.model.GetAfternotesInput
 import com.kuit.afternote.feature.afternote.domain.model.PagedAfternotes
 import com.kuit.afternote.feature.afternote.domain.repository.AfternoteRepository
 import javax.inject.Inject
