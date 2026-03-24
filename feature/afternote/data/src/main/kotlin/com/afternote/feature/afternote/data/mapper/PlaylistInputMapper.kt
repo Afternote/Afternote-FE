@@ -2,9 +2,8 @@ package com.afternote.feature.afternote.data.mapper
 
 import com.afternote.feature.afternote.data.dto.AfternotePlaylist
 import com.afternote.feature.afternote.data.dto.AfternoteSong
-import com.afternote.feature.afternote.domain.model.playlist.PlaylistInput
-import com.afternote.feature.afternote.domain.model.playlist.SongInput
-import kotlin.collections.map
+import com.afternote.feature.afternote.domain.model.input.PlaylistInput
+import com.afternote.feature.afternote.domain.model.input.SongInput
 
 fun PlaylistInput.toDto() =
     AfternotePlaylist(
@@ -15,7 +14,7 @@ fun PlaylistInput.toDto() =
         memorialVideo = memorialVideo?.toDto(),
     )
 
-private fun SongInput.toDto() =
+fun SongInput.toDto() =
     AfternoteSong(
         id = id,
         title = title,
@@ -23,7 +22,7 @@ private fun SongInput.toDto() =
         coverUrl = coverUrl,
     )
 
-private fun List<SongInput>.toDto() =
+fun List<SongInput>.toDto() =
     map {
         it.toDto()
     }

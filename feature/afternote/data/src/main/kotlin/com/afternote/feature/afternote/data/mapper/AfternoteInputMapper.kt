@@ -3,10 +3,9 @@ package com.afternote.feature.afternote.data.mapper
 import com.afternote.feature.afternote.data.dto.AfternoteCredentials
 import com.afternote.feature.afternote.data.dto.AfternoteMemorialVideo
 import com.afternote.feature.afternote.data.dto.AfternoteReceiverRef
-import com.afternote.feature.afternote.domain.model.CredentialsInput
-import com.afternote.feature.afternote.domain.model.ReceiverRefInput
-import com.afternote.feature.afternote.domain.model.playlist.MemorialVideoInput
-import kotlin.collections.map
+import com.afternote.feature.afternote.domain.model.input.CredentialsInput
+import com.afternote.feature.afternote.domain.model.input.MemorialVideoInput
+import com.afternote.feature.afternote.domain.model.input.ReceiverRefInput
 
 fun MemorialVideoInput.toDto() =
     AfternoteMemorialVideo(
@@ -20,12 +19,12 @@ fun CredentialsInput.toDto() =
         password = password,
     )
 
-private fun ReceiverRefInput.toDto() =
+fun ReceiverRefInput.toDto() =
     AfternoteReceiverRef(
         receiverId = receiverId,
     )
 
-internal fun List<ReceiverRefInput>?.toDto() =
+fun List<ReceiverRefInput>?.toDto() =
     this?.map {
         it.toDto()
     }

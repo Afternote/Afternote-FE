@@ -22,7 +22,7 @@ fun UpdateInput.toRequest() =
         playlist = playlist?.toDto(),
     )
 
-internal fun CreateSocialInput.toRequest() =
+fun CreateSocialInput.toRequest() =
     AfternoteCreateSocialRequest(
         category = "SOCIAL",
         title = title,
@@ -33,7 +33,7 @@ internal fun CreateSocialInput.toRequest() =
         receivers = receiverIds.map { AfternoteReceiverRef(receiverId = it) },
     )
 
-internal fun CreateGalleryInput.toRequest() =
+fun CreateGalleryInput.toRequest() =
     AfternoteCreateGalleryRequest(
         category = "GALLERY",
         title = title,
@@ -43,7 +43,7 @@ internal fun CreateGalleryInput.toRequest() =
         receivers = receiverIds.map { AfternoteReceiverRef(receiverId = it) },
     )
 
-internal fun CreatePlaylistInput.toRequest() =
+fun CreatePlaylistInput.toRequest() =
     AfternoteCreatePlaylistRequest(
         category = "PLAYLIST",
         title = title,
