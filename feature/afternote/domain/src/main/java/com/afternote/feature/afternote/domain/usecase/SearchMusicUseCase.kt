@@ -1,6 +1,6 @@
 package com.kuit.afternote.feature.afternote.domain.usecase
 
-import com.kuit.afternote.feature.afternote.domain.model.SearchedSong
+import com.afternote.feature.afternote.domain.model.playlist.SearchedSong
 import com.kuit.afternote.feature.afternote.domain.repository.MusicSearchRepository
 import javax.inject.Inject
 

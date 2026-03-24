@@ -1,4 +1,4 @@
-package com.kuit.afternote.feature.afternote.domain.model
+package com.afternote.feature.afternote.domain.model.playlist
 
 data class SearchedSong(
     val id: String,

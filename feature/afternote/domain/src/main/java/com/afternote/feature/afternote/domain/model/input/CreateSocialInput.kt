@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.domain.model
+package com.afternote.feature.afternote.domain.model.input
 
 data class CreateSocialInput(
     val title: String,

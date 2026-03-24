@@ -1,8 +1,8 @@
 package com.kuit.afternote.feature.afternote.domain.usecase
 
-import com.afternote.feature.afternote.domain.model.GetAfternotesInput
-import com.kuit.afternote.feature.afternote.domain.model.PagedAfternotes
-import com.kuit.afternote.feature.afternote.domain.repository.AfternoteRepository
+import com.afternote.feature.afternote.domain.model.ListPage
+import com.afternote.feature.afternote.domain.model.input.GetListPageInput
+import com.afternote.feature.afternote.domain.repository.AfternoteRepository
 import javax.inject.Inject
 
 /**
@@ -15,5 +15,5 @@ class GetAfternotesUseCase
     constructor(
         private val repository: AfternoteRepository,
     ) {
-        suspend operator fun invoke(input: GetAfternotesInput): Result<PagedAfternotes> = repository.getAfternotes(input = input)
+        suspend operator fun invoke(input: GetListPageInput): Result<ListPage> = repository.getListPage(input = input)
     }

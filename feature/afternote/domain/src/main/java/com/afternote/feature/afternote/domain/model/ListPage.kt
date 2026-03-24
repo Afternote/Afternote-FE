@@ -1,14 +1,8 @@
-package com.kuit.afternote.feature.afternote.domain.model
+package com.afternote.feature.afternote.domain.model
 
 import com.afternote.feature.afternote.domain.AfternoteServiceType
 
-/**
- * One page of afternotes from GET /afternotes.
- *
- * @param items Items for this page
- * @param hasNext Whether more pages are available
- */
-data class PagedAfternotes(
+data class ListPage(
     val items: List<Item>,
     val hasNext: Boolean,
 )
@@ -41,4 +35,9 @@ data class ItemProcessing(
     val informationMethod: String = "",
     val methods: List<ProcessingMethod> = emptyList(),
     val galleryMethods: List<ProcessingMethod> = emptyList(),
+)
+
+data class ProcessingMethod(
+    val id: String,
+    val text: String,
 )

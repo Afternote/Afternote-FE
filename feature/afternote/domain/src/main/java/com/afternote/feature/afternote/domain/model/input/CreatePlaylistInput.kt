@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.domain.model.playlist
+package com.afternote.feature.afternote.domain.model.input
 
 data class CreatePlaylistInput(
     val title: String,
