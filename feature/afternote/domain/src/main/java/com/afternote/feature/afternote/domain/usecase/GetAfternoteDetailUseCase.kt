@@ -1,10 +1,12 @@
 package com.afternote.feature.afternote.domain.usecase
 
+import com.afternote.core.domain.model.ReceiverListItem
+import com.afternote.core.domain.usecase.GetReceiversUseCase
+import com.afternote.core.domain.usecase.GetUserIdUseCase
 import com.afternote.feature.afternote.domain.model.Detail
 import com.kuit.afternote.feature.afternote.domain.model.DetailReceiver
 import com.kuit.afternote.feature.afternote.domain.repository.AfternoteRepository
 import javax.inject.Inject
-import kotlin.collections.find
 
 /**
  * 애프터노트 상세 조회 UseCase.
