@@ -1,7 +1,6 @@
 package com.afternote.feature.afternote.domain.model
 
 import com.afternote.feature.afternote.domain.AfternoteServiceType
-import com.kuit.afternote.feature.afternote.domain.model.ProcessingMethod
 
 /**
  * 애프터노트 아이템 도메인 모델

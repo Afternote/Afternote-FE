@@ -4,8 +4,8 @@ import com.afternote.core.domain.model.ReceiverListItem
 import com.afternote.core.domain.usecase.GetReceiversUseCase
 import com.afternote.core.domain.usecase.GetUserIdUseCase
 import com.afternote.feature.afternote.domain.model.Detail
-import com.kuit.afternote.feature.afternote.domain.model.DetailReceiver
-import com.kuit.afternote.feature.afternote.domain.repository.AfternoteRepository
+import com.afternote.feature.afternote.domain.model.DetailReceiver
+import com.afternote.feature.afternote.domain.repository.AfternoteRepository
 import javax.inject.Inject
 
 /**

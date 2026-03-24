@@ -1,6 +1,6 @@
-package com.kuit.afternote.feature.afternote.domain.usecase
+package com.afternote.feature.afternote.domain.usecase
 
-import com.kuit.afternote.feature.afternote.domain.repository.AfternoteRepository
+import com.afternote.feature.afternote.domain.repository.AfternoteRepository
 import javax.inject.Inject
 
 /**

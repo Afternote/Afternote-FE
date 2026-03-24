@@ -1,4 +1,4 @@
-package com.kuit.afternote.feature.afternote.domain.model
+package com.afternote.feature.afternote.domain.model
 
 /**
  * Saved processing method entry for an afternote item.

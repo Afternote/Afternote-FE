@@ -1,6 +1,4 @@
-package com.kuit.afternote.feature.afternote.domain.model
-
-import com.afternote.feature.afternote.domain.model.Item
+package com.afternote.feature.afternote.domain.model
 
 /**
  * One page of afternotes from GET /afternotes.

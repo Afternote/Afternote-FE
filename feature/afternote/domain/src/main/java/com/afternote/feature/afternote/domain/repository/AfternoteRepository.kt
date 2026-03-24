@@ -1,12 +1,12 @@
-package com.kuit.afternote.feature.afternote.domain.repository
+package com.afternote.feature.afternote.domain.repository
 
+import com.afternote.feature.afternote.domain.model.CreateGalleryInput
+import com.afternote.feature.afternote.domain.model.CreateSocialInput
 import com.afternote.feature.afternote.domain.model.Detail
-import com.kuit.afternote.feature.afternote.domain.model.CreateGalleryInput
-import com.kuit.afternote.feature.afternote.domain.model.CreateSocialInput
-import com.kuit.afternote.feature.afternote.domain.model.GetAfternotesInput
-import com.kuit.afternote.feature.afternote.domain.model.PagedAfternotes
-import com.kuit.afternote.feature.afternote.domain.model.UpdateRequestInput
-import com.kuit.afternote.feature.afternote.domain.model.playlist.CreatePlaylistInput
+import com.afternote.feature.afternote.domain.model.GetAfternotesInput
+import com.afternote.feature.afternote.domain.model.PagedAfternotes
+import com.afternote.feature.afternote.domain.model.UpdateRequestInput
+import com.afternote.feature.afternote.domain.model.playlist.CreatePlaylistInput
 
 /**
  * Afternote 도메인 Repository 인터페이스.

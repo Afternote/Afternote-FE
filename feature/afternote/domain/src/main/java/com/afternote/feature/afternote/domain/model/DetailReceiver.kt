@@ -1,4 +1,4 @@
-package com.kuit.afternote.feature.afternote.domain.model
+package com.afternote.feature.afternote.domain.model
 
 /**
  * 갤러리 카테고리의 수신자 정보.

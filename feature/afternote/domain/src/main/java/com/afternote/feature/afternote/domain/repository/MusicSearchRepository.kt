@@ -1,6 +1,6 @@
-package com.kuit.afternote.feature.afternote.domain.repository
+package com.afternote.feature.afternote.domain.repository
 
-import com.kuit.afternote.feature.afternote.domain.model.SearchedSong
+import com.afternote.feature.afternote.domain.model.SearchedSong
 
 /**
  * Music search by keyword (artist or title).
