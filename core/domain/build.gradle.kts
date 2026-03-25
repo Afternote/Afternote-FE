@@ -8,7 +8,5 @@ android {
     namespace = "com.afternote.feature.afternote.domain"
 }
 dependencies {
-//    implementation(libs.javax.inject)
     implementation(projects.core.model)
-    implementation(projects.core.common)
 }

@@ -1,4 +1,4 @@
-package com.afternote.core.domain.model.setting
+package com.afternote.core.model.setting
 
 data class PushSettings(
     val timeLetter: Boolean,
