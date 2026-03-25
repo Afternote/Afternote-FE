@@ -5,7 +5,7 @@ plugins {
 
 android {
     // 모듈의 고유 패키지 명칭
-    namespace = "com.afternote.feature.afternote.domain"
+    namespace = "com.afternote.core.domain"
 }
 dependencies {
     implementation(projects.core.model)
