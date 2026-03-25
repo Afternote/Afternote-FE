@@ -37,7 +37,7 @@ class TokenManager
             }
 
         suspend fun saveTokens(
-        accessToken: String,
+            accessToken: String,
             refreshToken: String,
             userId: Long,
         ) {
@@ -61,8 +61,8 @@ class TokenManager
             dataStore.edit { prefs ->
                 prefs[accessTokenKey] = accessToken
                 prefs[refreshTokenKey] = refreshToken
+            }
         }
-    }
 
         suspend fun getAccessToken(): String? = getPrefs()[accessTokenKey]
 
