@@ -10,35 +10,40 @@ import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
+import javax.inject.Singleton
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("Token")
 
-private val TOKEN_KEY = stringPreferencesKey("access_token")
-private val USER_ID_KEY = longPreferencesKey("user_id")
-
+@Singleton
 class TokenManager
     @Inject
     constructor(
         @param:ApplicationContext val context: Context,
     ) {
-        suspend fun saveToken(token: String) {
-            val dataStore = context.dataStore
-            dataStore.edit {
-                it[TOKEN_KEY] = token
+        private val accessTokenKey = stringPreferencesKey("access_token")
+        private val refreshTokenKey = stringPreferencesKey("refresh_token")
+        private val userIdKey = longPreferencesKey("user_id")
+
+        private val dataStore get() = context.dataStore
+        private val dataFlow get() = dataStore.data
+
+        private suspend fun getPrefs() = dataFlow.first()
+
+        suspend fun saveAccessToken(
+            accessToken: String,
+            refreshToken: String,
+            userId: Long,
+        ) {
+            dataStore.edit { prefs ->
+                prefs[accessTokenKey] = accessToken
+                prefs[refreshTokenKey] = refreshToken
+            prefs[userIdKey] = userId
             }
         }
 
-        suspend fun getToken(): String? {
-            val dataStore = context.dataStore
-            val dataFlow = dataStore.data
-            val prefs = dataFlow.first()
-            return prefs[TOKEN_KEY]
-        }
+        suspend fun getAccessToken(): String? = getPrefs()[accessTokenKey]
 
-        suspend fun getUserId(): Long? {
-            val dataStore = context.dataStore
-            val dataFlow = dataStore.data
-            val prefs = dataFlow.first()
-            return prefs[USER_ID_KEY]
-        }
+        suspend fun getRefreshToken(): String? = getPrefs()[refreshTokenKey]
+
+        suspend fun getUserId(): Long? = getPrefs()[userIdKey]
     }
