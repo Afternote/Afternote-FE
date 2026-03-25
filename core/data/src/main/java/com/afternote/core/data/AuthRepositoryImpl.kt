@@ -34,8 +34,8 @@ class AuthRepositoryImpl
             refreshToken: String,
         ) = tokenManager.updateTokens(
             accessToken = accessToken,
-        refreshToken = refreshToken,
-    )
+            refreshToken = refreshToken,
+        )
 
         override suspend fun getUserId() = tokenManager.getUserId()
     }
