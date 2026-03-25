@@ -1,13 +1,13 @@
 package com.afternote.core.data
 
 import com.afternote.core.datastore.TokenManager
-import com.afternote.core.domain.usecase.UserSessionRepository
+import com.afternote.core.domain.repository.AuthRepository
 import javax.inject.Inject
 
-class UserSessionRepositoryImpl
+class AuthRepositoryImpl
     @Inject
     constructor(
         val tokenManager: TokenManager,
-    ) : UserSessionRepository {
+    ) : AuthRepository {
         override suspend fun getUserId() = tokenManager.getUserId()
     }
