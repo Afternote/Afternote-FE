@@ -1,8 +1,7 @@
-package com.afternote.datastore
+package com.afternote.core.datastore
 
+import org.junit.Assert.assertEquals
 import org.junit.Test
-
-import org.junit.Assert.*
 
 /**
  * Example local unit test, which will execute on the development machine (host).
