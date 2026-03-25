@@ -7,4 +7,5 @@ android {
     namespace = "com.afternote.core.datastore"
 }
 dependencies {
+    implementation(libs.androidx.datastore.preferences)
 }
