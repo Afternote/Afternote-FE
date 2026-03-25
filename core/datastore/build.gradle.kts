@@ -8,4 +8,6 @@ android {
 }
 dependencies {
     implementation(libs.androidx.datastore.preferences)
+    implementation(projects.core.common)
+    implementation(libs.jetbrains.kotlinx.serialization.json)
 }
