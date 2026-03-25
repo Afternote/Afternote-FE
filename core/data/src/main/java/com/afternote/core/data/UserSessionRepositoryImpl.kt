@@ -10,4 +10,4 @@ class UserSessionRepositoryImpl
         val tokenManager: TokenManager,
     ) : UserSessionRepository {
         override suspend fun getUserId() = tokenManager.getUserId()
-}
+    }
