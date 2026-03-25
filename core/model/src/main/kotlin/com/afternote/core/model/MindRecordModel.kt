@@ -1,4 +1,4 @@
-package com.afternote.core.domain.model
+package com.afternote.core.model
 
 data class ReceiverMindRecordItem(
     val recordId: Long,

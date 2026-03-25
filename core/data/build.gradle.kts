@@ -4,8 +4,9 @@ plugins {
 }
 
 android {
-    namespace = "com.afternote.feature.afternote.domain"
+    namespace = "com.afternote.core.data"
 }
 dependencies {
     implementation(projects.core.domain)
+    implementation(projects.core.datastore)
 }

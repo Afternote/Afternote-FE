@@ -1,7 +1,7 @@
 package com.afternote.core.domain.usecase
 
-import com.afternote.core.domain.model.setting.ReceiverListItem
 import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.model.setting.ReceiverListItem
 import javax.inject.Inject
 
 /**

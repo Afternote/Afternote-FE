@@ -29,31 +29,31 @@ fun AfternoteDetailResponse.toDetailDomain(): Detail =
         playlist = playlist?.toDomain(),
     )
 
-fun List<AfternoteDetailReceiver>?.toDomain() =
+private fun List<AfternoteDetailReceiver>?.toDomain() =
     this?.map { a ->
         a.toDomain()
     } ?: emptyList()
 
-fun AfternoteDetailResponse.toTimestamps(): DetailTimestamps =
+private fun AfternoteDetailResponse.toTimestamps(): DetailTimestamps =
     DetailTimestamps(
         createdAt = formatDateFromServer(createdAt),
         updatedAt = formatDateFromServer(updatedAt),
     )
 
-fun AfternoteDetailResponse.toProcessing() =
+private fun AfternoteDetailResponse.toProcessing() =
     DetailProcessing(
         method = processMethod,
         actions = actions ?: emptyList(),
         leaveMessage = leaveMessage,
     )
 
-fun AfternoteCredentials.toDomain() =
+private fun AfternoteCredentials.toDomain() =
     DetailCredentials(
         id = id,
         password = password,
     )
 
-fun AfternotePlaylist.toDomain() =
+private fun AfternotePlaylist.toDomain() =
     PlaylistDetail(
         profilePhoto = profilePhoto,
         atmosphere = atmosphere,
@@ -61,14 +61,14 @@ fun AfternotePlaylist.toDomain() =
         playlistDetailMemorialMedia = toMemorialMedia(),
     )
 
-fun AfternotePlaylist.toMemorialMedia() =
+private fun AfternotePlaylist.toMemorialMedia() =
     PlaylistDetailMemorialMedia(
         photoUrl = memorialPhotoUrl ?: profilePhoto,
         videoUrl = memorialVideo?.videoUrl,
         thumbnailUrl = memorialVideo?.thumbnailUrl,
     )
 
-fun AfternoteDetailReceiver.toDomain() =
+private fun AfternoteDetailReceiver.toDomain() =
     DetailReceiver(
         receiverId = receiverId,
         name = name ?: "",
@@ -76,7 +76,7 @@ fun AfternoteDetailReceiver.toDomain() =
         phone = phone ?: "",
     )
 
-fun AfternoteSong.toDomain() =
+private fun AfternoteSong.toDomain() =
     DetailSong(
         id = id,
         title = title,

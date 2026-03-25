@@ -8,4 +8,5 @@ android {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
+    implementation(libs.jetbrains.kotlinx.serialization.json)
 }
