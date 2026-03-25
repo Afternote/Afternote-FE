@@ -6,6 +6,3 @@ plugins {
 android {
     namespace = "com.afternote.core.model"
 }
-
-dependencies {
-}
