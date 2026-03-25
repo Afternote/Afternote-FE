@@ -13,5 +13,5 @@ import javax.inject.Singleton
 fun interface CoreRepositoryModule {
     @Binds
     @Singleton
-    fun bindsAuthRepository(impl: AuthRepositoryImpl): AuthRepository
+    fun bindAuthRepository(impl: AuthRepositoryImpl): AuthRepository
 }
