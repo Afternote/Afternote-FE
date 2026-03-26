@@ -1,8 +1,8 @@
 package com.afternote.feature.afternote.data.repositoryimpl
 
-import com.afternote.core.network.ImageApiService
 import com.afternote.core.network.dto.PresignedUrlRequestDto
 import com.afternote.core.network.model.requireData
+import com.afternote.core.network.service.ImageApiService
 import com.afternote.feature.afternote.domain.repository.MemorialThumbnailUploadRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -24,8 +24,8 @@ class MemorialThumbnailUploadRepositoryImpl
     @Inject
     constructor(
         private val imageApi: ImageApiService,
-        @Named("S3Upload") private val okHttpClient: OkHttpClient,
-        @Named("IoDispatcher") private val ioDispatcher: CoroutineDispatcher,
+        @param:Named("S3Upload") private val okHttpClient: OkHttpClient,
+        @param:Named("IoDispatcher") private val ioDispatcher: CoroutineDispatcher,
     ) : MemorialThumbnailUploadRepository {
         override suspend fun uploadThumbnail(jpegBytes: ByteArray): Result<String> =
             runCatching {
