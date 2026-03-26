@@ -29,10 +29,10 @@ private const val DEFAULT_VIDEO_EXTENSION = "mp4"
 class MemorialVideoUploadRepositoryImpl
     @Inject
     constructor(
-        @ApplicationContext private val context: Context,
+        @param:ApplicationContext private val context: Context,
         private val imageApi: ImageApiService,
-        @Named("S3Upload") private val okHttpClient: OkHttpClient,
-        @Named("IoDispatcher") private val ioDispatcher: CoroutineDispatcher,
+        @param:Named("S3Upload") private val okHttpClient: OkHttpClient,
+        @param:Named("IoDispatcher") private val ioDispatcher: CoroutineDispatcher,
     ) : MemorialVideoUploadRepository {
         override suspend fun uploadVideo(contentUriString: String): Result<String> =
             runCatching {

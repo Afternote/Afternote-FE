@@ -24,8 +24,8 @@ class MemorialThumbnailUploadRepositoryImpl
     @Inject
     constructor(
         private val imageApi: ImageApiService,
-        @Named("S3Upload") private val okHttpClient: OkHttpClient,
-        @Named("IoDispatcher") private val ioDispatcher: CoroutineDispatcher,
+        @param:Named("S3Upload") private val okHttpClient: OkHttpClient,
+        @param:Named("IoDispatcher") private val ioDispatcher: CoroutineDispatcher,
     ) : MemorialThumbnailUploadRepository {
         override suspend fun uploadThumbnail(jpegBytes: ByteArray): Result<String> =
             runCatching {

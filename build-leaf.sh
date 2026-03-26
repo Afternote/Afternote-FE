@@ -10,7 +10,7 @@ TARGET_PATH=$1
 echo "🔍 $TARGET_PATH 하위의 최하위 모듈을 찾는 중..."
 
 # 2. 전체 모듈 중 입력한 경로로 시작하는 것들만 추출
-ALL_MODULES=$(./gradlew -q projects | grep -o "$TARGET_PATH:[a-zA-Z0-9:-]*")
+ALL_MODULES=$(./gradlew -q projects | grep -o "$TARGET_PATH:[a-zA-Z0-9_.:-]*")
 
 if [ -z "$ALL_MODULES" ]; then
     echo "❌ $TARGET_PATH 하위에서 모듈을 찾을 수 없습니다."
