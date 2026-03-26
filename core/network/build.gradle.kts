@@ -7,6 +7,3 @@ plugins {
 android {
     namespace = "com.afternote.core.network"
 }
-
-dependencies {
-}
