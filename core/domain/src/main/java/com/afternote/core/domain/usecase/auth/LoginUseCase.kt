@@ -19,17 +19,20 @@ class LoginUseCase
     constructor(
         private val authRepository: AuthRepository,
     ) {
-        suspend operator fun invoke(
-            email: String,
-            password: String,
-            socialAccessToken: String,
-        ) {
-            authRepository.login(
-                email = email,
-                password = password,
-            )
-            authRepository.kakaoLogin(
-                socialAccessToken = socialAccessToken,
-            )
+        suspend operator fun invoke(loginType: LoginType) {
+            when (loginType) {
+                is LoginType.Email -> {
+                    authRepository.login(
+                        email = loginType.email,
+                        password = loginType.password,
+                    )
+                }
+
+                is LoginType.Kakao -> {
+                    authRepository.kakaoLogin(
+                        socialAccessToken = loginType.socialAccessToken,
+                    )
+            }
+        }
         }
     }
