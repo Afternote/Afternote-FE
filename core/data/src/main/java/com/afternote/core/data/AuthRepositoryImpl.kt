@@ -144,13 +144,13 @@ class AuthRepositoryImpl
                 Log.d(TAG, "passwordChange: newPassword length=${newPassword.length}")
                 val response =
                     authApiService.passwordChange(PasswordChangeRequest(currentPassword, newPassword))
-            Log.d(
-                TAG,
-                "passwordChange: response status=${response.status}, message=${response.message}",
-            )
-        }
+                Log.d(
+                    TAG,
+                    "passwordChange: response status=${response.status}, message=${response.message}",
+                )
+            }
 
-    companion object {
-        private const val TAG = "AuthRepositoryImpl"
-    }
+        companion object {
+            private const val TAG = "AuthRepositoryImpl"
+        }
     }

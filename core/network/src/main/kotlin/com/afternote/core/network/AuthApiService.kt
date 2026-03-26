@@ -20,40 +20,40 @@ interface AuthApiService {
     @POST("auth/email/send")
     suspend fun sendEmailCode(
         @Body body: SendEmailCodeRequest,
-    ): BaseResponse<Unit?>
+    ): BaseResponse<Unit>
 
     @POST("auth/email/verify")
     suspend fun verifyEmail(
         @Body body: VerifyEmailRequest,
-    ): BaseResponse<VerifyEmailData?>
+    ): BaseResponse<VerifyEmailData>
 
     @POST("auth/sign-up")
     suspend fun signUp(
         @Body body: SignUpRequest,
-    ): BaseResponse<SignUpData?>
+    ): BaseResponse<SignUpData>
 
     @POST("auth/login")
     suspend fun login(
         @Body body: LoginRequest,
-    ): BaseResponse<LoginData?>
+    ): BaseResponse<LoginData>
 
     @POST("auth/social/login")
     suspend fun socialLogin(
         @Body body: SocialLoginRequest,
-    ): BaseResponse<LoginData?>
+    ): BaseResponse<LoginData>
 
     @POST("auth/reissue")
     suspend fun reissue(
         @Body body: ReissueRequest,
-    ): BaseResponse<ReissueData?>
+    ): BaseResponse<ReissueData>
 
     @POST("auth/logout")
     suspend fun logout(
         @Body body: LogoutRequest,
-    ): BaseResponse<Unit?>
+    ): BaseResponse<Unit>
 
     @POST("auth/password/change")
     suspend fun passwordChange(
         @Body body: PasswordChangeRequest,
-    ): BaseResponse<Unit?>
+    ): BaseResponse<Unit>
 }

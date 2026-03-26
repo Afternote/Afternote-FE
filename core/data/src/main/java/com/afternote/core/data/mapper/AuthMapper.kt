@@ -17,7 +17,7 @@ object AuthMapper {
 
     fun toSignUpResult(dto: SignUpData): SignUpResult = SignUpResult(userId = dto.userId, email = dto.email)
 
-    fun toLoginResult(dto: LoginData?): LoginResult = LoginResult(accessToken = dto.accessToken, refreshToken = dto.refreshToken)
+    fun toLoginResult(dto: LoginData?): LoginResult = LoginResult(accessToken = dto?.accessToken, refreshToken = dto?.refreshToken)
 
     fun toReissueResult(dto: ReissueData): ReissueResult = ReissueResult(accessToken = dto.accessToken, refreshToken = dto.refreshToken)
 }
