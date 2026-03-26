@@ -3,11 +3,11 @@ package com.afternote.feature.afternote.data.service
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.feature.afternote.data.dto.AfternoteCreateGalleryRequest
 import com.afternote.feature.afternote.data.dto.AfternoteCreatePlaylistRequest
+import com.afternote.feature.afternote.data.dto.AfternoteCreateSocialRequest
 import com.afternote.feature.afternote.data.dto.AfternoteDetailResponse
+import com.afternote.feature.afternote.data.dto.AfternoteIdResponse
+import com.afternote.feature.afternote.data.dto.AfternoteListResponse
 import com.afternote.feature.afternote.data.dto.AfternoteUpdateRequest
-import com.afternote.feature.afternote.data.dto.request.AfternoteCreateSocialRequest
-import com.afternote.feature.afternote.data.dto.response.AfternoteIdResponse
-import com.afternote.feature.afternote.data.dto.response.AfternoteListResponse
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET

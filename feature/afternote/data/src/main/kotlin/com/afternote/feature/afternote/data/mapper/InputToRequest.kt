@@ -2,9 +2,9 @@ package com.afternote.feature.afternote.data.mapper
 
 import com.afternote.feature.afternote.data.dto.AfternoteCreateGalleryRequest
 import com.afternote.feature.afternote.data.dto.AfternoteCreatePlaylistRequest
+import com.afternote.feature.afternote.data.dto.AfternoteCreateSocialRequest
 import com.afternote.feature.afternote.data.dto.AfternoteReceiverRef
 import com.afternote.feature.afternote.data.dto.AfternoteUpdateRequest
-import com.afternote.feature.afternote.data.dto.request.AfternoteCreateSocialRequest
 import com.afternote.feature.afternote.domain.model.input.CreateGalleryInput
 import com.afternote.feature.afternote.domain.model.input.CreatePlaylistInput
 import com.afternote.feature.afternote.domain.model.input.CreateSocialInput
