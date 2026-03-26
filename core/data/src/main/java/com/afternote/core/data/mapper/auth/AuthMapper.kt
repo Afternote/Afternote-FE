@@ -11,6 +11,7 @@ import com.afternote.core.network.dto.VerifyEmailData
 
 /**
  * Auth DTO를 Domain 모델로 변환. (스웨거 기준)
+ * TODO:리팩토링 점검 필요
  */
 object AuthMapper {
     fun toEmailVerifyResult(dto: VerifyEmailData): EmailVerifyResult = EmailVerifyResult(isVerified = dto.isVerified ?: true)

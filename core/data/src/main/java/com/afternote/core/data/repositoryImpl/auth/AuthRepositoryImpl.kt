@@ -3,22 +3,14 @@ package com.afternote.core.data.repositoryImpl.auth
 import com.afternote.core.data.mapper.auth.AuthMapper
 import com.afternote.core.datastore.TokenManager
 import com.afternote.core.domain.repository.AuthRepository
-import com.afternote.core.model.EmailVerifyResult
 import com.afternote.core.model.LoginResult
 import com.afternote.core.model.ReissueResult
-import com.afternote.core.model.SignUpResult
-import com.afternote.core.network.AuthApiService
 import com.afternote.core.network.dto.LoginRequest
 import com.afternote.core.network.dto.LogoutRequest
-import com.afternote.core.network.dto.PasswordChangeRequest
 import com.afternote.core.network.dto.ReissueRequest
-import com.afternote.core.network.dto.SendEmailCodeRequest
-import com.afternote.core.network.dto.SignUpRequest
 import com.afternote.core.network.dto.SocialLoginRequest
-import com.afternote.core.network.dto.VerifyEmailData
-import com.afternote.core.network.dto.VerifyEmailRequest
 import com.afternote.core.network.model.requireData
-import com.afternote.core.network.model.requireStatus
+import com.afternote.core.network.service.AuthApiService
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -57,48 +49,7 @@ class AuthRepositoryImpl
         )
 
         override suspend fun getUserId() = tokenManager.getUserId()
-        // 레거시 레포에 있던 authApiService 관련
-
-        override suspend fun sendEmailCode(email: String): Result<Unit> =
-            runCatching {
-                authApiService.sendEmailCode(SendEmailCodeRequest(email))
-            }
-
-        override suspend fun verifyEmail(
-            email: String,
-            certificateCode: String,
-        ): Result<EmailVerifyResult> =
-            runCatching {
-                val response =
-                    authApiService.verifyEmail(
-                        VerifyEmailRequest(
-                            email,
-                            certificateCode,
-                        ),
-                    )
-                response.requireStatus()
-
-                AuthMapper.toEmailVerifyResult(response.data ?: VerifyEmailData(isVerified = null))
-            }
-
-        override suspend fun signUp(
-            email: String,
-            password: String,
-            name: String,
-            profileUrl: String?,
-        ): Result<SignUpResult> =
-            runCatching {
-                val response =
-                    authApiService.signUp(
-                        SignUpRequest(
-                            email,
-                            password,
-                            name,
-                            profileUrl,
-                        ),
-                    )
-                AuthMapper.toSignUpResult(response.requireData())
-            }
+        // TODO:레거시 레포에 있던 authApiService 관련이고 리팩토링해야 하는지 검사 필요
 
         override suspend fun login(
             email: String,
@@ -130,19 +81,5 @@ class AuthRepositoryImpl
         override suspend fun logout(refreshToken: String): Result<Unit> =
             runCatching {
                 authApiService.logout(LogoutRequest(refreshToken))
-            }
-
-        override suspend fun passwordChange(
-            currentPassword: String,
-            newPassword: String,
-        ): Result<Unit> =
-            runCatching {
-                val response =
-                    authApiService.passwordChange(
-                        PasswordChangeRequest(
-                            currentPassword,
-                            newPassword,
-                        ),
-                    )
             }
     }

@@ -3,9 +3,9 @@ package com.kuit.afternote.data.repositoryimpl
 import android.content.Context
 import android.net.Uri
 import androidx.core.net.toUri
-import com.afternote.core.network.ImageApiService
 import com.afternote.core.network.dto.PresignedUrlRequestDto
 import com.afternote.core.network.model.requireData
+import com.afternote.core.network.service.ImageApiService
 import com.afternote.feature.afternote.domain.repository.MemorialVideoUploadRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
