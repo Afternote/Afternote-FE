@@ -19,7 +19,7 @@ class LoginViewModel
         private val loginUseCase: LoginUseCase,
     ) : ViewModel() {
         // UI의 상태를 담는 변수
-        private val _uiState = MutableStateFlow(LoginUiState())
+        private val _uiState: MutableStateFlow<LoginUiState> = MutableStateFlow(LoginUiState())
         val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
         fun login(loginType: LoginType) {
@@ -28,10 +28,10 @@ class LoginViewModel
                 _uiState.update { it.copy(isLoading = true, error = null) }
 
                 // 2. 유스케이스 실행
-                val result = loginUseCase(loginType)
+                val loginResult = loginUseCase(loginType)
 
                 // 3. 결과 처리
-                result
+                loginResult
                     .onSuccess {
                         _uiState.update { it.copy(isLoading = false, isSuccess = true) }
                     }.onFailure { exception ->
