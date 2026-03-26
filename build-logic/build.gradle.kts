@@ -41,6 +41,10 @@ gradlePlugin {
             id = "afternote.android.data"
             implementationClass = "AndroidDataConventionPlugin"
         }
+        register("androidDatastore") {
+            id = "afternote.android.datastore"
+            implementationClass = "AndroidDatastoreConventionPlugin"
+        }
         register("androidDomain") {
             id = "afternote.android.domain"
             implementationClass = "AndroidDomainConventionPlugin"

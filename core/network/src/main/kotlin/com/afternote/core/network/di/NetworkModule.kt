@@ -1,5 +1,8 @@
 package com.afternote.core.network.di
 
+import com.afternote.core.network.service.AccountApiService
+import com.afternote.core.network.service.AuthApiService
+import com.afternote.core.network.service.ImageApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -46,4 +49,16 @@ object NetworkModule {
             .client(okHttpClient)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
+
+    @Provides
+    @Singleton
+    fun provideAuthApiService(retrofit: Retrofit): AuthApiService = retrofit.create(AuthApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideAccountApiService(retrofit: Retrofit): AccountApiService = retrofit.create(AccountApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideImageApiService(retrofit: Retrofit): ImageApiService = ImageApiService { body -> retrofit.create(ImageApiService::class.java).getPresignedUrl(body) }
 }
