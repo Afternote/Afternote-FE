@@ -60,13 +60,13 @@ class AuthRepositoryImpl
                 AuthMapper.toLoginResult(response.requireData())
             }
 
-        override suspend fun kakaoLogin(accessToken: String): Result<LoginResult> =
+        override suspend fun kakaoLogin(socialAccessToken: String): Result<LoginResult> =
             runCatching {
                 val response =
                     authApiService.socialLogin(
                         SocialLoginRequest(
                             provider = "KAKAO",
-                            accessToken = accessToken,
+                            accessToken = socialAccessToken,
                         ),
                     )
                 AuthMapper.toLoginResult(response.requireData())
