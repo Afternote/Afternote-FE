@@ -2,7 +2,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- KakaoTalk 앱 설치 여부 확인에 필요 -->
+    <queries>
+        <package android:name="com.kakao.talk" />
+    </queries>
+
     <application
+        android:name=".AfternoteApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -11,6 +17,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Afternotefe">
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -18,8 +25,22 @@
             android:theme="@style/Theme.Afternotefe">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- 카카오 OAuth 리다이렉트 처리 액티비티 -->
+        <activity
+            android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- kakao{APP_KEY}://oauth -->
+                <data
+                    android:host="oauth"
+                    android:scheme="kakao${KAKAO_APP_KEY}" />
             </intent-filter>
         </activity>
     </application>

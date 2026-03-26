@@ -17,7 +17,7 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
                 project(":core:model")
 
                 // 3. 피처 모듈 전용 라이브러리 (Hilt Navigation 등)
-                implementation("androidx-hilt-navigation-compose")
+                implementation("hilt-navigation")
             }
         }
     }

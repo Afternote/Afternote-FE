@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -32,9 +33,9 @@ class TokenManager
         private suspend fun getPrefs() = dataFlow.first()
 
         val isLoggedInFlow: Flow<Boolean> =
-            dataFlow.map { prefs ->
-                prefs[accessTokenKey] != null
-            }
+            dataFlow
+                .map { prefs -> prefs[accessTokenKey] != null }
+                .distinctUntilChanged()
 
         suspend fun saveTokens(
             accessToken: String,

@@ -1,5 +1,6 @@
 package com.afternote.core.network.di
 
+import com.afternote.core.network.interceptor.AuthInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -25,9 +26,10 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient =
+    fun provideOkHttpClient(authInterceptor: AuthInterceptor): OkHttpClient =
         OkHttpClient
             .Builder()
+            .addInterceptor(authInterceptor)
             .addInterceptor(
                 HttpLoggingInterceptor().apply {
                     level = HttpLoggingInterceptor.Level.BODY
@@ -42,7 +44,7 @@ object NetworkModule {
     ): Retrofit =
         Retrofit
             .Builder()
-            .baseUrl("testUrl")
+            .baseUrl(com.afternote.core.network.BuildConfig.BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
