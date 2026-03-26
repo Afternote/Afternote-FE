@@ -1,9 +1,7 @@
 package com.afternote.feature.afternote.data.mapper
 
 import com.afternote.feature.afternote.data.dto.AfternoteReceiverRef
-import com.afternote.feature.afternote.data.dto.request.AfternoteCreateGalleryRequest
-import com.afternote.feature.afternote.data.dto.request.AfternoteCreatePlaylistRequest
-import com.afternote.feature.afternote.data.dto.request.AfternoteCreateSocialRequest
+import com.afternote.feature.afternote.data.dto.request.AfternoteCreateRequest
 import com.afternote.feature.afternote.data.dto.request.AfternoteUpdateRequest
 import com.afternote.feature.afternote.domain.model.input.CreateGalleryInput
 import com.afternote.feature.afternote.domain.model.input.CreatePlaylistInput
@@ -23,7 +21,7 @@ fun UpdateInput.toRequest() =
     )
 
 fun CreateSocialInput.toRequest() =
-    AfternoteCreateSocialRequest(
+    AfternoteCreateRequest(
         category = "SOCIAL",
         title = title,
         processMethod = processMethod,
@@ -34,7 +32,7 @@ fun CreateSocialInput.toRequest() =
     )
 
 fun CreateGalleryInput.toRequest() =
-    AfternoteCreateGalleryRequest(
+    AfternoteCreateRequest(
         category = "GALLERY",
         title = title,
         processMethod = processMethod,
@@ -44,7 +42,7 @@ fun CreateGalleryInput.toRequest() =
     )
 
 fun CreatePlaylistInput.toRequest() =
-    AfternoteCreatePlaylistRequest(
+    AfternoteCreateRequest(
         category = "PLAYLIST",
         title = title,
         playlist = playlist.toDto(),

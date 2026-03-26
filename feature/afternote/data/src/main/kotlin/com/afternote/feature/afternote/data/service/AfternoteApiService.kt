@@ -1,9 +1,7 @@
 package com.afternote.feature.afternote.data.service
 
 import com.afternote.core.network.model.BaseResponse
-import com.afternote.feature.afternote.data.dto.request.AfternoteCreateGalleryRequest
-import com.afternote.feature.afternote.data.dto.request.AfternoteCreatePlaylistRequest
-import com.afternote.feature.afternote.data.dto.request.AfternoteCreateSocialRequest
+import com.afternote.feature.afternote.data.dto.request.AfternoteCreateRequest
 import com.afternote.feature.afternote.data.dto.request.AfternoteUpdateRequest
 import com.afternote.feature.afternote.data.dto.response.AfternoteDetailResponse
 import com.afternote.feature.afternote.data.dto.response.AfternoteIdResponse
@@ -30,18 +28,8 @@ interface AfternoteApiService {
     ): BaseResponse<AfternoteDetailResponse>
 
     @POST("api/afternotes")
-    suspend fun createAfternoteSocial(
-        @Body request: AfternoteCreateSocialRequest,
-    ): BaseResponse<AfternoteIdResponse>
-
-    @POST("api/afternotes")
-    suspend fun createAfternoteGallery(
-        @Body request: AfternoteCreateGalleryRequest,
-    ): BaseResponse<AfternoteIdResponse>
-
-    @POST("api/afternotes")
-    suspend fun createAfternotePlaylist(
-        @Body request: AfternoteCreatePlaylistRequest,
+    suspend fun createAfternote(
+        @Body request: AfternoteCreateRequest,
     ): BaseResponse<AfternoteIdResponse>
 
     @PATCH("api/afternotes/{afternoteId}")

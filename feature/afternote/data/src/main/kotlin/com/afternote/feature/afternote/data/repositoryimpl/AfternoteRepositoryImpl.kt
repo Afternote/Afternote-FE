@@ -43,7 +43,7 @@ class AfternoteRepositoryImpl
         override suspend fun createSocial(input: CreateSocialInput): Result<Long> =
             runCatching {
                 val request = input.toRequest()
-                val response = api.createAfternoteSocial(request)
+                val response = api.createAfternote(request)
                 val data = response.requireData()
                 getAfternoteId(data)
             }.logFailure()
@@ -51,7 +51,7 @@ class AfternoteRepositoryImpl
         override suspend fun createGallery(input: CreateGalleryInput): Result<Long> =
             runCatching {
                 val request = input.toRequest()
-                val response = api.createAfternoteGallery(request)
+                val response = api.createAfternote(request)
                 val data = response.requireData()
                 getAfternoteId(data)
             }.logFailure()
@@ -72,7 +72,7 @@ class AfternoteRepositoryImpl
         override suspend fun createPlaylist(input: CreatePlaylistInput): Result<Long> =
             runCatching {
                 val request = input.toRequest()
-                val response = api.createAfternotePlaylist(request)
+                val response = api.createAfternote(request)
                 val data = response.requireData()
                 getAfternoteId(data)
             }.logFailure()
