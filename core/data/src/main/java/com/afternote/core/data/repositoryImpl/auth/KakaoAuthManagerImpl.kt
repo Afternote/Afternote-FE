@@ -1,16 +1,17 @@
 package com.afternote.core.data.repositoryImpl.auth
 
-// import com.kakao.sdk.auth.TokenManagerProvider
 import com.afternote.core.domain.repository.KakaoAuthManager
-import com.afternote.core.network.service.AuthApiService
+import com.kakao.sdk.auth.TokenManageable
 import javax.inject.Inject
 
 class KakaoAuthManagerImpl
     @Inject
     constructor(
-        val authApiService: AuthApiService,
+        val tokenManageable: TokenManageable,
     ) : KakaoAuthManager {
         override fun getAccessToken(): String? {
-//            val token = TokenManagerProvider.instance.manager.getToken()
+//            @Inject
+//            lateinit var tokenManageable: TokenManageable
+            return tokenManageable.getToken()?.accessToken
         }
     }

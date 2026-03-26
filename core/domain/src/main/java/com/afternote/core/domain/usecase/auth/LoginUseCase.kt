@@ -9,9 +9,7 @@ sealed class LoginType {
         val password: String,
     ) : LoginType()
 
-    data class Kakao(
-        val socialAccessToken: String,
-    ) : LoginType()
+    object Kakao : LoginType()
 }
 
 class LoginUseCase
@@ -19,20 +17,18 @@ class LoginUseCase
     constructor(
         private val authRepository: AuthRepository,
     ) {
-        suspend operator fun invoke(loginType: LoginType) {
+        suspend operator fun invoke(loginType: LoginType) =
             when (loginType) {
                 is LoginType.Email -> {
-                    authRepository.login(
-                        email = loginType.email,
-                        password = loginType.password,
-                    )
+                    authRepository
+                        .login(
+                            email = loginType.email,
+                            password = loginType.password,
+                        )
                 }
 
                 is LoginType.Kakao -> {
-                    authRepository.kakaoLogin(
-                        socialAccessToken = loginType.socialAccessToken,
-                    )
+                    authRepository.kakaoLogin()
+                }
             }
-        }
-        }
     }

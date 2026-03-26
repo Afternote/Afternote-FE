@@ -32,7 +32,7 @@ interface AuthRepository {
         password: String,
     ): Result<LoginResult>
 
-    suspend fun kakaoLogin(socialAccessToken: String): Result<LoginResult>
+    suspend fun kakaoLogin(): Result<LoginResult>
 
     suspend fun reissue(refreshToken: String): Result<ReissueResult>
 

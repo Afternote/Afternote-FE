@@ -3,6 +3,7 @@ package com.afternote.core.data.repositoryImpl.auth
 import com.afternote.core.data.mapper.auth.AuthMapper
 import com.afternote.core.datastore.TokenManager
 import com.afternote.core.domain.repository.AuthRepository
+import com.afternote.core.domain.repository.KakaoAuthManager
 import com.afternote.core.model.LoginResult
 import com.afternote.core.model.ReissueResult
 import com.afternote.core.network.dto.LoginRequest
@@ -14,11 +15,19 @@ import com.afternote.core.network.service.AuthApiService
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
+// Auth와 관련된 에러 정의
+sealed class AuthException(
+    message: String,
+) : Exception(message) {
+    class KakaoTokenNotFound : AuthException("카카오 인증 토큰이 없습니다.")
+}
+
 class AuthRepositoryImpl
     @Inject
     constructor(
         val tokenManager: TokenManager,
         val authApiService: AuthApiService,
+        val kakaoAuthManager: KakaoAuthManager,
     ) : AuthRepository {
         // 토큰 매니저 관련
         override suspend fun clearSession() = tokenManager.clearTokens()
@@ -60,8 +69,10 @@ class AuthRepositoryImpl
                 AuthMapper.toLoginResult(response.requireData())
             }
 
-        override suspend fun kakaoLogin(socialAccessToken: String): Result<LoginResult> =
-            runCatching {
+        override suspend fun kakaoLogin(): Result<LoginResult> {
+            val socialAccessToken =
+                kakaoAuthManager.getAccessToken() ?: throw AuthException.KakaoTokenNotFound()
+            return runCatching {
                 val response =
                     authApiService.socialLogin(
                         SocialLoginRequest(
@@ -71,6 +82,7 @@ class AuthRepositoryImpl
                     )
                 AuthMapper.toLoginResult(response.requireData())
             }
+        }
 
         override suspend fun reissue(refreshToken: String): Result<ReissueResult> =
             runCatching {
