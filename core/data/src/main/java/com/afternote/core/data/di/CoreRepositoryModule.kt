@@ -1,6 +1,6 @@
 package com.afternote.core.data.di
 
-import com.afternote.core.data.AuthRepositoryImpl
+import com.afternote.core.data.repositoryImpl.auth.AuthRepositoryImpl
 import com.afternote.core.domain.repository.AuthRepository
 import dagger.Binds
 import dagger.Module

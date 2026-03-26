@@ -1,4 +1,4 @@
-package com.afternote.core.data.mapper
+package com.afternote.core.data.mapper.auth
 
 import com.afternote.core.model.EmailVerifyResult
 import com.afternote.core.model.LoginResult

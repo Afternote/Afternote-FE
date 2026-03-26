@@ -1,6 +1,6 @@
-package com.afternote.core.data
+package com.afternote.core.data.repositoryImpl.auth
 
-import com.afternote.core.data.mapper.AuthMapper
+import com.afternote.core.data.mapper.auth.AuthMapper
 import com.afternote.core.datastore.TokenManager
 import com.afternote.core.domain.repository.AuthRepository
 import com.afternote.core.model.EmailVerifyResult
@@ -69,7 +69,13 @@ class AuthRepositoryImpl
             certificateCode: String,
         ): Result<EmailVerifyResult> =
             runCatching {
-                val response = authApiService.verifyEmail(VerifyEmailRequest(email, certificateCode))
+                val response =
+                    authApiService.verifyEmail(
+                        VerifyEmailRequest(
+                            email,
+                            certificateCode,
+                        ),
+                    )
                 response.requireStatus()
 
                 AuthMapper.toEmailVerifyResult(response.data ?: VerifyEmailData(isVerified = null))
@@ -82,7 +88,15 @@ class AuthRepositoryImpl
             profileUrl: String?,
         ): Result<SignUpResult> =
             runCatching {
-                val response = authApiService.signUp(SignUpRequest(email, password, name, profileUrl))
+                val response =
+                    authApiService.signUp(
+                        SignUpRequest(
+                            email,
+                            password,
+                            name,
+                            profileUrl,
+                        ),
+                    )
                 AuthMapper.toSignUpResult(response.requireData())
             }
 
@@ -124,6 +138,11 @@ class AuthRepositoryImpl
         ): Result<Unit> =
             runCatching {
                 val response =
-                    authApiService.passwordChange(PasswordChangeRequest(currentPassword, newPassword))
+                    authApiService.passwordChange(
+                        PasswordChangeRequest(
+                            currentPassword,
+                            newPassword,
+                        ),
+                    )
             }
     }
