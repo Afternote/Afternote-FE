@@ -1,4 +1,4 @@
-package com.afternote.core.network
+package com.afternote.core.network.service
 
 import com.afternote.core.network.dto.PresignedUrlRequestDto
 import com.afternote.core.network.dto.PresignedUrlResponseDto
