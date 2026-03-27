@@ -6,4 +6,8 @@ plugins {
 
 android {
     namespace = "com.afternote.core.network"
+    buildFeatures {
+        buildConfig = true
+    }
+    defaultConfig { buildConfigField("String", "BASE_URL", "\"https://afternote.kro.kr/\"") }
 }
