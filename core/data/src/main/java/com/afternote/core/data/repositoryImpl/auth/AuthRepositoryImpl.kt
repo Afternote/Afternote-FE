@@ -13,6 +13,7 @@ import com.afternote.core.network.dto.ReissueRequest
 import com.afternote.core.network.dto.SocialLoginRequest
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.service.AuthApiService
+import com.afternote.core.network.service.TokenApiService
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -29,6 +30,7 @@ class AuthRepositoryImpl
         val tokenManager: TokenManager,
         val authApiService: AuthApiService,
         val kakaoAuthManager: KakaoAuthManager,
+        val tokenApiService: TokenApiService,
     ) : AuthRepository {
         // 토큰 매니저 관련
         override suspend fun clearSession() = runCatching { tokenManager.clearTokens() }
@@ -91,7 +93,7 @@ class AuthRepositoryImpl
 
         override suspend fun rotateToken(refreshToken: String): Result<TokenBundle> =
             runCatching {
-                val response = authApiService.reissue(ReissueRequest(refreshToken))
+                val response = tokenApiService.reissue(ReissueRequest(refreshToken))
                 AuthMapper.toRotateTokenResult(response.requireData())
             }
 
