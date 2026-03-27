@@ -7,7 +7,7 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
             with(pluginManager) {
                 // 1. 우리가 만든 플러그인들을 조합하여 'Feature' 성격 정의
                 apply("afternote.android.library.compose") // 기본 SDK + UI
-                apply("afternote.android.hilt") // DI
+                apply("afternote.android.hilt")            // DI
                 // apply("afternote.android.navigation")   // (아직 안 만들었다면 생성 필요)
             }
 

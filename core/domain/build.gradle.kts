@@ -1,5 +1,6 @@
 plugins {
-    id("afternote.android.domain")
+    id("afternote.android.library")
+    id("afternote.android.hilt")
 }
 
 android {

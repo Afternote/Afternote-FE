@@ -23,25 +23,25 @@ import javax.inject.Singleton
  */
 @Module
 @InstallIn(SingletonComponent::class)
-interface AfternoteRepositoryModule {
+abstract class AfternoteRepositoryModule {
     // 사용 위치가 Hilt가 생성하는 코드 안에만 있기 때문에 IDE에서 'never used'로 표시됩니다.
     @Suppress("unused")
     @Binds
     @Singleton
-    fun bindAfternoteRepository(impl: AfternoteRepositoryImpl): AfternoteRepository
+    abstract fun bindAfternoteRepository(impl: AfternoteRepositoryImpl): AfternoteRepository
 
     @Suppress("unused")
     @Binds
     @Singleton
-    fun bindMusicSearchRepository(impl: MusicSearchRepositoryImpl): MusicSearchRepository
+    abstract fun bindMusicSearchRepository(impl: MusicSearchRepositoryImpl): MusicSearchRepository
 
     @Suppress("unused")
     @Binds
     @Singleton
-    fun bindMemorialThumbnailUploadRepository(impl: MemorialThumbnailUploadRepositoryImpl): MemorialThumbnailUploadRepository
+    abstract fun bindMemorialThumbnailUploadRepository(impl: MemorialThumbnailUploadRepositoryImpl): MemorialThumbnailUploadRepository
 
     @Suppress("unused")
     @Binds
     @Singleton
-    fun bindMemorialVideoUploadRepository(impl: MemorialVideoUploadRepositoryImpl): MemorialVideoUploadRepository
+    abstract fun bindMemorialVideoUploadRepository(impl: MemorialVideoUploadRepositoryImpl): MemorialVideoUploadRepository
 }
