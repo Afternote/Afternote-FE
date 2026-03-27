@@ -1,11 +1,12 @@
 plugins {
-    id("afternote.android.data")
+    id("afternote.android.library")
+    id("afternote.android.hilt")
 }
 
 android {
     namespace = "com.afternote.core.data"
 }
-
 dependencies {
-    implementation(libs.kakao.sdk.auth)
+    implementation(projects.core.domain)
+    implementation(projects.core.datastore)
 }

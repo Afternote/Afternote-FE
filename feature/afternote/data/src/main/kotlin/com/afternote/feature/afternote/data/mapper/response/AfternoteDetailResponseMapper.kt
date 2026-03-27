@@ -2,9 +2,9 @@ package com.afternote.feature.afternote.data.mapper.response
 
 import com.afternote.feature.afternote.data.dto.AfternoteCredentials
 import com.afternote.feature.afternote.data.dto.AfternoteDetailReceiver
-import com.afternote.feature.afternote.data.dto.AfternoteDetailResponse
 import com.afternote.feature.afternote.data.dto.AfternotePlaylist
 import com.afternote.feature.afternote.data.dto.AfternoteSong
+import com.afternote.feature.afternote.data.dto.response.AfternoteDetailResponse
 import com.afternote.feature.afternote.data.mapper.categoryToServiceType
 import com.afternote.feature.afternote.data.mapper.formatDateFromServer
 import com.afternote.feature.afternote.domain.model.Detail

@@ -3,9 +3,9 @@ package com.kuit.afternote.data.repositoryimpl
 import android.content.Context
 import android.net.Uri
 import androidx.core.net.toUri
+import com.afternote.core.network.ImageApiService
 import com.afternote.core.network.dto.PresignedUrlRequestDto
 import com.afternote.core.network.model.requireData
-import com.afternote.core.network.service.ImageApiService
 import com.afternote.feature.afternote.domain.repository.MemorialVideoUploadRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
@@ -29,10 +29,10 @@ private const val DEFAULT_VIDEO_EXTENSION = "mp4"
 class MemorialVideoUploadRepositoryImpl
     @Inject
     constructor(
-        @param:ApplicationContext private val context: Context,
+        @ApplicationContext private val context: Context,
         private val imageApi: ImageApiService,
-        @param:Named("S3Upload") private val okHttpClient: OkHttpClient,
-        @param:Named("IoDispatcher") private val ioDispatcher: CoroutineDispatcher,
+        @Named("S3Upload") private val okHttpClient: OkHttpClient,
+        @Named("IoDispatcher") private val ioDispatcher: CoroutineDispatcher,
     ) : MemorialVideoUploadRepository {
         override suspend fun uploadVideo(contentUriString: String): Result<String> =
             runCatching {
