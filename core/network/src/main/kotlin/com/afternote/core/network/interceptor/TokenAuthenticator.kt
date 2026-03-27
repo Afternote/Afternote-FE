@@ -18,8 +18,7 @@ class TokenAuthenticator
             response: Response,
         ): Request? {
             val originalRequest = response.request
-            val header = originalRequest.header("Authorization")
-            val oldAccessToken = header?.removePrefix("Bearer ")
+            val oldAccessToken = originalRequest.header("Authorization")?.removePrefix("Bearer ")
 
             // 2. 만약 401(만료)이 떴다면?
             synchronized(this) {
@@ -57,8 +56,7 @@ class TokenAuthenticator
 private fun getRequest(
     originalRequest: Request,
     accessToken: String?,
-): Request {
-    val requestBuilder = originalRequest.newBuilder()
-    requestBuilder.header("Authorization", "Bearer $accessToken")
-    return requestBuilder.build()
-}
+) = originalRequest
+    .newBuilder()
+    .header("Authorization", "Bearer $accessToken")
+    .build()
