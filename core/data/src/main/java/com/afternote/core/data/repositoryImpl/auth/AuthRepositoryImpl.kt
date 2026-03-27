@@ -4,9 +4,9 @@ import com.afternote.core.data.mapper.auth.AuthMapper
 import com.afternote.core.datastore.TokenManager
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.domain.repository.auth.KakaoAuthManager
-import com.afternote.core.model.Login
-import com.afternote.core.model.RotateToken
-import com.afternote.core.model.SocialLogin
+import com.afternote.core.model.SocialSession
+import com.afternote.core.model.TokenBundle
+import com.afternote.core.model.UserSession
 import com.afternote.core.network.dto.LoginRequest
 import com.afternote.core.network.dto.LogoutRequest
 import com.afternote.core.network.dto.ReissueRequest
@@ -68,13 +68,13 @@ class AuthRepositoryImpl
         override suspend fun login(
             email: String,
             password: String,
-        ): Result<Login> =
+        ): Result<UserSession> =
             runCatching {
                 val response = authApiService.login(LoginRequest(email, password))
                 AuthMapper.toLoginResult(response.requireData())
             }
 
-        override suspend fun kakaoLogin(): Result<SocialLogin> {
+        override suspend fun kakaoLogin(): Result<SocialSession> {
             val socialAccessToken =
                 kakaoAuthManager.getAccessToken() ?: throw AuthException.KakaoTokenNotFound()
             return runCatching {
@@ -89,7 +89,7 @@ class AuthRepositoryImpl
             }
         }
 
-        override suspend fun rotateToken(refreshToken: String): Result<RotateToken> =
+        override suspend fun rotateToken(refreshToken: String): Result<TokenBundle> =
             runCatching {
                 val response = authApiService.reissue(ReissueRequest(refreshToken))
                 AuthMapper.toRotateTokenResult(response.requireData())

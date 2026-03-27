@@ -1,7 +1,7 @@
 package com.afternote.core.domain.usecase.account
 
 import com.afternote.core.domain.repository.account.AccountRepository
-import com.afternote.core.model.EmailVerify
+import com.afternote.core.model.EmailVerification
 import javax.inject.Inject
 
 /**
@@ -15,5 +15,5 @@ class VerifyEmailUseCase
         suspend operator fun invoke(
             email: String,
             certificateCode: String,
-        ): Result<EmailVerify> = accountRepository.verifyEmail(email, certificateCode)
+        ): Result<EmailVerification> = accountRepository.verifyEmail(email, certificateCode)
     }
