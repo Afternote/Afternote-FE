@@ -3,7 +3,6 @@ package com.afternote.feature.afternote.data.dto
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonNames
 
 @Serializable
 data class AfternoteCreateGalleryRequest(
@@ -65,8 +64,7 @@ data class AfternoteDetailResponse(
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class AfternoteIdResponse(
-    @SerialName("afternoteId")
-    @JsonNames("afternote_id") val afternoteId: Long,
+    @SerialName("afternoteId") val afternoteId: Long,
 )
 
 @Serializable
