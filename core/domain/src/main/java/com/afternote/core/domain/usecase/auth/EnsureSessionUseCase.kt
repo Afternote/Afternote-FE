@@ -14,5 +14,5 @@ class EnsureSessionUseCase
         suspend operator fun invoke(refreshToken: String) {
             // TODO:토큰의 남은 유효 기간 알려 주는 기능이 API에 추가된 후 구현 예정
             authRepository.rotateToken(refreshToken)
-    }
+        }
     }

@@ -50,7 +50,13 @@ data class SocialLoginRequest(
 data class LoginData(
     val accessToken: String? = null,
     val refreshToken: String? = null,
-    val newUser: Boolean? = null,
+)
+
+@Serializable
+data class SocialLoginData(
+    val accessToken: String? = null,
+    val refreshToken: String? = null,
+    val isNewUser: Boolean? = null,
 )
 
 @Serializable
