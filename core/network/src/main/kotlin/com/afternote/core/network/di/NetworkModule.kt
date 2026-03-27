@@ -1,5 +1,6 @@
 package com.afternote.core.network.di
 
+import com.afternote.core.network.BuildConfig
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
