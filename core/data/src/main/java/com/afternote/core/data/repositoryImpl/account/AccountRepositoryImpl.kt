@@ -1,7 +1,7 @@
-package com.afternote.core.data.repositoryImpl.auth
+package com.afternote.core.data.repositoryImpl.account
 
 import com.afternote.core.data.mapper.auth.AuthMapper
-import com.afternote.core.domain.repository.AccountRepository
+import com.afternote.core.domain.repository.account.AccountRepository
 import com.afternote.core.model.EmailVerifyResult
 import com.afternote.core.model.SignUpResult
 import com.afternote.core.network.dto.PasswordChangeRequest

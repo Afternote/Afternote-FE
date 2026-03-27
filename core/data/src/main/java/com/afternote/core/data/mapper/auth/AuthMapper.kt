@@ -2,7 +2,7 @@ package com.afternote.core.data.mapper.auth
 
 import com.afternote.core.model.EmailVerifyResult
 import com.afternote.core.model.LoginResult
-import com.afternote.core.model.ReissueResult
+import com.afternote.core.model.RotateTokenResult
 import com.afternote.core.model.SignUpResult
 import com.afternote.core.network.dto.LoginData
 import com.afternote.core.network.dto.ReissueData
@@ -20,5 +20,6 @@ object AuthMapper {
 
     fun toLoginResult(dto: LoginData?): LoginResult = LoginResult(accessToken = dto?.accessToken, refreshToken = dto?.refreshToken)
 
-    fun toReissueResult(dto: ReissueData): ReissueResult = ReissueResult(accessToken = dto.accessToken, refreshToken = dto.refreshToken)
+    fun toRotateTokenResult(dto: ReissueData): RotateTokenResult =
+        RotateTokenResult(accessToken = dto.accessToken, refreshToken = dto.refreshToken)
 }

@@ -1,9 +1,9 @@
 package com.afternote.core.common.di
 
-import com.afternote.core.data.repositoryImpl.auth.AccountRepositoryImpl
+import com.afternote.core.data.repositoryImpl.account.AccountRepositoryImpl
 import com.afternote.core.data.repositoryImpl.auth.AuthRepositoryImpl
-import com.afternote.core.domain.repository.AccountRepository
-import com.afternote.core.domain.repository.AuthRepository
+import com.afternote.core.domain.repository.account.AccountRepository
+import com.afternote.core.domain.repository.auth.AuthRepository
 import com.kakao.sdk.auth.TokenManageable
 import com.kakao.sdk.auth.TokenManagerProvider
 import dagger.Binds

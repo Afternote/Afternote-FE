@@ -26,7 +26,7 @@ data class LoginResult(
 /**
  * 토큰 재발급 성공 결과.
  */
-data class ReissueResult(
+data class RotateTokenResult(
     val accessToken: String? = null,
     val refreshToken: String? = null,
 )

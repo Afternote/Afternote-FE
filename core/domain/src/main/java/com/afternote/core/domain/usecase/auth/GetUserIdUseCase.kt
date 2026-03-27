@@ -1,6 +1,6 @@
 package com.afternote.core.domain.usecase.auth
 
-import com.afternote.core.domain.repository.AuthRepository
+import com.afternote.core.domain.repository.auth.AuthRepository
 import javax.inject.Inject
 
 // 사용자 ID 조회 UseCase.

@@ -1,7 +1,7 @@
-package com.afternote.core.domain.repository
+package com.afternote.core.domain.repository.auth
 
 import com.afternote.core.model.LoginResult
-import com.afternote.core.model.ReissueResult
+import com.afternote.core.model.RotateTokenResult
 import kotlinx.coroutines.flow.Flow
 
 interface AuthRepository {
@@ -34,7 +34,7 @@ interface AuthRepository {
 
     suspend fun kakaoLogin(): Result<LoginResult>
 
-    suspend fun reissue(refreshToken: String): Result<ReissueResult>
+    suspend fun rotateToken(refreshToken: String): Result<RotateTokenResult>
 
     suspend fun logout(refreshToken: String): Result<Unit>
 }

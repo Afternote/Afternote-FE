@@ -1,6 +1,6 @@
 package com.afternote.core.data.repositoryImpl.auth
 
-import com.afternote.core.domain.repository.KakaoAuthManager
+import com.afternote.core.domain.repository.auth.KakaoAuthManager
 import com.kakao.sdk.auth.TokenManageable
 import javax.inject.Inject
 

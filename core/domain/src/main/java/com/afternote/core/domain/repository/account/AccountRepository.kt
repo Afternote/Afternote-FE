@@ -1,4 +1,4 @@
-package com.afternote.core.domain.repository
+package com.afternote.core.domain.repository.account
 
 import com.afternote.core.model.EmailVerifyResult
 import com.afternote.core.model.SignUpResult

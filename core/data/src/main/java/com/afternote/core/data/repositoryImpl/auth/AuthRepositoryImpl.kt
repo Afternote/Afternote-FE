@@ -2,10 +2,10 @@ package com.afternote.core.data.repositoryImpl.auth
 
 import com.afternote.core.data.mapper.auth.AuthMapper
 import com.afternote.core.datastore.TokenManager
-import com.afternote.core.domain.repository.AuthRepository
-import com.afternote.core.domain.repository.KakaoAuthManager
+import com.afternote.core.domain.repository.auth.AuthRepository
+import com.afternote.core.domain.repository.auth.KakaoAuthManager
 import com.afternote.core.model.LoginResult
-import com.afternote.core.model.ReissueResult
+import com.afternote.core.model.RotateTokenResult
 import com.afternote.core.network.dto.LoginRequest
 import com.afternote.core.network.dto.LogoutRequest
 import com.afternote.core.network.dto.ReissueRequest
@@ -84,10 +84,10 @@ class AuthRepositoryImpl
             }
         }
 
-        override suspend fun reissue(refreshToken: String): Result<ReissueResult> =
+        override suspend fun rotateToken(refreshToken: String): Result<RotateTokenResult> =
             runCatching {
                 val response = authApiService.reissue(ReissueRequest(refreshToken))
-                AuthMapper.toReissueResult(response.requireData())
+                AuthMapper.toRotateTokenResult(response.requireData())
             }
 
         override suspend fun logout(refreshToken: String): Result<Unit> =
