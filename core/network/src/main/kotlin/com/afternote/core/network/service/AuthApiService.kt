@@ -5,6 +5,7 @@ import com.afternote.core.network.dto.LoginRequest
 import com.afternote.core.network.dto.LogoutRequest
 import com.afternote.core.network.dto.ReissueData
 import com.afternote.core.network.dto.ReissueRequest
+import com.afternote.core.network.dto.SocialLoginData
 import com.afternote.core.network.dto.SocialLoginRequest
 import com.afternote.core.network.model.BaseResponse
 import retrofit2.http.Body
@@ -19,7 +20,7 @@ interface AuthApiService {
     @POST("auth/social/login")
     suspend fun socialLogin(
         @Body body: SocialLoginRequest,
-    ): BaseResponse<LoginData>
+    ): BaseResponse<SocialLoginData>
 
     @POST("auth/reissue")
     suspend fun reissue(

@@ -23,6 +23,12 @@ data class LoginResult(
     val refreshToken: String? = null,
 )
 
+data class SocialLoginResult(
+    val accessToken: String? = null,
+    val refreshToken: String? = null,
+    val isNewUser: Boolean?,
+)
+
 /**
  * 토큰 재발급 성공 결과.
  */

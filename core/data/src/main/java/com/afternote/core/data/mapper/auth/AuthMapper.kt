@@ -4,9 +4,11 @@ import com.afternote.core.model.EmailVerifyResult
 import com.afternote.core.model.LoginResult
 import com.afternote.core.model.RotateTokenResult
 import com.afternote.core.model.SignUpResult
+import com.afternote.core.model.SocialLoginResult
 import com.afternote.core.network.dto.LoginData
 import com.afternote.core.network.dto.ReissueData
 import com.afternote.core.network.dto.SignUpData
+import com.afternote.core.network.dto.SocialLoginData
 import com.afternote.core.network.dto.VerifyEmailData
 
 /**
@@ -19,6 +21,13 @@ object AuthMapper {
     fun toSignUpResult(dto: SignUpData): SignUpResult = SignUpResult(userId = dto.userId, email = dto.email)
 
     fun toLoginResult(dto: LoginData?): LoginResult = LoginResult(accessToken = dto?.accessToken, refreshToken = dto?.refreshToken)
+
+    fun toSocialLoginResult(dto: SocialLoginData?): SocialLoginResult =
+        SocialLoginResult(
+            accessToken = dto?.accessToken,
+            refreshToken = dto?.refreshToken,
+            isNewUser = dto?.isNewUser,
+        )
 
     fun toRotateTokenResult(dto: ReissueData): RotateTokenResult =
         RotateTokenResult(accessToken = dto.accessToken, refreshToken = dto.refreshToken)

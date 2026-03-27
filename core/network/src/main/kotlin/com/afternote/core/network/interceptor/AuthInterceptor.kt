@@ -15,7 +15,10 @@ class AuthInterceptor
             val originalRequest = chain.request()
 
             // 1. 일단 원래 요청에 토큰을 실어서 보냄
-            val token = runBlocking { authRepository.getAccessToken() }
+            val token =
+                runBlocking {
+                    authRepository.getAccessToken()
+                }
             val request =
                 originalRequest
                     .newBuilder()
@@ -28,9 +31,15 @@ class AuthInterceptor
             if (response.code == 401) {
                 synchronized(this) {
                     // 3. 리이슈를 실행해서 토큰을 갈아치움 (EnsureSession 로직)
-                    val newToken =
+                    val refreshToken =
                         runBlocking {
                             authRepository.getRefreshToken()
+                        } ?: return chain.proceed(chain.request())
+                    val newToken =
+                        runBlocking {
+                            authRepository.rotateToken(
+                                refreshToken = refreshToken,
+                            )
                         }
 
                     if (newToken != null) {

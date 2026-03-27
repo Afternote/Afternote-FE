@@ -14,5 +14,7 @@ android {
 
 dependencies {
     implementation(projects.core.domain)
-    implementation(projects.core.common)
+//    순환 의존
+//    implementation(projects.core.datastore)
+//    implementation(projects.core.data)
 }

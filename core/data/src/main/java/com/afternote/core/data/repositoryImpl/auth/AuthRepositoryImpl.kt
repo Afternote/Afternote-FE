@@ -6,6 +6,7 @@ import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.domain.repository.auth.KakaoAuthManager
 import com.afternote.core.model.LoginResult
 import com.afternote.core.model.RotateTokenResult
+import com.afternote.core.model.SocialLoginResult
 import com.afternote.core.network.dto.LoginRequest
 import com.afternote.core.network.dto.LogoutRequest
 import com.afternote.core.network.dto.ReissueRequest
@@ -69,7 +70,7 @@ class AuthRepositoryImpl
                 AuthMapper.toLoginResult(response.requireData())
             }
 
-        override suspend fun kakaoLogin(): Result<LoginResult> {
+        override suspend fun kakaoLogin(): Result<SocialLoginResult> {
             val socialAccessToken =
                 kakaoAuthManager.getAccessToken() ?: throw AuthException.KakaoTokenNotFound()
             return runCatching {
@@ -80,7 +81,7 @@ class AuthRepositoryImpl
                             accessToken = socialAccessToken,
                         ),
                     )
-                AuthMapper.toLoginResult(response.requireData())
+                AuthMapper.toSocialLoginResult(response.requireData())
             }
         }
 
