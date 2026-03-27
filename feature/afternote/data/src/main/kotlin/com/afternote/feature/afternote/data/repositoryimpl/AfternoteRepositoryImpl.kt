@@ -3,7 +3,7 @@ package com.afternote.feature.afternote.data.repositoryimpl
 import android.util.Log
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
-import com.afternote.feature.afternote.data.dto.response.AfternoteIdResponse
+import com.afternote.feature.afternote.data.dto.AfternoteIdResponse
 import com.afternote.feature.afternote.data.mapper.response.toDetailDomain
 import com.afternote.feature.afternote.data.mapper.response.toListPage
 import com.afternote.feature.afternote.data.mapper.toRequest
