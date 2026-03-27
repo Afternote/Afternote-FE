@@ -1,15 +1,16 @@
-package com.afternote.core.domain.usecase
+package com.afternote.core.domain.usecase.auth
 
+import com.afternote.core.domain.repository.auth.AuthRepository
 import javax.inject.Inject
 
 // 사용자 ID 조회 UseCase.
 class GetUserIdUseCase
     @Inject
     constructor(
-        private val userSessionRepository: UserSessionRepository,
+        private val authRepository: AuthRepository,
     ) {
         /**
          * @return userId (Long) 또는 null (토큰이 없거나 userId를 찾을 수 없는 경우)
          */
-        suspend operator fun invoke(): Long? = userSessionRepository.getUserId()
+        suspend operator fun invoke(): Result<Long?> = authRepository.getUserId()
     }

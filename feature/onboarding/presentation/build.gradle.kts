@@ -10,5 +10,6 @@ android {
 dependencies {
     implementation(projects.feature.onboarding.domain)
     implementation(projects.core.common)
+    implementation(projects.core.domain)
     implementation(projects.core.ui)
 }
