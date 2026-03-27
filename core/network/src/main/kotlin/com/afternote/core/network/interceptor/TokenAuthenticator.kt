@@ -12,14 +12,19 @@ import javax.inject.Inject
 class TokenAuthenticator
     @Inject
     constructor(
-        val authRepository: AuthRepository,
+        private val authRepository: AuthRepository,
     ) : Authenticator {
         @Suppress("ReturnCount")
         override fun authenticate(
-            // 401일 때만 실행되어 응답을 앱 쪽으로 넘기지 않고 곧바로 요청을 다시 보내는 투명한 재시도
             route: Route?,
             response: Response,
         ): Request? {
+            if (responseCount(response) >= 3) {
+                // 리프레시 토큰이 만료된 토큰을 준다면 재시도가 계속 일어날 수 있다
+                Log.e("TokenAuthenticator", "❌ 무한 루프 방지: 재시도 횟수 3회 초과. 로그아웃 처리 요망")
+                return null
+            }
+
             val originalRequest = response.request
             val oldAccessToken = originalRequest.header("Authorization")?.removePrefix("Bearer ")
             if (oldAccessToken == null) {
@@ -67,8 +72,18 @@ class TokenAuthenticator
 
 private fun buildRequest(
     request: Request,
-    accessToken: String?,
+    accessToken: String,
 ) = request
     .newBuilder()
     .header("Authorization", "Bearer $accessToken")
     .build()
+
+private fun responseCount(response: Response): Int {
+    var count = 1
+    var prior = response.priorResponse
+    while (prior != null) {
+        count++
+        prior = prior.priorResponse
+    }
+    return count
+}

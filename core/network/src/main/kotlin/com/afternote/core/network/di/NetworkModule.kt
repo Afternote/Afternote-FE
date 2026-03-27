@@ -39,6 +39,7 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
                 } else {
                     HttpLoggingInterceptor.Level.NONE
                 }
+            redactHeader("Authorization")
         }
 
     // 리이슈를 할 때 일반용 OkhttpClient만 사용하면 액세스 토큰이 계속 헤더에 포함되어 401을 받는 행위가 무한 반복
@@ -63,10 +64,12 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
         OkHttpClient
             .Builder()
             // 요청은 인터셉터를 추가한 순서대로 인터셉터를 거쳐 서버로 가고 응답은 그 반대 순서로
-            .addInterceptor(loggingInterceptor)
             .addInterceptor(authInterceptor) // 액세스 토큰을 리퀘스트 헤더에 달아 주는 인터셉터
             // 액세스 토큰이 필요한 서비스가 많기 때문에 요청 필드로 일일이 보내는 대신 모든 요청의 헤더로 담는다
-            .authenticator(tokenAuthenticator) // 어센티케이터는 요청할 때 말고 응답받을 때만 작동하며 인터셉터보다 먼저 적용
+            .addInterceptor(loggingInterceptor)
+            .authenticator(tokenAuthenticator)
+            // 401 응답을 받았을 때 응답이 앱 쪽으로 넘어가기 전에 낚아채 곧바로 요청을 다시 보내는 투명한 재시도
+            // 요청을 다시 보낼 때 다른 요청처럼 인터셉터를 거침
             .build()
 
     @Provides
