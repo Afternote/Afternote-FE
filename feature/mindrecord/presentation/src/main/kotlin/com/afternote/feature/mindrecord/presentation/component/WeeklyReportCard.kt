@@ -1,6 +1,5 @@
 package com.afternote.feature.mindrecord.presentation.component
 
-import android.R
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,12 +17,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.motionEventSpy
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray2
@@ -33,7 +30,12 @@ import com.afternote.core.ui.theme.naNumGothic
 @Composable
 fun WeeklyReportCard(modifier: Modifier = Modifier) {
     Box(modifier = modifier.border(1.dp, color = Gray2, shape = RoundedCornerShape(6.dp))) {
-        Column(modifier = Modifier.fillMaxSize().padding(21.dp)) {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(21.dp),
+        ) {
             Text(
                 text = "주간 리포트",
                 style = MaterialTheme.typography.bodyLarge,

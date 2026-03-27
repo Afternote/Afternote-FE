@@ -2,9 +2,7 @@ package com.afternote.feature.mindrecord.presentation.component
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -53,8 +51,7 @@ fun MemoriesCard(modifier: Modifier = Modifier) {
                         .fillMaxWidth()
                         .graphicsLayer {
                             this.alpha = 0.7f
-                        }
-                        .drawWithContent {
+                        }.drawWithContent {
                             drawContent()
                             drawRect(
                                 brush =
