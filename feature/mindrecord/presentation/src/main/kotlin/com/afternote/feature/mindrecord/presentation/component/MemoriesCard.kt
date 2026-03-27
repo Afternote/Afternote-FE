@@ -43,7 +43,7 @@ fun MemoriesCard(modifier: Modifier = Modifier) {
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Image(
-                painter = painterResource(R.drawable.img),
+                painter = painterResource(R.drawable.mindrecord_img),
                 contentDescription = null,
                 contentScale = ContentScale.FillWidth,
                 modifier =

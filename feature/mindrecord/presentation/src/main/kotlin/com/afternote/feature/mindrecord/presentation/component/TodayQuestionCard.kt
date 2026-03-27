@@ -83,7 +83,7 @@ fun TodayQuestionCard(modifier: Modifier = Modifier) {
                 )
 
                 Icon(
-                    painterResource(R.drawable.outline_wb_sunny_24),
+                    painterResource(R.drawable.mindrecord_outline_wb_sunny_24),
                     contentDescription = null,
                     tint = Color(0xFF000000).copy(alpha = 0.15f),
                 )
