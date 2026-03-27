@@ -7,7 +7,6 @@ class AndroidDatastoreConventionPlugin : Plugin<Project> {
             pluginManager.apply("afternote.android.library")
             pluginManager.apply("afternote.android.hilt")
             afterNoteDependencies {
-                project(":core:common")
             }
         }
     }

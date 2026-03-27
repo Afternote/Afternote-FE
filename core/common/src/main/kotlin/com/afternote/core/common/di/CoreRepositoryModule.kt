@@ -1,4 +1,4 @@
-package com.afternote.core.data.di
+package com.afternote.core.common.di
 
 import com.afternote.core.data.repositoryImpl.auth.AccountRepositoryImpl
 import com.afternote.core.data.repositoryImpl.auth.AuthRepositoryImpl
