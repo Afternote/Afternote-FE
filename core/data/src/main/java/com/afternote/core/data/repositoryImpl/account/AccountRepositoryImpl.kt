@@ -2,8 +2,8 @@ package com.afternote.core.data.repositoryImpl.account
 
 import com.afternote.core.data.mapper.auth.AuthMapper
 import com.afternote.core.domain.repository.account.AccountRepository
-import com.afternote.core.model.EmailVerifyResult
-import com.afternote.core.model.SignUpResult
+import com.afternote.core.model.EmailVerify
+import com.afternote.core.model.SignUp
 import com.afternote.core.network.dto.PasswordChangeRequest
 import com.afternote.core.network.dto.SendEmailCodeRequest
 import com.afternote.core.network.dto.SignUpRequest
@@ -28,7 +28,7 @@ class AccountRepositoryImpl
         override suspend fun verifyEmail(
             email: String,
             certificateCode: String,
-        ): Result<EmailVerifyResult> =
+        ): Result<EmailVerify> =
             runCatching {
                 val response =
                     accountApiService.verifyEmail(
@@ -47,7 +47,7 @@ class AccountRepositoryImpl
             password: String,
             name: String,
             profileUrl: String?,
-        ): Result<SignUpResult> =
+        ): Result<SignUp> =
             runCatching {
                 val response =
                     accountApiService.signUp(

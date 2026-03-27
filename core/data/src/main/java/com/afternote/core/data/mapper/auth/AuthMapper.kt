@@ -1,10 +1,10 @@
 package com.afternote.core.data.mapper.auth
 
-import com.afternote.core.model.EmailVerifyResult
-import com.afternote.core.model.LoginResult
-import com.afternote.core.model.RotateTokenResult
-import com.afternote.core.model.SignUpResult
-import com.afternote.core.model.SocialLoginResult
+import com.afternote.core.model.EmailVerify
+import com.afternote.core.model.Login
+import com.afternote.core.model.RotateToken
+import com.afternote.core.model.SignUp
+import com.afternote.core.model.SocialLogin
 import com.afternote.core.network.dto.LoginData
 import com.afternote.core.network.dto.ReissueData
 import com.afternote.core.network.dto.SignUpData
@@ -16,19 +16,18 @@ import com.afternote.core.network.dto.VerifyEmailData
  * TODO:리팩토링 점검 필요
  */
 object AuthMapper {
-    fun toEmailVerifyResult(dto: VerifyEmailData): EmailVerifyResult = EmailVerifyResult(isVerified = dto.isVerified ?: true)
+    fun toEmailVerifyResult(dto: VerifyEmailData): EmailVerify = EmailVerify(isVerified = dto.isVerified ?: true)
 
-    fun toSignUpResult(dto: SignUpData): SignUpResult = SignUpResult(userId = dto.userId, email = dto.email)
+    fun toSignUpResult(dto: SignUpData): SignUp = SignUp(userId = dto.userId, email = dto.email)
 
-    fun toLoginResult(dto: LoginData?): LoginResult = LoginResult(accessToken = dto?.accessToken, refreshToken = dto?.refreshToken)
+    fun toLoginResult(dto: LoginData?): Login = Login(accessToken = dto?.accessToken, refreshToken = dto?.refreshToken)
 
-    fun toSocialLoginResult(dto: SocialLoginData?): SocialLoginResult =
-        SocialLoginResult(
+    fun toSocialLoginResult(dto: SocialLoginData?): SocialLogin =
+        SocialLogin(
             accessToken = dto?.accessToken,
             refreshToken = dto?.refreshToken,
             isNewUser = dto?.isNewUser,
         )
 
-    fun toRotateTokenResult(dto: ReissueData): RotateTokenResult =
-        RotateTokenResult(accessToken = dto.accessToken, refreshToken = dto.refreshToken)
+    fun toRotateTokenResult(dto: ReissueData): RotateToken = RotateToken(accessToken = dto.accessToken, refreshToken = dto.refreshToken)
 }

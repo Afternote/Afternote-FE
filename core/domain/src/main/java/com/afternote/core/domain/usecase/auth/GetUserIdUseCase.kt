@@ -12,5 +12,5 @@ class GetUserIdUseCase
         /**
          * @return userId (Long) 또는 null (토큰이 없거나 userId를 찾을 수 없는 경우)
          */
-        suspend operator fun invoke(): Long? = authRepository.getUserId()
+        suspend operator fun invoke(): Result<Long?> = authRepository.getUserId()
     }

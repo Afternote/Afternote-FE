@@ -3,14 +3,14 @@ package com.afternote.core.model
 /**
  * 이메일 인증번호 확인 성공 결과.
  */
-data class EmailVerifyResult(
+data class EmailVerify(
     val isVerified: Boolean,
 )
 
 /**
  * 회원가입 성공 결과. (스웨거: userId)
  */
-data class SignUpResult(
+data class SignUp(
     val userId: Long,
     val email: String,
 )
@@ -18,12 +18,12 @@ data class SignUpResult(
 /**
  * 로그인 성공 결과.
  */
-data class LoginResult(
+data class Login(
     val accessToken: String? = null,
     val refreshToken: String? = null,
 )
 
-data class SocialLoginResult(
+data class SocialLogin(
     val accessToken: String? = null,
     val refreshToken: String? = null,
     val isNewUser: Boolean?,
@@ -32,7 +32,7 @@ data class SocialLoginResult(
 /**
  * 토큰 재발급 성공 결과.
  */
-data class RotateTokenResult(
+data class RotateToken(
     val accessToken: String? = null,
     val refreshToken: String? = null,
 )

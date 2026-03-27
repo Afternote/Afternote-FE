@@ -1,7 +1,7 @@
 package com.afternote.core.domain.repository.account
 
-import com.afternote.core.model.EmailVerifyResult
-import com.afternote.core.model.SignUpResult
+import com.afternote.core.model.EmailVerify
+import com.afternote.core.model.SignUp
 
 interface AccountRepository {
     suspend fun sendEmailCode(email: String): Result<Unit>
@@ -9,14 +9,14 @@ interface AccountRepository {
     suspend fun verifyEmail(
         email: String,
         certificateCode: String,
-    ): Result<EmailVerifyResult>
+    ): Result<EmailVerify>
 
     suspend fun signUp(
         email: String,
         password: String,
         name: String,
         profileUrl: String?,
-    ): Result<SignUpResult>
+    ): Result<SignUp>
 
     suspend fun passwordChange(
         currentPassword: String,

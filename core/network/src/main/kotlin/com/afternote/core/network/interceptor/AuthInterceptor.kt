@@ -34,26 +34,26 @@ class AuthInterceptor
                     val refreshToken =
                         runBlocking {
                             authRepository.getRefreshToken()
-                        } ?: return chain.proceed(chain.request())
+                        }.getOrNull() ?: return chain.proceed(chain.request())
                     val rotateTokenResult =
                         runBlocking {
                             authRepository.rotateToken(
                                 refreshToken = refreshToken,
                             )
                         }
-                    val newAccessToken = rotateTokenResult.getOrNull()
-                    if (newAccessToken != null) {
-                        response.close() // 기존 응답 닫기
+                    val newAccessToken =
+                        rotateTokenResult.getOrNull()?.accessToken?.let {
+                            response.close() // 기존 응답 닫기
 
-                        // 4. 새 토큰으로 다시 요청 생성
-                        val newRequest =
-                            originalRequest
-                                .newBuilder()
-                                .header("Authorization", "Bearer $newAccessToken")
-                                .build()
+                            // 4. 새 토큰으로 다시 요청 생성
+                            val newRequest =
+                                originalRequest
+                                    .newBuilder()
+                                    .header("Authorization", "Bearer $it")
+                                    .build()
 
-                        return chain.proceed(newRequest) // 재시도!
-                    }
+                            return chain.proceed(newRequest) // 재시도!
+                        }
                 }
             }
             return response

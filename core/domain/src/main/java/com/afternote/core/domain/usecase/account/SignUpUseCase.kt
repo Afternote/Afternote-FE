@@ -1,7 +1,7 @@
 package com.afternote.core.domain.usecase.account
 
 import com.afternote.core.domain.repository.account.AccountRepository
-import com.afternote.core.model.SignUpResult
+import com.afternote.core.model.SignUp
 import javax.inject.Inject
 
 /**
@@ -17,5 +17,5 @@ class SignUpUseCase
             password: String,
             name: String,
             profileUrl: String?,
-        ): Result<SignUpResult> = accountRepository.signUp(email, password, name, profileUrl)
+        ): Result<SignUp> = accountRepository.signUp(email, password, name, profileUrl)
     }
