@@ -43,7 +43,7 @@ class TokenAuthenticator
                         )
                     }.getOrNull()
                 val newAccessToken = tokenBundle?.accessToken
-                if (!newAccessToken.isNullOrEmpty() || newAccessToken == oldAccessToken) {
+                if (newAccessToken.isNullOrEmpty() || newAccessToken == oldAccessToken) {
                     return null
                 }
                 return getRequest(
