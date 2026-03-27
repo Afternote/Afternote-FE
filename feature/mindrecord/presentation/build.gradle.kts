@@ -5,6 +5,7 @@ plugins {
 
 android {
     namespace = "com.afternote.feature.mindrecord.presentation"
+    resourcePrefix = "mindrecord_"
 }
 
 dependencies {

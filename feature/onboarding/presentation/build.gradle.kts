@@ -8,9 +8,7 @@ android {
 }
 
 dependencies {
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.jetbrains.kotlinx.serialization.json)
-    implementation(projects.core.domain)
-    implementation(projects.core.model)
-    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(projects.feature.onboarding.domain)
+    implementation(projects.core.common)
+    implementation(projects.core.ui)
 }
