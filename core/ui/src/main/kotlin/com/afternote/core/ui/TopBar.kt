@@ -1,7 +1,6 @@
 package com.afternote.core.ui
 
 import android.content.res.Configuration
-import android.view.Surface
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -69,10 +68,10 @@ fun TopBar(modifier: Modifier = Modifier) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopBar(
-    modifier: Modifier = Modifier,
     isListView: Boolean,
     onBackClick: () -> Unit,
     onToggleClick: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     TopAppBar(
         title = {
@@ -99,7 +98,7 @@ fun TopBar(
                 },
             )
         },
-        modifier = modifier.padding(end = 17.dp)
+        modifier = modifier.padding(end = 17.dp),
     )
 }
 
@@ -124,7 +123,7 @@ private fun DailyRecordTopBarPreview() {
                     onBackClick = { /* 뒤로가기 로그 확인 */ },
                     onToggleClick = { newValue ->
                         isListMode = newValue // 클릭 시 프리뷰 상태가 변하도록 연결
-                    }
+                    },
                 )
             }
         }

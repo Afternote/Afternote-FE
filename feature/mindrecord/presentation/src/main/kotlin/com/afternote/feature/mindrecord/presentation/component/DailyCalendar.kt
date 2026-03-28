@@ -9,12 +9,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -37,9 +33,9 @@ import java.util.Calendar
 
 @Composable
 fun DailyCalendar(
-    modifier: Modifier = Modifier,
     year: Int,
     month: Int,
+    modifier: Modifier = Modifier,
 ) {
     val days = remember(year, month) { buildDays(year, month) }
     OutlinedCard(
@@ -123,9 +119,9 @@ private fun buildDays(
 }
 
 @Composable
-fun Legend() {
+fun Legend(modifier: Modifier = Modifier) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {

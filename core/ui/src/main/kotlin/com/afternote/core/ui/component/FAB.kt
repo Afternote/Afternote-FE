@@ -2,7 +2,6 @@ package com.afternote.core.ui.component
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.runtime.Composable
@@ -16,18 +15,21 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray9
 
 @Composable
-fun FAB(modifier: Modifier = Modifier, onclick: () -> Unit) {
+fun FAB(
+    onclick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     SmallFloatingActionButton(
-        onClick = {onclick()},
+        onClick = { onclick() },
         containerColor = Gray9,
         shape = CircleShape,
-        modifier = modifier
+        modifier = modifier,
     ) {
         Icon(
             painter = painterResource(R.drawable.core_ui_add),
             contentDescription = null,
             tint = Color(0xFFFFFFFF),
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(20.dp),
         )
     }
 }

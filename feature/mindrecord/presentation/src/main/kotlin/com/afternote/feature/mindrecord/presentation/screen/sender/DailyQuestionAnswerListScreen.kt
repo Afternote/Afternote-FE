@@ -77,13 +77,15 @@ fun DailyQuestionAnswerListScreen(modifier: Modifier = Modifier) {
             )
         },
         floatingActionButton = {
-            FAB {
-            }
+            FAB(
+                onclick = {},
+            )
         },
+        modifier = modifier,
     ) { paddingValues ->
         LazyColumn(
             modifier =
-                modifier
+                Modifier
                     .padding(paddingValues)
                     .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),

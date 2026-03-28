@@ -17,14 +17,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.Gray5
 import com.afternote.feature.mindrecord.presentation.model.DayState
 import com.afternote.feature.mindrecord.presentation.model.DayUiModel
 
 @Composable
-fun DayCell(model: DayUiModel) {
+fun DayCell(
+    model: DayUiModel,
+    modifier: Modifier = Modifier,
+) {
     if (model.day == null) {
         Box(modifier = Modifier.aspectRatio(1f)) // 빈 셀
         return
@@ -40,7 +42,7 @@ fun DayCell(model: DayUiModel) {
 
     Box(
         modifier =
-            Modifier
+            modifier
                 .aspectRatio(1f)
                 .padding(4.dp),
         contentAlignment = Alignment.Center,
@@ -57,7 +59,7 @@ fun DayCell(model: DayUiModel) {
                 Text(
                     text = model.day.toString(),
                     style = MaterialTheme.typography.displayLarge,
-                    color = textColor
+                    color = textColor,
                 )
                 if (model.state == DayState.ANSWERED || model.state == DayState.UNANSWERED) {
                     Spacer(modifier = Modifier.height(2.dp))

@@ -32,8 +32,8 @@ import java.time.LocalDate
 
 @Composable
 fun DailyQuestionListCard(
-    modifier: Modifier = Modifier,
     answer: DailyQuestion,
+    modifier: Modifier = Modifier,
 ) {
     OutlinedCard(
         colors =
