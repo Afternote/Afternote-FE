@@ -22,14 +22,14 @@ import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray5
 import com.afternote.core.ui.theme.Gray9
+import com.afternote.core.ui.theme.shadow
 import com.afternote.feature.mindrecord.presentation.R
 
 @Composable
@@ -38,7 +38,10 @@ fun TodayQuestionCard(modifier: Modifier = Modifier) {
         modifier =
             modifier
                 .height(230.dp)
-                .drawWithCache {
+                .dropShadow(
+                    shape = RectangleShape,
+                    shadow = shadow,
+                ).drawWithCache {
                     val radius = size.height + 35.dp.toPx() // 하단 중앙 → 박스 상단 위 40px
 
                     val brush =
@@ -55,16 +58,7 @@ fun TodayQuestionCard(modifier: Modifier = Modifier) {
                     onDrawBehind {
                         drawRect(brush)
                     }
-                }.dropShadow(
-                    shape = RoundedCornerShape(0.dp),
-                    shadow =
-                        Shadow(
-                            radius = 5.dp,
-                            spread = 0.dp,
-                            color = Color(0xFF000000).copy(alpha = 0.05f),
-                            offset = DpOffset(x = 0.dp, 2.dp),
-                        ),
-                ),
+                },
     ) {
         Column(
             modifier =
