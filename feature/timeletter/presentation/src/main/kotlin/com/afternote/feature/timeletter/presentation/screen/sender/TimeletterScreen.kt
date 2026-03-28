@@ -8,7 +8,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.ui.TopBar
 import com.afternote.feature.timeletter.domain.TimeLetters
 import com.afternote.feature.timeletter.presentation.component.EmptyTimeletterContent
-import com.afternote.feature.timeletter.presentation.component.TimeletterListContent
 
 @Composable
 fun TimeletterScreen(
@@ -35,10 +34,7 @@ private fun TimeletterContent(
         EmptyTimeletterContent(modifier = modifier)
         return
     }
-    TimeletterListContent(
-        letters = letters,
-        modifier = modifier,
-    )
+
 }
 
 @Preview

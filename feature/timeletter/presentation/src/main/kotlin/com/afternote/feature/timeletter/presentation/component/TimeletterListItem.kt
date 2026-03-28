@@ -1,6 +1,5 @@
 package com.afternote.feature.timeletter.presentation.component
 
-import android.content.res.Resources
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,9 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -28,10 +25,9 @@ import com.afternote.feature.timeletter.domain.LetterIdentity
 import com.afternote.feature.timeletter.domain.LetterSchedule
 import com.afternote.feature.timeletter.domain.OpenDate
 import com.afternote.feature.timeletter.domain.TimeLetter
-import com.afternote.feature.timeletter.res.R
 
 @Composable
-fun TimeletterItem(
+fun TimeletterListItem(
     letter: TimeLetter,
     modifier: Modifier = Modifier,
 ) {
@@ -96,7 +92,7 @@ fun TimeletterItem(
 @Preview(showBackground = true)
 @Composable
 private fun TimeletterItemPreview() {
-    TimeletterItem(
+    TimeletterListItem(
         letter =
             TimeLetter(
                 identity =
