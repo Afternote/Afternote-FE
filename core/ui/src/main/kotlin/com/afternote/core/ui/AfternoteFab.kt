@@ -23,7 +23,7 @@ fun AfternoteFab(onClick: () -> Unit, modifier: Modifier = Modifier) {
         contentColor = Color.White
     ) {
         Icon(
-            painter = painterResource(id = R.drawable.floating_action_button_plus),
+            painter = painterResource(id = R.drawable.core_ui_floating_action_button_plus),
             contentDescription = "추가",
             modifier = Modifier.size(20.dp)
         )
@@ -35,7 +35,6 @@ fun AfternoteFab(onClick: () -> Unit, modifier: Modifier = Modifier) {
 private fun AfternoteFabPreview() {
     AfternoteTheme {
         AfternoteFab(
-            onClick = {}
-        )
+            onClick = {})
     }
 }

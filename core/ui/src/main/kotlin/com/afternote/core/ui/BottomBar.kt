@@ -23,21 +23,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.Black
 
-@JvmInline
-value class NavRoute(val value: String)
-
-data class BottomNavItem(val label: String, @DrawableRes val iconRes: Int, val route: NavRoute)
+data class BottomNavItem(val label: String, @DrawableRes val iconRes: Int, val route: Any)
 
 @Composable
 fun BottomBar(
     items: List<BottomNavItem>,
-    currentRoute: String?,
+    isSelected: (BottomNavItem) -> Boolean,
     onItemClick: (BottomNavItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
     NavigationBar(modifier = modifier) {
         items.forEach { item ->
-            val selected = currentRoute == item.route.value
+            val selected = isSelected(item)
             NavigationBarItem(
                 selected = selected,
                 onClick = { onItemClick(item) },
@@ -81,15 +78,15 @@ fun BottomBar(
 private fun BottomBarPreview() {
     val items =
         listOf(
-            BottomNavItem("홈", R.drawable.ic_home, NavRoute("home")),
-            BottomNavItem("기록", R.drawable.ic_mindrecord, NavRoute("mindrecord")),
-            BottomNavItem("타임레터", R.drawable.ic_mail, NavRoute("timeletter")),
-            BottomNavItem("노트", R.drawable.ic_note, NavRoute("afternote"))
+            BottomNavItem("홈", R.drawable.core_ui_ic_home, "home"),
+            BottomNavItem("기록", R.drawable.core_ui_ic_mindrecord, "mindrecord"),
+            BottomNavItem("타임레터", R.drawable.core_ui_ic_mail, "timeletter"),
+            BottomNavItem("노트", R.drawable.core_ui_ic_note, "afternote")
         )
     MaterialTheme {
         BottomBar(
             items = items,
-            currentRoute = "timeletter",
+            isSelected = { it.route == "timeletter" },
             onItemClick = {}
         )
     }
