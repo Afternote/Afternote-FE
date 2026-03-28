@@ -22,7 +22,7 @@ private val bottomNavItems =
         BottomNavItem("홈", R.drawable.ic_home, AppDestination.Home.route),
         BottomNavItem("기록", R.drawable.ic_mindrecord, AppDestination.Mindrecord.route),
         BottomNavItem("타임레터", R.drawable.ic_mail, AppDestination.Timeletter.route),
-        BottomNavItem("노트", R.drawable.ic_note, AppDestination.Afternote.route),
+        BottomNavItem("노트", R.drawable.ic_note, AppDestination.Afternote.route)
     )
 
 @Composable
@@ -44,14 +44,14 @@ fun AppNavigation() {
                         launchSingleTop = true
                         restoreState = true
                     }
-                },
+                }
             )
-        },
+        }
     ) { innerPadding ->
         NavHost(
             navController = navController,
             startDestination = AppDestination.Home.route.value,
-            modifier = Modifier.padding(innerPadding),
+            modifier = Modifier.padding(innerPadding)
         ) {
             composable(AppDestination.Home.route.value) { HomeScreen() }
             // TODO: MindrecordScreen 구현 후 교체

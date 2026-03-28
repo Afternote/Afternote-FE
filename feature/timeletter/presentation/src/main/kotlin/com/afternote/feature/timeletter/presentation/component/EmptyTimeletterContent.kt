@@ -15,10 +15,11 @@ import com.afternote.core.ui.theme.AfternoteTheme
 @Composable
 fun EmptyTimeletterContent(modifier: Modifier = Modifier) {
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal =20.dp)
-            .padding(top = 24.dp)
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp)
+                .padding(top = 24.dp)
     ) {
         Text(
             text = "아직 등록된 타임레터가 없어요.\n소중한 사람을 위해 작성해 보세요.",

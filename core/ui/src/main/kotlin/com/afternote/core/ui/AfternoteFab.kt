@@ -14,10 +14,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray9
 
 @Composable
-fun AfternoteFab(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
+fun AfternoteFab(onClick: () -> Unit, modifier: Modifier = Modifier) {
     FloatingActionButton(
         onClick = onClick,
         modifier = modifier,

@@ -26,18 +26,14 @@ import com.afternote.core.ui.theme.Black
 @JvmInline
 value class NavRoute(val value: String)
 
-data class BottomNavItem(
-    val label: String,
-    @DrawableRes val iconRes: Int,
-    val route: NavRoute,
-)
+data class BottomNavItem(val label: String, @DrawableRes val iconRes: Int, val route: NavRoute)
 
 @Composable
 fun BottomBar(
     items: List<BottomNavItem>,
     currentRoute: String?,
     onItemClick: (BottomNavItem) -> Unit,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier
 ) {
     NavigationBar(modifier = modifier) {
         items.forEach { item ->
@@ -48,31 +44,33 @@ fun BottomBar(
                 icon = {
                     Icon(
                         painter = painterResource(item.iconRes),
-                        contentDescription = item.label,
+                        contentDescription = item.label
                     )
                 },
                 label = {
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(item.label)
                         Spacer(modifier = Modifier.height(4.dp))
                         if (selected) {
                             Box(
-                                modifier = Modifier
-                                    .size(4.dp)
-                                    .background(color = Black, shape = CircleShape),
+                                modifier =
+                                    Modifier
+                                        .size(4.dp)
+                                        .background(color = Black, shape = CircleShape)
                             )
                         }
                     }
                 },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Black,
-                    selectedTextColor = Black,
-                    unselectedIconColor = Black.copy(alpha = 0.25f),
-                    unselectedTextColor = Black.copy(alpha = 0.25f),
-                    indicatorColor = Color.Transparent,
-                ),
+                colors =
+                    NavigationBarItemDefaults.colors(
+                        selectedIconColor = Black,
+                        selectedTextColor = Black,
+                        unselectedIconColor = Black.copy(alpha = 0.25f),
+                        unselectedTextColor = Black.copy(alpha = 0.25f),
+                        indicatorColor = Color.Transparent
+                    )
             )
         }
     }
@@ -86,13 +84,13 @@ private fun BottomBarPreview() {
             BottomNavItem("홈", R.drawable.ic_home, NavRoute("home")),
             BottomNavItem("기록", R.drawable.ic_mindrecord, NavRoute("mindrecord")),
             BottomNavItem("타임레터", R.drawable.ic_mail, NavRoute("timeletter")),
-            BottomNavItem("노트", R.drawable.ic_note, NavRoute("afternote")),
+            BottomNavItem("노트", R.drawable.ic_note, NavRoute("afternote"))
         )
     MaterialTheme {
         BottomBar(
             items = items,
             currentRoute = "timeletter",
-            onItemClick = {},
+            onItemClick = {}
         )
     }
 }
