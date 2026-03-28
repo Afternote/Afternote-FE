@@ -19,11 +19,11 @@ fun EmptyTimeletterContent(modifier: Modifier = Modifier) {
             modifier
                 .fillMaxSize()
                 .padding(horizontal = 20.dp)
-                .padding(top = 24.dp)
+                .padding(top = 24.dp),
     ) {
         Text(
             text = "아직 등록된 타임레터가 없어요.\n소중한 사람을 위해 작성해 보세요.",
-            style = MaterialTheme.typography.bodyMedium
+            style = MaterialTheme.typography.bodyMedium,
         )
     }
 }

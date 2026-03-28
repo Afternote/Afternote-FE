@@ -13,28 +13,31 @@ import com.afternote.feature.timeletter.presentation.component.TimeletterListCon
 @Composable
 fun TimeletterScreen(
     letters: TimeLetters = TimeLetters(emptyList()),
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Scaffold(
         modifier = modifier,
-        topBar = { TopBar() }
+        topBar = { TopBar() },
     ) { paddingValues ->
         TimeletterContent(
             letters = letters,
-            modifier = Modifier.padding(paddingValues)
+            modifier = Modifier.padding(paddingValues),
         )
     }
 }
 
 @Composable
-private fun TimeletterContent(letters: TimeLetters, modifier: Modifier = Modifier) {
+private fun TimeletterContent(
+    letters: TimeLetters,
+    modifier: Modifier = Modifier,
+) {
     if (letters.isEmpty()) {
         EmptyTimeletterContent(modifier = modifier)
         return
     }
     TimeletterListContent(
         letters = letters,
-        modifier = modifier
+        modifier = modifier,
     )
 }
 

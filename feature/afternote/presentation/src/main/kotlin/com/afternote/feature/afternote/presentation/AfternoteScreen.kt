@@ -11,11 +11,11 @@ import com.afternote.core.ui.TopBar
 fun AfternoteScreen(modifier: Modifier = Modifier) {
     Scaffold(
         modifier = modifier,
-        topBar = { TopBar() }
+        topBar = { TopBar() },
     ) { paddingValues ->
         Text(
             text = "애프터노트",
-            modifier = Modifier.padding(paddingValues)
+            modifier = Modifier.padding(paddingValues),
         )
     }
 }
