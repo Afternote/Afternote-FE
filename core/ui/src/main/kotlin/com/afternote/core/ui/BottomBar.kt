@@ -23,14 +23,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.Black
 
-data class BottomNavItem(val label: String, @DrawableRes val iconRes: Int, val route: Any)
+data class BottomNavItem(
+    val label: String,
+    @DrawableRes val iconRes: Int,
+    val route: Any,
+)
 
 @Composable
 fun BottomBar(
     items: List<BottomNavItem>,
     isSelected: (BottomNavItem) -> Boolean,
     onItemClick: (BottomNavItem) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     NavigationBar(modifier = modifier) {
         items.forEach { item ->
@@ -41,12 +45,12 @@ fun BottomBar(
                 icon = {
                     Icon(
                         painter = painterResource(item.iconRes),
-                        contentDescription = item.label
+                        contentDescription = item.label,
                     )
                 },
                 label = {
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(item.label)
                         Spacer(modifier = Modifier.height(4.dp))
@@ -55,7 +59,7 @@ fun BottomBar(
                                 modifier =
                                     Modifier
                                         .size(4.dp)
-                                        .background(color = Black, shape = CircleShape)
+                                        .background(color = Black, shape = CircleShape),
                             )
                         }
                     }
@@ -66,8 +70,8 @@ fun BottomBar(
                         selectedTextColor = Black,
                         unselectedIconColor = Black.copy(alpha = 0.25f),
                         unselectedTextColor = Black.copy(alpha = 0.25f),
-                        indicatorColor = Color.Transparent
-                    )
+                        indicatorColor = Color.Transparent,
+                    ),
             )
         }
     }
@@ -81,13 +85,13 @@ private fun BottomBarPreview() {
             BottomNavItem("홈", R.drawable.core_ui_ic_home, "home"),
             BottomNavItem("기록", R.drawable.core_ui_ic_mindrecord, "mindrecord"),
             BottomNavItem("타임레터", R.drawable.core_ui_ic_mail, "timeletter"),
-            BottomNavItem("노트", R.drawable.core_ui_ic_note, "afternote")
+            BottomNavItem("노트", R.drawable.core_ui_ic_note, "afternote"),
         )
     MaterialTheme {
         BottomBar(
             items = items,
             isSelected = { it.route == "timeletter" },
-            onItemClick = {}
+            onItemClick = {},
         )
     }
 }

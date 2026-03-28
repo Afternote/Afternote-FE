@@ -14,18 +14,21 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray9
 
 @Composable
-fun AfternoteFab(onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun AfternoteFab(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     FloatingActionButton(
         onClick = onClick,
         modifier = modifier,
         shape = CircleShape,
         containerColor = Gray9,
-        contentColor = Color.White
+        contentColor = Color.White,
     ) {
         Icon(
             painter = painterResource(id = R.drawable.core_ui_floating_action_button_plus),
             contentDescription = "추가",
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(20.dp),
         )
     }
 }
@@ -34,7 +37,6 @@ fun AfternoteFab(onClick: () -> Unit, modifier: Modifier = Modifier) {
 @Composable
 private fun AfternoteFabPreview() {
     AfternoteTheme {
-        AfternoteFab(
-            onClick = {})
+        AfternoteFab(onClick = {})
     }
 }
