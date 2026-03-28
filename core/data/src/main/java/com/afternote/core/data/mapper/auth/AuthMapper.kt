@@ -2,13 +2,11 @@ package com.afternote.core.data.mapper.auth
 
 import com.afternote.core.model.AccountRegistration
 import com.afternote.core.model.EmailVerification
-import com.afternote.core.model.SocialSession
+import com.afternote.core.model.Session
 import com.afternote.core.model.TokenBundle
-import com.afternote.core.model.UserSession
 import com.afternote.core.network.dto.LoginData
 import com.afternote.core.network.dto.ReissueData
 import com.afternote.core.network.dto.SignUpData
-import com.afternote.core.network.dto.SocialLoginData
 import com.afternote.core.network.dto.VerifyEmailData
 
 /**
@@ -20,13 +18,19 @@ object AuthMapper {
 
     fun toSignUpResult(dto: SignUpData): AccountRegistration = AccountRegistration(userId = dto.userId, email = dto.email)
 
-    fun toLoginResult(dto: LoginData?): UserSession = UserSession(accessToken = dto?.accessToken, refreshToken = dto?.refreshToken)
+    fun toDefaultLoginResult(dto: LoginData.DefaultLoginData): Session.DefaultSession =
+        Session.DefaultSession(
+            accessToken = dto.accessToken,
+            refreshToken = dto.refreshToken,
+            userId = dto.userId,
+        )
 
-    fun toSocialLoginResult(dto: SocialLoginData?): SocialSession =
-        SocialSession(
-            accessToken = dto?.accessToken,
-            refreshToken = dto?.refreshToken,
-            isNewUser = dto?.isNewUser,
+    fun toSocialLoginResult(dto: LoginData.SocialLoginData): Session.SocialSession =
+        Session.SocialSession(
+            accessToken = dto.accessToken,
+            refreshToken = dto.refreshToken,
+            isNewUser = dto.isNewUser,
+            userId = dto.userId,
         )
 
     fun toRotateTokenResult(dto: ReissueData): TokenBundle = TokenBundle(accessToken = dto.accessToken, refreshToken = dto.refreshToken)

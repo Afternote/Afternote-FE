@@ -46,18 +46,26 @@ data class SocialLoginRequest(
     @SerialName("accessToken") val accessToken: String,
 )
 
-@Serializable
-data class LoginData(
-    val accessToken: String? = null,
-    val refreshToken: String? = null,
-)
+sealed class LoginData {
+    abstract val accessToken: String
+    abstract val refreshToken: String
+    abstract val userId: Long // TODO:백엔드 구현 필요
 
-@Serializable
-data class SocialLoginData(
-    val accessToken: String? = null,
-    val refreshToken: String? = null,
-    val isNewUser: Boolean? = null,
-)
+    @Serializable
+    data class DefaultLoginData(
+        override val accessToken: String,
+        override val refreshToken: String,
+        override val userId: Long,
+    ) : LoginData()
+
+    @Serializable
+    data class SocialLoginData(
+        override val accessToken: String,
+        override val refreshToken: String,
+        override val userId: Long,
+        val isNewUser: Boolean? = null,
+    ) : LoginData()
+}
 
 @Serializable
 data class ReissueRequest(
@@ -66,8 +74,8 @@ data class ReissueRequest(
 
 @Serializable
 data class ReissueData(
-    val accessToken: String? = null,
-    val refreshToken: String? = null,
+    val accessToken: String,
+    val refreshToken: String,
 )
 
 @Serializable
