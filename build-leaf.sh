@@ -10,7 +10,7 @@ TARGET_PATH=$1
 echo "🔍 '$TARGET_PATH' 및 하위의 최하위 모듈을 찾는 중..."
 
 # 2. 전체 모듈 목록 추출 (보이지 않는 줄바꿈 문자 \r 제거 및 모듈명만 추출)
-ALL_MODULES=$(./gradlew -q projects | grep -oE ":[a-zA-Z0-9_.-]+" | tr -d '\r' | sort -u)
+ALL_MODULES=$(./gradlew -q projects | grep -oE "'(:[a-zA-Z0-9_:.-]+)'" | tr -d "'" | tr -d '\r' | sort -u)
 
 # 3. 입력한 경로와 정확히 일치하거나, 해당 경로의 하위 모듈인 것들만 필터링
 # 정규식 ^TARGET_PATH($|:) -> 정확히 일치($)하거나 하위 모듈(:)인 경우

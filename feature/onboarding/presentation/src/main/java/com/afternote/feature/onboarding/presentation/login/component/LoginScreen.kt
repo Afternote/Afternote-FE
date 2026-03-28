@@ -25,12 +25,13 @@ import com.afternote.core.ui.theme.White
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen() {
+fun LoginScreen(modifier: Modifier = Modifier) {
     // 입력 필드의 상태를 관리합니다.
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
     Scaffold(
+        modifier = modifier,
         topBar = {
             TopBar()
         },
@@ -85,7 +86,7 @@ fun LoginScreen() {
 
 @Preview(showBackground = true)
 @Composable
-fun LoginScreenPreview() {
+private fun LoginScreenPreview() {
     MaterialTheme {
         LoginScreen()
     }
