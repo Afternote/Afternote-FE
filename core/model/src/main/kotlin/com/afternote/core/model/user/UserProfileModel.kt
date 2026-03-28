@@ -1,4 +1,4 @@
-package com.afternote.core.model
+package com.afternote.core.model.user
 
 data class UserProfileModel(
     val name: String,
