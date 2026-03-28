@@ -1,28 +1,39 @@
 package com.afternote.feature.mindrecord.presentation.screen.sender
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.TopBar
 import com.afternote.core.ui.component.FAB
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionListCard
+import com.afternote.feature.mindrecord.presentation.component.Legend
 import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
 import java.time.LocalDate
 
 @Composable
 fun DailyQuestionAnswerListScreen(modifier: Modifier = Modifier) {
-    var isListView by remember { mutableStateOf(true) }
+    var isListView by remember { mutableStateOf(false) }
 
     val testDailyQuestion =
         listOf(
@@ -61,7 +72,7 @@ fun DailyQuestionAnswerListScreen(modifier: Modifier = Modifier) {
         topBar = {
             TopBar(
                 onBackClick = {},
-                onToggleClick = { isListView = !isListView},
+                onToggleClick = { isListView = !isListView },
                 isListView = isListView,
             )
         },
@@ -71,7 +82,10 @@ fun DailyQuestionAnswerListScreen(modifier: Modifier = Modifier) {
         },
     ) { paddingValues ->
         LazyColumn(
-            modifier = modifier.padding(paddingValues).padding(horizontal = 20.dp),
+            modifier =
+                modifier
+                    .padding(paddingValues)
+                    .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (isListView) {
@@ -79,7 +93,38 @@ fun DailyQuestionAnswerListScreen(modifier: Modifier = Modifier) {
                     DailyQuestionListCard(answer = it)
                 }
             } else {
+                item {
+                    DailyCalendar(
+                        year = 2026,
+                        month = 3,
+                    )
 
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                item {
+                    Legend()
+                }
+
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "DAILY ANSWER",
+                            style = MaterialTheme.typography.displaySmall,
+                            color = Color(0xFF000000).copy(alpha = 0.4f),
+                        )
+
+                        HorizontalDivider(modifier = Modifier.padding(start = 12.dp))
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+                }
+                items(testDailyQuestion) {
+                    DailyQuestionListCard(answer = it)
+                }
             }
         }
     }

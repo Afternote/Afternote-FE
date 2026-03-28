@@ -1,25 +1,47 @@
 package com.afternote.feature.mindrecord.presentation.component
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.core.ui.theme.Gray5
+import com.afternote.feature.mindrecord.presentation.model.DayState
+import com.afternote.feature.mindrecord.presentation.model.DayUiModel
+import java.util.Calendar
 
 @Composable
-fun DailyCalendar(modifier: Modifier = Modifier) {
+fun DailyCalendar(
+    modifier: Modifier = Modifier,
+    year: Int,
+    month: Int,
+) {
+    val days = remember(year, month) { buildDays(year, month) }
     OutlinedCard(
         colors =
             CardDefaults.cardColors(
@@ -30,6 +52,8 @@ fun DailyCalendar(modifier: Modifier = Modifier) {
     ) {
         Column {
             val dayLabels = listOf("일", "월", "화", "수", "목", "금", "토")
+
+            Spacer(modifier = Modifier.height(16.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
                 dayLabels.forEach { dayLabel ->
                     Text(
@@ -37,15 +61,87 @@ fun DailyCalendar(modifier: Modifier = Modifier) {
                         modifier = Modifier.weight(1f),
                         color = Color(0xFF000000).copy(alpha = 0.3f),
                         style = MaterialTheme.typography.labelSmall,
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
                     )
                 }
             }
 
+            Spacer(modifier = Modifier.height(10.dp))
             LazyVerticalGrid(
                 columns = GridCells.Fixed(7),
-                userScrollEnabled = false
-            ) { }
+                userScrollEnabled = false,
+            ) {
+                items(days) { dayModel ->
+                    DayCell(model = dayModel)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+        }
+    }
+}
+
+private fun buildDays(
+    year: Int,
+    month: Int,
+): List<DayUiModel> {
+    val calendar =
+        Calendar.getInstance().apply {
+            set(year, month - 1, 1)
+        }
+    val firstDayOfWeek = calendar.get(Calendar.DAY_OF_WEEK) - 1 // 0=일
+    val daysInMonth = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
+
+    val today =
+        Calendar
+            .getInstance()
+            .get(Calendar.DAY_OF_MONTH)
+            .takeIf { Calendar.getInstance().get(Calendar.MONTH) == month - 1 }
+
+    return buildList {
+        // 앞 빈 셀
+        repeat(firstDayOfWeek) { add(DayUiModel(day = null)) }
+        // 날짜 셀 (실제 상태는 ViewModel에서 주입)
+        for (day in 1..daysInMonth) {
+            val state =
+                when (day) {
+                    today -> DayState.TODAY
+                    else -> DayState.ANSWERED // ViewModel에서 실제 데이터로 교체
+                }
+            add(DayUiModel(day = day, state = state))
+        }
+    }
+}
+
+@Composable
+fun Legend() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        listOf(
+            DayState.TODAY to "오늘",
+            DayState.ANSWERED to "답변완료",
+            DayState.UNANSWERED to "미답변",
+        ).forEach { (state, label) ->
+            val color =
+                when (state) {
+                    DayState.TODAY -> Color(0xFF1A1A1A)
+                    DayState.ANSWERED -> Color(0xFFAAAAAA)
+                    DayState.UNANSWERED -> Color(0xFFDDDDDD)
+                    else -> Color.Transparent
+                }
+            Box(
+                modifier =
+                    Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(color),
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(text = label, style = MaterialTheme.typography.labelSmall, color = Gray5)
+            Spacer(modifier = Modifier.width(16.dp))
         }
     }
 }
@@ -54,6 +150,6 @@ fun DailyCalendar(modifier: Modifier = Modifier) {
 @Composable
 private fun DailyCalendarPreview() {
     AfternoteTheme {
-        DailyCalendar()
+        DailyCalendar(year = 2022, month = 1)
     }
 }
