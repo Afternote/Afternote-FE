@@ -5,6 +5,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.afternote.core.ui.BottomBar
 import com.afternote.core.ui.TopBar
 import com.afternote.feature.timeletter.domain.TimeLetters
 import com.afternote.feature.timeletter.presentation.component.EmptyTimeletterContent
@@ -17,6 +18,7 @@ fun TimeletterScreen(
     Scaffold(
         modifier = modifier,
         topBar = { TopBar() },
+        bottomBar = { BottomBar() },
     ) { paddingValues ->
         TimeletterContent(
             letters = letters,
@@ -34,7 +36,6 @@ private fun TimeletterContent(
         EmptyTimeletterContent(modifier = modifier)
         return
     }
-
 }
 
 @Preview

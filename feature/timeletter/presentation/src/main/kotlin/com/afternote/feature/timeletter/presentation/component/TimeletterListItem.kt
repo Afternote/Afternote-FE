@@ -27,7 +27,7 @@ import com.afternote.feature.timeletter.domain.OpenDate
 import com.afternote.feature.timeletter.domain.TimeLetter
 
 @Composable
-fun TimeletterListItem(
+fun TimeLetterListItem(
     letter: TimeLetter,
     modifier: Modifier = Modifier,
 ) {
@@ -91,8 +91,8 @@ fun TimeletterListItem(
 
 @Preview(showBackground = true)
 @Composable
-private fun TimeletterItemPreview() {
-    TimeletterListItem(
+private fun TimeLetterItemPreview() {
+    TimeLetterListItem(
         letter =
             TimeLetter(
                 identity =
