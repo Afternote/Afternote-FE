@@ -18,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.MainButton
 import com.afternote.core.ui.TopBar
 import com.afternote.core.ui.theme.White
 
@@ -70,7 +69,7 @@ fun LoginScreen() {
             Spacer(modifier = Modifier.height(24.dp))
 
             // 로그인 버튼
-            MainButton(
+            LoginButton(
                 text = "로그인",
                 onClick = { /* 로그인 로직 */ },
                 modifier = Modifier.fillMaxWidth(),

@@ -7,39 +7,33 @@ if [ -z "$1" ]; then
 fi
 
 TARGET_PATH=$1
-echo "🔍 $TARGET_PATH 하위의 최하위 모듈을 찾는 중..."
+echo "🔍 '$TARGET_PATH' 및 하위의 최하위 모듈을 찾는 중..."
 
-# 2. 전체 모듈 중 입력한 경로로 시작하는 것들만 추출
-ALL_MODULES=$(./gradlew -q projects | grep -oE ":[a-zA-Z0-9_.:-]*")
+# 2. 전체 모듈 목록 추출 (보이지 않는 줄바꿈 문자 \r 제거 및 모듈명만 추출)
+ALL_MODULES=$(./gradlew -q projects | grep -oE ":[a-zA-Z0-9_.-]+" | tr -d '\r' | sort -u)
 
-# 입력이 이미 등록된 모듈이면 바로 빌드
-if echo "$ALL_MODULES" | grep -qx "$TARGET_PATH"; then
-    CHILD_MODULES=$(echo "$ALL_MODULES" | grep "^$TARGET_PATH:")
-    if [ -z "$CHILD_MODULES" ]; then
-        LEAF_TASKS="$TARGET_PATH:build"
-        echo "📦 빌드 대상: $LEAF_TASKS"
-        ./gradlew $LEAF_TASKS
-        exit $?
-    fi
-fi
-
-MATCHED_MODULES=$(echo "$ALL_MODULES" | grep "^$TARGET_PATH:")
+# 3. 입력한 경로와 정확히 일치하거나, 해당 경로의 하위 모듈인 것들만 필터링
+# 정규식 ^TARGET_PATH($|:) -> 정확히 일치($)하거나 하위 모듈(:)인 경우
+MATCHED_MODULES=$(echo "$ALL_MODULES" | grep -E "^${TARGET_PATH}($|:)")
 
 if [ -z "$MATCHED_MODULES" ]; then
-    echo "❌ $TARGET_PATH 하위에서 모듈을 찾을 수 없습니다."
+    echo "❌ '$TARGET_PATH' 에 해당하는 모듈을 찾을 수 없습니다. (오타가 없는지 확인해 주세요!)"
     exit 1
 fi
 
-# 3. 자식 모듈이 없는 '최하위(Leaf)' 모듈만 필터링
+# 4. 자식 모듈이 없는 '최하위(Leaf)' 모듈만 찾아내기
 LEAF_TASKS=""
 for mod in $MATCHED_MODULES; do
-    # 현재 모듈명 뒤에 ':'가 붙은 경로가 없다면 최하위 모듈임
-    if ! echo "$MATCHED_MODULES" | grep -q "^$mod:"; then
+    # 현재 모듈($mod)명 뒤에 ':'가 붙은 하위 모듈이 MATCHED_MODULES 목록에 존재하는지 검사
+    HAS_CHILD=$(echo "$MATCHED_MODULES" | grep -E "^${mod}:" | wc -l)
+
+    # 하위 모듈이 0개라면 그것이 최하위 모듈(Leaf)임
+    if [ "$HAS_CHILD" -eq 0 ]; then
         LEAF_TASKS="$LEAF_TASKS $mod:build"
     fi
 done
 
-echo "📦 빌드 대상: $LEAF_TASKS"
+echo "📦 최종 빌드 대상:$LEAF_TASKS"
 
-# 4. 한꺼번에 빌드 실행
+# 5. 한꺼번에 빌드 실행
 ./gradlew $LEAF_TASKS

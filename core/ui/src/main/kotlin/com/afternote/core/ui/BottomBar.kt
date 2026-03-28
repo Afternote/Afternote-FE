@@ -82,15 +82,15 @@ fun BottomBar(
 private fun BottomBarPreview() {
     val items =
         listOf(
-            BottomNavItem("홈", R.drawable.core_ui_ic_home, "home"),
-            BottomNavItem("기록", R.drawable.core_ui_ic_mindrecord, "mindrecord"),
-            BottomNavItem("타임레터", R.drawable.core_ui_ic_mail, "timeletter"),
-            BottomNavItem("노트", R.drawable.core_ui_ic_note, "afternote"),
+            BottomNavItem("홈", R.drawable.core_ui_ic_home, Route.Home),
+            BottomNavItem("기록", R.drawable.core_ui_ic_mindrecord, Route.MindRecord),
+            BottomNavItem("타임레터", R.drawable.core_ui_ic_mail, Route.TimeLetter),
+            BottomNavItem("노트", R.drawable.core_ui_ic_note, Route.Afternote),
         )
     MaterialTheme {
         BottomBar(
             items = items,
-            isSelected = { it.route == "timeletter" },
+            isSelected = { it.route == Route.TimeLetter },
             onItemClick = {},
         )
     }

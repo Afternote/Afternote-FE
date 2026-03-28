@@ -22,7 +22,33 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.Gray2
 import com.afternote.core.ui.theme.Gray6
+import com.afternote.core.ui.theme.Gray9
+import com.afternote.core.ui.theme.White
 import com.afternote.feature.onboarding.presentation.R
+
+@Composable
+fun LoginButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.height(48.dp),
+        enabled = enabled,
+        shape = RoundedCornerShape(8.dp),
+        colors =
+            ButtonDefaults.buttonColors(
+                containerColor = Gray9,
+                contentColor = White,
+                disabledContainerColor = Gray9,
+                disabledContentColor = White,
+            ),
+    ) {
+        Text(text = text, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium))
+    }
+}
 
 @Composable
 fun BottomButtons(modifier: Modifier = Modifier) {

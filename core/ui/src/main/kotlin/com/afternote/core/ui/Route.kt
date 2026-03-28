@@ -1,4 +1,4 @@
-package com.afternote.afternote_fe.navigation
+package com.afternote.core.ui
 
 import kotlinx.serialization.Serializable
 
@@ -14,5 +14,5 @@ sealed interface Route {
     data object TimeLetter : Route
 
     @Serializable
-    data object AfterNote : Route
+    data object Afternote : Route
 }
