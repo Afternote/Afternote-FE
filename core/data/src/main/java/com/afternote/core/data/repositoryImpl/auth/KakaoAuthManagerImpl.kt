@@ -7,7 +7,7 @@ import javax.inject.Inject
 class KakaoAuthManagerImpl
     @Inject
     constructor(
-        val tokenManageable: TokenManageable,
+        private val tokenManageable: TokenManageable,
     ) : KakaoAuthManager {
         override fun getAccessToken(): String? {
 //            @Inject

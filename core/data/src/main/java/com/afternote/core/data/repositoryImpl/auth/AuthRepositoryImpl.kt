@@ -4,9 +4,8 @@ import com.afternote.core.data.mapper.auth.AuthMapper
 import com.afternote.core.datastore.TokenManager
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.domain.repository.auth.KakaoAuthManager
-import com.afternote.core.model.SocialSession
+import com.afternote.core.model.Session
 import com.afternote.core.model.TokenBundle
-import com.afternote.core.model.UserSession
 import com.afternote.core.network.dto.LoginRequest
 import com.afternote.core.network.dto.LogoutRequest
 import com.afternote.core.network.dto.ReissueRequest
@@ -27,10 +26,10 @@ sealed class AuthException(
 class AuthRepositoryImpl
     @Inject
     constructor(
-        val tokenManager: TokenManager,
-        val authApiService: AuthApiService,
-        val kakaoAuthManager: KakaoAuthManager,
-        val tokenApiService: TokenApiService,
+        private val tokenManager: TokenManager,
+        private val authApiService: AuthApiService,
+        private val kakaoAuthManager: KakaoAuthManager,
+        private val tokenApiService: TokenApiService,
     ) : AuthRepository {
         // 토큰 매니저 관련
         override suspend fun clearSession() = runCatching { tokenManager.clearTokens() }
@@ -67,19 +66,19 @@ class AuthRepositoryImpl
         override suspend fun getUserId(): Result<Long?> = runCatching { tokenManager.getUserId() }
         // TODO:레거시 레포에 있던 authApiService 관련이고 리팩토링해야 하는지 검사 필요
 
-        override suspend fun login(
+        override suspend fun defaultLogin(
             email: String,
             password: String,
-        ): Result<UserSession> =
+        ): Result<Session.DefaultSession> =
             runCatching {
                 val response = authApiService.login(LoginRequest(email, password))
-                AuthMapper.toLoginResult(response.requireData())
+                AuthMapper.toDefaultLoginResult(response.requireData())
             }
 
-        override suspend fun kakaoLogin(): Result<SocialSession> {
-            val socialAccessToken =
-                kakaoAuthManager.getAccessToken() ?: throw AuthException.KakaoTokenNotFound()
-            return runCatching {
+        override suspend fun kakaoLogin(): Result<Session.SocialSession> =
+            runCatching {
+                val socialAccessToken =
+                    kakaoAuthManager.getAccessToken() ?: throw AuthException.KakaoTokenNotFound()
                 val response =
                     authApiService.socialLogin(
                         SocialLoginRequest(
@@ -89,12 +88,16 @@ class AuthRepositoryImpl
                     )
                 AuthMapper.toSocialLoginResult(response.requireData())
             }
-        }
 
         override suspend fun rotateToken(refreshToken: String): Result<TokenBundle> =
             runCatching {
                 val response = tokenApiService.reissue(ReissueRequest(refreshToken))
-                AuthMapper.toRotateTokenResult(response.requireData())
+                val tokenBundleResult = AuthMapper.toRotateTokenResult(response.requireData())
+                updateTokens(
+                    accessToken = tokenBundleResult.accessToken,
+                    refreshToken = tokenBundleResult.refreshToken,
+                )
+                tokenBundleResult
             }
 
         override suspend fun logout(refreshToken: String): Result<Unit> =
