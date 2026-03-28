@@ -26,7 +26,7 @@ import com.afternote.core.ui.theme.Black
 data class BottomNavItem(
     val label: String,
     @DrawableRes val iconRes: Int,
-    val route: Any,
+    val route: Route,
 )
 
 @Composable

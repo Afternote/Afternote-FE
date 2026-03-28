@@ -28,7 +28,7 @@ private val bottomNavItems =
         BottomNavItem("노트", R.drawable.core_ui_ic_note, Route.AfterNote),
     )
 
-private fun NavController.navigateTo(route: Any) {
+private fun NavController.navigateTo(route: Route) {
     val builder: NavOptionsBuilder.() -> Unit = {
         popUpTo(graph.findStartDestination().id) {
             saveState = true
