@@ -46,9 +46,9 @@ import java.time.LocalDate
 
 @Composable
 fun DiaryScreen(modifier: Modifier = Modifier) {
-    var isListView by remember { mutableStateOf(true) }
+    var isListView by remember { mutableStateOf(false) }
     val testDiaryList =
-        listOf<DailyDiary>(
+        listOf(
             DailyDiary(
                 title = "가족과 함께한 저녁 식사",
                 content = "오랜만에 가족들과 testsetsetsetsetset",
@@ -118,7 +118,12 @@ fun DiaryScreen(modifier: Modifier = Modifier) {
         modifier = modifier,
     ) { paddingValues ->
         if (isListView) {
-            LazyColumn(modifier = Modifier.padding(paddingValues).padding(horizontal = 20.dp)) {
+            LazyColumn(
+                modifier =
+                    Modifier
+                        .padding(paddingValues)
+                        .padding(horizontal = 20.dp),
+            ) {
                 item {
                     Row(
                         modifier = Modifier.clickable {},
@@ -189,7 +194,10 @@ fun DiaryScreen(modifier: Modifier = Modifier) {
             }
         } else {
             LazyVerticalGrid(
-                modifier = Modifier.padding(paddingValues).padding(horizontal = 20.dp),
+                modifier =
+                    Modifier
+                        .padding(paddingValues)
+                        .padding(horizontal = 20.dp),
                 columns = GridCells.Fixed(2),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
