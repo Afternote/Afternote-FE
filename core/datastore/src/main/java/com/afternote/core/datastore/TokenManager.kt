@@ -67,6 +67,4 @@ class TokenManager
         suspend fun getAccessToken(): String? = getPrefs()[accessTokenKey]
 
         suspend fun getRefreshToken(): String? = getPrefs()[refreshTokenKey]
-
-        suspend fun getUserId(): Long? = getPrefs()[userIdKey]
     }

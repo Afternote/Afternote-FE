@@ -218,8 +218,8 @@ class UserRepositoryImpl
                     )
                 Log.d(TAG, "getReceiverMindRecords: response=$response")
                 val body = response.requireData()
-                val items = (body?.items ?: emptyList()).map(UserMapper::toReceiverMindRecordItem)
-                UserMapper.toReceiverMindRecordsResult(items = items, hasNext = body?.hasNext ?: false)
+                val items = (body.items).map(UserMapper::toReceiverMindRecordItem)
+                UserMapper.toReceiverMindRecordsResult(items = items, hasNext = body.hasNext)
             }
 
         override suspend fun getDeliveryCondition(): Result<DeliveryCondition> =
