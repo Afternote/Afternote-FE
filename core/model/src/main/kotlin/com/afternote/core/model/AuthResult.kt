@@ -18,21 +18,29 @@ data class AccountRegistration(
 /**
  * 로그인 성공 결과.
  */
-data class UserSession(
-    val accessToken: String? = null,
-    val refreshToken: String? = null,
-)
+sealed class Session {
+    abstract val accessToken: String
+    abstract val refreshToken: String
+    abstract val userId: Long
 
-data class SocialSession(
-    val accessToken: String? = null,
-    val refreshToken: String? = null,
-    val isNewUser: Boolean?,
-)
+    data class DefaultSession(
+        override val accessToken: String,
+        override val refreshToken: String,
+        override val userId: Long,
+    ) : Session()
+
+    data class SocialSession(
+        override val accessToken: String,
+        override val refreshToken: String,
+        override val userId: Long,
+        val isNewUser: Boolean?,
+    ) : Session()
+}
 
 /**
  * 토큰 재발급 성공 결과.
  */
 data class TokenBundle(
-    val accessToken: String? = null,
-    val refreshToken: String? = null,
+    val accessToken: String,
+    val refreshToken: String,
 )

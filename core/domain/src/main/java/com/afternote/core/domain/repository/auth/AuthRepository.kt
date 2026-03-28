@@ -1,8 +1,7 @@
 package com.afternote.core.domain.repository.auth
 
-import com.afternote.core.model.SocialSession
+import com.afternote.core.model.Session
 import com.afternote.core.model.TokenBundle
-import com.afternote.core.model.UserSession
 import kotlinx.coroutines.flow.Flow
 
 interface AuthRepository {
@@ -28,12 +27,12 @@ interface AuthRepository {
     suspend fun getUserId(): Result<Long?>
     // 레거시 레포 기준
 
-    suspend fun login(
+    suspend fun defaultLogin(
         email: String,
         password: String,
-    ): Result<UserSession>
+    ): Result<Session.DefaultSession>
 
-    suspend fun kakaoLogin(): Result<SocialSession>
+    suspend fun kakaoLogin(): Result<Session.SocialSession>
 
     suspend fun rotateToken(refreshToken: String): Result<TokenBundle>
 
