@@ -33,7 +33,7 @@ fun TimeletterItem(
             style = typography.bodySmall,
         )
         Text(
-            text = schedule.openDate,
+            text = schedule.openDate.value,
             style = typography.bodySmall,
         )
     }

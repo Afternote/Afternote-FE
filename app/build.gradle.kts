@@ -1,5 +1,6 @@
 plugins {
     id("afternote.android.application")
+    id("afternote.android.navigation")
 }
 
 android {
@@ -13,5 +14,12 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.compose.material.icons.extended)
+
     implementation(projects.core.ui)
+
+    implementation(projects.feature.afternote.presentation)
+    implementation(projects.feature.mindrecord.presentation)
+    implementation(projects.feature.timeletter.presentation)
+    implementation(projects.feature.onboarding.presentation)
 }

@@ -12,7 +12,7 @@ import com.afternote.feature.timeletter.presentation.component.TimeletterListCon
 
 @Composable
 fun TimeletterScreen(
-    letters: TimeLetters,
+    letters: TimeLetters = TimeLetters(emptyList()),
     modifier: Modifier = Modifier,
 ) {
     Scaffold(

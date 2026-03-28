@@ -4,7 +4,9 @@
       "Skill(update-config)",
       "Bash(dir:*)",
       "Bash(tree -L 4 /c/AFTERNOTE/Afternote-FE/feature/mindrecord --ignore \"build|bin\")",
-      "Bash(find /c/AFTERNOTE/Afternote-FE/feature/mindrecord -not -path */build/* -not -path */bin/* -type f)"
+      "Bash(find /c/AFTERNOTE/Afternote-FE/feature/mindrecord -not -path */build/* -not -path */bin/* -type f)",
+      "Bash(find C:/AFTERNOTE/Afternote-FE/feature/timeletter/domain -type f -name *.kt)",
+      "Bash(xargs grep:*)"
     ]
   }
 }
