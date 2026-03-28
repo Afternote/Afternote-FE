@@ -21,7 +21,7 @@ class TokenAuthenticator
         ): Request? {
             if (responseCount(response) >= 3) {
                 // 리프레시 토큰이 유효하지 않은 액세스 토큰을 계속 준다면 재시도가 계속 일어날 수 있다
-                Log.e("TokenAuthenticator", "❌ 무한 루프 방지: 재시도 횟수 3회 초과. 로그아웃 처리 요망")
+                Log.e("TokenAuthenticator", "❌ 무한 루프 방지: 재시도 횟수 3회 이상. 로그아웃 처리 요망")
                 return null
             }
 
