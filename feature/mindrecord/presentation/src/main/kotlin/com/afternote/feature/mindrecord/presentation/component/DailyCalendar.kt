@@ -67,12 +67,21 @@ fun DailyCalendar(
             }
 
             Spacer(modifier = Modifier.height(10.dp))
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(7),
-                userScrollEnabled = false,
-            ) {
-                items(days) { dayModel ->
-                    DayCell(model = dayModel)
+            val chunked = days.chunked(7)
+
+            Column {
+                chunked.forEach { week ->
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        week.forEach { dayModel ->
+                            Box(modifier = Modifier.weight(1f)) {
+                                DayCell(model = dayModel)
+                            }
+                        }
+                        // 마지막 주가 7개 미만이면 빈 셀로 채우기
+                        repeat(7 - week.size) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
                 }
             }
 

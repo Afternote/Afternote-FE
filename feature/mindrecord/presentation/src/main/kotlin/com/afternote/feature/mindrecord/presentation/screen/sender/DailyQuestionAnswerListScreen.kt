@@ -33,7 +33,7 @@ import java.time.LocalDate
 
 @Composable
 fun DailyQuestionAnswerListScreen(modifier: Modifier = Modifier) {
-    var isListView by remember { mutableStateOf(false) }
+    var isListView by remember { mutableStateOf(true) }
 
     val testDailyQuestion =
         listOf(
