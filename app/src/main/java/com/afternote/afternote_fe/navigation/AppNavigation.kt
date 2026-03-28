@@ -46,7 +46,7 @@ private fun NavController.navigateTo(route: Any) {
 }
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -60,13 +60,16 @@ fun AppNavigation() {
             else -> null
         }
 
-    Scaffold(bottomBar = {
-        BottomBar(
-            items = bottomNavItems,
-            isSelected = { item -> item.route == currentRoute },
-            onItemClick = { item -> navController.navigateTo(item.route) },
-        )
-    }) { innerPadding ->
+    Scaffold(
+        bottomBar = {
+            BottomBar(
+                items = bottomNavItems,
+                isSelected = { item -> item.route == currentRoute },
+                onItemClick = { item -> navController.navigateTo(item.route) },
+            )
+        },
+        modifier = modifier,
+    ) { innerPadding ->
         NavHost(
             navController = navController,
             startDestination = Route.Home,
