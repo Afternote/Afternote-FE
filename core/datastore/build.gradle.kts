@@ -1,6 +1,5 @@
 plugins {
-    id("afternote.android.library")
-    id("afternote.android.hilt")
+    id("afternote.android.datastore")
 }
 
 android {
@@ -8,6 +7,5 @@ android {
 }
 dependencies {
     implementation(libs.androidx.datastore.preferences)
-    implementation(projects.core.common)
     implementation(libs.jetbrains.kotlinx.serialization.json)
 }
