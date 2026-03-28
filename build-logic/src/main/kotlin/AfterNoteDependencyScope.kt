@@ -19,9 +19,10 @@ internal class AfterNoteDependencyScope(
     private val project: Project,
     private val dependencies: DependencyHandlerScope,
 ) {
-    val libs: VersionCatalog = project.extensions
-        .getByType<VersionCatalogsExtension>()
-        .named("libs")
+    val libs: VersionCatalog =
+        project.extensions
+            .getByType<VersionCatalogsExtension>()
+            .named("libs")
 
     private fun findLibrary(alias: String): Provider<MinimalExternalModuleDependency> {
         val library = libs.findLibrary(alias)
@@ -38,7 +39,6 @@ internal class AfterNoteDependencyScope(
         }
         return bundle.get()
     }
-
 
     fun implementation(alias: String) {
         dependencies.add("implementation", findLibrary(alias))
@@ -75,12 +75,14 @@ internal class AfterNoteDependencyScope(
     fun project(path: String) {
         dependencies.add("implementation", dependencies.project(path))
     }
+
     fun platform(dependency: Any): Any {
-        val resolvedDependency = if (dependency is Provider<*>) {
-            dependency.get()
-        } else {
-            dependency
-        }
+        val resolvedDependency =
+            if (dependency is Provider<*>) {
+                dependency.get()
+            } else {
+                dependency
+            }
         return project.dependencies.platform(resolvedDependency)
     }
 }

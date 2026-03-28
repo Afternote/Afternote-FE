@@ -32,7 +32,7 @@ fun TopBar(modifier: Modifier = Modifier) {
                 Image(
                     painter = painterResource(R.drawable.core_ui_user),
                     contentDescription = null,
-                    modifier = Modifier.size(30.dp),
+                    modifier = Modifier.size(18.dp),
                 )
 
                 Spacer(modifier = Modifier.width(15.dp))
@@ -40,7 +40,7 @@ fun TopBar(modifier: Modifier = Modifier) {
                 Image(
                     painter = painterResource(R.drawable.core_ui_settings),
                     contentDescription = null,
-                    modifier = Modifier.size(30.dp),
+                    modifier = Modifier.size(18.dp),
                 )
             }
         },

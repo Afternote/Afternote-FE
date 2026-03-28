@@ -6,6 +6,3 @@ android {
     namespace = "com.afternote.core.ui"
     resourcePrefix = "core_ui_"
 }
-
-dependencies {
-}

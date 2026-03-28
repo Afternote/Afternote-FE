@@ -9,6 +9,7 @@ android {
 
 dependencies {
     implementation(projects.feature.timeletter.domain)
+    implementation(projects.feature.timeletter.res)
     implementation(projects.core.common)
     implementation(projects.core.ui)
 }
