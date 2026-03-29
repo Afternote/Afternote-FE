@@ -29,7 +29,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.Gray2
 import com.afternote.core.ui.theme.toggleShadow_1
 import com.afternote.core.ui.theme.toggleShadow_2
@@ -39,6 +38,8 @@ import kotlin.math.roundToInt
 fun ViewModeSwitcher(
     isListView: Boolean,
     onViewChange: (Boolean) -> Unit,
+    image1: Int,
+    image2: Int,
     modifier: Modifier = Modifier,
 ) {
     val containerHeight = 36.dp
@@ -85,11 +86,11 @@ fun ViewModeSwitcher(
 
         Row(modifier = Modifier.fillMaxSize()) {
             SwitcherIcon(
-                icon = painterResource(R.drawable.core_ui_list),
+                icon = painterResource(image1),
                 onClick = { onViewChange(true) },
             )
             SwitcherIcon(
-                icon = painterResource(R.drawable.core_ui_calendar),
+                icon = painterResource(image2),
                 onClick = { onViewChange(false) },
             )
         }

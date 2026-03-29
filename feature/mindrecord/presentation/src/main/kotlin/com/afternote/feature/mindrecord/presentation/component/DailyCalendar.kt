@@ -29,12 +29,14 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray5
 import com.afternote.feature.mindrecord.presentation.model.DayState
 import com.afternote.feature.mindrecord.presentation.model.DayUiModel
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import java.util.Calendar
 
 @Composable
 fun DailyCalendar(
     year: Int,
     month: Int,
+    type: MindRecordCategory,
     modifier: Modifier = Modifier,
 ) {
     val days = remember(year, month) { buildDays(year, month) }
@@ -70,7 +72,7 @@ fun DailyCalendar(
                     Row(modifier = Modifier.fillMaxWidth()) {
                         week.forEach { dayModel ->
                             Box(modifier = Modifier.weight(1f)) {
-                                DayCell(model = dayModel)
+                                DayCell(model = dayModel, type = type)
                             }
                         }
                         // 마지막 주가 7개 미만이면 빈 셀로 채우기
@@ -155,6 +157,6 @@ fun Legend(modifier: Modifier = Modifier) {
 @Composable
 private fun DailyCalendarPreview() {
     AfternoteTheme {
-        DailyCalendar(year = 2022, month = 1)
+        DailyCalendar(year = 2022, month = 1, type = MindRecordCategory.DAILY_QUESTION)
     }
 }
