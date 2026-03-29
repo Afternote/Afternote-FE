@@ -28,9 +28,9 @@ import com.afternote.core.ui.theme.Black
 
 @Composable
 fun BottomBar(
-    modifier: Modifier = Modifier,
     isSelected: @Composable (BottomNavTab) -> Boolean,
     onItemClick: (BottomNavTab) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     NavigationBar(modifier = modifier) {
         BottomNavTab.entries.forEach { tab ->

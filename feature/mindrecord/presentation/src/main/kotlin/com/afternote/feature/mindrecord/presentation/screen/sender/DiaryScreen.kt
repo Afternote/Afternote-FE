@@ -29,9 +29,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.AfternoteFab
 import com.afternote.core.ui.R
-import com.afternote.core.ui.TopBar
+import com.afternote.core.ui.component.AfternoteFab
+import com.afternote.core.ui.component.TopBar
 import com.afternote.core.ui.component.ViewModeSwitcher
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray9
