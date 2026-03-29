@@ -18,14 +18,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.afternote.core.ui.TopBar
 import com.afternote.core.ui.theme.White
+import com.afternote.feature.onboarding.presentation.login.LoginViewModel
 
 // TODO:AI 딸깍하기만 하고 아무 것도 안 함
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(modifier: Modifier = Modifier) {
+fun LoginScreen(
+    modifier: Modifier = Modifier,
+    loginViewModel: LoginViewModel = hiltViewModel(),
+) {
     // 입력 필드의 상태를 관리합니다.
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }

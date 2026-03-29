@@ -8,7 +8,6 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -23,26 +22,19 @@ import com.afternote.feature.timeletter.presentation.screen.sender.TimeletterScr
 
 private val bottomNavItems =
     listOf(
-        BottomNavItem("홈", R.drawable.core_ui_ic_home, Route.Home),
+        BottomNavItem(R.string, R.drawable.core_ui_ic_home, Route.Home),
         BottomNavItem("기록", R.drawable.core_ui_ic_mindrecord, Route.MindRecord),
         BottomNavItem("타임레터", R.drawable.core_ui_ic_mail, Route.TimeLetter),
         BottomNavItem("노트", R.drawable.core_ui_ic_note, Route.Afternote),
     )
 
 private fun NavController.navigateTo(route: Route) {
-    val builder: NavOptionsBuilder.() -> Unit = {
+    navigate(route) {
         popUpTo(graph.findStartDestination().id) {
             saveState = true
         }
-
         launchSingleTop = true
         restoreState = true
-    }
-    when (route) {
-        is Route.Home -> navigate(route, builder = builder)
-        is Route.MindRecord -> navigate(route, builder = builder)
-        is Route.TimeLetter -> navigate(route, builder = builder)
-        is Route.Afternote -> navigate(route, builder = builder)
     }
 }
 

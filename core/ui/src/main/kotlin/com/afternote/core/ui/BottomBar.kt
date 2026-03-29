@@ -1,6 +1,7 @@
 package com.afternote.core.ui
 
 import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,8 +25,8 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.Black
 
 data class BottomNavItem(
-    val label: String,
-    @DrawableRes val iconRes: Int,
+    @param:StringRes val label: Int,
+    @param:DrawableRes val iconRes: Int,
     val route: Route,
 )
 
