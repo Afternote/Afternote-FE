@@ -30,8 +30,8 @@ import com.afternote.core.ui.expand.dropShadow
  */
 @Composable
 fun BoxScope.AddFloatingActionButton(
-    modifier: Modifier = Modifier,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Box(
         modifier =
@@ -44,8 +44,7 @@ fun BoxScope.AddFloatingActionButton(
                     offsetX = 0.dp,
                     offsetY = 2.dp,
                     spread = 0.dp,
-                )
-                .background(Color.White, CircleShape)
+                ).background(Color.White, CircleShape)
                 .clip(CircleShape)
                 .clickable {
                     Log.d("AddFAB", "FAB clicked")

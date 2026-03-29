@@ -16,7 +16,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -57,7 +56,7 @@ private val PROFILE_EDIT_BUTTON_SHADOW_COLOR = Color(0x26000000)
 @Composable
 fun ProfileImage(
     modifier: Modifier = Modifier,
-    @DrawableRes fallbackImageRes: Int = R.drawable.img_default_profile,
+    @DrawableRes fallbackImageRes: Int = R.drawable.core_ui_default_profile,
     profileImageSize: Dp = 133.dp,
     isEditable: Boolean = true,
     onEditClick: (() -> Unit)? = null,
@@ -65,9 +64,10 @@ fun ProfileImage(
 ) {
     Log.d(TAG, "displayImageUri=$displayImageUri fallbackImageRes=$fallbackImageRes")
 
-    val imageModifier = Modifier
-        .size(profileImageSize)
-        .clip(CircleShape)
+    val imageModifier =
+        Modifier
+            .size(profileImageSize)
+            .clip(CircleShape)
 
     if (isEditable) {
         val containerSize = (profileImageSize.value * CONTAINER_TO_PROFILE_RATIO).dp
@@ -83,8 +83,8 @@ fun ProfileImage(
                 modifier = imageModifier,
             )
             Image(
-                painter = painterResource(R.drawable.ic_add_circle_profile),
-                contentDescription = stringResource(R.string.content_description_profile_edit_button),
+                painter = painterResource(R.drawable.core_ui_add_circle_profile),
+                contentDescription = "프로필 수정 버튼",
                 modifier =
                     Modifier
                         .size(editButtonSize)
@@ -94,8 +94,7 @@ fun ProfileImage(
                             shape = CircleShape,
                             spotColor = PROFILE_EDIT_BUTTON_SHADOW_COLOR,
                             ambientColor = PROFILE_EDIT_BUTTON_SHADOW_COLOR,
-                        )
-                        .clickable(onClick = { onEditClick?.invoke() }),
+                        ).clickable(onClick = { onEditClick?.invoke() }),
             )
         }
     } else {
@@ -127,7 +126,7 @@ private fun ProfileImageContent(
                                 this["User-Agent"] = "Afternote Android App"
                             }.build(),
                     ).build(),
-            contentDescription = stringResource(R.string.content_description_profile_image),
+            contentDescription = "프로필 이미지",
             modifier = modifier,
             contentScale = ContentScale.Crop,
             error = painterResource(fallbackImageRes),
@@ -143,7 +142,7 @@ private fun ProfileImageContent(
         Log.d(TAG, "using fallback drawable")
         Image(
             painter = painterResource(fallbackImageRes),
-            contentDescription = stringResource(R.string.content_description_profile_image),
+            contentDescription = "프로필 이미지",
             contentScale = ContentScale.Crop,
             modifier = modifier,
         )

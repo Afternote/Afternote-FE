@@ -22,9 +22,9 @@ import com.afternote.core.ui.R
  */
 @Composable
 fun AddCircleButton(
-    modifier: Modifier = Modifier,
     contentDescription: String,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Image(
         painter = painterResource(R.drawable.core_ui_add_circle),

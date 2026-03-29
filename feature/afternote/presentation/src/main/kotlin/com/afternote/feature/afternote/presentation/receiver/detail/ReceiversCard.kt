@@ -19,11 +19,11 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.Black
 import com.afternote.core.ui.theme.Gray8
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.Sansneo
+import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiver
 
 /**

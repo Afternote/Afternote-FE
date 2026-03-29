@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
@@ -20,14 +19,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.R
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.B1
-import com.afternote.core.ui.theme.B2
 
 /**
  * 아이콘 관련 설정을 묶는 불변 데이터 클래스
@@ -54,11 +49,12 @@ data class ArrowIconSpec(
 @Composable
 fun RightArrowIcon(
     color: Color,
+    modifier: Modifier = Modifier,
     size: Dp = 12.dp,
 ) {
     Box(
         modifier =
-            Modifier
+            modifier
                 .size(size)
                 .clip(CircleShape)
                 .background(color = color),
@@ -85,8 +81,8 @@ fun RightArrowIcon(
  */
 @Composable
 fun RightArrowIcon(
-    modifier: Modifier = Modifier,
     iconSpec: ArrowIconSpec,
+    modifier: Modifier = Modifier,
     backgroundColor: Color = B1,
     size: Dp = 12.dp,
     shape: Shape = CircleShape,
@@ -118,76 +114,13 @@ fun RightArrowIcon(
                         } else {
                             Modifier
                         },
-                    )
-                    .then(
+                    ).then(
                         if (iconSpec.offset != DpOffset.Zero) {
                             Modifier.offset(x = iconSpec.offset.x, y = iconSpec.offset.y)
                         } else {
                             Modifier
                         },
                     ),
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Material Icons")
-@Composable
-private fun RightArrowIconMaterialPreview() {
-    AfternoteTheme {
-        RightArrowIcon(
-            color = B1,
-            size = 16.dp,
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Drawable - 작은 원형 (Tab)")
-@Composable
-private fun RightArrowIconDrawableTabPreview() {
-    AfternoteTheme {
-        RightArrowIcon(
-            iconSpec =
-                ArrowIconSpec(
-                    iconRes = R.drawable.ic_arrow_right_tab,
-                    contentDescription = "추가",
-                ),
-            backgroundColor = B1,
-            size = 12.dp,
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Drawable - 작은 원형 (Playlist)")
-@Composable
-private fun RightArrowIconDrawablePlaylistPreview() {
-    AfternoteTheme {
-        RightArrowIcon(
-            iconSpec =
-                ArrowIconSpec(
-                    iconRes = R.drawable.ic_arrow_right_playlist,
-                    contentDescription = "추가",
-                ),
-            backgroundColor = B1,
-            size = 12.dp,
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Drawable - 큰 둥근 모서리")
-@Composable
-private fun RightArrowIconDrawableRoundedPreview() {
-    AfternoteTheme {
-        RightArrowIcon(
-            iconSpec =
-                ArrowIconSpec(
-                    iconRes = R.drawable.ic_arrow_forward_b2,
-                    size = 6.dp,
-                    offset = DpOffset(x = 9.9.dp, y = 6.dp),
-                ),
-            backgroundColor = B2,
-            size = 24.dp,
-            shape = RoundedCornerShape(12.dp),
-            padding = 0.dp,
         )
     }
 }

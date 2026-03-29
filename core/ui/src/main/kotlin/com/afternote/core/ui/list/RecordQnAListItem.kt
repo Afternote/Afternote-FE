@@ -36,10 +36,10 @@ import com.afternote.core.ui.theme.Sansneo
  */
 @Composable
 fun RecordQnAListItem(
-    modifier: Modifier = Modifier,
     question: String,
     answer: String,
     dateText: String,
+    modifier: Modifier = Modifier,
     trailing: (@Composable () -> Unit)? = null,
 ) {
     Column(
@@ -77,8 +77,7 @@ fun RecordQnAListItem(
                         .background(
                             color = Gray2,
                             shape = RoundedCornerShape(8.dp),
-                        )
-                        .padding(
+                        ).padding(
                             horizontal = 16.dp,
                             vertical = 24.dp,
                         ),

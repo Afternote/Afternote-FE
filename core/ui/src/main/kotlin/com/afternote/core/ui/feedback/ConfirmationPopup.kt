@@ -141,8 +141,7 @@ fun ConfirmationPopupContent(
                                 offsetX = 0.dp,
                                 offsetY = 2.dp,
                                 spread = 0.dp,
-                            )
-                            .clip(buttonShape)
+                            ).clip(buttonShape)
                             .background(Gray3)
                             .clickable(enabled = !isLoading, onClick = onDismiss)
                             .padding(
@@ -162,8 +161,7 @@ fun ConfirmationPopupContent(
                                 offsetX = 0.dp,
                                 offsetY = 2.dp,
                                 spread = 0.dp,
-                            )
-                            .clip(buttonShape)
+                            ).clip(buttonShape)
                             .background(B3)
                             .clickable(enabled = !isLoading, onClick = onConfirm)
                             .padding(

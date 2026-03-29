@@ -35,8 +35,8 @@ data class MemorialGuidelineSlots(
  */
 @Composable
 fun MemorialGuidelineContent(
-    modifier: Modifier = Modifier,
     slots: MemorialGuidelineSlots,
+    modifier: Modifier = Modifier,
     sectionSpacing: Dp = 32.dp,
     trailingSpacerHeight: Dp = 0.dp,
 ) {

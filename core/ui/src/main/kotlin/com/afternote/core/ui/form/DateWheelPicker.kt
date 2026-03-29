@@ -70,9 +70,9 @@ object DateWheelPickerDefaults {
  */
 @Composable
 fun DateWheelPicker(
+    onDateChanged: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
     currentDate: LocalDate = LocalDate.now(),
-    onDateChanged: (LocalDate) -> Unit,
     minDate: LocalDate? = null,
     selectedTextColor: Color = DateWheelPickerDefaults.SelectedTextColor,
     unselectedTextColor: Color = DateWheelPickerDefaults.UnselectedTextColor,
@@ -196,7 +196,7 @@ private fun rememberDateWheelPickerModel(
 
 @Composable
 private fun DateWheelPickerContent(
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
     model: DateWheelPickerModel,
     currentDate: LocalDate,
     yearState: FWheelPickerState,
@@ -292,7 +292,7 @@ private data class DateWheelPickerDayModel(
 
 @Composable
 private fun SelectionBorder(
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
     selectionBorderColor: Color,
 ) {
     Box(
@@ -313,7 +313,7 @@ private fun SelectionBorder(
 
 @Composable
 private fun DayWheel(
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
     model: DateWheelPickerDayModel,
     currentDate: LocalDate,
     minDate: LocalDate?,

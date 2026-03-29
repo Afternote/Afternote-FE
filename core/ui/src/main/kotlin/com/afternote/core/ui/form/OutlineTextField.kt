@@ -418,11 +418,11 @@ object Multiline
 @Suppress("UNUSED_PARAMETER")
 @Composable
 fun OutlineTextField(
-    modifier: Modifier = Modifier,
     label: String,
     textFieldState: TextFieldState,
-    placeholder: String = DEFAULT_PLACEHOLDER,
     multiline: Multiline,
+    modifier: Modifier = Modifier,
+    placeholder: String = DEFAULT_PLACEHOLDER,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),

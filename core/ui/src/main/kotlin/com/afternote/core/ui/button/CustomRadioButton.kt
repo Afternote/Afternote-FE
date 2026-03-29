@@ -34,8 +34,8 @@ import com.afternote.core.ui.theme.Gray4
  */
 @Composable
 fun CustomRadioButton(
-    modifier: Modifier = Modifier,
     selected: Boolean,
+    modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     buttonSize: Dp = 24.dp,
     selectedColor: Color = B2,
@@ -59,7 +59,8 @@ fun CustomRadioButton(
                     width = borderWidth,
                     color = if (selected) selectedColor else unselectedColor,
                     shape = CircleShape,
-                ).then(
+                )
+                .then(
                     if (onClick != null) {
                         Modifier.clickable(onClick = onClick)
                     } else {
