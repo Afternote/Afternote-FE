@@ -34,7 +34,7 @@ import com.afternote.core.ui.theme.B1
  */
 @Immutable
 data class ArrowIconSpec(
-    @DrawableRes val iconRes: Int,
+    @param:DrawableRes val iconRes: Int,
     val contentDescription: String? = null,
     val size: Dp? = null,
     val offset: DpOffset = DpOffset.Zero,
@@ -114,7 +114,8 @@ fun RightArrowIcon(
                         } else {
                             Modifier
                         },
-                    ).then(
+                    )
+                    .then(
                         if (iconSpec.offset != DpOffset.Zero) {
                             Modifier.offset(x = iconSpec.offset.x, y = iconSpec.offset.y)
                         } else {

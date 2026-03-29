@@ -20,15 +20,16 @@ import com.afternote.core.ui.theme.B3
 @Composable
 fun SignUpContentButton(
     onNextClick: () -> Unit,
-    content: @Composable ColumnScope.() -> Unit,
+    modifier: Modifier = Modifier,
     buttonAlignment: Alignment = Alignment.Center,
     contentSpacing: Dp? = null,
     buttonTitle: String = "다음",
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     // 1. 컨텐츠 기준으로 띄우고 싶을 때 (순서대로 나열)
     if (contentSpacing != null) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = modifier.fillMaxSize(),
         ) {
             // (1) 컨텐츠 표시
             content()
@@ -48,9 +49,8 @@ fun SignUpContentButton(
                 )
             }
         }
-    }
-    // 2. 기존 방식 (화면 위치 고정, 다른 화면 깨짐 방지용)
-    else {
+    } else {
+        // 2. 기존 방식 (화면 위치 고정, 다른 화면 깨짐 방지용)
         Box(
             modifier = Modifier.fillMaxSize(),
         ) {

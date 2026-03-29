@@ -14,4 +14,5 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     implementation(libs.androidx.material.icons.core)
     implementation(libs.androidx.material.icons.extended)
+    implementation(libs.compose.wheel.picker)
 }

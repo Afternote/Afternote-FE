@@ -23,10 +23,11 @@ fun CircleCheckBox(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     size: Dp = 20.dp,
+    modifier: Modifier = Modifier,
 ) {
     Surface(
         modifier =
-            Modifier
+            modifier
                 .size(size)
                 .clickable { onCheckedChange(!checked) },
         shape = CircleShape,

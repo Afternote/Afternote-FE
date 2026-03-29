@@ -94,7 +94,8 @@ fun ProfileImage(
                             shape = CircleShape,
                             spotColor = PROFILE_EDIT_BUTTON_SHADOW_COLOR,
                             ambientColor = PROFILE_EDIT_BUTTON_SHADOW_COLOR,
-                        ).clickable(onClick = { onEditClick?.invoke() }),
+                        )
+                        .clickable(onClick = { onEditClick?.invoke() }),
             )
         }
     } else {
@@ -108,9 +109,9 @@ fun ProfileImage(
 
 @Composable
 private fun ProfileImageContent(
-    modifier: Modifier,
     displayImageUri: String?,
     @DrawableRes fallbackImageRes: Int,
+    modifier: Modifier = Modifier,
 ) {
     if (!displayImageUri.isNullOrBlank()) {
         Log.d(TAG, "using AsyncImage for uri=$displayImageUri")
