@@ -157,6 +157,7 @@ private val PasswordOutputTransformation =
 fun OutlineTextField(
     textFieldState: TextFieldState,
     label: String,
+    modifier: Modifier = Modifier,
     keyboardType: KeyboardType = KeyboardType.Text,
     enabled: Boolean = true,
     focusRequester: FocusRequester? = null,
@@ -178,7 +179,7 @@ fun OutlineTextField(
         enabled = enabled,
         readOnly = false,
         modifier =
-            Modifier
+            modifier
                 .fillMaxWidth()
                 .height(OutlineTextFieldHeightBasic)
                 .then(
@@ -204,8 +205,9 @@ fun OutlineTextField(
 fun OutlineTextField(
     textFieldState: TextFieldState,
     label: String,
-    keyboardType: KeyboardType = KeyboardType.Text,
     onAuthClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    keyboardType: KeyboardType = KeyboardType.Text,
 ) {
     OutlinedTextField(
         state = textFieldState,
@@ -232,7 +234,7 @@ fun OutlineTextField(
             }
         },
         modifier =
-            Modifier
+            modifier
                 .fillMaxWidth()
                 .height(OutlineTextFieldHeightBasic),
     )
@@ -242,8 +244,9 @@ fun OutlineTextField(
 fun OutlineTextField(
     textFieldState: TextFieldState,
     label: String,
-    keyboardType: KeyboardType = KeyboardType.Phone,
     outputTransformation: OutputTransformation,
+    modifier: Modifier = Modifier,
+    keyboardType: KeyboardType = KeyboardType.Phone,
 ) {
     OutlinedTextField(
         state = textFieldState,
@@ -261,7 +264,7 @@ fun OutlineTextField(
         outputTransformation = outputTransformation,
         colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = Gray4),
         modifier =
-            Modifier
+            modifier
                 .fillMaxWidth()
                 .height(70.dp),
     )
@@ -275,6 +278,7 @@ fun OutlineTextField(
     textFieldState: TextFieldState,
     label: String,
     onFileAddClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     OutlinedTextField(
         state = textFieldState,
@@ -299,7 +303,7 @@ fun OutlineTextField(
             }
         },
         modifier =
-            Modifier
+            modifier
                 .fillMaxWidth()
                 .height(OutlineTextFieldHeightBasic),
     )
@@ -327,9 +331,9 @@ fun OutlineTextField(
  */
 @Composable
 fun OutlineTextField(
-    modifier: Modifier = Modifier,
     label: String,
     textFieldState: TextFieldState,
+    modifier: Modifier = Modifier,
     placeholder: String = DEFAULT_PLACEHOLDER,
     keyboardType: KeyboardType = KeyboardType.Text,
     style: LabeledTextFieldStyle = LabeledTextFieldStyle(),
@@ -481,8 +485,8 @@ fun OutlineTextField(
  */
 @Composable
 fun OutlineTextField(
-    modifier: Modifier = Modifier,
     textFieldState: TextFieldState,
+    modifier: Modifier = Modifier,
     placeholder: String = DEFAULT_PLACEHOLDER,
     containerColor: Color = Gray1,
     height: Dp = OutlineTextFieldHeightMultiline,
@@ -524,6 +528,7 @@ private fun OutlineTextFieldBasicPreview() {
             textFieldState = rememberTextFieldState(),
             label = "시작",
             keyboardType = KeyboardType.Text,
+            enabled = true,
         )
     }
 }
@@ -557,9 +562,9 @@ private fun OutlineTextFieldWithFileAddPreview() {
 private fun OutlineTextFieldWithLabelPreview() {
     AfternoteTheme {
         OutlineTextField(
-            modifier = Modifier,
             label = "아이디",
             textFieldState = rememberTextFieldState(),
+            placeholder = DEFAULT_PLACEHOLDER,
         )
     }
 }
@@ -569,7 +574,6 @@ private fun OutlineTextFieldWithLabelPreview() {
 private fun OutlineTextFieldWithErrorPreview() {
     AfternoteTheme {
         OutlineTextField(
-            modifier = Modifier,
             label = "비밀번호",
             textFieldState = rememberTextFieldState(),
             isError = true,
@@ -597,6 +601,7 @@ private fun OutlineTextFieldPasswordPreview() {
             textFieldState = rememberTextFieldState("password123"),
             label = "비밀번호",
             keyboardType = KeyboardType.Password,
+            enabled = true,
         )
     }
 }

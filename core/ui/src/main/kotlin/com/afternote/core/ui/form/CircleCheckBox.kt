@@ -22,8 +22,8 @@ import com.afternote.core.ui.theme.AfternoteTheme
 fun CircleCheckBox(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    size: Dp = 20.dp,
     modifier: Modifier = Modifier,
+    size: Dp = 20.dp,
 ) {
     Surface(
         modifier =

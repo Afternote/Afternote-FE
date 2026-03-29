@@ -61,8 +61,8 @@ data class LabelStyle(
  */
 @Composable
 fun Label(
-    modifier: Modifier = Modifier,
     text: String,
+    modifier: Modifier = Modifier,
     isRequired: Boolean = false,
     style: LabelStyle = LabelStyle(),
 ) {

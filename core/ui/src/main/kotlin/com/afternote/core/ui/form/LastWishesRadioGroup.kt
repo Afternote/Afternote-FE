@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,7 +76,7 @@ fun LastWishesRadioGroup(
     label: String = LABEL_LAST_WISH,
     options: List<LastWishOption> = emptyList(),
     selectedValue: String? = null,
-    onOptionSelected: (String) -> Unit = {},
+    onOptionSelect: (String) -> Unit = {},
     displayTextOnly: String? = null,
     otherState: LastWishOtherState? = null,
 ) {
@@ -101,7 +102,7 @@ fun LastWishesRadioGroup(
             LastWishEditModeContent(
                 options = options,
                 selectedValue = selectedValue,
-                onOptionSelected = onOptionSelected,
+                onOptionSelect = onOptionSelect,
                 otherState = otherState,
             )
         }
@@ -134,7 +135,7 @@ private fun LastWishViewModeContent(displayTextOnly: String) {
 private fun LastWishEditModeContent(
     options: List<LastWishOption>,
     selectedValue: String?,
-    onOptionSelected: (String) -> Unit,
+    onOptionSelect: (String) -> Unit,
     otherState: LastWishOtherState?,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(space = 8.dp)) {
@@ -145,13 +146,13 @@ private fun LastWishEditModeContent(
                     option = option,
                     selected = selected,
                     otherState = otherState,
-                    onOptionSelected = { onOptionSelected(option.value) },
+                    onOptionSelect = { onOptionSelect(option.value) },
                 )
             } else {
                 SelectableRadioCard(
                     modifier = Modifier.fillMaxWidth(),
                     selected = selected,
-                    onClick = { onOptionSelected(option.value) },
+                    onClick = { onOptionSelect(option.value) },
                 ) {
                     Text(
                         text = option.text,
@@ -169,7 +170,7 @@ private fun LastWishOtherCard(
     option: LastWishOption,
     selected: Boolean,
     otherState: LastWishOtherState,
-    onOptionSelected: () -> Unit,
+    onOptionSelect: () -> Unit,
 ) {
     val borderColor = if (selected) B2 else Color.Transparent
     val interactionSource = remember { MutableInteractionSource() }
@@ -180,7 +181,7 @@ private fun LastWishOtherCard(
                 .fillMaxWidth()
                 .selectable(
                     selected = selected,
-                    onClick = onOptionSelected,
+                    onClick = onOptionSelect,
                     role = Role.RadioButton,
                     interactionSource = interactionSource,
                     indication = null,
@@ -239,13 +240,14 @@ private fun LastWishOtherTextField(
     modifier: Modifier = Modifier,
 ) {
     val state = rememberTextFieldState(initialText = value)
+    val currentOnValueChange = rememberUpdatedState(onValueChange)
     LaunchedEffect(value) {
         if (state.text.toString() != value) {
             state.edit { replace(0, length, value) }
         }
     }
     LaunchedEffect(state) {
-        snapshotFlow { state.text.toString() }.collect { onValueChange(it) }
+        snapshotFlow { state.text.toString() }.collect { currentOnValueChange.value(it) }
     }
     OutlineTextField(
         modifier = modifier,
@@ -272,7 +274,7 @@ private fun LastWishesRadioGroupEditPreview() {
                 label = LABEL_LAST_WISH,
                 options = options,
                 selectedValue = "calm",
-                onOptionSelected = {},
+                onOptionSelect = {},
                 otherState = LastWishOtherState(text = "", onTextChange = {}),
             )
         }
@@ -294,7 +296,7 @@ private fun LastWishesRadioGroupOtherSelectedPreview() {
                 label = LABEL_LAST_WISH,
                 options = options,
                 selectedValue = "other",
-                onOptionSelected = {},
+                onOptionSelect = {},
                 otherState =
                     LastWishOtherState(
                         text = "끼니 거르지 말고 건강 챙기고 지내.",
