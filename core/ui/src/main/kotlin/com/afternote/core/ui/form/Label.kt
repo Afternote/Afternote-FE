@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation.form
+package com.afternote.core.ui.form
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -25,10 +25,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.kuit.afternote.ui.theme.AfternoteTheme
-import com.kuit.afternote.ui.theme.B2
-import com.kuit.afternote.ui.theme.Gray9
-import com.kuit.afternote.ui.theme.Sansneo
+import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.core.ui.theme.B2
+import com.afternote.core.ui.theme.Gray9
+import com.afternote.core.ui.theme.Sansneo
 
 /**
  * Style configuration for Label component.

@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation.detail
+package com.afternote.feature.afternote.presentation.receiver.detail
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -16,10 +16,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.kuit.afternote.ui.theme.AfternoteTheme
-import com.kuit.afternote.ui.theme.B3
-import com.kuit.afternote.ui.theme.Gray9
-import com.kuit.afternote.ui.theme.Sansneo
+import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.core.ui.theme.B3
+import com.afternote.core.ui.theme.Gray9
+import com.afternote.core.ui.theme.Sansneo
 
 /**
  * 개인 정보 행 컴포넌트 (라벨 + 값)

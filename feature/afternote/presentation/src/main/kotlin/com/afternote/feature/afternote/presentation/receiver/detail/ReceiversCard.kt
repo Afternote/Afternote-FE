@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation.detail
+package com.afternote.feature.afternote.presentation.receiver.detail
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -15,18 +15,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.kuit.afternote.R
-import com.kuit.afternote.feature.afternote.presentation.author.nav.ui.navgraph.AfternoteLightTheme
-import com.kuit.afternote.ui.theme.Black
-import com.kuit.afternote.ui.theme.Gray8
-import com.kuit.afternote.ui.theme.Gray9
-import com.kuit.afternote.ui.theme.Sansneo
+import com.afternote.core.ui.R
+import com.afternote.core.ui.theme.Black
+import com.afternote.core.ui.theme.Gray8
+import com.afternote.core.ui.theme.Gray9
+import com.afternote.core.ui.theme.Sansneo
+import com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiver
 
 /**
  * 수신자 목록 카드. 애프터노트 상세 화면(갤러리/소셜/추모 가이드라인)에서 공통 사용.
@@ -35,7 +33,7 @@ import com.kuit.afternote.ui.theme.Sansneo
 @Composable
 fun ReceiversCard(
     modifier: Modifier = Modifier,
-    receivers: List<com.kuit.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiver>,
+    receivers: List<AfternoteEditReceiver>,
 ) {
     if (receivers.isEmpty()) return
 
@@ -46,7 +44,7 @@ fun ReceiversCard(
                 verticalArrangement = Arrangement.spacedBy(space = 8.dp),
             ) {
                 Text(
-                    text = stringResource(R.string.afternote_detail_receivers_label),
+                    text = "수신자",
                     style =
                         TextStyle(
                             fontSize = 16.sp,
@@ -67,7 +65,7 @@ fun ReceiversCard(
 @Composable
 private fun ReceiverDetailItem(
     modifier: Modifier = Modifier,
-    receiver: com.kuit.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiver,
+    receiver: com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiver,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -110,27 +108,5 @@ private fun ReceiverDetailItem(
                     ),
             )
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ReceiversCardPreview() {
-    AfternoteLightTheme {
-        ReceiversCard(
-            receivers =
-                listOf(
-                    com.kuit.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiver(
-                        id = "1",
-                        name = "황규운",
-                        label = "친구",
-                    ),
-                    com.kuit.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiver(
-                        id = "2",
-                        name = "김소희",
-                        label = "가족",
-                    ),
-                ),
-        )
     }
 }

@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation.shell.model
+package com.afternote.core.ui.shell.model
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -17,11 +17,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.kuit.afternote.R
-import com.kuit.afternote.ui.theme.AfternoteTheme
-import com.kuit.afternote.ui.theme.B1
-import com.kuit.afternote.ui.theme.Gray4
-import com.kuit.afternote.ui.theme.Sansneo
+import com.afternote.core.ui.R
+import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.core.ui.theme.B1
+import com.afternote.core.ui.theme.Gray4
+import com.afternote.core.ui.theme.Sansneo
 
 /**
  * 하단 네비게이션 바 아이템

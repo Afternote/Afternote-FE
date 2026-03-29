@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation.form
+package com.afternote.core.ui.form
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -25,12 +25,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.button.CustomRadioButton
-import com.kuit.afternote.ui.theme.AfternoteTheme
-import com.kuit.afternote.ui.theme.B2
-import com.kuit.afternote.ui.theme.Gray4
-import com.kuit.afternote.ui.theme.Gray9
-import com.kuit.afternote.ui.theme.Sansneo
-import com.kuit.afternote.ui.theme.White
+import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.core.ui.theme.B2
+import com.afternote.core.ui.theme.Gray4
+import com.afternote.core.ui.theme.Gray9
+import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.White
 
 /**
  * 선택 가능한 라디오 버튼 카드 컴포넌트 (Slot API 패턴)

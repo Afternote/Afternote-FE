@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation.shell
+package com.afternote.core.ui.shell
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.AddFloatingActionButton
-import com.kuit.afternote.ui.theme.AfternoteTheme
+import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
  * Scaffold content area: full-size Box with [paddingValues], optional inner [contentPadding],

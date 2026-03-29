@@ -17,7 +17,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
-import com.kuit.afternote.core.presentation.expand.dropShadow
+import com.afternote.core.ui.expand.dropShadow
 
 /**
  * 추가 버튼 FAB 컴포넌트

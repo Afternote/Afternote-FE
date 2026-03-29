@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation.icon
+package com.afternote.core.ui.icon
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
@@ -24,10 +24,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import com.kuit.afternote.R
-import com.kuit.afternote.ui.theme.AfternoteTheme
-import com.kuit.afternote.ui.theme.B1
-import com.kuit.afternote.ui.theme.B2
+import com.afternote.core.ui.R
+import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.core.ui.theme.B1
+import com.afternote.core.ui.theme.B2
 
 /**
  * 아이콘 관련 설정을 묶는 불변 데이터 클래스

@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation.form
+package com.afternote.core.ui.form
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -26,14 +26,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.button.CustomRadioButton
-import com.kuit.afternote.ui.theme.AfternoteTheme
-import com.kuit.afternote.ui.theme.B1
-import com.kuit.afternote.ui.theme.B2
-import com.kuit.afternote.ui.theme.Gray1
-import com.kuit.afternote.ui.theme.Gray4
-import com.kuit.afternote.ui.theme.Gray9
-import com.kuit.afternote.ui.theme.Sansneo
-import com.kuit.afternote.ui.theme.White
+import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.core.ui.theme.B1
+import com.afternote.core.ui.theme.B2
+import com.afternote.core.ui.theme.Gray1
+import com.afternote.core.ui.theme.Gray4
+import com.afternote.core.ui.theme.Gray9
+import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.White
 
 /** Section label used for edit and view (receiver) so both share the same literal. */
 const val LABEL_LAST_WISH = "남기고 싶은 당부"

@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation.shell
+package com.afternote.core.ui.shell
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
@@ -12,9 +12,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.kuit.afternote.core.presentation.shell.model.BottomNavItem
-import com.kuit.afternote.core.presentation.shell.model.BottomNavigationItem
-import com.kuit.afternote.ui.theme.AfternoteTheme
+import com.afternote.core.ui.shell.model.BottomNavItem
+import com.afternote.core.ui.shell.model.BottomNavigationItem
+import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
  * 하단 네비게이션 바

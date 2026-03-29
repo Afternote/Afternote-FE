@@ -1,11 +1,11 @@
-package com.afternote.core.ui.detail
+package com.afternote.feature.afternote.presentation.receiver.detail
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.afternote.core.ui.feedback.ConfirmationPopup
+import com.afternote.core.ui.feedback.ConfirmationPopupContent
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.kuit.afternote.core.presentation.feedback.ConfirmationPopup
-import com.kuit.afternote.core.presentation.feedback.ConfirmationPopupContent
 
 @Composable
 fun DeleteConfirmDialog(

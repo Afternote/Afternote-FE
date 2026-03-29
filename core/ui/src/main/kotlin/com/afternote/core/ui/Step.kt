@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation
+package com.afternote.core.ui
 
 interface Step {
     val value: Int

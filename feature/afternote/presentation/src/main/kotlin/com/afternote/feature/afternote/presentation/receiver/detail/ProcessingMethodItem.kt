@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation.detail
+package com.afternote.feature.afternote.presentation.receiver.detail
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -11,9 +11,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.kuit.afternote.core.presentation.icon.CheckCircleIcon
-import com.kuit.afternote.ui.theme.Gray9
-import com.kuit.afternote.ui.theme.Sansneo
+import com.afternote.core.ui.icon.CheckCircleIcon
+import com.afternote.core.ui.theme.Gray9
+import com.afternote.core.ui.theme.Sansneo
 
 /**
  * 처리 방법 아이템 컴포넌트

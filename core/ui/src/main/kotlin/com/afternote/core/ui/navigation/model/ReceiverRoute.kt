@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation.navigation.model
+package com.afternote.core.ui.navigation.model
 
 import kotlinx.serialization.Serializable
 

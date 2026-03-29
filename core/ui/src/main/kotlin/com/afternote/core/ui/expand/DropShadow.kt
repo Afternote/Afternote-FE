@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation.expand
+package com.afternote.core.ui.expand
 
 import android.graphics.BlurMaskFilter
 import androidx.compose.runtime.Composable

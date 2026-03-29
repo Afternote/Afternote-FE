@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation
+package com.afternote.core.ui
 
 import androidx.compose.foundation.text.input.OutputTransformation
 import androidx.compose.foundation.text.input.TextFieldBuffer

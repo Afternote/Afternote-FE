@@ -13,11 +13,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.expand.dropShadow
 import com.afternote.core.ui.theme.B3
 import com.afternote.core.ui.theme.Gray3
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.Sansneo
-import com.kuit.afternote.core.presentation.expand.dropShadow
 
 @Composable
 fun ClickButton(

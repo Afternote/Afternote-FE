@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation.icon
+package com.afternote.core.ui.icon
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
@@ -7,8 +7,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.kuit.afternote.R
-import com.kuit.afternote.ui.theme.AfternoteTheme
+import com.afternote.core.ui.R
+import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
  * 체크 원 아이콘 컴포넌트

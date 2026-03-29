@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation.detail
+package com.afternote.feature.afternote.presentation.receiver.detail
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,8 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.kuit.afternote.ui.theme.AfternoteTheme
-import com.kuit.afternote.ui.theme.Gray2
+import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.core.ui.theme.Gray2
 
 /**
  * 정보 카드 컴포넌트

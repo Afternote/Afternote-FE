@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation.form
+package com.afternote.core.ui.form
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -39,14 +39,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.kuit.afternote.ui.theme.AfternoteTheme
-import com.kuit.afternote.ui.theme.B2
-import com.kuit.afternote.ui.theme.Gray1
-import com.kuit.afternote.ui.theme.Gray4
-import com.kuit.afternote.ui.theme.Gray9
-import com.kuit.afternote.ui.theme.Red
-import com.kuit.afternote.ui.theme.Sansneo
-import com.kuit.afternote.ui.theme.White
+import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.core.ui.theme.B2
+import com.afternote.core.ui.theme.Gray1
+import com.afternote.core.ui.theme.Gray4
+import com.afternote.core.ui.theme.Gray9
+import com.afternote.core.ui.theme.Red
+import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.White
 
 private const val DEFAULT_PLACEHOLDER = "Text Field"
 private const val PASSWORD_MASK_CHAR = '\u2022'

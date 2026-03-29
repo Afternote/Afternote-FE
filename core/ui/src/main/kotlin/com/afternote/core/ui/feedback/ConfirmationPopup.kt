@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation.feedback
+package com.afternote.core.ui.feedback
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -27,12 +27,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.kuit.afternote.core.presentation.expand.dropShadow
-import com.kuit.afternote.ui.theme.AfternoteTheme
-import com.kuit.afternote.ui.theme.B3
-import com.kuit.afternote.ui.theme.Gray3
-import com.kuit.afternote.ui.theme.Gray9
-import com.kuit.afternote.ui.theme.Sansneo
+import com.afternote.core.ui.expand.dropShadow
+import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.core.ui.theme.B3
+import com.afternote.core.ui.theme.Gray3
+import com.afternote.core.ui.theme.Gray9
+import com.afternote.core.ui.theme.Sansneo
 
 @Composable
 fun ConfirmationPopup(
@@ -52,7 +52,7 @@ fun ConfirmationPopup(
                 dismissOnClickOutside = !isLoading,
             ),
     ) {
-        com.kuit.afternote.core.presentation.feedback.ConfirmationPopupContent(
+        com.afternote.core.ui.feedback.ConfirmationPopupContent(
             message = message,
             onDismiss = onDismiss,
             onConfirm = onConfirm,
@@ -194,7 +194,7 @@ fun ConfirmationPopupContent(
 @Composable
 private fun ConfirmationPopupPreview() {
     AfternoteTheme {
-        com.kuit.afternote.core.presentation.feedback.ConfirmationPopupContent(
+        com.afternote.core.ui.feedback.ConfirmationPopupContent(
             message = "인스타그램에 대한 기록을 삭제하시겠습니까?\n삭제 시, 되돌릴 수 없습니다.",
             onDismiss = {},
             onConfirm = {},
@@ -206,7 +206,7 @@ private fun ConfirmationPopupPreview() {
 @Composable
 private fun ConfirmationPopupCustomButtonsPreview() {
     AfternoteTheme {
-        com.kuit.afternote.core.presentation.feedback.ConfirmationPopupContent(
+        com.afternote.core.ui.feedback.ConfirmationPopupContent(
             message = "사망 프로토콜이 아직 실행되지 않았습니다.\n프로토콜을 실행하시겠습니까?",
             onDismiss = {},
             onConfirm = {},

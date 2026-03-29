@@ -1,8 +1,8 @@
-package com.kuit.afternote.core.presentation.shell.model
+package com.afternote.core.ui.shell.model
 
 import androidx.annotation.StringRes
 import androidx.compose.ui.unit.dp
-import com.kuit.afternote.R
+import com.afternote.core.ui.R
 
 /**
  * 하단 네비게이션 바 아이템 enum

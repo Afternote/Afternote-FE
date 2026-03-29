@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation.list
+package com.afternote.core.ui.list
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,10 +11,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.kuit.afternote.R
-import com.kuit.afternote.feature.timeletter.presentation.component.LetterTheme
-import com.kuit.afternote.feature.timeletter.presentation.component.TimeLetterBlockItem
-import com.kuit.afternote.feature.timeletter.presentation.uimodel.TimeLetterItem
+import com.afternote.core.ui.R
+import com.afternote.feature.timeletter.presentation.component.LetterTheme
+import com.afternote.feature.timeletter.presentation.component.TimeLetterBlockItem
+import com.afternote.feature.timeletter.presentation.uimodel.TimeLetterItem
 
 @Composable
 fun TimeLetterBlockList(

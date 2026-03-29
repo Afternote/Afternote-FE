@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation.list
+package com.afternote.core.ui.list
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -21,13 +21,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.kuit.afternote.ui.theme.AfternoteTheme
-import com.kuit.afternote.ui.theme.Gray2
-import com.kuit.afternote.ui.theme.Gray3
-import com.kuit.afternote.ui.theme.Gray5
-import com.kuit.afternote.ui.theme.Gray8
-import com.kuit.afternote.ui.theme.Gray9
-import com.kuit.afternote.ui.theme.Sansneo
+import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.core.ui.theme.Gray2
+import com.afternote.core.ui.theme.Gray3
+import com.afternote.core.ui.theme.Gray5
+import com.afternote.core.ui.theme.Gray8
+import com.afternote.core.ui.theme.Gray9
+import com.afternote.core.ui.theme.Sansneo
 
 /**
  * A reusable list item for displaying a record-like Q/A content with date.

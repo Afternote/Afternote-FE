@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation.form
+package com.afternote.core.ui.form
 
 import android.util.Log
 import androidx.annotation.DrawableRes
@@ -25,8 +25,8 @@ import coil3.compose.AsyncImagePainter
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
-import com.kuit.afternote.R
-import com.kuit.afternote.ui.theme.AfternoteTheme
+import com.afternote.core.ui.R
+import com.afternote.core.ui.theme.AfternoteTheme
 
 private const val TAG = "ProfileImage"
 

@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation.shell
+package com.afternote.core.ui.shell
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
@@ -18,13 +18,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.kuit.afternote.R
-import com.kuit.afternote.core.presentation.Step
-import com.kuit.afternote.feature.onboarding.presentation.component.StepProgressBar
-import com.kuit.afternote.ui.theme.AfternoteTheme
-import com.kuit.afternote.ui.theme.Gray5
-import com.kuit.afternote.ui.theme.Gray8
-import com.kuit.afternote.ui.theme.Sansneo
+import com.afternote.core.ui.R
+import com.afternote.core.ui.Step
+import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.core.ui.theme.Gray5
+import com.afternote.core.ui.theme.Gray8
+import com.afternote.core.ui.theme.Sansneo
+import com.afternote.feature.onboarding.presentation.component.StepProgressBar
 
 @Composable
 private fun TopBarBackButton(onBackClick: () -> Unit) {
