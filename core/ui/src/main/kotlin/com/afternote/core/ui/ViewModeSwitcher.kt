@@ -82,7 +82,8 @@ fun ViewModeSwitcher(
                     .dropShadow(
                         shape = CircleShape,
                         shadow = toggleShadow_2,
-                    ).background(Color.White, CircleShape),
+                    )
+                    .background(Color.White, CircleShape),
         )
 
         Row(modifier = Modifier.fillMaxSize()) {

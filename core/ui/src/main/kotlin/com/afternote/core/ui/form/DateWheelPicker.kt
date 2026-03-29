@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,7 +62,7 @@ object DateWheelPickerDefaults {
  *
  * @param modifier Modifier
  * @param currentDate 현재 선택된 날짜 (State Hoisting)
- * @param onDateChanged 날짜 변경 콜백
+ * @param onDateChange 날짜 변경 콜백 (현재시제 네이밍 규칙 준수)
  * @param minDate 최소 선택 가능 날짜. null이면 제한 없음(과거·미래 모두 선택 가능).
  * @param selectedTextColor 선택된 텍스트 색상
  * @param unselectedTextColor 선택되지 않은 텍스트 색상
@@ -70,7 +71,7 @@ object DateWheelPickerDefaults {
  */
 @Composable
 fun DateWheelPicker(
-    onDateChanged: (LocalDate) -> Unit,
+    onDateChange: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
     currentDate: LocalDate = LocalDate.now(),
     minDate: LocalDate? = null,
@@ -100,14 +101,14 @@ fun DateWheelPicker(
         currentYearFallback = model.currentYear,
         currentDate = currentDate,
         minDate = minDate,
-        onDateChanged = onDateChanged,
+        onDateChange = onDateChange,
     )
     ObserveMonthWheel(
         state = monthState,
         months = model.months,
         currentDate = currentDate,
         minDate = minDate,
-        onDateChanged = onDateChanged,
+        onDateChange = onDateChange,
     )
 
     DateWheelPickerContent(
@@ -116,7 +117,7 @@ fun DateWheelPicker(
         yearState = yearState,
         monthState = monthState,
         minDate = minDate,
-        onDateChanged = onDateChanged,
+        onDateChange = onDateChange,
         colors = colors,
         modifier = modifier,
     )
@@ -201,7 +202,7 @@ private fun DateWheelPickerContent(
     yearState: FWheelPickerState,
     monthState: FWheelPickerState,
     minDate: LocalDate?,
-    onDateChanged: (LocalDate) -> Unit,
+    onDateChange: (LocalDate) -> Unit,
     colors: DateWheelPickerColors,
     modifier: Modifier = Modifier,
 ) {
@@ -276,7 +277,7 @@ private fun DateWheelPickerContent(
                     ),
                 currentDate = currentDate,
                 minDate = minDate,
-                onDateChanged = onDateChanged,
+                onDateChange = onDateChange,
                 colors = colors,
                 modifier = Modifier.weight(3f),
             )
@@ -316,7 +317,7 @@ private fun DayWheel(
     model: DateWheelPickerDayModel,
     currentDate: LocalDate,
     minDate: LocalDate?,
-    onDateChanged: (LocalDate) -> Unit,
+    onDateChange: (LocalDate) -> Unit,
     colors: DateWheelPickerColors,
     modifier: Modifier = Modifier,
 ) {
@@ -329,7 +330,7 @@ private fun DayWheel(
             days = model.days,
             currentDate = currentDate,
             minDate = minDate,
-            onDateChanged = onDateChanged,
+            onDateChange = onDateChange,
         )
 
         FVerticalWheelPicker(
@@ -369,8 +370,9 @@ private fun ObserveYearWheel(
     currentYearFallback: Int,
     currentDate: LocalDate,
     minDate: LocalDate?,
-    onDateChanged: (LocalDate) -> Unit,
+    onDateChange: (LocalDate) -> Unit,
 ) {
+    val currentOnDateChange = rememberUpdatedState(onDateChange)
     LaunchedEffect(state, currentDate, minDate) {
         snapshotFlow { state.currentIndex }
             .distinctUntilChanged()
@@ -378,7 +380,7 @@ private fun ObserveYearWheel(
                 val newYear = years.getOrElse(index) { currentYearFallback }
                 var newDate = currentDate.withYearClamped(newYear)
                 if (minDate != null) newDate = newDate.coerceAtLeast(minDate)
-                newDate.takeIf { it != currentDate }?.let(onDateChanged)
+                newDate.takeIf { it != currentDate }?.let(currentOnDateChange.value)
             }
     }
 }
@@ -389,8 +391,9 @@ private fun ObserveMonthWheel(
     months: List<Int>,
     currentDate: LocalDate,
     minDate: LocalDate?,
-    onDateChanged: (LocalDate) -> Unit,
+    onDateChange: (LocalDate) -> Unit,
 ) {
+    val currentOnDateChange = rememberUpdatedState(onDateChange)
     LaunchedEffect(state, currentDate, minDate) {
         snapshotFlow { state.currentIndex }
             .distinctUntilChanged()
@@ -398,7 +401,7 @@ private fun ObserveMonthWheel(
                 val newMonth = months.getOrElse(index) { 1 }
                 var newDate = currentDate.withMonthClamped(newMonth)
                 if (minDate != null) newDate = newDate.coerceAtLeast(minDate)
-                newDate.takeIf { it != currentDate }?.let(onDateChanged)
+                newDate.takeIf { it != currentDate }?.let(currentOnDateChange.value)
             }
     }
 }
@@ -409,8 +412,9 @@ private fun ObserveDayWheel(
     days: List<Int>,
     currentDate: LocalDate,
     minDate: LocalDate?,
-    onDateChanged: (LocalDate) -> Unit,
+    onDateChange: (LocalDate) -> Unit,
 ) {
+    val currentOnDateChange = rememberUpdatedState(onDateChange)
     LaunchedEffect(state, currentDate, minDate) {
         snapshotFlow { state.currentIndex }
             .distinctUntilChanged()
@@ -418,7 +422,7 @@ private fun ObserveDayWheel(
                 val newDay = days.getOrElse(index) { 1 }
                 var newDate = currentDate.withDayClamped(newDay)
                 if (minDate != null) newDate = newDate.coerceAtLeast(minDate)
-                newDate.takeIf { it != currentDate }?.let(onDateChanged)
+                newDate.takeIf { it != currentDate }?.let(currentOnDateChange.value)
             }
     }
 }
@@ -477,6 +481,6 @@ private fun DateWheelPickerPreview() {
     DateWheelPicker(
         modifier = Modifier.width(DateWheelPickerDefaults.ContainerWidth),
         currentDate = LocalDate.of(2025, 11, 26),
-        onDateChanged = {},
+        onDateChange = {},
     )
 }
