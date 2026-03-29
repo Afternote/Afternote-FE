@@ -24,9 +24,9 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.hilt.navigation)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.retrofit)
     implementation(libs.kotlinx.serialization.json)
-    implementation("androidx.biometric:biometric:1.1.0")
-    implementation("androidx.fragment:fragment-ktx:1.8.9")
+    implementation(libs.androidx.biometric)
+    implementation(libs.androidx.fragment.ktx)
 }
