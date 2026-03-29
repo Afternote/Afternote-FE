@@ -5,6 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -68,15 +69,15 @@ fun TopBar(modifier: Modifier = Modifier) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopBar(
-    isListView: Boolean,
+    title: String,
     onBackClick: () -> Unit,
-    onToggleClick: (Boolean) -> Unit,
+    action: @Composable (RowScope.() -> Unit),
     modifier: Modifier = Modifier,
 ) {
     TopAppBar(
         title = {
             Text(
-                text = "데일리 질문",
+                text = title,
                 style = MaterialTheme.typography.titleMedium,
             )
         },
@@ -91,12 +92,7 @@ fun TopBar(
             }
         },
         actions = {
-            ViewModeSwitcher(
-                isListView = isListView,
-                onViewChange = {
-                    onToggleClick(it)
-                },
-            )
+            action()
         },
         modifier = modifier.padding(end = 17.dp),
     )
@@ -119,10 +115,15 @@ private fun DailyRecordTopBarPreview() {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 // 실제 컴포넌트 호출
                 TopBar(
-                    isListView = isListMode,
+                    title = "데일리 질문",
                     onBackClick = { /* 뒤로가기 로그 확인 */ },
-                    onToggleClick = { newValue ->
-                        isListMode = newValue // 클릭 시 프리뷰 상태가 변하도록 연결
+                    action = {
+                        ViewModeSwitcher(
+                            isListView = isListMode,
+                            onViewChange = { isListMode = it },
+                            image1 = R.drawable.core_ui_list,
+                            image2 = R.drawable.core_ui_calendar,
+                        )
                     },
                 )
             }

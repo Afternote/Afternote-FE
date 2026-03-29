@@ -21,10 +21,12 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.Gray5
 import com.afternote.feature.mindrecord.presentation.model.DayState
 import com.afternote.feature.mindrecord.presentation.model.DayUiModel
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 
 @Composable
 fun DayCell(
     model: DayUiModel,
+    type: MindRecordCategory,
     modifier: Modifier = Modifier,
 ) {
     if (model.day == null) {
@@ -63,13 +65,28 @@ fun DayCell(
                 )
                 if (model.state == DayState.ANSWERED || model.state == DayState.UNANSWERED) {
                     Spacer(modifier = Modifier.height(2.dp))
-                    Box(
-                        modifier =
-                            Modifier
-                                .size(4.dp)
-                                .clip(CircleShape)
-                                .background(textColor),
-                    )
+                    when (type) {
+                        MindRecordCategory.DAILY_QUESTION -> {
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .size(4.dp)
+                                        .clip(CircleShape)
+                                        .background(textColor),
+                            )
+                        }
+
+                        MindRecordCategory.DIARY -> {
+                            model.emotion?.let {
+                                Text(
+                                    text = it,
+                                )
+                            }
+                        }
+
+                        else -> {
+                        }
+                    }
                 }
             }
         }
