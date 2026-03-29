@@ -94,8 +94,7 @@ fun ProfileImage(
                             shape = CircleShape,
                             spotColor = PROFILE_EDIT_BUTTON_SHADOW_COLOR,
                             ambientColor = PROFILE_EDIT_BUTTON_SHADOW_COLOR,
-                        )
-                        .clickable(onClick = { onEditClick?.invoke() }),
+                        ).clickable(onClick = { onEditClick?.invoke() }),
             )
         }
     } else {

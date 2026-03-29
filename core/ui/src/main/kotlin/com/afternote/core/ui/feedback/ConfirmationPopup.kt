@@ -99,8 +99,7 @@ fun ConfirmationPopupContent(
                         offsetX = 0.dp,
                         offsetY = 2.dp,
                         spread = 0.dp,
-                    )
-                    .clip(containerShape)
+                    ).clip(containerShape)
                     .background(Color.White)
                     .padding(
                         horizontal = 20.dp,

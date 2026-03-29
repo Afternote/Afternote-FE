@@ -78,8 +78,7 @@ fun ViewModeSwitcher(
                     .dropShadow(
                         shape = CircleShape,
                         shadow = toggleShadow_1,
-                    )
-                    .dropShadow(
+                    ).dropShadow(
                         shape = CircleShape,
                         shadow = toggleShadow_2,
                     ).background(Color.White, CircleShape),

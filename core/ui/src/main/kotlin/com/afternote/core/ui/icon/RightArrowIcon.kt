@@ -114,8 +114,7 @@ fun RightArrowIcon(
                         } else {
                             Modifier
                         },
-                    )
-                    .then(
+                    ).then(
                         if (iconSpec.offset != DpOffset.Zero) {
                             Modifier.offset(x = iconSpec.offset.x, y = iconSpec.offset.y)
                         } else {

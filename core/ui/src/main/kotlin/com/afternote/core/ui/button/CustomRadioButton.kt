@@ -59,8 +59,7 @@ fun CustomRadioButton(
                     width = borderWidth,
                     color = if (selected) selectedColor else unselectedColor,
                     shape = CircleShape,
-                )
-                .then(
+                ).then(
                     if (onClick != null) {
                         Modifier.clickable(onClick = onClick)
                     } else {
