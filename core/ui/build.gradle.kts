@@ -1,5 +1,6 @@
 plugins {
     id("afternote.android.library.compose")
+    kotlin("plugin.serialization")
 }
 
 android {
