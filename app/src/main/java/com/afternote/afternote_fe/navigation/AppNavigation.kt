@@ -6,8 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.afternote.afternote_fe.AppState
-import com.afternote.afternote_fe.rememberAfternoteAppState
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.component.bottombar.BottomBar
 import com.afternote.feature.afternote.presentation.AfternoteScreen
