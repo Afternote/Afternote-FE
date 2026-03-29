@@ -54,7 +54,7 @@ import java.time.LocalDate
 
 @Composable
 fun DeepThoughtScreen(modifier: Modifier = Modifier) {
-    var isListView by remember { mutableStateOf(false) }
+    var isListView by remember { mutableStateOf(true) }
     var selectedIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf<String>("전체 카테고리", "카테고리", "카테고리", "카테고리")
     var selectedTag by remember { mutableStateOf<Tag?>(null) }
