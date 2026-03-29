@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation.screen.afternotedetail
+package com.afternote.feature.afternote.presentation.detail
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -24,21 +23,13 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.kuit.afternote.core.component.detail.DeleteConfirmDialog
-import com.kuit.afternote.core.component.detail.EditDropdownMenu
-import com.kuit.afternote.core.component.detail.InfoCard
-import com.kuit.afternote.core.component.detail.InfoRow
-import com.kuit.afternote.core.component.detail.ProcessingMethodItem
-import com.kuit.afternote.core.component.detail.ReceiversCard
-import com.kuit.afternote.core.component.navigation.BottomNavItem
-import com.kuit.afternote.core.component.navigation.BottomNavigationBar
-import com.kuit.afternote.core.component.navigation.TopBar
-import com.kuit.afternote.ui.theme.AfternoteTheme
-import com.kuit.afternote.ui.theme.B1
-import com.kuit.afternote.ui.theme.Gray5
-import com.kuit.afternote.ui.theme.Gray6
-import com.kuit.afternote.ui.theme.Gray9
-import com.kuit.afternote.ui.theme.Sansneo
+import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.core.ui.theme.Gray5
+import com.afternote.core.ui.theme.Gray6
+import com.afternote.core.ui.theme.Gray9
+import com.afternote.feature.afternote.presentation.theme.B1
+import com.afternote.feature.afternote.presentation.theme.Sansneo
+import com.kuit.afternote.feature.afternote.presentation.edit.model.AfternoteEditReceiver
 
 /**
  * Display data for [SocialNetworkDetailScreen].
@@ -54,7 +45,7 @@ data class SocialNetworkDetailContent(
     val processingMethods: List<String> = emptyList(),
     val message: String = "",
     val finalWriteDate: String = "2025.11.26.",
-    val afternoteEditReceivers: List<com.kuit.afternote.feature.afternote.presentation.edit.model.AfternoteEditReceiver> = emptyList(),
+    val afternoteEditReceivers: List<AfternoteEditReceiver> = emptyList(),
 )
 
 /**
@@ -94,51 +85,27 @@ fun SocialNetworkDetailScreen(
         )
     }
 
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        topBar = {
-            if (isEditable) {
-                TopBar(
-                    onBackClick = onBackClick,
-                    onEditClick = state::toggleDropdownMenu,
+    Box(
+        modifier =
+            modifier
+                .fillMaxSize(),
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            SocialNetworkDetailScrollContent(content = content)
+        }
+        if (isEditable) {
+            Box(
+                modifier =
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(end = 20.dp),
+            ) {
+                EditDropdownMenu(
+                    expanded = state.showDropdownMenu,
+                    onDismissRequest = state::hideDropdownMenu,
+                    onEditClick = onEditClick,
+                    onDeleteClick = { state.showDeleteDialog() },
                 )
-            } else {
-                TopBar(
-                    title = "",
-                    onBackClick = onBackClick,
-                )
-            }
-        },
-        bottomBar = {
-            BottomNavigationBar(
-                selectedItem = state.selectedBottomNavItem,
-                onItemSelected = state::onBottomNavItemSelected,
-            )
-        },
-    ) { paddingValues ->
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-        ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                SocialNetworkDetailScrollContent(content = content)
-            }
-            if (isEditable) {
-                Box(
-                    modifier =
-                        Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(end = 20.dp),
-                ) {
-                    EditDropdownMenu(
-                        expanded = state.showDropdownMenu,
-                        onDismissRequest = state::hideDropdownMenu,
-                        onEditClick = onEditClick,
-                        onDeleteClick = { state.showDeleteDialog() },
-                    )
-                }
             }
         }
     }
@@ -402,26 +369,6 @@ private fun SocialNetworkDetailScreenWithEditDropdownMenuPreview() {
             onBackClick = {},
             onEditClick = {},
             state = stateWithDropdown,
-        )
-    }
-}
-
-@Preview(
-    showBackground = true,
-    device = "spec:width=390dp,height=844dp,dpi=420,isRound=false",
-    name = "SocialNetworkDetailScreen - Receiver Mode (Read Only)",
-)
-@Composable
-private fun SocialNetworkDetailScreenReceiverModePreview() {
-    AfternoteTheme {
-        SocialNetworkDetailScreen(
-            content = SocialNetworkDetailContent(),
-            isEditable = false,
-            onBackClick = {},
-            state =
-                rememberAfternoteDetailState(
-                    defaultBottomNavItem = BottomNavItem.AFTERNOTE,
-                ),
         )
     }
 }

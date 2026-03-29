@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.detail.addsong
+package com.kuit.afternote.core.component
 
 import android.util.Log
 import androidx.compose.foundation.background
@@ -35,11 +35,11 @@ import coil3.compose.AsyncImagePainter
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
-import com.afternote.core.ui.theme.Gray3
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.edit.addsong.PlaylistSongDisplay
-import com.afternote.feature.afternote.presentation.theme.Sansneo
+import com.kuit.afternote.R
+import com.kuit.afternote.core.presentation.uimodel.PlaylistSongDisplay
+import com.kuit.afternote.ui.theme.Gray3
+import com.kuit.afternote.ui.theme.Gray9
+import com.kuit.afternote.ui.theme.Sansneo
 
 private const val TAG = "PlaylistSongItem"
 

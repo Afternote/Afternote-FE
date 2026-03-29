@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation.screen.afternotedetail
+package com.afternote.feature.afternote.presentation.detail
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
@@ -6,7 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.kuit.afternote.core.component.navigation.BottomNavItem
+import com.afternote.core.ui.component.bottombar.BottomNavTab
 
 /*
  * Detail screen UI state (dropdown, delete dialog, bottom nav).
@@ -17,7 +17,7 @@ import com.kuit.afternote.core.component.navigation.BottomNavItem
  */
 @Stable
 class AfternoteDetailState(
-    defaultBottomNavItem: BottomNavItem = BottomNavItem.AFTERNOTE,
+    defaultBottomNavItem: BottomNavTab = BottomNavTab.NOTE,
 ) {
     var selectedBottomNavItem by mutableStateOf(defaultBottomNavItem)
         private set
@@ -31,8 +31,8 @@ class AfternoteDetailState(
     /**
      * 하단 네비게이션 아이템 선택
      */
-    fun onBottomNavItemSelected(navItem: BottomNavItem) {
-        selectedBottomNavItem = navItem
+    fun onBottomNavItemSelected(navTab: BottomNavTab) {
+        selectedBottomNavItem = navTab
     }
 
     /**
@@ -67,11 +67,11 @@ class AfternoteDetailState(
 /**
  * Creates [AfternoteDetailState] for detail screens (social network, gallery).
  *
- * @param defaultBottomNavItem 기본 선택된 하단 네비게이션 아이템
+ * @param defaultBottomNavTab 기본 선택된 하단 네비게이션 아이템
  */
 @Stable
 @Composable
-fun rememberAfternoteDetailState(defaultBottomNavItem: BottomNavItem = BottomNavItem.AFTERNOTE): AfternoteDetailState =
-    remember(defaultBottomNavItem) {
-        AfternoteDetailState(defaultBottomNavItem = defaultBottomNavItem)
+fun rememberAfternoteDetailState(defaultBottomNavTab: BottomNavTab = BottomNavTab.NOTE): AfternoteDetailState =
+    remember(defaultBottomNavTab) {
+        AfternoteDetailState(defaultBottomNavItem = defaultBottomNavTab)
     }

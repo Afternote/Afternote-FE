@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation.screen.afternotedetail
+package com.afternote.feature.afternote.presentation.detail
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -16,11 +16,9 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,33 +32,23 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
-import com.kuit.afternote.R
+import com.afternote.core.ui.theme.Black
+import com.afternote.core.ui.theme.Gray5
+import com.afternote.core.ui.theme.Gray6
+import com.afternote.core.ui.theme.Gray9
+import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.component.expand.horizontalFadingEdge
+import com.afternote.feature.afternote.presentation.theme.B1
+import com.afternote.feature.afternote.presentation.theme.Sansneo
 import com.kuit.afternote.core.component.ProfileImage
-import com.kuit.afternote.core.component.detail.DeleteConfirmDialog
-import com.kuit.afternote.core.component.detail.EditDropdownMenu
-import com.kuit.afternote.core.component.detail.InfoCard
-import com.kuit.afternote.core.component.detail.ReceiversCard
-import com.kuit.afternote.core.component.expand.horizontalFadingEdge
 import com.kuit.afternote.core.component.list.AlbumCover
-import com.kuit.afternote.core.component.navigation.BottomNavItem
-import com.kuit.afternote.core.component.navigation.BottomNavigationBar
-import com.kuit.afternote.core.component.navigation.TopBar
-import com.kuit.afternote.core.dummy.album.AlbumDummies
-import com.kuit.afternote.feature.afternote.presentation.navgraph.AfternoteLightTheme
-import com.kuit.afternote.ui.theme.B1
-import com.kuit.afternote.ui.theme.Black
-import com.kuit.afternote.ui.theme.Gray5
-import com.kuit.afternote.ui.theme.Gray6
-import com.kuit.afternote.ui.theme.Gray9
-import com.kuit.afternote.ui.theme.Sansneo
-import kotlin.collections.isNotEmpty
+import com.kuit.afternote.feature.afternote.presentation.edit.model.AfternoteEditReceiver
 
 /**
  * 추모 가이드라인 상세 화면의 데이터 상태
@@ -73,7 +61,7 @@ data class MemorialGuidelineDetailState(
     val albumCovers: List<AlbumCover> = emptyList(),
     val songCount: Int = 0,
     val lastWish: String = "",
-    val afternoteEditReceivers: List<com.kuit.afternote.feature.afternote.presentation.edit.model.AfternoteEditReceiver> = emptyList(),
+    val afternoteEditReceivers: List<AfternoteEditReceiver> = emptyList(),
     val memorialVideoUrl: String? = null,
     val memorialThumbnailUrl: String? = null,
 )
@@ -121,51 +109,27 @@ fun MemorialGuidelineDetailScreen(
         )
     }
 
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        topBar = {
-            if (isEditable) {
-                TopBar(
-                    onBackClick = callbacks.onBackClick,
-                    onEditClick = uiState::toggleDropdownMenu,
+    Box(
+        modifier =
+            modifier
+                .fillMaxSize(),
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            MemorialGuidelineDetailScrollContent(detailState = detailState)
+        }
+        if (isEditable) {
+            Box(
+                modifier =
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(end = 20.dp),
+            ) {
+                EditDropdownMenu(
+                    expanded = uiState.showDropdownMenu,
+                    onDismissRequest = uiState::hideDropdownMenu,
+                    onEditClick = callbacks.onEditClick,
+                    onDeleteClick = { uiState.showDeleteDialog() },
                 )
-            } else {
-                TopBar(
-                    title = "",
-                    onBackClick = callbacks.onBackClick,
-                )
-            }
-        },
-        bottomBar = {
-            BottomNavigationBar(
-                selectedItem = uiState.selectedBottomNavItem,
-                onItemSelected = uiState::onBottomNavItemSelected,
-            )
-        },
-    ) { paddingValues ->
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-        ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                MemorialGuidelineDetailScrollContent(detailState = detailState)
-            }
-            if (isEditable) {
-                Box(
-                    modifier =
-                        Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(end = 20.dp),
-                ) {
-                    EditDropdownMenu(
-                        expanded = uiState.showDropdownMenu,
-                        onDismissRequest = uiState::hideDropdownMenu,
-                        onEditClick = callbacks.onEditClick,
-                        onDeleteClick = { uiState.showDeleteDialog() },
-                    )
-                }
             }
         }
     }
@@ -491,86 +455,4 @@ private fun LastWishCard(lastWish: String) {
             }
         },
     )
-}
-
-@Preview(
-    showBackground = true,
-    device = "spec:width=390dp,height=844dp,dpi=420,isRound=false",
-)
-@Composable
-private fun MemorialGuidelineDetailScreenPreview() {
-    AfternoteLightTheme {
-        MemorialGuidelineDetailScreen(
-            detailState =
-                MemorialGuidelineDetailState(
-                    songCount = 16,
-                    albumCovers = AlbumDummies.list,
-                    lastWish = "차분하고 조용하게 보내주세요.",
-                ),
-            callbacks =
-                MemorialGuidelineDetailCallbacks(
-                    onBackClick = {},
-                    onEditClick = {},
-                ),
-        )
-    }
-}
-
-@Preview(
-    showBackground = true,
-    device = "spec:width=390dp,height=844dp,dpi=420,isRound=false",
-    name = "Memorial Guideline Detail - Delete Dialog",
-)
-@Composable
-private fun MemorialGuidelineDetailScreenDeleteDialogPreview() {
-    AfternoteLightTheme {
-        val stateWithDialog =
-            remember {
-                AfternoteDetailState().apply {
-                    showDeleteDialog()
-                }
-            }
-        MemorialGuidelineDetailScreen(
-            detailState =
-                MemorialGuidelineDetailState(
-                    songCount = 16,
-                    albumCovers = AlbumDummies.list,
-                    lastWish = "차분하고 조용하게 보내주세요.1",
-                ),
-            callbacks =
-                MemorialGuidelineDetailCallbacks(
-                    onBackClick = {},
-                    onEditClick = {},
-                ),
-            uiState = stateWithDialog,
-        )
-    }
-}
-
-@Preview(
-    showBackground = true,
-    device = "spec:width=390dp,height=844dp,dpi=420,isRound=false",
-    name = "Memorial Guideline Detail - Receiver Mode",
-)
-@Composable
-private fun MemorialGuidelineDetailScreenReceiverModePreview() {
-    AfternoteLightTheme {
-        MemorialGuidelineDetailScreen(
-            detailState =
-                MemorialGuidelineDetailState(
-                    songCount = 16,
-                    albumCovers = AlbumDummies.list,
-                    lastWish = "차분하고 조용하게 보내주세요.2",
-                ),
-            callbacks =
-                MemorialGuidelineDetailCallbacks(
-                    onBackClick = {},
-                ),
-            isEditable = false,
-            uiState =
-                rememberAfternoteDetailState(
-                    defaultBottomNavItem = BottomNavItem.AFTERNOTE,
-                ),
-        )
-    }
 }

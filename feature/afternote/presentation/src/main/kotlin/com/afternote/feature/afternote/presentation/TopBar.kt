@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray5
 import com.afternote.core.ui.theme.Gray8
+import com.afternote.feature.afternote.presentation.theme.Sansneo
 
 @Composable
 private fun TopBarBackButton(onBackClick: () -> Unit) {

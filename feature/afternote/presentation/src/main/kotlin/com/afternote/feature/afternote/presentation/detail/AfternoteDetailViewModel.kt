@@ -1,9 +1,8 @@
-package com.kuit.afternote.feature.afternote.presentation.detail
+package com.afternote.feature.afternote.presentation.detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kuit.afternote.feature.afternote.domain.usecase.DeleteAfternoteUseCase
-import com.kuit.afternote.feature.afternote.domain.usecase.GetAfternoteDetailUseCase
+import com.afternote.feature.afternote.domain.usecase.GetDetailUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,16 +21,16 @@ import javax.inject.Inject
 class AfternoteDetailViewModel
     @Inject
     constructor(
-        private val getDetailUseCase: GetAfternoteDetailUseCase,
-        private val deleteUseCase: DeleteAfternoteUseCase,
+        private val getDetailUseCase: GetDetailUseCase,
+        private val deleteUseCase: GetDetailUseCase,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(AfternoteDetailUiState())
         val uiState: StateFlow<AfternoteDetailUiState> = _uiState.asStateFlow()
 
-        fun loadDetail(afternoteId: Long) {
+        fun loadDetail(id: Long) {
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoading = true, error = null) }
-                getDetailUseCase(afternoteId = afternoteId)
+                getDetailUseCase(id = id)
                     .onSuccess { detail ->
                         _uiState.update {
                             it.copy(isLoading = false, detail = detail, error = null)
@@ -47,10 +46,10 @@ class AfternoteDetailViewModel
             }
         }
 
-        fun deleteAfternote(afternoteId: Long) {
+        fun deleteAfternote(id: Long) {
             viewModelScope.launch {
                 _uiState.update { it.copy(isDeleting = true, deleteError = null) }
-                deleteUseCase(afternoteId = afternoteId)
+                deleteUseCase(id = id)
                     .onSuccess {
                         _uiState.update {
                             it.copy(isDeleting = false, deleteSuccess = true)

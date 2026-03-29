@@ -33,8 +33,8 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.afternote.feature.afternote.presentation.detail.EditDropdownMenu
 import com.kuit.afternote.R
-import com.kuit.afternote.core.component.detail.EditDropdownMenu
 import com.kuit.afternote.core.component.icon.CheckCircleIcon
 import com.kuit.afternote.feature.afternote.presentation.edit.model.ProcessingMethodItem
 import com.kuit.afternote.ui.theme.AfternoteTheme

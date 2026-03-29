@@ -27,8 +27,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.afternote.feature.afternote.presentation.component.expand.dropShadow
 import com.kuit.afternote.R
-import com.kuit.afternote.core.component.expand.dropShadow
 import com.kuit.afternote.core.domain.model.AfternoteServiceType
 import com.kuit.afternote.core.util.getIconResForServiceName
 import com.kuit.afternote.feature.afternote.domain.model.Item

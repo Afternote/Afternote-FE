@@ -25,8 +25,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.afternote.feature.afternote.presentation.component.expand.horizontalFadingEdge
 import com.kuit.afternote.R
-import com.kuit.afternote.core.component.expand.horizontalFadingEdge
 import com.kuit.afternote.core.component.icon.ArrowIconSpec
 import com.kuit.afternote.core.component.icon.RightArrowIcon
 import com.kuit.afternote.core.component.list.AfternoteTab

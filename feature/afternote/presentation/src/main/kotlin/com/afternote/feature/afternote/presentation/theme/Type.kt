@@ -1,9 +1,10 @@
-package com.afternote.feature.afternote.presentation
+package com.afternote.feature.afternote.presentation.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import com.afternote.feature.afternote.presentation.R
 
 val Sansneo =
     FontFamily(

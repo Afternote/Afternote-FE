@@ -26,10 +26,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.afternote.feature.afternote.presentation.component.expand.dropShadow
 import com.kuit.afternote.core.component.LabeledTextFieldStyle
 import com.kuit.afternote.core.component.OutlineTextField
 import com.kuit.afternote.core.component.button.ClickButton
-import com.kuit.afternote.core.component.expand.dropShadow
 import com.kuit.afternote.feature.afternote.presentation.edit.dropdown.DropdownMenuStyle
 import com.kuit.afternote.ui.theme.AfternoteTheme
 import com.kuit.afternote.ui.theme.B3

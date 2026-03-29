@@ -1,4 +1,4 @@
-package com.kuit.afternote.core.presentation.screen.afternotedetail
+package com.afternote.feature.afternote.presentation.detail
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -24,19 +23,13 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.kuit.afternote.core.component.detail.DeleteConfirmDialog
-import com.kuit.afternote.core.component.detail.EditDropdownMenu
-import com.kuit.afternote.core.component.detail.InfoCard
-import com.kuit.afternote.core.component.detail.ProcessingMethodItem
-import com.kuit.afternote.core.component.detail.ReceiversCard
-import com.kuit.afternote.core.component.navigation.BottomNavigationBar
-import com.kuit.afternote.core.component.navigation.TopBar
+import com.afternote.core.ui.theme.Gray5
+import com.afternote.core.ui.theme.Gray6
+import com.afternote.core.ui.theme.Gray9
+import com.afternote.feature.afternote.presentation.theme.B1
+import com.afternote.feature.afternote.presentation.theme.Sansneo
+import com.kuit.afternote.feature.afternote.presentation.edit.model.AfternoteEditReceiver
 import com.kuit.afternote.feature.afternote.presentation.navgraph.AfternoteLightTheme
-import com.kuit.afternote.ui.theme.B1
-import com.kuit.afternote.ui.theme.Gray5
-import com.kuit.afternote.ui.theme.Gray6
-import com.kuit.afternote.ui.theme.Gray9
-import com.kuit.afternote.ui.theme.Sansneo
 
 /**
  * 갤러리 상세 화면의 데이터 상태
@@ -46,7 +39,7 @@ data class GalleryDetailState(
     val serviceName: String = "갤러리",
     val userName: String = "서영",
     val finalWriteDate: String = "2025.11.26.",
-    val afternoteEditReceivers: List<com.kuit.afternote.feature.afternote.presentation.edit.model.AfternoteEditReceiver> = emptyList(),
+    val afternoteEditReceivers: List<AfternoteEditReceiver> = emptyList(),
     val informationProcessingMethod: String = "",
     val processingMethods: List<String> = emptyList(),
     val message: String = "",
@@ -100,36 +93,13 @@ private fun GalleryDetailScaffold(
     isEditable: Boolean,
     uiState: AfternoteDetailState,
 ) {
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        topBar = {
-            if (isEditable) {
-                TopBar(
-                    onBackClick = callbacks.onBackClick,
-                    onEditClick = uiState::toggleDropdownMenu,
-                )
-            } else {
-                TopBar(
-                    title = "",
-                    onBackClick = callbacks.onBackClick,
-                )
-            }
-        },
-        bottomBar = {
-            BottomNavigationBar(
-                selectedItem = uiState.selectedBottomNavItem,
-                onItemSelected = uiState::onBottomNavItemSelected,
-            )
-        },
-    ) { paddingValues ->
-        GalleryDetailContent(
-            modifier = Modifier.padding(paddingValues),
-            detailState = detailState,
-            callbacks = callbacks,
-            isEditable = isEditable,
-            uiState = uiState,
-        )
-    }
+    GalleryDetailContent(
+        modifier = modifier,
+        detailState = detailState,
+        callbacks = callbacks,
+        isEditable = isEditable,
+        uiState = uiState,
+    )
 }
 
 @Composable

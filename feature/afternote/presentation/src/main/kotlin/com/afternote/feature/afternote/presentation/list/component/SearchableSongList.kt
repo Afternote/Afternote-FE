@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.detail.addsong
+package com.kuit.afternote.core.component.list
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -42,18 +43,22 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.afternote.core.ui.component.bottombar.BottomNavTab
-import com.afternote.core.ui.theme.Gray1
-import com.afternote.core.ui.theme.Gray2
-import com.afternote.core.ui.theme.Gray4
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.White
-import com.afternote.feature.afternote.presentation.CustomRadioButton
-import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.edit.addsong.PlaylistSongDisplay
-import com.afternote.feature.afternote.presentation.theme.B1
-import com.afternote.feature.afternote.presentation.theme.B2
-import com.afternote.feature.afternote.presentation.theme.Sansneo
+import com.kuit.afternote.R
+import com.kuit.afternote.core.component.PlaylistSongItem
+import com.kuit.afternote.core.component.button.CustomRadioButton
+import com.kuit.afternote.core.component.navigation.BottomNavItem
+import com.kuit.afternote.core.component.navigation.BottomNavigationBar
+import com.kuit.afternote.core.component.navigation.TopBar
+import com.kuit.afternote.core.presentation.uimodel.PlaylistSongDisplay
+import com.kuit.afternote.ui.theme.B1
+import com.kuit.afternote.ui.theme.B2
+import com.kuit.afternote.ui.theme.Gray1
+import com.kuit.afternote.ui.theme.Gray2
+import com.kuit.afternote.ui.theme.Gray4
+import com.kuit.afternote.ui.theme.Gray9
+import com.kuit.afternote.ui.theme.Sansneo
+import com.kuit.afternote.ui.theme.White
+import kotlin.collections.filter
 
 /**
  * Slots for [SearchableSongList]: optional trailing (per row) and leading (header) content.
@@ -81,7 +86,7 @@ data class SongPlaylistScreenManagementContent(
  * Optional parameters for the selectable [SongPlaylistScreen] (S107: keep param count ≤7).
  */
 data class SongPlaylistScreenSelectableOptions(
-    val defaultBottomNavTab: BottomNavTab = BottomNavTab.NOTE,
+    val defaultBottomNavItem: BottomNavItem = BottomNavItem.AFTERNOTE,
     val initialSelectedSongIds: Set<String>? = null,
     val searchQuery: String? = null,
     val onSearchQueryChange: ((String) -> Unit)? = null,
@@ -96,7 +101,7 @@ data class SongPlaylistScreenSelectableOptions(
  * @param title TopBar에 표시할 타이틀
  * @param onBackClick 뒤로가기 콜백
  * @param songs 표시할 노래 목록
- * @param defaultBottomNavTab 초기 선택 BottomNavTab
+ * @param defaultBottomNavItem 초기 선택 BottomNavItem
  */
 @Composable
 @Suppress("AssignedValueIsNeverRead")
@@ -105,18 +110,37 @@ fun SongPlaylistScreen(
     title: String,
     onBackClick: () -> Unit,
     songs: List<PlaylistSongDisplay>,
-    defaultBottomNavTab: BottomNavTab = BottomNavTab.NOTE,
+    defaultBottomNavItem: BottomNavItem = BottomNavItem.AFTERNOTE,
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    SearchableSongList(
-        modifier =
-            modifier
-                .fillMaxSize(),
-        songs = songs,
-        searchQuery = searchQuery,
-        onSearchQueryChange = { searchQuery = it },
-        contentPadding = PaddingValues(horizontal = 20.dp),
-    )
+    var selectedBottomNavItem by remember { mutableStateOf(defaultBottomNavItem) }
+
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = {
+            TopBar(
+                title = title,
+                onBackClick = onBackClick,
+            )
+        },
+        bottomBar = {
+            BottomNavigationBar(
+                selectedItem = selectedBottomNavItem,
+                onItemSelected = { selectedBottomNavItem = it },
+            )
+        },
+    ) { paddingValues ->
+        SearchableSongList(
+            modifier =
+                Modifier
+                    .padding(paddingValues)
+                    .fillMaxSize(),
+            songs = songs,
+            searchQuery = searchQuery,
+            onSearchQueryChange = { searchQuery = it },
+            contentPadding = PaddingValues(horizontal = 20.dp),
+        )
+    }
 }
 
 /**
@@ -127,7 +151,7 @@ fun SongPlaylistScreen(
  * @param onBackClick 뒤로가기 콜백
  * @param songs 표시할 노래 목록
  * @param onSongsSelected 추가하기 버튼 클릭 시 선택된 노래 목록 전달
- * @param defaultBottomNavTab 초기 선택 BottomNavTab
+ * @param defaultBottomNavItem 초기 선택 BottomNavItem
  * @param initialSelectedSongIds Preview용 초기 선택 ID (기본 null)
  * @param options [SongPlaylistScreenSelectableOptions] for nav item, initial selection, and optional search binding.
  */
@@ -147,6 +171,7 @@ fun SongPlaylistScreen(
         )
     }
     var internalSearchQuery by remember { mutableStateOf("") }
+    var selectedBottomNavItem by remember { mutableStateOf(options.defaultBottomNavItem) }
 
     val effectiveQuery = options.searchQuery ?: internalSearchQuery
     val effectiveOnSearchQueryChange = options.onSearchQueryChange ?: { internalSearchQuery = it }
@@ -156,53 +181,70 @@ fun SongPlaylistScreen(
         } else {
             filterSongsByQuery(songs, effectiveQuery)
         }
-    Box(modifier = modifier) {
-        SearchableSongList(
-            modifier = Modifier.fillMaxSize(),
-            songs = displaySongs,
-            searchQuery = effectiveQuery,
-            onSearchQueryChange = effectiveOnSearchQueryChange,
-            onSongClick = { song ->
-                selectedSongIds =
-                    if (song.id in selectedSongIds) {
-                        selectedSongIds - song.id
-                    } else {
-                        selectedSongIds + song.id
-                    }
-            },
-            contentPadding =
-                PaddingValues(
-                    start = 20.dp,
-                    end = 20.dp,
-                    bottom = if (selectedSongIds.isNotEmpty()) 72.dp else 0.dp,
-                ),
-            slots =
-                SearchableSongListSlots(
-                    trailingContent = { song ->
-                        CustomRadioButton(
-                            selected = selectedSongIds.contains(song.id),
-                            onClick = null,
-                            buttonSize = 24.dp,
-                            selectedColor = B2,
-                            unselectedColor = Gray4,
-                        )
-                    },
-                ),
-        )
-        if (selectedSongIds.isNotEmpty()) {
-            Row(
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
-            ) {
-                SongAddButton(
-                    count = selectedSongIds.size,
-                    onClick = {
-                        val selected = displaySongs.filter { it.id in selectedSongIds }
-                        onSongsSelected(selected)
-                    },
-                )
+
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = {
+            TopBar(
+                title = title,
+                onBackClick = onBackClick,
+            )
+        },
+        bottomBar = {
+            BottomNavigationBar(
+                selectedItem = selectedBottomNavItem,
+                onItemSelected = { selectedBottomNavItem = it },
+            )
+        },
+    ) { paddingValues ->
+        Box(modifier = Modifier.padding(paddingValues)) {
+            SearchableSongList(
+                modifier = Modifier.fillMaxSize(),
+                songs = displaySongs,
+                searchQuery = effectiveQuery,
+                onSearchQueryChange = effectiveOnSearchQueryChange,
+                onSongClick = { song ->
+                    selectedSongIds =
+                        if (song.id in selectedSongIds) {
+                            selectedSongIds - song.id
+                        } else {
+                            selectedSongIds + song.id
+                        }
+                },
+                contentPadding =
+                    PaddingValues(
+                        start = 20.dp,
+                        end = 20.dp,
+                        bottom = if (selectedSongIds.isNotEmpty()) 72.dp else 0.dp,
+                    ),
+                slots =
+                    SearchableSongListSlots(
+                        trailingContent = { song ->
+                            CustomRadioButton(
+                                selected = selectedSongIds.contains(song.id),
+                                onClick = null,
+                                buttonSize = 24.dp,
+                                selectedColor = B2,
+                                unselectedColor = Gray4,
+                            )
+                        },
+                    ),
+            )
+            if (selectedSongIds.isNotEmpty()) {
+                Row(
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
+                ) {
+                    SongAddButton(
+                        count = selectedSongIds.size,
+                        onClick = {
+                            val selected = displaySongs.filter { it.id in selectedSongIds }
+                            onSongsSelected(selected)
+                        },
+                    )
+                }
             }
         }
     }
@@ -217,7 +259,7 @@ fun SongPlaylistScreen(
  * @param onBackClick 뒤로가기 콜백
  * @param songs 표시할 노래 목록
  * @param managementContent leadingContent + selectionBottomBar (헤더 및 하단 액션 바)
- * @param defaultBottomNavTab 초기 BottomNavTab
+ * @param defaultBottomNavItem 초기 BottomNavItem
  * @param initialSelectedSongIds Preview용 초기 선택 ID
  */
 @Composable
@@ -228,56 +270,73 @@ fun SongPlaylistScreen(
     onBackClick: () -> Unit,
     songs: List<PlaylistSongDisplay>,
     managementContent: SongPlaylistScreenManagementContent,
-    defaultBottomNavTab: BottomNavTab = BottomNavTab.NOTE,
+    defaultBottomNavItem: BottomNavItem = BottomNavItem.AFTERNOTE,
     initialSelectedSongIds: Set<String>? = null,
 ) {
     var selectedSongIds by remember {
         mutableStateOf(initialSelectedSongIds ?: emptySet<String>())
     }
+    var selectedBottomNavItem by remember { mutableStateOf(defaultBottomNavItem) }
 
-    Box(modifier = modifier) {
-        SearchableSongList(
-            modifier = Modifier.fillMaxSize(),
-            songs = songs,
-            searchQuery = "",
-            onSearchQueryChange = {},
-            onSongClick = { song ->
-                selectedSongIds =
-                    if (song.id in selectedSongIds) {
-                        selectedSongIds - song.id
-                    } else {
-                        selectedSongIds + song.id
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = {
+            TopBar(
+                title = title,
+                onBackClick = onBackClick,
+            )
+        },
+        bottomBar = {
+            BottomNavigationBar(
+                selectedItem = selectedBottomNavItem,
+                onItemSelected = { selectedBottomNavItem = it },
+            )
+        },
+    ) { paddingValues ->
+        Box(modifier = Modifier.padding(paddingValues)) {
+            SearchableSongList(
+                modifier = Modifier.fillMaxSize(),
+                songs = songs,
+                searchQuery = "",
+                onSearchQueryChange = {},
+                onSongClick = { song ->
+                    selectedSongIds =
+                        if (song.id in selectedSongIds) {
+                            selectedSongIds - song.id
+                        } else {
+                            selectedSongIds + song.id
+                        }
+                },
+                contentPadding =
+                    PaddingValues(
+                        start = 20.dp,
+                        end = 20.dp,
+                        bottom = if (selectedSongIds.isNotEmpty()) 72.dp else 0.dp,
+                    ),
+                slots =
+                    SearchableSongListSlots(
+                        trailingContent = { song ->
+                            CustomRadioButton(
+                                selected = selectedSongIds.contains(song.id),
+                                onClick = null,
+                                buttonSize = 24.dp,
+                                selectedColor = B2,
+                                unselectedColor = Gray4,
+                            )
+                        },
+                        leadingContent = { managementContent.leadingContent(selectedSongIds) },
+                    ),
+            )
+            if (selectedSongIds.isNotEmpty()) {
+                Row(
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
+                ) {
+                    managementContent.selectionBottomBar(selectedSongIds) {
+                        selectedSongIds = emptySet()
                     }
-            },
-            contentPadding =
-                PaddingValues(
-                    start = 20.dp,
-                    end = 20.dp,
-                    bottom = if (selectedSongIds.isNotEmpty()) 72.dp else 0.dp,
-                ),
-            slots =
-                SearchableSongListSlots(
-                    trailingContent = { song ->
-                        CustomRadioButton(
-                            selected = selectedSongIds.contains(song.id),
-                            onClick = null,
-                            buttonSize = 24.dp,
-                            selectedColor = B2,
-                            unselectedColor = Gray4,
-                        )
-                    },
-                    leadingContent = { managementContent.leadingContent(selectedSongIds) },
-                ),
-        )
-        if (selectedSongIds.isNotEmpty()) {
-            Row(
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
-            ) {
-                managementContent.selectionBottomBar(selectedSongIds) {
-                    selectedSongIds = emptySet()
                 }
             }
         }
@@ -482,8 +541,7 @@ private fun SongAddButton(
                     clip = false,
                     ambientColor = Color(0x26000000),
                     spotColor = Color(0x26000000),
-                )
-                .background(color = Gray1, shape = shape)
+                ).background(color = Gray1, shape = shape)
                 .clip(shape)
                 .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
@@ -538,7 +596,7 @@ private fun SongPlaylistScreenPreview() {
         title = "추모 플레이리스트",
         onBackClick = {},
         songs = songs,
-        defaultBottomNavTab = BottomNavTab.NOTE,
+        defaultBottomNavItem = BottomNavItem.AFTERNOTE,
     )
 }
 
