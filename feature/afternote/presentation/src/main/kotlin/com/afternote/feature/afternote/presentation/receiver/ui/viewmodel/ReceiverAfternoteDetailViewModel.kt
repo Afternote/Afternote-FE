@@ -2,9 +2,9 @@ package com.afternote.feature.afternote.presentation.receiver.ui.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.feature.afternote.presentation.receiver.wiring.GetAfternoteDetailByAuthCodeUseCase
-import com.afternote.feature.afternote.presentation.receiver.wiring.ReceiverAuthCodeProvider
-import com.afternote.feature.afternote.presentation.receiver.wiring.model.ReceivedAfternoteDetail
+import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
+import com.afternote.feature.afternote.domain.port.ReceiverAuthCodeProvider
+import com.afternote.feature.afternote.domain.usecase.receiver.GetAfternoteDetailByAuthCodeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

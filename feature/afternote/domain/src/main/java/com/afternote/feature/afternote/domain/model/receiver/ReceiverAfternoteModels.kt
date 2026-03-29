@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.receiver.wiring.model
+package com.afternote.feature.afternote.domain.model.receiver
 
 data class AfterNotesListResult(
     val items: List<AfterNoteListItemDto>,

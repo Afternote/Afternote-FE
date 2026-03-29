@@ -1,8 +1,10 @@
 package com.afternote.feature.afternote.presentation.author.edit.ui
+
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.feature.afternote.domain.model.Detail
+import com.afternote.feature.afternote.domain.model.author.AuthorReceiverDirectoryEntry
 import com.afternote.feature.afternote.domain.model.input.CreateGalleryInput
 import com.afternote.feature.afternote.domain.model.input.CreatePlaylistInput
 import com.afternote.feature.afternote.domain.model.input.CreateSocialInput
@@ -12,6 +14,8 @@ import com.afternote.feature.afternote.domain.model.input.PlaylistInput
 import com.afternote.feature.afternote.domain.model.input.ReceiverRefInput
 import com.afternote.feature.afternote.domain.model.input.SongInput
 import com.afternote.feature.afternote.domain.model.input.UpdateInput
+import com.afternote.feature.afternote.domain.port.AuthorReceiversDirectoryPort
+import com.afternote.feature.afternote.domain.port.CurrentAuthorUserIdPort
 import com.afternote.feature.afternote.domain.usecase.CreateGalleryUseCase
 import com.afternote.feature.afternote.domain.usecase.CreatePlaylistUseCase
 import com.afternote.feature.afternote.domain.usecase.CreateSocialUseCase
@@ -31,9 +35,6 @@ import com.afternote.feature.afternote.presentation.author.edit.model.MemorialPl
 import com.afternote.feature.afternote.presentation.author.edit.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.edit.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.edit.model.Song
-import com.afternote.feature.afternote.presentation.author.edit.wiring.AuthorReceiverDirectoryEntry
-import com.afternote.feature.afternote.presentation.author.edit.wiring.AuthorReceiversDirectoryPort
-import com.afternote.feature.afternote.presentation.author.edit.wiring.CurrentAuthorUserIdPort
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -285,7 +286,11 @@ class AfternoteEditViewModel
             memorialPhotoUrl: String?,
             pickedMemorialPhotoUri: String?,
         ): String? {
-            if (!pickedMemorialPhotoUri.isNullOrBlank() && pickedMemorialPhotoUri.startsWith(CONTENT_SCHEME)) {
+            if (!pickedMemorialPhotoUri.isNullOrBlank() &&
+                pickedMemorialPhotoUri.startsWith(
+                    CONTENT_SCHEME,
+                )
+            ) {
                 return uploadMemorialPhotoUseCase(pickedMemorialPhotoUri).fold(
                     onSuccess = { it },
                     onFailure = { e ->
@@ -453,7 +458,8 @@ class AfternoteEditViewModel
             if (payload.accountId.isBlank() || payload.password.isBlank()) {
                 return AfternoteValidationError.SOCIAL_CREDENTIALS_REQUIRED
             }
-            val validProcessMethods = setOf("MEMORIAL_ACCOUNT", "PERMANENT_DELETE", "TRANSFER_TO_RECEIVER")
+            val validProcessMethods =
+                setOf("MEMORIAL_ACCOUNT", "PERMANENT_DELETE", "TRANSFER_TO_RECEIVER")
             if (payload.accountProcessingMethod !in validProcessMethods) {
                 return AfternoteValidationError.SOCIAL_PROCESS_METHOD_REQUIRED
             }

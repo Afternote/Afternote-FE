@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.edit.ui.provider
+
 import android.content.Context
 import androidx.core.content.edit
 import com.afternote.feature.afternote.presentation.BuildConfig
@@ -24,7 +25,7 @@ class DataProviderSwitch
         private val realAfternote: RealAfternoteEditDataProvider,
         private val fakeReceiver: FakeReceiverDataProvider,
         private val realReceiver: RealReceiverDataProvider,
-        @ApplicationContext private val context: Context,
+        @param:ApplicationContext private val context: Context,
     ) {
         private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 

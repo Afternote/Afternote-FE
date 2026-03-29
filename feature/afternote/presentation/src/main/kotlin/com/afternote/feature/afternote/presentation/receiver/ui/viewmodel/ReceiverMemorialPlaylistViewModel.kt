@@ -1,11 +1,12 @@
 package com.afternote.feature.afternote.presentation.receiver.ui.viewmodel
+
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.feature.afternote.domain.port.ReceiverAuthCodeProvider
+import com.afternote.feature.afternote.domain.usecase.receiver.GetAfterNotesByAuthCodeUseCase
+import com.afternote.feature.afternote.domain.usecase.receiver.GetAfternoteDetailByAuthCodeUseCase
 import com.afternote.feature.afternote.presentation.receiver.model.uimodel.ReceiverMemorialPlaylistUiState
-import com.afternote.feature.afternote.presentation.receiver.wiring.GetAfterNotesByAuthCodeUseCase
-import com.afternote.feature.afternote.presentation.receiver.wiring.GetAfternoteDetailByAuthCodeUseCase
-import com.afternote.feature.afternote.presentation.receiver.wiring.ReceiverAuthCodeProvider
 import com.afternote.feature.afternote.presentation.shared.model.uimodel.PlaylistSongDisplay
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -46,8 +47,14 @@ class ReceiverMemorialPlaylistViewModel
                         )
                     }
                 }
-                afternoteId != null -> loadPlaylist(authCode = authCode, afternoteId = afternoteId)
-                else -> resolveFirstAfternoteAndLoad(authCode = authCode)
+
+                afternoteId != null -> {
+                    loadPlaylist(authCode = authCode, afternoteId = afternoteId)
+                }
+
+                else -> {
+                    resolveFirstAfternoteAndLoad(authCode = authCode)
+                }
             }
         }
 

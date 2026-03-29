@@ -1,10 +1,10 @@
 package com.afternote.feature.afternote.presentation.receiver.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.feature.afternote.presentation.receiver.wiring.GetAfterNotesByAuthCodeUseCase
-import com.afternote.feature.afternote.presentation.receiver.wiring.LoadMindRecordsByAuthCodePort
-import com.afternote.feature.afternote.presentation.receiver.wiring.LoadSenderMessageByAuthCodePort
-import com.afternote.feature.afternote.presentation.receiver.wiring.LoadTimeLettersByAuthCodePort
+import com.afternote.feature.afternote.domain.port.LoadMindRecordsByAuthCodePort
+import com.afternote.feature.afternote.domain.port.LoadSenderMessageByAuthCodePort
+import com.afternote.feature.afternote.domain.port.LoadTimeLettersByAuthCodePort
+import com.afternote.feature.afternote.domain.usecase.receiver.GetAfterNotesByAuthCodeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll

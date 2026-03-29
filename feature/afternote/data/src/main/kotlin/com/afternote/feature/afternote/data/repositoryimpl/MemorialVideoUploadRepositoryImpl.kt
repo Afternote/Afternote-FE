@@ -1,4 +1,4 @@
-package com.kuit.afternote.data.repositoryimpl
+package com.afternote.feature.afternote.data.repositoryimpl
 
 import android.content.Context
 import android.net.Uri
