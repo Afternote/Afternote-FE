@@ -12,8 +12,8 @@ import com.afternote.feature.timeletter.presentation.component.TimeletterListCon
 
 @Composable
 fun TimeletterScreen(
-    letters: TimeLetters = TimeLetters(emptyList()),
     modifier: Modifier = Modifier,
+    letters: TimeLetters = TimeLetters(emptyList()),
 ) {
     Scaffold(
         modifier = modifier,

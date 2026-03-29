@@ -8,6 +8,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -32,83 +36,94 @@ import com.afternote.core.ui.component.ViewModeSwitcher
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
-import com.afternote.feature.mindrecord.presentation.component.DailyQuestionListCard
-import com.afternote.feature.mindrecord.presentation.component.Legend
-import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
+import com.afternote.feature.mindrecord.presentation.component.DiaryCard
+import com.afternote.feature.mindrecord.presentation.component.DiaryComponent
+import com.afternote.feature.mindrecord.presentation.component.DiaryReportCard
+import com.afternote.feature.mindrecord.presentation.component.WeeklyEmotionCard
+import com.afternote.feature.mindrecord.presentation.model.DailyDiary
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import java.time.LocalDate
 
 @Composable
-fun DailyQuestionAnswerListScreen(modifier: Modifier = Modifier) {
+fun DiaryScreen(modifier: Modifier = Modifier) {
     var isListView by remember { mutableStateOf(false) }
-
-    val testDailyQuestion =
+    val testDiaryList =
         listOf(
-            DailyQuestion(
-                title = "test",
-                content = "test for DailyQuestionCardPreview",
+            DailyDiary(
+                title = "가족과 함께한 저녁 식사",
+                content = "오랜만에 가족들과 testsetsetsetsetset",
                 date = LocalDate.now(),
             ),
-            DailyQuestion(
-                title = "test",
-                content = "test for DailyQuestionCardPreview",
+            DailyDiary(
+                title = "가족과 함께한 저녁 식사",
+                content = "오랜만에 가족들과 testsetsetsetsetset",
                 date = LocalDate.now(),
             ),
-            DailyQuestion(
-                title = "test",
-                content = "test for DailyQuestionCardPreview",
+            DailyDiary(
+                title = "가족과 함께한 저녁 식사",
+                content = "오랜만에 가족들과 testsetsetsetsetset",
                 date = LocalDate.now(),
             ),
-            DailyQuestion(
-                title = "test",
-                content = "test for DailyQuestionCardPreview",
+            DailyDiary(
+                title = "가족과 함께한 저녁 식사",
+                content = "오랜만에 가족들과 testsetsetsetsetset",
                 date = LocalDate.now(),
             ),
-            DailyQuestion(
-                title = "test",
-                content = "test for DailyQuestionCardPreview",
+            DailyDiary(
+                title = "가족과 함께한 저녁 식사",
+                content = "오랜만에 가족들과 testsetsetsetsetset",
                 date = LocalDate.now(),
             ),
-            DailyQuestion(
-                title = "test",
-                content = "test for DailyQuestionCardPreview",
+            DailyDiary(
+                title = "가족과 함께한 저녁 식사",
+                content = "오랜만에 가족들과 testsetsetsetsetset",
+                date = LocalDate.now(),
+            ),
+            DailyDiary(
+                title = "가족과 함께한 저녁 식사",
+                content = "오랜만에 가족들과 testsetsetsetsetset",
+                date = LocalDate.now(),
+            ),
+            DailyDiary(
+                title = "가족과 함께한 저녁 식사",
+                content = "오랜만에 가족들과 testsetsetsetsetset",
+                date = LocalDate.now(),
+            ),
+            DailyDiary(
+                title = "가족과 함께한 저녁 식사",
+                content = "오랜만에 가족들과 testsetsetsetsetset",
                 date = LocalDate.now(),
             ),
         )
     Scaffold(
         topBar = {
             TopBar(
-                onBackClick = {},
+                title = "일기",
                 action = {
                     ViewModeSwitcher(
                         isListView = isListView,
-                        image1 = R.drawable.core_ui_list,
+                        image1 = R.drawable.core_ui_grid,
                         image2 = R.drawable.core_ui_calendar,
                         onViewChange = { isListView = it },
                     )
                 },
-                title = "데일리 기록",
+                onBackClick = {},
             )
         },
         floatingActionButton = {
             AfternoteFab(
-                onClick = { },
+                onClick = {},
             )
         },
         modifier = modifier,
     ) { paddingValues ->
-        LazyColumn(
-            modifier =
-                Modifier
-                    .padding(paddingValues)
-                    .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            if (isListView) {
-                items(testDailyQuestion) {
-                    DailyQuestionListCard(answer = it)
-                }
-            } else {
+        if (isListView) {
+            LazyColumn(
+                modifier =
+                    Modifier
+                        .padding(paddingValues)
+                        .padding(horizontal = 20.dp),
+            ) {
                 item {
                     Row(
                         modifier = Modifier.clickable {},
@@ -124,6 +139,7 @@ fun DailyQuestionAnswerListScreen(modifier: Modifier = Modifier) {
                             contentDescription = null,
                         )
                     }
+
                     Spacer(modifier = Modifier.height(4.dp))
                 }
 
@@ -133,19 +149,23 @@ fun DailyQuestionAnswerListScreen(modifier: Modifier = Modifier) {
                         style = MaterialTheme.typography.displayMedium,
                         color = Color(0xFF000000).copy(alpha = 0.35f),
                     )
+
+                    Spacer(modifier = Modifier.height(28.dp))
                 }
+
                 item {
                     DailyCalendar(
                         year = 2026,
                         month = 3,
-                        type = MindRecordCategory.DAILY_QUESTION,
+                        type = MindRecordCategory.DIARY,
                     )
-
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
                 }
 
                 item {
-                    Legend()
+                    WeeklyEmotionCard()
+
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
 
                 item {
@@ -164,8 +184,32 @@ fun DailyQuestionAnswerListScreen(modifier: Modifier = Modifier) {
 
                     Spacer(modifier = Modifier.height(10.dp))
                 }
-                items(testDailyQuestion) {
-                    DailyQuestionListCard(answer = it)
+
+                items(testDiaryList) {
+                    DiaryComponent(
+                        diary = it,
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    )
+                }
+            }
+        } else {
+            LazyVerticalGrid(
+                modifier =
+                    Modifier
+                        .padding(paddingValues)
+                        .padding(horizontal = 20.dp),
+                columns = GridCells.Fixed(2),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                item(span = { GridItemSpan(2) }) {
+                    DiaryReportCard()
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+                items(testDiaryList) {
+                    DiaryCard(
+                        diary = it,
+                    )
                 }
             }
         }
@@ -174,8 +218,8 @@ fun DailyQuestionAnswerListScreen(modifier: Modifier = Modifier) {
 
 @Preview(showBackground = true)
 @Composable
-private fun DailyQuestionAnswerListScreenPreview() {
+private fun DiaryScreenPreview() {
     AfternoteTheme {
-        DailyQuestionAnswerListScreen()
+        DiaryScreen()
     }
 }
