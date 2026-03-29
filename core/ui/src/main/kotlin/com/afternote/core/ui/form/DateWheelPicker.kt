@@ -111,7 +111,6 @@ fun DateWheelPicker(
     )
 
     DateWheelPickerContent(
-        modifier = modifier,
         model = model,
         currentDate = currentDate,
         yearState = yearState,
@@ -119,6 +118,7 @@ fun DateWheelPicker(
         minDate = minDate,
         onDateChanged = onDateChanged,
         colors = colors,
+        modifier = modifier,
     )
 }
 
@@ -196,7 +196,6 @@ private fun rememberDateWheelPickerModel(
 
 @Composable
 private fun DateWheelPickerContent(
-    modifier: Modifier = Modifier,
     model: DateWheelPickerModel,
     currentDate: LocalDate,
     yearState: FWheelPickerState,
@@ -204,6 +203,7 @@ private fun DateWheelPickerContent(
     minDate: LocalDate?,
     onDateChanged: (LocalDate) -> Unit,
     colors: DateWheelPickerColors,
+    modifier: Modifier = Modifier,
 ) {
     Box(
         modifier =
@@ -213,8 +213,8 @@ private fun DateWheelPickerContent(
     ) {
         // 테두리는 뒤에 그려서 휠 터치가 가려지지 않도록 함
         SelectionBorder(
-            modifier = Modifier.align(Alignment.Center),
             selectionBorderColor = colors.selectionBorderColor,
+            modifier = Modifier.align(Alignment.Center),
         )
 
         Row(
@@ -242,8 +242,8 @@ private fun DateWheelPickerContent(
             }
 
             Divider(
-                modifier = Modifier.width(DividerWidth),
                 color = colors.dividerColor,
+                modifier = Modifier.width(DividerWidth),
             )
 
             FVerticalWheelPicker(
@@ -263,12 +263,11 @@ private fun DateWheelPickerContent(
             }
 
             Divider(
-                modifier = Modifier.width(DividerWidth),
                 color = colors.dividerColor,
+                modifier = Modifier.width(DividerWidth),
             )
 
             DayWheel(
-                modifier = Modifier.weight(3f),
                 model =
                     DateWheelPickerDayModel(
                         daysInMonth = model.daysInMonth,
@@ -279,6 +278,7 @@ private fun DateWheelPickerContent(
                 minDate = minDate,
                 onDateChanged = onDateChanged,
                 colors = colors,
+                modifier = Modifier.weight(3f),
             )
         }
     }
@@ -292,8 +292,8 @@ private data class DateWheelPickerDayModel(
 
 @Composable
 private fun SelectionBorder(
-    modifier: Modifier = Modifier,
     selectionBorderColor: Color,
+    modifier: Modifier = Modifier,
 ) {
     Box(
         modifier =
@@ -313,12 +313,12 @@ private fun SelectionBorder(
 
 @Composable
 private fun DayWheel(
-    modifier: Modifier = Modifier,
     model: DateWheelPickerDayModel,
     currentDate: LocalDate,
     minDate: LocalDate?,
     onDateChanged: (LocalDate) -> Unit,
     colors: DateWheelPickerColors,
+    modifier: Modifier = Modifier,
 ) {
     key(model.daysInMonth, model.days.size) {
         val dayState = rememberFWheelPickerState(initialIndex = model.dayIndex)
@@ -460,8 +460,8 @@ private fun PickerText(
 
 @Composable
 private fun Divider(
-    modifier: Modifier = Modifier,
     color: Color,
+    modifier: Modifier = Modifier,
 ) {
     Text(
         text = "|",
