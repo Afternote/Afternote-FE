@@ -20,9 +20,10 @@ class AppState(
 ) {
     // 현재 백스택 엔트리의 상태를 가져와 엔트리의 목적지를 저장
     val currentDestination: NavDestination?
-        // 상태 관찰은 컴포저블 스코프 내에서만 가능하므로 어노테이션을 붙여 컴포저블 함수로서 컴포지션에 등록
-        // 엔트리의 상태가 바뀔 때마다 get()을 컴포즈 엔진으로 하여금 다시 그리게 한다
-        // 커스텀 게터는 변수를 읽을 때마다 최신 정보가 반영된 변수를 읽게 해 준다
+        // 어노테이션을 붙여 get() = 뒤 전체 코드를 컴포저블 함수로 만들어 상태를 다룰 수 있게 해 줌
+        // value가 바뀔 때마다 currentDestination를 호출한 컴포저블 함수는 리컴포지션
+        // 리컴포지션시 커스텀게터가 navController.currentBackStackEntryAsState()부터 재호출하기 때문에 최신 엔트리의 데스티네이션을 줌
+        // 게터가 없으면 currentDestination에 처음 저장했던 값만 계속 주게 됨
         @Composable get() = navController.currentBackStackEntryAsState().value?.destination
 
     val currentRoute: Route?
