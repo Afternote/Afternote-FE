@@ -1,6 +1,3 @@
 <resources>
-    <string name="nav_item_home">홈</string>
-    <string name="nav_item_record">기록</string>
-    <string name="nav_item_timeletter">타임레터</string>
-    <string name="nav_item_note">노트</string>
+    <string name="app_name">afternote-fe</string>
 </resources>

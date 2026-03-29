@@ -5,7 +5,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.afternote.core.ui.TopBar
+import com.afternote.core.ui.component.TopBar
 
 @Composable
 fun AfternoteScreen(modifier: Modifier = Modifier) {

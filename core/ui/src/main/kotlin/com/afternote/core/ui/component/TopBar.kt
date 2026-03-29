@@ -1,4 +1,4 @@
-package com.afternote.core.ui
+package com.afternote.core.ui.component
 
 import android.content.res.Configuration
 import androidx.compose.foundation.Image
@@ -26,7 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.component.ViewModeSwitcher
+import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteTheme
 
 @OptIn(ExperimentalMaterial3Api::class)

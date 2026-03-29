@@ -1,7 +1,5 @@
-package com.afternote.core.ui
+package com.afternote.core.ui.component.bottombar
 
-import androidx.annotation.DrawableRes
-import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,25 +18,47 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.R
+import com.afternote.core.ui.Route
 import com.afternote.core.ui.theme.Black
 
-data class BottomNavItem(
-    @param:StringRes val label: Int,
-    @param:DrawableRes val iconRes: Int,
-    val route: Route,
-)
+// TODO:검토
+
+private val bottomNavItems =
+    listOf(
+        BottomNavItem(
+            R.string.core_ui_nav_item_home,
+            R.drawable.core_ui_ic_home,
+            Route.Home,
+        ),
+        BottomNavItem(
+            R.string.core_ui_nav_item_mindrecord,
+            R.drawable.core_ui_ic_mindrecord,
+            Route.MindRecord,
+        ),
+        BottomNavItem(
+            R.string.core_ui_nav_item_timeletter,
+            R.drawable.core_ui_ic_mail,
+            Route.TimeLetter,
+        ),
+        BottomNavItem(
+            R.string.core_ui_nav_item_note,
+            R.drawable.core_ui_ic_note,
+            Route.Afternote,
+        ),
+    )
 
 @Composable
 fun BottomBar(
-    items: List<BottomNavItem>,
-    isSelected: (BottomNavItem) -> Boolean,
-    onItemClick: (BottomNavItem) -> Unit,
     modifier: Modifier = Modifier,
+    isSelected: @Composable (BottomNavItem) -> Boolean,
+    onItemClick: (BottomNavItem) -> Unit,
 ) {
     NavigationBar(modifier = modifier) {
-        items.forEach { item ->
+        bottomNavItems.forEach { item ->
             val selected = isSelected(item)
             NavigationBarItem(
                 selected = selected,
@@ -46,14 +66,14 @@ fun BottomBar(
                 icon = {
                     Icon(
                         painter = painterResource(item.iconRes),
-                        contentDescription = item.label,
+                        contentDescription = stringResource(item.label),
                     )
                 },
                 label = {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Text(item.label)
+                        Text(stringResource(item.label))
                         Spacer(modifier = Modifier.height(4.dp))
                         if (selected) {
                             Box(
@@ -81,16 +101,8 @@ fun BottomBar(
 @Preview(showBackground = true)
 @Composable
 private fun BottomBarPreview() {
-    val items =
-        listOf(
-            BottomNavItem("홈", R.drawable.core_ui_ic_home, Route.Home),
-            BottomNavItem("기록", R.drawable.core_ui_ic_mindrecord, Route.MindRecord),
-            BottomNavItem("타임레터", R.drawable.core_ui_ic_mail, Route.TimeLetter),
-            BottomNavItem("노트", R.drawable.core_ui_ic_note, Route.Afternote),
-        )
     MaterialTheme {
         BottomBar(
-            items = items,
             isSelected = { it.route == Route.TimeLetter },
             onItemClick = {},
         )
