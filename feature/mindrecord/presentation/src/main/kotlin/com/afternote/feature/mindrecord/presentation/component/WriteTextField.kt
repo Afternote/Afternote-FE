@@ -54,9 +54,9 @@ fun WriteTextField(modifier: Modifier = Modifier) {
         BasicTextField(
             value = textFieldValue,
             onValueChange = { textFieldValue = it },
-            modifier = Modifier.weight(1f).fillMaxWidth().padding(16.dp),
+            modifier = Modifier.weight(1f).fillMaxWidth().padding(bottom = 16.dp).background(color = Color.White),
             decorationBox = { innerTextField ->
-                Box {
+                Box(modifier = Modifier.padding(16.dp)) {
                     if (textFieldValue.text.isEmpty()) {
                         Text("당신의 오늘을 기록해보세요", color = Gray4)
                     }
