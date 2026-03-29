@@ -21,59 +21,34 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.R
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.theme.Black
 
 // TODO:검토
 
-private val bottomNavItems =
-    listOf(
-        BottomNavItem(
-            R.string.core_ui_nav_item_home,
-            R.drawable.core_ui_ic_home,
-            Route.Home,
-        ),
-        BottomNavItem(
-            R.string.core_ui_nav_item_mindrecord,
-            R.drawable.core_ui_ic_mindrecord,
-            Route.MindRecord,
-        ),
-        BottomNavItem(
-            R.string.core_ui_nav_item_timeletter,
-            R.drawable.core_ui_ic_mail,
-            Route.TimeLetter,
-        ),
-        BottomNavItem(
-            R.string.core_ui_nav_item_note,
-            R.drawable.core_ui_ic_note,
-            Route.Afternote,
-        ),
-    )
-
 @Composable
 fun BottomBar(
     modifier: Modifier = Modifier,
-    isSelected: @Composable (BottomNavItem) -> Boolean,
-    onItemClick: (BottomNavItem) -> Unit,
+    isSelected: @Composable (BottomNavTab) -> Boolean,
+    onItemClick: (BottomNavTab) -> Unit,
 ) {
     NavigationBar(modifier = modifier) {
-        bottomNavItems.forEach { item ->
-            val selected = isSelected(item)
+        BottomNavTab.entries.forEach { tab ->
+            val selected = isSelected(tab)
             NavigationBarItem(
                 selected = selected,
-                onClick = { onItemClick(item) },
+                onClick = { onItemClick(tab) },
                 icon = {
                     Icon(
-                        painter = painterResource(item.iconRes),
-                        contentDescription = stringResource(item.label),
+                        painter = painterResource(tab.iconRes),
+                        contentDescription = null,
                     )
                 },
                 label = {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Text(stringResource(item.label))
+                        Text(stringResource(tab.label))
                         Spacer(modifier = Modifier.height(4.dp))
                         if (selected) {
                             Box(

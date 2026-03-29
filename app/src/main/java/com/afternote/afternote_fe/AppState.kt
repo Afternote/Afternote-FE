@@ -3,20 +3,17 @@ package com.afternote.afternote_fe
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.afternote.core.ui.Route
-import kotlinx.coroutines.CoroutineScope
 
 // TODO:검토
 @Stable
 class AppState(
     val navController: NavHostController,
-    val coroutineScope: CoroutineScope,
 // 추후 여기에 val snackbarHostState: SnackbarHostState 등을 추가합니다.
 ) {
     // 현재 백스택 목적지
@@ -45,10 +42,7 @@ class AppState(
 }
 
 @Composable
-fun rememberAfternoteAppState(
-    coroutineScope: CoroutineScope = rememberCoroutineScope(),
-    navController: NavHostController = rememberNavController(),
-): AppState =
-    remember(navController, coroutineScope) {
-        AppState(navController, coroutineScope)
+fun rememberAfternoteAppState(navController: NavHostController = rememberNavController()): AppState =
+    remember(navController) {
+        AppState(navController)
     }
