@@ -19,7 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.afternote.core.ui.component.TopBar
+import com.afternote.core.ui.scaffold.TopBar
 import com.afternote.core.ui.theme.White
 import com.afternote.feature.onboarding.presentation.login.LoginViewModel
 

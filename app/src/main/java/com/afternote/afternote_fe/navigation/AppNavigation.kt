@@ -7,7 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.afternote.core.ui.Route
-import com.afternote.core.ui.component.bottombar.BottomBar
+import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.feature.afternote.presentation.AfternoteScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.HomeScreen
 import com.afternote.feature.timeletter.presentation.screen.sender.TimeletterScreen
