@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -24,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.R
 import com.afternote.core.ui.component.AfternoteFab
 import com.afternote.core.ui.component.TopBar
 import com.afternote.core.ui.component.ViewModeSwitcher
@@ -33,6 +35,7 @@ import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionListCard
 import com.afternote.feature.mindrecord.presentation.component.Legend
 import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import java.time.LocalDate
 
 @Composable
