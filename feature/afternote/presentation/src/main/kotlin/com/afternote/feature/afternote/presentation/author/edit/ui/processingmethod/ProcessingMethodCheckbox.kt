@@ -38,7 +38,7 @@ import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.Sansneo
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.edit.model.ProcessingMethodItem
-import com.afternote.feature.afternote.presentation.shared.ui.detail.EditDropdownMenu
+import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 
 /**
  * Callbacks for processing method checkbox dropdown (more, dismiss, edit, delete).

@@ -60,15 +60,15 @@ import com.afternote.feature.afternote.presentation.author.edit.ui.addsong.AddSo
 import com.afternote.feature.afternote.presentation.author.edit.ui.addsong.AddSongScreen
 import com.afternote.feature.afternote.presentation.author.edit.ui.addsong.AddSongViewModel
 import com.afternote.feature.afternote.presentation.author.edit.ui.provider.AfternoteEditDataProvider
-import com.afternote.feature.afternote.presentation.author.list.ui.AfternoteListRoute
-import com.afternote.feature.afternote.presentation.author.list.ui.AfternoteListRouteCallbacks
+import com.afternote.feature.afternote.presentation.author.list.AfternoteListRoute
+import com.afternote.feature.afternote.presentation.author.list.AfternoteListRouteCallbacks
 import com.afternote.feature.afternote.presentation.author.nav.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.author.nav.model.SELECTED_RECEIVER_ID_KEY
-import com.afternote.feature.afternote.presentation.shared.ui.component.list.AfternoteTab
-import com.afternote.feature.afternote.presentation.shared.ui.component.list.AlbumCover
-import com.afternote.feature.afternote.presentation.shared.ui.fingerprint.FingerprintLoginScreen
-import com.afternote.feature.afternote.presentation.shared.ui.shell.BottomNavItem
-import com.afternote.feature.afternote.presentation.shared.ui.shell.TopBar
+import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteTab
+import com.afternote.feature.afternote.presentation.shared.component.list.AlbumCover
+import com.afternote.feature.afternote.presentation.shared.fingerprint.FingerprintLoginScreen
+import com.afternote.feature.afternote.presentation.shared.shell.BottomNavItem
+import com.afternote.feature.afternote.presentation.shared.shell.TopBar
 
 private const val TAG_AFTERNOTE_EDIT = "AfternoteEdit"
 private const val TAG_FINGERPRINT = "FingerprintLogin"

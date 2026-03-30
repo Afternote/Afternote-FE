@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.list.ui
+package com.afternote.feature.afternote.presentation.shared.component.list
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -18,42 +18,34 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.expand.dropShadow
+import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.B2
 import com.afternote.core.ui.theme.Black
 import com.afternote.core.ui.theme.Gray5
 import com.afternote.core.ui.theme.Sansneo
 import com.afternote.core.ui.theme.ShadowBlack
 import com.afternote.core.ui.theme.White
-import com.afternote.feature.afternote.domain.AfternoteServiceType
-import com.afternote.feature.afternote.domain.model.Item
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.model.util.getIconResForServiceName
+import com.afternote.feature.afternote.presentation.shared.model.uimodel.AfternoteListDisplayItem
 
 /**
- * 애프터노트 리스트 아이템 컴포넌트
- *
- * 피그마 디자인:
- * - 흰색 배경, 둥근 모서리 16dp
- * - 왼쪽: 아이콘 (40x40)
- * - 중간: 서비스명, 날짜
- * - 오른쪽: 화살표 버튼 (24x24, 파란색)
+ * Shared list row for 애프터노트 list (writer main and receiver list).
+ * White card, icon, serviceName, "최종 작성일 {date}", arrow.
  */
 @Composable
 fun AfternoteListItem(
     modifier: Modifier = Modifier,
-    item: Item,
+    item: AfternoteListDisplayItem,
     onClick: () -> Unit = {},
 ) {
-    val imageRes = getIconResForServiceName(item.serviceName)
     val shape = RoundedCornerShape(16.dp)
 
     Surface(
@@ -83,55 +75,42 @@ fun AfternoteListItem(
                         .padding(vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // 왼쪽: 아이콘/이미지 영역
                 Box(
-                    modifier =
-                        Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color.Transparent),
+                    modifier = Modifier.size(40.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Image(
-                        painter = painterResource(imageRes),
-                        contentDescription = null,
+                        painter = painterResource(item.iconResId),
+                        contentDescription = item.serviceName,
                         modifier = Modifier.size(40.dp),
                         contentScale = ContentScale.FillBounds,
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(
+                        text = item.serviceName,
+                        color = Black,
+                        lineHeight = 22.sp,
+                        fontSize = 16.sp,
+                        fontFamily = Sansneo,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.afternote_last_written_date, item.date),
+                        color = Gray5,
+                        lineHeight = 16.sp,
+                        fontSize = 10.sp,
+                        fontFamily = Sansneo,
+                        fontWeight = FontWeight.Normal,
                     )
                 }
 
                 Spacer(modifier = Modifier.width(16.dp))
 
-                // 중간: 텍스트 영역
-                Column(
-                    modifier =
-                        Modifier
-                            .weight(1f),
-                ) {
-                    Text(
-                        text = item.serviceName,
-                        color = Black,
-                        fontSize = 16.sp,
-                        fontFamily = Sansneo,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "최종 작성일 ${item.date}",
-                        color = Gray5,
-                        fontSize = 10.sp,
-                        fontFamily = Sansneo,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                // 오른쪽: 화살표 버튼
                 Box(
                     modifier =
                         Modifier
@@ -156,24 +135,14 @@ fun AfternoteListItem(
 @Preview(showBackground = true)
 @Composable
 private fun AfternoteListItemPreview() {
-    Column {
+    AfternoteTheme {
         AfternoteListItem(
             item =
-                Item(
+                AfternoteListDisplayItem(
                     id = "1",
                     serviceName = "인스타그램",
                     date = "2023.11.24",
-                    type = AfternoteServiceType.SOCIAL_NETWORK,
-                ),
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        AfternoteListItem(
-            item =
-                Item(
-                    id = "2",
-                    serviceName = "갤러리",
-                    date = "2023.11.25",
-                    type = AfternoteServiceType.GALLERY_AND_FILES,
+                    iconResId = R.drawable.img_insta_pattern,
                 ),
         )
     }

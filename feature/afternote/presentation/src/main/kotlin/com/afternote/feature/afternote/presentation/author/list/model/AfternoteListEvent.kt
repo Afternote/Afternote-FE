@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.list.model
-import com.afternote.feature.afternote.presentation.shared.ui.component.list.AfternoteTab
-import com.afternote.feature.afternote.presentation.shared.ui.shell.BottomNavItem
+import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteTab
+import com.afternote.feature.afternote.presentation.shared.shell.BottomNavItem
 
 /**
  * 애프터노트 목록 화면 UI 이벤트

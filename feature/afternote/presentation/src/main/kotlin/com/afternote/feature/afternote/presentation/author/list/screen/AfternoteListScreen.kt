@@ -1,15 +1,15 @@
-package com.afternote.feature.afternote.presentation.author.list.ui.screen
+package com.afternote.feature.afternote.presentation.author.list.screen
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteListContent
+import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteListContentListParams
+import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteListScreenShell
+import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteTab
 import com.afternote.feature.afternote.presentation.shared.model.uimodel.AfternoteListDisplayItem
-import com.afternote.feature.afternote.presentation.shared.ui.component.list.AfternoteListContent
-import com.afternote.feature.afternote.presentation.shared.ui.component.list.AfternoteListContentListParams
-import com.afternote.feature.afternote.presentation.shared.ui.component.list.AfternoteListScreenShell
-import com.afternote.feature.afternote.presentation.shared.ui.component.list.AfternoteTab
-import com.afternote.feature.afternote.presentation.shared.ui.shell.BottomNavItem
+import com.afternote.feature.afternote.presentation.shared.shell.BottomNavItem
 
 /** Shell params for AfternoteListScreen (title, bottom bar, FAB). */
 data class AfternoteListScreenShellParams(

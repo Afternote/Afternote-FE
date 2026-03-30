@@ -1,4 +1,5 @@
-package com.afternote.feature.afternote.presentation.shared.ui.component.list
+package com.afternote.feature.afternote.presentation.shared.component.list
+
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
@@ -6,11 +7,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.afternote.core.ui.scaffold.bottombar.BottomBar
+import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.presentation.shared.ui.shell.BottomNavItem
-import com.afternote.feature.afternote.presentation.shared.ui.shell.BottomNavigationBar
-import com.afternote.feature.afternote.presentation.shared.ui.shell.ScaffoldContentWithOptionalFab
-import com.afternote.feature.afternote.presentation.shared.ui.shell.TopBar
+import com.afternote.feature.afternote.presentation.shared.shell.BottomNavItem
+import com.afternote.feature.afternote.presentation.shared.shell.ScaffoldContentWithOptionalFab
+import com.afternote.feature.afternote.presentation.shared.shell.TopBar
 
 /**
  * Shared shell for 애프터노트 list screens (writer main and receiver list).
@@ -20,8 +22,8 @@ import com.afternote.feature.afternote.presentation.shared.ui.shell.TopBar
 fun AfternoteListScreenShell(
     modifier: Modifier = Modifier,
     title: String = "애프터노트",
-    bottomBarSelectedItem: BottomNavItem = BottomNavItem.AFTERNOTE,
-    onBottomBarItemSelected: (BottomNavItem) -> Unit,
+    selectedNavTab: BottomNavTab = BottomNavTab.NOTE,
+    onNavTabSelected: (BottomNavItem) -> Unit,
     showFab: Boolean = false,
     onFabClick: () -> Unit = {},
     content: @Composable (Modifier) -> Unit,
@@ -32,9 +34,10 @@ fun AfternoteListScreenShell(
             TopBar(title = title)
         },
         bottomBar = {
-            BottomNavigationBar(
-                selectedItem = bottomBarSelectedItem,
-                onItemSelected = onBottomBarItemSelected,
+            BottomBar(
+                onItemClick = TODO(),
+                modifier = TODO(),
+                selectedNavTab = selectedNavTab,
             )
         },
     ) { paddingValues ->

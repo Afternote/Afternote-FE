@@ -1,9 +1,9 @@
 package com.afternote.feature.afternote.presentation.receiver.ui.navgraph
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.afternote.feature.afternote.presentation.author.list.ui.screen.AfternoteListScreen
-import com.afternote.feature.afternote.presentation.author.list.ui.screen.AfternoteListScreenListParams
-import com.afternote.feature.afternote.presentation.author.list.ui.screen.AfternoteListScreenShellParams
+import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreen
+import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreenListParams
+import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreenShellParams
 import com.afternote.feature.afternote.presentation.receiver.model.ReceiverAfternoteListEvent
 import com.afternote.feature.afternote.presentation.receiver.model.uimodel.ReceiverAfternoteListUiState
 

@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.shared.ui.shell
+package com.afternote.feature.afternote.presentation.shared.shell
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues

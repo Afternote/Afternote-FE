@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.shared.ui.component.list
+package com.afternote.feature.afternote.presentation.shared.component.list
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,7 +18,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.list.ui.AfternoteTabRow
+import com.afternote.feature.afternote.presentation.author.list.AfternoteTabRow
 import com.afternote.feature.afternote.presentation.shared.model.uimodel.AfternoteListDisplayItem
 
 private const val LOAD_MORE_THRESHOLD = 3

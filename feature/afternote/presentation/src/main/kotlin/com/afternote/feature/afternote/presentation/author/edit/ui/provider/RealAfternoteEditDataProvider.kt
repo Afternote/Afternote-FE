@@ -1,8 +1,8 @@
 package com.afternote.feature.afternote.presentation.author.edit.ui.provider
 import com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiver
 import com.afternote.feature.afternote.presentation.author.edit.model.Song
+import com.afternote.feature.afternote.presentation.shared.component.list.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.uimodel.PlaylistSongDisplay
-import com.afternote.feature.afternote.presentation.shared.ui.component.list.AlbumCover
 import javax.inject.Inject
 
 /**

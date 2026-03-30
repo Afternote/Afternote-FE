@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.presentation.receiver.model.uimodel
+import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteTab
 import com.afternote.feature.afternote.presentation.shared.model.uimodel.AfternoteListDisplayItem
-import com.afternote.feature.afternote.presentation.shared.ui.component.list.AfternoteTab
-import com.afternote.feature.afternote.presentation.shared.ui.shell.BottomNavItem
+import com.afternote.feature.afternote.presentation.shared.shell.BottomNavItem
 
 /**
  * Receiver list screen UI state. Same shape as writer main (items, selectedTab, selectedBottomNavItem).

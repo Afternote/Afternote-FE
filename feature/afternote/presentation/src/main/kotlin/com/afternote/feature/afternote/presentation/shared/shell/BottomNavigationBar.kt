@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.shared.ui.shell
+package com.afternote.feature.afternote.presentation.shared.shell
 
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem

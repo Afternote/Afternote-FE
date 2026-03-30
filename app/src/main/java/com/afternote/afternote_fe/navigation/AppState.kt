@@ -26,12 +26,12 @@ class AppState(
         // 게터가 없으면 currentDestination에 처음 저장했던 값만 계속 주게 됨
         @Composable get() = navController.currentBackStackEntryAsState().value?.destination
 
-    val currentRoute: Route?
+    val currentRoute: Route
         @Composable get() =
             BottomNavTab.entries
                 // 조건을 만족하는 첫 번째 요소를 가져 오고 없으면 널 반환
                 .firstOrNull { currentDestination?.hasRoute(it.route::class) == true }
-                ?.route
+                ?.route ?: Route.Home
 
     fun navigateToBottomBarRoute(route: Route) {
         navController.navigate(route) {

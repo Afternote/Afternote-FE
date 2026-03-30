@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.list.ui
+package com.afternote.feature.afternote.presentation.author.list
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -34,7 +34,7 @@ import com.afternote.core.ui.theme.Gray2
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.Sansneo
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.ui.component.list.AfternoteTab
+import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteTab
 
 /**
  * 애프터노트 상단 탭 로우 컴포넌트

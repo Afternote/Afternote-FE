@@ -36,7 +36,7 @@ import com.afternote.feature.afternote.presentation.author.edit.model.AfternoteE
 import com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiverCallbacks
 import com.afternote.feature.afternote.presentation.author.edit.ui.provider.FakeAfternoteEditDataProvider
 import com.afternote.feature.afternote.presentation.shared.compositionlocal.DataProviderLocals
-import com.afternote.feature.afternote.presentation.shared.ui.detail.EditDropdownMenu
+import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 
 /**
  * 수신자 리스트 컴포넌트

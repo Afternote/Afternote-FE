@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.shared.ui.component.list
+package com.afternote.feature.afternote.presentation.shared.component.list
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -52,11 +52,11 @@ import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.Sansneo
 import com.afternote.core.ui.theme.White
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.shared.component.PlaylistSongItem
 import com.afternote.feature.afternote.presentation.shared.model.uimodel.PlaylistSongDisplay
-import com.afternote.feature.afternote.presentation.shared.ui.component.PlaylistSongItem
-import com.afternote.feature.afternote.presentation.shared.ui.shell.BottomNavItem
-import com.afternote.feature.afternote.presentation.shared.ui.shell.BottomNavigationBar
-import com.afternote.feature.afternote.presentation.shared.ui.shell.TopBar
+import com.afternote.feature.afternote.presentation.shared.shell.BottomNavItem
+import com.afternote.feature.afternote.presentation.shared.shell.BottomNavigationBar
+import com.afternote.feature.afternote.presentation.shared.shell.TopBar
 
 /**
  * Slots for [SearchableSongList]: optional trailing (per row) and leading (header) content.

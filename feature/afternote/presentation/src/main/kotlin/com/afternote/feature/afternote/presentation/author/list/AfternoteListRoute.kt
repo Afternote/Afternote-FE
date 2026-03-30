@@ -1,4 +1,5 @@
-package com.afternote.feature.afternote.presentation.author.list.ui
+package com.afternote.feature.afternote.presentation.author.list
+
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -9,13 +10,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.domain.model.Item
 import com.afternote.feature.afternote.presentation.author.list.model.AfternoteListEvent
-import com.afternote.feature.afternote.presentation.author.list.ui.screen.AfternoteListScreen
-import com.afternote.feature.afternote.presentation.author.list.ui.screen.AfternoteListScreenListParams
-import com.afternote.feature.afternote.presentation.author.list.ui.screen.AfternoteListScreenShellParams
+import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreen
+import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreenListParams
+import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreenShellParams
+import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteTab
 import com.afternote.feature.afternote.presentation.shared.model.uimodel.AfternoteListDisplayItem
 import com.afternote.feature.afternote.presentation.shared.model.util.getIconResForServiceName
-import com.afternote.feature.afternote.presentation.shared.ui.component.list.AfternoteTab
-import com.afternote.feature.afternote.presentation.shared.ui.shell.BottomNavItem
+import com.afternote.feature.afternote.presentation.shared.shell.BottomNavItem
 
 data class AfternoteListRouteCallbacks(
     val onNavigateToDetail: (String) -> Unit = {},
@@ -99,12 +100,26 @@ fun AfternoteListRoute(
                 selectedTab = uiState.selectedTab,
                 onTabSelected = { viewModel.onEvent(AfternoteListEvent.SelectTab(it)) },
                 onItemClick = { itemId ->
-                    val item = uiState.items.find { it.id == itemId } ?: return@AfternoteListScreenListParams
+                    val item =
+                        uiState.items.find { it.id == itemId }
+                            ?: return@AfternoteListScreenListParams
                     // Design has two detail screens only: Social Network, Gallery and Files. Others use Social-style detail.
                     when (item.type) {
-                        AfternoteServiceType.GALLERY_AND_FILES -> callbacks.onNavigateToGalleryDetail(itemId)
-                        AfternoteServiceType.MEMORIAL -> callbacks.onNavigateToMemorialGuidelineDetail(itemId)
-                        else -> callbacks.onNavigateToDetail(itemId)
+                        AfternoteServiceType.GALLERY_AND_FILES -> {
+                            callbacks.onNavigateToGalleryDetail(
+                                itemId,
+                            )
+                        }
+
+                        AfternoteServiceType.MEMORIAL -> {
+                            callbacks.onNavigateToMemorialGuidelineDetail(
+                                itemId,
+                            )
+                        }
+
+                        else -> {
+                            callbacks.onNavigateToDetail(itemId)
+                        }
                     }
                 },
                 hasNext = uiState.hasNext,

@@ -21,20 +21,19 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.Route
 import com.afternote.core.ui.theme.Black
 
 // TODO:검토
 
 @Composable
 fun BottomBar(
-    isSelected: @Composable (BottomNavTab) -> Boolean,
+    selectedNavTab: BottomNavTab,
     onItemClick: (BottomNavTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     NavigationBar(modifier = modifier) {
         BottomNavTab.entries.forEach { tab ->
-            val selected = isSelected(tab)
+            val selected = selectedNavTab == tab
             NavigationBarItem(
                 selected = selected,
                 onClick = { onItemClick(tab) },
@@ -78,8 +77,8 @@ fun BottomBar(
 private fun BottomBarPreview() {
     MaterialTheme {
         BottomBar(
-            isSelected = { it.route == Route.TimeLetter },
             onItemClick = {},
+            selectedNavTab = BottomNavTab.TIMELETTER,
         )
     }
 }

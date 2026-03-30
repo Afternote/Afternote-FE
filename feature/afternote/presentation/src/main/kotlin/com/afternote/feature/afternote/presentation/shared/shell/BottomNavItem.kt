@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.shared.ui.shell
+package com.afternote.feature.afternote.presentation.shared.shell
 
 /**
  * Bottom navigation destinations shared across writer/receiver afternote flows.

@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.scaffold.bottombar.BottomBar
+import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.AfternoteScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.HomeScreen
 import com.afternote.feature.timeletter.presentation.screen.sender.TimeletterScreen
@@ -22,8 +23,8 @@ fun AppNavigation(
         modifier = modifier,
         bottomBar = {
             BottomBar(
-                isSelected = { item -> item.route == appState.currentRoute },
                 onItemClick = { item -> appState.navigateToBottomBarRoute(item.route) },
+                selectedNavTab = BottomNavTab.find(appState.currentRoute)?: BottomNavTab.HOME,
             )
         },
     ) { innerPadding ->

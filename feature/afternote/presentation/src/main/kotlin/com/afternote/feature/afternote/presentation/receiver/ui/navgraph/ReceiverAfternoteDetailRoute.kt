@@ -26,9 +26,9 @@ import com.afternote.feature.afternote.presentation.author.detail.ui.afternotede
 import com.afternote.feature.afternote.presentation.author.detail.ui.afternotedetail.SocialNetworkDetailScreen
 import com.afternote.feature.afternote.presentation.author.detail.ui.afternotedetail.rememberAfternoteDetailState
 import com.afternote.feature.afternote.presentation.receiver.ui.viewmodel.ReceiverAfternoteDetailViewModel
-import com.afternote.feature.afternote.presentation.shared.ui.component.list.AlbumCover
-import com.afternote.feature.afternote.presentation.shared.ui.shell.BottomNavItem
-import com.afternote.feature.afternote.presentation.shared.ui.shell.TopBar
+import com.afternote.feature.afternote.presentation.shared.component.list.AlbumCover
+import com.afternote.feature.afternote.presentation.shared.shell.BottomNavItem
+import com.afternote.feature.afternote.presentation.shared.shell.TopBar
 
 /**
  * 수신자 애프터노트 상세 라우트.

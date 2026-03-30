@@ -57,12 +57,12 @@ import com.afternote.core.ui.theme.B3
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.Sansneo
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.ui.component.list.AlbumCover
-import com.afternote.feature.afternote.presentation.shared.ui.component.list.MemorialPlaylist
-import com.afternote.feature.afternote.presentation.shared.ui.detail.InfoCard
-import com.afternote.feature.afternote.presentation.shared.ui.shell.BottomNavItem
-import com.afternote.feature.afternote.presentation.shared.ui.shell.BottomNavigationBar
-import com.afternote.feature.afternote.presentation.shared.ui.shell.TopBar
+import com.afternote.feature.afternote.presentation.shared.component.list.AlbumCover
+import com.afternote.feature.afternote.presentation.shared.component.list.MemorialPlaylist
+import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
+import com.afternote.feature.afternote.presentation.shared.shell.BottomNavItem
+import com.afternote.feature.afternote.presentation.shared.shell.BottomNavigationBar
+import com.afternote.feature.afternote.presentation.shared.shell.TopBar
 
 @Suppress("AssignedValueIsNeverRead")
 @Composable

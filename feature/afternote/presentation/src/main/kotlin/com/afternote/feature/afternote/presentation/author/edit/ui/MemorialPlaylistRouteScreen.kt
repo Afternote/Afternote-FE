@@ -35,11 +35,11 @@ import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.edit.model.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.edit.ui.provider.FakeAfternoteEditDataProvider
 import com.afternote.feature.afternote.presentation.author.nav.ui.navgraph.AfternoteLightTheme
+import com.afternote.feature.afternote.presentation.shared.component.list.SongPlaylistScreen
+import com.afternote.feature.afternote.presentation.shared.component.list.SongPlaylistScreenManagementContent
 import com.afternote.feature.afternote.presentation.shared.compositionlocal.DataProviderLocals
 import com.afternote.feature.afternote.presentation.shared.model.uimodel.PlaylistSongDisplay
-import com.afternote.feature.afternote.presentation.shared.ui.component.list.SongPlaylistScreen
-import com.afternote.feature.afternote.presentation.shared.ui.component.list.SongPlaylistScreenManagementContent
-import com.afternote.feature.afternote.presentation.shared.ui.shell.BottomNavItem
+import com.afternote.feature.afternote.presentation.shared.shell.BottomNavItem
 
 /**
  * 추모 플레이리스트 전체 화면 (MemorialPlaylistList).

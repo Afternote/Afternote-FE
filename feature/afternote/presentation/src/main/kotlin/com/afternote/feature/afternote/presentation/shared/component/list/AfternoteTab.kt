@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.shared.ui.component.list
+package com.afternote.feature.afternote.presentation.shared.component.list
 
 /**
  * Tab categories for the shared 애프터노트 list screen (writer main and receiver list).

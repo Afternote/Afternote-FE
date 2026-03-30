@@ -50,15 +50,15 @@ import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.Sansneo
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.nav.ui.navgraph.AfternoteLightTheme
+import com.afternote.feature.afternote.presentation.shared.component.list.AlbumCover
+import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
+import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
+import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
+import com.afternote.feature.afternote.presentation.shared.detail.ReceiversCard
 import com.afternote.feature.afternote.presentation.shared.model.dummy.AlbumDummies
-import com.afternote.feature.afternote.presentation.shared.ui.component.list.AlbumCover
-import com.afternote.feature.afternote.presentation.shared.ui.detail.DeleteConfirmDialog
-import com.afternote.feature.afternote.presentation.shared.ui.detail.EditDropdownMenu
-import com.afternote.feature.afternote.presentation.shared.ui.detail.InfoCard
-import com.afternote.feature.afternote.presentation.shared.ui.detail.ReceiversCard
-import com.afternote.feature.afternote.presentation.shared.ui.shell.BottomNavItem
-import com.afternote.feature.afternote.presentation.shared.ui.shell.BottomNavigationBar
-import com.afternote.feature.afternote.presentation.shared.ui.shell.TopBar
+import com.afternote.feature.afternote.presentation.shared.shell.BottomNavItem
+import com.afternote.feature.afternote.presentation.shared.shell.BottomNavigationBar
+import com.afternote.feature.afternote.presentation.shared.shell.TopBar
 
 /**
  * 추모 가이드라인 상세 화면의 데이터 상태

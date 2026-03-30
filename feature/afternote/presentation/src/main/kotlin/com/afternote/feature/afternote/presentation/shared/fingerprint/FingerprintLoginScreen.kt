@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.shared.ui.fingerprint
+package com.afternote.feature.afternote.presentation.shared.fingerprint
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,9 +12,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.feature.afternote.presentation.author.nav.ui.navgraph.AfternoteLightTheme
-import com.afternote.feature.afternote.presentation.shared.ui.shell.BottomNavItem
-import com.afternote.feature.afternote.presentation.shared.ui.shell.BottomNavigationBar
-import com.afternote.feature.afternote.presentation.shared.ui.shell.TopBar
+import com.afternote.feature.afternote.presentation.shared.shell.BottomNavItem
+import com.afternote.feature.afternote.presentation.shared.shell.BottomNavigationBar
+import com.afternote.feature.afternote.presentation.shared.shell.TopBar
 
 /**
  * 지문 로그인 화면
