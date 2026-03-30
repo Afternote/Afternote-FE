@@ -73,7 +73,7 @@ fun DailyQuestionWriteScreen(modifier : Modifier = Modifier) {
                 Spacer(modifier = Modifier.height(10.dp))
 
             }
-            Column {
+            androidx.compose.foundation.layout.Column {
                 WriteTextField()
             }
         }

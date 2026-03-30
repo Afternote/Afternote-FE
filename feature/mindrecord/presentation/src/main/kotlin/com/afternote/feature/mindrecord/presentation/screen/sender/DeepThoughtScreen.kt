@@ -46,6 +46,7 @@ import com.afternote.core.ui.theme.Gray6
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
 import com.afternote.feature.mindrecord.presentation.component.DeepThoughtCard
+import com.afternote.feature.mindrecord.presentation.component.FlowTags
 import com.afternote.feature.mindrecord.presentation.component.Legend
 import com.afternote.feature.mindrecord.presentation.model.DeepThoughtModel
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
@@ -174,39 +175,12 @@ fun DeepThoughtScreen(modifier: Modifier = Modifier) {
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    FilterChip(
-                        selected = selectedTag == null,
-                        onClick = { selectedTag = null },
-                        label = {
-                            Text(
-                                "전체",
-                                style = MaterialTheme.typography.displayLarge,
-                                color = if (selectedTag == null) Gray1 else Gray6,
-                            )
-                        },
-                        shape = RoundedCornerShape(16777200.dp),
-                        border = BorderStroke(1.dp, Gray2),
-                    )
-
-                    tags.forEach { tag ->
-                        FilterChip(
-                            selected = selectedTag == tag,
-                            onClick = { selectedTag = tag },
-                            label = {
-                                Text(
-                                    text = "#${tag.name} ${tag.count}",
-                                    style = MaterialTheme.typography.displayLarge,
-                                    color = if (selectedTag == tag) Gray1 else Gray6,
-                                )
-                            },
-                            shape = RoundedCornerShape(16777200.dp),
-                            border = BorderStroke(1.dp, Gray2),
-                        )
-                    }
-                }
+                FlowTags(
+                    tags = tags,
+                    selectedTag = selectedTag,
+                    onclick = { selectedTag = null },
+                    onTagClick = { selectedTag = it },
+                )
 
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(deepThoughtList) {

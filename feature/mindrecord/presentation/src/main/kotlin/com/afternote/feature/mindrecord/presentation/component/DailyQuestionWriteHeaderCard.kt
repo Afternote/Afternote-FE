@@ -40,7 +40,6 @@ fun DailyQuestionWriteHeaderCard(modifier: Modifier = Modifier) {
         Column(
             modifier =
                 Modifier.fillMaxSize().drawWithCache {
-                    val radius = size.height + 35.dp.toPx()
                     val brush =
                         Brush.radialGradient(
                             colorStops =
