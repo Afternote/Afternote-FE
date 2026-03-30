@@ -15,7 +15,7 @@ import com.afternote.feature.afternote.presentation.shared.shell.TopBar
  */
 @Composable
 fun AfternoteListScreenShell(
-    onTabClick: (BottomNavTab) -> Unit,
+    onNavTabSelected: (BottomNavTab) -> Unit,
     modifier: Modifier = Modifier,
     title: String = "애프터노트",
     selectedNavTab: BottomNavTab = BottomNavTab.NOTE,
@@ -30,7 +30,7 @@ fun AfternoteListScreenShell(
         },
         bottomBar = {
             BottomBar(
-                onTabClick = onTabClick,
+                onTabClick = onNavTabSelected,
                 selectedNavTab = selectedNavTab,
             )
         },

@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.detail.ui.afternotedetail
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,18 +24,19 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.theme.B1
 import com.afternote.core.ui.theme.Gray5
 import com.afternote.core.ui.theme.Gray6
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.Sansneo
+import com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiver
 import com.afternote.feature.afternote.presentation.author.nav.ui.navgraph.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.shared.detail.ReceiversCard
-import com.afternote.feature.afternote.presentation.shared.shell.BottomNavigationBar
 import com.afternote.feature.afternote.presentation.shared.shell.TopBar
 
 /**
@@ -45,7 +47,7 @@ data class GalleryDetailState(
     val serviceName: String = "갤러리",
     val userName: String = "서영",
     val finalWriteDate: String = "2025.11.26.",
-    val afternoteEditReceivers: List<com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiver> =
+    val afternoteEditReceivers: List<AfternoteEditReceiver> =
         emptyList(),
     val informationProcessingMethod: String = "",
     val processingMethods: List<String> = emptyList(),
@@ -116,9 +118,9 @@ private fun GalleryDetailScaffold(
             }
         },
         bottomBar = {
-            BottomNavigationBar(
-                selectedItem = uiState.selectedBottomNavItem,
-                onItemSelected = uiState::onBottomNavItemSelected,
+            BottomBar(
+                selectedNavTab = uiState.selectedNavItem,
+                onTabClick = uiState::onNavItemSelected,
             )
         },
     ) { paddingValues ->

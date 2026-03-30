@@ -3,7 +3,7 @@ import com.afternote.feature.afternote.presentation.shared.component.list.Aftern
 import com.afternote.feature.afternote.presentation.shared.model.uimodel.AfternoteListDisplayItem
 
 /**
- * Receiver list screen UI state. Same shape as writer main (items, selectedTab, selectedBottomNavItem).
+ * Receiver list screen UI state. Same shape as writer main (items, selectedTab, selectedNavItem).
  */
 data class ReceiverAfternoteListUiState(
     val selectedTab: AfternoteTab = AfternoteTab.ALL,

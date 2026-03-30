@@ -38,11 +38,12 @@ fun AfternoteListScreen(
     modifier: Modifier = Modifier,
     shell: AfternoteListScreenShellParams,
     list: AfternoteListScreenListParams,
+    onNavTabSelected: (BottomNavTab) -> Unit,
 ) {
     AfternoteListScreenShell(
         modifier = modifier,
         title = shell.title,
-        onTabClick = shell.bottomBarSelectedItem,
+        onNavTabSelected = onNavTabSelected,
 //        on = shell.onBottomBarItemSelected,
         showFab = shell.showFab,
         onFabClick = shell.onFabClick,

@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.shared.fingerprint
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,10 +11,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.feature.afternote.presentation.author.nav.ui.navgraph.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.shell.TopBar
 
 /**
@@ -31,6 +30,7 @@ import com.afternote.feature.afternote.presentation.shared.shell.TopBar
 fun FingerprintLoginScreen(
     modifier: Modifier = Modifier,
     onFingerprintAuthClick: () -> Unit = {},
+    onNavTabSelected: (BottomNavTab) -> Unit,
 ) {
     var selectedNavTab by remember { mutableStateOf(BottomNavTab.NOTE) }
 
@@ -42,8 +42,7 @@ fun FingerprintLoginScreen(
         bottomBar = {
             BottomBar(
                 selectedNavTab = selectedNavTab,
-                onTabClick = TODO(),
-                modifier = TODO()
+                onTabClick = onNavTabSelected,
             )
         },
     ) { paddingValues ->
@@ -62,16 +61,5 @@ fun FingerprintLoginScreen(
                 onFingerprintAuthClick = onFingerprintAuthClick,
             )
         }
-    }
-}
-
-@Preview(
-    showBackground = true,
-    device = "spec:width=390dp,height=844dp,dpi=420,isRound=false",
-)
-@Composable
-private fun FingerprintLoginScreenPreview() {
-    AfternoteLightTheme {
-        FingerprintLoginScreen()
     }
 }

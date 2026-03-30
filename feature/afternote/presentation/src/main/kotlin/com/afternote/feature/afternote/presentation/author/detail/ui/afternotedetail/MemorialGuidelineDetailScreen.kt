@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.detail.ui.afternotedetail
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -42,6 +43,7 @@ import coil3.network.httpHeaders
 import coil3.request.ImageRequest
 import com.afternote.core.ui.expand.horizontalFadingEdge
 import com.afternote.core.ui.form.ProfileImage
+import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.theme.B1
 import com.afternote.core.ui.theme.Black
 import com.afternote.core.ui.theme.Gray5
@@ -49,6 +51,7 @@ import com.afternote.core.ui.theme.Gray6
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.Sansneo
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiver
 import com.afternote.feature.afternote.presentation.author.nav.ui.navgraph.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.component.list.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
@@ -56,7 +59,6 @@ import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMe
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.ReceiversCard
 import com.afternote.feature.afternote.presentation.shared.model.dummy.AlbumDummies
-import com.afternote.feature.afternote.presentation.shared.shell.BottomNavigationBar
 import com.afternote.feature.afternote.presentation.shared.shell.TopBar
 
 /**
@@ -70,7 +72,7 @@ data class MemorialGuidelineDetailState(
     val albumCovers: List<AlbumCover> = emptyList(),
     val songCount: Int = 0,
     val lastWish: String = "",
-    val afternoteEditReceivers: List<com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiver> =
+    val afternoteEditReceivers: List<AfternoteEditReceiver> =
         emptyList(),
     val memorialVideoUrl: String? = null,
     val memorialThumbnailUrl: String? = null,
@@ -135,9 +137,9 @@ fun MemorialGuidelineDetailScreen(
             }
         },
         bottomBar = {
-            BottomNavigationBar(
-                selectedItem = uiState.selectedBottomNavItem,
-                onItemSelected = uiState::onBottomNavItemSelected,
+            BottomBar(
+                selectedNavTab = uiState.selectedNavItem,
+                onTabClick = uiState::onNavItemSelected,
             )
         },
     ) { paddingValues ->
@@ -541,34 +543,6 @@ private fun MemorialGuidelineDetailScreenDeleteDialogPreview() {
                     onEditClick = {},
                 ),
             uiState = stateWithDialog,
-        )
-    }
-}
-
-@Preview(
-    showBackground = true,
-    device = "spec:width=390dp,height=844dp,dpi=420,isRound=false",
-    name = "Memorial Guideline Detail - Receiver Mode",
-)
-@Composable
-private fun MemorialGuidelineDetailScreenReceiverModePreview() {
-    AfternoteLightTheme {
-        MemorialGuidelineDetailScreen(
-            detailState =
-                MemorialGuidelineDetailState(
-                    songCount = 16,
-                    albumCovers = AlbumDummies.list,
-                    lastWish = "차분하고 조용하게 보내주세요.2",
-                ),
-            callbacks =
-                MemorialGuidelineDetailCallbacks(
-                    onBackClick = {},
-                ),
-            isEditable = false,
-            uiState =
-                rememberAfternoteDetailState(
-                    defaultBottomNavItem = BottomNavItem.AFTERNOTE,
-                ),
         )
     }
 }

@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.nav.ui.navgraph
+
 import android.util.Log
 import android.widget.Toast
 import androidx.biometric.BiometricManager
@@ -29,6 +30,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.domain.model.Item
@@ -137,7 +139,7 @@ private fun resolveListItems(
 @Composable
 private fun AfternoteListRouteContent(
     navController: NavController,
-    onBottomNavTabSelected: (BottomNavItem) -> Unit = {},
+    onNavTabSelected: (BottomNavTab) -> Unit = {},
     onItemsUpdated: (List<Item>) -> Unit,
     editStateHandling: AfternoteEditStateHandling,
     playlistStateHolder: MemorialPlaylistStateHolder,
@@ -171,7 +173,7 @@ private fun AfternoteListRouteContent(
                     )
                     navController.navigate(AfternoteRoute.EditRoute(initialCategory = initialCategory))
                 },
-                onBottomNavTabSelected = onBottomNavTabSelected,
+                onBottomNavTabSelected = onNavTabSelected,
             ),
         initialItems = emptyList(),
         onItemsChanged = onItemsUpdated,
@@ -477,7 +479,7 @@ private data class EditScreenCallbacksParams(
     val initialItem: Item?,
     val playlistStateHolder: MemorialPlaylistStateHolder,
     val onNavigateToSelectReceiver: () -> Unit,
-    val onBottomNavTabSelected: (BottomNavItem) -> Unit,
+    val onBottomNavTabSelected: (BottomNavTab) -> Unit,
 )
 
 private data class AfternoteEditRouteContentParams(
@@ -488,7 +490,7 @@ private data class AfternoteEditRouteContentParams(
     val afternoteProvider: AfternoteEditDataProvider,
     val editStateHandling: AfternoteEditStateHandling,
     val onNavigateToSelectReceiver: () -> Unit = {},
-    val onBottomNavTabSelected: (BottomNavItem) -> Unit = {},
+    val onBottomNavTabSelected: (BottomNavTab) -> Unit = {},
 )
 
 private fun navigateToAfternoteListOnSaveSuccess(
@@ -535,7 +537,9 @@ private fun buildEditScreenCallbacks(params: EditScreenCallbacksParams): Afterno
         },
         onRegisterClick = { payload: RegisterAfternotePayload ->
             params.editViewModel.saveAfternote(
-                editingId = params.route.itemId?.toLongOrNull() ?: params.initialItem?.id?.toLongOrNull(),
+                editingId =
+                    params.route.itemId?.toLongOrNull()
+                        ?: params.initialItem?.id?.toLongOrNull(),
                 category = params.state.selectedCategory,
                 payload = payload,
                 selectedReceiverIds = params.state.afternoteEditReceivers.mapNotNull { it.id.toLongOrNull() },
@@ -590,7 +594,8 @@ private fun AfternoteEditRouteContent(
     }
     LaunchedEffect(Unit) { editViewModel.loadReceivers() }
 
-    val isEditCurrentDestination = params.navController.currentBackStackEntry == params.backStackEntry
+    val isEditCurrentDestination =
+        params.navController.currentBackStackEntry == params.backStackEntry
     LaunchedEffect(isEditCurrentDestination) {
         if (isEditCurrentDestination) {
             tryApplyReceiverSelectionFromSavedState(
@@ -624,7 +629,9 @@ private fun AfternoteEditRouteContent(
         }
     }
 
-    val uploadedThumbnailUrl by editViewModel.uploadedThumbnailUrl.collectAsStateWithLifecycle(initialValue = null)
+    val uploadedThumbnailUrl by editViewModel.uploadedThumbnailUrl.collectAsStateWithLifecycle(
+        initialValue = null,
+    )
     LaunchedEffect(uploadedThumbnailUrl) {
         uploadedThumbnailUrl?.let { url ->
             applyUploadedThumbnailAndClear(url, state, editViewModel)
@@ -671,7 +678,7 @@ private fun AfternoteEditRouteContent(
 @Composable
 private fun AfternoteFingerprintLoginContent(
     navController: NavController,
-    onBottomNavTabSelected: (BottomNavItem) -> Unit,
+    onNavTabSelected: (BottomNavTab) -> Unit,
 ) {
     val context = LocalContext.current
     val activity = context as? FragmentActivity
@@ -728,7 +735,7 @@ private fun AfternoteFingerprintLoginContent(
                 }
             }
         },
-        onBottomNavTabSelected = onBottomNavTabSelected,
+        onNavTabSelected = onNavTabSelected,
     )
 }
 
@@ -758,14 +765,14 @@ private fun AfternoteAddSongRouteContent(
 fun NavGraphBuilder.afternoteNavGraph(
     navController: NavController,
     params: AfternoteNavGraphParams,
-    onBottomNavTabSelected: (BottomNavItem) -> Unit = {},
+    onNavTabSelected: (BottomNavTab) -> Unit = {},
 ) {
     val afternoteProvider = params.afternoteProvider
 
     afternoteComposable<AfternoteRoute.AfternoteListRoute> {
         AfternoteListRouteContent(
             navController = navController,
-            onBottomNavTabSelected = onBottomNavTabSelected,
+            onNavTabSelected = onNavTabSelected,
             onItemsUpdated = params.onItemsUpdated,
             editStateHandling = params.editStateHandling,
             playlistStateHolder = params.playlistStateHolder,
@@ -804,7 +811,7 @@ fun NavGraphBuilder.afternoteNavGraph(
                 afternoteProvider = afternoteProvider,
                 editStateHandling = params.editStateHandling,
                 onNavigateToSelectReceiver = params.onNavigateToSelectReceiver,
-                onBottomNavTabSelected = onBottomNavTabSelected,
+                onBottomNavTabSelected = onNavTabSelected,
             ),
         )
     }
@@ -829,7 +836,7 @@ fun NavGraphBuilder.afternoteNavGraph(
     afternoteComposable<AfternoteRoute.FingerprintLoginRoute> {
         AfternoteFingerprintLoginContent(
             navController = navController,
-            onBottomNavTabSelected = onBottomNavTabSelected,
+            onNavTabSelected = onNavTabSelected,
         )
     }
 

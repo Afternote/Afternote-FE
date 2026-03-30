@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.domain.model.Item
 import com.afternote.feature.afternote.presentation.author.list.model.AfternoteListEvent
@@ -22,7 +23,7 @@ data class AfternoteListRouteCallbacks(
     val onNavigateToGalleryDetail: (String) -> Unit = {},
     val onNavigateToMemorialGuidelineDetail: (String) -> Unit = {},
     val onNavigateToAdd: (AfternoteTab) -> Unit = {},
-    val onBottomNavTabSelected: (BottomNavItem) -> Unit = {},
+    val onBottomNavTabSelected: (BottomNavTab) -> Unit = {},
 )
 
 /**
@@ -125,5 +126,6 @@ fun AfternoteListRoute(
                 isLoadingMore = uiState.isLoadingMore,
                 onLoadMore = { viewModel.loadNextPage() },
             ),
+        onNavTabSelected = TODO(),
     )
 }

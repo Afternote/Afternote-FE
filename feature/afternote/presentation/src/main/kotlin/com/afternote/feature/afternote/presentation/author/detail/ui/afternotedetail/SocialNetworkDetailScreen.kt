@@ -110,8 +110,8 @@ fun SocialNetworkDetailScreen(
         },
         bottomBar = {
             BottomNavigationBar(
-                selectedItem = state.selectedBottomNavItem,
-                onItemSelected = state::onBottomNavItemSelected,
+                selectedItem = state.selectedNavItem,
+                onItemSelected = state::onNavItemSelected,
             )
         },
     ) { paddingValues ->
