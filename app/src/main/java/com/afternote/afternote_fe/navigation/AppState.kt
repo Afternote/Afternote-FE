@@ -27,11 +27,19 @@ class AppState(
         // 게터가 없으면 currentDestination에 처음 저장했던 값만 계속 주게 됨
         @Composable get() = navController.currentBackStackEntryAsState().value?.destination
 
-    val currentNavTab: BottomNavTab?
-        @Composable get() =
-            BottomNavTab.entries.firstOrNull {
-                currentDestination?.hasRoute(it.route::class as KClass<out Any>) == true
+    var lastNavTab: BottomNavTab = BottomNavTab.HOME
+    val currentNavTab: BottomNavTab
+        @Composable get() {
+            val matched =
+                BottomNavTab.entries.firstOrNull {
+                    currentDestination?.hasRoute(it.route::class as KClass<out Any>) == true
+                }
+            if (matched == null) {
+                return lastNavTab
             }
+            lastNavTab = matched
+            return matched
+        }
 //    val currentRoute: Route?
 //            BottomNavTab.entries
 //                // 조건을 만족하는 첫 번째 요소를 가져 오고 없으면 널 반환
