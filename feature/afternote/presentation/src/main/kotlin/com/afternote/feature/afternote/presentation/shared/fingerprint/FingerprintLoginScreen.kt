@@ -11,8 +11,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
+import com.afternote.feature.afternote.presentation.shared.compositionlocal.AfternoteEmbeddedMainBottomBar
 import com.afternote.feature.afternote.presentation.shared.shell.TopBar
 
 /**
@@ -40,7 +40,7 @@ fun FingerprintLoginScreen(
             TopBar(title = "지문 로그인")
         },
         bottomBar = {
-            BottomBar(
+            AfternoteEmbeddedMainBottomBar(
                 selectedNavTab = selectedNavTab,
                 onTabClick = onNavTabSelected,
             )

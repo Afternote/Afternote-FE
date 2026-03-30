@@ -28,7 +28,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.expand.addFocusCleaner
-import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.domain.model.Item
 import com.afternote.feature.afternote.domain.model.ProcessingMethod
@@ -42,8 +41,9 @@ import com.afternote.feature.afternote.presentation.author.edit.model.MemorialPl
 import com.afternote.feature.afternote.presentation.author.edit.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.edit.model.rememberAfternoteEditState
 import com.afternote.feature.afternote.presentation.author.edit.ui.provider.FakeAfternoteEditDataProvider
-import com.afternote.feature.afternote.presentation.author.nav.ui.navgraph.AfternoteLightTheme
+import com.afternote.feature.afternote.presentation.author.nav.navgraph.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.component.list.AlbumCover
+import com.afternote.feature.afternote.presentation.shared.compositionlocal.AfternoteEmbeddedMainBottomBar
 import com.afternote.feature.afternote.presentation.shared.compositionlocal.DataProviderLocals
 import com.afternote.feature.afternote.presentation.shared.shell.TopBar
 import java.text.SimpleDateFormat
@@ -222,7 +222,7 @@ fun AfternoteEditScreen(
             )
         },
         bottomBar = {
-            BottomBar(
+            AfternoteEmbeddedMainBottomBar(
                 selectedNavTab = state.selectedBottomNavItem,
                 onTabClick = { item ->
                     state.onBottomNavItemSelected(item)

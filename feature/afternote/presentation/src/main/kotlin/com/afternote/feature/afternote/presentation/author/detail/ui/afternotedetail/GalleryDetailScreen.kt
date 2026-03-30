@@ -24,14 +24,14 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.theme.B1
 import com.afternote.core.ui.theme.Gray5
 import com.afternote.core.ui.theme.Gray6
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.Sansneo
 import com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiver
-import com.afternote.feature.afternote.presentation.author.nav.ui.navgraph.AfternoteLightTheme
+import com.afternote.feature.afternote.presentation.author.nav.navgraph.AfternoteLightTheme
+import com.afternote.feature.afternote.presentation.shared.compositionlocal.AfternoteEmbeddedMainBottomBar
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
@@ -118,7 +118,7 @@ private fun GalleryDetailScaffold(
             }
         },
         bottomBar = {
-            BottomBar(
+            AfternoteEmbeddedMainBottomBar(
                 selectedNavTab = uiState.selectedNavItem,
                 onTabClick = uiState::onNavItemSelected,
             )

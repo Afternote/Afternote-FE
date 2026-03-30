@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.nav.ui.navgraph
+package com.afternote.feature.afternote.presentation.author.nav.navgraph
 
 import android.util.Log
 import android.widget.Toast

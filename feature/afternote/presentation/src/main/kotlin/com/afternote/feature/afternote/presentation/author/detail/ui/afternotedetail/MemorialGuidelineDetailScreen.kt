@@ -43,7 +43,6 @@ import coil3.network.httpHeaders
 import coil3.request.ImageRequest
 import com.afternote.core.ui.expand.horizontalFadingEdge
 import com.afternote.core.ui.form.ProfileImage
-import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.theme.B1
 import com.afternote.core.ui.theme.Black
 import com.afternote.core.ui.theme.Gray5
@@ -52,8 +51,9 @@ import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.Sansneo
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiver
-import com.afternote.feature.afternote.presentation.author.nav.ui.navgraph.AfternoteLightTheme
+import com.afternote.feature.afternote.presentation.author.nav.navgraph.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.component.list.AlbumCover
+import com.afternote.feature.afternote.presentation.shared.compositionlocal.AfternoteEmbeddedMainBottomBar
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
@@ -137,7 +137,7 @@ fun MemorialGuidelineDetailScreen(
             }
         },
         bottomBar = {
-            BottomBar(
+            AfternoteEmbeddedMainBottomBar(
                 selectedNavTab = uiState.selectedNavItem,
                 onTabClick = uiState::onNavItemSelected,
             )

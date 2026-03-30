@@ -4,8 +4,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
+import com.afternote.feature.afternote.presentation.shared.compositionlocal.AfternoteEmbeddedMainBottomBar
 import com.afternote.feature.afternote.presentation.shared.shell.ScaffoldContentWithOptionalFab
 import com.afternote.feature.afternote.presentation.shared.shell.TopBar
 
@@ -29,7 +29,7 @@ fun AfternoteListScreenShell(
             TopBar(title = title)
         },
         bottomBar = {
-            BottomBar(
+            AfternoteEmbeddedMainBottomBar(
                 onTabClick = onNavTabSelected,
                 selectedNavTab = selectedNavTab,
             )

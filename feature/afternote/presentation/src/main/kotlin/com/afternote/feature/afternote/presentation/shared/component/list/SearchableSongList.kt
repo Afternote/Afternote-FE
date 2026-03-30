@@ -43,7 +43,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.button.CustomRadioButton
-import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.theme.B1
 import com.afternote.core.ui.theme.B2
@@ -55,6 +54,7 @@ import com.afternote.core.ui.theme.Sansneo
 import com.afternote.core.ui.theme.White
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.component.PlaylistSongItem
+import com.afternote.feature.afternote.presentation.shared.compositionlocal.AfternoteEmbeddedMainBottomBar
 import com.afternote.feature.afternote.presentation.shared.model.uimodel.PlaylistSongDisplay
 import com.afternote.feature.afternote.presentation.shared.shell.TopBar
 
@@ -122,7 +122,7 @@ fun SongPlaylistScreen(
             )
         },
         bottomBar = {
-            BottomBar(
+            AfternoteEmbeddedMainBottomBar(
                 selectedNavTab = selectedBottomNavTab,
                 onTabClick = { selectedBottomNavTab = it },
             )
@@ -185,7 +185,7 @@ fun SongPlaylistScreen(
             )
         },
         bottomBar = {
-            BottomBar(
+            AfternoteEmbeddedMainBottomBar(
                 selectedNavTab = selectedBottomNavTab,
                 onTabClick = { selectedBottomNavTab = it },
             )
@@ -281,7 +281,7 @@ fun SongPlaylistScreen(
             )
         },
         bottomBar = {
-            BottomBar(
+            AfternoteEmbeddedMainBottomBar(
                 selectedNavTab = selectedBottomNavTab,
                 onTabClick = { selectedBottomNavTab = it },
             )

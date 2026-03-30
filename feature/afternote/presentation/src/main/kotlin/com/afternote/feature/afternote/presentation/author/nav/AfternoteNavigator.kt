@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.nav.ui.navigation
+package com.afternote.feature.afternote.presentation.author.nav
 
 /**
  * 온보딩(로그인 등)으로 나가기 위한 목적지. Afternote feature는 onboarding 패키지에 의존하지 않습니다.

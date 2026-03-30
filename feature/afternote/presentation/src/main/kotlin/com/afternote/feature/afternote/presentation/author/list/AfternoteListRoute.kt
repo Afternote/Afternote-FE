@@ -126,6 +126,9 @@ fun AfternoteListRoute(
                 isLoadingMore = uiState.isLoadingMore,
                 onLoadMore = { viewModel.loadNextPage() },
             ),
-        onNavTabSelected = TODO(),
+        onNavTabSelected = { tab ->
+            viewModel.onEvent(AfternoteListEvent.SelectBottomNav(tab))
+            callbacks.onBottomNavTabSelected(tab)
+        },
     )
 }
