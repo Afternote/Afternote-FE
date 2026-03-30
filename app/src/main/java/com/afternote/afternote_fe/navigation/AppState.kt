@@ -27,7 +27,7 @@ class AppState(
         // 게터가 없으면 currentDestination에 처음 저장했던 값만 계속 주게 됨
         @Composable get() = navController.currentBackStackEntryAsState().value?.destination
 
-    var lastNavTab: BottomNavTab = BottomNavTab.HOME
+    private var _lastNavTab: BottomNavTab = BottomNavTab.HOME
     val currentNavTab: BottomNavTab
         @Composable get() {
             val matched =
@@ -35,9 +35,9 @@ class AppState(
                     currentDestination?.hasRoute(it.route::class as KClass<out Any>) == true
                 }
             if (matched == null) {
-                return lastNavTab
+                return _lastNavTab
             }
-            lastNavTab = matched
+            _lastNavTab = matched
             return matched
         }
 //    val currentRoute: Route?
