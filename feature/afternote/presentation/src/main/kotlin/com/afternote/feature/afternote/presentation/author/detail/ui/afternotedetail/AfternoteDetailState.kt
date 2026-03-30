@@ -5,7 +5,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.afternote.feature.afternote.presentation.shared.shell.BottomNavItem
 
 /*
  * Detail screen UI state (dropdown, delete dialog, bottom nav).

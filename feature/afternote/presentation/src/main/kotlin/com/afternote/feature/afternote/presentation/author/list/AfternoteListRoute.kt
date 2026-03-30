@@ -16,7 +16,6 @@ import com.afternote.feature.afternote.presentation.author.list.screen.Afternote
 import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteTab
 import com.afternote.feature.afternote.presentation.shared.model.uimodel.AfternoteListDisplayItem
 import com.afternote.feature.afternote.presentation.shared.model.util.getIconResForServiceName
-import com.afternote.feature.afternote.presentation.shared.shell.BottomNavItem
 
 data class AfternoteListRouteCallbacks(
     val onNavigateToDetail: (String) -> Unit = {},

@@ -28,7 +28,7 @@ import com.afternote.core.ui.theme.Black
 @Composable
 fun BottomBar(
     selectedNavTab: BottomNavTab,
-    onItemClick: (BottomNavTab) -> Unit,
+    onTabClick: (BottomNavTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     NavigationBar(modifier = modifier) {
@@ -36,7 +36,7 @@ fun BottomBar(
             val selected = selectedNavTab == tab
             NavigationBarItem(
                 selected = selected,
-                onClick = { onItemClick(tab) },
+                onClick = { onTabClick(tab) },
                 icon = {
                     Icon(
                         painter = painterResource(tab.iconRes),
@@ -77,7 +77,7 @@ fun BottomBar(
 private fun BottomBarPreview() {
     MaterialTheme {
         BottomBar(
-            onItemClick = {},
+            onTabClick = {},
             selectedNavTab = BottomNavTab.TIMELETTER,
         )
     }

@@ -1,6 +1,5 @@
 package com.afternote.feature.afternote.presentation.receiver.model
 import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteTab
-import com.afternote.feature.afternote.presentation.shared.shell.BottomNavItem
 
 /**
  * 수신자 애프터노트 목록 화면에서 발생하는 사용자 이벤트.

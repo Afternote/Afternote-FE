@@ -54,7 +54,6 @@ import com.afternote.core.ui.theme.White
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.component.PlaylistSongItem
 import com.afternote.feature.afternote.presentation.shared.model.uimodel.PlaylistSongDisplay
-import com.afternote.feature.afternote.presentation.shared.shell.BottomNavItem
 import com.afternote.feature.afternote.presentation.shared.shell.BottomNavigationBar
 import com.afternote.feature.afternote.presentation.shared.shell.TopBar
 

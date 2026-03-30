@@ -35,7 +35,6 @@ import com.afternote.feature.afternote.presentation.receiver.ui.component.HeroCa
 import com.afternote.feature.afternote.presentation.receiver.ui.component.TopHeader
 import com.afternote.feature.afternote.presentation.receiver.ui.viewmodel.ReceiverDownloadAllViewModel
 import com.afternote.feature.afternote.presentation.receiver.ui.viewmodel.ReceiverDownloadAllViewModelContract
-import com.afternote.feature.afternote.presentation.shared.shell.BottomNavItem
 import com.afternote.feature.afternote.presentation.shared.shell.BottomNavigationBar
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

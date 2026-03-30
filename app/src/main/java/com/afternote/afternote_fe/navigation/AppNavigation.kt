@@ -22,7 +22,7 @@ fun AppNavigation(
         modifier = modifier,
         bottomBar = {
             BottomBar(
-                onItemClick = { item -> appState.navigateToBottomBarRoute(item.route) },
+                onTabClick = { item -> appState.navigateToBottomBarRoute(item.route) },
                 selectedNavTab = appState.currentNavTab,
             )
         },

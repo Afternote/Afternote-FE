@@ -16,7 +16,6 @@ import com.afternote.core.ui.form.LastWishOption
 import com.afternote.feature.afternote.presentation.shared.component.list.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.compositionlocal.DataProviderLocals
 import com.afternote.feature.afternote.presentation.shared.model.util.AfternoteServiceCatalog
-import com.afternote.feature.afternote.presentation.shared.shell.BottomNavItem
 
 /**
  * 추모 플레이리스트 상태 홀더

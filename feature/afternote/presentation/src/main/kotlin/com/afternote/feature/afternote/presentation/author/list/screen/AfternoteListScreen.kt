@@ -1,21 +1,19 @@
 package com.afternote.feature.afternote.presentation.author.list.screen
+
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.presentation.R
+import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteListContent
 import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteListContentListParams
 import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteListScreenShell
 import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteTab
 import com.afternote.feature.afternote.presentation.shared.model.uimodel.AfternoteListDisplayItem
-import com.afternote.feature.afternote.presentation.shared.shell.BottomNavItem
 
 /** Shell params for AfternoteListScreen (title, bottom bar, FAB). */
 data class AfternoteListScreenShellParams(
     val title: String = "애프터노트",
-    val bottomBarSelectedItem: BottomNavItem = BottomNavItem.AFTERNOTE,
-    val onBottomBarItemSelected: (BottomNavItem) -> Unit,
+    val bottomBarSelectedItem: BottomNavTab = BottomNavTab.NOTE,
+    val onBottomBarItemSelected: (BottomNavTab) -> Unit,
     val showFab: Boolean = false,
     val onFabClick: () -> Unit = {},
 )
@@ -44,8 +42,8 @@ fun AfternoteListScreen(
     AfternoteListScreenShell(
         modifier = modifier,
         title = shell.title,
-        bottomBarSelectedItem = shell.bottomBarSelectedItem,
-        onBottomBarItemSelected = shell.onBottomBarItemSelected,
+        onTabClick = shell.bottomBarSelectedItem,
+//        on = shell.onBottomBarItemSelected,
         showFab = shell.showFab,
         onFabClick = shell.onFabClick,
         content = { contentModifier ->
@@ -64,38 +62,4 @@ fun AfternoteListScreen(
             )
         },
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun AfternoteListScreenPreview() {
-    AfternoteTheme {
-        AfternoteListScreen(
-            shell =
-                AfternoteListScreenShellParams(
-                    bottomBarSelectedItem = BottomNavItem.AFTERNOTE,
-                    onBottomBarItemSelected = {},
-                    showFab = false,
-                    onFabClick = {},
-                ),
-            list =
-                AfternoteListScreenListParams(
-                    items =
-                        listOf(
-                            AfternoteListDisplayItem(
-                                id = "1",
-                                serviceName = "추모 가이드라인",
-                                date = "2025.12.01",
-                                iconResId = R.drawable.img_logo,
-                            ),
-                        ),
-                    selectedTab = AfternoteTab.ALL,
-                    onTabSelected = {},
-                    onItemClick = {},
-                    hasNext = false,
-                    isLoadingMore = false,
-                    onLoadMore = {},
-                ),
-        )
-    }
 }

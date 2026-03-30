@@ -39,7 +39,6 @@ import com.afternote.feature.afternote.presentation.shared.component.list.SongPl
 import com.afternote.feature.afternote.presentation.shared.component.list.SongPlaylistScreenManagementContent
 import com.afternote.feature.afternote.presentation.shared.compositionlocal.DataProviderLocals
 import com.afternote.feature.afternote.presentation.shared.model.uimodel.PlaylistSongDisplay
-import com.afternote.feature.afternote.presentation.shared.shell.BottomNavItem
 
 /**
  * 추모 플레이리스트 전체 화면 (MemorialPlaylistList).

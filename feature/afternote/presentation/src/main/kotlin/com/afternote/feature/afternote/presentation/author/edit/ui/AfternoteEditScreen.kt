@@ -43,7 +43,6 @@ import com.afternote.feature.afternote.presentation.author.edit.ui.provider.Fake
 import com.afternote.feature.afternote.presentation.author.nav.ui.navgraph.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.component.list.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.compositionlocal.DataProviderLocals
-import com.afternote.feature.afternote.presentation.shared.shell.BottomNavItem
 import com.afternote.feature.afternote.presentation.shared.shell.BottomNavigationBar
 import com.afternote.feature.afternote.presentation.shared.shell.TopBar
 import java.text.SimpleDateFormat

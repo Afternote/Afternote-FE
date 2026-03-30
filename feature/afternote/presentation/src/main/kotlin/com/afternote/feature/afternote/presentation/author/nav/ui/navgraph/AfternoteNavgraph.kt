@@ -67,7 +67,6 @@ import com.afternote.feature.afternote.presentation.author.nav.model.SELECTED_RE
 import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteTab
 import com.afternote.feature.afternote.presentation.shared.component.list.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.fingerprint.FingerprintLoginScreen
-import com.afternote.feature.afternote.presentation.shared.shell.BottomNavItem
 import com.afternote.feature.afternote.presentation.shared.shell.TopBar
 
 private const val TAG_AFTERNOTE_EDIT = "AfternoteEdit"

@@ -11,9 +11,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.afternote.core.ui.scaffold.bottombar.BottomBar
+import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.nav.ui.navgraph.AfternoteLightTheme
-import com.afternote.feature.afternote.presentation.shared.shell.BottomNavItem
-import com.afternote.feature.afternote.presentation.shared.shell.BottomNavigationBar
 import com.afternote.feature.afternote.presentation.shared.shell.TopBar
 
 /**
@@ -31,9 +31,8 @@ import com.afternote.feature.afternote.presentation.shared.shell.TopBar
 fun FingerprintLoginScreen(
     modifier: Modifier = Modifier,
     onFingerprintAuthClick: () -> Unit = {},
-    onBottomNavTabSelected: (BottomNavItem) -> Unit = {},
 ) {
-    var selectedBottomNavItem by remember { mutableStateOf(BottomNavItem.AFTERNOTE) }
+    var selectedNavTab by remember { mutableStateOf(BottomNavTab.NOTE) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -41,12 +40,10 @@ fun FingerprintLoginScreen(
             TopBar(title = "지문 로그인")
         },
         bottomBar = {
-            BottomNavigationBar(
-                selectedItem = selectedBottomNavItem,
-                onItemSelected = { item ->
-                    selectedBottomNavItem = item
-                    onBottomNavTabSelected(item)
-                },
+            BottomBar(
+                selectedNavTab = selectedNavTab,
+                onTabClick = TODO(),
+                modifier = TODO()
             )
         },
     ) { paddingValues ->

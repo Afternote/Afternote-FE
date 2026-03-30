@@ -8,7 +8,6 @@ import com.afternote.feature.afternote.domain.usecase.GetListUseCase
 import com.afternote.feature.afternote.presentation.author.list.model.AfternoteListEvent
 import com.afternote.feature.afternote.presentation.author.list.model.AfternoteListUiState
 import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteTab
-import com.afternote.feature.afternote.presentation.shared.shell.BottomNavItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
