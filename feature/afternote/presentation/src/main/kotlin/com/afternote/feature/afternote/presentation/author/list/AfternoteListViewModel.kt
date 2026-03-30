@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.list
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.domain.model.Item
 import com.afternote.feature.afternote.domain.model.input.GetListPageInput
@@ -180,7 +181,7 @@ class AfternoteListViewModel
         /**
          * 하단 네비게이션 아이템 변경 처리
          */
-        private fun updateBottomNav(navItem: BottomNavItem) {
+        private fun updateBottomNav(navItem: BottomNavTab) {
             _uiState.update { it.copy(selectedBottomNavItem = navItem) }
             // 필요시 네비게이션 로직 추가
         }

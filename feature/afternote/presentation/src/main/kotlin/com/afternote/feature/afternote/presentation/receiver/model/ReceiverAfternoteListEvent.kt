@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.receiver.model
+import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteTab
 
 /**
@@ -10,7 +11,7 @@ sealed interface ReceiverAfternoteListEvent {
     ) : ReceiverAfternoteListEvent
 
     data class SelectBottomNav(
-        val navItem: BottomNavItem,
+        val navItem: BottomNavTab,
     ) : ReceiverAfternoteListEvent
 
     data class ClickItem(

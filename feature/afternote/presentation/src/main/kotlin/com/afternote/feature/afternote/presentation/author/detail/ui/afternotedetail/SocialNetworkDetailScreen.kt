@@ -23,6 +23,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.scaffold.bottombar.BottomBar
+import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.B1
 import com.afternote.core.ui.theme.Gray5
@@ -35,7 +37,6 @@ import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.InfoRow
 import com.afternote.feature.afternote.presentation.shared.detail.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.shared.detail.ReceiversCard
-import com.afternote.feature.afternote.presentation.shared.shell.BottomNavigationBar
 import com.afternote.feature.afternote.presentation.shared.shell.TopBar
 
 /**
@@ -109,9 +110,9 @@ fun SocialNetworkDetailScreen(
             }
         },
         bottomBar = {
-            BottomNavigationBar(
-                selectedItem = state.selectedNavItem,
-                onItemSelected = state::onNavItemSelected,
+            BottomBar(
+                selectedNavTab = state.selectedNavItem,
+                onTabClick = state::onNavItemSelected,
             )
         },
     ) { paddingValues ->
@@ -419,7 +420,7 @@ private fun SocialNetworkDetailScreenReceiverModePreview() {
             onBackClick = {},
             state =
                 rememberAfternoteDetailState(
-                    defaultBottomNavItem = BottomNavItem.AFTERNOTE,
+                    defaultBottomNavItem = BottomNavTab.NOTE,
                 ),
         )
     }

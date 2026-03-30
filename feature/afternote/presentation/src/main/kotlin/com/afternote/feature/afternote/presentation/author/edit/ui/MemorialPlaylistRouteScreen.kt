@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.icon.ArrowIconSpec
 import com.afternote.core.ui.icon.RightArrowIcon
+import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.theme.B1
 import com.afternote.core.ui.theme.B3
 import com.afternote.core.ui.theme.Gray9
@@ -91,7 +92,7 @@ fun MemorialPlaylistRouteScreen(
                     )
                 },
             ),
-        defaultBottomNavItem = BottomNavItem.AFTERNOTE,
+        defaultBottomNavTab = BottomNavTab.NOTE,
         initialSelectedSongIds = initialSelectedSongIds,
     )
 }

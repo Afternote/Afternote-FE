@@ -33,5 +33,6 @@ fun ReceiverAfternoteListRoute(
                 onTabSelected = { onEvent(ReceiverAfternoteListEvent.SelectTab(it)) },
                 onItemClick = { onEvent(ReceiverAfternoteListEvent.ClickItem(it)) },
             ),
+        onNavTabSelected = { onEvent(ReceiverAfternoteListEvent.SelectBottomNav(it)) },
     )
 }

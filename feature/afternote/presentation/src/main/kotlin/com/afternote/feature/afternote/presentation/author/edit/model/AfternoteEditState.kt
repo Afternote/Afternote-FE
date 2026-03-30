@@ -13,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.afternote.core.ui.form.LastWishOption
+import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.shared.component.list.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.compositionlocal.DataProviderLocals
 import com.afternote.feature.afternote.presentation.shared.model.util.AfternoteServiceCatalog
@@ -91,7 +92,7 @@ class AfternoteEditState(
     albumCovers: List<AlbumCover>,
 ) {
     // Navigation
-    var selectedBottomNavItem by mutableStateOf(BottomNavItem.AFTERNOTE)
+    var selectedBottomNavItem by mutableStateOf(BottomNavTab.NOTE)
         private set
 
     // Category & Service
@@ -412,7 +413,7 @@ class AfternoteEditState(
         afternoteEditReceivers = afternoteEditReceivers + newAfternoteEditReceiver
     }
 
-    fun onBottomNavItemSelected(item: BottomNavItem) {
+    fun onBottomNavItemSelected(item: BottomNavTab) {
         selectedBottomNavItem = item
     }
 

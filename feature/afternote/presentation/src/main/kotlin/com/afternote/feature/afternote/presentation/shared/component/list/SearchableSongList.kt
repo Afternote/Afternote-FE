@@ -43,6 +43,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.button.CustomRadioButton
+import com.afternote.core.ui.scaffold.bottombar.BottomBar
+import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.theme.B1
 import com.afternote.core.ui.theme.B2
 import com.afternote.core.ui.theme.Gray1
@@ -54,7 +56,6 @@ import com.afternote.core.ui.theme.White
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.component.PlaylistSongItem
 import com.afternote.feature.afternote.presentation.shared.model.uimodel.PlaylistSongDisplay
-import com.afternote.feature.afternote.presentation.shared.shell.BottomNavigationBar
 import com.afternote.feature.afternote.presentation.shared.shell.TopBar
 
 /**
@@ -83,7 +84,7 @@ data class SongPlaylistScreenManagementContent(
  * Optional parameters for the selectable [SongPlaylistScreen] (S107: keep param count ≤7).
  */
 data class SongPlaylistScreenSelectableOptions(
-    val defaultBottomNavItem: BottomNavItem = BottomNavItem.AFTERNOTE,
+    val defaultBottomNavTab: BottomNavTab = BottomNavTab.NOTE,
     val initialSelectedSongIds: Set<String>? = null,
     val searchQuery: String? = null,
     val onSearchQueryChange: ((String) -> Unit)? = null,
@@ -93,12 +94,12 @@ data class SongPlaylistScreenSelectableOptions(
 
 /**
  * 노래 검색 + 목록 전체 화면 (view-only).
- * Scaffold(TopBar + BottomNavigationBar) + SearchableSongList.
+ * Scaffold(TopBar + BottomBar) + SearchableSongList.
  *
  * @param title TopBar에 표시할 타이틀
  * @param onBackClick 뒤로가기 콜백
  * @param songs 표시할 노래 목록
- * @param defaultBottomNavItem 초기 선택 BottomNavItem
+ * @param defaultBottomNavTab 초기 선택 BottomNavTab
  */
 @Composable
 @Suppress("AssignedValueIsNeverRead")
@@ -107,10 +108,10 @@ fun SongPlaylistScreen(
     title: String,
     onBackClick: () -> Unit,
     songs: List<PlaylistSongDisplay>,
-    defaultBottomNavItem: BottomNavItem = BottomNavItem.AFTERNOTE,
+    defaultBottomNavTab: BottomNavTab = BottomNavTab.NOTE,
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    var selectedBottomNavItem by remember { mutableStateOf(defaultBottomNavItem) }
+    var selectedBottomNavTab by remember { mutableStateOf(defaultBottomNavTab) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -121,9 +122,9 @@ fun SongPlaylistScreen(
             )
         },
         bottomBar = {
-            BottomNavigationBar(
-                selectedItem = selectedBottomNavItem,
-                onItemSelected = { selectedBottomNavItem = it },
+            BottomBar(
+                selectedNavTab = selectedBottomNavTab,
+                onTabClick = { selectedBottomNavTab = it },
             )
         },
     ) { paddingValues ->
@@ -148,7 +149,7 @@ fun SongPlaylistScreen(
  * @param onBackClick 뒤로가기 콜백
  * @param songs 표시할 노래 목록
  * @param onSongsSelected 추가하기 버튼 클릭 시 선택된 노래 목록 전달
- * @param defaultBottomNavItem 초기 선택 BottomNavItem
+ * @param defaultBottomNavTab 초기 선택 BottomNavTab
  * @param initialSelectedSongIds Preview용 초기 선택 ID (기본 null)
  * @param options [SongPlaylistScreenSelectableOptions] for nav item, initial selection, and optional search binding.
  */
@@ -164,7 +165,7 @@ fun SongPlaylistScreen(
 ) {
     var selectedSongIds by remember { mutableStateOf(options.initialSelectedSongIds ?: emptySet<String>()) }
     var internalSearchQuery by remember { mutableStateOf("") }
-    var selectedBottomNavItem by remember { mutableStateOf(options.defaultBottomNavItem) }
+    var selectedBottomNavTab by remember { mutableStateOf(options.defaultBottomNavTab) }
 
     val effectiveQuery = options.searchQuery ?: internalSearchQuery
     val effectiveOnSearchQueryChange = options.onSearchQueryChange ?: { internalSearchQuery = it }
@@ -184,9 +185,9 @@ fun SongPlaylistScreen(
             )
         },
         bottomBar = {
-            BottomNavigationBar(
-                selectedItem = selectedBottomNavItem,
-                onItemSelected = { selectedBottomNavItem = it },
+            BottomBar(
+                selectedNavTab = selectedBottomNavTab,
+                onTabClick = { selectedBottomNavTab = it },
             )
         },
     ) { paddingValues ->
@@ -252,7 +253,7 @@ fun SongPlaylistScreen(
  * @param onBackClick 뒤로가기 콜백
  * @param songs 표시할 노래 목록
  * @param managementContent leadingContent + selectionBottomBar (헤더 및 하단 액션 바)
- * @param defaultBottomNavItem 초기 BottomNavItem
+ * @param defaultBottomNavTab 초기 BottomNavTab
  * @param initialSelectedSongIds Preview용 초기 선택 ID
  */
 @Composable
@@ -263,13 +264,13 @@ fun SongPlaylistScreen(
     onBackClick: () -> Unit,
     songs: List<PlaylistSongDisplay>,
     managementContent: SongPlaylistScreenManagementContent,
-    defaultBottomNavItem: BottomNavItem = BottomNavItem.AFTERNOTE,
+    defaultBottomNavTab: BottomNavTab = BottomNavTab.NOTE,
     initialSelectedSongIds: Set<String>? = null,
 ) {
     var selectedSongIds by remember {
         mutableStateOf(initialSelectedSongIds ?: emptySet<String>())
     }
-    var selectedBottomNavItem by remember { mutableStateOf(defaultBottomNavItem) }
+    var selectedBottomNavTab by remember { mutableStateOf(defaultBottomNavTab) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -280,9 +281,9 @@ fun SongPlaylistScreen(
             )
         },
         bottomBar = {
-            BottomNavigationBar(
-                selectedItem = selectedBottomNavItem,
-                onItemSelected = { selectedBottomNavItem = it },
+            BottomBar(
+                selectedNavTab = selectedBottomNavTab,
+                onTabClick = { selectedBottomNavTab = it },
             )
         },
     ) { paddingValues ->
@@ -589,7 +590,7 @@ private fun SongPlaylistScreenPreview() {
         title = "추모 플레이리스트",
         onBackClick = {},
         songs = songs,
-        defaultBottomNavItem = BottomNavItem.AFTERNOTE,
+        defaultBottomNavTab = BottomNavTab.NOTE,
     )
 }
 

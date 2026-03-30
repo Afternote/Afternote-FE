@@ -15,6 +15,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.detail.ui.afternotedetail.GalleryDetailCallbacks
 import com.afternote.feature.afternote.presentation.author.detail.ui.afternotedetail.GalleryDetailScreen
@@ -54,7 +55,7 @@ fun ReceiverAfternoteDetailRoute(
 
     val defaultState =
         rememberAfternoteDetailState(
-            defaultBottomNavItem = BottomNavItem.AFTERNOTE,
+            defaultBottomNavItem = BottomNavTab.NOTE,
         )
     val onBackClick: () -> Unit = {
         navHostController.popBackStack()

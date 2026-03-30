@@ -3,6 +3,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.shared.component.list.SongPlaylistScreen
 import com.afternote.feature.afternote.presentation.shared.model.uimodel.PlaylistSongDisplay
 
@@ -17,7 +18,7 @@ fun MemorialPlaylistScreen(
         title = "추모 플레이리스트",
         onBackClick = onBackClick,
         songs = songs,
-        defaultBottomNavItem = BottomNavItem.AFTERNOTE,
+        defaultBottomNavTab = BottomNavTab.NOTE,
     )
 }
 

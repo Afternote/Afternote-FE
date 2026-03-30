@@ -28,6 +28,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.expand.addFocusCleaner
+import com.afternote.core.ui.scaffold.bottombar.BottomBar
+import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.domain.model.Item
 import com.afternote.feature.afternote.domain.model.ProcessingMethod
 import com.afternote.feature.afternote.presentation.author.edit.mapper.AfternoteItemMapper
@@ -43,7 +45,6 @@ import com.afternote.feature.afternote.presentation.author.edit.ui.provider.Fake
 import com.afternote.feature.afternote.presentation.author.nav.ui.navgraph.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.component.list.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.compositionlocal.DataProviderLocals
-import com.afternote.feature.afternote.presentation.shared.shell.BottomNavigationBar
 import com.afternote.feature.afternote.presentation.shared.shell.TopBar
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -61,7 +62,7 @@ data class AfternoteEditScreenCallbacks(
     val onRegisterClick: (RegisterAfternotePayload) -> Unit = {},
     val onNavigateToAddSong: () -> Unit = {},
     val onNavigateToSelectReceiver: () -> Unit = {},
-    val onBottomNavTabSelected: (BottomNavItem) -> Unit = {},
+    val onBottomNavTabSelected: (BottomNavTab) -> Unit = {},
     val onThumbnailBytesReady: (ByteArray?) -> Unit = {},
 )
 
@@ -221,9 +222,9 @@ fun AfternoteEditScreen(
             )
         },
         bottomBar = {
-            BottomNavigationBar(
-                selectedItem = state.selectedBottomNavItem,
-                onItemSelected = { item ->
+            BottomBar(
+                selectedNavTab = state.selectedBottomNavItem,
+                onTabClick = { item ->
                     state.onBottomNavItemSelected(item)
                     callbacks.onBottomNavTabSelected(item)
                 },

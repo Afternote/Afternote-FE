@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.list.model
+import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteTab
 
 /**
@@ -17,7 +18,7 @@ sealed interface AfternoteListEvent {
      * 하단 네비게이션 아이템 선택 이벤트
      */
     data class SelectBottomNav(
-        val navItem: BottomNavItem,
+        val navItem: BottomNavTab,
     ) : AfternoteListEvent
 
     /**

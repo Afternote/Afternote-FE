@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.list.model
+import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.domain.model.Item
 import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteTab
 
@@ -15,7 +16,7 @@ import com.afternote.feature.afternote.presentation.shared.component.list.Aftern
  */
 data class AfternoteListUiState(
     val selectedTab: AfternoteTab = AfternoteTab.ALL,
-    val selectedBottomNavItem: BottomNavItem = BottomNavItem.AFTERNOTE,
+    val selectedBottomNavItem: BottomNavTab = BottomNavTab.NOTE,
     val items: List<Item> = emptyList(),
     val isLoading: Boolean = false,
     val loadError: String? = null,

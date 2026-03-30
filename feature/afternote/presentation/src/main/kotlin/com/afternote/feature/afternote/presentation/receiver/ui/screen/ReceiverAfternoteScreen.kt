@@ -25,6 +25,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.button.ClickButton
 import com.afternote.core.ui.feedback.ConfirmationPopup
+import com.afternote.core.ui.scaffold.bottombar.BottomBar
+import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.theme.B3
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.Sansneo
@@ -35,7 +37,6 @@ import com.afternote.feature.afternote.presentation.receiver.ui.component.HeroCa
 import com.afternote.feature.afternote.presentation.receiver.ui.component.TopHeader
 import com.afternote.feature.afternote.presentation.receiver.ui.viewmodel.ReceiverDownloadAllViewModel
 import com.afternote.feature.afternote.presentation.receiver.ui.viewmodel.ReceiverDownloadAllViewModelContract
-import com.afternote.feature.afternote.presentation.shared.shell.BottomNavigationBar
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -56,7 +57,7 @@ fun ReceiverAfterNoteScreen(
     onNavigateToAfternote: () -> Unit = {},
     viewModel: ReceiverDownloadAllViewModelContract = hiltViewModel<ReceiverDownloadAllViewModel>(),
 ) {
-    var selectedBottomNavItem by remember { mutableStateOf(BottomNavItem.AFTERNOTE) }
+    var selectedBottomNavItem by remember { mutableStateOf(BottomNavTab.NOTE) }
     var showDialog by remember { mutableStateOf(false) }
     val downloadAllUiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -92,9 +93,9 @@ fun ReceiverAfterNoteScreen(
         },
         bottomBar = {
             if (showBottomBar) {
-                BottomNavigationBar(
-                    selectedItem = selectedBottomNavItem,
-                    onItemSelected = { selectedBottomNavItem = it },
+                BottomBar(
+                    selectedNavTab = selectedBottomNavItem,
+                    onTabClick = { selectedBottomNavItem = it },
                 )
             }
         },
