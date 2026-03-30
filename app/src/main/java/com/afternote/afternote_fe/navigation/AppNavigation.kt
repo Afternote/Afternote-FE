@@ -24,7 +24,7 @@ fun AppNavigation(
         bottomBar = {
             BottomBar(
                 onItemClick = { item -> appState.navigateToBottomBarRoute(item.route) },
-                selectedNavTab = BottomNavTab.find(appState.currentRoute)?: BottomNavTab.HOME,
+                selectedNavTab = appState.currentNavTab ?: BottomNavTab.HOME,
             )
         },
     ) { innerPadding ->
