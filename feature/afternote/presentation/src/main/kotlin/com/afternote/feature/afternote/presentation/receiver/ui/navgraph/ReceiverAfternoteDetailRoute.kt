@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.receiver.ui.navgraph
+
 import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -71,6 +72,7 @@ fun ReceiverAfternoteDetailRoute(
                 CircularProgressIndicator()
             }
         }
+
         uiState.errorMessage != null || uiState.detail == null -> {
             Scaffold(
                 modifier = Modifier.fillMaxSize(),
@@ -91,6 +93,7 @@ fun ReceiverAfternoteDetailRoute(
                 }
             }
         }
+
         else -> {
             val detail = uiState.detail!!
             val serviceName = detail.title.orEmpty().ifEmpty { "애프터노트" }
@@ -98,7 +101,7 @@ fun ReceiverAfternoteDetailRoute(
             val finalWriteDate = detail.createdAt.orEmpty()
 
             when (receiverDetailCategoryFromApi(detail.category)) {
-                ReceiverDetailCategory.GALLERY ->
+                ReceiverDetailCategory.GALLERY -> {
                     GalleryDetailScreen(
                         detailState =
                             GalleryDetailState(
@@ -118,7 +121,9 @@ fun ReceiverAfternoteDetailRoute(
                         isEditable = false,
                         uiState = defaultState,
                     )
-                ReceiverDetailCategory.MEMORIAL_GUIDELINE ->
+                }
+
+                ReceiverDetailCategory.MEMORIAL_GUIDELINE -> {
                     MemorialGuidelineDetailScreen(
                         detailState =
                             MemorialGuidelineDetailState(
@@ -147,7 +152,9 @@ fun ReceiverAfternoteDetailRoute(
                         isEditable = false,
                         uiState = defaultState,
                     )
-                ReceiverDetailCategory.SOCIAL ->
+                }
+
+                ReceiverDetailCategory.SOCIAL -> {
                     SocialNetworkDetailScreen(
                         content =
                             SocialNetworkDetailContent(
@@ -165,6 +172,7 @@ fun ReceiverAfternoteDetailRoute(
                         onBackClick = onBackClick,
                         state = defaultState,
                     )
+                }
             }
         }
     }
