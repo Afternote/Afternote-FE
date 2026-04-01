@@ -1,12 +1,16 @@
 package com.afternote.feature.afternote.presentation.author.list.screen
 
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.afternote.core.ui.scaffold.TopBar
+import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.shared.list.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.list.AfternoteListContent
 import com.afternote.feature.afternote.presentation.shared.list.AfternoteListContentUiState
-import com.afternote.feature.afternote.presentation.shared.list.AfternoteListScreenShell
+import com.afternote.feature.afternote.presentation.shared.scaffold.ScaffoldContentWithOptionalFab
 
 /** Shell params for AfternoteListScreen (title, bottom bar, FAB). */
 data class AfternoteListScreenShellState(
@@ -31,11 +35,23 @@ fun AfternoteListScreen(
     onLoadMore: () -> Unit = {},
     onFabClick: () -> Unit = {},
 ) {
-    AfternoteListScreenShell(
-        modifier = modifier,
-        showFab = shellState.showFab,
-        onFabClick = onFabClick,
-        content = { contentModifier ->
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        topBar = {
+            TopBar()
+        },
+        bottomBar = {
+            BottomBar(
+                selectedNavTab = shellState.bottomBarSelectedItem,
+                onTabClick = onNavTabSelected,
+            )
+        },
+    ) { paddingValues ->
+        ScaffoldContentWithOptionalFab(
+            paddingValues = paddingValues,
+            showFab = shellState.showFab,
+            onFabClick = onFabClick,
+        ) { contentModifier ->
             AfternoteListContent(
                 modifier = contentModifier,
                 uiState = listState,
@@ -43,7 +59,6 @@ fun AfternoteListScreen(
                 onItemClick = onItemClick,
                 onLoadMore = onLoadMore,
             )
-        },
-        onNavTabSelected = onNavTabSelected,
-    )
+        }
+    }
 }
