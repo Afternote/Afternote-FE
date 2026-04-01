@@ -16,8 +16,8 @@ import com.afternote.feature.afternote.presentation.shared.shell.ScaffoldContent
  */
 @Composable
 fun AfternoteListScreenShell(
-    modifier: Modifier = Modifier,
     onNavTabSelected: (BottomNavTab) -> Unit,
+    modifier: Modifier = Modifier,
     selectedNavTab: BottomNavTab = BottomNavTab.NOTE,
     showFab: Boolean = false,
     onFabClick: () -> Unit = {},
