@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.shared.component.list
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,6 +36,8 @@ private const val LOAD_MORE_THRESHOLD = 3
  * @param isLoadingMore Whether next page is loading
  * @param onLoadMore Callback when user scrolls near end and more can load
  */
+
+@Stable
 data class AfternoteListContentListParams(
     val items: List<AfternoteListDisplayItem>,
     val selectedTab: AfternoteTab = AfternoteTab.ALL,
@@ -51,14 +55,13 @@ data class AfternoteListContentListParams(
  */
 @Composable
 fun AfternoteListContent(
-    modifier: Modifier = Modifier,
     list: AfternoteListContentListParams,
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier =
             modifier
-                .fillMaxSize()
-                .fillMaxWidth(),
+                .fillMaxSize(),
     ) {
         Spacer(modifier = Modifier.height(16.dp))
         AfternoteTabRow(
