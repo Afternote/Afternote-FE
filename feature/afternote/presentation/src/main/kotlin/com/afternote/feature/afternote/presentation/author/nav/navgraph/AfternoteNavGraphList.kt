@@ -5,9 +5,9 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.domain.model.Item
-import com.afternote.feature.afternote.presentation.author.edit.mapper.AfternoteItemMapper
+import com.afternote.feature.afternote.presentation.author.edit.AfternoteItemMapper
 import com.afternote.feature.afternote.presentation.author.edit.model.MemorialPlaylistStateHolder
-import com.afternote.feature.afternote.presentation.author.edit.ui.provider.AfternoteEditDataProvider
+import com.afternote.feature.afternote.presentation.author.edit.provider.AfternoteEditDataProvider
 import com.afternote.feature.afternote.presentation.author.list.AfternoteListRoute
 import com.afternote.feature.afternote.presentation.author.list.AfternoteListRouteCallbacks
 import com.afternote.feature.afternote.presentation.author.nav.model.AfternoteRoute

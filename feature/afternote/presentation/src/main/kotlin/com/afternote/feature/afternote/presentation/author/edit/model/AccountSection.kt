@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.edit.model
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.Immutable
+import com.afternote.feature.afternote.presentation.author.edit.processing.model.AccountProcessingMethod
 
 /**
  * 계정 정보 섹션

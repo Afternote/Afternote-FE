@@ -1,5 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.edit.model
 
+import com.afternote.feature.afternote.presentation.author.edit.processing.model.ProcessingMethodOption
+
 /**
  * 정보 처리 방법 (갤러리 및 파일용).
  * 갤러리는 수신자 지정만 지원하며, 수신자는 설정 > 수신자 목록(GET /users/receivers)에서 선택합니다.

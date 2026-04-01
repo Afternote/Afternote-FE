@@ -4,7 +4,7 @@ import androidx.compose.runtime.MutableState
 import com.afternote.feature.afternote.domain.model.Item
 import com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditState
 import com.afternote.feature.afternote.presentation.author.edit.model.MemorialPlaylistStateHolder
-import com.afternote.feature.afternote.presentation.author.edit.ui.provider.AfternoteEditDataProvider
+import com.afternote.feature.afternote.presentation.author.edit.provider.AfternoteEditDataProvider
 
 /**
  * Holder and clear callback for hoisted edit state (keeps param count ≤7).

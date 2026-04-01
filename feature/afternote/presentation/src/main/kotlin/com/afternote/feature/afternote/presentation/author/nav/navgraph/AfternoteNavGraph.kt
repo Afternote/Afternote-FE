@@ -4,8 +4,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.feature.afternote.presentation.author.edit.ui.MemorialPlaylistRouteScreen
-import com.afternote.feature.afternote.presentation.author.edit.ui.addsong.AddSongViewModel
+import com.afternote.feature.afternote.presentation.author.edit.playlist.AddSongViewModel
+import com.afternote.feature.afternote.presentation.author.edit.playlist.MemorialPlaylistRouteScreen
 import com.afternote.feature.afternote.presentation.author.nav.model.AfternoteRoute
 
 fun NavGraphBuilder.afternoteNavGraph(

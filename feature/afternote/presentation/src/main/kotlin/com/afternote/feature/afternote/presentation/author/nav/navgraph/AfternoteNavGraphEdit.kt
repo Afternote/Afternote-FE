@@ -13,18 +13,18 @@ import androidx.navigation.NavController
 import androidx.navigation.toRoute
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.domain.model.Item
+import com.afternote.feature.afternote.presentation.author.edit.AfternoteEditSaveError
+import com.afternote.feature.afternote.presentation.author.edit.AfternoteEditScreen
+import com.afternote.feature.afternote.presentation.author.edit.AfternoteEditScreenCallbacks
+import com.afternote.feature.afternote.presentation.author.edit.AfternoteEditViewModel
+import com.afternote.feature.afternote.presentation.author.edit.SaveAfternoteMemorialMedia
 import com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditState
 import com.afternote.feature.afternote.presentation.author.edit.model.AfternoteSaveState
 import com.afternote.feature.afternote.presentation.author.edit.model.AfternoteValidationError
 import com.afternote.feature.afternote.presentation.author.edit.model.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.edit.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.edit.model.rememberAfternoteEditState
-import com.afternote.feature.afternote.presentation.author.edit.ui.AfternoteEditSaveError
-import com.afternote.feature.afternote.presentation.author.edit.ui.AfternoteEditScreen
-import com.afternote.feature.afternote.presentation.author.edit.ui.AfternoteEditScreenCallbacks
-import com.afternote.feature.afternote.presentation.author.edit.ui.AfternoteEditViewModel
-import com.afternote.feature.afternote.presentation.author.edit.ui.SaveAfternoteMemorialMedia
-import com.afternote.feature.afternote.presentation.author.edit.ui.provider.AfternoteEditDataProvider
+import com.afternote.feature.afternote.presentation.author.edit.provider.AfternoteEditDataProvider
 import com.afternote.feature.afternote.presentation.author.nav.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.author.nav.model.SELECTED_RECEIVER_ID_KEY
 

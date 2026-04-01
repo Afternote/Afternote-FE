@@ -5,9 +5,9 @@ import androidx.compose.ui.Modifier
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.shared.list.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.list.AfternoteItemUiModel
+import com.afternote.feature.afternote.presentation.shared.list.AfternoteListContent
+import com.afternote.feature.afternote.presentation.shared.list.AfternoteListContentParams
 import com.afternote.feature.afternote.presentation.shared.list.AfternoteListScreenShell
-import com.afternote.feature.afternote.presentation.shared.list.content.AfternoteListContent
-import com.afternote.feature.afternote.presentation.shared.list.content.AfternoteListContentParams
 
 /** Shell params for AfternoteListScreen (title, bottom bar, FAB). */
 data class AfternoteListScreenShellState(

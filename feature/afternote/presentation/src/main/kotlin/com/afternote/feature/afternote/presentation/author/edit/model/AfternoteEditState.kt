@@ -15,6 +15,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.afternote.core.ui.form.LastWishOption
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
+import com.afternote.feature.afternote.presentation.author.edit.playlist.Song
+import com.afternote.feature.afternote.presentation.author.edit.processing.model.AccountProcessingMethod
+import com.afternote.feature.afternote.presentation.author.edit.processing.model.ProcessingMethodCallbacks
+import com.afternote.feature.afternote.presentation.author.edit.processing.model.ProcessingMethodItem
+import com.afternote.feature.afternote.presentation.author.edit.processing.model.ProcessingMethodManager
+import com.afternote.feature.afternote.presentation.author.edit.selection.SelectionDropdownState
 import com.afternote.feature.afternote.presentation.shared.DataProviderLocals
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
@@ -24,18 +30,18 @@ import com.afternote.feature.afternote.presentation.shared.util.AfternoteService
  */
 @Stable
 class MemorialPlaylistStateHolder {
-    val songs: SnapshotStateList<com.afternote.feature.afternote.presentation.author.edit.model.Song> =
+    val songs: SnapshotStateList<Song> =
         mutableStateListOf()
 
     var onSongCountChanged: (() -> Unit)? = null
 
-    fun initializeSongs(initialSongs: List<com.afternote.feature.afternote.presentation.author.edit.model.Song>) {
+    fun initializeSongs(initialSongs: List<Song>) {
         if (songs.isEmpty()) {
             songs.addAll(initialSongs)
         }
     }
 
-    fun addSong(song: com.afternote.feature.afternote.presentation.author.edit.model.Song) {
+    fun addSong(song: Song) {
         songs.add(song)
         onSongCountChanged?.invoke()
     }
@@ -78,7 +84,7 @@ enum class DialogType {
  * AfternoteEditScreen의 상태를 관리하는 State Holder
  *
  * Note: State Holder 패턴으로 인해 많은 함수가 필요합니다.
- * [ProcessingMethodManager]로 처리 방법 목록 책임을 분리하여 함수 수를 20 이하로 유지합니다.
+ * [com.afternote.feature.afternote.presentation.author.edit.processing.model.ProcessingMethodManager]로 처리 방법 목록 책임을 분리하여 함수 수를 20 이하로 유지합니다.
  * 추가 확장 시 AfternoteEditReceiverManager, CategoryManager 등 분리 고려.
  */
 @Stable
@@ -105,7 +111,7 @@ class AfternoteEditState(
 
     // Processing Methods
     var selectedProcessingMethod by mutableStateOf(
-        com.afternote.feature.afternote.presentation.author.edit.model.AccountProcessingMethod.MEMORIAL_ACCOUNT,
+        AccountProcessingMethod.MEMORIAL_ACCOUNT,
     )
         private set
     var selectedInformationProcessingMethod by mutableStateOf(
@@ -129,9 +135,9 @@ class AfternoteEditState(
 
     // Processing Method Lists (delegated to manager to keep function count under threshold)
     private val processingMethodManager = ProcessingMethodManager()
-    val processingMethods: List<com.afternote.feature.afternote.presentation.author.edit.model.ProcessingMethodItem>
+    val processingMethods: List<ProcessingMethodItem>
         get() = processingMethodManager.processingMethods
-    val galleryProcessingMethods: List<com.afternote.feature.afternote.presentation.author.edit.model.ProcessingMethodItem>
+    val galleryProcessingMethods: List<ProcessingMethodItem>
         get() = processingMethodManager.galleryProcessingMethods
 
     // Memorial Guideline
@@ -177,20 +183,17 @@ class AfternoteEditState(
 
     // Dropdown States
     var categoryDropdownState by mutableStateOf(
-        com.afternote.feature.afternote.presentation.author.edit.ui.dropdown
-            .SelectionDropdownState(),
+        SelectionDropdownState(),
     )
         private set
     var serviceDropdownState by mutableStateOf(
-        com.afternote.feature.afternote.presentation.author.edit.ui.dropdown
-            .SelectionDropdownState(),
+        SelectionDropdownState(),
     )
         private set
 
     @Suppress("UNUSED")
     var relationshipDropdownState by mutableStateOf(
-        com.afternote.feature.afternote.presentation.author.edit.ui.dropdown
-            .SelectionDropdownState(),
+        SelectionDropdownState(),
     )
         private set
 
@@ -245,8 +248,8 @@ class AfternoteEditState(
             )
         }
 
-    val galleryProcessingCallbacks: com.afternote.feature.afternote.presentation.author.edit.model.ProcessingMethodCallbacks by lazy {
-        com.afternote.feature.afternote.presentation.author.edit.model.ProcessingMethodCallbacks(
+    val galleryProcessingCallbacks: ProcessingMethodCallbacks by lazy {
+        ProcessingMethodCallbacks(
             onItemDeleteClick = processingMethodManager::deleteGalleryProcessingMethod,
             onItemAdded = processingMethodManager::addGalleryProcessingMethod,
             onTextFieldVisibilityChanged = { _ ->
@@ -256,8 +259,8 @@ class AfternoteEditState(
         )
     }
 
-    val socialProcessingCallbacks: com.afternote.feature.afternote.presentation.author.edit.model.ProcessingMethodCallbacks by lazy {
-        com.afternote.feature.afternote.presentation.author.edit.model.ProcessingMethodCallbacks(
+    val socialProcessingCallbacks: ProcessingMethodCallbacks by lazy {
+        ProcessingMethodCallbacks(
             onItemDeleteClick = processingMethodManager::deleteProcessingMethod,
             onItemAdded = processingMethodManager::addProcessingMethod,
             onTextFieldVisibilityChanged = { _ ->
@@ -287,7 +290,7 @@ class AfternoteEditState(
         }
     }
 
-    fun onProcessingMethodSelected(method: com.afternote.feature.afternote.presentation.author.edit.model.AccountProcessingMethod) {
+    fun onProcessingMethodSelected(method: AccountProcessingMethod) {
         selectedProcessingMethod = method
     }
 
@@ -444,11 +447,11 @@ class AfternoteEditState(
         if (params.processing.accountMethodName.isNotEmpty()) {
             selectedProcessingMethod =
                 runCatching {
-                    com.afternote.feature.afternote.presentation.author.edit.model.AccountProcessingMethod.valueOf(
+                    AccountProcessingMethod.valueOf(
                         params.processing.accountMethodName,
                     )
                 }.getOrDefault(
-                    com.afternote.feature.afternote.presentation.author.edit.model.AccountProcessingMethod.MEMORIAL_ACCOUNT,
+                    AccountProcessingMethod.MEMORIAL_ACCOUNT,
                 )
         }
 

@@ -1,4 +1,6 @@
 package com.afternote.feature.afternote.presentation.shared.model.dummy.afternote
+import com.afternote.feature.afternote.presentation.author.edit.playlist.Song
+import com.afternote.feature.afternote.presentation.author.edit.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
 /**
@@ -9,17 +11,17 @@ object AfternoteEditDummies {
     /**
      * Default processing method items for record-type services (애프터노트 수정 화면). Dummy data.
      */
-    fun defaultRecordProcessingMethods(): List<com.afternote.feature.afternote.presentation.author.edit.model.ProcessingMethodItem> =
+    fun defaultRecordProcessingMethods(): List<ProcessingMethodItem> =
         listOf(
-            com.afternote.feature.afternote.presentation.author.edit.model.ProcessingMethodItem(
+            ProcessingMethodItem(
                 "1",
                 "게시물 내리기",
             ),
-            com.afternote.feature.afternote.presentation.author.edit.model.ProcessingMethodItem(
+            ProcessingMethodItem(
                 "2",
                 "추모 게시물 올리기",
             ),
-            com.afternote.feature.afternote.presentation.author.edit.model.ProcessingMethodItem(
+            ProcessingMethodItem(
                 "3",
                 "추모 계정으로 전환하기",
             ),
@@ -28,13 +30,13 @@ object AfternoteEditDummies {
     /**
      * Default processing method items for gallery/file-type services. Dummy data.
      */
-    fun defaultGalleryProcessingMethods(): List<com.afternote.feature.afternote.presentation.author.edit.model.ProcessingMethodItem> =
+    fun defaultGalleryProcessingMethods(): List<ProcessingMethodItem> =
         listOf(
-            com.afternote.feature.afternote.presentation.author.edit.model.ProcessingMethodItem(
+            ProcessingMethodItem(
                 "1",
                 "'엽사' 폴더 박선호에게 전송",
             ),
-            com.afternote.feature.afternote.presentation.author.edit.model.ProcessingMethodItem(
+            ProcessingMethodItem(
                 "2",
                 "'흑역사' 폴더 삭제",
             ),
@@ -112,59 +114,59 @@ object AfternoteEditDummies {
     /**
      * Default playlist songs for edit screen. Replace with API load when backend is ready.
      */
-    fun defaultSongs(): List<com.afternote.feature.afternote.presentation.author.edit.model.Song> =
+    fun defaultSongs(): List<Song> =
         listOf(
-            com.afternote.feature.afternote.presentation.author.edit.model.Song(
+            Song(
                 id = "1",
                 title = "노래 제목",
                 artist = "가수 이름",
             ),
-            com.afternote.feature.afternote.presentation.author.edit.model.Song(
+            Song(
                 id = "2",
                 title = "노래 제목",
                 artist = "가수 이름",
             ),
-            com.afternote.feature.afternote.presentation.author.edit.model.Song(
+            Song(
                 id = "3",
                 title = "노래 제목",
                 artist = "가수 이름",
             ),
-            com.afternote.feature.afternote.presentation.author.edit.model.Song(
+            Song(
                 id = "4",
                 title = "노래 제목",
                 artist = "가수 이름",
             ),
-            com.afternote.feature.afternote.presentation.author.edit.model.Song(
+            Song(
                 id = "5",
                 title = "노래 제목",
                 artist = "가수 이름",
             ),
-            com.afternote.feature.afternote.presentation.author.edit.model.Song(
+            Song(
                 id = "6",
                 title = "노래 제목",
                 artist = "가수 이름",
             ),
-            com.afternote.feature.afternote.presentation.author.edit.model.Song(
+            Song(
                 id = "7",
                 title = "노래 제목",
                 artist = "가수 이름",
             ),
-            com.afternote.feature.afternote.presentation.author.edit.model.Song(
+            Song(
                 id = "8",
                 title = "노래 제목",
                 artist = "가수 이름",
             ),
-            com.afternote.feature.afternote.presentation.author.edit.model.Song(
+            Song(
                 id = "9",
                 title = "노래 제목",
                 artist = "가수 이름",
             ),
-            com.afternote.feature.afternote.presentation.author.edit.model.Song(
+            Song(
                 id = "10",
                 title = "노래 제목",
                 artist = "가수 이름",
             ),
-            com.afternote.feature.afternote.presentation.author.edit.model.Song(
+            Song(
                 id = "11",
                 title = "노래 제목",
                 artist = "가수 이름",
