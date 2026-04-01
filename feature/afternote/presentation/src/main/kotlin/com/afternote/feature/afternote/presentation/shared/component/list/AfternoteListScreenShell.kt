@@ -4,10 +4,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import com.afternote.core.ui.scaffold.TopBar
+import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.feature.afternote.presentation.shared.compositionlocal.AfternoteEmbeddedMainBottomBar
 import com.afternote.feature.afternote.presentation.shared.shell.ScaffoldContentWithOptionalFab
-import com.afternote.feature.afternote.presentation.shared.shell.TopBar
 
 /**
  * Shared shell for 애프터노트 list screens (writer main and receiver list).
@@ -15,9 +16,8 @@ import com.afternote.feature.afternote.presentation.shared.shell.TopBar
  */
 @Composable
 fun AfternoteListScreenShell(
-    onNavTabSelected: (BottomNavTab) -> Unit,
     modifier: Modifier = Modifier,
-    title: String = "애프터노트",
+    onNavTabSelected: (BottomNavTab) -> Unit,
     selectedNavTab: BottomNavTab = BottomNavTab.NOTE,
     showFab: Boolean = false,
     onFabClick: () -> Unit = {},
@@ -26,12 +26,12 @@ fun AfternoteListScreenShell(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            TopBar(title = title)
+            TopBar()
         },
         bottomBar = {
-            AfternoteEmbeddedMainBottomBar(
-                onTabClick = onNavTabSelected,
+            BottomBar(
                 selectedNavTab = selectedNavTab,
+                onTabClick = onNavTabSelected,
             )
         },
     ) { paddingValues ->
@@ -42,4 +42,13 @@ fun AfternoteListScreenShell(
             content = content,
         )
     }
+}
+
+@Preview
+@Composable
+private fun AfternoteListScreenShellPreview() {
+    AfternoteListScreenShell(
+        onNavTabSelected = {},
+        content = { },
+    )
 }

@@ -40,12 +40,6 @@ class AppState(
             lastNavTab = matched
             return matched
         }
-//    val currentRoute: Route?
-//            BottomNavTab.entries
-//                // 조건을 만족하는 첫 번째 요소를 가져 오고 없으면 널 반환
-//                .firstOrNull { currentDestination?.hasRoute(it.route::class) == true }
-//                ?.route
-//            return
 
     fun navigateToBottomBarRoute(route: Route) {
         navController.navigate(route) {

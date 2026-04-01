@@ -2,12 +2,16 @@ package com.afternote.feature.afternote.presentation.author.list.screen
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
+import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteListContent
 import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteListContentListParams
 import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteListScreenShell
 import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteTab
+import com.afternote.feature.afternote.presentation.shared.model.dummy.afternote.AfternoteListDummies
 import com.afternote.feature.afternote.presentation.shared.model.uimodel.AfternoteListDisplayItem
+import com.afternote.feature.afternote.presentation.shared.model.util.getIconResForServiceName
 
 /** Shell params for AfternoteListScreen (title, bottom bar, FAB). */
 data class AfternoteListScreenShellParams(
@@ -42,9 +46,6 @@ fun AfternoteListScreen(
 ) {
     AfternoteListScreenShell(
         modifier = modifier,
-        title = shell.title,
-        onNavTabSelected = onNavTabSelected,
-//        on = shell.onBottomBarItemSelected,
         showFab = shell.showFab,
         onFabClick = shell.onFabClick,
         content = { contentModifier ->
@@ -62,5 +63,35 @@ fun AfternoteListScreen(
                     ),
             )
         },
+        onNavTabSelected = onNavTabSelected,
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AfternoteListScreenPreview() {
+    AfternoteTheme {
+        val sampleItems =
+            AfternoteListDummies.defaultAfternoteList().mapIndexed { index, (name, date) ->
+                AfternoteListDisplayItem(
+                    id = index.toString(),
+                    serviceName = name,
+                    date = date,
+                    iconResId = getIconResForServiceName(name),
+                )
+            }
+        AfternoteListScreen(
+            shell =
+                AfternoteListScreenShellParams(
+                    onBottomBarItemSelected = {},
+                ),
+            list =
+                AfternoteListScreenListParams(
+                    items = sampleItems,
+                    onTabSelected = {},
+                    onItemClick = {},
+                ),
+            onNavTabSelected = {},
+        )
+    }
 }
