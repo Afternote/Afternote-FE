@@ -1,16 +1,14 @@
 package com.afternote.feature.afternote.presentation.shared.component.list
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,13 +20,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.afternote.core.ui.expand.dropShadow
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Black
 import com.afternote.core.ui.theme.Gray5
 import com.afternote.core.ui.theme.Sansneo
-import com.afternote.core.ui.theme.ShadowBlack
-import com.afternote.core.ui.theme.White
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.uimodel.AfternoteListDisplayItem
 
@@ -38,79 +33,52 @@ import com.afternote.feature.afternote.presentation.shared.model.uimodel.Afterno
  */
 @Composable
 fun AfternoteListItem(
-    modifier: Modifier = Modifier,
     item: AfternoteListDisplayItem,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
 ) {
-    val shape = RoundedCornerShape(16.dp)
-
-    Surface(
+    Row(
         modifier =
             modifier
                 .fillMaxWidth()
-                .height(74.dp)
-                .dropShadow(
-                    shape = shape,
-                    color = ShadowBlack,
-                    blur = 5.dp,
-                    offsetY = 2.dp,
-                    offsetX = 0.dp,
-                    spread = 0.dp,
-                ),
-        shape = shape,
-        color = White,
-        onClick = onClick,
+                .clickable
+                { onClick() }
+                .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Box(
-            modifier = Modifier.padding(horizontal = 20.dp),
+        Image(
+            painter = painterResource(item.iconResId),
+            contentDescription = item.serviceName,
+            modifier = Modifier.size(40.dp),
+            contentScale = ContentScale.FillBounds,
+        )
+        Column(
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Image(
-                        painter = painterResource(item.iconResId),
-                        contentDescription = item.serviceName,
-                        modifier = Modifier.size(40.dp),
-                        contentScale = ContentScale.FillBounds,
-                    )
-                }
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        text = item.serviceName,
-                        color = Black,
-                        lineHeight = 22.sp,
-                        fontSize = 16.sp,
-                        fontFamily = Sansneo,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Text(
-                        text = stringResource(R.string.afternote_last_written_date, item.date),
-                        color = Gray5,
-                        lineHeight = 16.sp,
-                        fontSize = 10.sp,
-                        fontFamily = Sansneo,
-                        fontWeight = FontWeight.Normal,
-                    )
-                }
-
-                Image(
-                    painter = painterResource(R.drawable.ic_arrow_right_tab),
-                    contentDescription = "애프터노트 상세보기 화살표",
-                    modifier = Modifier.size(10.dp),
-                )
-            }
+            Text(
+                text = item.serviceName,
+                color = Black,
+                lineHeight = 22.sp,
+                fontSize = 16.sp,
+                fontFamily = Sansneo,
+                fontWeight = FontWeight.Medium,
+            )
+            Text(
+                text = stringResource(R.string.afternote_last_written_date, item.date),
+                color = Gray5,
+                lineHeight = 16.sp,
+                fontSize = 10.sp,
+                fontFamily = Sansneo,
+                fontWeight = FontWeight.Normal,
+            )
         }
+        Spacer(Modifier.weight(1f))
+
+        Image(
+            painter = painterResource(R.drawable.feature_afternote_presentation_right_arrow),
+            contentDescription = null,
+        )
     }
 }
 
