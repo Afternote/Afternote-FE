@@ -17,14 +17,18 @@ fun ReceiverAfternoteListRoute(
     modifier: Modifier = Modifier,
 ) {
     AfternoteListScreen(
-        listState = AfternoteListScreenListState(
-            items = uiState.items,
-            selectedTab = uiState.selectedTab,
-        ),
+        listState =
+            AfternoteListScreenListState(
+                items = uiState.items,
+                selectedTab = uiState.selectedTab,
+            ),
         shellState =
             AfternoteListScreenShellState(
                 bottomBarSelectedItem = uiState.selectedBottomNavItem,
             ),
+        onNavTabSelected = { onEvent(ReceiverAfternoteListEvent.SelectBottomNav(it)) },
+        onTabSelected = { onEvent(ReceiverAfternoteListEvent.SelectTab(it)) },
+        onItemClick = { onEvent(ReceiverAfternoteListEvent.ClickItem(it)) },
         modifier = modifier,
     )
 }

@@ -9,6 +9,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.domain.model.Item
+import com.afternote.feature.afternote.presentation.author.list.model.AfternoteListEvent
 import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreen
 import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreenListState
 import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreenShellState
@@ -81,16 +82,22 @@ fun AfternoteListRoute(
         }
 
     AfternoteListScreen(
-        listState = AfternoteListScreenListState(
-            items = displayItems,
-            selectedTab = uiState.selectedTab,
-            hasNext = uiState.hasNext,
-            isLoadingMore = uiState.isLoadingMore,
-        ),
+        listState =
+            AfternoteListScreenListState(
+                items = displayItems,
+                selectedTab = uiState.selectedTab,
+                hasNext = uiState.hasNext,
+                isLoadingMore = uiState.isLoadingMore,
+            ),
         shellState =
             AfternoteListScreenShellState(
                 bottomBarSelectedItem = uiState.selectedBottomNavItem,
                 showFab = true,
             ),
+        onNavTabSelected = callbacks.onBottomNavTabSelected,
+        onTabSelected = { viewModel.onEvent(AfternoteListEvent.SelectTab(it)) },
+        onItemClick = callbacks.onNavigateToDetail,
+        onLoadMore = { viewModel.loadNextPage() },
+        onFabClick = { callbacks.onNavigateToAdd(uiState.selectedTab) },
     )
 }
