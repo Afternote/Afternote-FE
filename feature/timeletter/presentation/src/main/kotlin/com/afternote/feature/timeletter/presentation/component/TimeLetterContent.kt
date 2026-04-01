@@ -7,13 +7,13 @@ import androidx.compose.ui.Modifier
 import com.afternote.feature.timeletter.domain.TimeLetters
 
 @Composable
-fun TimeLetterContent(
+private fun TimeLetterContent(
     letters: TimeLetters,
     modifier: Modifier = Modifier,
 ) {
-    LazyColumn(modifier = modifier) {
-        items(letters.toList()) { letter ->
-            TimeLetterListItem(letter = letter)
-        }
+    if (letters.isEmpty()) {
+        EmptyTimeLetterContent(modifier = modifier)
+    } else {
+        TimeLetterContent(letters = letters, modifier = modifier)
     }
 }

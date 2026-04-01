@@ -31,6 +31,6 @@ fun EmptyTimeLetterContent(modifier: Modifier = Modifier) {
 @Composable
 private fun EmptyTimeLetterContentPreview() {
     AfternoteTheme {
-        EmptyTimeletterContent()
+        EmptyTimeLetterContent()
     }
 }

@@ -5,20 +5,34 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.afternote.core.ui.AfternoteFab
 import com.afternote.core.ui.BottomBar
+import com.afternote.core.ui.BottomNavItem
+import com.afternote.core.ui.R
 import com.afternote.core.ui.TopBar
 import com.afternote.feature.timeletter.domain.TimeLetters
-import com.afternote.feature.timeletter.presentation.component.EmptyTimeletterContent
+import com.afternote.feature.timeletter.presentation.component.EmptyTimeLetterContent
 
 @Composable
 fun TimeletterScreen(
-    letters: TimeLetters = TimeLetters(emptyList()),
+    letters: TimeLetters,
+    bottomNavItems: List<BottomNavItem>,
+    selectedNavItem: BottomNavItem,
+    onNavItemClick: (BottomNavItem) -> Unit,
+    onAddClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
         modifier = modifier,
         topBar = { TopBar() },
-        bottomBar = { BottomBar() },
+        bottomBar = {
+            BottomBar(
+                items = bottomNavItems,
+                isSelected = { it == selectedNavItem },
+                onNavItemClick,
+            )
+        },
+        floatingActionButton = { AfternoteFab(onClick = onAddClick) },
     ) { paddingValues ->
         TimeletterContent(
             letters = letters,
@@ -33,7 +47,7 @@ private fun TimeletterContent(
     modifier: Modifier = Modifier,
 ) {
     if (letters.isEmpty()) {
-        EmptyTimeletterContent(modifier = modifier)
+        EmptyTimeLetterContent(modifier = modifier)
         return
     }
 }
@@ -41,5 +55,17 @@ private fun TimeletterContent(
 @Preview
 @Composable
 private fun TimeletterScreenEmptyPreview() {
-    TimeletterScreen(letters = TimeLetters(emptyList()))
+    val items = listOf(
+        BottomNavItem("홈", R.drawable.core_ui_ic_home, "home"),
+        BottomNavItem("기록", R.drawable.core_ui_ic_mindrecord, "mindrecord"),
+        BottomNavItem("타임레터", R.drawable.core_ui_ic_mail, "timeletter"),
+        BottomNavItem("노트", R.drawable.core_ui_ic_note, "afternote"),
+    )
+    TimeletterScreen(
+        letters = TimeLetters(emptyList()),
+        bottomNavItems = items,
+        selectedNavItem = items[2],
+        onNavItemClick = {},
+        onAddClick = {},
+    )
 }
