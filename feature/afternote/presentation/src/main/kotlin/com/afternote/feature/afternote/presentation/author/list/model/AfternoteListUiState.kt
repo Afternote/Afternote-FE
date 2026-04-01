@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.list.model
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.domain.model.Item
-import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteTab
+import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteCategory
 
 /**
  * 애프터노트 목록 화면 UI 상태
@@ -15,7 +15,7 @@ import com.afternote.feature.afternote.presentation.shared.component.list.Aftern
  * @param isLoadingMore 다음 페이지 로딩 중 여부
  */
 data class AfternoteListUiState(
-    val selectedTab: AfternoteTab = AfternoteTab.ALL,
+    val selectedTab: AfternoteCategory = AfternoteCategory.ALL,
     val selectedBottomNavItem: BottomNavTab = BottomNavTab.NOTE,
     val items: List<Item> = emptyList(),
     val isLoading: Boolean = false,

@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.list.model
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteTab
+import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteCategory
 
 /**
  * 애프터노트 목록 화면 UI 이벤트
@@ -11,7 +11,7 @@ sealed interface AfternoteListEvent {
      * 탭 선택 이벤트
      */
     data class SelectTab(
-        val tab: AfternoteTab,
+        val tab: AfternoteCategory,
     ) : AfternoteListEvent
 
     /**

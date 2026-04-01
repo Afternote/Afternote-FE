@@ -20,7 +20,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.list.AfternoteTabRow
+import com.afternote.feature.afternote.presentation.author.list.AfternoteCategoryRow
 import com.afternote.feature.afternote.presentation.shared.model.uimodel.AfternoteListDisplayItem
 
 private const val LOAD_MORE_THRESHOLD = 3
@@ -40,8 +40,8 @@ private const val LOAD_MORE_THRESHOLD = 3
 @Stable
 data class AfternoteListContentListParams(
     val items: List<AfternoteListDisplayItem>,
-    val selectedTab: AfternoteTab = AfternoteTab.ALL,
-    val onTabSelected: (AfternoteTab) -> Unit = {},
+    val selectedTab: AfternoteCategory = AfternoteCategory.ALL,
+    val onTabSelected: (AfternoteCategory) -> Unit = {},
     val onItemClick: (String) -> Unit = {},
     val hasNext: Boolean = false,
     val isLoadingMore: Boolean = false,
@@ -64,12 +64,12 @@ fun AfternoteListContent(
                 .fillMaxSize(),
     ) {
         Spacer(modifier = Modifier.height(16.dp))
-        AfternoteTabRow(
-            selectedTab = list.selectedTab,
-            onTabSelected = list.onTabSelected,
+        AfternoteCategoryRow(
+            onCategorySelected = list.onTabSelected,
+            selectedCategory = list.selectedTab,
         )
         Spacer(modifier = Modifier.height(20.dp))
-        if (list.items.isEmpty() && list.selectedTab == AfternoteTab.ALL) {
+        if (list.items.isEmpty() && list.selectedTab == AfternoteCategory.ALL) {
             EmptyAfternoteContent(
                 modifier =
                     Modifier
@@ -129,7 +129,7 @@ private fun AfternoteListContentEmptyPreview() {
             list =
                 AfternoteListContentListParams(
                     items = emptyList(),
-                    selectedTab = AfternoteTab.ALL,
+                    selectedTab = AfternoteCategory.ALL,
                 ),
         )
     }
@@ -157,7 +157,7 @@ private fun AfternoteListContentWithItemsPreview() {
                                 iconResId = R.drawable.img_logo,
                             ),
                         ),
-                    selectedTab = AfternoteTab.ALL,
+                    selectedTab = AfternoteCategory.ALL,
                 ),
         )
     }

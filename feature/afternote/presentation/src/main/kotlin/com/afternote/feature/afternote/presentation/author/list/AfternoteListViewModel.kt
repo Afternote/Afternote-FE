@@ -8,7 +8,7 @@ import com.afternote.feature.afternote.domain.model.input.GetListPageInput
 import com.afternote.feature.afternote.domain.usecase.GetListUseCase
 import com.afternote.feature.afternote.presentation.author.list.model.AfternoteListEvent
 import com.afternote.feature.afternote.presentation.author.list.model.AfternoteListUiState
-import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteTab
+import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -158,7 +158,7 @@ class AfternoteListViewModel
         /**
          * 탭 변경 및 필터링 로직
          */
-        private fun updateTab(tab: AfternoteTab) {
+        private fun updateTab(tab: AfternoteCategory) {
             _uiState.update { it.copy(selectedTab = tab) }
             updateFilteredItems(tab)
         }
@@ -166,13 +166,13 @@ class AfternoteListViewModel
         /**
          * 선택된 탭에 따라 아이템 필터링
          */
-        private fun updateFilteredItems(tab: AfternoteTab) {
+        private fun updateFilteredItems(tab: AfternoteCategory) {
             val filtered =
                 when (tab) {
-                    AfternoteTab.ALL -> allItems
-                    AfternoteTab.SOCIAL_NETWORK -> allItems.filter { it.type == AfternoteServiceType.SOCIAL_NETWORK }
-                    AfternoteTab.GALLERY_AND_FILES -> allItems.filter { it.type == AfternoteServiceType.GALLERY_AND_FILES }
-                    AfternoteTab.MEMORIAL -> allItems.filter { it.type == AfternoteServiceType.MEMORIAL }
+                    AfternoteCategory.ALL -> allItems
+                    AfternoteCategory.SOCIAL_NETWORK -> allItems.filter { it.type == AfternoteServiceType.SOCIAL_NETWORK }
+                    AfternoteCategory.GALLERY_AND_FILES -> allItems.filter { it.type == AfternoteServiceType.GALLERY_AND_FILES }
+                    AfternoteCategory.MEMORIAL -> allItems.filter { it.type == AfternoteServiceType.MEMORIAL }
                 }
 
             _uiState.update { it.copy(items = filtered) }

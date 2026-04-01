@@ -3,7 +3,7 @@ package com.afternote.feature.afternote.presentation.shared.component.list
 /**
  * Tab categories for the shared 애프터노트 list screen (writer main and receiver list).
  */
-enum class AfternoteTab(
+enum class AfternoteCategory(
     val label: String,
 ) {
     ALL("전체"),

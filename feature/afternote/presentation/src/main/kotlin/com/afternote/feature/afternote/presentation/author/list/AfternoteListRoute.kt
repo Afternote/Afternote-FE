@@ -13,7 +13,7 @@ import com.afternote.feature.afternote.presentation.author.list.model.AfternoteL
 import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreen
 import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreenListState
 import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreenShellState
-import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteTab
+import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.model.uimodel.AfternoteListDisplayItem
 import com.afternote.feature.afternote.presentation.shared.model.util.getIconResForServiceName
 
@@ -21,7 +21,7 @@ data class AfternoteListRouteCallbacks(
     val onNavigateToDetail: (String) -> Unit = {},
     val onNavigateToGalleryDetail: (String) -> Unit = {},
     val onNavigateToMemorialGuidelineDetail: (String) -> Unit = {},
-    val onNavigateToAdd: (AfternoteTab) -> Unit = {},
+    val onNavigateToAdd: (AfternoteCategory) -> Unit = {},
     val onBottomNavTabSelected: (BottomNavTab) -> Unit = {},
 )
 

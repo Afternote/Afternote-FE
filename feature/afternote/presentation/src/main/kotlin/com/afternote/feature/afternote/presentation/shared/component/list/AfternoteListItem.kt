@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Black
 import com.afternote.core.ui.theme.Gray5
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.naNumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.uimodel.AfternoteListDisplayItem
 
@@ -59,17 +59,17 @@ fun AfternoteListItem(
             Text(
                 text = item.serviceName,
                 color = Black,
-                lineHeight = 22.sp,
+                lineHeight = 24.sp,
                 fontSize = 16.sp,
-                fontFamily = Sansneo,
-                fontWeight = FontWeight.Medium,
+                fontFamily = naNumGothic,
+                fontWeight = FontWeight.Normal,
             )
             Text(
                 text = stringResource(R.string.afternote_last_written_date, item.date),
                 color = Gray5,
                 lineHeight = 16.sp,
                 fontSize = 10.sp,
-                fontFamily = Sansneo,
+                fontFamily = naNumGothic,
                 fontWeight = FontWeight.Normal,
             )
         }

@@ -11,7 +11,7 @@ import com.afternote.feature.afternote.presentation.author.edit.ui.provider.Afte
 import com.afternote.feature.afternote.presentation.author.list.AfternoteListRoute
 import com.afternote.feature.afternote.presentation.author.list.AfternoteListRouteCallbacks
 import com.afternote.feature.afternote.presentation.author.nav.model.AfternoteRoute
-import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteTab
+import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteCategory
 
 internal fun resolveListItems(
     afternoteItems: List<Item>,
@@ -48,7 +48,7 @@ internal fun AfternoteListRouteContent(
                     editStateHandling.onClear()
                     playlistStateHolder.clearAllSongs()
                     val initialCategory =
-                        if (selectedTab == AfternoteTab.ALL) null else selectedTab.label
+                        if (selectedTab == AfternoteCategory.ALL) null else selectedTab.label
                     Log.d(
                         "AfternoteNav",
                         "FAB onNavigateToAdd → navigate(EditRoute initialCategory=$initialCategory)",
