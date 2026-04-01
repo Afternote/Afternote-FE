@@ -7,9 +7,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -25,10 +27,6 @@ import com.afternote.feature.afternote.presentation.shared.list.content.EmptyAft
 
 private const val LOAD_MORE_THRESHOLD = 3
 
-/**
- * Read-only UI state for [AfternoteListContent] (items + tab + pagination flags).
- * Events are passed as separate parameters so callbacks do not trigger state identity changes.
- */
 @Stable
 data class AfternoteListContentUiState(
     val items: List<AfternoteItemUiModel>,
@@ -37,11 +35,6 @@ data class AfternoteListContentUiState(
     val isLoadingMore: Boolean = false,
 )
 
-/**
- * Shared list content for 애프터노트 list screens (writer main and receiver list).
- * Same look: tab row, then empty state or list of items. Only FAB differs at shell level.
- * When [uiState.hasNext] is true and user scrolls near the end, [onLoadMore] is called.
- */
 @Composable
 fun AfternoteListContent(
     uiState: AfternoteListContentUiState,
@@ -65,11 +58,10 @@ fun AfternoteListContent(
             EmptyAfternoteContent(
                 modifier =
                     Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
+                        .fillMaxWidth(),
             )
         } else {
-            AfternotePagedList(
+            AfternoteInfiniteList(
                 uiState = uiState,
                 onItemClick = onItemClick,
                 onLoadMore = onLoadMore,
@@ -79,7 +71,7 @@ fun AfternoteListContent(
 }
 
 @Composable
-private fun AfternotePagedList(
+private fun AfternoteInfiniteList(
     uiState: AfternoteListContentUiState,
     onItemClick: (String) -> Unit,
     onLoadMore: () -> Unit,
@@ -98,15 +90,18 @@ private fun AfternotePagedList(
                     onClick = { onItemClick(item.id) },
                 )
             }
-        }
-        if (uiState.hasNext && uiState.isLoadingMore) {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(32.dp),
-                contentAlignment = Alignment.Center,
-            ) {}
+            if (uiState.hasNext && uiState.isLoadingMore) {
+                item(key = "loading_indicator") {
+                    Box(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator(Modifier.size(32.dp))
+                    }
+                }
+            }
         }
     }
     if (uiState.hasNext && !uiState.isLoadingMore && uiState.items.isNotEmpty()) {
