@@ -26,36 +26,28 @@ import com.afternote.feature.afternote.presentation.shared.list.content.EmptyAft
 private const val LOAD_MORE_THRESHOLD = 3
 
 /**
- * List params for [AfternoteListContent] (S107: keep param count ≤7).
- *
- * @param items Items to show
- * @param selectedTab Current tab
- * @param onTabSelected Tab selection callback
- * @param onItemClick Item click callback
- * @param hasNext Whether more pages exist
- * @param isLoadingMore Whether next page is loading
- * @param onLoadMore Callback when user scrolls near end and more can load
+ * Read-only UI state for [AfternoteListContent] (items + tab + pagination flags).
+ * Events are passed as separate parameters so callbacks do not trigger state identity changes.
  */
-
 @Stable
-data class AfternoteListContentParams(
+data class AfternoteListContentUiState(
     val items: List<AfternoteItemUiModel>,
     val selectedTab: AfternoteCategory = AfternoteCategory.ALL,
-    val onTabSelected: (AfternoteCategory) -> Unit = {},
-    val onItemClick: (String) -> Unit = {},
     val hasNext: Boolean = false,
     val isLoadingMore: Boolean = false,
-    val onLoadMore: () -> Unit = {},
 )
 
 /**
  * Shared list content for 애프터노트 list screens (writer main and receiver list).
  * Same look: tab row, then empty state or list of items. Only FAB differs at shell level.
- * When [list.hasNext] is true and user scrolls near the end, [list.onLoadMore] is called.
+ * When [uiState.hasNext] is true and user scrolls near the end, [onLoadMore] is called.
  */
 @Composable
 fun AfternoteListContent(
-    list: AfternoteListContentParams,
+    uiState: AfternoteListContentUiState,
+    onTabSelected: (AfternoteCategory) -> Unit,
+    onItemClick: (String) -> Unit,
+    onLoadMore: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -65,11 +57,11 @@ fun AfternoteListContent(
     ) {
         Spacer(modifier = Modifier.height(16.dp))
         AfternoteCategoryRow(
-            onCategorySelected = list.onTabSelected,
-            selectedCategory = list.selectedTab,
+            onCategorySelected = onTabSelected,
+            selectedCategory = uiState.selectedTab,
         )
         Spacer(modifier = Modifier.height(20.dp))
-        if (list.items.isEmpty() && list.selectedTab == AfternoteCategory.ALL) {
+        if (uiState.items.isEmpty() && uiState.selectedTab == AfternoteCategory.ALL) {
             EmptyAfternoteContent(
                 modifier =
                     Modifier
@@ -77,14 +69,20 @@ fun AfternoteListContent(
                         .weight(1f),
             )
         } else {
-            AfternotePagedList(list = list)
+            AfternotePagedList(
+                uiState = uiState,
+                onItemClick = onItemClick,
+                onLoadMore = onLoadMore,
+            )
         }
     }
 }
 
 @Composable
 private fun AfternotePagedList(
-    list: AfternoteListContentParams,
+    uiState: AfternoteListContentUiState,
+    onItemClick: (String) -> Unit,
+    onLoadMore: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
@@ -94,14 +92,14 @@ private fun AfternotePagedList(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            items(items = list.items, key = { it.id }) { item ->
+            items(items = uiState.items, key = { it.id }) { item ->
                 AfternoteListItem(
                     item = item,
-                    onClick = { list.onItemClick(item.id) },
+                    onClick = { onItemClick(item.id) },
                 )
             }
         }
-        if (list.hasNext && list.isLoadingMore) {
+        if (uiState.hasNext && uiState.isLoadingMore) {
             Box(
                 modifier =
                     Modifier
@@ -111,13 +109,13 @@ private fun AfternotePagedList(
             ) {}
         }
     }
-    if (list.hasNext && !list.isLoadingMore && list.items.isNotEmpty()) {
-        LaunchedEffect(listState, list.items.size) {
+    if (uiState.hasNext && !uiState.isLoadingMore && uiState.items.isNotEmpty()) {
+        LaunchedEffect(listState, uiState.items.size) {
             snapshotFlow { listState.layoutInfo.visibleItemsInfo }
                 .collect { visible ->
                     val lastIndex = visible.lastOrNull()?.index ?: return@collect
-                    if (lastIndex >= list.items.size - LOAD_MORE_THRESHOLD) {
-                        list.onLoadMore()
+                    if (lastIndex >= uiState.items.size - LOAD_MORE_THRESHOLD) {
+                        onLoadMore()
                     }
                 }
         }
@@ -129,11 +127,14 @@ private fun AfternotePagedList(
 private fun AfternoteListContentEmptyPreview() {
     AfternoteTheme {
         AfternoteListContent(
-            list =
-                AfternoteListContentParams(
+            uiState =
+                AfternoteListContentUiState(
                     items = emptyList(),
                     selectedTab = AfternoteCategory.ALL,
                 ),
+            onTabSelected = {},
+            onItemClick = {},
+            onLoadMore = {},
         )
     }
 }
@@ -143,8 +144,8 @@ private fun AfternoteListContentEmptyPreview() {
 private fun AfternoteListContentWithItemsPreview() {
     AfternoteTheme {
         AfternoteListContent(
-            list =
-                AfternoteListContentParams(
+            uiState =
+                AfternoteListContentUiState(
                     items =
                         listOf(
                             AfternoteItemUiModel(
@@ -162,6 +163,9 @@ private fun AfternoteListContentWithItemsPreview() {
                         ),
                     selectedTab = AfternoteCategory.ALL,
                 ),
+            onTabSelected = {},
+            onItemClick = {},
+            onLoadMore = {},
         )
     }
 }
