@@ -1,5 +1,5 @@
 package com.afternote.feature.afternote.presentation.receiver.model.uimodel
-import com.afternote.feature.afternote.presentation.shared.model.uimodel.PlaylistSongDisplay
+import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
 /**
  * 수신자 추모 플레이리스트 화면 UI 상태.

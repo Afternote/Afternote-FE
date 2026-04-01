@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.shared.component.list
+package com.afternote.feature.afternote.presentation.shared.list
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
@@ -8,7 +8,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.ui.scaffold.TopBar
 import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.feature.afternote.presentation.shared.shell.ScaffoldContentWithOptionalFab
+import com.afternote.feature.afternote.presentation.shared.scaffold.ScaffoldContentWithOptionalFab
 
 /**
  * Shared shell for 애프터노트 list screens (writer main and receiver list).

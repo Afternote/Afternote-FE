@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.shared.model.uimodel
+package com.afternote.feature.afternote.presentation.shared.list
 
 /**
  * Display model for a single row in the shared 애프터노트 list (writer main and receiver list).
@@ -9,7 +9,7 @@ package com.afternote.feature.afternote.presentation.shared.model.uimodel
  * @param date date string (e.g. "2025.11.26")
  * @param iconResId drawable resource id for the row icon
  */
-data class AfternoteListDisplayItem(
+data class AfternoteItemUiModel(
     val id: String,
     val serviceName: String,
     val date: String,

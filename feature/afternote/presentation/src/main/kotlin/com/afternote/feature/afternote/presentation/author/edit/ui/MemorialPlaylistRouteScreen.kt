@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.edit.ui
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,10 +37,10 @@ import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.edit.model.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.edit.ui.provider.FakeAfternoteEditDataProvider
 import com.afternote.feature.afternote.presentation.author.nav.navgraph.AfternoteLightTheme
-import com.afternote.feature.afternote.presentation.shared.component.list.SongPlaylistScreen
-import com.afternote.feature.afternote.presentation.shared.component.list.SongPlaylistScreenManagementContent
-import com.afternote.feature.afternote.presentation.shared.compositionlocal.DataProviderLocals
-import com.afternote.feature.afternote.presentation.shared.model.uimodel.PlaylistSongDisplay
+import com.afternote.feature.afternote.presentation.shared.DataProviderLocals
+import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScreen
+import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScreenManagementContent
+import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
 /**
  * 추모 플레이리스트 전체 화면 (MemorialPlaylistList).

@@ -13,9 +13,9 @@ import com.afternote.feature.afternote.presentation.author.list.model.AfternoteL
 import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreen
 import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreenListState
 import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreenShellState
-import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteCategory
-import com.afternote.feature.afternote.presentation.shared.model.uimodel.AfternoteListDisplayItem
-import com.afternote.feature.afternote.presentation.shared.model.util.getIconResForServiceName
+import com.afternote.feature.afternote.presentation.shared.list.AfternoteCategory
+import com.afternote.feature.afternote.presentation.shared.list.AfternoteItemUiModel
+import com.afternote.feature.afternote.presentation.shared.util.getIconResForServiceName
 
 data class AfternoteListRouteCallbacks(
     val onNavigateToDetail: (String) -> Unit = {},
@@ -73,7 +73,7 @@ fun AfternoteListRoute(
 
     val displayItems =
         uiState.items.map { item ->
-            AfternoteListDisplayItem(
+            AfternoteItemUiModel(
                 id = item.id,
                 serviceName = item.serviceName,
                 date = item.date,

@@ -1,5 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.edit.ui.addsong
-import com.afternote.feature.afternote.presentation.shared.model.uimodel.PlaylistSongDisplay
+import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 import kotlinx.coroutines.flow.StateFlow
 
 /**

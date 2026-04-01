@@ -24,7 +24,7 @@ import com.afternote.feature.afternote.presentation.author.edit.model.Processing
 import com.afternote.feature.afternote.presentation.author.edit.ui.processingmethod.ProcessingMethodList
 import com.afternote.feature.afternote.presentation.author.edit.ui.processingmethod.ProcessingMethodListParams
 import com.afternote.feature.afternote.presentation.author.edit.ui.provider.FakeAfternoteEditDataProvider
-import com.afternote.feature.afternote.presentation.shared.compositionlocal.DataProviderLocals
+import com.afternote.feature.afternote.presentation.shared.DataProviderLocals
 
 /**
  * 갤러리 및 파일 선택 시 표시되는 콘텐츠

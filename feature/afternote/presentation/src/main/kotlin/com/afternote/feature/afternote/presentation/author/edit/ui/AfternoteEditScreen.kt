@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.edit.ui
+
 import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -42,10 +43,10 @@ import com.afternote.feature.afternote.presentation.author.edit.model.RegisterAf
 import com.afternote.feature.afternote.presentation.author.edit.model.rememberAfternoteEditState
 import com.afternote.feature.afternote.presentation.author.edit.ui.provider.FakeAfternoteEditDataProvider
 import com.afternote.feature.afternote.presentation.author.nav.navgraph.AfternoteLightTheme
-import com.afternote.feature.afternote.presentation.shared.component.list.AlbumCover
-import com.afternote.feature.afternote.presentation.shared.compositionlocal.AfternoteEmbeddedMainBottomBar
-import com.afternote.feature.afternote.presentation.shared.compositionlocal.DataProviderLocals
-import com.afternote.feature.afternote.presentation.shared.shell.TopBar
+import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
+import com.afternote.feature.afternote.presentation.shared.DataProviderLocals
+import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
+import com.afternote.feature.afternote.presentation.shared.scaffold.TopBar
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -408,7 +409,9 @@ private fun CategoryContent(
                 bottomPadding = bottomPadding,
                 params =
                     com.afternote.feature.afternote.presentation.author.edit.ui.content.MemorialGuidelineEditContentParams(
-                        displayMemorialPhotoUri = state.pickedMemorialPhotoUri ?: state.memorialPhotoUrl,
+                        displayMemorialPhotoUri =
+                            state.pickedMemorialPhotoUri
+                                ?: state.memorialPhotoUrl,
                         playlistSongCount = livePlaylistSongCount,
                         playlistAlbumCovers = albumCoversFromPlaylist,
                         selectedLastWish = state.selectedLastWish,

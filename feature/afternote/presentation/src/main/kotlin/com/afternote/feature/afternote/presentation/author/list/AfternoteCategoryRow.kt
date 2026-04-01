@@ -33,7 +33,7 @@ import com.afternote.core.ui.theme.Gray4
 import com.afternote.core.ui.theme.Gray7
 import com.afternote.core.ui.theme.Sansneo
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteCategory
+import com.afternote.feature.afternote.presentation.shared.list.AfternoteCategory
 
 @Composable
 fun AfternoteCategoryRow(

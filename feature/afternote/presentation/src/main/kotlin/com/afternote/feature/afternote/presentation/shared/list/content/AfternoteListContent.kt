@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.shared.component.list
+package com.afternote.feature.afternote.presentation.shared.list.content
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -21,7 +22,9 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.list.AfternoteCategoryRow
-import com.afternote.feature.afternote.presentation.shared.model.uimodel.AfternoteListDisplayItem
+import com.afternote.feature.afternote.presentation.shared.list.AfternoteCategory
+import com.afternote.feature.afternote.presentation.shared.list.AfternoteItemUiModel
+import com.afternote.feature.afternote.presentation.shared.list.AfternoteListItem
 
 private const val LOAD_MORE_THRESHOLD = 3
 
@@ -38,8 +41,8 @@ private const val LOAD_MORE_THRESHOLD = 3
  */
 
 @Stable
-data class AfternoteListContentListParams(
-    val items: List<AfternoteListDisplayItem>,
+data class AfternoteListContentParams(
+    val items: List<AfternoteItemUiModel>,
     val selectedTab: AfternoteCategory = AfternoteCategory.ALL,
     val onTabSelected: (AfternoteCategory) -> Unit = {},
     val onItemClick: (String) -> Unit = {},
@@ -55,13 +58,14 @@ data class AfternoteListContentListParams(
  */
 @Composable
 fun AfternoteListContent(
-    list: AfternoteListContentListParams,
+    list: AfternoteListContentParams,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier =
             modifier
-                .fillMaxSize(),
+                .fillMaxSize()
+                .padding(20.dp),
     ) {
         Spacer(modifier = Modifier.height(16.dp))
         AfternoteCategoryRow(
@@ -77,15 +81,18 @@ fun AfternoteListContent(
                         .weight(1f),
             )
         } else {
-            AfternoteListContentPagedList(list = list)
+            AfternotePagedList(list = list)
         }
     }
 }
 
 @Composable
-private fun AfternoteListContentPagedList(list: AfternoteListContentListParams) {
+private fun AfternotePagedList(
+    list: AfternoteListContentParams,
+    modifier: Modifier = Modifier,
+) {
     val listState = rememberLazyListState()
-    Box(modifier = Modifier.fillMaxWidth()) {
+    Box(modifier = modifier.fillMaxWidth()) {
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxWidth(),
@@ -127,7 +134,7 @@ private fun AfternoteListContentEmptyPreview() {
     AfternoteTheme {
         AfternoteListContent(
             list =
-                AfternoteListContentListParams(
+                AfternoteListContentParams(
                     items = emptyList(),
                     selectedTab = AfternoteCategory.ALL,
                 ),
@@ -141,16 +148,16 @@ private fun AfternoteListContentWithItemsPreview() {
     AfternoteTheme {
         AfternoteListContent(
             list =
-                AfternoteListContentListParams(
+                AfternoteListContentParams(
                     items =
                         listOf(
-                            AfternoteListDisplayItem(
+                            AfternoteItemUiModel(
                                 id = "1",
                                 serviceName = "추모 가이드라인",
                                 date = "2025.12.01",
                                 iconResId = R.drawable.img_logo,
                             ),
-                            AfternoteListDisplayItem(
+                            AfternoteItemUiModel(
                                 id = "2",
                                 serviceName = "인스타그램",
                                 date = "2025.11.26",

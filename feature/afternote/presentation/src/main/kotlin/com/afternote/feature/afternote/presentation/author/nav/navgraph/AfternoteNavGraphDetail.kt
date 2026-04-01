@@ -31,8 +31,8 @@ import com.afternote.feature.afternote.presentation.author.detail.ui.afternotede
 import com.afternote.feature.afternote.presentation.author.detail.ui.afternotedetail.SocialNetworkDetailScreen
 import com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiver
 import com.afternote.feature.afternote.presentation.author.nav.model.AfternoteRoute
-import com.afternote.feature.afternote.presentation.shared.component.list.AlbumCover
-import com.afternote.feature.afternote.presentation.shared.shell.TopBar
+import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
+import com.afternote.feature.afternote.presentation.shared.scaffold.TopBar
 
 private val designedDetailTypes = setOf(AfternoteServiceType.SOCIAL_NETWORK)
 

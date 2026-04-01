@@ -15,7 +15,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.author.edit.ui.memorial.LastMomentQuestion
 import com.afternote.feature.afternote.presentation.author.edit.ui.upload.FuneralVideoUpload
 import com.afternote.feature.afternote.presentation.author.edit.ui.upload.MemorialPhotoUpload
-import com.afternote.feature.afternote.presentation.shared.component.list.MemorialPlaylist
+import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
 
 /**
  * 추모 가이드라인 종류 선택 시 표시되는 콘텐츠 (편집 모드).

@@ -30,14 +30,14 @@ import com.afternote.core.ui.theme.Gray5
 import com.afternote.core.ui.theme.Gray6
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.Sansneo
-import com.afternote.feature.afternote.presentation.shared.compositionlocal.AfternoteEmbeddedMainBottomBar
+import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.InfoRow
 import com.afternote.feature.afternote.presentation.shared.detail.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.shared.detail.ReceiversCard
-import com.afternote.feature.afternote.presentation.shared.shell.TopBar
+import com.afternote.feature.afternote.presentation.shared.scaffold.TopBar
 
 /**
  * Display data for [SocialNetworkDetailScreen].

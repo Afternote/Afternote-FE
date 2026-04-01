@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.shared.model.util
+package com.afternote.feature.afternote.presentation.shared.util
 import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.presentation.R
 

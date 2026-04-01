@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.presentation.shared.model.dummy
 
-import com.afternote.feature.afternote.presentation.shared.component.list.AlbumCover
+import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 
 /**
  * Default album cover list for playlists (Previews and dummy state).

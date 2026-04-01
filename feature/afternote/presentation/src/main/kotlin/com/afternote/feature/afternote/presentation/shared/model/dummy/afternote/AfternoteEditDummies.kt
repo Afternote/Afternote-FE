@@ -1,5 +1,5 @@
 package com.afternote.feature.afternote.presentation.shared.model.dummy.afternote
-import com.afternote.feature.afternote.presentation.shared.model.uimodel.PlaylistSongDisplay
+import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
 /**
  * Dummy data for 애프터노트 수정 화면 (플레이리스트, 수신자 등).
@@ -60,7 +60,7 @@ object AfternoteEditDummies {
     /**
      * Default search-result songs for Add Song screen. Replace with real search API when ready.
      */
-    fun defaultAddSongSearchResults(): List<com.afternote.feature.afternote.presentation.shared.model.uimodel.PlaylistSongDisplay> =
+    fun defaultAddSongSearchResults(): List<PlaylistSongDisplay> =
         listOf(
             PlaylistSongDisplay(
                 id = "1",

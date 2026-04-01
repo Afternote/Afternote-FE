@@ -1,4 +1,5 @@
-package com.afternote.feature.afternote.presentation.shared.model.uimodel
+package com.afternote.feature.afternote.presentation.shared.model
+
 import androidx.compose.runtime.Immutable
 
 /**

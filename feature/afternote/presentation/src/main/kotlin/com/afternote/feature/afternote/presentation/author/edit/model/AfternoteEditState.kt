@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.edit.model
+
 import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.text.input.TextFieldState
@@ -14,16 +15,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.afternote.core.ui.form.LastWishOption
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.feature.afternote.presentation.shared.component.list.AlbumCover
-import com.afternote.feature.afternote.presentation.shared.compositionlocal.DataProviderLocals
-import com.afternote.feature.afternote.presentation.shared.model.util.AfternoteServiceCatalog
+import com.afternote.feature.afternote.presentation.shared.DataProviderLocals
+import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
+import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 
 /**
  * 추모 플레이리스트 상태 홀더
  */
 @Stable
 class MemorialPlaylistStateHolder {
-    val songs: SnapshotStateList<com.afternote.feature.afternote.presentation.author.edit.model.Song> = mutableStateListOf()
+    val songs: SnapshotStateList<com.afternote.feature.afternote.presentation.author.edit.model.Song> =
+        mutableStateListOf()
 
     var onSongCountChanged: (() -> Unit)? = null
 

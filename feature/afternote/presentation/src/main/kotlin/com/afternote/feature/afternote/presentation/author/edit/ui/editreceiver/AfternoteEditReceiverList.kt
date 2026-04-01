@@ -35,7 +35,7 @@ import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiver
 import com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiverCallbacks
 import com.afternote.feature.afternote.presentation.author.edit.ui.provider.FakeAfternoteEditDataProvider
-import com.afternote.feature.afternote.presentation.shared.compositionlocal.DataProviderLocals
+import com.afternote.feature.afternote.presentation.shared.DataProviderLocals
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 
 /**

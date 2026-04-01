@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.shared.shell
+package com.afternote.feature.afternote.presentation.shared.scaffold
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack

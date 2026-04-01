@@ -2,7 +2,7 @@ package com.afternote.feature.afternote.presentation.author.edit.ui.content
 import androidx.compose.runtime.Immutable
 import com.afternote.core.ui.form.LastWishOption
 import com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiverSection
-import com.afternote.feature.afternote.presentation.shared.component.list.AlbumCover
+import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 
 /**
  * 추모 가이드라인 콘텐츠 파라미터

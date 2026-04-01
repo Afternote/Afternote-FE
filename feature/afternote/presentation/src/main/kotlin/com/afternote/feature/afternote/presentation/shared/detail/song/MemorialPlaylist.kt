@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.shared.component.list
+package com.afternote.feature.afternote.presentation.shared.detail.song
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

@@ -20,7 +20,7 @@ import com.afternote.feature.afternote.presentation.author.nav.model.AfternoteRo
 import com.afternote.feature.afternote.presentation.author.nav.navgraph.AfternoteEditStateHandling
 import com.afternote.feature.afternote.presentation.author.nav.navgraph.AfternoteNavGraphParams
 import com.afternote.feature.afternote.presentation.author.nav.navgraph.afternoteNavGraph
-import com.afternote.feature.afternote.presentation.shared.compositionlocal.LocalAfternoteUsesAppBottomBar
+import com.afternote.feature.afternote.presentation.shared.LocalAfternoteUsesAppBottomBar
 
 @Composable
 fun AfternoteScreen(

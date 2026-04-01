@@ -12,8 +12,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.feature.afternote.presentation.shared.compositionlocal.AfternoteEmbeddedMainBottomBar
-import com.afternote.feature.afternote.presentation.shared.shell.TopBar
+import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
+import com.afternote.feature.afternote.presentation.shared.scaffold.TopBar
 
 /**
  * 지문 로그인 화면

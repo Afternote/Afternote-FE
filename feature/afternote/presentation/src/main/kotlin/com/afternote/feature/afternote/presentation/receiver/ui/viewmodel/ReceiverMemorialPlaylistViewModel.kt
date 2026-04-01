@@ -7,7 +7,7 @@ import com.afternote.feature.afternote.domain.port.ReceiverAuthCodeProvider
 import com.afternote.feature.afternote.domain.usecase.receiver.GetAfterNotesByAuthCodeUseCase
 import com.afternote.feature.afternote.domain.usecase.receiver.GetAfternoteDetailByAuthCodeUseCase
 import com.afternote.feature.afternote.presentation.receiver.model.uimodel.ReceiverMemorialPlaylistUiState
-import com.afternote.feature.afternote.presentation.shared.model.uimodel.PlaylistSongDisplay
+import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

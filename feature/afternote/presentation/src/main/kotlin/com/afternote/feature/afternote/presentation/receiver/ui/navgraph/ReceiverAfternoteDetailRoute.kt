@@ -28,8 +28,8 @@ import com.afternote.feature.afternote.presentation.author.detail.ui.afternotede
 import com.afternote.feature.afternote.presentation.author.detail.ui.afternotedetail.SocialNetworkDetailScreen
 import com.afternote.feature.afternote.presentation.author.detail.ui.afternotedetail.rememberAfternoteDetailState
 import com.afternote.feature.afternote.presentation.receiver.ui.viewmodel.ReceiverAfternoteDetailViewModel
-import com.afternote.feature.afternote.presentation.shared.component.list.AlbumCover
-import com.afternote.feature.afternote.presentation.shared.shell.TopBar
+import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
+import com.afternote.feature.afternote.presentation.shared.scaffold.TopBar
 
 /**
  * 수신자 애프터노트 상세 라우트.

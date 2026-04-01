@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.shared.compositionlocal
+package com.afternote.feature.afternote.presentation.shared
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf

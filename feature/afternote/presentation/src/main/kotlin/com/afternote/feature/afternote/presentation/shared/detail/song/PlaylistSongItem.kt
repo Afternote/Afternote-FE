@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.shared.component
+package com.afternote.feature.afternote.presentation.shared.detail.song
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -38,7 +38,7 @@ import com.afternote.core.ui.theme.Gray3
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.Sansneo
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.model.uimodel.PlaylistSongDisplay
+import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
 private const val TAG = "PlaylistSongItem"
 

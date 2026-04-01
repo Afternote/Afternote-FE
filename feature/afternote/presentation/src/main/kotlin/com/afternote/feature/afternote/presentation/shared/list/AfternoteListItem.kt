@@ -1,6 +1,8 @@
-package com.afternote.feature.afternote.presentation.shared.component.list
+package com.afternote.feature.afternote.presentation.shared.list
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,10 +11,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -22,10 +26,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Black
+import com.afternote.core.ui.theme.Gray2
 import com.afternote.core.ui.theme.Gray5
+import com.afternote.core.ui.theme.White
 import com.afternote.core.ui.theme.naNumGothic
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.model.uimodel.AfternoteListDisplayItem
 
 /**
  * Shared list row for 애프터노트 list (writer main and receiver list).
@@ -33,7 +38,7 @@ import com.afternote.feature.afternote.presentation.shared.model.uimodel.Afterno
  */
 @Composable
 fun AfternoteListItem(
-    item: AfternoteListDisplayItem,
+    item: AfternoteItemUiModel,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
 ) {
@@ -41,7 +46,13 @@ fun AfternoteListItem(
         modifier =
             modifier
                 .fillMaxWidth()
-                .clickable
+                .clip(RoundedCornerShape(6.dp))
+                .background(White)
+                .border(
+                    width = 1.dp,
+                    color = Gray2,
+                    shape = RoundedCornerShape(6.dp),
+                ).clickable
                 { onClick() }
                 .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -82,13 +93,13 @@ fun AfternoteListItem(
     }
 }
 
-@Preview(showBackground = true)
+@Preview
 @Composable
 private fun AfternoteListItemPreview() {
     AfternoteTheme {
         AfternoteListItem(
             item =
-                AfternoteListDisplayItem(
+                AfternoteItemUiModel(
                     id = "1",
                     serviceName = "인스타그램",
                     date = "2023.11.24",

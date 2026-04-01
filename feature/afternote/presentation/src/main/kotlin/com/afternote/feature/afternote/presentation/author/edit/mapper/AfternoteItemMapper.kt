@@ -4,7 +4,7 @@ import com.afternote.feature.afternote.domain.model.Account
 import com.afternote.feature.afternote.domain.model.Item
 import com.afternote.feature.afternote.domain.model.ItemProcessing
 import com.afternote.feature.afternote.domain.model.ProcessingMethod
-import com.afternote.feature.afternote.presentation.shared.model.util.AfternoteServiceCatalog
+import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 
 /**
  * Pair<String, String> 및 RegisterAfternotePayload를 AfternoteItem으로 변환하는 매퍼
