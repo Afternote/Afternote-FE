@@ -8,12 +8,10 @@ import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.domain.model.Item
-import com.afternote.feature.afternote.presentation.author.list.model.AfternoteListEvent
 import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreen
-import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreenListParams
-import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreenShellParams
+import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreenListState
+import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreenShellState
 import com.afternote.feature.afternote.presentation.shared.component.list.AfternoteTab
 import com.afternote.feature.afternote.presentation.shared.model.uimodel.AfternoteListDisplayItem
 import com.afternote.feature.afternote.presentation.shared.model.util.getIconResForServiceName
@@ -83,52 +81,16 @@ fun AfternoteListRoute(
         }
 
     AfternoteListScreen(
-        shell =
-            AfternoteListScreenShellParams(
-                title = "애프터노트",
+        listState = AfternoteListScreenListState(
+            items = displayItems,
+            selectedTab = uiState.selectedTab,
+            hasNext = uiState.hasNext,
+            isLoadingMore = uiState.isLoadingMore,
+        ),
+        shellState =
+            AfternoteListScreenShellState(
                 bottomBarSelectedItem = uiState.selectedBottomNavItem,
-                onBottomBarItemSelected = {
-                    viewModel.onEvent(AfternoteListEvent.SelectBottomNav(it))
-                    callbacks.onBottomNavTabSelected(it)
-                },
                 showFab = true,
-                onFabClick = { callbacks.onNavigateToAdd(uiState.selectedTab) },
             ),
-        list =
-            AfternoteListScreenListParams(
-                items = displayItems,
-                selectedTab = uiState.selectedTab,
-                onTabSelected = { viewModel.onEvent(AfternoteListEvent.SelectTab(it)) },
-                onItemClick = { itemId ->
-                    val item =
-                        uiState.items.find { it.id == itemId }
-                            ?: return@AfternoteListScreenListParams
-                    // Design has two detail screens only: Social Network, Gallery and Files. Others use Social-style detail.
-                    when (item.type) {
-                        AfternoteServiceType.GALLERY_AND_FILES -> {
-                            callbacks.onNavigateToGalleryDetail(
-                                itemId,
-                            )
-                        }
-
-                        AfternoteServiceType.MEMORIAL -> {
-                            callbacks.onNavigateToMemorialGuidelineDetail(
-                                itemId,
-                            )
-                        }
-
-                        else -> {
-                            callbacks.onNavigateToDetail(itemId)
-                        }
-                    }
-                },
-                hasNext = uiState.hasNext,
-                isLoadingMore = uiState.isLoadingMore,
-                onLoadMore = { viewModel.loadNextPage() },
-            ),
-        onNavTabSelected = { tab ->
-            viewModel.onEvent(AfternoteListEvent.SelectBottomNav(tab))
-            callbacks.onBottomNavTabSelected(tab)
-        },
     )
 }
