@@ -6,7 +6,6 @@ import androidx.navigation.NavController
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.domain.model.Item
 import com.afternote.feature.afternote.presentation.author.edit.AfternoteItemMapper
-import com.afternote.feature.afternote.presentation.author.edit.model.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.edit.provider.AfternoteEditDataProvider
 import com.afternote.feature.afternote.presentation.author.list.AfternoteListRoute
 import com.afternote.feature.afternote.presentation.author.list.AfternoteListRouteActions
@@ -26,8 +25,6 @@ internal fun AfternoteListRouteContent(
     navController: NavController,
     onNavTabSelected: (BottomNavTab) -> Unit = {},
     onItemsUpdated: (List<Item>) -> Unit,
-    editStateHandling: AfternoteEditStateHandling,
-    playlistStateHolder: MemorialPlaylistStateHolder,
     listRefresh: AfternoteListRefreshParams? = null,
 ) {
     AfternoteListRoute(
@@ -45,8 +42,6 @@ internal fun AfternoteListRouteContent(
                     navController.navigate(AfternoteRoute.MemorialGuidelineDetailRoute(itemId = itemId))
                 },
                 onNavigateToAdd = { selectedTab ->
-                    editStateHandling.onClear()
-                    playlistStateHolder.clearAllSongs()
                     val initialCategory =
                         if (selectedTab == AfternoteCategory.ALL) null else selectedTab.label
                     Log.d(

@@ -20,8 +20,6 @@ fun NavGraphBuilder.afternoteNavGraph(
             navController = navController,
             onNavTabSelected = onNavTabSelected,
             onItemsUpdated = params.onItemsUpdated,
-            editStateHandling = params.editStateHandling,
-            playlistStateHolder = params.playlistStateHolder,
             listRefresh = params.listRefresh,
         )
     }
