@@ -21,10 +21,10 @@ internal fun resolveListItems(
     }
 
 @Composable
-internal fun AfternoteListRouteContent(
+internal fun AfternoteListDestination(
     navController: NavController,
     onNavTabSelected: (BottomNavTab) -> Unit = {},
-    onItemsUpdated: (List<Item>) -> Unit,
+    onItemsChanged: (List<Item>) -> Unit,
     listRefresh: AfternoteListRefreshParams? = null,
 ) {
     AfternoteListRoute(
@@ -32,26 +32,26 @@ internal fun AfternoteListRouteContent(
         onListRefreshConsumed = listRefresh?.onListRefreshConsumed ?: {},
         actions =
             AfternoteListRouteActions(
-                onNavigateToDetail = { itemId ->
+                navigateToDetail = { itemId ->
                     navController.navigate(AfternoteRoute.DetailRoute(itemId = itemId))
                 },
-                onNavigateToGalleryDetail = { itemId ->
+                navigateToGalleryDetail = { itemId ->
                     navController.navigate(AfternoteRoute.GalleryDetailRoute(itemId = itemId))
                 },
-                onNavigateToMemorialGuidelineDetail = { itemId ->
+                navigateToMemorialGuidelineDetail = { itemId ->
                     navController.navigate(AfternoteRoute.MemorialGuidelineDetailRoute(itemId = itemId))
                 },
-                onNavigateToAdd = { selectedTab ->
+                navigateToAdd = { selectedTab ->
                     val initialCategory =
                         if (selectedTab == AfternoteCategory.ALL) null else selectedTab.label
                     Log.d(
                         "AfternoteNav",
-                        "FAB onNavigateToAdd → navigate(EditRoute initialCategory=$initialCategory)",
+                        "FAB navigateToAdd → navigate(EditRoute initialCategory=$initialCategory)",
                     )
                     navController.navigate(AfternoteRoute.EditRoute(initialCategory = initialCategory))
                 },
-                onBottomNavTabSelected = onNavTabSelected,
+                selectBottomNavTab = onNavTabSelected,
             ),
-        onItemsChanged = onItemsUpdated,
+        onItemsChanged = onItemsChanged,
     )
 }

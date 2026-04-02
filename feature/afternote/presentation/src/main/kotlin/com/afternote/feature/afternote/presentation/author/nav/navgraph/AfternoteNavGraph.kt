@@ -16,10 +16,10 @@ fun NavGraphBuilder.afternoteNavGraph(
     val afternoteProvider = params.afternoteProvider
 
     afternoteComposable<AfternoteRoute.AfternoteListRoute> {
-        AfternoteListRouteContent(
+        AfternoteListDestination(
             navController = navController,
             onNavTabSelected = onNavTabSelected,
-            onItemsUpdated = params.onItemsUpdated,
+            onItemsChanged = params.onItemsUpdated,
             listRefresh = params.listRefresh,
         )
     }

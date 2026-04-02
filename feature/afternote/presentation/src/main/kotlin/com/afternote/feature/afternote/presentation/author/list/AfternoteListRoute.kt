@@ -14,11 +14,11 @@ import com.afternote.feature.afternote.presentation.author.list.screen.Afternote
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 
 data class AfternoteListRouteActions(
-    val onNavigateToDetail: (String) -> Unit = {},
-    val onNavigateToGalleryDetail: (String) -> Unit = {},
-    val onNavigateToMemorialGuidelineDetail: (String) -> Unit = {},
-    val onNavigateToAdd: (AfternoteCategory) -> Unit = {},
-    val onBottomNavTabSelected: (BottomNavTab) -> Unit = {},
+    val navigateToDetail: (String) -> Unit = {},
+    val navigateToGalleryDetail: (String) -> Unit = {},
+    val navigateToMemorialGuidelineDetail: (String) -> Unit = {},
+    val navigateToAdd: (AfternoteCategory) -> Unit = {},
+    val selectBottomNavTab: (BottomNavTab) -> Unit = {},
 )
 
 /**
@@ -55,10 +55,10 @@ fun AfternoteListRoute(
 
     AfternoteListScreen(
         listState = bodyUiState,
-        onNavTabSelected = actions.onBottomNavTabSelected,
+        onNavTabSelected = actions.selectBottomNavTab,
         onCategorySelected = { viewModel.onEvent(AfternoteListEvent.SelectTab(it)) },
-        onListItemClick = actions.onNavigateToDetail,
+        onListItemClick = actions.navigateToDetail,
         selectedNavTab = uiState.selectedBottomNavItem,
         onLoadMore = viewModel::loadNextPage,
-    ) { actions.onNavigateToAdd(uiState.selectedTab) }
+    ) { actions.navigateToAdd(uiState.selectedTab) }
 }
