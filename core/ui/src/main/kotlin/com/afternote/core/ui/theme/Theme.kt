@@ -136,7 +136,6 @@ val afternoteTypography =
 private val AfternoteLightColors =
     lightColorScheme(
         background = Gray2,
-//        background = Red,
     )
 
 @Composable

@@ -3,7 +3,6 @@ package com.afternote.core.ui.scaffold.topbar
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -26,12 +25,19 @@ fun HomeTopBar(modifier: Modifier = Modifier) {
             Image(
                 painter = painterResource(com.afternote.core.common.R.drawable.core_common_logo),
                 contentDescription = null,
-                modifier = Modifier.size(90.dp),
+                modifier =
+                    Modifier
+                        .padding(start = 25.dp)
+                        .size(90.dp),
             )
         },
         title = { },
         actions = {
-            Row {
+            Row(
+                modifier =
+                    Modifier
+                        .padding(end = 25.dp),
+            ) {
                 Image(
                     painter = painterResource(R.drawable.core_ui_user),
                     contentDescription = null,
@@ -51,10 +57,7 @@ fun HomeTopBar(modifier: Modifier = Modifier) {
             TopAppBarDefaults.topAppBarColors(
                 containerColor = Gray2,
             ),
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .padding(horizontal = 25.dp),
+        modifier = modifier,
     )
 }
 
