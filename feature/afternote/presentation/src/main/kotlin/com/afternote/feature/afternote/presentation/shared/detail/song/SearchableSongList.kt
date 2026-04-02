@@ -94,7 +94,7 @@ data class SongPlaylistScreenSelectableOptions(
 
 /**
  * 노래 검색 + 목록 전체 화면 (view-only).
- * Scaffold(TopBar + BottomBar) + SearchableSongList.
+ * Scaffold(HomeTopBar + BottomBar) + SearchableSongList.
  *
  * @param title TopBar에 표시할 타이틀
  * @param onBackClick 뒤로가기 콜백
@@ -253,7 +253,7 @@ fun SongPlaylistScreen(
  * managementContent.leadingContent로 "총 N곡" + 노래 추가하기 등 헤더를 넣고,
  * managementContent.selectionBottomBar로 선택 시 표시할 액션 바(예: 전체 삭제/선택 삭제)를 넣을 수 있음.
  *
- * @param title TopBar 타이틀
+ * @param title HomeTopBar 타이틀
  * @param onBackClick 뒤로가기 콜백
  * @param songs 표시할 노래 목록
  * @param managementContent leadingContent + selectionBottomBar (헤더 및 하단 액션 바)

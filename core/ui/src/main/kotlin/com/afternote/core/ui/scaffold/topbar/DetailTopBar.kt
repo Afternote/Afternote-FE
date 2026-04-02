@@ -1,16 +1,10 @@
-package com.afternote.core.ui.scaffold
+package com.afternote.core.ui.scaffold.topbar
 
 import android.content.res.Configuration
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,47 +27,11 @@ import com.afternote.core.ui.theme.AfternoteTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopBar(modifier: Modifier = Modifier) {
-    TopAppBar(
-        navigationIcon = {
-            Image(
-                painter = painterResource(com.afternote.core.common.R.drawable.core_common_logo),
-                contentDescription = null,
-                modifier = Modifier.size(90.dp),
-            )
-        },
-        title = { },
-        actions = {
-            Row {
-                Image(
-                    painter = painterResource(R.drawable.core_ui_user),
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                )
-
-                Spacer(modifier = Modifier.width(15.dp))
-
-                Image(
-                    painter = painterResource(R.drawable.core_ui_settings),
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                )
-            }
-        },
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .padding(horizontal = 25.dp),
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TopBar(
+fun DetailTopBar(
     title: String,
     onBackClick: () -> Unit,
     action: @Composable (RowScope.() -> Unit),
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier.Companion,
 ) {
     TopAppBar(
         title = {
@@ -88,7 +46,7 @@ fun TopBar(
             ) {
                 Icon(
                     painterResource(R.drawable.core_ui_arrow_left),
-                    contentDescription = null,
+                    contentDescription = "뒤로 가기",
                 )
             }
         },
@@ -97,12 +55,6 @@ fun TopBar(
         },
         modifier = modifier.padding(end = 17.dp),
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun TopBarPreview() {
-    TopBar()
 }
 
 @Preview(showBackground = true, name = "Light Mode - List")
@@ -115,7 +67,7 @@ private fun DailyRecordTopBarPreview() {
         Surface(color = MaterialTheme.colorScheme.background) {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 // 실제 컴포넌트 호출
-                TopBar(
+                DetailTopBar(
                     title = "데일리 질문",
                     onBackClick = { /* 뒤로가기 로그 확인 */ },
                     action = {
