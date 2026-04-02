@@ -69,7 +69,8 @@ fun AfternoteList(
         LaunchedEffect(listState, bodyUiState.items.size) {
             // layoutInfo는 리스트의 물리적인 배치 정보를 담고 있음
             // visibleItemsInfo는 현재 화면에 보이고 있는 아이템들의 리스트
-            snapshotFlow { listState.layoutInfo.visibleItemsInfo }
+            snapshotFlow { listState.layoutInfo.visibleItemsInfo } // visibleItemsInfo를 관찰
+                // 관찰할 데이터가 변경될 때마다 이 람다를 실행
                 .collect { visible ->
                     val lastIndex = visible.lastOrNull()?.index ?: return@collect
                     if (lastIndex >= bodyUiState.items.size - LOAD_MORE_THRESHOLD) {

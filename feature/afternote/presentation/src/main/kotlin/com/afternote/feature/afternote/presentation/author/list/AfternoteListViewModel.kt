@@ -9,6 +9,9 @@ import com.afternote.feature.afternote.domain.usecase.GetListUseCase
 import com.afternote.feature.afternote.presentation.author.list.model.AfternoteListEvent
 import com.afternote.feature.afternote.presentation.author.list.model.AfternoteListUiState
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
+import com.afternote.feature.afternote.presentation.shared.body.infinite.AfternoteBodyUiState
+import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
+import com.afternote.feature.afternote.presentation.shared.util.getIconResForServiceName
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,10 +22,6 @@ import javax.inject.Inject
 
 /**
  * 애프터노트 목록 화면 ViewModel.
- *
- * 초기에는 NavGraph에서 전달된 더미/캐시 데이터를 사용할 수 있지만,
- * 실제 API 로딩이 실패했을 때는 더미 데이터를 유지하지 않고
- * 오류 상태만 표시하도록 설계합니다.
  */
 @HiltViewModel
 class AfternoteListViewModel
@@ -38,16 +37,17 @@ class AfternoteListViewModel
         private var hasNextPage: Boolean = false
         private val pageSize: Int = 10
 
+        /** Screen에서 바로 사용할 수 있는 UI 상태. */
+        val bodyUiState: StateFlow<AfternoteBodyUiState>
+            get() = _bodyUiState.asStateFlow()
+        private val _bodyUiState = MutableStateFlow(AfternoteBodyUiState(items = emptyList()))
+
         init {
             loadAfternotes()
         }
 
         /**
          * API에서 애프터노트 목록 첫 페이지를 로드합니다.
-         * category가 null이면 전체, 그 외에는 카테고리별 필터링을 서버에서 수행합니다.
-         *
-         * 최초 로드는 init에서 자동 호출되며,
-         * 편집/저장 후 명시적으로 새로고침이 필요한 경우에만 외부에서 호출합니다.
          */
         fun loadAfternotes(category: String? = null) {
             viewModelScope.launch {
@@ -85,13 +85,13 @@ class AfternoteListViewModel
                                 isLoadingMore = false,
                             )
                         }
+                        updateBodyUiState()
                     }
             }
         }
 
         /**
          * 다음 페이지를 로드하여 목록에 이어붙입니다.
-         * hasNext가 true이고 로딩 중이 아닐 때만 호출합니다.
          */
         fun loadNextPage() {
             if (!hasNextPage || _uiState.value.isLoadingMore) return
@@ -121,18 +121,6 @@ class AfternoteListViewModel
         }
 
         /**
-         * 초기 데이터 설정 (NavGraph에서 더미/캐시로 주입)
-         */
-        fun setItems(items: List<Item>) {
-            allItems = items
-            hasNextPage = false
-            _uiState.update {
-                it.copy(loadError = null, isLoading = false, hasNext = false, isLoadingMore = false)
-            }
-            updateFilteredItems(_uiState.value.selectedTab)
-        }
-
-        /**
          * UI 이벤트 처리
          */
         fun onEvent(event: AfternoteListEvent) {
@@ -146,7 +134,7 @@ class AfternoteListViewModel
                 }
 
                 is AfternoteListEvent.ClickItem -> {
-                    handleItemClick(event.itemId)
+                    // 네비게이션은 Route에서 처리
                 }
 
                 is AfternoteListEvent.ClickAdd -> {
@@ -155,43 +143,49 @@ class AfternoteListViewModel
             }
         }
 
-        /**
-         * 탭 변경 및 필터링 로직
-         */
         private fun updateTab(tab: AfternoteCategory) {
             _uiState.update { it.copy(selectedTab = tab) }
             updateFilteredItems(tab)
         }
 
-        /**
-         * 선택된 탭에 따라 아이템 필터링
-         */
         private fun updateFilteredItems(tab: AfternoteCategory) {
             val filtered =
                 when (tab) {
                     AfternoteCategory.ALL -> allItems
-                    AfternoteCategory.SOCIAL_NETWORK -> allItems.filter { it.type == AfternoteServiceType.SOCIAL_NETWORK }
-                    AfternoteCategory.GALLERY_AND_FILES -> allItems.filter { it.type == AfternoteServiceType.GALLERY_AND_FILES }
-                    AfternoteCategory.MEMORIAL -> allItems.filter { it.type == AfternoteServiceType.MEMORIAL }
+                    AfternoteCategory.SOCIAL_NETWORK ->
+                        allItems.filter { it.type == AfternoteServiceType.SOCIAL_NETWORK }
+                    AfternoteCategory.GALLERY_AND_FILES ->
+                        allItems.filter { it.type == AfternoteServiceType.GALLERY_AND_FILES }
+                    AfternoteCategory.MEMORIAL ->
+                        allItems.filter { it.type == AfternoteServiceType.MEMORIAL }
                 }
 
             _uiState.update { it.copy(items = filtered) }
+            updateBodyUiState()
         }
 
-        /**
-         * 하단 네비게이션 아이템 변경 처리
-         */
         private fun updateBottomNav(navItem: BottomNavTab) {
             _uiState.update { it.copy(selectedBottomNavItem = navItem) }
-            // 필요시 네비게이션 로직 추가
         }
 
-        /**
-         * 아이템 클릭 처리
-         */
-        private fun handleItemClick(
-            @Suppress("UNUSED_PARAMETER") itemId: String,
-        ) {
-            // 네비게이션은 Route에서 처리
+        /** uiState → bodyUiState 변환 (Item → ListItemUiModel 매핑 포함) */
+        private fun updateBodyUiState() {
+            val state = _uiState.value
+            val displayItems =
+                state.items.map { item ->
+                    ListItemUiModel(
+                        id = item.id,
+                        serviceName = item.serviceName,
+                        date = item.date,
+                        iconResId = getIconResForServiceName(item.serviceName),
+                    )
+                }
+            _bodyUiState.value =
+                AfternoteBodyUiState(
+                    items = displayItems,
+                    selectedTab = state.selectedTab,
+                    hasNext = state.hasNext,
+                    isLoadingMore = state.isLoadingMore,
+                )
         }
     }

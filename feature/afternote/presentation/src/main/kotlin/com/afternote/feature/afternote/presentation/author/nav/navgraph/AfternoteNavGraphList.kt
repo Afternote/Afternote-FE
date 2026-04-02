@@ -57,7 +57,6 @@ internal fun AfternoteListRouteContent(
                 },
                 onBottomNavTabSelected = onNavTabSelected,
             ),
-        initialItems = emptyList(),
         onItemsChanged = onItemsUpdated,
     )
 }
