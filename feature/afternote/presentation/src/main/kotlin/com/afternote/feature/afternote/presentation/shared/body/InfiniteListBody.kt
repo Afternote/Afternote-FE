@@ -3,7 +3,6 @@ package com.afternote.feature.afternote.presentation.shared.body
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -12,12 +11,11 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.list.AfternoteCategoryRow
-import com.afternote.feature.afternote.presentation.shared.body.list.AfternoteEmptyList
-import com.afternote.feature.afternote.presentation.shared.body.list.AfternoteInfiniteList
+import com.afternote.feature.afternote.presentation.shared.body.list.AfternoteList
 import com.afternote.feature.afternote.presentation.shared.body.list.item.ListItemUiModel
 
 @Composable
-fun AfternoteBody(
+fun InfiniteListBody(
     uiState: AfternoteBodyUiState,
     onTabSelected: (AfternoteCategory) -> Unit,
     onItemClick: (String) -> Unit,
@@ -34,45 +32,19 @@ fun AfternoteBody(
             onCategorySelected = onTabSelected,
             selectedCategory = uiState.selectedTab,
         )
-        Spacer(modifier = Modifier.height(20.dp))
-        if (uiState.items.isEmpty()) {
-            AfternoteEmptyList(
-                modifier =
-                    Modifier
-                        .fillMaxWidth(),
-            )
-        } else {
-            AfternoteInfiniteList(
-                bodyUiState = uiState,
-                onItemClick = onItemClick,
-                onLoadMore = onLoadMore,
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun AfternoteBodyEmptyPreview() {
-    AfternoteTheme {
-        AfternoteBody(
-            uiState =
-                AfternoteBodyUiState(
-                    items = emptyList(),
-                    selectedTab = AfternoteCategory.ALL,
-                ),
-            onTabSelected = {},
-            onItemClick = {},
-            onLoadMore = {},
+        AfternoteList(
+            bodyUiState = uiState,
+            onItemClick = onItemClick,
+            onLoadMore = onLoadMore,
         )
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun AfternoteBodyWithItemsPreview() {
+private fun InfiniteListBodyPreview() {
     AfternoteTheme {
-        AfternoteBody(
+        InfiniteListBody(
             uiState =
                 AfternoteBodyUiState(
                     items =

@@ -7,9 +7,9 @@ import androidx.compose.ui.Modifier
 import com.afternote.core.ui.scaffold.TopBar
 import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.feature.afternote.presentation.shared.body.AfternoteBody
 import com.afternote.feature.afternote.presentation.shared.body.AfternoteBodyUiState
 import com.afternote.feature.afternote.presentation.shared.body.AfternoteCategory
+import com.afternote.feature.afternote.presentation.shared.body.InfiniteListBody
 import com.afternote.feature.afternote.presentation.shared.scaffold.ScaffoldContentWithOptionalFab
 
 /**
@@ -46,7 +46,7 @@ fun AfternoteListScreen(
             showFab = showFab,
             onFabClick = onFabClick,
         ) { contentModifier ->
-            AfternoteBody(
+            InfiniteListBody(
                 modifier = contentModifier,
                 uiState = listState,
                 onTabSelected = onTabSelected,
