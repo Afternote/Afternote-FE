@@ -5,7 +5,7 @@ import com.afternote.feature.afternote.presentation.author.list.screen.Afternote
 import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreenShellState
 import com.afternote.feature.afternote.presentation.receiver.model.ReceiverAfternoteListEvent
 import com.afternote.feature.afternote.presentation.receiver.model.uimodel.ReceiverAfternoteListUiState
-import com.afternote.feature.afternote.presentation.shared.list.AfternoteListContentUiState
+import com.afternote.feature.afternote.presentation.shared.list.AfternoteBodyUiState
 
 /**
  * Receiver list Route. Calls shared AfternoteListScreen with showFab = false.
@@ -18,7 +18,7 @@ fun ReceiverAfternoteListRoute(
 ) {
     AfternoteListScreen(
         listState =
-            AfternoteListContentUiState(
+            AfternoteBodyUiState(
                 items = uiState.items,
                 selectedTab = uiState.selectedTab,
             ),

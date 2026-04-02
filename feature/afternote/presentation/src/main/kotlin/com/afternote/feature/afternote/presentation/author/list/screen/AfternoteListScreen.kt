@@ -7,9 +7,9 @@ import androidx.compose.ui.Modifier
 import com.afternote.core.ui.scaffold.TopBar
 import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
+import com.afternote.feature.afternote.presentation.shared.list.AfternoteBody
+import com.afternote.feature.afternote.presentation.shared.list.AfternoteBodyUiState
 import com.afternote.feature.afternote.presentation.shared.list.AfternoteCategory
-import com.afternote.feature.afternote.presentation.shared.list.AfternoteListContent
-import com.afternote.feature.afternote.presentation.shared.list.AfternoteListContentUiState
 import com.afternote.feature.afternote.presentation.shared.scaffold.ScaffoldContentWithOptionalFab
 
 /** Shell params for AfternoteListScreen (title, bottom bar, FAB). */
@@ -26,7 +26,7 @@ data class AfternoteListScreenShellState(
 @Suppress("LongParameterList")
 @Composable
 fun AfternoteListScreen(
-    listState: AfternoteListContentUiState,
+    listState: AfternoteBodyUiState,
     shellState: AfternoteListScreenShellState,
     onNavTabSelected: (BottomNavTab) -> Unit,
     onTabSelected: (AfternoteCategory) -> Unit,
@@ -52,7 +52,7 @@ fun AfternoteListScreen(
             showFab = shellState.showFab,
             onFabClick = onFabClick,
         ) { contentModifier ->
-            AfternoteListContent(
+            AfternoteBody(
                 modifier = contentModifier,
                 uiState = listState,
                 onTabSelected = onTabSelected,

@@ -12,9 +12,9 @@ import com.afternote.feature.afternote.domain.model.Item
 import com.afternote.feature.afternote.presentation.author.list.model.AfternoteListEvent
 import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreen
 import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreenShellState
+import com.afternote.feature.afternote.presentation.shared.list.AfternoteBodyUiState
 import com.afternote.feature.afternote.presentation.shared.list.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.list.AfternoteItemUiModel
-import com.afternote.feature.afternote.presentation.shared.list.AfternoteListContentUiState
 import com.afternote.feature.afternote.presentation.shared.util.getIconResForServiceName
 
 data class AfternoteListRouteCallbacks(
@@ -83,7 +83,7 @@ fun AfternoteListRoute(
 
     AfternoteListScreen(
         listState =
-            AfternoteListContentUiState(
+            AfternoteBodyUiState(
                 items = displayItems,
                 selectedTab = uiState.selectedTab,
                 hasNext = uiState.hasNext,

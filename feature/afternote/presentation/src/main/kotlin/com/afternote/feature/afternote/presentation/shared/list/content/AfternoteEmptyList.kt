@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.shared.list.content
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,7 +28,7 @@ import com.afternote.feature.afternote.presentation.R
  * Shared empty state for 애프터노트 list (writer main and receiver list).
  */
 @Composable
-fun EmptyAfternoteContent(modifier: Modifier = Modifier) {
+fun AfternoteEmptyList(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxWidth(),
     ) {
@@ -71,8 +72,8 @@ fun EmptyAfternoteContent(modifier: Modifier = Modifier) {
 
 @Preview(showBackground = true)
 @Composable
-private fun EmptyAfternoteContentPreview() {
+private fun AfternoteEmptyListPreview() {
     AfternoteTheme {
-        EmptyAfternoteContent()
+        AfternoteEmptyList()
     }
 }
