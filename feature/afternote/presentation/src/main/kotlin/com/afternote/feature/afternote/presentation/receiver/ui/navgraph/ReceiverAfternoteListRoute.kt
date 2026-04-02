@@ -21,10 +21,10 @@ fun ReceiverAfternoteListRoute(
                 items = uiState.items,
                 selectedTab = uiState.selectedTab,
             ),
-        selectedNavTab = uiState.selectedBottomNavItem,
         onNavTabSelected = { onEvent(ReceiverAfternoteListEvent.SelectBottomNav(it)) },
         onTabSelected = { onEvent(ReceiverAfternoteListEvent.SelectTab(it)) },
         onItemClick = { onEvent(ReceiverAfternoteListEvent.ClickItem(it)) },
         modifier = modifier,
+        selectedNavTab = uiState.selectedBottomNavItem,
     )
 }

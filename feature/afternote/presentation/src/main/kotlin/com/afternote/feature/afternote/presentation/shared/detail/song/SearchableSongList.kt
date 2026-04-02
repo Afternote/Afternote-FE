@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.shared.detail.song
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -54,8 +55,8 @@ import com.afternote.core.ui.theme.Sansneo
 import com.afternote.core.ui.theme.White
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
+import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
-import com.afternote.feature.afternote.presentation.shared.scaffold.TopBar
 
 /**
  * Slots for [SearchableSongList]: optional trailing (per row) and leading (header) content.
@@ -115,7 +116,7 @@ fun SongPlaylistScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            TopBar(
+            AfternoteTopBar(
                 title = title,
                 onBackClick = onBackClick,
             )
@@ -162,7 +163,11 @@ fun SongPlaylistScreen(
     onSongsSelected: (List<PlaylistSongDisplay>) -> Unit,
     options: SongPlaylistScreenSelectableOptions = SongPlaylistScreenSelectableOptions(),
 ) {
-    var selectedSongIds by remember { mutableStateOf(options.initialSelectedSongIds ?: emptySet<String>()) }
+    var selectedSongIds by remember {
+        mutableStateOf(
+            options.initialSelectedSongIds ?: emptySet<String>(),
+        )
+    }
     var internalSearchQuery by remember { mutableStateOf("") }
     var selectedBottomNavTab by remember { mutableStateOf(options.defaultBottomNavTab) }
 
@@ -178,7 +183,7 @@ fun SongPlaylistScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            TopBar(
+            AfternoteTopBar(
                 title = title,
                 onBackClick = onBackClick,
             )
@@ -274,7 +279,7 @@ fun SongPlaylistScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            TopBar(
+            AfternoteTopBar(
                 title = title,
                 onBackClick = onBackClick,
             )

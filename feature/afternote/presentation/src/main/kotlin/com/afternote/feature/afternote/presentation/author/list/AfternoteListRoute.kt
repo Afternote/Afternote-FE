@@ -88,12 +88,10 @@ fun AfternoteListRoute(
                 hasNext = uiState.hasNext,
                 isLoadingMore = uiState.isLoadingMore,
             ),
-        selectedNavTab = uiState.selectedBottomNavItem,
-        showFab = true,
         onNavTabSelected = callbacks.onBottomNavTabSelected,
         onTabSelected = { viewModel.onEvent(AfternoteListEvent.SelectTab(it)) },
         onItemClick = callbacks.onNavigateToDetail,
+        selectedNavTab = uiState.selectedBottomNavItem,
         onLoadMore = { viewModel.loadNextPage() },
-        onFabClick = { callbacks.onNavigateToAdd(uiState.selectedTab) },
-    )
+    ) { callbacks.onNavigateToAdd(uiState.selectedTab) }
 }

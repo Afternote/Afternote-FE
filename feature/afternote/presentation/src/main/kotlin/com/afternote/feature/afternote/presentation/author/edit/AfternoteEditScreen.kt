@@ -8,6 +8,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -34,8 +36,8 @@ import com.afternote.feature.afternote.presentation.author.edit.processing.model
 import com.afternote.feature.afternote.presentation.author.edit.provider.FakeAfternoteEditDataProvider
 import com.afternote.feature.afternote.presentation.author.nav.navgraph.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
+import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
 import com.afternote.feature.afternote.presentation.shared.DataProviderLocals
-import com.afternote.feature.afternote.presentation.shared.scaffold.TopBar
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -151,9 +153,11 @@ fun AfternoteEditScreen(
         modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopBar(
+            AfternoteTopBar(
                 title = "애프터노트 작성하기",
                 onBackClick = callbacks.onBackClick,
+                actionIcon = Icons.Default.Check,
+                actionContentDescription = "작성 완료",
                 onActionClick = {
                     val dateFormat = SimpleDateFormat("yyyy.MM.dd", Locale.getDefault())
                     val date = dateFormat.format(Date())

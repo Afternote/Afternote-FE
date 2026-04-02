@@ -28,8 +28,8 @@ import com.afternote.feature.afternote.presentation.author.detail.ui.afternotede
 import com.afternote.feature.afternote.presentation.author.detail.ui.afternotedetail.SocialNetworkDetailScreen
 import com.afternote.feature.afternote.presentation.author.detail.ui.afternotedetail.rememberAfternoteDetailState
 import com.afternote.feature.afternote.presentation.receiver.ui.viewmodel.ReceiverAfternoteDetailViewModel
+import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
-import com.afternote.feature.afternote.presentation.shared.scaffold.TopBar
 
 /**
  * 수신자 애프터노트 상세 라우트.
@@ -77,7 +77,7 @@ fun ReceiverAfternoteDetailRoute(
             Scaffold(
                 modifier = Modifier.fillMaxSize(),
                 topBar = {
-                    TopBar(title = "", onBackClick = onBackClick)
+                    AfternoteTopBar(onBackClick = onBackClick)
                 },
             ) { paddingValues ->
                 Box(

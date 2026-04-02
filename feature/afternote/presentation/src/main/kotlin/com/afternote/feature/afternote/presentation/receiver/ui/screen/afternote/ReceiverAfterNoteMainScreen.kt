@@ -59,10 +59,10 @@ import com.afternote.core.ui.theme.B3
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.Sansneo
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
-import com.afternote.feature.afternote.presentation.shared.scaffold.TopBar
 
 @Suppress("AssignedValueIsNeverRead")
 @Composable
@@ -88,7 +88,7 @@ fun ReceiverAfterNoteMainScreen(
     Scaffold(
         topBar = {
             Column(modifier = Modifier.statusBarsPadding()) {
-                TopBar(
+                AfternoteTopBar(
                     title = "故${senderName}님의 애프터노트",
                     onBackClick = { onBackClick() },
                 )

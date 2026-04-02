@@ -16,6 +16,8 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -53,13 +55,13 @@ import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiver
 import com.afternote.feature.afternote.presentation.author.nav.navgraph.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
+import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.ReceiversCard
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.dummy.AlbumDummies
-import com.afternote.feature.afternote.presentation.shared.scaffold.TopBar
 
 /**
  * 추모 가이드라인 상세 화면의 데이터 상태
@@ -124,17 +126,12 @@ fun MemorialGuidelineDetailScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            if (isEditable) {
-                TopBar(
-                    onBackClick = callbacks.onBackClick,
-                    onEditClick = uiState::toggleDropdownMenu,
-                )
-            } else {
-                TopBar(
-                    title = "",
-                    onBackClick = callbacks.onBackClick,
-                )
-            }
+            AfternoteTopBar(
+                onBackClick = callbacks.onBackClick,
+                actionIcon = if (isEditable) Icons.Default.MoreVert else null,
+                actionContentDescription = "더보기",
+                onActionClick = if (isEditable) uiState::toggleDropdownMenu else null,
+            )
         },
         bottomBar = {
             AfternoteEmbeddedMainBottomBar(

@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.detail.ui.afternotedetail
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,13 +34,13 @@ import com.afternote.core.ui.theme.Gray6
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.Sansneo
 import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
+import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.InfoRow
 import com.afternote.feature.afternote.presentation.shared.detail.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.shared.detail.ReceiversCard
-import com.afternote.feature.afternote.presentation.shared.scaffold.TopBar
 
 /**
  * Display data for [SocialNetworkDetailScreen].
@@ -97,17 +100,12 @@ fun SocialNetworkDetailScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            if (isEditable) {
-                TopBar(
-                    onBackClick = onBackClick,
-                    onEditClick = state::toggleDropdownMenu,
-                )
-            } else {
-                TopBar(
-                    title = "",
-                    onBackClick = onBackClick,
-                )
-            }
+            AfternoteTopBar(
+                onBackClick = onBackClick,
+                actionIcon = if (isEditable) Icons.Default.MoreVert else null,
+                actionContentDescription = "더보기",
+                onActionClick = if (isEditable) state::toggleDropdownMenu else null,
+            )
         },
         bottomBar = {
             AfternoteEmbeddedMainBottomBar(

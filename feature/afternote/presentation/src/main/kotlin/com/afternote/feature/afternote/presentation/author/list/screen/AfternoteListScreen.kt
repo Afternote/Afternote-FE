@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.list.screen
 
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -11,7 +12,6 @@ import com.afternote.feature.afternote.presentation.shared.body.AfternoteBodyUiS
 import com.afternote.feature.afternote.presentation.shared.body.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.body.EmptyListBody
 import com.afternote.feature.afternote.presentation.shared.body.InfiniteListBody
-import com.afternote.feature.afternote.presentation.shared.scaffold.ScaffoldContentWithOptionalFab
 
 @Suppress("LongParameterList")
 @Composable
@@ -22,7 +22,6 @@ fun AfternoteListScreen(
     onItemClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     selectedNavTab: BottomNavTab = BottomNavTab.NOTE,
-    showFab: Boolean = false,
     onLoadMore: () -> Unit = {},
     onFabClick: () -> Unit = {},
 ) {
@@ -38,22 +37,22 @@ fun AfternoteListScreen(
             )
         },
     ) { paddingValues ->
-        ScaffoldContentWithOptionalFab(
-            paddingValues = paddingValues,
-            showFab = showFab,
-            onFabClick = onFabClick,
-        ) { contentModifier ->
-            if (listState.items.isNotEmpty()) {
-                InfiniteListBody(
-                    modifier = contentModifier,
-                    uiState = listState,
-                    onTabSelected = onTabSelected,
-                    onItemClick = onItemClick,
-                    onLoadMore = onLoadMore,
-                )
-            } else {
-                EmptyListBody()
-            }
+//        ScaffoldContentWithOptionalFab(
+//            paddingValues = paddingValues,
+//            showFab = showFab,
+//            onFabClick = onFabClick,
+//        ) { contentModifier ->
+        if (listState.items.isNotEmpty()) {
+            InfiniteListBody(
+                modifier = Modifier.padding(paddingValues),
+                uiState = listState,
+                onTabSelected = onTabSelected,
+                onItemClick = onItemClick,
+                onLoadMore = onLoadMore,
+            )
+        } else {
+            EmptyListBody()
         }
+//        }
     }
 }

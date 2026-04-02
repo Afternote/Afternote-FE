@@ -13,7 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
-import com.afternote.feature.afternote.presentation.shared.scaffold.TopBar
+import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
 
 /**
  * 지문 로그인 화면
@@ -37,7 +37,7 @@ fun FingerprintLoginScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            TopBar(title = "지문 로그인")
+            AfternoteTopBar(title = "지문 로그인")
         },
         bottomBar = {
             AfternoteEmbeddedMainBottomBar(
