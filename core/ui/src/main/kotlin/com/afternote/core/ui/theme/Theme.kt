@@ -99,7 +99,7 @@ val afternoteTypography =
             TextStyle(
                 fontFamily = naNumGothic,
                 fontWeight = FontWeight.Normal,
-                fontSize = 22.sp,
+                fontSize = 22.sp, // TODO: 이거 떄문에 나브탭 크기가 커지는 문제
                 lineHeight = 20.sp,
                 letterSpacing = (-0.0025).em,
             ),
