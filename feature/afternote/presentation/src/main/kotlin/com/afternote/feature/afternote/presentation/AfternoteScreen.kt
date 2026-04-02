@@ -9,6 +9,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
+import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavGraphEditContext
+import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavGraphListContext
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavGraphParams
 import com.afternote.feature.afternote.presentation.author.navigation.afternoteNavGraph
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
@@ -37,14 +39,20 @@ fun AfternoteScreen(
                 navController = appState.navController,
                 params =
                     AfternoteNavGraphParams(
-                        afternoteItemsProvider = { items },
-                        onItemsUpdated = hostViewModel::updateItems,
-                        playlistStateHolder = appState.playlistHolder,
-                        afternoteProvider = afternoteProvider,
-                        userNameProvider = { "" },
-                        editStateHandling = appState.editHandling,
-                        listRefresh = null,
-                        onNavigateToSelectReceiver = {},
+                        list =
+                            AfternoteNavGraphListContext(
+                                afternoteItems = items,
+                                onItemsUpdated = hostViewModel::updateItems,
+                                listRefresh = null,
+                            ),
+                        edit =
+                            AfternoteNavGraphEditContext(
+                                playlistStateHolder = appState.playlistHolder,
+                                afternoteProvider = afternoteProvider,
+                                editStateHandling = appState.editHandling,
+                                onNavigateToSelectReceiver = {},
+                            ),
+                        userName = "",
                     ),
                 onNavTabSelected = onBottomNavTabClick,
             )

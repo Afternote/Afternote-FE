@@ -28,7 +28,7 @@ internal fun AfternoteListDestination(
     listRefresh: AfternoteListRefreshParams? = null,
 ) {
     AfternoteListRoute(
-        listRefreshRequested = listRefresh?.listRefreshRequestedProvider?.invoke() == true,
+        listRefreshRequested = listRefresh?.listRefreshRequested == true,
         onListRefreshConsumed = listRefresh?.onListRefreshConsumed ?: {},
         actions =
             AfternoteListRouteActions(
@@ -50,7 +50,7 @@ internal fun AfternoteListDestination(
                     )
                     navController.navigate(AfternoteRoute.EditRoute(initialCategory = initialCategory))
                 },
-                selectBottomNavTab = onNavTabSelected,
+                onNavTabSelected = onNavTabSelected,
             ),
         onItemsChanged = onItemsChanged,
     )

@@ -23,11 +23,14 @@ class AfternoteAppState(
     val playlistHolder: MemorialPlaylistStateHolder,
     private val editStateHolder: MutableState<AfternoteEditState?>,
 ) {
-    val editHandling =
-        AfternoteEditStateHandling(
-            holder = editStateHolder,
-            onClear = { editStateHolder.value = null },
-        )
+    /** UDF-friendly snapshot + callbacks for nav graph (no [MutableState] leak). */
+    val editHandling: AfternoteEditStateHandling
+        get() =
+            AfternoteEditStateHandling(
+                state = editStateHolder.value,
+                onStateChanged = { editStateHolder.value = it },
+                onClear = { editStateHolder.value = null },
+            )
 }
 
 @Composable

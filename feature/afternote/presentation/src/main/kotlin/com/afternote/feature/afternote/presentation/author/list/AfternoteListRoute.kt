@@ -13,12 +13,13 @@ import com.afternote.feature.afternote.presentation.author.list.model.AfternoteL
 import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreen
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 
+// TODO: AI 딸깍이라 점검 필요
 data class AfternoteListRouteActions(
     val navigateToDetail: (String) -> Unit = {},
     val navigateToGalleryDetail: (String) -> Unit = {},
     val navigateToMemorialGuidelineDetail: (String) -> Unit = {},
     val navigateToAdd: (AfternoteCategory) -> Unit = {},
-    val selectBottomNavTab: (BottomNavTab) -> Unit = {},
+    val onNavTabSelected: (BottomNavTab) -> Unit = {},
 )
 
 /**
@@ -55,7 +56,7 @@ fun AfternoteListRoute(
 
     AfternoteListScreen(
         listState = bodyUiState,
-        onNavTabSelected = actions.selectBottomNavTab,
+        onNavTabSelected = actions.onNavTabSelected,
         onCategorySelected = { viewModel.onEvent(AfternoteListEvent.SelectTab(it)) },
         onListItemClick = actions.navigateToDetail,
         selectedNavTab = uiState.selectedBottomNavItem,

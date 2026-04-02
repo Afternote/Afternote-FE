@@ -3,6 +3,9 @@ import kotlinx.serialization.Serializable
 
 sealed interface AfternoteRoute {
     @Serializable
+    data object AfternoteGraph : AfternoteRoute
+
+    @Serializable
     data object AfternoteListRoute : AfternoteRoute
 
     @Serializable

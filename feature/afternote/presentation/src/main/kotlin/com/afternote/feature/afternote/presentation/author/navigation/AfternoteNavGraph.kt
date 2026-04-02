@@ -13,24 +13,24 @@ fun NavGraphBuilder.afternoteNavGraph(
     params: AfternoteNavGraphParams,
     onNavTabSelected: (BottomNavTab) -> Unit = {},
 ) {
-    val afternoteProvider = params.afternoteProvider
+    val afternoteProvider = params.edit.afternoteProvider
 
     afternoteComposable<AfternoteRoute.AfternoteListRoute> {
         AfternoteListDestination(
             navController = navController,
             onNavTabSelected = onNavTabSelected,
-            onItemsChanged = params.onItemsUpdated,
-            listRefresh = params.listRefresh,
+            onItemsChanged = params.list.onItemsUpdated,
+            listRefresh = params.list.listRefresh,
         )
     }
 
-    val onAfternoteDeleted = params.listRefresh?.onAfternoteDeleted ?: {}
+    val onAfternoteDeleted = params.list.listRefresh?.onAfternoteDeleted ?: {}
 
     afternoteComposable<AfternoteRoute.DetailRoute> { backStackEntry ->
         AfternoteDetailDestination(
             backStackEntry = backStackEntry,
             navController = navController,
-            userName = params.userNameProvider(),
+            userName = params.userName,
             onAfternoteDeleted = onAfternoteDeleted,
         )
     }
@@ -39,22 +39,22 @@ fun NavGraphBuilder.afternoteNavGraph(
         AfternoteGalleryDetailDestination(
             backStackEntry = backStackEntry,
             navController = navController,
-            userName = params.userNameProvider(),
+            userName = params.userName,
             onAfternoteDeleted = onAfternoteDeleted,
         )
     }
 
     afternoteComposable<AfternoteRoute.EditRoute> { backStackEntry ->
-        val currentItems = params.afternoteItemsProvider()
+        val currentItems = params.list.afternoteItems
         AfternoteEditDestination(
             AfternoteEditDestinationParams(
                 backStackEntry = backStackEntry,
                 navController = navController,
                 afternoteItems = currentItems,
-                playlistStateHolder = params.playlistStateHolder,
+                playlistStateHolder = params.edit.playlistStateHolder,
                 afternoteProvider = afternoteProvider,
-                editStateHandling = params.editStateHandling,
-                onNavigateToSelectReceiver = params.onNavigateToSelectReceiver,
+                editStateHandling = params.edit.editStateHandling,
+                onNavigateToSelectReceiver = params.edit.onNavigateToSelectReceiver,
                 onBottomNavTabSelected = onNavTabSelected,
             ),
         )
@@ -64,14 +64,14 @@ fun NavGraphBuilder.afternoteNavGraph(
         AfternoteMemorialGuidelineDetailDestination(
             backStackEntry = backStackEntry,
             navController = navController,
-            userName = params.userNameProvider(),
+            userName = params.userName,
             onAfternoteDeleted = onAfternoteDeleted,
         )
     }
 
     afternoteComposable<AfternoteRoute.MemorialPlaylistRoute> {
         MemorialPlaylistRouteScreen(
-            playlistStateHolder = params.playlistStateHolder,
+            playlistStateHolder = params.edit.playlistStateHolder,
             onBackClick = { navController.popBackStack() },
             onNavigateToAddSongScreen = { navController.navigate(AfternoteRoute.AddSongRoute) },
         )
@@ -88,7 +88,7 @@ fun NavGraphBuilder.afternoteNavGraph(
         val addSongViewModel: AddSongViewModel = hiltViewModel()
         AfternoteAddSongDestination(
             navController = navController,
-            playlistStateHolder = params.playlistStateHolder,
+            playlistStateHolder = params.edit.playlistStateHolder,
             viewModel = addSongViewModel,
         )
     }

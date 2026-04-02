@@ -162,7 +162,7 @@ internal fun AfternoteEditDestination(
     }
     val saveState by editViewModel.saveState.collectAsStateWithLifecycle()
     val newState = rememberAfternoteEditState()
-    val existingState = params.editStateHandling.holder.value
+    val existingState = params.editStateHandling.state
     val state = existingState ?: newState
 
     // 새 글 작성 시 기존 상태 초기화 (목적지 화면이 스스로 책임)
@@ -173,8 +173,8 @@ internal fun AfternoteEditDestination(
         }
     }
     LaunchedEffect(Unit) {
-        if (params.editStateHandling.holder.value == null) {
-            params.editStateHandling.holder.value = state
+        if (params.editStateHandling.state == null) {
+            params.editStateHandling.onStateChanged(state)
         }
     }
     LaunchedEffect(Unit) { editViewModel.loadReceivers() }
