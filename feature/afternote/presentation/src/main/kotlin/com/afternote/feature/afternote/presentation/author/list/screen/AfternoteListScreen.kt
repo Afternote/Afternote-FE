@@ -9,13 +9,10 @@ import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.shared.body.AfternoteBodyUiState
 import com.afternote.feature.afternote.presentation.shared.body.AfternoteCategory
+import com.afternote.feature.afternote.presentation.shared.body.EmptyListBody
 import com.afternote.feature.afternote.presentation.shared.body.InfiniteListBody
 import com.afternote.feature.afternote.presentation.shared.scaffold.ScaffoldContentWithOptionalFab
 
-/**
- * Single shared screen for 애프터노트 list (writer main and receiver list).
- * Writer and receiver both call this with showFab true/false and their own listState/callbacks.
- */
 @Suppress("LongParameterList")
 @Composable
 fun AfternoteListScreen(
@@ -46,13 +43,17 @@ fun AfternoteListScreen(
             showFab = showFab,
             onFabClick = onFabClick,
         ) { contentModifier ->
-            InfiniteListBody(
-                modifier = contentModifier,
-                uiState = listState,
-                onTabSelected = onTabSelected,
-                onItemClick = onItemClick,
-                onLoadMore = onLoadMore,
-            )
+            if (listState.items.isNotEmpty()) {
+                InfiniteListBody(
+                    modifier = contentModifier,
+                    uiState = listState,
+                    onTabSelected = onTabSelected,
+                    onItemClick = onItemClick,
+                    onLoadMore = onLoadMore,
+                )
+            } else {
+                EmptyListBody()
+            }
         }
     }
 }

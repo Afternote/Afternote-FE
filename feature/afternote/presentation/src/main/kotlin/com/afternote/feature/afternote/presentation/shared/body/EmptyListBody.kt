@@ -64,7 +64,7 @@ fun EmptyListBody(modifier: Modifier = Modifier) {
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, heightDp = 600)
 @Composable
 private fun EmptyListBodyPreview() {
     EmptyListBody()
