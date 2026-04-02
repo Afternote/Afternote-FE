@@ -1,10 +1,16 @@
 package com.afternote.feature.afternote.presentation.shared.body.infinite
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.AfternoteListContent
+import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
 
 @Composable
 fun InfiniteListBody(
@@ -16,13 +22,52 @@ fun InfiniteListBody(
 ) {
     Column(
         modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        AfternoteHeader()
+        // TODO: 헤더 코어로 옮겨지면 적용하기
         AfternoteListContent(
             uiState = uiState,
             onCategorySelected = onCategorySelected,
             onListItemClick = onListItemClick,
             onLoadMore = onLoadMore,
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun InfiniteListBodyPreview() {
+    AfternoteTheme {
+        InfiniteListBody(
+            uiState =
+                AfternoteBodyUiState(
+                    items =
+                        listOf(
+                            ListItemUiModel(
+                                id = "1",
+                                serviceName = "인스타그램",
+                                date = "2023.11.24",
+                                iconResId = R.drawable.img_insta_pattern,
+                            ),
+                            ListItemUiModel(
+                                id = "2",
+                                serviceName = "페이스북",
+                                date = "2023.11.25",
+                                iconResId = R.drawable.img_insta_pattern,
+                            ),
+                            ListItemUiModel(
+                                id = "3",
+                                serviceName = "갤러리",
+                                date = "2023.11.26",
+                                iconResId = R.drawable.img_insta_pattern,
+                            ),
+                        ),
+                    selectedTab = AfternoteCategory.ALL,
+                    hasNext = true,
+                    isLoadingMore = false,
+                ),
+            onCategorySelected = {},
+            onListItemClick = {},
         )
     }
 }
