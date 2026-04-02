@@ -35,6 +35,7 @@ fun BottomBar(
     NavigationBar(
         modifier = modifier,
         containerColor = White,
+        tonalElevation = 0.dp,
     ) {
         BottomNavTab.entries.forEach { tab ->
             val selected = selectedNavTab == tab
