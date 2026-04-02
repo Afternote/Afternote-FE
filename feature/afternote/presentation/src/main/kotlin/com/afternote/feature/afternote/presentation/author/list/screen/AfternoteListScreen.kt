@@ -12,19 +12,19 @@ import com.afternote.core.ui.scaffold.topbar.HomeTopBar
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.AfternoteAddFAB
-import com.afternote.feature.afternote.presentation.shared.body.AfternoteBodyUiState
-import com.afternote.feature.afternote.presentation.shared.body.AfternoteCategory
+import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.body.EmptyListBody
-import com.afternote.feature.afternote.presentation.shared.body.InfiniteListBody
-import com.afternote.feature.afternote.presentation.shared.body.list.item.ListItemUiModel
+import com.afternote.feature.afternote.presentation.shared.body.infinite.AfternoteBodyUiState
+import com.afternote.feature.afternote.presentation.shared.body.infinite.InfiniteListBody
+import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
 
 @Suppress("LongParameterList")
 @Composable
 fun AfternoteListScreen(
     listState: AfternoteBodyUiState,
     onNavTabSelected: (BottomNavTab) -> Unit,
-    onTabSelected: (AfternoteCategory) -> Unit,
-    onItemClick: (String) -> Unit,
+    onCategorySelected: (AfternoteCategory) -> Unit,
+    onListItemClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     selectedNavTab: BottomNavTab = BottomNavTab.NOTE,
     onLoadMore: () -> Unit = {},
@@ -47,12 +47,12 @@ fun AfternoteListScreen(
             InfiniteListBody(
                 modifier = Modifier.padding(paddingValues),
                 uiState = listState,
-                onTabSelected = onTabSelected,
-                onItemClick = onItemClick,
+                onCategorySelected = onCategorySelected,
+                onListItemClick = onListItemClick,
                 onLoadMore = onLoadMore,
             )
         } else {
-            EmptyListBody()
+            EmptyListBody(modifier = Modifier.padding(paddingValues))
         }
     }
 }
@@ -82,8 +82,8 @@ private fun AfternoteListScreenPreview() {
                     selectedTab = AfternoteCategory.ALL,
                 ),
             onNavTabSelected = {},
-            onTabSelected = {},
-            onItemClick = {},
+            onCategorySelected = {},
+            onListItemClick = {},
             selectedNavTab = BottomNavTab.NOTE,
         )
     }
@@ -100,8 +100,8 @@ private fun AfternoteListScreenEmptyPreview() {
                     selectedTab = AfternoteCategory.ALL,
                 ),
             onNavTabSelected = {},
-            onTabSelected = {},
-            onItemClick = {},
+            onCategorySelected = {},
+            onListItemClick = {},
             selectedNavTab = BottomNavTab.NOTE,
         )
     }

@@ -1,7 +1,8 @@
-package com.afternote.feature.afternote.presentation.shared.body
+package com.afternote.feature.afternote.presentation.shared.body.infinite
 
 import androidx.compose.runtime.Stable
-import com.afternote.feature.afternote.presentation.shared.body.list.item.ListItemUiModel
+import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
+import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
 
 @Stable
 data class AfternoteBodyUiState(

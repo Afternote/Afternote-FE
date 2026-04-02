@@ -2,7 +2,6 @@ package com.afternote.feature.afternote.presentation.author.list
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -29,17 +28,18 @@ import com.afternote.core.ui.icon.ArrowIconSpec
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.B1
+import com.afternote.core.ui.theme.Gray2
 import com.afternote.core.ui.theme.Gray4
 import com.afternote.core.ui.theme.Gray7
 import com.afternote.core.ui.theme.Sansneo
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.body.AfternoteCategory
+import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 
 @Composable
 fun AfternoteCategoryRow(
-    onCategorySelected: (AfternoteCategory) -> Unit,
+    onTabSelected: (AfternoteCategory) -> Unit,
     modifier: Modifier = Modifier,
-    selectedCategory: AfternoteCategory = AfternoteCategory.ALL,
+    selectedTab: AfternoteCategory = AfternoteCategory.ALL,
 ) {
     val scrollState = rememberScrollState()
     val canScrollRight by remember {
@@ -53,12 +53,11 @@ fun AfternoteCategoryRow(
                     .fillMaxWidth()
                     .horizontalFadingEdge(edgeWidth = 45.dp)
                     .horizontalScroll(scrollState),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             AfternoteCategory.entries.forEach { tab ->
                 CategoryItem(
-                    isSelected = tab == selectedCategory,
-                    onClick = { onCategorySelected(tab) },
+                    isSelected = tab == selectedTab,
+                    onClick = { onTabSelected(tab) },
                     category = tab,
                 )
             }
@@ -77,6 +76,11 @@ fun AfternoteCategoryRow(
                 modifier = Modifier.align(Alignment.CenterEnd),
             )
         }
+        HorizontalDivider(
+            thickness = 1.dp,
+            color = Gray2,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
     }
 }
 
@@ -131,8 +135,8 @@ private fun AfternoteCategoryRowPreview() {
     AfternoteTheme {
         var selectedTab by remember { mutableStateOf(AfternoteCategory.ALL) }
         AfternoteCategoryRow(
-            onCategorySelected = { selectedTab = it },
-            selectedCategory = selectedTab,
+            onTabSelected = { selectedTab = it },
+            selectedTab = selectedTab,
         )
     }
 }

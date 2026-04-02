@@ -4,7 +4,7 @@ import androidx.compose.ui.Modifier
 import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreen
 import com.afternote.feature.afternote.presentation.receiver.model.ReceiverAfternoteListEvent
 import com.afternote.feature.afternote.presentation.receiver.model.uimodel.ReceiverAfternoteListUiState
-import com.afternote.feature.afternote.presentation.shared.body.AfternoteBodyUiState
+import com.afternote.feature.afternote.presentation.shared.body.infinite.AfternoteBodyUiState
 
 /**
  * Receiver list Route. Calls shared AfternoteListScreen with showFab = false.
@@ -22,8 +22,8 @@ fun ReceiverAfternoteListRoute(
                 selectedTab = uiState.selectedTab,
             ),
         onNavTabSelected = { onEvent(ReceiverAfternoteListEvent.SelectBottomNav(it)) },
-        onTabSelected = { onEvent(ReceiverAfternoteListEvent.SelectTab(it)) },
-        onItemClick = { onEvent(ReceiverAfternoteListEvent.ClickItem(it)) },
+        onCategorySelected = { onEvent(ReceiverAfternoteListEvent.SelectTab(it)) },
+        onListItemClick = { onEvent(ReceiverAfternoteListEvent.ClickItem(it)) },
         modifier = modifier,
         selectedNavTab = uiState.selectedBottomNavItem,
     )

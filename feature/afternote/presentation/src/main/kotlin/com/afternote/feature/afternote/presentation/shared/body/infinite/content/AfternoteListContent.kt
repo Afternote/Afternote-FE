@@ -1,4 +1,6 @@
-package com.afternote.feature.afternote.presentation.shared.body
+@file:JvmName("InfiniteListContentKt")
+
+package com.afternote.feature.afternote.presentation.shared.body.infinite.content
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,14 +10,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.list.AfternoteCategoryRow
-import com.afternote.feature.afternote.presentation.shared.body.list.AfternoteList
-import com.afternote.feature.afternote.presentation.shared.body.list.item.ListItemUiModel
+import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
+import com.afternote.feature.afternote.presentation.shared.body.infinite.AfternoteBodyUiState
+import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.AfternoteList
+import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
 
 @Composable
-fun InfiniteListBody(
+fun AfternoteListContent(
     uiState: AfternoteBodyUiState,
-    onTabSelected: (AfternoteCategory) -> Unit,
-    onItemClick: (String) -> Unit,
+    onCategorySelected: (AfternoteCategory) -> Unit,
+    onListItemClick: (String) -> Unit,
     onLoadMore: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -25,12 +29,12 @@ fun InfiniteListBody(
                 .fillMaxSize(),
     ) {
         AfternoteCategoryRow(
-            onCategorySelected = onTabSelected,
-            selectedCategory = uiState.selectedTab,
+            onTabSelected = onCategorySelected,
+            selectedTab = uiState.selectedTab,
         )
         AfternoteList(
             bodyUiState = uiState,
-            onItemClick = onItemClick,
+            onItemClick = onListItemClick,
             onLoadMore = onLoadMore,
         )
     }
@@ -38,9 +42,9 @@ fun InfiniteListBody(
 
 @Preview(showBackground = true)
 @Composable
-private fun InfiniteListBodyPreview() {
+private fun AfternoteListContentPreview() {
     AfternoteTheme {
-        InfiniteListBody(
+        AfternoteListContent(
             uiState =
                 AfternoteBodyUiState(
                     items =
@@ -60,8 +64,8 @@ private fun InfiniteListBodyPreview() {
                         ),
                     selectedTab = AfternoteCategory.ALL,
                 ),
-            onTabSelected = {},
-            onItemClick = {},
+            onCategorySelected = {},
+            onListItemClick = {},
             onLoadMore = {},
         )
     }

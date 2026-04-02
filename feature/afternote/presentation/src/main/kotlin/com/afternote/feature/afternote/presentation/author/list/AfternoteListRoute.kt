@@ -11,9 +11,9 @@ import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.domain.model.Item
 import com.afternote.feature.afternote.presentation.author.list.model.AfternoteListEvent
 import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreen
-import com.afternote.feature.afternote.presentation.shared.body.AfternoteBodyUiState
-import com.afternote.feature.afternote.presentation.shared.body.AfternoteCategory
-import com.afternote.feature.afternote.presentation.shared.body.list.item.ListItemUiModel
+import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
+import com.afternote.feature.afternote.presentation.shared.body.infinite.AfternoteBodyUiState
+import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
 import com.afternote.feature.afternote.presentation.shared.util.getIconResForServiceName
 
 data class AfternoteListRouteCallbacks(
@@ -89,8 +89,8 @@ fun AfternoteListRoute(
                 isLoadingMore = uiState.isLoadingMore,
             ),
         onNavTabSelected = callbacks.onBottomNavTabSelected,
-        onTabSelected = { viewModel.onEvent(AfternoteListEvent.SelectTab(it)) },
-        onItemClick = callbacks.onNavigateToDetail,
+        onCategorySelected = { viewModel.onEvent(AfternoteListEvent.SelectTab(it)) },
+        onListItemClick = callbacks.onNavigateToDetail,
         selectedNavTab = uiState.selectedBottomNavItem,
         onLoadMore = { viewModel.loadNextPage() },
     ) { callbacks.onNavigateToAdd(uiState.selectedTab) }

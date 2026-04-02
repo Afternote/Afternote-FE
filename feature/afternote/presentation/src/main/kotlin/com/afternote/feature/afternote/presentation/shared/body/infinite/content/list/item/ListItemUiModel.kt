@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.shared.body.list.item
+package com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item
 
 /**
  * Display model for a single row in the shared 애프터노트 list (writer main and receiver list).

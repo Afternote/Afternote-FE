@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.shared.body.list.item
+package com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

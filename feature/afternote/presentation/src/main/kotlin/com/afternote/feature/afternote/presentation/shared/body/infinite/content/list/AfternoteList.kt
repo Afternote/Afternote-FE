@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.shared.body.list
+package com.afternote.feature.afternote.presentation.shared.body.infinite.content.list
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,9 +19,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.body.AfternoteBodyUiState
-import com.afternote.feature.afternote.presentation.shared.body.list.item.AfternoteListItem
-import com.afternote.feature.afternote.presentation.shared.body.list.item.ListItemUiModel
+import com.afternote.feature.afternote.presentation.shared.body.infinite.AfternoteBodyUiState
+import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.AfternoteListItem
+import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
 
 private const val LOAD_MORE_THRESHOLD = 3
 
