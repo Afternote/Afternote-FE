@@ -9,7 +9,7 @@ import com.afternote.feature.afternote.presentation.author.edit.AfternoteItemMap
 import com.afternote.feature.afternote.presentation.author.edit.model.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.edit.provider.AfternoteEditDataProvider
 import com.afternote.feature.afternote.presentation.author.list.AfternoteListRoute
-import com.afternote.feature.afternote.presentation.author.list.AfternoteListRouteCallbacks
+import com.afternote.feature.afternote.presentation.author.list.AfternoteListRouteActions
 import com.afternote.feature.afternote.presentation.author.nav.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 
@@ -33,8 +33,8 @@ internal fun AfternoteListRouteContent(
     AfternoteListRoute(
         listRefreshRequested = listRefresh?.listRefreshRequestedProvider?.invoke() == true,
         onListRefreshConsumed = listRefresh?.onListRefreshConsumed ?: {},
-        callbacks =
-            AfternoteListRouteCallbacks(
+        actions =
+            AfternoteListRouteActions(
                 onNavigateToDetail = { itemId ->
                     navController.navigate(AfternoteRoute.DetailRoute(itemId = itemId))
                 },

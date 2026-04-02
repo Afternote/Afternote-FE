@@ -13,7 +13,7 @@ import com.afternote.feature.afternote.presentation.author.list.model.AfternoteL
 import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreen
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 
-data class AfternoteListRouteCallbacks(
+data class AfternoteListRouteActions(
     val onNavigateToDetail: (String) -> Unit = {},
     val onNavigateToGalleryDetail: (String) -> Unit = {},
     val onNavigateToMemorialGuidelineDetail: (String) -> Unit = {},
@@ -29,7 +29,7 @@ data class AfternoteListRouteCallbacks(
 @Composable
 fun AfternoteListRoute(
     viewModel: AfternoteListViewModel = hiltViewModel(),
-    callbacks: AfternoteListRouteCallbacks = AfternoteListRouteCallbacks(),
+    actions: AfternoteListRouteActions = AfternoteListRouteActions(),
     onItemsChanged: (List<Item>) -> Unit = {},
     listRefreshRequested: Boolean = false,
     onListRefreshConsumed: () -> Unit = {},
@@ -55,10 +55,10 @@ fun AfternoteListRoute(
 
     AfternoteListScreen(
         listState = bodyUiState,
-        onNavTabSelected = callbacks.onBottomNavTabSelected,
+        onNavTabSelected = actions.onBottomNavTabSelected,
         onCategorySelected = { viewModel.onEvent(AfternoteListEvent.SelectTab(it)) },
-        onListItemClick = callbacks.onNavigateToDetail,
+        onListItemClick = actions.onNavigateToDetail,
         selectedNavTab = uiState.selectedBottomNavItem,
         onLoadMore = viewModel::loadNextPage,
-    ) { callbacks.onNavigateToAdd(uiState.selectedTab) }
+    ) { actions.onNavigateToAdd(uiState.selectedTab) }
 }
