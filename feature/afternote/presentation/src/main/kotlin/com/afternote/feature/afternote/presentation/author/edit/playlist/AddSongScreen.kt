@@ -5,7 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.afternote.feature.afternote.presentation.author.nav.navgraph.AfternoteLightTheme
+import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScreen
 import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScreenSelectableOptions
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay

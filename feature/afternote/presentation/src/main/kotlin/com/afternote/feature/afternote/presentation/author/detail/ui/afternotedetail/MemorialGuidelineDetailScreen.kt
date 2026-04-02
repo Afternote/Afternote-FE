@@ -53,7 +53,7 @@ import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.Sansneo
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiver
-import com.afternote.feature.afternote.presentation.author.nav.navgraph.AfternoteLightTheme
+import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
 import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog

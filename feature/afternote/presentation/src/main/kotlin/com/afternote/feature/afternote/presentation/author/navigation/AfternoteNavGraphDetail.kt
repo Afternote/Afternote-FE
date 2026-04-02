@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.nav.navgraph
+package com.afternote.feature.afternote.presentation.author.navigation
 
 import android.util.Log
 import androidx.compose.foundation.layout.Box
@@ -30,7 +30,7 @@ import com.afternote.feature.afternote.presentation.author.detail.ui.afternotede
 import com.afternote.feature.afternote.presentation.author.detail.ui.afternotedetail.SocialNetworkDetailContent
 import com.afternote.feature.afternote.presentation.author.detail.ui.afternotedetail.SocialNetworkDetailScreen
 import com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiver
-import com.afternote.feature.afternote.presentation.author.nav.model.AfternoteRoute
+import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 
@@ -67,7 +67,7 @@ internal fun DesignPendingDetailContent(onBackClick: () -> Unit) {
 }
 
 @Composable
-internal fun AfternoteDetailRouteContent(
+internal fun AfternoteDetailDestination(
     backStackEntry: NavBackStackEntry,
     navController: NavController,
     userName: String,
@@ -139,7 +139,7 @@ internal fun AfternoteDetailRouteContent(
 }
 
 @Composable
-internal fun AfternoteGalleryDetailRouteContent(
+internal fun AfternoteGalleryDetailDestination(
     backStackEntry: NavBackStackEntry,
     navController: NavController,
     userName: String,
@@ -208,7 +208,7 @@ internal fun AfternoteGalleryDetailRouteContent(
 }
 
 @Composable
-internal fun AfternoteMemorialGuidelineDetailContent(
+internal fun AfternoteMemorialGuidelineDetailDestination(
     backStackEntry: NavBackStackEntry,
     navController: NavController,
     userName: String,

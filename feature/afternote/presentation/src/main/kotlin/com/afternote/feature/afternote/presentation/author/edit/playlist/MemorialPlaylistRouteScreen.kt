@@ -36,7 +36,7 @@ import com.afternote.core.ui.theme.Sansneo
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.edit.model.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.edit.provider.FakeAfternoteEditDataProvider
-import com.afternote.feature.afternote.presentation.author.nav.navgraph.AfternoteLightTheme
+import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.DataProviderLocals
 import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScreen
 import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScreenManagementContent

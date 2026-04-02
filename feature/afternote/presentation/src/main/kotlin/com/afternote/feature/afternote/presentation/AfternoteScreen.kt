@@ -16,10 +16,10 @@ import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.domain.model.Item
 import com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditState
 import com.afternote.feature.afternote.presentation.author.edit.model.MemorialPlaylistStateHolder
-import com.afternote.feature.afternote.presentation.author.nav.model.AfternoteRoute
-import com.afternote.feature.afternote.presentation.author.nav.navgraph.AfternoteEditStateHandling
-import com.afternote.feature.afternote.presentation.author.nav.navgraph.AfternoteNavGraphParams
-import com.afternote.feature.afternote.presentation.author.nav.navgraph.afternoteNavGraph
+import com.afternote.feature.afternote.presentation.author.navigation.AfternoteEditStateHandling
+import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavGraphParams
+import com.afternote.feature.afternote.presentation.author.navigation.afternoteNavGraph
+import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.shared.LocalAfternoteUsesAppBottomBar
 
 @Composable

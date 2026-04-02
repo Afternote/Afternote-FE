@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.nav.model
+package com.afternote.feature.afternote.presentation.author.navigation.model
 import kotlinx.serialization.Serializable
 
 sealed interface AfternoteRoute {

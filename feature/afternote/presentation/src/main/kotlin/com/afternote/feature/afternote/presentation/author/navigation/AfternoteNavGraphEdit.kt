@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.nav.navgraph
+package com.afternote.feature.afternote.presentation.author.navigation
 
 import android.util.Log
 import androidx.compose.runtime.Composable
@@ -25,8 +25,8 @@ import com.afternote.feature.afternote.presentation.author.edit.model.MemorialPl
 import com.afternote.feature.afternote.presentation.author.edit.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.edit.model.rememberAfternoteEditState
 import com.afternote.feature.afternote.presentation.author.edit.provider.AfternoteEditDataProvider
-import com.afternote.feature.afternote.presentation.author.nav.model.AfternoteRoute
-import com.afternote.feature.afternote.presentation.author.nav.model.SELECTED_RECEIVER_ID_KEY
+import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
+import com.afternote.feature.afternote.presentation.author.navigation.model.SELECTED_RECEIVER_ID_KEY
 
 internal sealed class EditSaveErrorResult {
     data class Validation(
@@ -64,7 +64,7 @@ internal data class EditScreenCallbacksParams(
     val onBottomNavTabSelected: (BottomNavTab) -> Unit,
 )
 
-internal data class AfternoteEditRouteContentParams(
+internal data class AfternoteEditDestinationParams(
     val backStackEntry: NavBackStackEntry,
     val navController: NavController,
     val afternoteItems: List<Item>,
@@ -140,8 +140,8 @@ internal fun buildEditScreenCallbacks(params: EditScreenCallbacksParams): Aftern
     )
 
 @Composable
-internal fun AfternoteEditRouteContent(
-    params: AfternoteEditRouteContentParams,
+internal fun AfternoteEditDestination(
+    params: AfternoteEditDestinationParams,
     editViewModel: AfternoteEditViewModel = hiltViewModel(),
 ) {
     val route = params.backStackEntry.toRoute<AfternoteRoute.EditRoute>()

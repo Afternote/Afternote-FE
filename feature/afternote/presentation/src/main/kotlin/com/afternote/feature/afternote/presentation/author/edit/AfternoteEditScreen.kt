@@ -34,7 +34,7 @@ import com.afternote.feature.afternote.presentation.author.edit.model.RegisterAf
 import com.afternote.feature.afternote.presentation.author.edit.model.rememberAfternoteEditState
 import com.afternote.feature.afternote.presentation.author.edit.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.edit.provider.FakeAfternoteEditDataProvider
-import com.afternote.feature.afternote.presentation.author.nav.navgraph.AfternoteLightTheme
+import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
 import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
 import com.afternote.feature.afternote.presentation.shared.DataProviderLocals

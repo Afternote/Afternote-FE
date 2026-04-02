@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.nav.navgraph
+package com.afternote.feature.afternote.presentation.author.navigation
 
 import android.util.Log
 import android.widget.Toast
@@ -15,11 +15,11 @@ import androidx.fragment.app.FragmentActivity
 import androidx.navigation.NavController
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.nav.model.AfternoteRoute
+import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.shared.fingerprint.FingerprintLoginScreen
 
 @Composable
-internal fun AfternoteFingerprintLoginContent(
+internal fun AfternoteFingerprintLoginDestination(
     navController: NavController,
     onNavTabSelected: (BottomNavTab) -> Unit,
 ) {

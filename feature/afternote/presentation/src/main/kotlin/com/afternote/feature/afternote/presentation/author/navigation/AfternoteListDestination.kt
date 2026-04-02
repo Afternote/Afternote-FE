@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.nav.navgraph
+package com.afternote.feature.afternote.presentation.author.navigation
 
 import android.util.Log
 import androidx.compose.runtime.Composable
@@ -9,7 +9,7 @@ import com.afternote.feature.afternote.presentation.author.edit.AfternoteItemMap
 import com.afternote.feature.afternote.presentation.author.edit.provider.AfternoteEditDataProvider
 import com.afternote.feature.afternote.presentation.author.list.AfternoteListRoute
 import com.afternote.feature.afternote.presentation.author.list.AfternoteListRouteActions
-import com.afternote.feature.afternote.presentation.author.nav.model.AfternoteRoute
+import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 
 internal fun resolveListItems(

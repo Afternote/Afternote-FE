@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.nav.navgraph
+package com.afternote.feature.afternote.presentation.author.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
@@ -8,7 +8,7 @@ import com.afternote.feature.afternote.presentation.author.edit.playlist.AddSong
 import com.afternote.feature.afternote.presentation.author.edit.playlist.AddSongViewModel
 
 @Composable
-internal fun AfternoteAddSongRouteContent(
+internal fun AfternoteAddSongDestination(
     navController: NavController,
     playlistStateHolder: MemorialPlaylistStateHolder,
     viewModel: AddSongViewModel,

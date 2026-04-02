@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.nav.navgraph
+package com.afternote.feature.afternote.presentation.author.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavBackStackEntry
