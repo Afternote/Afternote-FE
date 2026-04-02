@@ -22,6 +22,7 @@ import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.body.infinite.AfternoteBodyUiState
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.AfternoteListItem
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 private const val LOAD_MORE_THRESHOLD = 3
 
@@ -65,15 +66,25 @@ fun AfternoteList(
         }
     }
     if (bodyUiState.hasNext && !bodyUiState.isLoadingMore && bodyUiState.items.isNotEmpty()) {
-        // LazyColumn의 상태와
+        // LazyColumn의 상태와 애프터노트 개수가 변할 때마다 실행
         LaunchedEffect(listState, bodyUiState.items.size) {
             // layoutInfo는 리스트의 물리적인 배치 정보를 담고 있음
             // visibleItemsInfo는 현재 화면에 보이고 있는 아이템들의 리스트
-            snapshotFlow { listState.layoutInfo.visibleItemsInfo } // visibleItemsInfo를 관찰
-                // 관찰할 데이터가 변경될 때마다 이 람다를 실행
-                .collect { visible ->
-                    val lastIndex = visible.lastOrNull()?.index ?: return@collect
-                    if (lastIndex >= bodyUiState.items.size - LOAD_MORE_THRESHOLD) {
+
+            snapshotFlow {
+                // 관찰 대상의 참조 및 내부 상태 변경마다 블록 재실행
+                // listState, layoutInfo 객체는 고정 -> 상태 변화를 안 일으킴
+                // visibleItemsInfo는 스크롤마다 참조 바뀌므로 상태 변화 일으킴
+                // 상태 변화 일으키는 객체는 snapshotFlow의 관찰 대상
+                listState.layoutInfo.visibleItemsInfo
+                    .lastOrNull()
+                    ?.index ?: 0 // visibleItemsInfo의 마지막 인덱스
+                // 첫 블록 실행 시 블록 실행 결과 값 타입의 Flow 객체(스트림) 생성
+                // 블록 실행마다 스트림에 결과 값 담음
+            }.distinctUntilChanged() // 스트림 결과 값이 스트림의 직전 결과 값과 다를 때만 collect 실행
+                // collect는 스트림에서 결과 값 emit시켜 그 값을 수신
+                .collect { index ->
+                    if (index >= bodyUiState.items.size - LOAD_MORE_THRESHOLD) {
                         onLoadMore()
                     }
                 }
