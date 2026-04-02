@@ -1,11 +1,9 @@
-package com.afternote.core.ui.button
+package com.afternote.feature.afternote.presentation.shared
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
@@ -20,23 +18,20 @@ import com.afternote.core.ui.R
 import com.afternote.core.ui.expand.dropShadow
 
 /**
- * 추가 버튼 FAB 컴포넌트
+ * 추가 버튼 FAB 컴포넌트.
  *
- * 피그마 디자인:
- * - 오른쪽 20dp, 아래쪽 16dp 패딩
- * - 그림자: offset (0, 2), blur 40dp, spread 0, 투명도 15%
- *
- * Box scope 안에서 사용해야 합니다.
+ * 피그마 그림자: offset (0, 2), blur 40dp, spread 0, 투명도 15%.
+ * 위치와 여백은 호출하는 쪽에서 결정합니다.
  */
 @Composable
-fun BoxScope.AddFloatingActionButton(
+fun AfternoteAddFAB(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    contentDescription: String = "새 애프터노트 추가",
 ) {
     Box(
         modifier =
             modifier
-                .align(Alignment.BottomEnd)
                 .dropShadow(
                     shape = CircleShape,
                     color = Color(0x26000000),
@@ -46,26 +41,20 @@ fun BoxScope.AddFloatingActionButton(
                     spread = 0.dp,
                 ).background(Color.White, CircleShape)
                 .clip(CircleShape)
-                .clickable {
-                    Log.d("AddFAB", "FAB clicked")
-                    onClick()
-                },
+                .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
     ) {
         Image(
             painter = painterResource(R.drawable.core_ui_add_circle),
-            contentDescription = "새 애프터노트 추가",
+            contentDescription = contentDescription,
         )
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun AddFloatingActionButtonPreview() {
-    Box(
-        modifier = Modifier.wrapContentSize(),
-    ) {
-        AddFloatingActionButton(
-            onClick = {},
-        )
+private fun AfternoteAddFABPreview() {
+    Box(modifier = Modifier.wrapContentSize()) {
+        AfternoteAddFAB(onClick = {})
     }
 }

@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import com.afternote.core.ui.scaffold.TopBar
 import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
+import com.afternote.feature.afternote.presentation.shared.AfternoteAddFAB
 import com.afternote.feature.afternote.presentation.shared.body.AfternoteBodyUiState
 import com.afternote.feature.afternote.presentation.shared.body.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.body.EmptyListBody
@@ -36,12 +37,8 @@ fun AfternoteListScreen(
                 onTabClick = onNavTabSelected,
             )
         },
+        floatingActionButton = { AfternoteAddFAB(onClick = onFabClick) },
     ) { paddingValues ->
-//        ScaffoldContentWithOptionalFab(
-//            paddingValues = paddingValues,
-//            showFab = showFab,
-//            onFabClick = onFabClick,
-//        ) { contentModifier ->
         if (listState.items.isNotEmpty()) {
             InfiniteListBody(
                 modifier = Modifier.padding(paddingValues),
@@ -53,6 +50,5 @@ fun AfternoteListScreen(
         } else {
             EmptyListBody()
         }
-//        }
     }
 }
