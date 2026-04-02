@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.list.model
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.feature.afternote.presentation.shared.list.AfternoteCategory
+import com.afternote.feature.afternote.presentation.shared.body.AfternoteCategory
 
 /**
  * 애프터노트 목록 화면 UI 이벤트

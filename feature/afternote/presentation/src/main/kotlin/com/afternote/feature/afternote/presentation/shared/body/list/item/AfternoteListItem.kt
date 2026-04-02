@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.shared.list
+package com.afternote.feature.afternote.presentation.shared.body.list.item
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -38,7 +38,7 @@ import com.afternote.feature.afternote.presentation.R
  */
 @Composable
 fun AfternoteListItem(
-    item: AfternoteItemUiModel,
+    uiModel: ListItemUiModel,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
 ) {
@@ -59,8 +59,8 @@ fun AfternoteListItem(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Image(
-            painter = painterResource(item.iconResId),
-            contentDescription = item.serviceName,
+            painter = painterResource(uiModel.iconResId),
+            contentDescription = uiModel.serviceName,
             modifier = Modifier.size(40.dp),
             contentScale = ContentScale.FillBounds,
         )
@@ -68,7 +68,7 @@ fun AfternoteListItem(
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
-                text = item.serviceName,
+                text = uiModel.serviceName,
                 color = Black,
                 lineHeight = 24.sp,
                 fontSize = 16.sp,
@@ -76,7 +76,7 @@ fun AfternoteListItem(
                 fontWeight = FontWeight.Normal,
             )
             Text(
-                text = stringResource(R.string.afternote_last_written_date, item.date),
+                text = stringResource(R.string.afternote_last_written_date, uiModel.date),
                 color = Gray5,
                 lineHeight = 16.sp,
                 fontSize = 10.sp,
@@ -98,8 +98,8 @@ fun AfternoteListItem(
 private fun AfternoteListItemPreview() {
     AfternoteTheme {
         AfternoteListItem(
-            item =
-                AfternoteItemUiModel(
+            uiModel =
+                ListItemUiModel(
                     id = "1",
                     serviceName = "인스타그램",
                     date = "2023.11.24",

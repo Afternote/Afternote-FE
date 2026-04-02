@@ -11,10 +11,9 @@ import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.domain.model.Item
 import com.afternote.feature.afternote.presentation.author.list.model.AfternoteListEvent
 import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreen
-import com.afternote.feature.afternote.presentation.author.list.screen.AfternoteListScreenShellState
-import com.afternote.feature.afternote.presentation.shared.list.AfternoteBodyUiState
-import com.afternote.feature.afternote.presentation.shared.list.AfternoteCategory
-import com.afternote.feature.afternote.presentation.shared.list.AfternoteItemUiModel
+import com.afternote.feature.afternote.presentation.shared.body.AfternoteBodyUiState
+import com.afternote.feature.afternote.presentation.shared.body.AfternoteCategory
+import com.afternote.feature.afternote.presentation.shared.body.list.item.ListItemUiModel
 import com.afternote.feature.afternote.presentation.shared.util.getIconResForServiceName
 
 data class AfternoteListRouteCallbacks(
@@ -73,7 +72,7 @@ fun AfternoteListRoute(
 
     val displayItems =
         uiState.items.map { item ->
-            AfternoteItemUiModel(
+            ListItemUiModel(
                 id = item.id,
                 serviceName = item.serviceName,
                 date = item.date,
@@ -89,11 +88,8 @@ fun AfternoteListRoute(
                 hasNext = uiState.hasNext,
                 isLoadingMore = uiState.isLoadingMore,
             ),
-        shellState =
-            AfternoteListScreenShellState(
-                bottomBarSelectedItem = uiState.selectedBottomNavItem,
-                showFab = true,
-            ),
+        selectedNavTab = uiState.selectedBottomNavItem,
+        showFab = true,
         onNavTabSelected = callbacks.onBottomNavTabSelected,
         onTabSelected = { viewModel.onEvent(AfternoteListEvent.SelectTab(it)) },
         onItemClick = callbacks.onNavigateToDetail,

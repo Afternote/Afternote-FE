@@ -11,7 +11,7 @@ import com.afternote.feature.afternote.presentation.author.edit.provider.Afterno
 import com.afternote.feature.afternote.presentation.author.list.AfternoteListRoute
 import com.afternote.feature.afternote.presentation.author.list.AfternoteListRouteCallbacks
 import com.afternote.feature.afternote.presentation.author.nav.model.AfternoteRoute
-import com.afternote.feature.afternote.presentation.shared.list.AfternoteCategory
+import com.afternote.feature.afternote.presentation.shared.body.AfternoteCategory
 
 internal fun resolveListItems(
     afternoteItems: List<Item>,

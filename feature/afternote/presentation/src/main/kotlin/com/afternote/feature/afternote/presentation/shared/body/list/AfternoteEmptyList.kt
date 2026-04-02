@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.shared.list.content
+package com.afternote.feature.afternote.presentation.shared.body.list
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
@@ -16,17 +16,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray4
 import com.afternote.core.ui.theme.Sansneo
 import com.afternote.feature.afternote.presentation.R
 
-/**
- * Shared empty state for 애프터노트 list (writer main and receiver list).
- */
 @Composable
 fun AfternoteEmptyList(modifier: Modifier = Modifier) {
     Column(
@@ -67,13 +62,5 @@ fun AfternoteEmptyList(modifier: Modifier = Modifier) {
         )
 
         Spacer(modifier = Modifier.weight(1f))
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun AfternoteEmptyListPreview() {
-    AfternoteTheme {
-        AfternoteEmptyList()
     }
 }
