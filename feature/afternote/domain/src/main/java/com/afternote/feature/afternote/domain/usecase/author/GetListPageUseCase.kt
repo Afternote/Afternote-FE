@@ -8,7 +8,7 @@ import javax.inject.Inject
 /**
  * 애프터노트 목록 조회 UseCase.
  *
- * GET /afternotes?category=&page=&size=
+ * GET /afternotes?category=&pageNumber=&size=
  */
 class GetListPageUseCase
     @Inject

@@ -89,7 +89,7 @@ class AfternoteHomeViewModel
                     val input =
                         GetListPageInput(
                             category = category,
-                            page = 0, // 항상 첫 페이지 불러 옴
+                            pageNumber = 0, // 항상 첫 페이지 불러 옴
                             size = PAGE_SIZE,
                         )
                     getListPageUseCase(input)
@@ -99,7 +99,7 @@ class AfternoteHomeViewModel
                                     isLoading = false,
                                     loadError = null,
                                     listItems = listPage.listItems,
-                                    currentPage = 0,
+                                    currentPageNumber = 0,
                                     hasNext = listPage.hasNext,
                                     isLoadingMore = false,
                                 )
@@ -109,7 +109,7 @@ class AfternoteHomeViewModel
                                 listState.copy(
                                     isLoading = false,
                                     listItems = emptyList(),
-                                    currentPage = 0,
+                                    currentPageNumber = 0,
                                     loadError = e.message ?: "애프터노트 목록을 불러오지 못했습니다.",
                                     hasNext = false,
                                     isLoadingMore = false,
@@ -130,11 +130,11 @@ class AfternoteHomeViewModel
                 updateListState { listState ->
                     listState.copy(isLoadingMore = true)
                 }
-                val nextPage = list.currentPage + 1
+                val nextPageNumber = list.currentPageNumber + 1
                 val input =
                     GetListPageInput(
                         category = state.categoryState.selectedCategory.toCategoryParam(),
-                        page = nextPage,
+                        pageNumber = nextPageNumber,
                         size = PAGE_SIZE,
                     )
                 getListPageUseCase(input)
@@ -142,14 +142,17 @@ class AfternoteHomeViewModel
                         updateListState { listState ->
                             listState.copy(
                                 listItems = listState.listItems + listPage.listItems,
-                                currentPage = nextPage,
+                                currentPageNumber = nextPageNumber,
                                 isLoadingMore = false,
                                 hasNext = listPage.hasNext,
                             )
                         }
-                    }.onFailure {
+                    }.onFailure { e ->
                         updateListState { listState ->
-                            listState.copy(isLoadingMore = false)
+                            listState.copy(
+                                isLoadingMore = false,
+                                loadError = e.message ?: "애프터노트 추가 목록을 불러오지 못했습니다.",
+                            )
                         }
                     }
             }

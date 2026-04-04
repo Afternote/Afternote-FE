@@ -25,7 +25,7 @@ data class AfternoteListState(
     val listItems: List<ListItem> = emptyList(),
     val isLoading: Boolean = false,
     val loadError: String? = null,
-    val currentPage: Int = 0,
+    val currentPageNumber: Int = 0,
     val hasNext: Boolean = false,
     val isLoadingMore: Boolean = false,
 )
