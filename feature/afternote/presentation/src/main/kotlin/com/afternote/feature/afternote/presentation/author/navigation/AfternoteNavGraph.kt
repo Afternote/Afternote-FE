@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.navigation
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -125,12 +126,12 @@ fun NavGraphBuilder.afternoteNavGraph(
  * navigation graph scope에 묶인 [AfternoteHostViewModel]을 가져옵니다.
  * 같은 graph 내 모든 화면이 동일한 인스턴스를 공유합니다.
  */
-@androidx.compose.runtime.Composable
+@Composable
 private fun graphScopedHostViewModel(navController: NavController): AfternoteHostViewModel {
     val currentEntry = navController.currentBackStackEntry
     val parentEntry =
-        androidx.compose.runtime.remember(currentEntry) {
-            navController.getBackStackEntry<Route.Afternote>()
+        remember(currentEntry) {
+            navController.getBackStackEntry<Route.Afternote>() // 해당 라우트의 엔트리 중 최신 걸 가져 옴
         }
-    return hiltViewModel(parentEntry)
+    return hiltViewModel(parentEntry) // 뷰모델의 생명 주기를 parentEntry 백스택 엔트리에 스코핑
 }

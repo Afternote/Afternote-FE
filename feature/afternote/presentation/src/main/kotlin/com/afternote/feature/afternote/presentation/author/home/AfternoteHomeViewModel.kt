@@ -47,11 +47,10 @@ class AfternoteHomeViewModel
             // 내부 로직은 내부용 변수 _uiState를 쓰는 것이 안전
             _uiState
                 // uiState를 관찰하는 순간에 수행할 연산의 설계도
-                // 관찰을 시작하는 순간 list의 map처럼 작동
-                // _uiState는 map 설계를 했을 뿐 수행은 bodyUiState가 함
+                // 관찰을 시작하는 순간 stateIn을 통해 list의 map처럼 작동 시작
                 .map { homeState ->
                     // 관찰하는 시점 기준 최신 homeState를 가져옴
-                    // 연산이 수행된 시점에 모든 homeState 요소에 대해 연산을 완료했다면 새로운 요소가 추가될 때까지 대기
+                    // 현 시점 homeState에 대해 연산 완료했으면 새로운 homeState가 발행될 때까지 대기
                     val listState = homeState.listState
                     AfternoteBodyUiState(
                         visibleItems = listState.visibleItems.map { it.toUiModel() },

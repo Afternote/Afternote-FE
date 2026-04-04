@@ -12,7 +12,6 @@ import com.afternote.feature.afternote.presentation.author.home.model.AfternoteH
 import com.afternote.feature.afternote.presentation.author.home.screen.AfternoteHomeScreen
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 
-// TODO: AI 딸깍이라 점검 필요
 data class AfternoteHomeEntryActions(
     val navigateToDetail: (String) -> Unit = {},
     val navigateToGalleryDetail: (String) -> Unit = {},
