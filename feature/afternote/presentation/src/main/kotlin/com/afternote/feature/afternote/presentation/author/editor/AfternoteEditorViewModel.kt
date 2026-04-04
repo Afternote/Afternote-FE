@@ -85,9 +85,15 @@ class AfternoteEditorViewModel
 
         fun onEvent(event: AfternoteEditorUiEvent) {
             when (event) {
-                is AfternoteEditorUiEvent.LoadReceivers -> loadReceivers()
-                is AfternoteEditorUiEvent.UploadThumbnail -> uploadMemorialThumbnail(event.jpegBytes)
-                is AfternoteEditorUiEvent.Save ->
+                is AfternoteEditorUiEvent.LoadReceivers -> {
+                    loadReceivers()
+                }
+
+                is AfternoteEditorUiEvent.UploadThumbnail -> {
+                    uploadMemorialThumbnail(event.jpegBytes)
+                }
+
+                is AfternoteEditorUiEvent.Save -> {
                     saveAfternote(
                         editingId = event.editingId,
                         category = event.category,
@@ -96,12 +102,15 @@ class AfternoteEditorViewModel
                         playlistStateHolder = event.playlistStateHolder,
                         memorialMedia = event.memorialMedia,
                     )
-                is AfternoteEditorUiEvent.LoadForEdit ->
+                }
+
+                is AfternoteEditorUiEvent.LoadForEdit -> {
                     loadForEdit(
                         afternoteId = event.afternoteId,
                         state = event.state,
                         playlistStateHolder = event.playlistStateHolder,
                     )
+                }
             }
         }
 

@@ -13,7 +13,10 @@ import com.afternote.feature.afternote.presentation.author.editor.receiver.AddAf
 @Composable
 internal fun AfternoteEditorDialogs(state: AfternoteEditorState) {
     when (val dialogType = state.activeDialog) {
-        null -> Unit
+        null -> {
+            Unit
+        }
+
         DialogType.ADD_AFTERNOTE_EDIT_RECEIVER -> {
             AddAfternoteEditorReceiverDialog(
                 params =
