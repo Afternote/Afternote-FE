@@ -29,7 +29,7 @@ data class AfternoteListRouteActions(
  */
 @Composable
 fun AfternoteListRoute(
-    viewModel: AfternoteListViewModel = hiltViewModel(),
+    viewModel: AfternoteViewModel = hiltViewModel(),
     actions: AfternoteListRouteActions = AfternoteListRouteActions(),
     onItemsChanged: (List<Item>) -> Unit = {},
     listRefreshRequested: Boolean = false,

@@ -16,10 +16,10 @@ class UpdateUseCase
     ) {
         suspend operator fun invoke(
             id: Long,
-            body: UpdateInput,
+            updateInput: UpdateInput,
         ): Result<Long> =
             repository.update(
                 id = id,
-                input = body,
+                input = updateInput,
             )
     }

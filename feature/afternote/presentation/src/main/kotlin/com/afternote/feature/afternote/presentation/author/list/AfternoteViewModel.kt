@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.domain.model.input.GetListPageInput
-import com.afternote.feature.afternote.domain.usecase.author.GetListUseCase
+import com.afternote.feature.afternote.domain.usecase.author.GetListPageUseCase
 import com.afternote.feature.afternote.presentation.author.list.model.AfternoteListEvent
 import com.afternote.feature.afternote.presentation.author.list.model.AfternoteListUiState
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
@@ -29,10 +29,10 @@ private const val SUBSCRIBE_TIMEOUT_MS = 5_000L
  * 애프터노트 목록 화면 ViewModel.
  */
 @HiltViewModel
-class AfternoteListViewModel
+class AfternoteViewModel
     @Inject
     constructor(
-        private val getAfternotesUseCase: GetListUseCase,
+        private val getListPageUseCase: GetListPageUseCase,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(AfternoteListUiState())
         val uiState: StateFlow<AfternoteListUiState> = _uiState.asStateFlow()
@@ -77,7 +77,7 @@ class AfternoteListViewModel
                         page = 0,
                         size = PAGE_SIZE,
                     )
-                getAfternotesUseCase(input)
+                getListPageUseCase(input)
                     .onSuccess { paged ->
                         _uiState.update {
                             it.copy(
@@ -121,7 +121,7 @@ class AfternoteListViewModel
                         page = nextPage,
                         size = PAGE_SIZE,
                     )
-                getAfternotesUseCase(input)
+                getListPageUseCase(input)
                     .onSuccess { paged ->
                         _uiState.update {
                             it.copy(

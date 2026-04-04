@@ -618,7 +618,10 @@ class AfternoteEditorViewModel
                         selectedReceiverIds = selectedReceiverIds,
                     )
                 }
-            return updateUseCase(id = afternoteId, body = body)
+            return updateUseCase(
+                id = afternoteId,
+                updateInput = body,
+            )
         }
 
         /**

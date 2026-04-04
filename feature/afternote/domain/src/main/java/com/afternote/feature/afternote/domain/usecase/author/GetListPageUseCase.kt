@@ -10,7 +10,7 @@ import javax.inject.Inject
  *
  * GET /afternotes?category=&page=&size=
  */
-class GetListUseCase
+class GetListPageUseCase
     @Inject
     constructor(
         private val repository: AfternoteRepository,
