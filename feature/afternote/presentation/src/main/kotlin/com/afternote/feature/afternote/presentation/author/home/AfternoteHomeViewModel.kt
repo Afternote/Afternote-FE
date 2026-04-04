@@ -2,6 +2,7 @@ package com.afternote.feature.afternote.presentation.author.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.domain.model.ListItem
 import com.afternote.feature.afternote.domain.model.input.GetListPageInput
 import com.afternote.feature.afternote.domain.usecase.author.GetListPageUseCase
@@ -69,13 +70,51 @@ class AfternoteHomeViewModel
             refreshList()
         }
 
+        // region Event
+
+        fun onEvent(event: AfternoteHomeEvent) {
+            when (event) {
+                is AfternoteHomeEvent.SelectTab -> handleSelectTab(event.tab)
+                is AfternoteHomeEvent.SelectBottomNav -> handleSelectBottomNav(event.navItem)
+                AfternoteHomeEvent.Refresh -> refreshList()
+                AfternoteHomeEvent.LoadMore -> loadMoreListItems()
+            }
+        }
+
+        private fun handleSelectTab(tab: AfternoteCategory) {
+            val currentState = _uiState.value
+            if (currentState.categoryState.selectedCategory == tab) return
+
+            _uiState.update {
+                it.copy(
+                    categoryState = it.categoryState.copy(selectedCategory = tab),
+                )
+            }
+            refreshList(category = tab.toCategoryParam())
+        }
+
+        private fun handleSelectBottomNav(navItem: BottomNavTab) {
+            _uiState.update {
+                it.copy(
+                    navState =
+                        it.navState.copy(
+                            selectedBottomNavItem = navItem,
+                        ),
+                )
+            }
+        }
+
+        // endregion
+
+        // region Data Loading
+
         /**
          * API에서 애프터노트 목록 첫 페이지를 로드합니다.
          * 탭 변경 시에도 이 함수를 호출하여 0페이지부터 새로 요청합니다.
          */
         private var fetchJob: Job? = null
 
-        fun refreshList(category: String? = null) {
+        private fun refreshList(category: String? = null) {
             fetchJob?.cancel()
             fetchJob =
                 viewModelScope.launch {
@@ -122,7 +161,7 @@ class AfternoteHomeViewModel
         /**
          * 다음 페이지를 로드하여 목록에 이어붙입니다.
          */
-        fun loadMoreListItems() {
+        private fun loadMoreListItems() {
             viewModelScope.launch {
                 val state = _uiState.value
                 val list = state.listState
@@ -158,32 +197,9 @@ class AfternoteHomeViewModel
             }
         }
 
-        fun onEvent(event: AfternoteHomeEvent) {
-            when (event) {
-                is AfternoteHomeEvent.SelectTab -> {
-                    val currentState = _uiState.value
-                    if (currentState.categoryState.selectedCategory == event.tab) return
+        // endregion
 
-                    _uiState.update {
-                        it.copy(
-                            categoryState = it.categoryState.copy(selectedCategory = event.tab),
-                        )
-                    }
-                    refreshList(category = event.tab.toCategoryParam())
-                }
-
-                is AfternoteHomeEvent.SelectBottomNav -> {
-                    _uiState.update {
-                        it.copy(
-                            navState =
-                                it.navState.copy(
-                                    selectedBottomNavItem = event.navItem,
-                                ),
-                        )
-                    }
-                }
-            }
-        }
+        // region Utility
 
         /** AfternoteCategory → API category 파라미터 변환. ALL이면 null. */
         private fun AfternoteCategory.toCategoryParam(): String? =
@@ -197,6 +213,8 @@ class AfternoteHomeViewModel
                 uiState.copy(listState = reducer(uiState.listState))
             }
         }
+
+        // endregion
     }
 
 private fun ListItem.toUiModel(): ListItemUiModel =

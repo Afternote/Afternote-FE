@@ -15,4 +15,8 @@ sealed interface AfternoteHomeEvent {
     data class SelectBottomNav(
         val navItem: BottomNavTab,
     ) : AfternoteHomeEvent
+
+    data object Refresh : AfternoteHomeEvent
+
+    data object LoadMore : AfternoteHomeEvent
 }
