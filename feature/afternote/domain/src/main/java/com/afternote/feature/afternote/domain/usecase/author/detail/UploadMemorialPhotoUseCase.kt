@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.domain.usecase
+package com.afternote.feature.afternote.domain.usecase.author.detail
 
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import javax.inject.Inject

@@ -79,7 +79,16 @@ fun BottomBar(
 
 @Preview(showBackground = true)
 @Composable
-private fun BottomBarPreview() {
+private fun 테마안씌운거() {
+    BottomBar(
+        onTabClick = {},
+        selectedNavTab = BottomNavTab.TIMELETTER,
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun 테마씌운거() {
     AfternoteTheme {
         BottomBar(
             onTabClick = {},

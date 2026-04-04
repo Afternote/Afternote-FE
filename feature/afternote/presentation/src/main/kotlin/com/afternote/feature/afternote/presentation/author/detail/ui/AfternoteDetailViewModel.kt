@@ -1,8 +1,8 @@
 package com.afternote.feature.afternote.presentation.author.detail.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.feature.afternote.domain.usecase.DeleteUseCase
-import com.afternote.feature.afternote.domain.usecase.GetDetailUseCase
+import com.afternote.feature.afternote.domain.usecase.author.DeleteUseCase
+import com.afternote.feature.afternote.domain.usecase.author.detail.GetDetailUseCase
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

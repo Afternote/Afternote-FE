@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.domain.usecase
+package com.afternote.feature.afternote.domain.usecase.author.list
 
 import com.afternote.feature.afternote.domain.model.ListPage
 import com.afternote.feature.afternote.domain.model.input.GetListPageInput

@@ -42,11 +42,21 @@ fun AfternoteListRoute(
         }
     }
 
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val bodyUiState by viewModel.bodyUiState.collectAsStateWithLifecycle()
+    val uiState by viewModel
+        .uiState
+        .collectAsStateWithLifecycle()
+    val bodyUiState by viewModel
+        .bodyUiState
+        .collectAsStateWithLifecycle()
 
     // 상위로 items 전파 (Edit 화면에서 사용)
-    val itemIds = remember(uiState.items) { uiState.items.map { it.id }.toSet() }
+    val itemIds =
+        remember(uiState.items) {
+            uiState
+                .items
+                .map { it.id }
+                .toSet()
+        }
     LaunchedEffect(itemIds) {
         if (uiState.items.isNotEmpty()) {
             Log.d("AfternoteListRoute", "items changed: size=${uiState.items.size}")

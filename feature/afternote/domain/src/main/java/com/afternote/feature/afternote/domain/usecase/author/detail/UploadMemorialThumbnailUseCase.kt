@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.domain.usecase
+package com.afternote.feature.afternote.domain.usecase.author.detail
 
 import com.afternote.feature.afternote.domain.repository.MemorialThumbnailUploadRepository
 import javax.inject.Inject

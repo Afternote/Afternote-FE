@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.domain.model.input.GetListPageInput
-import com.afternote.feature.afternote.domain.usecase.GetListUseCase
+import com.afternote.feature.afternote.domain.usecase.author.list.GetListUseCase
 import com.afternote.feature.afternote.presentation.author.list.model.AfternoteListEvent
 import com.afternote.feature.afternote.presentation.author.list.model.AfternoteListUiState
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
