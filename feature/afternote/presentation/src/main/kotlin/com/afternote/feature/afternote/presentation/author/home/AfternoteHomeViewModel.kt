@@ -58,6 +58,7 @@ class AfternoteHomeViewModel
                         selectedCategory = homeState.categoryState.selectedCategory,
                         hasNext = listState.hasNext,
                         isLoadingMore = listState.isLoadingMore,
+                        paginationError = listState.paginationError,
                     )
                 }.stateIn(
                     // map이 Flow로 매핑했던 것들을 StateFlow로 변환
@@ -78,6 +79,7 @@ class AfternoteHomeViewModel
                 is AfternoteHomeEvent.SelectBottomNav -> handleSelectBottomNav(event.navItem)
                 AfternoteHomeEvent.Refresh -> refreshList()
                 AfternoteHomeEvent.LoadMore -> loadMoreListItems()
+                AfternoteHomeEvent.PaginationErrorConsumed -> clearPaginationError()
             }
         }
 
@@ -91,6 +93,10 @@ class AfternoteHomeViewModel
                 )
             }
             refreshList(category = tab.toCategoryParam())
+        }
+
+        private fun clearPaginationError() {
+            updateListState { it.copy(paginationError = null) }
         }
 
         private fun handleSelectBottomNav(navItem: BottomNavTab) {
@@ -190,7 +196,7 @@ class AfternoteHomeViewModel
                         updateListState { listState ->
                             listState.copy(
                                 isLoadingMore = false,
-                                loadError = e.message ?: "애프터노트 추가 목록을 불러오지 못했습니다.",
+                                paginationError = e.message ?: "애프터노트 추가 목록을 불러오지 못했습니다.",
                             )
                         }
                     }

@@ -10,4 +10,5 @@ data class AfternoteBodyUiState(
     val selectedCategory: AfternoteCategory = AfternoteCategory.ALL,
     val hasNext: Boolean = false,
     val isLoadingMore: Boolean = false,
+    val paginationError: String? = null,
 )

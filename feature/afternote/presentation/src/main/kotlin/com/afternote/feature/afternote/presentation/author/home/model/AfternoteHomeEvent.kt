@@ -19,4 +19,6 @@ sealed interface AfternoteHomeEvent {
     data object Refresh : AfternoteHomeEvent
 
     data object LoadMore : AfternoteHomeEvent
+
+    data object PaginationErrorConsumed : AfternoteHomeEvent
 }
