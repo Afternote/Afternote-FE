@@ -19,7 +19,7 @@ fun NavGraphBuilder.afternoteNavGraph(
         AfternoteHomeDestination(
             navController = navController,
             onNavTabSelected = onNavTabSelected,
-            onItemsChanged = params.home.onItemsUpdated,
+            onListItemsUpdated = params.home.onListItemsUpdated,
             homeRefresh = params.home.homeRefresh,
         )
     }

@@ -31,7 +31,7 @@ data class AfternoteHomeRouteActions(
 fun AfternoteHomeRoute(
     viewModel: AfternoteHomeViewModel = hiltViewModel(),
     actions: AfternoteHomeRouteActions = AfternoteHomeRouteActions(),
-    onItemsChanged: (List<ListItem>) -> Unit = {},
+    onListItemsUpdated: (List<ListItem>) -> Unit = {},
     homeRefreshRequested: Boolean = false,
     onHomeRefreshConsumed: () -> Unit = {},
 ) {
@@ -47,20 +47,20 @@ fun AfternoteHomeRoute(
         .collectAsStateWithLifecycle() // 관찰 시작
     val bodyUiState by viewModel
         .bodyUiState
-        .collectAsStateWithLifecycle() // 관찰 시작
+        .collectAsStateWithLifecycle()
 
-    // 상위로 listItems 전파 (Edit 화면에서 사용)
+    // 상위로 listItems 전파 (Editor 화면에서 사용)
     val listItems = uiState.listState.listItems
-    val itemIds =
+    val listItemIds =
         remember(listItems) {
             listItems
                 .map { it.id }
                 .toSet()
         }
-    LaunchedEffect(itemIds) {
+    LaunchedEffect(listItemIds) {
         if (listItems.isNotEmpty()) {
             Log.d("AfternoteHomeRoute", "listItems changed: size=${listItems.size}")
-            onItemsChanged(listItems)
+            onListItemsUpdated(listItems)
         }
     }
 

@@ -18,7 +18,7 @@ class AfternoteHostViewModel
         private val _items = MutableStateFlow<List<ListItem>>(emptyList())
         val items: StateFlow<List<ListItem>> = _items.asStateFlow()
 
-        fun updateItems(newListItems: List<ListItem>) {
+        fun updateListItems(newListItems: List<ListItem>) {
             _items.value = newListItems
         }
     }

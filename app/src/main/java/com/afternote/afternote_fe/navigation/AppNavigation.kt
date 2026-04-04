@@ -37,7 +37,7 @@ fun AppNavigation(
             composable<Route.TimeLetter> { TimeletterScreen() }
             composable<Route.Afternote> {
                 AfternoteScreen(
-                    onBottomNavTabClick = { tab -> appState.navigateToBottomBarRoute(tab.route) },
+                    onNavTabSelected = { tab -> appState.navigateToBottomBarRoute(tab.route) },
                 )
             }
         }

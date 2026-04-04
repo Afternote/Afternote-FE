@@ -24,7 +24,7 @@ internal fun resolveListItems(
 internal fun AfternoteHomeDestination(
     navController: NavController,
     onNavTabSelected: (BottomNavTab) -> Unit = {},
-    onItemsChanged: (List<ListItem>) -> Unit,
+    onListItemsUpdated: (List<ListItem>) -> Unit,
     homeRefresh: AfternoteHomeRefreshParams? = null,
 ) {
     AfternoteHomeRoute(
@@ -52,6 +52,6 @@ internal fun AfternoteHomeDestination(
                 },
                 onNavTabSelected = onNavTabSelected,
             ),
-        onItemsChanged = onItemsChanged,
+        onListItemsUpdated = onListItemsUpdated,
     )
 }

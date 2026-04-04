@@ -19,7 +19,7 @@ import com.afternote.feature.afternote.presentation.shared.LocalAfternoteUsesApp
 @Composable
 fun AfternoteScreen(
     modifier: Modifier = Modifier,
-    onBottomNavTabClick: (BottomNavTab) -> Unit = {},
+    onNavTabSelected: (BottomNavTab) -> Unit = {},
     hostViewModel: AfternoteHostViewModel = hiltViewModel(),
 ) {
     val appState = rememberAfternoteAppState()
@@ -42,7 +42,7 @@ fun AfternoteScreen(
                         home =
                             AfternoteNavGraphHomeContext(
                                 afternoteListItems = items,
-                                onItemsUpdated = hostViewModel::updateItems,
+                                onListItemsUpdated = hostViewModel::updateListItems,
                                 homeRefresh = null,
                             ),
                         edit =
@@ -54,7 +54,7 @@ fun AfternoteScreen(
                             ),
                         userName = "",
                     ),
-                onNavTabSelected = onBottomNavTabClick,
+                onNavTabSelected = onNavTabSelected,
             )
         }
     }
