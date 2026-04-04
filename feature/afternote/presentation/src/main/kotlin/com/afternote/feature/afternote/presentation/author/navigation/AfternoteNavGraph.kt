@@ -44,7 +44,7 @@ fun NavGraphBuilder.afternoteNavGraph(
         )
     }
 
-    afternoteComposable<AfternoteRoute.EditRoute> { backStackEntry ->
+    afternoteComposable<AfternoteRoute.EditorRoute> { backStackEntry ->
         val currentItems = params.home.afternoteVisibleItems
         AfternoteEditorNavigation(
             AfternoteEditorNavigationParams(

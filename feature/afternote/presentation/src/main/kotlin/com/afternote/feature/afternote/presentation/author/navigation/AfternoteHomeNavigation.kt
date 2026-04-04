@@ -46,9 +46,9 @@ internal fun AfternoteHomeNavigation(
                         if (selectedTab == AfternoteCategory.ALL) null else selectedTab.label
                     Log.d(
                         "AfternoteNav",
-                        "FAB navigateToAdd → navigate(EditRoute initialCategory=$initialCategory)",
+                        "FAB navigateToAdd → navigate(EditorRoute initialCategory=$initialCategory)",
                     )
-                    navController.navigate(AfternoteRoute.EditRoute(initialCategory = initialCategory))
+                    navController.navigate(AfternoteRoute.EditorRoute(initialCategory = initialCategory))
                 },
                 onNavTabSelected = onNavTabSelected,
             ),

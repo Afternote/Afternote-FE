@@ -1,10 +1,8 @@
 package com.afternote.feature.afternote.presentation.author.navigation.model
+
 import kotlinx.serialization.Serializable
 
 sealed interface AfternoteRoute {
-    @Serializable
-    data object AfternoteGraph : AfternoteRoute
-
     @Serializable
     data object AfternoteHomeRoute : AfternoteRoute
 
@@ -19,7 +17,7 @@ sealed interface AfternoteRoute {
     ) : AfternoteRoute
 
     @Serializable
-    data class EditRoute(
+    data class EditorRoute(
         val itemId: String? = null,
         val initialCategory: String? = null,
     ) : AfternoteRoute

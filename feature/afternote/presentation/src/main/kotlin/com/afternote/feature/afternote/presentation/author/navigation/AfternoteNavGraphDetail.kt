@@ -132,7 +132,7 @@ internal fun AfternoteDetailNavigation(
                 onBackClick = { navController.popBackStack() },
                 onEditClick = {
                     navController.navigate(
-                        AfternoteRoute.EditRoute(itemId = detail.id.toString()),
+                        AfternoteRoute.EditorRoute(itemId = detail.id.toString()),
                     )
                 },
                 onDeleteConfirm = { viewModel.onEvent(AfternoteDetailEvent.Delete(detail.id)) },
@@ -202,7 +202,7 @@ internal fun AfternoteGalleryDetailNavigation(
                         onBackClick = { navController.popBackStack() },
                         onEditClick = {
                             navController.navigate(
-                                AfternoteRoute.EditRoute(itemId = detail.id.toString()),
+                                AfternoteRoute.EditorRoute(itemId = detail.id.toString()),
                             )
                         },
                         onDeleteConfirm = { viewModel.onEvent(AfternoteDetailEvent.Delete(detail.id)) },
@@ -282,7 +282,7 @@ internal fun AfternoteMemorialGuidelineDetailNavigation(
                         onBackClick = { navController.popBackStack() },
                         onEditClick = {
                             navController.navigate(
-                                AfternoteRoute.EditRoute(itemId = detail.id.toString()),
+                                AfternoteRoute.EditorRoute(itemId = detail.id.toString()),
                             )
                         },
                         onDeleteConfirm = { viewModel.onEvent(AfternoteDetailEvent.Delete(detail.id)) },

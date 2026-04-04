@@ -59,7 +59,7 @@ internal data class EditScreenCallbacksParams(
     val editViewModel: AfternoteEditorViewModel,
     val editStateHandling: AfternoteEditorStateHandling,
     val state: AfternoteEditorState,
-    val route: AfternoteRoute.EditRoute,
+    val route: AfternoteRoute.EditorRoute,
     val initialListItem: ListItem?,
     val playlistStateHolder: MemorialPlaylistStateHolder,
     val onNavigateToSelectReceiver: () -> Unit,
@@ -138,7 +138,7 @@ internal fun AfternoteEditorNavigation(
     params: AfternoteEditorNavigationParams,
     editViewModel: AfternoteEditorViewModel = hiltViewModel(),
 ) {
-    val route = params.backStackEntry.toRoute<AfternoteRoute.EditRoute>()
+    val route = params.backStackEntry.toRoute<AfternoteRoute.EditorRoute>()
     val visibleItems =
         remember(params.afternoteVisibleItems, params.afternoteProvider) {
             resolveListItems(params.afternoteVisibleItems, params.afternoteProvider)
