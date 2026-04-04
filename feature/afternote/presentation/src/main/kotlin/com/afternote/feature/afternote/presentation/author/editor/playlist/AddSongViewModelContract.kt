@@ -15,7 +15,9 @@ interface AddSongViewModelContract {
  * UI events for Add Song screen.
  */
 sealed interface AddSongEvent {
-    data class SearchQueryChange(val query: String) : AddSongEvent
+    data class SearchQueryChange(
+        val query: String,
+    ) : AddSongEvent
 }
 
 /**

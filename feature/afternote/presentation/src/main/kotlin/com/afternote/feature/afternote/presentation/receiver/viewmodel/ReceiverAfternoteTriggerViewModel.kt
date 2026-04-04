@@ -55,6 +55,7 @@ class ReceiverAfternoteTriggerViewModel
         // endregion
 
         // region Data Loading
+
         /**
          * 홈 화면용 요약 데이터 로드. 마음의 기록, 타임레터, 애프터노트 totalCount와 leaveMessage를 가져옵니다.
          */
