@@ -1,18 +1,18 @@
 package com.afternote.feature.afternote.presentation.author.navigation
 
 import com.afternote.feature.afternote.domain.model.Item
-import com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditState
-import com.afternote.feature.afternote.presentation.author.edit.model.MemorialPlaylistStateHolder
-import com.afternote.feature.afternote.presentation.author.edit.provider.AfternoteEditDataProvider
+import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorState
+import com.afternote.feature.afternote.presentation.author.editor.model.MemorialPlaylistStateHolder
+import com.afternote.feature.afternote.presentation.author.editor.provider.AfternoteEditorDataProvider
 
 /**
  * Hoisted edit state for navigation (UDF: value + events, not [androidx.compose.runtime.MutableState]).
  *
  * [state] is the latest snapshot; [onStateChanged] replaces the stored edit state; [onClear] clears it.
  */
-data class AfternoteEditStateHandling(
-    val state: AfternoteEditState?,
-    val onStateChanged: (AfternoteEditState?) -> Unit,
+data class AfternoteEditorStateHandling(
+    val state: AfternoteEditorState?,
+    val onStateChanged: (AfternoteEditorState?) -> Unit,
     val onClear: () -> Unit,
 )
 
@@ -36,8 +36,8 @@ data class AfternoteNavGraphListContext(
 /** Edit-flow shared dependencies (playlist, providers, hoisted edit state). */
 data class AfternoteNavGraphEditContext(
     val playlistStateHolder: MemorialPlaylistStateHolder,
-    val afternoteProvider: AfternoteEditDataProvider,
-    val editStateHandling: AfternoteEditStateHandling,
+    val afternoteProvider: AfternoteEditorDataProvider,
+    val editStateHandling: AfternoteEditorStateHandling,
     val onNavigateToSelectReceiver: () -> Unit = {},
 )
 

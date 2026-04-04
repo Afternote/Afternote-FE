@@ -56,7 +56,7 @@ data class SocialNetworkDetailContent(
     val processingMethods: List<String> = emptyList(),
     val message: String = "",
     val finalWriteDate: String = "2025.11.26.",
-    val afternoteEditReceivers: List<com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiver> =
+    val afternoteEditReceivers: List<com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver> =
         emptyList(),
 )
 

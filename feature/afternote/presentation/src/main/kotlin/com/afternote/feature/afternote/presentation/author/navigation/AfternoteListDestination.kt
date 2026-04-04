@@ -5,8 +5,8 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.domain.model.Item
-import com.afternote.feature.afternote.presentation.author.edit.AfternoteItemMapper
-import com.afternote.feature.afternote.presentation.author.edit.provider.AfternoteEditDataProvider
+import com.afternote.feature.afternote.presentation.author.editor.AfternoteItemMapper
+import com.afternote.feature.afternote.presentation.author.editor.provider.AfternoteEditorDataProvider
 import com.afternote.feature.afternote.presentation.author.list.AfternoteListRoute
 import com.afternote.feature.afternote.presentation.author.list.AfternoteListRouteActions
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
@@ -14,7 +14,7 @@ import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 
 internal fun resolveListItems(
     afternoteItems: List<Item>,
-    afternoteProvider: AfternoteEditDataProvider,
+    afternoteProvider: AfternoteEditorDataProvider,
 ): List<Item> =
     afternoteItems.ifEmpty {
         AfternoteItemMapper.toAfternoteItemsWithStableIds(afternoteProvider.getDefaultAfternoteItems())

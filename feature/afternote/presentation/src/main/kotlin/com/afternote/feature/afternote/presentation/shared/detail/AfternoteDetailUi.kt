@@ -39,7 +39,7 @@ import com.afternote.core.ui.theme.Gray8
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.Sansneo
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiver
+import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 
 @Composable
 fun InfoCard(
@@ -90,7 +90,7 @@ fun ProcessingMethodItem(
  */
 @Composable
 fun ReceiversCard(
-    receivers: List<AfternoteEditReceiver>,
+    receivers: List<AfternoteEditorReceiver>,
     modifier: Modifier = Modifier,
 ) {
     if (receivers.isEmpty()) return
@@ -122,7 +122,7 @@ fun ReceiversCard(
 
 @Composable
 private fun ReceiverDetailItem(
-    receiver: AfternoteEditReceiver,
+    receiver: AfternoteEditorReceiver,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -176,12 +176,12 @@ private fun ReceiversCardPreview() {
         ReceiversCard(
             receivers =
                 listOf(
-                    AfternoteEditReceiver(
+                    AfternoteEditorReceiver(
                         id = "1",
                         name = "황규운",
                         label = "친구",
                     ),
-                    AfternoteEditReceiver(
+                    AfternoteEditorReceiver(
                         id = "2",
                         name = "김소희",
                         label = "가족",

@@ -2,7 +2,7 @@ package com.afternote.feature.afternote.presentation
 
 import androidx.lifecycle.ViewModel
 import com.afternote.feature.afternote.domain.model.Item
-import com.afternote.feature.afternote.presentation.author.edit.provider.DataProviderSwitch
+import com.afternote.feature.afternote.presentation.author.editor.provider.DataProviderSwitch
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

@@ -31,7 +31,7 @@ import com.afternote.core.ui.theme.Gray5
 import com.afternote.core.ui.theme.Gray6
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.Sansneo
-import com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiver
+import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
 import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
@@ -49,7 +49,7 @@ data class GalleryDetailState(
     val serviceName: String = "갤러리",
     val userName: String = "서영",
     val finalWriteDate: String = "2025.11.26.",
-    val afternoteEditReceivers: List<AfternoteEditReceiver> =
+    val afternoteEditReceivers: List<AfternoteEditorReceiver> =
         emptyList(),
     val informationProcessingMethod: String = "",
     val processingMethods: List<String> = emptyList(),

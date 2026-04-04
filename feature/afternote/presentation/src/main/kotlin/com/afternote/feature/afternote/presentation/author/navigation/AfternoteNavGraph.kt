@@ -4,8 +4,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.feature.afternote.presentation.author.edit.playlist.AddSongViewModel
-import com.afternote.feature.afternote.presentation.author.edit.playlist.MemorialPlaylistRouteScreen
+import com.afternote.feature.afternote.presentation.author.editor.playlist.AddSongViewModel
+import com.afternote.feature.afternote.presentation.author.editor.playlist.MemorialPlaylistRouteScreen
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 
 fun NavGraphBuilder.afternoteNavGraph(
@@ -46,8 +46,8 @@ fun NavGraphBuilder.afternoteNavGraph(
 
     afternoteComposable<AfternoteRoute.EditRoute> { backStackEntry ->
         val currentItems = params.list.afternoteItems
-        AfternoteEditDestination(
-            AfternoteEditDestinationParams(
+        AfternoteEditorDestination(
+            AfternoteEditorDestinationParams(
                 backStackEntry = backStackEntry,
                 navController = navController,
                 afternoteItems = currentItems,

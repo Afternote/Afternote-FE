@@ -29,7 +29,7 @@ import com.afternote.feature.afternote.presentation.author.detail.ui.afternotede
 import com.afternote.feature.afternote.presentation.author.detail.ui.afternotedetail.MemorialGuidelineDetailState
 import com.afternote.feature.afternote.presentation.author.detail.ui.afternotedetail.SocialNetworkDetailContent
 import com.afternote.feature.afternote.presentation.author.detail.ui.afternotedetail.SocialNetworkDetailScreen
-import com.afternote.feature.afternote.presentation.author.edit.model.AfternoteEditReceiver
+import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
@@ -119,7 +119,7 @@ internal fun AfternoteDetailDestination(
                         finalWriteDate = detail.timestamps.updatedAt.ifEmpty { detail.timestamps.createdAt },
                         afternoteEditReceivers =
                             detail.receivers.map { r ->
-                                AfternoteEditReceiver(
+                                AfternoteEditorReceiver(
                                     id = "",
                                     name = r.name,
                                     label = r.relation,
@@ -182,7 +182,7 @@ internal fun AfternoteGalleryDetailDestination(
                         finalWriteDate = detail.timestamps.updatedAt.ifEmpty { detail.timestamps.createdAt },
                         afternoteEditReceivers =
                             detail.receivers.map { r ->
-                                AfternoteEditReceiver(
+                                AfternoteEditorReceiver(
                                     id = "",
                                     name = r.name,
                                     label = r.relation,
@@ -251,7 +251,7 @@ internal fun AfternoteMemorialGuidelineDetailDestination(
                         profileImageUri = detail.playlist?.playlistDetailMemorialMedia?.photoUrl,
                         afternoteEditReceivers =
                             detail.receivers.map { r ->
-                                AfternoteEditReceiver(
+                                AfternoteEditorReceiver(
                                     id = "",
                                     name = r.name,
                                     label = r.relation,
