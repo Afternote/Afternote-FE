@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.feature.afternote.domain.port.ReceiverAuthCodeProvider
 import com.afternote.feature.afternote.domain.usecase.receiver.GetAfterNotesByAuthCodeUseCase
-import com.afternote.feature.afternote.presentation.receiver.model.uimodel.ReceivedAfternoteListItemUi
-import com.afternote.feature.afternote.presentation.receiver.model.uimodel.ReceiverAfternotesListUiState
+import com.afternote.feature.afternote.presentation.receiver.model.uistate.ReceivedAfternoteListItemUi
+import com.afternote.feature.afternote.presentation.receiver.model.uistate.ReceiverAfternotesListUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

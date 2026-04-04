@@ -1,5 +1,5 @@
 package com.afternote.feature.afternote.presentation.receiver.viewmodel
-import com.afternote.feature.afternote.presentation.receiver.model.uimodel.ReceiverDownloadAllUiState
+import com.afternote.feature.afternote.presentation.receiver.model.uistate.ReceiverDownloadAllUiState
 import kotlinx.coroutines.flow.StateFlow
 
 /**

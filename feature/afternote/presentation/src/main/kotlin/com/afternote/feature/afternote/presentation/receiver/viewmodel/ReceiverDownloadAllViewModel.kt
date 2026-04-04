@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.feature.afternote.domain.port.ExportReceivedRepository
 import com.afternote.feature.afternote.domain.usecase.receiver.DownloadAllReceivedUseCase
-import com.afternote.feature.afternote.presentation.receiver.model.uimodel.ReceiverDownloadAllUiState
+import com.afternote.feature.afternote.presentation.receiver.model.uistate.ReceiverDownloadAllUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

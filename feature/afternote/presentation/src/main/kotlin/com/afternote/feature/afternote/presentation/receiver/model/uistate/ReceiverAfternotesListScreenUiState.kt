@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.receiver.model.uimodel
+package com.afternote.feature.afternote.presentation.receiver.model.uistate
 
 /**
  * 수신 애프터노트 목록 화면(설정 플로우)용 리스트 아이템 UI 모델.

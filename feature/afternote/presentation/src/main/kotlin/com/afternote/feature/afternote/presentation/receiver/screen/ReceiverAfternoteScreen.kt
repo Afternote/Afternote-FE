@@ -31,12 +31,12 @@ import com.afternote.core.ui.theme.B3
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.Sansneo
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.receiver.model.uimodel.ReceiverDownloadAllUiState
-import com.afternote.feature.afternote.presentation.receiver.ui.component.ContentSection
-import com.afternote.feature.afternote.presentation.receiver.ui.component.HeroCard
-import com.afternote.feature.afternote.presentation.receiver.ui.component.TopHeader
-import com.afternote.feature.afternote.presentation.receiver.ui.viewmodel.ReceiverDownloadAllViewModel
-import com.afternote.feature.afternote.presentation.receiver.ui.viewmodel.ReceiverDownloadAllViewModelContract
+import com.afternote.feature.afternote.presentation.receiver.component.ContentSection
+import com.afternote.feature.afternote.presentation.receiver.component.HeroCard
+import com.afternote.feature.afternote.presentation.receiver.component.TopHeader
+import com.afternote.feature.afternote.presentation.receiver.model.uistate.ReceiverDownloadAllUiState
+import com.afternote.feature.afternote.presentation.receiver.viewmodel.ReceiverDownloadAllViewModel
+import com.afternote.feature.afternote.presentation.receiver.viewmodel.ReceiverDownloadAllViewModelContract
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -45,7 +45,6 @@ import kotlinx.coroutines.flow.StateFlow
 fun ReceiverAfterNoteScreen(
     modifier: Modifier = Modifier,
     showBottomBar: Boolean = true,
-    receiverId: String = "1",
     authCode: String = "",
     senderName: String = "",
     leaveMessage: String? = null,

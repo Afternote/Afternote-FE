@@ -3,7 +3,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.afternote.feature.afternote.presentation.author.home.screen.AfternoteHomeScreen
 import com.afternote.feature.afternote.presentation.receiver.model.ReceiverAfternoteHomeEvent
-import com.afternote.feature.afternote.presentation.receiver.model.uimodel.ReceiverAfternoteHomeUiState
+import com.afternote.feature.afternote.presentation.receiver.model.uistate.ReceiverAfternoteHomeUiState
 import com.afternote.feature.afternote.presentation.shared.body.infinite.AfternoteBodyUiState
 
 /**

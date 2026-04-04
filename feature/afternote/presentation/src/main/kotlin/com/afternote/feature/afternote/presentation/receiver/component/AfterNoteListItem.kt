@@ -27,7 +27,7 @@ import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.B2
 import com.afternote.core.ui.theme.Gray5
 import com.afternote.core.ui.theme.Sansneo
-import com.afternote.feature.afternote.presentation.receiver.model.uimodel.AppNoteItem
+import com.afternote.feature.afternote.presentation.receiver.model.AppNoteItem
 
 @Composable
 @Suppress("UNUSED")

@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.receiver.model.uimodel
+package com.afternote.feature.afternote.presentation.receiver.model.uistate
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
