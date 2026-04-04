@@ -1,10 +1,12 @@
 package com.afternote.feature.afternote.presentation.receiver.screen
+
 import android.widget.Toast
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -35,172 +37,175 @@ import com.afternote.feature.afternote.presentation.receiver.component.ContentSe
 import com.afternote.feature.afternote.presentation.receiver.component.HeroCard
 import com.afternote.feature.afternote.presentation.receiver.component.TopHeader
 import com.afternote.feature.afternote.presentation.receiver.model.uistate.ReceiverDownloadAllUiState
+import com.afternote.feature.afternote.presentation.receiver.model.uistate.ReceiverSummaryUiState
 import com.afternote.feature.afternote.presentation.receiver.viewmodel.ReceiverDownloadAllViewModel
 import com.afternote.feature.afternote.presentation.receiver.viewmodel.ReceiverDownloadAllViewModelContract
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 
+/**
+ * Stateful Route: ViewModel을 주입받아 상태를 수집하고 side-effect를 처리합니다.
+ */
 @Composable
-@Suppress("AssignedValueIsNeverRead")
-fun ReceiverAfterNoteScreen(
+fun ReceiverAfterNoteRoute(
     modifier: Modifier = Modifier,
+    summary: ReceiverSummaryUiState = ReceiverSummaryUiState(),
     showBottomBar: Boolean = true,
-    authCode: String = "",
-    senderName: String = "",
-    leaveMessage: String? = null,
-    mindRecordTotalCount: Int = 0,
-    timeLetterTotalCount: Int = 0,
-    afternoteTotalCount: Int = 0,
+    selectedNavTab: BottomNavTab = BottomNavTab.NOTE,
+    onNavTabSelected: (BottomNavTab) -> Unit = {},
     onNavigateToRecord: () -> Unit = {},
     onNavigateToTimeLetter: () -> Unit = {},
     onNavigateToAfternote: () -> Unit = {},
     viewModel: ReceiverDownloadAllViewModelContract = hiltViewModel<ReceiverDownloadAllViewModel>(),
 ) {
-    var selectedBottomNavItem by remember { mutableStateOf(BottomNavTab.NOTE) }
-    var showDialog by remember { mutableStateOf(false) }
-    val downloadAllUiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val downloadUiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    LaunchedEffect(downloadAllUiState.downloadSuccess) {
-        if (downloadAllUiState.downloadSuccess) {
-            showDialog = false
+    LaunchedEffect(downloadUiState.downloadSuccess) {
+        if (downloadUiState.downloadSuccess) {
             viewModel.clearDownloadSuccess()
         }
     }
-    LaunchedEffect(downloadAllUiState.errorMessage) {
-        downloadAllUiState.errorMessage?.let { message ->
-            showDialog = false
+    LaunchedEffect(downloadUiState.errorMessage) {
+        downloadUiState.errorMessage?.let { message ->
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
             viewModel.clearError()
         }
     }
+
+    ReceiverAfterNoteScreen(
+        modifier = modifier,
+        summary = summary,
+        downloadUiState = downloadUiState,
+        showBottomBar = showBottomBar,
+        selectedNavTab = selectedNavTab,
+        onNavTabSelected = onNavTabSelected,
+        onNavigateToRecord = onNavigateToRecord,
+        onNavigateToTimeLetter = onNavigateToTimeLetter,
+        onNavigateToAfternote = onNavigateToAfternote,
+        onDownloadConfirm = { viewModel.confirmDownloadAll(summary.authCode) },
+    )
+}
+
+/**
+ * Stateless Screen: ViewModel 의존성 없이 순수하게 UI만 그립니다.
+ * Preview 작성 시 Fake ViewModel이 필요 없습니다.
+ */
+@Composable
+fun ReceiverAfterNoteScreen(
+    modifier: Modifier = Modifier,
+    summary: ReceiverSummaryUiState = ReceiverSummaryUiState(),
+    downloadUiState: ReceiverDownloadAllUiState = ReceiverDownloadAllUiState(),
+    showBottomBar: Boolean = true,
+    selectedNavTab: BottomNavTab = BottomNavTab.NOTE,
+    onNavTabSelected: (BottomNavTab) -> Unit = {},
+    onNavigateToRecord: () -> Unit = {},
+    onNavigateToTimeLetter: () -> Unit = {},
+    onNavigateToAfternote: () -> Unit = {},
+    onDownloadConfirm: () -> Unit = {},
+) {
+    var showDialog by remember { mutableStateOf(false) }
 
     if (showDialog) {
         ConfirmationPopup(
             message = stringResource(R.string.receiver_download_all_dialog_message),
             onDismiss = { showDialog = false },
             onConfirm = {
-                if (authCode.isNotBlank()) viewModel.confirmDownloadAll(authCode)
+                onDownloadConfirm()
+                showDialog = false
             },
-            isLoading = downloadAllUiState.isLoading,
+            isLoading = downloadUiState.isLoading,
         )
     }
 
+    val scrollState = rememberScrollState()
+
     Scaffold(
-        topBar = {
-            TopHeader()
-        },
+        modifier = modifier,
+        topBar = { TopHeader() },
         bottomBar = {
             if (showBottomBar) {
                 BottomBar(
-                    selectedNavTab = selectedBottomNavItem,
-                    onTabClick = { selectedBottomNavItem = it },
+                    selectedNavTab = selectedNavTab,
+                    onTabClick = onNavTabSelected,
                 )
             }
         },
     ) { innerPadding ->
-        LazyColumn(
+        androidx.compose.foundation.layout.Column(
             modifier =
                 Modifier
                     .padding(innerPadding)
                     .fillMaxSize()
-                    .padding(horizontal = 20.dp, vertical = 10.dp),
+                    .padding(horizontal = 20.dp, vertical = 10.dp)
+                    .verticalScroll(scrollState),
         ) {
-            item {
-                Text(
-                    text =
-                        stringResource(
-                            R.string.receiver_sender_record_title,
-                            senderName.ifBlank { "" },
-                        ),
-                    fontWeight = FontWeight.Bold,
-                    color = Gray9,
-                    fontFamily = Sansneo,
-                    modifier = Modifier.padding(bottom = 16.dp),
-                )
-            }
+            Text(
+                text =
+                    stringResource(
+                        R.string.receiver_sender_record_title,
+                        summary.senderName.ifBlank { "" },
+                    ),
+                fontWeight = FontWeight.Bold,
+                color = Gray9,
+                fontFamily = Sansneo,
+                modifier = Modifier.padding(bottom = 16.dp),
+            )
 
-            item {
-                HeroCard(
-                    leaveMessage =
-                        leaveMessage?.takeIf { it.isNotBlank() }
-                            ?: "가족들에게...\n내가 없어도 너무 슬퍼하지마.",
-                )
-            }
+            HeroCard(
+                leaveMessage =
+                    summary.leaveMessage?.takeIf { it.isNotBlank() }
+                        ?: stringResource(R.string.receiver_hero_default_message),
+            )
 
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
-            }
+            Spacer(modifier = Modifier.height(24.dp))
 
-            item {
-                ContentSection(
-                    title = "마음의 기록",
-                    desc = "고인의 일상적인 생각과 감정, 일기들입니다.",
-                    subDesc =
-                        stringResource(
-                            R.string.receiver_mindrecord_section_count,
-                            mindRecordTotalCount,
-                        ),
-                    btnText = "마음의 기록 확인하러 가기",
-                    imageResource = painterResource(R.drawable.img_book),
-                    onButtonClick = onNavigateToRecord,
-                )
-            }
+            ContentSection(
+                title = stringResource(R.string.receiver_mindrecord_section_title),
+                desc = stringResource(R.string.receiver_mindrecord_section_desc),
+                subDesc =
+                    stringResource(
+                        R.string.receiver_mindrecord_section_count,
+                        summary.mindRecordTotalCount,
+                    ),
+                btnText = stringResource(R.string.receiver_mindrecord_section_button),
+                imageResource = painterResource(R.drawable.img_book),
+                onButtonClick = onNavigateToRecord,
+            )
 
-            item {
-                ContentSection(
-                    title = "타임레터",
-                    desc = "고인이 특별한 날에 작성한 편지입니다.",
-                    subDesc =
-                        stringResource(
-                            R.string.receiver_timeletter_section_count,
-                            timeLetterTotalCount,
-                        ),
-                    btnText = "라이프 이벤트 레터 확인하러 가기",
-                    imageResource = painterResource(R.drawable.img_letter),
-                    onButtonClick = onNavigateToTimeLetter,
-                )
-            }
+            ContentSection(
+                title = stringResource(R.string.receiver_timeletter_section_title),
+                desc = stringResource(R.string.receiver_timeletter_section_desc),
+                subDesc =
+                    stringResource(
+                        R.string.receiver_timeletter_section_count,
+                        summary.timeLetterTotalCount,
+                    ),
+                btnText = stringResource(R.string.receiver_timeletter_section_button),
+                imageResource = painterResource(R.drawable.img_letter),
+                onButtonClick = onNavigateToTimeLetter,
+            )
 
-            item {
-                ContentSection(
-                    title = "애프터노트",
-                    desc = "고인이 사후 정리하고자 하는 데이터입니다.",
-                    subDesc =
-                        stringResource(
-                            R.string.receiver_afternote_section_count,
-                            afternoteTotalCount,
-                        ),
-                    btnText = "애프터노트 확인하러 가기",
-                    imageResource = painterResource(R.drawable.img_notebook),
-                    onButtonClick = onNavigateToAfternote,
-                )
-            }
+            ContentSection(
+                title = stringResource(R.string.receiver_afternote_section_title),
+                desc = stringResource(R.string.receiver_afternote_section_desc),
+                subDesc =
+                    stringResource(
+                        R.string.receiver_afternote_section_count,
+                        summary.afternoteTotalCount,
+                    ),
+                btnText = stringResource(R.string.receiver_afternote_section_button),
+                imageResource = painterResource(R.drawable.img_notebook),
+                onButtonClick = onNavigateToAfternote,
+            )
 
-            item {
-                Spacer(modifier = Modifier.height(20.dp))
-            }
+            Spacer(modifier = Modifier.height(20.dp))
 
-            item {
-                ClickButton(
-                    color = B3,
-                    onButtonClick = { showDialog = true },
-                    title = stringResource(R.string.receiver_download_all_button),
-                )
-            }
+            ClickButton(
+                color = B3,
+                onButtonClick = { showDialog = true },
+                title = stringResource(R.string.receiver_download_all_button),
+            )
         }
     }
-}
-
-private class FakeReceiverDownloadAllViewModel : ReceiverDownloadAllViewModelContract {
-    private val _uiState = MutableStateFlow(ReceiverDownloadAllUiState())
-    override val uiState: StateFlow<ReceiverDownloadAllUiState> = _uiState
-
-    override fun confirmDownloadAll(authCode: String) {}
-
-    override fun clearDownloadSuccess() {}
-
-    override fun clearError() {}
 }
 
 @Preview(showBackground = true)
@@ -208,7 +213,13 @@ private class FakeReceiverDownloadAllViewModel : ReceiverDownloadAllViewModelCon
 private fun PreviewReceiverAfterNote() {
     MaterialTheme {
         ReceiverAfterNoteScreen(
-            viewModel = remember { FakeReceiverDownloadAllViewModel() },
+            summary =
+                ReceiverSummaryUiState(
+                    senderName = "홍길동",
+                    mindRecordTotalCount = 3,
+                    timeLetterTotalCount = 2,
+                    afternoteTotalCount = 5,
+                ),
         )
     }
 }
