@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.editor.playlist
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.feature.afternote.domain.usecase.author.detail.SearchMusicUseCase
+import com.afternote.feature.afternote.domain.usecase.author.editor.SearchMusicUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay

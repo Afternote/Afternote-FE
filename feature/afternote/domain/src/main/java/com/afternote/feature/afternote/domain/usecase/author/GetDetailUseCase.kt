@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.domain.usecase.author.detail
+package com.afternote.feature.afternote.domain.usecase.author
 
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
 import javax.inject.Inject

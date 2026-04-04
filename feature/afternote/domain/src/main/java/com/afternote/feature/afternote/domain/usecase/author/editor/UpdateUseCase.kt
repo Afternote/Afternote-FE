@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.domain.usecase.author
+package com.afternote.feature.afternote.domain.usecase.author.editor
 
 import com.afternote.feature.afternote.domain.model.input.UpdateInput
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
