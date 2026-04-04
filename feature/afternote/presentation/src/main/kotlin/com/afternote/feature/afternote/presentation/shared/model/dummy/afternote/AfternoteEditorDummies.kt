@@ -9,7 +9,7 @@ import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDis
  */
 object AfternoteEditorDummies {
     /**
-     * Default processing method items for record-type services (애프터노트 수정 화면). Dummy data.
+     * Default processing method listItems for record-type services (애프터노트 수정 화면). Dummy data.
      */
     fun defaultRecordProcessingMethods(): List<ProcessingMethodItem> =
         listOf(
@@ -28,7 +28,7 @@ object AfternoteEditorDummies {
         )
 
     /**
-     * Default processing method items for gallery/file-type services. Dummy data.
+     * Default processing method listItems for gallery/file-type services. Dummy data.
      */
     fun defaultGalleryProcessingMethods(): List<ProcessingMethodItem> =
         listOf(

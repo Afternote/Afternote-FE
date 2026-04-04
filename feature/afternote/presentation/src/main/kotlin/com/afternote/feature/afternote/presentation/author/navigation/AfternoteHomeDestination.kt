@@ -4,7 +4,7 @@ import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.feature.afternote.domain.model.Item
+import com.afternote.feature.afternote.domain.model.ListItem
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteItemMapper
 import com.afternote.feature.afternote.presentation.author.editor.provider.AfternoteEditorDataProvider
 import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeRoute
@@ -13,10 +13,10 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.Afte
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 
 internal fun resolveListItems(
-    afternoteItems: List<Item>,
+    afternoteListItems: List<ListItem>,
     afternoteProvider: AfternoteEditorDataProvider,
-): List<Item> =
-    afternoteItems.ifEmpty {
+): List<ListItem> =
+    afternoteListItems.ifEmpty {
         AfternoteItemMapper.toAfternoteItemsWithStableIds(afternoteProvider.getDefaultAfternoteItems())
     }
 
@@ -24,7 +24,7 @@ internal fun resolveListItems(
 internal fun AfternoteHomeDestination(
     navController: NavController,
     onNavTabSelected: (BottomNavTab) -> Unit = {},
-    onItemsChanged: (List<Item>) -> Unit,
+    onItemsChanged: (List<ListItem>) -> Unit,
     homeRefresh: AfternoteHomeRefreshParams? = null,
 ) {
     AfternoteHomeRoute(

@@ -8,7 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.feature.afternote.domain.model.Item
+import com.afternote.feature.afternote.domain.model.ListItem
 import com.afternote.feature.afternote.presentation.author.home.model.AfternoteHomeEvent
 import com.afternote.feature.afternote.presentation.author.home.screen.AfternoteHomeScreen
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
@@ -31,7 +31,7 @@ data class AfternoteHomeRouteActions(
 fun AfternoteHomeRoute(
     viewModel: AfternoteHomeViewModel = hiltViewModel(),
     actions: AfternoteHomeRouteActions = AfternoteHomeRouteActions(),
-    onItemsChanged: (List<Item>) -> Unit = {},
+    onItemsChanged: (List<ListItem>) -> Unit = {},
     homeRefreshRequested: Boolean = false,
     onHomeRefreshConsumed: () -> Unit = {},
 ) {
@@ -49,18 +49,18 @@ fun AfternoteHomeRoute(
         .bodyUiState
         .collectAsStateWithLifecycle()
 
-    // 상위로 items 전파 (Edit 화면에서 사용)
+    // 상위로 listItems 전파 (Edit 화면에서 사용)
     val itemIds =
-        remember(uiState.items) {
+        remember(uiState.listItems) {
             uiState
-                .items
+                .listItems
                 .map { it.id }
                 .toSet()
         }
     LaunchedEffect(itemIds) {
-        if (uiState.items.isNotEmpty()) {
-            Log.d("AfternoteHomeRoute", "items changed: size=${uiState.items.size}")
-            onItemsChanged(uiState.items)
+        if (uiState.listItems.isNotEmpty()) {
+            Log.d("AfternoteHomeRoute", "listItems changed: size=${uiState.listItems.size}")
+            onItemsChanged(uiState.listItems)
         }
     }
 

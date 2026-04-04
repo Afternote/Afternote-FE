@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.detail.ui.afternotedetail
+package com.afternote.feature.afternote.presentation.author.detail.afternotedetail
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable

@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.detail.ui.afternotedetail
+package com.afternote.feature.afternote.presentation.author.detail.afternotedetail
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,6 +33,7 @@ import com.afternote.core.ui.theme.Gray5
 import com.afternote.core.ui.theme.Gray6
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.Sansneo
+import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
 import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
@@ -56,7 +57,7 @@ data class SocialNetworkDetailContent(
     val processingMethods: List<String> = emptyList(),
     val message: String = "",
     val finalWriteDate: String = "2025.11.26.",
-    val afternoteEditReceivers: List<com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver> =
+    val afternoteEditReceivers: List<AfternoteEditorReceiver> =
         emptyList(),
 )
 

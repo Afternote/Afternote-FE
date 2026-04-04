@@ -23,7 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.ui.expand.addFocusCleaner
-import com.afternote.feature.afternote.domain.model.Item
+import com.afternote.feature.afternote.domain.model.ListItem
 import com.afternote.feature.afternote.domain.model.ProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.model.LoadFromExistingAccountParams
@@ -62,7 +62,7 @@ fun AfternoteEditorScreen(
     callbacks: AfternoteEditorScreenCallbacks = AfternoteEditorScreenCallbacks(),
     state: AfternoteEditorState = rememberAfternoteEditorState(),
     playlistStateHolder: MemorialPlaylistStateHolder? = null,
-    initialItem: Item? = null,
+    initialListItem: ListItem? = null,
     saveError: AfternoteEditorSaveError? = null,
 ) {
     val focusManager = LocalFocusManager.current
@@ -77,10 +77,10 @@ fun AfternoteEditorScreen(
         }
     }
 
-    LaunchedEffect(initialItem?.id) {
+    LaunchedEffect(initialListItem?.id) {
         val item =
-            initialItem ?: run {
-                Log.d(TAG, "LaunchedEffect: initialItem is null, skipping loadFromExisting")
+            initialListItem ?: run {
+                Log.d(TAG, "LaunchedEffect: initialListItem is null, skipping loadFromExisting")
                 return@LaunchedEffect
             }
         Log.d(

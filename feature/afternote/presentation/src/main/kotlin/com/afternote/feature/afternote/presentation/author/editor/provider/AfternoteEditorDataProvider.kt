@@ -5,7 +5,7 @@ import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCove
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
 /**
- * Provides data for afternote edit flows (songs, receivers, album covers, afternote items).
+ * Provides data for afternote edit flows (songs, receivers, album covers, afternote listItems).
  * Implementation (real vs dummy-backed) is decided at DI; consumers use this interface only.
  */
 interface AfternoteEditorDataProvider {

@@ -33,16 +33,18 @@ class AfternoteHomeViewModel
     constructor(
         private val getListPageUseCase: GetListPageUseCase,
     ) : ViewModel() {
+        // MutableStateFlow는 인자로 받은 객체 타입의 MutableStateFlow 객체를 만든다
         private val _uiState = MutableStateFlow(AfternoteHomeUiState())
+
+        // 관찰만 하고 수정할 수 없는 StateFlow 타입으로 변환
         val uiState: StateFlow<AfternoteHomeUiState> = _uiState.asStateFlow()
 
-        /** uiState에서 자동 파생되는 Screen용 UI 상태. */
         val bodyUiState: StateFlow<AfternoteBodyUiState> =
             _uiState
-                .map { state ->
+                .map { homeState ->
                     AfternoteBodyUiState(
                         items =
-                            state.items.map { item ->
+                            homeState.listItems.map { item ->
                                 ListItemUiModel(
                                     id = item.id,
                                     serviceName = item.serviceName,
@@ -50,9 +52,9 @@ class AfternoteHomeViewModel
                                     iconResId = getIconResForServiceName(item.serviceName),
                                 )
                             },
-                        selectedTab = state.selectedTab,
-                        hasNext = state.hasNext,
-                        isLoadingMore = state.isLoadingMore,
+                        selectedTab = homeState.selectedTab,
+                        hasNext = homeState.hasNext,
+                        isLoadingMore = homeState.isLoadingMore,
                     )
                 }.stateIn(
                     scope = viewModelScope,
@@ -74,7 +76,7 @@ class AfternoteHomeViewModel
                     it.copy(
                         isLoading = true,
                         loadError = null,
-                        items = emptyList(),
+                        listItems = emptyList(),
                     )
                 }
                 val input =
@@ -89,7 +91,7 @@ class AfternoteHomeViewModel
                             it.copy(
                                 isLoading = false,
                                 loadError = null,
-                                items = paged.items,
+                                listItems = paged.listItems,
                                 currentPage = 0,
                                 hasNext = paged.hasNext,
                                 isLoadingMore = false,
@@ -99,7 +101,7 @@ class AfternoteHomeViewModel
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                items = emptyList(),
+                                listItems = emptyList(),
                                 currentPage = 0,
                                 loadError = e.message ?: "애프터노트 목록을 불러오지 못했습니다.",
                                 hasNext = false,
@@ -129,7 +131,7 @@ class AfternoteHomeViewModel
                     .onSuccess { paged ->
                         _uiState.update {
                             it.copy(
-                                items = it.items + paged.items,
+                                listItems = it.listItems + paged.listItems,
                                 currentPage = nextPage,
                                 isLoadingMore = false,
                                 hasNext = paged.hasNext,

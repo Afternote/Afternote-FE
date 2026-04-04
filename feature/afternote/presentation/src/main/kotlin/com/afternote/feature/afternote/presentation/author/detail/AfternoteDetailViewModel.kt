@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.detail.ui
+package com.afternote.feature.afternote.presentation.author.detail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.feature.afternote.domain.usecase.author.DeleteUseCase

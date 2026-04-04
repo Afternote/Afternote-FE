@@ -2,8 +2,8 @@ package com.afternote.feature.afternote.presentation.author.editor
 
 import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.domain.model.Account
-import com.afternote.feature.afternote.domain.model.Item
 import com.afternote.feature.afternote.domain.model.ItemProcessing
+import com.afternote.feature.afternote.domain.model.ListItem
 import com.afternote.feature.afternote.domain.model.ProcessingMethod
 import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 
@@ -16,12 +16,12 @@ object AfternoteItemMapper {
      * List<Pair>를 List<AfternoteItem>으로 변환하며 **안정적인 id**를 부여.
      * 목록/상세/편집에서 동일한 id로 조회할 수 있도록 더미 목록용.
      */
-    fun toAfternoteItemsWithStableIds(pairs: List<Pair<String, String>>): List<Item> =
+    fun toAfternoteItemsWithStableIds(pairs: List<Pair<String, String>>): List<ListItem> =
         pairs.mapIndexed { index, pair ->
             val (serviceName, date) = pair
             val serviceType = inferServiceType(serviceName)
             val dummyData = dummyDataForServiceType(serviceType)
-            Item(
+            ListItem(
                 id = "dummy_${serviceName}_${date}_$index",
                 serviceName = serviceName,
                 date = date,

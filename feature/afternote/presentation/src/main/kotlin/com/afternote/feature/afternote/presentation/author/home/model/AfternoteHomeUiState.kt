@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.home.model
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.feature.afternote.domain.model.Item
+import com.afternote.feature.afternote.domain.model.ListItem
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 
 /**
@@ -13,7 +13,7 @@ import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 data class AfternoteHomeUiState(
     val selectedTab: AfternoteCategory = AfternoteCategory.ALL,
     val selectedBottomNavItem: BottomNavTab = BottomNavTab.NOTE,
-    val items: List<Item> = emptyList(),
+    val listItems: List<ListItem> = emptyList(),
     val isLoading: Boolean = false,
     val loadError: String? = null,
     val currentPage: Int = 0,

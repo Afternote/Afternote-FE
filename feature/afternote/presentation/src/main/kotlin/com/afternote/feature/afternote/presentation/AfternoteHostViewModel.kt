@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.presentation
 
 import androidx.lifecycle.ViewModel
-import com.afternote.feature.afternote.domain.model.Item
+import com.afternote.feature.afternote.domain.model.ListItem
 import com.afternote.feature.afternote.presentation.author.editor.provider.DataProviderSwitch
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,10 +15,10 @@ class AfternoteHostViewModel
     constructor(
         val dataProviderSwitch: DataProviderSwitch,
     ) : ViewModel() {
-        private val _items = MutableStateFlow<List<Item>>(emptyList())
-        val items: StateFlow<List<Item>> = _items.asStateFlow()
+        private val _items = MutableStateFlow<List<ListItem>>(emptyList())
+        val items: StateFlow<List<ListItem>> = _items.asStateFlow()
 
-        fun updateItems(newItems: List<Item>) {
-            _items.value = newItems
+        fun updateItems(newListItems: List<ListItem>) {
+            _items.value = newListItems
         }
     }

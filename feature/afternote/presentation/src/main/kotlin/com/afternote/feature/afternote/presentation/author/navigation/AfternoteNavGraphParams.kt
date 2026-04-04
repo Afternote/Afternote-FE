@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.navigation
 
-import com.afternote.feature.afternote.domain.model.Item
+import com.afternote.feature.afternote.domain.model.ListItem
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.model.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.provider.AfternoteEditorDataProvider
@@ -26,10 +26,10 @@ data class AfternoteHomeRefreshParams(
     val onAfternoteDeleted: () -> Unit,
 )
 
-/** Home-related inputs for [afternoteNavGraph] (items + home refresh). */
+/** Home-related inputs for [afternoteNavGraph] (listItems + home refresh). */
 data class AfternoteNavGraphHomeContext(
-    val afternoteItems: List<Item>,
-    val onItemsUpdated: (List<Item>) -> Unit,
+    val afternoteListItems: List<ListItem>,
+    val onItemsUpdated: (List<ListItem>) -> Unit,
     val homeRefresh: AfternoteHomeRefreshParams? = null,
 )
 

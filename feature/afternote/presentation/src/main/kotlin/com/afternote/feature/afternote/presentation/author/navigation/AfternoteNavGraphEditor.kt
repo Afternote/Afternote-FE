@@ -12,7 +12,7 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.toRoute
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.feature.afternote.domain.model.Item
+import com.afternote.feature.afternote.domain.model.ListItem
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorEvent
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorSaveError
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorScreen
@@ -59,7 +59,7 @@ internal data class EditScreenCallbacksParams(
     val editStateHandling: AfternoteEditorStateHandling,
     val state: AfternoteEditorState,
     val route: AfternoteRoute.EditRoute,
-    val initialItem: Item?,
+    val initialListItem: ListItem?,
     val playlistStateHolder: MemorialPlaylistStateHolder,
     val onNavigateToSelectReceiver: () -> Unit,
     val onBottomNavTabSelected: (BottomNavTab) -> Unit,
@@ -68,7 +68,7 @@ internal data class EditScreenCallbacksParams(
 internal data class AfternoteEditorDestinationParams(
     val backStackEntry: NavBackStackEntry,
     val navController: NavController,
-    val afternoteItems: List<Item>,
+    val afternoteListItems: List<ListItem>,
     val playlistStateHolder: MemorialPlaylistStateHolder,
     val afternoteProvider: AfternoteEditorDataProvider,
     val editStateHandling: AfternoteEditorStateHandling,
@@ -108,7 +108,7 @@ internal fun buildEditScreenCallbacks(params: EditScreenCallbacksParams): Aftern
             params.editViewModel.saveAfternote(
                 editingId =
                     params.route.itemId?.toLongOrNull()
-                        ?: params.initialItem?.id?.toLongOrNull(),
+                        ?: params.initialListItem?.id?.toLongOrNull(),
                 category = params.state.selectedCategory,
                 payload = payload,
                 selectedReceiverIds = params.state.afternoteEditReceivers.mapNotNull { it.id.toLongOrNull() },
@@ -137,8 +137,8 @@ internal fun AfternoteEditorDestination(
 ) {
     val route = params.backStackEntry.toRoute<AfternoteRoute.EditRoute>()
     val listItems =
-        remember(params.afternoteItems, params.afternoteProvider) {
-            resolveListItems(params.afternoteItems, params.afternoteProvider)
+        remember(params.afternoteListItems, params.afternoteProvider) {
+            resolveListItems(params.afternoteListItems, params.afternoteProvider)
         }
     val initialItem =
         remember(route.itemId, listItems) {
@@ -245,14 +245,14 @@ internal fun AfternoteEditorDestination(
                     editStateHandling = params.editStateHandling,
                     state = state,
                     route = route,
-                    initialItem = initialItem,
+                    initialListItem = initialItem,
                     playlistStateHolder = params.playlistStateHolder,
                     onNavigateToSelectReceiver = params.onNavigateToSelectReceiver,
                     onBottomNavTabSelected = params.onBottomNavTabSelected,
                 ),
             ),
         playlistStateHolder = params.playlistStateHolder,
-        initialItem = if (route.itemId != null) null else initialItem,
+        initialListItem = if (route.itemId != null) null else initialItem,
         state = state,
         saveError = saveError,
     )

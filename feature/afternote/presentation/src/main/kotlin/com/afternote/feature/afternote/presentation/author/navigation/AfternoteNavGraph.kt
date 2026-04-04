@@ -45,12 +45,12 @@ fun NavGraphBuilder.afternoteNavGraph(
     }
 
     afternoteComposable<AfternoteRoute.EditRoute> { backStackEntry ->
-        val currentItems = params.home.afternoteItems
+        val currentItems = params.home.afternoteListItems
         AfternoteEditorDestination(
             AfternoteEditorDestinationParams(
                 backStackEntry = backStackEntry,
                 navController = navController,
-                afternoteItems = currentItems,
+                afternoteListItems = currentItems,
                 playlistStateHolder = params.edit.playlistStateHolder,
                 afternoteProvider = afternoteProvider,
                 editStateHandling = params.edit.editStateHandling,

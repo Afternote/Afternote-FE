@@ -41,7 +41,7 @@ fun AfternoteScreen(
                     AfternoteNavGraphParams(
                         home =
                             AfternoteNavGraphHomeContext(
-                                afternoteItems = items,
+                                afternoteListItems = items,
                                 onItemsUpdated = hostViewModel::updateItems,
                                 homeRefresh = null,
                             ),
