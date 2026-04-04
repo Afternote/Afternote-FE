@@ -59,8 +59,7 @@ fun TimeLetterContent(
                     .background(
                         color = Color(0xFFEEEEEE),
                         shape = RoundedCornerShape(size = 16777200.dp),
-                    )
-                    .padding(horizontal = 16.dp),
+                    ).padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(

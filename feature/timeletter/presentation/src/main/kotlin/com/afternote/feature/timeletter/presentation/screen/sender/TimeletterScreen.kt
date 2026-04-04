@@ -75,7 +75,11 @@ private val previewLetters =
             ),
             TimeLetter(
                 identity = LetterIdentity(id = 2L, title = "10년 후의 나에게", body = "지금보다 더 행복하길 바라."),
-                schedule = LetterSchedule(recipientName = "미래의 나", openDate = OpenDate("2035-01-01")),
+                schedule =
+                    LetterSchedule(
+                        recipientName = "미래의 나",
+                        openDate = OpenDate("2035-01-01"),
+                    ),
             ),
         ),
     )

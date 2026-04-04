@@ -39,8 +39,12 @@ fun TimeLetterListItem(
     val typography = MaterialTheme.typography
     Column(
         modifier =
-            modifier.border(width = 1.dp, color = Color(0xFFBDBDBD), shape = RoundedCornerShape(size = 6.dp))
-                .fillMaxWidth()
+            modifier
+                .border(
+                    width = 1.dp,
+                    color = Color(0xFFBDBDBD),
+                    shape = RoundedCornerShape(size = 6.dp),
+                ).fillMaxWidth()
                 .padding(vertical = 19.dp),
     ) {
         Row(
