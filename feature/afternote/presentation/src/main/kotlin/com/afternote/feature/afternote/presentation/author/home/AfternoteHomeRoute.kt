@@ -44,23 +44,23 @@ fun AfternoteHomeRoute(
 
     val uiState by viewModel
         .uiState
-        .collectAsStateWithLifecycle()
+        .collectAsStateWithLifecycle() // 관찰 시작
     val bodyUiState by viewModel
         .bodyUiState
-        .collectAsStateWithLifecycle()
+        .collectAsStateWithLifecycle() // 관찰 시작
 
     // 상위로 listItems 전파 (Edit 화면에서 사용)
+    val listItems = uiState.listState.listItems
     val itemIds =
-        remember(uiState.listItems) {
-            uiState
-                .listItems
+        remember(listItems) {
+            listItems
                 .map { it.id }
                 .toSet()
         }
     LaunchedEffect(itemIds) {
-        if (uiState.listItems.isNotEmpty()) {
-            Log.d("AfternoteHomeRoute", "listItems changed: size=${uiState.listItems.size}")
-            onItemsChanged(uiState.listItems)
+        if (listItems.isNotEmpty()) {
+            Log.d("AfternoteHomeRoute", "listItems changed: size=${listItems.size}")
+            onItemsChanged(listItems)
         }
     }
 
@@ -69,7 +69,7 @@ fun AfternoteHomeRoute(
         onNavTabSelected = actions.onNavTabSelected,
         onCategorySelected = { viewModel.onEvent(AfternoteHomeEvent.SelectTab(it)) },
         onListItemClick = actions.navigateToDetail,
-        selectedNavTab = uiState.selectedBottomNavItem,
+        selectedNavTab = uiState.navState.selectedBottomNavItem,
         onLoadMore = viewModel::loadNextPage,
-    ) { actions.navigateToAdd(uiState.selectedTab) }
+    ) { actions.navigateToAdd(uiState.categoryState.selectedCategory) }
 }

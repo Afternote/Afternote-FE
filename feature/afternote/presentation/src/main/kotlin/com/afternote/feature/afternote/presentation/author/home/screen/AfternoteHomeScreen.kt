@@ -43,7 +43,7 @@ fun AfternoteHomeScreen(
         },
         floatingActionButton = { AfternoteAddFAB(onClick = onFabClick) },
     ) { paddingValues ->
-        if (listState.items.isNotEmpty()) {
+        if (listState.listItems.isNotEmpty()) {
             InfiniteListBody(
                 modifier = Modifier.padding(paddingValues),
                 uiState = listState,
@@ -64,7 +64,7 @@ private fun AfternoteHomeScreenPreview() {
         AfternoteHomeScreen(
             listState =
                 AfternoteBodyUiState(
-                    items =
+                    listItems =
                         listOf(
                             ListItemUiModel(
                                 id = "1",
@@ -79,7 +79,7 @@ private fun AfternoteHomeScreenPreview() {
                                 iconResId = R.drawable.img_insta_pattern,
                             ),
                         ),
-                    selectedTab = AfternoteCategory.ALL,
+                    selectedCategory = AfternoteCategory.ALL,
                 ),
             onNavTabSelected = {},
             onCategorySelected = {},
@@ -96,8 +96,8 @@ private fun AfternoteHomeScreenEmptyPreview() {
         AfternoteHomeScreen(
             listState =
                 AfternoteBodyUiState(
-                    items = emptyList(),
-                    selectedTab = AfternoteCategory.ALL,
+                    listItems = emptyList(),
+                    selectedCategory = AfternoteCategory.ALL,
                 ),
             onNavTabSelected = {},
             onCategorySelected = {},

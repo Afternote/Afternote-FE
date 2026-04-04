@@ -40,11 +40,18 @@ class AfternoteHomeViewModel
         val uiState: StateFlow<AfternoteHomeUiState> = _uiState.asStateFlow()
 
         val bodyUiState: StateFlow<AfternoteBodyUiState> =
+            // 새로운 상태를 파생시킬 때 순수한 원천 데이터를 사용하기 위해 uiState가 아닌 원본을 가져 옴
+            // 내부 로직은 내부용 변수 _uiState를 쓰는 것이 안전
             _uiState
                 .map { homeState ->
+                    // uiState를 관찰하는 순간에 수행할 연산의 설계도
+                    // 관찰하는 시점 기준 최신 homeState를 가져옴
+                    // 관찰을 시작하는 순간 list의 map처럼 작동
+                    // 연산이 수행된 시점에 모든 요소에 대해 연산을 완료했다면 새로운 요소가 추가될 때까지 대기
+                    val listState = homeState.listState
                     AfternoteBodyUiState(
-                        items =
-                            homeState.listItems.map { item ->
+                        listItems =
+                            listState.listItems.map { item ->
                                 ListItemUiModel(
                                     id = item.id,
                                     serviceName = item.serviceName,
@@ -52,14 +59,16 @@ class AfternoteHomeViewModel
                                     iconResId = getIconResForServiceName(item.serviceName),
                                 )
                             },
-                        selectedTab = homeState.selectedTab,
-                        hasNext = homeState.hasNext,
-                        isLoadingMore = homeState.isLoadingMore,
+                        selectedCategory = homeState.categoryState.selectedCategory,
+                        hasNext = listState.hasNext,
+                        isLoadingMore = listState.isLoadingMore,
                     )
                 }.stateIn(
+                    // StateFlow로 변환
+                    // map 연산을 거치면서 초기화되었던 세팅을 다시 해 줌
                     scope = viewModelScope,
                     started = SharingStarted.WhileSubscribed(SUBSCRIBE_TIMEOUT_MS),
-                    initialValue = AfternoteBodyUiState(items = emptyList()),
+                    initialValue = AfternoteBodyUiState(listItems = emptyList()),
                 )
 
         init {
@@ -74,9 +83,12 @@ class AfternoteHomeViewModel
             viewModelScope.launch {
                 _uiState.update {
                     it.copy(
-                        isLoading = true,
-                        loadError = null,
-                        listItems = emptyList(),
+                        listState =
+                            it.listState.copy(
+                                isLoading = true,
+                                loadError = null,
+                                listItems = emptyList(),
+                            ),
                     )
                 }
                 val input =
@@ -89,23 +101,29 @@ class AfternoteHomeViewModel
                     .onSuccess { paged ->
                         _uiState.update {
                             it.copy(
-                                isLoading = false,
-                                loadError = null,
-                                listItems = paged.listItems,
-                                currentPage = 0,
-                                hasNext = paged.hasNext,
-                                isLoadingMore = false,
+                                listState =
+                                    it.listState.copy(
+                                        isLoading = false,
+                                        loadError = null,
+                                        listItems = paged.listItems,
+                                        currentPage = 0,
+                                        hasNext = paged.hasNext,
+                                        isLoadingMore = false,
+                                    ),
                             )
                         }
                     }.onFailure { e ->
                         _uiState.update {
                             it.copy(
-                                isLoading = false,
-                                listItems = emptyList(),
-                                currentPage = 0,
-                                loadError = e.message ?: "애프터노트 목록을 불러오지 못했습니다.",
-                                hasNext = false,
-                                isLoadingMore = false,
+                                listState =
+                                    it.listState.copy(
+                                        isLoading = false,
+                                        listItems = emptyList(),
+                                        currentPage = 0,
+                                        loadError = e.message ?: "애프터노트 목록을 불러오지 못했습니다.",
+                                        hasNext = false,
+                                        isLoadingMore = false,
+                                    ),
                             )
                         }
                     }
@@ -117,28 +135,37 @@ class AfternoteHomeViewModel
          */
         fun loadNextPage() {
             val state = _uiState.value
-            if (!state.hasNext || state.isLoadingMore) return
+            val list = state.listState
+            if (!list.hasNext || list.isLoadingMore) return
             viewModelScope.launch {
-                _uiState.update { it.copy(isLoadingMore = true) }
-                val nextPage = state.currentPage + 1
+                _uiState.update {
+                    it.copy(listState = it.listState.copy(isLoadingMore = true))
+                }
+                val nextPage = list.currentPage + 1
                 val input =
                     GetListPageInput(
-                        category = state.selectedTab.toCategoryParam(),
+                        category = state.categoryState.selectedCategory.toCategoryParam(),
                         page = nextPage,
                         size = PAGE_SIZE,
                     )
                 getListPageUseCase(input)
                     .onSuccess { paged ->
                         _uiState.update {
+                            val ls = it.listState
                             it.copy(
-                                listItems = it.listItems + paged.listItems,
-                                currentPage = nextPage,
-                                isLoadingMore = false,
-                                hasNext = paged.hasNext,
+                                listState =
+                                    ls.copy(
+                                        listItems = ls.listItems + paged.listItems,
+                                        currentPage = nextPage,
+                                        isLoadingMore = false,
+                                        hasNext = paged.hasNext,
+                                    ),
                             )
                         }
                     }.onFailure {
-                        _uiState.update { it.copy(isLoadingMore = false) }
+                        _uiState.update {
+                            it.copy(listState = it.listState.copy(isLoadingMore = false))
+                        }
                     }
             }
         }
@@ -147,14 +174,25 @@ class AfternoteHomeViewModel
             when (event) {
                 is AfternoteHomeEvent.SelectTab -> {
                     val currentState = _uiState.value
-                    if (currentState.selectedTab == event.tab) return
+                    if (currentState.categoryState.selectedCategory == event.tab) return
 
-                    _uiState.update { it.copy(selectedTab = event.tab) }
+                    _uiState.update {
+                        it.copy(
+                            categoryState = it.categoryState.copy(selectedCategory = event.tab),
+                        )
+                    }
                     loadAfternotes(category = event.tab.toCategoryParam())
                 }
 
                 is AfternoteHomeEvent.SelectBottomNav -> {
-                    _uiState.update { it.copy(selectedBottomNavItem = event.navItem) }
+                    _uiState.update {
+                        it.copy(
+                            navState =
+                                it.navState.copy(
+                                    selectedBottomNavItem = event.navItem,
+                                ),
+                        )
+                    }
                 }
             }
         }

@@ -30,7 +30,7 @@ fun AfternoteListContent(
     ) {
         AfternoteCategoryRow(
             onTabSelected = onCategorySelected,
-            selectedTab = uiState.selectedTab,
+            selectedTab = uiState.selectedCategory,
         )
         AfternoteList(
             bodyUiState = uiState,
@@ -47,7 +47,7 @@ private fun AfternoteListContentPreview() {
         AfternoteListContent(
             uiState =
                 AfternoteBodyUiState(
-                    items =
+                    listItems =
                         listOf(
                             ListItemUiModel(
                                 id = "1",
@@ -62,7 +62,7 @@ private fun AfternoteListContentPreview() {
                                 iconResId = R.drawable.img_logo,
                             ),
                         ),
-                    selectedTab = AfternoteCategory.ALL,
+                    selectedCategory = AfternoteCategory.ALL,
                 ),
             onCategorySelected = {},
             onListItemClick = {},

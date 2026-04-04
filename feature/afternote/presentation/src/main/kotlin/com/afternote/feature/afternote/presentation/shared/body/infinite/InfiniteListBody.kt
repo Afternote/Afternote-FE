@@ -41,7 +41,7 @@ private fun InfiniteListBodyPreview() {
         InfiniteListBody(
             uiState =
                 AfternoteBodyUiState(
-                    items =
+                    listItems =
                         listOf(
                             ListItemUiModel(
                                 id = "1",
@@ -62,7 +62,7 @@ private fun InfiniteListBodyPreview() {
                                 iconResId = R.drawable.img_insta_pattern,
                             ),
                         ),
-                    selectedTab = AfternoteCategory.ALL,
+                    selectedCategory = AfternoteCategory.ALL,
                     hasNext = true,
                     isLoadingMore = false,
                 ),

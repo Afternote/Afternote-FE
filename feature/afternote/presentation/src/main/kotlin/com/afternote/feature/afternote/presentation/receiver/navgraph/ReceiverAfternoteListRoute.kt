@@ -18,8 +18,8 @@ fun ReceiverAfternoteHomeRoute(
     AfternoteHomeScreen(
         listState =
             AfternoteBodyUiState(
-                items = uiState.items,
-                selectedTab = uiState.selectedTab,
+                listItems = uiState.items,
+                selectedCategory = uiState.selectedTab,
             ),
         onNavTabSelected = { onEvent(ReceiverAfternoteHomeEvent.SelectBottomNav(it)) },
         onCategorySelected = { onEvent(ReceiverAfternoteHomeEvent.SelectTab(it)) },
