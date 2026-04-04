@@ -2,6 +2,7 @@ package com.afternote.feature.afternote.presentation.author.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.feature.afternote.domain.model.ListItem
 import com.afternote.feature.afternote.domain.model.input.GetListPageInput
 import com.afternote.feature.afternote.domain.usecase.author.GetListPageUseCase
 import com.afternote.feature.afternote.presentation.author.home.model.AfternoteHomeEvent
@@ -43,32 +44,24 @@ class AfternoteHomeViewModel
             // 새로운 상태를 파생시킬 때 순수한 원천 데이터를 사용하기 위해 uiState가 아닌 원본을 가져 옴
             // 내부 로직은 내부용 변수 _uiState를 쓰는 것이 안전
             _uiState
+                // uiState를 관찰하는 순간에 수행할 연산의 설계도
+                // 관찰을 시작하는 순간 list의 map처럼 작동
+                // _uiState는 map 설계를 했을 뿐 수행은 bodyUiState가 함
                 .map { homeState ->
-                    // uiState를 관찰하는 순간에 수행할 연산의 설계도
                     // 관찰하는 시점 기준 최신 homeState를 가져옴
-                    // 관찰을 시작하는 순간 list의 map처럼 작동
-                    // 연산이 수행된 시점에 모든 요소에 대해 연산을 완료했다면 새로운 요소가 추가될 때까지 대기
+                    // 연산이 수행된 시점에 모든 homeState 요소에 대해 연산을 완료했다면 새로운 요소가 추가될 때까지 대기
                     val listState = homeState.listState
                     AfternoteBodyUiState(
-                        listItems =
-                            listState.listItems.map { item ->
-                                ListItemUiModel(
-                                    id = item.id,
-                                    serviceName = item.serviceName,
-                                    date = item.date,
-                                    iconResId = getIconResForServiceName(item.serviceName),
-                                )
-                            },
+                        listItems = listState.listItems.map { it.toUiModel() },
                         selectedCategory = homeState.categoryState.selectedCategory,
                         hasNext = listState.hasNext,
                         isLoadingMore = listState.isLoadingMore,
                     )
                 }.stateIn(
-                    // StateFlow로 변환
-                    // map 연산을 거치면서 초기화되었던 세팅을 다시 해 줌
-                    scope = viewModelScope,
-                    started = SharingStarted.WhileSubscribed(SUBSCRIBE_TIMEOUT_MS),
-                    initialValue = AfternoteBodyUiState(listItems = emptyList()),
+                    // map이 Flow로 매핑했던 것들을 StateFlow로 변환
+                    scope = viewModelScope, // map 연산을 수행할 코루틴의 스코프
+                    started = SharingStarted.WhileSubscribed(SUBSCRIBE_TIMEOUT_MS), // 관찰자가 있을 때만 map 연산을 수행하게 함
+                    initialValue = AfternoteBodyUiState(listItems = emptyList()), // bodyUiState의 초기값
                 )
 
         init {
@@ -204,3 +197,11 @@ class AfternoteHomeViewModel
                 else -> label
             }
     }
+
+private fun ListItem.toUiModel(): ListItemUiModel =
+    ListItemUiModel(
+        id = id,
+        serviceName = serviceName,
+        date = date,
+        iconResId = getIconResForServiceName(serviceName),
+    )
