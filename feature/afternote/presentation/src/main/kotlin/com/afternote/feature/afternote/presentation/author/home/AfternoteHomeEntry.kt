@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
@@ -50,14 +49,10 @@ fun AfternoteHomeEntry(
         .collectAsStateWithLifecycle()
 
     // 상위로 visibleItems 전파 (Editor 화면에서 사용)
+    // ListItem이 data class이므로 List.equals()가 구조적 비교를 수행하여
+    // 리스트 내용이 실제로 바뀌었을 때만 LaunchedEffect가 재실행됩니다.
     val visibleItems = uiState.listState.visibleItems
-    val listItemIds =
-        remember(visibleItems) {
-            visibleItems
-                .map { it.id }
-                .toSet()
-        }
-    LaunchedEffect(listItemIds) {
+    LaunchedEffect(visibleItems) {
         if (visibleItems.isNotEmpty()) {
             Log.d("AfternoteHomeEntry", "visibleItems changed: size=${visibleItems.size}")
             onVisibleItemsUpdated(visibleItems)

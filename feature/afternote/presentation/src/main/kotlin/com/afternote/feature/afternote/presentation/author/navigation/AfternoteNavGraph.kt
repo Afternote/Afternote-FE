@@ -1,95 +1,130 @@
 package com.afternote.feature.afternote.presentation.author.navigation
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
+import androidx.navigation.navigation
+import com.afternote.core.ui.Route
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
+import com.afternote.feature.afternote.presentation.AfternoteHostViewModel
 import com.afternote.feature.afternote.presentation.author.editor.playlist.AddSongViewModel
 import com.afternote.feature.afternote.presentation.author.editor.playlist.MemorialPlaylistEntry
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 
+/**
+ * Afternote 피처의 네비게이션 그래프.
+ *
+ * 앱 모듈의 NavHost에 직접 연결되며, [Route.Afternote]를 graph route로 사용합니다.
+ * 내부 모든 화면은 graph-scoped [AfternoteHostViewModel]을 공유합니다.
+ */
 fun NavGraphBuilder.afternoteNavGraph(
     navController: NavController,
-    params: AfternoteNavGraphParams,
     onNavTabSelected: (BottomNavTab) -> Unit = {},
+    userName: String = "",
+    homeRefresh: AfternoteHomeRefreshParams? = null,
 ) {
-    val afternoteProvider = params.edit.afternoteProvider
+    navigation<Route.Afternote>(startDestination = AfternoteRoute.AfternoteHomeRoute) {
+        afternoteComposable<AfternoteRoute.AfternoteHomeRoute> {
+            val hostViewModel = graphScopedHostViewModel(navController)
+            AfternoteHomeNavigation(
+                navController = navController,
+                onNavTabSelected = onNavTabSelected,
+                onVisibleItemsUpdated = hostViewModel::updateVisibleItems,
+                homeRefresh = homeRefresh,
+            )
+        }
 
-    afternoteComposable<AfternoteRoute.AfternoteHomeRoute> {
-        AfternoteHomeNavigation(
-            navController = navController,
-            onNavTabSelected = onNavTabSelected,
-            onVisibleItemsUpdated = params.home.onVisibleItemsUpdated,
-            homeRefresh = params.home.homeRefresh,
-        )
-    }
+        val onAfternoteDeleted = homeRefresh?.onAfternoteDeleted ?: {}
 
-    val onAfternoteDeleted = params.home.homeRefresh?.onAfternoteDeleted ?: {}
-
-    afternoteComposable<AfternoteRoute.DetailRoute> { backStackEntry ->
-        AfternoteDetailNavigation(
-            backStackEntry = backStackEntry,
-            navController = navController,
-            userName = params.userName,
-            onAfternoteDeleted = onAfternoteDeleted,
-        )
-    }
-
-    afternoteComposable<AfternoteRoute.GalleryDetailRoute> { backStackEntry ->
-        AfternoteGalleryDetailNavigation(
-            backStackEntry = backStackEntry,
-            navController = navController,
-            userName = params.userName,
-            onAfternoteDeleted = onAfternoteDeleted,
-        )
-    }
-
-    afternoteComposable<AfternoteRoute.EditorRoute> { backStackEntry ->
-        val currentItems = params.home.afternoteVisibleItems
-        AfternoteEditorNavigation(
-            AfternoteEditorNavigationParams(
+        afternoteComposable<AfternoteRoute.DetailRoute> { backStackEntry ->
+            AfternoteDetailNavigation(
                 backStackEntry = backStackEntry,
                 navController = navController,
-                afternoteVisibleItems = currentItems,
-                playlistStateHolder = params.edit.playlistStateHolder,
-                afternoteProvider = afternoteProvider,
-                editStateHandling = params.edit.editStateHandling,
-                onNavigateToSelectReceiver = params.edit.onNavigateToSelectReceiver,
-                onBottomNavTabSelected = onNavTabSelected,
-            ),
-        )
-    }
+                userName = userName,
+                onAfternoteDeleted = onAfternoteDeleted,
+            )
+        }
 
-    afternoteComposable<AfternoteRoute.MemorialGuidelineDetailRoute> { backStackEntry ->
-        AfternoteMemorialGuidelineDetailNavigation(
-            backStackEntry = backStackEntry,
-            navController = navController,
-            userName = params.userName,
-            onAfternoteDeleted = onAfternoteDeleted,
-        )
-    }
+        afternoteComposable<AfternoteRoute.GalleryDetailRoute> { backStackEntry ->
+            AfternoteGalleryDetailNavigation(
+                backStackEntry = backStackEntry,
+                navController = navController,
+                userName = userName,
+                onAfternoteDeleted = onAfternoteDeleted,
+            )
+        }
 
-    afternoteComposable<AfternoteRoute.MemorialPlaylistRoute> {
-        MemorialPlaylistEntry(
-            playlistStateHolder = params.edit.playlistStateHolder,
-            onBackClick = { navController.popBackStack() },
-            onNavigateToAddSongScreen = { navController.navigate(AfternoteRoute.AddSongRoute) },
-        )
-    }
+        afternoteComposable<AfternoteRoute.EditorRoute> { backStackEntry ->
+            val hostViewModel = graphScopedHostViewModel(navController)
+            val items by hostViewModel.items.collectAsStateWithLifecycle()
+            val useFake by hostViewModel.useFakeState.collectAsStateWithLifecycle()
+            val afternoteProvider =
+                remember(useFake) { hostViewModel.currentAfternoteEditorDataProvider }
 
-    afternoteComposable<AfternoteRoute.FingerprintLoginRoute> {
-        AfternoteFingerprintLoginNavigation(
-            navController = navController,
-            onNavTabSelected = onNavTabSelected,
-        )
-    }
+            AfternoteEditorNavigation(
+                AfternoteEditorNavigationParams(
+                    backStackEntry = backStackEntry,
+                    navController = navController,
+                    afternoteVisibleItems = items,
+                    playlistStateHolder = hostViewModel.playlistHolder,
+                    afternoteProvider = afternoteProvider,
+                    editStateHandling = hostViewModel.editHandling,
+                    onNavigateToSelectReceiver = {},
+                    onBottomNavTabSelected = onNavTabSelected,
+                ),
+            )
+        }
 
-    afternoteComposable<AfternoteRoute.AddSongRoute> {
-        val addSongViewModel: AddSongViewModel = hiltViewModel()
-        AfternoteAddSongNavigation(
-            navController = navController,
-            playlistStateHolder = params.edit.playlistStateHolder,
-            viewModel = addSongViewModel,
-        )
+        afternoteComposable<AfternoteRoute.MemorialGuidelineDetailRoute> { backStackEntry ->
+            AfternoteMemorialGuidelineDetailNavigation(
+                backStackEntry = backStackEntry,
+                navController = navController,
+                userName = userName,
+                onAfternoteDeleted = onAfternoteDeleted,
+            )
+        }
+
+        afternoteComposable<AfternoteRoute.MemorialPlaylistRoute> {
+            val hostViewModel = graphScopedHostViewModel(navController)
+            MemorialPlaylistEntry(
+                playlistStateHolder = hostViewModel.playlistHolder,
+                onBackClick = { navController.popBackStack() },
+                onNavigateToAddSongScreen = { navController.navigate(AfternoteRoute.AddSongRoute) },
+            )
+        }
+
+        afternoteComposable<AfternoteRoute.FingerprintLoginRoute> {
+            AfternoteFingerprintLoginNavigation(
+                navController = navController,
+                onNavTabSelected = onNavTabSelected,
+            )
+        }
+
+        afternoteComposable<AfternoteRoute.AddSongRoute> {
+            val hostViewModel = graphScopedHostViewModel(navController)
+            val addSongViewModel: AddSongViewModel = hiltViewModel()
+            AfternoteAddSongNavigation(
+                navController = navController,
+                playlistStateHolder = hostViewModel.playlistHolder,
+                viewModel = addSongViewModel,
+            )
+        }
     }
+}
+
+/**
+ * navigation graph scope에 묶인 [AfternoteHostViewModel]을 가져옵니다.
+ * 같은 graph 내 모든 화면이 동일한 인스턴스를 공유합니다.
+ */
+@androidx.compose.runtime.Composable
+private fun graphScopedHostViewModel(navController: NavController): AfternoteHostViewModel {
+    val currentEntry = navController.currentBackStackEntry
+    val parentEntry =
+        androidx.compose.runtime.remember(currentEntry) {
+            navController.getBackStackEntry<Route.Afternote>()
+        }
+    return hiltViewModel(parentEntry)
 }
