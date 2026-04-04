@@ -7,11 +7,13 @@ import com.afternote.feature.afternote.domain.model.input.GetListPageInput
 import com.afternote.feature.afternote.domain.usecase.author.GetListPageUseCase
 import com.afternote.feature.afternote.presentation.author.home.model.AfternoteHomeEvent
 import com.afternote.feature.afternote.presentation.author.home.model.AfternoteHomeUiState
+import com.afternote.feature.afternote.presentation.author.home.model.AfternoteListState
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.body.infinite.AfternoteBodyUiState
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
 import com.afternote.feature.afternote.presentation.shared.util.getIconResForServiceName
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -39,7 +41,6 @@ class AfternoteHomeViewModel
 
         // 관찰만 하고 수정할 수 없는 StateFlow 타입으로 변환
         val uiState: StateFlow<AfternoteHomeUiState> = _uiState.asStateFlow()
-
         val bodyUiState: StateFlow<AfternoteBodyUiState> =
             // 새로운 상태를 파생시킬 때 순수한 원천 데이터를 사용하기 위해 uiState가 아닌 원본을 가져 옴
             // 내부 로직은 내부용 변수 _uiState를 쓰는 것이 안전
@@ -65,74 +66,69 @@ class AfternoteHomeViewModel
                 )
 
         init {
-            loadAfternotes()
+            refreshList()
         }
 
         /**
          * API에서 애프터노트 목록 첫 페이지를 로드합니다.
          * 탭 변경 시에도 이 함수를 호출하여 0페이지부터 새로 요청합니다.
          */
-        fun loadAfternotes(category: String? = null) {
-            viewModelScope.launch {
-                _uiState.update {
-                    it.copy(
-                        listState =
-                            it.listState.copy(
-                                isLoading = true,
-                                loadError = null,
-                                listItems = emptyList(),
-                            ),
-                    )
-                }
-                val input =
-                    GetListPageInput(
-                        category = category,
-                        page = 0,
-                        size = PAGE_SIZE,
-                    )
-                getListPageUseCase(input)
-                    .onSuccess { paged ->
-                        _uiState.update {
-                            it.copy(
-                                listState =
-                                    it.listState.copy(
-                                        isLoading = false,
-                                        loadError = null,
-                                        listItems = paged.listItems,
-                                        currentPage = 0,
-                                        hasNext = paged.hasNext,
-                                        isLoadingMore = false,
-                                    ),
-                            )
-                        }
-                    }.onFailure { e ->
-                        _uiState.update {
-                            it.copy(
-                                listState =
-                                    it.listState.copy(
-                                        isLoading = false,
-                                        listItems = emptyList(),
-                                        currentPage = 0,
-                                        loadError = e.message ?: "애프터노트 목록을 불러오지 못했습니다.",
-                                        hasNext = false,
-                                        isLoadingMore = false,
-                                    ),
-                            )
-                        }
+        private var fetchJob: Job? = null
+
+        fun refreshList(category: String? = null) {
+            fetchJob?.cancel()
+            fetchJob =
+                viewModelScope.launch {
+                    updateListState { listState ->
+                        listState.copy(
+                            isLoading = true,
+                            loadError = null,
+                            listItems = emptyList(),
+                        )
                     }
-            }
+                    val input =
+                        GetListPageInput(
+                            category = category,
+                            page = 0, // 항상 첫 페이지 불러 옴
+                            size = PAGE_SIZE,
+                        )
+                    getListPageUseCase(input)
+                        .onSuccess { listPage ->
+                            updateListState { listState ->
+                                listState.copy(
+                                    isLoading = false,
+                                    loadError = null,
+                                    listItems = listPage.listItems,
+                                    currentPage = 0,
+                                    hasNext = listPage.hasNext,
+                                    isLoadingMore = false,
+                                )
+                            }
+                        }.onFailure { e ->
+                            updateListState { listState ->
+                                listState.copy(
+                                    isLoading = false,
+                                    listItems = emptyList(),
+                                    currentPage = 0,
+                                    loadError = e.message ?: "애프터노트 목록을 불러오지 못했습니다.",
+                                    hasNext = false,
+                                    isLoadingMore = false,
+                                )
+                            }
+                        }
+                }
         }
 
         /**
          * 다음 페이지를 로드하여 목록에 이어붙입니다.
          */
-        fun loadNextPage() {
-            val state = _uiState.value
-            val list = state.listState
-            if (!list.hasNext || list.isLoadingMore) return
+        fun loadMoreListItems() {
             viewModelScope.launch {
-                _uiState.update {
-                    it.copy(listState = it.listState.copy(isLoadingMore = true))
+                val state = _uiState.value
+                val list = state.listState
+                if (!list.hasNext || list.isLoadingMore) return@launch
+                updateListState { listState ->
+                    listState.copy(isLoadingMore = true)
                 }
                 val nextPage = list.currentPage + 1
                 val input =
@@ -142,22 +138,18 @@ class AfternoteHomeViewModel
                         size = PAGE_SIZE,
                     )
                 getListPageUseCase(input)
-                    .onSuccess { paged ->
-                        _uiState.update {
-                            val ls = it.listState
-                            it.copy(
-                                listState =
-                                    ls.copy(
-                                        listItems = ls.listItems + paged.listItems,
-                                        currentPage = nextPage,
-                                        isLoadingMore = false,
-                                        hasNext = paged.hasNext,
-                                    ),
+                    .onSuccess { listPage ->
+                        updateListState { listState ->
+                            listState.copy(
+                                listItems = listState.listItems + listPage.listItems,
+                                currentPage = nextPage,
+                                isLoadingMore = false,
+                                hasNext = listPage.hasNext,
                             )
                         }
                     }.onFailure {
-                        _uiState.update {
-                            it.copy(listState = it.listState.copy(isLoadingMore = false))
+                        updateListState { listState ->
+                            listState.copy(isLoadingMore = false)
                         }
                     }
             }
@@ -174,7 +166,7 @@ class AfternoteHomeViewModel
                             categoryState = it.categoryState.copy(selectedCategory = event.tab),
                         )
                     }
-                    loadAfternotes(category = event.tab.toCategoryParam())
+                    refreshList(category = event.tab.toCategoryParam())
                 }
 
                 is AfternoteHomeEvent.SelectBottomNav -> {
@@ -196,6 +188,12 @@ class AfternoteHomeViewModel
                 AfternoteCategory.ALL -> null
                 else -> label
             }
+
+        private fun updateListState(reducer: (AfternoteListState) -> AfternoteListState) {
+            _uiState.update { uiState ->
+                uiState.copy(listState = reducer(uiState.listState))
+            }
+        }
     }
 
 private fun ListItem.toUiModel(): ListItemUiModel =

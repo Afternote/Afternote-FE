@@ -37,7 +37,7 @@ fun AfternoteHomeRoute(
 ) {
     LaunchedEffect(homeRefreshRequested) {
         if (homeRefreshRequested) {
-            viewModel.loadAfternotes()
+            viewModel.refreshList()
             onHomeRefreshConsumed()
         }
     }
@@ -70,6 +70,6 @@ fun AfternoteHomeRoute(
         onCategorySelected = { viewModel.onEvent(AfternoteHomeEvent.SelectTab(it)) },
         onListItemClick = actions.navigateToDetail,
         selectedNavTab = uiState.navState.selectedBottomNavItem,
-        onLoadMore = viewModel::loadNextPage,
+        onLoadMore = viewModel::loadMoreListItems,
     ) { actions.navigateToAdd(uiState.categoryState.selectedCategory) }
 }
