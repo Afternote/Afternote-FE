@@ -7,8 +7,8 @@ import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.domain.model.ListItem
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteItemMapper
 import com.afternote.feature.afternote.presentation.author.editor.provider.AfternoteEditorDataProvider
-import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeRoute
-import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeRouteActions
+import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeEntry
+import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeEntryActions
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 
@@ -21,17 +21,17 @@ internal fun resolveListItems(
     }
 
 @Composable
-internal fun AfternoteHomeDestination(
+internal fun AfternoteHomeNavigation(
     navController: NavController,
     onNavTabSelected: (BottomNavTab) -> Unit = {},
     onVisibleItemsUpdated: (List<ListItem>) -> Unit,
     homeRefresh: AfternoteHomeRefreshParams? = null,
 ) {
-    AfternoteHomeRoute(
+    AfternoteHomeEntry(
         homeRefreshRequested = homeRefresh?.homeRefreshRequested == true,
         onHomeRefreshConsumed = homeRefresh?.onHomeRefreshConsumed ?: {},
         actions =
-            AfternoteHomeRouteActions(
+            AfternoteHomeEntryActions(
                 navigateToDetail = { itemId ->
                     navController.navigate(AfternoteRoute.DetailRoute(itemId = itemId))
                 },

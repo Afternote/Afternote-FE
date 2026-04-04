@@ -8,7 +8,7 @@ import com.afternote.feature.afternote.presentation.author.editor.playlist.AddSo
 import com.afternote.feature.afternote.presentation.author.editor.playlist.AddSongViewModel
 
 @Composable
-internal fun AfternoteAddSongDestination(
+internal fun AfternoteAddSongNavigation(
     navController: NavController,
     playlistStateHolder: MemorialPlaylistStateHolder,
     viewModel: AddSongViewModel,

@@ -7,10 +7,10 @@ import com.afternote.feature.afternote.presentation.receiver.model.uistate.Recei
 import com.afternote.feature.afternote.presentation.shared.body.infinite.AfternoteBodyUiState
 
 /**
- * Receiver list Route. Calls shared AfternoteHomeScreen with showFab = false.
+ * Receiver list Entry. Calls shared AfternoteHomeScreen with showFab = false.
  */
 @Composable
-fun ReceiverAfternoteHomeRoute(
+fun ReceiverAfternoteHomeEntry(
     uiState: ReceiverAfternoteHomeUiState,
     onEvent: (ReceiverAfternoteHomeEvent) -> Unit,
     modifier: Modifier = Modifier,

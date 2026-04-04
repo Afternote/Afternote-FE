@@ -50,7 +50,7 @@ import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDis
  * @param initialSelectedSongIds Preview용. 넣으면 해당 ID가 선택된 상태로 시작 (기본 null)
  */
 @Composable
-fun MemorialPlaylistRouteScreen(
+fun MemorialPlaylistEntry(
     playlistStateHolder: MemorialPlaylistStateHolder,
     onBackClick: () -> Unit,
     onNavigateToAddSongScreen: () -> Unit,
@@ -282,7 +282,7 @@ private fun MemorialPlaylistActionBar(
 
 @Preview(showBackground = true)
 @Composable
-private fun MemorialPlaylistRouteScreenPreview() {
+private fun MemorialPlaylistEntryPreview() {
     AfternoteLightTheme {
         CompositionLocalProvider(
             DataProviderLocals.LocalAfternoteEditorDataProvider provides FakeAfternoteEditorDataProvider(),
@@ -292,7 +292,7 @@ private fun MemorialPlaylistRouteScreenPreview() {
                 MemorialPlaylistStateHolder().apply {
                     initializeSongs(provider.getSongs().take(3))
                 }
-            MemorialPlaylistRouteScreen(
+            MemorialPlaylistEntry(
                 playlistStateHolder = holder,
                 onBackClick = {},
                 onNavigateToAddSongScreen = {},
@@ -303,7 +303,7 @@ private fun MemorialPlaylistRouteScreenPreview() {
 
 @Preview(showBackground = true, name = "선택 모드")
 @Composable
-private fun MemorialPlaylistRouteScreenSelectionModePreview() {
+private fun MemorialPlaylistEntrySelectionModePreview() {
     AfternoteLightTheme {
         CompositionLocalProvider(
             DataProviderLocals.LocalAfternoteEditorDataProvider provides FakeAfternoteEditorDataProvider(),
@@ -313,7 +313,7 @@ private fun MemorialPlaylistRouteScreenSelectionModePreview() {
                 MemorialPlaylistStateHolder().apply {
                     initializeSongs(provider.getSongs().take(4))
                 }
-            MemorialPlaylistRouteScreen(
+            MemorialPlaylistEntry(
                 playlistStateHolder = holder,
                 onBackClick = {},
                 onNavigateToAddSongScreen = {},

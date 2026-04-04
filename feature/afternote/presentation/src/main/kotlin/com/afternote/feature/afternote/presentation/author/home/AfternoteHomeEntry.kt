@@ -14,7 +14,7 @@ import com.afternote.feature.afternote.presentation.author.home.screen.Afternote
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 
 // TODO: AI 딸깍이라 점검 필요
-data class AfternoteHomeRouteActions(
+data class AfternoteHomeEntryActions(
     val navigateToDetail: (String) -> Unit = {},
     val navigateToGalleryDetail: (String) -> Unit = {},
     val navigateToMemorialGuidelineDetail: (String) -> Unit = {},
@@ -23,14 +23,14 @@ data class AfternoteHomeRouteActions(
 )
 
 /**
- * 애프터노트 목록 Route.
+ * 애프터노트 목록 Entry.
  *
- * ViewModel에서 데이터를 로드·가공하고, Route는 Screen에 전달만 합니다.
+ * ViewModel에서 데이터를 로드·가공하고, Entry는 Screen에 전달만 합니다.
  */
 @Composable
-fun AfternoteHomeRoute(
+fun AfternoteHomeEntry(
     viewModel: AfternoteHomeViewModel = hiltViewModel(),
-    actions: AfternoteHomeRouteActions = AfternoteHomeRouteActions(),
+    actions: AfternoteHomeEntryActions = AfternoteHomeEntryActions(),
     onVisibleItemsUpdated: (List<ListItem>) -> Unit = {},
     homeRefreshRequested: Boolean = false,
     onHomeRefreshConsumed: () -> Unit = {},
@@ -59,7 +59,7 @@ fun AfternoteHomeRoute(
         }
     LaunchedEffect(listItemIds) {
         if (visibleItems.isNotEmpty()) {
-            Log.d("AfternoteHomeRoute", "visibleItems changed: size=${visibleItems.size}")
+            Log.d("AfternoteHomeEntry", "visibleItems changed: size=${visibleItems.size}")
             onVisibleItemsUpdated(visibleItems)
         }
     }

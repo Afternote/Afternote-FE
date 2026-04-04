@@ -19,7 +19,7 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.Afte
 import com.afternote.feature.afternote.presentation.shared.fingerprint.FingerprintLoginScreen
 
 @Composable
-internal fun AfternoteFingerprintLoginDestination(
+internal fun AfternoteFingerprintLoginNavigation(
     navController: NavController,
     onNavTabSelected: (BottomNavTab) -> Unit,
 ) {

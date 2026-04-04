@@ -68,7 +68,7 @@ internal fun DesignPendingDetailContent(onBackClick: () -> Unit) {
 }
 
 @Composable
-internal fun AfternoteDetailDestination(
+internal fun AfternoteDetailNavigation(
     backStackEntry: NavBackStackEntry,
     navController: NavController,
     userName: String,
@@ -142,7 +142,7 @@ internal fun AfternoteDetailDestination(
 }
 
 @Composable
-internal fun AfternoteGalleryDetailDestination(
+internal fun AfternoteGalleryDetailNavigation(
     backStackEntry: NavBackStackEntry,
     navController: NavController,
     userName: String,
@@ -213,7 +213,7 @@ internal fun AfternoteGalleryDetailDestination(
 }
 
 @Composable
-internal fun AfternoteMemorialGuidelineDetailDestination(
+internal fun AfternoteMemorialGuidelineDetailNavigation(
     backStackEntry: NavBackStackEntry,
     navController: NavController,
     userName: String,

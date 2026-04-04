@@ -66,7 +66,7 @@ internal data class EditScreenCallbacksParams(
     val onBottomNavTabSelected: (BottomNavTab) -> Unit,
 )
 
-internal data class AfternoteEditorDestinationParams(
+internal data class AfternoteEditorNavigationParams(
     val backStackEntry: NavBackStackEntry,
     val navController: NavController,
     val afternoteVisibleItems: List<ListItem>,
@@ -134,8 +134,8 @@ internal fun buildEditScreenCallbacks(params: EditScreenCallbacksParams): Aftern
     )
 
 @Composable
-internal fun AfternoteEditorDestination(
-    params: AfternoteEditorDestinationParams,
+internal fun AfternoteEditorNavigation(
+    params: AfternoteEditorNavigationParams,
     editViewModel: AfternoteEditorViewModel = hiltViewModel(),
 ) {
     val route = params.backStackEntry.toRoute<AfternoteRoute.EditRoute>()

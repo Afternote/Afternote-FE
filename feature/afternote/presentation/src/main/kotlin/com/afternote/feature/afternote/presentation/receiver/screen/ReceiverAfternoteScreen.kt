@@ -43,10 +43,10 @@ import com.afternote.feature.afternote.presentation.receiver.viewmodel.ReceiverD
 import com.afternote.feature.afternote.presentation.receiver.viewmodel.ReceiverDownloadAllViewModelContract
 
 /**
- * Stateful Route: ViewModel을 주입받아 상태를 수집하고 side-effect를 처리합니다.
+ * Stateful Entry: ViewModel을 주입받아 상태를 수집하고 side-effect를 처리합니다.
  */
 @Composable
-fun ReceiverAfterNoteRoute(
+fun ReceiverAfterNoteEntry(
     modifier: Modifier = Modifier,
     summary: ReceiverSummaryUiState = ReceiverSummaryUiState(),
     showBottomBar: Boolean = true,
