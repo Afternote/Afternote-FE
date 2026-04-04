@@ -52,7 +52,9 @@ class DataProviderSwitch
             _useFakeState.value = useFake
         }
 
-        fun getCurrentAfternoteEditorDataProvider(): AfternoteEditorDataProvider = if (_useFakeState.value) fakeAfternote else realAfternote
+        val currentAfternoteEditorDataProvider: AfternoteEditorDataProvider
+            get() = if (_useFakeState.value) fakeAfternote else realAfternote
 
-        fun getCurrentReceiverDataProvider(): ReceiverDataProvider = if (_useFakeState.value) fakeReceiver else realReceiver
+        val currentReceiverDataProvider: ReceiverDataProvider
+            get() = if (_useFakeState.value) fakeReceiver else realReceiver
     }
