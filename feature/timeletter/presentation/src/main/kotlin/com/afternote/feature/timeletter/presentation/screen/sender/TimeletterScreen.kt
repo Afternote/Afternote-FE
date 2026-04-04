@@ -1,7 +1,5 @@
 package com.afternote.feature.timeletter.presentation.screen.sender
 
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -9,11 +7,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.afternote.core.ui.AfternoteFab
-import com.afternote.core.ui.BottomBar
-import com.afternote.core.ui.BottomNavItem
-import com.afternote.core.ui.R
-import com.afternote.core.ui.TopBar
 import com.afternote.feature.timeletter.domain.LetterIdentity
 import com.afternote.feature.timeletter.domain.LetterSchedule
 import com.afternote.feature.timeletter.domain.OpenDate
@@ -23,43 +16,16 @@ import com.afternote.feature.timeletter.presentation.component.TimeLetterContent
 import com.afternote.feature.timeletter.presentation.component.ViewMode
 
 @Composable
-fun TimeletterScreen(
-    letters: TimeLetters,
-    bottomNavItems: List<BottomNavItem>,
-    selectedNavItem: BottomNavItem,
-    onNavItemClick: (BottomNavItem) -> Unit,
-    onAddClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
+fun TimeletterScreen(modifier: Modifier = Modifier) {
     var viewMode by remember { mutableStateOf(ViewMode.List) }
-    Scaffold(
-        modifier = modifier,
-        topBar = { TopBar() },
-        bottomBar = {
-            BottomBar(
-                items = bottomNavItems,
-                isSelected = { it == selectedNavItem },
-                onNavItemClick,
-            )
-        },
-        floatingActionButton = { AfternoteFab(onClick = onAddClick) },
-    ) { paddingValues ->
-        TimeLetterContent(
-            letters = letters,
-            viewMode = viewMode,
-            onViewModeChange = { viewMode = it },
-            modifier = Modifier.padding(paddingValues),
-        )
-    }
-}
 
-private val previewItems =
-    listOf(
-        BottomNavItem("홈", R.drawable.core_ui_ic_home, "home"),
-        BottomNavItem("기록", R.drawable.core_ui_ic_mindrecord, "mindrecord"),
-        BottomNavItem("타임레터", R.drawable.core_ui_ic_mail, "timeletter"),
-        BottomNavItem("노트", R.drawable.core_ui_ic_note, "afternote"),
+    TimeLetterContent(
+        letters = TimeLetters(emptyList()),
+        viewMode = viewMode,
+        onViewModeChange = { viewMode = it },
+        modifier = modifier,
     )
+}
 
 private val previewLetters =
     TimeLetters(
@@ -87,24 +53,17 @@ private val previewLetters =
 @Preview(showBackground = true)
 @Composable
 private fun TimeletterScreenEmptyPreview() {
-    TimeletterScreen(
-        letters = TimeLetters(emptyList()),
-        bottomNavItems = previewItems,
-        selectedNavItem = previewItems[2],
-        onNavItemClick = {},
-        onAddClick = {},
-    )
+    TimeletterScreen()
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun TimeletterScreenListPreview() {
-    TimeletterScreen(
+    var viewMode by remember { mutableStateOf(ViewMode.List) }
+    TimeLetterContent(
         letters = previewLetters,
-        bottomNavItems = previewItems,
-        selectedNavItem = previewItems[2],
-        onNavItemClick = {},
-        onAddClick = {},
+        viewMode = viewMode,
+        onViewModeChange = { viewMode = it },
     )
 }
 
