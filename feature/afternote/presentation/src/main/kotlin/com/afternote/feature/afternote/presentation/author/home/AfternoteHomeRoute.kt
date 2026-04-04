@@ -1,0 +1,75 @@
+package com.afternote.feature.afternote.presentation.author.home
+
+import android.util.Log
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
+import com.afternote.feature.afternote.domain.model.Item
+import com.afternote.feature.afternote.presentation.author.home.model.AfternoteHomeEvent
+import com.afternote.feature.afternote.presentation.author.home.screen.AfternoteHomeScreen
+import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
+
+// TODO: AI 딸깍이라 점검 필요
+data class AfternoteHomeRouteActions(
+    val navigateToDetail: (String) -> Unit = {},
+    val navigateToGalleryDetail: (String) -> Unit = {},
+    val navigateToMemorialGuidelineDetail: (String) -> Unit = {},
+    val navigateToAdd: (AfternoteCategory) -> Unit = {},
+    val onNavTabSelected: (BottomNavTab) -> Unit = {},
+)
+
+/**
+ * 애프터노트 목록 Route.
+ *
+ * ViewModel에서 데이터를 로드·가공하고, Route는 Screen에 전달만 합니다.
+ */
+@Composable
+fun AfternoteHomeRoute(
+    viewModel: AfternoteHomeViewModel = hiltViewModel(),
+    actions: AfternoteHomeRouteActions = AfternoteHomeRouteActions(),
+    onItemsChanged: (List<Item>) -> Unit = {},
+    homeRefreshRequested: Boolean = false,
+    onHomeRefreshConsumed: () -> Unit = {},
+) {
+    LaunchedEffect(homeRefreshRequested) {
+        if (homeRefreshRequested) {
+            viewModel.loadAfternotes()
+            onHomeRefreshConsumed()
+        }
+    }
+
+    val uiState by viewModel
+        .uiState
+        .collectAsStateWithLifecycle()
+    val bodyUiState by viewModel
+        .bodyUiState
+        .collectAsStateWithLifecycle()
+
+    // 상위로 items 전파 (Edit 화면에서 사용)
+    val itemIds =
+        remember(uiState.items) {
+            uiState
+                .items
+                .map { it.id }
+                .toSet()
+        }
+    LaunchedEffect(itemIds) {
+        if (uiState.items.isNotEmpty()) {
+            Log.d("AfternoteHomeRoute", "items changed: size=${uiState.items.size}")
+            onItemsChanged(uiState.items)
+        }
+    }
+
+    AfternoteHomeScreen(
+        listState = bodyUiState,
+        onNavTabSelected = actions.onNavTabSelected,
+        onCategorySelected = { viewModel.onEvent(AfternoteHomeEvent.SelectTab(it)) },
+        onListItemClick = actions.navigateToDetail,
+        selectedNavTab = uiState.selectedBottomNavItem,
+        onLoadMore = viewModel::loadNextPage,
+    ) { actions.navigateToAdd(uiState.selectedTab) }
+}

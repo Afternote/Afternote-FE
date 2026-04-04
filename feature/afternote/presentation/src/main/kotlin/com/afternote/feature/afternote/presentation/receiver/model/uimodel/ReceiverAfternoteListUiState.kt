@@ -6,7 +6,7 @@ import com.afternote.feature.afternote.presentation.shared.body.infinite.content
 /**
  * Receiver list screen UI state. Same shape as writer main (items, selectedTab, selectedNavItem).
  */
-data class ReceiverAfternoteListUiState(
+data class ReceiverAfternoteHomeUiState(
     val selectedTab: AfternoteCategory = AfternoteCategory.ALL,
     val selectedBottomNavItem: BottomNavTab = BottomNavTab.NOTE,
     val items: List<ListItemUiModel> = emptyList(),

@@ -17,20 +17,20 @@ data class AfternoteEditorStateHandling(
 )
 
 /**
- * List refresh signals for the list route. [listRefreshRequested] should be driven by observable
+ * Home refresh signals for the home route. [homeRefreshRequested] should be driven by observable
  * state upstream (e.g. [kotlinx.coroutines.flow.StateFlow]) so recompositions see changes.
  */
-data class AfternoteListRefreshParams(
-    val listRefreshRequested: Boolean,
-    val onListRefreshConsumed: () -> Unit,
+data class AfternoteHomeRefreshParams(
+    val homeRefreshRequested: Boolean,
+    val onHomeRefreshConsumed: () -> Unit,
     val onAfternoteDeleted: () -> Unit,
 )
 
-/** List-related inputs for [afternoteNavGraph] (items + list refresh). */
-data class AfternoteNavGraphListContext(
+/** Home-related inputs for [afternoteNavGraph] (items + home refresh). */
+data class AfternoteNavGraphHomeContext(
     val afternoteItems: List<Item>,
     val onItemsUpdated: (List<Item>) -> Unit,
-    val listRefresh: AfternoteListRefreshParams? = null,
+    val homeRefresh: AfternoteHomeRefreshParams? = null,
 )
 
 /** Edit-flow shared dependencies (playlist, providers, hoisted edit state). */
@@ -44,11 +44,11 @@ data class AfternoteNavGraphEditContext(
 /**
  * Parameters for [afternoteNavGraph].
  *
- * Split into [list] / [edit] to avoid a single “god” params object. For graph-scoped shared
+ * Split into [home] / [edit] to avoid a single “god” params object. For graph-scoped shared
  * ViewModel, see future refactor (Hilt + [androidx.navigation.NavBackStackEntry] scope).
  */
 data class AfternoteNavGraphParams(
-    val list: AfternoteNavGraphListContext,
+    val home: AfternoteNavGraphHomeContext,
     val edit: AfternoteNavGraphEditContext,
     val userName: String,
 )

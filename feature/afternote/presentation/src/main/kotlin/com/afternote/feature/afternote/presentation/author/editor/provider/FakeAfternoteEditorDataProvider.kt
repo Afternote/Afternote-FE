@@ -6,7 +6,7 @@ import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCove
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 import com.afternote.feature.afternote.presentation.shared.model.dummy.AlbumDummies
 import com.afternote.feature.afternote.presentation.shared.model.dummy.afternote.AfternoteEditorDummies
-import com.afternote.feature.afternote.presentation.shared.model.dummy.afternote.AfternoteListDummies
+import com.afternote.feature.afternote.presentation.shared.model.dummy.afternote.AfternoteHomeDummies
 import javax.inject.Inject
 
 /**
@@ -20,7 +20,7 @@ class FakeAfternoteEditorDataProvider
 
         override fun getAfternoteEditorReceivers(): List<AfternoteEditorReceiver> = emptyList()
 
-        override fun getDefaultAfternoteItems(): List<Pair<String, String>> = AfternoteListDummies.defaultAfternoteList()
+        override fun getDefaultAfternoteItems(): List<Pair<String, String>> = AfternoteHomeDummies.defaultAfternoteList()
 
         override fun getAlbumCovers(): List<AlbumCover> = AlbumDummies.list
 

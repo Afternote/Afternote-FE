@@ -5,16 +5,16 @@ import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 /**
  * 수신자 애프터노트 목록 화면에서 발생하는 사용자 이벤트.
  */
-sealed interface ReceiverAfternoteListEvent {
+sealed interface ReceiverAfternoteHomeEvent {
     data class SelectTab(
         val tab: AfternoteCategory,
-    ) : ReceiverAfternoteListEvent
+    ) : ReceiverAfternoteHomeEvent
 
     data class SelectBottomNav(
         val navItem: BottomNavTab,
-    ) : ReceiverAfternoteListEvent
+    ) : ReceiverAfternoteHomeEvent
 
     data class ClickItem(
         val itemId: String,
-    ) : ReceiverAfternoteListEvent
+    ) : ReceiverAfternoteHomeEvent
 }

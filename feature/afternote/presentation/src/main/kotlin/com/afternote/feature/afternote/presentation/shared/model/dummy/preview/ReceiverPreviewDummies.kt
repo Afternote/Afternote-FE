@@ -1,11 +1,11 @@
 package com.afternote.feature.afternote.presentation.shared.model.dummy.preview
 
-import com.afternote.feature.afternote.presentation.shared.model.dummy.afternote.AfternoteListDummies
+import com.afternote.feature.afternote.presentation.shared.model.dummy.afternote.AfternoteHomeDummies
 
 object ReceiverPreviewDummies {
     fun defaultReceiverTitle(): String = "수신자"
 
-    fun defaultAfternoteListSeedsForReceiverList(): List<Pair<String, String>> = AfternoteListDummies.defaultAfternoteList()
+    fun defaultAfternoteListSeedsForReceiverList(): List<Pair<String, String>> = AfternoteHomeDummies.defaultAfternoteList()
 
     fun defaultAfternoteListSeedsForReceiverDetail(): List<Pair<String, String>> =
         listOf(

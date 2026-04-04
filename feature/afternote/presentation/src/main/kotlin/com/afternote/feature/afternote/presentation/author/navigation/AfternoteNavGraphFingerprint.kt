@@ -38,7 +38,7 @@ internal fun AfternoteFingerprintLoginDestination(
                         executor,
                         object : BiometricPrompt.AuthenticationCallback() {
                             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                                navController.navigate(AfternoteRoute.AfternoteListRoute) {
+                                navController.navigate(AfternoteRoute.AfternoteHomeRoute) {
                                     popUpTo(AfternoteRoute.FingerprintLoginRoute) {
                                         inclusive = true
                                     }

@@ -10,7 +10,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavGraphEditContext
-import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavGraphListContext
+import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavGraphHomeContext
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavGraphParams
 import com.afternote.feature.afternote.presentation.author.navigation.afternoteNavGraph
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
@@ -32,18 +32,18 @@ fun AfternoteScreen(
     CompositionLocalProvider(LocalAfternoteUsesAppBottomBar provides true) {
         NavHost(
             navController = appState.navController,
-            startDestination = AfternoteRoute.AfternoteListRoute,
+            startDestination = AfternoteRoute.AfternoteHomeRoute,
             modifier = modifier,
         ) {
             afternoteNavGraph(
                 navController = appState.navController,
                 params =
                     AfternoteNavGraphParams(
-                        list =
-                            AfternoteNavGraphListContext(
+                        home =
+                            AfternoteNavGraphHomeContext(
                                 afternoteItems = items,
                                 onItemsUpdated = hostViewModel::updateItems,
-                                listRefresh = null,
+                                homeRefresh = null,
                             ),
                         edit =
                             AfternoteNavGraphEditContext(

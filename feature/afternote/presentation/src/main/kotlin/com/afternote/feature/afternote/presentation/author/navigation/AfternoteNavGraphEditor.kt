@@ -75,13 +75,13 @@ internal data class AfternoteEditorDestinationParams(
     val onBottomNavTabSelected: (BottomNavTab) -> Unit = {},
 )
 
-internal fun navigateToAfternoteListOnSaveSuccess(
+internal fun navigateToAfternoteHomeOnSaveSuccess(
     editStateHandling: AfternoteEditorStateHandling,
     navController: NavController,
 ) {
     editStateHandling.onClear()
-    navController.navigate(AfternoteRoute.AfternoteListRoute) {
-        popUpTo(AfternoteRoute.AfternoteListRoute) { inclusive = true }
+    navController.navigate(AfternoteRoute.AfternoteHomeRoute) {
+        popUpTo(AfternoteRoute.AfternoteHomeRoute) { inclusive = true }
         launchSingleTop = true
     }
 }
@@ -210,7 +210,7 @@ internal fun AfternoteEditorDestination(
 
     LaunchedEffect(saveState.saveSuccess) {
         if (saveState.saveSuccess) {
-            navigateToAfternoteListOnSaveSuccess(params.editStateHandling, params.navController)
+            navigateToAfternoteHomeOnSaveSuccess(params.editStateHandling, params.navController)
         }
     }
 

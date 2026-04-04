@@ -6,7 +6,7 @@ sealed interface AfternoteRoute {
     data object AfternoteGraph : AfternoteRoute
 
     @Serializable
-    data object AfternoteListRoute : AfternoteRoute
+    data object AfternoteHomeRoute : AfternoteRoute
 
     @Serializable
     data class DetailRoute(

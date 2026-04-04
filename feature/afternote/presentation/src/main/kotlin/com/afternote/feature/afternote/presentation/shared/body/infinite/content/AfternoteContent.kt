@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.list.AfternoteCategoryRow
+import com.afternote.feature.afternote.presentation.author.home.AfternoteCategoryRow
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.body.infinite.AfternoteBodyUiState
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.AfternoteList
