@@ -41,7 +41,7 @@ private fun InfiniteListBodyPreview() {
         InfiniteListBody(
             uiState =
                 AfternoteBodyUiState(
-                    listItems =
+                    visibleItems =
                         listOf(
                             ListItemUiModel(
                                 id = "1",

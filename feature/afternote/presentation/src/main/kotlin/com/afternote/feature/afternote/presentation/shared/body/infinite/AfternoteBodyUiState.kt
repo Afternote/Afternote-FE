@@ -6,7 +6,7 @@ import com.afternote.feature.afternote.presentation.shared.body.infinite.content
 
 @Stable
 data class AfternoteBodyUiState(
-    val listItems: List<ListItemUiModel>,
+    val visibleItems: List<ListItemUiModel>,
     val selectedCategory: AfternoteCategory = AfternoteCategory.ALL,
     val hasNext: Boolean = false,
     val isLoadingMore: Boolean = false,

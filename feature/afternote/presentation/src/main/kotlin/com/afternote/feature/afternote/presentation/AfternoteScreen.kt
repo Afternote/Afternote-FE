@@ -24,9 +24,9 @@ fun AfternoteScreen(
 ) {
     val appState = rememberAfternoteAppState()
 
-    val useFake by hostViewModel.dataProviderSwitch.useFakeState.collectAsStateWithLifecycle()
+    val useFake by hostViewModel.useFakeState.collectAsStateWithLifecycle()
     val afternoteProvider =
-        remember(useFake) { hostViewModel.dataProviderSwitch.currentAfternoteEditorDataProvider }
+        remember(useFake) { hostViewModel.currentAfternoteEditorDataProvider }
     val items by hostViewModel.items.collectAsStateWithLifecycle()
 
     CompositionLocalProvider(LocalAfternoteUsesAppBottomBar provides true) {

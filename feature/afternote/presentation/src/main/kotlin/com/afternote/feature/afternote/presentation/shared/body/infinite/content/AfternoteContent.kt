@@ -47,7 +47,7 @@ private fun AfternoteListContentPreview() {
         AfternoteListContent(
             uiState =
                 AfternoteBodyUiState(
-                    listItems =
+                    visibleItems =
                         listOf(
                             ListItemUiModel(
                                 id = "1",

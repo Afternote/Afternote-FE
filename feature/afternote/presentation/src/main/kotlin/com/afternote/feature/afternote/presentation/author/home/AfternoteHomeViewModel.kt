@@ -54,7 +54,7 @@ class AfternoteHomeViewModel
                     // 연산이 수행된 시점에 모든 homeState 요소에 대해 연산을 완료했다면 새로운 요소가 추가될 때까지 대기
                     val listState = homeState.listState
                     AfternoteBodyUiState(
-                        listItems = listState.listItems.map { it.toUiModel() },
+                        visibleItems = listState.visibleItems.map { it.toUiModel() },
                         selectedCategory = homeState.categoryState.selectedCategory,
                         hasNext = listState.hasNext,
                         isLoadingMore = listState.isLoadingMore,
@@ -64,7 +64,7 @@ class AfternoteHomeViewModel
                     // map이 Flow로 매핑했던 것들을 StateFlow로 변환
                     scope = viewModelScope, // map 연산을 수행할 코루틴의 스코프
                     started = SharingStarted.WhileSubscribed(SUBSCRIBE_TIMEOUT_MS), // 관찰자가 있을 때만 map 연산을 수행하게 함
-                    initialValue = AfternoteBodyUiState(listItems = emptyList()), // bodyUiState의 초기값
+                    initialValue = AfternoteBodyUiState(visibleItems = emptyList()), // bodyUiState의 초기값
                 )
 
         init {
@@ -128,7 +128,7 @@ class AfternoteHomeViewModel
                         listState.copy(
                             isLoading = true,
                             loadError = null,
-                            listItems = emptyList(),
+                            visibleItems = emptyList(),
                         )
                     }
                     val input =
@@ -143,7 +143,7 @@ class AfternoteHomeViewModel
                                 listState.copy(
                                     isLoading = false,
                                     loadError = null,
-                                    listItems = listPage.listItems,
+                                    visibleItems = listPage.listItems,
                                     currentPageNumber = 0,
                                     hasNext = listPage.hasNext,
                                     isLoadingMore = false,
@@ -153,7 +153,7 @@ class AfternoteHomeViewModel
                             updateListState { listState ->
                                 listState.copy(
                                     isLoading = false,
-                                    listItems = emptyList(),
+                                    visibleItems = emptyList(),
                                     currentPageNumber = 0,
                                     loadError = e.message ?: "애프터노트 목록을 불러오지 못했습니다.",
                                     hasNext = false,
@@ -186,7 +186,7 @@ class AfternoteHomeViewModel
                     .onSuccess { listPage ->
                         updateListState { listState ->
                             listState.copy(
-                                listItems = listState.listItems + listPage.listItems,
+                                visibleItems = listState.visibleItems + listPage.listItems,
                                 currentPageNumber = nextPageNumber,
                                 isLoadingMore = false,
                                 hasNext = listPage.hasNext,

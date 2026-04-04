@@ -47,7 +47,7 @@ fun AfternoteList(
                 ),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items(items = bodyUiState.listItems, key = { it.id }) { itemUiModel ->
+        items(items = bodyUiState.visibleItems, key = { it.id }) { itemUiModel ->
             AfternoteListItem(
                 uiModel = itemUiModel,
             ) { onItemClick(itemUiModel.id) }
@@ -65,9 +65,9 @@ fun AfternoteList(
             }
         }
     }
-    if (bodyUiState.hasNext && !bodyUiState.isLoadingMore && bodyUiState.listItems.isNotEmpty()) {
+    if (bodyUiState.hasNext && !bodyUiState.isLoadingMore && bodyUiState.visibleItems.isNotEmpty()) {
         // LazyColumn의 상태와 애프터노트 개수가 변할 때마다 실행
-        LaunchedEffect(listState, bodyUiState.listItems.size) {
+        LaunchedEffect(listState, bodyUiState.visibleItems.size) {
             // 상태 변화마다 리컴포지션 대신 snapshotFlow를 통한 블록 재실행으로 성능 향상
             snapshotFlow {
                 // layoutInfo는 리스트의 물리적인 배치 정보를 담고 있고, 내부적으로 MutableState에 담겨 있음
@@ -80,7 +80,7 @@ fun AfternoteList(
             }.distinctUntilChanged() // 스트림 결과 값이 스트림의 직전 결과 값과 다를 때만 collect 실행하므로써 또 성능 향상
                 // collect는 스트림에서 결과 값 emit시켜 그 값을 수신
                 .collect { index ->
-                    if (index >= bodyUiState.listItems.size - LOAD_MORE_THRESHOLD) {
+                    if (index >= bodyUiState.visibleItems.size - LOAD_MORE_THRESHOLD) {
                         onLoadMore()
                     }
                 }
@@ -96,7 +96,7 @@ private fun AfternoteListPreview() {
         AfternoteList(
             bodyUiState =
                 AfternoteBodyUiState(
-                    listItems =
+                    visibleItems =
                         listOf(
                             ListItemUiModel(
                                 id = "1",

@@ -22,7 +22,7 @@ data class BodyCategoryState(
  * 목록·페이지네이션·로딩·에러. 스크롤/추가 로딩과 생명주기가 같습니다.
  */
 data class AfternoteListState(
-    val listItems: List<ListItem> = emptyList(),
+    val visibleItems: List<ListItem> = emptyList(),
     val isLoading: Boolean = false,
     val loadError: String? = null,
     val paginationError: String? = null,

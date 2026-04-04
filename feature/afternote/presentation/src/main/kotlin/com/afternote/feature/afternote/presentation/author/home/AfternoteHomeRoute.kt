@@ -49,18 +49,18 @@ fun AfternoteHomeRoute(
         .bodyUiState
         .collectAsStateWithLifecycle()
 
-    // 상위로 listItems 전파 (Editor 화면에서 사용)
-    val listItems = uiState.listState.listItems
+    // 상위로 visibleItems 전파 (Editor 화면에서 사용)
+    val visibleItems = uiState.listState.visibleItems
     val listItemIds =
-        remember(listItems) {
-            listItems
+        remember(visibleItems) {
+            visibleItems
                 .map { it.id }
                 .toSet()
         }
     LaunchedEffect(listItemIds) {
-        if (listItems.isNotEmpty()) {
-            Log.d("AfternoteHomeRoute", "listItems changed: size=${listItems.size}")
-            onListItemsUpdated(listItems)
+        if (visibleItems.isNotEmpty()) {
+            Log.d("AfternoteHomeRoute", "visibleItems changed: size=${visibleItems.size}")
+            onListItemsUpdated(visibleItems)
         }
     }
 

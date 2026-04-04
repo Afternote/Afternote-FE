@@ -26,7 +26,7 @@ data class AfternoteHomeRefreshParams(
     val onAfternoteDeleted: () -> Unit,
 )
 
-/** Home-related inputs for [afternoteNavGraph] (listItems + home refresh). */
+/** Home-related inputs for [afternoteNavGraph] (visibleItems + home refresh). */
 data class AfternoteNavGraphHomeContext(
     val afternoteListItems: List<ListItem>,
     val onListItemsUpdated: (List<ListItem>) -> Unit,
