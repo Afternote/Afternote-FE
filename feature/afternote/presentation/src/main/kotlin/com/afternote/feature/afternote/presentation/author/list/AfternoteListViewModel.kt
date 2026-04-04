@@ -2,7 +2,6 @@ package com.afternote.feature.afternote.presentation.author.list
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.domain.model.input.GetListPageInput
 import com.afternote.feature.afternote.domain.usecase.author.GetListPageUseCase
 import com.afternote.feature.afternote.presentation.author.list.model.AfternoteListEvent
@@ -29,7 +28,7 @@ private const val SUBSCRIBE_TIMEOUT_MS = 5_000L
  * 애프터노트 목록 화면 ViewModel.
  */
 @HiltViewModel
-class AfternoteViewModel
+class AfternoteListViewModel
     @Inject
     constructor(
         private val getListPageUseCase: GetListPageUseCase,
@@ -67,10 +66,17 @@ class AfternoteViewModel
 
         /**
          * API에서 애프터노트 목록 첫 페이지를 로드합니다.
+         * 탭 변경 시에도 이 함수를 호출하여 0페이지부터 새로 요청합니다.
          */
         fun loadAfternotes(category: String? = null) {
             viewModelScope.launch {
-                _uiState.update { it.copy(isLoading = true, loadError = null) }
+                _uiState.update {
+                    it.copy(
+                        isLoading = true,
+                        loadError = null,
+                        items = emptyList(),
+                    )
+                }
                 val input =
                     GetListPageInput(
                         category = category,
@@ -83,18 +89,16 @@ class AfternoteViewModel
                             it.copy(
                                 isLoading = false,
                                 loadError = null,
-                                allItems = paged.items,
+                                items = paged.items,
                                 currentPage = 0,
                                 hasNext = paged.hasNext,
                                 isLoadingMore = false,
                             )
                         }
-                        applyFilter()
                     }.onFailure { e ->
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                allItems = emptyList(),
                                 items = emptyList(),
                                 currentPage = 0,
                                 loadError = e.message ?: "애프터노트 목록을 불러오지 못했습니다.",
@@ -125,13 +129,12 @@ class AfternoteViewModel
                     .onSuccess { paged ->
                         _uiState.update {
                             it.copy(
-                                allItems = it.allItems + paged.items,
+                                items = it.items + paged.items,
                                 currentPage = nextPage,
                                 isLoadingMore = false,
                                 hasNext = paged.hasNext,
                             )
                         }
-                        applyFilter()
                     }.onFailure {
                         _uiState.update { it.copy(isLoadingMore = false) }
                     }
@@ -141,38 +144,16 @@ class AfternoteViewModel
         fun onEvent(event: AfternoteListEvent) {
             when (event) {
                 is AfternoteListEvent.SelectTab -> {
+                    val currentState = _uiState.value
+                    if (currentState.selectedTab == event.tab) return
+
                     _uiState.update { it.copy(selectedTab = event.tab) }
-                    applyFilter()
+                    loadAfternotes(category = event.tab.toCategoryParam())
                 }
 
                 is AfternoteListEvent.SelectBottomNav -> {
                     _uiState.update { it.copy(selectedBottomNavItem = event.navItem) }
                 }
-            }
-        }
-
-        /** 선택된 탭에 따라 allItems를 필터링하여 items에 반영합니다. */
-        private fun applyFilter() {
-            _uiState.update { state ->
-                val filtered =
-                    when (state.selectedTab) {
-                        AfternoteCategory.ALL -> {
-                            state.allItems
-                        }
-
-                        AfternoteCategory.SOCIAL_NETWORK -> {
-                            state.allItems.filter { it.type == AfternoteServiceType.SOCIAL_NETWORK }
-                        }
-
-                        AfternoteCategory.GALLERY_AND_FILES -> {
-                            state.allItems.filter { it.type == AfternoteServiceType.GALLERY_AND_FILES }
-                        }
-
-                        AfternoteCategory.MEMORIAL -> {
-                            state.allItems.filter { it.type == AfternoteServiceType.MEMORIAL }
-                        }
-                    }
-                state.copy(items = filtered)
             }
         }
 
