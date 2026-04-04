@@ -12,6 +12,7 @@ import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.AfternoteHostViewModel
 import com.afternote.feature.afternote.presentation.author.editor.playlist.AddSongViewModel
 import com.afternote.feature.afternote.presentation.author.editor.playlist.MemorialPlaylistEntry
+import com.afternote.feature.afternote.presentation.author.editor.playlist.MemorialPlaylistEntryActions
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 
 /**
@@ -91,8 +92,13 @@ fun NavGraphBuilder.afternoteNavGraph(
             val hostViewModel = graphScopedHostViewModel(navController)
             MemorialPlaylistEntry(
                 playlistStateHolder = hostViewModel.playlistHolder,
-                onBackClick = { navController.popBackStack() },
-                onNavigateToAddSongScreen = { navController.navigate(AfternoteRoute.AddSongRoute) },
+                actions =
+                    MemorialPlaylistEntryActions(
+                        onBackClick = { navController.popBackStack() },
+                        onNavigateToAddSongScreen = {
+                            navController.navigate(AfternoteRoute.AddSongRoute)
+                        },
+                    ),
             )
         }
 

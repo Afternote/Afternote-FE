@@ -43,7 +43,9 @@ import com.afternote.feature.afternote.presentation.receiver.viewmodel.ReceiverD
 import com.afternote.feature.afternote.presentation.receiver.viewmodel.ReceiverDownloadAllViewModelContract
 
 /**
- * Stateful Entry: ViewModel을 주입받아 상태를 수집하고 side-effect를 처리합니다.
+ * 수신자 애프터노트 메인 Entry.
+ *
+ * ViewModel에서 데이터를 로드·가공하고, Entry는 Screen에 전달만 합니다.
  */
 @Composable
 fun ReceiverAfterNoteEntry(
@@ -87,8 +89,9 @@ fun ReceiverAfterNoteEntry(
 }
 
 /**
- * Stateless Screen: ViewModel 의존성 없이 순수하게 UI만 그립니다.
- * Preview 작성 시 Fake ViewModel이 필요 없습니다.
+ * 수신자 애프터노트 메인 Screen.
+ *
+ * ViewModel 의존성 없이 순수하게 UI만 그립니다. Preview 가능합니다.
  */
 @Composable
 fun ReceiverAfterNoteScreen(

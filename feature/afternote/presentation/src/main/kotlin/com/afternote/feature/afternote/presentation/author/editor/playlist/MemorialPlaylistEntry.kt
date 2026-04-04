@@ -42,18 +42,24 @@ import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlayl
 import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScreenManagementContent
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
+data class MemorialPlaylistEntryActions(
+    val onBackClick: () -> Unit = {},
+    val onNavigateToAddSongScreen: () -> Unit = {},
+)
+
 /**
- * 추모 플레이리스트 전체 화면 (MemorialPlaylistList).
- * 공통 [SongPlaylistScreen]을 사용하며, "노래 추가하기" 클릭 시 [onNavigateToAddSongScreen]으로 AddSongScreen으로 이동.
+ * 추모 플레이리스트 Entry.
  *
- * @param onNavigateToAddSongScreen MemorialPlaylistList 내 "노래 추가하기" 클릭 시 AddSongScreen으로 이동하는 콜백
+ * graph-scoped [MemorialPlaylistStateHolder]의 곡 목록을 공용 [SongPlaylistScreen]의 입력 형태로 매핑합니다.
+ *
+ * @param playlistStateHolder graph-scoped HostViewModel에서 전달받은 플레이리스트 상태
+ * @param actions 네비게이션 콜백 모음
  * @param initialSelectedSongIds Preview용. 넣으면 해당 ID가 선택된 상태로 시작 (기본 null)
  */
 @Composable
 fun MemorialPlaylistEntry(
     playlistStateHolder: MemorialPlaylistStateHolder,
-    onBackClick: () -> Unit,
-    onNavigateToAddSongScreen: () -> Unit,
+    actions: MemorialPlaylistEntryActions = MemorialPlaylistEntryActions(),
     modifier: Modifier = Modifier,
     initialSelectedSongIds: Set<String>? = null,
 ) {
@@ -69,7 +75,7 @@ fun MemorialPlaylistEntry(
     SongPlaylistScreen(
         modifier = modifier,
         title = "추모 플레이리스트",
-        onBackClick = onBackClick,
+        onBackClick = actions.onBackClick,
         songs = songs,
         managementContent =
             SongPlaylistScreenManagementContent(
@@ -77,7 +83,7 @@ fun MemorialPlaylistEntry(
                     MemorialPlaylistListHeader(
                         songCount = songs.size,
                         isSelectionMode = selectedIds.isNotEmpty(),
-                        onAddSongClick = onNavigateToAddSongScreen,
+                        onAddSongClick = actions.onNavigateToAddSongScreen,
                     )
                 },
                 selectionBottomBar = { selectedIds, onClearSelection ->
@@ -294,8 +300,7 @@ private fun MemorialPlaylistEntryPreview() {
                 }
             MemorialPlaylistEntry(
                 playlistStateHolder = holder,
-                onBackClick = {},
-                onNavigateToAddSongScreen = {},
+                actions = MemorialPlaylistEntryActions(),
             )
         }
     }
@@ -315,8 +320,7 @@ private fun MemorialPlaylistEntrySelectionModePreview() {
                 }
             MemorialPlaylistEntry(
                 playlistStateHolder = holder,
-                onBackClick = {},
-                onNavigateToAddSongScreen = {},
+                actions = MemorialPlaylistEntryActions(),
                 initialSelectedSongIds = setOf("1", "3"),
             )
         }

@@ -196,3 +196,9 @@ fun getIconResForServiceType(serviceType: AfternoteServiceType) = getAfternoteDi
 fun getIconResForServiceName(serviceName: String): Int =
     DISPLAY_KEY_TO_DRAWABLE[serviceName]
         ?: getIconResForServiceType(AfternoteServiceCatalog.serviceTypeFor(serviceName))
+
+/**
+ * API typeKey(예: "INSTAGRAM") → 화면 표시명(예: "인스타그램") 변환.
+ * 매핑이 없으면 typeKey를 그대로 반환합니다.
+ */
+fun getServiceNameForTypeKey(typeKey: String): String = TYPE_KEY_TO_DISPLAY_INFO[typeKey]?.second ?: typeKey
