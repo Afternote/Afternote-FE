@@ -53,26 +53,32 @@ fun TimeletterScreen(
     }
 }
 
-private val previewItems = listOf(
-    BottomNavItem("홈", R.drawable.core_ui_ic_home, "home"),
-    BottomNavItem("기록", R.drawable.core_ui_ic_mindrecord, "mindrecord"),
-    BottomNavItem("타임레터", R.drawable.core_ui_ic_mail, "timeletter"),
-    BottomNavItem("노트", R.drawable.core_ui_ic_note, "afternote"),
-)
-
-private val previewLetters = TimeLetters(
+private val previewItems =
     listOf(
-        TimeLetter(
-            identity = LetterIdentity(id = 1L, title = "미래의 나에게", body = "지금 이 순간을 잊지 마. 열심히 살고 있는 너를 응원해."),
-            schedule = LetterSchedule(recipientName = "박경민", openDate = OpenDate("2026-12-31")),
-        ),
-        TimeLetter(
-            identity = LetterIdentity(id = 2L, title = "10년 후의 나에게", body = "지금보다 더 행복하길 바라."),
-            schedule = LetterSchedule(recipientName = "미래의 나", openDate = OpenDate("2035-01-01")),
-        ),
-    ),
-)
+        BottomNavItem("홈", R.drawable.core_ui_ic_home, "home"),
+        BottomNavItem("기록", R.drawable.core_ui_ic_mindrecord, "mindrecord"),
+        BottomNavItem("타임레터", R.drawable.core_ui_ic_mail, "timeletter"),
+        BottomNavItem("노트", R.drawable.core_ui_ic_note, "afternote"),
+    )
 
+private val previewLetters =
+    TimeLetters(
+        listOf(
+            TimeLetter(
+                identity =
+                    LetterIdentity(
+                        id = 1L,
+                        title = "미래의 나에게",
+                        body = "지금 이 순간을 잊지 마. 열심히 살고 있는 너를 응원해.",
+                    ),
+                schedule = LetterSchedule(recipientName = "박경민", openDate = OpenDate("2026-12-31")),
+            ),
+            TimeLetter(
+                identity = LetterIdentity(id = 2L, title = "10년 후의 나에게", body = "지금보다 더 행복하길 바라."),
+                schedule = LetterSchedule(recipientName = "미래의 나", openDate = OpenDate("2035-01-01")),
+            ),
+        ),
+    )
 
 @Preview(showBackground = true)
 @Composable
