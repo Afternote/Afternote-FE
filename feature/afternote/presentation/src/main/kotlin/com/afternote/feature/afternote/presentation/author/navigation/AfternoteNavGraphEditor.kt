@@ -13,6 +13,7 @@ import androidx.navigation.NavController
 import androidx.navigation.toRoute
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.domain.model.Item
+import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorEvent
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorSaveError
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorScreen
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorScreenCallbacks
@@ -84,16 +85,6 @@ internal fun navigateToAfternoteHomeOnSaveSuccess(
         popUpTo(AfternoteRoute.AfternoteHomeRoute) { inclusive = true }
         launchSingleTop = true
     }
-}
-
-internal fun applyUploadedThumbnailAndClear(
-    url: String,
-    state: AfternoteEditorState,
-    viewModel: AfternoteEditorViewModel,
-) {
-    runCatching { state.onFuneralThumbnailDataUrlReady(url) }
-        .onFailure { e -> Log.e(TAG_AFTERNOTE_EDIT, "apply uploadedThumbnailUrl failed", e) }
-    viewModel.clearUploadedThumbnailUrl()
 }
 
 internal fun tryApplyReceiverSelectionFromSavedState(
@@ -208,18 +199,27 @@ internal fun AfternoteEditorDestination(
         }
     }
 
-    LaunchedEffect(saveState.saveSuccess) {
-        if (saveState.saveSuccess) {
-            navigateToAfternoteHomeOnSaveSuccess(params.editStateHandling, params.navController)
-        }
-    }
+    LaunchedEffect(Unit) {
+        editViewModel.events.collect { event ->
+            when (event) {
+                is AfternoteEditorEvent.SaveSuccess -> {
+                    navigateToAfternoteHomeOnSaveSuccess(
+                        params.editStateHandling,
+                        params.navController,
+                    )
+                }
 
-    val uploadedThumbnailUrl by editViewModel.uploadedThumbnailUrl.collectAsStateWithLifecycle(
-        initialValue = null,
-    )
-    LaunchedEffect(uploadedThumbnailUrl) {
-        uploadedThumbnailUrl?.let { url ->
-            applyUploadedThumbnailAndClear(url, state, editViewModel)
+                is AfternoteEditorEvent.ThumbnailUploaded -> {
+                    runCatching { state.onFuneralThumbnailDataUrlReady(event.url) }
+                        .onFailure { e ->
+                            Log.e(
+                                TAG_AFTERNOTE_EDIT,
+                                "apply thumbnailUrl failed",
+                                e,
+                            )
+                        }
+                }
+            }
         }
     }
 

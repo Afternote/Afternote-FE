@@ -5,15 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.feature.afternote.domain.model.Detail
 import com.afternote.feature.afternote.domain.model.author.AuthorReceiverDirectoryEntry
-import com.afternote.feature.afternote.domain.model.input.CreateGalleryInput
-import com.afternote.feature.afternote.domain.model.input.CreatePlaylistInput
-import com.afternote.feature.afternote.domain.model.input.CreateSocialInput
-import com.afternote.feature.afternote.domain.model.input.CredentialsInput
-import com.afternote.feature.afternote.domain.model.input.MemorialVideoInput
-import com.afternote.feature.afternote.domain.model.input.PlaylistInput
-import com.afternote.feature.afternote.domain.model.input.ReceiverRefInput
-import com.afternote.feature.afternote.domain.model.input.SongInput
-import com.afternote.feature.afternote.domain.model.input.UpdateInput
 import com.afternote.feature.afternote.domain.port.AuthorReceiversDirectoryPort
 import com.afternote.feature.afternote.domain.port.CurrentAuthorUserIdPort
 import com.afternote.feature.afternote.domain.usecase.author.GetDetailUseCase
@@ -28,17 +19,16 @@ import com.afternote.feature.afternote.presentation.author.editor.model.Afternot
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteSaveState
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteValidationError
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteValidationException
-import com.afternote.feature.afternote.presentation.author.editor.model.LoadFromExistingAccountParams
-import com.afternote.feature.afternote.presentation.author.editor.model.LoadFromExistingParams
-import com.afternote.feature.afternote.presentation.author.editor.model.LoadFromExistingProcessingParams
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.playlist.Song
-import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -47,9 +37,6 @@ import retrofit2.HttpException
 import javax.inject.Inject
 
 private const val TAG = "AfternoteEditorVM"
-private const val CATEGORY_SOCIAL = "소셜네트워크"
-private const val CATEGORY_GALLERY = "갤러리 및 파일"
-private const val CATEGORY_MEMORIAL = "추모 가이드라인"
 
 /** S3 presigned URLs contain this; we must not send them back on PATCH or the server overwrites the stored key. */
 private const val PRESIGNED_URL_MARKER = "X-Amz-"
@@ -60,8 +47,8 @@ private const val CONTENT_SCHEME = "content://"
 /**
  * 애프터노트 생성/수정 ViewModel.
  *
- * 카테고리에 따라 적절한 create UseCase를 호출하거나,
- * 기존 항목 수정 시 update UseCase를 호출합니다.
+ * 단발성 이벤트(저장 성공, 썸네일 업로드 완료)는 [Channel]을 통해 전달하여
+ * 화면 회전 등 재구성 시 재실행되지 않도록 합니다.
  */
 @HiltViewModel
 class AfternoteEditorViewModel
@@ -81,17 +68,19 @@ class AfternoteEditorViewModel
         private val _saveState = MutableStateFlow(AfternoteSaveState())
         val saveState: StateFlow<AfternoteSaveState> = _saveState.asStateFlow()
 
-        /** Set when memorial thumbnail upload (presigned URL) succeeds; consumed by screen to set state. */
-        private val _uploadedThumbnailUrl = MutableStateFlow<String?>(null)
-        val uploadedThumbnailUrl: StateFlow<String?> = _uploadedThumbnailUrl.asStateFlow()
+        /** 단발성 이벤트 채널: 저장 성공, 썸네일 업로드 완료 등. */
+        private val _events = Channel<AfternoteEditorEvent>(Channel.BUFFERED)
+        val events = _events.receiveAsFlow()
 
         /** Cached receiver list (GET /users/receivers) for lookup when returning from receiver selection. */
         private var cachedReceivers: List<AuthorReceiverDirectoryEntry> = emptyList()
 
         /**
-         * Loads receivers (GET /users/receivers) and caches for [getReceiverById] lookup.
-         * Call when entering edit screen so selection-from-navigation can resolve names.
+         * Category from the server when loading for edit. Used for update requests because the API
+         * does not allow changing category; we must send the original category.
          */
+        private var loadedCategoryForEdit: EditorCategory? = null
+
         fun loadReceivers() {
             viewModelScope.launch {
                 val userId = currentAuthorUserId() ?: return@launch
@@ -101,47 +90,22 @@ class AfternoteEditorViewModel
             }
         }
 
-        /**
-         * Returns the receiver for the given id from the last [loadReceivers] result, or null.
-         */
         fun getReceiverById(id: Long): AuthorReceiverDirectoryEntry? = cachedReceivers.find { it.receiverId == id }
 
-        /**
-         * Category from the server when loading for edit. Used for update requests because the API
-         * does not allow changing category; we must send the original category.
-         */
-        private var loadedCategoryForEdit: String? = null
-
-        /**
-         * Uploads memorial thumbnail via POST /files/presigned-url and S3. On success emits URL to
-         * [uploadedThumbnailUrl]; screen should apply it to state then call [clearUploadedThumbnailUrl].
-         */
         fun uploadMemorialThumbnail(jpegBytes: ByteArray) {
             viewModelScope.launch {
                 uploadMemorialThumbnailUseCase(jpegBytes)
                     .onSuccess { url ->
                         Log.d(TAG, "uploadMemorialThumbnail: success, url=$url")
-                        _uploadedThumbnailUrl.value = url
+                        _events.send(AfternoteEditorEvent.ThumbnailUploaded(url))
                     }.onFailure { e ->
                         Log.e(TAG, "uploadMemorialThumbnail: failed", e)
                     }
             }
         }
 
-        fun clearUploadedThumbnailUrl() {
-            _uploadedThumbnailUrl.value = null
-        }
-
         /**
          * 애프터노트 저장 (생성 또는 수정).
-         * 수신자: [selectedReceiverIds]에 최소 1명 이상 필요하며, 비어 있으면 검증 오류로 저장하지 않습니다.
-         *
-         * @param editingId null이면 신규 생성, non-null이면 수정
-         * @param category 선택된 카테고리 한국어 문자열
-         * @param payload 편집 화면에서 수집된 데이터
-         * @param selectedReceiverIds 수신자 지정에서 선택한 수신자 ID 목록 (최소 1명 필요)
-         * @param playlistStateHolder 추모 가이드라인의 플레이리스트 상태
-         * @param memorialMedia 추모 가이드라인 전용: 영상/썸네일/영정 URL 및 선택한 영정 URI
          */
         fun saveAfternote(
             editingId: Long?,
@@ -156,9 +120,10 @@ class AfternoteEditorViewModel
                 return
             }
 
+            val editorCategory = EditorCategory.fromDisplayLabel(category)
             val validationError =
-                validateRequiredFieldsSync(
-                    category = category,
+                AfternoteEditorValidator.validate(
+                    category = editorCategory,
                     payload = payload,
                     selectedReceiverIds = selectedReceiverIds,
                     playlistStateHolder = playlistStateHolder,
@@ -169,19 +134,13 @@ class AfternoteEditorViewModel
                 return
             }
 
-            // API does not allow editing category; when updating, use the category from the loaded detail.
             val categoryForApi =
-                if (editingId != null) (loadedCategoryForEdit ?: category) else category
+                if (editingId != null) (loadedCategoryForEdit ?: editorCategory) else editorCategory
 
             Log.d(
                 TAG,
-                "saveAfternote: editingId=$editingId, category=$categoryForApi, " +
-                    "serviceName=${payload.serviceName}, " +
-                    "accountProcessingMethod=${payload.accountProcessingMethod}, " +
-                    "informationProcessingMethod=${payload.informationProcessingMethod}, " +
-                    "processingMethods=${payload.processingMethods}, " +
-                    "galleryProcessingMethods=${payload.galleryProcessingMethods}, " +
-                    "hasPlaylist=${playlistStateHolder != null}",
+                "saveAfternote: editingId=$editingId, category=${categoryForApi.serverValue}, " +
+                    "serviceName=${payload.serviceName}",
             )
 
             viewModelScope.launch {
@@ -209,54 +168,109 @@ class AfternoteEditorViewModel
                 val videoUrlForUpdate = videoUrlForUpdateRequest(editingId != null, resolvedVideoUrl)
                 val thumbnailForUpdate =
                     if (videoUrlForUpdate == null) null else memorialMedia.funeralThumbnailUrl
-                val updateMedia =
-                    MemorialMediaUrls(
-                        funeralVideoUrl = videoUrlForUpdate,
-                        funeralThumbnailUrl = thumbnailForUpdate,
-                        memorialPhotoUrl = resolvedMemorialPhotoUrl,
-                    )
-                val createMedia =
-                    MemorialMediaUrls(
-                        funeralVideoUrl = resolvedVideoUrl,
-                        funeralThumbnailUrl = memorialMedia.funeralThumbnailUrl,
-                        memorialPhotoUrl = resolvedMemorialPhotoUrl,
-                    )
-                (
+
+                val result =
                     if (editingId != null) {
-                        performUpdate(
-                            afternoteId = editingId,
-                            category = categoryForApi,
-                            payload = payload,
-                            selectedReceiverIds = selectedReceiverIds,
-                            playlistStateHolder = playlistStateHolder,
-                            memorialMedia = updateMedia,
-                        )
+                        val updateInput =
+                            AfternoteEditorMapper.buildUpdateInput(
+                                category = categoryForApi,
+                                payload = payload,
+                                selectedReceiverIds = selectedReceiverIds,
+                                playlistStateHolder = playlistStateHolder,
+                                memorialMedia =
+                                    MemorialMediaUrls(
+                                        funeralVideoUrl = videoUrlForUpdate,
+                                        funeralThumbnailUrl = thumbnailForUpdate,
+                                        memorialPhotoUrl = resolvedMemorialPhotoUrl,
+                                    ),
+                            )
+                        updateUseCase(id = editingId, updateInput = updateInput)
                     } else {
                         performCreate(
                             category = categoryForApi,
                             payload = payload,
                             selectedReceiverIds = selectedReceiverIds,
                             playlistStateHolder = playlistStateHolder,
-                            funeralVideoUrl = createMedia.funeralVideoUrl,
-                            funeralThumbnailUrl = createMedia.funeralThumbnailUrl,
-                            memorialPhotoUrl = createMedia.memorialPhotoUrl,
+                            funeralVideoUrl = resolvedVideoUrl,
+                            funeralThumbnailUrl = memorialMedia.funeralThumbnailUrl,
+                            memorialPhotoUrl = resolvedMemorialPhotoUrl,
                         )
                     }
-                ).onSuccess { id ->
-                    Log.d(TAG, "saveAfternote: SUCCESS, savedId=$id")
-                    _saveState.update {
-                        it.copy(isSaving = false, saveSuccess = true, savedId = id)
+
+                result
+                    .onSuccess { id ->
+                        Log.d(TAG, "saveAfternote: SUCCESS, savedId=$id")
+                        _saveState.update {
+                            it.copy(isSaving = false, savedId = id)
+                        }
+                        _events.send(AfternoteEditorEvent.SaveSuccess(id))
+                    }.onFailure { e ->
+                        handleSaveFailure(e, categoryForApi)
                     }
-                }.onFailure { e ->
-                    handleSaveFailure(e, categoryForApi)
-                }
             }
         }
 
-        /**
-         * Resolves [funeralVideoUrl] for save: returns as-is if non-blank and not content://;
-         * uploads and returns file URL if content://; on upload failure updates [saveState] and returns null.
-         */
+        fun loadForEdit(
+            afternoteId: Long,
+            state: AfternoteEditorState,
+            playlistStateHolder: MemorialPlaylistStateHolder? = null,
+        ) {
+            viewModelScope.launch {
+                getDetailUseCase(id = afternoteId)
+                    .onSuccess { detail ->
+                        populatePlaylistFromDetail(detail, playlistStateHolder)
+                        val params = AfternoteEditorMapper.buildLoadFromExistingParams(detail)
+                        loadedCategoryForEdit = EditorCategory.fromDisplayLabel(params.categoryDisplayString)
+                        state.loadFromExisting(params)
+                    }
+            }
+        }
+
+        private fun populatePlaylistFromDetail(
+            detail: Detail,
+            playlistStateHolder: MemorialPlaylistStateHolder?,
+        ) {
+            val detailCategory = EditorCategory.fromServerValue(detail.category)
+            if (detailCategory != EditorCategory.MEMORIAL || playlistStateHolder == null) return
+            val playlist = detail.playlist ?: return
+            playlistStateHolder.clearAllSongs()
+            playlist.songs
+                .mapIndexed { index, s ->
+                    Song(
+                        id = (s.id ?: index.toLong()).toString(),
+                        title = s.title,
+                        artist = s.artist,
+                        albumCoverUrl = s.coverUrl,
+                    )
+                }.forEach { playlistStateHolder.addSong(it) }
+        }
+
+        private suspend fun performCreate(
+            category: EditorCategory,
+            payload: RegisterAfternotePayload,
+            selectedReceiverIds: List<Long>,
+            playlistStateHolder: MemorialPlaylistStateHolder?,
+            funeralVideoUrl: String?,
+            funeralThumbnailUrl: String?,
+            memorialPhotoUrl: String?,
+        ): Result<Long> {
+            val createInput =
+                AfternoteEditorMapper.buildCreateInput(
+                    category = category,
+                    payload = payload,
+                    selectedReceiverIds = selectedReceiverIds,
+                    playlistStateHolder = playlistStateHolder,
+                    funeralVideoUrl = funeralVideoUrl,
+                    funeralThumbnailUrl = funeralThumbnailUrl,
+                    memorialPhotoUrl = memorialPhotoUrl,
+                )
+            return when (createInput) {
+                is CreateInput.Social -> createSocialUseCase(createInput.input)
+                is CreateInput.Gallery -> createGalleryUseCase(createInput.input)
+                is CreateInput.Playlist -> createPlaylistUseCase(createInput.input)
+            }
+        }
+
         private suspend fun resolveVideoUrlForSave(funeralVideoUrl: String?): String? {
             when {
                 funeralVideoUrl.isNullOrBlank() -> return null
@@ -267,39 +281,26 @@ class AfternoteEditorViewModel
                 onFailure = { e ->
                     Log.e(TAG, "saveAfternote: video upload failed", e)
                     _saveState.update {
-                        it.copy(
-                            isSaving = false,
-                            error = e.message ?: "영상 업로드에 실패했습니다.",
-                        )
+                        it.copy(isSaving = false, error = e.message ?: "영상 업로드에 실패했습니다.")
                     }
                     null
                 },
             )
         }
 
-        /**
-         * Resolves memorial photo URL for save: returns [memorialPhotoUrl] if non-blank (e.g. from API on edit);
-         * uploads and returns file URL if [pickedMemorialPhotoUri] is content://; on upload failure updates
-         * [saveState] and returns null.
-         */
         private suspend fun resolveMemorialPhotoUrlForSave(
             memorialPhotoUrl: String?,
             pickedMemorialPhotoUri: String?,
         ): String? {
             if (!pickedMemorialPhotoUri.isNullOrBlank() &&
-                pickedMemorialPhotoUri.startsWith(
-                    CONTENT_SCHEME,
-                )
+                pickedMemorialPhotoUri.startsWith(CONTENT_SCHEME)
             ) {
                 return uploadMemorialPhotoUseCase(pickedMemorialPhotoUri).fold(
                     onSuccess = { it },
                     onFailure = { e ->
                         Log.e(TAG, "saveAfternote: memorial photo upload failed", e)
                         _saveState.update {
-                            it.copy(
-                                isSaving = false,
-                                error = e.message ?: "영정 사진 업로드에 실패했습니다.",
-                            )
+                            it.copy(isSaving = false, error = e.message ?: "영정 사진 업로드에 실패했습니다.")
                         }
                         null
                     },
@@ -308,9 +309,6 @@ class AfternoteEditorViewModel
             return memorialPhotoUrl?.takeIf { it.isNotBlank() }
         }
 
-        /**
-         * For update (PATCH), do not send presigned URLs so the server does not overwrite the stored key.
-         */
         private fun videoUrlForUpdateRequest(
             isUpdate: Boolean,
             resolvedVideoUrl: String?,
@@ -325,9 +323,9 @@ class AfternoteEditorViewModel
 
         private fun handleSaveFailure(
             e: Throwable,
-            categoryForApi: String,
+            category: EditorCategory,
         ) {
-            Log.e(TAG, "saveAfternote: FAILURE, category=$categoryForApi", e)
+            Log.e(TAG, "saveAfternote: FAILURE, category=${category.serverValue}", e)
             val validationError =
                 when (e) {
                     is AfternoteValidationException -> e.validationError
@@ -348,7 +346,6 @@ class AfternoteEditorViewModel
             }
         }
 
-        /** API 400 + code 475 (수신자 최소 1명) 시 RECEIVERS_REQUIRED로 통일. */
         private fun parseReceiversRequiredFromBody(e: HttpException): AfternoteValidationError? {
             val body = e.response()?.errorBody()?.string() ?: return null
             return runCatching {
@@ -356,444 +353,18 @@ class AfternoteEditorViewModel
                 if (parsed.code == 475) AfternoteValidationError.RECEIVERS_REQUIRED else null
             }.getOrNull()
         }
-
-        /**
-         * 상세 API에서 조회한 데이터를 기반으로 편집 화면 상태를 채웁니다.
-         *
-         * 리스트 아이템에는 계정 정보/처리 방법/메시지가 없기 때문에,
-         * 편집 화면 진입 시 GET /api/afternotes/{id} 결과를 사용해
-         * [AfternoteEditorState.loadFromExisting]를 호출합니다.
-         * 추모 가이드라인(PLAYLIST)인 경우 [playlistStateHolder]에 상세 플레이리스트 곡을 채워
-         * 편집 화면과 상세 화면의 곡 수가 일치하도록 합니다.
-         */
-        fun loadForEdit(
-            afternoteId: Long,
-            state: AfternoteEditorState,
-            playlistStateHolder: MemorialPlaylistStateHolder? = null,
-        ) {
-            viewModelScope.launch {
-                getDetailUseCase(id = afternoteId)
-                    .onSuccess { detail ->
-                        populatePlaylistFromDetail(detail, playlistStateHolder)
-                        val params = buildLoadFromExistingParams(detail)
-                        loadedCategoryForEdit = params.categoryDisplayString
-                        state.loadFromExisting(params)
-                    }
-            }
-        }
-
-        private fun populatePlaylistFromDetail(
-            detail: Detail,
-            playlistStateHolder: MemorialPlaylistStateHolder?,
-        ) {
-            if (detail.category.uppercase() != "PLAYLIST" || playlistStateHolder == null) {
-                return
-            }
-            val playlist = detail.playlist ?: return
-            playlistStateHolder.clearAllSongs()
-            playlist.songs
-                .mapIndexed { index, s ->
-                    Song(
-                        id = (s.id ?: index.toLong()).toString(),
-                        title = s.title,
-                        artist = s.artist,
-                        albumCoverUrl = s.coverUrl,
-                    )
-                }.forEach { playlistStateHolder.addSong(it) }
-        }
-
-        private fun buildLoadFromExistingParams(detail: Detail): LoadFromExistingParams {
-            val actionItems =
-                detail.processing?.actions?.mapIndexed { index, text ->
-                    ProcessingMethodItem(
-                        id = (index + 1).toString(),
-                        text = text,
-                    )
-                } ?: emptyList()
-            val processMethod = detail.processing?.method ?: ""
-            val categoryUpper = detail.category.uppercase()
-            val isGalleryCategory = categoryUpper == "GALLERY"
-            val isSocialCategory = categoryUpper == "SOCIAL"
-            val accountProcessingMethodName =
-                if (isSocialCategory) {
-                    serverProcessMethodToAccountEnum(processMethod)
-                } else {
-                    ""
-                }
-            val informationProcessingMethodName =
-                if (isGalleryCategory) {
-                    serverProcessMethodToInfoEnum(processMethod)
-                } else {
-                    ""
-                }
-            return LoadFromExistingParams(
-                itemId = detail.id.toString(),
-                serviceName = detail.title,
-                categoryDisplayString = serverCategoryToEditScreenCategory(detail.category),
-                account =
-                    LoadFromExistingAccountParams(
-                        id = detail.credentials?.id ?: "",
-                        password = detail.credentials?.password ?: "",
-                    ),
-                processing =
-                    LoadFromExistingProcessingParams(
-                        message = detail.processing?.leaveMessage ?: "",
-                        accountMethodName = accountProcessingMethodName,
-                        informationMethodName = informationProcessingMethodName,
-                        methods = if (!isGalleryCategory) actionItems else emptyList(),
-                        galleryMethods = if (isGalleryCategory) actionItems else emptyList(),
-                    ),
-                atmosphere = detail.playlist?.atmosphere,
-                memorialVideoUrl = detail.playlist?.playlistDetailMemorialMedia?.videoUrl,
-                memorialThumbnailUrl = detail.playlist?.playlistDetailMemorialMedia?.thumbnailUrl,
-                memorialPhotoUrl = detail.playlist?.playlistDetailMemorialMedia?.photoUrl,
-            )
-        }
-
-        /**
-         * Validates required fields for SOCIAL category (소셜네트워크).
-         * Returns the first validation error found, or null if valid.
-         */
-        private fun validateSocialLikeRequiredFields(payload: RegisterAfternotePayload): AfternoteValidationError? {
-            if (payload.accountId.isBlank() || payload.password.isBlank()) {
-                return AfternoteValidationError.SOCIAL_CREDENTIALS_REQUIRED
-            }
-            val validProcessMethods =
-                setOf("MEMORIAL_ACCOUNT", "PERMANENT_DELETE", "TRANSFER_TO_RECEIVER")
-            if (payload.accountProcessingMethod !in validProcessMethods) {
-                return AfternoteValidationError.SOCIAL_PROCESS_METHOD_REQUIRED
-            }
-            if (payload.processingMethods.isEmpty()) {
-                return AfternoteValidationError.SOCIAL_ACTIONS_REQUIRED
-            }
-            return null
-        }
-
-        /**
-         * Validates required fields per category before save (create).
-         * Returns the first validation error found, or null if valid.
-         */
-        private fun validateRequiredFieldsSync(
-            category: String,
-            payload: RegisterAfternotePayload,
-            selectedReceiverIds: List<Long>,
-            playlistStateHolder: MemorialPlaylistStateHolder?,
-        ): AfternoteValidationError? {
-            if (selectedReceiverIds.isEmpty()) {
-                return AfternoteValidationError.RECEIVERS_REQUIRED
-            }
-            if (payload.serviceName.trim().isEmpty()) {
-                return AfternoteValidationError.TITLE_REQUIRED
-            }
-            return when (category) {
-                CATEGORY_GALLERY -> validateGalleryRequiredFields(payload)
-                CATEGORY_MEMORIAL -> validateMemorialRequiredFields(playlistStateHolder)
-                else -> validateSocialLikeRequiredFields(payload)
-            }
-        }
-
-        private fun validateGalleryRequiredFields(payload: RegisterAfternotePayload): AfternoteValidationError? {
-            if (payload.galleryProcessingMethods.isEmpty()) {
-                return AfternoteValidationError.GALLERY_ACTIONS_REQUIRED
-            }
-            return null
-        }
-
-        private fun validateMemorialRequiredFields(playlistStateHolder: MemorialPlaylistStateHolder?): AfternoteValidationError? {
-            if (playlistStateHolder == null || playlistStateHolder.songs.isEmpty()) {
-                return AfternoteValidationError.PLAYLIST_SONGS_REQUIRED
-            }
-            return null
-        }
-
-        private suspend fun performCreate(
-            category: String,
-            payload: RegisterAfternotePayload,
-            selectedReceiverIds: List<Long>,
-            playlistStateHolder: MemorialPlaylistStateHolder?,
-            funeralVideoUrl: String? = null,
-            funeralThumbnailUrl: String? = null,
-            memorialPhotoUrl: String? = null,
-        ): Result<Long> {
-            val actions =
-                payload.processingMethods.map { it.text } +
-                    payload.galleryProcessingMethods.map { it.text }
-            val isSocial = category == CATEGORY_SOCIAL
-            val processMethod =
-                toServerProcessMethod(
-                    accountProcessingMethod =
-                        if (isSocial) payload.accountProcessingMethod else "",
-                    informationProcessingMethod =
-                        if (!isSocial) payload.informationProcessingMethod else "",
-                )
-            val leaveMessage = payload.message.ifEmpty { null }
-
-            Log.d(
-                TAG,
-                "performCreate: category=$category, title=${payload.serviceName}, " +
-                    "processMethod=$processMethod, actions=$actions, " +
-                    "leaveMessage=$leaveMessage",
-            )
-
-            return when (category) {
-                CATEGORY_GALLERY -> {
-                    val galleryActions =
-                        actions.ifEmpty { listOf("정보 전달") }
-                    Log.d(
-                        TAG,
-                        "performCreate GALLERY: receivers=$selectedReceiverIds, actions=$galleryActions",
-                    )
-                    createGalleryUseCase(
-                        input =
-                            CreateGalleryInput(
-                                title = payload.serviceName,
-                                processMethod = processMethod,
-                                actions = galleryActions,
-                                leaveMessage = leaveMessage,
-                                receiverIds = selectedReceiverIds,
-                            ),
-                    )
-                }
-
-                CATEGORY_MEMORIAL -> {
-                    val input =
-                        buildPlaylistInput(
-                            playlistStateHolder = playlistStateHolder,
-                            atmosphere = payload.atmosphere,
-                            memorialPhotoUrl = memorialPhotoUrl,
-                            funeralVideoUrl = funeralVideoUrl,
-                            funeralThumbnailUrl = funeralThumbnailUrl,
-                        )
-                    createPlaylistUseCase(
-                        input =
-                            CreatePlaylistInput(
-                                title = payload.serviceName,
-                                playlist = input,
-                                receiverIds = selectedReceiverIds,
-                            ),
-                    )
-                }
-
-                else -> {
-                    createSocialUseCase(
-                        CreateSocialInput(
-                            title = payload.serviceName,
-                            processMethod = processMethod,
-                            actions = actions,
-                            leaveMessage = leaveMessage,
-                            credentials =
-                                CredentialsInput(
-                                    id = payload.accountId.takeIf { it.isNotEmpty() },
-                                    password = payload.password.takeIf { it.isNotEmpty() },
-                                ),
-                            receiverIds = selectedReceiverIds,
-                        ),
-                    )
-                }
-            }
-        }
-
-        private suspend fun performUpdate(
-            afternoteId: Long,
-            category: String,
-            payload: RegisterAfternotePayload,
-            selectedReceiverIds: List<Long>,
-            playlistStateHolder: MemorialPlaylistStateHolder?,
-            memorialMedia: MemorialMediaUrls,
-        ): Result<Long> {
-            val body =
-                if (category == CATEGORY_MEMORIAL) {
-                    buildMemorialUpdateBody(
-                        title = payload.serviceName,
-                        atmosphere = payload.atmosphere,
-                        playlistStateHolder = playlistStateHolder,
-                        funeralVideoUrl = memorialMedia.funeralVideoUrl,
-                        funeralThumbnailUrl = memorialMedia.funeralThumbnailUrl,
-                        memorialPhotoUrl = memorialMedia.memorialPhotoUrl,
-                    )
-                } else {
-                    buildNonMemorialUpdateBody(
-                        category = category,
-                        payload = payload,
-                        selectedReceiverIds = selectedReceiverIds,
-                    )
-                }
-            return updateUseCase(
-                id = afternoteId,
-                updateInput = body,
-            )
-        }
-
-        /**
-         * PLAYLIST category allows only title and playlist to be updated (API spec).
-         * Title and category are mandatory for the edit API.
-         * [atmosphere] is "남기고 싶은 당부" (playlist.atmosphere).
-         */
-        private fun buildMemorialUpdateBody(
-            title: String,
-            atmosphere: String,
-            playlistStateHolder: MemorialPlaylistStateHolder?,
-            funeralVideoUrl: String? = null,
-            funeralThumbnailUrl: String? = null,
-            memorialPhotoUrl: String? = null,
-        ) = UpdateInput(
-            category = "PLAYLIST",
-            title = title,
-            playlist =
-                buildPlaylistInput(
-                    playlistStateHolder = playlistStateHolder,
-                    atmosphere = atmosphere,
-                    memorialPhotoUrl = memorialPhotoUrl,
-                    funeralVideoUrl = funeralVideoUrl,
-                    funeralThumbnailUrl = funeralThumbnailUrl,
-                ),
-        )
-
-        private fun buildNonMemorialUpdateBody(
-            category: String,
-            payload: RegisterAfternotePayload,
-            selectedReceiverIds: List<Long>,
-        ): UpdateInput {
-            val actions =
-                payload.processingMethods.map { it.text } +
-                    payload.galleryProcessingMethods.map { it.text }
-            val isSocial =
-                category == CATEGORY_SOCIAL
-            val processMethod =
-                toServerProcessMethod(
-                    accountProcessingMethod =
-                        if (isSocial) payload.accountProcessingMethod else "",
-                    informationProcessingMethod =
-                        if (!isSocial) payload.informationProcessingMethod else "",
-                )
-            val serverCategory =
-                when (category) {
-                    CATEGORY_SOCIAL -> "SOCIAL"
-                    CATEGORY_GALLERY -> "GALLERY"
-                    else -> null
-                }
-            // Title and category are mandatory for the edit API; fallback for unknown display category.
-            return UpdateInput(
-                category = serverCategory ?: "SOCIAL",
-                title = payload.serviceName,
-                processMethod = processMethod.ifEmpty { null },
-                actions = actions.ifEmpty { null },
-                leaveMessage = payload.message.ifEmpty { null },
-                credentials =
-                    when (category) {
-                        CATEGORY_SOCIAL -> {
-                            val id = payload.accountId.takeIf { it.isNotEmpty() }
-                            val pw = payload.password.takeIf { it.isNotEmpty() }
-                            if (id != null || pw != null) {
-                                CredentialsInput(id = id, password = pw)
-                            } else {
-                                null
-                            }
-                        }
-
-                        else -> {
-                            null
-                        }
-                    },
-                receivers =
-                    when (category) {
-                        CATEGORY_GALLERY -> {
-                            selectedReceiverIds.map { ReceiverRefInput(receiverId = it) }
-                        }
-
-                        else -> {
-                            null
-                        }
-                    },
-                playlist = null,
-            )
-        }
-
-//         클라이언트 enum 이름을 서버 processMethod 코드로 변환.
-//         갤러리는 수신자 지정만 지원하며 TRANSFER만 전송합니다.
-
-        // 서버 processMethod → 계정 처리 방법 enum 이름 (소셜/비즈니스 편집용).
-        private fun serverProcessMethodToAccountEnum(processMethod: String): String =
-            when (processMethod.uppercase()) {
-                "MEMORIAL" -> "MEMORIAL_ACCOUNT"
-                "DELETE" -> "PERMANENT_DELETE"
-                "TRANSFER", "RECEIVER" -> "TRANSFER_TO_RECEIVER"
-                else -> processMethod
-            }
-
-        /** 서버 processMethod → 정보 처리 방법 enum 이름 (갤러리 편집용). 갤러리는 수신자 지정만 지원. */
-        private fun serverProcessMethodToInfoEnum(processMethod: String): String =
-            when (processMethod.uppercase()) {
-                "TRANSFER", "RECEIVER", "ADDITIONAL" -> "TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER"
-                else -> processMethod
-            }
-
-        /** API category (e.g. GALLERY) → edit screen dropdown value so Gallery processMethod loads. */
-        private fun serverCategoryToEditScreenCategory(serverCategory: String): String =
-            when (serverCategory.uppercase()) {
-                "SOCIAL" -> CATEGORY_SOCIAL
-                "GALLERY" -> CATEGORY_GALLERY
-                "PLAYLIST", "MUSIC" -> CATEGORY_MEMORIAL
-                else -> CATEGORY_SOCIAL
-            }
-
-        private fun toServerProcessMethod(
-            accountProcessingMethod: String,
-            informationProcessingMethod: String,
-        ): String {
-            val fromAccount =
-                when (accountProcessingMethod) {
-                    "MEMORIAL_ACCOUNT" -> "MEMORIAL"
-                    "PERMANENT_DELETE" -> "DELETE"
-                    "TRANSFER_TO_RECEIVER" -> "TRANSFER"
-                    else -> null
-                }
-            if (fromAccount != null) return fromAccount
-            val fallback = accountProcessingMethod.ifEmpty { informationProcessingMethod }
-            return when (fallback) {
-                "TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER" -> "TRANSFER"
-                else -> fallback
-            }
-        }
-
-        /**
-         * Builds playlist DTO for create/update. memorialVideo is included whenever the user has
-         * selected a video. thumbnailUrl is from POST /files/presigned-url upload or API on edit.
-         * memorialPhotoUrl: 영정 사진 URL (from API on edit or after upload).
-         */
-        private fun buildPlaylistInput(
-            playlistStateHolder: MemorialPlaylistStateHolder?,
-            atmosphere: String = "",
-            memorialPhotoUrl: String? = null,
-            funeralVideoUrl: String? = null,
-            funeralThumbnailUrl: String? = null,
-        ): PlaylistInput {
-            val songs =
-                playlistStateHolder?.songs?.map { song ->
-                    SongInput(
-                        id = song.id.toLongOrNull(),
-                        title = song.title,
-                        artist = song.artist,
-                        coverUrl = song.albumCoverUrl,
-                    )
-                } ?: emptyList()
-            val memorialVideo =
-                if (funeralVideoUrl.isNullOrBlank()) {
-                    null
-                } else {
-                    MemorialVideoInput(
-                        videoUrl = funeralVideoUrl,
-                        thumbnailUrl = funeralThumbnailUrl.takeIf { !it.isNullOrBlank() },
-                    )
-                }
-            return PlaylistInput(
-                atmosphere = atmosphere.ifEmpty { null },
-                memorialPhotoUrl = memorialPhotoUrl?.takeIf { it.isNotBlank() },
-                songs = songs,
-                memorialVideo = memorialVideo,
-            )
-        }
     }
+
+/** 단발성 이벤트. [Channel]을 통해 한 번만 소비됩니다. */
+sealed interface AfternoteEditorEvent {
+    data class SaveSuccess(
+        val savedId: Long,
+    ) : AfternoteEditorEvent
+
+    data class ThumbnailUploaded(
+        val url: String,
+    ) : AfternoteEditorEvent
+}
 
 /**
  * Memorial-related media URLs and the picked photo URI for save.
@@ -803,15 +374,6 @@ data class SaveAfternoteMemorialMedia(
     val funeralThumbnailUrl: String? = null,
     val memorialPhotoUrl: String? = null,
     val pickedMemorialPhotoUri: String? = null,
-)
-
-/**
- * Resolved memorial media URLs for performUpdate/performCreate.
- */
-private data class MemorialMediaUrls(
-    val funeralVideoUrl: String? = null,
-    val funeralThumbnailUrl: String? = null,
-    val memorialPhotoUrl: String? = null,
 )
 
 /** API 400 응답 body 파싱용 (code 475 등). */

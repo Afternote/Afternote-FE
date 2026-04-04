@@ -28,10 +28,12 @@ enum class AfternoteValidationError(
 
 /**
  * 애프터노트 저장(생성/수정) 상태.
+ *
+ * 저장 성공은 [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorEvent.SaveSuccess]
+ * Channel 이벤트로 전달되며, 이 클래스는 진행 상태와 오류만 관리합니다.
  */
 data class AfternoteSaveState(
     val isSaving: Boolean = false,
-    val saveSuccess: Boolean = false,
     val savedId: Long? = null,
     val error: String? = null,
     val validationError: AfternoteValidationError? = null,
