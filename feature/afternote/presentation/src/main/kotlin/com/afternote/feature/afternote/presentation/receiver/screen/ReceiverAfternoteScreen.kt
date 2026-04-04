@@ -38,6 +38,7 @@ import com.afternote.feature.afternote.presentation.receiver.component.HeroCard
 import com.afternote.feature.afternote.presentation.receiver.component.TopHeader
 import com.afternote.feature.afternote.presentation.receiver.model.uistate.ReceiverDownloadAllUiState
 import com.afternote.feature.afternote.presentation.receiver.model.uistate.ReceiverSummaryUiState
+import com.afternote.feature.afternote.presentation.receiver.viewmodel.ReceiverDownloadAllEvent
 import com.afternote.feature.afternote.presentation.receiver.viewmodel.ReceiverDownloadAllViewModel
 import com.afternote.feature.afternote.presentation.receiver.viewmodel.ReceiverDownloadAllViewModelContract
 
@@ -61,13 +62,13 @@ fun ReceiverAfterNoteRoute(
 
     LaunchedEffect(downloadUiState.downloadSuccess) {
         if (downloadUiState.downloadSuccess) {
-            viewModel.clearDownloadSuccess()
+            viewModel.onEvent(ReceiverDownloadAllEvent.DownloadSuccessConsumed)
         }
     }
     LaunchedEffect(downloadUiState.errorMessage) {
         downloadUiState.errorMessage?.let { message ->
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-            viewModel.clearError()
+            viewModel.onEvent(ReceiverDownloadAllEvent.ErrorConsumed)
         }
     }
 
@@ -81,7 +82,7 @@ fun ReceiverAfterNoteRoute(
         onNavigateToRecord = onNavigateToRecord,
         onNavigateToTimeLetter = onNavigateToTimeLetter,
         onNavigateToAfternote = onNavigateToAfternote,
-        onDownloadConfirm = { viewModel.confirmDownloadAll(summary.authCode) },
+        onDownloadConfirm = { viewModel.onEvent(ReceiverDownloadAllEvent.ConfirmDownload(summary.authCode)) },
     )
 }
 

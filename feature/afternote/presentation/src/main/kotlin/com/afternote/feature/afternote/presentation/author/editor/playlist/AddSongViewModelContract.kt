@@ -8,7 +8,14 @@ import kotlinx.coroutines.flow.StateFlow
 interface AddSongViewModelContract {
     val uiState: StateFlow<AddSongUiState>
 
-    fun onSearchQueryChange(query: String)
+    fun onEvent(event: AddSongEvent)
+}
+
+/**
+ * UI events for Add Song screen.
+ */
+sealed interface AddSongEvent {
+    data class SearchQueryChange(val query: String) : AddSongEvent
 }
 
 /**

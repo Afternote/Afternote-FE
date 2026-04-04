@@ -52,7 +52,7 @@ fun AddSongScreen(
         options =
             SongPlaylistScreenSelectableOptions(
                 searchQuery = uiState.searchQuery,
-                onSearchQueryChange = viewModel::onSearchQueryChange,
+                onSearchQueryChange = { viewModel.onEvent(AddSongEvent.SearchQueryChange(it)) },
             ),
     )
 }
@@ -148,7 +148,7 @@ private class FakeAddSongViewModel : AddSongViewModelContract {
             ),
         ).asStateFlow()
 
-    override fun onSearchQueryChange(query: String) {
+    override fun onEvent(event: AddSongEvent) {
         // No-op for Preview; real ViewModel triggers API search.
     }
 }

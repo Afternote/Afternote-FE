@@ -30,12 +30,26 @@ class ReceiverDownloadAllViewModel
         private val _uiState = MutableStateFlow(ReceiverDownloadAllUiState())
         override val uiState: StateFlow<ReceiverDownloadAllUiState> = _uiState.asStateFlow()
 
+        // region Event
+
+        override fun onEvent(event: ReceiverDownloadAllEvent) {
+            when (event) {
+                is ReceiverDownloadAllEvent.ConfirmDownload -> handleConfirmDownload(event.authCode)
+                is ReceiverDownloadAllEvent.DownloadSuccessConsumed -> handleClearDownloadSuccess()
+                is ReceiverDownloadAllEvent.ErrorConsumed -> handleClearError()
+            }
+        }
+
+        // endregion
+
+        // region Data Loading
+
         /**
          * 다이얼로그 "예" 선택 시 호출. 인증번호(마스터키)로 세 API를 순차 호출합니다.
          *
          * @param authCode 수신자 인증번호 (마스터키)
          */
-        override fun confirmDownloadAll(authCode: String) {
+        private fun handleConfirmDownload(authCode: String) {
             viewModelScope.launch {
                 _uiState.update {
                     it.copy(isLoading = true, errorMessage = null, downloadSuccess = false)
@@ -67,13 +81,19 @@ class ReceiverDownloadAllViewModel
             }
         }
 
+        // endregion
+
+        // region Utility
+
         /** downloadSuccess 플래그를 초기화합니다. 다이얼로그를 닫은 뒤 호출합니다. */
-        override fun clearDownloadSuccess() {
+        private fun handleClearDownloadSuccess() {
             _uiState.update { it.copy(downloadSuccess = false) }
         }
 
         /** errorMessage를 초기화합니다. 스낵바/토스트 소비 후 호출합니다. */
-        override fun clearError() {
+        private fun handleClearError() {
             _uiState.update { it.copy(errorMessage = null) }
         }
+
+        // endregion
     }

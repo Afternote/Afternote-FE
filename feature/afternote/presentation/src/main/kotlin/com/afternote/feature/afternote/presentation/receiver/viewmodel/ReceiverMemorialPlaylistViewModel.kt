@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.afternote.feature.afternote.domain.port.ReceiverAuthCodeProvider
 import com.afternote.feature.afternote.domain.usecase.receiver.GetAfterNotesByAuthCodeUseCase
 import com.afternote.feature.afternote.domain.usecase.receiver.GetAfternoteDetailByAuthCodeUseCase
+import com.afternote.feature.afternote.presentation.receiver.model.ReceiverMemorialPlaylistEvent
 import com.afternote.feature.afternote.presentation.receiver.model.uistate.ReceiverMemorialPlaylistUiState
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -31,8 +32,10 @@ class ReceiverMemorialPlaylistViewModel
         private val getAfterNotesByAuthCodeUseCase: GetAfterNotesByAuthCodeUseCase,
         private val getAfternoteDetailByAuthCodeUseCase: GetAfternoteDetailByAuthCodeUseCase,
     ) : ViewModel() {
+        // region State
         private val _uiState = MutableStateFlow(ReceiverMemorialPlaylistUiState())
         val uiState: StateFlow<ReceiverMemorialPlaylistUiState> = _uiState.asStateFlow()
+        // endregion
 
         init {
             val afternoteId = (savedStateHandle["afternoteId"] as? String)?.toLongOrNull()
@@ -58,6 +61,19 @@ class ReceiverMemorialPlaylistViewModel
             }
         }
 
+        // region Event
+        fun onEvent(event: ReceiverMemorialPlaylistEvent) {
+            when (event) {
+                ReceiverMemorialPlaylistEvent.ErrorConsumed -> clearError()
+            }
+        }
+
+        private fun clearError() {
+            _uiState.update { it.copy(errorMessage = null) }
+        }
+        // endregion
+
+        // region Data Loading
         private fun resolveFirstAfternoteAndLoad(authCode: String) {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             viewModelScope.launch {
@@ -126,8 +142,5 @@ class ReceiverMemorialPlaylistViewModel
                 }
             }
         }
-
-        fun clearError() {
-            _uiState.update { it.copy(errorMessage = null) }
-        }
+        // endregion
     }

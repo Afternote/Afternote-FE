@@ -81,7 +81,35 @@ class AfternoteEditorViewModel
          */
         private var loadedCategoryForEdit: EditorCategory? = null
 
-        fun loadReceivers() {
+        // region Event
+
+        fun onEvent(event: AfternoteEditorUiEvent) {
+            when (event) {
+                is AfternoteEditorUiEvent.LoadReceivers -> loadReceivers()
+                is AfternoteEditorUiEvent.UploadThumbnail -> uploadMemorialThumbnail(event.jpegBytes)
+                is AfternoteEditorUiEvent.Save ->
+                    saveAfternote(
+                        editingId = event.editingId,
+                        category = event.category,
+                        payload = event.payload,
+                        selectedReceiverIds = event.selectedReceiverIds,
+                        playlistStateHolder = event.playlistStateHolder,
+                        memorialMedia = event.memorialMedia,
+                    )
+                is AfternoteEditorUiEvent.LoadForEdit ->
+                    loadForEdit(
+                        afternoteId = event.afternoteId,
+                        state = event.state,
+                        playlistStateHolder = event.playlistStateHolder,
+                    )
+            }
+        }
+
+        // endregion
+
+        // region Data Loading
+
+        private fun loadReceivers() {
             viewModelScope.launch {
                 val userId = currentAuthorUserId() ?: return@launch
                 authorReceiversDirectory(userId)
@@ -90,9 +118,7 @@ class AfternoteEditorViewModel
             }
         }
 
-        fun getReceiverById(id: Long): AuthorReceiverDirectoryEntry? = cachedReceivers.find { it.receiverId == id }
-
-        fun uploadMemorialThumbnail(jpegBytes: ByteArray) {
+        private fun uploadMemorialThumbnail(jpegBytes: ByteArray) {
             viewModelScope.launch {
                 uploadMemorialThumbnailUseCase(jpegBytes)
                     .onSuccess { url ->
@@ -107,7 +133,7 @@ class AfternoteEditorViewModel
         /**
          * 애프터노트 저장 (생성 또는 수정).
          */
-        fun saveAfternote(
+        private fun saveAfternote(
             editingId: Long?,
             category: String,
             payload: RegisterAfternotePayload,
@@ -210,7 +236,7 @@ class AfternoteEditorViewModel
             }
         }
 
-        fun loadForEdit(
+        private fun loadForEdit(
             afternoteId: Long,
             state: AfternoteEditorState,
             playlistStateHolder: MemorialPlaylistStateHolder? = null,
@@ -346,6 +372,12 @@ class AfternoteEditorViewModel
             }
         }
 
+        // endregion
+
+        // region Utility
+
+        fun getReceiverById(id: Long): AuthorReceiverDirectoryEntry? = cachedReceivers.find { it.receiverId == id }
+
         private fun parseReceiversRequiredFromBody(e: HttpException): AfternoteValidationError? {
             val body = e.response()?.errorBody()?.string() ?: return null
             return runCatching {
@@ -353,6 +385,8 @@ class AfternoteEditorViewModel
                 if (parsed.code == 475) AfternoteValidationError.RECEIVERS_REQUIRED else null
             }.getOrNull()
         }
+
+        // endregion
     }
 
 /** 단발성 이벤트. [Channel]을 통해 한 번만 소비됩니다. */
@@ -364,6 +398,30 @@ sealed interface AfternoteEditorEvent {
     data class ThumbnailUploaded(
         val url: String,
     ) : AfternoteEditorEvent
+}
+
+/** UI에서 ViewModel로 전달되는 사용자 액션 이벤트. */
+sealed interface AfternoteEditorUiEvent {
+    data object LoadReceivers : AfternoteEditorUiEvent
+
+    data class UploadThumbnail(
+        val jpegBytes: ByteArray,
+    ) : AfternoteEditorUiEvent
+
+    data class Save(
+        val editingId: Long?,
+        val category: String,
+        val payload: RegisterAfternotePayload,
+        val selectedReceiverIds: List<Long>,
+        val playlistStateHolder: MemorialPlaylistStateHolder?,
+        val memorialMedia: SaveAfternoteMemorialMedia,
+    ) : AfternoteEditorUiEvent
+
+    data class LoadForEdit(
+        val afternoteId: Long,
+        val state: AfternoteEditorState,
+        val playlistStateHolder: MemorialPlaylistStateHolder?,
+    ) : AfternoteEditorUiEvent
 }
 
 /**

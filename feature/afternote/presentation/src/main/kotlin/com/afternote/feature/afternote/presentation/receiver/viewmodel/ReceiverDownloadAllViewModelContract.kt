@@ -9,9 +9,14 @@ import kotlinx.coroutines.flow.StateFlow
 interface ReceiverDownloadAllViewModelContract {
     val uiState: StateFlow<ReceiverDownloadAllUiState>
 
-    fun confirmDownloadAll(authCode: String)
+    fun onEvent(event: ReceiverDownloadAllEvent)
+}
 
-    fun clearDownloadSuccess()
-
-    fun clearError()
+/**
+ * 모든 기록 내려받기 UI 이벤트.
+ */
+sealed interface ReceiverDownloadAllEvent {
+    data class ConfirmDownload(val authCode: String) : ReceiverDownloadAllEvent
+    data object DownloadSuccessConsumed : ReceiverDownloadAllEvent
+    data object ErrorConsumed : ReceiverDownloadAllEvent
 }

@@ -1,10 +1,12 @@
 package com.afternote.feature.afternote.presentation.receiver.viewmodel
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.feature.afternote.domain.port.LoadMindRecordsByAuthCodePort
 import com.afternote.feature.afternote.domain.port.LoadSenderMessageByAuthCodePort
 import com.afternote.feature.afternote.domain.port.LoadTimeLettersByAuthCodePort
 import com.afternote.feature.afternote.domain.usecase.receiver.GetAfterNotesByAuthCodeUseCase
+import com.afternote.feature.afternote.presentation.receiver.model.ReceiverAfternoteTriggerEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -17,9 +19,8 @@ import javax.inject.Inject
 /**
  * 수신자 HOME에서 콘텐츠 개수(마음의 기록, 타임레터, 애프터노트) 및 leaveMessage를 로드하는 ViewModel.
  *
- * [loadHomeSummary]로 네 API를 병렬 호출하여 totalCount와 leaveMessage를 수집합니다.
+ * [onEvent]를 통해 [ReceiverAfternoteTriggerEvent]를 수신하여 처리합니다.
  * leaveMessage는 GET /api/receiver-auth/message의 message 필드에서 가져옵니다.
- * [loadAfterNotes]는 "애프터노트 확인하러 가기" 버튼 클릭 시 afternoteTotalCount 갱신용으로 호출됩니다.
  */
 @HiltViewModel
 class ReceiverAfternoteTriggerViewModel
@@ -30,6 +31,7 @@ class ReceiverAfternoteTriggerViewModel
         private val loadTimeLettersByAuthCode: LoadTimeLettersByAuthCodePort,
         private val loadSenderMessageByAuthCode: LoadSenderMessageByAuthCodePort,
     ) : ViewModel() {
+        // region State
         private val _leaveMessage = MutableStateFlow<String?>(null)
         val leaveMessage: StateFlow<String?> = _leaveMessage.asStateFlow()
 
@@ -41,13 +43,22 @@ class ReceiverAfternoteTriggerViewModel
 
         private val _afternoteTotalCount = MutableStateFlow(0)
         val afternoteTotalCount: StateFlow<Int> = _afternoteTotalCount.asStateFlow()
+        // endregion
 
+        // region Event
+        fun onEvent(event: ReceiverAfternoteTriggerEvent) {
+            when (event) {
+                is ReceiverAfternoteTriggerEvent.LoadHomeSummary -> loadHomeSummary(event.authCode)
+                is ReceiverAfternoteTriggerEvent.LoadAfterNotes -> loadAfterNotes(event.authCode)
+            }
+        }
+        // endregion
+
+        // region Data Loading
         /**
          * 홈 화면용 요약 데이터 로드. 마음의 기록, 타임레터, 애프터노트 totalCount와 leaveMessage를 가져옵니다.
-         *
-         * @param authCode 수신자 인증번호 (마스터키)
          */
-        fun loadHomeSummary(authCode: String) {
+        private fun loadHomeSummary(authCode: String) {
             viewModelScope.launch {
                 val afternotesDeferred = async { getAfterNotesByAuthCodeUseCase(authCode) }
                 val mindRecordsDeferred = async { loadMindRecordsByAuthCode(authCode) }
@@ -77,11 +88,9 @@ class ReceiverAfternoteTriggerViewModel
 
         /**
          * GET /api/receiver-auth/after-notes (X-Auth-Code) API를 호출합니다.
-         * leaveMessage 갱신 및 afternoteTotalCount 업데이트.
-         *
-         * @param authCode 수신자 인증번호 (마스터키)
+         * afternoteTotalCount 업데이트.
          */
-        fun loadAfterNotes(authCode: String) {
+        private fun loadAfterNotes(authCode: String) {
             viewModelScope.launch {
                 getAfterNotesByAuthCodeUseCase(authCode)
                     .onSuccess { result ->
@@ -89,4 +98,5 @@ class ReceiverAfternoteTriggerViewModel
                     }
             }
         }
+        // endregion
     }

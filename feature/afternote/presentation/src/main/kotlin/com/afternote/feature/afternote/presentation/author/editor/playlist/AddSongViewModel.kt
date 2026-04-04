@@ -26,7 +26,19 @@ class AddSongViewModel
 
         private var searchJob: Job? = null
 
-        override fun onSearchQueryChange(query: String) {
+        // region Event
+
+        override fun onEvent(event: AddSongEvent) {
+            when (event) {
+                is AddSongEvent.SearchQueryChange -> handleSearchQueryChange(event.query)
+            }
+        }
+
+        // endregion
+
+        // region Data Loading
+
+        private fun handleSearchQueryChange(query: String) {
             _uiState.update { it.copy(searchQuery = query, errorMessage = null) }
             searchJob?.cancel()
             searchJob =
@@ -54,4 +66,6 @@ class AddSongViewModel
                         }
                 }
         }
+
+        // endregion
     }

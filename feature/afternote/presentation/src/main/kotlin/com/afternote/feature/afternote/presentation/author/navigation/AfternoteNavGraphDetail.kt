@@ -29,6 +29,7 @@ import com.afternote.feature.afternote.presentation.author.detail.afternotedetai
 import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.MemorialGuidelineDetailState
 import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.SocialNetworkDetailContent
 import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.SocialNetworkDetailScreen
+import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailEvent
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
@@ -78,7 +79,9 @@ internal fun AfternoteDetailDestination(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(route.itemId) {
-        route.itemId.toLongOrNull()?.let { viewModel.loadDetail(it) }
+        route.itemId.toLongOrNull()?.let {
+            viewModel.onEvent(AfternoteDetailEvent.LoadDetail(it))
+        }
     }
 
     LaunchedEffect(uiState.deleteSuccess) {
@@ -132,7 +135,7 @@ internal fun AfternoteDetailDestination(
                         AfternoteRoute.EditRoute(itemId = detail.id.toString()),
                     )
                 },
-                onDeleteConfirm = { viewModel.deleteAfternote(detail.id) },
+                onDeleteConfirm = { viewModel.onEvent(AfternoteDetailEvent.Delete(detail.id)) },
             )
         }
     }
@@ -150,7 +153,9 @@ internal fun AfternoteGalleryDetailDestination(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(route.itemId) {
-        route.itemId.toLongOrNull()?.let { viewModel.loadDetail(it) }
+        route.itemId.toLongOrNull()?.let {
+            viewModel.onEvent(AfternoteDetailEvent.LoadDetail(it))
+        }
     }
 
     LaunchedEffect(uiState.deleteSuccess) {
@@ -200,7 +205,7 @@ internal fun AfternoteGalleryDetailDestination(
                                 AfternoteRoute.EditRoute(itemId = detail.id.toString()),
                             )
                         },
-                        onDeleteConfirm = { viewModel.deleteAfternote(detail.id) },
+                        onDeleteConfirm = { viewModel.onEvent(AfternoteDetailEvent.Delete(detail.id)) },
                     ),
             )
         }
@@ -219,7 +224,9 @@ internal fun AfternoteMemorialGuidelineDetailDestination(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(route.itemId) {
-        route.itemId.toLongOrNull()?.let { viewModel.loadDetail(it) }
+        route.itemId.toLongOrNull()?.let {
+            viewModel.onEvent(AfternoteDetailEvent.LoadDetail(it))
+        }
     }
 
     LaunchedEffect(uiState.deleteSuccess) {
@@ -278,7 +285,7 @@ internal fun AfternoteMemorialGuidelineDetailDestination(
                                 AfternoteRoute.EditRoute(itemId = detail.id.toString()),
                             )
                         },
-                        onDeleteConfirm = { viewModel.deleteAfternote(detail.id) },
+                        onDeleteConfirm = { viewModel.onEvent(AfternoteDetailEvent.Delete(detail.id)) },
                     ),
             )
         }

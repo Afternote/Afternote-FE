@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.feature.afternote.domain.port.ReceiverAuthCodeProvider
 import com.afternote.feature.afternote.domain.usecase.receiver.GetAfterNotesByAuthCodeUseCase
+import com.afternote.feature.afternote.presentation.receiver.model.ReceiverAfternotesListEvent
 import com.afternote.feature.afternote.presentation.receiver.model.uistate.ReceivedAfternoteListItemUi
 import com.afternote.feature.afternote.presentation.receiver.model.uistate.ReceiverAfternotesListUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,7 +34,21 @@ class ReceiverAfternotesListViewModel
             receiverAuthCodeProvider.currentAuthCode()?.let { authCode -> loadAfterNotes(authCode) }
         }
 
-        fun loadAfterNotes(authCode: String) {
+        // region Event
+
+        fun onEvent(event: ReceiverAfternotesListEvent) {
+            when (event) {
+                is ReceiverAfternotesListEvent.Load -> loadAfterNotes(event.authCode)
+                ReceiverAfternotesListEvent.Retry -> retry()
+                ReceiverAfternotesListEvent.ErrorConsumed -> clearError()
+            }
+        }
+
+        // endregion
+
+        // region Data Loading
+
+        private fun loadAfterNotes(authCode: String) {
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoading = true, errorMessage = null) }
                 getAfterNotesByAuthCodeUseCase(authCode)
@@ -64,15 +79,18 @@ class ReceiverAfternotesListViewModel
             }
         }
 
-        fun clearError() {
+        // endregion
+
+        // region Utility
+
+        private fun clearError() {
             _uiState.update { it.copy(errorMessage = null) }
         }
 
-        /**
-         * 에러 상태에서 재시도. 세션의 authCode로 목록을 다시 로드합니다.
-         */
-        fun retry() {
+        private fun retry() {
             clearError()
             receiverAuthCodeProvider.currentAuthCode()?.let { loadAfterNotes(it) }
         }
+
+        // endregion
     }

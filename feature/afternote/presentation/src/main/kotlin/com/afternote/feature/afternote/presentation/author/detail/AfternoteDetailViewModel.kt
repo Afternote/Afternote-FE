@@ -3,6 +3,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.feature.afternote.domain.usecase.author.DeleteUseCase
 import com.afternote.feature.afternote.domain.usecase.author.GetDetailUseCase
+import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailEvent
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,7 +29,21 @@ class AfternoteDetailViewModel
         private val _uiState = MutableStateFlow(AfternoteDetailUiState())
         val uiState: StateFlow<AfternoteDetailUiState> = _uiState.asStateFlow()
 
-        fun loadDetail(afternoteId: Long) {
+        // region Event
+
+        fun onEvent(event: AfternoteDetailEvent) {
+            when (event) {
+                is AfternoteDetailEvent.LoadDetail -> loadDetail(event.afternoteId)
+                is AfternoteDetailEvent.Delete -> deleteAfternote(event.afternoteId)
+                AfternoteDetailEvent.DeleteResultConsumed -> clearDeleteResult()
+            }
+        }
+
+        // endregion
+
+        // region Data Loading
+
+        private fun loadDetail(afternoteId: Long) {
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoading = true, error = null) }
                 getDetailUseCase(id = afternoteId)
@@ -47,7 +62,7 @@ class AfternoteDetailViewModel
             }
         }
 
-        fun deleteAfternote(afternoteId: Long) {
+        private fun deleteAfternote(afternoteId: Long) {
             viewModelScope.launch {
                 _uiState.update { it.copy(isDeleting = true, deleteError = null) }
                 deleteUseCase(id = afternoteId)
@@ -66,7 +81,13 @@ class AfternoteDetailViewModel
             }
         }
 
-        fun clearDeleteResult() {
+        // endregion
+
+        // region Utility
+
+        private fun clearDeleteResult() {
             _uiState.update { it.copy(deleteSuccess = false, deleteError = null) }
         }
+
+        // endregion
     }

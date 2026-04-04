@@ -17,6 +17,7 @@ import com.afternote.feature.afternote.presentation.author.editor.AfternoteEdito
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorSaveError
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorScreen
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorScreenCallbacks
+import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorUiEvent
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorState
@@ -105,28 +106,30 @@ internal fun buildEditScreenCallbacks(params: EditScreenCallbacksParams): Aftern
             params.navController.popBackStack()
         },
         onRegisterClick = { payload: RegisterAfternotePayload ->
-            params.editViewModel.saveAfternote(
-                editingId =
-                    params.route.itemId?.toLongOrNull()
-                        ?: params.initialListItem?.id?.toLongOrNull(),
-                category = params.state.selectedCategory,
-                payload = payload,
-                selectedReceiverIds = params.state.afternoteEditReceivers.mapNotNull { it.id.toLongOrNull() },
-                playlistStateHolder = params.playlistStateHolder,
-                memorialMedia =
-                    SaveAfternoteMemorialMedia(
-                        funeralVideoUrl = params.state.funeralVideoUrl,
-                        funeralThumbnailUrl = params.state.funeralThumbnailUrl,
-                        memorialPhotoUrl = params.state.memorialPhotoUrl,
-                        pickedMemorialPhotoUri = params.state.pickedMemorialPhotoUri,
-                    ),
+            params.editViewModel.onEvent(
+                AfternoteEditorUiEvent.Save(
+                    editingId =
+                        params.route.itemId?.toLongOrNull()
+                            ?: params.initialListItem?.id?.toLongOrNull(),
+                    category = params.state.selectedCategory,
+                    payload = payload,
+                    selectedReceiverIds = params.state.afternoteEditReceivers.mapNotNull { it.id.toLongOrNull() },
+                    playlistStateHolder = params.playlistStateHolder,
+                    memorialMedia =
+                        SaveAfternoteMemorialMedia(
+                            funeralVideoUrl = params.state.funeralVideoUrl,
+                            funeralThumbnailUrl = params.state.funeralThumbnailUrl,
+                            memorialPhotoUrl = params.state.memorialPhotoUrl,
+                            pickedMemorialPhotoUri = params.state.pickedMemorialPhotoUri,
+                        ),
+                ),
             )
         },
         onNavigateToAddSong = { params.navController.navigate(AfternoteRoute.MemorialPlaylistRoute) },
         onNavigateToSelectReceiver = params.onNavigateToSelectReceiver,
         onBottomNavTabSelected = params.onBottomNavTabSelected,
         onThumbnailBytesReady = { bytes ->
-            if (bytes != null) params.editViewModel.uploadMemorialThumbnail(bytes)
+            if (bytes != null) params.editViewModel.onEvent(AfternoteEditorUiEvent.UploadThumbnail(bytes))
         },
     )
 
@@ -168,7 +171,7 @@ internal fun AfternoteEditorDestination(
             params.editStateHandling.onStateChanged(state)
         }
     }
-    LaunchedEffect(Unit) { editViewModel.loadReceivers() }
+    LaunchedEffect(Unit) { editViewModel.onEvent(AfternoteEditorUiEvent.LoadReceivers) }
 
     val isEditCurrentDestination =
         params.navController.currentBackStackEntry == params.backStackEntry
@@ -191,10 +194,12 @@ internal fun AfternoteEditorDestination(
     LaunchedEffect(route.itemId) {
         val id = route.itemId?.toLongOrNull() ?: return@LaunchedEffect
         if (state.loadedItemId != route.itemId) {
-            editViewModel.loadForEdit(
-                afternoteId = id,
-                state = state,
-                playlistStateHolder = params.playlistStateHolder,
+            editViewModel.onEvent(
+                AfternoteEditorUiEvent.LoadForEdit(
+                    afternoteId = id,
+                    state = state,
+                    playlistStateHolder = params.playlistStateHolder,
+                ),
             )
         }
     }
