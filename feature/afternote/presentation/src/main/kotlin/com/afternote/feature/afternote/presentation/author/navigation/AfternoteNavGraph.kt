@@ -19,7 +19,7 @@ fun NavGraphBuilder.afternoteNavGraph(
         AfternoteHomeDestination(
             navController = navController,
             onNavTabSelected = onNavTabSelected,
-            onListItemsUpdated = params.home.onListItemsUpdated,
+            onVisibleItemsUpdated = params.home.onVisibleItemsUpdated,
             homeRefresh = params.home.homeRefresh,
         )
     }
@@ -45,12 +45,12 @@ fun NavGraphBuilder.afternoteNavGraph(
     }
 
     afternoteComposable<AfternoteRoute.EditRoute> { backStackEntry ->
-        val currentItems = params.home.afternoteListItems
+        val currentItems = params.home.afternoteVisibleItems
         AfternoteEditorDestination(
             AfternoteEditorDestinationParams(
                 backStackEntry = backStackEntry,
                 navController = navController,
-                afternoteListItems = currentItems,
+                afternoteVisibleItems = currentItems,
                 playlistStateHolder = params.edit.playlistStateHolder,
                 afternoteProvider = afternoteProvider,
                 editStateHandling = params.edit.editStateHandling,

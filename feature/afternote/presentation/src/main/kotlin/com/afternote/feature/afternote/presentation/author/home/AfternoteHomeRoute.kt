@@ -31,7 +31,7 @@ data class AfternoteHomeRouteActions(
 fun AfternoteHomeRoute(
     viewModel: AfternoteHomeViewModel = hiltViewModel(),
     actions: AfternoteHomeRouteActions = AfternoteHomeRouteActions(),
-    onListItemsUpdated: (List<ListItem>) -> Unit = {},
+    onVisibleItemsUpdated: (List<ListItem>) -> Unit = {},
     homeRefreshRequested: Boolean = false,
     onHomeRefreshConsumed: () -> Unit = {},
 ) {
@@ -60,7 +60,7 @@ fun AfternoteHomeRoute(
     LaunchedEffect(listItemIds) {
         if (visibleItems.isNotEmpty()) {
             Log.d("AfternoteHomeRoute", "visibleItems changed: size=${visibleItems.size}")
-            onListItemsUpdated(visibleItems)
+            onVisibleItemsUpdated(visibleItems)
         }
     }
 

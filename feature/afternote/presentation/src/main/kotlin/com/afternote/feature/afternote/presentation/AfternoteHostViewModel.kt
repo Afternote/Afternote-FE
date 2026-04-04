@@ -24,7 +24,7 @@ class AfternoteHostViewModel
         val currentAfternoteEditorDataProvider: AfternoteEditorDataProvider
             get() = dataProviderSwitch.currentAfternoteEditorDataProvider
 
-        fun updateListItems(newListItems: List<ListItem>) {
-            _items.value = newListItems
+        fun updateVisibleItems(newVisibleItems: List<ListItem>) {
+            _items.value = newVisibleItems
         }
     }

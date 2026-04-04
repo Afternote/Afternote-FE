@@ -28,8 +28,8 @@ data class AfternoteHomeRefreshParams(
 
 /** Home-related inputs for [afternoteNavGraph] (visibleItems + home refresh). */
 data class AfternoteNavGraphHomeContext(
-    val afternoteListItems: List<ListItem>,
-    val onListItemsUpdated: (List<ListItem>) -> Unit,
+    val afternoteVisibleItems: List<ListItem>,
+    val onVisibleItemsUpdated: (List<ListItem>) -> Unit,
     val homeRefresh: AfternoteHomeRefreshParams? = null,
 )
 

@@ -13,10 +13,10 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.Afte
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 
 internal fun resolveListItems(
-    afternoteListItems: List<ListItem>,
+    afternoteVisibleItems: List<ListItem>,
     afternoteProvider: AfternoteEditorDataProvider,
 ): List<ListItem> =
-    afternoteListItems.ifEmpty {
+    afternoteVisibleItems.ifEmpty {
         AfternoteItemMapper.toAfternoteItemsWithStableIds(afternoteProvider.getDefaultAfternoteItems())
     }
 
@@ -24,7 +24,7 @@ internal fun resolveListItems(
 internal fun AfternoteHomeDestination(
     navController: NavController,
     onNavTabSelected: (BottomNavTab) -> Unit = {},
-    onListItemsUpdated: (List<ListItem>) -> Unit,
+    onVisibleItemsUpdated: (List<ListItem>) -> Unit,
     homeRefresh: AfternoteHomeRefreshParams? = null,
 ) {
     AfternoteHomeRoute(
@@ -52,6 +52,6 @@ internal fun AfternoteHomeDestination(
                 },
                 onNavTabSelected = onNavTabSelected,
             ),
-        onListItemsUpdated = onListItemsUpdated,
+        onVisibleItemsUpdated = onVisibleItemsUpdated,
     )
 }

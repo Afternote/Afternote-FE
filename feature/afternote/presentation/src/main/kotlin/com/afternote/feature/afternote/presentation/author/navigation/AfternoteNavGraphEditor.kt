@@ -69,7 +69,7 @@ internal data class EditScreenCallbacksParams(
 internal data class AfternoteEditorDestinationParams(
     val backStackEntry: NavBackStackEntry,
     val navController: NavController,
-    val afternoteListItems: List<ListItem>,
+    val afternoteVisibleItems: List<ListItem>,
     val playlistStateHolder: MemorialPlaylistStateHolder,
     val afternoteProvider: AfternoteEditorDataProvider,
     val editStateHandling: AfternoteEditorStateHandling,
@@ -139,19 +139,19 @@ internal fun AfternoteEditorDestination(
     editViewModel: AfternoteEditorViewModel = hiltViewModel(),
 ) {
     val route = params.backStackEntry.toRoute<AfternoteRoute.EditRoute>()
-    val listItems =
-        remember(params.afternoteListItems, params.afternoteProvider) {
-            resolveListItems(params.afternoteListItems, params.afternoteProvider)
+    val visibleItems =
+        remember(params.afternoteVisibleItems, params.afternoteProvider) {
+            resolveListItems(params.afternoteVisibleItems, params.afternoteProvider)
         }
     val initialItem =
-        remember(route.itemId, listItems) {
-            route.itemId?.let { id -> listItems.find { it.id == id } }
+        remember(route.itemId, visibleItems) {
+            route.itemId?.let { id -> visibleItems.find { it.id == id } }
         }
     if (route.itemId != null && initialItem == null) {
         Log.w(
             TAG_AFTERNOTE_EDIT,
             "Edit opened but item not found: itemId=${route.itemId}, " +
-                "listSize=${listItems.size}",
+                "listSize=${visibleItems.size}",
         )
     }
     val saveState by editViewModel.saveState.collectAsStateWithLifecycle()
