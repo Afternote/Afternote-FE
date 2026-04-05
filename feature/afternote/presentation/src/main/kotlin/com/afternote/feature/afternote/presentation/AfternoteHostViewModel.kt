@@ -21,6 +21,22 @@ class AfternoteHostViewModel
         private val _items = MutableStateFlow<List<ListItem>>(emptyList())
         val items: StateFlow<List<ListItem>> = _items.asStateFlow()
 
+        /**
+         * 홈 화면 새로고침 요청 플래그.
+         * 에디터 저장 성공·상세 삭제 등 그래프 내부에서 발생한 이벤트를
+         * 홈 화면에 전달하기 위한 one-time flag. 소비 후 [consumeHomeRefresh]로 꺼진다.
+         */
+        private val _homeRefreshRequested = MutableStateFlow(false)
+        val homeRefreshRequested: StateFlow<Boolean> = _homeRefreshRequested.asStateFlow()
+
+        fun requestHomeRefresh() {
+            _homeRefreshRequested.value = true
+        }
+
+        fun consumeHomeRefresh() {
+            _homeRefreshRequested.value = false
+        }
+
         val useFakeState: StateFlow<Boolean> = dataProviderSwitch.useFakeState
 
         val currentAfternoteEditorDataProvider: AfternoteEditorDataProvider

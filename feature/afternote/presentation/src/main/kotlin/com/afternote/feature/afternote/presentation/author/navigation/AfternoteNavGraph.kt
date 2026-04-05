@@ -21,6 +21,7 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.Afte
  * 앱 모듈의 NavHost에 직접 연결되며, [Route.Afternote]를 graph route로 사용합니다.
  * 내부 모든 화면은 graph-scoped [AfternoteHostViewModel]을 공유합니다.
  */
+@Suppress("LongMethod")
 fun NavGraphBuilder.afternoteNavGraph(params: AfternoteNavGraphParams) {
     val navController = params.navController
     navigation<Route.Afternote>(startDestination = AfternoteRoute.AfternoteHomeRoute) {
@@ -28,30 +29,33 @@ fun NavGraphBuilder.afternoteNavGraph(params: AfternoteNavGraphParams) {
             // Composable Destination: 화면을 정의 하고 의존성을 주입하는 컴포저블 함수
             // 네비게이트할 때마다 엔트리가 추가되면서 블록을 실행
             val hostViewModel = graphScopedHostViewModel(navController)
+            val refreshRequested by hostViewModel.homeRefreshRequested.collectAsStateWithLifecycle()
             AfternoteHomeNavigation(
                 navController = navController,
                 onNavTabSelected = params.onNavTabSelected,
                 onVisibleItemsUpdated = hostViewModel::updateVisibleItems,
-                homeRefreshRequested = params.homeRefreshRequested,
-                onHomeRefreshConsumed = params.onHomeRefreshConsumed,
+                homeRefreshRequested = refreshRequested,
+                onHomeRefreshConsumed = hostViewModel::consumeHomeRefresh,
             )
         }
 
         afternoteComposable<AfternoteRoute.DetailRoute> { backStackEntry ->
+            val hostViewModel = graphScopedHostViewModel(navController)
             AfternoteDetailNavigation(
                 backStackEntry = backStackEntry,
                 navController = navController,
                 userName = params.userName,
-                onAfternoteDeleted = params.onAfternoteDeleted,
+                onAfternoteDeleted = hostViewModel::requestHomeRefresh,
             )
         }
 
         afternoteComposable<AfternoteRoute.GalleryDetailRoute> { backStackEntry ->
+            val hostViewModel = graphScopedHostViewModel(navController)
             AfternoteGalleryDetailNavigation(
                 backStackEntry = backStackEntry,
                 navController = navController,
                 userName = params.userName,
-                onAfternoteDeleted = params.onAfternoteDeleted,
+                onAfternoteDeleted = hostViewModel::requestHomeRefresh,
             )
         }
 
@@ -72,6 +76,7 @@ fun NavGraphBuilder.afternoteNavGraph(params: AfternoteNavGraphParams) {
                     editState = hostViewModel.editState,
                     onEditStateChanged = hostViewModel::updateEditState,
                     onEditStateClear = hostViewModel::clearEditState,
+                    onRequestHomeRefresh = hostViewModel::requestHomeRefresh,
                     onNavigateToSelectReceiver = {},
                     onBottomNavTabSelected = params.onNavTabSelected,
                 ),
@@ -79,11 +84,12 @@ fun NavGraphBuilder.afternoteNavGraph(params: AfternoteNavGraphParams) {
         }
 
         afternoteComposable<AfternoteRoute.MemorialGuidelineDetailRoute> { backStackEntry ->
+            val hostViewModel = graphScopedHostViewModel(navController)
             AfternoteMemorialGuidelineDetailNavigation(
                 backStackEntry = backStackEntry,
                 navController = navController,
                 userName = params.userName,
-                onAfternoteDeleted = params.onAfternoteDeleted,
+                onAfternoteDeleted = hostViewModel::requestHomeRefresh,
             )
         }
 

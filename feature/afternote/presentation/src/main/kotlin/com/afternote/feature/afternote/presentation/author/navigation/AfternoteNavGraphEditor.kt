@@ -77,6 +77,7 @@ internal data class AfternoteEditorNavigationParams(
     val editState: AfternoteEditorState?,
     val onEditStateChanged: (AfternoteEditorState?) -> Unit,
     val onEditStateClear: () -> Unit,
+    val onRequestHomeRefresh: () -> Unit = {},
     val onNavigateToSelectReceiver: () -> Unit = {},
     val onBottomNavTabSelected: (BottomNavTab) -> Unit = {},
 )
@@ -211,6 +212,7 @@ internal fun AfternoteEditorNavigation(
         editViewModel.events.collect { event ->
             when (event) {
                 is AfternoteEditorEvent.SaveSuccess -> {
+                    params.onRequestHomeRefresh()
                     navigateToAfternoteHomeOnSaveSuccess(
                         params.onEditStateClear,
                         params.navController,
