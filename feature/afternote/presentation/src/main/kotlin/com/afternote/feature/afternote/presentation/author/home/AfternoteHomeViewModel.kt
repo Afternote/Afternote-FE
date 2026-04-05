@@ -38,6 +38,9 @@ class AfternoteHomeViewModel
         private val getListPageUseCase: GetListPageUseCase,
     ) : ViewModel() {
         // MutableStateFlow는 인자로 받은 객체 타입의 MutableStateFlow 객체를 만든다
+        // 인자 객체에 대해 equals()를 통해 직전 객체와 비교하여 다를 때마다 리컴포지션하라는 신호를 보낸다
+        // 이런 StateFlow의 특성 때문에 상태가 변했을 때만 _uiState가 업데이트됨
+        // .value가 set 될 때마다 collect 안으로 _uiState.value를 발행하는 Hot Flow
         private val _uiState = MutableStateFlow(AfternoteHomeUiState())
 
         // 관찰만 하고 수정할 수 없는 StateFlow 타입으로 변환
@@ -48,9 +51,10 @@ class AfternoteHomeViewModel
             _uiState
                 // uiState를 관찰하는 순간에 수행할 연산의 설계도
                 // 관찰을 시작하는 순간 stateIn을 통해 list의 map처럼 작동 시작
+                // _uiState.value가 발행될 때마다 실행
                 .map { homeState ->
-                    // 관찰하는 시점 기준 최신 homeState를 가져옴
-                    // 현 시점 homeState에 대해 연산 완료했으면 새로운 homeState가 발행될 때까지 대기
+                    // _uiState.value
+                    // 연산 완료했으면 새로운 _uiState.value가 발행될 때까지 suspsend
                     val listState = homeState.listState
                     AfternoteBodyUiState(
                         visibleItems = listState.visibleItems.map { it.toUiModel() },

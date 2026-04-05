@@ -42,6 +42,7 @@ class AfternoteHostViewModel
         val homeRefreshEvents: Flow<Unit> = _homeRefreshEvents.receiveAsFlow()
 
         fun requestHomeRefresh() {
+            // 채널은 send하는 즉시 데이터를 발행하는 Hot Flow
             _homeRefreshEvents.trySend(Unit)
         }
 
