@@ -57,7 +57,9 @@ internal fun editSaveErrorFromState(
 internal data class EditScreenCallbacksParams(
     val navController: NavController,
     val editViewModel: AfternoteEditorViewModel,
-    val editStateHandling: AfternoteEditorStateHandling,
+    val editState: AfternoteEditorState?,
+    val onEditStateChanged: (AfternoteEditorState?) -> Unit,
+    val onEditStateClear: () -> Unit,
     val state: AfternoteEditorState,
     val route: AfternoteRoute.EditorRoute,
     val initialListItem: ListItem?,
@@ -72,16 +74,18 @@ internal data class AfternoteEditorNavigationParams(
     val afternoteVisibleItems: List<ListItem>,
     val playlistStateHolder: MemorialPlaylistStateHolder,
     val afternoteProvider: AfternoteEditorDataProvider,
-    val editStateHandling: AfternoteEditorStateHandling,
+    val editState: AfternoteEditorState?,
+    val onEditStateChanged: (AfternoteEditorState?) -> Unit,
+    val onEditStateClear: () -> Unit,
     val onNavigateToSelectReceiver: () -> Unit = {},
     val onBottomNavTabSelected: (BottomNavTab) -> Unit = {},
 )
 
 internal fun navigateToAfternoteHomeOnSaveSuccess(
-    editStateHandling: AfternoteEditorStateHandling,
+    onEditStateClear: () -> Unit,
     navController: NavController,
 ) {
-    editStateHandling.onClear()
+    onEditStateClear()
     navController.navigate(AfternoteRoute.AfternoteHomeRoute) {
         popUpTo(AfternoteRoute.AfternoteHomeRoute) { inclusive = true }
         launchSingleTop = true
@@ -102,7 +106,7 @@ internal fun tryApplyReceiverSelectionFromSavedState(
 internal fun buildEditScreenCallbacks(params: EditScreenCallbacksParams): AfternoteEditorScreenCallbacks =
     AfternoteEditorScreenCallbacks(
         onBackClick = {
-            params.editStateHandling.onClear()
+            params.onEditStateClear()
             params.navController.popBackStack()
         },
         onRegisterClick = { payload: RegisterAfternotePayload ->
@@ -156,19 +160,18 @@ internal fun AfternoteEditorNavigation(
     }
     val saveState by editViewModel.saveState.collectAsStateWithLifecycle()
     val newState = rememberAfternoteEditorState()
-    val existingState = params.editStateHandling.state
-    val state = existingState ?: newState
+    val state = params.editState ?: newState
 
     // 새 글 작성 시 기존 상태 초기화 (목적지 화면이 스스로 책임)
     LaunchedEffect(Unit) {
         if (route.itemId == null) {
-            params.editStateHandling.onClear()
+            params.onEditStateClear()
             params.playlistStateHolder.clearAllSongs()
         }
     }
     LaunchedEffect(Unit) {
-        if (params.editStateHandling.state == null) {
-            params.editStateHandling.onStateChanged(state)
+        if (params.editState == null) {
+            params.onEditStateChanged(state)
         }
     }
     LaunchedEffect(Unit) { editViewModel.onEvent(AfternoteEditorUiEvent.LoadReceivers) }
@@ -209,7 +212,7 @@ internal fun AfternoteEditorNavigation(
             when (event) {
                 is AfternoteEditorEvent.SaveSuccess -> {
                     navigateToAfternoteHomeOnSaveSuccess(
-                        params.editStateHandling,
+                        params.onEditStateClear,
                         params.navController,
                     )
                 }
@@ -247,7 +250,9 @@ internal fun AfternoteEditorNavigation(
                 EditScreenCallbacksParams(
                     navController = params.navController,
                     editViewModel = editViewModel,
-                    editStateHandling = params.editStateHandling,
+                    editState = params.editState,
+                    onEditStateChanged = params.onEditStateChanged,
+                    onEditStateClear = params.onEditStateClear,
                     state = state,
                     route = route,
                     initialListItem = initialItem,

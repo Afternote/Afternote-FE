@@ -26,20 +26,23 @@ fun NavGraphBuilder.afternoteNavGraph(
     navController: NavController,
     onNavTabSelected: (BottomNavTab) -> Unit = {},
     userName: String = "",
-    homeRefresh: AfternoteHomeRefreshParams? = null,
+    homeRefreshRequested: Boolean = false,
+    onHomeRefreshConsumed: () -> Unit = {},
+    onAfternoteDeleted: () -> Unit = {},
 ) {
     navigation<Route.Afternote>(startDestination = AfternoteRoute.AfternoteHomeRoute) {
         afternoteComposable<AfternoteRoute.AfternoteHomeRoute> {
+            // Composable Destination: 화면을 정의 하고 의존성을 주입하는 컴포저블 함수
+            // 네비게이트할 때마다 엔트리가 추가되면서 블록을 실행
             val hostViewModel = graphScopedHostViewModel(navController)
             AfternoteHomeNavigation(
                 navController = navController,
                 onNavTabSelected = onNavTabSelected,
                 onVisibleItemsUpdated = hostViewModel::updateVisibleItems,
-                homeRefresh = homeRefresh,
+                homeRefreshRequested = homeRefreshRequested,
+                onHomeRefreshConsumed = onHomeRefreshConsumed,
             )
         }
-
-        val onAfternoteDeleted = homeRefresh?.onAfternoteDeleted ?: {}
 
         afternoteComposable<AfternoteRoute.DetailRoute> { backStackEntry ->
             AfternoteDetailNavigation(
@@ -73,7 +76,9 @@ fun NavGraphBuilder.afternoteNavGraph(
                     afternoteVisibleItems = items,
                     playlistStateHolder = hostViewModel.playlistHolder,
                     afternoteProvider = afternoteProvider,
-                    editStateHandling = hostViewModel.editHandling,
+                    editState = hostViewModel.editState,
+                    onEditStateChanged = hostViewModel::updateEditState,
+                    onEditStateClear = hostViewModel::clearEditState,
                     onNavigateToSelectReceiver = {},
                     onBottomNavTabSelected = onNavTabSelected,
                 ),
@@ -131,7 +136,9 @@ private fun graphScopedHostViewModel(navController: NavController): AfternoteHos
     val currentEntry = navController.currentBackStackEntry
     val parentEntry =
         remember(currentEntry) {
-            navController.getBackStackEntry<Route.Afternote>() // 해당 라우트의 엔트리 중 최신 걸 가져 옴
+            navController.getBackStackEntry<Route.Afternote>() // 해당 라우트의 그래프 엔트리 가져 옴
         }
     return hiltViewModel(parentEntry) // 뷰모델의 생명 주기를 parentEntry 백스택 엔트리에 스코핑
+    // hiltViewModel의 제네릭 타입 추론을 통해 함수의 리턴 시그니처에 맞는 타입으로 반환
+    // 리컴포지션 시 parentEntry에 스코핑된 AfternoteHostViewModel가 있다면 재사용, 그렇지 않다면 새로 생성
 }

@@ -25,11 +25,12 @@ internal fun AfternoteHomeNavigation(
     navController: NavController,
     onNavTabSelected: (BottomNavTab) -> Unit = {},
     onVisibleItemsUpdated: (List<ListItem>) -> Unit,
-    homeRefresh: AfternoteHomeRefreshParams? = null,
+    homeRefreshRequested: Boolean = false,
+    onHomeRefreshConsumed: () -> Unit = {},
 ) {
     AfternoteHomeEntry(
-        homeRefreshRequested = homeRefresh?.homeRefreshRequested == true,
-        onHomeRefreshConsumed = homeRefresh?.onHomeRefreshConsumed ?: {},
+        homeRefreshRequested = homeRefreshRequested,
+        onHomeRefreshConsumed = onHomeRefreshConsumed,
         actions =
             AfternoteHomeEntryActions(
                 navigateToDetail = { itemId ->
