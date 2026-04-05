@@ -10,14 +10,13 @@ import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeEnt
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emptyFlow
 
 @Composable
 internal fun AfternoteHomeNavigation(
     navController: NavController,
     onNavTabSelected: (BottomNavTab) -> Unit = {},
-    onVisibleItemsUpdated: (List<ListItem>) -> Unit,
-    homeRefreshEvents: Flow<Unit> = emptyFlow(),
+    onVisibleItemsUpdated: (List<ListItem>) -> Unit = {},
+    homeRefreshEvents: Flow<Unit>,
 ) {
     AfternoteHomeEntry(
         homeRefreshEvents = homeRefreshEvents,
