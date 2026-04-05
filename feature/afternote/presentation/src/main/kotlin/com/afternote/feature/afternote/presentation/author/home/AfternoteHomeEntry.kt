@@ -51,7 +51,7 @@ fun AfternoteHomeEntry(
 
     val uiState by viewModel
         .uiState
-        .collectAsStateWithLifecycle() // 관찰 시작
+        .collectAsStateWithLifecycle() // 내부의 collect로 viewModel.uiState를 관찰/수집
     val bodyUiState by viewModel
         .bodyUiState
         .collectAsStateWithLifecycle()
