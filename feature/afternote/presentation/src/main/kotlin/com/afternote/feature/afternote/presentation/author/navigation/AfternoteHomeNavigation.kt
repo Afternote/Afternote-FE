@@ -26,7 +26,7 @@ internal fun AfternoteHomeNavigation(
     onNavTabSelected: (BottomNavTab) -> Unit = {},
     onVisibleItemsUpdated: (List<ListItem>) -> Unit,
     homeRefreshRequested: Boolean = false,
-    onHomeRefreshConsumed: () -> Unit = {},
+    onHomeRefreshConsumed: () -> Unit = {}, // 새로고침 실행했을 때 플래그 끔
 ) {
     AfternoteHomeEntry(
         homeRefreshRequested = homeRefreshRequested,

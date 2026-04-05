@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.scaffold.bottombar.BottomBar
+import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavGraphParams
 import com.afternote.feature.afternote.presentation.author.navigation.afternoteNavGraph
 import com.afternote.feature.mindrecord.presentation.screen.sender.HomeScreen
 import com.afternote.feature.timeletter.presentation.screen.sender.TimeletterScreen
@@ -36,8 +37,11 @@ fun AppNavigation(
             composable<Route.MindRecord> { HomeScreen() }
             composable<Route.TimeLetter> { TimeletterScreen() }
             afternoteNavGraph(
-                navController = appState.navController,
-                onNavTabSelected = { tab -> appState.navigateToBottomBarRoute(tab.route) },
+                params =
+                    AfternoteNavGraphParams(
+                        navController = appState.navController,
+                        onNavTabSelected = { tab -> appState.navigateToBottomBarRoute(tab.route) },
+                    ),
             )
         }
     }

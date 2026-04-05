@@ -9,7 +9,6 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.navigation
 import com.afternote.core.ui.Route
-import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.AfternoteHostViewModel
 import com.afternote.feature.afternote.presentation.author.editor.playlist.AddSongViewModel
 import com.afternote.feature.afternote.presentation.author.editor.playlist.MemorialPlaylistEntry
@@ -22,14 +21,8 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.Afte
  * 앱 모듈의 NavHost에 직접 연결되며, [Route.Afternote]를 graph route로 사용합니다.
  * 내부 모든 화면은 graph-scoped [AfternoteHostViewModel]을 공유합니다.
  */
-fun NavGraphBuilder.afternoteNavGraph(
-    navController: NavController,
-    onNavTabSelected: (BottomNavTab) -> Unit = {},
-    userName: String = "",
-    homeRefreshRequested: Boolean = false,
-    onHomeRefreshConsumed: () -> Unit = {},
-    onAfternoteDeleted: () -> Unit = {},
-) {
+fun NavGraphBuilder.afternoteNavGraph(params: AfternoteNavGraphParams) {
+    val navController = params.navController
     navigation<Route.Afternote>(startDestination = AfternoteRoute.AfternoteHomeRoute) {
         afternoteComposable<AfternoteRoute.AfternoteHomeRoute> {
             // Composable Destination: 화면을 정의 하고 의존성을 주입하는 컴포저블 함수
@@ -37,10 +30,10 @@ fun NavGraphBuilder.afternoteNavGraph(
             val hostViewModel = graphScopedHostViewModel(navController)
             AfternoteHomeNavigation(
                 navController = navController,
-                onNavTabSelected = onNavTabSelected,
+                onNavTabSelected = params.onNavTabSelected,
                 onVisibleItemsUpdated = hostViewModel::updateVisibleItems,
-                homeRefreshRequested = homeRefreshRequested,
-                onHomeRefreshConsumed = onHomeRefreshConsumed,
+                homeRefreshRequested = params.homeRefreshRequested,
+                onHomeRefreshConsumed = params.onHomeRefreshConsumed,
             )
         }
 
@@ -48,8 +41,8 @@ fun NavGraphBuilder.afternoteNavGraph(
             AfternoteDetailNavigation(
                 backStackEntry = backStackEntry,
                 navController = navController,
-                userName = userName,
-                onAfternoteDeleted = onAfternoteDeleted,
+                userName = params.userName,
+                onAfternoteDeleted = params.onAfternoteDeleted,
             )
         }
 
@@ -57,8 +50,8 @@ fun NavGraphBuilder.afternoteNavGraph(
             AfternoteGalleryDetailNavigation(
                 backStackEntry = backStackEntry,
                 navController = navController,
-                userName = userName,
-                onAfternoteDeleted = onAfternoteDeleted,
+                userName = params.userName,
+                onAfternoteDeleted = params.onAfternoteDeleted,
             )
         }
 
@@ -80,7 +73,7 @@ fun NavGraphBuilder.afternoteNavGraph(
                     onEditStateChanged = hostViewModel::updateEditState,
                     onEditStateClear = hostViewModel::clearEditState,
                     onNavigateToSelectReceiver = {},
-                    onBottomNavTabSelected = onNavTabSelected,
+                    onBottomNavTabSelected = params.onNavTabSelected,
                 ),
             )
         }
@@ -89,8 +82,8 @@ fun NavGraphBuilder.afternoteNavGraph(
             AfternoteMemorialGuidelineDetailNavigation(
                 backStackEntry = backStackEntry,
                 navController = navController,
-                userName = userName,
-                onAfternoteDeleted = onAfternoteDeleted,
+                userName = params.userName,
+                onAfternoteDeleted = params.onAfternoteDeleted,
             )
         }
 
@@ -111,7 +104,7 @@ fun NavGraphBuilder.afternoteNavGraph(
         afternoteComposable<AfternoteRoute.FingerprintLoginRoute> {
             AfternoteFingerprintLoginNavigation(
                 navController = navController,
-                onNavTabSelected = onNavTabSelected,
+                onNavTabSelected = params.onNavTabSelected,
             )
         }
 
