@@ -9,19 +9,18 @@ import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeEnt
 import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeEntryActions
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 
 @Composable
 internal fun AfternoteHomeNavigation(
     navController: NavController,
     onNavTabSelected: (BottomNavTab) -> Unit = {},
     onVisibleItemsUpdated: (List<ListItem>) -> Unit,
-    homeRefreshRequested: Boolean = false,
-    // 새로고침 플래그와 짝을 이루는 필수 콜백. 누락 시 플래그가 소비되지 않아 상태가 어긋나므로 디폴트 없이 강제.
-    onHomeRefreshConsumed: () -> Unit,
+    homeRefreshEvents: Flow<Unit> = emptyFlow(),
 ) {
     AfternoteHomeEntry(
-        homeRefreshRequested = homeRefreshRequested,
-        onHomeRefreshConsumed = onHomeRefreshConsumed,
+        homeRefreshEvents = homeRefreshEvents,
         actions =
             AfternoteHomeEntryActions(
                 navigateToDetail = { itemId ->

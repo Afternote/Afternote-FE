@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.home.screen
+package com.afternote.feature.afternote.presentation.author.home
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding

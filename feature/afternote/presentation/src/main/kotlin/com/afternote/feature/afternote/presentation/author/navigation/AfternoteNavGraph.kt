@@ -29,13 +29,11 @@ fun NavGraphBuilder.afternoteNavGraph(params: AfternoteNavGraphParams) {
             // Composable Destination: 화면을 정의 하고 의존성을 주입하는 컴포저블 함수
             // 네비게이트할 때마다 엔트리가 추가되면서 블록을 실행
             val hostViewModel = graphScopedHostViewModel(navController)
-            val refreshRequested by hostViewModel.homeRefreshRequested.collectAsStateWithLifecycle()
             AfternoteHomeNavigation(
                 navController = navController,
                 onNavTabSelected = params.onNavTabSelected,
                 onVisibleItemsUpdated = hostViewModel::updateVisibleItems,
-                homeRefreshRequested = refreshRequested,
-                onHomeRefreshConsumed = hostViewModel::consumeHomeRefresh,
+                homeRefreshEvents = hostViewModel.homeRefreshEvents,
             )
         }
 

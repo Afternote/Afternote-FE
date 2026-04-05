@@ -6,7 +6,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.feature.afternote.presentation.author.home.screen.AfternoteHomeScreen
+import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeScreen
 import com.afternote.feature.afternote.presentation.receiver.model.ReceiverAfternoteHomeEvent
 import com.afternote.feature.afternote.presentation.receiver.viewmodel.ReceiverAfternoteHomeViewModel
 import com.afternote.feature.afternote.presentation.shared.body.infinite.AfternoteBodyUiState

@@ -9,8 +9,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.domain.model.ListItem
 import com.afternote.feature.afternote.presentation.author.home.model.AfternoteHomeEvent
-import com.afternote.feature.afternote.presentation.author.home.screen.AfternoteHomeScreen
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 
 data class AfternoteHomeEntryActions(
     val navigateToDetail: (String) -> Unit = {},
@@ -30,14 +31,13 @@ fun AfternoteHomeEntry(
     viewModel: AfternoteHomeViewModel = hiltViewModel(),
     actions: AfternoteHomeEntryActions = AfternoteHomeEntryActions(),
     onVisibleItemsUpdated: (List<ListItem>) -> Unit = {},
-    homeRefreshRequested: Boolean = false,
-    // 새로고침 플래그와 짝을 이루는 필수 콜백. 누락 시 플래그가 소비되지 않아 상태가 어긋나므로 디폴트 없이 강제.
-    onHomeRefreshConsumed: () -> Unit,
+    // 상위(graph-scoped HostViewModel)에서 발행하는 one-shot 새로고침 이벤트 스트림.
+    // 단발성 이벤트이므로 Boolean flag + consume 콜백 패턴 대신 Flow로 모델링한다.
+    homeRefreshEvents: Flow<Unit> = emptyFlow(),
 ) {
-    LaunchedEffect(homeRefreshRequested) {
-        if (homeRefreshRequested) {
+    LaunchedEffect(homeRefreshEvents) {
+        homeRefreshEvents.collect {
             viewModel.onEvent(AfternoteHomeEvent.Refresh)
-            onHomeRefreshConsumed()
         }
     }
 
