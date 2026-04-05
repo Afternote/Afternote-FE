@@ -38,7 +38,14 @@ fun AfternoteHomeEntry(
     homeRefreshEvents: Flow<Unit>,
 ) {
     LaunchedEffect(homeRefreshEvents) {
+        // homeRefreshEvents는 서브 그래프 Route.Afternote에 바인딩된 뷰모델의 프로퍼티
+        // 서브 그래프는 팝될 일이 잘 없기 때문에 homeRefreshEvents도 변경될 일이 거의 없음
+        // 그럼에도 LaunchedEffect가 의존하는 객체를 키로 설정하는 것이 권장되는 패턴
         homeRefreshEvents.collect {
+            // 관찰/수집 시작
+            // Unit 타입 데이터를 발행 받을 때마다 다음 실행
+            // 이 컴포저블이 호출되기 전에 신호가 도착했더라도 버퍼링되어 있기 때문에 버퍼에서 꺼내어 수집 가능
+            // 실행 후에 데이터를 새로 발행받을 때까지 suspend
             viewModel.onEvent(AfternoteHomeEvent.Refresh)
         }
     }

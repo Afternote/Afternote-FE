@@ -35,8 +35,8 @@ class AfternoteHostViewModel
          * 그래프 scope 종료 시 [Channel]은 ViewModel과 함께 정리된다.
          *
          * 데이터 내용이 Unit 타입이며 신호를 보내겠다는 의미
-         * BUFFERED로 신호를 임시 보관
-         * 임시 보관은 에디터 엔트리가 팝되는 찰나에는 홈 화면이 아직 활성화되지 않아서 신호를 못 받을 수 있는 문제를 해결
+         * 버퍼링을 위해 플로우 대신 채널 사용
+         * BUFFERED로 신호를 잃어 버리지 않게 보관
          */
         private val _homeRefreshEvents = Channel<Unit>(Channel.BUFFERED)
         val homeRefreshEvents: Flow<Unit> = _homeRefreshEvents.receiveAsFlow()
