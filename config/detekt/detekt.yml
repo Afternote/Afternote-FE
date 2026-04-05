@@ -1,0 +1,8 @@
+naming:
+  FunctionNaming:
+    active: true
+    functionPattern: '[a-z][a-zA-Z0-9]*'
+    excludeClassPattern: '$^'
+    # @Composable 함수는 PascalCase 컨벤션을 따르므로 이 규칙에서 제외.
+    ignoreAnnotated:
+      - 'Composable'

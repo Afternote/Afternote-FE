@@ -5,20 +5,10 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.domain.model.ListItem
-import com.afternote.feature.afternote.presentation.author.editor.AfternoteItemMapper
-import com.afternote.feature.afternote.presentation.author.editor.provider.AfternoteEditorDataProvider
 import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeEntry
 import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeEntryActions
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
-
-internal fun resolveListItems(
-    afternoteVisibleItems: List<ListItem>,
-    afternoteProvider: AfternoteEditorDataProvider,
-): List<ListItem> =
-    afternoteVisibleItems.ifEmpty {
-        AfternoteItemMapper.toAfternoteItemsWithStableIds(afternoteProvider.getDefaultAfternoteItems())
-    }
 
 @Composable
 internal fun AfternoteHomeNavigation(
@@ -26,7 +16,8 @@ internal fun AfternoteHomeNavigation(
     onNavTabSelected: (BottomNavTab) -> Unit = {},
     onVisibleItemsUpdated: (List<ListItem>) -> Unit,
     homeRefreshRequested: Boolean = false,
-    onHomeRefreshConsumed: () -> Unit = {}, // 새로고침 실행했을 때 플래그 끔
+    // 새로고침 플래그와 짝을 이루는 필수 콜백. 누락 시 플래그가 소비되지 않아 상태가 어긋나므로 디폴트 없이 강제.
+    onHomeRefreshConsumed: () -> Unit,
 ) {
     AfternoteHomeEntry(
         homeRefreshRequested = homeRefreshRequested,

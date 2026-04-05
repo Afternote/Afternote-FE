@@ -31,7 +31,8 @@ fun AfternoteHomeEntry(
     actions: AfternoteHomeEntryActions = AfternoteHomeEntryActions(),
     onVisibleItemsUpdated: (List<ListItem>) -> Unit = {},
     homeRefreshRequested: Boolean = false,
-    onHomeRefreshConsumed: () -> Unit = {},
+    // 새로고침 플래그와 짝을 이루는 필수 콜백. 누락 시 플래그가 소비되지 않아 상태가 어긋나므로 디폴트 없이 강제.
+    onHomeRefreshConsumed: () -> Unit,
 ) {
     LaunchedEffect(homeRefreshRequested) {
         if (homeRefreshRequested) {

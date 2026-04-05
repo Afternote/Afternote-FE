@@ -19,6 +19,7 @@ import com.afternote.feature.afternote.presentation.author.editor.AfternoteEdito
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorScreenCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorUiEvent
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
+import com.afternote.feature.afternote.presentation.author.editor.AfternoteItemMapper
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteSaveState
@@ -29,6 +30,18 @@ import com.afternote.feature.afternote.presentation.author.editor.model.remember
 import com.afternote.feature.afternote.presentation.author.editor.provider.AfternoteEditorDataProvider
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.author.navigation.model.SELECTED_RECEIVER_ID_KEY
+
+/**
+ * 에디터에서 사용할 아이템 목록을 결정.
+ * 홈에서 공유된 visibleItems가 비어 있으면 provider의 기본 아이템으로 폴백.
+ */
+internal fun resolveListItems(
+    afternoteVisibleItems: List<ListItem>,
+    afternoteProvider: AfternoteEditorDataProvider,
+): List<ListItem> =
+    afternoteVisibleItems.ifEmpty {
+        AfternoteItemMapper.toAfternoteItemsWithStableIds(afternoteProvider.getDefaultAfternoteItems())
+    }
 
 internal sealed class EditSaveErrorResult {
     data class Validation(
@@ -134,7 +147,13 @@ internal fun buildEditScreenCallbacks(params: EditScreenCallbacksParams): Aftern
         onNavigateToSelectReceiver = params.onNavigateToSelectReceiver,
         onBottomNavTabSelected = params.onBottomNavTabSelected,
         onThumbnailBytesReady = { bytes ->
-            if (bytes != null) params.editViewModel.onEvent(AfternoteEditorUiEvent.UploadThumbnail(bytes))
+            if (bytes != null) {
+                params.editViewModel.onEvent(
+                    AfternoteEditorUiEvent.UploadThumbnail(
+                        bytes,
+                    ),
+                )
+            }
         },
     )
 
