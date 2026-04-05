@@ -18,7 +18,7 @@ import com.afternote.feature.afternote.presentation.shared.body.infinite.Afterno
 import com.afternote.feature.afternote.presentation.shared.body.infinite.InfiniteListBody
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
 
-@Suppress("LongParameterList")
+@Suppress("LongParameterList", "kotlin:S107")
 @Composable
 fun AfternoteHomeScreen(
     listState: AfternoteBodyUiState,

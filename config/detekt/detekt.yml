@@ -6,3 +6,11 @@ naming:
     # @Composable 함수는 PascalCase 컨벤션을 따르므로 이 규칙에서 제외.
     ignoreAnnotated:
       - 'Composable'
+
+style:
+  UnusedPrivateMember:
+    active: true
+    # @Preview composable은 IDE 프리뷰 전용이라 호출부가 없어도 사용되는 것으로 간주.
+    ignoreAnnotated:
+      - 'Preview'
+      - 'PreviewParameter'
