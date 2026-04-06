@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -22,7 +21,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
-import com.afternote.core.ui.TopBar
+import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray2
 import com.afternote.core.ui.theme.Gray6
@@ -34,7 +33,7 @@ import com.afternote.feature.mindrecord.presentation.component.DailyDeepThoughtC
 fun DeepThoughtWriteScreen(modifier: Modifier = Modifier) {
     Scaffold(
         topBar = {
-            TopBar(
+            DetailTopBar(
                 title = "깊은 생각 기록하기",
                 onBackClick = {},
                 action = {

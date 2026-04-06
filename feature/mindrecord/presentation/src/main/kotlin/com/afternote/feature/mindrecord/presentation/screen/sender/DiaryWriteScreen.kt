@@ -32,7 +32,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
-import com.afternote.core.ui.TopBar
+import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray2
 import com.afternote.core.ui.theme.Gray6
@@ -45,7 +45,7 @@ fun DiaryWriteScreen(modifier: Modifier = Modifier) {
     var titleState = rememberTextFieldState()
     Scaffold(
         topBar = {
-            TopBar(
+            DetailTopBar(
                 title = "일기 기록하기",
                 onBackClick = {},
                 action = {

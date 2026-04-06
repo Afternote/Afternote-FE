@@ -36,8 +36,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
-import com.afternote.core.ui.TopBar
-import com.afternote.core.ui.component.ViewModeSwitcher
+import com.afternote.core.ui.ViewModeSwitcher
+import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray1
 import com.afternote.core.ui.theme.Gray2
@@ -103,7 +103,7 @@ fun DeepThoughtScreen(modifier: Modifier = Modifier) {
         )
     Scaffold(
         topBar = {
-            TopBar(
+            DetailTopBar(
                 title = "깊은 생각",
                 onBackClick = {},
                 action = {

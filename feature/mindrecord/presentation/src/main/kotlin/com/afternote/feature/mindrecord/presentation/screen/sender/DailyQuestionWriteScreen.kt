@@ -19,7 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.TopBar
+import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray2
 import com.afternote.core.ui.theme.Gray6
@@ -31,7 +31,7 @@ import java.time.LocalDate
 fun DailyQuestionWriteScreen(modifier : Modifier = Modifier) {
     Scaffold(
         topBar = {
-            TopBar(
+            DetailTopBar(
                 title = LocalDate.now().toString(),
                 action = {
                     Button(
