@@ -25,11 +25,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray2
-import com.afternote.core.ui.theme.Gray3
-import com.afternote.core.ui.theme.Gray8
-import com.afternote.core.ui.theme.White
 import com.afternote.feature.mindrecord.presentation.R
 import java.time.LocalDate
 
@@ -38,9 +35,9 @@ fun DailyDeepThoughtCard(modifier: Modifier = Modifier) {
     OutlinedCard(
         colors =
             CardDefaults.cardColors(
-                containerColor = White,
+                containerColor = AfternoteDesign.colors.white,
             ),
-        border = BorderStroke(1.dp, color = Gray2),
+        border = BorderStroke(1.dp, color = AfternoteDesign.colors.gray2),
         modifier =
             modifier
                 .fillMaxWidth()
@@ -68,14 +65,14 @@ fun DailyDeepThoughtCard(modifier: Modifier = Modifier) {
                 painter = painterResource(R.drawable.mindrecord_semicol),
                 contentDescription = null,
                 modifier = Modifier.size(32.dp),
-                tint = Gray3,
+                tint = AfternoteDesign.colors.gray3,
             )
 
             Spacer(modifier = Modifier.height(18.dp))
             Text(
                 text = "생각은 깊이를 더할수록 진실에 가까워진다.",
                 style = MaterialTheme.typography.titleMedium,
-                color = Gray8,
+                color = AfternoteDesign.colors.gray8,
             )
 
             Spacer(modifier = Modifier.height(16.dp))

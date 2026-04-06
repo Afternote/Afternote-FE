@@ -33,10 +33,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray2
-import com.afternote.core.ui.theme.Gray6
-import com.afternote.core.ui.theme.Gray9
 import com.afternote.feature.mindrecord.presentation.component.WriteTextField
 import java.time.LocalDate
 
@@ -54,13 +52,13 @@ fun DiaryWriteScreen(modifier: Modifier = Modifier) {
                         shape = RoundedCornerShape(6.dp),
                         colors =
                             ButtonDefaults.buttonColors(
-                                containerColor = Gray2,
+                                containerColor = AfternoteDesign.colors.gray2,
                             ),
                     ) {
                         Text(
                             text = "등록",
                             style = MaterialTheme.typography.titleSmall,
-                            color = Gray6,
+                            color = AfternoteDesign.colors.gray6,
                         )
                     }
                 },
@@ -77,7 +75,7 @@ fun DiaryWriteScreen(modifier: Modifier = Modifier) {
                 Text(
                     text = LocalDate.now().toString(),
                     style = MaterialTheme.typography.displayMedium,
-                    color = Gray9,
+                    color = AfternoteDesign.colors.gray9,
                 )
 
                 Icon(

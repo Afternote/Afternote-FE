@@ -26,12 +26,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray2
-import com.afternote.core.ui.theme.Gray5
-import com.afternote.core.ui.theme.Gray6
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.White
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.DeepThoughtModel
 import com.afternote.feature.mindrecord.presentation.model.Tag
@@ -45,9 +41,9 @@ fun DeepThoughtCard(
     OutlinedCard(
         colors =
             CardDefaults.cardColors(
-                containerColor = White,
+                containerColor = AfternoteDesign.colors.white,
             ),
-        border = BorderStroke(1.dp, color = Gray2),
+        border = BorderStroke(1.dp, color = AfternoteDesign.colors.gray2),
         modifier =
             modifier
                 .fillMaxWidth()
@@ -78,7 +74,7 @@ fun DeepThoughtCard(
                     Icon(
                         painter = painterResource(R.drawable.mindrecord_horizontal),
                         contentDescription = null,
-                        tint = Gray5,
+                        tint = AfternoteDesign.colors.gray5,
                     )
                 }
             }
@@ -87,7 +83,7 @@ fun DeepThoughtCard(
             Text(
                 text = deepThought.title,
                 style = MaterialTheme.typography.titleMedium,
-                color = Gray9,
+                color = AfternoteDesign.colors.gray9,
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -104,12 +100,12 @@ fun DeepThoughtCard(
                         modifier =
                             Modifier
                                 .clip(RoundedCornerShape(16777200.dp))
-                                .background(Gray2)
+                                .background(AfternoteDesign.colors.gray2)
                                 .padding(5.dp),
                     ) {
                         Text(
                             text = "#${tag.name}",
-                            color = Gray6,
+                            color = AfternoteDesign.colors.gray6,
                             style = MaterialTheme.typography.displaySmall,
                         )
                     }

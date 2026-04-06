@@ -23,9 +23,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray2
-import com.afternote.core.ui.theme.Gray6
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 
@@ -38,7 +37,7 @@ fun WeeklyReportReviewCard(modifier: Modifier = Modifier) {
             3 to MindRecordCategory.DEEP_THOUGHT,
         )
     OutlinedCard(
-        border = BorderStroke(1.dp, color = Gray2),
+        border = BorderStroke(1.dp, color = AfternoteDesign.colors.gray2),
         modifier =
             modifier
                 .fillMaxWidth()
@@ -89,7 +88,7 @@ fun WeeklyReportReviewCard(modifier: Modifier = Modifier) {
             Text(
                 text = "2025.11.10. - 2025.11.16.",
                 style = MaterialTheme.typography.titleSmall,
-                color = Gray6,
+                color = AfternoteDesign.colors.gray6,
             )
 
             Row(

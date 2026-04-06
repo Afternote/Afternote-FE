@@ -10,9 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.theme.Gray1
-import com.afternote.core.ui.theme.Gray2
-import com.afternote.core.ui.theme.Gray6
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.mindrecord.presentation.model.Tag
 
 @Composable
@@ -34,11 +32,11 @@ fun FlowTags(
                 Text(
                     "전체",
                     style = MaterialTheme.typography.displayLarge,
-                    color = if (selectedTag == null) Gray1 else Gray6,
+                    color = if (selectedTag == null) AfternoteDesign.colors.gray1 else AfternoteDesign.colors.gray6,
                 )
             },
             shape = RoundedCornerShape(16777200.dp),
-            border = BorderStroke(1.dp, Gray2),
+            border = BorderStroke(1.dp, AfternoteDesign.colors.gray2),
         )
 
         tags.forEach { tag ->
@@ -49,11 +47,11 @@ fun FlowTags(
                     Text(
                         text = "#${tag.name} ${tag.count}",
                         style = MaterialTheme.typography.displayLarge,
-                        color = if (selectedTag == tag) Gray1 else Gray6,
+                        color = if (selectedTag == tag) AfternoteDesign.colors.gray1 else AfternoteDesign.colors.gray6,
                     )
                 },
                 shape = RoundedCornerShape(16777200.dp),
-                border = BorderStroke(1.dp, Gray2),
+                border = BorderStroke(1.dp, AfternoteDesign.colors.gray2),
             )
         }
     }

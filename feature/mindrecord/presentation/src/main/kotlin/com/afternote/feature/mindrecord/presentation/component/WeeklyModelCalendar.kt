@@ -25,9 +25,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray8
-import com.afternote.core.ui.theme.Gray9
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.DayBackground
 import com.afternote.feature.mindrecord.presentation.model.DayContent
@@ -113,7 +112,7 @@ private fun DayCell(
                     Text(
                         text = content.day.toString(),
                         style = MaterialTheme.typography.displayMedium,
-                        color = Gray9,
+                        color = AfternoteDesign.colors.gray9,
                     )
                 }
 
@@ -125,7 +124,7 @@ private fun DayCell(
                         Text(
                             text = content.day.toString(),
                             style = MaterialTheme.typography.displayMedium,
-                            color = Gray9,
+                            color = AfternoteDesign.colors.gray9,
                         )
                         Spacer(modifier = Modifier.height(1.dp))
                         // 하단 점
@@ -134,7 +133,7 @@ private fun DayCell(
                                 Modifier
                                     .size(4.dp)
                                     .clip(CircleShape)
-                                    .background(Gray8),
+                                    .background(AfternoteDesign.colors.gray8),
                         )
                     }
                 }
@@ -154,7 +153,7 @@ private fun DayCell(
                                 Modifier
                                     .size(4.dp)
                                     .clip(CircleShape)
-                                    .background(Gray8),
+                                    .background(AfternoteDesign.colors.gray8),
                         )
                     }
                 }
