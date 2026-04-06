@@ -14,16 +14,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray2
-import com.afternote.core.ui.theme.Gray9
 
 @Composable
 fun WeeklyEmotionCard(modifier: Modifier = Modifier) {
     OutlinedCard(
         colors =
             CardDefaults.cardColors(
-                containerColor = Gray2,
+                containerColor = AfternoteDesign.colors.gray2,
             ),
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(100.dp),
@@ -39,13 +38,13 @@ fun WeeklyEmotionCard(modifier: Modifier = Modifier) {
             Text(
                 text = "주간 평균 감정",
                 style = MaterialTheme.typography.displayMedium,
-                color = Gray9,
+                color = AfternoteDesign.colors.gray9,
             )
 
             Text(
                 text = "\uD83D\uDE0A 좋음",
                 style = MaterialTheme.typography.displayMedium,
-                color = Gray9,
+                color = AfternoteDesign.colors.gray9,
             )
         }
     }

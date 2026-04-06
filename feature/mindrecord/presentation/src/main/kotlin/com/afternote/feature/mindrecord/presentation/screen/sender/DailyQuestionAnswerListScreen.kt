@@ -29,8 +29,8 @@ import com.afternote.core.ui.R
 import com.afternote.core.ui.ViewModeSwitcher
 import com.afternote.core.ui.scaffold.AfternoteFab
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray9
 import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionListCard
 import com.afternote.feature.mindrecord.presentation.component.Legend
@@ -116,7 +116,7 @@ fun DailyQuestionAnswerListScreen(modifier: Modifier = Modifier) {
                     ) {
                         Text(
                             text = "2026년 3월",
-                            color = Gray9,
+                            color = AfternoteDesign.colors.gray9,
                             style = MaterialTheme.typography.headlineSmall,
                         )
                         Icon(

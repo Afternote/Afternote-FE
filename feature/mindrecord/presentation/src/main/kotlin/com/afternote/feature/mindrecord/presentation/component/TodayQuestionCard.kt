@@ -26,9 +26,8 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray5
-import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.shadow
 import com.afternote.feature.mindrecord.presentation.R
 
@@ -92,14 +91,14 @@ fun TodayQuestionCard(modifier: Modifier = Modifier) {
             Text(
                 text = "매일 다른 질문들에 나를 남겨보세요.",
                 style = MaterialTheme.typography.displayMedium,
-                color = Gray5,
+                color = AfternoteDesign.colors.gray5,
             )
             Spacer(modifier = Modifier.height(18.dp))
             Button(
                 onClick = {},
                 colors =
                     ButtonDefaults.buttonColors(
-                        containerColor = Gray9,
+                        containerColor = AfternoteDesign.colors.gray9,
                     ),
                 modifier =
                     Modifier

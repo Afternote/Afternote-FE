@@ -24,10 +24,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray2
-import com.afternote.core.ui.theme.Gray5
-import com.afternote.core.ui.theme.Gray7
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 
 @Composable
@@ -35,7 +33,7 @@ fun MindRecordListCard(
     category: MindRecordCategory,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier.border(1.dp, color = Gray2, shape = RoundedCornerShape(6.dp))) {
+    Box(modifier = modifier.border(1.dp, color = AfternoteDesign.colors.gray2, shape = RoundedCornerShape(6.dp))) {
         Column(
             modifier =
                 Modifier
@@ -53,7 +51,7 @@ fun MindRecordListCard(
                         painter = painterResource(category.imageUrl),
                         contentDescription = null,
                         modifier = Modifier.size(20.dp),
-                        tint = Gray7,
+                        tint = AfternoteDesign.colors.gray7,
                     )
                 }
             }
@@ -70,7 +68,7 @@ fun MindRecordListCard(
             Text(
                 text = category.description,
                 style = MaterialTheme.typography.displayMedium,
-                color = Gray5,
+                color = AfternoteDesign.colors.gray5,
             )
             Spacer(modifier = Modifier.height(18.dp))
 

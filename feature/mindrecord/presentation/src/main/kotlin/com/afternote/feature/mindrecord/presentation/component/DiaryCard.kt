@@ -26,11 +26,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray2
-import com.afternote.core.ui.theme.Gray6
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.White
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.DailyDiary
 import java.time.LocalDate
@@ -43,9 +40,9 @@ fun DiaryCard(
     OutlinedCard(
         colors =
             CardDefaults.cardColors(
-                containerColor = White,
+                containerColor = AfternoteDesign.colors.white,
             ),
-        border = BorderStroke(1.dp, color = Gray2),
+        border = BorderStroke(1.dp, color = AfternoteDesign.colors.gray2),
         modifier =
             modifier
                 .fillMaxWidth()
@@ -87,7 +84,7 @@ fun DiaryCard(
                 Text(
                     text = diary.date.toString(),
                     style = MaterialTheme.typography.labelSmall,
-                    color = Gray6,
+                    color = AfternoteDesign.colors.gray6,
                 )
 
                 Box(
@@ -96,7 +93,7 @@ fun DiaryCard(
                     Icon(
                         painter = painterResource(R.drawable.mindrecord_horizontal),
                         contentDescription = null,
-                        tint = Gray6,
+                        tint = AfternoteDesign.colors.gray6,
                     )
                 }
             }
@@ -104,7 +101,7 @@ fun DiaryCard(
             Text(
                 text = diary.title,
                 style = MaterialTheme.typography.bodySmall,
-                color = Gray9,
+                color = AfternoteDesign.colors.gray9,
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
 
@@ -112,7 +109,7 @@ fun DiaryCard(
             Text(
                 text = diary.content,
                 style = MaterialTheme.typography.displayMedium,
-                color = Gray6,
+                color = AfternoteDesign.colors.gray6,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(horizontal = 16.dp),

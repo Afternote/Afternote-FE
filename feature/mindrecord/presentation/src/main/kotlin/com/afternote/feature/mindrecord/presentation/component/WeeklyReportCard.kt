@@ -22,14 +22,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray2
-import com.afternote.core.ui.theme.Gray5
 import com.afternote.core.ui.theme.nanumGothic
 
 @Composable
 fun WeeklyReportCard(modifier: Modifier = Modifier) {
-    Box(modifier = modifier.border(1.dp, color = Gray2, shape = RoundedCornerShape(6.dp))) {
+    Box(modifier = modifier.border(1.dp, color = AfternoteDesign.colors.gray2, shape = RoundedCornerShape(6.dp))) {
         Column(
             modifier =
                 Modifier
@@ -44,7 +43,7 @@ fun WeeklyReportCard(modifier: Modifier = Modifier) {
             Text(
                 text = "이번 주 나의 기록들을 확인해 보세요.",
                 style = MaterialTheme.typography.displayMedium,
-                color = Gray5,
+                color = AfternoteDesign.colors.gray5,
             )
 
             Spacer(modifier = Modifier.height(16.dp))
