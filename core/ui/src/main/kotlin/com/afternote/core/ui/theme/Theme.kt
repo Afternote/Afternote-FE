@@ -146,7 +146,7 @@ private val afternoteTypography =
 //        background = Gray2,
 //    )
 //
-// fun AfternoteTheme(content: @Composable () -> Unit) {
+// fun ProvideAfternoteTheme(content: @Composable () -> Unit) {
 //    MaterialTheme(
 //        colorScheme = AfternoteLightColors,
 //        typography = afternoteTypography,
@@ -175,9 +175,9 @@ fun AfternoteTheme(
     // AfternoteTheme의 current를 호출해 봤자 CompositionLocalProvider 호출 전이기 때문에 제공자가 없음
     // 따라서 staticCompositionLocalOf의 기본 값(lightColors() 등)만 들어오기 때문에 의미가 없음
     // 그래서 기본값 lightColors() 등을 직접 전달
-//    colors: AfternoteColors = AfternoteTheme.colors,
-//    darkColors: AfternoteColors = AfternoteTheme.darkColors,
-//    typography: Typography = AfternoteTheme.typography,
+//    colors: AfternoteColors = ProvideAfternoteTheme.colors,
+//    darkColors: AfternoteColors = ProvideAfternoteTheme.darkColors,
+//    typography: Typography = ProvideAfternoteTheme.typography,
     colors: AfternoteColors = lightColors(),
     darkColors: AfternoteColors = darkColors(),
     typography: Typography = afternoteTypography,
@@ -203,7 +203,10 @@ fun AfternoteTheme(
     }
 }
 
-object AfternoteTheme {
+// 다크 모드 자동 적용
+// Gray9 대신 AfternoteDesign.colors.gray9
+// MaterialTheme.typography.H1 대신 AfternoteDesign.typography.H1
+object AfternoteDesign {
     val colors: AfternoteColors
         // current는 컴포저블 함수이므로 이를 호출하는 게터 함수도 컴포저블이어야 하기 때문에 컴포저블 어노테이션 필요
         // 이 게터는 colors가 호출되는 시점에 LocalColors.current를 실행하는 함수
