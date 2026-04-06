@@ -17,7 +17,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -62,8 +61,8 @@ fun InfoRow(
     modifier: Modifier = Modifier,
 ) {
     Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(text = label, style = MaterialTheme.typography.bodyMedium, color = AfternoteDesign.colors.gray5)
-        Text(text = value, style = MaterialTheme.typography.bodyMedium, color = AfternoteDesign.colors.gray9)
+        Text(text = label, style = AfternoteDesign.typography.bodyLargeR, color = AfternoteDesign.colors.gray5)
+        Text(text = value, style = AfternoteDesign.typography.bodyLargeR, color = AfternoteDesign.colors.gray9)
     }
 }
 
@@ -75,7 +74,7 @@ fun ProcessingMethodItem(
     Text(
         text = text,
         modifier = modifier.fillMaxWidth(),
-        style = MaterialTheme.typography.bodyMedium,
+        style = AfternoteDesign.typography.bodyLargeR,
         color = AfternoteDesign.colors.gray9,
     )
 }
