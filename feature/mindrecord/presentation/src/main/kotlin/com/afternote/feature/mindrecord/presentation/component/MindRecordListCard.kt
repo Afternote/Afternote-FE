@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -60,14 +59,14 @@ fun MindRecordListCard(
 
             Text(
                 text = category.title,
-                style = MaterialTheme.typography.titleMedium,
+                style = AfternoteDesign.typography.bodyBase,
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = category.description,
-                style = MaterialTheme.typography.displayMedium,
+                style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray5,
             )
             Spacer(modifier = Modifier.height(18.dp))
@@ -75,7 +74,7 @@ fun MindRecordListCard(
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 Text(
                     text = "18",
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = AfternoteDesign.typography.h3,
                 )
             }
         }

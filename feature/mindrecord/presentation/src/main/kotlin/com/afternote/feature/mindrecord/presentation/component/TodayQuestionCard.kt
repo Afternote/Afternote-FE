@@ -13,7 +13,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -71,7 +70,7 @@ fun TodayQuestionCard(modifier: Modifier = Modifier) {
             ) {
                 Text(
                     text = "Today'S QUESTION",
-                    style = MaterialTheme.typography.displaySmall,
+                    style = AfternoteDesign.typography.mono,
                     color = Color(0xFF000000).copy(alpha = 0.3f),
                 )
 
@@ -85,12 +84,12 @@ fun TodayQuestionCard(modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 "오늘 하루,\n 누구에게 가장 고마웠나요?",
-                style = MaterialTheme.typography.headlineSmall,
+                style = AfternoteDesign.typography.h3,
             )
             Spacer(modifier = Modifier.height(18.dp))
             Text(
                 text = "매일 다른 질문들에 나를 남겨보세요.",
-                style = MaterialTheme.typography.displayMedium,
+                style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray5,
             )
             Spacer(modifier = Modifier.height(18.dp))
@@ -107,7 +106,7 @@ fun TodayQuestionCard(modifier: Modifier = Modifier) {
             ) {
                 Text(
                     text = "마음의 기록 남기기",
-                    style = MaterialTheme.typography.displayLarge,
+                    style = AfternoteDesign.typography.captionLargeB,
                 )
             }
         }

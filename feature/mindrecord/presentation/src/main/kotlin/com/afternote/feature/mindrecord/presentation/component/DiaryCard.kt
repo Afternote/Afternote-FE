@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -83,7 +82,7 @@ fun DiaryCard(
             ) {
                 Text(
                     text = diary.date.toString(),
-                    style = MaterialTheme.typography.labelSmall,
+                    style = AfternoteDesign.typography.footnoteCaption,
                     color = AfternoteDesign.colors.gray6,
                 )
 
@@ -100,7 +99,7 @@ fun DiaryCard(
 
             Text(
                 text = diary.title,
-                style = MaterialTheme.typography.bodySmall,
+                style = AfternoteDesign.typography.bodySmallR,
                 color = AfternoteDesign.colors.gray9,
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
@@ -108,7 +107,7 @@ fun DiaryCard(
             Spacer(modifier = Modifier.height(2.5.dp))
             Text(
                 text = diary.content,
-                style = MaterialTheme.typography.displayMedium,
+                style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray6,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,

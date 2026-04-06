@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -58,7 +57,7 @@ fun DailyCalendar(
                         text = dayLabel,
                         modifier = Modifier.weight(1f),
                         color = Color(0xFF000000).copy(alpha = 0.3f),
-                        style = MaterialTheme.typography.labelSmall,
+                        style = AfternoteDesign.typography.footnoteCaption,
                         textAlign = TextAlign.Center,
                     )
                 }
@@ -147,7 +146,7 @@ fun Legend(modifier: Modifier = Modifier) {
                         .background(color),
             )
             Spacer(modifier = Modifier.width(4.dp))
-            Text(text = label, style = MaterialTheme.typography.labelSmall, color = AfternoteDesign.colors.gray5)
+            Text(text = label, style = AfternoteDesign.typography.footnoteCaption, color = AfternoteDesign.colors.gray5)
             Spacer(modifier = Modifier.width(16.dp))
         }
     }

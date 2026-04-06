@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -46,13 +45,13 @@ fun DiaryReportCard(modifier: Modifier = Modifier) {
             ) {
                 Text(
                     text = "이번 달",
-                    style = MaterialTheme.typography.displaySmall,
+                    style = AfternoteDesign.typography.mono,
                     color = AfternoteDesign.colors.gray6,
                 )
 
                 Text(
                     text = "주간 평균 기분",
-                    style = MaterialTheme.typography.displaySmall,
+                    style = AfternoteDesign.typography.mono,
                     color = AfternoteDesign.colors.gray6,
                 )
             }
@@ -64,7 +63,7 @@ fun DiaryReportCard(modifier: Modifier = Modifier) {
             ) {
                 Text(
                     text = "18",
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = AfternoteDesign.typography.h2,
                     color = AfternoteDesign.colors.gray9,
                 )
 

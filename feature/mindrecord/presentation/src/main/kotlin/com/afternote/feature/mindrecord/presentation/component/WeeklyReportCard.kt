@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
@@ -37,12 +36,12 @@ fun WeeklyReportCard(modifier: Modifier = Modifier) {
         ) {
             Text(
                 text = "주간 리포트",
-                style = MaterialTheme.typography.bodyLarge,
+                style = AfternoteDesign.typography.bodyLargeB,
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "이번 주 나의 기록들을 확인해 보세요.",
-                style = MaterialTheme.typography.displayMedium,
+                style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray5,
             )
 

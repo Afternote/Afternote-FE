@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -60,7 +59,7 @@ fun DayCell(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     text = model.day.toString(),
-                    style = MaterialTheme.typography.displayLarge,
+                    style = AfternoteDesign.typography.captionLargeB,
                     color = textColor,
                 )
                 if (model.state == DayState.ANSWERED || model.state == DayState.UNANSWERED) {

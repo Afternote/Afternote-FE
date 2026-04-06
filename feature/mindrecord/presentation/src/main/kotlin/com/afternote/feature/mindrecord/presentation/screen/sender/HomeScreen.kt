@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.scaffold.topbar.HomeTopBar
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.component.MemoriesCard
 import com.afternote.feature.mindrecord.presentation.component.MindRecordListCard
@@ -41,7 +41,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
             item {
                 Text(
                     text = "나의 기록",
-                    style = MaterialTheme.typography.headlineLarge,
+                    style = AfternoteDesign.typography.h1,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
@@ -49,7 +49,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
             item {
                 Text(
                     text = "오늘도 당신의 하루를 차분히 기록해보세요.",
-                    style = MaterialTheme.typography.displayMedium,
+                    style = AfternoteDesign.typography.captionLargeR,
                 )
                 Spacer(modifier = Modifier.height(32.dp))
             }
@@ -81,7 +81,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                 ) {
                     Text(
                         text = "WEEK REPORT",
-                        style = MaterialTheme.typography.displaySmall,
+                        style = AfternoteDesign.typography.mono,
                         color = Color(0xFF000000).copy(alpha = 0.4f),
                     )
 
@@ -103,7 +103,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                 ) {
                     Text(
                         text = "MEMORIES",
-                        style = MaterialTheme.typography.displaySmall,
+                        style = AfternoteDesign.typography.mono,
                         color = Color(0xFF000000).copy(alpha = 0.4f),
                     )
 

@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,7 +50,7 @@ fun DailyQuestionListCard(
             ) {
                 Text(
                     text = answer.date.toString(),
-                    style = MaterialTheme.typography.displayMedium,
+                    style = AfternoteDesign.typography.captionLargeR,
                     color = AfternoteDesign.colors.gray6,
                 )
 
@@ -69,14 +68,14 @@ fun DailyQuestionListCard(
 
             Text(
                 text = answer.title,
-                style = MaterialTheme.typography.bodySmall,
+                style = AfternoteDesign.typography.bodySmallR,
                 color = AfternoteDesign.colors.gray9,
             )
 
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = answer.content,
-                style = MaterialTheme.typography.displayMedium,
+                style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray6,
             )
         }
