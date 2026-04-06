@@ -20,7 +20,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.afternote.core.ui.scaffold.topbar.HomeTopBar
-import com.afternote.core.ui.theme.White
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.onboarding.presentation.login.LoginViewModel
 
 // TODO:AI 딸깍하기만 하고 아무 것도 안 함
@@ -40,7 +40,7 @@ fun LoginScreen(
         topBar = {
             HomeTopBar()
         },
-        containerColor = White, // 배경색을 흰색으로 설정
+        containerColor = AfternoteDesign.colors.white, // 배경색을 흰색으로 설정
     ) { innerPadding ->
         Column(
             modifier =

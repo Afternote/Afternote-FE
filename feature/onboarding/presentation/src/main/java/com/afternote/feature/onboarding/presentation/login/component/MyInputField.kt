@@ -18,8 +18,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.afternote.core.ui.theme.Gray2
-import com.afternote.core.ui.theme.Gray4
+import com.afternote.core.ui.theme.AfternoteDesign
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,13 +38,13 @@ fun MyInputField(
                 .background(Color.White)
                 .border(
                     1.dp,
-                    color = Gray2,
+                    color = AfternoteDesign.colors.gray2,
                     RoundedCornerShape(8.dp),
                 ),
         placeholder = {
             Text(
                 text = label,
-                color = Gray4,
+                color = AfternoteDesign.colors.gray4,
                 style = TextStyle(fontSize = 14.sp),
             )
         },
