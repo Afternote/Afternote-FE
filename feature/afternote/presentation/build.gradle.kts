@@ -11,4 +11,8 @@ dependencies {
     implementation(projects.feature.afternote.domain)
     implementation(projects.core.common)
     implementation(projects.core.ui)
+    implementation(libs.androidx.compose.material.icons.core)
+    implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.coil.network.okhttp)
+    implementation(libs.coil.compose)
 }
