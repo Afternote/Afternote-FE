@@ -64,7 +64,11 @@ fun darkColors() =
         isLightMode = false,
     )
 
-@Stable // 불필요한 리컴포지션 방지
+// 컴포저블이 리컴포지션될 때 그 내부 객체는 Stable/Unstable에 따라 리컴포지션이 결정
+// Stable하다면 그 객체의 상태 변화를 확인 후 리컴포지션 결정
+// Unstable하다면 그 객체의 상태를 확인할 것도 없이 무조건 리컴포지션
+// 클래스의 경우 var 프로퍼티가 있으면 Unstable하므로 @Stable을 붙여 불필요한 리컴포지션 방지
+@Stable
 class AfternoteColors(
     white: Color,
     black: Color,
