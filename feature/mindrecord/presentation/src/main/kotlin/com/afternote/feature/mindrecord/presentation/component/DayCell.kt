@@ -37,8 +37,7 @@ fun DayCell(
         when (model.state) {
             DayState.TODAY -> Color(0xFF1A1A1A) to Color.White
             DayState.ANSWERED -> Color(0xFFEEEEEE) to Color(0xFF1A1A1A)
-            DayState.UNANSWERED -> Color(0xFFF5F5F5) to AfternoteDesign.colors.gray5
-            DayState.NONE -> Color.Transparent to AfternoteDesign.colors.gray5
+            DayState.UNANSWERED, DayState.NONE -> Color.Transparent to AfternoteDesign.colors.gray5
         }
 
     Box(
@@ -83,7 +82,14 @@ fun DayCell(
                             }
                         }
 
-                        else -> {
+                        MindRecordCategory.DEEP_THOUGHT -> {
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .size(4.dp)
+                                        .clip(CircleShape)
+                                        .background(textColor),
+                            )
                         }
                     }
                 }
