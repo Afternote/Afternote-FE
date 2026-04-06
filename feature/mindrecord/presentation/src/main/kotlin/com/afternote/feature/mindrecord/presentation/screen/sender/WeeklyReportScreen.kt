@@ -14,8 +14,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,37 +38,44 @@ fun WeeklyReportScreen(modifier: Modifier = Modifier) {
                 onBackClick = {},
                 action = {},
             )
-        }
+        },
+        modifier = modifier,
     ) { paddingValues ->
-        Column(modifier.padding(paddingValues)) {
+        Column(Modifier.padding(paddingValues)) {
             WeeklyReportReviewCard()
 
             buildAnnotatedString {
                 withStyle(
-                    style = MaterialTheme.typography.titleMedium.toSpanStyle()
+                    style = MaterialTheme.typography.titleMedium.toSpanStyle(),
                 ) {
                     append(
-                        text = "이번 주,"
+                        text = "이번 주,",
                     )
                     withStyle(
-                        style = MaterialTheme.typography.titleMedium.copy(color = B1).toSpanStyle()
+                        style =
+                            MaterialTheme.typography.titleMedium
+                                .copy(color = B1)
+                                .toSpanStyle(),
                     ) {
                         append(
-                            text = "박서연"
+                            text = "박서연",
                         )
                     }
                     append(
-                        text = "님은"
+                        text = "님은",
                     )
                     withStyle(
-                        style = MaterialTheme.typography.titleMedium.copy(color = B1).toSpanStyle()
+                        style =
+                            MaterialTheme.typography.titleMedium
+                                .copy(color = B1)
+                                .toSpanStyle(),
                     ) {
                         append(
-                            text = "3일"
+                            text = "3일",
                         )
                     }
                     append(
-                        text = "의 마음을 기록하셨네요."
+                        text = "의 마음을 기록하셨네요.",
                     )
                 }
             }
@@ -112,11 +117,14 @@ fun WeeklyReportScreen(modifier: Modifier = Modifier) {
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            DailyQuestionListCard(answer = DailyQuestion(
-                title = "오늘하루",
-                date = LocalDate.now(),
-                content = "오늘 하루"
-            ))
+            DailyQuestionListCard(
+                answer =
+                    DailyQuestion(
+                        title = "오늘하루",
+                        date = LocalDate.now(),
+                        content = "오늘 하루",
+                    ),
+            )
         }
     }
 }

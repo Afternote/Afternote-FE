@@ -28,7 +28,7 @@ import com.afternote.feature.mindrecord.presentation.component.WriteTextField
 import java.time.LocalDate
 
 @Composable
-fun DailyQuestionWriteScreen(modifier : Modifier = Modifier) {
+fun DailyQuestionWriteScreen(modifier: Modifier = Modifier) {
     Scaffold(
         topBar = {
             DetailTopBar(
@@ -37,21 +37,22 @@ fun DailyQuestionWriteScreen(modifier : Modifier = Modifier) {
                     Button(
                         onClick = {},
                         shape = RoundedCornerShape(6.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Gray2
-                        )
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = Gray2,
+                            ),
                     ) {
                         Text(
                             text = "등록",
                             style = MaterialTheme.typography.titleSmall,
-                            color = Gray6
+                            color = Gray6,
                         )
                     }
                 },
-                onBackClick = {}
+                onBackClick = {},
             )
         },
-        modifier = modifier
+        modifier = modifier,
     ) { paddingValues ->
         Column {
             Column(modifier = Modifier.padding(paddingValues).padding(horizontal = 20.dp)) {
@@ -71,7 +72,6 @@ fun DailyQuestionWriteScreen(modifier : Modifier = Modifier) {
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
-
             }
             androidx.compose.foundation.layout.Column {
                 WriteTextField()

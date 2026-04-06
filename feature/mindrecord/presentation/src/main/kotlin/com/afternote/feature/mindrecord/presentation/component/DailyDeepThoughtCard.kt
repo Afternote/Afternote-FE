@@ -46,29 +46,36 @@ fun DailyDeepThoughtCard(modifier: Modifier = Modifier) {
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(6.dp)),
     ) {
-        Column(modifier = Modifier.fillMaxSize().drawWithCache{
-            val brush = Brush.linearGradient(
-                colorStops = arrayOf(
-                    0.0f to Color(0xFFF5F5F4).copy(alpha = 0.8f),
-                    1.0f to Color(0xFFFAFAF9).copy(alpha = 0.5f)
-                )
-            )
-            onDrawBehind {
-                drawRect(brush)
-            }
-        }.padding(25.dp)) {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .drawWithCache {
+                        val brush =
+                            Brush.linearGradient(
+                                colorStops =
+                                    arrayOf(
+                                        0.0f to Color(0xFFF5F5F4).copy(alpha = 0.8f),
+                                        1.0f to Color(0xFFFAFAF9).copy(alpha = 0.5f),
+                                    ),
+                            )
+                        onDrawBehind {
+                            drawRect(brush)
+                        }
+                    }.padding(25.dp),
+        ) {
             Icon(
-                painter = painterResource(R.drawable.semicol),
+                painter = painterResource(R.drawable.mindrecord_semicol),
                 contentDescription = null,
                 modifier = Modifier.size(32.dp),
-                tint = Gray3
+                tint = Gray3,
             )
 
             Spacer(modifier = Modifier.height(18.dp))
             Text(
                 text = "생각은 깊이를 더할수록 진실에 가까워진다.",
                 style = MaterialTheme.typography.titleMedium,
-                color = Gray8
+                color = Gray8,
             )
 
             Spacer(modifier = Modifier.height(16.dp))

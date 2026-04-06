@@ -8,9 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
@@ -37,14 +35,15 @@ import com.afternote.feature.mindrecord.presentation.model.TextStyleType
 
 @Composable
 fun BottomToolbar(
-    modifier: Modifier = Modifier,
     onTextStyleClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(Color.White)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .background(Color.White)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // 링크
@@ -60,9 +59,15 @@ fun BottomToolbar(
         // 정렬
         Icon(painter = painterResource(R.drawable.mindrecord_align_left), contentDescription = null)
         Spacer(modifier = Modifier.width(8.dp))
-        Icon(painter = painterResource(R.drawable.mindrecord_align_center), contentDescription = null)
+        Icon(
+            painter = painterResource(R.drawable.mindrecord_align_center),
+            contentDescription = null,
+        )
         Spacer(modifier = Modifier.width(8.dp))
-        Icon(painter = painterResource(R.drawable.mindrecord_align_right), contentDescription = null)
+        Icon(
+            painter = painterResource(R.drawable.mindrecord_align_right),
+            contentDescription = null,
+        )
 
         Spacer(modifier = Modifier.weight(1f))
 
@@ -74,8 +79,6 @@ fun BottomToolbar(
 // 텍스트 설정 툴바
 @Composable
 fun TextStyleToolbar(
-    modifier: Modifier = Modifier,
-    styleState: TextStyleState,
     onClose: () -> Unit,
     onBoldClick: () -> Unit,
     onItalicClick: () -> Unit,
@@ -83,12 +86,15 @@ fun TextStyleToolbar(
     onStrikethroughClick: () -> Unit,
     onAlignChange: (TextAlign) -> Unit,
     onTextStyleChange: (TextStyleType) -> Unit,
+    styleState: TextStyleState,
+    modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(Color.White)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .background(Color.White)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -97,7 +103,10 @@ fun TextStyleToolbar(
             Text("텍스트 설정", style = MaterialTheme.typography.labelMedium)
             Spacer(modifier = Modifier.weight(1f))
             IconButton(onClick = onClose) {
-                Icon(painter = painterResource(R.drawable.mindrecord_close), contentDescription = null)
+                Icon(
+                    painter = painterResource(R.drawable.mindrecord_close),
+                    contentDescription = null,
+                )
             }
         }
 
@@ -113,7 +122,10 @@ fun TextStyleToolbar(
 
             // 정렬
             listOf(TextAlign.Start, TextAlign.Center, TextAlign.End).forEach { align ->
-                ToolbarButton(selected = styleState.textAlign == align, onClick = { onAlignChange(align) }) {
+                ToolbarButton(
+                    selected = styleState.textAlign == align,
+                    onClick = { onAlignChange(align) },
+                ) {
                     // 정렬 아이콘
                 }
             }
@@ -156,21 +168,20 @@ fun TextStyleToolbar(
     }
 }
 
-
-
 @Composable
 fun ToolbarButton(
-    modifier: Modifier = Modifier,
     selected: Boolean,
     onClick: () -> Unit,
-    content: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit = {},
 ) {
     Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(4.dp))
-            .background(if (selected) Gray2 else Color.Transparent)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(4.dp))
+                .background(if (selected) Gray2 else Color.Transparent)
+                .clickable(onClick = onClick)
+                .padding(horizontal = 8.dp, vertical = 4.dp),
         contentAlignment = Alignment.Center,
     ) {
         content()

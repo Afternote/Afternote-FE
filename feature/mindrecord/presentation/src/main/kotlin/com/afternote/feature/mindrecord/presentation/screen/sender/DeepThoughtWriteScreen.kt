@@ -57,32 +57,37 @@ fun DeepThoughtWriteScreen(modifier: Modifier = Modifier) {
         modifier = modifier,
     ) { paddingValues ->
         Column(modifier = Modifier.padding(paddingValues)) {
-
             DailyDeepThoughtCard(modifier = Modifier.height(150.dp))
 
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Text(
                     text = "카테고리",
                     style = MaterialTheme.typography.titleSmall,
-                    color = Gray7
+                    color = Gray7,
                 )
                 Column {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         Text(
                             text = "나의 가치관",
                             style = MaterialTheme.typography.displayMedium,
-                            color = Gray9
+                            color = Gray9,
                         )
 
                         Icon(
                             painter = painterResource(R.drawable.core_ui_arrowdown),
-                            contentDescription = null
+                            contentDescription = null,
                         )
                     }
 
                     HorizontalDivider()
                 }
-
             }
         }
     }

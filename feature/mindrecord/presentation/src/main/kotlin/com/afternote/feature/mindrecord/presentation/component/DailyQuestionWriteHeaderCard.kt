@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
@@ -25,7 +24,6 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray2
 import com.afternote.core.ui.theme.Gray6
 import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.White
 
 @Composable
 fun DailyQuestionWriteHeaderCard(modifier: Modifier = Modifier) {
@@ -39,22 +37,24 @@ fun DailyQuestionWriteHeaderCard(modifier: Modifier = Modifier) {
     ) {
         Column(
             modifier =
-                Modifier.fillMaxSize().drawWithCache {
-                    val brush =
-                        Brush.radialGradient(
-                            colorStops =
-                                arrayOf(
-                                    0.0f to Color(0xFFB7C4CD).copy(alpha = 0.9f),
-                                    1.0f to Color(0xFFF8F8F7),
-                                ),
-                            center = Offset(size.width / 2f, size.height / 2f),
-                            radius = size.height * 3f
-                        )
+                Modifier
+                    .fillMaxSize()
+                    .drawWithCache {
+                        val brush =
+                            Brush.radialGradient(
+                                colorStops =
+                                    arrayOf(
+                                        0.0f to Color(0xFFB7C4CD).copy(alpha = 0.9f),
+                                        1.0f to Color(0xFFF8F8F7),
+                                    ),
+                                center = Offset(size.width / 2f, size.height / 2f),
+                                radius = size.height * 3f,
+                            )
 
-                    onDrawBehind {
-                        drawRect(brush)
-                    }
-                }.padding(24.dp),
+                        onDrawBehind {
+                            drawRect(brush)
+                        }
+                    }.padding(24.dp),
         ) {
             Text(
                 text = "TODAY'S QUESTION",
@@ -66,14 +66,14 @@ fun DailyQuestionWriteHeaderCard(modifier: Modifier = Modifier) {
             Text(
                 text = "오늘 하루, \n 누구에게 가장 고마웠나요?",
                 style = MaterialTheme.typography.headlineSmall,
-                color = Gray9
+                color = Gray9,
             )
 
             Spacer(modifier = Modifier.height(7.5.dp))
             Text(
                 text = "· Day 21",
                 style = MaterialTheme.typography.displaySmall,
-                color = Gray6
+                color = Gray6,
             )
         }
     }

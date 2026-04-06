@@ -32,15 +32,15 @@ fun InsightCard(modifier: Modifier = Modifier) {
             Text(
                 text = "INSIGHTS",
                 style = MaterialTheme.typography.displaySmall,
-                color = Gray6
+                color = Gray6,
             )
 
             Spacer(modifier = Modifier.height(17.dp))
-            
+
             Text(
                 text = "이번주는 가족과 함께하는 시간을 가장 많이 기록하셨네요. 일상의 소중함을 느끼는 한주였던 것 같아요.",
                 style = MaterialTheme.typography.titleSmall,
-                color = Color(0xFF000000).copy(alpha = 0.7f)
+                color = Color(0xFF000000).copy(alpha = 0.7f),
             )
 
             Spacer(modifier = Modifier.height(17.dp))
@@ -48,7 +48,7 @@ fun InsightCard(modifier: Modifier = Modifier) {
             Text(
                 text = "매일 꾸준히 기록하는 습관이 정말 멋져요!",
                 style = MaterialTheme.typography.displayMedium,
-                color = Gray6
+                color = Gray6,
             )
         }
     }

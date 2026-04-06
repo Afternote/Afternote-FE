@@ -1,7 +1,6 @@
 package com.afternote.feature.mindrecord.presentation.component
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,18 +21,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray4
 import com.afternote.feature.mindrecord.presentation.model.TextStyleState
-import com.afternote.feature.mindrecord.presentation.model.TextStyleType
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -54,7 +46,12 @@ fun WriteTextField(modifier: Modifier = Modifier) {
         BasicTextField(
             value = textFieldValue,
             onValueChange = { textFieldValue = it },
-            modifier = Modifier.weight(1f).fillMaxWidth().padding(bottom = 16.dp).background(color = Color.White),
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+                    .background(color = Color.White),
             decorationBox = { innerTextField ->
                 Box(modifier = Modifier.padding(16.dp)) {
                     if (textFieldValue.text.isEmpty()) {
@@ -67,7 +64,7 @@ fun WriteTextField(modifier: Modifier = Modifier) {
                         modifier = Modifier.align(Alignment.BottomEnd),
                     )
                 }
-            }
+            },
         )
 
         // 텍스트 설정 툴바 (T 눌렀을 때)
