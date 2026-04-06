@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor.processing
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -26,12 +27,9 @@ import com.afternote.core.ui.button.ClickButton
 import com.afternote.core.ui.expand.dropShadow
 import com.afternote.core.ui.form.LabeledTextFieldStyle
 import com.afternote.core.ui.form.OutlineTextField
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.B3
-import com.afternote.core.ui.theme.Gray1
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
-import com.afternote.core.ui.theme.White
+import com.afternote.core.ui.theme.nanumGothic
 
 /**
  * 직접 입력하기 다이얼로그 콜백
@@ -55,9 +53,9 @@ data class CustomServiceDialogParams(
  * 직접 입력하기 다이얼로그 컴포넌트
  *
  * 피그마 디자인 기반:
- * - 타이틀: "직접 입력하기" (18sp, Bold, Gray9, 중앙 정렬)
- * - 추가 서비스명 입력 필드 (Gray1 배경, 8dp radius)
- * - 추가하기 버튼 (B3 배경, 전체 너비)
+ * - 타이틀: "직접 입력하기" (18sp, Bold, AfternoteDesign.colors.gray9, 중앙 정렬)
+ * - 추가 서비스명 입력 필드 (AfternoteDesign.colors.gray1 배경, 8dp radius)
+ * - 추가하기 버튼 (AfternoteDesign.colors.gray9 배경, 전체 너비)
  * - 다이얼로그: 흰색 배경, 16dp radius, drop shadow
  */
 @Composable
@@ -85,7 +83,7 @@ fun CustomServiceDialog(
                         offsetY = 2.dp,
                         spread = 0.dp,
                     ).background(
-                        color = White,
+                        color = AfternoteDesign.colors.white,
                         shape = RoundedCornerShape(16.dp),
                     ).padding(
                         horizontal = 24.dp,
@@ -100,9 +98,9 @@ fun CustomServiceDialog(
                     TextStyle(
                         fontSize = 18.sp,
                         lineHeight = 24.sp,
-                        fontFamily = Sansneo,
+                        fontFamily = nanumGothic,
                         fontWeight = FontWeight.Bold,
-                        color = Gray9,
+                        color = AfternoteDesign.colors.gray9,
                     ),
             )
 
@@ -113,14 +111,14 @@ fun CustomServiceDialog(
                 label = "추가 서비스명",
                 textFieldState = params.serviceNameState,
                 keyboardType = KeyboardType.Text,
-                style = LabeledTextFieldStyle(containerColor = Gray1, labelSpacing = 8.dp),
+                style = LabeledTextFieldStyle(containerColor = AfternoteDesign.colors.gray1, labelSpacing = 8.dp),
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
             // 추가하기 버튼
             ClickButton(
-                color = B3,
+                color = AfternoteDesign.colors.gray9,
                 title = "추가하기",
                 onButtonClick = params.callbacks.onAddClick,
             )

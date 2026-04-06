@@ -20,10 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.afternote.core.ui.theme.Gray2
-import com.afternote.core.ui.theme.Gray6
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.White
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.onboarding.presentation.R
 
 @Composable
@@ -40,10 +37,10 @@ fun LoginButton(
         shape = RoundedCornerShape(8.dp),
         colors =
             ButtonDefaults.buttonColors(
-                containerColor = Gray9,
-                contentColor = White,
-                disabledContainerColor = Gray9,
-                disabledContentColor = White,
+                containerColor = AfternoteDesign.colors.gray9,
+                contentColor = AfternoteDesign.colors.white,
+                disabledContainerColor = AfternoteDesign.colors.gray9,
+                disabledContentColor = AfternoteDesign.colors.white,
             ),
     ) {
         Text(text = text, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium))
@@ -59,7 +56,7 @@ fun BottomButtons(modifier: Modifier = Modifier) {
         // 간편 회원가입하기 버튼
         BottomButton(
             text = "간편 회원가입하기",
-            backgroundColor = Gray2,
+            backgroundColor = AfternoteDesign.colors.gray2,
             textColor = Color.Black,
             onClick = { /* 회원가입 로직 */ },
             modifier = Modifier.fillMaxWidth(),
@@ -85,7 +82,7 @@ fun BottomButtons(modifier: Modifier = Modifier) {
             style =
                 TextStyle(
                     fontSize = 12.sp,
-                    color = Gray6,
+                    color = AfternoteDesign.colors.gray6,
                     textDecoration = TextDecoration.Underline, // 밑줄 구현
                 ),
             modifier = Modifier.clickable { /* 찾기 로직 */ },

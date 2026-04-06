@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.shared.detail.song
+
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -34,9 +35,8 @@ import coil3.compose.AsyncImagePainter
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
-import com.afternote.core.ui.theme.Gray3
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
@@ -87,9 +87,9 @@ fun PlaylistSongItem(
                         TextStyle(
                             fontSize = 14.sp,
                             lineHeight = 20.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = nanumGothic,
                             fontWeight = FontWeight.Normal,
-                            color = Gray9,
+                            color = AfternoteDesign.colors.gray9,
                         ),
                 )
                 Spacer(modifier = Modifier.height(4.dp))
@@ -99,9 +99,9 @@ fun PlaylistSongItem(
                         TextStyle(
                             fontSize = 14.sp,
                             lineHeight = 20.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = nanumGothic,
                             fontWeight = FontWeight.Normal,
-                            color = Gray9,
+                            color = AfternoteDesign.colors.gray9,
                         ),
                 )
             }
@@ -112,7 +112,7 @@ fun PlaylistSongItem(
         Spacer(modifier = Modifier.height(8.dp))
         HorizontalDivider(
             thickness = 1.dp,
-            color = Gray3,
+            color = AfternoteDesign.colors.gray3,
 //            modifier = Modifier.padding(horizontal = 20.dp)
         )
     }

@@ -18,7 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.afternote.core.ui.theme.Gray9
+import com.afternote.core.ui.theme.AfternoteDesign
 
 @Composable
 fun TopHeader(modifier: Modifier = Modifier) {
@@ -41,14 +41,14 @@ fun TopHeader(modifier: Modifier = Modifier) {
                 imageVector = Icons.Default.Person,
                 contentDescription = "User",
                 modifier = Modifier.size(24.dp),
-                tint = Gray9,
+                tint = AfternoteDesign.colors.gray9,
             )
             Spacer(modifier = Modifier.width(16.dp))
             Icon(
                 imageVector = Icons.Default.Settings,
                 contentDescription = "Settings",
                 modifier = Modifier.size(24.dp),
-                tint = Gray9,
+                tint = AfternoteDesign.colors.gray9,
             )
         }
     }

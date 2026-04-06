@@ -45,12 +45,8 @@ import coil3.network.httpHeaders
 import coil3.request.ImageRequest
 import com.afternote.core.ui.expand.horizontalFadingEdge
 import com.afternote.core.ui.form.ProfileImage
-import com.afternote.core.ui.theme.B1
-import com.afternote.core.ui.theme.Black
-import com.afternote.core.ui.theme.Gray5
-import com.afternote.core.ui.theme.Gray6
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
@@ -189,7 +185,7 @@ private fun TitleSection(userName: String) {
     Text(
         text =
             buildAnnotatedString {
-                withStyle(style = SpanStyle(color = B1)) {
+                withStyle(style = SpanStyle(color = AfternoteDesign.colors.gray9)) {
                     append(CATEGORY_NAME)
                 }
                 append("에 대한 ${userName}님의 기록")
@@ -198,9 +194,9 @@ private fun TitleSection(userName: String) {
             TextStyle(
                 fontSize = 18.sp,
                 lineHeight = 24.sp,
-                fontFamily = Sansneo,
+                fontFamily = nanumGothic,
                 fontWeight = FontWeight.Bold,
-                color = Gray9,
+                color = AfternoteDesign.colors.gray9,
             ),
     )
 }
@@ -245,9 +241,9 @@ private fun PhotoCard(
                         TextStyle(
                             fontSize = 10.sp,
                             lineHeight = 16.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = nanumGothic,
                             fontWeight = FontWeight.Normal,
-                            color = Gray6,
+                            color = AfternoteDesign.colors.gray6,
                         ),
                 )
                 ProfileImage(
@@ -264,7 +260,7 @@ private fun PhotoCard(
 /**
  * 장례식에 남길 영상 카드 — 피그마 node 4813:15198 기준.
  *
- * InfoCard(Gray2) 안에 제목 + 썸네일(dark gradient overlay + 재생 아이콘) 구조.
+ * InfoCard(AfternoteDesign.colors.gray2) 안에 제목 + 썸네일(dark gradient overlay + 재생 아이콘) 구조.
  * 영상 URL이 없으면 카드를 표시하지 않는다.
  */
 @Composable
@@ -284,9 +280,9 @@ private fun VideoCard(
                         TextStyle(
                             fontSize = 16.sp,
                             lineHeight = 22.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = nanumGothic,
                             fontWeight = FontWeight.Medium,
-                            color = Gray9,
+                            color = AfternoteDesign.colors.gray9,
                         ),
                 )
                 VideoThumbnail(thumbnailUrl = thumbnailUrl)
@@ -362,7 +358,7 @@ private fun VideoThumbnail(thumbnailUrl: String?) {
  * 추모 플레이리스트 카드 — 피그마 node 4160:9168 기준.
  *
  * 레이아웃 순서: 제목 → 앨범 커버 행 → 곡 수 텍스트.
- * InfoCard(Gray2) 안에 직접 렌더링하며, 내부 White 카드 없이 flat 구조.
+ * InfoCard(AfternoteDesign.colors.gray2) 안에 직접 렌더링하며, 내부 AfternoteDesign.colors.white 카드 없이 flat 구조.
  * 앨범 커버: 87dp, 간격 10dp, 오른쪽 45dp 페이드.
  */
 @Composable
@@ -380,9 +376,9 @@ private fun PlaylistCard(
                         TextStyle(
                             fontSize = 16.sp,
                             lineHeight = 22.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = nanumGothic,
                             fontWeight = FontWeight.Medium,
-                            color = Gray9,
+                            color = AfternoteDesign.colors.gray9,
                         ),
                 )
                 Spacer(Modifier.height(7.dp))
@@ -396,9 +392,9 @@ private fun PlaylistCard(
                         TextStyle(
                             fontSize = 14.sp,
                             lineHeight = 20.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = nanumGothic,
                             fontWeight = FontWeight.Normal,
-                            color = Black,
+                            color = AfternoteDesign.colors.black,
                         ),
                 )
             }
@@ -456,7 +452,7 @@ private fun AlbumCoverItem(album: AlbumCover) {
 @Composable
 private fun LastWishCard(lastWish: String) {
     val displayText = lastWish.ifEmpty { "남기고 싶은 당부가 없습니다." }
-    val textColor = if (lastWish.isNotEmpty()) Gray9 else Gray5
+    val textColor = if (lastWish.isNotEmpty()) AfternoteDesign.colors.gray9 else AfternoteDesign.colors.gray5
 
     InfoCard(
         modifier = Modifier.fillMaxWidth(),
@@ -468,9 +464,9 @@ private fun LastWishCard(lastWish: String) {
                         TextStyle(
                             fontSize = 16.sp,
                             lineHeight = 22.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = nanumGothic,
                             fontWeight = FontWeight.Medium,
-                            color = Gray9,
+                            color = AfternoteDesign.colors.gray9,
                         ),
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -480,7 +476,7 @@ private fun LastWishCard(lastWish: String) {
                         TextStyle(
                             fontSize = 14.sp,
                             lineHeight = 20.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = nanumGothic,
                             fontWeight = FontWeight.Normal,
                             color = textColor,
                         ),

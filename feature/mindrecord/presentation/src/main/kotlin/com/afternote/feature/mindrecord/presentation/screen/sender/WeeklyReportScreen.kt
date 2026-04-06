@@ -19,8 +19,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.B1
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionListCard
 import com.afternote.feature.mindrecord.presentation.component.EmotionKeywordCard
 import com.afternote.feature.mindrecord.presentation.component.InsightCard
@@ -54,7 +54,7 @@ fun WeeklyReportScreen(modifier: Modifier = Modifier) {
                     withStyle(
                         style =
                             MaterialTheme.typography.titleMedium
-                                .copy(color = B1)
+                                .copy(color = AfternoteDesign.colors.b1)
                                 .toSpanStyle(),
                     ) {
                         append(
@@ -67,7 +67,7 @@ fun WeeklyReportScreen(modifier: Modifier = Modifier) {
                     withStyle(
                         style =
                             MaterialTheme.typography.titleMedium
-                                .copy(color = B1)
+                                .copy(color = AfternoteDesign.colors.b1)
                                 .toSpanStyle(),
                     ) {
                         append(

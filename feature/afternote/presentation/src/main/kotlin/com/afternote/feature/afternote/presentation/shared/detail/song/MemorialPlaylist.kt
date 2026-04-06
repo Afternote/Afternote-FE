@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.shared.detail.song
+
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -37,12 +38,9 @@ import coil3.request.ImageRequest
 import com.afternote.core.ui.expand.horizontalFadingEdge
 import com.afternote.core.ui.icon.ArrowIconSpec
 import com.afternote.core.ui.icon.RightArrowIcon
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.B1
-import com.afternote.core.ui.theme.B3
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
-import com.afternote.core.ui.theme.White
+import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.dummy.AlbumDummies
 
@@ -61,7 +59,7 @@ private val songCountTextStyle =
     TextStyle(
         fontSize = 14.sp,
         lineHeight = 20.sp,
-        fontFamily = Sansneo,
+        fontFamily = nanumGothic,
         fontWeight = FontWeight.Normal,
         color = Color(0xFF000000),
     )
@@ -78,7 +76,7 @@ private fun MemorialPlaylistSongCountRow(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(text = "현재 ${songCount}개의 노래가 담겨 있습니다.", style = songCountTextStyle)
-            RightArrowIcon(color = B1, size = 16.dp)
+            RightArrowIcon(color = AfternoteDesign.colors.gray9, size = 16.dp)
         }
     } else {
         Text(text = "현재 ${songCount}개의 노래가 담겨 있습니다.", style = songCountTextStyle)
@@ -93,7 +91,7 @@ private fun MemorialPlaylistAddButton(
     Row(
         modifier =
             modifier
-                .background(color = B3, shape = RoundedCornerShape(20.dp))
+                .background(color = AfternoteDesign.colors.gray9, shape = RoundedCornerShape(20.dp))
                 .clickable(onClick = onClick)
                 .padding(vertical = 8.dp, horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -105,9 +103,9 @@ private fun MemorialPlaylistAddButton(
                 TextStyle(
                     fontSize = 12.sp,
                     lineHeight = 18.sp,
-                    fontFamily = Sansneo,
+                    fontFamily = nanumGothic,
                     fontWeight = FontWeight.Medium,
-                    color = Gray9,
+                    color = AfternoteDesign.colors.gray9,
                 ),
         )
         RightArrowIcon(
@@ -116,7 +114,7 @@ private fun MemorialPlaylistAddButton(
                     iconRes = R.drawable.ic_arrow_right_playlist,
                     contentDescription = "추가",
                 ),
-            backgroundColor = B1,
+            backgroundColor = AfternoteDesign.colors.gray9,
             size = 12.dp,
         )
     }
@@ -166,15 +164,15 @@ fun MemorialPlaylist(
                 TextStyle(
                     fontSize = 16.sp,
                     lineHeight = 22.sp,
-                    fontFamily = Sansneo,
+                    fontFamily = nanumGothic,
                     fontWeight = FontWeight.Medium,
-                    color = Gray9,
+                    color = AfternoteDesign.colors.gray9,
                 ),
         )
         Column(
             modifier =
                 cardModifier
-                    .background(color = White, shape = RoundedCornerShape(size = 16.dp))
+                    .background(color = AfternoteDesign.colors.white, shape = RoundedCornerShape(size = 16.dp))
                     .padding(all = 16.dp),
             verticalArrangement = Arrangement.spacedBy(space = 8.dp),
         ) {

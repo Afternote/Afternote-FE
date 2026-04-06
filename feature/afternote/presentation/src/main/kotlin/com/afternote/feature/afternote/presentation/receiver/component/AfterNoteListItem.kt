@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.receiver.component
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,9 +25,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.icon.RightArrowIcon
-import com.afternote.core.ui.theme.B2
-import com.afternote.core.ui.theme.Gray5
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.receiver.model.AppNoteItem
 
 @Composable
@@ -78,7 +78,7 @@ fun AfterNoteListItem(
                     text = item.name,
                     fontWeight = FontWeight.Medium,
                     fontSize = 16.sp,
-                    fontFamily = Sansneo,
+                    fontFamily = nanumGothic,
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -86,14 +86,14 @@ fun AfterNoteListItem(
                 Text(
                     text = item.date,
                     fontSize = 10.sp,
-                    color = Gray5,
-                    fontFamily = Sansneo,
+                    color = AfternoteDesign.colors.gray5,
+                    fontFamily = nanumGothic,
                     fontWeight = FontWeight.Normal,
                 )
             }
 
             RightArrowIcon(
-                color = B2,
+                color = AfternoteDesign.colors.gray9,
                 size = 24.dp,
             )
         }

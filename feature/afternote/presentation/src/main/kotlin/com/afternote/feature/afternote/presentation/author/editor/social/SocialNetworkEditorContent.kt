@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.form.Label
 import com.afternote.core.ui.form.LabelStyle
-import com.afternote.core.ui.form.Multiline
+import com.afternote.core.ui.form.MultilineOutlineTextField
 import com.afternote.core.ui.form.OutlineTextField
 import com.afternote.core.ui.form.SelectableRadioCard
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -168,10 +168,9 @@ private fun SocialNetworkEditorContentContent(
         Spacer(modifier = Modifier.height(32.dp))
 
         // 남기실 말씀
-        OutlineTextField(
+        MultilineOutlineTextField(
             label = "남기실 말씀",
             textFieldState = params.messageState,
-            multiline = Multiline,
         )
 
         // 소셜네트워크 탭 하단 여백 (Viewport 높이의 10%, 800dp 기준 약 80dp)

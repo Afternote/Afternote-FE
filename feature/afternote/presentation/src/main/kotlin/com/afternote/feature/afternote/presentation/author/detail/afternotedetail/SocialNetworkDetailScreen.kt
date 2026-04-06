@@ -27,12 +27,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.B1
-import com.afternote.core.ui.theme.Gray5
-import com.afternote.core.ui.theme.Gray6
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
 import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
@@ -156,7 +153,7 @@ private fun SocialNetworkDetailScrollContent(content: SocialNetworkDetailContent
         Text(
             text =
                 buildAnnotatedString {
-                    withStyle(style = SpanStyle(color = B1)) {
+                    withStyle(style = SpanStyle(color = AfternoteDesign.colors.gray9)) {
                         append(content.serviceName)
                     }
                     append("에 대한 ${content.userName}님의 기록")
@@ -165,9 +162,9 @@ private fun SocialNetworkDetailScrollContent(content: SocialNetworkDetailContent
                 TextStyle(
                     fontSize = 18.sp,
                     lineHeight = 24.sp,
-                    fontFamily = Sansneo,
+                    fontFamily = nanumGothic,
                     fontWeight = FontWeight.Bold,
-                    color = Gray9,
+                    color = AfternoteDesign.colors.gray9,
                 ),
         )
         Spacer(modifier = Modifier.height(24.dp))
@@ -181,9 +178,9 @@ private fun SocialNetworkDetailScrollContent(content: SocialNetworkDetailContent
                             TextStyle(
                                 fontSize = 10.sp,
                                 lineHeight = 16.sp,
-                                fontFamily = Sansneo,
+                                fontFamily = nanumGothic,
                                 fontWeight = FontWeight.Normal,
-                                color = Gray6,
+                                color = AfternoteDesign.colors.gray6,
                             ),
                     )
                     AccountProcessingMethodText(
@@ -205,9 +202,9 @@ private fun SocialNetworkDetailScrollContent(content: SocialNetworkDetailContent
                             TextStyle(
                                 fontSize = 16.sp,
                                 lineHeight = 22.sp,
-                                fontFamily = Sansneo,
+                                fontFamily = nanumGothic,
                                 fontWeight = FontWeight.Medium,
-                                color = Gray9,
+                                color = AfternoteDesign.colors.gray9,
                             ),
                     )
                     Spacer(modifier = Modifier.height(7.dp))
@@ -229,9 +226,9 @@ private fun SocialNetworkDetailScrollContent(content: SocialNetworkDetailContent
                                 TextStyle(
                                     fontSize = 16.sp,
                                     lineHeight = 22.sp,
-                                    fontFamily = Sansneo,
+                                    fontFamily = nanumGothic,
                                     fontWeight = FontWeight.Medium,
-                                    color = Gray9,
+                                    color = AfternoteDesign.colors.gray9,
                                 ),
                         )
                         Spacer(modifier = Modifier.height(8.dp))
@@ -254,21 +251,21 @@ private fun SocialNetworkDetailScrollContent(content: SocialNetworkDetailContent
                             TextStyle(
                                 fontSize = 16.sp,
                                 lineHeight = 22.sp,
-                                fontFamily = Sansneo,
+                                fontFamily = nanumGothic,
                                 fontWeight = FontWeight.Medium,
-                                color = Gray9,
+                                color = AfternoteDesign.colors.gray9,
                             ),
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     val displayMessage = content.message.ifEmpty { "남기신 말씀이 없습니다." }
-                    val textColor = if (content.message.isNotEmpty()) Gray9 else Gray5
+                    val textColor = if (content.message.isNotEmpty()) AfternoteDesign.colors.gray9 else AfternoteDesign.colors.gray5
                     Text(
                         text = displayMessage,
                         style =
                             TextStyle(
                                 fontSize = 14.sp,
                                 lineHeight = 20.sp,
-                                fontFamily = Sansneo,
+                                fontFamily = nanumGothic,
                                 fontWeight = FontWeight.Normal,
                                 color = textColor,
                             ),
@@ -292,7 +289,7 @@ private fun AccountProcessingMethodText(accountProcessingMethod: String) {
             "MEMORIAL" -> {
                 buildAnnotatedString {
                     append("사망 후 ")
-                    withStyle(style = SpanStyle(color = B1)) { append("추모 계정") }
+                    withStyle(style = SpanStyle(color = AfternoteDesign.colors.gray9)) { append("추모 계정") }
                     append("으로 전환")
                 }
             }
@@ -300,20 +297,20 @@ private fun AccountProcessingMethodText(accountProcessingMethod: String) {
             "DELETE" -> {
                 buildAnnotatedString {
                     append("사망 후 ")
-                    withStyle(style = SpanStyle(color = B1)) { append("계정 영구 삭제") }
+                    withStyle(style = SpanStyle(color = AfternoteDesign.colors.gray9)) { append("계정 영구 삭제") }
                 }
             }
 
             "TRANSFER", "RECEIVER" -> {
                 buildAnnotatedString {
-                    withStyle(style = SpanStyle(color = B1)) { append("수신자") }
+                    withStyle(style = SpanStyle(color = AfternoteDesign.colors.gray9)) { append("수신자") }
                     append("에게 정보 전달")
                 }
             }
 
             "ADDITIONAL" -> {
                 buildAnnotatedString {
-                    withStyle(style = SpanStyle(color = B1)) { append("추가 수신자") }
+                    withStyle(style = SpanStyle(color = AfternoteDesign.colors.gray9)) { append("추가 수신자") }
                     append("에게 정보 전달")
                 }
             }
@@ -330,9 +327,9 @@ private fun AccountProcessingMethodText(accountProcessingMethod: String) {
             TextStyle(
                 fontSize = 16.sp,
                 lineHeight = 22.sp,
-                fontFamily = Sansneo,
+                fontFamily = nanumGothic,
                 fontWeight = FontWeight.Medium,
-                color = Gray9,
+                color = AfternoteDesign.colors.gray9,
             ),
     )
 }

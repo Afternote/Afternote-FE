@@ -29,10 +29,8 @@ import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.icon.ArrowIconSpec
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.core.ui.theme.B1
-import com.afternote.core.ui.theme.B3
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.model.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.provider.FakeAfternoteEditorDataProvider
@@ -127,9 +125,9 @@ private fun MemorialPlaylistListHeader(
                         TextStyle(
                             fontSize = 16.sp,
                             lineHeight = 22.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = nanumGothic,
                             fontWeight = FontWeight.Medium,
-                            color = Gray9,
+                            color = AfternoteDesign.colors.gray9,
                         ),
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -142,9 +140,9 @@ private fun MemorialPlaylistListHeader(
                         TextStyle(
                             fontSize = 14.sp,
                             lineHeight = 20.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = nanumGothic,
                             fontWeight = FontWeight.Normal,
-                            color = Gray9,
+                            color = AfternoteDesign.colors.gray9,
                         ),
                 )
                 Spacer(modifier = Modifier.height(17.dp))
@@ -158,7 +156,7 @@ private fun MemorialPlaylistListHeader(
                         TextStyle(
                             fontSize = 14.sp,
                             lineHeight = 20.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = nanumGothic,
                             fontWeight = FontWeight.Normal,
                             color = Color(color = 0xFF000000),
                         ),
@@ -171,7 +169,7 @@ private fun MemorialPlaylistListHeader(
                     modifier =
                         Modifier
                             .background(
-                                color = B3,
+                                color = AfternoteDesign.colors.gray9,
                                 shape = RoundedCornerShape(20.dp),
                             ).clickable(onClick = onAddSongClick),
                     verticalAlignment = Alignment.CenterVertically,
@@ -186,9 +184,9 @@ private fun MemorialPlaylistListHeader(
                                     TextStyle(
                                         fontSize = 12.sp,
                                         lineHeight = 18.sp,
-                                        fontFamily = Sansneo,
+                                        fontFamily = nanumGothic,
                                         fontWeight = FontWeight.Medium,
-                                        color = Gray9,
+                                        color = AfternoteDesign.colors.gray9,
                                     ),
                             )
                             Spacer(modifier = Modifier.width(4.dp))
@@ -198,7 +196,7 @@ private fun MemorialPlaylistListHeader(
                                         iconRes = R.drawable.ic_arrow_right_playlist,
                                         contentDescription = "추가",
                                     ),
-                                backgroundColor = B1,
+                                backgroundColor = AfternoteDesign.colors.gray9,
                                 size = 12.dp,
                             )
                         }
@@ -248,9 +246,9 @@ private fun MemorialPlaylistActionBar(
                     TextStyle(
                         fontSize = 16.sp,
                         lineHeight = 22.sp,
-                        fontFamily = Sansneo,
+                        fontFamily = nanumGothic,
                         fontWeight = FontWeight.Normal,
-                        color = Gray9,
+                        color = AfternoteDesign.colors.gray9,
                         textAlign = TextAlign.Center,
                     ),
             )
@@ -276,9 +274,9 @@ private fun MemorialPlaylistActionBar(
                     TextStyle(
                         fontSize = 16.sp,
                         lineHeight = 22.sp,
-                        fontFamily = Sansneo,
+                        fontFamily = nanumGothic,
                         fontWeight = FontWeight.Normal,
-                        color = Gray9,
+                        color = AfternoteDesign.colors.gray9,
                         textAlign = TextAlign.Center,
                     ),
             )

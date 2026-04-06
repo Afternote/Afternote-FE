@@ -17,7 +17,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -31,13 +30,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Black
-import com.afternote.core.ui.theme.Gray2
-import com.afternote.core.ui.theme.Gray5
-import com.afternote.core.ui.theme.Gray8
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 
@@ -49,7 +44,7 @@ fun InfoCard(
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Gray2),
+        colors = CardDefaults.cardColors(containerColor = AfternoteDesign.colors.gray2),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Column(
@@ -66,8 +61,8 @@ fun InfoRow(
     modifier: Modifier = Modifier,
 ) {
     Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(text = label, style = MaterialTheme.typography.bodyMedium, color = Gray5)
-        Text(text = value, style = MaterialTheme.typography.bodyMedium, color = Gray9)
+        Text(text = label, style = AfternoteDesign.typography.bodyLargeR, color = AfternoteDesign.colors.gray5)
+        Text(text = value, style = AfternoteDesign.typography.bodyLargeR, color = AfternoteDesign.colors.gray9)
     }
 }
 
@@ -79,8 +74,8 @@ fun ProcessingMethodItem(
     Text(
         text = text,
         modifier = modifier.fillMaxWidth(),
-        style = MaterialTheme.typography.bodyMedium,
-        color = Gray9,
+        style = AfternoteDesign.typography.bodyLargeR,
+        color = AfternoteDesign.colors.gray9,
     )
 }
 
@@ -107,9 +102,9 @@ fun ReceiversCard(
                         TextStyle(
                             fontSize = 16.sp,
                             lineHeight = 22.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = nanumGothic,
                             fontWeight = FontWeight.Medium,
-                            color = Gray9,
+                            color = AfternoteDesign.colors.gray9,
                         ),
                 )
                 receivers.forEach { receiver ->
@@ -149,9 +144,9 @@ private fun ReceiverDetailItem(
                     TextStyle(
                         fontSize = 12.sp,
                         lineHeight = 18.sp,
-                        fontFamily = Sansneo,
+                        fontFamily = nanumGothic,
                         fontWeight = FontWeight.Medium,
-                        color = Black,
+                        color = AfternoteDesign.colors.black,
                     ),
             )
             Text(
@@ -160,9 +155,9 @@ private fun ReceiverDetailItem(
                     TextStyle(
                         fontSize = 12.sp,
                         lineHeight = 18.sp,
-                        fontFamily = Sansneo,
+                        fontFamily = nanumGothic,
                         fontWeight = FontWeight.Normal,
-                        color = Gray8,
+                        color = AfternoteDesign.colors.gray8,
                     ),
             )
         }

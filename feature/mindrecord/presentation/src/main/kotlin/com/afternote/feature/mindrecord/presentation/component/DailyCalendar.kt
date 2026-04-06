@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,8 +24,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray5
 import com.afternote.feature.mindrecord.presentation.model.DayState
 import com.afternote.feature.mindrecord.presentation.model.DayUiModel
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
@@ -58,7 +57,7 @@ fun DailyCalendar(
                         text = dayLabel,
                         modifier = Modifier.weight(1f),
                         color = Color(0xFF000000).copy(alpha = 0.3f),
-                        style = MaterialTheme.typography.labelSmall,
+                        style = AfternoteDesign.typography.footnoteCaption,
                         textAlign = TextAlign.Center,
                     )
                 }
@@ -147,7 +146,7 @@ fun Legend(modifier: Modifier = Modifier) {
                         .background(color),
             )
             Spacer(modifier = Modifier.width(4.dp))
-            Text(text = label, style = MaterialTheme.typography.labelSmall, color = Gray5)
+            Text(text = label, style = AfternoteDesign.typography.footnoteCaption, color = AfternoteDesign.colors.gray5)
             Spacer(modifier = Modifier.width(16.dp))
         }
     }

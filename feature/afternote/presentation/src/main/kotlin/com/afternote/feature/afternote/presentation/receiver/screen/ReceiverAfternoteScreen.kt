@@ -29,9 +29,8 @@ import com.afternote.core.ui.button.ClickButton
 import com.afternote.core.ui.feedback.ConfirmationPopup
 import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.core.ui.theme.B3
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.receiver.component.ContentSection
 import com.afternote.feature.afternote.presentation.receiver.component.HeroCard
@@ -149,8 +148,8 @@ fun ReceiverAfterNoteScreen(
                         summary.senderName.ifBlank { "" },
                     ),
                 fontWeight = FontWeight.Bold,
-                color = Gray9,
-                fontFamily = Sansneo,
+                color = AfternoteDesign.colors.gray9,
+                fontFamily = nanumGothic,
                 modifier = Modifier.padding(bottom = 16.dp),
             )
 
@@ -204,7 +203,7 @@ fun ReceiverAfterNoteScreen(
             Spacer(modifier = Modifier.height(20.dp))
 
             ClickButton(
-                color = B3,
+                color = AfternoteDesign.colors.gray9,
                 onButtonClick = { showDialog = true },
                 title = stringResource(R.string.receiver_download_all_button),
             )

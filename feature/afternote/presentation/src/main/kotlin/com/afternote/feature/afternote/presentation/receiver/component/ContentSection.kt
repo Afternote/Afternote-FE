@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.receiver.component
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,10 +25,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.icon.RightArrowIcon
-import com.afternote.core.ui.theme.B1
-import com.afternote.core.ui.theme.B3
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.core.ui.theme.nanumGothic
 
 @Composable
 fun ContentSection(
@@ -43,9 +42,9 @@ fun ContentSection(
         Text(
             text = title,
             fontSize = 18.sp,
-            fontFamily = Sansneo,
+            fontFamily = nanumGothic,
             fontWeight = FontWeight.Bold,
-            color = Gray9,
+            color = AfternoteDesign.colors.gray9,
         )
 
         Card(
@@ -74,21 +73,21 @@ fun ContentSection(
                     Text(
                         text = desc,
                         fontSize = 16.sp,
-                        fontFamily = Sansneo,
+                        fontFamily = nanumGothic,
                         fontWeight = FontWeight.Medium,
-                        color = Gray9,
+                        color = AfternoteDesign.colors.gray9,
                     )
                     Text(
                         text = subDesc,
                         fontSize = 12.sp,
-                        fontFamily = Sansneo,
-                        color = Gray9,
+                        fontFamily = nanumGothic,
+                        color = AfternoteDesign.colors.gray9,
                         modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
                     )
 
                     Button(
                         onClick = onButtonClick,
-                        colors = ButtonDefaults.buttonColors(containerColor = B3),
+                        colors = ButtonDefaults.buttonColors(containerColor = AfternoteDesign.colors.gray9),
                         shape = RoundedCornerShape(50),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                         modifier = Modifier.height(36.dp),
@@ -96,13 +95,13 @@ fun ContentSection(
                         Text(
                             text = btnText,
                             fontSize = 12.sp,
-                            color = Gray9,
+                            color = AfternoteDesign.colors.gray9,
                             fontWeight = FontWeight.Medium,
-                            fontFamily = Sansneo,
+                            fontFamily = nanumGothic,
                         )
 
                         Spacer(modifier = Modifier.width(4.dp))
-                        RightArrowIcon(B1)
+                        RightArrowIcon(AfternoteDesign.colors.gray9)
                     }
                 }
             }

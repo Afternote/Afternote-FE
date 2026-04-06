@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor.memorial
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -10,15 +11,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.nanumGothic
 
 /**
  * 마지막 순간 질문 텍스트 컴포넌트
  *
  * 피그마 디자인 기반:
- * - 텍스트: 16sp, Regular, Gray9
+ * - 텍스트: 16sp, Regular, AfternoteDesign.colors.gray9
  * - 라인 높이: 22sp
  */
 @Composable
@@ -35,9 +36,9 @@ fun LastMomentQuestion(
                 TextStyle(
                     fontSize = 16.sp,
                     lineHeight = 22.sp,
-                    fontFamily = Sansneo,
+                    fontFamily = nanumGothic,
                     fontWeight = FontWeight.Medium,
-                    color = Gray9,
+                    color = AfternoteDesign.colors.gray9,
                 ),
         )
     }

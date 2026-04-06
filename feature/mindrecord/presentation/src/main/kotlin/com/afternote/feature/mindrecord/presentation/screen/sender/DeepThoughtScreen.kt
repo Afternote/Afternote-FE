@@ -34,9 +34,8 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.ViewModeSwitcher
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray4
-import com.afternote.core.ui.theme.Gray9
 import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
 import com.afternote.feature.mindrecord.presentation.component.DeepThoughtCard
 import com.afternote.feature.mindrecord.presentation.component.FlowTags
@@ -141,7 +140,7 @@ fun DeepThoughtScreen(modifier: Modifier = Modifier) {
                             text = {
                                 Text(
                                     text = title,
-                                    color = if (selectedIndex == index) Color(0xFF1F1F1F) else Gray4,
+                                    color = if (selectedIndex == index) Color(0xFF1F1F1F) else AfternoteDesign.colors.gray4,
                                 )
                             },
                         )
@@ -195,7 +194,7 @@ fun DeepThoughtScreen(modifier: Modifier = Modifier) {
                     ) {
                         Text(
                             text = "2026년 3월",
-                            color = Gray9,
+                            color = AfternoteDesign.colors.gray9,
                             style = MaterialTheme.typography.headlineSmall,
                         )
                         Icon(

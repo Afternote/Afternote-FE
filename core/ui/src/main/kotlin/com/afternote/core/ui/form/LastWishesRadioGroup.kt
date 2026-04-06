@@ -27,14 +27,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.button.CustomRadioButton
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.B1
-import com.afternote.core.ui.theme.B2
-import com.afternote.core.ui.theme.Gray1
-import com.afternote.core.ui.theme.Gray4
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
-import com.afternote.core.ui.theme.White
+import com.afternote.core.ui.theme.nanumGothic
 
 /** Section label used for edit and view (receiver) so both share the same literal. */
 const val LABEL_LAST_WISH = "남기고 싶은 당부"
@@ -90,9 +85,9 @@ fun LastWishesRadioGroup(
                 TextStyle(
                     fontSize = 16.sp,
                     lineHeight = 22.sp,
-                    fontFamily = Sansneo,
+                    fontFamily = nanumGothic,
                     fontWeight = FontWeight.Medium,
-                    color = Gray9,
+                    color = AfternoteDesign.colors.gray9,
                 ),
         )
 
@@ -114,17 +109,17 @@ private fun LastWishViewModeContent(displayTextOnly: String) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, B1),
-        color = White,
+        border = BorderStroke(1.dp, AfternoteDesign.colors.gray9),
+        color = AfternoteDesign.colors.white,
     ) {
         Text(
             text = displayTextOnly,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp),
-            color = B1,
+            color = AfternoteDesign.colors.gray9,
             style =
                 TextStyle(
                     fontSize = 14.sp,
-                    fontFamily = Sansneo,
+                    fontFamily = nanumGothic,
                     fontWeight = FontWeight.Medium,
                 ),
         )
@@ -172,7 +167,7 @@ private fun LastWishOtherCard(
     otherState: LastWishOtherState,
     onOptionSelect: () -> Unit,
 ) {
-    val borderColor = if (selected) B2 else Color.Transparent
+    val borderColor = if (selected) AfternoteDesign.colors.gray9 else Color.Transparent
     val interactionSource = remember { MutableInteractionSource() }
 
     Surface(
@@ -188,7 +183,7 @@ private fun LastWishOtherCard(
                 ),
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(1.dp, borderColor),
-        color = White,
+        color = AfternoteDesign.colors.white,
     ) {
         Column(
             modifier =
@@ -205,8 +200,8 @@ private fun LastWishOtherCard(
                     selected = selected,
                     onClick = null,
                     buttonSize = 24.dp,
-                    selectedColor = B2,
-                    unselectedColor = Gray4,
+                    selectedColor = AfternoteDesign.colors.gray9,
+                    unselectedColor = AfternoteDesign.colors.gray4,
                 )
                 Text(
                     text = option.text,
@@ -224,13 +219,15 @@ private fun LastWishOtherCard(
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
+@Composable
 private fun optionLabelStyle(selected: Boolean): TextStyle =
     TextStyle(
         fontSize = 16.sp,
         lineHeight = 22.sp,
-        fontFamily = Sansneo,
+        fontFamily = nanumGothic,
         fontWeight = FontWeight.Medium,
-        color = if (selected) B1 else Gray9,
+        color = AfternoteDesign.colors.gray9,
     )
 
 @Composable
@@ -253,7 +250,7 @@ private fun LastWishOtherTextField(
         modifier = modifier,
         textFieldState = state,
         placeholder = "Text Field",
-        containerColor = Gray1,
+        containerColor = AfternoteDesign.colors.gray1,
         height = 160.dp,
         shape = RoundedCornerShape(16.dp),
     )

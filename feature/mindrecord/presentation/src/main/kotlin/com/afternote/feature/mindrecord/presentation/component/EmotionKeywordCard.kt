@@ -24,8 +24,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray9
 
 // ───────────────────────────────────────────────
 // 데이터 모델
@@ -67,7 +67,7 @@ fun EmotionKeywordCard(
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge,
-                color = Gray9,
+                color = AfternoteDesign.colors.gray9,
             )
 
             // ── 버블 캔버스 ──
@@ -99,7 +99,7 @@ fun EmotionKeywordCard(
             Text(
                 text = descriptionText,
                 style = MaterialTheme.typography.titleSmall,
-                color = Gray9,
+                color = AfternoteDesign.colors.gray9,
             )
         }
     }

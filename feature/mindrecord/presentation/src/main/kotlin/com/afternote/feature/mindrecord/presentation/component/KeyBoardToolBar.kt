@@ -27,8 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.theme.Gray2
-import com.afternote.core.ui.theme.Gray6
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.TextStyleState
 import com.afternote.feature.mindrecord.presentation.model.TextStyleType
@@ -42,7 +41,7 @@ fun BottomToolbar(
         modifier =
             modifier
                 .fillMaxWidth()
-                .background(Color.White)
+                .background(AfternoteDesign.colors.white)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -72,7 +71,7 @@ fun BottomToolbar(
         Spacer(modifier = Modifier.weight(1f))
 
         // 임시저장
-        Text("임시저장 1", style = MaterialTheme.typography.labelSmall, color = Gray6)
+        Text("임시저장 1", style = MaterialTheme.typography.labelSmall, color = AfternoteDesign.colors.gray6)
     }
 }
 
@@ -93,7 +92,7 @@ fun TextStyleToolbar(
         modifier =
             modifier
                 .fillMaxWidth()
-                .background(Color.White)
+                .background(AfternoteDesign.colors.white)
                 .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
         Row(
@@ -179,7 +178,7 @@ fun ToolbarButton(
         modifier =
             modifier
                 .clip(RoundedCornerShape(4.dp))
-                .background(if (selected) Gray2 else Color.Transparent)
+                .background(if (selected) AfternoteDesign.colors.gray2 else Color.Transparent)
                 .clickable(onClick = onClick)
                 .padding(horizontal = 8.dp, vertical = 4.dp),
         contentAlignment = Alignment.Center,

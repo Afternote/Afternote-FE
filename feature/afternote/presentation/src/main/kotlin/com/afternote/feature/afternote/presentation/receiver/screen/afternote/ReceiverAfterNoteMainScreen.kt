@@ -54,10 +54,9 @@ import com.afternote.core.ui.form.LastWishesRadioGroup
 import com.afternote.core.ui.form.ProfileImage
 import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.B3
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
@@ -118,10 +117,10 @@ fun ReceiverAfterNoteMainScreen(
                             introContent = {
                                 Text(
                                     text = "故 ${senderName}님의 애프터노트입니다.",
-                                    color = Gray9,
+                                    color = AfternoteDesign.colors.gray9,
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Medium,
-                                    fontFamily = Sansneo,
+                                    fontFamily = nanumGothic,
                                     modifier = Modifier.fillMaxWidth(),
                                 )
                             },
@@ -165,7 +164,7 @@ fun ReceiverAfterNoteMainScreen(
                 Spacer(modifier = Modifier.height(70.dp))
 
                 ClickButton(
-                    color = B3,
+                    color = AfternoteDesign.colors.gray9,
                     title = "애프터노트 확인하기",
                     onButtonClick = onNavigateToFullList,
                 )
@@ -296,8 +295,8 @@ private fun ReceiverSectionHeader(title: String = LABEL_VIDEO_SECTION) {
         text = title,
         fontWeight = FontWeight.Medium,
         fontSize = 16.sp,
-        color = Gray9,
-        fontFamily = Sansneo,
+        color = AfternoteDesign.colors.gray9,
+        fontFamily = nanumGothic,
         modifier = Modifier.padding(bottom = 8.dp),
     )
 }

@@ -15,8 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray6
 
 @Composable
 fun InsightCard(modifier: Modifier = Modifier) {
@@ -32,7 +32,7 @@ fun InsightCard(modifier: Modifier = Modifier) {
             Text(
                 text = "INSIGHTS",
                 style = MaterialTheme.typography.displaySmall,
-                color = Gray6,
+                color = AfternoteDesign.colors.gray6,
             )
 
             Spacer(modifier = Modifier.height(17.dp))
@@ -48,7 +48,7 @@ fun InsightCard(modifier: Modifier = Modifier) {
             Text(
                 text = "매일 꾸준히 기록하는 습관이 정말 멋져요!",
                 style = MaterialTheme.typography.displayMedium,
-                color = Gray6,
+                color = AfternoteDesign.colors.gray6,
             )
         }
     }

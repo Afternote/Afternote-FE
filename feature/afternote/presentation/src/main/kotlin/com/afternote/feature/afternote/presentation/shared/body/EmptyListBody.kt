@@ -20,8 +20,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.afternote.core.ui.theme.Gray4
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 
 @Composable
@@ -53,9 +53,9 @@ fun EmptyListBody(modifier: Modifier = Modifier) {
                 TextStyle(
                     fontSize = 14.sp,
                     lineHeight = 20.sp,
-                    fontFamily = Sansneo,
+                    fontFamily = nanumGothic,
                     fontWeight = FontWeight.Normal,
-                    color = Gray4,
+                    color = AfternoteDesign.colors.gray4,
                     textAlign = TextAlign.Center,
                 ),
             modifier = Modifier.align(Alignment.CenterHorizontally),

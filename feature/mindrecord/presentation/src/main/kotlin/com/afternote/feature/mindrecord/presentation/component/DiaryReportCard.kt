@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,20 +17,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray1
-import com.afternote.core.ui.theme.Gray2
-import com.afternote.core.ui.theme.Gray6
-import com.afternote.core.ui.theme.Gray9
 
 @Composable
 fun DiaryReportCard(modifier: Modifier = Modifier) {
     OutlinedCard(
         colors =
             CardDefaults.cardColors(
-                containerColor = Gray1,
+                containerColor = AfternoteDesign.colors.gray1,
             ),
-        border = BorderStroke(1.dp, color = Gray2),
+        border = BorderStroke(1.dp, color = AfternoteDesign.colors.gray2),
         modifier =
             modifier
                 .fillMaxWidth()
@@ -49,14 +45,14 @@ fun DiaryReportCard(modifier: Modifier = Modifier) {
             ) {
                 Text(
                     text = "이번 달",
-                    style = MaterialTheme.typography.displaySmall,
-                    color = Gray6,
+                    style = AfternoteDesign.typography.mono,
+                    color = AfternoteDesign.colors.gray6,
                 )
 
                 Text(
                     text = "주간 평균 기분",
-                    style = MaterialTheme.typography.displaySmall,
-                    color = Gray6,
+                    style = AfternoteDesign.typography.mono,
+                    color = AfternoteDesign.colors.gray6,
                 )
             }
 
@@ -67,8 +63,8 @@ fun DiaryReportCard(modifier: Modifier = Modifier) {
             ) {
                 Text(
                     text = "18",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = Gray9,
+                    style = AfternoteDesign.typography.h2,
+                    color = AfternoteDesign.colors.gray9,
                 )
 
                 Text(

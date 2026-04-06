@@ -29,7 +29,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.theme.Gray2
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.toggleShadow_1
 import com.afternote.core.ui.theme.toggleShadow_2
 import kotlin.math.roundToInt
@@ -67,7 +67,7 @@ fun ViewModeSwitcher(
             modifier
                 .size(width = containerWidth, height = containerHeight)
                 .clip(CircleShape)
-                .background(Gray2)
+                .background(AfternoteDesign.colors.gray2)
                 .padding(indicatorPadding),
     ) {
         Box(

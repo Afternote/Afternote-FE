@@ -20,15 +20,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray2
-import com.afternote.core.ui.theme.Gray6
-import com.afternote.core.ui.theme.Gray9
 
 @Composable
 fun DailyQuestionWriteHeaderCard(modifier: Modifier = Modifier) {
     OutlinedCard(
-        border = BorderStroke(1.dp, color = Gray2),
+        border = BorderStroke(1.dp, color = AfternoteDesign.colors.gray2),
         modifier =
             modifier
                 .fillMaxWidth()
@@ -59,21 +57,21 @@ fun DailyQuestionWriteHeaderCard(modifier: Modifier = Modifier) {
             Text(
                 text = "TODAY'S QUESTION",
                 style = MaterialTheme.typography.displaySmall,
-                color = Gray6,
+                color = AfternoteDesign.colors.gray6,
             )
 
             Spacer(modifier = Modifier.height(7.5.dp))
             Text(
                 text = "오늘 하루, \n 누구에게 가장 고마웠나요?",
                 style = MaterialTheme.typography.headlineSmall,
-                color = Gray9,
+                color = AfternoteDesign.colors.gray9,
             )
 
             Spacer(modifier = Modifier.height(7.5.dp))
             Text(
                 text = "· Day 21",
                 style = MaterialTheme.typography.displaySmall,
-                color = Gray6,
+                color = AfternoteDesign.colors.gray6,
             )
         }
     }

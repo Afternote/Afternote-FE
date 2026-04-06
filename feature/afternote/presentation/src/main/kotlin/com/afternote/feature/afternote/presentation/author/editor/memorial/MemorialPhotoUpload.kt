@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor.memorial
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,20 +13,20 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.form.ProfileImage
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 
 /**
  * 영정사진 추가 컴포넌트
  *
  * 피그마 디자인 기반:
- * - 라벨: 12sp, Regular, Gray9
+ * - 라벨: 12sp, Regular, AfternoteDesign.colors.gray9
  * - 라벨과 이미지 간 간격: 6dp
- * - 큰 원형 배경: B3 (#BDE0FF), 120dp
+ * - 큰 원형 배경: AfternoteDesign.colors.gray9, 120dp
  * - 프로필 아이콘: 중앙에 위치, 48dp
- * - 작은 플러스 버튼: 우하단에 오버레이, 40dp, B2 (#89C2FF)
+ * - 작은 플러스 버튼: 우하단에 오버레이, 40dp, AfternoteDesign.colors.gray9
  * - 플러스 아이콘: 흰색, 24dp
  */
 @Composable
@@ -45,9 +46,9 @@ fun MemorialPhotoUpload(
                 TextStyle(
                     fontSize = 16.sp,
                     lineHeight = 22.sp,
-                    fontFamily = Sansneo,
+                    fontFamily = nanumGothic,
                     fontWeight = FontWeight.Medium,
-                    color = Gray9,
+                    color = AfternoteDesign.colors.gray9,
                 ),
         )
         Column(

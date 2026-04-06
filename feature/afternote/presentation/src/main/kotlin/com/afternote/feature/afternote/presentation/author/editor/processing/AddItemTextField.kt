@@ -28,11 +28,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.expand.bottomBorder
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray2
-import com.afternote.core.ui.theme.Gray4
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.nanumGothic
 
 /**
  * 아이템 추가용 텍스트 필드 컴포넌트
@@ -80,7 +78,7 @@ fun AddItemTextField(
             modifier =
                 modifier
                     .fillMaxWidth()
-                    .bottomBorder(color = Gray2, width = 1.dp)
+                    .bottomBorder(color = AfternoteDesign.colors.gray2, width = 1.dp)
                     .padding(horizontal = 8.dp, vertical = 4.dp),
         ) {
             OutlinedTextField(
@@ -93,9 +91,9 @@ fun AddItemTextField(
                             TextStyle(
                                 fontSize = 16.sp,
                                 lineHeight = 20.sp,
-                                fontFamily = Sansneo,
+                                fontFamily = nanumGothic,
                                 fontWeight = FontWeight.Normal,
-                                color = Gray4,
+                                color = AfternoteDesign.colors.gray4,
                             ),
                     )
                 },
@@ -116,9 +114,9 @@ fun AddItemTextField(
                     TextStyle(
                         fontSize = 16.sp,
                         lineHeight = 20.sp,
-                        fontFamily = Sansneo,
+                        fontFamily = nanumGothic,
                         fontWeight = FontWeight.Normal,
-                        color = Gray9,
+                        color = AfternoteDesign.colors.gray9,
                     ),
             )
         }

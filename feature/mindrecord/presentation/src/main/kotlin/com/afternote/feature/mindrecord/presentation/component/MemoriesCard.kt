@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -26,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R
 
@@ -75,12 +75,12 @@ fun MemoriesCard(modifier: Modifier = Modifier) {
         ) {
             Text(
                 text = "\"내 인생에서 가장 소중했던 순간은?\"",
-                style = MaterialTheme.typography.bodySmall,
+                style = AfternoteDesign.typography.bodySmallR,
                 color = Color(0xFF000000).copy(alpha = 0.8f),
             )
             Text(
                 text = "- 아이가 태어났을 때...",
-                style = MaterialTheme.typography.displayMedium,
+                style = AfternoteDesign.typography.captionLargeR,
                 color = Color(0xFF000000).copy(alpha = 0.3f),
             )
 

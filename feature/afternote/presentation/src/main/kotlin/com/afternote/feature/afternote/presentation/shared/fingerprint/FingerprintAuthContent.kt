@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.shared.fingerprint
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,10 +20,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.button.ClickButton
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.B3
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 
 /**
@@ -51,9 +51,9 @@ fun FingerprintAuthContent(
                 TextStyle(
                     fontSize = 16.sp,
                     lineHeight = 22.sp,
-                    fontFamily = Sansneo,
+                    fontFamily = nanumGothic,
                     fontWeight = FontWeight.Medium,
-                    color = Gray9,
+                    color = AfternoteDesign.colors.gray9,
                     textAlign = TextAlign.Center,
                 ),
         )
@@ -78,7 +78,7 @@ fun FingerprintAuthContent(
         ClickButton(
             title = "지문 인증하기",
             onButtonClick = onFingerprintAuthClick,
-            color = B3,
+            color = AfternoteDesign.colors.gray9,
             modifier = Modifier.fillMaxWidth(),
         )
 

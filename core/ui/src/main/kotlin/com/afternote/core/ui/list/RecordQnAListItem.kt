@@ -21,13 +21,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray2
-import com.afternote.core.ui.theme.Gray3
-import com.afternote.core.ui.theme.Gray5
-import com.afternote.core.ui.theme.Gray8
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.nanumGothic
 
 /**
  * A reusable list item for displaying a record-like Q/A content with date.
@@ -60,9 +56,9 @@ fun RecordQnAListItem(
                         TextStyle(
                             fontSize = 16.sp,
                             lineHeight = 22.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = nanumGothic,
                             fontWeight = FontWeight.Medium,
-                            color = Gray9,
+                            color = AfternoteDesign.colors.gray9,
                         ),
                 )
             }
@@ -75,7 +71,7 @@ fun RecordQnAListItem(
                         .fillMaxWidth()
                         .height(88.dp)
                         .background(
-                            color = Gray2,
+                            color = AfternoteDesign.colors.gray2,
                             shape = RoundedCornerShape(8.dp),
                         ).padding(
                             horizontal = 16.dp,
@@ -88,9 +84,9 @@ fun RecordQnAListItem(
                         TextStyle(
                             fontSize = 14.sp,
                             lineHeight = 20.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = nanumGothic,
                             fontWeight = FontWeight.Normal,
-                            color = Gray8,
+                            color = AfternoteDesign.colors.gray8,
                         ),
                 )
             }
@@ -108,9 +104,9 @@ fun RecordQnAListItem(
                         TextStyle(
                             fontSize = 12.sp,
                             lineHeight = 18.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = nanumGothic,
                             fontWeight = FontWeight.Medium,
-                            color = Gray5,
+                            color = AfternoteDesign.colors.gray5,
                         ),
                 )
 
@@ -123,7 +119,7 @@ fun RecordQnAListItem(
         HorizontalDivider(
             modifier = Modifier.padding(horizontal = 20.dp),
             thickness = 1.dp,
-            color = Gray3,
+            color = AfternoteDesign.colors.gray3,
         )
     }
 }

@@ -20,9 +20,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray2
-import com.afternote.core.ui.theme.Gray6
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionWriteHeaderCard
 import com.afternote.feature.mindrecord.presentation.component.WriteTextField
 import java.time.LocalDate
@@ -39,13 +38,13 @@ fun DailyQuestionWriteScreen(modifier: Modifier = Modifier) {
                         shape = RoundedCornerShape(6.dp),
                         colors =
                             ButtonDefaults.buttonColors(
-                                containerColor = Gray2,
+                                containerColor = AfternoteDesign.colors.gray2,
                             ),
                     ) {
                         Text(
                             text = "등록",
                             style = MaterialTheme.typography.titleSmall,
-                            color = Gray6,
+                            color = AfternoteDesign.colors.gray6,
                         )
                     }
                 },

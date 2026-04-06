@@ -22,7 +22,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.theme.B1
+import com.afternote.core.ui.theme.AfternoteDesign
 
 /**
  * 아이콘 관련 설정을 묶는 불변 데이터 클래스
@@ -74,7 +74,7 @@ fun RightArrowIcon(
  *
  * @param modifier Modifier (기본: Modifier)
  * @param iconSpec 아이콘 관련 설정 (필수)
- * @param backgroundColor 배경색 (기본: B1)
+ * @param backgroundColor 배경색 (기본: theme gray9)
  * @param size 전체 크기 (기본: 12.dp)
  * @param shape 배경 모양 (기본: CircleShape)
  * @param padding 내부 패딩 (기본: 1.dp, CircleShape 사용 시)
@@ -83,7 +83,7 @@ fun RightArrowIcon(
 fun RightArrowIcon(
     iconSpec: ArrowIconSpec,
     modifier: Modifier = Modifier,
-    backgroundColor: Color = B1,
+    backgroundColor: Color = AfternoteDesign.colors.gray9,
     size: Dp = 12.dp,
     shape: Shape = CircleShape,
     padding: Dp = 1.dp,

@@ -25,10 +25,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.B2
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.nanumGothic
 
 /**
  * Style configuration for Label component.
@@ -36,14 +35,14 @@ import com.afternote.core.ui.theme.Sansneo
  * @param fontSize Font size of the label text (default: 16.sp)
  * @param lineHeight Line height of the label text (default: 22.sp)
  * @param fontWeight Font weight of the label text (default: Medium)
- * @param color Text color (default: Gray9)
+ * @param color Text color (default: theme gray9)
  * @param requiredDotOffsetY Vertical offset of the required dot from the top (default: 4.dp)
  */
 data class LabelStyle(
     val fontSize: TextUnit = 16.sp,
     val lineHeight: TextUnit = 22.sp,
     val fontWeight: FontWeight = FontWeight.Medium,
-    val color: Color = Gray9,
+    val color: Color? = null,
     val requiredDotOffsetY: Dp = 4.dp,
 )
 
@@ -51,7 +50,7 @@ data class LabelStyle(
  * 라벨 컴포넌트 (필수 표시 옵션 포함)
  *
  * 피그마 디자인 기반:
- * - 텍스트: 기본값 16sp, Medium, Gray9 (LabelStyle로 커스터마이징 가능)
+ * - 텍스트: 기본값 16sp, Medium, AfternoteDesign.colors.gray9 (LabelStyle로 커스터마이징 가능)
  * - 필수 표시 (isRequired=true): 파란 점 4dp, 텍스트 오른쪽 위 꼭짓점으로부터 오른쪽 8.dp
  *
  * @param modifier Modifier for the component
@@ -69,6 +68,7 @@ fun Label(
     Box(modifier = modifier) {
         var textWidth by remember { mutableStateOf(0.dp) }
         val density = LocalDensity.current
+        val textColor = style.color ?: AfternoteDesign.colors.gray9
 
         Text(
             text = text,
@@ -76,9 +76,9 @@ fun Label(
                 TextStyle(
                     fontSize = style.fontSize,
                     lineHeight = style.lineHeight,
-                    fontFamily = Sansneo,
+                    fontFamily = nanumGothic,
                     fontWeight = style.fontWeight,
-                    color = style.color,
+                    color = textColor,
                 ),
             modifier =
                 Modifier.onGloballyPositioned { coordinates ->
@@ -92,7 +92,7 @@ fun Label(
                     Modifier
                         .offset(x = textWidth + 8.dp, y = style.requiredDotOffsetY)
                         .size(4.dp)
-                        .background(color = B2, shape = CircleShape),
+                        .background(color = AfternoteDesign.colors.gray9, shape = CircleShape),
             )
         }
     }
