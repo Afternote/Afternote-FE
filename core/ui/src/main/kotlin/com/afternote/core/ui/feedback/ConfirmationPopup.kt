@@ -29,7 +29,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.afternote.core.ui.expand.dropShadow
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.B3
 import com.afternote.core.ui.theme.Gray3
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.naNumGothic
@@ -161,7 +160,7 @@ fun ConfirmationPopupContent(
                                 offsetY = 2.dp,
                                 spread = 0.dp,
                             ).clip(buttonShape)
-                            .background(B3)
+                            .background(Gray9)
                             .clickable(enabled = !isLoading, onClick = onConfirm)
                             .padding(
                                 horizontal = 24.dp,

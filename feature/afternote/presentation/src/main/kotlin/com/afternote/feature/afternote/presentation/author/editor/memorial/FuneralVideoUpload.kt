@@ -63,7 +63,7 @@ private const val TAG = "FuneralVideoUpload"
  * 피그마 디자인 기반:
  * - 라벨: 12sp, Regular, Gray9
  * - 라벨과 버튼 간 간격: 6dp
- * - 큰 원형 버튼: B3 (#BDE0FF), 120dp
+ * - 큰 원형 버튼: Gray9, 120dp
  * - 플러스 아이콘: 중앙에 위치, 24dp
  *
  * @param thumbnailUrl When set (e.g. from API when loading for edit), shown as thumbnail instead of extracting from video.

@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.icon.ArrowIconSpec
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.core.ui.theme.B3
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.naNumGothic
 import com.afternote.feature.afternote.presentation.R
@@ -170,7 +169,7 @@ private fun MemorialPlaylistListHeader(
                     modifier =
                         Modifier
                             .background(
-                                color = B3,
+                                color = Gray9,
                                 shape = RoundedCornerShape(20.dp),
                             ).clickable(onClick = onAddSongClick),
                     verticalAlignment = Alignment.CenterVertically,

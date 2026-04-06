@@ -55,7 +55,6 @@ import com.afternote.core.ui.form.ProfileImage
 import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.B3
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.naNumGothic
 import com.afternote.feature.afternote.presentation.R
@@ -165,7 +164,7 @@ fun ReceiverAfterNoteMainScreen(
                 Spacer(modifier = Modifier.height(70.dp))
 
                 ClickButton(
-                    color = B3,
+                    color = Gray9,
                     title = "애프터노트 확인하기",
                     onButtonClick = onNavigateToFullList,
                 )

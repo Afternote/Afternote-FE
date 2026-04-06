@@ -27,7 +27,6 @@ import com.afternote.core.ui.expand.dropShadow
 import com.afternote.core.ui.form.LabeledTextFieldStyle
 import com.afternote.core.ui.form.OutlineTextField
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.B3
 import com.afternote.core.ui.theme.Gray1
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.White
@@ -57,7 +56,7 @@ data class CustomServiceDialogParams(
  * 피그마 디자인 기반:
  * - 타이틀: "직접 입력하기" (18sp, Bold, Gray9, 중앙 정렬)
  * - 추가 서비스명 입력 필드 (Gray1 배경, 8dp radius)
- * - 추가하기 버튼 (B3 배경, 전체 너비)
+ * - 추가하기 버튼 (Gray9 배경, 전체 너비)
  * - 다이얼로그: 흰색 배경, 16dp radius, drop shadow
  */
 @Composable
@@ -120,7 +119,7 @@ fun CustomServiceDialog(
 
             // 추가하기 버튼
             ClickButton(
-                color = B3,
+                color = Gray9,
                 title = "추가하기",
                 onButtonClick = params.callbacks.onAddClick,
             )

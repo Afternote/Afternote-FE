@@ -24,7 +24,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.icon.RightArrowIcon
-import com.afternote.core.ui.theme.B3
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.naNumGothic
 
@@ -87,7 +86,7 @@ fun ContentSection(
 
                     Button(
                         onClick = onButtonClick,
-                        colors = ButtonDefaults.buttonColors(containerColor = B3),
+                        colors = ButtonDefaults.buttonColors(containerColor = Gray9),
                         shape = RoundedCornerShape(50),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                         modifier = Modifier.height(36.dp),

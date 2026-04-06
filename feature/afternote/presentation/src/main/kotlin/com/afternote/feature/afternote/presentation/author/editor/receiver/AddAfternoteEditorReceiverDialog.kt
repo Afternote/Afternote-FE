@@ -30,7 +30,6 @@ import com.afternote.core.ui.expand.dropShadow
 import com.afternote.core.ui.form.LabeledTextFieldStyle
 import com.afternote.core.ui.form.OutlineTextField
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.B3
 import com.afternote.core.ui.theme.Gray1
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.White
@@ -70,11 +69,11 @@ private fun RelationshipDropdown(
  * 수신자 추가 다이얼로그 컴포넌트
  *
  * 피그마 디자인 기반:
- * - 헤더: "수신자 추가" 타이틀, 우측 상단 "추가하기" 버튼 (B3 배경, 흰색 텍스트)
+ * - 헤더: "수신자 추가" 타이틀, 우측 상단 "추가하기" 버튼 (Gray9 배경, 흰색 텍스트)
  * - 수신자 이름 입력 필드
  * - 수신자와의 관계 드롭다운
  * - 전화번호로 추가하기 입력 필드
- * - 연락처에서 추가하기 버튼 (B3 배경)
+ * - 연락처에서 추가하기 버튼 (Gray9 배경)
  */
 @Composable
 fun AddAfternoteEditorReceiverDialog(
@@ -129,7 +128,7 @@ fun AddAfternoteEditorReceiverDialog(
                     shape = RoundedCornerShape(20.dp),
                     colors =
                         ButtonDefaults.buttonColors(
-                            containerColor = B3,
+                            containerColor = Gray9,
                         ),
                     contentPadding =
                         PaddingValues(
@@ -145,7 +144,7 @@ fun AddAfternoteEditorReceiverDialog(
                                 lineHeight = 18.sp,
                                 fontFamily = naNumGothic,
                                 fontWeight = FontWeight.Medium,
-                                color = Gray9,
+                                color = White,
                             ),
                     )
                 }
@@ -205,7 +204,7 @@ fun AddAfternoteEditorReceiverDialog(
 
             // 연락처에서 추가하기 버튼
             ClickButton(
-                color = B3,
+                color = Gray9,
                 title = "연락처 가져오기",
                 onButtonClick = params.callbacks.onImportContactsClick,
             )

@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.button.ClickButton
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.B3
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.naNumGothic
 import com.afternote.feature.afternote.presentation.R
@@ -78,7 +77,7 @@ fun FingerprintAuthContent(
         ClickButton(
             title = "지문 인증하기",
             onButtonClick = onFingerprintAuthClick,
-            color = B3,
+            color = Gray9,
             modifier = Modifier.fillMaxWidth(),
         )
 

@@ -38,7 +38,6 @@ import com.afternote.core.ui.expand.horizontalFadingEdge
 import com.afternote.core.ui.icon.ArrowIconSpec
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.B3
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.White
 import com.afternote.core.ui.theme.naNumGothic
@@ -92,7 +91,7 @@ private fun MemorialPlaylistAddButton(
     Row(
         modifier =
             modifier
-                .background(color = B3, shape = RoundedCornerShape(20.dp))
+                .background(color = Gray9, shape = RoundedCornerShape(20.dp))
                 .clickable(onClick = onClick)
                 .padding(vertical = 8.dp, horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),

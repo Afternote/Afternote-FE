@@ -23,7 +23,7 @@ import com.afternote.feature.afternote.presentation.R
  * 피그마 디자인 기반:
  * - 라벨: 12sp, Regular, Gray9
  * - 라벨과 이미지 간 간격: 6dp
- * - 큰 원형 배경: B3 (#BDE0FF), 120dp
+ * - 큰 원형 배경: Gray9, 120dp
  * - 프로필 아이콘: 중앙에 위치, 48dp
  * - 작은 플러스 버튼: 우하단에 오버레이, 40dp, Gray9
  * - 플러스 아이콘: 흰색, 24dp
