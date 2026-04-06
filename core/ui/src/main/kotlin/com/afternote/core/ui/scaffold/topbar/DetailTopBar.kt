@@ -31,7 +31,7 @@ fun DetailTopBar(
     title: String,
     onBackClick: () -> Unit,
     action: @Composable (RowScope.() -> Unit),
-    modifier: Modifier = Modifier.Companion,
+    modifier: Modifier = Modifier,
 ) {
     TopAppBar(
         title = {
