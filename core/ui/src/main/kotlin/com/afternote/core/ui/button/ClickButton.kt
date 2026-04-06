@@ -15,8 +15,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.expand.dropShadow
-import com.afternote.core.ui.theme.Gray3
-import com.afternote.core.ui.theme.Gray9
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.nanumGothic
 
 @Composable
@@ -46,7 +45,7 @@ fun ClickButton(
                 containerColor = color,
             ),
     ) {
-        val labelColor = if (color.luminance() > 0.5f) Gray9 else Color.White
+        val labelColor = if (color.luminance() > 0.5f) AfternoteDesign.colors.gray9 else Color.White
         Text(
             text = title,
             fontSize = 16.sp,
@@ -63,9 +62,9 @@ fun ClickButton(
     title: String,
     isTrue: Boolean,
     modifier: Modifier = Modifier,
-    activeColor: Color = Gray9,
+    activeColor: Color = AfternoteDesign.colors.gray9,
 ) {
-    val containerColor = if (isTrue) activeColor else Gray3
+    val containerColor = if (isTrue) activeColor else AfternoteDesign.colors.gray3
     Button(
         enabled = isTrue,
         onClick = onButtonClick,
@@ -87,7 +86,7 @@ fun ClickButton(
                 containerColor = containerColor,
             ),
     ) {
-        val labelColor = if (containerColor.luminance() > 0.5f) Gray9 else Color.White
+        val labelColor = if (containerColor.luminance() > 0.5f) AfternoteDesign.colors.gray9 else Color.White
         Text(
             text = title,
             fontSize = 16.sp,
@@ -104,6 +103,6 @@ private fun ClickButtonPreview() {
     ClickButton(
         onButtonClick = {},
         title = "시작하기",
-        color = Gray9,
+        color = AfternoteDesign.colors.gray9,
     )
 }

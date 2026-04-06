@@ -25,10 +25,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.button.CustomRadioButton
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray4
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.White
 import com.afternote.core.ui.theme.nanumGothic
 
 /**
@@ -55,8 +53,8 @@ fun SelectableRadioCard(
 ) {
     val borderColor =
         when {
-            selected -> Gray9
-            borderWhenUnselected -> Gray4
+            selected -> AfternoteDesign.colors.gray9
+            borderWhenUnselected -> AfternoteDesign.colors.gray4
             else -> Color.Transparent
         }
 
@@ -73,7 +71,7 @@ fun SelectableRadioCard(
             ),
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(1.dp, borderColor),
-        color = White,
+        color = AfternoteDesign.colors.white,
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -84,8 +82,8 @@ fun SelectableRadioCard(
                 selected = selected,
                 onClick = null,
                 buttonSize = 24.dp,
-                selectedColor = Gray9,
-                unselectedColor = Gray4,
+                selectedColor = AfternoteDesign.colors.gray9,
+                unselectedColor = AfternoteDesign.colors.gray4,
             )
 
             Spacer(modifier = Modifier.width(radioButtonSpacing))
@@ -115,7 +113,7 @@ private fun SelectableRadioCardPreview() {
                                 lineHeight = 22.sp,
                                 fontFamily = nanumGothic,
                                 fontWeight = FontWeight.Medium,
-                                color = Gray9,
+                                color = AfternoteDesign.colors.gray9,
                             ),
                     )
                 },
@@ -136,7 +134,7 @@ private fun SelectableRadioCardPreview() {
                                 lineHeight = 22.sp,
                                 fontFamily = nanumGothic,
                                 fontWeight = FontWeight.Medium,
-                                color = Gray9,
+                                color = AfternoteDesign.colors.gray9,
                             ),
                     )
                 },
@@ -157,7 +155,7 @@ private fun SelectableRadioCardPreview() {
                                 lineHeight = 22.sp,
                                 fontFamily = nanumGothic,
                                 fontWeight = FontWeight.Medium,
-                                color = Gray9,
+                                color = AfternoteDesign.colors.gray9,
                             ),
                     )
                     androidx.compose.material3.Text(
@@ -168,7 +166,7 @@ private fun SelectableRadioCardPreview() {
                                 lineHeight = 20.sp,
                                 fontFamily = nanumGothic,
                                 fontWeight = FontWeight.Normal,
-                                color = Gray9,
+                                color = AfternoteDesign.colors.gray9,
                             ),
                     )
                 },
@@ -190,7 +188,7 @@ private fun SelectableRadioCardPreview() {
                                 lineHeight = 22.sp,
                                 fontFamily = nanumGothic,
                                 fontWeight = FontWeight.Medium,
-                                color = Gray9,
+                                color = AfternoteDesign.colors.gray9,
                             ),
                     )
                 },

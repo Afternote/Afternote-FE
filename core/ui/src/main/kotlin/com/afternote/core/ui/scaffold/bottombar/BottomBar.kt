@@ -20,9 +20,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Black
-import com.afternote.core.ui.theme.White
 
 // TODO:검토
 
@@ -34,7 +33,7 @@ fun BottomBar(
 ) {
     NavigationBar(
         modifier = modifier,
-        containerColor = White,
+        containerColor = AfternoteDesign.colors.white,
         tonalElevation = 0.dp,
     ) {
         BottomNavTab.entries.forEach { tab ->
@@ -59,17 +58,17 @@ fun BottomBar(
                                 modifier =
                                     Modifier
                                         .size(4.dp)
-                                        .background(color = Black, shape = CircleShape),
+                                        .background(color = AfternoteDesign.colors.black, shape = CircleShape),
                             )
                         }
                     }
                 },
                 colors =
                     NavigationBarItemDefaults.colors(
-                        selectedIconColor = Black,
-                        selectedTextColor = Black,
-                        unselectedIconColor = Black.copy(alpha = 0.25f),
-                        unselectedTextColor = Black.copy(alpha = 0.25f),
+                        selectedIconColor = AfternoteDesign.colors.black,
+                        selectedTextColor = AfternoteDesign.colors.black,
+                        unselectedIconColor = AfternoteDesign.colors.black.copy(alpha = 0.25f),
+                        unselectedTextColor = AfternoteDesign.colors.black.copy(alpha = 0.25f),
                         indicatorColor = Color.Transparent,
                     ),
             )

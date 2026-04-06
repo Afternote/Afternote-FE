@@ -28,9 +28,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.afternote.core.ui.expand.dropShadow
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray3
-import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.nanumGothic
 
 @Composable
@@ -81,7 +80,7 @@ fun ConfirmationPopupContent(
             lineHeight = 22.sp,
             fontFamily = nanumGothic,
             fontWeight = FontWeight.Medium,
-            color = Gray9,
+            color = AfternoteDesign.colors.gray9,
             textAlign = TextAlign.Center,
         )
 
@@ -114,7 +113,7 @@ fun ConfirmationPopupContent(
                         lineHeight = 22.sp,
                         fontFamily = nanumGothic,
                         fontWeight = FontWeight.Medium,
-                        color = Gray9,
+                        color = AfternoteDesign.colors.gray9,
                         textAlign = TextAlign.Center,
                     ),
             )
@@ -140,7 +139,7 @@ fun ConfirmationPopupContent(
                                 offsetY = 2.dp,
                                 spread = 0.dp,
                             ).clip(buttonShape)
-                            .background(Gray3)
+                            .background(AfternoteDesign.colors.gray3)
                             .clickable(enabled = !isLoading, onClick = onDismiss)
                             .padding(
                                 horizontal = 24.dp,
@@ -160,7 +159,7 @@ fun ConfirmationPopupContent(
                                 offsetY = 2.dp,
                                 spread = 0.dp,
                             ).clip(buttonShape)
-                            .background(Gray9)
+                            .background(AfternoteDesign.colors.gray9)
                             .clickable(enabled = !isLoading, onClick = onConfirm)
                             .padding(
                                 horizontal = 24.dp,

@@ -130,7 +130,7 @@ data class AfternoteTypography(
 
 // private val AfternoteLightColors =
 //    lightColorScheme(
-//        background = Gray2,
+//        background = AfternoteDesign.colors.gray2,
 //    )
 //
 // fun ProvideAfternoteTheme(content: @Composable () -> Unit) {
