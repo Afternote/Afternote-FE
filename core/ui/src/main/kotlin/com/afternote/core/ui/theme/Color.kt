@@ -47,6 +47,23 @@ fun lightColors() =
         isLightMode = true,
     )
 
+fun darkColors() =
+    AfternoteColors(
+        white = Black,       // 배경 계열 반전
+        black = White,       // 텍스트 계열 반전
+        iconBk = White.copy(alpha = 0.6F),
+        gray1 = Gray9,       // 가장 밝은 ↔ 가장 어두운
+        gray2 = Gray8,
+        gray3 = Gray7,
+        gray4 = Gray6,
+        gray5 = Gray5,       // 중간은 그대로
+        gray6 = Gray4,
+        gray7 = Gray3,
+        gray8 = Gray2,
+        gray9 = Gray1,       // 가장 어두운 ↔ 가장 밝은
+        isLightMode = false,
+    )
+
 @Stable // 불필요한 리컴포지션 방지
 class AfternoteColors(
     white: Color,
