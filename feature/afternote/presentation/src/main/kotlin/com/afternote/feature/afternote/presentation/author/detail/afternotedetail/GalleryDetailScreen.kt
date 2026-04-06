@@ -26,9 +26,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.afternote.core.ui.theme.Gray5
-import com.afternote.core.ui.theme.Gray6
-import com.afternote.core.ui.theme.Gray9
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
@@ -214,7 +212,7 @@ private fun TitleSection(
     Text(
         text =
             buildAnnotatedString {
-                withStyle(style = SpanStyle(color = Gray9)) {
+                withStyle(style = SpanStyle(color = AfternoteDesign.colors.gray9)) {
                     append(serviceName)
                 }
                 append("에 대한 ${userName}님의 기록")
@@ -225,7 +223,7 @@ private fun TitleSection(
                 lineHeight = 24.sp,
                 fontFamily = nanumGothic,
                 fontWeight = FontWeight.Bold,
-                color = Gray9,
+                color = AfternoteDesign.colors.gray9,
             ),
     )
 }
@@ -247,7 +245,7 @@ private fun DateAndMethodCard(
                             lineHeight = 16.sp,
                             fontFamily = nanumGothic,
                             fontWeight = FontWeight.Normal,
-                            color = Gray6,
+                            color = AfternoteDesign.colors.gray6,
                         ),
                 )
                 InformationProcessingMethodText(
@@ -272,7 +270,7 @@ private fun InformationProcessingMethodText(informationProcessingMethod: String)
             "TRANSFER_TO_ADDITIONAL_AFTERNOTE_EDIT_RECEIVER",
             -> {
                 buildAnnotatedString {
-                    withStyle(style = SpanStyle(color = Gray9)) { append("수신자") }
+                    withStyle(style = SpanStyle(color = AfternoteDesign.colors.gray9)) { append("수신자") }
                     append("에게 정보 전달")
                 }
             }
@@ -291,7 +289,7 @@ private fun InformationProcessingMethodText(informationProcessingMethod: String)
                 lineHeight = 22.sp,
                 fontFamily = nanumGothic,
                 fontWeight = FontWeight.Medium,
-                color = Gray9,
+                color = AfternoteDesign.colors.gray9,
             ),
     )
 }
@@ -312,7 +310,7 @@ private fun ProcessingMethodsCard(processingMethods: List<String>) {
                             lineHeight = 22.sp,
                             fontFamily = nanumGothic,
                             fontWeight = FontWeight.Medium,
-                            color = Gray9,
+                            color = AfternoteDesign.colors.gray9,
                         ),
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -330,7 +328,7 @@ private fun ProcessingMethodsCard(processingMethods: List<String>) {
 @Composable
 private fun MessageCard(message: String) {
     val displayMessage = message.ifEmpty { "남기신 말씀이 없습니다." }
-    val textColor = if (message.isNotEmpty()) Gray9 else Gray5
+    val textColor = if (message.isNotEmpty()) AfternoteDesign.colors.gray9 else AfternoteDesign.colors.gray5
 
     InfoCard(
         modifier = Modifier.fillMaxWidth(),
@@ -344,7 +342,7 @@ private fun MessageCard(message: String) {
                             lineHeight = 22.sp,
                             fontFamily = nanumGothic,
                             fontWeight = FontWeight.Medium,
-                            color = Gray9,
+                            color = AfternoteDesign.colors.gray9,
                         ),
                 )
                 Spacer(modifier = Modifier.height(8.dp))

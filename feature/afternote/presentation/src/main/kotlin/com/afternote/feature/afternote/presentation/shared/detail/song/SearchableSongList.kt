@@ -45,11 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.button.CustomRadioButton
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.core.ui.theme.Gray1
-import com.afternote.core.ui.theme.Gray2
-import com.afternote.core.ui.theme.Gray4
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.White
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
@@ -220,8 +216,8 @@ fun SongPlaylistScreen(
                                 selected = selectedSongIds.contains(song.id),
                                 onClick = null,
                                 buttonSize = 24.dp,
-                                selectedColor = Gray9,
-                                unselectedColor = Gray4,
+                                selectedColor = AfternoteDesign.colors.gray9,
+                                unselectedColor = AfternoteDesign.colors.gray4,
                             )
                         },
                     ),
@@ -316,8 +312,8 @@ fun SongPlaylistScreen(
                                 selected = selectedSongIds.contains(song.id),
                                 onClick = null,
                                 buttonSize = 24.dp,
-                                selectedColor = Gray9,
-                                unselectedColor = Gray4,
+                                selectedColor = AfternoteDesign.colors.gray9,
+                                unselectedColor = AfternoteDesign.colors.gray4,
                             )
                         },
                         leadingContent = { managementContent.leadingContent(selectedSongIds) },
@@ -463,7 +459,7 @@ private fun SongSearchSection(
                     lineHeight = 22.sp,
                     fontFamily = nanumGothic,
                     fontWeight = FontWeight.Medium,
-                    color = Gray9,
+                    color = AfternoteDesign.colors.gray9,
                 ),
             modifier = Modifier.padding(bottom = 8.dp),
         )
@@ -479,7 +475,7 @@ private fun SongSearchSection(
                             lineHeight = 20.sp,
                             fontFamily = nanumGothic,
                             fontWeight = FontWeight.Normal,
-                            color = Gray4,
+                            color = AfternoteDesign.colors.gray4,
                         ),
                 )
             },
@@ -487,7 +483,7 @@ private fun SongSearchSection(
                 Icon(
                     imageVector = Icons.Default.Search,
                     contentDescription = stringResource(R.string.song_search_label),
-                    tint = Gray9,
+                    tint = AfternoteDesign.colors.gray9,
                 )
             },
             modifier =
@@ -497,18 +493,18 @@ private fun SongSearchSection(
             shape = RoundedCornerShape(8.dp),
             colors =
                 OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = White,
-                    unfocusedContainerColor = White,
-                    focusedBorderColor = Gray9,
-                    unfocusedBorderColor = Gray2,
-                    cursorColor = Gray9,
+                    focusedContainerColor = AfternoteDesign.colors.white,
+                    unfocusedContainerColor = AfternoteDesign.colors.white,
+                    focusedBorderColor = AfternoteDesign.colors.gray9,
+                    unfocusedBorderColor = AfternoteDesign.colors.gray2,
+                    cursorColor = AfternoteDesign.colors.gray9,
                 ),
             singleLine = true,
             textStyle =
                 TextStyle(
                     fontSize = 14.sp,
                     fontFamily = nanumGothic,
-                    color = Gray9,
+                    color = AfternoteDesign.colors.gray9,
                 ),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
         )
@@ -537,7 +533,7 @@ private fun SongAddButton(
                     clip = false,
                     ambientColor = Color(0x26000000),
                     spotColor = Color(0x26000000),
-                ).background(color = Gray1, shape = shape)
+                ).background(color = AfternoteDesign.colors.gray1, shape = shape)
                 .clip(shape)
                 .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
@@ -548,7 +544,7 @@ private fun SongAddButton(
                 modifier =
                     Modifier
                         .size(16.dp)
-                        .background(color = Gray9, shape = RoundedCornerShape(40.dp)),
+                        .background(color = AfternoteDesign.colors.gray9, shape = RoundedCornerShape(40.dp)),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -558,7 +554,7 @@ private fun SongAddButton(
                             fontSize = 12.sp,
                             fontFamily = nanumGothic,
                             fontWeight = FontWeight.Medium,
-                            color = White,
+                            color = AfternoteDesign.colors.white,
                         ),
                 )
             }
@@ -570,7 +566,7 @@ private fun SongAddButton(
                         fontSize = 16.sp,
                         fontFamily = nanumGothic,
                         fontWeight = FontWeight.Medium,
-                        color = Gray9,
+                        color = AfternoteDesign.colors.gray9,
                     ),
             )
         }

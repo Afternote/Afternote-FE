@@ -31,12 +31,8 @@ import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.expand.bottomBorder
 import com.afternote.core.ui.form.Label
 import com.afternote.core.ui.form.LabelStyle
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray1
-import com.afternote.core.ui.theme.Gray3
-import com.afternote.core.ui.theme.Gray8
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.White
 import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 
@@ -63,13 +59,13 @@ data class SelectionDropdownLabelParams(
  * 드롭다운 메뉴 스타일 설정
  *
  * @param menuOffset 드롭다운 메뉴가 필드 아래 나타나는 간격 (기본: 4.dp)
- * @param menuBackgroundColor 드롭다운 메뉴 배경색 (기본: White)
+ * @param menuBackgroundColor 드롭다운 메뉴 배경색 (기본: AfternoteDesign.colors.white)
  * @param shadowElevation 드롭다운 메뉴 그림자 elevation (기본: 0.dp)
  * @param tonalElevation 드롭다운 메뉴 톤 elevation (기본: 0.dp)
  */
 data class DropdownMenuStyle(
     val menuOffset: Dp = 4.dp,
-    val menuBackgroundColor: Color = White,
+    val menuBackgroundColor: Color? = null,
     val shadowElevation: Dp = 0.dp,
     val tonalElevation: Dp = 0.dp,
 )
@@ -78,9 +74,9 @@ data class DropdownMenuStyle(
  * 선택 드롭다운 컴포넌트
  *
  * 피그마 디자인 기반:
- * - 라벨: 기본 12sp, Regular, Gray9 (LabelStyle로 커스터마이징 가능)
+ * - 라벨: 기본 12sp, Regular, AfternoteDesign.colors.gray9 (LabelStyle로 커스터마이징 가능)
  * - 드롭다운 필드: 흰색 배경, 하단 보더
- * - 선택된 값: 16sp, Regular, Gray8
+ * - 선택된 값: 16sp, Regular, AfternoteDesign.colors.gray8
  * - 드롭다운 아이콘: 오른쪽 정렬
  * - 드롭다운 메뉴 offset: 기본 4.dp
  *
@@ -103,6 +99,7 @@ fun SelectionDropdown(
     state: SelectionDropdownState = rememberSelectionDropdownState(),
 ) {
     val density = LocalDensity.current
+    val menuBackgroundResolved = menuStyle.menuBackgroundColor ?: AfternoteDesign.colors.white
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -133,7 +130,7 @@ fun SelectionDropdown(
                                 state.boxWidth = newWidth
                             }
                         }.clickable { state.expanded = !state.expanded }
-                        .bottomBorder(color = Gray3, width = 0.5.dp)
+                        .bottomBorder(color = AfternoteDesign.colors.gray3, width = 0.5.dp)
                         .padding(all = 8.dp),
             ) {
                 Row(
@@ -149,7 +146,7 @@ fun SelectionDropdown(
                                 lineHeight = 20.sp,
                                 fontFamily = nanumGothic,
                                 fontWeight = FontWeight.Normal,
-                                color = Gray8,
+                                color = AfternoteDesign.colors.gray8,
                             ),
                     )
 
@@ -165,7 +162,7 @@ fun SelectionDropdown(
                 expanded = state.expanded,
                 onDismissRequest = { state.expanded = false },
                 offset = DpOffset(x = 0.dp, y = menuStyle.menuOffset),
-                containerColor = menuStyle.menuBackgroundColor,
+                containerColor = menuBackgroundResolved,
                 shadowElevation = menuStyle.shadowElevation,
                 tonalElevation = menuStyle.tonalElevation,
                 modifier =
@@ -183,7 +180,7 @@ fun SelectionDropdown(
                                         lineHeight = 22.sp,
                                         fontFamily = nanumGothic,
                                         fontWeight = FontWeight.Medium,
-                                        color = Gray9,
+                                        color = AfternoteDesign.colors.gray9,
                                         textAlign = TextAlign.Center,
                                     ),
                                 modifier = Modifier.fillMaxWidth(),
@@ -259,7 +256,7 @@ private fun ExpandedDropdownMenuPreview() {
                 expanded = true,
                 onDismissRequest = {},
                 offset = DpOffset(x = 0.dp, y = 4.dp),
-                containerColor = White,
+                containerColor = AfternoteDesign.colors.white,
                 shadowElevation = 0.dp,
                 tonalElevation = 0.dp,
                 modifier = Modifier.width(200.dp),
@@ -279,7 +276,7 @@ private fun ExpandedDropdownMenuPreview() {
                                         lineHeight = 22.sp,
                                         fontFamily = nanumGothic,
                                         fontWeight = FontWeight.Normal,
-                                        color = Gray9,
+                                        color = AfternoteDesign.colors.gray9,
                                         textAlign = TextAlign.Center,
                                     ),
                                 modifier = Modifier.fillMaxWidth(),
@@ -310,7 +307,7 @@ private fun ExpandedDropdownMenuWithElevationPreview() {
                 expanded = true,
                 onDismissRequest = {},
                 offset = DpOffset(x = 0.dp, y = 4.dp),
-                containerColor = White,
+                containerColor = AfternoteDesign.colors.white,
                 shadowElevation = 10.dp,
                 tonalElevation = 10.dp,
                 modifier = Modifier.width(200.dp),
@@ -326,7 +323,7 @@ private fun ExpandedDropdownMenuWithElevationPreview() {
                                         lineHeight = 22.sp,
                                         fontFamily = nanumGothic,
                                         fontWeight = FontWeight.Normal,
-                                        color = Gray9,
+                                        color = AfternoteDesign.colors.gray9,
                                         textAlign = TextAlign.Center,
                                     ),
                                 modifier = Modifier.fillMaxWidth(),
@@ -357,7 +354,7 @@ private fun ExpandedDropdownMenuInDialogPreview() {
                 expanded = true,
                 onDismissRequest = {},
                 offset = DpOffset(x = 0.dp, y = 5.2.dp),
-                containerColor = Gray1,
+                containerColor = AfternoteDesign.colors.gray1,
                 shadowElevation = 0.dp,
                 tonalElevation = 0.dp,
                 modifier = Modifier.width(200.dp),
@@ -373,7 +370,7 @@ private fun ExpandedDropdownMenuInDialogPreview() {
                                         lineHeight = 22.sp,
                                         fontFamily = nanumGothic,
                                         fontWeight = FontWeight.Normal,
-                                        color = Gray9,
+                                        color = AfternoteDesign.colors.gray9,
                                         textAlign = TextAlign.Center,
                                     ),
                                 modifier = Modifier.fillMaxWidth(),
@@ -404,7 +401,7 @@ private fun ExpandedDropdownMenuLongListPreview() {
                 expanded = true,
                 onDismissRequest = {},
                 offset = DpOffset(x = 0.dp, y = 4.dp),
-                containerColor = White,
+                containerColor = AfternoteDesign.colors.white,
                 shadowElevation = 0.dp,
                 tonalElevation = 0.dp,
                 modifier = Modifier.width(200.dp),
@@ -429,7 +426,7 @@ private fun ExpandedDropdownMenuLongListPreview() {
                                         lineHeight = 22.sp,
                                         fontFamily = nanumGothic,
                                         fontWeight = FontWeight.Normal,
-                                        color = Gray9,
+                                        color = AfternoteDesign.colors.gray9,
                                         textAlign = TextAlign.Center,
                                     ),
                                 modifier = Modifier.fillMaxWidth(),

@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor.memorial
+
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
 import android.util.Log
@@ -45,9 +46,8 @@ import coil3.compose.AsyncImagePainter
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.White
 import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import kotlinx.coroutines.CoroutineDispatcher
@@ -61,9 +61,9 @@ private const val TAG = "FuneralVideoUpload"
  * 장례식에 남길 영상 추가 컴포넌트
  *
  * 피그마 디자인 기반:
- * - 라벨: 12sp, Regular, Gray9
+ * - 라벨: 12sp, Regular, AfternoteDesign.colors.gray9
  * - 라벨과 버튼 간 간격: 6dp
- * - 큰 원형 버튼: Gray9, 120dp
+ * - 큰 원형 버튼: AfternoteDesign.colors.gray9, 120dp
  * - 플러스 아이콘: 중앙에 위치, 24dp
  *
  * @param thumbnailUrl When set (e.g. from API when loading for edit), shown as thumbnail instead of extracting from video.
@@ -140,7 +140,7 @@ fun FuneralVideoUpload(
                     lineHeight = 22.sp,
                     fontFamily = nanumGothic,
                     fontWeight = FontWeight.Medium,
-                    color = Gray9,
+                    color = AfternoteDesign.colors.gray9,
                 ),
         )
 
@@ -151,7 +151,7 @@ fun FuneralVideoUpload(
                     Modifier
                         .fillMaxWidth()
                         .height(80.dp)
-                        .background(color = White, shape = RoundedCornerShape(size = 16.dp))
+                        .background(color = AfternoteDesign.colors.white, shape = RoundedCornerShape(size = 16.dp))
                         .clickable(onClick = onAddVideoClick),
             ) {
                 Column(

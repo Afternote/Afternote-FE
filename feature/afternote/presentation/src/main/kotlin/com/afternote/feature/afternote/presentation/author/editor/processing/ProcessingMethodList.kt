@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor.processing
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -16,8 +17,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.AddCircleButton
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.White
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import kotlinx.coroutines.launch
 
@@ -47,7 +48,7 @@ fun ProcessingMethodList(
         modifier =
             modifier
                 .fillMaxWidth()
-                .background(color = White, shape = RoundedCornerShape(16.dp))
+                .background(color = AfternoteDesign.colors.white, shape = RoundedCornerShape(16.dp))
                 .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {

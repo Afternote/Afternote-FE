@@ -22,7 +22,7 @@ import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
  * - 헤더: "지문 로그인" 타이틀
  * - 안내 텍스트: "사용자 인증 후 조회가 가능합니다."
  * - 지문 아이콘 (중앙)
- * - 버튼: "지문 인증하기" (Gray9 배경색)
+ * - 버튼: "지문 인증하기" (AfternoteDesign.colors.gray9 배경색)
  * - 하단 네비게이션 바
  */
 @Composable

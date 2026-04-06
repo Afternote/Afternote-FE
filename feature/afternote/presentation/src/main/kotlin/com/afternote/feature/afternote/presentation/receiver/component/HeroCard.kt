@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.receiver.component
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -22,8 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.afternote.core.ui.theme.Gray5
-import com.afternote.core.ui.theme.Gray8
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 
@@ -69,7 +69,7 @@ fun HeroCard(
                 text = leaveMessage,
                 fontFamily = nanumGothic,
                 fontWeight = FontWeight.Bold,
-                color = Gray8,
+                color = AfternoteDesign.colors.gray8,
                 fontSize = 24.sp,
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -77,7 +77,7 @@ fun HeroCard(
                 text = "고인이 남긴 마지막 인사말",
                 fontFamily = nanumGothic,
                 fontWeight = FontWeight.Medium,
-                color = Gray5,
+                color = AfternoteDesign.colors.gray5,
             )
         }
     }

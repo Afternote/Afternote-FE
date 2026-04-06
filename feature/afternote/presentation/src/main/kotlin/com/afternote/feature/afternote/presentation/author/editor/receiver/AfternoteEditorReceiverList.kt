@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor.receiver
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -26,10 +27,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.button.AddCircleButton
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray5
-import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.White
 import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
@@ -64,7 +63,7 @@ fun AfternoteEditorReceiverList(
         modifier =
             modifier
                 .fillMaxWidth()
-                .background(color = White, shape = RoundedCornerShape(16.dp))
+                .background(color = AfternoteDesign.colors.white, shape = RoundedCornerShape(16.dp))
                 .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -103,8 +102,8 @@ fun AfternoteEditorReceiverList(
  *
  * 피그마 디자인 기반:
  * - 아바타: 회색 원형 배경, 40dp
- * - 이름: 14sp, Regular, Gray9
- * - 라벨: 12sp, Regular, Gray5
+ * - 이름: 14sp, Regular, AfternoteDesign.colors.gray9
+ * - 라벨: 12sp, Regular, AfternoteDesign.colors.gray5
  * - 더보기 아이콘: 오른쪽 정렬
  */
 @Composable
@@ -143,7 +142,7 @@ private fun AfternoteEditorReceiverItem(
                         lineHeight = 20.sp,
                         fontFamily = nanumGothic,
                         fontWeight = FontWeight.Medium,
-                        color = Gray9,
+                        color = AfternoteDesign.colors.gray9,
                     ),
             )
             Text(
@@ -154,7 +153,7 @@ private fun AfternoteEditorReceiverItem(
                         lineHeight = 18.sp,
                         fontFamily = nanumGothic,
                         fontWeight = FontWeight.Normal,
-                        color = Gray5,
+                        color = AfternoteDesign.colors.gray5,
                     ),
             )
         }

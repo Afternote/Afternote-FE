@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor.processing
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -33,8 +34,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.icon.CheckCircleIcon
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
@@ -51,13 +52,14 @@ data class ProcessingMethodCheckboxCallbacks(
     val onEditConfirmed: (String) -> Unit = {},
 )
 
-private val processingMethodTextStyle =
+@Composable
+private fun processingMethodTextStyle(): TextStyle =
     TextStyle(
         fontSize = 14.sp,
         lineHeight = 20.sp,
         fontFamily = nanumGothic,
         fontWeight = FontWeight.Normal,
-        color = Gray9,
+        color = AfternoteDesign.colors.gray9,
     )
 
 /**
@@ -65,7 +67,7 @@ private val processingMethodTextStyle =
  *
  * 피그마 디자인 기반:
  * - 체크박스: 16dp
- * - 텍스트: 14sp, Regular, Gray9
+ * - 텍스트: 14sp, Regular, AfternoteDesign.colors.gray9
  * - 더보기 아이콘: 오른쪽 정렬
  *
  * [isEditing]이 true이면 텍스트 영역이 BasicTextField로 전환되어 인라인 편집을 지원합니다.
@@ -94,7 +96,7 @@ fun ProcessingMethodCheckbox(
         } else {
             Text(
                 text = item.text,
-                style = processingMethodTextStyle,
+                style = processingMethodTextStyle(),
                 modifier = Modifier.weight(1f),
             )
         }
@@ -120,7 +122,7 @@ fun ProcessingMethodCheckbox(
 /**
  * 인라인 편집용 텍스트 필드.
  *
- * 기존 Text와 동일한 스타일(14sp, Regular, Gray9)을 유지하여
+ * 기존 Text와 동일한 스타일(14sp, Regular, AfternoteDesign.colors.gray9)을 유지하여
  * 편집 모드 전환 시 레이아웃이 자연스럽게 유지됩니다.
  * Enter 키 또는 포커스 해제 시 편집을 확정합니다.
  *
@@ -158,7 +160,7 @@ private fun InlineEditTextField(
     BasicTextField(
         value = textFieldValue,
         onValueChange = { textFieldValue = it },
-        textStyle = processingMethodTextStyle,
+        textStyle = processingMethodTextStyle(),
         singleLine = true,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
         keyboardActions =

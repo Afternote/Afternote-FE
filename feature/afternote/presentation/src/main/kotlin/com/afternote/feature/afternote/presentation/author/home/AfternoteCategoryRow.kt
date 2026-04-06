@@ -26,11 +26,8 @@ import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.expand.horizontalFadingEdge
 import com.afternote.core.ui.icon.ArrowIconSpec
 import com.afternote.core.ui.icon.RightArrowIcon
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray2
-import com.afternote.core.ui.theme.Gray4
-import com.afternote.core.ui.theme.Gray7
-import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
@@ -71,14 +68,14 @@ fun AfternoteCategoryRow(
                         iconRes = R.drawable.ic_arrow_right_tab,
                         contentDescription = "더 보기",
                     ),
-                backgroundColor = Gray9,
+                backgroundColor = AfternoteDesign.colors.gray9,
                 size = 16.dp,
                 modifier = Modifier.align(Alignment.CenterEnd),
             )
         }
         HorizontalDivider(
             thickness = 1.dp,
-            color = Gray2,
+            color = AfternoteDesign.colors.gray2,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
     }
@@ -104,9 +101,9 @@ private fun CategoryItem(
             text = category.label,
             color =
                 if (isSelected) {
-                    Gray7
+                    AfternoteDesign.colors.gray7
                 } else {
-                    Gray4
+                    AfternoteDesign.colors.gray4
                 },
             fontFamily = nanumGothic,
             fontWeight = FontWeight.SemiBold,
@@ -119,7 +116,7 @@ private fun CategoryItem(
         if (isSelected) {
             HorizontalDivider(
                 thickness = 2.dp,
-                color = Gray7,
+                color = AfternoteDesign.colors.gray7,
                 modifier =
                     Modifier
                         .align(Alignment.BottomCenter),

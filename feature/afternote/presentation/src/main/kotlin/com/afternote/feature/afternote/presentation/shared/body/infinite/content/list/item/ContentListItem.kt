@@ -24,17 +24,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Black
-import com.afternote.core.ui.theme.Gray2
-import com.afternote.core.ui.theme.Gray5
-import com.afternote.core.ui.theme.White
 import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 
 /**
  * Shared list row for 애프터노트 list (writer main and receiver list).
- * White card, icon, serviceName, "최종 작성일 {date}", arrow.
+ * AfternoteDesign.colors.white card, icon, serviceName, "최종 작성일 {date}", arrow.
  */
 @Composable
 fun AfternoteListItem(
@@ -47,10 +44,10 @@ fun AfternoteListItem(
             modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(6.dp))
-                .background(White)
+                .background(AfternoteDesign.colors.white)
                 .border(
                     width = 1.dp,
-                    color = Gray2,
+                    color = AfternoteDesign.colors.gray2,
                     shape = RoundedCornerShape(6.dp),
                 ).clickable
                 { onClick() }
@@ -69,7 +66,7 @@ fun AfternoteListItem(
         ) {
             Text(
                 text = uiModel.serviceName,
-                color = Black,
+                color = AfternoteDesign.colors.black,
                 lineHeight = 24.sp,
                 fontSize = 16.sp,
                 fontFamily = nanumGothic,
@@ -77,7 +74,7 @@ fun AfternoteListItem(
             )
             Text(
                 text = stringResource(R.string.afternote_last_written_date, uiModel.date),
-                color = Gray5,
+                color = AfternoteDesign.colors.gray5,
                 lineHeight = 16.sp,
                 fontSize = 10.sp,
                 fontFamily = nanumGothic,

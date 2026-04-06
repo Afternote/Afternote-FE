@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor.processing
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,16 +12,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.form.SelectableRadioCard
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray6
-import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodOption
 
 /**
  * Title + description content for use inside [SelectableRadioCard].
- * Figma: title 16sp Medium Gray9, description 14sp Regular Gray6, 6.dp spacing.
+ * Figma: title 16sp Medium AfternoteDesign.colors.gray9, description 14sp Regular AfternoteDesign.colors.gray6, 6.dp spacing.
  */
 @Suppress("UNUSED_PARAMETER")
 @Composable
@@ -41,7 +41,7 @@ fun OptionRadioCardContent(
                     lineHeight = 22.sp,
                     fontFamily = nanumGothic,
                     fontWeight = FontWeight.Medium,
-                    color = Gray9,
+                    color = AfternoteDesign.colors.gray9,
                 ),
         )
         Text(
@@ -52,7 +52,7 @@ fun OptionRadioCardContent(
                     lineHeight = 20.sp,
                     fontFamily = nanumGothic,
                     fontWeight = FontWeight.Normal,
-                    color = Gray6,
+                    color = AfternoteDesign.colors.gray6,
                 ),
         )
     }
