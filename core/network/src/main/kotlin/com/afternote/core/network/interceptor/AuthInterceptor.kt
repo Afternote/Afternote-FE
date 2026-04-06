@@ -9,7 +9,8 @@ import javax.inject.Inject
 class AuthInterceptor
     @Inject
     constructor(
-        private val authRepository: AuthRepository,
+        // authRepository.get()이 호출되는 시점으로 AuthRepository 생성 늦춤
+        private val authRepository: dagger.Lazy<AuthRepository>,
     ) : Interceptor {
         override fun intercept(chain: Interceptor.Chain): Response {
             val originalRequest = chain.request()
@@ -17,7 +18,7 @@ class AuthInterceptor
             val accessToken =
                 // 블록 내의 작업이 끝날 때까지 너(runBlocking을 호출한 스레드)는 이 작업에서 벗어나지 마
                 runBlocking {
-                    authRepository.getAccessToken()
+                    authRepository.get().getAccessToken()
                 }.getOrNull()
 
             // 액세스 토큰이 없으면
