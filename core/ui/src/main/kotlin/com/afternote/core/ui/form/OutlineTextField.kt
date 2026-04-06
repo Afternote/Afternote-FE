@@ -39,12 +39,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray1
-import com.afternote.core.ui.theme.Gray4
-import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.Red
-import com.afternote.core.ui.theme.White
 import com.afternote.core.ui.theme.nanumGothic
 
 private const val DEFAULT_PLACEHOLDER = "Text Field"
@@ -56,46 +53,30 @@ private val OutlineTextFieldHeightLabeled = 56.dp
 private val OutlineTextFieldHeightMultiline = 160.dp
 
 /**
- * Shared placeholder content for outline text fields (simple: 16.sp, Gray4).
+ * Shared placeholder content for outline text fields.
  */
 @Composable
-private fun OutlineTextFieldPlaceholderSimple(text: String) {
+private fun OutlineTextFieldPlaceholder(text: String) {
     Text(
         text = text,
-        fontSize = 16.sp,
-        fontFamily = nanumGothic,
-        color = Gray4,
-    )
-}
-
-/**
- * Shared placeholder content with line height (16.sp, lineHeight 20.sp, Gray4).
- */
-@Composable
-private fun OutlineTextFieldPlaceholderWithLineHeight(text: String) {
-    Text(
-        text = text,
-        fontSize = 16.sp,
-        lineHeight = 20.sp,
-        fontFamily = nanumGothic,
-        fontWeight = FontWeight.Normal,
-        color = Gray4,
+        style = AfternoteDesign.typography.textField,
+        color = AfternoteDesign.colors.gray4,
     )
 }
 
 @Composable
 private fun outlineTextFieldBasicColors() =
     OutlinedTextFieldDefaults.colors(
-        unfocusedBorderColor = Gray4,
-        disabledTextColor = Gray9,
-        disabledPlaceholderColor = Gray4,
-        disabledContainerColor = White,
+        unfocusedBorderColor = AfternoteDesign.colors.gray4,
+        disabledTextColor = AfternoteDesign.colors.gray9,
+        disabledPlaceholderColor = AfternoteDesign.colors.gray4,
+        disabledContainerColor = AfternoteDesign.colors.white,
     )
 
 @Composable
 private fun outlineTextFieldBasicColorsSimple() =
     OutlinedTextFieldDefaults.colors(
-        unfocusedBorderColor = Gray4,
+        unfocusedBorderColor = AfternoteDesign.colors.gray4,
     )
 
 @Composable
@@ -124,12 +105,12 @@ private fun outlineTextFieldFilledColorsAll(containerColor: Color) =
  * Style configuration for labeled OutlineTextField.
  */
 data class LabeledTextFieldStyle(
-    val containerColor: Color = White,
+    val containerColor: Color? = null,
     val labelSpacing: Dp = 6.dp,
     val labelFontSize: TextUnit = 12.sp,
     val labelLineHeight: TextUnit = 18.sp,
     val labelFontWeight: FontWeight = FontWeight.Normal,
-    val labelColor: Color = Gray9,
+    val labelColor: Color? = null,
 )
 
 private val PasswordOutputTransformation =
@@ -165,7 +146,7 @@ fun OutlineTextField(
     OutlinedTextField(
         state = textFieldState,
         lineLimits = TextFieldLineLimits.SingleLine,
-        placeholder = { OutlineTextFieldPlaceholderSimple(text = label) },
+        placeholder = { OutlineTextFieldPlaceholder(text = label) },
         colors = outlineTextFieldBasicColors(),
         shape = OutlineTextFieldShape,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
@@ -211,7 +192,7 @@ fun OutlineTextField(
     OutlinedTextField(
         state = textFieldState,
         lineLimits = TextFieldLineLimits.SingleLine,
-        placeholder = { OutlineTextFieldPlaceholderSimple(text = label) },
+        placeholder = { OutlineTextFieldPlaceholder(text = label) },
         shape = OutlineTextFieldShape,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         outputTransformation =
@@ -250,22 +231,15 @@ fun OutlineTextField(
     OutlinedTextField(
         state = textFieldState,
         lineLimits = TextFieldLineLimits.SingleLine,
-        placeholder = {
-            Text(
-                text = label,
-                fontSize = 16.sp,
-                fontFamily = nanumGothic,
-                color = Gray4,
-            )
-        },
-        shape = RoundedCornerShape(8.dp),
+        placeholder = { OutlineTextFieldPlaceholder(text = label) },
+        shape = OutlineTextFieldShape,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         outputTransformation = outputTransformation,
-        colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = Gray4),
+        colors = outlineTextFieldBasicColorsSimple(),
         modifier =
             modifier
                 .fillMaxWidth()
-                .height(70.dp),
+                .height(OutlineTextFieldHeightBasic),
     )
 }
 
@@ -282,7 +256,7 @@ fun OutlineTextField(
     OutlinedTextField(
         state = textFieldState,
         lineLimits = TextFieldLineLimits.SingleLine,
-        placeholder = { OutlineTextFieldPlaceholderSimple(text = label) },
+        placeholder = { OutlineTextFieldPlaceholder(text = label) },
         shape = OutlineTextFieldShape,
         colors = outlineTextFieldBasicColorsSimple(),
         readOnly = true,
@@ -295,7 +269,7 @@ fun OutlineTextField(
                     Icon(
                         imageVector = Icons.Filled.AddCircle,
                         contentDescription = "Add file",
-                        tint = Gray9,
+                        tint = AfternoteDesign.colors.gray9,
                         modifier = Modifier.size(24.dp),
                     )
                 }
@@ -338,6 +312,8 @@ fun OutlineTextField(
     style: LabeledTextFieldStyle = LabeledTextFieldStyle(),
     isError: Boolean = false,
 ) {
+    val containerColor = style.containerColor ?: AfternoteDesign.colors.white
+    val labelColorResolved = style.labelColor ?: AfternoteDesign.colors.gray9
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(space = style.labelSpacing),
@@ -350,7 +326,7 @@ fun OutlineTextField(
                     lineHeight = style.labelLineHeight,
                     fontFamily = nanumGothic,
                     fontWeight = style.labelFontWeight,
-                    color = Gray9,
+                    color = labelColorResolved,
                 ),
         )
 
@@ -362,8 +338,8 @@ fun OutlineTextField(
                     vertical = 16.dp,
                     horizontal = 24.dp,
                 ),
-            placeholder = { OutlineTextFieldPlaceholderWithLineHeight(text = placeholder) },
-            colors = outlineTextFieldFilledColors(style.containerColor),
+            placeholder = { OutlineTextFieldPlaceholder(text = placeholder) },
+            colors = outlineTextFieldFilledColors(containerColor),
             shape = OutlineTextFieldShape,
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             outputTransformation =
@@ -376,7 +352,7 @@ fun OutlineTextField(
                 Modifier
                     .fillMaxWidth()
                     .height(OutlineTextFieldHeightLabeled)
-                    .background(style.containerColor, OutlineTextFieldShape)
+                    .background(containerColor, OutlineTextFieldShape)
                     .then(
                         if (isError) {
                             Modifier.border(
@@ -389,12 +365,8 @@ fun OutlineTextField(
                         },
                     ),
             textStyle =
-                TextStyle(
-                    fontSize = 16.sp,
-                    lineHeight = 20.sp,
-                    fontFamily = nanumGothic,
-                    fontWeight = FontWeight.Normal,
-                    color = Gray9,
+                AfternoteDesign.typography.textField.copy(
+                    color = labelColorResolved,
                 ),
         )
     }
@@ -405,25 +377,17 @@ fun OutlineTextField(
 // ============================================================================
 
 /**
- * Marker object for multiline OutlineTextField variant.
- */
-object Multiline
-
-/**
  * Multiline message-style text field.
  *
  * @param modifier Modifier for the whole component.
  * @param label Label text shown above the field.
  * @param textFieldState Text field state holder.
  * @param placeholder Placeholder text shown when empty.
- * @param multiline Marker to distinguish this as multiline variant.
  */
-@Suppress("UNUSED_PARAMETER")
 @Composable
-fun OutlineTextField(
+fun MultilineOutlineTextField(
     label: String,
     textFieldState: TextFieldState,
-    multiline: Multiline,
     modifier: Modifier = Modifier,
     placeholder: String = DEFAULT_PLACEHOLDER,
 ) {
@@ -434,35 +398,28 @@ fun OutlineTextField(
         Text(
             text = label,
             style =
-                TextStyle(
-                    fontSize = 16.sp,
-                    lineHeight = 22.sp,
-                    fontFamily = nanumGothic,
+                AfternoteDesign.typography.textField.copy(
                     fontWeight = FontWeight.Medium,
-                    color = Gray9,
                 ),
+            color = AfternoteDesign.colors.gray9,
         )
 
         OutlinedTextField(
             state = textFieldState,
             lineLimits = TextFieldLineLimits.MultiLine(),
-            placeholder = { OutlineTextFieldPlaceholderWithLineHeight(text = placeholder) },
-            colors = outlineTextFieldFilledColors(White),
+            placeholder = { OutlineTextFieldPlaceholder(text = placeholder) },
+            colors = outlineTextFieldFilledColors(AfternoteDesign.colors.white),
             shape = RoundedCornerShape(16.dp),
             keyboardOptions = KeyboardOptions.Default,
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .height(OutlineTextFieldHeightMultiline)
-                    .background(White, RoundedCornerShape(16.dp)),
+                    .background(AfternoteDesign.colors.white, RoundedCornerShape(16.dp)),
             contentPadding = PaddingValues(all = 16.dp),
             textStyle =
-                TextStyle(
-                    fontSize = 16.sp,
-                    lineHeight = 20.dp.value.sp,
-                    fontFamily = nanumGothic,
-                    fontWeight = FontWeight.Normal,
-                    color = Gray9,
+                AfternoteDesign.typography.textField.copy(
+                    color = AfternoteDesign.colors.gray9,
                 ),
         )
     }
@@ -487,30 +444,27 @@ fun OutlineTextField(
     textFieldState: TextFieldState,
     modifier: Modifier = Modifier,
     placeholder: String = DEFAULT_PLACEHOLDER,
-    containerColor: Color = Gray1,
+    containerColor: Color? = null,
     height: Dp = OutlineTextFieldHeightMultiline,
     shape: RoundedCornerShape = RoundedCornerShape(16.dp),
 ) {
+    val bg = containerColor ?: AfternoteDesign.colors.gray1
     OutlinedTextField(
         state = textFieldState,
         lineLimits = TextFieldLineLimits.MultiLine(),
-        placeholder = { OutlineTextFieldPlaceholderWithLineHeight(text = placeholder) },
-        colors = outlineTextFieldFilledColorsAll(containerColor),
+        placeholder = { OutlineTextFieldPlaceholder(text = placeholder) },
+        colors = outlineTextFieldFilledColorsAll(bg),
         shape = shape,
         keyboardOptions = KeyboardOptions.Default,
         modifier =
             modifier
                 .fillMaxWidth()
                 .height(height)
-                .background(containerColor, shape),
+                .background(bg, shape),
         contentPadding = PaddingValues(all = 16.dp),
         textStyle =
-            TextStyle(
-                fontSize = 16.sp,
-                lineHeight = 20.sp,
-                fontFamily = nanumGothic,
-                fontWeight = FontWeight.Normal,
-                color = Gray9,
+            AfternoteDesign.typography.textField.copy(
+                color = AfternoteDesign.colors.gray9,
             ),
     )
 }
@@ -607,12 +561,11 @@ private fun OutlineTextFieldPasswordPreview() {
 
 @Preview(showBackground = true, name = "멀티라인 버전")
 @Composable
-private fun OutlineTextFieldMultilinePreview() {
+private fun MultilineOutlineTextFieldPreview() {
     AfternoteTheme {
-        OutlineTextField(
+        MultilineOutlineTextField(
             label = "남기실 말씀",
             textFieldState = rememberTextFieldState(),
-            multiline = Multiline,
         )
     }
 }
