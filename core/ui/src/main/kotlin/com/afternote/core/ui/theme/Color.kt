@@ -1,5 +1,9 @@
 package com.afternote.core.ui.theme
 
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 
 val White = Color(0xFFFFFFFF)
@@ -25,6 +29,113 @@ val Gray7 = Color(0xFF616161)
 val Gray8 = Color(0xFF424242)
 
 val Gray9 = Color(0xFF212121)
+
+fun lightColors() =
+    AfternoteColors(
+        white = White,
+        black = Black,
+        iconBk = IconBk,
+        gray1 = Gray1,
+        gray2 = Gray2,
+        gray3 = Gray3,
+        gray4 = Gray4,
+        gray5 = Gray5,
+        gray6 = Gray6,
+        gray7 = Gray7,
+        gray8 = Gray8,
+        gray9 = Gray9,
+        isLightMode = true,
+    )
+
+@Stable // 불필요한 리컴포지션 방지
+class AfternoteColors(
+    white: Color,
+    black: Color,
+    iconBk: Color,
+    gray1: Color,
+    gray2: Color,
+    gray3: Color,
+    gray4: Color,
+    gray5: Color,
+    gray6: Color,
+    gray7: Color,
+    gray8: Color,
+    gray9: Color,
+    isLightMode: Boolean,
+) {
+    var white by mutableStateOf(white)
+        private set
+    var black by mutableStateOf(black)
+        private set
+    var iconBk by mutableStateOf(iconBk)
+        private set
+    var gray1 by mutableStateOf(gray1)
+        private set
+    var gray2 by mutableStateOf(gray2)
+        private set
+    var gray3 by mutableStateOf(gray3)
+        private set
+    var gray4 by mutableStateOf(gray4)
+        private set
+    var gray5 by mutableStateOf(gray5)
+        private set
+    var gray6 by mutableStateOf(gray6)
+        private set
+    var gray7 by mutableStateOf(gray7)
+        private set
+    var gray8 by mutableStateOf(gray8)
+        private set
+    var gray9 by mutableStateOf(gray9)
+        private set
+    var isLightMode by mutableStateOf(isLightMode)
+        private set
+
+    fun copy(
+        white: Color = this.white,
+        black: Color = this.black,
+        iconBk: Color = this.iconBk,
+        gray1: Color = this.gray1,
+        gray2: Color = this.gray2,
+        gray3: Color = this.gray3,
+        gray4: Color = this.gray4,
+        gray5: Color = this.gray5,
+        gray6: Color = this.gray6,
+        gray7: Color = this.gray7,
+        gray8: Color = this.gray8,
+        gray9: Color = this.gray9,
+        isLightMode: Boolean = this.isLightMode,
+    ) = AfternoteColors(
+        white = white,
+        black = black,
+        iconBk = iconBk,
+        gray1 = gray1,
+        gray2 = gray2,
+        gray3 = gray3,
+        gray4 = gray4,
+        gray5 = gray5,
+        gray6 = gray6,
+        gray7 = gray7,
+        gray8 = gray8,
+        gray9 = gray9,
+        isLightMode = isLightMode,
+    )
+
+    fun update(other: AfternoteColors) {
+        this.white = other.white
+        this.black = other.black
+        this.iconBk = other.iconBk
+        this.gray1 = other.gray1
+        this.gray2 = other.gray2
+        this.gray3 = other.gray3
+        this.gray4 = other.gray4
+        this.gray5 = other.gray5
+        this.gray6 = other.gray6
+        this.gray7 = other.gray7
+        this.gray8 = other.gray8
+        this.gray9 = other.gray9
+        this.isLightMode = other.isLightMode
+    }
+}
 
 // 이전 레포
 val Purple80 = Color(0xFFD0BCFF)
