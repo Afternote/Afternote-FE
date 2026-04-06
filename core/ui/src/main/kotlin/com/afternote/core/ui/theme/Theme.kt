@@ -28,12 +28,12 @@ import androidx.compose.runtime.staticCompositionLocalOf
 // LocalColors.current의 형태로 현재 전달된 데이터를 꺼내 쓸 수 있음
 // staticCompositionLocalOf는 데이터 값이 변경되면 데이터 제공자와 그 모든 자식 컴포저블을 리컴포지션
 // compositionLocalOf는 데이터 값이 변경되면 데이터를 참조하는 컴포저블만 리컴포지션
-val LocalColors =
+private val LocalColors =
     staticCompositionLocalOf {
         lightColors() // 제공자가 준 데이터 값 없을 때 사용하는 기본 값
     }
 
-val LocalTypography =
+private val LocalTypography =
     staticCompositionLocalOf {
         AfternoteTypography()
     }
