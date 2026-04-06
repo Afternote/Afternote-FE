@@ -29,8 +29,8 @@ import com.afternote.core.ui.button.AddCircleButton
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray5
 import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
 import com.afternote.core.ui.theme.White
+import com.afternote.core.ui.theme.naNumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverCallbacks
@@ -141,7 +141,7 @@ private fun AfternoteEditorReceiverItem(
                     TextStyle(
                         fontSize = 14.sp,
                         lineHeight = 20.sp,
-                        fontFamily = Sansneo,
+                        fontFamily = naNumGothic,
                         fontWeight = FontWeight.Medium,
                         color = Gray9,
                     ),
@@ -152,7 +152,7 @@ private fun AfternoteEditorReceiverItem(
                     TextStyle(
                         fontSize = 12.sp,
                         lineHeight = 18.sp,
-                        fontFamily = Sansneo,
+                        fontFamily = naNumGothic,
                         fontWeight = FontWeight.Normal,
                         color = Gray5,
                     ),

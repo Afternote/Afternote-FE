@@ -50,7 +50,7 @@ import com.afternote.core.ui.theme.Black
 import com.afternote.core.ui.theme.Gray5
 import com.afternote.core.ui.theme.Gray6
 import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.naNumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
@@ -198,7 +198,7 @@ private fun TitleSection(userName: String) {
             TextStyle(
                 fontSize = 18.sp,
                 lineHeight = 24.sp,
-                fontFamily = Sansneo,
+                fontFamily = naNumGothic,
                 fontWeight = FontWeight.Bold,
                 color = Gray9,
             ),
@@ -245,7 +245,7 @@ private fun PhotoCard(
                         TextStyle(
                             fontSize = 10.sp,
                             lineHeight = 16.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = naNumGothic,
                             fontWeight = FontWeight.Normal,
                             color = Gray6,
                         ),
@@ -284,7 +284,7 @@ private fun VideoCard(
                         TextStyle(
                             fontSize = 16.sp,
                             lineHeight = 22.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = naNumGothic,
                             fontWeight = FontWeight.Medium,
                             color = Gray9,
                         ),
@@ -380,7 +380,7 @@ private fun PlaylistCard(
                         TextStyle(
                             fontSize = 16.sp,
                             lineHeight = 22.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = naNumGothic,
                             fontWeight = FontWeight.Medium,
                             color = Gray9,
                         ),
@@ -396,7 +396,7 @@ private fun PlaylistCard(
                         TextStyle(
                             fontSize = 14.sp,
                             lineHeight = 20.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = naNumGothic,
                             fontWeight = FontWeight.Normal,
                             color = Black,
                         ),
@@ -468,7 +468,7 @@ private fun LastWishCard(lastWish: String) {
                         TextStyle(
                             fontSize = 16.sp,
                             lineHeight = 22.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = naNumGothic,
                             fontWeight = FontWeight.Medium,
                             color = Gray9,
                         ),
@@ -480,7 +480,7 @@ private fun LastWishCard(lastWish: String) {
                         TextStyle(
                             fontSize = 14.sp,
                             lineHeight = 20.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = naNumGothic,
                             fontWeight = FontWeight.Normal,
                             color = textColor,
                         ),

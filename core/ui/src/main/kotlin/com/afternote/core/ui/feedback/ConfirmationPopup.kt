@@ -32,7 +32,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.B3
 import com.afternote.core.ui.theme.Gray3
 import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.naNumGothic
 
 @Composable
 fun ConfirmationPopup(
@@ -80,7 +80,7 @@ fun ConfirmationPopupContent(
         TextStyle(
             fontSize = 16.sp,
             lineHeight = 22.sp,
-            fontFamily = Sansneo,
+            fontFamily = naNumGothic,
             fontWeight = FontWeight.Medium,
             color = Gray9,
             textAlign = TextAlign.Center,
@@ -113,7 +113,7 @@ fun ConfirmationPopupContent(
                     TextStyle(
                         fontSize = 16.sp,
                         lineHeight = 22.sp,
-                        fontFamily = Sansneo,
+                        fontFamily = naNumGothic,
                         fontWeight = FontWeight.Medium,
                         color = Gray9,
                         textAlign = TextAlign.Center,

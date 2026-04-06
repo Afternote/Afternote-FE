@@ -37,7 +37,7 @@ import com.afternote.core.ui.theme.Gray2
 import com.afternote.core.ui.theme.Gray5
 import com.afternote.core.ui.theme.Gray8
 import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.naNumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 
@@ -107,7 +107,7 @@ fun ReceiversCard(
                         TextStyle(
                             fontSize = 16.sp,
                             lineHeight = 22.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = naNumGothic,
                             fontWeight = FontWeight.Medium,
                             color = Gray9,
                         ),
@@ -149,7 +149,7 @@ private fun ReceiverDetailItem(
                     TextStyle(
                         fontSize = 12.sp,
                         lineHeight = 18.sp,
-                        fontFamily = Sansneo,
+                        fontFamily = naNumGothic,
                         fontWeight = FontWeight.Medium,
                         color = Black,
                     ),
@@ -160,7 +160,7 @@ private fun ReceiverDetailItem(
                     TextStyle(
                         fontSize = 12.sp,
                         lineHeight = 18.sp,
-                        fontFamily = Sansneo,
+                        fontFamily = naNumGothic,
                         fontWeight = FontWeight.Normal,
                         color = Gray8,
                     ),

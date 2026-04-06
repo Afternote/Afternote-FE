@@ -41,8 +41,8 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.B1
 import com.afternote.core.ui.theme.B3
 import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
 import com.afternote.core.ui.theme.White
+import com.afternote.core.ui.theme.naNumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.dummy.AlbumDummies
 
@@ -61,7 +61,7 @@ private val songCountTextStyle =
     TextStyle(
         fontSize = 14.sp,
         lineHeight = 20.sp,
-        fontFamily = Sansneo,
+        fontFamily = naNumGothic,
         fontWeight = FontWeight.Normal,
         color = Color(0xFF000000),
     )
@@ -105,7 +105,7 @@ private fun MemorialPlaylistAddButton(
                 TextStyle(
                     fontSize = 12.sp,
                     lineHeight = 18.sp,
-                    fontFamily = Sansneo,
+                    fontFamily = naNumGothic,
                     fontWeight = FontWeight.Medium,
                     color = Gray9,
                 ),
@@ -166,7 +166,7 @@ fun MemorialPlaylist(
                 TextStyle(
                     fontSize = 16.sp,
                     lineHeight = 22.sp,
-                    fontFamily = Sansneo,
+                    fontFamily = naNumGothic,
                     fontWeight = FontWeight.Medium,
                     color = Gray9,
                 ),

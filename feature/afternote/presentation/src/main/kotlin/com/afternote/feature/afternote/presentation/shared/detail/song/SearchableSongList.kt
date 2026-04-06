@@ -51,8 +51,8 @@ import com.afternote.core.ui.theme.Gray1
 import com.afternote.core.ui.theme.Gray2
 import com.afternote.core.ui.theme.Gray4
 import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
 import com.afternote.core.ui.theme.White
+import com.afternote.core.ui.theme.naNumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
 import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
@@ -463,7 +463,7 @@ private fun SongSearchSection(
                 TextStyle(
                     fontSize = 16.sp,
                     lineHeight = 22.sp,
-                    fontFamily = Sansneo,
+                    fontFamily = naNumGothic,
                     fontWeight = FontWeight.Medium,
                     color = Gray9,
                 ),
@@ -479,7 +479,7 @@ private fun SongSearchSection(
                         TextStyle(
                             fontSize = 16.sp,
                             lineHeight = 20.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = naNumGothic,
                             fontWeight = FontWeight.Normal,
                             color = Gray4,
                         ),
@@ -509,7 +509,7 @@ private fun SongSearchSection(
             textStyle =
                 TextStyle(
                     fontSize = 14.sp,
-                    fontFamily = Sansneo,
+                    fontFamily = naNumGothic,
                     color = Gray9,
                 ),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -558,7 +558,7 @@ private fun SongAddButton(
                     style =
                         TextStyle(
                             fontSize = 12.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = naNumGothic,
                             fontWeight = FontWeight.Medium,
                             color = White,
                         ),
@@ -570,7 +570,7 @@ private fun SongAddButton(
                 style =
                     TextStyle(
                         fontSize = 16.sp,
-                        fontFamily = Sansneo,
+                        fontFamily = naNumGothic,
                         fontWeight = FontWeight.Medium,
                         color = Gray9,
                     ),

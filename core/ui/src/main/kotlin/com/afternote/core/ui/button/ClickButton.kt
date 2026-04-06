@@ -17,7 +17,7 @@ import com.afternote.core.ui.expand.dropShadow
 import com.afternote.core.ui.theme.B3
 import com.afternote.core.ui.theme.Gray3
 import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.naNumGothic
 
 @Composable
 fun ClickButton(
@@ -50,7 +50,7 @@ fun ClickButton(
             text = title,
             fontSize = 16.sp,
             color = Gray9,
-            fontFamily = Sansneo,
+            fontFamily = naNumGothic,
             fontWeight = FontWeight.Medium,
         )
     }
@@ -89,7 +89,7 @@ fun ClickButton(
             text = title,
             fontSize = 16.sp,
             color = Gray9,
-            fontFamily = Sansneo,
+            fontFamily = naNumGothic,
             fontWeight = FontWeight.Medium,
         )
     }

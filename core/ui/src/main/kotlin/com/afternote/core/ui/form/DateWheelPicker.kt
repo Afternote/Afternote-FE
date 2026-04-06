@@ -21,13 +21,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.afternote.core.ui.R
+import com.afternote.core.ui.theme.naNumGothic
 import com.sd.lib.compose.wheel_picker.FVerticalWheelPicker
 import com.sd.lib.compose.wheel_picker.FWheelPickerState
 import com.sd.lib.compose.wheel_picker.rememberFWheelPickerState
@@ -458,7 +456,7 @@ private fun PickerText(
         fontSize = if (isSelected) 18.sp else 14.sp,
         fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
         color = if (isSelected) selectedTextColor else unselectedTextColor,
-        fontFamily = FontFamily(Font(R.font.sansneomedium)),
+        fontFamily = naNumGothic,
     )
 }
 

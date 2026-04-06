@@ -32,7 +32,7 @@ import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.theme.B1
 import com.afternote.core.ui.theme.B3
 import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.naNumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.model.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.provider.FakeAfternoteEditorDataProvider
@@ -127,7 +127,7 @@ private fun MemorialPlaylistListHeader(
                         TextStyle(
                             fontSize = 16.sp,
                             lineHeight = 22.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = naNumGothic,
                             fontWeight = FontWeight.Medium,
                             color = Gray9,
                         ),
@@ -142,7 +142,7 @@ private fun MemorialPlaylistListHeader(
                         TextStyle(
                             fontSize = 14.sp,
                             lineHeight = 20.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = naNumGothic,
                             fontWeight = FontWeight.Normal,
                             color = Gray9,
                         ),
@@ -158,7 +158,7 @@ private fun MemorialPlaylistListHeader(
                         TextStyle(
                             fontSize = 14.sp,
                             lineHeight = 20.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = naNumGothic,
                             fontWeight = FontWeight.Normal,
                             color = Color(color = 0xFF000000),
                         ),
@@ -186,7 +186,7 @@ private fun MemorialPlaylistListHeader(
                                     TextStyle(
                                         fontSize = 12.sp,
                                         lineHeight = 18.sp,
-                                        fontFamily = Sansneo,
+                                        fontFamily = naNumGothic,
                                         fontWeight = FontWeight.Medium,
                                         color = Gray9,
                                     ),
@@ -248,7 +248,7 @@ private fun MemorialPlaylistActionBar(
                     TextStyle(
                         fontSize = 16.sp,
                         lineHeight = 22.sp,
-                        fontFamily = Sansneo,
+                        fontFamily = naNumGothic,
                         fontWeight = FontWeight.Normal,
                         color = Gray9,
                         textAlign = TextAlign.Center,
@@ -276,7 +276,7 @@ private fun MemorialPlaylistActionBar(
                     TextStyle(
                         fontSize = 16.sp,
                         lineHeight = 22.sp,
-                        fontFamily = Sansneo,
+                        fontFamily = naNumGothic,
                         fontWeight = FontWeight.Normal,
                         color = Gray9,
                         textAlign = TextAlign.Center,

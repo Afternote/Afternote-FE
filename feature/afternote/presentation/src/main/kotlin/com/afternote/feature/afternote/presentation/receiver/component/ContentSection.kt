@@ -27,7 +27,7 @@ import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.B1
 import com.afternote.core.ui.theme.B3
 import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.naNumGothic
 
 @Composable
 fun ContentSection(
@@ -43,7 +43,7 @@ fun ContentSection(
         Text(
             text = title,
             fontSize = 18.sp,
-            fontFamily = Sansneo,
+            fontFamily = naNumGothic,
             fontWeight = FontWeight.Bold,
             color = Gray9,
         )
@@ -74,14 +74,14 @@ fun ContentSection(
                     Text(
                         text = desc,
                         fontSize = 16.sp,
-                        fontFamily = Sansneo,
+                        fontFamily = naNumGothic,
                         fontWeight = FontWeight.Medium,
                         color = Gray9,
                     )
                     Text(
                         text = subDesc,
                         fontSize = 12.sp,
-                        fontFamily = Sansneo,
+                        fontFamily = naNumGothic,
                         color = Gray9,
                         modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
                     )
@@ -98,7 +98,7 @@ fun ContentSection(
                             fontSize = 12.sp,
                             color = Gray9,
                             fontWeight = FontWeight.Medium,
-                            fontFamily = Sansneo,
+                            fontFamily = naNumGothic,
                         )
 
                         Spacer(modifier = Modifier.width(4.dp))

@@ -32,7 +32,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray2
 import com.afternote.core.ui.theme.Gray4
 import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.naNumGothic
 
 /**
  * 아이템 추가용 텍스트 필드 컴포넌트
@@ -93,7 +93,7 @@ fun AddItemTextField(
                             TextStyle(
                                 fontSize = 16.sp,
                                 lineHeight = 20.sp,
-                                fontFamily = Sansneo,
+                                fontFamily = naNumGothic,
                                 fontWeight = FontWeight.Normal,
                                 color = Gray4,
                             ),
@@ -116,7 +116,7 @@ fun AddItemTextField(
                     TextStyle(
                         fontSize = 16.sp,
                         lineHeight = 20.sp,
-                        fontFamily = Sansneo,
+                        fontFamily = naNumGothic,
                         fontWeight = FontWeight.Normal,
                         color = Gray9,
                     ),

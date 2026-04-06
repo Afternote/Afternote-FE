@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.naNumGothic
 
 /**
  * 마지막 순간 질문 텍스트 컴포넌트
@@ -35,7 +35,7 @@ fun LastMomentQuestion(
                 TextStyle(
                     fontSize = 16.sp,
                     lineHeight = 22.sp,
-                    fontFamily = Sansneo,
+                    fontFamily = naNumGothic,
                     fontWeight = FontWeight.Medium,
                     color = Gray9,
                 ),

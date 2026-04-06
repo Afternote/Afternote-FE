@@ -45,8 +45,8 @@ import com.afternote.core.ui.theme.Gray1
 import com.afternote.core.ui.theme.Gray4
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.Red
-import com.afternote.core.ui.theme.Sansneo
 import com.afternote.core.ui.theme.White
+import com.afternote.core.ui.theme.naNumGothic
 
 private const val DEFAULT_PLACEHOLDER = "Text Field"
 private const val PASSWORD_MASK_CHAR = '\u2022'
@@ -64,7 +64,7 @@ private fun OutlineTextFieldPlaceholderSimple(text: String) {
     Text(
         text = text,
         fontSize = 16.sp,
-        fontFamily = Sansneo,
+        fontFamily = naNumGothic,
         color = Gray4,
     )
 }
@@ -78,7 +78,7 @@ private fun OutlineTextFieldPlaceholderWithLineHeight(text: String) {
         text = text,
         fontSize = 16.sp,
         lineHeight = 20.sp,
-        fontFamily = Sansneo,
+        fontFamily = naNumGothic,
         fontWeight = FontWeight.Normal,
         color = Gray4,
     )
@@ -255,7 +255,7 @@ fun OutlineTextField(
             Text(
                 text = label,
                 fontSize = 16.sp,
-                fontFamily = Sansneo,
+                fontFamily = naNumGothic,
                 color = Gray4,
             )
         },
@@ -349,7 +349,7 @@ fun OutlineTextField(
                 TextStyle(
                     fontSize = style.labelFontSize,
                     lineHeight = style.labelLineHeight,
-                    fontFamily = Sansneo,
+                    fontFamily = naNumGothic,
                     fontWeight = style.labelFontWeight,
                     color = Gray9,
                 ),
@@ -393,7 +393,7 @@ fun OutlineTextField(
                 TextStyle(
                     fontSize = 16.sp,
                     lineHeight = 20.sp,
-                    fontFamily = Sansneo,
+                    fontFamily = naNumGothic,
                     fontWeight = FontWeight.Normal,
                     color = Gray9,
                 ),
@@ -438,7 +438,7 @@ fun OutlineTextField(
                 TextStyle(
                     fontSize = 16.sp,
                     lineHeight = 22.sp,
-                    fontFamily = Sansneo,
+                    fontFamily = naNumGothic,
                     fontWeight = FontWeight.Medium,
                     color = Gray9,
                 ),
@@ -461,7 +461,7 @@ fun OutlineTextField(
                 TextStyle(
                     fontSize = 16.sp,
                     lineHeight = 20.dp.value.sp,
-                    fontFamily = Sansneo,
+                    fontFamily = naNumGothic,
                     fontWeight = FontWeight.Normal,
                     color = Gray9,
                 ),
@@ -509,7 +509,7 @@ fun OutlineTextField(
             TextStyle(
                 fontSize = 16.sp,
                 lineHeight = 20.sp,
-                fontFamily = Sansneo,
+                fontFamily = naNumGothic,
                 fontWeight = FontWeight.Normal,
                 color = Gray9,
             ),

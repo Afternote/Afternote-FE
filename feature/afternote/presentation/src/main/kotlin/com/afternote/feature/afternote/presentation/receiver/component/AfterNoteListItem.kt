@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.B2
 import com.afternote.core.ui.theme.Gray5
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.naNumGothic
 import com.afternote.feature.afternote.presentation.receiver.model.AppNoteItem
 
 @Composable
@@ -78,7 +78,7 @@ fun AfterNoteListItem(
                     text = item.name,
                     fontWeight = FontWeight.Medium,
                     fontSize = 16.sp,
-                    fontFamily = Sansneo,
+                    fontFamily = naNumGothic,
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -87,7 +87,7 @@ fun AfterNoteListItem(
                     text = item.date,
                     fontSize = 10.sp,
                     color = Gray5,
-                    fontFamily = Sansneo,
+                    fontFamily = naNumGothic,
                     fontWeight = FontWeight.Normal,
                 )
             }

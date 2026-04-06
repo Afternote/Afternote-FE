@@ -29,8 +29,8 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.B2
 import com.afternote.core.ui.theme.Gray4
 import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
 import com.afternote.core.ui.theme.White
+import com.afternote.core.ui.theme.naNumGothic
 
 /**
  * 선택 가능한 라디오 버튼 카드 컴포넌트 (Slot API 패턴)
@@ -114,7 +114,7 @@ private fun SelectableRadioCardPreview() {
                             TextStyle(
                                 fontSize = 16.sp,
                                 lineHeight = 22.sp,
-                                fontFamily = Sansneo,
+                                fontFamily = naNumGothic,
                                 fontWeight = FontWeight.Medium,
                                 color = Gray9,
                             ),
@@ -135,7 +135,7 @@ private fun SelectableRadioCardPreview() {
                             TextStyle(
                                 fontSize = 16.sp,
                                 lineHeight = 22.sp,
-                                fontFamily = Sansneo,
+                                fontFamily = naNumGothic,
                                 fontWeight = FontWeight.Medium,
                                 color = Gray9,
                             ),
@@ -156,7 +156,7 @@ private fun SelectableRadioCardPreview() {
                             TextStyle(
                                 fontSize = 16.sp,
                                 lineHeight = 22.sp,
-                                fontFamily = Sansneo,
+                                fontFamily = naNumGothic,
                                 fontWeight = FontWeight.Medium,
                                 color = Gray9,
                             ),
@@ -167,7 +167,7 @@ private fun SelectableRadioCardPreview() {
                             TextStyle(
                                 fontSize = 14.sp,
                                 lineHeight = 20.sp,
-                                fontFamily = Sansneo,
+                                fontFamily = naNumGothic,
                                 fontWeight = FontWeight.Normal,
                                 color = Gray9,
                             ),
@@ -189,7 +189,7 @@ private fun SelectableRadioCardPreview() {
                             TextStyle(
                                 fontSize = 16.sp,
                                 lineHeight = 22.sp,
-                                fontFamily = Sansneo,
+                                fontFamily = naNumGothic,
                                 fontWeight = FontWeight.Medium,
                                 color = Gray9,
                             ),

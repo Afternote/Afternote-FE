@@ -30,7 +30,7 @@ import com.afternote.core.ui.theme.B1
 import com.afternote.core.ui.theme.Gray5
 import com.afternote.core.ui.theme.Gray6
 import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.naNumGothic
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
@@ -224,7 +224,7 @@ private fun TitleSection(
             TextStyle(
                 fontSize = 18.sp,
                 lineHeight = 24.sp,
-                fontFamily = Sansneo,
+                fontFamily = naNumGothic,
                 fontWeight = FontWeight.Bold,
                 color = Gray9,
             ),
@@ -246,7 +246,7 @@ private fun DateAndMethodCard(
                         TextStyle(
                             fontSize = 10.sp,
                             lineHeight = 16.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = naNumGothic,
                             fontWeight = FontWeight.Normal,
                             color = Gray6,
                         ),
@@ -290,7 +290,7 @@ private fun InformationProcessingMethodText(informationProcessingMethod: String)
             TextStyle(
                 fontSize = 16.sp,
                 lineHeight = 22.sp,
-                fontFamily = Sansneo,
+                fontFamily = naNumGothic,
                 fontWeight = FontWeight.Medium,
                 color = Gray9,
             ),
@@ -311,7 +311,7 @@ private fun ProcessingMethodsCard(processingMethods: List<String>) {
                         TextStyle(
                             fontSize = 16.sp,
                             lineHeight = 22.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = naNumGothic,
                             fontWeight = FontWeight.Medium,
                             color = Gray9,
                         ),
@@ -343,7 +343,7 @@ private fun MessageCard(message: String) {
                         TextStyle(
                             fontSize = 16.sp,
                             lineHeight = 22.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = naNumGothic,
                             fontWeight = FontWeight.Medium,
                             color = Gray9,
                         ),
@@ -355,7 +355,7 @@ private fun MessageCard(message: String) {
                         TextStyle(
                             fontSize = 14.sp,
                             lineHeight = 20.sp,
-                            fontFamily = Sansneo,
+                            fontFamily = naNumGothic,
                             fontWeight = FontWeight.Normal,
                             color = textColor,
                         ),

@@ -31,7 +31,7 @@ import com.afternote.core.ui.theme.B1
 import com.afternote.core.ui.theme.Gray2
 import com.afternote.core.ui.theme.Gray4
 import com.afternote.core.ui.theme.Gray7
-import com.afternote.core.ui.theme.Sansneo
+import com.afternote.core.ui.theme.naNumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 
@@ -108,7 +108,7 @@ private fun CategoryItem(
                 } else {
                     Gray4
                 },
-            fontFamily = Sansneo,
+            fontFamily = naNumGothic,
             fontWeight = FontWeight.SemiBold,
             lineHeight = 20.sp,
             fontSize = 14.sp,
