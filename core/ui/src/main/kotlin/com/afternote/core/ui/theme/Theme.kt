@@ -71,9 +71,11 @@ fun AfternoteTheme(
     }
 }
 
-// 다크 모드 자동 적용
-// Gray9 대신 AfternoteDesign.colors.gray9
-// MaterialTheme.typography.h1 대신 AfternoteDesign.typography.h1
+// Typography: MaterialTheme.typography.* → AfternoteDesign.typography.* (see AfternoteTypography in Type.kt)
+// e.g. headlineLarge→h1, headlineMedium→h2, headlineSmall→h3, bodyLarge→bodyLargeB, bodyMedium→bodyLargeR,
+// titleMedium→bodyBase, bodySmall→bodySmallR, titleSmall→bodySmallB, labelLarge→primaryButton,
+// labelMedium→secondaryButton, labelSmall→footnoteCaption, displayLarge→captionLargeB,
+// displayMedium→captionLargeR, displaySmall→mono
 object AfternoteDesign {
     val colors: AfternoteColors
         // current는 컴포저블 함수이므로 이를 호출하는 게터 함수도 컴포저블이어야 하기 때문에 컴포저블 어노테이션 필요

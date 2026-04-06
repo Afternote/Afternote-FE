@@ -23,6 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.ViewModeSwitcher
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,7 +38,7 @@ fun DetailTopBar(
         title = {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleMedium,
+                style = AfternoteDesign.typography.bodyBase,
             )
         },
         navigationIcon = {
