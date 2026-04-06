@@ -32,7 +32,7 @@ import com.afternote.core.ui.theme.Gray1
 import com.afternote.core.ui.theme.Gray4
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.White
-import com.afternote.core.ui.theme.naNumGothic
+import com.afternote.core.ui.theme.nanumGothic
 
 /** Section label used for edit and view (receiver) so both share the same literal. */
 const val LABEL_LAST_WISH = "남기고 싶은 당부"
@@ -88,7 +88,7 @@ fun LastWishesRadioGroup(
                 TextStyle(
                     fontSize = 16.sp,
                     lineHeight = 22.sp,
-                    fontFamily = naNumGothic,
+                    fontFamily = nanumGothic,
                     fontWeight = FontWeight.Medium,
                     color = Gray9,
                 ),
@@ -122,7 +122,7 @@ private fun LastWishViewModeContent(displayTextOnly: String) {
             style =
                 TextStyle(
                     fontSize = 14.sp,
-                    fontFamily = naNumGothic,
+                    fontFamily = nanumGothic,
                     fontWeight = FontWeight.Medium,
                 ),
         )
@@ -227,7 +227,7 @@ private fun optionLabelStyle(selected: Boolean): TextStyle =
     TextStyle(
         fontSize = 16.sp,
         lineHeight = 22.sp,
-        fontFamily = naNumGothic,
+        fontFamily = nanumGothic,
         fontWeight = FontWeight.Medium,
         color = Gray9,
     )

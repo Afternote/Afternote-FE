@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray2
 import com.afternote.core.ui.theme.Gray5
-import com.afternote.core.ui.theme.naNumGothic
+import com.afternote.core.ui.theme.nanumGothic
 
 @Composable
 fun WeeklyReportCard(modifier: Modifier = Modifier) {
@@ -55,7 +55,7 @@ fun WeeklyReportCard(modifier: Modifier = Modifier) {
                         text = "42",
                         style =
                             TextStyle(
-                                fontFamily = naNumGothic,
+                                fontFamily = nanumGothic,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 24.sp,
                                 lineHeight = 32.sp,
@@ -66,7 +66,7 @@ fun WeeklyReportCard(modifier: Modifier = Modifier) {
                         text = "총 기록",
                         style =
                             TextStyle(
-                                fontFamily = naNumGothic,
+                                fontFamily = nanumGothic,
                                 fontWeight = FontWeight.Normal,
                                 fontSize = 11.sp,
                                 lineHeight = 16.sp,
@@ -82,7 +82,7 @@ fun WeeklyReportCard(modifier: Modifier = Modifier) {
                         text = "7",
                         style =
                             TextStyle(
-                                fontFamily = naNumGothic,
+                                fontFamily = nanumGothic,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 24.sp,
                                 lineHeight = 32.sp,
@@ -93,7 +93,7 @@ fun WeeklyReportCard(modifier: Modifier = Modifier) {
                         text = "이번 주",
                         style =
                             TextStyle(
-                                fontFamily = naNumGothic,
+                                fontFamily = nanumGothic,
                                 fontWeight = FontWeight.Normal,
                                 fontSize = 11.sp,
                                 lineHeight = 16.sp,

@@ -27,7 +27,7 @@ import com.afternote.core.ui.theme.Gray3
 import com.afternote.core.ui.theme.Gray5
 import com.afternote.core.ui.theme.Gray8
 import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.naNumGothic
+import com.afternote.core.ui.theme.nanumGothic
 
 /**
  * A reusable list item for displaying a record-like Q/A content with date.
@@ -60,7 +60,7 @@ fun RecordQnAListItem(
                         TextStyle(
                             fontSize = 16.sp,
                             lineHeight = 22.sp,
-                            fontFamily = naNumGothic,
+                            fontFamily = nanumGothic,
                             fontWeight = FontWeight.Medium,
                             color = Gray9,
                         ),
@@ -88,7 +88,7 @@ fun RecordQnAListItem(
                         TextStyle(
                             fontSize = 14.sp,
                             lineHeight = 20.sp,
-                            fontFamily = naNumGothic,
+                            fontFamily = nanumGothic,
                             fontWeight = FontWeight.Normal,
                             color = Gray8,
                         ),
@@ -108,7 +108,7 @@ fun RecordQnAListItem(
                         TextStyle(
                             fontSize = 12.sp,
                             lineHeight = 18.sp,
-                            fontFamily = naNumGothic,
+                            fontFamily = nanumGothic,
                             fontWeight = FontWeight.Medium,
                             color = Gray5,
                         ),

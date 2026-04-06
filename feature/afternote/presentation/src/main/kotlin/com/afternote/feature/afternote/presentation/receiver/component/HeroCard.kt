@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.Gray5
 import com.afternote.core.ui.theme.Gray8
-import com.afternote.core.ui.theme.naNumGothic
+import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 
 private const val HERO_CARD_DEFAULT_MESSAGE = "가족들에게...\n내가 없어도 너무 슬퍼하지마."
@@ -67,7 +67,7 @@ fun HeroCard(
         ) {
             Text(
                 text = leaveMessage,
-                fontFamily = naNumGothic,
+                fontFamily = nanumGothic,
                 fontWeight = FontWeight.Bold,
                 color = Gray8,
                 fontSize = 24.sp,
@@ -75,7 +75,7 @@ fun HeroCard(
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "고인이 남긴 마지막 인사말",
-                fontFamily = naNumGothic,
+                fontFamily = nanumGothic,
                 fontWeight = FontWeight.Medium,
                 color = Gray5,
             )
