@@ -45,7 +45,6 @@ import coil3.network.httpHeaders
 import coil3.request.ImageRequest
 import com.afternote.core.ui.expand.horizontalFadingEdge
 import com.afternote.core.ui.form.ProfileImage
-import com.afternote.core.ui.theme.B1
 import com.afternote.core.ui.theme.Black
 import com.afternote.core.ui.theme.Gray5
 import com.afternote.core.ui.theme.Gray6
@@ -189,7 +188,7 @@ private fun TitleSection(userName: String) {
     Text(
         text =
             buildAnnotatedString {
-                withStyle(style = SpanStyle(color = B1)) {
+                withStyle(style = SpanStyle(color = Gray9)) {
                     append(CATEGORY_NAME)
                 }
                 append("에 대한 ${userName}님의 기록")

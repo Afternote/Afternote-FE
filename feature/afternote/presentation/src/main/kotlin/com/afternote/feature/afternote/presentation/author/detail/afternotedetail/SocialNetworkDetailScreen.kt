@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.B1
 import com.afternote.core.ui.theme.Gray5
 import com.afternote.core.ui.theme.Gray6
 import com.afternote.core.ui.theme.Gray9
@@ -156,7 +155,7 @@ private fun SocialNetworkDetailScrollContent(content: SocialNetworkDetailContent
         Text(
             text =
                 buildAnnotatedString {
-                    withStyle(style = SpanStyle(color = B1)) {
+                    withStyle(style = SpanStyle(color = Gray9)) {
                         append(content.serviceName)
                     }
                     append("에 대한 ${content.userName}님의 기록")
@@ -292,7 +291,7 @@ private fun AccountProcessingMethodText(accountProcessingMethod: String) {
             "MEMORIAL" -> {
                 buildAnnotatedString {
                     append("사망 후 ")
-                    withStyle(style = SpanStyle(color = B1)) { append("추모 계정") }
+                    withStyle(style = SpanStyle(color = Gray9)) { append("추모 계정") }
                     append("으로 전환")
                 }
             }
@@ -300,20 +299,20 @@ private fun AccountProcessingMethodText(accountProcessingMethod: String) {
             "DELETE" -> {
                 buildAnnotatedString {
                     append("사망 후 ")
-                    withStyle(style = SpanStyle(color = B1)) { append("계정 영구 삭제") }
+                    withStyle(style = SpanStyle(color = Gray9)) { append("계정 영구 삭제") }
                 }
             }
 
             "TRANSFER", "RECEIVER" -> {
                 buildAnnotatedString {
-                    withStyle(style = SpanStyle(color = B1)) { append("수신자") }
+                    withStyle(style = SpanStyle(color = Gray9)) { append("수신자") }
                     append("에게 정보 전달")
                 }
             }
 
             "ADDITIONAL" -> {
                 buildAnnotatedString {
-                    withStyle(style = SpanStyle(color = B1)) { append("추가 수신자") }
+                    withStyle(style = SpanStyle(color = Gray9)) { append("추가 수신자") }
                     append("에게 정보 전달")
                 }
             }

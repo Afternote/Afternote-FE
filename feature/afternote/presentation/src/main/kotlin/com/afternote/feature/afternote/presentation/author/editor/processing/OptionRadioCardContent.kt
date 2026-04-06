@@ -12,7 +12,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.form.SelectableRadioCard
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.B1
 import com.afternote.core.ui.theme.Gray6
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.naNumGothic
@@ -21,8 +20,9 @@ import com.afternote.feature.afternote.presentation.author.editor.processing.mod
 
 /**
  * Title + description content for use inside [SelectableRadioCard].
- * Figma: title 16sp Medium (selected B1 / unselected Gray9), description 14sp Regular Gray6, 6.dp spacing.
+ * Figma: title 16sp Medium Gray9, description 14sp Regular Gray6, 6.dp spacing.
  */
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun OptionRadioCardContent(
     option: ProcessingMethodOption,
@@ -41,7 +41,7 @@ fun OptionRadioCardContent(
                     lineHeight = 22.sp,
                     fontFamily = naNumGothic,
                     fontWeight = FontWeight.Medium,
-                    color = if (selected) B1 else Gray9,
+                    color = Gray9,
                 ),
         )
         Text(

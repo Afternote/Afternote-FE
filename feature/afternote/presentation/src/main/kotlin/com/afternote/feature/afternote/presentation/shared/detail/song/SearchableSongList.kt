@@ -45,7 +45,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.button.CustomRadioButton
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.core.ui.theme.B1
 import com.afternote.core.ui.theme.B2
 import com.afternote.core.ui.theme.Gray1
 import com.afternote.core.ui.theme.Gray2
@@ -501,9 +500,9 @@ private fun SongSearchSection(
                 OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = White,
                     unfocusedContainerColor = White,
-                    focusedBorderColor = B1,
+                    focusedBorderColor = Gray9,
                     unfocusedBorderColor = Gray2,
-                    cursorColor = B1,
+                    cursorColor = Gray9,
                 ),
             singleLine = true,
             textStyle =
@@ -550,7 +549,7 @@ private fun SongAddButton(
                 modifier =
                     Modifier
                         .size(16.dp)
-                        .background(color = B1, shape = RoundedCornerShape(40.dp)),
+                        .background(color = Gray9, shape = RoundedCornerShape(40.dp)),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(

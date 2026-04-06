@@ -24,7 +24,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.icon.RightArrowIcon
-import com.afternote.core.ui.theme.B1
 import com.afternote.core.ui.theme.B3
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.naNumGothic
@@ -102,7 +101,7 @@ fun ContentSection(
                         )
 
                         Spacer(modifier = Modifier.width(4.dp))
-                        RightArrowIcon(B1)
+                        RightArrowIcon(Gray9)
                     }
                 }
             }

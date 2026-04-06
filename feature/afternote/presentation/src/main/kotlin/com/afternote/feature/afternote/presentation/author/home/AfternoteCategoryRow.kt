@@ -27,10 +27,10 @@ import com.afternote.core.ui.expand.horizontalFadingEdge
 import com.afternote.core.ui.icon.ArrowIconSpec
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.B1
 import com.afternote.core.ui.theme.Gray2
 import com.afternote.core.ui.theme.Gray4
 import com.afternote.core.ui.theme.Gray7
+import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.naNumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
@@ -71,7 +71,7 @@ fun AfternoteCategoryRow(
                         iconRes = R.drawable.ic_arrow_right_tab,
                         contentDescription = "더 보기",
                     ),
-                backgroundColor = B1,
+                backgroundColor = Gray9,
                 size = 16.dp,
                 modifier = Modifier.align(Alignment.CenterEnd),
             )

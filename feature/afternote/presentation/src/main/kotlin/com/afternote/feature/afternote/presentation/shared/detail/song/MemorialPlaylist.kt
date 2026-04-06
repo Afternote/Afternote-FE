@@ -38,7 +38,6 @@ import com.afternote.core.ui.expand.horizontalFadingEdge
 import com.afternote.core.ui.icon.ArrowIconSpec
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.B1
 import com.afternote.core.ui.theme.B3
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.White
@@ -78,7 +77,7 @@ private fun MemorialPlaylistSongCountRow(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(text = "현재 ${songCount}개의 노래가 담겨 있습니다.", style = songCountTextStyle)
-            RightArrowIcon(color = B1, size = 16.dp)
+            RightArrowIcon(color = Gray9, size = 16.dp)
         }
     } else {
         Text(text = "현재 ${songCount}개의 노래가 담겨 있습니다.", style = songCountTextStyle)
@@ -116,7 +115,7 @@ private fun MemorialPlaylistAddButton(
                     iconRes = R.drawable.ic_arrow_right_playlist,
                     contentDescription = "추가",
                 ),
-            backgroundColor = B1,
+            backgroundColor = Gray9,
             size = 12.dp,
         )
     }

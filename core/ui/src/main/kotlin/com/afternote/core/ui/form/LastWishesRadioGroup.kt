@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.button.CustomRadioButton
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.B1
 import com.afternote.core.ui.theme.B2
 import com.afternote.core.ui.theme.Gray1
 import com.afternote.core.ui.theme.Gray4
@@ -114,13 +113,13 @@ private fun LastWishViewModeContent(displayTextOnly: String) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, B1),
+        border = BorderStroke(1.dp, Gray9),
         color = White,
     ) {
         Text(
             text = displayTextOnly,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp),
-            color = B1,
+            color = Gray9,
             style =
                 TextStyle(
                     fontSize = 14.sp,
@@ -224,13 +223,14 @@ private fun LastWishOtherCard(
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 private fun optionLabelStyle(selected: Boolean): TextStyle =
     TextStyle(
         fontSize = 16.sp,
         lineHeight = 22.sp,
         fontFamily = naNumGothic,
         fontWeight = FontWeight.Medium,
-        color = if (selected) B1 else Gray9,
+        color = Gray9,
     )
 
 @Composable

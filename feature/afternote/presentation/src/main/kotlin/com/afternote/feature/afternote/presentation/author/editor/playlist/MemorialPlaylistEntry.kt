@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.icon.ArrowIconSpec
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.core.ui.theme.B1
 import com.afternote.core.ui.theme.B3
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.naNumGothic
@@ -198,7 +197,7 @@ private fun MemorialPlaylistListHeader(
                                         iconRes = R.drawable.ic_arrow_right_playlist,
                                         contentDescription = "추가",
                                     ),
-                                backgroundColor = B1,
+                                backgroundColor = Gray9,
                                 size = 12.dp,
                             )
                         }
