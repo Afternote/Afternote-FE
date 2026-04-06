@@ -54,7 +54,7 @@ fun AfternoteTheme(
     content: @Composable () -> Unit,
 ) {
     // remember는 이미 저장된 값이 있으면 블록을 실행하지 않기 때문에 darkTheme이 적용되지 않는다
-//    val currentColor = remember { if (darkTheme) darkColors else colors }
+//    val currentColor = remember { if (isDarkTheme) darkColors else colors }
     val currentColor = if (isDarkTheme) darkColors else colors
     // currentColors가 참조하는 원본의 변경에 따른 리컴포지션을 트리거하지 않고, 원본 내부를 update하지 않기 위해서 copy
     // copy를 리컴포지션마다 하지 않기 위해 remember
