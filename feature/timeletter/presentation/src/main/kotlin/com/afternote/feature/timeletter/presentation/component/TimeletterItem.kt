@@ -4,11 +4,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.timeletter.domain.TimeLetter
 
 @Composable
@@ -18,7 +18,6 @@ fun TimeletterItem(
 ) {
     val identity = letter.identity
     val schedule = letter.schedule
-    val typography = MaterialTheme.typography
     Column(
         modifier =
             modifier
@@ -27,15 +26,15 @@ fun TimeletterItem(
     ) {
         Text(
             text = identity.title,
-            style = typography.bodyLarge,
+            style = AfternoteDesign.typography.bodyLargeB,
         )
         Text(
             text = schedule.recipientName,
-            style = typography.bodySmall,
+            style = AfternoteDesign.typography.bodySmallR,
         )
         Text(
             text = schedule.openDate.value,
-            style = typography.bodySmall,
+            style = AfternoteDesign.typography.bodySmallR,
         )
     }
     HorizontalDivider()
