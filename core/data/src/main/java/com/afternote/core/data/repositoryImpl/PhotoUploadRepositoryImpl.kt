@@ -23,9 +23,9 @@ private const val DEFAULT_CONTENT_TYPE = "image/jpeg"
 class PhotoUploadRepositoryImpl
     @Inject
     constructor(
-        @ApplicationContext private val context: Context,
+        @param:ApplicationContext private val context: Context,
         private val imageApi: ImageApiService,
-        @Named("IoDispatcher") private val ioDispatcher: CoroutineDispatcher,
+        @param:Named("IoDispatcher") private val ioDispatcher: CoroutineDispatcher,
     ) : PhotoUploadRepository {
         override suspend fun upload(
             uriString: String,
@@ -60,11 +60,12 @@ class PhotoUploadRepositoryImpl
                     val contentType = presigned.contentType.ifBlank { DEFAULT_CONTENT_TYPE }
                     val requestBody = tempFile.asRequestBody(contentType.toMediaType())
 
-                    val response = imageApi.uploadToS3(
-                        url = presigned.presignedUrl,
-                        file = requestBody,
-                        contentType = contentType,
-                    )
+                    val response =
+                        imageApi.uploadToS3(
+                            url = presigned.presignedUrl,
+                            file = requestBody,
+                            contentType = contentType,
+                        )
                     check(response.isSuccessful) {
                         "S3 upload failed: ${response.code()} ${response.message()}"
                     }
