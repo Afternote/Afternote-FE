@@ -153,40 +153,60 @@ private val afternoteTypography =
 //    )
 // }
 
+// (static)compositionLocalOf는 부모에서 자식 컴포저블로 데이터를 전달할 때 파라미터로 일일이 넘기지(Prop Drilling) 않고 데이터를 사용할 수 있게 함
+// LocalColors.current의 형태로 현재 전달된 데이터를 꺼내 쓸 수 있음
+// staticCompositionLocalOf는 데이터 값이 변경되면 데이터를 제공하는 곳과 그 모든 자식 컴포저블을 리컴포지션
+// compositionLocalOf는 데이터 값이 변경되면 데이터를 참조하는 컴포저블만 리컴포지션
+val LocalColors = staticCompositionLocalOf { lightColors() }
+
+// val LocalDarkColors = staticCompositionLocalOf { darkColors() }
+val LocalTypography = staticCompositionLocalOf { afternoteTypography }
+
 @Composable
 fun AfternoteTheme(
-    colors: AfternoteColors = AfternoteThemeDefaults.colors,
-    typography: Typography = AfternoteThemeDefaults.typography,
-    darkColors: AfternoteColors = AfternoteThemeDefaults.darkColors,
-    darkTheme: Boolean = isSystemInDarkTheme(),
+//    colors: AfternoteColors = AfternoteThemeDefaults.colors,
+//    darkColors: AfternoteColors = AfternoteThemeDefaults.darkColors,
+//    typography: Typography = AfternoteThemeDefaults.typography,
+    colors: AfternoteColors = lightColors(),
+    darkColors: AfternoteColors = darkColors(),
+    typography: Typography = afternoteTypography,
+    // 시스템 설정이 다크 모드인지 확인
+    isDarkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
-    val currentColor = remember { if (darkTheme) darkColors else colors }
+//    val currentColor = remember { if (darkTheme) darkColors else colors }
+    val currentColor = if (isDarkTheme) darkColors else colors
+    // currentColors가 참조하는 원본의 변경에 따른 리컴포지션을 트리거하지 않고, 원본 내부를 update하지 않기 위해서 copy
+    // copy를 리컴포지션마다 하지 않기 위해 remember
     val rememberedColors = remember { currentColor.copy() }.apply { update(currentColor) }
 
     CompositionLocalProvider(
+        // provides 앞의 객체의 current 프로퍼티를 호출하면 provides 뒤의 객체를 반환하도록 current를 호출한 컴포저블부터 모든 하위 트리에 세팅
         LocalColors provides rememberedColors,
         LocalTypography provides typography,
     ) {
+        // 별도의 style 지정이 없다면 value를 content 내부의 모든 Text 컴포저블의 style의 기본값으로 지정
         ProvideTextStyle(typography.bodyMedium, content = content)
     }
 }
 
-val LocalColors = staticCompositionLocalOf { lightColors() }
-val LocalDarkColors = staticCompositionLocalOf { darkColors() }
-val LocalTypography = staticCompositionLocalOf { afternoteTypography }
-
-object AfternoteThemeDefaults {
+object AfternoteTheme {
     val colors: AfternoteColors
+        // current는 컴포저블 함수이므로 이를 호출하는 게터 함수도 컴포저블이어야 하기 때문에 컴포저블 어노테이션 필요
+        // 이 게터는 colors가 호출되는 시점에 LocalColors.current를 실행하는 함수
+        // LocalColors.current를 매번 새로 실행하므로 최신 값을 반환
         @Composable
+        // 게터는 상태를 저장하지 않는 컴포저블이므로 컴포지션 노드를 만들지 말라는 뜻
         @ReadOnlyComposable
         get() = LocalColors.current
-    val darkColors: AfternoteColors
-        @Composable
-        @ReadOnlyComposable
-        get() = LocalDarkColors.current
+
+//    val darkColors: AfternoteColors
+//        @Composable
+//        @ReadOnlyComposable
+//        get() = LocalDarkColors.current
+
     val typography: Typography
         @Composable
-        @ReadOnlyComposable
+        @ReadOnlyComposable //
         get() = LocalTypography.current
 }
