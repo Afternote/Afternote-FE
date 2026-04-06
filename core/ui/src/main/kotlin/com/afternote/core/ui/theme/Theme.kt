@@ -1,9 +1,14 @@
 package com.afternote.core.ui.theme
 
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Typography
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.em
@@ -26,7 +31,7 @@ CaptionLarge(B): displayLarge
 captionLarge(R): displayMedium
 mono: displaySmall
  */
-val afternoteTypography =
+private val afternoteTypography =
     Typography(
         headlineLarge =
             TextStyle(
@@ -140,10 +145,42 @@ private val AfternoteLightColors =
     )
 
 @Composable
-fun AfternoteTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = AfternoteLightColors,
-        typography = afternoteTypography,
-        content = content,
-    )
+fun Afternote_AndroidTheme(
+    colors: AfternoteColors,
+    darkColors: AfternoteColors? = null,
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit,
+) {
+    val currentColor = remember { if (darkColors != null && darkTheme) darkColors else colors }
+    val rememberedColors = remember { currentColor.copy() }.apply { update(currentColor) }
+
+    CompositionLocalProvider {
+        LocalColors provides rememberedColors
+        LocalTypography provides afternoteTypography
+    } {
+        ProvideTextStyle(afternoteTypography, content = content)
+    }
+}
+
+// 기존
+// fun AfternoteTheme(content: @Composable () -> Unit) {
+//    MaterialTheme(
+//        colorScheme = AfternoteLightColors,
+//        typography = afternoteTypography,
+//        content = content,
+//    )
+// }
+
+val LocalColors = staticCompositionLocalOf { lightColors() }
+val LocalTypography = staticCompositionLocalOf { afternoteTypography }
+
+object AfternoteTheme {
+    val colors: AfternoteColors
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalColors.current
+    val typography: Typography
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalTypography.current
 }
