@@ -5,10 +5,11 @@ plugins {
     id("afternote.android.navigation")
 }
 
-val localProperties =
-    Properties().apply {
-        load(rootProject.file("local.properties").inputStream())
-    }
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
+}
 
 android {
     namespace = "com.afternote.afternote_fe"
@@ -22,11 +23,12 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        buildConfigField(
-            "String",
-            "KAKAO_NATIVE_APP_KEY",
-            "\"${localProperties.getProperty("KAKAO_NATIVE_APP_KEY")}\"",
-        )
+        val kakaoKey =
+            localProperties.getProperty("KAKAO_NATIVE_APP_KEY")
+                ?: System.getenv("KAKAO_NATIVE_APP_KEY")
+                ?: ""
+
+        buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoKey\"")
     }
 
     buildTypes {
