@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.naNumGothic
+import com.afternote.core.ui.theme.nanumGothic
 
 @Composable
 fun ContentSection(
@@ -41,7 +41,7 @@ fun ContentSection(
         Text(
             text = title,
             fontSize = 18.sp,
-            fontFamily = naNumGothic,
+            fontFamily = nanumGothic,
             fontWeight = FontWeight.Bold,
             color = Gray9,
         )
@@ -72,14 +72,14 @@ fun ContentSection(
                     Text(
                         text = desc,
                         fontSize = 16.sp,
-                        fontFamily = naNumGothic,
+                        fontFamily = nanumGothic,
                         fontWeight = FontWeight.Medium,
                         color = Gray9,
                     )
                     Text(
                         text = subDesc,
                         fontSize = 12.sp,
-                        fontFamily = naNumGothic,
+                        fontFamily = nanumGothic,
                         color = Gray9,
                         modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
                     )
@@ -96,7 +96,7 @@ fun ContentSection(
                             fontSize = 12.sp,
                             color = Gray9,
                             fontWeight = FontWeight.Medium,
-                            fontFamily = naNumGothic,
+                            fontFamily = nanumGothic,
                         )
 
                         Spacer(modifier = Modifier.width(4.dp))

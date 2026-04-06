@@ -37,7 +37,7 @@ import com.afternote.core.ui.theme.Gray3
 import com.afternote.core.ui.theme.Gray8
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.White
-import com.afternote.core.ui.theme.naNumGothic
+import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 
 private const val CATEGORY_SOCIAL_NETWORK = "소셜네트워크"
@@ -147,7 +147,7 @@ fun SelectionDropdown(
                             TextStyle(
                                 fontSize = 16.sp,
                                 lineHeight = 20.sp,
-                                fontFamily = naNumGothic,
+                                fontFamily = nanumGothic,
                                 fontWeight = FontWeight.Normal,
                                 color = Gray8,
                             ),
@@ -181,7 +181,7 @@ fun SelectionDropdown(
                                     TextStyle(
                                         fontSize = 16.sp,
                                         lineHeight = 22.sp,
-                                        fontFamily = naNumGothic,
+                                        fontFamily = nanumGothic,
                                         fontWeight = FontWeight.Medium,
                                         color = Gray9,
                                         textAlign = TextAlign.Center,
@@ -277,7 +277,7 @@ private fun ExpandedDropdownMenuPreview() {
                                     TextStyle(
                                         fontSize = 16.sp,
                                         lineHeight = 22.sp,
-                                        fontFamily = naNumGothic,
+                                        fontFamily = nanumGothic,
                                         fontWeight = FontWeight.Normal,
                                         color = Gray9,
                                         textAlign = TextAlign.Center,
@@ -324,7 +324,7 @@ private fun ExpandedDropdownMenuWithElevationPreview() {
                                     TextStyle(
                                         fontSize = 16.sp,
                                         lineHeight = 22.sp,
-                                        fontFamily = naNumGothic,
+                                        fontFamily = nanumGothic,
                                         fontWeight = FontWeight.Normal,
                                         color = Gray9,
                                         textAlign = TextAlign.Center,
@@ -371,7 +371,7 @@ private fun ExpandedDropdownMenuInDialogPreview() {
                                     TextStyle(
                                         fontSize = 16.sp,
                                         lineHeight = 22.sp,
-                                        fontFamily = naNumGothic,
+                                        fontFamily = nanumGothic,
                                         fontWeight = FontWeight.Normal,
                                         color = Gray9,
                                         textAlign = TextAlign.Center,
@@ -427,7 +427,7 @@ private fun ExpandedDropdownMenuLongListPreview() {
                                     TextStyle(
                                         fontSize = 16.sp,
                                         lineHeight = 22.sp,
-                                        fontFamily = naNumGothic,
+                                        fontFamily = nanumGothic,
                                         fontWeight = FontWeight.Normal,
                                         color = Gray9,
                                         textAlign = TextAlign.Center,

@@ -5,10 +5,13 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import com.afternote.core.ui.R
 
-val naNumGothic =
+val nanumGothic =
     FontFamily(
-        Font(R.font.nanumbarungothic, FontWeight.Medium),
+        Font(R.font.nanumbarungothic, FontWeight.Normal),
         Font(R.font.nanumbarungothicbold, FontWeight.Bold),
-        Font(R.font.nanumbarungothiclight, FontWeight.Light),
-        Font(R.font.nanumbarungothicultralight, FontWeight.ExtraLight),
+    )
+
+val sfMono =
+    FontFamily(
+        Font(R.font.sf_mono_regular, FontWeight.Normal),
     )

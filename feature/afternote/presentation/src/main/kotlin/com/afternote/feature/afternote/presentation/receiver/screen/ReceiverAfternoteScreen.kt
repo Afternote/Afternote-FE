@@ -30,7 +30,7 @@ import com.afternote.core.ui.feedback.ConfirmationPopup
 import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.naNumGothic
+import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.receiver.component.ContentSection
 import com.afternote.feature.afternote.presentation.receiver.component.HeroCard
@@ -149,7 +149,7 @@ fun ReceiverAfterNoteScreen(
                     ),
                 fontWeight = FontWeight.Bold,
                 color = Gray9,
-                fontFamily = naNumGothic,
+                fontFamily = nanumGothic,
                 modifier = Modifier.padding(bottom = 16.dp),
             )
 

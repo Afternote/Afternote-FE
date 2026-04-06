@@ -36,7 +36,7 @@ import coil3.network.httpHeaders
 import coil3.request.ImageRequest
 import com.afternote.core.ui.theme.Gray3
 import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.naNumGothic
+import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
@@ -87,7 +87,7 @@ fun PlaylistSongItem(
                         TextStyle(
                             fontSize = 14.sp,
                             lineHeight = 20.sp,
-                            fontFamily = naNumGothic,
+                            fontFamily = nanumGothic,
                             fontWeight = FontWeight.Normal,
                             color = Gray9,
                         ),
@@ -99,7 +99,7 @@ fun PlaylistSongItem(
                         TextStyle(
                             fontSize = 14.sp,
                             lineHeight = 20.sp,
-                            fontFamily = naNumGothic,
+                            fontFamily = nanumGothic,
                             fontWeight = FontWeight.Normal,
                             color = Gray9,
                         ),

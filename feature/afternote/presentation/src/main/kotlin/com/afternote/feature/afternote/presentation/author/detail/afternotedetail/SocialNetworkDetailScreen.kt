@@ -31,7 +31,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray5
 import com.afternote.core.ui.theme.Gray6
 import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.naNumGothic
+import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
 import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
@@ -164,7 +164,7 @@ private fun SocialNetworkDetailScrollContent(content: SocialNetworkDetailContent
                 TextStyle(
                     fontSize = 18.sp,
                     lineHeight = 24.sp,
-                    fontFamily = naNumGothic,
+                    fontFamily = nanumGothic,
                     fontWeight = FontWeight.Bold,
                     color = Gray9,
                 ),
@@ -180,7 +180,7 @@ private fun SocialNetworkDetailScrollContent(content: SocialNetworkDetailContent
                             TextStyle(
                                 fontSize = 10.sp,
                                 lineHeight = 16.sp,
-                                fontFamily = naNumGothic,
+                                fontFamily = nanumGothic,
                                 fontWeight = FontWeight.Normal,
                                 color = Gray6,
                             ),
@@ -204,7 +204,7 @@ private fun SocialNetworkDetailScrollContent(content: SocialNetworkDetailContent
                             TextStyle(
                                 fontSize = 16.sp,
                                 lineHeight = 22.sp,
-                                fontFamily = naNumGothic,
+                                fontFamily = nanumGothic,
                                 fontWeight = FontWeight.Medium,
                                 color = Gray9,
                             ),
@@ -228,7 +228,7 @@ private fun SocialNetworkDetailScrollContent(content: SocialNetworkDetailContent
                                 TextStyle(
                                     fontSize = 16.sp,
                                     lineHeight = 22.sp,
-                                    fontFamily = naNumGothic,
+                                    fontFamily = nanumGothic,
                                     fontWeight = FontWeight.Medium,
                                     color = Gray9,
                                 ),
@@ -253,7 +253,7 @@ private fun SocialNetworkDetailScrollContent(content: SocialNetworkDetailContent
                             TextStyle(
                                 fontSize = 16.sp,
                                 lineHeight = 22.sp,
-                                fontFamily = naNumGothic,
+                                fontFamily = nanumGothic,
                                 fontWeight = FontWeight.Medium,
                                 color = Gray9,
                             ),
@@ -267,7 +267,7 @@ private fun SocialNetworkDetailScrollContent(content: SocialNetworkDetailContent
                             TextStyle(
                                 fontSize = 14.sp,
                                 lineHeight = 20.sp,
-                                fontFamily = naNumGothic,
+                                fontFamily = nanumGothic,
                                 fontWeight = FontWeight.Normal,
                                 color = textColor,
                             ),
@@ -329,7 +329,7 @@ private fun AccountProcessingMethodText(accountProcessingMethod: String) {
             TextStyle(
                 fontSize = 16.sp,
                 lineHeight = 22.sp,
-                fontFamily = naNumGothic,
+                fontFamily = nanumGothic,
                 fontWeight = FontWeight.Medium,
                 color = Gray9,
             ),

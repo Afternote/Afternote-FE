@@ -30,7 +30,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray1
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.White
-import com.afternote.core.ui.theme.naNumGothic
+import com.afternote.core.ui.theme.nanumGothic
 
 /**
  * 직접 입력하기 다이얼로그 콜백
@@ -99,7 +99,7 @@ fun CustomServiceDialog(
                     TextStyle(
                         fontSize = 18.sp,
                         lineHeight = 24.sp,
-                        fontFamily = naNumGothic,
+                        fontFamily = nanumGothic,
                         fontWeight = FontWeight.Bold,
                         color = Gray9,
                     ),

@@ -29,7 +29,7 @@ import com.afternote.core.ui.theme.Black
 import com.afternote.core.ui.theme.Gray2
 import com.afternote.core.ui.theme.Gray5
 import com.afternote.core.ui.theme.White
-import com.afternote.core.ui.theme.naNumGothic
+import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 
 /**
@@ -72,7 +72,7 @@ fun AfternoteListItem(
                 color = Black,
                 lineHeight = 24.sp,
                 fontSize = 16.sp,
-                fontFamily = naNumGothic,
+                fontFamily = nanumGothic,
                 fontWeight = FontWeight.Normal,
             )
             Text(
@@ -80,7 +80,7 @@ fun AfternoteListItem(
                 color = Gray5,
                 lineHeight = 16.sp,
                 fontSize = 10.sp,
-                fontFamily = naNumGothic,
+                fontFamily = nanumGothic,
                 fontWeight = FontWeight.Normal,
             )
         }

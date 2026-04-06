@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.button.ClickButton
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.naNumGothic
+import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 
 /**
@@ -50,7 +50,7 @@ fun FingerprintAuthContent(
                 TextStyle(
                     fontSize = 16.sp,
                     lineHeight = 22.sp,
-                    fontFamily = naNumGothic,
+                    fontFamily = nanumGothic,
                     fontWeight = FontWeight.Medium,
                     color = Gray9,
                     textAlign = TextAlign.Center,

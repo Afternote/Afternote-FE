@@ -33,7 +33,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray1
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.White
-import com.afternote.core.ui.theme.naNumGothic
+import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.author.editor.selection.DropdownMenuStyle
 import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdown
 import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdownLabelParams
@@ -116,7 +116,7 @@ fun AddAfternoteEditorReceiverDialog(
                         TextStyle(
                             fontSize = 18.sp,
                             lineHeight = 24.sp,
-                            fontFamily = naNumGothic,
+                            fontFamily = nanumGothic,
                             fontWeight = FontWeight.Bold,
                             color = Gray9,
                         ),
@@ -142,7 +142,7 @@ fun AddAfternoteEditorReceiverDialog(
                             TextStyle(
                                 fontSize = 12.sp,
                                 lineHeight = 18.sp,
-                                fontFamily = naNumGothic,
+                                fontFamily = nanumGothic,
                                 fontWeight = FontWeight.Medium,
                                 color = White,
                             ),
@@ -194,7 +194,7 @@ fun AddAfternoteEditorReceiverDialog(
                     TextStyle(
                         fontSize = 12.sp,
                         lineHeight = 18.sp,
-                        fontFamily = naNumGothic,
+                        fontFamily = nanumGothic,
                         fontWeight = FontWeight.Normal,
                         color = Gray9,
                     ),

@@ -56,7 +56,7 @@ import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.naNumGothic
+import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
@@ -120,7 +120,7 @@ fun ReceiverAfterNoteMainScreen(
                                     color = Gray9,
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Medium,
-                                    fontFamily = naNumGothic,
+                                    fontFamily = nanumGothic,
                                     modifier = Modifier.fillMaxWidth(),
                                 )
                             },
@@ -296,7 +296,7 @@ private fun ReceiverSectionHeader(title: String = LABEL_VIDEO_SECTION) {
         fontWeight = FontWeight.Medium,
         fontSize = 16.sp,
         color = Gray9,
-        fontFamily = naNumGothic,
+        fontFamily = nanumGothic,
         modifier = Modifier.padding(bottom = 8.dp),
     )
 }

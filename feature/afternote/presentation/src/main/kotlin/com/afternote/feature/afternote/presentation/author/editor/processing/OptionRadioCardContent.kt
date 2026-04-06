@@ -14,7 +14,7 @@ import com.afternote.core.ui.form.SelectableRadioCard
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray6
 import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.naNumGothic
+import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodOption
 
@@ -39,7 +39,7 @@ fun OptionRadioCardContent(
                 TextStyle(
                     fontSize = 16.sp,
                     lineHeight = 22.sp,
-                    fontFamily = naNumGothic,
+                    fontFamily = nanumGothic,
                     fontWeight = FontWeight.Medium,
                     color = Gray9,
                 ),
@@ -50,7 +50,7 @@ fun OptionRadioCardContent(
                 TextStyle(
                     fontSize = 14.sp,
                     lineHeight = 20.sp,
-                    fontFamily = naNumGothic,
+                    fontFamily = nanumGothic,
                     fontWeight = FontWeight.Normal,
                     color = Gray6,
                 ),

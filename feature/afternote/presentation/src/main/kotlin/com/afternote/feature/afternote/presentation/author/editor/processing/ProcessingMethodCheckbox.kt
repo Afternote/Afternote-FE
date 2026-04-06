@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.icon.CheckCircleIcon
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray9
-import com.afternote.core.ui.theme.naNumGothic
+import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
@@ -55,7 +55,7 @@ private val processingMethodTextStyle =
     TextStyle(
         fontSize = 14.sp,
         lineHeight = 20.sp,
-        fontFamily = naNumGothic,
+        fontFamily = nanumGothic,
         fontWeight = FontWeight.Normal,
         color = Gray9,
     )

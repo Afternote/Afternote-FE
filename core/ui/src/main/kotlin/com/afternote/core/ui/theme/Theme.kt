@@ -2,7 +2,6 @@ package com.afternote.core.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ProvideTextStyle
-import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
@@ -13,131 +12,119 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 
-/*
-style 매핑 가이드
-H1: headlineLarge
-H2: headlineMedium
-H3: headlineSmall
-BodyLarge(B): bodyLarge
-BodyLarge(R): bodyMedium
-BodyBase: titleMedium
-BodySmall(R): bodySmall
-BodySmall(B): titleSmall
-PrimaryButton: labelLarge
-SecondaryButton: labelMedium
-Footnote-caption: labelSmall
-CaptionLarge(B): displayLarge
-captionLarge(R): displayMedium
-mono: displaySmall
- */
-
-private val afternoteTypography =
-    Typography(
-        headlineLarge =
-            TextStyle(
-                fontFamily = naNumGothic,
-                fontWeight = FontWeight.Normal,
-                fontSize = 28.sp,
-                lineHeight = 36.sp,
-                letterSpacing = (-0.0025).em,
-            ),
-        headlineMedium =
-            TextStyle(
-                fontFamily = naNumGothic,
-                fontWeight = FontWeight.Bold,
-                fontSize = 24.sp,
-                lineHeight = 30.sp,
-                letterSpacing = (-0.0025).em,
-            ),
-        headlineSmall =
-            TextStyle(
-                fontFamily = naNumGothic,
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
-                lineHeight = 26.sp,
-                letterSpacing = (-0.0025).em,
-            ),
-        bodyLarge =
-            TextStyle(
-                fontFamily = naNumGothic,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                lineHeight = 24.sp,
-            ),
-        bodyMedium =
-            TextStyle(
-                fontFamily = naNumGothic,
-                fontWeight = FontWeight.Normal,
-                fontSize = 18.sp,
-                lineHeight = 22.sp,
-            ),
-        bodySmall =
-            TextStyle(
-                fontFamily = naNumGothic,
-                fontWeight = FontWeight.Normal,
-                fontSize = 14.sp,
-                lineHeight = 20.sp,
-            ),
-        titleSmall =
-            TextStyle(
-                fontFamily = naNumGothic,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                lineHeight = 20.sp,
-            ),
-        titleMedium =
-            TextStyle(
-                fontFamily = naNumGothic,
-                fontWeight = FontWeight.Normal,
-                fontSize = 16.sp,
-                lineHeight = 24.sp,
-            ),
-        labelLarge =
-            TextStyle(
-                fontFamily = naNumGothic,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                lineHeight = 24.sp,
-                letterSpacing = (-0.0025).em,
-            ),
-        labelMedium =
-            TextStyle(
-                fontFamily = naNumGothic,
-                fontWeight = FontWeight.Normal,
-//                fontSize = 12.sp, // 나브탭 크기가 커지는 문제 때문에 22에서 변경
-                fontSize = 22.sp,
-                lineHeight = 20.sp,
-                letterSpacing = (-0.0025).em,
-            ),
-        labelSmall =
-            TextStyle(
-                fontFamily = naNumGothic,
-                fontWeight = FontWeight.Normal,
-                fontSize = 10.sp,
-                lineHeight = 16.sp,
-            ),
-        displayLarge =
-            TextStyle(
-                fontFamily = naNumGothic,
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.sp,
-                lineHeight = 18.sp,
-            ),
-        displayMedium =
-            TextStyle(
-                fontFamily = naNumGothic,
-                fontWeight = FontWeight.Normal,
-                fontSize = 12.sp,
-                lineHeight = 18.sp,
-            ),
-        displaySmall =
-            TextStyle(
-                fontFamily = naNumGothic,
-                fontWeight = FontWeight.Normal,
-                fontSize = 11.sp,
-                lineHeight = 16.sp,
-            ),
-    )
+data class AfternoteTypography(
+    val h1: TextStyle =
+        TextStyle(
+            fontFamily = nanumGothic,
+            fontWeight = FontWeight.Normal,
+            fontSize = 28.sp,
+            lineHeight = 36.sp,
+            letterSpacing = (-0.0025).em,
+        ),
+    val h2: TextStyle =
+        TextStyle(
+            fontFamily = nanumGothic,
+            fontWeight = FontWeight.Bold,
+            fontSize = 24.sp,
+            lineHeight = 30.sp,
+            letterSpacing = (-0.0025).em,
+        ),
+    val h3: TextStyle =
+        TextStyle(
+            fontFamily = nanumGothic,
+            fontWeight = FontWeight.Bold,
+            fontSize = 20.sp,
+            lineHeight = 26.sp,
+            letterSpacing = (-0.0025).em,
+        ),
+    val bodyLargeB: TextStyle =
+        TextStyle(
+            fontFamily = nanumGothic,
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+            lineHeight = 24.sp,
+        ),
+    val bodyLargeR: TextStyle =
+        TextStyle(
+            fontFamily = nanumGothic,
+            fontWeight = FontWeight.Normal,
+            fontSize = 18.sp,
+            lineHeight = 22.sp,
+        ),
+    val bodyBase: TextStyle =
+        TextStyle(
+            fontFamily = nanumGothic,
+            fontWeight = FontWeight.Normal,
+            fontSize = 16.sp,
+            lineHeight = 24.sp,
+        ),
+    val bodySmallB: TextStyle =
+        TextStyle(
+            fontFamily = nanumGothic,
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp,
+            lineHeight = 20.sp,
+        ),
+    val bodySmallR: TextStyle =
+        TextStyle(
+            fontFamily = nanumGothic,
+            fontWeight = FontWeight.Normal,
+            fontSize = 14.sp,
+            lineHeight = 20.sp,
+        ),
+    val primaryButton: TextStyle =
+        TextStyle(
+            fontFamily = nanumGothic,
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp,
+            lineHeight = 24.sp,
+            letterSpacing = (-0.0025).em,
+        ),
+    val secondaryButton: TextStyle =
+        TextStyle(
+            fontFamily = nanumGothic,
+            fontWeight = FontWeight.Normal,
+            fontSize = 22.sp,
+            lineHeight = 20.sp,
+            letterSpacing = (-0.0025).em,
+        ),
+    val footnoteCaption: TextStyle =
+        TextStyle(
+            fontFamily = nanumGothic,
+            fontWeight = FontWeight.Normal,
+            fontSize = 10.sp,
+            lineHeight = 16.sp,
+        ),
+    val captionLargeB: TextStyle =
+        TextStyle(
+            fontFamily = nanumGothic,
+            fontWeight = FontWeight.Bold,
+            fontSize = 12.sp,
+            lineHeight = 18.sp,
+        ),
+    val captionLargeR: TextStyle =
+        TextStyle(
+            fontFamily = nanumGothic,
+            fontWeight = FontWeight.Normal,
+            fontSize = 12.sp,
+            lineHeight = 18.sp,
+        ),
+    val mono: TextStyle =
+        TextStyle(
+            fontFamily = sfMono,
+            fontWeight = FontWeight.Normal,
+            fontSize = 11.sp,
+            lineHeight = 16.sp,
+            letterSpacing = 0.045.em,
+        ),
+    val textField: TextStyle =
+        TextStyle(
+            fontFamily = nanumGothic,
+            fontWeight = FontWeight.Normal,
+            fontSize = 16.sp,
+            lineHeight = 22.sp,
+        ),
+)
 
 // 기존 버전
 
@@ -167,7 +154,7 @@ val LocalColors =
 
 val LocalTypography =
     staticCompositionLocalOf {
-        afternoteTypography
+        AfternoteTypography()
     }
 
 @Composable
@@ -180,7 +167,7 @@ fun AfternoteTheme(
 //    typography: Typography = ProvideAfternoteTheme.typography,
     colors: AfternoteColors = lightColors(),
     darkColors: AfternoteColors = darkColors(),
-    typography: Typography = afternoteTypography,
+    typography: AfternoteTypography = AfternoteTypography(),
     // 시스템 설정이 다크 모드인지 확인
     isDarkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
@@ -199,13 +186,13 @@ fun AfternoteTheme(
         LocalTypography provides typography,
     ) {
         // 별도의 style 지정이 없다면 value를 content 내부의 모든 Text 컴포저블의 style의 기본값으로 지정
-        ProvideTextStyle(typography.bodyMedium, content = content)
+        ProvideTextStyle(typography.bodyLargeR, content = content)
     }
 }
 
 // 다크 모드 자동 적용
 // Gray9 대신 AfternoteDesign.colors.gray9
-// MaterialTheme.typography.H1 대신 AfternoteDesign.typography.H1
+// MaterialTheme.typography.h1 대신 AfternoteDesign.typography.h1
 object AfternoteDesign {
     val colors: AfternoteColors
         // current는 컴포저블 함수이므로 이를 호출하는 게터 함수도 컴포저블이어야 하기 때문에 컴포저블 어노테이션 필요
@@ -216,8 +203,8 @@ object AfternoteDesign {
         @ReadOnlyComposable
         get() = LocalColors.current
 
-    val typography: Typography
+    val typography: AfternoteTypography
         @Composable
-        @ReadOnlyComposable //
+        @ReadOnlyComposable
         get() = LocalTypography.current
 }
