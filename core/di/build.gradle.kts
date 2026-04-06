@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.afternote.core.common"
+    namespace = "com.afternote.core.di"
 }
 
 dependencies {
