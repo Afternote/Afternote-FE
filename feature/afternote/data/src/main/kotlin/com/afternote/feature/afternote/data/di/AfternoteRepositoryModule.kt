@@ -2,12 +2,12 @@ package com.afternote.feature.afternote.data.di
 
 import com.afternote.feature.afternote.data.repositoryimpl.AfternoteRepositoryImpl
 import com.afternote.feature.afternote.data.repositoryimpl.MemorialThumbnailUploadRepositoryImpl
+import com.afternote.feature.afternote.data.repositoryimpl.MemorialVideoUploadRepositoryImpl
 import com.afternote.feature.afternote.data.repositoryimpl.MusicSearchRepositoryImpl
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
 import com.afternote.feature.afternote.domain.repository.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.repository.MemorialVideoUploadRepository
 import com.afternote.feature.afternote.domain.repository.MusicSearchRepository
-import com.kuit.afternote.data.repositoryimpl.MemorialVideoUploadRepositoryImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

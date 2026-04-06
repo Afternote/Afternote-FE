@@ -55,6 +55,16 @@
     <string name="receiver_timeletter_sort_unread_first">읽지 않은 순</string>
     <string name="receiver_download_all_button">모든 기록 내려받기</string>
     <string name="receiver_download_all_dialog_message">모든 기록을 내려받으시겠습니까?</string>
+    <string name="receiver_hero_default_message">가족들에게…\n내가 없어도 너무 슬퍼하지마.</string>
+    <string name="receiver_mindrecord_section_title">마음의 기록</string>
+    <string name="receiver_mindrecord_section_desc">고인의 일상적인 생각과 감정, 일기들입니다.</string>
+    <string name="receiver_mindrecord_section_button">마음의 기록 확인하러 가기</string>
+    <string name="receiver_timeletter_section_title">타임레터</string>
+    <string name="receiver_timeletter_section_desc">고인이 특별한 날에 작성한 편지입니다.</string>
+    <string name="receiver_timeletter_section_button">라이프 이벤트 레터 확인하러 가기</string>
+    <string name="receiver_afternote_section_title">애프터노트</string>
+    <string name="receiver_afternote_section_desc">고인이 사후 정리하고자 하는 데이터입니다.</string>
+    <string name="receiver_afternote_section_button">애프터노트 확인하러 가기</string>
     <string name="receiver_mindrecord_date_button_format">%1$d월 %2$d일</string>
     <string name="receiver_mindrecord_date_picker_confirm">선택하기</string>
     <string name="receiver_mindrecord_date_picker_content_description">%1$d년 %2$d월 선택</string>

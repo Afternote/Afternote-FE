@@ -1,0 +1,40 @@
+package com.afternote.feature.afternote.presentation.author.editor.model
+import androidx.annotation.StringRes
+import com.afternote.feature.afternote.presentation.R
+
+/**
+ * Thrown when validation fails asynchronously (e.g. GALLERY receivers from API).
+ * [validationError] is shown via stringResource([AfternoteValidationError.messageResId]).
+ */
+class AfternoteValidationException(
+    val validationError: AfternoteValidationError,
+) : Exception()
+
+/** Validation failure type for required-field checks before save. */
+enum class AfternoteValidationError(
+    @param:StringRes val messageResId: Int,
+) {
+    TITLE_REQUIRED(R.string.afternote_validation_title_required),
+    SOCIAL_CREDENTIALS_REQUIRED(R.string.afternote_validation_social_credentials_required),
+    SOCIAL_PROCESS_METHOD_REQUIRED(R.string.afternote_validation_social_process_method_required),
+    SOCIAL_ACTIONS_REQUIRED(R.string.afternote_validation_social_actions_required),
+    GALLERY_ACTIONS_REQUIRED(R.string.afternote_validation_gallery_actions_required),
+
+    /** 수신자 최소 1명 필요 (모든 카테고리). API 400/475와 동일 메시지. */
+    RECEIVERS_REQUIRED(R.string.afternote_validation_receivers_required),
+    GALLERY_RECEIVERS_REQUIRED(R.string.afternote_validation_gallery_receivers_required),
+    PLAYLIST_SONGS_REQUIRED(R.string.afternote_validation_playlist_songs_required),
+}
+
+/**
+ * 애프터노트 저장(생성/수정) 상태.
+ *
+ * 저장 성공은 [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorEvent.SaveSuccess]
+ * Channel 이벤트로 전달되며, 이 클래스는 진행 상태와 오류만 관리합니다.
+ */
+data class AfternoteSaveState(
+    val isSaving: Boolean = false,
+    val savedId: Long? = null,
+    val error: String? = null,
+    val validationError: AfternoteValidationError? = null,
+)

@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.ViewModeSwitcher
 import com.afternote.core.ui.scaffold.AfternoteFab
-import com.afternote.core.ui.scaffold.TopBar
+import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
@@ -97,7 +97,7 @@ fun DiaryScreen(modifier: Modifier = Modifier) {
         )
     Scaffold(
         topBar = {
-            TopBar(
+            DetailTopBar(
                 title = "일기",
                 action = {
                     ViewModeSwitcher(

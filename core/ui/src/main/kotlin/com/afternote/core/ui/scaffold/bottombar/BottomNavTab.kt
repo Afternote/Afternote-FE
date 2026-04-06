@@ -30,4 +30,8 @@ enum class BottomNavTab(
         R.drawable.core_ui_ic_note,
         Route.Afternote,
     ),
+
+//    companion object {
+//        fun find(route: Route) = entries.find { it.route == route }
+//    }
 }

@@ -10,6 +10,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
+import kotlin.reflect.KClass
 
 // 컴포즈 엔진은 커스텀 클래스에 대해 변경 여부를 확신할 수 없어 리컴포지션 스킵 불가
 // 이 클래스는 상태 변경 시 컴포즈에 알려 줄 것을 보장 매번 다시 그릴 필요 없음
@@ -26,12 +27,19 @@ class AppState(
         // 게터가 없으면 currentDestination에 처음 저장했던 값만 계속 주게 됨
         @Composable get() = navController.currentBackStackEntryAsState().value?.destination
 
-    val currentRoute: Route?
-        @Composable get() =
-            BottomNavTab.entries
-                // 조건을 만족하는 첫 번째 요소를 가져 오고 없으면 널 반환
-                .firstOrNull { currentDestination?.hasRoute(it.route::class) == true }
-                ?.route
+    private var lastNavTab: BottomNavTab = BottomNavTab.HOME
+    val currentNavTab: BottomNavTab
+        @Composable get() {
+            val matched =
+                BottomNavTab.entries.firstOrNull {
+                    currentDestination?.hasRoute(it.route::class as KClass<out Any>) == true
+                }
+            if (matched == null) {
+                return lastNavTab
+            }
+            lastNavTab = matched
+            return matched
+        }
 
     fun navigateToBottomBarRoute(route: Route) {
         navController.navigate(route) {

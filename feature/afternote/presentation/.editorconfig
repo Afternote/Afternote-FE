@@ -1,0 +1,6 @@
+# Presentation module: compose-rules from ktlint require wide API churn (param order, callback
+# naming, LaunchedEffect keys, VM forwarding). Disable that ruleset here; standard ktlint still applies.
+root = false
+
+[*.{kt,kts}]
+ktlint_compose = disabled

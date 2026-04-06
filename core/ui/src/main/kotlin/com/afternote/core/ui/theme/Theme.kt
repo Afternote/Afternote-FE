@@ -2,6 +2,7 @@ package com.afternote.core.ui.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -98,6 +99,7 @@ val afternoteTypography =
             TextStyle(
                 fontFamily = naNumGothic,
                 fontWeight = FontWeight.Normal,
+//                fontSize = 12.sp, // 나브탭 크기가 커지는 문제 때문에 22에서 변경
                 fontSize = 22.sp,
                 lineHeight = 20.sp,
                 letterSpacing = (-0.0025).em,
@@ -132,9 +134,15 @@ val afternoteTypography =
             ),
     )
 
+private val AfternoteLightColors =
+    lightColorScheme(
+        background = Gray2,
+    )
+
 @Composable
 fun AfternoteTheme(content: @Composable () -> Unit) {
     MaterialTheme(
+        colorScheme = AfternoteLightColors,
         typography = afternoteTypography,
         content = content,
     )

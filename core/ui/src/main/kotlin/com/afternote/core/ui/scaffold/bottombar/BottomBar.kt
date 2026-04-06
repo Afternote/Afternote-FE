@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -21,23 +20,28 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.Route
+import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Black
+import com.afternote.core.ui.theme.White
 
 // TODO:검토
 
 @Composable
 fun BottomBar(
-    isSelected: @Composable (BottomNavTab) -> Boolean,
-    onItemClick: (BottomNavTab) -> Unit,
+    selectedNavTab: BottomNavTab,
+    onTabClick: (BottomNavTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    NavigationBar(modifier = modifier) {
+    NavigationBar(
+        modifier = modifier,
+        containerColor = White,
+        tonalElevation = 0.dp,
+    ) {
         BottomNavTab.entries.forEach { tab ->
-            val selected = isSelected(tab)
+            val selected = selectedNavTab == tab
             NavigationBarItem(
                 selected = selected,
-                onClick = { onItemClick(tab) },
+                onClick = { onTabClick(tab) },
                 icon = {
                     Icon(
                         painter = painterResource(tab.iconRes),
@@ -75,11 +79,20 @@ fun BottomBar(
 
 @Preview(showBackground = true)
 @Composable
-private fun BottomBarPreview() {
-    MaterialTheme {
+private fun 테마안씌운거() {
+    BottomBar(
+        onTabClick = {},
+        selectedNavTab = BottomNavTab.TIMELETTER,
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun 테마씌운거() {
+    AfternoteTheme {
         BottomBar(
-            isSelected = { it.route == Route.TimeLetter },
-            onItemClick = {},
+            onTabClick = {},
+            selectedNavTab = BottomNavTab.TIMELETTER,
         )
     }
 }

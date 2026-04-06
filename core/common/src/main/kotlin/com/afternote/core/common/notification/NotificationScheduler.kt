@@ -1,11 +1,10 @@
-package com.kuit.afternote.core.background
+package com.afternote.core.common.notification
 
 import android.content.Context
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
-import com.afternote.core.common.notification.DailyNotificationWorker
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
