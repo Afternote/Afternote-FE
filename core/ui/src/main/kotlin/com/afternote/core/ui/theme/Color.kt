@@ -30,6 +30,9 @@ private val Gray8 = Color(0xFF424242)
 
 private val Gray9 = Color(0xFF212121)
 
+/** 브랜드 강조 블루 (디자인 토큰 B1). */
+private val B1 = Color(0xFF6B8FF8)
+
 internal fun lightColors() =
     AfternoteColors(
         white = White,
@@ -44,6 +47,7 @@ internal fun lightColors() =
         gray7 = Gray7,
         gray8 = Gray8,
         gray9 = Gray9,
+        b1 = B1,
         isLightMode = true,
     )
 
@@ -61,6 +65,7 @@ internal fun darkColors() =
         gray7 = Gray3,
         gray8 = Gray2,
         gray9 = Gray1, // 가장 어두운 ↔ 가장 밝은
+        b1 = B1,
         isLightMode = false,
     )
 
@@ -82,6 +87,7 @@ class AfternoteColors(
     gray7: Color,
     gray8: Color,
     gray9: Color,
+    b1: Color,
     isLightMode: Boolean,
 ) {
     var white by mutableStateOf(white)
@@ -108,6 +114,8 @@ class AfternoteColors(
         private set
     var gray9 by mutableStateOf(gray9)
         private set
+    var b1 by mutableStateOf(b1)
+        private set
     var isLightMode by mutableStateOf(isLightMode)
         private set
 
@@ -124,6 +132,7 @@ class AfternoteColors(
         gray7: Color = this.gray7,
         gray8: Color = this.gray8,
         gray9: Color = this.gray9,
+        b1: Color = this.b1,
         isLightMode: Boolean = this.isLightMode,
     ) = AfternoteColors(
         white = white,
@@ -138,6 +147,7 @@ class AfternoteColors(
         gray7 = gray7,
         gray8 = gray8,
         gray9 = gray9,
+        b1 = b1,
         isLightMode = isLightMode,
     )
 
@@ -154,6 +164,7 @@ class AfternoteColors(
         this.gray7 = other.gray7
         this.gray8 = other.gray8
         this.gray9 = other.gray9
+        this.b1 = other.b1
         this.isLightMode = other.isLightMode
     }
 }
