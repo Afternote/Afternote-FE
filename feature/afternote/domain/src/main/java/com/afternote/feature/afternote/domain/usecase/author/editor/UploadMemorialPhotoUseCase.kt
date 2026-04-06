@@ -1,0 +1,18 @@
+package com.afternote.feature.afternote.domain.usecase.author.editor
+
+import com.afternote.core.domain.repository.PhotoUploadRepository
+import javax.inject.Inject
+
+private const val DIRECTORY_AFTERNOTES = "afternotes"
+
+/**
+ * Uploads memorial (playlist) photo from content URI via presigned URL.
+ * Returns the image URL to send as playlist.memorialPhotoUrl.
+ */
+class UploadMemorialPhotoUseCase
+    @Inject
+    constructor(
+        private val photoUploadRepository: PhotoUploadRepository,
+    ) {
+        suspend operator fun invoke(uriString: String) = photoUploadRepository.upload(uriString, DIRECTORY_AFTERNOTES)
+    }

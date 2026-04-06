@@ -2,16 +2,14 @@ package com.afternote.core.domain.repository
 
 import com.afternote.core.model.ReceiverDailyQuestionsResult
 import com.afternote.core.model.ReceiverMindRecordsResult
-import com.afternote.core.model.UserProfileModel
 import com.afternote.core.model.setting.DeliveryCondition
 import com.afternote.core.model.setting.DeliveryConditionType
 import com.afternote.core.model.setting.PushSettings
 import com.afternote.core.model.setting.ReceiverDetail
 import com.afternote.core.model.setting.ReceiverListItem
+import com.afternote.core.model.user.UserProfileModel
 
-/**
- * User 도메인 Repository 인터페이스. (스웨거 기준)
- */
+// TODO:리팩토링
 interface UserRepository {
     suspend fun getMyProfile(userId: Long): Result<UserProfileModel>
 

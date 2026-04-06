@@ -17,8 +17,8 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
 
     implementation(projects.core.ui)
-
     implementation(projects.feature.afternote.presentation)
+    implementation(projects.feature.afternote.data)
     implementation(projects.feature.mindrecord.presentation)
     implementation(projects.feature.timeletter.presentation)
     implementation(projects.feature.onboarding.presentation)

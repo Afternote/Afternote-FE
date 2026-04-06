@@ -33,7 +33,7 @@ class AfternoteRepositoryImpl
                 val response =
                     api.getAfternotes(
                         category = input.category,
-                        page = input.page,
+                        pageNumber = input.pageNumber,
                         size = input.size,
                     )
                 val data = response.requireData()

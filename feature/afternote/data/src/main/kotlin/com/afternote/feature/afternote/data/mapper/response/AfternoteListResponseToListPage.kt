@@ -6,6 +6,6 @@ import com.afternote.feature.afternote.domain.model.ListPage
 
 fun AfternoteListResponse.toListPage() =
     ListPage(
-        items = content.toDomainList(),
+        listItems = content.toDomainList(),
         hasNext = hasNext,
     )

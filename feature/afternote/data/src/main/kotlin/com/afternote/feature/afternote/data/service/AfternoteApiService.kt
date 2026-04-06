@@ -20,7 +20,7 @@ interface AfternoteApiService {
     @GET("api/afternotes")
     suspend fun getAfternotes(
         @Query("category") category: String? = null,
-        @Query("page") page: Int = 0,
+        @Query("pageNumber") pageNumber: Int = 0,
         @Query("size") size: Int = 10,
     ): BaseResponse<AfternoteListResponse>
 

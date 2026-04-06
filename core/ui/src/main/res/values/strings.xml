@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="core_ui_nav_item_home">홈</string>
+    <string name="core_ui_nav_item_mindrecord">기록</string>
+    <string name="core_ui_nav_item_timeletter">타임레터</string>
+    <string name="core_ui_nav_item_note">노트</string>
+</resources>

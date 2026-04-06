@@ -63,7 +63,6 @@ class AuthRepositoryImpl
             )
         }
 
-        override suspend fun getUserId(): Result<Long?> = runCatching { tokenManager.getUserId() }
         // TODO:레거시 레포에 있던 authApiService 관련이고 리팩토링해야 하는지 검사 필요
 
         override suspend fun defaultLogin(
