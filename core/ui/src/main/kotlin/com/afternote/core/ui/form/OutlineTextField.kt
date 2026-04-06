@@ -40,7 +40,6 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.B2
 import com.afternote.core.ui.theme.Gray1
 import com.afternote.core.ui.theme.Gray4
 import com.afternote.core.ui.theme.Gray9
@@ -296,7 +295,7 @@ fun OutlineTextField(
                     Icon(
                         imageVector = Icons.Filled.AddCircle,
                         contentDescription = "Add file",
-                        tint = B2,
+                        tint = Gray9,
                         modifier = Modifier.size(24.dp),
                     )
                 }

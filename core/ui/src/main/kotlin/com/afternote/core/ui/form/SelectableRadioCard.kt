@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.button.CustomRadioButton
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.B2
 import com.afternote.core.ui.theme.Gray4
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.White
@@ -56,7 +55,7 @@ fun SelectableRadioCard(
 ) {
     val borderColor =
         when {
-            selected -> B2
+            selected -> Gray9
             borderWhenUnselected -> Gray4
             else -> Color.Transparent
         }
@@ -85,7 +84,7 @@ fun SelectableRadioCard(
                 selected = selected,
                 onClick = null,
                 buttonSize = 24.dp,
-                selectedColor = B2,
+                selectedColor = Gray9,
                 unselectedColor = Gray4,
             )
 

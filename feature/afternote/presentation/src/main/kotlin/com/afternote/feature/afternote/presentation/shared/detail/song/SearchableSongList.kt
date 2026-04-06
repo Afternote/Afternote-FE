@@ -45,7 +45,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.button.CustomRadioButton
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.core.ui.theme.B2
 import com.afternote.core.ui.theme.Gray1
 import com.afternote.core.ui.theme.Gray2
 import com.afternote.core.ui.theme.Gray4
@@ -221,7 +220,7 @@ fun SongPlaylistScreen(
                                 selected = selectedSongIds.contains(song.id),
                                 onClick = null,
                                 buttonSize = 24.dp,
-                                selectedColor = B2,
+                                selectedColor = Gray9,
                                 unselectedColor = Gray4,
                             )
                         },
@@ -317,7 +316,7 @@ fun SongPlaylistScreen(
                                 selected = selectedSongIds.contains(song.id),
                                 onClick = null,
                                 buttonSize = 24.dp,
-                                selectedColor = B2,
+                                selectedColor = Gray9,
                                 unselectedColor = Gray4,
                             )
                         },

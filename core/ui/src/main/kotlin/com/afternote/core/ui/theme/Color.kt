@@ -164,8 +164,6 @@ val PurpleGrey40 = Color(0xFF625b71)
 val Pink40 = Color(0xFF7D5260)
 val TextPrimary = Color(0xFF2D2722) // 다이얼로그 텍스트 등 주요 텍스트 색상
 
-val B2 = Color(0xFF89C2FF)
-
 val B3 = Color(0xFFBDE0FF)
 
 val LightBlue = Color(0xFFE3F2FD) // 아이콘 배경용

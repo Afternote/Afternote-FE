@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.button.CustomRadioButton
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.B2
 import com.afternote.core.ui.theme.Gray1
 import com.afternote.core.ui.theme.Gray4
 import com.afternote.core.ui.theme.Gray9
@@ -171,7 +170,7 @@ private fun LastWishOtherCard(
     otherState: LastWishOtherState,
     onOptionSelect: () -> Unit,
 ) {
-    val borderColor = if (selected) B2 else Color.Transparent
+    val borderColor = if (selected) Gray9 else Color.Transparent
     val interactionSource = remember { MutableInteractionSource() }
 
     Surface(
@@ -204,7 +203,7 @@ private fun LastWishOtherCard(
                     selected = selected,
                     onClick = null,
                     buttonSize = 24.dp,
-                    selectedColor = B2,
+                    selectedColor = Gray9,
                     unselectedColor = Gray4,
                 )
                 Text(

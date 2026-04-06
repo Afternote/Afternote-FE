@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.B2
 import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.naNumGothic
 
@@ -92,7 +91,7 @@ fun Label(
                     Modifier
                         .offset(x = textWidth + 8.dp, y = style.requiredDotOffsetY)
                         .size(4.dp)
-                        .background(color = B2, shape = CircleShape),
+                        .background(color = Gray9, shape = CircleShape),
             )
         }
     }

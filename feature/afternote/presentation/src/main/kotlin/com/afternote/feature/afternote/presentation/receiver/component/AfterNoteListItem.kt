@@ -24,8 +24,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.icon.RightArrowIcon
-import com.afternote.core.ui.theme.B2
 import com.afternote.core.ui.theme.Gray5
+import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.naNumGothic
 import com.afternote.feature.afternote.presentation.receiver.model.AppNoteItem
 
@@ -93,7 +93,7 @@ fun AfterNoteListItem(
             }
 
             RightArrowIcon(
-                color = B2,
+                color = Gray9,
                 size = 24.dp,
             )
         }

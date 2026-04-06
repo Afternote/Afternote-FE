@@ -18,8 +18,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.B2
 import com.afternote.core.ui.theme.Gray4
+import com.afternote.core.ui.theme.Gray9
 
 /**
  * 커스텀 라디오 버튼 컴포넌트
@@ -29,7 +29,7 @@ import com.afternote.core.ui.theme.Gray4
  * @param selected 선택 여부
  * @param onClick 클릭 이벤트 (null인 경우 클릭 불가, 부모 컴포넌트에서 클릭 처리)
  * @param buttonSize 전체 버튼 크기 (기본값: 24.dp)
- * @param selectedColor 선택된 색상 (기본값: B2)
+ * @param selectedColor 선택된 색상 (기본값: Gray9)
  * @param unselectedColor 선택 안 된 색상 (기본값: Gray4)
  */
 @Composable
@@ -38,7 +38,7 @@ fun CustomRadioButton(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     buttonSize: Dp = 24.dp,
-    selectedColor: Color = B2,
+    selectedColor: Color = Gray9,
     unselectedColor: Color = Gray4,
 ) {
     // 보더 두께
