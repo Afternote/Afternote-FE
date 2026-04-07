@@ -9,23 +9,17 @@ plugins {
     alias(libs.plugins.kotlin.serialization) apply false
 }
 
-tasks.register("installGitHooks") {
+tasks.register<Exec>("installGitHooks") {
     group = "verification"
     description = "Installs git-hooks/pre-commit into .git/hooks (run once per clone)."
-    notCompatibleWithConfigurationCache("Copies files from Project layout in doLast.")
-    doLast {
-        val source = rootDir.resolve("git-hooks/pre-commit")
-        val dest = rootDir.resolve(".git/hooks/pre-commit")
-        val hooksDir = dest.parentFile
-        if (!hooksDir.isDirectory) {
-            logger.lifecycle("installGitHooks: ${hooksDir.path} not found; skipping.")
-            return@doLast
-        }
-        if (!source.isFile) {
-            throw GradleException("Missing hook script: ${source.path}")
-        }
-        source.copyTo(dest, overwrite = true)
-        dest.setExecutable(true, false)
-        logger.lifecycle("Installed pre-commit hook -> ${dest.path}")
-    }
+    workingDir(layout.projectDirectory)
+    commandLine(
+        "sh",
+        "-c",
+        "if test -d .git/hooks; then " +
+            "cp git-hooks/pre-commit .git/hooks/pre-commit && " +
+            "chmod +x .git/hooks/pre-commit && " +
+            "echo \"Installed .git/hooks/pre-commit\"; " +
+            "else echo \"installGitHooks: .git/hooks not found, skipping\"; fi",
+    )
 }

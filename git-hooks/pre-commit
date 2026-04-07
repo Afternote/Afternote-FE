@@ -1,0 +1,17 @@
+#!/bin/sh
+# Afternote-FE: run ktlint before each commit.
+# Install once: ./gradlew installGitHooks
+
+set -e
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT" || exit 1
+
+echo "Running ktlintFormat..."
+./gradlew ktlintFormat
+
+# Re-stage tracked files ktlint modified (avoids staging brand-new untracked files like git add .)
+git add -u
+
+echo "Running ktlintCheck..."
+./gradlew ktlintCheck

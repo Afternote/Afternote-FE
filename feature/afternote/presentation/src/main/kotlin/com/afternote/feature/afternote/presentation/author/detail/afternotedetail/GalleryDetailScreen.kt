@@ -1,53 +1,60 @@
 package com.afternote.feature.afternote.presentation.author.detail.afternotedetail
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
+import com.afternote.feature.afternote.presentation.shared.detail.DetailCard
+import com.afternote.feature.afternote.presentation.shared.detail.DetailSectionHeader
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
-import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
-import com.afternote.feature.afternote.presentation.shared.detail.ProcessingMethodItem
-import com.afternote.feature.afternote.presentation.shared.detail.ReceiversCard
 
 /**
  * 갤러리 상세 화면의 데이터 상태
  */
 @Immutable
 data class GalleryDetailState(
-    val serviceName: String = "갤러리",
-    val userName: String = "서영",
-    val finalWriteDate: String = "2025.11.26.",
-    val afternoteEditReceivers: List<AfternoteEditorReceiver> =
-        emptyList(),
+    val serviceName: String = "",
+    val userName: String = "",
+    val finalWriteDate: String = "",
+    val afternoteEditReceivers: List<AfternoteEditorReceiver> = emptyList(),
     val informationProcessingMethod: String = "",
     val processingMethods: List<String> = emptyList(),
     val message: String = "",
@@ -65,16 +72,6 @@ data class GalleryDetailCallbacks(
 
 /**
  * 갤러리 상세 화면
- *
- * 피그마 디자인 기반:
- * - 헤더 (뒤로가기, 타이틀, 편집 버튼)
- * - 제목
- * - 최종 작성일 및 정보 처리 방법 카드
- * - 수신자 정보 카드 (있는 경우)
- * - 처리 방법 리스트 카드
- * - 남기신 말씀 카드
- * - 편집 드롭다운 메뉴 (수정하기/삭제하기)
- * - 삭제 확인 다이얼로그
  */
 @Composable
 fun GalleryDetailScreen(
@@ -84,34 +81,40 @@ fun GalleryDetailScreen(
     isEditable: Boolean = true,
     uiState: AfternoteDetailState = rememberAfternoteDetailState(),
 ) {
-    GalleryDetailScaffold(
-        modifier = modifier,
-        detailState = detailState,
-        callbacks = callbacks,
-        isEditable = isEditable,
-        uiState = uiState,
-    )
-}
+    if (isEditable && uiState.showDeleteDialog) {
+        DeleteConfirmDialog(
+            serviceName = detailState.serviceName,
+            onDismiss = uiState::hideDeleteDialog,
+            onConfirm = {
+                uiState.hideDeleteDialog()
+                callbacks.onDeleteConfirm()
+            },
+        )
+    }
 
-@Composable
-private fun GalleryDetailScaffold(
-    detailState: GalleryDetailState,
-    callbacks: GalleryDetailCallbacks,
-    isEditable: Boolean,
-    uiState: AfternoteDetailState,
-    modifier: Modifier = Modifier,
-) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = Color.Transparent,
         topBar = {
             DetailTopBar(
-                title = "",
+                title = stringResource(R.string.feature_afternote_detail_title),
                 onBackClick = callbacks.onBackClick,
                 actions = {
                     if (isEditable) {
-                        IconButton(onClick = uiState::toggleDropdownMenu) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "더보기")
+                        Box {
+                            IconButton(onClick = uiState::toggleDropdownMenu) {
+                                Icon(
+                                    Icons.Outlined.Edit,
+                                    contentDescription = stringResource(R.string.feature_afternote_detail_edit),
+                                    modifier = Modifier.size(20.dp),
+                                )
+                            }
+                            EditDropdownMenu(
+                                expanded = uiState.showDropdownMenu,
+                                onDismissRequest = uiState::hideDropdownMenu,
+                                onDeleteClick = { uiState.showDeleteDialog() },
+                                onEditClick = { callbacks.onEditClick() },
+                            )
                         }
                     }
                 },
@@ -124,239 +127,235 @@ private fun GalleryDetailScaffold(
             )
         },
     ) { paddingValues ->
-        GalleryDetailContent(
-            modifier = Modifier.padding(paddingValues),
+        GalleryDetailScrollContent(
             detailState = detailState,
-            callbacks = callbacks,
-            isEditable = isEditable,
-            uiState = uiState,
+            modifier = Modifier.padding(paddingValues),
         )
     }
 }
 
+// region — Scroll content
+
 @Composable
-private fun GalleryDetailContent(
+private fun GalleryDetailScrollContent(
     detailState: GalleryDetailState,
-    callbacks: GalleryDetailCallbacks,
-    isEditable: Boolean,
-    uiState: AfternoteDetailState,
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-    ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            GalleryDetailScrollableContent(detailState = detailState)
-        }
-
-        if (isEditable) {
-            Box(
-                modifier =
-                    Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(end = 20.dp),
-            ) {
-                EditDropdownMenu(
-                    expanded = uiState.showDropdownMenu,
-                    onDismissRequest = uiState::hideDropdownMenu,
-                    onDeleteClick = { uiState.showDeleteDialog() },
-                    onEditClick = { callbacks.onEditClick() },
-                )
-            }
-
-            if (uiState.showDeleteDialog) {
-                DeleteConfirmDialog(
-                    serviceName = detailState.serviceName,
-                    onDismiss = uiState::hideDeleteDialog,
-                    onConfirm = {
-                        uiState.hideDeleteDialog()
-                        callbacks.onDeleteConfirm()
-                    },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun GalleryDetailScrollableContent(detailState: GalleryDetailState) {
     Column(
         modifier =
-            Modifier
-                .fillMaxWidth()
+            modifier
+                .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp),
     ) {
-        Spacer(modifier = Modifier.height(24.dp))
-        TitleSection(
-            serviceName = detailState.serviceName,
-            userName = detailState.userName,
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        CardSection(detailState = detailState)
-    }
-}
+        Spacer(modifier = Modifier.height(16.dp))
 
-@Composable
-private fun CardSection(detailState: GalleryDetailState) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        DateAndMethodCard(
-            finalWriteDate = detailState.finalWriteDate,
-            informationProcessingMethod = detailState.informationProcessingMethod,
-        )
-        ReceiversCard(receivers = detailState.afternoteEditReceivers)
-        ProcessingMethodsCard(processingMethods = detailState.processingMethods)
-        MessageCard(message = detailState.message)
-    }
-}
-
-@Composable
-private fun TitleSection(
-    serviceName: String,
-    userName: String,
-) {
-    Text(
-        text =
-            buildAnnotatedString {
-                withStyle(style = SpanStyle(color = AfternoteDesign.colors.gray9)) {
-                    append(serviceName)
-                }
-                append("에 대한 ${userName}님의 기록")
-            },
-        style = AfternoteDesign.typography.bodyLargeB,
-    )
-}
-
-@Composable
-private fun DateAndMethodCard(
-    finalWriteDate: String,
-    informationProcessingMethod: String,
-) {
-    InfoCard(
-        modifier = Modifier.fillMaxWidth(),
-        content = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // — 서비스 아이콘 + 이름 + 날짜
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Image(
+                painter = painterResource(R.drawable.feature_afternote_ic_gallery_pattern),
+                contentDescription = detailState.serviceName,
+                modifier =
+                    Modifier
+                        .size(64.dp)
+                        .clip(RoundedCornerShape(16.dp)),
+                contentScale = ContentScale.Crop,
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = "최종 작성일 $finalWriteDate",
-                    style =
-                        AfternoteDesign.typography.footnoteCaption.copy(
-                            color = AfternoteDesign.colors.gray6,
+                    text = detailState.serviceName,
+                    style = AfternoteDesign.typography.h3,
+                    color = AfternoteDesign.colors.gray9,
+                )
+                Text(
+                    text =
+                        stringResource(
+                            R.string.afternote_last_written_date,
+                            detailState.finalWriteDate,
                         ),
+                    style = AfternoteDesign.typography.captionLargeR,
+                    color = AfternoteDesign.colors.gray5,
                 )
-                InformationProcessingMethodText(
-                    informationProcessingMethod = informationProcessingMethod,
-                )
-            }
-        },
-    )
-}
-
-/**
- * 정보 처리 방법 표시 텍스트
- * informationProcessingMethod enum name → 사용자에게 보여줄 텍스트로 변환
- */
-@Composable
-private fun InformationProcessingMethodText(informationProcessingMethod: String) {
-    val annotatedText =
-        when (informationProcessingMethod) {
-            "TRANSFER",
-            "TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER",
-            "ADDITIONAL",
-            "TRANSFER_TO_ADDITIONAL_AFTERNOTE_EDIT_RECEIVER",
-            -> {
-                buildAnnotatedString {
-                    withStyle(style = SpanStyle(color = AfternoteDesign.colors.gray9)) { append("수신자") }
-                    append("에게 정보 전달")
-                }
-            }
-
-            else -> {
-                buildAnnotatedString {
-                    append(informationProcessingMethod)
-                }
             }
         }
-    Text(
-        text = annotatedText,
-        style =
-            AfternoteDesign.typography.textField.copy(
-                fontWeight = FontWeight.Medium,
-                color = AfternoteDesign.colors.gray9,
-            ),
-    )
-}
 
-@Composable
-private fun ProcessingMethodsCard(processingMethods: List<String>) {
-    if (processingMethods.isEmpty()) return
-
-    InfoCard(
-        modifier = Modifier.fillMaxWidth(),
-        content = {
-            Column {
-                Text(
-                    text = "처리 방법",
-                    style =
-                        AfternoteDesign.typography.textField.copy(
-                            fontWeight = FontWeight.Medium,
-                            color = AfternoteDesign.colors.gray9,
-                        ),
+        // — 추가 수신자에게 정보 전달 뱃지
+        if (detailState.afternoteEditReceivers.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier =
+                    Modifier
+                        .border(
+                            width = 1.dp,
+                            color = AfternoteDesign.colors.gray3,
+                            shape = RoundedCornerShape(20.dp),
+                        ).padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Icon(
+                    painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_check_circle),
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = AfternoteDesign.colors.gray7,
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                processingMethods.forEachIndexed { index, method ->
-                    if (index > 0) {
-                        Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = stringResource(R.string.feature_afternote_detail_additional_receiver_badge),
+                    style = AfternoteDesign.typography.captionLargeR,
+                    color = AfternoteDesign.colors.gray7,
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // — 추가 수신자 섹션
+        if (detailState.afternoteEditReceivers.isNotEmpty()) {
+            DetailSectionHeader(
+                iconResId = com.afternote.core.ui.R.drawable.core_ui_user,
+                label = stringResource(R.string.feature_afternote_detail_section_additional_receiver),
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            DetailCard {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    detailState.afternoteEditReceivers.forEach { receiver ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        ) {
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .size(48.dp)
+                                        .clip(RoundedCornerShape(24.dp)),
+                            ) {
+                                Image(
+                                    painter = painterResource(R.drawable.feature_afternote_img_recipient_profile),
+                                    contentDescription = stringResource(R.string.feature_afternote_content_description_recipient_profile),
+                                    modifier = Modifier.fillMaxSize(),
+                                )
+                            }
+                            Column {
+                                Text(
+                                    text = receiver.name,
+                                    style = AfternoteDesign.typography.bodySmallB,
+                                    color = AfternoteDesign.colors.gray9,
+                                )
+                                Text(
+                                    text = receiver.label,
+                                    style = AfternoteDesign.typography.captionLargeR,
+                                    color = AfternoteDesign.colors.gray5,
+                                )
+                            }
+                        }
                     }
-                    ProcessingMethodItem(text = method)
                 }
             }
-        },
-    )
-}
+            Spacer(modifier = Modifier.height(24.dp))
+        }
 
-@Composable
-private fun MessageCard(message: String) {
-    val displayMessage = message.ifEmpty { "남기신 말씀이 없습니다." }
-    val textColor = if (message.isNotEmpty()) AfternoteDesign.colors.gray9 else AfternoteDesign.colors.gray5
+        // — 처리방법 섹션
+        if (detailState.processingMethods.isNotEmpty()) {
+            DetailSectionHeader(
+                iconResId = com.afternote.core.ui.R.drawable.core_ui_settings,
+                label = stringResource(R.string.feature_afternote_detail_section_processing),
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            DetailCard {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    detailState.processingMethods.forEach { method ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Icon(
+                                painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_check_circle),
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = AfternoteDesign.colors.gray9,
+                            )
+                            Text(
+                                text = method,
+                                style = AfternoteDesign.typography.bodySmallR,
+                                color = AfternoteDesign.colors.gray9,
+                            )
+                        }
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+        }
 
-    InfoCard(
-        modifier = Modifier.fillMaxWidth(),
-        content = {
-            Column {
-                Text(
-                    text = "남기신 말씀",
-                    style =
-                        AfternoteDesign.typography.textField.copy(
-                            fontWeight = FontWeight.Medium,
-                            color = AfternoteDesign.colors.gray9,
-                        ),
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = displayMessage,
-                    style =
-                        AfternoteDesign.typography.bodySmallR.copy(
-                            color = textColor,
-                        ),
+        // — 남기신 말씀 섹션
+        DetailSectionHeader(
+            iconResId = com.afternote.core.ui.R.drawable.core_ui_ic_mail,
+            label = stringResource(R.string.feature_afternote_detail_section_message),
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        DetailCard {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Bottom,
+            ) {
+                val hasMessage = detailState.message.isNotEmpty()
+                val displayMessage =
+                    if (hasMessage) detailState.message else stringResource(R.string.feature_afternote_detail_no_message)
+                val textColor =
+                    if (hasMessage) AfternoteDesign.colors.gray9 else AfternoteDesign.colors.gray5
+                Row(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.feature_afternote_detail_quote_mark),
+                        style = AfternoteDesign.typography.bodyLargeR,
+                        color = AfternoteDesign.colors.gray4,
+                    )
+                    Text(
+                        text = displayMessage,
+                        style = AfternoteDesign.typography.bodySmallR,
+                        color = textColor,
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Image(
+                    painter = painterResource(R.drawable.feature_afternote_img_logo),
+                    contentDescription = null,
+                    modifier =
+                        Modifier
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(18.dp)),
+                    contentScale = ContentScale.Crop,
                 )
             }
-        },
-    )
+        }
+        Spacer(modifier = Modifier.height(24.dp))
+    }
 }
 
-@Preview(
-    showBackground = true,
-    device = "spec:width=390dp,height=844dp,dpi=420,isRound=false",
-)
+// endregion
+
+internal val GALLERY_PREVIEW_CONTENT =
+    GalleryDetailState(
+        serviceName = "갤러리",
+        userName = "서영",
+        finalWriteDate = "2025.11.26",
+        informationProcessingMethod = "TRANSFER_TO_ADDITIONAL_AFTERNOTE_EDIT_RECEIVER",
+        processingMethods = listOf("'엽사' 폴더 박선호에게 전송", "'흑역사' 폴더 삭제"),
+        afternoteEditReceivers =
+            listOf(
+                AfternoteEditorReceiver(id = "1", name = "김지은", label = "친구"),
+                AfternoteEditorReceiver(id = "2", name = "김혜성", label = "친구"),
+            ),
+    )
+
+@Preview
 @Composable
 private fun GalleryDetailScreenPreview() {
     AfternoteLightTheme {
         GalleryDetailScreen(
-            detailState =
-                GalleryDetailState(
-                    informationProcessingMethod = "TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER",
-                    processingMethods = listOf("'엽사' 폴더 박선호에게 전송", "'흑역사' 폴더 삭제"),
-                ),
+            detailState = GALLERY_PREVIEW_CONTENT,
             callbacks =
                 GalleryDetailCallbacks(
                     onBackClick = {},
@@ -366,29 +365,66 @@ private fun GalleryDetailScreenPreview() {
     }
 }
 
-@Preview(
-    showBackground = true,
-    device = "spec:width=390dp,height=844dp,dpi=420,isRound=false",
-    name = "Gallery Detail Screen with Delete Dialog",
-)
+@Preview(name = "Edit Dropdown Menu")
 @Composable
-private fun GalleryDetailScreenWithDialogPreview() {
+private fun GalleryDetailScreenWithDropdownPreview() {
     AfternoteLightTheme {
-        val uiState = rememberAfternoteDetailState()
-        uiState.showDeleteDialog()
-
+        val uiState =
+            remember {
+                AfternoteDetailState().apply {
+                    toggleDropdownMenu()
+                }
+            }
         GalleryDetailScreen(
-            detailState =
-                GalleryDetailState(
-                    informationProcessingMethod = "TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER",
-                    processingMethods = listOf("'엽사' 폴더 박선호에게 전송", "'흑역사' 폴더 삭제"),
-                ),
+            detailState = GALLERY_PREVIEW_CONTENT,
             callbacks =
                 GalleryDetailCallbacks(
                     onBackClick = {},
                     onEditClick = {},
                 ),
             uiState = uiState,
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun GalleryDetailScreenWithDeleteDialogPreview() {
+    AfternoteLightTheme {
+        val uiState =
+            remember {
+                AfternoteDetailState().apply {
+                    showDeleteDialog()
+                }
+            }
+        GalleryDetailScreen(
+            detailState = GALLERY_PREVIEW_CONTENT,
+            callbacks =
+                GalleryDetailCallbacks(
+                    onBackClick = {},
+                    onEditClick = {},
+                ),
+            uiState = uiState,
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun GalleryDetailScreenReceiverModePreview() {
+    AfternoteLightTheme {
+        GalleryDetailScreen(
+            detailState = GALLERY_PREVIEW_CONTENT,
+            isEditable = false,
+            callbacks =
+                GalleryDetailCallbacks(
+                    onBackClick = {},
+                    onEditClick = {},
+                ),
+            uiState =
+                rememberAfternoteDetailState(
+                    defaultBottomNavItem = BottomNavTab.NOTE,
+                ),
         )
     }
 }
