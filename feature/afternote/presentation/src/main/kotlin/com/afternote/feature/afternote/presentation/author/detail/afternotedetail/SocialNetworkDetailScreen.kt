@@ -186,7 +186,7 @@ private fun SocialNetworkDetailScrollContent(
                     tint = AfternoteDesign.colors.gray7,
                 )
                 Text(
-                    text = stringResource(R.string.feature_afternote_detail_receiver_assigned),
+                    text = stringResource(content.badgeTextResId),
                     style = AfternoteDesign.typography.captionLargeR,
                     color = AfternoteDesign.colors.gray7,
                 )
@@ -424,6 +424,18 @@ private fun SocialNetworkDetailScreenReceiverModePreview() {
                 rememberAfternoteDetailState(
                     defaultBottomNavItem = BottomNavTab.NOTE,
                 ),
+        )
+    }
+}
+
+@Preview(name = "Naver Mail")
+@Composable
+private fun NaverMailDetailScreenPreview() {
+    AfternoteTheme {
+        SocialNetworkDetailScreen(
+            content = NAVER_MAIL_PREVIEW_CONTENT,
+            onBackClick = {},
+            onEditClick = {},
         )
     }
 }

@@ -182,6 +182,7 @@
     <string name="feature_afternote_detail_no_message">남기신 말씀이 없습니다.</string>
     <string name="feature_afternote_detail_password_mask">••••••••</string>
     <string name="feature_afternote_detail_quote_mark">❝ </string>
+    <string name="feature_afternote_detail_receiver_info_transfer_badge">수신자에게 정보전달</string>
     <string name="feature_afternote_detail_additional_receiver_badge">추가 수신자에게 정보 전달</string>
     <string name="feature_afternote_detail_section_additional_receiver">추가  수신자</string>
 </resources>

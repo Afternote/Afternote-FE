@@ -35,6 +35,7 @@ import com.afternote.feature.afternote.presentation.author.detail.model.Afternot
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
+import com.afternote.feature.afternote.presentation.shared.util.getIconResForServiceName
 
 private val designedDetailTypes = setOf(AfternoteServiceType.SOCIAL_NETWORK)
 
@@ -111,6 +112,13 @@ internal fun AfternoteDetailNavigation(
         }
 
         else -> {
+            val method = detail.processing?.method ?: ""
+            val badgeResId =
+                when {
+                    method.contains("TRANSFER") -> R.string.feature_afternote_detail_receiver_info_transfer_badge
+                    else -> R.string.feature_afternote_detail_receiver_assigned
+                }
+
             SocialNetworkDetailScreen(
                 content =
                     SocialNetworkDetailContent(
@@ -118,7 +126,7 @@ internal fun AfternoteDetailNavigation(
                         userName = userName,
                         accountId = detail.credentials?.id ?: "",
                         password = detail.credentials?.password ?: "",
-                        accountProcessingMethod = detail.processing?.method ?: "",
+                        accountProcessingMethod = method,
                         processingMethods = detail.processing?.actions ?: emptyList(),
                         message = detail.processing?.leaveMessage ?: "",
                         finalWriteDate = detail.timestamps.updatedAt.ifEmpty { detail.timestamps.createdAt },
@@ -130,6 +138,8 @@ internal fun AfternoteDetailNavigation(
                                     label = r.relation,
                                 )
                             },
+                        iconResId = getIconResForServiceName(detail.title),
+                        badgeTextResId = badgeResId,
                     ),
                 onBackClick = { navController.popBackStack() },
                 onEditClick = {
