@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.detail.afternotedetail
 
+import androidx.compose.runtime.Immutable
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 
@@ -8,6 +9,7 @@ import com.afternote.feature.afternote.presentation.author.editor.model.Afternot
  *
  * Used for 소셜 네트워크 category afternote detail.
  */
+@Immutable
 data class SocialNetworkDetailContent(
     val serviceName: String = "",
     val userName: String = "",
