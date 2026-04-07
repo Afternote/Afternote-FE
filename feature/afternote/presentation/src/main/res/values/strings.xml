@@ -162,7 +162,7 @@
     <string name="feature_afternote_dialog_delete_record_message">\"%1$s\" 기록을 삭제할까요?</string>
     <string name="feature_afternote_menu_edit">수정하기</string>
     <string name="feature_afternote_menu_delete_record">삭제하기</string>
-    <string name="feature_afternote_empty_list_body">아직 등록된 애프터노트가 없어요.\n등록하여 계정을 보호하세요.</string>
+    <string name="feature_afternote_empty_list_body">아직 등록된 답변이 없어요.\n답변을 등록해 자신을 알아 보아요.</string>
     <string name="feature_afternote_content_description_recipient_profile">프로필 사진</string>
     <string name="feature_afternote_hero_last_greeting_caption">고인이 남긴 마지막 인사말</string>
 </resources>
