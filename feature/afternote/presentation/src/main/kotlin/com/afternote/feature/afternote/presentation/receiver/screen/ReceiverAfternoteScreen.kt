@@ -169,7 +169,7 @@ fun ReceiverAfterNoteScreen(
                         summary.mindRecordTotalCount,
                     ),
                 btnText = stringResource(R.string.receiver_mindrecord_section_button),
-                imageResource = painterResource(R.drawable.img_book),
+                imageResource = painterResource(R.drawable.feature_afternote_img_book),
                 onButtonClick = onNavigateToRecord,
             )
 
@@ -182,7 +182,7 @@ fun ReceiverAfterNoteScreen(
                         summary.timeLetterTotalCount,
                     ),
                 btnText = stringResource(R.string.receiver_timeletter_section_button),
-                imageResource = painterResource(R.drawable.img_letter),
+                imageResource = painterResource(R.drawable.feature_afternote_img_letter),
                 onButtonClick = onNavigateToTimeLetter,
             )
 
@@ -195,7 +195,7 @@ fun ReceiverAfterNoteScreen(
                         summary.afternoteTotalCount,
                     ),
                 btnText = stringResource(R.string.receiver_afternote_section_button),
-                imageResource = painterResource(R.drawable.img_notebook),
+                imageResource = painterResource(R.drawable.feature_afternote_img_notebook),
                 onButtonClick = onNavigateToAfternote,
             )
 

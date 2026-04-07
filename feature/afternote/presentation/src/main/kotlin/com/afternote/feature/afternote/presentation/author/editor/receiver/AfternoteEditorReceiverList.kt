@@ -122,7 +122,7 @@ private fun AfternoteEditorReceiverItem(
     ) {
         // 아바타 (기본 프로필 이미지)
         Image(
-            painter = painterResource(R.drawable.img_recipient_profile),
+            painter = painterResource(R.drawable.feature_afternote_img_recipient_profile),
             contentDescription = "프로필 사진",
             modifier = Modifier.size(58.dp),
         )
@@ -151,7 +151,7 @@ private fun AfternoteEditorReceiverItem(
         // 더보기 아이콘 + 드롭다운 메뉴
         Box {
             Image(
-                painter = painterResource(R.drawable.ic_more_horizontal_1),
+                painter = painterResource(R.drawable.feature_afternote_ic_more_horizontal_1),
                 contentDescription = "더보기",
                 modifier =
                     Modifier

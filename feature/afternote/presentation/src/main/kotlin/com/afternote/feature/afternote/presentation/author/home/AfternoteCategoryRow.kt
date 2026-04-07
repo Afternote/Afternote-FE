@@ -64,7 +64,7 @@ fun AfternoteCategoryRow(
             RightArrowIcon(
                 iconSpec =
                     ArrowIconSpec(
-                        iconRes = R.drawable.ic_arrow_right_tab,
+                        iconRes = R.drawable.feature_afternote_ic_arrow_right_tab,
                         contentDescription = "더 보기",
                     ),
                 backgroundColor = AfternoteDesign.colors.gray9,

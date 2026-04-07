@@ -80,7 +80,7 @@ fun ReceiverAfterNoteMainScreen(
         "ReceiverAfterNoteMainScreen received senderName='$senderName'",
     )
     var selectedBottomNavItem by remember { mutableStateOf(BottomNavTab.TIMELETTER) }
-    val profileResId = profileImageResId ?: R.drawable.img_default_profile_deceased
+    val profileResId = profileImageResId ?: R.drawable.feature_afternote_img_default_profile_deceased
 
     Scaffold(
         topBar = {
@@ -278,7 +278,7 @@ private fun ReceiverMemorialVideoThumbnail(thumbnailUrl: String?) {
                     ),
         )
         Image(
-            painter = painterResource(R.drawable.ic_playback),
+            painter = painterResource(R.drawable.feature_afternote_ic_playback),
             contentDescription = "영상 재생",
             modifier =
                 Modifier

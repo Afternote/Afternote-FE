@@ -146,7 +146,7 @@ fun SelectionDropdown(
                     )
 
                     Image(
-                        painter = painterResource(R.drawable.ic_dropdown_vector),
+                        painter = painterResource(R.drawable.feature_afternote_ic_dropdown_vector),
                         contentDescription = "드롭다운",
                     )
                 }

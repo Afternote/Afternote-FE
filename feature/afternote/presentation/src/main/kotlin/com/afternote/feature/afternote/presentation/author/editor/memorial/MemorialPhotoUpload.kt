@@ -50,7 +50,7 @@ fun MemorialPhotoUpload(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             ProfileImage(
-                fallbackImageRes = R.drawable.img_default_profile_deceased,
+                fallbackImageRes = R.drawable.feature_afternote_img_default_profile_deceased,
                 profileImageSize = 144.dp,
                 displayImageUri = displayImageUri,
                 onEditClick = onAddPhotoClick,

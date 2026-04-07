@@ -176,7 +176,7 @@ private fun MemorialPlaylistListHeader(
                             RightArrowIcon(
                                 iconSpec =
                                     ArrowIconSpec(
-                                        iconRes = R.drawable.ic_arrow_right_playlist,
+                                        iconRes = R.drawable.feature_afternote_ic_arrow_right_playlist,
                                         contentDescription = "추가",
                                     ),
                                 backgroundColor = AfternoteDesign.colors.gray9,

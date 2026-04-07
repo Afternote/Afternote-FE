@@ -96,7 +96,7 @@ fun ProcessingMethodCheckbox(
 
         Box {
             Image(
-                painter = painterResource(R.drawable.ic_more_horizontal_1),
+                painter = painterResource(R.drawable.feature_afternote_ic_more_horizontal_1),
                 contentDescription = "더보기",
                 modifier =
                     Modifier

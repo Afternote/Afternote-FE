@@ -126,7 +126,7 @@ private fun ReceiverDetailItem(
                     .clip(CircleShape),
         ) {
             Image(
-                painter = painterResource(R.drawable.img_recipient_profile),
+                painter = painterResource(R.drawable.feature_afternote_img_recipient_profile),
                 contentDescription = stringResource(R.string.feature_afternote_content_description_recipient_profile),
                 modifier = Modifier.fillMaxSize(),
             )

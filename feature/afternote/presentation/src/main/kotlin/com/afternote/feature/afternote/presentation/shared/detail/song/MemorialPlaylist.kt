@@ -108,7 +108,7 @@ private fun MemorialPlaylistAddButton(
         RightArrowIcon(
             iconSpec =
                 ArrowIconSpec(
-                    iconRes = R.drawable.ic_arrow_right_playlist,
+                    iconRes = R.drawable.feature_afternote_ic_arrow_right_playlist,
                     contentDescription = "추가",
                 ),
             backgroundColor = AfternoteDesign.colors.gray9,
@@ -235,7 +235,7 @@ private fun MemorialPlaylistAlbumCoverBox(album: AlbumCover) {
             contentDescription = stringResource(R.string.content_description_album_cover),
             modifier = modifier,
             contentScale = ContentScale.Crop,
-            error = painterResource(R.drawable.img_placeholder_1),
+            error = painterResource(R.drawable.feature_afternote_img_placeholder_1),
             onError = { state: AsyncImagePainter.State.Error ->
                 Log.e(
                     TAG,

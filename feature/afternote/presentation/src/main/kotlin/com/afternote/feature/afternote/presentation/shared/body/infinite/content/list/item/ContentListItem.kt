@@ -81,7 +81,7 @@ fun AfternoteListItem(
         Spacer(Modifier.weight(1f))
 
         Image(
-            painter = painterResource(R.drawable.feature_afternote_presentation_right_arrow),
+            painter = painterResource(R.drawable.feature_afternote_right_arrow),
             contentDescription = null,
         )
     }
@@ -97,7 +97,7 @@ private fun AfternoteListItemPreview() {
                     id = "1",
                     serviceName = "인스타그램",
                     date = "2023.11.24",
-                    iconResId = R.drawable.img_insta_pattern,
+                    iconResId = R.drawable.feature_afternote_img_insta_pattern,
                 ),
         )
     }

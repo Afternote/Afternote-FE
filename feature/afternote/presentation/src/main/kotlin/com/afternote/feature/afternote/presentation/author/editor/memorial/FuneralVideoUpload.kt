@@ -157,7 +157,7 @@ fun FuneralVideoUpload(
                 ) {
                     Spacer(modifier = Modifier.height(24.dp))
                     Image(
-                        painter = painterResource(R.drawable.ic_add_circle),
+                        painter = painterResource(R.drawable.feature_afternote_ic_add_circle),
                         contentDescription = addContentDescription,
                         modifier = Modifier.size(24.dp),
                     )
@@ -203,7 +203,7 @@ fun FuneralVideoUpload(
                             contentDescription = null,
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop,
-                            error = painterResource(R.drawable.img_placeholder_1),
+                            error = painterResource(R.drawable.feature_afternote_img_placeholder_1),
                             onLoading = {
                                 Log.d(TAG, "Coil loading started: url=$thumbnailUrl")
                             },
@@ -243,7 +243,7 @@ fun FuneralVideoUpload(
                     }
                 }
                 Image(
-                    painter = painterResource(R.drawable.ic_playback),
+                    painter = painterResource(R.drawable.feature_afternote_ic_playback),
                     contentDescription = stringResource(R.string.content_description_video_play),
                     modifier =
                         Modifier

@@ -128,7 +128,7 @@ private fun AlbumCoverBox(albumImageUrl: String?) {
             contentDescription = stringResource(R.string.content_description_album_cover),
             modifier = modifier,
             contentScale = ContentScale.Crop,
-            error = painterResource(R.drawable.img_placeholder_1),
+            error = painterResource(R.drawable.feature_afternote_img_placeholder_1),
             onError = { state: AsyncImagePainter.State.Error ->
                 Log.e(
                     TAG,

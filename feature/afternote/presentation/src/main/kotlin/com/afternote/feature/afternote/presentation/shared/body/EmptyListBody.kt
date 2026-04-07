@@ -33,7 +33,7 @@ fun EmptyListBody(modifier: Modifier = Modifier) {
         ) {
             Spacer(modifier = Modifier.weight(6f))
             Image(
-                painter = painterResource(R.drawable.img_empty_state),
+                painter = painterResource(R.drawable.feature_afternote_img_empty_state),
                 contentDescription = null,
                 modifier =
                     Modifier

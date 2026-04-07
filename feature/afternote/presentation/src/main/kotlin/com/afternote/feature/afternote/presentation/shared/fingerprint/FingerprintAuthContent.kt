@@ -13,11 +13,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.button.ClickButton
+import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
@@ -45,18 +43,14 @@ fun FingerprintAuthContent(
         Text(
             text = stringResource(R.string.biometric_prompt_subtitle),
             style =
-                AfternoteDesign.typography.textField.copy(
-                    fontWeight = FontWeight.Medium,
-                    color = AfternoteDesign.colors.gray9,
-                    textAlign = TextAlign.Center,
-                ),
+                AfternoteDesign.typography.bodyBase,
         )
 
         Spacer(modifier = Modifier.height(40.dp))
 
         // 지문 아이콘
         Image(
-            painter = painterResource(R.drawable.ic_fingerprint),
+            painter = painterResource(R.drawable.feature_afternote_ic_fingerprint),
             contentDescription = stringResource(R.string.biometric_prompt_title),
             modifier = Modifier.size(100.dp, 114.dp),
         )
@@ -64,11 +58,9 @@ fun FingerprintAuthContent(
         Spacer(modifier = Modifier.height(32.dp))
 
         // 지문 인증 버튼
-        ClickButton(
-            title = stringResource(R.string.feature_afternote_fingerprint_auth_button),
-            onButtonClick = onFingerprintAuthClick,
-            color = AfternoteDesign.colors.gray9,
-            modifier = Modifier.fillMaxWidth(),
+        AfternoteButton(
+            text = stringResource(R.string.feature_afternote_fingerprint_auth_button),
+            onClick = onFingerprintAuthClick,
         )
 
         Spacer(modifier = Modifier.weight(1f))

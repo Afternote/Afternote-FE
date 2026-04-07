@@ -242,7 +242,7 @@ private fun PhotoCard(
                         ),
                 )
                 ProfileImage(
-                    fallbackImageRes = R.drawable.img_default_profile_deceased,
+                    fallbackImageRes = R.drawable.feature_afternote_img_default_profile_deceased,
                     profileImageSize = 144.dp,
                     isEditable = false,
                     displayImageUri = profileImageUri,
@@ -336,7 +336,7 @@ private fun VideoThumbnail(thumbnailUrl: String?) {
 
         // 재생 아이콘
         Image(
-            painter = painterResource(R.drawable.ic_playback),
+            painter = painterResource(R.drawable.feature_afternote_ic_playback),
             contentDescription = "영상 재생",
             modifier =
                 Modifier
