@@ -3,7 +3,7 @@ package com.afternote.feature.afternote.presentation.shared.fingerprint
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -33,12 +33,12 @@ fun FingerprintAuthContent(
     Column(
         modifier =
             modifier
-                .fillMaxWidth()
+                .fillMaxSize()
                 .padding(horizontal = 18.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
+//        verticalArrangement = Arrangement.Center,
     ) {
-        Spacer(modifier = Modifier.weight(1f))
-
+        Spacer(Modifier.weight(0.35f))
         // 안내 텍스트
         Text(
             text = stringResource(R.string.biometric_prompt_subtitle),
@@ -46,7 +46,7 @@ fun FingerprintAuthContent(
                 AfternoteDesign.typography.bodyBase,
         )
 
-        Spacer(modifier = Modifier.height(40.dp))
+        Spacer(modifier = Modifier.height(39.dp))
 
         // 지문 아이콘
         Image(
@@ -55,19 +55,18 @@ fun FingerprintAuthContent(
             modifier = Modifier.size(100.dp, 114.dp),
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(30.dp))
 
         // 지문 인증 버튼
         AfternoteButton(
             text = stringResource(R.string.feature_afternote_fingerprint_auth_button),
             onClick = onFingerprintAuthClick,
         )
-
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(Modifier.weight(0.65f))
     }
 }
 
-@Preview(showBackground = true)
+@Preview
 @Composable
 private fun FingerprintAuthContentPreview() {
     AfternoteTheme {
