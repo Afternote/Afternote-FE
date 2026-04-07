@@ -45,11 +45,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.button.CustomRadioButton
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
+import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
-import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
 /**
@@ -110,7 +110,7 @@ fun SongPlaylistScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            AfternoteTopBar(
+            DetailTopBar(
                 title = title,
                 onBackClick = onBackClick,
             )
@@ -177,7 +177,7 @@ fun SongPlaylistScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            AfternoteTopBar(
+            DetailTopBar(
                 title = title,
                 onBackClick = onBackClick,
             )
@@ -273,7 +273,7 @@ fun SongPlaylistScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            AfternoteTopBar(
+            DetailTopBar(
                 title = title,
                 onBackClick = onBackClick,
             )
@@ -544,7 +544,10 @@ private fun SongAddButton(
                 modifier =
                     Modifier
                         .size(16.dp)
-                        .background(color = AfternoteDesign.colors.gray9, shape = RoundedCornerShape(40.dp)),
+                        .background(
+                            color = AfternoteDesign.colors.gray9,
+                            shape = RoundedCornerShape(40.dp),
+                        ),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(

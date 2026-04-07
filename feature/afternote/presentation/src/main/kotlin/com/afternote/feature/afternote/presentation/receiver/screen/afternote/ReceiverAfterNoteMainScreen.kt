@@ -54,11 +54,11 @@ import com.afternote.core.ui.form.LastWishesRadioGroup
 import com.afternote.core.ui.form.ProfileImage
 import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
+import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
@@ -87,7 +87,7 @@ fun ReceiverAfterNoteMainScreen(
     Scaffold(
         topBar = {
             Column(modifier = Modifier.statusBarsPadding()) {
-                AfternoteTopBar(
+                DetailTopBar(
                     title = "故${senderName}님의 애프터노트",
                     onBackClick = { onBackClick() },
                 )

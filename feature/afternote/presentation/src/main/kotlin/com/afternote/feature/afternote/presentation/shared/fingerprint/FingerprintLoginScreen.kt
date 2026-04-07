@@ -6,8 +6,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
 
 /**
  * 지문 로그인 화면
@@ -26,7 +26,7 @@ fun FingerprintLoginScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            AfternoteTopBar(title = "지문 로그인")
+            DetailTopBar(title = "지문 로그인")
         },
     ) { paddingValues ->
         // 메인 컨텐츠

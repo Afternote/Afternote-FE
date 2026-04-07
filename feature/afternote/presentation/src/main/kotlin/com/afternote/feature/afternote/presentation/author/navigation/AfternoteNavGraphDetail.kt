@@ -18,6 +18,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.toRoute
+import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel
@@ -32,7 +33,6 @@ import com.afternote.feature.afternote.presentation.author.detail.afternotedetai
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailEvent
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
-import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 
 private val designedDetailTypes = setOf(AfternoteServiceType.SOCIAL_NETWORK)
@@ -52,7 +52,7 @@ internal fun DesignPendingDetailContent(onBackClick: () -> Unit) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            AfternoteTopBar(onBackClick = onBackClick)
+            DetailTopBar(title = "", onBackClick = onBackClick)
         },
     ) { paddingValues ->
         Box(

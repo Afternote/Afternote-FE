@@ -18,6 +18,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,13 +47,13 @@ import coil3.network.httpHeaders
 import coil3.request.ImageRequest
 import com.afternote.core.ui.expand.horizontalFadingEdge
 import com.afternote.core.ui.form.ProfileImage
+import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
-import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
@@ -122,11 +124,16 @@ fun MemorialGuidelineDetailScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            AfternoteTopBar(
+            DetailTopBar(
+                title = "",
                 onBackClick = callbacks.onBackClick,
-                actionIcon = if (isEditable) Icons.Default.MoreVert else null,
-                actionContentDescription = "더보기",
-                onActionClick = if (isEditable) uiState::toggleDropdownMenu else null,
+                actions = {
+                    if (isEditable) {
+                        IconButton(onClick = uiState::toggleDropdownMenu) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "더보기")
+                        }
+                    }
+                },
             )
         },
         bottomBar = {
@@ -452,7 +459,8 @@ private fun AlbumCoverItem(album: AlbumCover) {
 @Composable
 private fun LastWishCard(lastWish: String) {
     val displayText = lastWish.ifEmpty { "남기고 싶은 당부가 없습니다." }
-    val textColor = if (lastWish.isNotEmpty()) AfternoteDesign.colors.gray9 else AfternoteDesign.colors.gray5
+    val textColor =
+        if (lastWish.isNotEmpty()) AfternoteDesign.colors.gray9 else AfternoteDesign.colors.gray5
 
     InfoCard(
         modifier = Modifier.fillMaxWidth(),

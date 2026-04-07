@@ -12,6 +12,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,12 +28,12 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
-import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
@@ -104,11 +106,16 @@ private fun GalleryDetailScaffold(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            AfternoteTopBar(
+            DetailTopBar(
+                title = "",
                 onBackClick = callbacks.onBackClick,
-                actionIcon = if (isEditable) Icons.Default.MoreVert else null,
-                actionContentDescription = "더보기",
-                onActionClick = if (isEditable) uiState::toggleDropdownMenu else null,
+                actions = {
+                    if (isEditable) {
+                        IconButton(onClick = uiState::toggleDropdownMenu) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "더보기")
+                        }
+                    }
+                },
             )
         },
         bottomBar = {
