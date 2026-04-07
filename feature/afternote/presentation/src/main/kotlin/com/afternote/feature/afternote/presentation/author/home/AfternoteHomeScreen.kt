@@ -6,8 +6,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.afternote.core.ui.scaffold.bottombar.BottomBar
-import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.scaffold.topbar.HomeTopBar
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
@@ -22,11 +20,9 @@ import com.afternote.feature.afternote.presentation.shared.body.infinite.content
 @Composable
 fun AfternoteHomeScreen(
     listState: AfternoteBodyUiState,
-    onNavTabSelected: (BottomNavTab) -> Unit,
     onCategorySelected: (AfternoteCategory) -> Unit,
     onListItemClick: (String) -> Unit,
     modifier: Modifier = Modifier,
-    selectedNavTab: BottomNavTab = BottomNavTab.NOTE,
     onLoadMore: () -> Unit = {},
     onFabClick: () -> Unit = {},
 ) {
@@ -34,12 +30,6 @@ fun AfternoteHomeScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             HomeTopBar()
-        },
-        bottomBar = {
-            BottomBar(
-                selectedNavTab = selectedNavTab,
-                onTabClick = onNavTabSelected,
-            )
         },
         floatingActionButton = { AfternoteAddFAB(onClick = onFabClick) },
     ) { paddingValues ->
@@ -81,10 +71,8 @@ private fun AfternoteHomeScreenPreview() {
                         ),
                     selectedCategory = AfternoteCategory.ALL,
                 ),
-            onNavTabSelected = {},
             onCategorySelected = {},
             onListItemClick = {},
-            selectedNavTab = BottomNavTab.NOTE,
         )
     }
 }
@@ -99,10 +87,8 @@ private fun AfternoteHomeScreenEmptyPreview() {
                     visibleItems = emptyList(),
                     selectedCategory = AfternoteCategory.ALL,
                 ),
-            onNavTabSelected = {},
             onCategorySelected = {},
             onListItemClick = {},
-            selectedNavTab = BottomNavTab.NOTE,
         )
     }
 }

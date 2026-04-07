@@ -69,10 +69,8 @@ fun AfternoteHomeEntry(
 
     AfternoteHomeScreen(
         listState = bodyUiState,
-        onNavTabSelected = actions.onNavTabSelected,
         onCategorySelected = { viewModel.onEvent(AfternoteHomeEvent.SelectTab(it)) },
         onListItemClick = actions.navigateToDetail,
-        selectedNavTab = uiState.navState.selectedBottomNavItem,
         onLoadMore = { viewModel.onEvent(AfternoteHomeEvent.LoadMore) },
     ) { actions.navigateToAdd(uiState.categoryState.selectedCategory) }
 }

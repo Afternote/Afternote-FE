@@ -23,9 +23,9 @@ data class ReceiverAfternoteHomeEntryActions(
  */
 @Composable
 fun ReceiverAfternoteHomeEntry(
+    modifier: Modifier = Modifier,
     viewModel: ReceiverAfternoteHomeViewModel = hiltViewModel(),
     actions: ReceiverAfternoteHomeEntryActions = ReceiverAfternoteHomeEntryActions(),
-    modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -35,10 +35,8 @@ fun ReceiverAfternoteHomeEntry(
                 visibleItems = uiState.visibleItems,
                 selectedCategory = uiState.selectedTab,
             ),
-        onNavTabSelected = actions.onNavTabSelected,
         onCategorySelected = { viewModel.onEvent(ReceiverAfternoteHomeEvent.SelectTab(it)) },
         onListItemClick = actions.navigateToDetail,
         modifier = modifier,
-        selectedNavTab = uiState.selectedBottomNavItem,
     )
 }
