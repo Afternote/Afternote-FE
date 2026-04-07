@@ -24,7 +24,7 @@ fun RecipientDesignationSection(
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Label(
-            text = "수신자 지정",
+            text = "수신자 추가",
             isRequired = true,
             style = LabelStyle(requiredDotOffsetY = 3.dp),
         )
