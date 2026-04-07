@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -15,6 +16,7 @@ import com.afternote.feature.afternote.presentation.author.editor.playlist.AddSo
 import com.afternote.feature.afternote.presentation.author.editor.playlist.MemorialPlaylistEntry
 import com.afternote.feature.afternote.presentation.author.editor.playlist.MemorialPlaylistEntryActions
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
+import com.afternote.feature.afternote.presentation.shared.DataProviderLocals
 
 /**
  * Afternote 피처의 네비게이션 그래프.
@@ -66,21 +68,25 @@ fun NavGraphBuilder.afternoteNavGraph(params: AfternoteNavGraphParams) {
             val afternoteProvider =
                 remember(useFake) { hostViewModel.currentAfternoteEditorDataProvider }
 
-            AfternoteEditorNavigation(
-                AfternoteEditorNavigationParams(
-                    backStackEntry = backStackEntry,
-                    navController = navController,
-                    afternoteVisibleItems = items,
-                    playlistStateHolder = hostViewModel.playlistHolder,
-                    afternoteProvider = afternoteProvider,
-                    editState = hostViewModel.editState,
-                    onEditStateChanged = hostViewModel::updateEditState,
-                    onEditStateClear = hostViewModel::clearEditState,
-                    onRequestHomeRefresh = hostViewModel::requestHomeRefresh,
-                    onNavigateToSelectReceiver = {},
-                    onBottomNavTabSelected = params.onNavTabSelected,
-                ),
-            )
+            CompositionLocalProvider(
+                DataProviderLocals.LocalAfternoteEditorDataProvider provides afternoteProvider,
+            ) {
+                AfternoteEditorNavigation(
+                    AfternoteEditorNavigationParams(
+                        backStackEntry = backStackEntry,
+                        navController = navController,
+                        afternoteVisibleItems = items,
+                        playlistStateHolder = hostViewModel.playlistHolder,
+                        afternoteProvider = afternoteProvider,
+                        editState = hostViewModel.editState,
+                        onEditStateChanged = hostViewModel::updateEditState,
+                        onEditStateClear = hostViewModel::clearEditState,
+                        onRequestHomeRefresh = hostViewModel::requestHomeRefresh,
+                        onNavigateToSelectReceiver = {},
+                        onBottomNavTabSelected = params.onNavTabSelected,
+                    ),
+                )
+            }
         }
 
         afternoteComposable<AfternoteRoute.MemorialGuidelineDetailRoute> { backStackEntry ->
