@@ -20,6 +20,7 @@ import com.afternote.feature.afternote.presentation.author.editor.model.AccountS
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverSection
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorState
+import com.afternote.feature.afternote.presentation.author.editor.model.InfoMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.selection.DropdownMenuStyle
 import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdown
@@ -153,6 +154,11 @@ internal fun CategoryContent(
                         onMessageRegisterClick = {},
                         onMessageDeleteClick = state::removeEditorMessage,
                         onMessageAddClick = state::addEditorMessage,
+                        infoMethodSection =
+                            InfoMethodSection(
+                                selectedMethod = state.selectedInformationProcessingMethod,
+                                onMethodSelected = state::onInformationProcessingMethodSelected,
+                            ),
                         recipientSection =
                             AfternoteEditorReceiverSection(
                                 afternoteEditReceivers = state.afternoteEditReceivers,

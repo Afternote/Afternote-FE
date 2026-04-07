@@ -15,10 +15,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.form.Label
 import com.afternote.core.ui.form.LabelStyle
+import com.afternote.core.ui.form.SelectableRadioCard
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverSection
+import com.afternote.feature.afternote.presentation.author.editor.model.InfoMethodSection
+import com.afternote.feature.afternote.presentation.author.editor.model.InformationProcessingMethod
+import com.afternote.feature.afternote.presentation.author.editor.processing.OptionRadioCardContent
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodList
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListParams
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
@@ -61,6 +65,34 @@ private fun GalleryAndFileEditorContentBody(
     spacerHeight: Dp,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
+        // 계정 처리 방법 섹션
+        Label(
+            text = "계정 처리 방법",
+            isRequired = true,
+            style = LabelStyle(requiredDotOffsetY = 2.dp),
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        InformationProcessingMethod.entries.forEachIndexed { index, method ->
+            if (index > 0) {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            SelectableRadioCard(
+                selected = params.infoMethodSection.selectedMethod == method,
+                onClick = { params.infoMethodSection.onMethodSelected(method) },
+                modifier = Modifier.fillMaxWidth(),
+                content = {
+                    OptionRadioCardContent(
+                        option = method,
+                        selected = params.infoMethodSection.selectedMethod == method,
+                    )
+                },
+            )
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
         RecipientDesignationSection(section = params.recipientSection)
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -117,6 +149,11 @@ private fun GalleryAndFileEditorContentPreview() {
                 params =
                     GalleryAndFileEditorContentParams(
                         editorMessages = listOf(EditorMessage()),
+                        infoMethodSection =
+                            InfoMethodSection(
+                                selectedMethod = InformationProcessingMethod.TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER,
+                                onMethodSelected = {},
+                            ),
                         recipientSection = AfternoteEditorReceiverSection(),
                         processingMethodSection = ProcessingMethodSection(),
                     ),
@@ -144,6 +181,11 @@ private fun GalleryAndFileEditorContentWithAfternoteEditorReceiversPreview() {
                     params =
                         GalleryAndFileEditorContentParams(
                             editorMessages = listOf(EditorMessage()),
+                            infoMethodSection =
+                                InfoMethodSection(
+                                    selectedMethod = InformationProcessingMethod.TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER,
+                                    onMethodSelected = {},
+                                ),
                             recipientSection =
                                 AfternoteEditorReceiverSection(
                                     afternoteEditReceivers = provider.getAfternoteEditorReceivers(),
