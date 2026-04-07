@@ -110,7 +110,6 @@ fun NavGraphBuilder.afternoteNavGraph(params: AfternoteNavGraphParams) {
         afternoteComposable<AfternoteRoute.FingerprintLoginRoute> {
             AfternoteFingerprintLoginNavigation(
                 navController = navController,
-                onNavTabSelected = params.onNavTabSelected,
             )
         }
 

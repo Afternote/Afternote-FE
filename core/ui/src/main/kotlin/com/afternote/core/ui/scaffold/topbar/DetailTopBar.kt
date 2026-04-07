@@ -33,33 +33,34 @@ import com.afternote.core.ui.theme.AfternoteTheme
 @Composable
 fun DetailTopBar(
     title: String,
-    onBackClick: () -> Unit,
-    action: @Composable (RowScope.() -> Unit),
     modifier: Modifier = Modifier,
+    onBackClick: (() -> Unit)? = null, // 1. Nullable 처리 및 기본값 null
+    actions: @Composable RowScope.() -> Unit = {}, // 2. 네이밍 변경(action -> actions) 및 기본값 빈 람다
 ) {
     TopAppBar(
         title = {
             Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = title,
-                    style = AfternoteDesign.typography.bodyBase,
+                    style = AfternoteDesign.typography.bodyLargeB,
                     textAlign = TextAlign.Center,
                 )
             }
         },
         navigationIcon = {
-            IconButton(
-                onClick = onBackClick,
-            ) {
-                Icon(
-                    painterResource(R.drawable.core_ui_arrow_left),
-                    contentDescription = "뒤로 가기",
-                )
+            // 3. onBackClick이 전달되었을 때만 아이콘 렌더링
+            if (onBackClick != null) {
+                IconButton(
+                    onClick = onBackClick,
+                ) {
+                    Icon(
+                        painterResource(R.drawable.core_ui_arrow_left),
+                        contentDescription = "뒤로 가기",
+                    )
+                }
             }
         },
-        actions = {
-            action()
-        },
+        actions = actions, // 4. 그대로 전달 (비어있으면 아무것도 안 그림)
         modifier = modifier.padding(end = 17.dp),
     )
 }
@@ -73,11 +74,11 @@ private fun DailyRecordTopBarPreview() {
     AfternoteTheme {
         Surface(color = MaterialTheme.colorScheme.background) {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                // 실제 컴포넌트 호출
+                // 1. 둘 다 있는 경우 (기존과 동일)
                 DetailTopBar(
-                    title = "데일리 질문",
-                    onBackClick = { /* 뒤로가기 로그 확인 */ },
-                    action = {
+                    title = "데일리 질문 (Full)",
+                    onBackClick = { /* 뒤로가기 액션 */ },
+                    actions = {
                         ViewModeSwitcher(
                             isListView = isListMode,
                             onViewChange = { isListMode = it },
@@ -85,6 +86,17 @@ private fun DailyRecordTopBarPreview() {
                             image2 = R.drawable.core_ui_calendar,
                         )
                     },
+                )
+
+                // 2. 뒤로 가기만 있는 경우 (actions 생략)
+                DetailTopBar(
+                    title = "상세 화면 (Back Only)",
+                    onBackClick = { /* 뒤로가기 액션 */ },
+                )
+
+                // 3. 둘 다 없는 경우 (타이틀만 존재)
+                DetailTopBar(
+                    title = "메인 홈 (Title Only)",
                 )
             }
         }

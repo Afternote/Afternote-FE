@@ -13,16 +13,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.navigation.NavController
-import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.shared.fingerprint.FingerprintLoginScreen
 
 @Composable
-internal fun AfternoteFingerprintLoginNavigation(
-    navController: NavController,
-    onNavTabSelected: (BottomNavTab) -> Unit,
-) {
+internal fun AfternoteFingerprintLoginNavigation(navController: NavController) {
     val context = LocalContext.current
     val activity = context as? FragmentActivity
     val promptTitle = stringResource(R.string.biometric_prompt_title)
@@ -78,6 +74,5 @@ internal fun AfternoteFingerprintLoginNavigation(
                 }
             }
         },
-        onNavTabSelected = onNavTabSelected,
     )
 }
