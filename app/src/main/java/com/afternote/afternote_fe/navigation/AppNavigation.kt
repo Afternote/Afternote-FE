@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.scaffold.bottombar.BottomBar
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavGraphParams
 import com.afternote.feature.afternote.presentation.author.navigation.afternoteNavGraph
 import com.afternote.feature.mindrecord.presentation.screen.sender.HomeScreen
@@ -21,6 +22,8 @@ fun AppNavigation(
 ) {
     Scaffold(
         modifier = modifier,
+//        containerColor = AfternoteDesign.colors.gray1,
+        containerColor = AfternoteDesign.colors.black,
         bottomBar = {
             BottomBar(
                 onTabClick = { item -> appState.navigateToBottomBarRoute(item.route) },
