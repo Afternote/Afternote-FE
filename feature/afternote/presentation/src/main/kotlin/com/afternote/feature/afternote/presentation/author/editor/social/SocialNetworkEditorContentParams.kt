@@ -10,6 +10,7 @@ import com.afternote.feature.afternote.presentation.author.editor.processing.mod
  */
 @Immutable
 data class SocialNetworkEditorContentParams(
+    val messageTitleState: TextFieldState,
     val messageState: TextFieldState,
     val accountSection: AccountSection,
     val recipientSection: AfternoteEditorReceiverSection? = null,

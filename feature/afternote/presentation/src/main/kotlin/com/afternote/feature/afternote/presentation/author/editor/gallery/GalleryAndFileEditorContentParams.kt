@@ -9,6 +9,7 @@ import com.afternote.feature.afternote.presentation.author.editor.processing.mod
  */
 @Immutable
 data class GalleryAndFileEditorContentParams(
+    val messageTitleState: TextFieldState,
     val messageState: TextFieldState,
     val recipientSection: AfternoteEditorReceiverSection,
     val processingMethodSection: ProcessingMethodSection = ProcessingMethodSection(),
