@@ -20,7 +20,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -33,7 +32,6 @@ import com.afternote.core.ui.form.Label
 import com.afternote.core.ui.form.LabelStyle
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 
 private const val CATEGORY_SOCIAL_NETWORK = "소셜네트워크"
@@ -141,11 +139,8 @@ fun SelectionDropdown(
                     Text(
                         text = selectedValue,
                         style =
-                            TextStyle(
-                                fontSize = 16.sp,
+                            AfternoteDesign.typography.bodyBase.copy(
                                 lineHeight = 20.sp,
-                                fontFamily = nanumGothic,
-                                fontWeight = FontWeight.Normal,
                                 color = AfternoteDesign.colors.gray8,
                             ),
                     )
@@ -175,10 +170,7 @@ fun SelectionDropdown(
                             Text(
                                 text = option,
                                 style =
-                                    TextStyle(
-                                        fontSize = 16.sp,
-                                        lineHeight = 22.sp,
-                                        fontFamily = nanumGothic,
+                                    AfternoteDesign.typography.textField.copy(
                                         fontWeight = FontWeight.Medium,
                                         color = AfternoteDesign.colors.gray9,
                                         textAlign = TextAlign.Center,
@@ -271,11 +263,8 @@ private fun ExpandedDropdownMenuPreview() {
                             Text(
                                 text = option,
                                 style =
-                                    TextStyle(
-                                        fontSize = 16.sp,
+                                    AfternoteDesign.typography.bodyBase.copy(
                                         lineHeight = 22.sp,
-                                        fontFamily = nanumGothic,
-                                        fontWeight = FontWeight.Normal,
                                         color = AfternoteDesign.colors.gray9,
                                         textAlign = TextAlign.Center,
                                     ),
@@ -318,11 +307,8 @@ private fun ExpandedDropdownMenuWithElevationPreview() {
                             Text(
                                 text = option,
                                 style =
-                                    TextStyle(
-                                        fontSize = 16.sp,
+                                    AfternoteDesign.typography.bodyBase.copy(
                                         lineHeight = 22.sp,
-                                        fontFamily = nanumGothic,
-                                        fontWeight = FontWeight.Normal,
                                         color = AfternoteDesign.colors.gray9,
                                         textAlign = TextAlign.Center,
                                     ),
@@ -365,11 +351,8 @@ private fun ExpandedDropdownMenuInDialogPreview() {
                             Text(
                                 text = option,
                                 style =
-                                    TextStyle(
-                                        fontSize = 16.sp,
+                                    AfternoteDesign.typography.bodyBase.copy(
                                         lineHeight = 22.sp,
-                                        fontFamily = nanumGothic,
-                                        fontWeight = FontWeight.Normal,
                                         color = AfternoteDesign.colors.gray9,
                                         textAlign = TextAlign.Center,
                                     ),
@@ -421,11 +404,8 @@ private fun ExpandedDropdownMenuLongListPreview() {
                             Text(
                                 text = option,
                                 style =
-                                    TextStyle(
-                                        fontSize = 16.sp,
+                                    AfternoteDesign.typography.bodyBase.copy(
                                         lineHeight = 22.sp,
-                                        fontFamily = nanumGothic,
-                                        fontWeight = FontWeight.Normal,
                                         color = AfternoteDesign.colors.gray9,
                                         textAlign = TextAlign.Center,
                                     ),

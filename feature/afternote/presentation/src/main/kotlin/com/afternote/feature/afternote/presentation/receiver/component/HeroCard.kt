@@ -22,9 +22,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 
 private const val HERO_CARD_DEFAULT_MESSAGE = "가족들에게...\n내가 없어도 너무 슬퍼하지마."
@@ -67,17 +65,17 @@ fun HeroCard(
         ) {
             Text(
                 text = leaveMessage,
-                fontFamily = nanumGothic,
-                fontWeight = FontWeight.Bold,
+                style = AfternoteDesign.typography.h2,
                 color = AfternoteDesign.colors.gray8,
-                fontSize = 24.sp,
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "고인이 남긴 마지막 인사말",
-                fontFamily = nanumGothic,
-                fontWeight = FontWeight.Medium,
-                color = AfternoteDesign.colors.gray5,
+                style =
+                    AfternoteDesign.typography.bodySmallR.copy(
+                        fontWeight = FontWeight.Medium,
+                        color = AfternoteDesign.colors.gray5,
+                    ),
             )
         }
     }

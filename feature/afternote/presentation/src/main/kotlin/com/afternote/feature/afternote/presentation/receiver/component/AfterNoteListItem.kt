@@ -23,10 +23,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.receiver.model.AppNoteItem
 
 @Composable
@@ -76,19 +74,20 @@ fun AfterNoteListItem(
             ) {
                 Text(
                     text = item.name,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 16.sp,
-                    fontFamily = nanumGothic,
+                    style =
+                        AfternoteDesign.typography.textField.copy(
+                            fontWeight = FontWeight.Medium,
+                        ),
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
                     text = item.date,
-                    fontSize = 10.sp,
-                    color = AfternoteDesign.colors.gray5,
-                    fontFamily = nanumGothic,
-                    fontWeight = FontWeight.Normal,
+                    style =
+                        AfternoteDesign.typography.footnoteCaption.copy(
+                            color = AfternoteDesign.colors.gray5,
+                        ),
                 )
             }
 

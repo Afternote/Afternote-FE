@@ -34,13 +34,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
@@ -49,7 +47,6 @@ import com.afternote.core.ui.expand.horizontalFadingEdge
 import com.afternote.core.ui.form.ProfileImage
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
@@ -197,14 +194,7 @@ private fun TitleSection(userName: String) {
                 }
                 append("에 대한 ${userName}님의 기록")
             },
-        style =
-            TextStyle(
-                fontSize = 18.sp,
-                lineHeight = 24.sp,
-                fontFamily = nanumGothic,
-                fontWeight = FontWeight.Bold,
-                color = AfternoteDesign.colors.gray9,
-            ),
+        style = AfternoteDesign.typography.bodyLargeB,
     )
 }
 
@@ -245,11 +235,7 @@ private fun PhotoCard(
                     text = "최종 작성일 $finalWriteDate",
                     modifier = Modifier.fillMaxWidth(),
                     style =
-                        TextStyle(
-                            fontSize = 10.sp,
-                            lineHeight = 16.sp,
-                            fontFamily = nanumGothic,
-                            fontWeight = FontWeight.Normal,
+                        AfternoteDesign.typography.footnoteCaption.copy(
                             color = AfternoteDesign.colors.gray6,
                         ),
                 )
@@ -284,10 +270,7 @@ private fun VideoCard(
                 Text(
                     text = "장례식에 남길 영상",
                     style =
-                        TextStyle(
-                            fontSize = 16.sp,
-                            lineHeight = 22.sp,
-                            fontFamily = nanumGothic,
+                        AfternoteDesign.typography.textField.copy(
                             fontWeight = FontWeight.Medium,
                             color = AfternoteDesign.colors.gray9,
                         ),
@@ -380,10 +363,7 @@ private fun PlaylistCard(
                 Text(
                     text = "추모 플레이리스트",
                     style =
-                        TextStyle(
-                            fontSize = 16.sp,
-                            lineHeight = 22.sp,
-                            fontFamily = nanumGothic,
+                        AfternoteDesign.typography.textField.copy(
                             fontWeight = FontWeight.Medium,
                             color = AfternoteDesign.colors.gray9,
                         ),
@@ -396,11 +376,7 @@ private fun PlaylistCard(
                 Text(
                     text = "현재 ${songCount}개의 노래가 담겨 있습니다.",
                     style =
-                        TextStyle(
-                            fontSize = 14.sp,
-                            lineHeight = 20.sp,
-                            fontFamily = nanumGothic,
-                            fontWeight = FontWeight.Normal,
+                        AfternoteDesign.typography.bodySmallR.copy(
                             color = AfternoteDesign.colors.black,
                         ),
                 )
@@ -469,10 +445,7 @@ private fun LastWishCard(lastWish: String) {
                 Text(
                     text = "남기고 싶은 당부",
                     style =
-                        TextStyle(
-                            fontSize = 16.sp,
-                            lineHeight = 22.sp,
-                            fontFamily = nanumGothic,
+                        AfternoteDesign.typography.textField.copy(
                             fontWeight = FontWeight.Medium,
                             color = AfternoteDesign.colors.gray9,
                         ),
@@ -481,11 +454,7 @@ private fun LastWishCard(lastWish: String) {
                 Text(
                     text = displayText,
                     style =
-                        TextStyle(
-                            fontSize = 14.sp,
-                            lineHeight = 20.sp,
-                            fontFamily = nanumGothic,
-                            fontWeight = FontWeight.Normal,
+                        AfternoteDesign.typography.bodySmallR.copy(
                             color = textColor,
                         ),
                 )

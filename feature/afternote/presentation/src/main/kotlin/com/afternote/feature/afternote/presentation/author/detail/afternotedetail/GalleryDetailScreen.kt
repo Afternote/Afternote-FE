@@ -21,16 +21,13 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
@@ -224,14 +221,7 @@ private fun TitleSection(
                 }
                 append("에 대한 ${userName}님의 기록")
             },
-        style =
-            TextStyle(
-                fontSize = 18.sp,
-                lineHeight = 24.sp,
-                fontFamily = nanumGothic,
-                fontWeight = FontWeight.Bold,
-                color = AfternoteDesign.colors.gray9,
-            ),
+        style = AfternoteDesign.typography.bodyLargeB,
     )
 }
 
@@ -247,11 +237,7 @@ private fun DateAndMethodCard(
                 Text(
                     text = "최종 작성일 $finalWriteDate",
                     style =
-                        TextStyle(
-                            fontSize = 10.sp,
-                            lineHeight = 16.sp,
-                            fontFamily = nanumGothic,
-                            fontWeight = FontWeight.Normal,
+                        AfternoteDesign.typography.footnoteCaption.copy(
                             color = AfternoteDesign.colors.gray6,
                         ),
                 )
@@ -291,10 +277,7 @@ private fun InformationProcessingMethodText(informationProcessingMethod: String)
     Text(
         text = annotatedText,
         style =
-            TextStyle(
-                fontSize = 16.sp,
-                lineHeight = 22.sp,
-                fontFamily = nanumGothic,
+            AfternoteDesign.typography.textField.copy(
                 fontWeight = FontWeight.Medium,
                 color = AfternoteDesign.colors.gray9,
             ),
@@ -312,10 +295,7 @@ private fun ProcessingMethodsCard(processingMethods: List<String>) {
                 Text(
                     text = "처리 방법",
                     style =
-                        TextStyle(
-                            fontSize = 16.sp,
-                            lineHeight = 22.sp,
-                            fontFamily = nanumGothic,
+                        AfternoteDesign.typography.textField.copy(
                             fontWeight = FontWeight.Medium,
                             color = AfternoteDesign.colors.gray9,
                         ),
@@ -344,10 +324,7 @@ private fun MessageCard(message: String) {
                 Text(
                     text = "남기신 말씀",
                     style =
-                        TextStyle(
-                            fontSize = 16.sp,
-                            lineHeight = 22.sp,
-                            fontFamily = nanumGothic,
+                        AfternoteDesign.typography.textField.copy(
                             fontWeight = FontWeight.Medium,
                             color = AfternoteDesign.colors.gray9,
                         ),
@@ -356,11 +333,7 @@ private fun MessageCard(message: String) {
                 Text(
                     text = displayMessage,
                     style =
-                        TextStyle(
-                            fontSize = 14.sp,
-                            lineHeight = 20.sp,
-                            fontFamily = nanumGothic,
-                            fontWeight = FontWeight.Normal,
+                        AfternoteDesign.typography.bodySmallR.copy(
                             color = textColor,
                         ),
                 )

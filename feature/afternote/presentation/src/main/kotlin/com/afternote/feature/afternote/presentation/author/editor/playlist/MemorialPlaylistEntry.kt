@@ -20,17 +20,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.icon.ArrowIconSpec
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.model.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.provider.FakeAfternoteEditorDataProvider
@@ -122,10 +119,7 @@ private fun MemorialPlaylistListHeader(
                 Text(
                     text = "현재 플레이리스트",
                     style =
-                        TextStyle(
-                            fontSize = 16.sp,
-                            lineHeight = 22.sp,
-                            fontFamily = nanumGothic,
+                        AfternoteDesign.typography.textField.copy(
                             fontWeight = FontWeight.Medium,
                             color = AfternoteDesign.colors.gray9,
                         ),
@@ -137,11 +131,7 @@ private fun MemorialPlaylistListHeader(
                 Text(
                     text = "총 ${songCount}곡",
                     style =
-                        TextStyle(
-                            fontSize = 14.sp,
-                            lineHeight = 20.sp,
-                            fontFamily = nanumGothic,
-                            fontWeight = FontWeight.Normal,
+                        AfternoteDesign.typography.bodySmallR.copy(
                             color = AfternoteDesign.colors.gray9,
                         ),
                 )
@@ -153,11 +143,7 @@ private fun MemorialPlaylistListHeader(
                 Text(
                     text = "총 ${songCount}곡",
                     style =
-                        TextStyle(
-                            fontSize = 14.sp,
-                            lineHeight = 20.sp,
-                            fontFamily = nanumGothic,
-                            fontWeight = FontWeight.Normal,
+                        AfternoteDesign.typography.bodySmallR.copy(
                             color = Color(color = 0xFF000000),
                         ),
                 )
@@ -181,10 +167,7 @@ private fun MemorialPlaylistListHeader(
                             Text(
                                 text = "노래 추가하기",
                                 style =
-                                    TextStyle(
-                                        fontSize = 12.sp,
-                                        lineHeight = 18.sp,
-                                        fontFamily = nanumGothic,
+                                    AfternoteDesign.typography.captionLargeR.copy(
                                         fontWeight = FontWeight.Medium,
                                         color = AfternoteDesign.colors.gray9,
                                     ),
@@ -243,11 +226,7 @@ private fun MemorialPlaylistActionBar(
             Text(
                 text = "전체 삭제",
                 style =
-                    TextStyle(
-                        fontSize = 16.sp,
-                        lineHeight = 22.sp,
-                        fontFamily = nanumGothic,
-                        fontWeight = FontWeight.Normal,
+                    AfternoteDesign.typography.textField.copy(
                         color = AfternoteDesign.colors.gray9,
                         textAlign = TextAlign.Center,
                     ),
@@ -271,11 +250,7 @@ private fun MemorialPlaylistActionBar(
             Text(
                 text = "선택 삭제",
                 style =
-                    TextStyle(
-                        fontSize = 16.sp,
-                        lineHeight = 22.sp,
-                        fontFamily = nanumGothic,
-                        fontWeight = FontWeight.Normal,
+                    AfternoteDesign.typography.textField.copy(
                         color = AfternoteDesign.colors.gray9,
                         textAlign = TextAlign.Center,
                     ),

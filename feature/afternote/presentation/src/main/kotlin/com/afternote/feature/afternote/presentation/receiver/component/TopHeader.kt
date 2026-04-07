@@ -17,7 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.AfternoteDesign
 
 @Composable
@@ -32,9 +31,11 @@ fun TopHeader(modifier: Modifier = Modifier) {
     ) {
         Text(
             text = "AFTERNOTE",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Medium,
-            color = Color.Gray,
+            style =
+                AfternoteDesign.typography.bodyLargeR.copy(
+                    fontWeight = FontWeight.Medium,
+                    color = Color.Gray,
+                ),
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(

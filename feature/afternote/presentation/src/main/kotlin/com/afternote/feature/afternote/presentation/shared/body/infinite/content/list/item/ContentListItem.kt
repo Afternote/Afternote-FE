@@ -20,13 +20,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 
 /**
@@ -66,19 +64,18 @@ fun AfternoteListItem(
         ) {
             Text(
                 text = uiModel.serviceName,
-                color = AfternoteDesign.colors.black,
-                lineHeight = 24.sp,
-                fontSize = 16.sp,
-                fontFamily = nanumGothic,
-                fontWeight = FontWeight.Normal,
+                style =
+                    AfternoteDesign.typography.bodyBase.copy(
+                        lineHeight = 24.sp,
+                        color = AfternoteDesign.colors.black,
+                    ),
             )
             Text(
                 text = stringResource(R.string.afternote_last_written_date, uiModel.date),
-                color = AfternoteDesign.colors.gray5,
-                lineHeight = 16.sp,
-                fontSize = 10.sp,
-                fontFamily = nanumGothic,
-                fontWeight = FontWeight.Normal,
+                style =
+                    AfternoteDesign.typography.footnoteCaption.copy(
+                        color = AfternoteDesign.colors.gray5,
+                    ),
             )
         }
         Spacer(Modifier.weight(1f))

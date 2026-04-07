@@ -14,14 +14,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 
 @Composable
@@ -50,11 +46,7 @@ fun EmptyListBody(modifier: Modifier = Modifier) {
         Text(
             text = "아직 등록된 애프터노트가 없어요.\n등록하여 계정을 보호하세요.",
             style =
-                TextStyle(
-                    fontSize = 14.sp,
-                    lineHeight = 20.sp,
-                    fontFamily = nanumGothic,
-                    fontWeight = FontWeight.Normal,
+                AfternoteDesign.typography.bodySmallR.copy(
                     color = AfternoteDesign.colors.gray4,
                     textAlign = TextAlign.Center,
                 ),

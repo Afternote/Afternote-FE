@@ -22,15 +22,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.expand.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.nanumGothic
 
 /**
  * 아이템 추가용 텍스트 필드 컴포넌트
@@ -88,11 +85,8 @@ fun AddItemTextField(
                     Text(
                         text = placeholder,
                         style =
-                            TextStyle(
-                                fontSize = 16.sp,
+                            AfternoteDesign.typography.bodyBase.copy(
                                 lineHeight = 20.sp,
-                                fontFamily = nanumGothic,
-                                fontWeight = FontWeight.Normal,
                                 color = AfternoteDesign.colors.gray4,
                             ),
                     )
@@ -111,11 +105,8 @@ fun AddItemTextField(
                         .fillMaxWidth()
                         .height(24.dp),
                 textStyle =
-                    TextStyle(
-                        fontSize = 16.sp,
+                    AfternoteDesign.typography.bodyBase.copy(
                         lineHeight = 20.sp,
-                        fontFamily = nanumGothic,
-                        fontWeight = FontWeight.Normal,
                         color = AfternoteDesign.colors.gray9,
                     ),
             )

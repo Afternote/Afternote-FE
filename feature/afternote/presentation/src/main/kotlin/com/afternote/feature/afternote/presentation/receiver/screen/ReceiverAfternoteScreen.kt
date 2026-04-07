@@ -20,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -30,7 +29,6 @@ import com.afternote.core.ui.feedback.ConfirmationPopup
 import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.receiver.component.ContentSection
 import com.afternote.feature.afternote.presentation.receiver.component.HeroCard
@@ -147,9 +145,10 @@ fun ReceiverAfterNoteScreen(
                         R.string.receiver_sender_record_title,
                         summary.senderName.ifBlank { "" },
                     ),
-                fontWeight = FontWeight.Bold,
-                color = AfternoteDesign.colors.gray9,
-                fontFamily = nanumGothic,
+                style =
+                    AfternoteDesign.typography.bodyLargeB.copy(
+                        color = AfternoteDesign.colors.gray9,
+                    ),
                 modifier = Modifier.padding(bottom = 16.dp),
             )
 

@@ -28,7 +28,6 @@ import com.afternote.core.ui.icon.ArrowIconSpec
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 
@@ -99,16 +98,17 @@ private fun CategoryItem(
     ) {
         Text(
             text = category.label,
-            color =
-                if (isSelected) {
-                    AfternoteDesign.colors.gray7
-                } else {
-                    AfternoteDesign.colors.gray4
-                },
-            fontFamily = nanumGothic,
-            fontWeight = FontWeight.SemiBold,
-            lineHeight = 20.sp,
-            fontSize = 14.sp,
+            style =
+                AfternoteDesign.typography.bodySmallR.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    lineHeight = 20.sp,
+                    color =
+                        if (isSelected) {
+                            AfternoteDesign.colors.gray7
+                        } else {
+                            AfternoteDesign.colors.gray4
+                        },
+                ),
             modifier =
                 Modifier
                     .padding(16.dp),

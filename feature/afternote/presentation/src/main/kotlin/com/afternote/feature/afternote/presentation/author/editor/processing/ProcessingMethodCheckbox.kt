@@ -27,16 +27,13 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.icon.CheckCircleIcon
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
@@ -54,11 +51,7 @@ data class ProcessingMethodCheckboxCallbacks(
 
 @Composable
 private fun processingMethodTextStyle(): TextStyle =
-    TextStyle(
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
-        fontFamily = nanumGothic,
-        fontWeight = FontWeight.Normal,
+    AfternoteDesign.typography.bodySmallR.copy(
         color = AfternoteDesign.colors.gray9,
     )
 

@@ -21,15 +21,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.button.AddCircleButton
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverCallbacks
@@ -137,10 +134,7 @@ private fun AfternoteEditorReceiverItem(
             Text(
                 text = receiver.name,
                 style =
-                    TextStyle(
-                        fontSize = 14.sp,
-                        lineHeight = 20.sp,
-                        fontFamily = nanumGothic,
+                    AfternoteDesign.typography.bodySmallR.copy(
                         fontWeight = FontWeight.Medium,
                         color = AfternoteDesign.colors.gray9,
                     ),
@@ -148,11 +142,7 @@ private fun AfternoteEditorReceiverItem(
             Text(
                 text = receiver.label,
                 style =
-                    TextStyle(
-                        fontSize = 12.sp,
-                        lineHeight = 18.sp,
-                        fontFamily = nanumGothic,
-                        fontWeight = FontWeight.Normal,
+                    AfternoteDesign.typography.captionLargeR.copy(
                         color = AfternoteDesign.colors.gray5,
                     ),
             )
