@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -16,9 +15,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.form.Label
 import com.afternote.core.ui.form.LabelStyle
-import com.afternote.core.ui.form.MultilineOutlineTextField
-import com.afternote.core.ui.form.OutlineTextField
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
+import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodList
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListParams
@@ -89,22 +88,11 @@ private fun GalleryAndFileEditorContentBody(
         Spacer(modifier = Modifier.height(32.dp))
 
         // 남기실 말씀
-        Label(
-            text = "남기실 말씀",
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        OutlineTextField(
-            "제목",
-            params.messageTitleState,
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        MultilineOutlineTextField(
-            label = "내용",
-            textFieldState = params.messageState,
+        EditorMessageSection(
+            messages = params.editorMessages,
+            onRegisterClick = params.onMessageRegisterClick,
+            onDeleteClick = params.onMessageDeleteClick,
+            onAddClick = params.onMessageAddClick,
         )
 
         // 갤러리 및 파일 탭 하단 여백 (Viewport 높이의 10%, 800dp 기준 약 80dp)
@@ -128,8 +116,7 @@ private fun GalleryAndFileEditorContentPreview() {
                 bottomPadding = PaddingValues(bottom = 88.dp),
                 params =
                     GalleryAndFileEditorContentParams(
-                        messageTitleState = rememberTextFieldState(),
-                        messageState = rememberTextFieldState(),
+                        editorMessages = listOf(EditorMessage()),
                         recipientSection = AfternoteEditorReceiverSection(),
                         processingMethodSection = ProcessingMethodSection(),
                     ),
@@ -156,8 +143,7 @@ private fun GalleryAndFileEditorContentWithAfternoteEditorReceiversPreview() {
                     bottomPadding = PaddingValues(bottom = 88.dp),
                     params =
                         GalleryAndFileEditorContentParams(
-                            messageTitleState = rememberTextFieldState(),
-                            messageState = rememberTextFieldState(),
+                            editorMessages = listOf(EditorMessage()),
                             recipientSection =
                                 AfternoteEditorReceiverSection(
                                     afternoteEditReceivers = provider.getAfternoteEditorReceivers(),

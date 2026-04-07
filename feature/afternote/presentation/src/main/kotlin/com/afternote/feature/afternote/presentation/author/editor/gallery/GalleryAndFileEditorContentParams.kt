@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.editor.gallery
-import androidx.compose.foundation.text.input.TextFieldState
+
 import androidx.compose.runtime.Immutable
+import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
 
@@ -9,8 +10,10 @@ import com.afternote.feature.afternote.presentation.author.editor.processing.mod
  */
 @Immutable
 data class GalleryAndFileEditorContentParams(
-    val messageTitleState: TextFieldState,
-    val messageState: TextFieldState,
+    val editorMessages: List<EditorMessage>,
+    val onMessageRegisterClick: (EditorMessage) -> Unit = {},
+    val onMessageDeleteClick: (EditorMessage) -> Unit = {},
+    val onMessageAddClick: () -> Unit = {},
     val recipientSection: AfternoteEditorReceiverSection,
     val processingMethodSection: ProcessingMethodSection = ProcessingMethodSection(),
 )

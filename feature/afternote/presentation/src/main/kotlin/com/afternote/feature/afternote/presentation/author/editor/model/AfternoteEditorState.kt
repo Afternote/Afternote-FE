@@ -8,12 +8,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.afternote.core.ui.form.LastWishOption
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.editor.CATEGORY_MEMORIAL_GUIDELINE
+import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
@@ -49,14 +52,26 @@ class AfternoteEditorState(
     // TextFieldState는 Composable에서 생성하여 전달
     val idState: TextFieldState,
     val passwordState: TextFieldState,
-    val messageTitleState: TextFieldState,
-    val messageState: TextFieldState,
     val afternoteEditReceiverNameState: TextFieldState,
     val phoneNumberState: TextFieldState,
     val customServiceNameState: TextFieldState,
     initialAfternoteEditorReceivers: List<com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver>,
     albumCovers: List<AlbumCover>,
 ) {
+    // 남기실 말씀 (multiple messages)
+    val editorMessages: SnapshotStateList<EditorMessage> =
+        mutableStateListOf(EditorMessage())
+
+    fun addEditorMessage() {
+        editorMessages.add(EditorMessage())
+    }
+
+    fun removeEditorMessage(message: EditorMessage) {
+        if (editorMessages.size > 1) {
+            editorMessages.removeAll { it.id == message.id }
+        }
+    }
+
     // Navigation
     var selectedBottomNavItem by mutableStateOf(BottomNavTab.NOTE)
         private set
@@ -415,7 +430,9 @@ class AfternoteEditorState(
 
         idState.edit { replace(0, length, params.account.id) }
         passwordState.edit { replace(0, length, params.account.password) }
-        messageState.edit { replace(0, length, params.processing.message) }
+        // 기존 메시지를 첫 번째 EditorMessage에 로드
+        val firstMessage = editorMessages.firstOrNull() ?: EditorMessage().also { editorMessages.add(it) }
+        firstMessage.contentState.edit { replace(0, length, params.processing.message) }
 
         if (params.processing.accountMethodName.isNotEmpty()) {
             selectedProcessingMethod =
@@ -498,9 +515,14 @@ class AfternoteEditorState(
                 com.afternote.feature.afternote.domain.model
                     .ProcessingMethod(it.id, it.text)
             }
-        val title = messageTitleState.text.toString()
-        val content = messageState.text.toString()
-        val fullMessage = if (title.isNotEmpty()) "$title\n$content" else content
+        val fullMessage =
+            editorMessages
+                .map { msg ->
+                    val t = msg.titleState.text.toString()
+                    val c = msg.contentState.text.toString()
+                    if (t.isNotEmpty()) "$t\n$c" else c
+                }.filter { it.isNotBlank() }
+                .joinToString("\n---\n")
 
         return RegisterAfternotePayload(
             serviceName =
@@ -563,8 +585,6 @@ fun rememberAfternoteEditorState(): AfternoteEditorState {
     val afternoteProvider = DataProviderLocals.LocalAfternoteEditorDataProvider.current
     val idState = rememberTextFieldState()
     val passwordState = rememberTextFieldState()
-    val messageTitleState = rememberTextFieldState()
-    val messageState = rememberTextFieldState()
     val afternoteEditReceiverNameState = rememberTextFieldState()
     val phoneNumberState = rememberTextFieldState()
     val customServiceNameState = rememberTextFieldState()
@@ -573,8 +593,6 @@ fun rememberAfternoteEditorState(): AfternoteEditorState {
         AfternoteEditorState(
             idState = idState,
             passwordState = passwordState,
-            messageTitleState = messageTitleState,
-            messageState = messageState,
             afternoteEditReceiverNameState = afternoteEditReceiverNameState,
             phoneNumberState = phoneNumberState,
             customServiceNameState = customServiceNameState,

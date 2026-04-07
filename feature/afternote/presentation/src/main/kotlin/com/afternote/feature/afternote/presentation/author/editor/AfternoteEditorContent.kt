@@ -149,8 +149,10 @@ internal fun CategoryContent(
                 bottomPadding = bottomPadding,
                 params =
                     GalleryAndFileEditorContentParams(
-                        messageTitleState = state.messageTitleState,
-                        messageState = state.messageState,
+                        editorMessages = state.editorMessages,
+                        onMessageRegisterClick = {},
+                        onMessageDeleteClick = state::removeEditorMessage,
+                        onMessageAddClick = state::addEditorMessage,
                         recipientSection =
                             AfternoteEditorReceiverSection(
                                 afternoteEditReceivers = state.afternoteEditReceivers,
@@ -175,8 +177,10 @@ internal fun CategoryContent(
                 bottomPadding = bottomPadding,
                 params =
                     SocialNetworkEditorContentParams(
-                        messageTitleState = state.messageTitleState,
-                        messageState = state.messageState,
+                        editorMessages = state.editorMessages,
+                        onMessageRegisterClick = {},
+                        onMessageDeleteClick = state::removeEditorMessage,
+                        onMessageAddClick = state::addEditorMessage,
                         accountSection =
                             AccountSection(
                                 idState = state.idState,

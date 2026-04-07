@@ -16,10 +16,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.form.Label
 import com.afternote.core.ui.form.LabelStyle
-import com.afternote.core.ui.form.MultilineOutlineTextField
 import com.afternote.core.ui.form.OutlineTextField
 import com.afternote.core.ui.form.SelectableRadioCard
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
+import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
 import com.afternote.feature.afternote.presentation.author.editor.model.AccountSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.OptionRadioCardContent
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodList
@@ -145,24 +146,11 @@ private fun SocialNetworkEditorContentContent(
         Spacer(modifier = Modifier.height(32.dp))
 
         // 남기실 말씀
-        Label(
-            text = "남기실 말씀",
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        OutlineTextField(
-            "제목",
-            params.messageTitleState,
-            Modifier,
-            keyboardType = KeyboardType.Text,
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        MultilineOutlineTextField(
-            label = "내용",
-            textFieldState = params.messageState,
+        EditorMessageSection(
+            messages = params.editorMessages,
+            onRegisterClick = params.onMessageRegisterClick,
+            onDeleteClick = params.onMessageDeleteClick,
+            onAddClick = params.onMessageAddClick,
         )
 
         // 소셜네트워크 탭 하단 여백 (Viewport 높이의 10%, 800dp 기준 약 80dp)
@@ -186,8 +174,13 @@ private fun SocialNetworkEditorContentPreview() {
                 bottomPadding = PaddingValues(bottom = 88.dp),
                 params =
                     SocialNetworkEditorContentParams(
-                        messageTitleState = rememberTextFieldState(),
-                        messageState = rememberTextFieldState(),
+                        editorMessages =
+                            listOf(
+                                EditorMessage(
+                                    titleState = rememberTextFieldState("남긴말1"),
+                                ),
+                                EditorMessage(),
+                            ),
                         accountSection =
                             AccountSection(
                                 idState = rememberTextFieldState(),
