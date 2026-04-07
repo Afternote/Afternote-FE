@@ -18,16 +18,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.button.CustomRadioButton
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.nanumGothic
 
 /**
  * 선택 가능한 라디오 버튼 카드 컴포넌트 (Slot API 패턴)
@@ -108,10 +105,7 @@ private fun SelectableRadioCardPreview() {
                     androidx.compose.material3.Text(
                         text = "선택된 옵션",
                         style =
-                            TextStyle(
-                                fontSize = 16.sp,
-                                lineHeight = 22.sp,
-                                fontFamily = nanumGothic,
+                            AfternoteDesign.typography.textField.copy(
                                 fontWeight = FontWeight.Medium,
                                 color = AfternoteDesign.colors.gray9,
                             ),
@@ -129,10 +123,7 @@ private fun SelectableRadioCardPreview() {
                     androidx.compose.material3.Text(
                         text = "선택 안 된 옵션",
                         style =
-                            TextStyle(
-                                fontSize = 16.sp,
-                                lineHeight = 22.sp,
-                                fontFamily = nanumGothic,
+                            AfternoteDesign.typography.textField.copy(
                                 fontWeight = FontWeight.Medium,
                                 color = AfternoteDesign.colors.gray9,
                             ),
@@ -150,10 +141,7 @@ private fun SelectableRadioCardPreview() {
                     androidx.compose.material3.Text(
                         text = "제목 텍스트",
                         style =
-                            TextStyle(
-                                fontSize = 16.sp,
-                                lineHeight = 22.sp,
-                                fontFamily = nanumGothic,
+                            AfternoteDesign.typography.textField.copy(
                                 fontWeight = FontWeight.Medium,
                                 color = AfternoteDesign.colors.gray9,
                             ),
@@ -161,11 +149,7 @@ private fun SelectableRadioCardPreview() {
                     androidx.compose.material3.Text(
                         text = "설명 텍스트",
                         style =
-                            TextStyle(
-                                fontSize = 14.sp,
-                                lineHeight = 20.sp,
-                                fontFamily = nanumGothic,
-                                fontWeight = FontWeight.Normal,
+                            AfternoteDesign.typography.bodySmallR.copy(
                                 color = AfternoteDesign.colors.gray9,
                             ),
                     )
@@ -183,10 +167,7 @@ private fun SelectableRadioCardPreview() {
                     androidx.compose.material3.Text(
                         text = "보더가 있는 선택 안 된 옵션",
                         style =
-                            TextStyle(
-                                fontSize = 16.sp,
-                                lineHeight = 22.sp,
-                                fontFamily = nanumGothic,
+                            AfternoteDesign.typography.textField.copy(
                                 fontWeight = FontWeight.Medium,
                                 color = AfternoteDesign.colors.gray9,
                             ),

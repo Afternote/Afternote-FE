@@ -18,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -27,7 +26,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.nanumGothic
 
 /**
  * Style configuration for Label component.
@@ -73,10 +71,9 @@ fun Label(
         Text(
             text = text,
             style =
-                TextStyle(
+                AfternoteDesign.typography.textField.copy(
                     fontSize = style.fontSize,
                     lineHeight = style.lineHeight,
-                    fontFamily = nanumGothic,
                     fontWeight = style.fontWeight,
                     color = textColor,
                 ),

@@ -19,18 +19,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.afternote.core.ui.expand.dropShadow
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.nanumGothic
 
 @Composable
 fun ConfirmationPopup(
@@ -75,10 +72,7 @@ fun ConfirmationPopupContent(
     val containerShape = RoundedCornerShape(16.dp)
     val buttonShape = RoundedCornerShape(8.dp)
     val buttonTextStyle =
-        TextStyle(
-            fontSize = 16.sp,
-            lineHeight = 22.sp,
-            fontFamily = nanumGothic,
+        AfternoteDesign.typography.textField.copy(
             fontWeight = FontWeight.Medium,
             color = AfternoteDesign.colors.gray9,
             textAlign = TextAlign.Center,
@@ -108,10 +102,7 @@ fun ConfirmationPopupContent(
             Text(
                 text = message,
                 style =
-                    TextStyle(
-                        fontSize = 16.sp,
-                        lineHeight = 22.sp,
-                        fontFamily = nanumGothic,
+                    AfternoteDesign.typography.textField.copy(
                         fontWeight = FontWeight.Medium,
                         color = AfternoteDesign.colors.gray9,
                         textAlign = TextAlign.Center,

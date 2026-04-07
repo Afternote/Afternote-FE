@@ -8,13 +8,13 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.R
 
-val nanumGothic =
+private val nanumGothic =
     FontFamily(
         Font(R.font.nanumbarungothic, FontWeight.Normal),
         Font(R.font.nanumbarungothicbold, FontWeight.Bold),
     )
 
-val sfMono =
+private val sfMono =
     FontFamily(
         Font(R.font.sf_mono_regular, FontWeight.Normal),
     )

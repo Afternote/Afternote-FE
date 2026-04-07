@@ -16,14 +16,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.nanumGothic
 
 /**
  * A reusable list item for displaying a record-like Q/A content with date.
@@ -53,10 +50,7 @@ fun RecordQnAListItem(
                 Text(
                     text = question,
                     style =
-                        TextStyle(
-                            fontSize = 16.sp,
-                            lineHeight = 22.sp,
-                            fontFamily = nanumGothic,
+                        AfternoteDesign.typography.textField.copy(
                             fontWeight = FontWeight.Medium,
                             color = AfternoteDesign.colors.gray9,
                         ),
@@ -81,11 +75,7 @@ fun RecordQnAListItem(
                 Text(
                     text = answer,
                     style =
-                        TextStyle(
-                            fontSize = 14.sp,
-                            lineHeight = 20.sp,
-                            fontFamily = nanumGothic,
-                            fontWeight = FontWeight.Normal,
+                        AfternoteDesign.typography.bodySmallR.copy(
                             color = AfternoteDesign.colors.gray8,
                         ),
                 )
@@ -101,10 +91,7 @@ fun RecordQnAListItem(
                 Text(
                     text = dateText,
                     style =
-                        TextStyle(
-                            fontSize = 12.sp,
-                            lineHeight = 18.sp,
-                            fontFamily = nanumGothic,
+                        AfternoteDesign.typography.captionLargeR.copy(
                             fontWeight = FontWeight.Medium,
                             color = AfternoteDesign.colors.gray5,
                         ),

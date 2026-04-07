@@ -31,7 +31,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -42,7 +41,6 @@ import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Red
-import com.afternote.core.ui.theme.nanumGothic
 
 private const val DEFAULT_PLACEHOLDER = "Text Field"
 private const val PASSWORD_MASK_CHAR = '\u2022'
@@ -321,10 +319,9 @@ fun OutlineTextField(
         Text(
             text = label,
             style =
-                TextStyle(
+                AfternoteDesign.typography.captionLargeR.copy(
                     fontSize = style.labelFontSize,
                     lineHeight = style.labelLineHeight,
-                    fontFamily = nanumGothic,
                     fontWeight = style.labelFontWeight,
                     color = labelColorResolved,
                 ),

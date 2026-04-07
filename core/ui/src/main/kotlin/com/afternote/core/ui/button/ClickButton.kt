@@ -13,10 +13,8 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.expand.dropShadow
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.nanumGothic
 
 @Composable
 fun ClickButton(
@@ -48,10 +46,11 @@ fun ClickButton(
         val labelColor = if (color.luminance() > 0.5f) AfternoteDesign.colors.gray9 else Color.White
         Text(
             text = title,
-            fontSize = 16.sp,
-            color = labelColor,
-            fontFamily = nanumGothic,
-            fontWeight = FontWeight.Medium,
+            style =
+                AfternoteDesign.typography.bodyBase.copy(
+                    color = labelColor,
+                    fontWeight = FontWeight.Medium,
+                ),
         )
     }
 }
@@ -89,10 +88,11 @@ fun ClickButton(
         val labelColor = if (containerColor.luminance() > 0.5f) AfternoteDesign.colors.gray9 else Color.White
         Text(
             text = title,
-            fontSize = 16.sp,
-            color = labelColor,
-            fontFamily = nanumGothic,
-            fontWeight = FontWeight.Medium,
+            style =
+                AfternoteDesign.typography.bodyBase.copy(
+                    color = labelColor,
+                    fontWeight = FontWeight.Medium,
+                ),
         )
     }
 }
