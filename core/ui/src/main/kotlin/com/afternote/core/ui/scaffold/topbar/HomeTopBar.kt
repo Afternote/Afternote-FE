@@ -11,11 +11,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
+import com.afternote.core.ui.theme.AfternoteDesign
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,8 +55,8 @@ fun HomeTopBar(modifier: Modifier = Modifier) {
         },
         colors =
             TopAppBarDefaults.topAppBarColors(
-//                containerColor = AfternoteDesign.colors.gray1,
-                containerColor = Color.Red,
+                containerColor = AfternoteDesign.colors.gray1,
+//                containerColor = Color.Red,
             ),
         modifier = modifier,
     )

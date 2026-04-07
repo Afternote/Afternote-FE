@@ -54,7 +54,7 @@ fun AfternoteHomeScreen(
     }
 }
 
-@Preview(showBackground = true)
+@Preview
 @Composable
 private fun AfternoteHomeScreenPreview() {
     AfternoteTheme {
