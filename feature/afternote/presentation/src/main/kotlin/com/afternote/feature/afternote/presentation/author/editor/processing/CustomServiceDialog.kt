@@ -20,7 +20,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.afternote.core.ui.button.ClickButton
+import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.expand.dropShadow
 import com.afternote.core.ui.form.LabeledTextFieldStyle
 import com.afternote.core.ui.form.OutlineTextField
@@ -106,10 +106,9 @@ fun CustomServiceDialog(
             Spacer(modifier = Modifier.height(24.dp))
 
             // 추가하기 버튼
-            ClickButton(
-                color = AfternoteDesign.colors.gray9,
-                title = "추가하기",
-                onButtonClick = params.callbacks.onAddClick,
+            AfternoteButton(
+                text = "추가하기",
+                onClick = params.callbacks.onAddClick,
             )
         }
     }

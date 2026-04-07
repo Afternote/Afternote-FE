@@ -24,7 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.afternote.core.ui.button.ClickButton
+import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.expand.dropShadow
 import com.afternote.core.ui.form.LabeledTextFieldStyle
 import com.afternote.core.ui.form.OutlineTextField
@@ -184,10 +184,9 @@ fun AddAfternoteEditorReceiverDialog(
             Spacer(modifier = Modifier.height(8.dp))
 
             // 연락처에서 추가하기 버튼
-            ClickButton(
-                color = AfternoteDesign.colors.gray9,
-                title = "연락처 가져오기",
-                onButtonClick = params.callbacks.onImportContactsClick,
+            AfternoteButton(
+                text = "연락처 가져오기",
+                onClick = params.callbacks.onImportContactsClick,
             )
         }
     }

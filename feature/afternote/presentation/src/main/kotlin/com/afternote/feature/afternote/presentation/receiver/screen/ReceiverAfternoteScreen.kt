@@ -24,7 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.afternote.core.ui.button.ClickButton
+import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.feedback.ConfirmationPopup
 import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
@@ -201,10 +201,9 @@ fun ReceiverAfterNoteScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            ClickButton(
-                color = AfternoteDesign.colors.gray9,
-                onButtonClick = { showDialog = true },
-                title = stringResource(R.string.receiver_download_all_button),
+            AfternoteButton(
+                text = stringResource(R.string.receiver_download_all_button),
+                onClick = { showDialog = true },
             )
         }
     }

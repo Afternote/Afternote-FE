@@ -46,7 +46,7 @@ import coil3.compose.AsyncImage
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
-import com.afternote.core.ui.button.ClickButton
+import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.content.MemorialGuidelineContent
 import com.afternote.core.ui.content.MemorialGuidelineSlots
 import com.afternote.core.ui.form.LastWishesRadioGroup
@@ -162,10 +162,9 @@ fun ReceiverAfterNoteMainScreen(
             item {
                 Spacer(modifier = Modifier.height(70.dp))
 
-                ClickButton(
-                    color = AfternoteDesign.colors.gray9,
-                    title = "애프터노트 확인하기",
-                    onButtonClick = onNavigateToFullList,
+                AfternoteButton(
+                    text = "애프터노트 확인하기",
+                    onClick = onNavigateToFullList,
                 )
                 Spacer(modifier = Modifier.height(20.dp))
             }

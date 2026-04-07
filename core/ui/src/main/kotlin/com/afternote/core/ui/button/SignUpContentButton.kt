@@ -14,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
 @Composable
@@ -42,10 +41,9 @@ fun SignUpContentButton(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center,
             ) {
-                ClickButton(
-                    title = buttonTitle,
-                    onButtonClick = onNextClick,
-                    color = AfternoteDesign.colors.gray9,
+                AfternoteButton(
+                    text = buttonTitle,
+                    onClick = onNextClick,
                 )
             }
         }
@@ -59,10 +57,9 @@ fun SignUpContentButton(
                 content = content,
             )
 
-            ClickButton(
-                title = buttonTitle,
-                onButtonClick = onNextClick,
-                color = AfternoteDesign.colors.gray9,
+            AfternoteButton(
+                text = buttonTitle,
+                onClick = onNextClick,
                 modifier =
                     Modifier
                         .align(buttonAlignment)
