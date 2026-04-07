@@ -24,7 +24,7 @@ private val inter =
         Font(R.font.inter_variable, FontWeight.Medium),
     )
 
-//private val fedraMonoLight =
+// private val fedraMonoLight =
 //    FontFamily(
 //        Font(R.font.fedra_mono_light, FontWeight.Light),
 //    )

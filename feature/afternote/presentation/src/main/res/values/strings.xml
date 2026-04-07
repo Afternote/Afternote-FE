@@ -160,6 +160,9 @@
     <string name="feature_afternote_fingerprint_login_title">지문 로그인</string>
     <string name="feature_afternote_dialog_delete_title">삭제</string>
     <string name="feature_afternote_dialog_delete_record_message">\"%1$s\" 기록을 삭제할까요?</string>
+    <string name="feature_afternote_dialog_delete_body">%1$s에 대한 기록을 삭제하시겠습니까?\n삭제 시, 되돌릴 수 없습니다.</string>
+    <string name="feature_afternote_dialog_delete_cancel">취소하기</string>
+    <string name="feature_afternote_dialog_delete_confirm">삭제하기</string>
     <string name="feature_afternote_menu_edit">수정하기</string>
     <string name="feature_afternote_menu_delete_record">삭제하기</string>
     <string name="feature_afternote_empty_list_body">아직 등록된 답변이 없어요.\n답변을 등록해 자신을 알아 보아요.</string>

@@ -103,7 +103,7 @@ private fun NextStepCard(
                 modifier =
                     Modifier
                         .size(4.dp, 7.dp),
-                tint = AfternoteDesign.colors.gray6
+                tint = AfternoteDesign.colors.gray6,
             )
             Spacer(Modifier.width(4.dp))
         }

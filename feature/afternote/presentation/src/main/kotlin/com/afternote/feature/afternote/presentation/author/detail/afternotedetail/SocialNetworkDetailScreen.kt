@@ -374,6 +374,25 @@ private fun SocialNetworkDetailScreenPreview() {
     }
 }
 
+@Preview(name = "Edit Dropdown Menu")
+@Composable
+private fun SocialNetworkDetailScreenWithDropdownPreview() {
+    AfternoteTheme {
+        val stateWithDropdown =
+            remember {
+                AfternoteDetailState().apply {
+                    toggleDropdownMenu()
+                }
+            }
+        SocialNetworkDetailScreen(
+            content = PREVIEW_CONTENT,
+            onBackClick = {},
+            onEditClick = {},
+            state = stateWithDropdown,
+        )
+    }
+}
+
 @Preview
 @Composable
 private fun SocialNetworkDetailScreenWithDeleteDialogPreview() {
