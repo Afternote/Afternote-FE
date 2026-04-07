@@ -115,6 +115,7 @@ private fun CategoryItem(
                 color = AfternoteDesign.colors.gray7,
                 modifier =
                     Modifier
+                        .padding(horizontal = 16.dp)
                         .align(Alignment.BottomCenter),
             )
         }

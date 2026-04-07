@@ -62,7 +62,7 @@ private fun AfternoteListContentPreview() {
                                 iconResId = R.drawable.feature_afternote_img_logo,
                             ),
                         ),
-                    selectedCategory = AfternoteCategory.ALL,
+                    selectedCategory = AfternoteCategory.SOCIAL_NETWORK,
                 ),
             onCategorySelected = {},
             onListItemClick = {},
