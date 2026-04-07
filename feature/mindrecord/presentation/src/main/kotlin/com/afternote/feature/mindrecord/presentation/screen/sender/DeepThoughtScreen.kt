@@ -98,7 +98,7 @@ fun DeepThoughtScreen(modifier: Modifier = Modifier) {
             DetailTopBar(
                 title = "깊은 생각",
                 onBackClick = {},
-                action = {
+                actions = {
                     ViewModeSwitcher(
                         image1 = R.drawable.core_ui_list,
                         image2 = R.drawable.core_ui_calendar,

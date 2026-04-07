@@ -78,7 +78,7 @@ fun DailyQuestionAnswerListScreen(modifier: Modifier = Modifier) {
         topBar = {
             DetailTopBar(
                 onBackClick = {},
-                action = {
+                actions = {
                     ViewModeSwitcher(
                         isListView = isListView,
                         image1 = R.drawable.core_ui_list,

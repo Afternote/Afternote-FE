@@ -14,7 +14,6 @@ import com.afternote.feature.afternote.presentation.author.navigation.afternoteN
 import com.afternote.feature.mindrecord.presentation.screen.sender.HomeScreen
 import com.afternote.feature.timeletter.presentation.screen.sender.TimeletterScreen
 
-// TODO:검토
 @Composable
 fun AppNavigation(
     modifier: Modifier = Modifier,
@@ -24,10 +23,12 @@ fun AppNavigation(
         modifier = modifier,
         containerColor = AfternoteDesign.colors.gray1,
         bottomBar = {
-            BottomBar(
-                onTabClick = { item -> appState.navigateToBottomBarRoute(item.route) },
-                selectedNavTab = appState.currentNavTab,
-            )
+            if (appState.shouldShowBottomBar) {
+                BottomBar(
+                    onTabClick = { item -> appState.navigateToBottomBarRoute(item.route) },
+                    selectedNavTab = appState.currentNavTab,
+                )
+            }
         },
     ) { innerPadding ->
         NavHost(

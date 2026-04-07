@@ -33,7 +33,7 @@ fun DeepThoughtWriteScreen(modifier: Modifier = Modifier) {
             DetailTopBar(
                 title = "깊은 생각 기록하기",
                 onBackClick = {},
-                action = {
+                actions = {
                     Button(
                         onClick = {},
                         shape = RoundedCornerShape(6.dp),
