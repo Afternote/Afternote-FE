@@ -79,7 +79,7 @@ private fun AfternoteHomeScreenPreview() {
     }
 }
 
-@Preview(showBackground = true)
+@Preview
 @Composable
 private fun AfternoteHomeScreenEmptyPreview() {
     AfternoteTheme {

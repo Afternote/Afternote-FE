@@ -3,17 +3,16 @@ package com.afternote.core.ui.scaffold.topbar
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,7 +21,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
@@ -35,34 +33,34 @@ import com.afternote.core.ui.theme.AfternoteTheme
 fun DetailTopBar(
     title: String,
     modifier: Modifier = Modifier,
-    onBackClick: (() -> Unit)? = null, // 1. Nullable 처리 및 기본값 null
-    actions: @Composable RowScope.() -> Unit = {}, // 2. 네이밍 변경(action -> actions) 및 기본값 빈 람다
+    onBackClick: (() -> Unit)? = null,
+    actions: @Composable RowScope.() -> Unit = {},
 ) {
-    TopAppBar(
+    // TopAppBar -> CenterAlignedTopAppBar 로 변경
+    CenterAlignedTopAppBar(
         title = {
-            Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = title,
-                    style = AfternoteDesign.typography.bodyLargeB,
-                    textAlign = TextAlign.Center,
-                )
-            }
+            // Row로 감싸서 강제 정렬할 필요가 없어집니다.
+            Text(
+                text = title,
+                style = AfternoteDesign.typography.bodyLargeB,
+                // CenterAlignedTopAppBar가 알아서 정중앙에 꽂아줍니다.
+            )
         },
         navigationIcon = {
-            // 3. onBackClick이 전달되었을 때만 아이콘 렌더링
             if (onBackClick != null) {
-                IconButton(
-                    onClick = onBackClick,
-                ) {
+                IconButton(onClick = onBackClick) {
                     Icon(
-                        painterResource(R.drawable.core_ui_arrow_left),
+                        painter = painterResource(R.drawable.core_ui_arrow_left),
                         contentDescription = stringResource(R.string.core_ui_content_description_back),
                     )
                 }
             }
         },
-        actions = actions, // 4. 그대로 전달 (비어있으면 아무것도 안 그림)
-        modifier = modifier.padding(end = 17.dp),
+        actions = {
+            actions()
+            Spacer(modifier = Modifier.width(17.dp))
+        },
+        modifier = modifier,
     )
 }
 

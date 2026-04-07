@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
@@ -30,6 +31,7 @@ fun FingerprintLoginScreen(
         topBar = {
             DetailTopBar(title = stringResource(R.string.feature_afternote_fingerprint_login_title))
         },
+        containerColor = Color.Transparent,
     ) { paddingValues ->
         // 메인 컨텐츠
         FingerprintAuthContent(
@@ -42,7 +44,7 @@ fun FingerprintLoginScreen(
     }
 }
 
-@Preview(showBackground = true)
+@Preview
 @Composable
 private fun FingerprintLoginScreenPreview() {
     AfternoteTheme {
