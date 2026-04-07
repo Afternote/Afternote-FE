@@ -165,4 +165,18 @@
     <string name="feature_afternote_empty_list_body">아직 등록된 답변이 없어요.\n답변을 등록해 자신을 알아 보아요.</string>
     <string name="feature_afternote_content_description_recipient_profile">프로필 사진</string>
     <string name="feature_afternote_hero_last_greeting_caption">고인이 남긴 마지막 인사말</string>
+
+    <string name="feature_afternote_detail_title">애프터노트 상세</string>
+    <string name="feature_afternote_detail_edit">수정</string>
+    <string name="feature_afternote_detail_receiver_assigned">수신인 지정 완료</string>
+    <string name="feature_afternote_detail_section_account">ACCOUNT</string>
+    <string name="feature_afternote_detail_label_id">아이디</string>
+    <string name="feature_afternote_detail_label_password">비밀번호</string>
+    <string name="feature_afternote_detail_password_show">표시</string>
+    <string name="feature_afternote_detail_password_hide">숨김</string>
+    <string name="feature_afternote_detail_section_processing">처리방법</string>
+    <string name="feature_afternote_detail_section_message">남기신  말씀</string>
+    <string name="feature_afternote_detail_no_message">남기신 말씀이 없습니다.</string>
+    <string name="feature_afternote_detail_password_mask">••••••••</string>
+    <string name="feature_afternote_detail_quote_mark">❝ </string>
 </resources>
