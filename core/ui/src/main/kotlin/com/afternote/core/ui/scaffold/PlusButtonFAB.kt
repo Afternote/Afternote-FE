@@ -35,7 +35,7 @@ fun PlusButtonFAB(
     }
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 private fun PlusButtonFABPreview() {
     AfternoteTheme {
