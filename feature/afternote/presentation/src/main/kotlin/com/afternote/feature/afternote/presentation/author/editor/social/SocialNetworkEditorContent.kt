@@ -98,45 +98,22 @@ private fun SocialNetworkEditorContentContent(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        SelectableRadioCard(
-            selected = params.accountSection.selectedMethod == AccountProcessingMethod.MEMORIAL_ACCOUNT,
-            onClick = { params.accountSection.onMethodSelected(AccountProcessingMethod.MEMORIAL_ACCOUNT) },
-            modifier = Modifier.fillMaxWidth(),
-            content = {
-                OptionRadioCardContent(
-                    option = AccountProcessingMethod.MEMORIAL_ACCOUNT,
-                    selected = params.accountSection.selectedMethod == AccountProcessingMethod.MEMORIAL_ACCOUNT,
-                )
-            },
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        SelectableRadioCard(
-            selected = params.accountSection.selectedMethod == AccountProcessingMethod.PERMANENT_DELETE,
-            onClick = { params.accountSection.onMethodSelected(AccountProcessingMethod.PERMANENT_DELETE) },
-            modifier = Modifier.fillMaxWidth(),
-            content = {
-                OptionRadioCardContent(
-                    option = AccountProcessingMethod.PERMANENT_DELETE,
-                    selected = params.accountSection.selectedMethod == AccountProcessingMethod.PERMANENT_DELETE,
-                )
-            },
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        SelectableRadioCard(
-            selected = params.accountSection.selectedMethod == AccountProcessingMethod.TRANSFER_TO_RECEIVER,
-            onClick = { params.accountSection.onMethodSelected(AccountProcessingMethod.TRANSFER_TO_RECEIVER) },
-            modifier = Modifier.fillMaxWidth(),
-            content = {
-                OptionRadioCardContent(
-                    option = AccountProcessingMethod.TRANSFER_TO_RECEIVER,
-                    selected = params.accountSection.selectedMethod == AccountProcessingMethod.TRANSFER_TO_RECEIVER,
-                )
-            },
-        )
+        AccountProcessingMethod.entries.forEachIndexed { index, method ->
+            if (index > 0) {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            SelectableRadioCard(
+                selected = params.accountSection.selectedMethod == method,
+                onClick = { params.accountSection.onMethodSelected(method) },
+                modifier = Modifier.fillMaxWidth(),
+                content = {
+                    OptionRadioCardContent(
+                        option = method,
+                        selected = params.accountSection.selectedMethod == method,
+                    )
+                },
+            )
+        }
 
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -168,8 +145,23 @@ private fun SocialNetworkEditorContentContent(
         Spacer(modifier = Modifier.height(32.dp))
 
         // 남기실 말씀
+        Label(
+            text = "남기실 말씀",
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlineTextField(
+            "제목",
+            params.messageTitleState,
+            Modifier,
+            keyboardType = KeyboardType.Text,
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
         MultilineOutlineTextField(
-            label = "남기실 말씀",
+            label = "내용",
             textFieldState = params.messageState,
         )
 
@@ -194,6 +186,7 @@ private fun SocialNetworkEditorContentPreview() {
                 bottomPadding = PaddingValues(bottom = 88.dp),
                 params =
                     SocialNetworkEditorContentParams(
+                        messageTitleState = rememberTextFieldState(),
                         messageState = rememberTextFieldState(),
                         accountSection =
                             AccountSection(

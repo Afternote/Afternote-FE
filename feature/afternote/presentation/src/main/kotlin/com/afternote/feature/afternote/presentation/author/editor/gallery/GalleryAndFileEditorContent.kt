@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.form.Label
 import com.afternote.core.ui.form.LabelStyle
 import com.afternote.core.ui.form.MultilineOutlineTextField
+import com.afternote.core.ui.form.OutlineTextField
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodList
@@ -88,8 +89,21 @@ private fun GalleryAndFileEditorContentBody(
         Spacer(modifier = Modifier.height(32.dp))
 
         // 남기실 말씀
+        Label(
+            text = "남기실 말씀",
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlineTextField(
+            "제목",
+            params.messageTitleState,
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
         MultilineOutlineTextField(
-            label = "남기실 말씀",
+            label = "내용",
             textFieldState = params.messageState,
         )
 
@@ -114,6 +128,7 @@ private fun GalleryAndFileEditorContentPreview() {
                 bottomPadding = PaddingValues(bottom = 88.dp),
                 params =
                     GalleryAndFileEditorContentParams(
+                        messageTitleState = rememberTextFieldState(),
                         messageState = rememberTextFieldState(),
                         recipientSection = AfternoteEditorReceiverSection(),
                         processingMethodSection = ProcessingMethodSection(),
@@ -141,6 +156,7 @@ private fun GalleryAndFileEditorContentWithAfternoteEditorReceiversPreview() {
                     bottomPadding = PaddingValues(bottom = 88.dp),
                     params =
                         GalleryAndFileEditorContentParams(
+                            messageTitleState = rememberTextFieldState(),
                             messageState = rememberTextFieldState(),
                             recipientSection =
                                 AfternoteEditorReceiverSection(

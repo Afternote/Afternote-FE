@@ -8,14 +8,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.afternote.core.ui.form.LastWishOption
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.feature.afternote.presentation.author.editor.playlist.Song
+import com.afternote.feature.afternote.presentation.author.editor.CATEGORY_MEMORIAL_GUIDELINE
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
@@ -24,47 +22,6 @@ import com.afternote.feature.afternote.presentation.author.editor.selection.Sele
 import com.afternote.feature.afternote.presentation.shared.DataProviderLocals
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
-
-/**
- * 추모 플레이리스트 상태 홀더
- */
-@Stable
-class MemorialPlaylistStateHolder {
-    val songs: SnapshotStateList<Song> =
-        mutableStateListOf()
-
-    var onSongCountChanged: (() -> Unit)? = null
-
-    fun initializeSongs(initialSongs: List<Song>) {
-        if (songs.isEmpty()) {
-            songs.addAll(initialSongs)
-        }
-    }
-
-    fun addSong(song: Song) {
-        songs.add(song)
-        onSongCountChanged?.invoke()
-    }
-
-    @Suppress("UNUSED")
-    fun removeSong(songId: String) {
-        songs.removeAll { it.id == songId }
-        onSongCountChanged?.invoke()
-    }
-
-    /**
-     * 선택된 곡 ID 집합에 해당하는 곡들을 일괄 삭제합니다.
-     */
-    fun removeSongs(ids: Set<String>) {
-        songs.removeAll { it.id in ids }
-        onSongCountChanged?.invoke()
-    }
-
-    fun clearAllSongs() {
-        songs.clear()
-        onSongCountChanged?.invoke()
-    }
-}
 
 private const val TAG = "AfternoteEditorState"
 private const val CATEGORY_GALLERY_AND_FILE = "갤러리 및 파일"
@@ -92,6 +49,7 @@ class AfternoteEditorState(
     // TextFieldState는 Composable에서 생성하여 전달
     val idState: TextFieldState,
     val passwordState: TextFieldState,
+    val messageTitleState: TextFieldState,
     val messageState: TextFieldState,
     val afternoteEditReceiverNameState: TextFieldState,
     val phoneNumberState: TextFieldState,
@@ -220,6 +178,21 @@ class AfternoteEditorState(
             ),
         )
     val playlistAlbumCovers = albumCovers
+
+    /** 플레이리스트 앨범 커버 (라이브 상태 우선, 없으면 초기 로드값) */
+    val displayAlbumCovers: List<AlbumCover>
+        get() =
+            playlistStateHolder?.songs?.map { s ->
+                AlbumCover(id = s.id, imageUrl = s.albumCoverUrl, title = s.title)
+            } ?: playlistAlbumCovers
+
+    /** 플레이리스트 곡 수 (라이브 상태 우선) */
+    val livePlaylistSongCount: Int
+        get() = playlistStateHolder?.songs?.size ?: playlistSongCount
+
+    /** 영정 사진 표시용 URI (사용자 선택 우선, 없으면 API 값) */
+    val displayMemorialPhotoUri: String?
+        get() = pickedMemorialPhotoUri ?: memorialPhotoUrl
 
     // Computed Properties (Line 295 해결: 삼항 연산자 제거)
     val currentServiceOptions: List<String>
@@ -503,6 +476,50 @@ class AfternoteEditorState(
         funeralThumbnailUrl = params.memorialThumbnailUrl
         memorialPhotoUrl = params.memorialPhotoUrl
     }
+
+    /**
+     * 등록 버튼 클릭 시 [RegisterAfternotePayload]를 생성한다.
+     */
+    fun createRegisterPayload(): RegisterAfternotePayload {
+        val date =
+            java.time.LocalDate
+                .now()
+                .format(
+                    java.time.format.DateTimeFormatter
+                        .ofPattern("yyyy.MM.dd"),
+                )
+        val socialMethods =
+            processingMethods.map {
+                com.afternote.feature.afternote.domain.model
+                    .ProcessingMethod(it.id, it.text)
+            }
+        val galleryMethods =
+            galleryProcessingMethods.map {
+                com.afternote.feature.afternote.domain.model
+                    .ProcessingMethod(it.id, it.text)
+            }
+        val title = messageTitleState.text.toString()
+        val content = messageState.text.toString()
+        val fullMessage = if (title.isNotEmpty()) "$title\n$content" else content
+
+        return RegisterAfternotePayload(
+            serviceName =
+                if (selectedCategory == CATEGORY_MEMORIAL_GUIDELINE) {
+                    CATEGORY_MEMORIAL_GUIDELINE
+                } else {
+                    selectedService
+                },
+            date = date,
+            accountId = idState.text.toString(),
+            password = passwordState.text.toString(),
+            message = fullMessage,
+            accountProcessingMethod = selectedProcessingMethod.name,
+            informationProcessingMethod = selectedInformationProcessingMethod.name,
+            processingMethods = socialMethods,
+            galleryProcessingMethods = galleryMethods,
+            atmosphere = getAtmosphereForSave(),
+        )
+    }
 }
 
 /**
@@ -546,6 +563,7 @@ fun rememberAfternoteEditorState(): AfternoteEditorState {
     val afternoteProvider = DataProviderLocals.LocalAfternoteEditorDataProvider.current
     val idState = rememberTextFieldState()
     val passwordState = rememberTextFieldState()
+    val messageTitleState = rememberTextFieldState()
     val messageState = rememberTextFieldState()
     val afternoteEditReceiverNameState = rememberTextFieldState()
     val phoneNumberState = rememberTextFieldState()
@@ -555,6 +573,7 @@ fun rememberAfternoteEditorState(): AfternoteEditorState {
         AfternoteEditorState(
             idState = idState,
             passwordState = passwordState,
+            messageTitleState = messageTitleState,
             messageState = messageState,
             afternoteEditReceiverNameState = afternoteEditReceiverNameState,
             phoneNumberState = phoneNumberState,

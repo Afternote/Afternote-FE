@@ -26,7 +26,6 @@ import com.afternote.feature.afternote.presentation.author.editor.selection.Sele
 import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdownLabelParams
 import com.afternote.feature.afternote.presentation.author.editor.social.SocialNetworkEditorContent
 import com.afternote.feature.afternote.presentation.author.editor.social.SocialNetworkEditorContentParams
-import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 
 @Composable
 internal fun EditContent(
@@ -113,27 +112,13 @@ internal fun CategoryContent(
 ) {
     when (state.selectedCategory) {
         CATEGORY_MEMORIAL_GUIDELINE -> {
-            val albumCoversFromPlaylist =
-                state.playlistStateHolder?.songs?.let { songs ->
-                    songs.mapIndexed { _, s ->
-                        AlbumCover(
-                            id = s.id,
-                            imageUrl = s.albumCoverUrl,
-                            title = s.title,
-                        )
-                    }
-                } ?: state.playlistAlbumCovers
-            val livePlaylistSongCount =
-                state.playlistStateHolder?.songs?.size ?: state.playlistSongCount
             MemorialGuidelineEditorContent(
                 bottomPadding = bottomPadding,
                 params =
                     MemorialGuidelineEditorContentParams(
-                        displayMemorialPhotoUri =
-                            state.pickedMemorialPhotoUri
-                                ?: state.memorialPhotoUrl,
-                        playlistSongCount = livePlaylistSongCount,
-                        playlistAlbumCovers = albumCoversFromPlaylist,
+                        displayMemorialPhotoUri = state.displayMemorialPhotoUri,
+                        playlistSongCount = state.livePlaylistSongCount,
+                        playlistAlbumCovers = state.displayAlbumCovers,
                         selectedLastWish = state.selectedLastWish,
                         lastWishOptions = state.lastWishOptions,
                         funeralVideoUrl = state.funeralVideoUrl,
@@ -164,6 +149,7 @@ internal fun CategoryContent(
                 bottomPadding = bottomPadding,
                 params =
                     GalleryAndFileEditorContentParams(
+                        messageTitleState = state.messageTitleState,
                         messageState = state.messageState,
                         recipientSection =
                             AfternoteEditorReceiverSection(
@@ -189,6 +175,7 @@ internal fun CategoryContent(
                 bottomPadding = bottomPadding,
                 params =
                     SocialNetworkEditorContentParams(
+                        messageTitleState = state.messageTitleState,
                         messageState = state.messageState,
                         accountSection =
                             AccountSection(

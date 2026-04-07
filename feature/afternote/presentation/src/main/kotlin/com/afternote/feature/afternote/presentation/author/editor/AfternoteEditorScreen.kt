@@ -8,13 +8,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -27,23 +25,19 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.ui.expand.addFocusCleaner
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.domain.model.ListItem
-import com.afternote.feature.afternote.domain.model.ProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.model.LoadFromExistingAccountParams
 import com.afternote.feature.afternote.presentation.author.editor.model.LoadFromExistingParams
 import com.afternote.feature.afternote.presentation.author.editor.model.LoadFromExistingProcessingParams
 import com.afternote.feature.afternote.presentation.author.editor.model.MemorialPlaylistStateHolder
-import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.model.rememberAfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.provider.FakeAfternoteEditorDataProvider
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
 import com.afternote.feature.afternote.presentation.shared.DataProviderLocals
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 private const val TAG = "AfternoteEditorScreen"
 
@@ -161,38 +155,14 @@ fun AfternoteEditorScreen(
                 title = "애프터노트 작성하기",
                 onBackClick = callbacks.onBackClick,
                 actions = {
-                    IconButton(onClick = {
-                        val dateFormat = SimpleDateFormat("yyyy.MM.dd", Locale.getDefault())
-                        val date = dateFormat.format(Date())
-                        val processingMethods =
-                            state.processingMethods.map {
-                                ProcessingMethod(it.id, it.text)
-                            }
-                        val galleryProcessingMethods =
-                            state.galleryProcessingMethods.map {
-                                ProcessingMethod(it.id, it.text)
-                            }
-                        callbacks.onRegisterClick(
-                            RegisterAfternotePayload(
-                                serviceName =
-                                    if (state.selectedCategory == CATEGORY_MEMORIAL_GUIDELINE) {
-                                        CATEGORY_MEMORIAL_GUIDELINE
-                                    } else {
-                                        state.selectedService
-                                    },
-                                date = date,
-                                accountId = state.idState.text.toString(),
-                                password = state.passwordState.text.toString(),
-                                message = state.messageState.text.toString(),
-                                accountProcessingMethod = state.selectedProcessingMethod.name,
-                                informationProcessingMethod = state.selectedInformationProcessingMethod.name,
-                                processingMethods = processingMethods,
-                                galleryProcessingMethods = galleryProcessingMethods,
-                                atmosphere = state.getAtmosphereForSave(),
-                            ),
+                    TextButton(
+                        onClick = { callbacks.onRegisterClick(state.createRegisterPayload()) },
+                    ) {
+                        Text(
+                            text = "등록",
+                            style = AfternoteDesign.typography.bodySmallB,
+                            color = AfternoteDesign.colors.gray9,
                         )
-                    }) {
-                        Icon(Icons.Default.Check, contentDescription = "작성 완료")
                     }
                 },
             )
