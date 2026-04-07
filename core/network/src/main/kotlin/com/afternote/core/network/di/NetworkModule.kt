@@ -72,6 +72,16 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
             // 요청을 다시 보낼 때 다른 요청처럼 인터셉터를 거침
             .build()
 
+    // S3에 우리 앱의 액세스 토큰이 헤더로 전달되면 400/403이 뜨기 때문에 토큰 없는 순수한 클라이언트 필요
+    @Provides
+    @Singleton
+    @Named("S3Upload")
+    fun provideS3UploadOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient =
+        OkHttpClient
+            .Builder()
+            .addInterceptor(loggingInterceptor)
+            .build()
+
     @Provides
     @Singleton
     fun provideRetrofit(

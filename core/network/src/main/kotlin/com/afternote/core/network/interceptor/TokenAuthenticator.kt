@@ -12,7 +12,7 @@ import javax.inject.Inject
 class TokenAuthenticator
     @Inject
     constructor(
-        private val authRepository: AuthRepository,
+        private val authRepository: dagger.Lazy<AuthRepository>,
     ) : Authenticator {
         @Suppress("ReturnCount")
         override fun authenticate(
@@ -34,7 +34,7 @@ class TokenAuthenticator
 
             synchronized(this) {
                 // 한 스레드만 접근할 수 있도록 락
-                val currentAccessToken = runBlocking { authRepository.getAccessToken() }.getOrNull()
+                val currentAccessToken = runBlocking { authRepository.get().getAccessToken() }.getOrNull()
                 // 앞선 다른 스레드가 토큰을 받아왔을 수도 있기 때문에 다시 현재 토큰을 확인
                 if (oldAccessToken != currentAccessToken && !currentAccessToken.isNullOrEmpty()) {
                     return buildRequest(
@@ -45,11 +45,11 @@ class TokenAuthenticator
 
                 val refreshToken =
                     runBlocking {
-                        authRepository.getRefreshToken()
+                        authRepository.get().getRefreshToken()
                     }.getOrNull() ?: return null
                 val tokenBundle =
                     runBlocking {
-                        authRepository.rotateToken(
+                        authRepository.get().rotateToken(
                             refreshToken = refreshToken,
                         )
                     }.getOrNull()
