@@ -19,10 +19,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.expand.horizontalFadingEdge
 import com.afternote.core.ui.icon.ArrowIconSpec
 import com.afternote.core.ui.icon.RightArrowIcon
@@ -99,9 +97,7 @@ private fun CategoryItem(
         Text(
             text = category.label,
             style =
-                AfternoteDesign.typography.bodySmallR.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    lineHeight = 20.sp,
+                AfternoteDesign.typography.bodySmallB.copy(
                     color =
                         if (isSelected) {
                             AfternoteDesign.colors.gray7

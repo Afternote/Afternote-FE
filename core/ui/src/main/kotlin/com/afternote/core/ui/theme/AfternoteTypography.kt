@@ -19,6 +19,16 @@ private val sfMono =
         Font(R.font.sf_mono_regular, FontWeight.Normal),
     )
 
+private val inter =
+    FontFamily(
+        Font(R.font.inter_variable, FontWeight.Medium),
+    )
+
+//private val fedraMonoLight =
+//    FontFamily(
+//        Font(R.font.fedra_mono_light, FontWeight.Light),
+//    )
+
 data class AfternoteTypography(
     val h1: TextStyle =
         TextStyle(
@@ -131,4 +141,20 @@ data class AfternoteTypography(
             fontSize = 16.sp,
             lineHeight = 22.sp,
         ),
+    val inter: TextStyle =
+        TextStyle(
+            fontFamily = com.afternote.core.ui.theme.inter,
+            fontWeight = FontWeight.Medium,
+            fontSize = 13.sp,
+            lineHeight = 21.1.sp,
+            letterSpacing = (-0.08).sp,
+        ),
+//    val fedraMono: TextStyle =
+//        TextStyle(
+//            fontFamily = fedraMonoLight,
+//            fontWeight = FontWeight.Light,
+//            fontSize = 11.sp,
+//            lineHeight = 16.5.sp,
+//            letterSpacing = 0.61.sp,
+//        ),
 )
