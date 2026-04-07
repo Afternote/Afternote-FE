@@ -83,6 +83,7 @@ fun ReceiverAfterNoteMainScreen(
     val profileResId = profileImageResId ?: R.drawable.feature_afternote_img_default_profile_deceased
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             Column(modifier = Modifier.statusBarsPadding()) {
                 DetailTopBar(

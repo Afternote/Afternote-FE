@@ -107,6 +107,7 @@ fun SongPlaylistScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         topBar = {
             DetailTopBar(
                 title = title,
@@ -174,6 +175,7 @@ fun SongPlaylistScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         topBar = {
             DetailTopBar(
                 title = title,
@@ -270,6 +272,7 @@ fun SongPlaylistScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         topBar = {
             DetailTopBar(
                 title = title,

@@ -122,6 +122,7 @@ fun MemorialGuidelineDetailScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         topBar = {
             DetailTopBar(
                 title = "",

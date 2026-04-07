@@ -7,10 +7,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import com.afternote.core.ui.scaffold.PlusButtonFAB
 import com.afternote.core.ui.scaffold.topbar.HomeTopBar
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.AfternoteAddFAB
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.body.EmptyListBody
 import com.afternote.feature.afternote.presentation.shared.body.infinite.AfternoteBodyUiState
@@ -33,7 +33,7 @@ fun AfternoteHomeScreen(
         topBar = {
             HomeTopBar()
         },
-        floatingActionButton = { AfternoteAddFAB(onClick = onFabClick) },
+        floatingActionButton = { PlusButtonFAB(onClick = onFabClick) },
     ) { paddingValues ->
         if (listState.visibleItems.isNotEmpty()) {
             InfiniteListBody(
