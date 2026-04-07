@@ -31,6 +31,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -38,11 +39,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Red
 
-private const val DEFAULT_PLACEHOLDER = "Text Field"
 private const val PASSWORD_MASK_CHAR = '\u2022'
 
 private val OutlineTextFieldShape = RoundedCornerShape(8.dp)
@@ -206,7 +207,7 @@ fun OutlineTextField(
                 modifier = Modifier.padding(end = 25.dp),
             ) {
                 Text(
-                    text = "인증번호 받기",
+                    text = stringResource(R.string.core_ui_request_verification_code),
                     modifier = Modifier.clickable { onAuthClick() },
                 )
             }
@@ -266,7 +267,7 @@ fun OutlineTextField(
                 IconButton(onClick = { onFileAddClick() }) {
                     Icon(
                         imageVector = Icons.Filled.AddCircle,
-                        contentDescription = "Add file",
+                        contentDescription = stringResource(R.string.core_ui_content_description_add_file),
                         tint = AfternoteDesign.colors.gray9,
                         modifier = Modifier.size(24.dp),
                     )
@@ -305,7 +306,7 @@ fun OutlineTextField(
     label: String,
     textFieldState: TextFieldState,
     modifier: Modifier = Modifier,
-    placeholder: String = DEFAULT_PLACEHOLDER,
+    placeholder: String = stringResource(R.string.core_ui_text_field_placeholder),
     keyboardType: KeyboardType = KeyboardType.Text,
     style: LabeledTextFieldStyle = LabeledTextFieldStyle(),
     isError: Boolean = false,
@@ -386,7 +387,7 @@ fun MultilineOutlineTextField(
     label: String,
     textFieldState: TextFieldState,
     modifier: Modifier = Modifier,
-    placeholder: String = DEFAULT_PLACEHOLDER,
+    placeholder: String = stringResource(R.string.core_ui_text_field_placeholder),
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -440,7 +441,7 @@ fun MultilineOutlineTextField(
 fun OutlineTextField(
     textFieldState: TextFieldState,
     modifier: Modifier = Modifier,
-    placeholder: String = DEFAULT_PLACEHOLDER,
+    placeholder: String = stringResource(R.string.core_ui_text_field_placeholder),
     containerColor: Color? = null,
     height: Dp = OutlineTextFieldHeightMultiline,
     shape: RoundedCornerShape = RoundedCornerShape(16.dp),
@@ -514,7 +515,7 @@ private fun OutlineTextFieldWithLabelPreview() {
         OutlineTextField(
             label = "아이디",
             textFieldState = rememberTextFieldState(),
-            placeholder = DEFAULT_PLACEHOLDER,
+            placeholder = stringResource(R.string.core_ui_text_field_placeholder),
         )
     }
 }

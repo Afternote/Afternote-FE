@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -84,7 +85,7 @@ fun ProfileImage(
             )
             Image(
                 painter = painterResource(R.drawable.core_ui_add_circle_profile),
-                contentDescription = "프로필 수정 버튼",
+                contentDescription = stringResource(R.string.core_ui_content_description_profile_edit),
                 modifier =
                     Modifier
                         .size(editButtonSize)
@@ -126,7 +127,7 @@ private fun ProfileImageContent(
                                 this["User-Agent"] = "Afternote Android App"
                             }.build(),
                     ).build(),
-            contentDescription = "프로필 이미지",
+            contentDescription = stringResource(R.string.core_ui_content_description_profile_image),
             modifier = modifier,
             contentScale = ContentScale.Crop,
             error = painterResource(fallbackImageRes),
@@ -142,7 +143,7 @@ private fun ProfileImageContent(
         Log.d(TAG, "using fallback drawable")
         Image(
             painter = painterResource(fallbackImageRes),
-            contentDescription = "프로필 이미지",
+            contentDescription = stringResource(R.string.core_ui_content_description_profile_image),
             contentScale = ContentScale.Crop,
             modifier = modifier,
         )

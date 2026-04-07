@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -57,6 +58,7 @@ import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.ReceiversCard
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.dummy.AlbumDummies
+import com.afternote.core.ui.R as CoreUiR
 
 /**
  * 추모 가이드라인 상세 화면의 데이터 상태
@@ -434,7 +436,8 @@ private fun AlbumCoverItem(album: AlbumCover) {
 
 @Composable
 private fun LastWishCard(lastWish: String) {
-    val displayText = lastWish.ifEmpty { "남기고 싶은 당부가 없습니다." }
+    val displayText =
+        lastWish.ifEmpty { stringResource(CoreUiR.string.core_ui_last_wish_empty_state) }
     val textColor =
         if (lastWish.isNotEmpty()) AfternoteDesign.colors.gray9 else AfternoteDesign.colors.gray5
 
@@ -443,7 +446,7 @@ private fun LastWishCard(lastWish: String) {
         content = {
             Column {
                 Text(
-                    text = "남기고 싶은 당부",
+                    text = stringResource(CoreUiR.string.core_ui_label_last_wish),
                     style =
                         AfternoteDesign.typography.textField.copy(
                             fontWeight = FontWeight.Medium,

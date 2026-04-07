@@ -127,7 +127,7 @@ private fun ReceiverDetailItem(
         ) {
             Image(
                 painter = painterResource(R.drawable.img_recipient_profile),
-                contentDescription = "프로필 사진",
+                contentDescription = stringResource(R.string.feature_afternote_content_description_recipient_profile),
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -181,16 +181,18 @@ fun DeleteConfirmDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("삭제") },
-        text = { Text("\"$serviceName\" 기록을 삭제할까요?") },
+        title = { Text(stringResource(R.string.feature_afternote_dialog_delete_title)) },
+        text = {
+            Text(stringResource(R.string.feature_afternote_dialog_delete_record_message, serviceName))
+        },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text("삭제")
+                Text(stringResource(R.string.feature_afternote_dialog_delete_title))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("취소")
+                Text(stringResource(R.string.biometric_prompt_negative))
             }
         },
     )
@@ -207,7 +209,7 @@ fun EditDropdownMenu(
     DropdownMenu(expanded = expanded, onDismissRequest = onDismissRequest) {
         if (showEditItem) {
             DropdownMenuItem(
-                text = { Text("수정하기") },
+                text = { Text(stringResource(R.string.feature_afternote_menu_edit)) },
                 onClick = {
                     onDismissRequest()
                     onEditClick()
@@ -215,7 +217,7 @@ fun EditDropdownMenu(
             )
         }
         DropdownMenuItem(
-            text = { Text("삭제하기") },
+            text = { Text(stringResource(R.string.feature_afternote_menu_delete_record)) },
             onClick = {
                 onDismissRequest()
                 onDeleteClick()

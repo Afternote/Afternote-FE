@@ -1,7 +1,6 @@
 package com.afternote.feature.afternote.presentation.shared.fingerprint
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -30,7 +30,7 @@ import com.afternote.feature.afternote.presentation.R
 @Composable
 fun FingerprintAuthContent(
     modifier: Modifier = Modifier,
-    onFingerprintAuthClick: () -> Unit = {},
+    onFingerprintAuthClick: () -> Unit,
 ) {
     Column(
         modifier =
@@ -43,7 +43,7 @@ fun FingerprintAuthContent(
 
         // 안내 텍스트
         Text(
-            text = "사용자 인증 후 조회가 가능합니다.",
+            text = stringResource(R.string.biometric_prompt_subtitle),
             style =
                 AfternoteDesign.typography.textField.copy(
                     fontWeight = FontWeight.Medium,
@@ -55,22 +55,17 @@ fun FingerprintAuthContent(
         Spacer(modifier = Modifier.height(40.dp))
 
         // 지문 아이콘
-        Box(
+        Image(
+            painter = painterResource(R.drawable.ic_fingerprint),
+            contentDescription = stringResource(R.string.biometric_prompt_title),
             modifier = Modifier.size(100.dp, 114.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Image(
-                painter = painterResource(R.drawable.ic_fingerprint),
-                contentDescription = "지문 인증",
-                modifier = Modifier.size(100.dp, 114.dp),
-            )
-        }
+        )
 
         Spacer(modifier = Modifier.height(32.dp))
 
         // 지문 인증 버튼
         ClickButton(
-            title = "지문 인증하기",
+            title = stringResource(R.string.feature_afternote_fingerprint_auth_button),
             onButtonClick = onFingerprintAuthClick,
             color = AfternoteDesign.colors.gray9,
             modifier = Modifier.fillMaxWidth(),
@@ -84,6 +79,8 @@ fun FingerprintAuthContent(
 @Composable
 private fun FingerprintAuthContentPreview() {
     AfternoteTheme {
-        FingerprintAuthContent()
+        FingerprintAuthContent(
+            onFingerprintAuthClick = {},
+        )
     }
 }

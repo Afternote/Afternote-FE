@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -44,7 +45,7 @@ fun EmptyListBody(modifier: Modifier = Modifier) {
         }
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "아직 등록된 애프터노트가 없어요.\n등록하여 계정을 보호하세요.",
+            text = stringResource(R.string.feature_afternote_empty_list_body),
             style =
                 AfternoteDesign.typography.bodySmallR.copy(
                     color = AfternoteDesign.colors.gray4,
