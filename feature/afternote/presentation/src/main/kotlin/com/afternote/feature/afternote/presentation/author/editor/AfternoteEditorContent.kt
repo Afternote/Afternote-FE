@@ -164,7 +164,7 @@ internal fun CategoryContent(
                                 afternoteEditReceivers = state.afternoteEditReceivers,
                                 callbacks =
                                     AfternoteEditorReceiverCallbacks(
-                                        onAddClick = onNavigateToSelectReceiver,
+                                        onAddClick = state::showAddAfternoteEditorReceiverDialog,
                                         onItemDeleteClick = state::onAfternoteEditorReceiverDelete,
                                         onItemAdded = state::onAfternoteEditorReceiverItemAdded,
                                     ),

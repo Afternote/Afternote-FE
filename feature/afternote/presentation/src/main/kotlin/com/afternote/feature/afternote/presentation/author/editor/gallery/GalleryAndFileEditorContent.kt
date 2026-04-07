@@ -91,9 +91,13 @@ private fun GalleryAndFileEditorContentBody(
             )
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        if (params.infoMethodSection.selectedMethod ==
+            InformationProcessingMethod.TRANSFER_TO_ADDITIONAL_AFTERNOTE_EDIT_RECEIVER
+        ) {
+            Spacer(modifier = Modifier.height(32.dp))
 
-        RecipientDesignationSection(section = params.recipientSection)
+            RecipientDesignationSection(section = params.recipientSection)
+        }
 
         Spacer(modifier = Modifier.height(32.dp))
 
