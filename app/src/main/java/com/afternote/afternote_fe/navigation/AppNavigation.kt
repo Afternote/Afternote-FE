@@ -22,8 +22,7 @@ fun AppNavigation(
 ) {
     Scaffold(
         modifier = modifier,
-//        containerColor = AfternoteDesign.colors.gray1,
-        containerColor = AfternoteDesign.colors.black,
+        containerColor = AfternoteDesign.colors.gray1,
         bottomBar = {
             BottomBar(
                 onTabClick = { item -> appState.navigateToBottomBarRoute(item.route) },
