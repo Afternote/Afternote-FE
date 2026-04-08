@@ -1,4 +1,4 @@
-package com.afternote.feature.onboarding.presentation.login.component
+package com.afternote.feature.onboarding.presentation.login
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

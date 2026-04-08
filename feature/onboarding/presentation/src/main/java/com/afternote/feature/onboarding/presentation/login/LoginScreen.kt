@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -18,10 +17,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.afternote.core.ui.scaffold.topbar.HomeTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.feature.onboarding.presentation.login.LoginViewModel
+import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.onboarding.presentation.login.BottomButtons
+import com.afternote.feature.onboarding.presentation.login.LoginButton
+import com.afternote.feature.onboarding.presentation.login.MyInputField
 
 // TODO:AI 딸깍하기만 하고 아무 것도 안 함
 
@@ -29,7 +30,7 @@ import com.afternote.feature.onboarding.presentation.login.LoginViewModel
 @Composable
 fun LoginScreen(
     modifier: Modifier = Modifier,
-    loginViewModel: LoginViewModel = hiltViewModel(),
+    onLogin: (email: String, password: String) -> Unit = { _, _ -> },
 ) {
     // 입력 필드의 상태를 관리합니다.
     var email by remember { mutableStateOf("") }
@@ -77,7 +78,7 @@ fun LoginScreen(
             // 로그인 버튼
             LoginButton(
                 text = "로그인",
-                onClick = { /* 로그인 로직 */ },
+                onClick = { onLogin(email, password) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = email.isNotEmpty() && password.isNotEmpty(), // 입력된 내용이 있을 때만 활성화
             )
@@ -92,7 +93,7 @@ fun LoginScreen(
 @Preview(showBackground = true)
 @Composable
 private fun LoginScreenPreview() {
-    MaterialTheme {
+    AfternoteTheme {
         LoginScreen()
     }
 }

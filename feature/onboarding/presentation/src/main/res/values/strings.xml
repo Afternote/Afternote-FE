@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="welcome_logo_description">Afternote 로고</string>
+    <string name="welcome_title">나의 만약이, 남겨진 이들의\n막막함이 되지 않도록</string>
+    <string name="welcome_description">애프터노트는 당신의 디지털 세상을\n미리 정리해 가장 소중한 사람들에게\n안전하고 따뜻한 다리를 제공합니다.</string>
+    <string name="welcome_start">시작하기</string>
+    <string name="welcome_check_records">전달 받은 기록 확인하기</string>
+    <string name="welcome_already_signed_up">이미 가입하셨나요?\u0020\u0020</string>
+    <string name="welcome_login">로그인하기</string>
+</resources>
