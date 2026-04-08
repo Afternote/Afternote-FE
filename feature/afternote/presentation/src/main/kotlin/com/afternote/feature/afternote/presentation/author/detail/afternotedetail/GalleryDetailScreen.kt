@@ -34,6 +34,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.icon.AfternoteCircularCheckbox
+import com.afternote.core.ui.icon.AfternoteCircularCheckboxState
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -196,11 +198,10 @@ private fun GalleryDetailScrollContent(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Icon(
-                    painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_check_circle),
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = AfternoteDesign.colors.gray7,
+                AfternoteCircularCheckbox(
+                    state = AfternoteCircularCheckboxState.Checked,
+                    onClick = null,
+                    visualSize = 16.dp,
                 )
                 Text(
                     text = stringResource(R.string.feature_afternote_detail_additional_receiver_badge),
@@ -272,11 +273,10 @@ private fun GalleryDetailScrollContent(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Icon(
-                                painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_check_circle),
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp),
-                                tint = AfternoteDesign.colors.gray9,
+                            AfternoteCircularCheckbox(
+                                state = AfternoteCircularCheckboxState.Checked,
+                                onClick = null,
+                                visualSize = 20.dp,
                             )
                             Text(
                                 text = method,

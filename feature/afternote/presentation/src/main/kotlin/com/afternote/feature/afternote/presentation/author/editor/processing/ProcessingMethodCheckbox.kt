@@ -31,7 +31,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.icon.CheckCircleIcon
+import com.afternote.core.ui.icon.AfternoteCircularCheckbox
+import com.afternote.core.ui.icon.AfternoteCircularCheckboxState
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
@@ -78,7 +79,11 @@ fun ProcessingMethodCheckbox(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        CheckCircleIcon()
+        AfternoteCircularCheckbox(
+            state = AfternoteCircularCheckboxState.Checked,
+            onClick = null,
+            visualSize = 16.dp,
+        )
 
         if (isEditing) {
             InlineEditTextField(

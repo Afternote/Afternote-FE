@@ -27,9 +27,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.afternote.core.ui.expand.bottomBorder
-import com.afternote.core.ui.form.Label
-import com.afternote.core.ui.form.LabelStyle
+import com.afternote.core.ui.Label
+import com.afternote.core.ui.LabelStyle
+import com.afternote.core.ui.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R

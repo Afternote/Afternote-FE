@@ -46,11 +46,11 @@ import coil3.compose.AsyncImage
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
+import com.afternote.core.ui.LastWishesRadioGroup
+import com.afternote.core.ui.MemorialGuidelineContent
+import com.afternote.core.ui.MemorialGuidelineSlots
+import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.button.AfternoteButton
-import com.afternote.core.ui.content.MemorialGuidelineContent
-import com.afternote.core.ui.content.MemorialGuidelineSlots
-import com.afternote.core.ui.form.LastWishesRadioGroup
-import com.afternote.core.ui.form.ProfileImage
 import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar

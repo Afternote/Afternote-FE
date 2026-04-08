@@ -1,29 +1,22 @@
 package com.afternote.feature.afternote.presentation.author.editor.processing
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.afternote.core.ui.button.AfternoteButton
-import com.afternote.core.ui.expand.dropShadow
-import com.afternote.core.ui.form.LabeledTextFieldStyle
-import com.afternote.core.ui.form.OutlineTextField
+import com.afternote.core.ui.popup.AfternotePopupCardLayout
+import com.afternote.core.ui.textfield.AfternoteTextField
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
@@ -67,26 +60,7 @@ fun CustomServiceDialog(
                 dismissOnClickOutside = true,
             ),
     ) {
-        Column(
-            modifier =
-                modifier
-                    .fillMaxWidth()
-                    .dropShadow(
-                        shape = RoundedCornerShape(16.dp),
-                        color = Color.Black.copy(alpha = 0.15f),
-                        blur = 10.dp,
-                        offsetX = 0.dp,
-                        offsetY = 2.dp,
-                        spread = 0.dp,
-                    ).background(
-                        color = AfternoteDesign.colors.white,
-                        shape = RoundedCornerShape(16.dp),
-                    ).padding(
-                        horizontal = 24.dp,
-                        vertical = 32.dp,
-                    ),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
+        AfternotePopupCardLayout(modifier = modifier.fillMaxWidth()) {
             // 타이틀
             Text(
                 text = "직접 입력하기",
@@ -96,11 +70,12 @@ fun CustomServiceDialog(
             Spacer(modifier = Modifier.height(24.dp))
 
             // 추가 서비스명 입력 필드
-            OutlineTextField(
+            AfternoteTextField(
+                state = params.serviceNameState,
                 label = "추가 서비스명",
-                textFieldState = params.serviceNameState,
                 keyboardType = KeyboardType.Text,
-                style = LabeledTextFieldStyle(containerColor = AfternoteDesign.colors.gray1, labelSpacing = 8.dp),
+                containerColor = AfternoteDesign.colors.gray1,
+                labelSpacing = 8.dp,
             )
 
             Spacer(modifier = Modifier.height(24.dp))

@@ -3,7 +3,9 @@ package com.afternote.core.ui.icon
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -15,14 +17,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
  * 아이콘 관련 설정을 묶는 불변 데이터 클래스
@@ -34,7 +38,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
  */
 @Immutable
 data class ArrowIconSpec(
-    @param:DrawableRes val iconRes: Int,
+    @DrawableRes val iconRes: Int,
     val contentDescription: String? = null,
     val size: Dp? = null,
     val offset: DpOffset = DpOffset.Zero,
@@ -52,28 +56,23 @@ fun RightArrowIcon(
     modifier: Modifier = Modifier,
     size: Dp = 12.dp,
 ) {
-    Box(
+    Icon(
+        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+        contentDescription = null,
         modifier =
             modifier
                 .size(size)
-                .clip(CircleShape)
-                .background(color = color),
-    ) {
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = null,
-            modifier = Modifier.size(size = size),
-            tint = Color.White,
-        )
-    }
+                .background(color = color, shape = CircleShape),
+        tint = Color.White,
+    )
 }
 
 /**
  * Drawable 리소스를 사용하는 원형 또는 둥근 모서리 배경에 화살표 아이콘을 표시하는 컴포넌트
  * (CircleArrowIcon 호환)
  *
- * @param modifier Modifier (기본: Modifier)
  * @param iconSpec 아이콘 관련 설정 (필수)
+ * @param modifier Modifier (기본: Modifier)
  * @param backgroundColor 배경색 (기본: theme gray9)
  * @param size 전체 크기 (기본: 12.dp)
  * @param shape 배경 모양 (기본: CircleShape)
@@ -92,8 +91,7 @@ fun RightArrowIcon(
         modifier =
             modifier
                 .size(size)
-                .clip(shape)
-                .background(backgroundColor)
+                .background(color = backgroundColor, shape = shape)
                 .then(
                     if (shape == CircleShape) {
                         Modifier.padding(padding)
@@ -122,5 +120,51 @@ fun RightArrowIcon(
                         },
                     ),
         )
+    }
+}
+
+@Preview(showBackground = true, name = "Material arrow")
+@Composable
+private fun RightArrowIconMaterialPreview() {
+    AfternoteTheme {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            RightArrowIcon(color = AfternoteDesign.colors.gray9)
+            RightArrowIcon(color = AfternoteDesign.colors.gray9, size = 16.dp)
+            RightArrowIcon(color = AfternoteDesign.colors.b1, size = 12.dp)
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Drawable + circle")
+@Composable
+private fun RightArrowIconDrawablePreview() {
+    AfternoteTheme {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            RightArrowIcon(
+                iconSpec =
+                    ArrowIconSpec(
+                        iconRes = R.drawable.core_ui_arrow_left,
+                        contentDescription = "미리보기",
+                        size = 8.dp,
+                    ),
+                size = 24.dp,
+            )
+            RightArrowIcon(
+                iconSpec =
+                    ArrowIconSpec(
+                        iconRes = R.drawable.core_ui_arrow_left,
+                        contentDescription = null,
+                    ),
+                backgroundColor = AfternoteDesign.colors.b1,
+                size = 20.dp,
+                padding = 2.dp,
+            )
+        }
     }
 }
