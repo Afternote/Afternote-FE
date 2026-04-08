@@ -1,6 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.home
 
-import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -62,7 +61,6 @@ fun AfternoteHomeEntry(
     val visibleItems = uiState.listState.visibleItems
     LaunchedEffect(visibleItems) {
         if (visibleItems.isNotEmpty()) {
-            Log.d("AfternoteHomeEntry", "visibleItems changed: size=${visibleItems.size}")
             onVisibleItemsUpdated(visibleItems)
         }
     }
