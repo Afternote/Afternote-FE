@@ -9,39 +9,35 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.scaffold.topbar.HomeTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.login.BottomButtons
 import com.afternote.feature.onboarding.presentation.login.LoginButton
 import com.afternote.feature.onboarding.presentation.login.MyInputField
 
-// TODO:AI 딸깍하기만 하고 아무 것도 안 함
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
+    email: String,
+    onEmailChange: (String) -> Unit,
+    password: String,
+    onPasswordChange: (String) -> Unit,
+    onLoginClick: () -> Unit,
     modifier: Modifier = Modifier,
-    onLogin: (email: String, password: String) -> Unit = { _, _ -> },
 ) {
-    // 입력 필드의 상태를 관리합니다.
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-
     Scaffold(
         modifier = modifier,
         topBar = {
             HomeTopBar()
         },
-        containerColor = AfternoteDesign.colors.white, // 배경색을 흰색으로 설정
+        containerColor = AfternoteDesign.colors.white,
     ) { innerPadding ->
         Column(
             modifier =
@@ -49,16 +45,15 @@ fun LoginScreen(
                     .padding(innerPadding)
                     .fillMaxSize()
                     .padding(horizontal = 24.dp),
-            // 좌우 여백 설정
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(modifier = Modifier.height(32.dp))
 
             // 아이디 (이메일) 입력 필드
             MyInputField(
-                label = "아이디 (이메일)",
+                label = stringResource(R.string.login_email_label),
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = onEmailChange,
                 modifier = Modifier.fillMaxWidth(),
             )
 
@@ -66,9 +61,9 @@ fun LoginScreen(
 
             // 비밀번호 입력 필드
             MyInputField(
-                label = "비밀번호",
+                label = stringResource(R.string.login_password_label),
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = onPasswordChange,
                 modifier = Modifier.fillMaxWidth(),
                 isPassword = true,
             )
@@ -77,10 +72,10 @@ fun LoginScreen(
 
             // 로그인 버튼
             LoginButton(
-                text = "로그인",
-                onClick = { onLogin(email, password) },
+                text = stringResource(R.string.login_button),
+                onClick = onLoginClick,
                 modifier = Modifier.fillMaxWidth(),
-                enabled = email.isNotEmpty() && password.isNotEmpty(), // 입력된 내용이 있을 때만 활성화
+                enabled = email.isNotEmpty() && password.isNotEmpty(),
             )
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -94,6 +89,12 @@ fun LoginScreen(
 @Composable
 private fun LoginScreenPreview() {
     AfternoteTheme {
-        LoginScreen()
+        LoginScreen(
+            email = "",
+            onEmailChange = {},
+            password = "",
+            onPasswordChange = {},
+            onLoginClick = {},
+        )
     }
 }

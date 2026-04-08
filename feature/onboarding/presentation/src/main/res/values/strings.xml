@@ -7,4 +7,8 @@
     <string name="welcome_check_records">전달 받은 기록 확인하기</string>
     <string name="welcome_already_signed_up">이미 가입하셨나요?\u0020\u0020</string>
     <string name="welcome_login">로그인하기</string>
+
+    <string name="login_email_label">아이디 (이메일)</string>
+    <string name="login_password_label">비밀번호</string>
+    <string name="login_button">로그인</string>
 </resources>
