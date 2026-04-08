@@ -18,19 +18,19 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,12 +42,14 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.button.CustomRadioButton
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 /**
  * Slots for [SearchableSongList]: optional trailing (per row) and leading (header) content.
@@ -442,45 +444,47 @@ private fun SongSearchSection(
                 ),
             modifier = Modifier.padding(bottom = 8.dp),
         )
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = onSearchQueryChange,
-            placeholder = {
-                Text(
-                    text = "Text Field",
-                    style =
-                        AfternoteDesign.typography.bodyBase.copy(
-                            lineHeight = 20.sp,
-                            color = AfternoteDesign.colors.gray4,
-                        ),
-                )
-            },
-            trailingIcon = {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = stringResource(R.string.song_search_label),
-                    tint = AfternoteDesign.colors.gray9,
-                )
-            },
+        val searchFieldState = rememberTextFieldState(searchQuery)
+        LaunchedEffect(searchQuery) {
+            if (searchFieldState.text.toString() != searchQuery) {
+                searchFieldState.edit { replace(0, length, searchQuery) }
+            }
+        }
+        LaunchedEffect(Unit) {
+            snapshotFlow { searchFieldState.text.toString() }
+                .distinctUntilChanged()
+                .collect { onSearchQueryChange(it) }
+        }
+        AfternoteTextField(
+            state = searchFieldState,
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .height(52.dp),
-            shape = RoundedCornerShape(8.dp),
-            colors =
-                OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = AfternoteDesign.colors.white,
-                    unfocusedContainerColor = AfternoteDesign.colors.white,
-                    focusedBorderColor = AfternoteDesign.colors.gray9,
-                    unfocusedBorderColor = AfternoteDesign.colors.gray2,
-                    cursorColor = AfternoteDesign.colors.gray9,
+            placeholder = "Text Field",
+            minHeight = 52.dp,
+            contentPadding =
+                PaddingValues(
+                    horizontal = 16.dp,
+                    vertical = 14.dp,
                 ),
-            singleLine = true,
+            trailingContent = {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = stringResource(R.string.song_search_label),
+                    tint = AfternoteDesign.colors.gray9,
+                    modifier = Modifier.size(24.dp),
+                )
+            },
+            imeAction = ImeAction.Search,
             textStyle =
                 AfternoteDesign.typography.bodySmallR.copy(
                     color = AfternoteDesign.colors.gray9,
                 ),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            placeholderTextStyle =
+                AfternoteDesign.typography.bodyBase.copy(
+                    lineHeight = 20.sp,
+                ),
         )
     }
 }

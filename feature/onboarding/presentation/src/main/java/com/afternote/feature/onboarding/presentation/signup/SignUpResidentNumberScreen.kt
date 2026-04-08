@@ -1,8 +1,8 @@
 package com.afternote.feature.onboarding.presentation.signup
 
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -11,10 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
@@ -32,8 +29,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -45,6 +41,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
@@ -205,35 +202,25 @@ private fun ResidentNumberInputField(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // 앞자리 6자리
-        BasicTextField(
+        AfternoteTextField(
             state = frontState,
-            lineLimits = TextFieldLineLimits.SingleLine,
-            keyboardOptions =
-                KeyboardOptions(
-                    keyboardType = KeyboardType.NumberPassword,
-                    imeAction = ImeAction.Next,
-                ),
+            modifier = Modifier.weight(1f),
+            placeholder = stringResource(R.string.signup_resident_number_placeholder),
+            keyboardType = KeyboardType.NumberPassword,
+            imeAction = ImeAction.Next,
             inputTransformation = InputTransformation.maxLength(FRONT_NUMBER_LENGTH).then(numberOnlyTransformation),
+            lineLimits = TextFieldLineLimits.SingleLine,
+            showOutline = false,
+            containerColor = Color.Transparent,
+            contentPadding = PaddingValues(0.dp),
+            minHeight = 56.dp,
+            expandTextAreaToAvailableWidth = true,
             textStyle =
                 AfternoteDesign.typography.textField.copy(
                     color = AfternoteDesign.colors.gray9,
                     textAlign = TextAlign.Center,
                     letterSpacing = 2.sp,
                 ),
-            cursorBrush = SolidColor(AfternoteDesign.colors.gray9),
-            modifier = Modifier.weight(1f),
-            decorator = { innerTextField ->
-                Box(contentAlignment = Alignment.Center) {
-                    if (frontState.text.isEmpty()) {
-                        Text(
-                            text = stringResource(R.string.signup_resident_number_placeholder),
-                            style = AfternoteDesign.typography.textField,
-                            color = AfternoteDesign.colors.gray4,
-                        )
-                    }
-                    innerTextField()
-                }
-            },
         )
 
         // 구분 기호
@@ -245,54 +232,38 @@ private fun ResidentNumberInputField(
         )
 
         // 뒷자리 (1자리 입력 + 마스킹)
-        Row(
+        AfternoteTextField(
+            state = backState,
             modifier = Modifier.weight(1f),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            BasicTextField(
-                state = backState,
-                lineLimits = TextFieldLineLimits.SingleLine,
-                keyboardOptions =
-                    KeyboardOptions(
-                        keyboardType = KeyboardType.NumberPassword,
-                        imeAction = ImeAction.Done,
-                    ),
-                inputTransformation = InputTransformation.maxLength(BACK_NUMBER_LENGTH).then(numberOnlyTransformation),
-                textStyle =
-                    AfternoteDesign.typography.textField.copy(
-                        color = AfternoteDesign.colors.gray9,
-                        textAlign = TextAlign.Center,
-                    ),
-                cursorBrush = SolidColor(AfternoteDesign.colors.gray9),
-                modifier =
-                    Modifier
-                        .width(16.dp)
-                        .focusRequester(backFocusRequester),
-                decorator = { innerTextField ->
-                    Box(contentAlignment = Alignment.Center) {
-                        if (backState.text.isEmpty()) {
-                            Text(
-                                text = stringResource(R.string.signup_resident_number_back_placeholder),
-                                style = AfternoteDesign.typography.textField,
-                                color = AfternoteDesign.colors.gray4,
-                            )
-                        }
-                        innerTextField()
-                    }
-                },
-            )
-
-            Text(
-                text = stringResource(R.string.signup_resident_number_mask),
-                style =
-                    AfternoteDesign.typography.textField.copy(
-                        fontSize = 12.sp,
-                        letterSpacing = 4.sp,
-                    ),
-                color = AfternoteDesign.colors.gray9,
-                modifier = Modifier.padding(start = 4.dp),
-            )
-        }
+            focusRequester = backFocusRequester,
+            placeholder = stringResource(R.string.signup_resident_number_back_placeholder),
+            keyboardType = KeyboardType.NumberPassword,
+            imeAction = ImeAction.Done,
+            inputTransformation = InputTransformation.maxLength(BACK_NUMBER_LENGTH).then(numberOnlyTransformation),
+            lineLimits = TextFieldLineLimits.SingleLine,
+            showOutline = false,
+            containerColor = Color.Transparent,
+            contentPadding = PaddingValues(0.dp),
+            minHeight = 56.dp,
+            minWidth = 16.dp,
+            suffix = {
+                Text(
+                    text = stringResource(R.string.signup_resident_number_mask),
+                    style =
+                        AfternoteDesign.typography.textField.copy(
+                            fontSize = 12.sp,
+                            letterSpacing = 4.sp,
+                        ),
+                    color = AfternoteDesign.colors.gray9,
+                    modifier = Modifier.padding(start = 4.dp),
+                )
+            },
+            textStyle =
+                AfternoteDesign.typography.textField.copy(
+                    color = AfternoteDesign.colors.gray9,
+                    textAlign = TextAlign.Center,
+                ),
+        )
     }
 }
 
