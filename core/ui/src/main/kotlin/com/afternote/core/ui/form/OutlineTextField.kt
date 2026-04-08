@@ -25,14 +25,15 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -126,29 +127,43 @@ private val PasswordOutputTransformation =
  * Single-line outlined text field (basic variant).
  *
  * @param textFieldState Text field state holder.
- * @param label Placeholder text shown when empty.
+ * @param placeholder Placeholder text shown when empty.
  * @param keyboardType Keyboard type; if [KeyboardType.Password], input is visually masked.
  * @param enabled Whether the field is enabled.
  * @param focusRequester Optional focus controller for programmatic focus.
- * @param requestFocusOnEnabled If true, requests focus when the field is laid out and enabled.
+ * @param requestFocusOnEnabled If true, requests focus when the field becomes enabled.
+ * @param imeAction Keyboard action button type (Next, Done, etc.).
  */
 @Composable
 fun OutlineTextField(
     textFieldState: TextFieldState,
-    label: String,
+    placeholder: String,
     modifier: Modifier = Modifier,
     keyboardType: KeyboardType = KeyboardType.Text,
     enabled: Boolean = true,
     focusRequester: FocusRequester? = null,
     requestFocusOnEnabled: Boolean = false,
+    imeAction: ImeAction = ImeAction.Default,
 ) {
+    if (focusRequester != null && requestFocusOnEnabled) {
+        LaunchedEffect(enabled, requestFocusOnEnabled) {
+            if (enabled) {
+                focusRequester.requestFocus()
+            }
+        }
+    }
+
     OutlinedTextField(
         state = textFieldState,
         lineLimits = TextFieldLineLimits.SingleLine,
-        placeholder = { OutlineTextFieldPlaceholder(text = label) },
+        placeholder = { OutlineTextFieldPlaceholder(text = placeholder) },
         colors = outlineTextFieldBasicColors(),
         shape = OutlineTextFieldShape,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        keyboardOptions =
+            KeyboardOptions(
+                keyboardType = keyboardType,
+                imeAction = imeAction,
+            ),
         outputTransformation =
             if (keyboardType == KeyboardType.Password) {
                 PasswordOutputTransformation
@@ -163,13 +178,7 @@ fun OutlineTextField(
                 .height(OutlineTextFieldHeightBasic)
                 .then(
                     if (focusRequester != null) {
-                        Modifier
-                            .focusRequester(focusRequester)
-                            .onGloballyPositioned {
-                                if (enabled && requestFocusOnEnabled) {
-                                    focusRequester.requestFocus()
-                                }
-                            }
+                        Modifier.focusRequester(focusRequester)
                     } else {
                         Modifier
                     },
@@ -183,17 +192,22 @@ fun OutlineTextField(
 @Composable
 fun OutlineTextField(
     textFieldState: TextFieldState,
-    label: String,
+    placeholder: String,
     onAuthClick: () -> Unit,
     modifier: Modifier = Modifier,
     keyboardType: KeyboardType = KeyboardType.Text,
+    imeAction: ImeAction = ImeAction.Next,
 ) {
     OutlinedTextField(
         state = textFieldState,
         lineLimits = TextFieldLineLimits.SingleLine,
-        placeholder = { OutlineTextFieldPlaceholder(text = label) },
+        placeholder = { OutlineTextFieldPlaceholder(text = placeholder) },
         shape = OutlineTextFieldShape,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        keyboardOptions =
+            KeyboardOptions(
+                keyboardType = keyboardType,
+                imeAction = imeAction,
+            ),
         outputTransformation =
             if (keyboardType == KeyboardType.Password) {
                 PasswordOutputTransformation
@@ -222,7 +236,7 @@ fun OutlineTextField(
 @Composable
 fun OutlineTextField(
     textFieldState: TextFieldState,
-    label: String,
+    placeholder: String,
     outputTransformation: OutputTransformation,
     modifier: Modifier = Modifier,
     keyboardType: KeyboardType = KeyboardType.Phone,
@@ -230,7 +244,7 @@ fun OutlineTextField(
     OutlinedTextField(
         state = textFieldState,
         lineLimits = TextFieldLineLimits.SingleLine,
-        placeholder = { OutlineTextFieldPlaceholder(text = label) },
+        placeholder = { OutlineTextFieldPlaceholder(text = placeholder) },
         shape = OutlineTextFieldShape,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         outputTransformation = outputTransformation,
@@ -248,14 +262,14 @@ fun OutlineTextField(
 @Composable
 fun OutlineTextField(
     textFieldState: TextFieldState,
-    label: String,
+    placeholder: String,
     onFileAddClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     OutlinedTextField(
         state = textFieldState,
         lineLimits = TextFieldLineLimits.SingleLine,
-        placeholder = { OutlineTextFieldPlaceholder(text = label) },
+        placeholder = { OutlineTextFieldPlaceholder(text = placeholder) },
         shape = OutlineTextFieldShape,
         colors = outlineTextFieldBasicColorsSimple(),
         readOnly = true,
@@ -300,6 +314,7 @@ fun OutlineTextField(
  * @param keyboardType Keyboard type; if [KeyboardType.Password], input is visually masked.
  * @param style Style configuration (container color, label spacing).
  * @param isError Whether to show the red error border.
+ * @param imeAction Keyboard action button type (Next, Done, etc.).
  */
 @Composable
 fun OutlineTextField(
@@ -310,6 +325,7 @@ fun OutlineTextField(
     keyboardType: KeyboardType = KeyboardType.Text,
     style: LabeledTextFieldStyle = LabeledTextFieldStyle(),
     isError: Boolean = false,
+    imeAction: ImeAction = ImeAction.Default,
 ) {
     val containerColor = style.containerColor ?: AfternoteDesign.colors.white
     val labelColorResolved = style.labelColor ?: AfternoteDesign.colors.gray9
@@ -339,7 +355,11 @@ fun OutlineTextField(
             placeholder = { OutlineTextFieldPlaceholder(text = placeholder) },
             colors = outlineTextFieldFilledColors(containerColor),
             shape = OutlineTextFieldShape,
-            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            keyboardOptions =
+                KeyboardOptions(
+                    keyboardType = keyboardType,
+                    imeAction = imeAction,
+                ),
             outputTransformation =
                 if (keyboardType == KeyboardType.Password) {
                     PasswordOutputTransformation
@@ -350,7 +370,6 @@ fun OutlineTextField(
                 Modifier
                     .fillMaxWidth()
                     .height(OutlineTextFieldHeightLabeled)
-                    .background(containerColor, OutlineTextFieldShape)
                     .then(
                         if (isError) {
                             Modifier.border(
@@ -477,7 +496,7 @@ private fun OutlineTextFieldBasicPreview() {
     AfternoteTheme {
         OutlineTextField(
             textFieldState = rememberTextFieldState(),
-            label = "시작",
+            placeholder = "시작",
             keyboardType = KeyboardType.Text,
             enabled = true,
         )
@@ -490,7 +509,7 @@ private fun OutlineTextFieldWithAuthPreview() {
     AfternoteTheme {
         OutlineTextField(
             textFieldState = rememberTextFieldState(),
-            label = "전화번호",
+            placeholder = "전화번호",
             onAuthClick = {},
         )
     }
@@ -502,7 +521,7 @@ private fun OutlineTextFieldWithFileAddPreview() {
     AfternoteTheme {
         OutlineTextField(
             textFieldState = rememberTextFieldState(),
-            label = "파일 선택",
+            placeholder = "파일 선택",
             onFileAddClick = {},
         )
     }
@@ -538,7 +557,7 @@ private fun OutlineTextFieldDisabledPreview() {
     AfternoteTheme {
         OutlineTextField(
             textFieldState = rememberTextFieldState(),
-            label = "비활성화된 필드",
+            placeholder = "비활성화된 필드",
             enabled = false,
         )
     }
@@ -550,7 +569,7 @@ private fun OutlineTextFieldPasswordPreview() {
     AfternoteTheme {
         OutlineTextField(
             textFieldState = rememberTextFieldState("password123"),
-            label = "비밀번호",
+            placeholder = "비밀번호",
             keyboardType = KeyboardType.Password,
             enabled = true,
         )
