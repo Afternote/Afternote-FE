@@ -1,6 +1,6 @@
 package com.afternote.feature.onboarding.presentation.signup
 
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldState
@@ -26,10 +25,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -98,7 +99,7 @@ private fun SignUpPasswordContent(
     val isNextEnabled by remember {
         derivedStateOf {
             passwordState.text.length in PASSWORD_MIN_LENGTH..PASSWORD_MAX_LENGTH &&
-                passwordState.text.toString() == passwordConfirmState.text.toString()
+                passwordState.text.contentEquals(passwordConfirmState.text)
         }
     }
 
@@ -157,6 +158,11 @@ private fun SignUpPasswordContent(
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Done,
                 outputTransformation = PasswordMaskTransformation,
+                onImeAction = {
+                    if (isNextEnabled) {
+                        onNextClick()
+                    }
+                },
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -174,33 +180,27 @@ private fun SignUpPasswordContent(
         }
 
         // 다음 버튼
-        Box(
+        Button(
+            onClick = onNextClick,
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 20.dp),
+                    .padding(horizontal = 24.dp, vertical = 20.dp)
+                    .height(48.dp),
+            shape = RoundedCornerShape(8.dp),
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor = AfternoteDesign.colors.gray9,
+                    contentColor = AfternoteDesign.colors.white,
+                    disabledContainerColor = AfternoteDesign.colors.gray4,
+                    disabledContentColor = AfternoteDesign.colors.white,
+                ),
+            enabled = isNextEnabled,
         ) {
-            Button(
-                onClick = onNextClick,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor = AfternoteDesign.colors.gray9,
-                        contentColor = AfternoteDesign.colors.white,
-                        disabledContainerColor = AfternoteDesign.colors.gray4,
-                        disabledContentColor = AfternoteDesign.colors.white,
-                    ),
-                enabled = isNextEnabled,
-            ) {
-                Text(
-                    text = stringResource(R.string.signup_next),
-                    style = AfternoteDesign.typography.primaryButton,
-                )
-            }
+            Text(
+                text = stringResource(R.string.signup_next),
+                style = AfternoteDesign.typography.primaryButton,
+            )
         }
     }
 }
@@ -211,17 +211,24 @@ private fun PasswordRuleItem(
     textColor: Color,
     modifier: Modifier = Modifier,
 ) {
-    Row(modifier = modifier.fillMaxWidth()) {
+    Row(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .semantics(mergeDescendants = true) {},
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
         Text(
-            text = "•",
+            text = "\u2022",
+            modifier = Modifier.clearAndSetSemantics {},
             style =
                 AfternoteDesign.typography.captionLargeR.copy(
                     fontSize = 12.sp,
+                    lineHeight = 18.sp,
                 ),
             color = textColor,
-            modifier = Modifier.padding(top = 2.dp),
         )
-        Spacer(modifier = Modifier.width(6.dp))
         Text(
             text = text,
             style =

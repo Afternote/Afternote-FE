@@ -1,8 +1,8 @@
 package com.afternote.feature.onboarding.presentation.terms
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -85,6 +86,38 @@ fun OnboardingTermsScreen(
                 onBackClick = onBackClick,
             )
         },
+        bottomBar = {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .background(AfternoteDesign.colors.white)
+                        .navigationBarsPadding(),
+            ) {
+                Button(
+                    onClick = onNextClick,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 20.dp)
+                            .height(48.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = AfternoteDesign.colors.gray9,
+                            contentColor = AfternoteDesign.colors.white,
+                            disabledContainerColor = AfternoteDesign.colors.gray4,
+                            disabledContentColor = AfternoteDesign.colors.white,
+                        ),
+                    enabled = termsState.isNextEnabled,
+                ) {
+                    Text(
+                        text = stringResource(R.string.terms_next),
+                        style = AfternoteDesign.typography.primaryButton,
+                    )
+                }
+            }
+        },
         containerColor = AfternoteDesign.colors.white,
     ) { innerPadding ->
         OnboardingTermsContent(
@@ -95,7 +128,6 @@ fun OnboardingTermsScreen(
             onMarketingToggle = onMarketingToggle,
             onToggleAll = onToggleAll,
             onViewTermsClick = onViewTermsClick,
-            onNextClick = onNextClick,
             progressDescription = progressDescription,
             modifier =
                 Modifier
@@ -114,7 +146,6 @@ private fun OnboardingTermsContent(
     onMarketingToggle: (Boolean) -> Unit,
     onToggleAll: (Boolean) -> Unit,
     onViewTermsClick: (Int) -> Unit,
-    onNextClick: () -> Unit,
     progressDescription: String,
     modifier: Modifier = Modifier,
 ) {
@@ -134,12 +165,12 @@ private fun OnboardingTermsContent(
             strokeCap = StrokeCap.Square,
         )
 
-        // 메인 콘텐츠 (스크롤 가능)
+        // 메인 콘텐츠 (스크롤 가능) — 하단 CTA는 Scaffold bottomBar에 두어 innerPadding으로 본문이 가려지지 않음
         Column(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .weight(1f)
+                    .weight(1f, fill = true)
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 24.dp),
         ) {
@@ -218,36 +249,6 @@ private fun OnboardingTermsContent(
             )
 
             Spacer(modifier = Modifier.height(32.dp))
-        }
-
-        // 하단 고정 버튼
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 20.dp),
-        ) {
-            Button(
-                onClick = onNextClick,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor = AfternoteDesign.colors.gray9,
-                        contentColor = AfternoteDesign.colors.white,
-                        disabledContainerColor = AfternoteDesign.colors.gray4,
-                        disabledContentColor = AfternoteDesign.colors.white,
-                    ),
-                enabled = termsState.isNextEnabled,
-            ) {
-                Text(
-                    text = stringResource(R.string.terms_next),
-                    style = AfternoteDesign.typography.primaryButton,
-                )
-            }
         }
     }
 }
@@ -354,7 +355,7 @@ private fun OnboardingTermsScreenPreview() {
     var state by remember { mutableStateOf(TermsState()) }
 
     AfternoteTheme {
-        OnboardingTermsContent(
+        OnboardingTermsScreen(
             currentStep = 1,
             termsState = state,
             onTermsToggle = { state = state.copy(isTermsAgreed = it) },
@@ -370,7 +371,7 @@ private fun OnboardingTermsScreenPreview() {
             },
             onViewTermsClick = {},
             onNextClick = {},
-            progressDescription = "회원가입 진행도 4단계 중 1단계",
+            onBackClick = {},
         )
     }
 }

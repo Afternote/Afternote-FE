@@ -80,6 +80,8 @@ fun AfternoteTextField(
     height: Dp = TextFieldHeight,
     labelSpacing: Dp = 6.dp,
     focusRequester: FocusRequester? = null,
+    /** [imeAction]으로 지정한 IME 액션(예: Done)이 눌릴 때. State 기반 [BasicTextField]의 [onKeyboardAction]에 연결됩니다. */
+    onImeAction: (() -> Unit)? = null,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
@@ -129,6 +131,12 @@ fun AfternoteTextField(
                     keyboardType = keyboardType,
                     imeAction = imeAction,
                 ),
+            onKeyboardAction =
+                if (onImeAction != null) {
+                    { onImeAction.invoke() }
+                } else {
+                    null
+                },
             inputTransformation = inputTransformation,
             outputTransformation = outputTransformation,
             interactionSource = interactionSource,
