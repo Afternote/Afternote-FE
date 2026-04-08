@@ -14,9 +14,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.form.AfternoteTextField
 import com.afternote.core.ui.form.Label
 import com.afternote.core.ui.form.LabelStyle
-import com.afternote.core.ui.form.OutlineTextField
+import com.afternote.core.ui.form.PasswordMaskTransformation
 import com.afternote.core.ui.form.SelectableRadioCard
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
@@ -72,20 +73,19 @@ private fun SocialNetworkEditorContentContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlineTextField(
-            "아이디",
-            params.accountSection.idState,
-            Modifier,
+        AfternoteTextField(
+            state = params.accountSection.idState,
+            label = "아이디",
             keyboardType = KeyboardType.Text,
         )
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        OutlineTextField(
-            "비밀번호",
-            params.accountSection.passwordState,
-            Modifier,
+        AfternoteTextField(
+            state = params.accountSection.passwordState,
+            label = "비밀번호",
             keyboardType = KeyboardType.Password,
+            outputTransformation = PasswordMaskTransformation,
         )
 
         Spacer(modifier = Modifier.height(32.dp))

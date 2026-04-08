@@ -22,8 +22,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.expand.dropShadow
-import com.afternote.core.ui.form.LabeledTextFieldStyle
-import com.afternote.core.ui.form.OutlineTextField
+import com.afternote.core.ui.form.AfternoteTextField
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
@@ -96,11 +95,12 @@ fun CustomServiceDialog(
             Spacer(modifier = Modifier.height(24.dp))
 
             // 추가 서비스명 입력 필드
-            OutlineTextField(
+            AfternoteTextField(
+                state = params.serviceNameState,
                 label = "추가 서비스명",
-                textFieldState = params.serviceNameState,
                 keyboardType = KeyboardType.Text,
-                style = LabeledTextFieldStyle(containerColor = AfternoteDesign.colors.gray1, labelSpacing = 8.dp),
+                containerColor = AfternoteDesign.colors.gray1,
+                labelSpacing = 8.dp,
             )
 
             Spacer(modifier = Modifier.height(24.dp))

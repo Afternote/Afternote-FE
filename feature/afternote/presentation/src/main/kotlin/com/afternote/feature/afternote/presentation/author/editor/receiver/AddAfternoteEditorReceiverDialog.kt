@@ -26,8 +26,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.expand.dropShadow
-import com.afternote.core.ui.form.LabeledTextFieldStyle
-import com.afternote.core.ui.form.OutlineTextField
+import com.afternote.core.ui.form.AfternoteTextField
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.author.editor.selection.DropdownMenuStyle
@@ -139,11 +138,12 @@ fun AddAfternoteEditorReceiverDialog(
             Spacer(modifier = Modifier.height(24.dp))
 
             // 수신자 이름 입력 필드
-            OutlineTextField(
+            AfternoteTextField(
+                state = params.afternoteEditReceiverNameState,
                 label = "수신자 이름",
-                textFieldState = params.afternoteEditReceiverNameState,
                 keyboardType = KeyboardType.Text,
-                style = LabeledTextFieldStyle(containerColor = AfternoteDesign.colors.gray1, labelSpacing = 7.95.dp),
+                containerColor = AfternoteDesign.colors.gray1,
+                labelSpacing = 7.95.dp,
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -164,11 +164,12 @@ fun AddAfternoteEditorReceiverDialog(
             Spacer(modifier = Modifier.height(24.dp))
 
             // 전화번호로 추가하기 입력 필드
-            OutlineTextField(
+            AfternoteTextField(
+                state = params.phoneNumberState,
                 label = "전화번호로 추가하기",
-                textFieldState = params.phoneNumberState,
                 keyboardType = KeyboardType.Phone,
-                style = LabeledTextFieldStyle(containerColor = AfternoteDesign.colors.gray1, labelSpacing = 7.95.dp),
+                containerColor = AfternoteDesign.colors.gray1,
+                labelSpacing = 7.95.dp,
             )
 
             Spacer(modifier = Modifier.height(16.dp))

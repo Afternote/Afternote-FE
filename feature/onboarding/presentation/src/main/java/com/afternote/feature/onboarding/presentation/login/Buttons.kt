@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -34,6 +35,8 @@ fun LoginButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    containerColor: Color = AfternoteDesign.colors.gray9,
+    contentColor: Color = AfternoteDesign.colors.white,
 ) {
     Button(
         onClick = onClick,
@@ -42,9 +45,9 @@ fun LoginButton(
         shape = RoundedCornerShape(8.dp),
         colors =
             ButtonDefaults.buttonColors(
-                containerColor = AfternoteDesign.colors.gray9,
-                contentColor = AfternoteDesign.colors.white,
-                disabledContainerColor = AfternoteDesign.colors.gray9,
+                containerColor = containerColor,
+                contentColor = contentColor,
+                disabledContainerColor = AfternoteDesign.colors.gray4,
                 disabledContentColor = AfternoteDesign.colors.white,
             ),
     ) {
@@ -68,7 +71,7 @@ fun BottomButtons(
 
     if (showFindAccountPopup) {
         InfoPopup(
-            message = "아이디/비밀번호 찾기의 경우,\n고객센터로 문의 바랍니다.",
+            message = stringResource(R.string.login_find_account_message),
             onConfirm = { showFindAccountPopup = false },
         )
     }
@@ -78,10 +81,10 @@ fun BottomButtons(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         // 간편 회원가입하기 버튼
-        BottomButton(
-            text = "간편 회원가입하기",
-            backgroundColor = AfternoteDesign.colors.gray2,
-            textColor = Color.Black,
+        LoginButton(
+            text = stringResource(R.string.login_signup_simple),
+            containerColor = AfternoteDesign.colors.gray2,
+            contentColor = Color.Black,
             onClick = onSignUpClick,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -104,7 +107,7 @@ fun BottomButtons(
         ) {
             Image(
                 painter = painterResource(R.drawable.kakao_login_large_wide_1),
-                contentDescription = "카카오 로그인",
+                contentDescription = stringResource(R.string.login_kakao),
                 modifier = Modifier.fillMaxWidth(),
                 contentScale = ContentScale.FillBounds,
             )
@@ -117,7 +120,7 @@ fun BottomButtons(
             onClick = { showFindAccountPopup = true },
         ) {
             Text(
-                text = "아이디/비밀번호 찾기",
+                text = stringResource(R.string.login_find_account),
                 style =
                     AfternoteDesign.typography.captionLargeR.copy(
                         color = AfternoteDesign.colors.gray6,
@@ -125,27 +128,5 @@ fun BottomButtons(
                     ),
             )
         }
-    }
-}
-
-@Composable
-fun BottomButton(
-    text: String,
-    backgroundColor: Color,
-    textColor: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Button(
-        onClick = onClick,
-        modifier = modifier.height(48.dp),
-        shape = RoundedCornerShape(8.dp),
-        colors =
-            ButtonDefaults.buttonColors(
-                containerColor = backgroundColor,
-                contentColor = textColor,
-            ),
-    ) {
-        Text(text = text, style = AfternoteDesign.typography.bodySmallR)
     }
 }

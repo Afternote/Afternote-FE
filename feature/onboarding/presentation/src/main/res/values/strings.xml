@@ -11,6 +11,10 @@
     <string name="login_email_label">아이디 (이메일)</string>
     <string name="login_password_label">비밀번호</string>
     <string name="login_button">로그인</string>
+    <string name="login_signup_simple">간편 회원가입하기</string>
+    <string name="login_kakao">카카오 로그인</string>
+    <string name="login_find_account">아이디/비밀번호 찾기</string>
+    <string name="login_find_account_message">아이디/비밀번호 찾기의 경우,\n고객센터로 문의 바랍니다.</string>
 
     <string name="signup_title">회원가입</string>
     <string name="signup_email_placeholder">이메일 주소</string>
@@ -26,4 +30,16 @@
     <string name="signup_password_confirm_placeholder">비밀번호 확인</string>
     <string name="signup_password_rule_combination">8 ~ 16자의 영문 대소문자, 숫자, 특수문자를 조합하여 설정해 주세요.</string>
     <string name="signup_password_rule_reuse">이전에 사용한 적 없는 비밀번호가 안전합니다.</string>
+
+    <string name="terms_top_bar_title">타임레터</string>
+    <string name="terms_welcome">환영합니다!</string>
+    <string name="terms_description">애프터노트와 함께\n당신의 마지막을 준비하세요.</string>
+    <string name="terms_agree_all">약관에 전체동의</string>
+    <string name="terms_service">애프터노트 서비스 이용 약관 (필수)</string>
+    <string name="terms_privacy">개인정보 수집 및 이용 동의서 (필수)</string>
+    <string name="terms_marketing">E-mail 및 SMS 광고성 정보 수신동의 (선택)</string>
+    <string name="terms_marketing_description">다양한 프로모션 소식을 전해드립니다.</string>
+    <string name="terms_view_detail">전체보기</string>
+    <string name="terms_next">프로필 설정하러가기</string>
+    <string name="terms_progress_description">회원가입 진행도 %1$d단계 중 %2$d단계</string>
 </resources>
