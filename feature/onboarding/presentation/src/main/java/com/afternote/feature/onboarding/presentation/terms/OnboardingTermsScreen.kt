@@ -16,10 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -43,6 +40,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.button.AfternoteButton
+import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -94,28 +93,21 @@ fun OnboardingTermsScreen(
                         .background(AfternoteDesign.colors.white)
                         .navigationBarsPadding(),
             ) {
-                Button(
+                AfternoteButton(
+                    text = stringResource(R.string.terms_next),
                     onClick = onNextClick,
                     modifier =
                         Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 24.dp, vertical = 20.dp)
                             .height(48.dp),
-                    shape = RoundedCornerShape(8.dp),
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = AfternoteDesign.colors.gray9,
-                            contentColor = AfternoteDesign.colors.white,
-                            disabledContainerColor = AfternoteDesign.colors.gray4,
-                            disabledContentColor = AfternoteDesign.colors.white,
-                        ),
-                    enabled = termsState.isNextEnabled,
-                ) {
-                    Text(
-                        text = stringResource(R.string.terms_next),
-                        style = AfternoteDesign.typography.primaryButton,
-                    )
-                }
+                    type =
+                        if (termsState.isNextEnabled) {
+                            AfternoteButtonType.Default
+                        } else {
+                            AfternoteButtonType.Un
+                        },
+                )
             }
         },
         containerColor = AfternoteDesign.colors.white,

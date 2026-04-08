@@ -11,12 +11,9 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -34,6 +31,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.ProfileImage
+import com.afternote.core.ui.button.AfternoteButton
+import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.textfield.AfternoteTextField
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -77,28 +76,21 @@ fun OnboardingProfileScreen(
                         .background(AfternoteDesign.colors.white)
                         .navigationBarsPadding(),
             ) {
-                Button(
+                AfternoteButton(
+                    text = stringResource(R.string.profile_complete),
                     onClick = onCompleteClick,
                     modifier =
                         Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 24.dp, vertical = 20.dp)
                             .height(48.dp),
-                    shape = RoundedCornerShape(8.dp),
-                    enabled = isCompleteEnabled,
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = AfternoteDesign.colors.gray9,
-                            contentColor = AfternoteDesign.colors.white,
-                            disabledContainerColor = AfternoteDesign.colors.gray4,
-                            disabledContentColor = AfternoteDesign.colors.white,
-                        ),
-                ) {
-                    Text(
-                        text = stringResource(R.string.profile_complete),
-                        style = AfternoteDesign.typography.primaryButton,
-                    )
-                }
+                    type =
+                        if (isCompleteEnabled) {
+                            AfternoteButtonType.Default
+                        } else {
+                            AfternoteButtonType.Un
+                        },
+                )
             }
         },
         containerColor = AfternoteDesign.colors.white,

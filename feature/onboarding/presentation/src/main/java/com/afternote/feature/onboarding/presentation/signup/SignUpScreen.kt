@@ -1,7 +1,6 @@
 package com.afternote.feature.onboarding.presentation.signup
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -15,8 +14,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
@@ -32,6 +29,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.textfield.AfternoteTextField
 import com.afternote.core.ui.textfield.PasswordMaskTransformation
@@ -165,31 +163,15 @@ private fun SignUpContent(
         }
 
         // 다음 버튼
-        Box(
+        AfternoteButton(
+            text = stringResource(R.string.signup_next),
+            onClick = onNextClick,
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 20.dp),
-        ) {
-            Button(
-                onClick = onNextClick,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor = AfternoteDesign.colors.gray9,
-                        contentColor = AfternoteDesign.colors.white,
-                    ),
-            ) {
-                Text(
-                    text = stringResource(R.string.signup_next),
-                    style = AfternoteDesign.typography.primaryButton,
-                )
-            }
-        }
+                    .padding(horizontal = 24.dp, vertical = 20.dp)
+                    .height(48.dp),
+        )
     }
 }
 

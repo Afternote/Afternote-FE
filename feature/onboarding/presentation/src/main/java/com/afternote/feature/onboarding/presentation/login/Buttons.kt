@@ -22,12 +22,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.button.AfternoteButton
+import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.popup.InfoPopup
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.onboarding.presentation.R
+
+enum class LoginButtonStyle {
+    /** gray9 배경 (로그인) */
+    Primary,
+
+    /** gray2 + 테두리 스타일 (간편 회원가입) */
+    Secondary,
+}
 
 @Composable
 fun LoginButton(
@@ -35,30 +44,20 @@ fun LoginButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    containerColor: Color = AfternoteDesign.colors.gray9,
-    contentColor: Color = AfternoteDesign.colors.white,
+    style: LoginButtonStyle = LoginButtonStyle.Primary,
 ) {
-    Button(
+    val type =
+        when {
+            !enabled -> AfternoteButtonType.Un
+            style == LoginButtonStyle.Secondary -> AfternoteButtonType.Plain
+            else -> AfternoteButtonType.Default
+        }
+    AfternoteButton(
+        text = text,
         onClick = onClick,
         modifier = modifier.height(48.dp),
-        enabled = enabled,
-        shape = RoundedCornerShape(8.dp),
-        colors =
-            ButtonDefaults.buttonColors(
-                containerColor = containerColor,
-                contentColor = contentColor,
-                disabledContainerColor = AfternoteDesign.colors.gray4,
-                disabledContentColor = AfternoteDesign.colors.white,
-            ),
-    ) {
-        Text(
-            text = text,
-            style =
-                AfternoteDesign.typography.bodyBase.copy(
-                    fontWeight = FontWeight.Medium,
-                ),
-        )
-    }
+        type = type,
+    )
 }
 
 @Composable
@@ -83,8 +82,7 @@ fun BottomButtons(
         // 간편 회원가입하기 버튼
         LoginButton(
             text = stringResource(R.string.login_signup_simple),
-            containerColor = AfternoteDesign.colors.gray2,
-            contentColor = Color.Black,
+            style = LoginButtonStyle.Secondary,
             onClick = onSignUpClick,
             modifier = Modifier.fillMaxWidth(),
         )
