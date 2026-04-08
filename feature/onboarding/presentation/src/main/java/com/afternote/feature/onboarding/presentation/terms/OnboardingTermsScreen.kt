@@ -267,61 +267,72 @@ private fun TermsRow(
     titleStyle: TermsRowTitleStyle = TermsRowTitleStyle.Normal,
     onViewDetailClick: (() -> Unit)? = null,
 ) {
+    // 최상위 Row는 레이아웃 배치만 담당 (이벤트 없음)
     Row(
         modifier =
             modifier
                 .fillMaxWidth()
-                .toggleable(
-                    value = isChecked,
-                    role = Role.Checkbox,
-                    onValueChange = { onToggle() },
-                ).padding(vertical = 4.dp),
+                .padding(vertical = 4.dp),
         verticalAlignment =
             if (subtitle != null) Alignment.Top else Alignment.CenterVertically,
     ) {
-        // 원형 체크 토글
-        Icon(
-            painter =
-                painterResource(
-                    if (isChecked) UiR.drawable.core_ui_check_circle else UiR.drawable.core_ui_uncheck_circle,
-                ),
-            contentDescription = null,
-            tint =
-                if (isChecked) AfternoteDesign.colors.gray9 else AfternoteDesign.colors.gray4,
+        // 1. 체크박스 + 텍스트 영역 (Toggleable)
+        Row(
             modifier =
                 Modifier
-                    .padding(top = if (subtitle != null) 2.dp else 0.dp)
-                    .size(24.dp),
-        )
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style =
-                    when (titleStyle) {
-                        TermsRowTitleStyle.Bold ->
-                            AfternoteDesign.typography.bodyLargeB
-
-                        TermsRowTitleStyle.Normal ->
-                            AfternoteDesign.typography.bodyBase.copy(
-                                fontWeight = FontWeight.Medium,
-                            )
-                    },
-                color = AfternoteDesign.colors.gray9,
+                    .weight(1f)
+                    .toggleable(
+                        value = isChecked,
+                        role = Role.Checkbox,
+                        onValueChange = { onToggle() },
+                    ).padding(vertical = 8.dp),
+            verticalAlignment =
+                if (subtitle != null) Alignment.Top else Alignment.CenterVertically,
+        ) {
+            Icon(
+                painter =
+                    painterResource(
+                        if (isChecked) UiR.drawable.core_ui_check_circle else UiR.drawable.core_ui_uncheck_circle,
+                    ),
+                contentDescription = null,
+                tint =
+                    if (isChecked) AfternoteDesign.colors.gray9 else AfternoteDesign.colors.gray4,
+                modifier =
+                    Modifier
+                        .padding(top = if (subtitle != null) 2.dp else 0.dp)
+                        .size(24.dp),
             )
 
-            if (subtitle != null) {
-                Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column {
                 Text(
-                    text = subtitle,
-                    style = AfternoteDesign.typography.captionLargeR,
-                    color = AfternoteDesign.colors.gray4,
+                    text = title,
+                    style =
+                        when (titleStyle) {
+                            TermsRowTitleStyle.Bold ->
+                                AfternoteDesign.typography.bodyLargeB
+
+                            TermsRowTitleStyle.Normal ->
+                                AfternoteDesign.typography.bodyBase.copy(
+                                    fontWeight = FontWeight.Medium,
+                                )
+                        },
+                    color = AfternoteDesign.colors.gray9,
                 )
+
+                if (subtitle != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = subtitle,
+                        style = AfternoteDesign.typography.captionLargeR,
+                        color = AfternoteDesign.colors.gray4,
+                    )
+                }
             }
         }
 
+        // 2. 전체보기 버튼 (독립된 Clickable — toggleable과 이벤트 분리)
         if (onViewDetailClick != null) {
             Spacer(modifier = Modifier.width(8.dp))
             Text(
@@ -331,13 +342,13 @@ private fun TermsRow(
                 modifier =
                     Modifier
                         .clickable(role = Role.Button, onClick = onViewDetailClick)
-                        .padding(4.dp),
+                        .padding(horizontal = 8.dp, vertical = 12.dp),
             )
         }
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+@Preview(showBackground = true)
 @Composable
 private fun OnboardingTermsScreenPreview() {
     var state by remember { mutableStateOf(TermsState()) }

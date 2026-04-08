@@ -23,6 +23,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -129,7 +130,11 @@ private fun SignUpContent(
                 trailingContent = {
                     Text(
                         text = stringResource(com.afternote.core.ui.R.string.core_ui_request_verification_code),
-                        modifier = Modifier.clickable { onRequestVerification() },
+                        modifier =
+                            Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .clickable { onRequestVerification() }
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
                         style = AfternoteDesign.typography.captionLargeR,
                         color = AfternoteDesign.colors.gray9,
                     )
@@ -143,6 +148,7 @@ private fun SignUpContent(
                 state = passwordState,
                 placeholder = stringResource(R.string.signup_password_placeholder),
                 keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Done,
                 outputTransformation = PasswordMaskTransformation,
             )
 
