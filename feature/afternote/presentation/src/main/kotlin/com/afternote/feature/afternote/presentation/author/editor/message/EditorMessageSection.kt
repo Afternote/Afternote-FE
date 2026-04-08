@@ -2,10 +2,13 @@ package com.afternote.feature.afternote.presentation.author.editor.message
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
@@ -15,10 +18,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.Label
 import com.afternote.core.ui.button.AddCircleButton
-import com.afternote.core.ui.textfield.AfternoteTextField
-import com.afternote.core.ui.textfield.MultilineOutlineTextField
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
@@ -83,9 +85,14 @@ private fun EditorMessageItem(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        MultilineOutlineTextField(
+        AfternoteTextField(
+            state = message.contentState,
             label = "내용",
-            textFieldState = message.contentState,
+            placeholder = "Text Field",
+            lineLimits = TextFieldLineLimits.MultiLine(),
+            minHeight = 160.dp,
+            shape = RoundedCornerShape(16.dp),
+            contentPadding = PaddingValues(all = 16.dp),
         )
 
         Spacer(modifier = Modifier.height(8.dp))

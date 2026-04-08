@@ -4,11 +4,13 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -27,7 +29,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.CustomRadioButton
-import com.afternote.core.ui.textfield.OutlineTextField
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
@@ -235,13 +236,15 @@ private fun LastWishOtherTextField(
     LaunchedEffect(state) {
         snapshotFlow { state.text.toString() }.collect { currentOnValueChange.value(it) }
     }
-    OutlineTextField(
+    AfternoteTextField(
         modifier = modifier,
-        textFieldState = state,
+        state = state,
         placeholder = stringResource(R.string.core_ui_text_field_placeholder),
         containerColor = AfternoteDesign.colors.gray1,
-        height = 160.dp,
+        minHeight = 160.dp,
         shape = RoundedCornerShape(16.dp),
+        lineLimits = TextFieldLineLimits.MultiLine(),
+        contentPadding = PaddingValues(all = 16.dp),
     )
 }
 

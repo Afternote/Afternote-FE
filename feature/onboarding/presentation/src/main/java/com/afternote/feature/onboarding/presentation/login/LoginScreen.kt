@@ -24,9 +24,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.AfternoteTextField
+import com.afternote.core.ui.PasswordMaskTransformation
 import com.afternote.core.ui.scaffold.topbar.HomeTopBar
-import com.afternote.core.ui.textfield.AfternoteTextField
-import com.afternote.core.ui.textfield.PasswordMaskTransformation
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
