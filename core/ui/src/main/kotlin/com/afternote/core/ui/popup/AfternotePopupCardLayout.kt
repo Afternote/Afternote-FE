@@ -27,15 +27,14 @@ import com.afternote.core.ui.theme.AfternoteTheme
 private val PopupCardShape = RoundedCornerShape(16.dp)
 
 /**
- * 피그마 기준 공통 알림 카드: 흰 배경·16dp 라운드·본문 메시지·하단 액션 영역.
+ * 피그마 기준 공통 팝업 카드 껍데기: 흰 배경·16dp 라운드·그림자·내부 패딩.
  *
- * [InfoPopupContent](단일 버튼), [ConfirmationPopupContent](이중 버튼)에서 공유합니다.
+ * 메시지+버튼 패턴은 [AfternotePopupCardLayout] (메시지 오버로드), 폼 다이얼로그는 이 슬롯 버전을 씁니다.
  */
 @Composable
 fun AfternotePopupCardLayout(
-    message: String,
     modifier: Modifier = Modifier,
-    actions: @Composable ColumnScope.() -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     Surface(
         modifier =
@@ -62,20 +61,36 @@ fun AfternotePopupCardLayout(
                     ),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(
-                text = message,
-                style =
-                    AfternoteDesign.typography.textField.copy(
-                        fontWeight = FontWeight.Medium,
-                        color = AfternoteDesign.colors.gray9,
-                        textAlign = TextAlign.Center,
-                    ),
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            actions()
+            content()
         }
+    }
+}
+
+/**
+ * 피그마 기준 공통 알림 카드: 흰 배경·16dp 라운드·본문 메시지·하단 액션 영역.
+ *
+ * [InfoPopupContent](단일 버튼), [ConfirmationPopupContent](이중 버튼)에서 공유합니다.
+ */
+@Composable
+fun AfternotePopupCardLayout(
+    message: String,
+    modifier: Modifier = Modifier,
+    actions: @Composable ColumnScope.() -> Unit,
+) {
+    AfternotePopupCardLayout(modifier = modifier) {
+        Text(
+            text = message,
+            style =
+                AfternoteDesign.typography.textField.copy(
+                    fontWeight = FontWeight.Medium,
+                    color = AfternoteDesign.colors.gray9,
+                    textAlign = TextAlign.Center,
+                ),
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        actions()
     }
 }
 
