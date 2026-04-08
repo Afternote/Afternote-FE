@@ -1,6 +1,7 @@
 plugins {
     id("afternote.android.library.compose")
     id("afternote.android.hilt")
+    kotlin("plugin.serialization")
 }
 
 android {
@@ -13,4 +14,5 @@ dependencies {
     implementation(projects.core.domain)
     implementation(projects.core.ui)
     implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.kotlinx.serialization.json)
 }
