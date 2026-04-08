@@ -43,11 +43,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.button.CustomRadioButton
+import com.afternote.core.ui.scaffold.bottombar.AfternoteEmbeddedMainBottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
 /**

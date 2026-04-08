@@ -46,12 +46,12 @@ import coil3.network.httpHeaders
 import coil3.request.ImageRequest
 import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.horizontalFadingEdge
+import com.afternote.core.ui.scaffold.bottombar.AfternoteEmbeddedMainBottomBar
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
-import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard

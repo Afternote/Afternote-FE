@@ -5,8 +5,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import com.afternote.core.ui.scaffold.bottombar.LocalAfternoteUsesAppBottomBar
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.presentation.shared.LocalAfternoteUsesAppBottomBar
 
 /**
  * afternote feature 전용 라이트 모드 테마 래퍼

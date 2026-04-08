@@ -36,13 +36,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.icon.AfternoteCircularCheckbox
 import com.afternote.core.ui.icon.AfternoteCircularCheckboxState
+import com.afternote.core.ui.scaffold.bottombar.AfternoteEmbeddedMainBottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
-import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.DetailCard
 import com.afternote.feature.afternote.presentation.shared.detail.DetailSectionHeader
