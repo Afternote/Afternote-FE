@@ -38,7 +38,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.afternote.core.ui.form.OutlineTextField
+import com.afternote.core.ui.form.AfternoteTextField
+import com.afternote.core.ui.form.PasswordMaskTransformation
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -139,21 +140,23 @@ private fun SignUpPasswordContent(
             Spacer(modifier = Modifier.height(16.dp))
 
             // 비밀번호 입력
-            OutlineTextField(
-                textFieldState = passwordState,
+            AfternoteTextField(
+                state = passwordState,
                 placeholder = stringResource(R.string.signup_password_placeholder),
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Next,
+                outputTransformation = PasswordMaskTransformation,
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
             // 비밀번호 확인
-            OutlineTextField(
-                textFieldState = passwordConfirmState,
+            AfternoteTextField(
+                state = passwordConfirmState,
                 placeholder = stringResource(R.string.signup_password_confirm_placeholder),
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Done,
+                outputTransformation = PasswordMaskTransformation,
             )
 
             Spacer(modifier = Modifier.height(16.dp))

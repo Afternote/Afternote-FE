@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -19,23 +21,24 @@ import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentType
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.form.AfternoteTextField
+import com.afternote.core.ui.form.PasswordMaskTransformation
 import com.afternote.core.ui.scaffold.topbar.HomeTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.login.BottomButtons
 import com.afternote.feature.onboarding.presentation.login.LoginButton
-import com.afternote.feature.onboarding.presentation.login.MyInputField
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
-    email: String,
-    onEmailChange: (String) -> Unit,
-    password: String,
-    onPasswordChange: (String) -> Unit,
+    emailState: TextFieldState,
+    passwordState: TextFieldState,
     onLoginClick: () -> Unit,
     onSignUpClick: () -> Unit,
     onKakaoLoginClick: () -> Unit,
@@ -62,28 +65,26 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             // 아이디 (이메일) 입력 필드
-            MyInputField(
-                label = stringResource(R.string.login_email_label),
-                value = email,
-                onValueChange = onEmailChange,
+            AfternoteTextField(
+                state = emailState,
+                placeholder = stringResource(R.string.login_email_label),
+                keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Next,
                 modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .semantics { contentType = ContentType.Username },
+                    Modifier.semantics { contentType = ContentType.Username },
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
             // 비밀번호 입력 필드
-            MyInputField(
-                label = stringResource(R.string.login_password_label),
-                value = password,
-                onValueChange = onPasswordChange,
+            AfternoteTextField(
+                state = passwordState,
+                placeholder = stringResource(R.string.login_password_label),
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Done,
+                outputTransformation = PasswordMaskTransformation,
                 modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .semantics { contentType = ContentType.Password },
-                isPassword = true,
+                    Modifier.semantics { contentType = ContentType.Password },
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -93,7 +94,7 @@ fun LoginScreen(
                 text = stringResource(R.string.login_button),
                 onClick = onLoginClick,
                 modifier = Modifier.fillMaxWidth(),
-                enabled = email.isNotBlank() && password.isNotEmpty(),
+                enabled = emailState.text.isNotBlank() && passwordState.text.isNotEmpty(),
             )
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -113,10 +114,8 @@ fun LoginScreen(
 private fun LoginScreenPreview() {
     AfternoteTheme {
         LoginScreen(
-            email = "",
-            onEmailChange = {},
-            password = "",
-            onPasswordChange = {},
+            emailState = rememberTextFieldState(),
+            passwordState = rememberTextFieldState(),
             onLoginClick = {},
             onSignUpClick = {},
             onKakaoLoginClick = {},

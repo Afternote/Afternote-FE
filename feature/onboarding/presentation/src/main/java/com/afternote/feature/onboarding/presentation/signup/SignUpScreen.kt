@@ -1,5 +1,6 @@
 package com.afternote.feature.onboarding.presentation.signup
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -26,10 +27,12 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.form.OutlineTextField
+import com.afternote.core.ui.form.AfternoteTextField
+import com.afternote.core.ui.form.PasswordMaskTransformation
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -118,20 +121,29 @@ private fun SignUpContent(
                     .padding(top = 32.dp, bottom = 16.dp),
         ) {
             // 이메일 입력 + 인증번호 받기
-            OutlineTextField(
-                textFieldState = emailState,
+            AfternoteTextField(
+                state = emailState,
                 placeholder = stringResource(R.string.signup_email_placeholder),
-                onAuthClick = onRequestVerification,
                 keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Next,
+                trailingContent = {
+                    Text(
+                        text = stringResource(com.afternote.core.ui.R.string.core_ui_request_verification_code),
+                        modifier = Modifier.clickable { onRequestVerification() },
+                        style = AfternoteDesign.typography.captionLargeR,
+                        color = AfternoteDesign.colors.gray9,
+                    )
+                },
             )
 
             Spacer(modifier = Modifier.height(4.dp))
 
             // 비밀번호 입력
-            OutlineTextField(
-                textFieldState = passwordState,
+            AfternoteTextField(
+                state = passwordState,
                 placeholder = stringResource(R.string.signup_password_placeholder),
                 keyboardType = KeyboardType.Password,
+                outputTransformation = PasswordMaskTransformation,
             )
 
             // 인증번호 전송 안내 메시지
