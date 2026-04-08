@@ -11,4 +11,11 @@
     <string name="login_email_label">아이디 (이메일)</string>
     <string name="login_password_label">비밀번호</string>
     <string name="login_button">로그인</string>
+
+    <string name="signup_title">회원가입</string>
+    <string name="signup_email_placeholder">이메일 주소</string>
+    <string name="signup_password_placeholder">비밀번호</string>
+    <string name="signup_verification_sent">인증번호가 전송되었습니다.\n수신 된 인증번호를 입력해 주세요.</string>
+    <string name="signup_next">다음</string>
+    <string name="signup_progress_description">회원가입 진행도 %1$d단계 중 %2$d단계</string>
 </resources>

@@ -2,16 +2,23 @@ package com.afternote.feature.onboarding.presentation.login.component
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.scaffold.topbar.HomeTopBar
@@ -30,6 +37,8 @@ fun LoginScreen(
     password: String,
     onPasswordChange: (String) -> Unit,
     onLoginClick: () -> Unit,
+    onSignUpClick: () -> Unit,
+    onKakaoLoginClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -43,7 +52,10 @@ fun LoginScreen(
             modifier =
                 Modifier
                     .padding(innerPadding)
+                    .consumeWindowInsets(innerPadding)
                     .fillMaxSize()
+                    .imePadding()
+                    .verticalScroll(rememberScrollState())
                     .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -54,7 +66,10 @@ fun LoginScreen(
                 label = stringResource(R.string.login_email_label),
                 value = email,
                 onValueChange = onEmailChange,
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .semantics { contentType = ContentType.Username },
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -64,7 +79,10 @@ fun LoginScreen(
                 label = stringResource(R.string.login_password_label),
                 value = password,
                 onValueChange = onPasswordChange,
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .semantics { contentType = ContentType.Password },
                 isPassword = true,
             )
 
@@ -75,12 +93,17 @@ fun LoginScreen(
                 text = stringResource(R.string.login_button),
                 onClick = onLoginClick,
                 modifier = Modifier.fillMaxWidth(),
-                enabled = email.isNotEmpty() && password.isNotEmpty(),
+                enabled = email.isNotBlank() && password.isNotEmpty(),
             )
             Spacer(modifier = Modifier.height(32.dp))
 
             // 하단 버튼 영역
-            BottomButtons()
+            BottomButtons(
+                onSignUpClick = onSignUpClick,
+                onKakaoLoginClick = onKakaoLoginClick,
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
@@ -95,6 +118,8 @@ private fun LoginScreenPreview() {
             password = "",
             onPasswordChange = {},
             onLoginClick = {},
+            onSignUpClick = {},
+            onKakaoLoginClick = {},
         )
     }
 }
