@@ -19,22 +19,30 @@ import com.afternote.core.ui.theme.AfternoteTheme
  * - 클릭 가능
  *
  * @param modifier Modifier (기본: Modifier)
- * @param contentDescription 접근성을 위한 콘텐츠 설명
- * @param onClick 클릭 시 실행할 콜백
+ * @param contentDescription 접근성을 위한 콘텐츠 설명 ([interactive]이 false면 이미지는 장식으로 처리되어 무시됨)
+ * @param onClick 클릭 시 실행할 콜백 ([interactive]이 true일 때만 적용)
+ * @param interactive false면 시각만 표시하고 클릭·이미지 contentDescription은 부모에 맡김 (카드 전체 탭 등)
  */
 @Composable
 fun AddCircleButton(
     contentDescription: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    interactive: Boolean = true,
 ) {
     Image(
         painter = painterResource(R.drawable.core_ui_add_circle_dark),
-        contentDescription = contentDescription,
+        contentDescription = if (interactive) contentDescription else null,
         modifier =
             modifier
                 .size(24.dp)
-                .clickable(onClick = onClick),
+                .then(
+                    if (interactive) {
+                        Modifier.clickable(onClick = onClick)
+                    } else {
+                        Modifier
+                    },
+                ),
     )
 }
 
