@@ -9,19 +9,22 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.presentation.R
 
 @Composable
 internal fun HomeHeaderSection(
@@ -94,9 +97,13 @@ private fun NextStepCard(
                 color = AfternoteDesign.colors.gray9,
                 modifier = Modifier.weight(1f),
             )
-            RightArrowIcon(
-                color = AfternoteDesign.colors.gray6,
-                size = 12.dp,
+            Icon(
+                painter = painterResource(R.drawable.feature_afternote_ic_next_step_right_arrow),
+                contentDescription = null,
+                modifier =
+                    Modifier
+                        .size(4.dp, 7.dp),
+                tint = AfternoteDesign.colors.gray6,
             )
             Spacer(Modifier.width(4.dp))
         }
