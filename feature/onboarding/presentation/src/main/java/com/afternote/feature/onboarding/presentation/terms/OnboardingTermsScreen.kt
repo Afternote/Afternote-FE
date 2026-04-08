@@ -19,7 +19,6 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -42,13 +41,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
+import com.afternote.core.ui.icon.AfternoteCircularCheckbox
+import com.afternote.core.ui.icon.AfternoteCircularCheckboxState
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.signup.SIGN_UP_TOTAL_STEPS
 import com.afternote.core.common.R as CommonR
-import com.afternote.core.ui.R as UiR
 
 @Immutable
 data class TermsState(
@@ -282,18 +282,17 @@ private fun TermsRow(
             verticalAlignment =
                 if (subtitle != null) Alignment.Top else Alignment.CenterVertically,
         ) {
-            Icon(
-                painter =
-                    painterResource(
-                        if (isChecked) UiR.drawable.core_ui_check_circle else UiR.drawable.core_ui_uncheck_circle,
-                    ),
-                contentDescription = null,
-                tint =
-                    if (isChecked) AfternoteDesign.colors.gray9 else AfternoteDesign.colors.gray4,
+            AfternoteCircularCheckbox(
+                state =
+                    if (isChecked) {
+                        AfternoteCircularCheckboxState.Checked
+                    } else {
+                        AfternoteCircularCheckboxState.Unchecked
+                    },
                 modifier =
-                    Modifier
-                        .padding(top = if (subtitle != null) 2.dp else 0.dp)
-                        .size(24.dp),
+                    Modifier.padding(top = if (subtitle != null) 2.dp else 0.dp),
+                onClick = null,
+                visualSize = 24.dp,
             )
 
             Spacer(modifier = Modifier.width(12.dp))

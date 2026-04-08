@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -31,8 +33,9 @@ import com.afternote.core.ui.theme.AfternoteTheme
  * 커스텀 라디오 버튼 컴포넌트
  *
  * 체크 표시(인디케이터)와 윤곽선 간 간격이 전체 크기의 12분의 1이 되도록 자동 계산됩니다.
- * [onClick]이 있으면 [Modifier.selectable] + [Role.RadioButton]으로 접근성을 맞춥니다.
- * 부모 행/카드가 선택을 처리하는 경우 [onClick]을 null로 두면 터치 영역이 겹치지 않습니다.
+ * [onClick]이 있으면 바깥에 [Modifier.minimumInteractiveComponentSize]와
+ * [Modifier.selectable] + [Role.RadioButton]을 두어 최소 48×48dp 터치 영역과 리플을 쓰고,
+ * 안쪽은 [buttonSize]만큼만 그립니다. 부모가 선택을 처리할 때는 [onClick]을 null로 두면 24dp만 차지합니다.
  *
  * @param selected 선택 여부
  * @param onClick 클릭 이벤트 (null이면 비인터랙티브·부모에서 처리)
@@ -70,38 +73,46 @@ fun CustomRadioButton(
 
     Box(
         modifier =
-            modifier
-                .size(buttonSize)
-                .clip(CircleShape)
-                .border(
-                    width = borderWidth,
-                    color = animatedBorderColor,
-                    shape = CircleShape,
-                ).then(
-                    if (onClick != null) {
-                        Modifier.selectable(
+            modifier.then(
+                if (onClick != null) {
+                    Modifier
+                        .minimumInteractiveComponentSize()
+                        .selectable(
                             selected = selected,
                             onClick = onClick,
                             role = Role.RadioButton,
                             interactionSource = interactionSource,
-                            indication = null,
+                            indication = ripple(),
                         )
-                    } else {
-                        Modifier
-                    },
-                ),
+                } else {
+                    Modifier
+                },
+            ),
         contentAlignment = Alignment.Center,
     ) {
-        if (indicatorSize > 0.dp) {
-            Box(
-                modifier =
-                    Modifier
-                        .size(indicatorSize)
-                        .background(
-                            color = animatedBorderColor,
-                            shape = CircleShape,
-                        ),
-            )
+        Box(
+            modifier =
+                Modifier
+                    .size(buttonSize)
+                    .clip(CircleShape)
+                    .border(
+                        width = borderWidth,
+                        color = animatedBorderColor,
+                        shape = CircleShape,
+                    ),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (indicatorSize > 0.dp) {
+                Box(
+                    modifier =
+                        Modifier
+                            .size(indicatorSize)
+                            .background(
+                                color = animatedBorderColor,
+                                shape = CircleShape,
+                            ),
+                )
+            }
         }
     }
 }
