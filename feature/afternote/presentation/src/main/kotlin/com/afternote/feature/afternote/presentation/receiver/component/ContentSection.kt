@@ -4,12 +4,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -19,7 +17,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -46,7 +43,7 @@ fun ContentSection(
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
+            colors = CardDefaults.cardColors(containerColor = AfternoteDesign.colors.white),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), // Flat style as per image
         ) {
             Box(modifier = Modifier.fillMaxWidth()) {
@@ -86,7 +83,7 @@ fun ContentSection(
                         colors = ButtonDefaults.buttonColors(containerColor = AfternoteDesign.colors.gray9),
                         shape = RoundedCornerShape(50),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                        modifier = Modifier.height(36.dp),
+                        modifier = Modifier.defaultMinSize(minHeight = 36.dp),
                     ) {
                         Text(
                             text = btnText,
@@ -97,8 +94,10 @@ fun ContentSection(
                                 ),
                         )
 
-                        Spacer(modifier = Modifier.width(4.dp))
-                        RightArrowIcon(AfternoteDesign.colors.gray9)
+                        RightArrowIcon(
+                            color = AfternoteDesign.colors.gray9,
+                            modifier = Modifier.padding(start = 4.dp),
+                        )
                     }
                 }
             }

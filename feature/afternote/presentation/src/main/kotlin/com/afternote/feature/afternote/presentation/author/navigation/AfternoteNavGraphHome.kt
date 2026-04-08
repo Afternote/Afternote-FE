@@ -1,6 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.navigation
 
-import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
@@ -34,10 +33,6 @@ internal fun AfternoteHomeNavigation(
                 navigateToAdd = { selectedTab ->
                     val initialCategory =
                         if (selectedTab == AfternoteCategory.ALL) null else selectedTab.label
-                    Log.d(
-                        "AfternoteNav",
-                        "FAB navigateToAdd → navigate(EditorRoute initialCategory=$initialCategory)",
-                    )
                     navController.navigate(AfternoteRoute.EditorRoute(initialCategory = initialCategory))
                 },
                 onNavTabSelected = onNavTabSelected,

@@ -155,7 +155,10 @@ fun AfternoteEditorScreen(
                 onBackClick = callbacks.onBackClick,
                 actions = {
                     TextButton(
-                        onClick = { callbacks.onRegisterClick(state.createRegisterPayload()) },
+                        onClick = {
+                            focusManager.clearFocus()
+                            callbacks.onRegisterClick(state.createRegisterPayload())
+                        },
                     ) {
                         Text(
                             text = "등록",

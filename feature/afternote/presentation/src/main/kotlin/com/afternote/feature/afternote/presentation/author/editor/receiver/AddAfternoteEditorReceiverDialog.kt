@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -21,6 +22,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.afternote.core.ui.AfternoteTextField
+import com.afternote.core.ui.PhoneNumberInputTransformation
+import com.afternote.core.ui.PhoneNumberVisualTransformation
+import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.popup.AfternotePopupCardLayout
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -71,6 +75,7 @@ fun AddAfternoteEditorReceiverDialog(
     modifier: Modifier = Modifier,
     params: AddAfternoteEditorReceiverDialogParams,
 ) {
+    val focusManager = LocalFocusManager.current
     Dialog(
         onDismissRequest = params.callbacks.onDismiss,
         properties =
@@ -79,7 +84,12 @@ fun AddAfternoteEditorReceiverDialog(
                 dismissOnClickOutside = true,
             ),
     ) {
-        AfternotePopupCardLayout(modifier = modifier.fillMaxWidth()) {
+        AfternotePopupCardLayout(
+            modifier =
+                modifier
+                    .fillMaxWidth()
+                    .addFocusCleaner(focusManager),
+        ) {
             // 헤더: 타이틀과 추가하기 버튼
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -92,7 +102,10 @@ fun AddAfternoteEditorReceiverDialog(
                 )
 
                 Button(
-                    onClick = params.callbacks.onAddClick,
+                    onClick = {
+                        focusManager.clearFocus()
+                        params.callbacks.onAddClick()
+                    },
                     modifier = Modifier.height(32.dp),
                     shape = RoundedCornerShape(20.dp),
                     colors =
@@ -149,6 +162,8 @@ fun AddAfternoteEditorReceiverDialog(
                 state = params.phoneNumberState,
                 label = "전화번호로 추가하기",
                 keyboardType = KeyboardType.Phone,
+                inputTransformation = PhoneNumberInputTransformation,
+                outputTransformation = PhoneNumberVisualTransformation,
                 containerColor = AfternoteDesign.colors.gray1,
                 labelSpacing = 7.95.dp,
             )
@@ -168,7 +183,10 @@ fun AddAfternoteEditorReceiverDialog(
             // 연락처에서 추가하기 버튼
             AfternoteButton(
                 text = "연락처 가져오기",
-                onClick = params.callbacks.onImportContactsClick,
+                onClick = {
+                    focusManager.clearFocus()
+                    params.callbacks.onImportContactsClick()
+                },
             )
         }
     }

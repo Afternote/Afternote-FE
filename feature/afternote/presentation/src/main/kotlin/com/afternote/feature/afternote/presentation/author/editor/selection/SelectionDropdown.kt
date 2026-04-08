@@ -1,8 +1,10 @@
 package com.afternote.feature.afternote.presentation.author.editor.selection
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,8 +19,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -96,7 +96,6 @@ fun SelectionDropdown(
     menuStyle: DropdownMenuStyle = DropdownMenuStyle(),
     state: SelectionDropdownState = rememberSelectionDropdownState(),
 ) {
-    val density = LocalDensity.current
     val menuBackgroundResolved = menuStyle.menuBackgroundColor ?: AfternoteDesign.colors.white
 
     Column(
@@ -113,77 +112,75 @@ fun SelectionDropdown(
             style = labelParams.labelStyle,
         )
 
-        // 드롭다운 필드
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-//                    .height(36.dp)
-                        .onGloballyPositioned { coordinates ->
-                            val newWidth = with(density) { coordinates.size.width.toDp() }
-                            if (newWidth != state.boxWidth) {
-                                state.boxWidth = newWidth
-                            }
-                        }.clickable { state.expanded = !state.expanded }
-                        .bottomBorder(color = AfternoteDesign.colors.gray3, width = 0.5.dp)
-                        .padding(all = 8.dp),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text(
-                        text = selectedValue,
-                        style =
-                            AfternoteDesign.typography.bodyBase.copy(
-                                lineHeight = 20.sp,
-                                color = AfternoteDesign.colors.gray8,
-                            ),
-                    )
-
-                    Image(
-                        painter = painterResource(R.drawable.feature_afternote_ic_dropdown_vector),
-                        contentDescription = "드롭다운",
-                    )
+        // 드롭다운 필드 (메뉴 너비는 BoxWithConstraints 제약으로 맞춤 — 측정 후 state 갱신 없음)
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val menuModifier =
+                if (constraints.hasBoundedWidth) {
+                    Modifier.width(maxWidth)
+                } else {
+                    Modifier.fillMaxWidth()
                 }
-            }
+            Box(modifier = Modifier.fillMaxWidth()) {
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { state.expanded = !state.expanded }
+                            .bottomBorder(color = AfternoteDesign.colors.gray3, width = 0.5.dp)
+                            .padding(all = 8.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            text = selectedValue,
+                            style =
+                                AfternoteDesign.typography.bodyBase.copy(
+                                    lineHeight = 20.sp,
+                                    color = AfternoteDesign.colors.gray8,
+                                ),
+                        )
 
-            // 드롭다운 메뉴
-            DropdownMenu(
-                expanded = state.expanded,
-                onDismissRequest = { state.expanded = false },
-                offset = DpOffset(x = 0.dp, y = menuStyle.menuOffset),
-                containerColor = menuBackgroundResolved,
-                shadowElevation = menuStyle.shadowElevation,
-                tonalElevation = menuStyle.tonalElevation,
-                modifier =
-                    Modifier
-                        .then(if (state.boxWidth > 0.dp) Modifier.width(state.boxWidth) else Modifier.fillMaxWidth()),
-            ) {
-                options.forEach { option ->
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = option,
-                                style =
-                                    AfternoteDesign.typography.textField.copy(
-                                        fontWeight = FontWeight.Medium,
-                                        color = AfternoteDesign.colors.gray9,
-                                        textAlign = TextAlign.Center,
-                                    ),
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        },
-                        onClick = {
-                            onValueSelected(option)
-                            state.expanded = false
-                        },
-                        contentPadding = PaddingValues(vertical = 16.dp),
-                    )
+                        Image(
+                            painter = painterResource(R.drawable.feature_afternote_ic_dropdown_vector),
+                            contentDescription = "드롭다운",
+                        )
+                    }
+                }
+
+                // 드롭다운 메뉴
+                DropdownMenu(
+                    expanded = state.expanded,
+                    onDismissRequest = { state.expanded = false },
+                    offset = DpOffset(x = 0.dp, y = menuStyle.menuOffset),
+                    containerColor = menuBackgroundResolved,
+                    shadowElevation = menuStyle.shadowElevation,
+                    tonalElevation = menuStyle.tonalElevation,
+                    modifier = menuModifier,
+                ) {
+                    options.forEach { option ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = option,
+                                    style =
+                                        AfternoteDesign.typography.textField.copy(
+                                            fontWeight = FontWeight.Medium,
+                                            color = AfternoteDesign.colors.gray9,
+                                            textAlign = TextAlign.Center,
+                                        ),
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                            },
+                            onClick = {
+                                onValueSelected(option)
+                                state.expanded = false
+                            },
+                            contentPadding = PaddingValues(vertical = 16.dp),
+                        )
+                    }
                 }
             }
         }

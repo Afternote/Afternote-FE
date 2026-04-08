@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -43,6 +44,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.AfternoteTextField
+import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.CustomRadioButton
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
@@ -103,6 +105,7 @@ fun SongPlaylistScreen(
     songs: List<PlaylistSongDisplay>,
     defaultBottomNavTab: BottomNavTab = BottomNavTab.NOTE,
 ) {
+    val focusManager = LocalFocusManager.current
     var searchQuery by remember { mutableStateOf("") }
     var selectedBottomNavTab by remember { mutableStateOf(defaultBottomNavTab) }
 
@@ -112,7 +115,10 @@ fun SongPlaylistScreen(
         topBar = {
             DetailTopBar(
                 title = title,
-                onBackClick = onBackClick,
+                onBackClick = {
+                    focusManager.clearFocus()
+                    onBackClick()
+                },
             )
         },
     ) { paddingValues ->
@@ -151,6 +157,7 @@ fun SongPlaylistScreen(
     onSongsSelected: (List<PlaylistSongDisplay>) -> Unit,
     options: SongPlaylistScreenSelectableOptions = SongPlaylistScreenSelectableOptions(),
 ) {
+    val focusManager = LocalFocusManager.current
     var selectedSongIds by remember {
         mutableStateOf(
             options.initialSelectedSongIds ?: emptySet<String>(),
@@ -174,7 +181,10 @@ fun SongPlaylistScreen(
         topBar = {
             DetailTopBar(
                 title = title,
-                onBackClick = onBackClick,
+                onBackClick = {
+                    focusManager.clearFocus()
+                    onBackClick()
+                },
             )
         },
     ) { paddingValues ->
@@ -254,6 +264,7 @@ fun SongPlaylistScreen(
     defaultBottomNavTab: BottomNavTab = BottomNavTab.NOTE,
     initialSelectedSongIds: Set<String>? = null,
 ) {
+    val focusManager = LocalFocusManager.current
     var selectedSongIds by remember {
         mutableStateOf(initialSelectedSongIds ?: emptySet<String>())
     }
@@ -265,7 +276,10 @@ fun SongPlaylistScreen(
         topBar = {
             DetailTopBar(
                 title = title,
-                onBackClick = onBackClick,
+                onBackClick = {
+                    focusManager.clearFocus()
+                    onBackClick()
+                },
             )
         },
     ) { paddingValues ->
@@ -395,12 +409,16 @@ fun SearchableSongList(
     contentPadding: PaddingValues = PaddingValues(0.dp),
     slots: SearchableSongListSlots = SearchableSongListSlots(),
 ) {
+    val focusManager = LocalFocusManager.current
     val filteredSongs =
         remember(songs, searchQuery) {
             filterSongsByQuery(songs, searchQuery)
         }
     LazyColumn(
-        modifier = modifier.fillMaxWidth(),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .addFocusCleaner(focusManager),
         contentPadding = contentPadding,
     ) {
         item {
@@ -499,6 +517,7 @@ private fun SongAddButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val focusManager = LocalFocusManager.current
     val shape = RoundedCornerShape(8.dp)
     Row(
         modifier =
@@ -509,11 +528,16 @@ private fun SongAddButton(
                     elevation = 5.dp,
                     shape = shape,
                     clip = false,
-                    ambientColor = Color(0x26000000),
-                    spotColor = Color(0x26000000),
+                    ambientColor = AfternoteDesign.colors.black.copy(alpha = 38f / 255f),
+                    spotColor = AfternoteDesign.colors.black.copy(alpha = 38f / 255f),
                 ).background(color = AfternoteDesign.colors.gray1, shape = shape)
                 .clip(shape)
-                .clickable(onClick = onClick),
+                .clickable(
+                    onClick = {
+                        focusManager.clearFocus()
+                        onClick()
+                    },
+                ),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {

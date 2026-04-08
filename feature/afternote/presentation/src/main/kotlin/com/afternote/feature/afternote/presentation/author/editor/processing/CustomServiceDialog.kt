@@ -9,12 +9,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.afternote.core.ui.AfternoteTextField
+import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.popup.AfternotePopupCardLayout
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -52,6 +54,7 @@ fun CustomServiceDialog(
     modifier: Modifier = Modifier,
     params: CustomServiceDialogParams,
 ) {
+    val focusManager = LocalFocusManager.current
     Dialog(
         onDismissRequest = params.callbacks.onDismiss,
         properties =
@@ -60,7 +63,12 @@ fun CustomServiceDialog(
                 dismissOnClickOutside = true,
             ),
     ) {
-        AfternotePopupCardLayout(modifier = modifier.fillMaxWidth()) {
+        AfternotePopupCardLayout(
+            modifier =
+                modifier
+                    .fillMaxWidth()
+                    .addFocusCleaner(focusManager),
+        ) {
             // 타이틀
             Text(
                 text = "직접 입력하기",
@@ -83,7 +91,10 @@ fun CustomServiceDialog(
             // 추가하기 버튼
             AfternoteButton(
                 text = "추가하기",
-                onClick = params.callbacks.onAddClick,
+                onClick = {
+                    focusManager.clearFocus()
+                    params.callbacks.onAddClick()
+                },
             )
         }
     }

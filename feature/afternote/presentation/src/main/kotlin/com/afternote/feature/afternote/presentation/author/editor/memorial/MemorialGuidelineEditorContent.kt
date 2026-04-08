@@ -1,5 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.editor.memorial
+
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -10,14 +12,13 @@ import com.afternote.core.ui.LastWishOption
 import com.afternote.core.ui.LastWishOtherState
 import com.afternote.core.ui.LastWishesRadioGroup
 import com.afternote.core.ui.MemorialGuidelineContent
-import com.afternote.core.ui.MemorialGuidelineSlots
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.author.editor.receiver.RecipientDesignationSection
 import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
 
 /**
  * 추모 가이드라인 종류 선택 시 표시되는 콘텐츠 (편집 모드).
- * [MemorialGuidelineContent] 공통 레이아웃을 사용하고, 슬롯에 편집용 컴포넌트를 채움.
+ * [MemorialGuidelineContent] 공통 레이아웃에 편집용 섹션 컴포저블을 넘깁니다.
  */
 @Composable
 fun MemorialGuidelineEditorContent(
@@ -35,49 +36,45 @@ fun MemorialGuidelineEditorContent(
     val trailingSpacerHeight = viewportHeight * 0.1f
 
     MemorialGuidelineContent(
+        introContent = { LastMomentQuestion() },
+        photoContent = {
+            MemorialPhotoUpload(
+                displayImageUri = params.displayMemorialPhotoUri,
+                onAddPhotoClick = params.onPhotoAddClick,
+            )
+        },
+        playlistContent = {
+            MemorialPlaylist(
+                songCount = params.playlistSongCount,
+                albumCovers = params.playlistAlbumCovers,
+                onAddSongClick = params.onSongAddClick,
+            )
+        },
+        lastWishContent = {
+            LastWishesRadioGroup(
+                options = params.lastWishOptions,
+                selectedValue = params.selectedLastWish,
+                onOptionSelect = params.onLastWishSelected,
+                otherState =
+                    LastWishOtherState(
+                        textFieldState = params.customLastWishState,
+                    ),
+            )
+        },
         modifier = modifier,
-        slots =
-            MemorialGuidelineSlots(
-                introContent = { LastMomentQuestion() },
-                photoContent = {
-                    MemorialPhotoUpload(
-                        displayImageUri = params.displayMemorialPhotoUri,
-                        onAddPhotoClick = params.onPhotoAddClick,
-                    )
-                },
-                playlistContent = {
-                    MemorialPlaylist(
-                        songCount = params.playlistSongCount,
-                        albumCovers = params.playlistAlbumCovers,
-                        onAddSongClick = params.onSongAddClick,
-                    )
-                },
-                lastWishContent = {
-                    LastWishesRadioGroup(
-                        options = params.lastWishOptions,
-                        selectedValue = params.selectedLastWish,
-                        onOptionSelect = params.onLastWishSelected,
-                        otherState =
-                            LastWishOtherState(
-                                text = params.customLastWishText,
-                                onTextChange = params.onCustomLastWishChanged,
-                            ),
-                    )
-                },
-                recipientContent = {
-                    params.recipientSection?.let { RecipientDesignationSection(section = it) }
-                },
-                videoContent = {
-                    FuneralVideoUpload(
-                        videoUrl = params.funeralVideoUrl,
-                        thumbnailUrl = params.funeralThumbnailUrl,
-                        onAddVideoClick = params.onVideoAddClick,
-                        onThumbnailBytesReady = params.onThumbnailBytesReady,
-                    )
-                },
-            ),
         sectionSpacing = 32.dp,
         trailingSpacerHeight = trailingSpacerHeight,
+        recipientContent = {
+            params.recipientSection?.let { RecipientDesignationSection(section = it) }
+        },
+        videoContent = {
+            FuneralVideoUpload(
+                videoUrl = params.funeralVideoUrl,
+                thumbnailUrl = params.funeralThumbnailUrl,
+                onAddVideoClick = params.onVideoAddClick,
+                onThumbnailBytesReady = params.onThumbnailBytesReady,
+            )
+        },
     )
 }
 
@@ -85,6 +82,7 @@ fun MemorialGuidelineEditorContent(
 @Composable
 private fun MemorialGuidelineEditorContentPreview() {
     AfternoteTheme {
+        val customLastWishState = rememberTextFieldState()
         val lastWishOptions =
             listOf(
                 LastWishOption(
@@ -111,10 +109,9 @@ private fun MemorialGuidelineEditorContentPreview() {
                     selectedLastWish = "calm",
                     lastWishOptions = lastWishOptions,
                     funeralVideoUrl = null,
-                    customLastWishText = "",
+                    customLastWishState = customLastWishState,
                     onSongAddClick = {},
                     onLastWishSelected = {},
-                    onCustomLastWishChanged = {},
                     onPhotoAddClick = {},
                     onVideoAddClick = {},
                     onThumbnailBytesReady = {},

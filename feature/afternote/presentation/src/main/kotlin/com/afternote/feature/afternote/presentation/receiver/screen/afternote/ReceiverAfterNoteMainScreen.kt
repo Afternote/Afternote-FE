@@ -3,7 +3,6 @@ package com.afternote.feature.afternote.presentation.receiver.screen.afternote
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -48,7 +47,6 @@ import coil3.network.httpHeaders
 import coil3.request.ImageRequest
 import com.afternote.core.ui.LastWishesRadioGroup
 import com.afternote.core.ui.MemorialGuidelineContent
-import com.afternote.core.ui.MemorialGuidelineSlots
 import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.scaffold.bottombar.BottomBar
@@ -75,10 +73,6 @@ fun ReceiverAfterNoteMainScreen(
     memorialThumbnailUrl: String? = null,
     showBottomBar: Boolean = true,
 ) {
-    Log.d(
-        TAG_RECEIVER_AFTERNOTE_MAIN,
-        "ReceiverAfterNoteMainScreen received senderName='$senderName'",
-    )
     var selectedBottomNavItem by remember { mutableStateOf(BottomNavTab.TIMELETTER) }
     val profileResId = profileImageResId ?: R.drawable.feature_afternote_img_default_profile_deceased
 
@@ -111,53 +105,50 @@ fun ReceiverAfterNoteMainScreen(
         ) {
             item {
                 MemorialGuidelineContent(
-                    slots =
-                        MemorialGuidelineSlots(
-                            introContent = {
-                                Text(
-                                    text = "故 ${senderName}님의 애프터노트입니다.",
-                                    style =
-                                        AfternoteDesign.typography.textField.copy(
-                                            fontWeight = FontWeight.Medium,
-                                            color = AfternoteDesign.colors.gray9,
-                                        ),
-                                    modifier = Modifier.fillMaxWidth(),
-                                )
-                            },
-                            photoContent = {
-                                Column(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                ) {
-                                    ProfileImage(
-                                        fallbackImageRes = profileResId,
-                                        profileImageSize = 140.dp,
-                                        isEditable = false,
-                                    )
-                                }
-                            },
-                            playlistContent = {
-                                MemorialPlaylist(
-                                    label = "추모 플레이리스트",
-                                    songCount = songCount,
-                                    albumCovers = albumCovers,
-                                    onAddSongClick = null,
-                                    onPlaylistClick = onNavigateToPlaylist,
-                                )
-                            },
-                            lastWishContent = {
-                                LastWishesRadioGroup(
-                                    displayTextOnly = "끼니 거르지 말고 건강 챙기고 지내.",
-                                )
-                            },
-                            videoContent = {
-                                ReceiverVideoSection(
-                                    memorialVideoUrl = memorialVideoUrl,
-                                    memorialThumbnailUrl = memorialThumbnailUrl,
-                                )
-                            },
-                        ),
+                    introContent = {
+                        Text(
+                            text = "故 ${senderName}님의 애프터노트입니다.",
+                            style =
+                                AfternoteDesign.typography.textField.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    color = AfternoteDesign.colors.gray9,
+                                ),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    },
+                    photoContent = {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            ProfileImage(
+                                fallbackImageRes = profileResId,
+                                profileImageSize = 140.dp,
+                                isEditable = false,
+                            )
+                        }
+                    },
+                    playlistContent = {
+                        MemorialPlaylist(
+                            label = "추모 플레이리스트",
+                            songCount = songCount,
+                            albumCovers = albumCovers,
+                            onAddSongClick = null,
+                            onPlaylistClick = onNavigateToPlaylist,
+                        )
+                    },
+                    lastWishContent = {
+                        LastWishesRadioGroup(
+                            displayTextOnly = "끼니 거르지 말고 건강 챙기고 지내.",
+                        )
+                    },
                     sectionSpacing = 32.dp,
+                    videoContent = {
+                        ReceiverVideoSection(
+                            memorialVideoUrl = memorialVideoUrl,
+                            memorialThumbnailUrl = memorialThumbnailUrl,
+                        )
+                    },
                 )
             }
             item {
@@ -173,7 +164,6 @@ fun ReceiverAfterNoteMainScreen(
     }
 }
 
-private const val TAG_RECEIVER_AFTERNOTE_MAIN = "ReceiverAfterNoteMain"
 private const val LABEL_VIDEO_SECTION = "장례식에 남길 영상"
 
 @Composable
@@ -218,18 +208,20 @@ private fun ReceiverVideoSection(
                         .fillMaxWidth()
                         .height(180.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color.LightGray),
+                        .background(AfternoteDesign.colors.gray3),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = Icons.Default.PlayArrow,
                     contentDescription = "Play",
-                    tint = Color.White,
+                    tint = AfternoteDesign.colors.white,
                     modifier =
                         Modifier
                             .size(48.dp)
-                            .background(Color.Black.copy(alpha = 0.3f), CircleShape)
-                            .padding(8.dp),
+                            .background(
+                                AfternoteDesign.colors.black.copy(alpha = 0.3f),
+                                CircleShape,
+                            ).padding(8.dp),
                 )
             }
         }
@@ -246,17 +238,21 @@ private fun ReceiverMemorialVideoThumbnail(thumbnailUrl: String?) {
                 .clip(RoundedCornerShape(16.dp)),
     ) {
         if (!thumbnailUrl.isNullOrBlank()) {
-            AsyncImage(
-                model =
+            val ctx = LocalContext.current
+            val imageRequest =
+                remember(thumbnailUrl) {
                     ImageRequest
-                        .Builder(LocalContext.current)
+                        .Builder(ctx)
                         .data(thumbnailUrl)
                         .httpHeaders(
                             NetworkHeaders
                                 .Builder()
                                 .set("User-Agent", "Afternote Android App")
                                 .build(),
-                        ).build(),
+                        ).build()
+                }
+            AsyncImage(
+                model = imageRequest,
                 contentDescription = "장례식에 남길 영상 썸네일",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
@@ -271,8 +267,8 @@ private fun ReceiverMemorialVideoThumbnail(thumbnailUrl: String?) {
                             Brush.verticalGradient(
                                 colors =
                                     listOf(
-                                        Color(0x99757575),
-                                        Color(0x99222222),
+                                        AfternoteDesign.colors.gray6.copy(alpha = 153f / 255f),
+                                        AfternoteDesign.colors.gray9.copy(alpha = 153f / 255f),
                                     ),
                             ),
                     ),

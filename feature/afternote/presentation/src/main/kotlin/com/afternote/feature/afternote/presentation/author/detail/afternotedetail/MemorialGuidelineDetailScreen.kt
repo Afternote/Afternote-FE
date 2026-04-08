@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -24,6 +25,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +47,7 @@ import coil3.compose.AsyncImage
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
+import com.afternote.core.ui.FadingEdgeDirection
 import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.horizontalFadingEdge
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
@@ -293,10 +297,11 @@ private fun VideoThumbnail(thumbnailUrl: String?) {
     ) {
         // 썸네일 이미지
         if (!thumbnailUrl.isNullOrBlank()) {
-            AsyncImage(
-                model =
+            val context = LocalContext.current
+            val imageRequest =
+                remember(thumbnailUrl) {
                     ImageRequest
-                        .Builder(LocalContext.current)
+                        .Builder(context)
                         .data(thumbnailUrl)
                         .httpHeaders(
                             NetworkHeaders
@@ -304,7 +309,10 @@ private fun VideoThumbnail(thumbnailUrl: String?) {
                                 .apply {
                                     this["User-Agent"] = "Afternote Android App"
                                 }.build(),
-                        ).build(),
+                        ).build()
+                }
+            AsyncImage(
+                model = imageRequest,
                 contentDescription = "장례식에 남길 영상 썸네일",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
@@ -321,8 +329,8 @@ private fun VideoThumbnail(thumbnailUrl: String?) {
                             Brush.verticalGradient(
                                 colors =
                                     listOf(
-                                        Color(0x99757575),
-                                        Color(0x99222222),
+                                        AfternoteDesign.colors.gray6.copy(alpha = 153f / 255f),
+                                        AfternoteDesign.colors.gray9.copy(alpha = 153f / 255f),
                                     ),
                             ),
                     ),
@@ -383,11 +391,38 @@ private fun PlaylistCard(
 
 @Composable
 private fun PlaylistAlbumRow(albumCovers: List<AlbumCover>) {
+    val listState = rememberLazyListState()
+    val needsHorizontalFade by remember {
+        derivedStateOf {
+            listState.canScrollBackward || listState.canScrollForward
+        }
+    }
+    val fadingDirection by remember {
+        derivedStateOf {
+            when {
+                listState.canScrollBackward && listState.canScrollForward ->
+                    FadingEdgeDirection.BOTH
+                listState.canScrollBackward -> FadingEdgeDirection.LEFT
+                listState.canScrollForward -> FadingEdgeDirection.RIGHT
+                else -> FadingEdgeDirection.RIGHT
+            }
+        }
+    }
     LazyRow(
+        state = listState,
         modifier =
             Modifier
                 .fillMaxWidth()
-                .horizontalFadingEdge(edgeWidth = 45.dp),
+                .then(
+                    if (needsHorizontalFade) {
+                        Modifier.horizontalFadingEdge(
+                            edgeWidth = 45.dp,
+                            direction = fadingDirection,
+                        )
+                    } else {
+                        Modifier
+                    },
+                ),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         itemsIndexed(albumCovers) { _, album ->
@@ -399,10 +434,11 @@ private fun PlaylistAlbumRow(albumCovers: List<AlbumCover>) {
 @Composable
 private fun AlbumCoverItem(album: AlbumCover) {
     if (!album.imageUrl.isNullOrBlank()) {
-        AsyncImage(
-            model =
+        val context = LocalContext.current
+        val imageRequest =
+            remember(album.imageUrl) {
                 ImageRequest
-                    .Builder(LocalContext.current)
+                    .Builder(context)
                     .data(album.imageUrl)
                     .httpHeaders(
                         NetworkHeaders
@@ -410,7 +446,10 @@ private fun AlbumCoverItem(album: AlbumCover) {
                             .apply {
                                 this["User-Agent"] = "Afternote Android App"
                             }.build(),
-                    ).build(),
+                    ).build()
+            }
+        AsyncImage(
+            model = imageRequest,
             contentDescription = album.title,
             modifier = Modifier.size(87.dp),
             contentScale = ContentScale.Crop,
@@ -421,7 +460,7 @@ private fun AlbumCoverItem(album: AlbumCover) {
                 Modifier
                     .size(87.dp)
                     .background(
-                        color = Color.LightGray,
+                        color = AfternoteDesign.colors.gray3,
                         shape = RoundedCornerShape(8.dp),
                     ),
         )

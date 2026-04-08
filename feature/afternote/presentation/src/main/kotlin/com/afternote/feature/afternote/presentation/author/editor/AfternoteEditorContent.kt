@@ -124,7 +124,7 @@ internal fun CategoryContent(
                         lastWishOptions = state.lastWishOptions,
                         funeralVideoUrl = state.funeralVideoUrl,
                         funeralThumbnailUrl = state.funeralThumbnailUrl,
-                        customLastWishText = state.customLastWishText,
+                        customLastWishState = state.customLastWishState,
                         recipientSection =
                             AfternoteEditorReceiverSection(
                                 afternoteEditReceivers = state.afternoteEditReceivers,
@@ -137,7 +137,6 @@ internal fun CategoryContent(
                             ),
                         onSongAddClick = onNavigateToAddSong,
                         onLastWishSelected = state::onLastWishSelected,
-                        onCustomLastWishChanged = state::onCustomLastWishChanged,
                         onPhotoAddClick = onPhotoAddClick,
                         onVideoAddClick = onVideoAddClick,
                         onThumbnailBytesReady = onThumbnailBytesReady,

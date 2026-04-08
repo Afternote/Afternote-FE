@@ -55,6 +55,7 @@ class AfternoteEditorState(
     val afternoteEditReceiverNameState: TextFieldState,
     val phoneNumberState: TextFieldState,
     val customServiceNameState: TextFieldState,
+    val customLastWishState: TextFieldState,
     initialAfternoteEditorReceivers: List<com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver>,
     albumCovers: List<AlbumCover>,
 ) {
@@ -129,9 +130,6 @@ class AfternoteEditorState(
     var memorialPhotoUrl by mutableStateOf<String?>(null)
         private set
     var playlistSongCount by mutableIntStateOf(16)
-        private set
-
-    var customLastWishText by mutableStateOf("")
         private set
 
     // Memorial Playlist State Holder (옵셔널 - 공유 상태)
@@ -292,10 +290,6 @@ class AfternoteEditorState(
         selectedLastWish = wish
     }
 
-    fun onCustomLastWishChanged(text: String) {
-        customLastWishText = text
-    }
-
     /**
      * Resolves the "남기고 싶은 당부" value to send as playlist.atmosphere (Memorial only).
      */
@@ -303,7 +297,7 @@ class AfternoteEditorState(
         when (selectedLastWish) {
             "calm" -> LAST_WISH_DEFAULT_CALM
             "bright" -> LAST_WISH_DEFAULT_BRIGHT
-            "other" -> customLastWishText.trim()
+            "other" -> customLastWishState.text.toString().trim()
             else -> ""
         }
 
@@ -469,22 +463,22 @@ class AfternoteEditorState(
             when {
                 trimmed.isEmpty() -> {
                     selectedLastWish = null
-                    customLastWishText = ""
+                    customLastWishState.edit { replace(0, length, "") }
                 }
 
                 trimmed == LAST_WISH_DEFAULT_CALM -> {
                     selectedLastWish = "calm"
-                    customLastWishText = ""
+                    customLastWishState.edit { replace(0, length, "") }
                 }
 
                 trimmed == LAST_WISH_DEFAULT_BRIGHT -> {
                     selectedLastWish = "bright"
-                    customLastWishText = ""
+                    customLastWishState.edit { replace(0, length, "") }
                 }
 
                 else -> {
                     selectedLastWish = "other"
-                    customLastWishText = trimmed
+                    customLastWishState.edit { replace(0, length, trimmed) }
                 }
             }
         }
@@ -588,6 +582,7 @@ fun rememberAfternoteEditorState(): AfternoteEditorState {
     val afternoteEditReceiverNameState = rememberTextFieldState()
     val phoneNumberState = rememberTextFieldState()
     val customServiceNameState = rememberTextFieldState()
+    val customLastWishState = rememberTextFieldState()
 
     return remember(afternoteProvider) {
         AfternoteEditorState(
@@ -596,6 +591,7 @@ fun rememberAfternoteEditorState(): AfternoteEditorState {
             afternoteEditReceiverNameState = afternoteEditReceiverNameState,
             phoneNumberState = phoneNumberState,
             customServiceNameState = customServiceNameState,
+            customLastWishState = customLastWishState,
             initialAfternoteEditorReceivers = afternoteProvider.getAfternoteEditorReceivers(),
             albumCovers = afternoteProvider.getAlbumCovers(),
         )
