@@ -50,11 +50,21 @@ fun AfternoteCategoryRow(
     val fadingDirection by remember {
         derivedStateOf {
             when {
-                scrollState.canScrollBackward && scrollState.canScrollForward ->
+                scrollState.canScrollBackward && scrollState.canScrollForward -> {
                     FadingEdgeDirection.BOTH
-                scrollState.canScrollBackward -> FadingEdgeDirection.LEFT
-                scrollState.canScrollForward -> FadingEdgeDirection.RIGHT
-                else -> FadingEdgeDirection.RIGHT
+                }
+
+                scrollState.canScrollBackward -> {
+                    FadingEdgeDirection.LEFT
+                }
+
+                scrollState.canScrollForward -> {
+                    FadingEdgeDirection.RIGHT
+                }
+
+                else -> {
+                    FadingEdgeDirection.RIGHT
+                }
             }
         }
     }
