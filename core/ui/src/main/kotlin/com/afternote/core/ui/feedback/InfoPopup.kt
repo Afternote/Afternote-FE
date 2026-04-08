@@ -1,10 +1,7 @@
 package com.afternote.core.ui.feedback
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
@@ -46,82 +43,47 @@ fun InfoPopupContent(
     modifier: Modifier = Modifier,
     confirmText: String = "확인",
 ) {
-    val containerShape = RoundedCornerShape(16.dp)
     val buttonShape = RoundedCornerShape(8.dp)
 
-    Surface(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .dropShadow(
-                    shape = containerShape,
-                    color = Color.Black.copy(alpha = 0.15f),
-                    blur = 10.dp,
-                    offsetX = 0.dp,
-                    offsetY = 2.dp,
-                    spread = 0.dp,
-                ),
-        shape = containerShape,
-        color = AfternoteDesign.colors.white,
+    AfternotePopupCardLayout(
+        message = message,
+        modifier = modifier,
     ) {
-        Column(
+        Surface(
+            onClick = onConfirm,
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(
-                        horizontal = 20.dp,
-                        vertical = 32.dp,
+                    .dropShadow(
+                        shape = buttonShape,
+                        color = Color.Black.copy(alpha = 0.05f),
+                        blur = 5.dp,
+                        offsetX = 0.dp,
+                        offsetY = 2.dp,
+                        spread = 0.dp,
                     ),
-            horizontalAlignment = Alignment.CenterHorizontally,
+            shape = buttonShape,
+            color = AfternoteDesign.colors.gray9,
         ) {
-            Text(
-                text = message,
-                style =
-                    AfternoteDesign.typography.textField.copy(
-                        fontWeight = FontWeight.Medium,
-                        color = AfternoteDesign.colors.gray9,
-                        textAlign = TextAlign.Center,
-                    ),
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Surface(
-                onClick = onConfirm,
+            Box(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .dropShadow(
-                            shape = buttonShape,
-                            color = Color.Black.copy(alpha = 0.05f),
-                            blur = 5.dp,
-                            offsetX = 0.dp,
-                            offsetY = 2.dp,
-                            spread = 0.dp,
+                        .padding(
+                            horizontal = 24.dp,
+                            vertical = 16.dp,
                         ),
-                shape = buttonShape,
-                color = AfternoteDesign.colors.gray9,
+                contentAlignment = Alignment.Center,
             ) {
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(
-                                horizontal = 24.dp,
-                                vertical = 16.dp,
-                            ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = confirmText,
-                        style =
-                            AfternoteDesign.typography.textField.copy(
-                                fontWeight = FontWeight.Medium,
-                                color = AfternoteDesign.colors.white,
-                                textAlign = TextAlign.Center,
-                            ),
-                    )
-                }
+                Text(
+                    text = confirmText,
+                    style =
+                        AfternoteDesign.typography.textField.copy(
+                            fontWeight = FontWeight.Medium,
+                            color = AfternoteDesign.colors.white,
+                            textAlign = TextAlign.Center,
+                        ),
+                )
             }
         }
     }

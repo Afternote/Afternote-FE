@@ -42,4 +42,9 @@
     <string name="terms_view_detail">전체보기</string>
     <string name="terms_next">프로필 설정하러가기</string>
     <string name="terms_progress_description">회원가입 진행도 %1$d단계 중 %2$d단계</string>
+
+    <string name="profile_top_bar_title">프로필 설정</string>
+    <string name="profile_headline">애프터노트에서의\n프로필을 설정해주세요</string>
+    <string name="profile_name_placeholder">이름을 지정해주세요</string>
+    <string name="profile_complete">회원가입 완료</string>
 </resources>

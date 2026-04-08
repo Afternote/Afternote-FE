@@ -4,11 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -47,7 +44,7 @@ fun ConfirmationPopup(
                 dismissOnClickOutside = !isLoading,
             ),
     ) {
-        com.afternote.core.ui.feedback.ConfirmationPopupContent(
+        ConfirmationPopupContent(
             message = message,
             onDismiss = onDismiss,
             onConfirm = onConfirm,
@@ -69,108 +66,81 @@ fun ConfirmationPopupContent(
     confirmText: String = "예",
     isLoading: Boolean = false,
 ) {
-    val containerShape = RoundedCornerShape(16.dp)
     val buttonShape = RoundedCornerShape(8.dp)
-    val buttonTextStyle =
+    val secondaryButtonTextStyle =
         AfternoteDesign.typography.textField.copy(
             fontWeight = FontWeight.Medium,
             color = AfternoteDesign.colors.gray9,
             textAlign = TextAlign.Center,
         )
+    val primaryButtonTextStyle =
+        secondaryButtonTextStyle.copy(color = AfternoteDesign.colors.white)
 
-    // Single 20.dp horizontal padding from dialog edge to content (no extra inner horizontal).
-    Box(modifier = modifier.fillMaxWidth()) {
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .dropShadow(
-                        shape = containerShape,
-                        color = Color.Black.copy(alpha = 0.15f),
-                        blur = 10.dp,
-                        offsetX = 0.dp,
-                        offsetY = 2.dp,
-                        spread = 0.dp,
-                    ).clip(containerShape)
-                    .background(Color.White)
-                    .padding(
-                        horizontal = 20.dp,
-                        vertical = 32.dp,
-                    ),
-            horizontalAlignment = Alignment.CenterHorizontally,
+    AfternotePopupCardLayout(
+        message = message,
+        modifier = modifier,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                text = message,
-                style =
-                    AfternoteDesign.typography.textField.copy(
-                        fontWeight = FontWeight.Medium,
-                        color = AfternoteDesign.colors.gray9,
-                        textAlign = TextAlign.Center,
-                    ),
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            Box(
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .dropShadow(
+                            shape = buttonShape,
+                            color = Color.Black.copy(alpha = 0.05f),
+                            blur = 5.dp,
+                            offsetX = 0.dp,
+                            offsetY = 2.dp,
+                            spread = 0.dp,
+                        ).clip(buttonShape)
+                        .background(AfternoteDesign.colors.gray3)
+                        .clickable(enabled = !isLoading, onClick = onDismiss)
+                        .padding(
+                            horizontal = 24.dp,
+                            vertical = 16.dp,
+                        ),
+                contentAlignment = Alignment.Center,
             ) {
-                Spacer(modifier = Modifier.height(7.5.dp))
                 Text(
                     text = dismissText,
-                    style = buttonTextStyle,
-                    modifier =
-                        Modifier
-                            .weight(1f)
-                            .dropShadow(
-                                shape = buttonShape,
-                                color = Color.Black.copy(alpha = 0.05f),
-                                blur = 5.dp,
-                                offsetX = 0.dp,
-                                offsetY = 2.dp,
-                                spread = 0.dp,
-                            ).clip(buttonShape)
-                            .background(AfternoteDesign.colors.gray3)
-                            .clickable(enabled = !isLoading, onClick = onDismiss)
-                            .padding(
-                                horizontal = 24.dp,
-                                vertical = 16.dp,
-                            ),
+                    style = secondaryButtonTextStyle,
                 )
+            }
 
-                Box(
-                    modifier =
-                        Modifier
-                            .weight(1f)
-                            .dropShadow(
-                                shape = buttonShape,
-                                color = Color.Black.copy(alpha = 0.05f),
-                                blur = 5.dp,
-                                offsetX = 0.dp,
-                                offsetY = 2.dp,
-                                spread = 0.dp,
-                            ).clip(buttonShape)
-                            .background(AfternoteDesign.colors.gray9)
-                            .clickable(enabled = !isLoading, onClick = onConfirm)
-                            .padding(
-                                horizontal = 24.dp,
-                                vertical = 16.dp,
-                            ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = Color.White,
-                        )
-                    } else {
-                        Text(
-                            text = confirmText,
-                            style = buttonTextStyle,
-                        )
-                    }
+            Box(
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .dropShadow(
+                            shape = buttonShape,
+                            color = Color.Black.copy(alpha = 0.05f),
+                            blur = 5.dp,
+                            offsetX = 0.dp,
+                            offsetY = 2.dp,
+                            spread = 0.dp,
+                        ).clip(buttonShape)
+                        .background(AfternoteDesign.colors.gray9)
+                        .clickable(enabled = !isLoading, onClick = onConfirm)
+                        .padding(
+                            horizontal = 24.dp,
+                            vertical = 16.dp,
+                        ),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = Color.White,
+                    )
+                } else {
+                    Text(
+                        text = confirmText,
+                        style = primaryButtonTextStyle,
+                    )
                 }
-                Spacer(modifier = Modifier.height(7.5.dp))
             }
         }
     }
@@ -180,7 +150,7 @@ fun ConfirmationPopupContent(
 @Composable
 private fun ConfirmationPopupPreview() {
     AfternoteTheme {
-        com.afternote.core.ui.feedback.ConfirmationPopupContent(
+        ConfirmationPopupContent(
             message = "인스타그램에 대한 기록을 삭제하시겠습니까?\n삭제 시, 되돌릴 수 없습니다.",
             onDismiss = {},
             onConfirm = {},
@@ -192,7 +162,7 @@ private fun ConfirmationPopupPreview() {
 @Composable
 private fun ConfirmationPopupCustomButtonsPreview() {
     AfternoteTheme {
-        com.afternote.core.ui.feedback.ConfirmationPopupContent(
+        ConfirmationPopupContent(
             message = "사망 프로토콜이 아직 실행되지 않았습니다.\n프로토콜을 실행하시겠습니까?",
             onDismiss = {},
             onConfirm = {},
