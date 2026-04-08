@@ -1,4 +1,4 @@
-package com.afternote.core.ui.form
+package com.afternote.core.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -102,7 +103,7 @@ private fun SelectableRadioCardPreview() {
                 selected = true,
                 onClick = {},
                 content = {
-                    androidx.compose.material3.Text(
+                    Text(
                         text = "선택된 옵션",
                         style =
                             AfternoteDesign.typography.textField.copy(
@@ -120,7 +121,7 @@ private fun SelectableRadioCardPreview() {
                 selected = false,
                 onClick = {},
                 content = {
-                    androidx.compose.material3.Text(
+                    Text(
                         text = "선택 안 된 옵션",
                         style =
                             AfternoteDesign.typography.textField.copy(
@@ -138,7 +139,7 @@ private fun SelectableRadioCardPreview() {
                 selected = true,
                 onClick = {},
                 content = {
-                    androidx.compose.material3.Text(
+                    Text(
                         text = "제목 텍스트",
                         style =
                             AfternoteDesign.typography.textField.copy(
@@ -146,7 +147,7 @@ private fun SelectableRadioCardPreview() {
                                 color = AfternoteDesign.colors.gray9,
                             ),
                     )
-                    androidx.compose.material3.Text(
+                    Text(
                         text = "설명 텍스트",
                         style =
                             AfternoteDesign.typography.bodySmallR.copy(
@@ -164,7 +165,7 @@ private fun SelectableRadioCardPreview() {
                 onClick = {},
                 borderWhenUnselected = true,
                 content = {
-                    androidx.compose.material3.Text(
+                    Text(
                         text = "보더가 있는 선택 안 된 옵션",
                         style =
                             AfternoteDesign.typography.textField.copy(

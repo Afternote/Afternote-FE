@@ -13,9 +13,9 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.form.Label
-import com.afternote.core.ui.form.LabelStyle
-import com.afternote.core.ui.form.SelectableRadioCard
+import com.afternote.core.ui.Label
+import com.afternote.core.ui.LabelStyle
+import com.afternote.core.ui.SelectableRadioCard
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection

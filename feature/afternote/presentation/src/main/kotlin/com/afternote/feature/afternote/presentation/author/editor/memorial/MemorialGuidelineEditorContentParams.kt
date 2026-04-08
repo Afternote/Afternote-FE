@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.editor.memorial
 import androidx.compose.runtime.Immutable
-import com.afternote.core.ui.form.LastWishOption
+import com.afternote.core.ui.LastWishOption
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverSection
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 

@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
+import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
  * 원형 추가 버튼 컴포넌트
@@ -34,4 +36,15 @@ fun AddCircleButton(
                 .size(24.dp)
                 .clickable(onClick = onClick),
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AddCircleButtonPreview() {
+    AfternoteTheme {
+        AddCircleButton(
+            contentDescription = "추가",
+            onClick = {},
+        )
+    }
 }

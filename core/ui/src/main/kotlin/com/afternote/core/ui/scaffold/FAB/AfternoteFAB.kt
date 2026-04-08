@@ -1,4 +1,4 @@
-package com.afternote.core.ui.scaffold
+package com.afternote.core.ui.scaffold.FAB
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape

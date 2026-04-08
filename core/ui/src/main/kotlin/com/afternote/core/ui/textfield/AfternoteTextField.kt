@@ -1,4 +1,4 @@
-package com.afternote.core.ui.form
+package com.afternote.core.ui.textfield
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

@@ -25,7 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.feedback.InfoPopup
+import com.afternote.core.ui.popup.InfoPopup
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.onboarding.presentation.R
 

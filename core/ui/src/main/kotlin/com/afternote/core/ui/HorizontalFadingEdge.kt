@@ -1,4 +1,4 @@
-package com.afternote.core.ui.expand
+package com.afternote.core.ui
 
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent

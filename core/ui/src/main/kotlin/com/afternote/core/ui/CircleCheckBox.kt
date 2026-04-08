@@ -1,4 +1,4 @@
-package com.afternote.core.ui.form
+package com.afternote.core.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -58,11 +58,11 @@ fun CircleCheckBox(
 private fun CircleCheckBoxPreview() {
     AfternoteTheme {
         Row {
-            com.afternote.core.ui.form.CircleCheckBox(
+            CircleCheckBox(
                 checked = true,
                 onCheckedChange = {},
             )
-            com.afternote.core.ui.form.CircleCheckBox(
+            CircleCheckBox(
                 checked = false,
                 onCheckedChange = {},
             )

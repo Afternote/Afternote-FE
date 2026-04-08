@@ -15,10 +15,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.Label
 import com.afternote.core.ui.button.AddCircleButton
-import com.afternote.core.ui.form.AfternoteTextField
-import com.afternote.core.ui.form.Label
-import com.afternote.core.ui.form.MultilineOutlineTextField
+import com.afternote.core.ui.textfield.AfternoteTextField
+import com.afternote.core.ui.textfield.MultilineOutlineTextField
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 

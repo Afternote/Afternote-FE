@@ -1,4 +1,4 @@
-package com.afternote.core.ui.content
+package com.afternote.core.ui
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer

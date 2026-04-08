@@ -44,8 +44,8 @@ import coil3.compose.AsyncImage
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
-import com.afternote.core.ui.expand.horizontalFadingEdge
-import com.afternote.core.ui.form.ProfileImage
+import com.afternote.core.ui.ProfileImage
+import com.afternote.core.ui.horizontalFadingEdge
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R

@@ -1,4 +1,4 @@
-package com.afternote.core.ui.expand
+package com.afternote.core.ui
 
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown

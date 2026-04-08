@@ -21,8 +21,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.afternote.core.ui.button.AfternoteButton
-import com.afternote.core.ui.expand.dropShadow
-import com.afternote.core.ui.form.AfternoteTextField
+import com.afternote.core.ui.dropShadow
+import com.afternote.core.ui.textfield.AfternoteTextField
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
