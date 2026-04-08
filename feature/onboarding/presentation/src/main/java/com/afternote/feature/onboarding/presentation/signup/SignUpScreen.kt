@@ -1,6 +1,7 @@
 package com.afternote.feature.onboarding.presentation.signup
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -22,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -31,6 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.PasswordMaskTransformation
+import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -51,6 +54,7 @@ fun SignUpScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val focusManager = LocalFocusManager.current
     val progressDescription =
         stringResource(R.string.signup_progress_description, currentStep, SIGN_UP_TOTAL_STEPS)
 
@@ -59,7 +63,10 @@ fun SignUpScreen(
         topBar = {
             DetailTopBar(
                 title = stringResource(R.string.signup_title),
-                onBackClick = onBackClick,
+                onBackClick = {
+                    focusManager.clearFocus()
+                    onBackClick()
+                },
             )
         },
         containerColor = AfternoteDesign.colors.white,
@@ -92,6 +99,7 @@ private fun SignUpContent(
     progressDescription: String,
     modifier: Modifier = Modifier,
 ) {
+    val focusManager = LocalFocusManager.current
     Column(
         modifier =
             modifier.fillMaxSize(),
@@ -116,39 +124,42 @@ private fun SignUpContent(
                     .fillMaxWidth()
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
+                    .addFocusCleaner(focusManager)
                     .padding(horizontal = 24.dp)
                     .padding(top = 32.dp, bottom = 16.dp),
         ) {
-            // 이메일 입력 + 인증번호 받기
-            AfternoteTextField(
-                state = emailState,
-                placeholder = stringResource(R.string.signup_email_placeholder),
-                keyboardType = KeyboardType.Email,
-                imeAction = ImeAction.Next,
-                trailingContent = {
-                    Text(
-                        text = stringResource(com.afternote.core.ui.R.string.core_ui_request_verification_code),
-                        modifier =
-                            Modifier
-                                .clip(RoundedCornerShape(4.dp))
-                                .clickable { onRequestVerification() }
-                                .padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = AfternoteDesign.typography.captionLargeR,
-                        color = AfternoteDesign.colors.gray9,
-                    )
-                },
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                // 이메일 입력 + 인증번호 받기
+                AfternoteTextField(
+                    state = emailState,
+                    placeholder = stringResource(R.string.signup_email_placeholder),
+                    keyboardType = KeyboardType.Email,
+                    imeAction = ImeAction.Next,
+                    trailingContent = {
+                        Text(
+                            text = stringResource(com.afternote.core.ui.R.string.core_ui_request_verification_code),
+                            modifier =
+                                Modifier
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .clickable {
+                                        focusManager.clearFocus()
+                                        onRequestVerification()
+                                    }.padding(horizontal = 8.dp, vertical = 4.dp),
+                            style = AfternoteDesign.typography.captionLargeR,
+                            color = AfternoteDesign.colors.gray9,
+                        )
+                    },
+                )
 
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // 비밀번호 입력
-            AfternoteTextField(
-                state = passwordState,
-                placeholder = stringResource(R.string.signup_password_placeholder),
-                keyboardType = KeyboardType.Password,
-                imeAction = ImeAction.Done,
-                outputTransformation = PasswordMaskTransformation,
-            )
+                // 비밀번호 입력
+                AfternoteTextField(
+                    state = passwordState,
+                    placeholder = stringResource(R.string.signup_password_placeholder),
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done,
+                    outputTransformation = PasswordMaskTransformation,
+                )
+            }
 
             // 인증번호 전송 안내 메시지
             if (isVerificationSent) {
@@ -165,7 +176,10 @@ private fun SignUpContent(
         // 다음 버튼
         AfternoteButton(
             text = stringResource(R.string.signup_next),
-            onClick = onNextClick,
+            onClick = {
+                focusManager.clearFocus()
+                onNextClick()
+            },
             modifier =
                 Modifier
                     .fillMaxWidth()

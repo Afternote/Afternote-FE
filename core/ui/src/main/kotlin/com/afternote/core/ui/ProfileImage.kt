@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,8 +63,6 @@ fun ProfileImage(
     onEditClick: (() -> Unit)? = null,
     displayImageUri: String? = null,
 ) {
-    Log.d(TAG, "displayImageUri=$displayImageUri fallbackImageRes=$fallbackImageRes")
-
     val imageModifier =
         Modifier
             .size(profileImageSize)
@@ -94,7 +93,8 @@ fun ProfileImage(
                             shape = CircleShape,
                             spotColor = PROFILE_EDIT_BUTTON_SHADOW_COLOR,
                             ambientColor = PROFILE_EDIT_BUTTON_SHADOW_COLOR,
-                        ).clickable(onClick = { onEditClick?.invoke() }),
+                        ).clip(CircleShape)
+                        .clickable(onClick = { onEditClick?.invoke() }),
             )
         }
     } else {
@@ -113,11 +113,11 @@ private fun ProfileImageContent(
     modifier: Modifier = Modifier,
 ) {
     if (!displayImageUri.isNullOrBlank()) {
-        Log.d(TAG, "using AsyncImage for uri=$displayImageUri")
-        AsyncImage(
-            model =
+        val context = LocalContext.current
+        val imageRequest =
+            remember(displayImageUri) {
                 ImageRequest
-                    .Builder(LocalContext.current)
+                    .Builder(context)
                     .data(displayImageUri)
                     .httpHeaders(
                         NetworkHeaders
@@ -125,7 +125,10 @@ private fun ProfileImageContent(
                             .apply {
                                 this["User-Agent"] = "Afternote Android App"
                             }.build(),
-                    ).build(),
+                    ).build()
+            }
+        AsyncImage(
+            model = imageRequest,
             contentDescription = stringResource(R.string.core_ui_content_description_profile_image),
             modifier = modifier,
             contentScale = ContentScale.Crop,
@@ -139,7 +142,6 @@ private fun ProfileImageContent(
             },
         )
     } else {
-        Log.d(TAG, "using fallback drawable")
         Image(
             painter = painterResource(fallbackImageRes),
             contentDescription = stringResource(R.string.core_ui_content_description_profile_image),

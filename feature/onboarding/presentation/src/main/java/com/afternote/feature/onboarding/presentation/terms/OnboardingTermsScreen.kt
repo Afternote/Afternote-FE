@@ -18,7 +18,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -31,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -39,10 +39,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.CircleCheckBox
+import com.afternote.core.ui.addFocusCleaner
+import com.afternote.core.ui.bottomBorder
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
-import com.afternote.core.ui.icon.AfternoteCircularCheckbox
-import com.afternote.core.ui.icon.AfternoteCircularCheckboxState
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -74,6 +75,7 @@ fun OnboardingTermsScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val focusManager = LocalFocusManager.current
     val progressDescription =
         stringResource(R.string.terms_progress_description, currentStep, SIGN_UP_TOTAL_STEPS)
 
@@ -82,7 +84,10 @@ fun OnboardingTermsScreen(
         topBar = {
             DetailTopBar(
                 title = stringResource(R.string.terms_top_bar_title),
-                onBackClick = onBackClick,
+                onBackClick = {
+                    focusManager.clearFocus()
+                    onBackClick()
+                },
             )
         },
         bottomBar = {
@@ -95,7 +100,10 @@ fun OnboardingTermsScreen(
             ) {
                 AfternoteButton(
                     text = stringResource(R.string.terms_next),
-                    onClick = onNextClick,
+                    onClick = {
+                        focusManager.clearFocus()
+                        onNextClick()
+                    },
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -141,6 +149,7 @@ private fun OnboardingTermsContent(
     progressDescription: String,
     modifier: Modifier = Modifier,
 ) {
+    val focusManager = LocalFocusManager.current
     Column(
         modifier = modifier.fillMaxSize(),
     ) {
@@ -164,6 +173,7 @@ private fun OnboardingTermsContent(
                     .fillMaxWidth()
                     .weight(1f, fill = true)
                     .verticalScroll(rememberScrollState())
+                    .addFocusCleaner(focusManager)
                     .padding(horizontal = 24.dp),
         ) {
             Spacer(modifier = Modifier.height(32.dp))
@@ -200,15 +210,22 @@ private fun OnboardingTermsContent(
             // --- 약관 동의 섹션 ---
 
             // 전체 동의
-            TermsRow(
-                title = stringResource(R.string.terms_agree_all),
-                isChecked = termsState.isAllAgreed,
-                onToggle = { onToggleAll(!termsState.isAllAgreed) },
-                titleStyle = TermsRowTitleStyle.Bold,
-            )
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .bottomBorder(color = AfternoteDesign.colors.gray3, width = 1.dp),
+            ) {
+                TermsRow(
+                    title = stringResource(R.string.terms_agree_all),
+                    isChecked = termsState.isAllAgreed,
+                    onToggle = { onToggleAll(!termsState.isAllAgreed) },
+                    titleStyle = TermsRowTitleStyle.Bold,
+                )
 
-            Spacer(modifier = Modifier.height(12.dp))
-            HorizontalDivider(color = AfternoteDesign.colors.gray3, thickness = 1.dp)
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
 
             // 서비스 이용 약관 (필수)
@@ -282,17 +299,12 @@ private fun TermsRow(
             verticalAlignment =
                 if (subtitle != null) Alignment.Top else Alignment.CenterVertically,
         ) {
-            AfternoteCircularCheckbox(
-                state =
-                    if (isChecked) {
-                        AfternoteCircularCheckboxState.Checked
-                    } else {
-                        AfternoteCircularCheckboxState.Unchecked
-                    },
+            CircleCheckBox(
+                checked = isChecked,
+                onCheckedChange = null,
                 modifier =
                     Modifier.padding(top = if (subtitle != null) 2.dp else 0.dp),
-                onClick = null,
-                visualSize = 24.dp,
+                size = 24.dp,
             )
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -302,13 +314,15 @@ private fun TermsRow(
                     text = title,
                     style =
                         when (titleStyle) {
-                            TermsRowTitleStyle.Bold ->
+                            TermsRowTitleStyle.Bold -> {
                                 AfternoteDesign.typography.bodyLargeB
+                            }
 
-                            TermsRowTitleStyle.Normal ->
+                            TermsRowTitleStyle.Normal -> {
                                 AfternoteDesign.typography.bodyBase.copy(
                                     fontWeight = FontWeight.Medium,
                                 )
+                            }
                         },
                     color = AfternoteDesign.colors.gray9,
                 )

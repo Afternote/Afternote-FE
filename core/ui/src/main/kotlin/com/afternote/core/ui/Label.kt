@@ -3,21 +3,18 @@ package com.afternote.core.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -34,7 +31,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
  * @param lineHeight Line height of the label text (default: 22.sp)
  * @param fontWeight Font weight of the label text (default: Medium)
  * @param color Text color (default: theme gray9)
- * @param requiredDotOffsetY Vertical offset of the required dot from the top (default: 4.dp)
+ * @param requiredDotOffsetY Top padding of the required dot from the row baseline (default: 4.dp)
  */
 data class LabelStyle(
     val fontSize: TextUnit = 16.sp,
@@ -48,8 +45,11 @@ data class LabelStyle(
  * 라벨 컴포넌트 (필수 표시 옵션 포함)
  *
  * 피그마 디자인 기반:
- * - 텍스트: 기본값 16sp, Medium, AfternoteDesign.colors.gray9 (LabelStyle로 커스터마이징 가능)
- * - 필수 표시 (isRequired=true): 파란 점 4dp, 텍스트 오른쪽 위 꼭짓점으로부터 오른쪽 8.dp
+ * - 텍스트: 기본값 16sp, Medium, [AfternoteDesign.colors.gray9] ([LabelStyle]로 커스터마이징 가능)
+ * - 필수 표시 ([isRequired]=true): 브랜드 블루([AfternoteDesign.colors.b1]) 점 4dp,
+ *   텍스트 오른쪽 8.dp 간격, 세로는 [LabelStyle.requiredDotOffsetY]만큼 아래로 내려 배치
+ *
+ * 레이아웃은 [Row]로 한 번에 측정·배치하여 [onGloballyPositioned] 기반 이중 리컴포지션을 피합니다.
  *
  * @param modifier Modifier for the component
  * @param text Label text
@@ -63,11 +63,12 @@ fun Label(
     isRequired: Boolean = false,
     style: LabelStyle = LabelStyle(),
 ) {
-    Box(modifier = modifier) {
-        var textWidth by remember { mutableStateOf(0.dp) }
-        val density = LocalDensity.current
-        val textColor = style.color ?: AfternoteDesign.colors.gray9
+    val textColor = style.color ?: AfternoteDesign.colors.gray9
 
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.Top,
+    ) {
         Text(
             text = text,
             style =
@@ -77,19 +78,19 @@ fun Label(
                     fontWeight = style.fontWeight,
                     color = textColor,
                 ),
-            modifier =
-                Modifier.onGloballyPositioned { coordinates ->
-                    textWidth = with(density) { coordinates.size.width.toDp() }
-                },
         )
 
         if (isRequired) {
+            Spacer(modifier = Modifier.width(8.dp))
             Box(
                 modifier =
                     Modifier
-                        .offset(x = textWidth + 8.dp, y = style.requiredDotOffsetY)
+                        .padding(top = style.requiredDotOffsetY)
                         .size(4.dp)
-                        .background(color = AfternoteDesign.colors.gray9, shape = CircleShape),
+                        .background(
+                            color = AfternoteDesign.colors.b1,
+                            shape = CircleShape,
+                        ),
             )
         }
     }

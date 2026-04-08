@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -42,6 +43,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.AfternoteTextField
+import com.afternote.core.ui.Label
+import com.afternote.core.ui.LabelStyle
+import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
@@ -54,6 +58,13 @@ import kotlinx.coroutines.flow.filter
 private const val FRONT_NUMBER_LENGTH = 6
 private const val BACK_NUMBER_LENGTH = 1
 
+private val ResidentNumberCaptionLabelStyle =
+    LabelStyle(
+        fontSize = 12.sp,
+        lineHeight = 18.sp,
+        fontWeight = FontWeight.Medium,
+    )
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpResidentNumberScreen(
@@ -64,6 +75,7 @@ fun SignUpResidentNumberScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val focusManager = LocalFocusManager.current
     val progressDescription =
         stringResource(R.string.signup_progress_description, currentStep, SIGN_UP_TOTAL_STEPS)
 
@@ -81,7 +93,10 @@ fun SignUpResidentNumberScreen(
         topBar = {
             DetailTopBar(
                 title = stringResource(R.string.signup_title),
-                onBackClick = onBackClick,
+                onBackClick = {
+                    focusManager.clearFocus()
+                    onBackClick()
+                },
             )
         },
         containerColor = AfternoteDesign.colors.white,
@@ -112,6 +127,7 @@ private fun ResidentNumberContent(
     progressDescription: String,
     modifier: Modifier = Modifier,
 ) {
+    val focusManager = LocalFocusManager.current
     Column(
         modifier = modifier.fillMaxSize(),
     ) {
@@ -134,16 +150,13 @@ private fun ResidentNumberContent(
                 Modifier
                     .fillMaxWidth()
                     .weight(1f)
+                    .addFocusCleaner(focusManager)
                     .padding(horizontal = 24.dp)
                     .padding(top = 32.dp),
         ) {
-            Text(
+            Label(
                 text = stringResource(R.string.signup_resident_number_label),
-                style =
-                    AfternoteDesign.typography.captionLargeR.copy(
-                        fontWeight = FontWeight.Medium,
-                    ),
-                color = AfternoteDesign.colors.gray9,
+                style = ResidentNumberCaptionLabelStyle,
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -161,7 +174,10 @@ private fun ResidentNumberContent(
                 backNumberState.text.length == BACK_NUMBER_LENGTH
         AfternoteButton(
             text = stringResource(R.string.signup_next),
-            onClick = onNextClick,
+            onClick = {
+                focusManager.clearFocus()
+                onNextClick()
+            },
             modifier =
                 Modifier
                     .fillMaxWidth()

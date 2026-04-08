@@ -23,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -32,6 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.ProfileImage
+import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
@@ -56,6 +58,7 @@ fun OnboardingProfileScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val focusManager = LocalFocusManager.current
     val isCompleteEnabled by remember {
         derivedStateOf { nameState.text.isNotBlank() }
     }
@@ -65,7 +68,10 @@ fun OnboardingProfileScreen(
         topBar = {
             DetailTopBar(
                 title = stringResource(R.string.profile_top_bar_title),
-                onBackClick = onBackClick,
+                onBackClick = {
+                    focusManager.clearFocus()
+                    onBackClick()
+                },
             )
         },
         bottomBar = {
@@ -78,7 +84,10 @@ fun OnboardingProfileScreen(
             ) {
                 AfternoteButton(
                     text = stringResource(R.string.profile_complete),
-                    onClick = onCompleteClick,
+                    onClick = {
+                        focusManager.clearFocus()
+                        onCompleteClick()
+                    },
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -116,10 +125,12 @@ private fun OnboardingProfileContent(
     onEditProfileImageClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val focusManager = LocalFocusManager.current
     Column(
         modifier =
             modifier
                 .verticalScroll(rememberScrollState())
+                .addFocusCleaner(focusManager)
                 .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -142,7 +153,10 @@ private fun OnboardingProfileContent(
             displayImageUri = displayImageUri,
             profileImageSize = 120.dp,
             isEditable = true,
-            onEditClick = onEditProfileImageClick,
+            onEditClick = {
+                focusManager.clearFocus()
+                onEditProfileImageClick()
+            },
         )
 
         Spacer(modifier = Modifier.height(56.dp))

@@ -1,23 +1,44 @@
 package com.afternote.core.ui
 
+import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.OutputTransformation
-import androidx.compose.foundation.text.input.TextFieldBuffer
 import androidx.compose.foundation.text.input.insert
 
-class PhoneNumberVisualTransformation : OutputTransformation {
-    override fun TextFieldBuffer.transformOutput() {
-        // 숫자만 남긴 상태라고 가정하고 처리
-        val rawText = this.asCharSequence()
-        if (rawText.length <= 3) return
+private const val PHONE_MAX_DIGITS = 11
 
-        // 010-1234-5678 (11자리) 또는 010-123-4567 (10자리) 대응
-        if (rawText.length <= 7) {
-            insert(3, "-")
-        } else {
-            insert(3, "-")
-            // 11자리일 때는 7번째 다음에, 10자리일 때는 6번째 다음에 대시
-            val dashIndex = if (rawText.length <= 10) 7 else 8
-            insert(dashIndex, "-")
+/**
+ * 한국 전화번호 입력용: 숫자만 허용, 최대 [PHONE_MAX_DIGITS]자리.
+ *
+ * [PhoneNumberVisualTransformation]과 함께 쓰는 것을 권장합니다.
+ */
+val PhoneNumberInputTransformation: InputTransformation =
+    InputTransformation {
+        val seq = asCharSequence()
+        if (!seq.all { it.isDigit() } || seq.length > PHONE_MAX_DIGITS) {
+            revertAllChanges()
         }
     }
-}
+
+/**
+ * 한국 전화번호 표시 포맷 (`010-XXX-XXXX` 또는 `010-XXXX-XXXX`)용 [OutputTransformation].
+ *
+ * 상태에는 하이픈 없이 숫자만 두고, 화면에만 하이픈을 넣습니다.
+ * [PhoneNumberInputTransformation] 등으로 숫자만 들어오게 맞추는 것을 권장합니다.
+ */
+val PhoneNumberVisualTransformation: OutputTransformation =
+    OutputTransformation {
+        val originalLength = length
+        if (originalLength <= 3) return@OutputTransformation
+
+        if (originalLength <= 7) {
+            insert(3, "-")
+        } else if (originalLength == 10) {
+            insert(3, "-")
+            insert(7, "-")
+        } else if (originalLength >= 11) {
+            insert(3, "-")
+            insert(8, "-")
+        } else {
+            insert(3, "-")
+        }
+    }

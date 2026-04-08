@@ -10,32 +10,57 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 
 /**
- * LazyRow나 가로 스크롤 가능한 컨테이너의 오른쪽 끝에 페이드 아웃 효과를 추가하는 Modifier
+ * 가로 스크롤 영역 페이드 마스크를 적용할 방향.
+ */
+enum class FadingEdgeDirection {
+    LEFT,
+    RIGHT,
+    BOTH,
+}
+
+/**
+ * LazyRow나 가로 스크롤 가능한 컨테이너 끝에 페이드 아웃 효과를 추가하는 Modifier
  *
- * Alpha Masking 방식을 사용하여 배경색에 상관없이 콘텐츠 자체를 투명하게 만듭니다.
- * 이 방식은 배경이 이미지나 그라디언트여도 자연스럽게 동작합니다.
+ * Alpha Masking([BlendMode.DstIn])으로 배경이 아닌 **콘텐츠 알파**를 줄입니다.
+ * [CompositingStrategy.Offscreen]으로 오프스크린 합성해 다크 모드·그라데이션 배경에서도 자연스럽게 동작합니다.
  *
  * **Modifier 적용 순서 중요:**
- * - `horizontalFadingEdge` -> `horizontalScroll` -> `padding` 순서로 적용해야 합니다.
- * - 이렇게 해야 페이드 효과가 화면에 고정되고 스크롤되는 콘텐츠를 따라 움직이지 않습니다.
+ * - `horizontalFadingEdge` → `horizontalScroll` → `padding` 순으로 두면 페이드가 화면에 고정되고 스크롤 콘텐츠만 움직입니다.
  *
- * @param edgeWidth 페이드 아웃 영역의 너비 (일반적으로 24dp ~ 48dp)
+ * @param edgeWidth 페이드 아웃 영역 너비 (보통 24dp ~ 48dp)
+ * @param direction 페이드를 줄 가장자리 (기본: 오른쪽만 — 기존 호출부와 동일)
  */
-fun Modifier.horizontalFadingEdge(edgeWidth: Dp) =
-    this
-        .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
-        .drawWithContent {
-            drawContent() // 콘텐츠 먼저 그림
+fun Modifier.horizontalFadingEdge(
+    edgeWidth: Dp,
+    direction: FadingEdgeDirection = FadingEdgeDirection.RIGHT,
+) = this
+    .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+    .drawWithContent {
+        drawContent()
 
-            // 오른쪽 끝 페이드 아웃 마스크
-            // BlendMode.DstIn: 검은색(불투명) 부분은 콘텐츠를 유지하고, 투명한 부분은 콘텐츠를 지움
+        val edgeWidthPx = edgeWidth.toPx()
+
+        if (direction == FadingEdgeDirection.RIGHT || direction == FadingEdgeDirection.BOTH) {
             drawRect(
                 brush =
                     Brush.horizontalGradient(
                         colors = listOf(Color.Black, Color.Transparent),
-                        startX = size.width - edgeWidth.toPx(),
+                        startX = size.width - edgeWidthPx,
                         endX = size.width,
                     ),
                 blendMode = BlendMode.DstIn,
             )
         }
+
+        if (direction == FadingEdgeDirection.LEFT || direction == FadingEdgeDirection.BOTH) {
+            drawRect(
+                brush =
+                    Brush.horizontalGradient(
+                        colors = listOf(Color.Transparent, Color.Black),
+                        startX = 0f,
+                        endX = edgeWidthPx,
+                    ),
+                blendMode = BlendMode.DstIn,
+            )
+        }
+    }

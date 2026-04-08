@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
@@ -66,6 +67,7 @@ fun BottomButtons(
     onKakaoLoginClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val focusManager = LocalFocusManager.current
     var showFindAccountPopup by remember { mutableStateOf(false) }
 
     if (showFindAccountPopup) {
@@ -83,7 +85,10 @@ fun BottomButtons(
         LoginButton(
             text = stringResource(R.string.login_signup_simple),
             style = LoginButtonStyle.Secondary,
-            onClick = onSignUpClick,
+            onClick = {
+                focusManager.clearFocus()
+                onSignUpClick()
+            },
             modifier = Modifier.fillMaxWidth(),
         )
 
@@ -91,7 +96,10 @@ fun BottomButtons(
 
         // 카카오 로그인 버튼
         Button(
-            onClick = onKakaoLoginClick,
+            onClick = {
+                focusManager.clearFocus()
+                onKakaoLoginClick()
+            },
             modifier =
                 Modifier
                     .fillMaxWidth()
@@ -115,7 +123,10 @@ fun BottomButtons(
 
         // 아이디/비밀번호 찾기
         TextButton(
-            onClick = { showFindAccountPopup = true },
+            onClick = {
+                focusManager.clearFocus()
+                showFindAccountPopup = true
+            },
         ) {
             Text(
                 text = stringResource(R.string.login_find_account),

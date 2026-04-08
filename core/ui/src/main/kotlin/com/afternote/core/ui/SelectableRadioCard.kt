@@ -13,6 +13,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -65,7 +66,7 @@ fun SelectableRadioCard(
                 onClick = onClick,
                 role = Role.RadioButton,
                 interactionSource = interactionSource,
-                indication = null,
+                indication = ripple(),
             ),
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(1.dp, borderColor),
@@ -86,7 +87,7 @@ fun SelectableRadioCard(
 
             Spacer(modifier = Modifier.width(radioButtonSpacing))
 
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 content()
             }
         }

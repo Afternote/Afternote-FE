@@ -16,13 +16,20 @@ import androidx.compose.ui.unit.dp
 fun Modifier.bottomBorder(
     color: Color,
     width: Dp = 1.dp,
-) = drawBehind {
-    val borderWidth = width.toPx()
-    val y = size.height - borderWidth / 2
-    drawLine(
-        color = color,
-        start = Offset(0f, y),
-        end = Offset(size.width, y),
-        strokeWidth = borderWidth,
-    )
-}
+) = this.then(
+    if (width > 0.dp && color != Color.Transparent) {
+        Modifier.drawBehind {
+            val borderWidth = width.toPx()
+            val y = size.height - (borderWidth / 2f)
+
+            drawLine(
+                color = color,
+                start = Offset(0f, y),
+                end = Offset(size.width, y),
+                strokeWidth = borderWidth,
+            )
+        }
+    } else {
+        Modifier
+    },
+)

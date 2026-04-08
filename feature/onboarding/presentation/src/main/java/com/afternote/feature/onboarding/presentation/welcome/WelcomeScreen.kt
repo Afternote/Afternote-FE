@@ -16,11 +16,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.noRippleClickable
@@ -36,10 +38,12 @@ fun WelcomeScreen(
     onLoginClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val focusManager = LocalFocusManager.current
     Box(
         modifier =
             modifier
                 .fillMaxSize()
+                .addFocusCleaner(focusManager)
                 .padding(horizontal = 24.dp),
     ) {
         Column(
@@ -86,7 +90,10 @@ fun WelcomeScreen(
             // 시작하기 버튼
             AfternoteButton(
                 text = stringResource(R.string.welcome_start),
-                onClick = onStartClick,
+                onClick = {
+                    focusManager.clearFocus()
+                    onStartClick()
+                },
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -99,7 +106,10 @@ fun WelcomeScreen(
             // 전달 받은 기록 확인하기 버튼
             AfternoteButton(
                 text = stringResource(R.string.welcome_check_records),
-                onClick = onCheckRecordsClick,
+                onClick = {
+                    focusManager.clearFocus()
+                    onCheckRecordsClick()
+                },
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -126,7 +136,10 @@ fun WelcomeScreen(
                     modifier =
                         Modifier.noRippleClickable(
                             interactionSource = remember { MutableInteractionSource() },
-                            onClick = onLoginClick,
+                            onClick = {
+                                focusManager.clearFocus()
+                                onLoginClick()
+                            },
                         ),
                 )
             }

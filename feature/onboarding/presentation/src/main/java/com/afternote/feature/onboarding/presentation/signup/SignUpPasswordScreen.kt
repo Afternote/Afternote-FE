@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -37,7 +38,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.AfternoteTextField
+import com.afternote.core.ui.Label
+import com.afternote.core.ui.LabelStyle
 import com.afternote.core.ui.PasswordMaskTransformation
+import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
@@ -47,6 +51,13 @@ import com.afternote.feature.onboarding.presentation.R
 
 private const val PASSWORD_MIN_LENGTH = 8
 private const val PASSWORD_MAX_LENGTH = 16
+
+private val SignUpCaptionLabelStyle =
+    LabelStyle(
+        fontSize = 12.sp,
+        lineHeight = 18.sp,
+        fontWeight = FontWeight.Medium,
+    )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,6 +69,7 @@ fun SignUpPasswordScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val focusManager = LocalFocusManager.current
     val progressDescription =
         stringResource(R.string.signup_progress_description, currentStep, SIGN_UP_TOTAL_STEPS)
 
@@ -66,7 +78,10 @@ fun SignUpPasswordScreen(
         topBar = {
             DetailTopBar(
                 title = stringResource(R.string.signup_title),
-                onBackClick = onBackClick,
+                onBackClick = {
+                    focusManager.clearFocus()
+                    onBackClick()
+                },
             )
         },
         containerColor = AfternoteDesign.colors.white,
@@ -95,6 +110,7 @@ private fun SignUpPasswordContent(
     progressDescription: String,
     modifier: Modifier = Modifier,
 ) {
+    val focusManager = LocalFocusManager.current
     val isNextEnabled by remember {
         derivedStateOf {
             passwordState.text.length in PASSWORD_MIN_LENGTH..PASSWORD_MAX_LENGTH &&
@@ -125,16 +141,13 @@ private fun SignUpPasswordContent(
                     .fillMaxWidth()
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
+                    .addFocusCleaner(focusManager)
                     .padding(horizontal = 24.dp)
                     .padding(top = 32.dp, bottom = 16.dp),
         ) {
-            Text(
+            Label(
                 text = stringResource(R.string.signup_password_input_label),
-                style =
-                    AfternoteDesign.typography.captionLargeR.copy(
-                        fontWeight = FontWeight.Medium,
-                    ),
-                color = AfternoteDesign.colors.gray9,
+                style = SignUpCaptionLabelStyle,
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -159,6 +172,7 @@ private fun SignUpPasswordContent(
                 outputTransformation = PasswordMaskTransformation,
                 onImeAction = {
                     if (isNextEnabled) {
+                        focusManager.clearFocus()
                         onNextClick()
                     }
                 },
@@ -181,7 +195,10 @@ private fun SignUpPasswordContent(
         // 다음 버튼
         AfternoteButton(
             text = stringResource(R.string.signup_next),
-            onClick = onNextClick,
+            onClick = {
+                focusManager.clearFocus()
+                onNextClick()
+            },
             modifier =
                 Modifier
                     .fillMaxWidth()

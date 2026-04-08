@@ -11,14 +11,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -44,14 +43,10 @@ data class LastWishOption(
 )
 
 /**
- * 기타(직접 입력) 선택 시 표시할 텍스트 필드 상태.
- *
- * @param text 현재 입력값
- * @param onTextChange 입력 변경 콜백
+ * 기타(직접 입력) 필드용 상태. [TextFieldState]를 호이스팅해 String 양방향 동기화 없이 사용합니다.
  */
 data class LastWishOtherState(
-    val text: String,
-    val onTextChange: (String) -> Unit,
+    val textFieldState: TextFieldState,
 )
 
 /**
@@ -61,7 +56,7 @@ data class LastWishOtherState(
  * - **View mode**: [displayTextOnly]가 non-null이면 라벨 + 테두리 Surface에 해당 텍스트만 표시 (수신자 화면).
  *
  * @param displayTextOnly View 모드일 때 표시할 단일 텍스트; null이면 edit 모드(라디오 옵션).
- * @param otherState 기타(직접 입력) 선택 시 텍스트 필드 상태; null이면 해당 옵션에 텍스트 필드 미표시.
+ * @param otherState 기타(직접 입력) 선택 시 [TextFieldState]; null이면 해당 옵션에 텍스트 필드 미표시.
  */
 @Composable
 fun LastWishesRadioGroup(
@@ -172,7 +167,7 @@ private fun LastWishOtherCard(
                     onClick = onOptionSelect,
                     role = Role.RadioButton,
                     interactionSource = interactionSource,
-                    indication = null,
+                    indication = ripple(),
                 ),
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(1.dp, borderColor),
@@ -203,50 +198,27 @@ private fun LastWishOtherCard(
                 )
             }
             if (selected) {
-                LastWishOtherTextField(
-                    value = otherState.text,
-                    onValueChange = otherState.onTextChange,
+                AfternoteTextField(
+                    modifier = Modifier,
+                    state = otherState.textFieldState,
+                    placeholder = stringResource(R.string.core_ui_text_field_placeholder),
+                    containerColor = AfternoteDesign.colors.gray1,
+                    minHeight = 160.dp,
+                    shape = RoundedCornerShape(16.dp),
+                    lineLimits = TextFieldLineLimits.MultiLine(),
+                    contentPadding = PaddingValues(all = 16.dp),
                 )
             }
         }
     }
 }
 
-@Suppress("UNUSED_PARAMETER")
 @Composable
 private fun optionLabelStyle(selected: Boolean): TextStyle =
     AfternoteDesign.typography.textField.copy(
         fontWeight = FontWeight.Medium,
-        color = AfternoteDesign.colors.gray9,
+        color = if (selected) AfternoteDesign.colors.gray9 else AfternoteDesign.colors.gray6,
     )
-
-@Composable
-private fun LastWishOtherTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val state = rememberTextFieldState(initialText = value)
-    val currentOnValueChange = rememberUpdatedState(onValueChange)
-    LaunchedEffect(value) {
-        if (state.text.toString() != value) {
-            state.edit { replace(0, length, value) }
-        }
-    }
-    LaunchedEffect(state) {
-        snapshotFlow { state.text.toString() }.collect { currentOnValueChange.value(it) }
-    }
-    AfternoteTextField(
-        modifier = modifier,
-        state = state,
-        placeholder = stringResource(R.string.core_ui_text_field_placeholder),
-        containerColor = AfternoteDesign.colors.gray1,
-        minHeight = 160.dp,
-        shape = RoundedCornerShape(16.dp),
-        lineLimits = TextFieldLineLimits.MultiLine(),
-        contentPadding = PaddingValues(all = 16.dp),
-    )
-}
 
 @Preview(showBackground = true, name = "Edit mode")
 @Composable
@@ -264,7 +236,7 @@ private fun LastWishesRadioGroupEditPreview() {
                 options = options,
                 selectedValue = "calm",
                 onOptionSelect = {},
-                otherState = LastWishOtherState(text = "", onTextChange = {}),
+                otherState = LastWishOtherState(textFieldState = rememberTextFieldState()),
             )
         }
     }
@@ -280,17 +252,14 @@ private fun LastWishesRadioGroupOtherSelectedPreview() {
                 LastWishOption(text = "슬퍼 하지 말고 밝고 따뜻하게 보내주세요.", value = "bright"),
                 LastWishOption(text = "기타(직접 입력)", value = "other"),
             )
+        val otherState = rememberTextFieldState(initialText = "끼니 거르지 말고 건강 챙기고 지내.")
         Column(modifier = Modifier.padding(20.dp)) {
             LastWishesRadioGroup(
                 label = stringResource(R.string.core_ui_label_last_wish),
                 options = options,
                 selectedValue = "other",
                 onOptionSelect = {},
-                otherState =
-                    LastWishOtherState(
-                        text = "끼니 거르지 말고 건강 챙기고 지내.",
-                        onTextChange = {},
-                    ),
+                otherState = LastWishOtherState(textFieldState = otherState),
             )
         }
     }

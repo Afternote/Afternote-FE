@@ -5,11 +5,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
@@ -42,35 +40,28 @@ fun RecordQnAListItem(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp)
-                    .padding(horizontal = 20.dp),
+                    .padding(top = 16.dp, start = 20.dp, end = 20.dp),
         ) {
-            Row {
-                Spacer(Modifier.width(4.dp))
-                Text(
-                    text = question,
-                    style =
-                        AfternoteDesign.typography.textField.copy(
-                            fontWeight = FontWeight.Medium,
-                            color = AfternoteDesign.colors.gray9,
-                        ),
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = question,
+                style =
+                    AfternoteDesign.typography.textField.copy(
+                        fontWeight = FontWeight.Medium,
+                        color = AfternoteDesign.colors.gray9,
+                    ),
+                modifier = Modifier.padding(start = 4.dp),
+            )
 
             Box(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .height(88.dp)
+                        .padding(top = 16.dp, bottom = 7.dp)
+                        .defaultMinSize(minHeight = 88.dp)
                         .background(
                             color = AfternoteDesign.colors.gray2,
                             shape = RoundedCornerShape(8.dp),
-                        ).padding(
-                            horizontal = 16.dp,
-                            vertical = 24.dp,
-                        ),
+                        ).padding(horizontal = 16.dp, vertical = 24.dp),
             ) {
                 Text(
                     text = answer,
@@ -81,10 +72,11 @@ fun RecordQnAListItem(
                 )
             }
 
-            Spacer(modifier = Modifier.height(7.dp))
-
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 11.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
@@ -99,8 +91,6 @@ fun RecordQnAListItem(
 
                 trailing?.invoke()
             }
-
-            Spacer(modifier = Modifier.height(11.dp))
         }
 
         HorizontalDivider(

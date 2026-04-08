@@ -12,7 +12,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
@@ -22,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -34,7 +34,7 @@ import java.time.LocalDate
 private val PickerContainerHeight = 152.dp
 private val SelectionBorderHeight = 40.dp
 private val SelectionBorderHorizontalInset = 4.dp
-private val DividerWidth = 14.dp
+private val DividerWidth = 24.dp
 
 private data class DateWheelPickerColors(
     val selectedTextColor: Color,
@@ -52,6 +52,13 @@ object DateWheelPickerDefaults {
     val UnselectedTextColor = Color(0xFFBDBDBD)
     val SelectionBorderColor = Color(0xFF6B8FF8)
     val DividerColor = Color(0xFFE0E0E0)
+
+    /** 기본 연도 범위: 올해 ~ 올해+10년. [DateWheelPicker]의 [yearRange] 기본값. */
+    val DefaultYearRange: IntRange
+        get() {
+            val y = LocalDate.now().year
+            return y..(y + 10)
+        }
 }
 
 /**
@@ -61,6 +68,7 @@ object DateWheelPickerDefaults {
  * @param currentDate 현재 선택된 날짜 (State Hoisting)
  * @param onDateChange 날짜 변경 콜백 (현재시제 네이밍 규칙 준수)
  * @param minDate 최소 선택 가능 날짜. null이면 제한 없음(과거·미래 모두 선택 가능).
+ * @param yearRange 연도 휠에 표시할 연도 구간. [minDate]·기획에 맞게 호출부에서 넘깁니다.
  * @param selectedTextColor 선택된 텍스트 색상
  * @param unselectedTextColor 선택되지 않은 텍스트 색상
  * @param selectionBorderColor 선택 영역 테두리 색상
@@ -72,6 +80,7 @@ fun DateWheelPicker(
     modifier: Modifier = Modifier,
     currentDate: LocalDate = LocalDate.now(),
     minDate: LocalDate? = null,
+    yearRange: IntRange = DateWheelPickerDefaults.DefaultYearRange,
     selectedTextColor: Color = DateWheelPickerDefaults.SelectedTextColor,
     unselectedTextColor: Color = DateWheelPickerDefaults.UnselectedTextColor,
     selectionBorderColor: Color = DateWheelPickerDefaults.SelectionBorderColor,
@@ -85,7 +94,12 @@ fun DateWheelPicker(
             dividerColor = dividerColor,
         )
 
-    val model = rememberDateWheelPickerModel(currentDate = currentDate, minDate = minDate)
+    val model =
+        rememberDateWheelPickerModel(
+            currentDate = currentDate,
+            minDate = minDate,
+            yearRange = yearRange,
+        )
     val yearState = rememberFWheelPickerState(initialIndex = model.yearIndex)
     val monthState = rememberFWheelPickerState(initialIndex = model.monthIndex)
 
@@ -136,9 +150,10 @@ private data class DateWheelPickerModel(
 private fun rememberDateWheelPickerModel(
     currentDate: LocalDate,
     minDate: LocalDate?,
+    yearRange: IntRange,
 ): DateWheelPickerModel {
     val currentYear = LocalDate.now().year
-    val years = remember(currentYear) { (currentYear..currentYear + 10).toList() }
+    val years = remember(yearRange.first, yearRange.last) { yearRange.toList() }
     val months = remember { (1..12).toList() }
 
     val effectiveDate =
@@ -318,33 +333,31 @@ private fun DayWheel(
     colors: DateWheelPickerColors,
     modifier: Modifier = Modifier,
 ) {
-    key(model.daysInMonth, model.days.size) {
-        val dayState = rememberFWheelPickerState(initialIndex = model.dayIndex)
+    val dayState = rememberFWheelPickerState(initialIndex = model.dayIndex)
 
-        SyncWheelIndex(state = dayState, targetIndex = model.dayIndex)
-        ObserveDayWheel(
-            state = dayState,
-            days = model.days,
-            currentDate = currentDate,
-            minDate = minDate,
-            onDateChange = onDateChange,
+    SyncWheelIndex(state = dayState, targetIndex = model.dayIndex)
+    ObserveDayWheel(
+        state = dayState,
+        days = model.days,
+        currentDate = currentDate,
+        minDate = minDate,
+        onDateChange = onDateChange,
+    )
+
+    FVerticalWheelPicker(
+        count = model.days.size,
+        state = dayState,
+        modifier = modifier,
+        itemHeight = SelectionBorderHeight,
+        unfocusedCount = 1,
+        focus = {},
+    ) { index ->
+        PickerText(
+            text = "${model.days[index]}",
+            isSelected = index == dayState.currentIndex,
+            selectedTextColor = colors.selectedTextColor,
+            unselectedTextColor = colors.unselectedTextColor,
         )
-
-        FVerticalWheelPicker(
-            count = model.days.size,
-            state = dayState,
-            modifier = modifier,
-            itemHeight = SelectionBorderHeight,
-            unfocusedCount = 1,
-            focus = {},
-        ) { index ->
-            PickerText(
-                text = "${model.days[index]}",
-                isSelected = index == dayState.currentIndex,
-                selectedTextColor = colors.selectedTextColor,
-                unselectedTextColor = colors.unselectedTextColor,
-            )
-        }
     }
 }
 
@@ -474,7 +487,8 @@ private fun Divider(
         text = "|",
         style = AfternoteDesign.typography.h3,
         color = color,
-        modifier = modifier.padding(horizontal = 8.dp),
+        textAlign = TextAlign.Center,
+        modifier = modifier,
     )
 }
 
