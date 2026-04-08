@@ -400,11 +400,21 @@ private fun PlaylistAlbumRow(albumCovers: List<AlbumCover>) {
     val fadingDirection by remember {
         derivedStateOf {
             when {
-                listState.canScrollBackward && listState.canScrollForward ->
+                listState.canScrollBackward && listState.canScrollForward -> {
                     FadingEdgeDirection.BOTH
-                listState.canScrollBackward -> FadingEdgeDirection.LEFT
-                listState.canScrollForward -> FadingEdgeDirection.RIGHT
-                else -> FadingEdgeDirection.RIGHT
+                }
+
+                listState.canScrollBackward -> {
+                    FadingEdgeDirection.LEFT
+                }
+
+                listState.canScrollForward -> {
+                    FadingEdgeDirection.RIGHT
+                }
+
+                else -> {
+                    FadingEdgeDirection.RIGHT
+                }
             }
         }
     }
