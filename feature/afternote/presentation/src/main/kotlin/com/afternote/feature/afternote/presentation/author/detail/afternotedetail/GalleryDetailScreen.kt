@@ -36,7 +36,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.icon.AfternoteCircularCheckbox
 import com.afternote.core.ui.icon.AfternoteCircularCheckboxState
-import com.afternote.core.ui.scaffold.bottombar.AfternoteEmbeddedMainBottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -120,12 +119,6 @@ fun GalleryDetailScreen(
                         }
                     }
                 },
-            )
-        },
-        bottomBar = {
-            AfternoteEmbeddedMainBottomBar(
-                selectedNavTab = uiState.selectedNavItem,
-                onTabClick = uiState::onNavItemSelected,
             )
         },
     ) { paddingValues ->

@@ -24,7 +24,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.ui.addFocusCleaner
-import com.afternote.core.ui.scaffold.bottombar.AfternoteEmbeddedMainBottomBar
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.domain.model.ListItem
@@ -164,15 +163,6 @@ fun AfternoteEditorScreen(
                             color = AfternoteDesign.colors.gray9,
                         )
                     }
-                },
-            )
-        },
-        bottomBar = {
-            AfternoteEmbeddedMainBottomBar(
-                selectedNavTab = state.selectedBottomNavItem,
-                onTabClick = { item ->
-                    state.onBottomNavItemSelected(item)
-                    callbacks.onBottomNavTabSelected(item)
                 },
             )
         },

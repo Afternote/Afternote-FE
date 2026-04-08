@@ -46,7 +46,6 @@ import coil3.network.httpHeaders
 import coil3.request.ImageRequest
 import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.horizontalFadingEdge
-import com.afternote.core.ui.scaffold.bottombar.AfternoteEmbeddedMainBottomBar
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
@@ -134,12 +133,6 @@ fun MemorialGuidelineDetailScreen(
                         }
                     }
                 },
-            )
-        },
-        bottomBar = {
-            AfternoteEmbeddedMainBottomBar(
-                selectedNavTab = uiState.selectedNavItem,
-                onTabClick = uiState::onNavItemSelected,
             )
         },
     ) { paddingValues ->

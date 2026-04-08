@@ -1,11 +1,9 @@
 package com.afternote.feature.afternote.presentation.author.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
-import com.afternote.core.ui.scaffold.bottombar.LocalAfternoteUsesAppBottomBar
 import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
@@ -23,9 +21,7 @@ fun AfternoteLightTheme(content: @Composable () -> Unit) {
 internal inline fun <reified T : Any> NavGraphBuilder.afternoteComposable(noinline content: @Composable (NavBackStackEntry) -> Unit) {
     composable<T> { backStackEntry ->
         AfternoteTheme {
-            CompositionLocalProvider(LocalAfternoteUsesAppBottomBar provides true) {
-                content(backStackEntry)
-            }
+            content(backStackEntry)
         }
     }
 }

@@ -43,7 +43,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.button.CustomRadioButton
-import com.afternote.core.ui.scaffold.bottombar.AfternoteEmbeddedMainBottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -114,12 +113,6 @@ fun SongPlaylistScreen(
                 onBackClick = onBackClick,
             )
         },
-        bottomBar = {
-            AfternoteEmbeddedMainBottomBar(
-                selectedNavTab = selectedBottomNavTab,
-                onTabClick = { selectedBottomNavTab = it },
-            )
-        },
     ) { paddingValues ->
         SearchableSongList(
             modifier =
@@ -180,12 +173,6 @@ fun SongPlaylistScreen(
             DetailTopBar(
                 title = title,
                 onBackClick = onBackClick,
-            )
-        },
-        bottomBar = {
-            AfternoteEmbeddedMainBottomBar(
-                selectedNavTab = selectedBottomNavTab,
-                onTabClick = { selectedBottomNavTab = it },
             )
         },
     ) { paddingValues ->
@@ -277,12 +264,6 @@ fun SongPlaylistScreen(
             DetailTopBar(
                 title = title,
                 onBackClick = onBackClick,
-            )
-        },
-        bottomBar = {
-            AfternoteEmbeddedMainBottomBar(
-                selectedNavTab = selectedBottomNavTab,
-                onTabClick = { selectedBottomNavTab = it },
             )
         },
     ) { paddingValues ->
