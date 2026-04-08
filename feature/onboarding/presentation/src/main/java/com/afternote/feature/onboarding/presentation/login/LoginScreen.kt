@@ -12,7 +12,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -34,7 +33,6 @@ import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.login.BottomButtons
 import com.afternote.feature.onboarding.presentation.login.LoginButton
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     emailState: TextFieldState,
@@ -94,7 +92,7 @@ fun LoginScreen(
                 text = stringResource(R.string.login_button),
                 onClick = onLoginClick,
                 modifier = Modifier.fillMaxWidth(),
-                enabled = emailState.text.isNotBlank() && passwordState.text.isNotEmpty(),
+                enabled = emailState.text.isNotBlank() && passwordState.text.isNotBlank(),
             )
             Spacer(modifier = Modifier.height(32.dp))
 
