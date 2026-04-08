@@ -1,14 +1,20 @@
 package com.afternote.afternote_fe.navigation
 
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavGraphParams
 import com.afternote.feature.afternote.presentation.author.navigation.afternoteNavGraph
 import com.afternote.feature.mindrecord.presentation.screen.sender.HomeScreen
@@ -22,6 +28,10 @@ fun AppNavigation(
     Scaffold(
         modifier = modifier,
         containerColor = AfternoteDesign.colors.gray1,
+        contentWindowInsets =
+            WindowInsets.systemBars.only(
+                WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom,
+            ),
         bottomBar = {
             if (appState.shouldShowBottomBar) {
                 BottomBar(
@@ -47,5 +57,13 @@ fun AppNavigation(
                     ),
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AppNavigationPreview() {
+    AfternoteTheme {
+        AppNavigation()
     }
 }
