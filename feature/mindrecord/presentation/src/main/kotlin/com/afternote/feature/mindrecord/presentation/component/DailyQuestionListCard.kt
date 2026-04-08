@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,10 +21,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray5
-import com.afternote.core.ui.theme.Gray6
-import com.afternote.core.ui.theme.Gray9
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
 import java.time.LocalDate
@@ -53,8 +50,8 @@ fun DailyQuestionListCard(
             ) {
                 Text(
                     text = answer.date.toString(),
-                    style = MaterialTheme.typography.displayMedium,
-                    color = Gray6,
+                    style = AfternoteDesign.typography.captionLargeR,
+                    color = AfternoteDesign.colors.gray6,
                 )
 
                 IconButton(
@@ -62,7 +59,7 @@ fun DailyQuestionListCard(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.mindrecord_horizontal),
-                        tint = Gray5,
+                        tint = AfternoteDesign.colors.gray5,
                         contentDescription = null,
                         modifier = Modifier.size(20.dp),
                     )
@@ -71,15 +68,15 @@ fun DailyQuestionListCard(
 
             Text(
                 text = answer.title,
-                style = MaterialTheme.typography.bodySmall,
-                color = Gray9,
+                style = AfternoteDesign.typography.bodySmallR,
+                color = AfternoteDesign.colors.gray9,
             )
 
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = answer.content,
-                style = MaterialTheme.typography.displayMedium,
-                color = Gray6,
+                style = AfternoteDesign.typography.captionLargeR,
+                color = AfternoteDesign.colors.gray6,
             )
         }
     }

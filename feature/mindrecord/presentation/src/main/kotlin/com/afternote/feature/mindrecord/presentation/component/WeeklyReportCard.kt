@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
@@ -22,14 +21,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray2
-import com.afternote.core.ui.theme.Gray5
-import com.afternote.core.ui.theme.naNumGothic
+import com.afternote.core.ui.theme.nanumGothic
 
 @Composable
 fun WeeklyReportCard(modifier: Modifier = Modifier) {
-    Box(modifier = modifier.border(1.dp, color = Gray2, shape = RoundedCornerShape(6.dp))) {
+    Box(modifier = modifier.border(1.dp, color = AfternoteDesign.colors.gray2, shape = RoundedCornerShape(6.dp))) {
         Column(
             modifier =
                 Modifier
@@ -38,13 +36,13 @@ fun WeeklyReportCard(modifier: Modifier = Modifier) {
         ) {
             Text(
                 text = "주간 리포트",
-                style = MaterialTheme.typography.bodyLarge,
+                style = AfternoteDesign.typography.bodyLargeB,
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "이번 주 나의 기록들을 확인해 보세요.",
-                style = MaterialTheme.typography.displayMedium,
-                color = Gray5,
+                style = AfternoteDesign.typography.captionLargeR,
+                color = AfternoteDesign.colors.gray5,
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -55,7 +53,7 @@ fun WeeklyReportCard(modifier: Modifier = Modifier) {
                         text = "42",
                         style =
                             TextStyle(
-                                fontFamily = naNumGothic,
+                                fontFamily = nanumGothic,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 24.sp,
                                 lineHeight = 32.sp,
@@ -66,7 +64,7 @@ fun WeeklyReportCard(modifier: Modifier = Modifier) {
                         text = "총 기록",
                         style =
                             TextStyle(
-                                fontFamily = naNumGothic,
+                                fontFamily = nanumGothic,
                                 fontWeight = FontWeight.Normal,
                                 fontSize = 11.sp,
                                 lineHeight = 16.sp,
@@ -82,7 +80,7 @@ fun WeeklyReportCard(modifier: Modifier = Modifier) {
                         text = "7",
                         style =
                             TextStyle(
-                                fontFamily = naNumGothic,
+                                fontFamily = nanumGothic,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 24.sp,
                                 lineHeight = 32.sp,
@@ -93,7 +91,7 @@ fun WeeklyReportCard(modifier: Modifier = Modifier) {
                         text = "이번 주",
                         style =
                             TextStyle(
-                                fontFamily = naNumGothic,
+                                fontFamily = nanumGothic,
                                 fontWeight = FontWeight.Normal,
                                 fontSize = 11.sp,
                                 lineHeight = 16.sp,

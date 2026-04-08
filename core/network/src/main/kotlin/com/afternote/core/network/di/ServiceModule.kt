@@ -2,6 +2,7 @@ package com.afternote.core.network.di
 
 import com.afternote.core.network.BuildConfig
 import com.afternote.core.network.service.AuthApiService
+import com.afternote.core.network.service.ImageApiService
 import com.afternote.core.network.service.TokenApiService
 import dagger.Module
 import dagger.Provides
@@ -36,4 +37,8 @@ object ServiceModule {
             .addConverterFactory(json.asConverterFactory(contentType = "application/json".toMediaType()))
             .build()
             .create(TokenApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideImageApiService(retrofit: Retrofit): ImageApiService = retrofit.create(ImageApiService::class.java)
 }

@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,9 +24,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray2
-import com.afternote.core.ui.theme.Gray5
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.DailyDiary
 import java.time.LocalDate
@@ -42,7 +40,7 @@ fun DiaryComponent(
             CardDefaults.cardColors(
                 containerColor = Color(0xFFFFFFFF),
             ),
-        border = BorderStroke(1.dp, color = Gray2),
+        border = BorderStroke(1.dp, color = AfternoteDesign.colors.gray2),
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(6.dp),
     ) {
@@ -84,7 +82,7 @@ fun DiaryComponent(
 
                 Text(
                     text = diary.title,
-                    style = MaterialTheme.typography.titleSmall,
+                    style = AfternoteDesign.typography.bodySmallB,
                     color = Color(0xFF000000).copy(alpha = 0.8f),
                 )
 
@@ -92,8 +90,8 @@ fun DiaryComponent(
 
                 Text(
                     text = diary.content,
-                    style = MaterialTheme.typography.displayMedium,
-                    color = Gray5,
+                    style = AfternoteDesign.typography.captionLargeR,
+                    color = AfternoteDesign.colors.gray5,
                 )
             }
         }

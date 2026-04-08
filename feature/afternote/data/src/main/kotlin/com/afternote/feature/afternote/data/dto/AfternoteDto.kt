@@ -70,7 +70,7 @@ data class AfternoteIdResponse(
 @Serializable
 data class AfternoteListResponse(
     @SerialName("content") val content: List<AfternoteListItem> = emptyList(),
-    @SerialName("page") val page: Int = 0,
+    @SerialName("pageNumber") val page: Int = 0,
     @SerialName("size") val size: Int = 10,
     @SerialName("hasNext") val hasNext: Boolean = false,
 )

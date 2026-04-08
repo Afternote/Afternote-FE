@@ -13,7 +13,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -26,9 +25,8 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray5
-import com.afternote.core.ui.theme.Gray9
 import com.afternote.core.ui.theme.shadow
 import com.afternote.feature.mindrecord.presentation.R
 
@@ -72,7 +70,7 @@ fun TodayQuestionCard(modifier: Modifier = Modifier) {
             ) {
                 Text(
                     text = "Today'S QUESTION",
-                    style = MaterialTheme.typography.displaySmall,
+                    style = AfternoteDesign.typography.mono,
                     color = Color(0xFF000000).copy(alpha = 0.3f),
                 )
 
@@ -86,20 +84,20 @@ fun TodayQuestionCard(modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 "오늘 하루,\n 누구에게 가장 고마웠나요?",
-                style = MaterialTheme.typography.headlineSmall,
+                style = AfternoteDesign.typography.h3,
             )
             Spacer(modifier = Modifier.height(18.dp))
             Text(
                 text = "매일 다른 질문들에 나를 남겨보세요.",
-                style = MaterialTheme.typography.displayMedium,
-                color = Gray5,
+                style = AfternoteDesign.typography.captionLargeR,
+                color = AfternoteDesign.colors.gray5,
             )
             Spacer(modifier = Modifier.height(18.dp))
             Button(
                 onClick = {},
                 colors =
                     ButtonDefaults.buttonColors(
-                        containerColor = Gray9,
+                        containerColor = AfternoteDesign.colors.gray9,
                     ),
                 modifier =
                     Modifier
@@ -108,7 +106,7 @@ fun TodayQuestionCard(modifier: Modifier = Modifier) {
             ) {
                 Text(
                     text = "마음의 기록 남기기",
-                    style = MaterialTheme.typography.displayLarge,
+                    style = AfternoteDesign.typography.captionLargeB,
                 )
             }
         }

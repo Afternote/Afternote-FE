@@ -23,8 +23,6 @@ interface AuthRepository {
     suspend fun getAccessToken(): Result<String?>
 
     suspend fun getRefreshToken(): Result<String?>
-
-    suspend fun getUserId(): Result<Long?>
     // 레거시 레포 기준
 
     suspend fun defaultLogin(

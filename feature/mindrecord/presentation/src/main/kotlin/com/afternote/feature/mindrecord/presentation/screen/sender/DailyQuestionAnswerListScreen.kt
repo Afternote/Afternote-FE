@@ -11,7 +11,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,12 +24,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.AfternoteFab
 import com.afternote.core.ui.R
-import com.afternote.core.ui.TopBar
-import com.afternote.core.ui.component.ViewModeSwitcher
+import com.afternote.core.ui.ViewModeSwitcher
+import com.afternote.core.ui.scaffold.AfternoteFab
+import com.afternote.core.ui.scaffold.topbar.DetailTopBar
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Gray9
 import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionListCard
 import com.afternote.feature.mindrecord.presentation.component.Legend
@@ -77,7 +76,7 @@ fun DailyQuestionAnswerListScreen(modifier: Modifier = Modifier) {
         )
     Scaffold(
         topBar = {
-            TopBar(
+            DetailTopBar(
                 onBackClick = {},
                 action = {
                     ViewModeSwitcher(
@@ -116,8 +115,8 @@ fun DailyQuestionAnswerListScreen(modifier: Modifier = Modifier) {
                     ) {
                         Text(
                             text = "2026년 3월",
-                            color = Gray9,
-                            style = MaterialTheme.typography.headlineSmall,
+                            color = AfternoteDesign.colors.gray9,
+                            style = AfternoteDesign.typography.h3,
                         )
                         Icon(
                             painter = painterResource(R.drawable.core_ui_arrowdown),
@@ -130,7 +129,7 @@ fun DailyQuestionAnswerListScreen(modifier: Modifier = Modifier) {
                 item {
                     Text(
                         text = "18개의 답변 완료",
-                        style = MaterialTheme.typography.displayMedium,
+                        style = AfternoteDesign.typography.captionLargeR,
                         color = Color(0xFF000000).copy(alpha = 0.35f),
                     )
                 }
@@ -155,7 +154,7 @@ fun DailyQuestionAnswerListScreen(modifier: Modifier = Modifier) {
                     ) {
                         Text(
                             text = "DAILY ANSWER",
-                            style = MaterialTheme.typography.displaySmall,
+                            style = AfternoteDesign.typography.mono,
                             color = Color(0xFF000000).copy(alpha = 0.4f),
                         )
 

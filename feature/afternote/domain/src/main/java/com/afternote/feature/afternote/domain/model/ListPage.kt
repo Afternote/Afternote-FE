@@ -3,7 +3,7 @@ package com.afternote.feature.afternote.domain.model
 import com.afternote.feature.afternote.domain.AfternoteServiceType
 
 data class ListPage(
-    val items: List<Item>,
+    val listItems: List<ListItem>,
     val hasNext: Boolean,
 )
 
@@ -15,7 +15,7 @@ data class ListPage(
  * @param date 날짜 (yyyy.MM.dd 형식)
  * @param type 서비스 타입 (필터링용)
  */
-data class Item(
+data class ListItem(
     val id: String,
     val serviceName: String,
     val date: String,
