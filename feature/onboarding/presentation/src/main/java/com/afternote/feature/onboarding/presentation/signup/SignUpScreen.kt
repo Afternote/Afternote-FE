@@ -35,7 +35,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
 
-private const val SIGN_UP_TOTAL_STEPS = 4
+internal const val SIGN_UP_TOTAL_STEPS = 4
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

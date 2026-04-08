@@ -18,4 +18,12 @@
     <string name="signup_verification_sent">인증번호가 전송되었습니다.\n수신 된 인증번호를 입력해 주세요.</string>
     <string name="signup_next">다음</string>
     <string name="signup_progress_description">회원가입 진행도 %1$d단계 중 %2$d단계</string>
+    <string name="signup_resident_number_label">주민등록번호</string>
+    <string name="signup_resident_number_placeholder">주민등록번호</string>
+    <string name="signup_resident_number_back_placeholder">0</string>
+    <string name="signup_resident_number_mask">\u0020●●●●●●</string>
+    <string name="signup_password_input_label">비밀번호 입력</string>
+    <string name="signup_password_confirm_placeholder">비밀번호 확인</string>
+    <string name="signup_password_rule_combination">8 ~ 16자의 영문 대소문자, 숫자, 특수문자를 조합하여 설정해 주세요.</string>
+    <string name="signup_password_rule_reuse">이전에 사용한 적 없는 비밀번호가 안전합니다.</string>
 </resources>
