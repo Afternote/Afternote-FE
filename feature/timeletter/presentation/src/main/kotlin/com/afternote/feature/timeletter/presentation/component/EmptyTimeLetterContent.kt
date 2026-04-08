@@ -12,7 +12,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
 @Composable
-fun EmptyTimeletterContent(modifier: Modifier = Modifier) {
+fun EmptyTimeLetterContent(modifier: Modifier = Modifier) {
     Box(
         modifier =
             modifier
@@ -29,8 +29,8 @@ fun EmptyTimeletterContent(modifier: Modifier = Modifier) {
 
 @Preview(showBackground = true)
 @Composable
-private fun EmptyTimeletterContentPreview() {
+private fun EmptyTimeLetterContentPreview() {
     AfternoteTheme {
-        EmptyTimeletterContent()
+        EmptyTimeLetterContent()
     }
 }
