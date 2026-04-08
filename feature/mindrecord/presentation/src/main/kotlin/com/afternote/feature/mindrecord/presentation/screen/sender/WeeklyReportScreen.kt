@@ -36,7 +36,7 @@ fun WeeklyReportScreen(modifier: Modifier = Modifier) {
             DetailTopBar(
                 title = "기록",
                 onBackClick = {},
-                action = {},
+                actions = {},
             )
         },
         modifier = modifier,

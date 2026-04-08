@@ -18,21 +18,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.afternote.core.ui.button.ClickButton
+import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.expand.dropShadow
 import com.afternote.core.ui.form.LabeledTextFieldStyle
 import com.afternote.core.ui.form.OutlineTextField
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.author.editor.selection.DropdownMenuStyle
 import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdown
 import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdownLabelParams
@@ -111,14 +108,7 @@ fun AddAfternoteEditorReceiverDialog(
             ) {
                 Text(
                     text = "수신자 추가",
-                    style =
-                        TextStyle(
-                            fontSize = 18.sp,
-                            lineHeight = 24.sp,
-                            fontFamily = nanumGothic,
-                            fontWeight = FontWeight.Bold,
-                            color = AfternoteDesign.colors.gray9,
-                        ),
+                    style = AfternoteDesign.typography.bodyLargeB,
                 )
 
                 Button(
@@ -138,10 +128,7 @@ fun AddAfternoteEditorReceiverDialog(
                     Text(
                         text = "추가하기",
                         style =
-                            TextStyle(
-                                fontSize = 12.sp,
-                                lineHeight = 18.sp,
-                                fontFamily = nanumGothic,
+                            AfternoteDesign.typography.captionLargeR.copy(
                                 fontWeight = FontWeight.Medium,
                                 color = AfternoteDesign.colors.white,
                             ),
@@ -188,13 +175,8 @@ fun AddAfternoteEditorReceiverDialog(
 
             Text(
                 text = "연락처에서 추가하기",
-                // CaptionLarge-R
                 style =
-                    TextStyle(
-                        fontSize = 12.sp,
-                        lineHeight = 18.sp,
-                        fontFamily = nanumGothic,
-                        fontWeight = FontWeight.Normal,
+                    AfternoteDesign.typography.captionLargeR.copy(
                         color = AfternoteDesign.colors.gray9,
                     ),
             )
@@ -202,10 +184,9 @@ fun AddAfternoteEditorReceiverDialog(
             Spacer(modifier = Modifier.height(8.dp))
 
             // 연락처에서 추가하기 버튼
-            ClickButton(
-                color = AfternoteDesign.colors.gray9,
-                title = "연락처 가져오기",
-                onButtonClick = params.callbacks.onImportContactsClick,
+            AfternoteButton(
+                text = "연락처 가져오기",
+                onClick = params.callbacks.onImportContactsClick,
             )
         }
     }

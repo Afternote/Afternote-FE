@@ -32,7 +32,7 @@ fun DailyQuestionWriteScreen(modifier: Modifier = Modifier) {
         topBar = {
             DetailTopBar(
                 title = LocalDate.now().toString(),
-                action = {
+                actions = {
                     Button(
                         onClick = {},
                         shape = RoundedCornerShape(6.dp),

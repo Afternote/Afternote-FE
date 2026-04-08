@@ -20,19 +20,16 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.R
 import com.afternote.core.ui.button.CustomRadioButton
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.nanumGothic
-
-/** Section label used for edit and view (receiver) so both share the same literal. */
-const val LABEL_LAST_WISH = "남기고 싶은 당부"
 
 /**
  * 남기고 싶은 당부 라디오 버튼 옵션
@@ -68,7 +65,7 @@ data class LastWishOtherState(
 @Composable
 fun LastWishesRadioGroup(
     modifier: Modifier = Modifier,
-    label: String = LABEL_LAST_WISH,
+    label: String = stringResource(R.string.core_ui_label_last_wish),
     options: List<LastWishOption> = emptyList(),
     selectedValue: String? = null,
     onOptionSelect: (String) -> Unit = {},
@@ -82,10 +79,7 @@ fun LastWishesRadioGroup(
         Text(
             text = label,
             style =
-                TextStyle(
-                    fontSize = 16.sp,
-                    lineHeight = 22.sp,
-                    fontFamily = nanumGothic,
+                AfternoteDesign.typography.textField.copy(
                     fontWeight = FontWeight.Medium,
                     color = AfternoteDesign.colors.gray9,
                 ),
@@ -117,9 +111,7 @@ private fun LastWishViewModeContent(displayTextOnly: String) {
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp),
             color = AfternoteDesign.colors.gray9,
             style =
-                TextStyle(
-                    fontSize = 14.sp,
-                    fontFamily = nanumGothic,
+                AfternoteDesign.typography.bodySmallR.copy(
                     fontWeight = FontWeight.Medium,
                 ),
         )
@@ -222,10 +214,7 @@ private fun LastWishOtherCard(
 @Suppress("UNUSED_PARAMETER")
 @Composable
 private fun optionLabelStyle(selected: Boolean): TextStyle =
-    TextStyle(
-        fontSize = 16.sp,
-        lineHeight = 22.sp,
-        fontFamily = nanumGothic,
+    AfternoteDesign.typography.textField.copy(
         fontWeight = FontWeight.Medium,
         color = AfternoteDesign.colors.gray9,
     )
@@ -249,7 +238,7 @@ private fun LastWishOtherTextField(
     OutlineTextField(
         modifier = modifier,
         textFieldState = state,
-        placeholder = "Text Field",
+        placeholder = stringResource(R.string.core_ui_text_field_placeholder),
         containerColor = AfternoteDesign.colors.gray1,
         height = 160.dp,
         shape = RoundedCornerShape(16.dp),
@@ -268,7 +257,7 @@ private fun LastWishesRadioGroupEditPreview() {
             )
         Column(modifier = Modifier.padding(20.dp)) {
             LastWishesRadioGroup(
-                label = LABEL_LAST_WISH,
+                label = stringResource(R.string.core_ui_label_last_wish),
                 options = options,
                 selectedValue = "calm",
                 onOptionSelect = {},
@@ -290,7 +279,7 @@ private fun LastWishesRadioGroupOtherSelectedPreview() {
             )
         Column(modifier = Modifier.padding(20.dp)) {
             LastWishesRadioGroup(
-                label = LABEL_LAST_WISH,
+                label = stringResource(R.string.core_ui_label_last_wish),
                 options = options,
                 selectedValue = "other",
                 onOptionSelect = {},
@@ -310,7 +299,7 @@ private fun LastWishesRadioGroupViewPreview() {
     AfternoteTheme {
         Column(modifier = Modifier.padding(20.dp)) {
             LastWishesRadioGroup(
-                label = LABEL_LAST_WISH,
+                label = stringResource(R.string.core_ui_label_last_wish),
                 displayTextOnly = "끼니 거르지 말고 건강 챙기고 지내.",
             )
         }

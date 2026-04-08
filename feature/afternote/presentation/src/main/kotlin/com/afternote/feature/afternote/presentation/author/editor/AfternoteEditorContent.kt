@@ -20,13 +20,13 @@ import com.afternote.feature.afternote.presentation.author.editor.model.AccountS
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverSection
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorState
+import com.afternote.feature.afternote.presentation.author.editor.model.InfoMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.selection.DropdownMenuStyle
 import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdown
 import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdownLabelParams
 import com.afternote.feature.afternote.presentation.author.editor.social.SocialNetworkEditorContent
 import com.afternote.feature.afternote.presentation.author.editor.social.SocialNetworkEditorContentParams
-import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 
 @Composable
 internal fun EditContent(
@@ -113,27 +113,13 @@ internal fun CategoryContent(
 ) {
     when (state.selectedCategory) {
         CATEGORY_MEMORIAL_GUIDELINE -> {
-            val albumCoversFromPlaylist =
-                state.playlistStateHolder?.songs?.let { songs ->
-                    songs.mapIndexed { _, s ->
-                        AlbumCover(
-                            id = s.id,
-                            imageUrl = s.albumCoverUrl,
-                            title = s.title,
-                        )
-                    }
-                } ?: state.playlistAlbumCovers
-            val livePlaylistSongCount =
-                state.playlistStateHolder?.songs?.size ?: state.playlistSongCount
             MemorialGuidelineEditorContent(
                 bottomPadding = bottomPadding,
                 params =
                     MemorialGuidelineEditorContentParams(
-                        displayMemorialPhotoUri =
-                            state.pickedMemorialPhotoUri
-                                ?: state.memorialPhotoUrl,
-                        playlistSongCount = livePlaylistSongCount,
-                        playlistAlbumCovers = albumCoversFromPlaylist,
+                        displayMemorialPhotoUri = state.displayMemorialPhotoUri,
+                        playlistSongCount = state.livePlaylistSongCount,
+                        playlistAlbumCovers = state.displayAlbumCovers,
                         selectedLastWish = state.selectedLastWish,
                         lastWishOptions = state.lastWishOptions,
                         funeralVideoUrl = state.funeralVideoUrl,
@@ -164,13 +150,21 @@ internal fun CategoryContent(
                 bottomPadding = bottomPadding,
                 params =
                     GalleryAndFileEditorContentParams(
-                        messageState = state.messageState,
+                        editorMessages = state.editorMessages,
+                        onMessageRegisterClick = {},
+                        onMessageDeleteClick = state::removeEditorMessage,
+                        onMessageAddClick = state::addEditorMessage,
+                        infoMethodSection =
+                            InfoMethodSection(
+                                selectedMethod = state.selectedInformationProcessingMethod,
+                                onMethodSelected = state::onInformationProcessingMethodSelected,
+                            ),
                         recipientSection =
                             AfternoteEditorReceiverSection(
                                 afternoteEditReceivers = state.afternoteEditReceivers,
                                 callbacks =
                                     AfternoteEditorReceiverCallbacks(
-                                        onAddClick = onNavigateToSelectReceiver,
+                                        onAddClick = state::showAddAfternoteEditorReceiverDialog,
                                         onItemDeleteClick = state::onAfternoteEditorReceiverDelete,
                                         onItemAdded = state::onAfternoteEditorReceiverItemAdded,
                                     ),
@@ -189,7 +183,10 @@ internal fun CategoryContent(
                 bottomPadding = bottomPadding,
                 params =
                     SocialNetworkEditorContentParams(
-                        messageState = state.messageState,
+                        editorMessages = state.editorMessages,
+                        onMessageRegisterClick = {},
+                        onMessageDeleteClick = state::removeEditorMessage,
+                        onMessageAddClick = state::addEditorMessage,
                         accountSection =
                             AccountSection(
                                 idState = state.idState,

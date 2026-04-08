@@ -16,10 +16,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.form.Label
 import com.afternote.core.ui.form.LabelStyle
-import com.afternote.core.ui.form.MultilineOutlineTextField
 import com.afternote.core.ui.form.OutlineTextField
 import com.afternote.core.ui.form.SelectableRadioCard
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
+import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
 import com.afternote.feature.afternote.presentation.author.editor.model.AccountSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.OptionRadioCardContent
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodList
@@ -98,45 +99,22 @@ private fun SocialNetworkEditorContentContent(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        SelectableRadioCard(
-            selected = params.accountSection.selectedMethod == AccountProcessingMethod.MEMORIAL_ACCOUNT,
-            onClick = { params.accountSection.onMethodSelected(AccountProcessingMethod.MEMORIAL_ACCOUNT) },
-            modifier = Modifier.fillMaxWidth(),
-            content = {
-                OptionRadioCardContent(
-                    option = AccountProcessingMethod.MEMORIAL_ACCOUNT,
-                    selected = params.accountSection.selectedMethod == AccountProcessingMethod.MEMORIAL_ACCOUNT,
-                )
-            },
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        SelectableRadioCard(
-            selected = params.accountSection.selectedMethod == AccountProcessingMethod.PERMANENT_DELETE,
-            onClick = { params.accountSection.onMethodSelected(AccountProcessingMethod.PERMANENT_DELETE) },
-            modifier = Modifier.fillMaxWidth(),
-            content = {
-                OptionRadioCardContent(
-                    option = AccountProcessingMethod.PERMANENT_DELETE,
-                    selected = params.accountSection.selectedMethod == AccountProcessingMethod.PERMANENT_DELETE,
-                )
-            },
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        SelectableRadioCard(
-            selected = params.accountSection.selectedMethod == AccountProcessingMethod.TRANSFER_TO_RECEIVER,
-            onClick = { params.accountSection.onMethodSelected(AccountProcessingMethod.TRANSFER_TO_RECEIVER) },
-            modifier = Modifier.fillMaxWidth(),
-            content = {
-                OptionRadioCardContent(
-                    option = AccountProcessingMethod.TRANSFER_TO_RECEIVER,
-                    selected = params.accountSection.selectedMethod == AccountProcessingMethod.TRANSFER_TO_RECEIVER,
-                )
-            },
-        )
+        AccountProcessingMethod.entries.forEachIndexed { index, method ->
+            if (index > 0) {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            SelectableRadioCard(
+                selected = params.accountSection.selectedMethod == method,
+                onClick = { params.accountSection.onMethodSelected(method) },
+                modifier = Modifier.fillMaxWidth(),
+                content = {
+                    OptionRadioCardContent(
+                        option = method,
+                        selected = params.accountSection.selectedMethod == method,
+                    )
+                },
+            )
+        }
 
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -168,9 +146,11 @@ private fun SocialNetworkEditorContentContent(
         Spacer(modifier = Modifier.height(32.dp))
 
         // 남기실 말씀
-        MultilineOutlineTextField(
-            label = "남기실 말씀",
-            textFieldState = params.messageState,
+        EditorMessageSection(
+            messages = params.editorMessages,
+            onRegisterClick = params.onMessageRegisterClick,
+            onDeleteClick = params.onMessageDeleteClick,
+            onAddClick = params.onMessageAddClick,
         )
 
         // 소셜네트워크 탭 하단 여백 (Viewport 높이의 10%, 800dp 기준 약 80dp)
@@ -194,7 +174,13 @@ private fun SocialNetworkEditorContentPreview() {
                 bottomPadding = PaddingValues(bottom = 88.dp),
                 params =
                     SocialNetworkEditorContentParams(
-                        messageState = rememberTextFieldState(),
+                        editorMessages =
+                            listOf(
+                                EditorMessage(
+                                    titleState = rememberTextFieldState("남긴말1"),
+                                ),
+                                EditorMessage(),
+                            ),
                         accountSection =
                             AccountSection(
                                 idState = rememberTextFieldState(),

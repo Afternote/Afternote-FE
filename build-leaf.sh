@@ -29,11 +29,11 @@ for mod in $MATCHED_MODULES; do
 
     # 하위 모듈이 0개라면 그것이 최하위 모듈(Leaf)임
     if [ "$HAS_CHILD" -eq 0 ]; then
-        LEAF_TASKS="$LEAF_TASKS $mod:build"
+        LEAF_TASKS="$LEAF_TASKS $mod:ktlintFormat $mod:build"
     fi
 done
 
-echo "📦 최종 빌드 대상:$LEAF_TASKS"
+echo "📦 최종 실행 대상:$LEAF_TASKS"
 
-# 5. 한꺼번에 빌드 실행
+# 5. ktlintFormat → build 순서로 한꺼번에 실행
 ./gradlew $LEAF_TASKS

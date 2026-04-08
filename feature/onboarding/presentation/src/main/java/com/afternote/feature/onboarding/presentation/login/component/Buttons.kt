@@ -15,11 +15,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.onboarding.presentation.R
 
@@ -43,7 +41,13 @@ fun LoginButton(
                 disabledContentColor = AfternoteDesign.colors.white,
             ),
     ) {
-        Text(text = text, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium))
+        Text(
+            text = text,
+            style =
+                AfternoteDesign.typography.bodyBase.copy(
+                    fontWeight = FontWeight.Medium,
+                ),
+        )
     }
 }
 
@@ -80,8 +84,7 @@ fun BottomButtons(modifier: Modifier = Modifier) {
         Text(
             text = "아이디/비밀번호 찾기",
             style =
-                TextStyle(
-                    fontSize = 12.sp,
+                AfternoteDesign.typography.captionLargeR.copy(
                     color = AfternoteDesign.colors.gray6,
                     textDecoration = TextDecoration.Underline, // 밑줄 구현
                 ),
@@ -108,6 +111,6 @@ fun BottomButton(
                 contentColor = textColor,
             ),
     ) {
-        Text(text = text, style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Normal))
+        Text(text = text, style = AfternoteDesign.typography.bodySmallR)
     }
 }

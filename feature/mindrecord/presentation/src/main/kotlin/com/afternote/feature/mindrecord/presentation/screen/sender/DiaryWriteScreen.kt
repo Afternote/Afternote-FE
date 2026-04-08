@@ -46,7 +46,7 @@ fun DiaryWriteScreen(modifier: Modifier = Modifier) {
             DetailTopBar(
                 title = "일기 기록하기",
                 onBackClick = {},
-                action = {
+                actions = {
                     Button(
                         onClick = {},
                         shape = RoundedCornerShape(6.dp),

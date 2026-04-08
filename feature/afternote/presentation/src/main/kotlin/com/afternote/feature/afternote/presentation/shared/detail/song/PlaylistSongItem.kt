@@ -25,18 +25,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
@@ -84,11 +80,7 @@ fun PlaylistSongItem(
                 Text(
                     text = song.title,
                     style =
-                        TextStyle(
-                            fontSize = 14.sp,
-                            lineHeight = 20.sp,
-                            fontFamily = nanumGothic,
-                            fontWeight = FontWeight.Normal,
+                        AfternoteDesign.typography.bodySmallB.copy(
                             color = AfternoteDesign.colors.gray9,
                         ),
                 )
@@ -96,12 +88,8 @@ fun PlaylistSongItem(
                 Text(
                     text = song.artist,
                     style =
-                        TextStyle(
-                            fontSize = 14.sp,
-                            lineHeight = 20.sp,
-                            fontFamily = nanumGothic,
-                            fontWeight = FontWeight.Normal,
-                            color = AfternoteDesign.colors.gray9,
+                        AfternoteDesign.typography.captionLargeR.copy(
+                            color = AfternoteDesign.colors.gray6,
                         ),
                 )
             }
@@ -140,7 +128,7 @@ private fun AlbumCoverBox(albumImageUrl: String?) {
             contentDescription = stringResource(R.string.content_description_album_cover),
             modifier = modifier,
             contentScale = ContentScale.Crop,
-            error = painterResource(R.drawable.img_placeholder_1),
+            error = painterResource(R.drawable.feature_afternote_img_placeholder_1),
             onError = { state: AsyncImagePainter.State.Error ->
                 Log.e(
                     TAG,

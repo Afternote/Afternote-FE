@@ -1,38 +1,39 @@
 package com.afternote.feature.afternote.presentation.shared.detail
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 
@@ -99,10 +100,7 @@ fun ReceiversCard(
                 Text(
                     text = stringResource(R.string.afternote_detail_receivers_label),
                     style =
-                        TextStyle(
-                            fontSize = 16.sp,
-                            lineHeight = 22.sp,
-                            fontFamily = nanumGothic,
+                        AfternoteDesign.typography.textField.copy(
                             fontWeight = FontWeight.Medium,
                             color = AfternoteDesign.colors.gray9,
                         ),
@@ -132,8 +130,8 @@ private fun ReceiverDetailItem(
                     .clip(CircleShape),
         ) {
             Image(
-                painter = painterResource(R.drawable.img_recipient_profile),
-                contentDescription = "프로필 사진",
+                painter = painterResource(R.drawable.feature_afternote_img_recipient_profile),
+                contentDescription = stringResource(R.string.feature_afternote_content_description_recipient_profile),
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -141,10 +139,7 @@ private fun ReceiverDetailItem(
             Text(
                 text = receiver.name,
                 style =
-                    TextStyle(
-                        fontSize = 12.sp,
-                        lineHeight = 18.sp,
-                        fontFamily = nanumGothic,
+                    AfternoteDesign.typography.captionLargeR.copy(
                         fontWeight = FontWeight.Medium,
                         color = AfternoteDesign.colors.black,
                     ),
@@ -152,11 +147,7 @@ private fun ReceiverDetailItem(
             Text(
                 text = receiver.label,
                 style =
-                    TextStyle(
-                        fontSize = 12.sp,
-                        lineHeight = 18.sp,
-                        fontFamily = nanumGothic,
-                        fontWeight = FontWeight.Normal,
+                    AfternoteDesign.typography.captionLargeR.copy(
                         color = AfternoteDesign.colors.gray8,
                     ),
             )
@@ -192,21 +183,78 @@ fun DeleteConfirmDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("삭제") },
-        text = { Text("\"$serviceName\" 기록을 삭제할까요?") },
-        confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text("삭제")
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = AfternoteDesign.colors.white,
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = stringResource(R.string.feature_afternote_dialog_delete_title),
+                    style = AfternoteDesign.typography.h3,
+                    color = AfternoteDesign.colors.gray9,
+                    textAlign = TextAlign.Center,
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = stringResource(R.string.feature_afternote_dialog_delete_body, serviceName),
+                    style = AfternoteDesign.typography.bodySmallR,
+                    color = AfternoteDesign.colors.gray5,
+                    textAlign = TextAlign.Center,
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Surface(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        color = AfternoteDesign.colors.white,
+                        border = BorderStroke(1.dp, AfternoteDesign.colors.gray3),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = stringResource(R.string.feature_afternote_dialog_delete_cancel),
+                                style = AfternoteDesign.typography.bodySmallB,
+                                color = AfternoteDesign.colors.gray9,
+                            )
+                        }
+                    }
+                    Surface(
+                        onClick = onConfirm,
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        color = AfternoteDesign.colors.gray9,
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = stringResource(R.string.feature_afternote_dialog_delete_confirm),
+                                style = AfternoteDesign.typography.bodySmallB,
+                                color = AfternoteDesign.colors.white,
+                            )
+                        }
+                    }
+                }
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("취소")
-            }
-        },
-    )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun DeleteConfirmDialogPreview() {
+    AfternoteTheme {
+        DeleteConfirmDialog(
+            serviceName = "인스타그램",
+            onDismiss = {},
+            onConfirm = {},
+        )
+    }
 }
 
 @Composable
@@ -220,7 +268,7 @@ fun EditDropdownMenu(
     DropdownMenu(expanded = expanded, onDismissRequest = onDismissRequest) {
         if (showEditItem) {
             DropdownMenuItem(
-                text = { Text("수정하기") },
+                text = { Text(stringResource(R.string.feature_afternote_menu_edit)) },
                 onClick = {
                     onDismissRequest()
                     onEditClick()
@@ -228,7 +276,7 @@ fun EditDropdownMenu(
             )
         }
         DropdownMenuItem(
-            text = { Text("삭제하기") },
+            text = { Text(stringResource(R.string.feature_afternote_menu_delete_record)) },
             onClick = {
                 onDismissRequest()
                 onDeleteClick()

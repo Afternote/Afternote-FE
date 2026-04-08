@@ -42,23 +42,21 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
-import com.afternote.core.ui.button.ClickButton
+import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.content.MemorialGuidelineContent
 import com.afternote.core.ui.content.MemorialGuidelineSlots
 import com.afternote.core.ui.form.LastWishesRadioGroup
 import com.afternote.core.ui.form.ProfileImage
 import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
+import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
@@ -82,12 +80,13 @@ fun ReceiverAfterNoteMainScreen(
         "ReceiverAfterNoteMainScreen received senderName='$senderName'",
     )
     var selectedBottomNavItem by remember { mutableStateOf(BottomNavTab.TIMELETTER) }
-    val profileResId = profileImageResId ?: R.drawable.img_default_profile_deceased
+    val profileResId = profileImageResId ?: R.drawable.feature_afternote_img_default_profile_deceased
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             Column(modifier = Modifier.statusBarsPadding()) {
-                AfternoteTopBar(
+                DetailTopBar(
                     title = "故${senderName}님의 애프터노트",
                     onBackClick = { onBackClick() },
                 )
@@ -117,10 +116,11 @@ fun ReceiverAfterNoteMainScreen(
                             introContent = {
                                 Text(
                                     text = "故 ${senderName}님의 애프터노트입니다.",
-                                    color = AfternoteDesign.colors.gray9,
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    fontFamily = nanumGothic,
+                                    style =
+                                        AfternoteDesign.typography.textField.copy(
+                                            fontWeight = FontWeight.Medium,
+                                            color = AfternoteDesign.colors.gray9,
+                                        ),
                                     modifier = Modifier.fillMaxWidth(),
                                 )
                             },
@@ -163,10 +163,9 @@ fun ReceiverAfterNoteMainScreen(
             item {
                 Spacer(modifier = Modifier.height(70.dp))
 
-                ClickButton(
-                    color = AfternoteDesign.colors.gray9,
-                    title = "애프터노트 확인하기",
-                    onButtonClick = onNavigateToFullList,
+                AfternoteButton(
+                    text = "애프터노트 확인하기",
+                    onClick = onNavigateToFullList,
                 )
                 Spacer(modifier = Modifier.height(20.dp))
             }
@@ -279,7 +278,7 @@ private fun ReceiverMemorialVideoThumbnail(thumbnailUrl: String?) {
                     ),
         )
         Image(
-            painter = painterResource(R.drawable.ic_playback),
+            painter = painterResource(R.drawable.feature_afternote_ic_playback),
             contentDescription = "영상 재생",
             modifier =
                 Modifier
@@ -293,10 +292,11 @@ private fun ReceiverMemorialVideoThumbnail(thumbnailUrl: String?) {
 private fun ReceiverSectionHeader(title: String = LABEL_VIDEO_SECTION) {
     Text(
         text = title,
-        fontWeight = FontWeight.Medium,
-        fontSize = 16.sp,
-        color = AfternoteDesign.colors.gray9,
-        fontFamily = nanumGothic,
+        style =
+            AfternoteDesign.typography.textField.copy(
+                fontWeight = FontWeight.Medium,
+                color = AfternoteDesign.colors.gray9,
+            ),
         modifier = Modifier.padding(bottom = 8.dp),
     )
 }

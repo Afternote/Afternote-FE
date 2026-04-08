@@ -7,6 +7,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
+
 // 기존 버전
 
 // private val AfternoteLightColors =
@@ -71,10 +72,10 @@ fun AfternoteTheme(
     }
 }
 
-// Typography: MaterialTheme.typography.* → AfternoteDesign.typography.* (see AfternoteTypography in Type.kt)
+// Typography: MaterialTheme.typography.* → AfternoteDesign.typography.* (see AfternoteTypography in AfternoteTypography.kt)
 // e.g. headlineLarge→h1, headlineMedium→h2, headlineSmall→h3, bodyLarge→bodyLargeB, bodyMedium→bodyLargeR,
 // titleMedium→bodyBase, bodySmall→bodySmallR, titleSmall→bodySmallB, labelLarge→primaryButton,
-// labelMedium→secondaryButton, labelSmall→footnoteCaption, displayLarge→captionLargeB,
+// inter→secondaryButton, labelSmall→footnoteCaption, displayLarge→captionLargeB,
 // displayMedium→captionLargeR, displaySmall→mono
 object AfternoteDesign {
     val colors: AfternoteColors

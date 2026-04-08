@@ -34,7 +34,7 @@ fun BottomBar(
     NavigationBar(
         modifier = modifier,
         containerColor = AfternoteDesign.colors.white,
-        tonalElevation = 0.dp,
+//        tonalElevation = 0.dp,
     ) {
         BottomNavTab.entries.forEach { tab ->
             val selected = selectedNavTab == tab
@@ -58,7 +58,10 @@ fun BottomBar(
                                 modifier =
                                     Modifier
                                         .size(4.dp)
-                                        .background(color = AfternoteDesign.colors.black, shape = CircleShape),
+                                        .background(
+                                            color = AfternoteDesign.colors.black,
+                                            shape = CircleShape,
+                                        ),
                             )
                         }
                     }
@@ -76,18 +79,9 @@ fun BottomBar(
     }
 }
 
-@Preview(showBackground = true)
+@Preview
 @Composable
-private fun 테마안씌운거() {
-    BottomBar(
-        onTabClick = {},
-        selectedNavTab = BottomNavTab.TIMELETTER,
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun 테마씌운거() {
+private fun BottomBarPreview() {
     AfternoteTheme {
         BottomBar(
             onTabClick = {},

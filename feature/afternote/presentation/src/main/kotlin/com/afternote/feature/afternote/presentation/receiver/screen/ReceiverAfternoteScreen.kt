@@ -17,20 +17,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.afternote.core.ui.button.ClickButton
+import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.feedback.ConfirmationPopup
 import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.receiver.component.ContentSection
 import com.afternote.feature.afternote.presentation.receiver.component.HeroCard
@@ -123,6 +122,7 @@ fun ReceiverAfterNoteScreen(
 
     Scaffold(
         modifier = modifier,
+        containerColor = Color.Transparent,
         topBar = { TopHeader() },
         bottomBar = {
             if (showBottomBar) {
@@ -147,9 +147,10 @@ fun ReceiverAfterNoteScreen(
                         R.string.receiver_sender_record_title,
                         summary.senderName.ifBlank { "" },
                     ),
-                fontWeight = FontWeight.Bold,
-                color = AfternoteDesign.colors.gray9,
-                fontFamily = nanumGothic,
+                style =
+                    AfternoteDesign.typography.bodyLargeB.copy(
+                        color = AfternoteDesign.colors.gray9,
+                    ),
                 modifier = Modifier.padding(bottom = 16.dp),
             )
 
@@ -170,7 +171,7 @@ fun ReceiverAfterNoteScreen(
                         summary.mindRecordTotalCount,
                     ),
                 btnText = stringResource(R.string.receiver_mindrecord_section_button),
-                imageResource = painterResource(R.drawable.img_book),
+                imageResource = painterResource(R.drawable.feature_afternote_img_book),
                 onButtonClick = onNavigateToRecord,
             )
 
@@ -183,7 +184,7 @@ fun ReceiverAfterNoteScreen(
                         summary.timeLetterTotalCount,
                     ),
                 btnText = stringResource(R.string.receiver_timeletter_section_button),
-                imageResource = painterResource(R.drawable.img_letter),
+                imageResource = painterResource(R.drawable.feature_afternote_img_letter),
                 onButtonClick = onNavigateToTimeLetter,
             )
 
@@ -196,16 +197,15 @@ fun ReceiverAfterNoteScreen(
                         summary.afternoteTotalCount,
                     ),
                 btnText = stringResource(R.string.receiver_afternote_section_button),
-                imageResource = painterResource(R.drawable.img_notebook),
+                imageResource = painterResource(R.drawable.feature_afternote_img_notebook),
                 onButtonClick = onNavigateToAfternote,
             )
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            ClickButton(
-                color = AfternoteDesign.colors.gray9,
-                onButtonClick = { showDialog = true },
-                title = stringResource(R.string.receiver_download_all_button),
+            AfternoteButton(
+                text = stringResource(R.string.receiver_download_all_button),
+                onClick = { showDialog = true },
             )
         }
     }

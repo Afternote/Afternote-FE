@@ -15,21 +15,17 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.afternote.core.ui.button.ClickButton
+import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.expand.dropShadow
 import com.afternote.core.ui.form.LabeledTextFieldStyle
 import com.afternote.core.ui.form.OutlineTextField
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.nanumGothic
 
 /**
  * 직접 입력하기 다이얼로그 콜백
@@ -94,14 +90,7 @@ fun CustomServiceDialog(
             // 타이틀
             Text(
                 text = "직접 입력하기",
-                style =
-                    TextStyle(
-                        fontSize = 18.sp,
-                        lineHeight = 24.sp,
-                        fontFamily = nanumGothic,
-                        fontWeight = FontWeight.Bold,
-                        color = AfternoteDesign.colors.gray9,
-                    ),
+                style = AfternoteDesign.typography.bodyLargeB,
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -117,10 +106,9 @@ fun CustomServiceDialog(
             Spacer(modifier = Modifier.height(24.dp))
 
             // 추가하기 버튼
-            ClickButton(
-                color = AfternoteDesign.colors.gray9,
-                title = "추가하기",
-                onButtonClick = params.callbacks.onAddClick,
+            AfternoteButton(
+                text = "추가하기",
+                onClick = params.callbacks.onAddClick,
             )
         }
     }

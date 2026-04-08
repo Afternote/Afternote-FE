@@ -19,20 +19,17 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
-
-private const val HERO_CARD_DEFAULT_MESSAGE = "가족들에게...\n내가 없어도 너무 슬퍼하지마."
 
 @Composable
 fun HeroCard(
     modifier: Modifier = Modifier,
-    leaveMessage: String = HERO_CARD_DEFAULT_MESSAGE,
+    leaveMessage: String = stringResource(R.string.receiver_hero_default_message),
 ) {
     Box(
         modifier =
@@ -53,7 +50,7 @@ fun HeroCard(
                 ),
     ) {
         Image(
-            painter = painterResource(R.drawable.img_hero_background),
+            painter = painterResource(R.drawable.feature_afternote_img_hero_background),
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop,
@@ -67,17 +64,17 @@ fun HeroCard(
         ) {
             Text(
                 text = leaveMessage,
-                fontFamily = nanumGothic,
-                fontWeight = FontWeight.Bold,
+                style = AfternoteDesign.typography.h2,
                 color = AfternoteDesign.colors.gray8,
-                fontSize = 24.sp,
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "고인이 남긴 마지막 인사말",
-                fontFamily = nanumGothic,
-                fontWeight = FontWeight.Medium,
-                color = AfternoteDesign.colors.gray5,
+                text = stringResource(R.string.feature_afternote_hero_last_greeting_caption),
+                style =
+                    AfternoteDesign.typography.bodySmallR.copy(
+                        fontWeight = FontWeight.Medium,
+                        color = AfternoteDesign.colors.gray5,
+                    ),
             )
         }
     }
@@ -86,5 +83,5 @@ fun HeroCard(
 @Preview(showBackground = true)
 @Composable
 private fun PreviewHeroCard() {
-    HeroCard(leaveMessage = "가족들에게...\n내가 없어도 너무 슬퍼하지마.")
+    HeroCard(leaveMessage = stringResource(R.string.receiver_hero_default_message))
 }

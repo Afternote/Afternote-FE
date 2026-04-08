@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -20,13 +21,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 
 /**
@@ -66,26 +64,28 @@ fun AfternoteListItem(
         ) {
             Text(
                 text = uiModel.serviceName,
+                style =
+                    AfternoteDesign.typography.bodyBase,
                 color = AfternoteDesign.colors.black,
-                lineHeight = 24.sp,
-                fontSize = 16.sp,
-                fontFamily = nanumGothic,
-                fontWeight = FontWeight.Normal,
             )
             Text(
                 text = stringResource(R.string.afternote_last_written_date, uiModel.date),
+                style =
+                    AfternoteDesign.typography.footnoteCaption,
                 color = AfternoteDesign.colors.gray5,
-                lineHeight = 16.sp,
-                fontSize = 10.sp,
-                fontFamily = nanumGothic,
-                fontWeight = FontWeight.Normal,
             )
         }
         Spacer(Modifier.weight(1f))
 
-        Image(
-            painter = painterResource(R.drawable.feature_afternote_presentation_right_arrow),
+        Icon(
+            painter = painterResource(R.drawable.feature_afternote_right_arrow),
             contentDescription = null,
+            tint = AfternoteDesign.colors.gray5,
+            modifier =
+                Modifier.size(
+                    width = 7.dp,
+                    height = 13.dp,
+                ),
         )
     }
 }
@@ -100,7 +100,7 @@ private fun AfternoteListItemPreview() {
                     id = "1",
                     serviceName = "인스타그램",
                     date = "2023.11.24",
-                    iconResId = R.drawable.img_insta_pattern,
+                    iconResId = R.drawable.feature_afternote_img_insta_pattern,
                 ),
         )
     }

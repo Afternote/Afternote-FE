@@ -24,8 +24,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.afternote.core.ui.theme.nanumGothic
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.sd.lib.compose.wheel_picker.FVerticalWheelPicker
 import com.sd.lib.compose.wheel_picker.FWheelPickerState
 import com.sd.lib.compose.wheel_picker.rememberFWheelPickerState
@@ -453,10 +452,16 @@ private fun PickerText(
 ) {
     Text(
         text = text,
-        fontSize = if (isSelected) 18.sp else 14.sp,
-        fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
-        color = if (isSelected) selectedTextColor else unselectedTextColor,
-        fontFamily = nanumGothic,
+        style =
+            (
+                if (isSelected) {
+                    AfternoteDesign.typography.bodyLargeR.copy(fontWeight = FontWeight.Medium)
+                } else {
+                    AfternoteDesign.typography.bodySmallR
+                }
+            ).copy(
+                color = if (isSelected) selectedTextColor else unselectedTextColor,
+            ),
     )
 }
 
@@ -467,8 +472,8 @@ private fun Divider(
 ) {
     Text(
         text = "|",
+        style = AfternoteDesign.typography.h3,
         color = color,
-        fontSize = 20.sp,
         modifier = modifier.padding(horizontal = 8.dp),
     )
 }

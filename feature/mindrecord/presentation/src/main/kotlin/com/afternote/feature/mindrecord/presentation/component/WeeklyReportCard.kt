@@ -16,18 +16,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.nanumGothic
 
 @Composable
 fun WeeklyReportCard(modifier: Modifier = Modifier) {
-    Box(modifier = modifier.border(1.dp, color = AfternoteDesign.colors.gray2, shape = RoundedCornerShape(6.dp))) {
+    Box(
+        modifier =
+            modifier.border(
+                1.dp,
+                color = AfternoteDesign.colors.gray2,
+                shape = RoundedCornerShape(6.dp),
+            ),
+    ) {
         Column(
             modifier =
                 Modifier
@@ -52,10 +56,7 @@ fun WeeklyReportCard(modifier: Modifier = Modifier) {
                     Text(
                         text = "42",
                         style =
-                            TextStyle(
-                                fontFamily = nanumGothic,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 24.sp,
+                            AfternoteDesign.typography.h2.copy(
                                 lineHeight = 32.sp,
                             ),
                     )
@@ -63,9 +64,7 @@ fun WeeklyReportCard(modifier: Modifier = Modifier) {
                     Text(
                         text = "총 기록",
                         style =
-                            TextStyle(
-                                fontFamily = nanumGothic,
-                                fontWeight = FontWeight.Normal,
+                            AfternoteDesign.typography.captionLargeR.copy(
                                 fontSize = 11.sp,
                                 lineHeight = 16.sp,
                             ),
@@ -79,10 +78,7 @@ fun WeeklyReportCard(modifier: Modifier = Modifier) {
                     Text(
                         text = "7",
                         style =
-                            TextStyle(
-                                fontFamily = nanumGothic,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 24.sp,
+                            AfternoteDesign.typography.h2.copy(
                                 lineHeight = 32.sp,
                             ),
                     )
@@ -90,9 +86,7 @@ fun WeeklyReportCard(modifier: Modifier = Modifier) {
                     Text(
                         text = "이번 주",
                         style =
-                            TextStyle(
-                                fontFamily = nanumGothic,
-                                fontWeight = FontWeight.Normal,
+                            AfternoteDesign.typography.captionLargeR.copy(
                                 fontSize = 11.sp,
                                 lineHeight = 16.sp,
                             ),

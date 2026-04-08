@@ -19,16 +19,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.expand.horizontalFadingEdge
 import com.afternote.core.ui.icon.ArrowIconSpec
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 
@@ -65,7 +62,7 @@ fun AfternoteCategoryRow(
             RightArrowIcon(
                 iconSpec =
                     ArrowIconSpec(
-                        iconRes = R.drawable.ic_arrow_right_tab,
+                        iconRes = R.drawable.feature_afternote_ic_arrow_right_tab,
                         contentDescription = "더 보기",
                     ),
                 backgroundColor = AfternoteDesign.colors.gray9,
@@ -99,16 +96,15 @@ private fun CategoryItem(
     ) {
         Text(
             text = category.label,
-            color =
-                if (isSelected) {
-                    AfternoteDesign.colors.gray7
-                } else {
-                    AfternoteDesign.colors.gray4
-                },
-            fontFamily = nanumGothic,
-            fontWeight = FontWeight.SemiBold,
-            lineHeight = 20.sp,
-            fontSize = 14.sp,
+            style =
+                AfternoteDesign.typography.bodySmallB.copy(
+                    color =
+                        if (isSelected) {
+                            AfternoteDesign.colors.gray7
+                        } else {
+                            AfternoteDesign.colors.gray4
+                        },
+                ),
             modifier =
                 Modifier
                     .padding(16.dp),
@@ -119,6 +115,7 @@ private fun CategoryItem(
                 color = AfternoteDesign.colors.gray7,
                 modifier =
                     Modifier
+                        .padding(horizontal = 16.dp)
                         .align(Alignment.BottomCenter),
             )
         }

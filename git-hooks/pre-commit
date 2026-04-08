@@ -1,0 +1,28 @@
+#!/bin/sh
+# Afternote-FE: run ktlint before each commit.
+# Install once: ./gradlew installGitHooks
+#
+# Only re-stages Kotlin/KTS paths that were already staged before the hook runs,
+# so git add -u does not pull in other modified tracked files you did not intend to commit.
+
+set -e
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT" || exit 1
+
+# Paths already staged for this commit (Added/Copied/Modified only; not pure deletes)
+STAGED_KT=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(kt|kts)$' || true)
+
+if [ -n "$STAGED_KT" ]; then
+    echo "Running ktlintFormat..."
+    ./gradlew ktlintFormat
+
+    printf '%s\n' "$STAGED_KT" | while IFS= read -r f; do
+        [ -n "$f" ] || continue
+        [ -f "$f" ] || continue
+        git add -- "$f"
+    done
+fi
+
+echo "Running ktlintCheck..."
+./gradlew ktlintCheck

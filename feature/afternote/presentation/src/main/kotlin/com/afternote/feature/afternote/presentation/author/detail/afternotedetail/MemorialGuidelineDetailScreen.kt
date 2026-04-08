@@ -18,6 +18,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,33 +33,32 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
 import com.afternote.core.ui.expand.horizontalFadingEdge
 import com.afternote.core.ui.form.ProfileImage
+import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
-import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.ReceiversCard
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.dummy.AlbumDummies
+import com.afternote.core.ui.R as CoreUiR
 
 /**
  * 추모 가이드라인 상세 화면의 데이터 상태
@@ -121,12 +122,18 @@ fun MemorialGuidelineDetailScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         topBar = {
-            AfternoteTopBar(
+            DetailTopBar(
+                title = "",
                 onBackClick = callbacks.onBackClick,
-                actionIcon = if (isEditable) Icons.Default.MoreVert else null,
-                actionContentDescription = "더보기",
-                onActionClick = if (isEditable) uiState::toggleDropdownMenu else null,
+                actions = {
+                    if (isEditable) {
+                        IconButton(onClick = uiState::toggleDropdownMenu) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "더보기")
+                        }
+                    }
+                },
             )
         },
         bottomBar = {
@@ -190,14 +197,7 @@ private fun TitleSection(userName: String) {
                 }
                 append("에 대한 ${userName}님의 기록")
             },
-        style =
-            TextStyle(
-                fontSize = 18.sp,
-                lineHeight = 24.sp,
-                fontFamily = nanumGothic,
-                fontWeight = FontWeight.Bold,
-                color = AfternoteDesign.colors.gray9,
-            ),
+        style = AfternoteDesign.typography.bodyLargeB,
     )
 }
 
@@ -238,16 +238,12 @@ private fun PhotoCard(
                     text = "최종 작성일 $finalWriteDate",
                     modifier = Modifier.fillMaxWidth(),
                     style =
-                        TextStyle(
-                            fontSize = 10.sp,
-                            lineHeight = 16.sp,
-                            fontFamily = nanumGothic,
-                            fontWeight = FontWeight.Normal,
+                        AfternoteDesign.typography.footnoteCaption.copy(
                             color = AfternoteDesign.colors.gray6,
                         ),
                 )
                 ProfileImage(
-                    fallbackImageRes = R.drawable.img_default_profile_deceased,
+                    fallbackImageRes = R.drawable.feature_afternote_img_default_profile_deceased,
                     profileImageSize = 144.dp,
                     isEditable = false,
                     displayImageUri = profileImageUri,
@@ -277,10 +273,7 @@ private fun VideoCard(
                 Text(
                     text = "장례식에 남길 영상",
                     style =
-                        TextStyle(
-                            fontSize = 16.sp,
-                            lineHeight = 22.sp,
-                            fontFamily = nanumGothic,
+                        AfternoteDesign.typography.textField.copy(
                             fontWeight = FontWeight.Medium,
                             color = AfternoteDesign.colors.gray9,
                         ),
@@ -344,7 +337,7 @@ private fun VideoThumbnail(thumbnailUrl: String?) {
 
         // 재생 아이콘
         Image(
-            painter = painterResource(R.drawable.ic_playback),
+            painter = painterResource(R.drawable.feature_afternote_ic_playback),
             contentDescription = "영상 재생",
             modifier =
                 Modifier
@@ -373,10 +366,7 @@ private fun PlaylistCard(
                 Text(
                     text = "추모 플레이리스트",
                     style =
-                        TextStyle(
-                            fontSize = 16.sp,
-                            lineHeight = 22.sp,
-                            fontFamily = nanumGothic,
+                        AfternoteDesign.typography.textField.copy(
                             fontWeight = FontWeight.Medium,
                             color = AfternoteDesign.colors.gray9,
                         ),
@@ -389,11 +379,7 @@ private fun PlaylistCard(
                 Text(
                     text = "현재 ${songCount}개의 노래가 담겨 있습니다.",
                     style =
-                        TextStyle(
-                            fontSize = 14.sp,
-                            lineHeight = 20.sp,
-                            fontFamily = nanumGothic,
-                            fontWeight = FontWeight.Normal,
+                        AfternoteDesign.typography.bodySmallR.copy(
                             color = AfternoteDesign.colors.black,
                         ),
                 )
@@ -451,20 +437,19 @@ private fun AlbumCoverItem(album: AlbumCover) {
 
 @Composable
 private fun LastWishCard(lastWish: String) {
-    val displayText = lastWish.ifEmpty { "남기고 싶은 당부가 없습니다." }
-    val textColor = if (lastWish.isNotEmpty()) AfternoteDesign.colors.gray9 else AfternoteDesign.colors.gray5
+    val displayText =
+        lastWish.ifEmpty { stringResource(CoreUiR.string.core_ui_last_wish_empty_state) }
+    val textColor =
+        if (lastWish.isNotEmpty()) AfternoteDesign.colors.gray9 else AfternoteDesign.colors.gray5
 
     InfoCard(
         modifier = Modifier.fillMaxWidth(),
         content = {
             Column {
                 Text(
-                    text = "남기고 싶은 당부",
+                    text = stringResource(CoreUiR.string.core_ui_label_last_wish),
                     style =
-                        TextStyle(
-                            fontSize = 16.sp,
-                            lineHeight = 22.sp,
-                            fontFamily = nanumGothic,
+                        AfternoteDesign.typography.textField.copy(
                             fontWeight = FontWeight.Medium,
                             color = AfternoteDesign.colors.gray9,
                         ),
@@ -473,11 +458,7 @@ private fun LastWishCard(lastWish: String) {
                 Text(
                     text = displayText,
                     style =
-                        TextStyle(
-                            fontSize = 14.sp,
-                            lineHeight = 20.sp,
-                            fontFamily = nanumGothic,
-                            fontWeight = FontWeight.Normal,
+                        AfternoteDesign.typography.bodySmallR.copy(
                             color = textColor,
                         ),
                 )

@@ -25,11 +25,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
 import coil3.network.NetworkHeaders
@@ -40,7 +38,6 @@ import com.afternote.core.ui.icon.ArrowIconSpec
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.dummy.AlbumDummies
 
@@ -55,15 +52,6 @@ data class AlbumCover(
     val title: String? = null,
 )
 
-private val songCountTextStyle =
-    TextStyle(
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
-        fontFamily = nanumGothic,
-        fontWeight = FontWeight.Normal,
-        color = Color(0xFF000000),
-    )
-
 @Composable
 private fun MemorialPlaylistSongCountRow(
     songCount: Int,
@@ -75,11 +63,23 @@ private fun MemorialPlaylistSongCountRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text(text = "현재 ${songCount}개의 노래가 담겨 있습니다.", style = songCountTextStyle)
+            Text(
+                text = "현재 ${songCount}개의 노래가 담겨 있습니다.",
+                style =
+                    AfternoteDesign.typography.bodySmallR.copy(
+                        color = Color(0xFF000000),
+                    ),
+            )
             RightArrowIcon(color = AfternoteDesign.colors.gray9, size = 16.dp)
         }
     } else {
-        Text(text = "현재 ${songCount}개의 노래가 담겨 있습니다.", style = songCountTextStyle)
+        Text(
+            text = "현재 ${songCount}개의 노래가 담겨 있습니다.",
+            style =
+                AfternoteDesign.typography.bodySmallR.copy(
+                    color = Color(0xFF000000),
+                ),
+        )
     }
 }
 
@@ -100,10 +100,7 @@ private fun MemorialPlaylistAddButton(
         Text(
             text = "노래 추가하기",
             style =
-                TextStyle(
-                    fontSize = 12.sp,
-                    lineHeight = 18.sp,
-                    fontFamily = nanumGothic,
+                AfternoteDesign.typography.captionLargeR.copy(
                     fontWeight = FontWeight.Medium,
                     color = AfternoteDesign.colors.gray9,
                 ),
@@ -111,7 +108,7 @@ private fun MemorialPlaylistAddButton(
         RightArrowIcon(
             iconSpec =
                 ArrowIconSpec(
-                    iconRes = R.drawable.ic_arrow_right_playlist,
+                    iconRes = R.drawable.feature_afternote_ic_arrow_right_playlist,
                     contentDescription = "추가",
                 ),
             backgroundColor = AfternoteDesign.colors.gray9,
@@ -161,10 +158,7 @@ fun MemorialPlaylist(
         Text(
             text = label,
             style =
-                TextStyle(
-                    fontSize = 16.sp,
-                    lineHeight = 22.sp,
-                    fontFamily = nanumGothic,
+                AfternoteDesign.typography.textField.copy(
                     fontWeight = FontWeight.Medium,
                     color = AfternoteDesign.colors.gray9,
                 ),
@@ -241,7 +235,7 @@ private fun MemorialPlaylistAlbumCoverBox(album: AlbumCover) {
             contentDescription = stringResource(R.string.content_description_album_cover),
             modifier = modifier,
             contentScale = ContentScale.Crop,
-            error = painterResource(R.drawable.img_placeholder_1),
+            error = painterResource(R.drawable.feature_afternote_img_placeholder_1),
             onError = { state: AsyncImagePainter.State.Error ->
                 Log.e(
                     TAG,

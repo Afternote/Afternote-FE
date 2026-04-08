@@ -8,18 +8,18 @@ import com.afternote.feature.afternote.presentation.R
 object PlaceholderDrawables {
     private val LIST =
         listOf(
-            R.drawable.img_placeholder_1,
-            R.drawable.img_placeholder_2,
-            R.drawable.img_placeholder_3,
-            R.drawable.img_placeholder_4,
-            R.drawable.img_placeholder_5,
-            R.drawable.img_placeholder_6,
-            R.drawable.img_placeholder_7,
-            R.drawable.img_placeholder_8,
-            R.drawable.img_placeholder_9,
-            R.drawable.img_placeholder_10,
-            R.drawable.img_placeholder_11,
-            R.drawable.img_placeholder_12,
+            R.drawable.feature_afternote_img_placeholder_1,
+            R.drawable.feature_afternote_img_placeholder_2,
+            R.drawable.feature_afternote_img_placeholder_3,
+            R.drawable.feature_afternote_img_placeholder_4,
+            R.drawable.feature_afternote_img_placeholder_5,
+            R.drawable.feature_afternote_img_placeholder_6,
+            R.drawable.feature_afternote_img_placeholder_7,
+            R.drawable.feature_afternote_img_placeholder_8,
+            R.drawable.feature_afternote_img_placeholder_9,
+            R.drawable.feature_afternote_img_placeholder_10,
+            R.drawable.feature_afternote_img_placeholder_11,
+            R.drawable.feature_afternote_img_placeholder_12,
         )
 
     /**

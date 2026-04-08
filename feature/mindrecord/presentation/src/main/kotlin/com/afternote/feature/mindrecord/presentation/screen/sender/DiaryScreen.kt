@@ -98,7 +98,7 @@ fun DiaryScreen(modifier: Modifier = Modifier) {
         topBar = {
             DetailTopBar(
                 title = "일기",
-                action = {
+                actions = {
                     ViewModeSwitcher(
                         isListView = isListView,
                         image1 = R.drawable.core_ui_grid,

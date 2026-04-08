@@ -15,7 +15,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.afternote.core.ui.form.LastWishOption
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.feature.afternote.presentation.author.editor.playlist.Song
+import com.afternote.feature.afternote.presentation.author.editor.CATEGORY_MEMORIAL_GUIDELINE
+import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
@@ -24,47 +25,6 @@ import com.afternote.feature.afternote.presentation.author.editor.selection.Sele
 import com.afternote.feature.afternote.presentation.shared.DataProviderLocals
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
-
-/**
- * 추모 플레이리스트 상태 홀더
- */
-@Stable
-class MemorialPlaylistStateHolder {
-    val songs: SnapshotStateList<Song> =
-        mutableStateListOf()
-
-    var onSongCountChanged: (() -> Unit)? = null
-
-    fun initializeSongs(initialSongs: List<Song>) {
-        if (songs.isEmpty()) {
-            songs.addAll(initialSongs)
-        }
-    }
-
-    fun addSong(song: Song) {
-        songs.add(song)
-        onSongCountChanged?.invoke()
-    }
-
-    @Suppress("UNUSED")
-    fun removeSong(songId: String) {
-        songs.removeAll { it.id == songId }
-        onSongCountChanged?.invoke()
-    }
-
-    /**
-     * 선택된 곡 ID 집합에 해당하는 곡들을 일괄 삭제합니다.
-     */
-    fun removeSongs(ids: Set<String>) {
-        songs.removeAll { it.id in ids }
-        onSongCountChanged?.invoke()
-    }
-
-    fun clearAllSongs() {
-        songs.clear()
-        onSongCountChanged?.invoke()
-    }
-}
 
 private const val TAG = "AfternoteEditorState"
 private const val CATEGORY_GALLERY_AND_FILE = "갤러리 및 파일"
@@ -92,13 +52,26 @@ class AfternoteEditorState(
     // TextFieldState는 Composable에서 생성하여 전달
     val idState: TextFieldState,
     val passwordState: TextFieldState,
-    val messageState: TextFieldState,
     val afternoteEditReceiverNameState: TextFieldState,
     val phoneNumberState: TextFieldState,
     val customServiceNameState: TextFieldState,
     initialAfternoteEditorReceivers: List<com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver>,
     albumCovers: List<AlbumCover>,
 ) {
+    // 남기실 말씀 (multiple messages)
+    val editorMessages: SnapshotStateList<EditorMessage> =
+        mutableStateListOf(EditorMessage())
+
+    fun addEditorMessage() {
+        editorMessages.add(EditorMessage())
+    }
+
+    fun removeEditorMessage(message: EditorMessage) {
+        if (editorMessages.size > 1) {
+            editorMessages.removeAll { it.id == message.id }
+        }
+    }
+
     // Navigation
     var selectedBottomNavItem by mutableStateOf(BottomNavTab.NOTE)
         private set
@@ -220,6 +193,21 @@ class AfternoteEditorState(
             ),
         )
     val playlistAlbumCovers = albumCovers
+
+    /** 플레이리스트 앨범 커버 (라이브 상태 우선, 없으면 초기 로드값) */
+    val displayAlbumCovers: List<AlbumCover>
+        get() =
+            playlistStateHolder?.songs?.map { s ->
+                AlbumCover(id = s.id, imageUrl = s.albumCoverUrl, title = s.title)
+            } ?: playlistAlbumCovers
+
+    /** 플레이리스트 곡 수 (라이브 상태 우선) */
+    val livePlaylistSongCount: Int
+        get() = playlistStateHolder?.songs?.size ?: playlistSongCount
+
+    /** 영정 사진 표시용 URI (사용자 선택 우선, 없으면 API 값) */
+    val displayMemorialPhotoUri: String?
+        get() = pickedMemorialPhotoUri ?: memorialPhotoUrl
 
     // Computed Properties (Line 295 해결: 삼항 연산자 제거)
     val currentServiceOptions: List<String>
@@ -442,7 +430,9 @@ class AfternoteEditorState(
 
         idState.edit { replace(0, length, params.account.id) }
         passwordState.edit { replace(0, length, params.account.password) }
-        messageState.edit { replace(0, length, params.processing.message) }
+        // 기존 메시지를 첫 번째 EditorMessage에 로드
+        val firstMessage = editorMessages.firstOrNull() ?: EditorMessage().also { editorMessages.add(it) }
+        firstMessage.contentState.edit { replace(0, length, params.processing.message) }
 
         if (params.processing.accountMethodName.isNotEmpty()) {
             selectedProcessingMethod =
@@ -503,6 +493,55 @@ class AfternoteEditorState(
         funeralThumbnailUrl = params.memorialThumbnailUrl
         memorialPhotoUrl = params.memorialPhotoUrl
     }
+
+    /**
+     * 등록 버튼 클릭 시 [RegisterAfternotePayload]를 생성한다.
+     */
+    fun createRegisterPayload(): RegisterAfternotePayload {
+        val date =
+            java.time.LocalDate
+                .now()
+                .format(
+                    java.time.format.DateTimeFormatter
+                        .ofPattern("yyyy.MM.dd"),
+                )
+        val socialMethods =
+            processingMethods.map {
+                com.afternote.feature.afternote.domain.model
+                    .ProcessingMethod(it.id, it.text)
+            }
+        val galleryMethods =
+            galleryProcessingMethods.map {
+                com.afternote.feature.afternote.domain.model
+                    .ProcessingMethod(it.id, it.text)
+            }
+        val fullMessage =
+            editorMessages
+                .map { msg ->
+                    val t = msg.titleState.text.toString()
+                    val c = msg.contentState.text.toString()
+                    if (t.isNotEmpty()) "$t\n$c" else c
+                }.filter { it.isNotBlank() }
+                .joinToString("\n---\n")
+
+        return RegisterAfternotePayload(
+            serviceName =
+                if (selectedCategory == CATEGORY_MEMORIAL_GUIDELINE) {
+                    CATEGORY_MEMORIAL_GUIDELINE
+                } else {
+                    selectedService
+                },
+            date = date,
+            accountId = idState.text.toString(),
+            password = passwordState.text.toString(),
+            message = fullMessage,
+            accountProcessingMethod = selectedProcessingMethod.name,
+            informationProcessingMethod = selectedInformationProcessingMethod.name,
+            processingMethods = socialMethods,
+            galleryProcessingMethods = galleryMethods,
+            atmosphere = getAtmosphereForSave(),
+        )
+    }
 }
 
 /**
@@ -546,7 +585,6 @@ fun rememberAfternoteEditorState(): AfternoteEditorState {
     val afternoteProvider = DataProviderLocals.LocalAfternoteEditorDataProvider.current
     val idState = rememberTextFieldState()
     val passwordState = rememberTextFieldState()
-    val messageState = rememberTextFieldState()
     val afternoteEditReceiverNameState = rememberTextFieldState()
     val phoneNumberState = rememberTextFieldState()
     val customServiceNameState = rememberTextFieldState()
@@ -555,7 +593,6 @@ fun rememberAfternoteEditorState(): AfternoteEditorState {
         AfternoteEditorState(
             idState = idState,
             passwordState = passwordState,
-            messageState = messageState,
             afternoteEditReceiverNameState = afternoteEditReceiverNameState,
             phoneNumberState = phoneNumberState,
             customServiceNameState = customServiceNameState,

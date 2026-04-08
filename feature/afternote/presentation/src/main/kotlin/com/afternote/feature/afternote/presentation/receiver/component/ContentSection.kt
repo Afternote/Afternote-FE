@@ -23,10 +23,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.nanumGothic
 
 @Composable
 fun ContentSection(
@@ -41,9 +39,7 @@ fun ContentSection(
     Column(modifier = modifier.padding(bottom = 24.dp)) {
         Text(
             text = title,
-            fontSize = 18.sp,
-            fontFamily = nanumGothic,
-            fontWeight = FontWeight.Bold,
+            style = AfternoteDesign.typography.bodyLargeB,
             color = AfternoteDesign.colors.gray9,
         )
 
@@ -72,15 +68,15 @@ fun ContentSection(
                 Column(modifier = Modifier.padding(20.dp)) {
                     Text(
                         text = desc,
-                        fontSize = 16.sp,
-                        fontFamily = nanumGothic,
-                        fontWeight = FontWeight.Medium,
-                        color = AfternoteDesign.colors.gray9,
+                        style =
+                            AfternoteDesign.typography.textField.copy(
+                                fontWeight = FontWeight.Medium,
+                                color = AfternoteDesign.colors.gray9,
+                            ),
                     )
                     Text(
                         text = subDesc,
-                        fontSize = 12.sp,
-                        fontFamily = nanumGothic,
+                        style = AfternoteDesign.typography.captionLargeR,
                         color = AfternoteDesign.colors.gray9,
                         modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
                     )
@@ -94,10 +90,11 @@ fun ContentSection(
                     ) {
                         Text(
                             text = btnText,
-                            fontSize = 12.sp,
-                            color = AfternoteDesign.colors.gray9,
-                            fontWeight = FontWeight.Medium,
-                            fontFamily = nanumGothic,
+                            style =
+                                AfternoteDesign.typography.captionLargeR.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    color = AfternoteDesign.colors.gray9,
+                                ),
                         )
 
                         Spacer(modifier = Modifier.width(4.dp))

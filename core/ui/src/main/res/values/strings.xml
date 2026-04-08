@@ -4,4 +4,14 @@
     <string name="core_ui_nav_item_mindrecord">기록</string>
     <string name="core_ui_nav_item_timeletter">타임레터</string>
     <string name="core_ui_nav_item_note">노트</string>
+
+    <string name="core_ui_request_verification_code">인증번호 받기</string>
+    <string name="core_ui_content_description_add_file">파일 추가</string>
+    <string name="core_ui_content_description_back">뒤로가기</string>
+    <string name="core_ui_content_description_profile_edit">프로필 수정 버튼</string>
+    <string name="core_ui_content_description_profile_image">프로필 이미지</string>
+    <string name="core_ui_fab_content_description_add">추가</string>
+    <string name="core_ui_label_last_wish">남기고 싶은 당부</string>
+    <string name="core_ui_last_wish_empty_state">남기고 싶은 당부가 없습니다.</string>
+    <string name="core_ui_text_field_placeholder">입력해 주세요</string>
 </resources>

@@ -35,11 +35,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
@@ -48,7 +46,6 @@ import coil3.network.httpHeaders
 import coil3.request.ImageRequest
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -135,10 +132,7 @@ fun FuneralVideoUpload(
         Text(
             text = label,
             style =
-                TextStyle(
-                    fontSize = 16.sp,
-                    lineHeight = 22.sp,
-                    fontFamily = nanumGothic,
+                AfternoteDesign.typography.textField.copy(
                     fontWeight = FontWeight.Medium,
                     color = AfternoteDesign.colors.gray9,
                 ),
@@ -163,7 +157,7 @@ fun FuneralVideoUpload(
                 ) {
                     Spacer(modifier = Modifier.height(24.dp))
                     Image(
-                        painter = painterResource(R.drawable.ic_add_circle),
+                        painter = painterResource(R.drawable.feature_afternote_ic_add_circle),
                         contentDescription = addContentDescription,
                         modifier = Modifier.size(24.dp),
                     )
@@ -209,7 +203,7 @@ fun FuneralVideoUpload(
                             contentDescription = null,
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop,
-                            error = painterResource(R.drawable.img_placeholder_1),
+                            error = painterResource(R.drawable.feature_afternote_img_placeholder_1),
                             onLoading = {
                                 Log.d(TAG, "Coil loading started: url=$thumbnailUrl")
                             },
@@ -249,7 +243,7 @@ fun FuneralVideoUpload(
                     }
                 }
                 Image(
-                    painter = painterResource(R.drawable.ic_playback),
+                    painter = painterResource(R.drawable.feature_afternote_ic_playback),
                     contentDescription = stringResource(R.string.content_description_video_play),
                     modifier =
                         Modifier

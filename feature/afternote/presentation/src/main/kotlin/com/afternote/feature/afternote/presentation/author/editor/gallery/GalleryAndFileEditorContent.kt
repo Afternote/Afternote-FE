@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -16,9 +15,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.form.Label
 import com.afternote.core.ui.form.LabelStyle
-import com.afternote.core.ui.form.MultilineOutlineTextField
+import com.afternote.core.ui.form.SelectableRadioCard
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
+import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverSection
+import com.afternote.feature.afternote.presentation.author.editor.model.InfoMethodSection
+import com.afternote.feature.afternote.presentation.author.editor.model.InformationProcessingMethod
+import com.afternote.feature.afternote.presentation.author.editor.processing.OptionRadioCardContent
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodList
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListParams
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
@@ -61,7 +65,39 @@ private fun GalleryAndFileEditorContentBody(
     spacerHeight: Dp,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        RecipientDesignationSection(section = params.recipientSection)
+        // 계정 처리 방법 섹션
+        Label(
+            text = "계정 처리 방법",
+            isRequired = true,
+            style = LabelStyle(requiredDotOffsetY = 2.dp),
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        InformationProcessingMethod.entries.forEachIndexed { index, method ->
+            if (index > 0) {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            SelectableRadioCard(
+                selected = params.infoMethodSection.selectedMethod == method,
+                onClick = { params.infoMethodSection.onMethodSelected(method) },
+                modifier = Modifier.fillMaxWidth(),
+                content = {
+                    OptionRadioCardContent(
+                        option = method,
+                        selected = params.infoMethodSection.selectedMethod == method,
+                    )
+                },
+            )
+        }
+
+        if (params.infoMethodSection.selectedMethod ==
+            InformationProcessingMethod.TRANSFER_TO_ADDITIONAL_AFTERNOTE_EDIT_RECEIVER
+        ) {
+            Spacer(modifier = Modifier.height(32.dp))
+
+            RecipientDesignationSection(section = params.recipientSection)
+        }
 
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -88,9 +124,11 @@ private fun GalleryAndFileEditorContentBody(
         Spacer(modifier = Modifier.height(32.dp))
 
         // 남기실 말씀
-        MultilineOutlineTextField(
-            label = "남기실 말씀",
-            textFieldState = params.messageState,
+        EditorMessageSection(
+            messages = params.editorMessages,
+            onRegisterClick = params.onMessageRegisterClick,
+            onDeleteClick = params.onMessageDeleteClick,
+            onAddClick = params.onMessageAddClick,
         )
 
         // 갤러리 및 파일 탭 하단 여백 (Viewport 높이의 10%, 800dp 기준 약 80dp)
@@ -114,7 +152,12 @@ private fun GalleryAndFileEditorContentPreview() {
                 bottomPadding = PaddingValues(bottom = 88.dp),
                 params =
                     GalleryAndFileEditorContentParams(
-                        messageState = rememberTextFieldState(),
+                        editorMessages = listOf(EditorMessage()),
+                        infoMethodSection =
+                            InfoMethodSection(
+                                selectedMethod = InformationProcessingMethod.TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER,
+                                onMethodSelected = {},
+                            ),
                         recipientSection = AfternoteEditorReceiverSection(),
                         processingMethodSection = ProcessingMethodSection(),
                     ),
@@ -141,7 +184,12 @@ private fun GalleryAndFileEditorContentWithAfternoteEditorReceiversPreview() {
                     bottomPadding = PaddingValues(bottom = 88.dp),
                     params =
                         GalleryAndFileEditorContentParams(
-                            messageState = rememberTextFieldState(),
+                            editorMessages = listOf(EditorMessage()),
+                            infoMethodSection =
+                                InfoMethodSection(
+                                    selectedMethod = InformationProcessingMethod.TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER,
+                                    onMethodSelected = {},
+                                ),
                             recipientSection =
                                 AfternoteEditorReceiverSection(
                                     afternoteEditReceivers = provider.getAfternoteEditorReceivers(),

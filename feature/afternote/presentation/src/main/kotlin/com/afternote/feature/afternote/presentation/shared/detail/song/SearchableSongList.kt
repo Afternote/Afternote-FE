@@ -37,7 +37,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
@@ -45,11 +44,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.button.CustomRadioButton
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
+import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.core.ui.theme.nanumGothic
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
-import com.afternote.feature.afternote.presentation.shared.AfternoteTopBar
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
 /**
@@ -109,8 +107,9 @@ fun SongPlaylistScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         topBar = {
-            AfternoteTopBar(
+            DetailTopBar(
                 title = title,
                 onBackClick = onBackClick,
             )
@@ -176,8 +175,9 @@ fun SongPlaylistScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         topBar = {
-            AfternoteTopBar(
+            DetailTopBar(
                 title = title,
                 onBackClick = onBackClick,
             )
@@ -272,8 +272,9 @@ fun SongPlaylistScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        containerColor = Color.Transparent,
         topBar = {
-            AfternoteTopBar(
+            DetailTopBar(
                 title = title,
                 onBackClick = onBackClick,
             )
@@ -454,10 +455,7 @@ private fun SongSearchSection(
         Text(
             text = stringResource(R.string.song_search_label),
             style =
-                TextStyle(
-                    fontSize = 16.sp,
-                    lineHeight = 22.sp,
-                    fontFamily = nanumGothic,
+                AfternoteDesign.typography.textField.copy(
                     fontWeight = FontWeight.Medium,
                     color = AfternoteDesign.colors.gray9,
                 ),
@@ -470,11 +468,8 @@ private fun SongSearchSection(
                 Text(
                     text = "Text Field",
                     style =
-                        TextStyle(
-                            fontSize = 16.sp,
+                        AfternoteDesign.typography.bodyBase.copy(
                             lineHeight = 20.sp,
-                            fontFamily = nanumGothic,
-                            fontWeight = FontWeight.Normal,
                             color = AfternoteDesign.colors.gray4,
                         ),
                 )
@@ -501,9 +496,7 @@ private fun SongSearchSection(
                 ),
             singleLine = true,
             textStyle =
-                TextStyle(
-                    fontSize = 14.sp,
-                    fontFamily = nanumGothic,
+                AfternoteDesign.typography.bodySmallR.copy(
                     color = AfternoteDesign.colors.gray9,
                 ),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -544,15 +537,16 @@ private fun SongAddButton(
                 modifier =
                     Modifier
                         .size(16.dp)
-                        .background(color = AfternoteDesign.colors.gray9, shape = RoundedCornerShape(40.dp)),
+                        .background(
+                            color = AfternoteDesign.colors.gray9,
+                            shape = RoundedCornerShape(40.dp),
+                        ),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = "$count",
                     style =
-                        TextStyle(
-                            fontSize = 12.sp,
-                            fontFamily = nanumGothic,
+                        AfternoteDesign.typography.captionLargeR.copy(
                             fontWeight = FontWeight.Medium,
                             color = AfternoteDesign.colors.white,
                         ),
@@ -562,9 +556,7 @@ private fun SongAddButton(
             Text(
                 text = stringResource(R.string.add_button),
                 style =
-                    TextStyle(
-                        fontSize = 16.sp,
-                        fontFamily = nanumGothic,
+                    AfternoteDesign.typography.textField.copy(
                         fontWeight = FontWeight.Medium,
                         color = AfternoteDesign.colors.gray9,
                     ),

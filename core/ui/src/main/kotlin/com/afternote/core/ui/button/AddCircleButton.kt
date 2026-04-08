@@ -13,7 +13,7 @@ import com.afternote.core.ui.R
  * 원형 추가 버튼 컴포넌트
  *
  * 리스트 하단에 아이템을 추가하기 위한 버튼
- * - 파란 원형 아이콘 (24dp)
+ * - 다크 원형 아이콘 (24dp, gray9 배경 + 흰색 "+")
  * - 클릭 가능
  *
  * @param modifier Modifier (기본: Modifier)
@@ -27,7 +27,7 @@ fun AddCircleButton(
     modifier: Modifier = Modifier,
 ) {
     Image(
-        painter = painterResource(R.drawable.core_ui_add_circle),
+        painter = painterResource(R.drawable.core_ui_add_circle_dark),
         contentDescription = contentDescription,
         modifier =
             modifier

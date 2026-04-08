@@ -55,7 +55,8 @@ fun HomeTopBar(modifier: Modifier = Modifier) {
         },
         colors =
             TopAppBarDefaults.topAppBarColors(
-                containerColor = AfternoteDesign.colors.gray2,
+                containerColor = AfternoteDesign.colors.gray1,
+//                containerColor = Color.Red,
             ),
         modifier = modifier,
     )
