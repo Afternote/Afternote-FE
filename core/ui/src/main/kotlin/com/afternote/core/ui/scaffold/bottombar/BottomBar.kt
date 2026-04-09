@@ -23,8 +23,6 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
-// TODO:검토
-
 @Composable
 fun BottomBar(
     selectedNavTab: BottomNavTab,
@@ -34,7 +32,6 @@ fun BottomBar(
     NavigationBar(
         modifier = modifier,
         containerColor = AfternoteDesign.colors.white,
-//        tonalElevation = 0.dp,
     ) {
         BottomNavTab.entries.forEach { tab ->
             val selected = selectedNavTab == tab

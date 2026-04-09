@@ -10,19 +10,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.theme.Gray6
-import com.afternote.core.ui.theme.afternoteTypography
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.timeletter.domain.LetterIdentity
 import com.afternote.feature.timeletter.domain.LetterSchedule
 import com.afternote.feature.timeletter.domain.OpenDate
@@ -40,7 +37,7 @@ fun TimeLetterBlockItem(
             Modifier
                 .border(
                     width = 1.dp,
-                    color = Color(0xFFBDBDBD),
+                    color = AfternoteDesign.colors.gray4,
                     shape = RoundedCornerShape(size = 6.dp),
                 ).fillMaxWidth(),
     ) {
@@ -61,14 +58,14 @@ fun TimeLetterBlockItem(
             ) {
                 Text(
                     text = "수신인  ${schedule.recipientName}",
-                    style = typography.bodySmall,
-                    color = Gray6,
+                    style = AfternoteDesign.typography.bodySmallR,
+                    color = AfternoteDesign.colors.gray6,
                 )
-                Spacer(modifier = Modifier.weight(1f)) // 👈 이게 핵심
+                Spacer(modifier = Modifier.weight(1f))
                 Text(
                     text = "발송 예정일  ${schedule.openDate.value.replace("-", ".")}",
-                    style = typography.bodySmall,
-                    color = Gray6,
+                    style = AfternoteDesign.typography.bodySmallR,
+                    color = AfternoteDesign.colors.gray6,
                 )
                 Spacer(modifier = Modifier.width(43.dp))
                 Image(
@@ -80,16 +77,16 @@ fun TimeLetterBlockItem(
 
             Text(
                 text = identity.title,
-                style = afternoteTypography.bodyLarge,
+                style = AfternoteDesign.typography.bodyLargeB,
                 fontWeight = FontWeight.W600,
             )
             Spacer(modifier = Modifier.padding(top = 5.dp))
             Text(
                 text = identity.body,
-                style = typography.bodyMedium,
+                style = AfternoteDesign.typography.bodyLargeR,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                color = Gray6,
+                color = AfternoteDesign.colors.gray6,
             )
         }
     }

@@ -34,13 +34,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.CircleCheckBox
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
-import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.DetailCard
 import com.afternote.feature.afternote.presentation.shared.detail.DetailSectionHeader
@@ -120,12 +120,6 @@ fun GalleryDetailScreen(
                 },
             )
         },
-        bottomBar = {
-            AfternoteEmbeddedMainBottomBar(
-                selectedNavTab = uiState.selectedNavItem,
-                onTabClick = uiState::onNavItemSelected,
-            )
-        },
     ) { paddingValues ->
         GalleryDetailScrollContent(
             detailState = detailState,
@@ -196,11 +190,10 @@ private fun GalleryDetailScrollContent(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Icon(
-                    painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_check_circle),
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = AfternoteDesign.colors.gray7,
+                CircleCheckBox(
+                    checked = true,
+                    onCheckedChange = null,
+                    size = 16.dp,
                 )
                 Text(
                     text = stringResource(R.string.feature_afternote_detail_additional_receiver_badge),
@@ -272,11 +265,10 @@ private fun GalleryDetailScrollContent(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Icon(
-                                painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_check_circle),
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp),
-                                tint = AfternoteDesign.colors.gray9,
+                            CircleCheckBox(
+                                checked = true,
+                                onCheckedChange = null,
+                                size = 20.dp,
                             )
                             Text(
                                 text = method,

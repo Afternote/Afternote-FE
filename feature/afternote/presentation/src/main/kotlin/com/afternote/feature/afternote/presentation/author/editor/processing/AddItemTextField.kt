@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor.processing
+
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Box
@@ -9,9 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -25,7 +23,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.afternote.core.ui.expand.bottomBorder
+import com.afternote.core.ui.AfternoteTextField
+import com.afternote.core.ui.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
@@ -78,36 +77,23 @@ fun AddItemTextField(
                     .bottomBorder(color = AfternoteDesign.colors.gray2, width = 1.dp)
                     .padding(horizontal = 8.dp, vertical = 4.dp),
         ) {
-            OutlinedTextField(
+            AfternoteTextField(
                 state = textFieldState,
                 lineLimits = TextFieldLineLimits.SingleLine,
-                placeholder = {
-                    Text(
-                        text = placeholder,
-                        style =
-                            AfternoteDesign.typography.bodyBase.copy(
-                                lineHeight = 20.sp,
-                                color = AfternoteDesign.colors.gray4,
-                            ),
-                    )
-                },
-                colors =
-                    OutlinedTextFieldDefaults.colors(
-                        unfocusedBorderColor = Color.Transparent,
-                        focusedBorderColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedContainerColor = Color.Transparent,
-                    ),
-                interactionSource = interactionSource,
+                placeholder = placeholder,
+                minHeight = 24.dp,
                 contentPadding = PaddingValues(0.dp),
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(24.dp),
+                showOutline = false,
+                containerColor = Color.Transparent,
+                interactionSource = interactionSource,
                 textStyle =
                     AfternoteDesign.typography.bodyBase.copy(
                         lineHeight = 20.sp,
                         color = AfternoteDesign.colors.gray9,
+                    ),
+                placeholderTextStyle =
+                    AfternoteDesign.typography.bodyBase.copy(
+                        lineHeight = 20.sp,
                     ),
             )
         }

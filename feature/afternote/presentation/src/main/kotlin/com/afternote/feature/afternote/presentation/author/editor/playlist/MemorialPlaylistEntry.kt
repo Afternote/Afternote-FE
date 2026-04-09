@@ -19,7 +19,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -144,7 +143,7 @@ private fun MemorialPlaylistListHeader(
                     text = "총 ${songCount}곡",
                     style =
                         AfternoteDesign.typography.bodySmallR.copy(
-                            color = Color(color = 0xFF000000),
+                            color = AfternoteDesign.colors.gray9,
                         ),
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -208,9 +207,9 @@ private fun MemorialPlaylistActionBar(
                     elevation = 5.dp,
                     shape = actionBarShape,
                     clip = false,
-                    ambientColor = Color(0x26000000),
-                    spotColor = Color(0x26000000),
-                ).background(color = Color.White, shape = actionBarShape)
+                    ambientColor = AfternoteDesign.colors.black.copy(alpha = 38f / 255f),
+                    spotColor = AfternoteDesign.colors.black.copy(alpha = 38f / 255f),
+                ).background(color = AfternoteDesign.colors.white, shape = actionBarShape)
                 .clip(actionBarShape),
         horizontalArrangement = Arrangement.spacedBy(0.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -237,7 +236,7 @@ private fun MemorialPlaylistActionBar(
                 Modifier
                     .width(1.dp)
                     .height(20.dp)
-                    .background(Color(0xFFE0E0E0)),
+                    .background(AfternoteDesign.colors.gray3),
         )
         Column(
             modifier =

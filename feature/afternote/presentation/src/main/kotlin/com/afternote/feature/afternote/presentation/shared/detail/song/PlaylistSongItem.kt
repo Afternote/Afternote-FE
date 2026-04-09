@@ -14,13 +14,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -32,6 +31,7 @@ import coil3.compose.AsyncImagePainter
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
+import com.afternote.core.ui.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
@@ -41,7 +41,7 @@ private const val TAG = "PlaylistSongItem"
 /**
  * 추모 플레이리스트·노래 추가 등에서 공통으로 쓰는 노래 한 줄 아이템.
  *
- * UI: 앨범 48dp(DarkGray placeholder), 제목 Bold 14sp Gray9, 가수 12sp Gray6, 하단 Gray6 1dp 구분선.
+ * UI: 앨범 48dp(gray8 placeholder), 제목 Bold 14sp Gray9, 가수 12sp Gray6, 하단 Gray6 1dp 구분선.
  *
  * - [onClick]이 있으면 클릭 가능, [trailingContent]로 라디오 버튼 등 오른쪽 UI 삽입 (없으면 null)
  *
@@ -66,43 +66,47 @@ fun PlaylistSongItem(
         }
 
     Column(modifier = base) {
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(
+        Column(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                    .bottomBorder(color = AfternoteDesign.colors.gray3, width = 1.dp),
         ) {
-            AlbumCoverBox(albumImageUrl = song.albumImageUrl)
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = song.title,
-                    style =
-                        AfternoteDesign.typography.bodySmallB.copy(
-                            color = AfternoteDesign.colors.gray9,
-                        ),
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = song.artist,
-                    style =
-                        AfternoteDesign.typography.captionLargeR.copy(
-                            color = AfternoteDesign.colors.gray6,
-                        ),
-                )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                AlbumCoverBox(albumImageUrl = song.albumImageUrl)
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = song.title,
+                        style =
+                            AfternoteDesign.typography.bodySmallB.copy(
+                                color = AfternoteDesign.colors.gray9,
+                            ),
+                    )
+                    Text(
+                        text = song.artist,
+                        style =
+                            AfternoteDesign.typography.captionLargeR.copy(
+                                color = AfternoteDesign.colors.gray6,
+                            ),
+                    )
+                }
+                if (trailingContent != null) {
+                    trailingContent()
+                }
             }
-            if (trailingContent != null) {
-                trailingContent()
-            }
+            Spacer(modifier = Modifier.height(8.dp))
         }
-        Spacer(modifier = Modifier.height(8.dp))
-        HorizontalDivider(
-            thickness = 1.dp,
-            color = AfternoteDesign.colors.gray3,
-//            modifier = Modifier.padding(horizontal = 20.dp)
-        )
     }
 }
 
@@ -113,10 +117,11 @@ private fun AlbumCoverBox(albumImageUrl: String?) {
             .size(48.dp)
             .clip(RoundedCornerShape(4.dp))
     if (!albumImageUrl.isNullOrBlank()) {
-        AsyncImage(
-            model =
+        val context = LocalContext.current
+        val imageRequest =
+            remember(albumImageUrl) {
                 ImageRequest
-                    .Builder(LocalContext.current)
+                    .Builder(context)
                     .data(albumImageUrl)
                     .httpHeaders(
                         NetworkHeaders
@@ -124,7 +129,10 @@ private fun AlbumCoverBox(albumImageUrl: String?) {
                             .apply {
                                 this["User-Agent"] = "Afternote Android App"
                             }.build(),
-                    ).build(),
+                    ).build()
+            }
+        AsyncImage(
+            model = imageRequest,
             contentDescription = stringResource(R.string.content_description_album_cover),
             modifier = modifier,
             contentScale = ContentScale.Crop,
@@ -139,7 +147,7 @@ private fun AlbumCoverBox(albumImageUrl: String?) {
         )
     } else {
         Box(
-            modifier = modifier.background(Color.DarkGray),
+            modifier = modifier.background(AfternoteDesign.colors.gray8),
         )
     }
 }

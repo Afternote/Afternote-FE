@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -18,7 +17,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -47,7 +45,7 @@ internal fun HomeHeaderSection(
         Text(
             text = "애프터 노트 설명",
             style = AfternoteDesign.typography.captionLargeR,
-            color = Color(0x59000000),
+            color = AfternoteDesign.colors.black.copy(alpha = 89f / 255f),
         )
         Spacer(modifier = Modifier.height(16.dp))
         NextStepCard(
@@ -63,7 +61,10 @@ private fun NextStepCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -78,7 +79,6 @@ private fun NextStepCard(
                 color = AfternoteDesign.colors.gray3,
             )
         }
-        Spacer(modifier = Modifier.height(4.dp))
         Row(
             modifier =
                 Modifier
@@ -88,7 +88,7 @@ private fun NextStepCard(
                         color = AfternoteDesign.colors.gray2,
                         shape = RoundedCornerShape(8.dp),
                     ).clickable(onClick = onClick)
-                    .padding(16.dp),
+                    .padding(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 20.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -105,7 +105,6 @@ private fun NextStepCard(
                         .size(4.dp, 7.dp),
                 tint = AfternoteDesign.colors.gray6,
             )
-            Spacer(Modifier.width(4.dp))
         }
     }
 }

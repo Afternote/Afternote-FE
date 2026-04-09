@@ -19,7 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,13 +27,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -44,6 +44,7 @@ import coil3.compose.AsyncImagePainter
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
+import com.afternote.core.ui.button.AddCircleButton
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
@@ -79,15 +80,6 @@ fun FuneralVideoUpload(
     val addContentDescription = if (hasVideo) "영상 변경" else "영상 추가"
     val context = LocalContext.current
     var thumbnailBitmap by remember(videoUrl) { mutableStateOf<ImageBitmap?>(null) }
-
-    LaunchedEffect(videoUrl, thumbnailUrl, hasVideo, thumbnailBitmap) {
-        Log.d(
-            TAG,
-            "FuneralVideoUpload active: videoUrl=${videoUrl?.take(50) ?: "null"}, " +
-                "thumbnailUrl=${thumbnailUrl?.take(80) ?: "null"}, hasVideo=$hasVideo, " +
-                "hasBitmap=${thumbnailBitmap != null}",
-        )
-    }
 
     LaunchedEffect(videoUrl) {
         if (videoUrl.isNullOrBlank()) {
@@ -146,6 +138,7 @@ fun FuneralVideoUpload(
                         .fillMaxWidth()
                         .height(80.dp)
                         .background(color = AfternoteDesign.colors.white, shape = RoundedCornerShape(size = 16.dp))
+                        .semantics { contentDescription = addContentDescription }
                         .clickable(onClick = onAddVideoClick),
             ) {
                 Column(
@@ -156,10 +149,10 @@ fun FuneralVideoUpload(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Spacer(modifier = Modifier.height(24.dp))
-                    Image(
-                        painter = painterResource(R.drawable.feature_afternote_ic_add_circle),
+                    AddCircleButton(
                         contentDescription = addContentDescription,
-                        modifier = Modifier.size(24.dp),
+                        onClick = {},
+                        interactive = false,
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                 }
@@ -177,19 +170,16 @@ fun FuneralVideoUpload(
                                 Brush.verticalGradient(
                                     colors =
                                         listOf(
-                                            Color(0x99757575),
-                                            Color(0x99222222),
+                                            AfternoteDesign.colors.gray6.copy(alpha = 153f / 255f),
+                                            AfternoteDesign.colors.gray9.copy(alpha = 153f / 255f),
                                         ),
                                 ),
                         ).clickable(onClick = onAddVideoClick),
             ) {
                 when {
                     !thumbnailUrl.isNullOrBlank() -> {
-                        SideEffect {
-                            Log.d(TAG, "Branch=URL, thumbnailUrl=$thumbnailUrl")
-                        }
-                        AsyncImage(
-                            model =
+                        val imageRequest =
+                            remember(thumbnailUrl) {
                                 ImageRequest
                                     .Builder(context)
                                     .data(thumbnailUrl)
@@ -199,17 +189,14 @@ fun FuneralVideoUpload(
                                             .apply {
                                                 this["User-Agent"] = "Afternote Android App"
                                             }.build(),
-                                    ).build(),
+                                    ).build()
+                            }
+                        AsyncImage(
+                            model = imageRequest,
                             contentDescription = null,
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop,
                             error = painterResource(R.drawable.feature_afternote_img_placeholder_1),
-                            onLoading = {
-                                Log.d(TAG, "Coil loading started: url=$thumbnailUrl")
-                            },
-                            onSuccess = {
-                                Log.d(TAG, "Coil load success: url=$thumbnailUrl")
-                            },
                             onError = { state: AsyncImagePainter.State.Error ->
                                 Log.e(
                                     TAG,
@@ -221,25 +208,12 @@ fun FuneralVideoUpload(
                     }
 
                     thumbnailBitmap != null -> {
-                        SideEffect {
-                            Log.d(TAG, "Branch=LocalBitmap, videoUrl=$videoUrl")
-                        }
                         Image(
                             bitmap = thumbnailBitmap!!,
                             contentDescription = null,
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop,
                         )
-                    }
-
-                    else -> {
-                        SideEffect {
-                            Log.w(
-                                TAG,
-                                "Branch=NoThumbnail, videoUrl=$videoUrl, " +
-                                    "thumbnailUrl=$thumbnailUrl, thumbnailBitmap=null",
-                            )
-                        }
                     }
                 }
                 Image(

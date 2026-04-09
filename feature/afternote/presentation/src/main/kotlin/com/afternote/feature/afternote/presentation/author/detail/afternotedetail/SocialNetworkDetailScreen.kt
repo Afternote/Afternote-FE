@@ -18,7 +18,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -38,12 +37,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.CircleCheckBox
+import com.afternote.core.ui.bottomBorder
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.DetailCard
 import com.afternote.feature.afternote.presentation.shared.detail.DetailSectionHeader
@@ -99,12 +99,6 @@ fun SocialNetworkDetailScreen(
                         }
                     }
                 },
-            )
-        },
-        bottomBar = {
-            AfternoteEmbeddedMainBottomBar(
-                selectedNavTab = state.selectedNavItem,
-                onTabClick = state::onNavItemSelected,
             )
         },
     ) { paddingValues ->
@@ -179,11 +173,10 @@ private fun SocialNetworkDetailScrollContent(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Icon(
-                    painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_check_circle),
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = AfternoteDesign.colors.gray7,
+                CircleCheckBox(
+                    checked = true,
+                    onCheckedChange = null,
+                    size = 16.dp,
                 )
                 Text(
                     text = stringResource(content.badgeTextResId),
@@ -203,32 +196,38 @@ private fun SocialNetworkDetailScrollContent(
         Spacer(modifier = Modifier.height(8.dp))
         DetailCard {
             Column {
-                // 아이디
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .bottomBorder(color = AfternoteDesign.colors.gray2, width = 1.dp),
                 ) {
-                    Icon(
-                        painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_user),
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = AfternoteDesign.colors.gray5,
-                    )
-                    Column {
-                        Text(
-                            text = stringResource(R.string.feature_afternote_detail_label_id),
-                            style = AfternoteDesign.typography.footnoteCaption,
-                            color = AfternoteDesign.colors.gray5,
+                    // 아이디
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_user),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = AfternoteDesign.colors.gray5,
                         )
-                        Text(
-                            text = content.accountId,
-                            style = AfternoteDesign.typography.bodySmallB,
-                            color = AfternoteDesign.colors.gray9,
-                        )
+                        Column {
+                            Text(
+                                text = stringResource(R.string.feature_afternote_detail_label_id),
+                                style = AfternoteDesign.typography.footnoteCaption,
+                                color = AfternoteDesign.colors.gray5,
+                            )
+                            Text(
+                                text = content.accountId,
+                                style = AfternoteDesign.typography.bodySmallB,
+                                color = AfternoteDesign.colors.gray9,
+                            )
+                        }
                     }
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
-                Spacer(modifier = Modifier.height(12.dp))
-                HorizontalDivider(color = AfternoteDesign.colors.gray2)
                 Spacer(modifier = Modifier.height(12.dp))
                 // 비밀번호
                 Row(
@@ -298,11 +297,10 @@ private fun SocialNetworkDetailScrollContent(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Icon(
-                                painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_check_circle),
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp),
-                                tint = AfternoteDesign.colors.gray9,
+                            CircleCheckBox(
+                                checked = true,
+                                onCheckedChange = null,
+                                size = 20.dp,
                             )
                             Text(
                                 text = method,

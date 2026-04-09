@@ -23,7 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
-import com.afternote.core.ui.expand.addFocusCleaner
+import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.domain.model.ListItem
@@ -36,7 +36,6 @@ import com.afternote.feature.afternote.presentation.author.editor.model.remember
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.provider.FakeAfternoteEditorDataProvider
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
-import com.afternote.feature.afternote.presentation.shared.AfternoteEmbeddedMainBottomBar
 import com.afternote.feature.afternote.presentation.shared.DataProviderLocals
 
 private const val TAG = "AfternoteEditorScreen"
@@ -156,7 +155,10 @@ fun AfternoteEditorScreen(
                 onBackClick = callbacks.onBackClick,
                 actions = {
                     TextButton(
-                        onClick = { callbacks.onRegisterClick(state.createRegisterPayload()) },
+                        onClick = {
+                            focusManager.clearFocus()
+                            callbacks.onRegisterClick(state.createRegisterPayload())
+                        },
                     ) {
                         Text(
                             text = "등록",
@@ -164,15 +166,6 @@ fun AfternoteEditorScreen(
                             color = AfternoteDesign.colors.gray9,
                         )
                     }
-                },
-            )
-        },
-        bottomBar = {
-            AfternoteEmbeddedMainBottomBar(
-                selectedNavTab = state.selectedBottomNavItem,
-                onTabClick = { item ->
-                    state.onBottomNavItemSelected(item)
-                    callbacks.onBottomNavTabSelected(item)
                 },
             )
         },

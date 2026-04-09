@@ -2,7 +2,6 @@ package com.afternote.feature.timeletter.presentation.component
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,14 +20,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.theme.Gray6
-import com.afternote.core.ui.theme.afternoteTypography
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.timeletter.domain.LetterIdentity
 import com.afternote.feature.timeletter.domain.LetterSchedule
 import com.afternote.feature.timeletter.domain.OpenDate
 import com.afternote.feature.timeletter.domain.TimeLetter
 import com.afternote.feature.timeletter.domain.TimeLetters
-import com.afternote.feature.timeletter.res.R
 
 @Composable
 fun TimeLetterContent(
@@ -43,9 +40,13 @@ fun TimeLetterContent(
     }
 
     Column(modifier = modifier.padding(horizontal = 20.dp)) {
-        Text("타임레터", style = afternoteTypography.headlineLarge)
+        Text("타임레터", style = AfternoteDesign.typography.h1)
         Spacer(modifier = Modifier.padding(8.dp))
-        Text("소중한 사람들을 위한 마음을 남겨보세요", style = afternoteTypography.displayMedium, color = Gray6)
+        Text(
+            "소중한 사람들을 위한 마음을 남겨보세요",
+            style = AfternoteDesign.typography.captionLargeR,
+            color = AfternoteDesign.colors.gray6,
+        )
 
         Spacer(modifier = Modifier.padding(20.dp))
 
@@ -64,7 +65,7 @@ fun TimeLetterContent(
             ) {
                 Text(
                     "전체레터",
-                    style = afternoteTypography.displayMedium,
+                    style = AfternoteDesign.typography.captionLargeR,
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Image(

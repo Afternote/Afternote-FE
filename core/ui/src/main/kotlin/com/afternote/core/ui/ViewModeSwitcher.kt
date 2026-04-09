@@ -1,8 +1,10 @@
 package com.afternote.core.ui
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -25,14 +27,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.toggleShadow_1
 import com.afternote.core.ui.theme.toggleShadow_2
-import kotlin.math.roundToInt
 
 @Composable
 fun ViewModeSwitcher(
@@ -49,14 +48,12 @@ fun ViewModeSwitcher(
 
     val targetOffset =
         if (isListView) {
-            0f
+            0.dp
         } else {
-            with(LocalDensity.current) {
-                (containerWidth - indicatorSize - (indicatorPadding * 2)).toPx()
-            }
+            containerWidth - indicatorSize - (indicatorPadding * 2)
         }
 
-    val animatedOffset by animateFloatAsState(
+    val animatedOffset by animateDpAsState(
         targetValue = targetOffset,
         animationSpec = spring(stiffness = Spring.StiffnessLow),
         label = "IndicatorOffset",
@@ -73,7 +70,7 @@ fun ViewModeSwitcher(
         Box(
             modifier =
                 Modifier
-                    .offset { IntOffset(animatedOffset.roundToInt(), 0) }
+                    .offset(x = animatedOffset, y = 0.dp)
                     .size(indicatorSize)
                     .dropShadow(
                         shape = CircleShape,
@@ -87,10 +84,12 @@ fun ViewModeSwitcher(
         Row(modifier = Modifier.fillMaxSize()) {
             SwitcherIcon(
                 icon = painterResource(image1),
+                isSelected = isListView,
                 onClick = { onViewChange(true) },
             )
             SwitcherIcon(
                 icon = painterResource(image2),
+                isSelected = !isListView,
                 onClick = { onViewChange(false) },
             )
         }
@@ -100,8 +99,20 @@ fun ViewModeSwitcher(
 @Composable
 private fun RowScope.SwitcherIcon(
     icon: Painter,
+    isSelected: Boolean,
     onClick: () -> Unit,
 ) {
+    val iconTint by animateColorAsState(
+        targetValue =
+            if (isSelected) {
+                AfternoteDesign.colors.gray9
+            } else {
+                AfternoteDesign.colors.gray5
+            },
+        animationSpec = tween(150),
+        label = "SwitcherIconTint",
+    )
+
     Box(
         modifier =
             Modifier
@@ -118,7 +129,7 @@ private fun RowScope.SwitcherIcon(
             painter = icon,
             contentDescription = null,
             modifier = Modifier.size(18.dp),
-            tint = Color.Black.copy(alpha = 0.6f),
+            tint = iconTint,
         )
     }
 }

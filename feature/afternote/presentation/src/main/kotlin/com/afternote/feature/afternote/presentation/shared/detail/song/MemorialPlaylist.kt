@@ -14,13 +14,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -33,7 +36,8 @@ import coil3.compose.AsyncImagePainter
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
-import com.afternote.core.ui.expand.horizontalFadingEdge
+import com.afternote.core.ui.FadingEdgeDirection
+import com.afternote.core.ui.horizontalFadingEdge
 import com.afternote.core.ui.icon.ArrowIconSpec
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -67,7 +71,7 @@ private fun MemorialPlaylistSongCountRow(
                 text = "현재 ${songCount}개의 노래가 담겨 있습니다.",
                 style =
                     AfternoteDesign.typography.bodySmallR.copy(
-                        color = Color(0xFF000000),
+                        color = AfternoteDesign.colors.black,
                     ),
             )
             RightArrowIcon(color = AfternoteDesign.colors.gray9, size = 16.dp)
@@ -77,7 +81,7 @@ private fun MemorialPlaylistSongCountRow(
             text = "현재 ${songCount}개의 노래가 담겨 있습니다.",
             style =
                 AfternoteDesign.typography.bodySmallR.copy(
-                    color = Color(0xFF000000),
+                    color = AfternoteDesign.colors.black,
                 ),
         )
     }
@@ -196,11 +200,48 @@ private fun MemorialPlaylistAlbumRow(
     albumCovers: List<AlbumCover>,
     albumItemContent: (@Composable (album: AlbumCover, index: Int) -> Unit)?,
 ) {
+    val listState = rememberLazyListState()
+    val needsHorizontalFade by remember {
+        derivedStateOf {
+            listState.canScrollBackward || listState.canScrollForward
+        }
+    }
+    val fadingDirection by remember {
+        derivedStateOf {
+            when {
+                listState.canScrollBackward && listState.canScrollForward -> {
+                    FadingEdgeDirection.BOTH
+                }
+
+                listState.canScrollBackward -> {
+                    FadingEdgeDirection.LEFT
+                }
+
+                listState.canScrollForward -> {
+                    FadingEdgeDirection.RIGHT
+                }
+
+                else -> {
+                    FadingEdgeDirection.RIGHT
+                }
+            }
+        }
+    }
     LazyRow(
+        state = listState,
         modifier =
             Modifier
                 .fillMaxWidth()
-                .horizontalFadingEdge(edgeWidth = 45.dp),
+                .then(
+                    if (needsHorizontalFade) {
+                        Modifier.horizontalFadingEdge(
+                            edgeWidth = 45.dp,
+                            direction = fadingDirection,
+                        )
+                    } else {
+                        Modifier
+                    },
+                ),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         itemsIndexed(albumCovers) { index, album ->
@@ -220,10 +261,11 @@ private fun MemorialPlaylistAlbumCoverBox(album: AlbumCover) {
             .size(80.dp)
             .clip(RoundedCornerShape(8.dp))
     if (!album.imageUrl.isNullOrBlank()) {
-        AsyncImage(
-            model =
+        val context = LocalContext.current
+        val imageRequest =
+            remember(album.imageUrl) {
                 ImageRequest
-                    .Builder(LocalContext.current)
+                    .Builder(context)
                     .data(album.imageUrl)
                     .httpHeaders(
                         NetworkHeaders
@@ -231,7 +273,10 @@ private fun MemorialPlaylistAlbumCoverBox(album: AlbumCover) {
                             .apply {
                                 this["User-Agent"] = "Afternote Android App"
                             }.build(),
-                    ).build(),
+                    ).build()
+            }
+        AsyncImage(
+            model = imageRequest,
             contentDescription = stringResource(R.string.content_description_album_cover),
             modifier = modifier,
             contentScale = ContentScale.Crop,
@@ -248,7 +293,7 @@ private fun MemorialPlaylistAlbumCoverBox(album: AlbumCover) {
         Box(
             modifier =
                 modifier.background(
-                    color = Color.LightGray,
+                    color = AfternoteDesign.colors.gray3,
                     shape = RoundedCornerShape(8.dp),
                 ),
         )
