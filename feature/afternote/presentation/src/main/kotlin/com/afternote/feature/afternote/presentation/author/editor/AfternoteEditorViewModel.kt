@@ -71,6 +71,12 @@ class AfternoteEditorViewModel
         private val uploadMemorialVideoUseCase: UploadMemorialVideoUseCase,
         private val uploadMemorialPhotoUseCase: UploadMemorialPhotoUseCase,
     ) : ViewModel() {
+        /** 에러 바디에 알 수 없는 키가 있어도 파싱 실패로 크래시 나지 않도록. */
+        private val apiErrorBodyJson =
+            Json {
+                ignoreUnknownKeys = true
+            }
+
         private val _saveState = MutableStateFlow(AfternoteSaveState())
         val saveState: StateFlow<AfternoteSaveState> = _saveState.asStateFlow()
 
@@ -106,7 +112,7 @@ class AfternoteEditorViewModel
                 is AfternoteEditorUiEvent.Save -> {
                     saveAfternote(
                         editingId = event.editingId,
-                        category = event.category,
+                        category = event.editorCategory,
                         payload = event.payload,
                         selectedReceiverIds = event.selectedReceiverIds,
                         playlistStateHolder = event.playlistStateHolder,
@@ -157,7 +163,7 @@ class AfternoteEditorViewModel
          */
         private fun saveAfternote(
             editingId: Long?,
-            category: String,
+            category: EditorCategory,
             payload: RegisterAfternotePayload,
             selectedReceiverIds: List<Long>,
             playlistStateHolder: MemorialPlaylistStateHolder?,
@@ -168,10 +174,9 @@ class AfternoteEditorViewModel
                 return
             }
 
-            val editorCategory = EditorCategory.fromDisplayLabel(category)
             val validationError =
                 AfternoteEditorValidator.validate(
-                    category = editorCategory,
+                    category = category,
                     payload = payload,
                     selectedReceiverIds = selectedReceiverIds,
                     playlistStateHolder = playlistStateHolder,
@@ -183,7 +188,7 @@ class AfternoteEditorViewModel
             }
 
             val categoryForApi =
-                if (editingId != null) (loadedCategoryForEdit ?: editorCategory) else editorCategory
+                if (editingId != null) (loadedCategoryForEdit ?: category) else category
 
             Log.d(
                 TAG,
@@ -195,24 +200,31 @@ class AfternoteEditorViewModel
                 _saveState.update {
                     it.copy(isSaving = true, error = null, validationError = null)
                 }
-                val resolvedVideoUrl = resolveVideoUrlForSave(memorialMedia.funeralVideoUrl)
-                if (resolvedVideoUrl == null &&
-                    memorialMedia.funeralVideoUrl != null &&
-                    memorialMedia.funeralVideoUrl.startsWith(CONTENT_SCHEME)
-                ) {
-                    return@launch
-                }
+                val resolvedVideoUrl =
+                    resolveVideoUrlForSave(memorialMedia.funeralVideoUrl).getOrElse { e ->
+                        Log.e(TAG, "saveAfternote: video upload failed", e)
+                        _saveState.update {
+                            it.copy(
+                                isSaving = false,
+                                error = e.message ?: "영상 업로드에 실패했습니다.",
+                            )
+                        }
+                        return@launch
+                    }
                 val resolvedMemorialPhotoUrl =
                     resolveMemorialPhotoUrlForSave(
                         memorialPhotoUrl = memorialMedia.memorialPhotoUrl,
                         pickedMemorialPhotoUri = memorialMedia.pickedMemorialPhotoUri,
-                    )
-                if (resolvedMemorialPhotoUrl == null &&
-                    memorialMedia.pickedMemorialPhotoUri != null &&
-                    memorialMedia.pickedMemorialPhotoUri.startsWith(CONTENT_SCHEME)
-                ) {
-                    return@launch
-                }
+                    ).getOrElse { e ->
+                        Log.e(TAG, "saveAfternote: memorial photo upload failed", e)
+                        _saveState.update {
+                            it.copy(
+                                isSaving = false,
+                                error = e.message ?: "영정 사진 업로드에 실패했습니다.",
+                            )
+                        }
+                        return@launch
+                    }
                 val videoUrlForUpdate = videoUrlForUpdateRequest(editingId != null, resolvedVideoUrl)
                 val thumbnailForUpdate =
                     if (videoUrlForUpdate == null) null else memorialMedia.funeralThumbnailUrl
@@ -268,7 +280,8 @@ class AfternoteEditorViewModel
                     .onSuccess { detail ->
                         populatePlaylistFromDetail(detail, playlistStateHolder)
                         val params = AfternoteEditorMapper.buildLoadFromExistingParams(detail)
-                        loadedCategoryForEdit = EditorCategory.fromDisplayLabel(params.categoryDisplayString)
+                        loadedCategoryForEdit =
+                            EditorCategory.fromDisplayLabel(params.categoryDisplayString)
                         state.loadFromExisting(params)
                     }
             }
@@ -319,42 +332,28 @@ class AfternoteEditorViewModel
             }
         }
 
-        private suspend fun resolveVideoUrlForSave(funeralVideoUrl: String?): String? {
-            when {
-                funeralVideoUrl.isNullOrBlank() -> return null
-                !funeralVideoUrl.startsWith(CONTENT_SCHEME) -> return funeralVideoUrl
-            }
+        private suspend fun resolveVideoUrlForSave(funeralVideoUrl: String?): Result<String?> {
+            if (funeralVideoUrl.isNullOrBlank()) return Result.success(null)
+            if (!funeralVideoUrl.startsWith(CONTENT_SCHEME)) return Result.success(funeralVideoUrl)
             return uploadMemorialVideoUseCase(funeralVideoUrl).fold(
-                onSuccess = { it },
-                onFailure = { e ->
-                    Log.e(TAG, "saveAfternote: video upload failed", e)
-                    _saveState.update {
-                        it.copy(isSaving = false, error = e.message ?: "영상 업로드에 실패했습니다.")
-                    }
-                    null
-                },
+                onSuccess = { Result.success(it) },
+                onFailure = { Result.failure(it) },
             )
         }
 
         private suspend fun resolveMemorialPhotoUrlForSave(
             memorialPhotoUrl: String?,
             pickedMemorialPhotoUri: String?,
-        ): String? {
+        ): Result<String?> {
             if (!pickedMemorialPhotoUri.isNullOrBlank() &&
                 pickedMemorialPhotoUri.startsWith(CONTENT_SCHEME)
             ) {
                 return uploadMemorialPhotoUseCase(pickedMemorialPhotoUri).fold(
-                    onSuccess = { it },
-                    onFailure = { e ->
-                        Log.e(TAG, "saveAfternote: memorial photo upload failed", e)
-                        _saveState.update {
-                            it.copy(isSaving = false, error = e.message ?: "영정 사진 업로드에 실패했습니다.")
-                        }
-                        null
-                    },
+                    onSuccess = { Result.success(it) },
+                    onFailure = { Result.failure(it) },
                 )
             }
-            return memorialPhotoUrl?.takeIf { it.isNotBlank() }
+            return Result.success(memorialPhotoUrl?.takeIf { it.isNotBlank() })
         }
 
         private fun videoUrlForUpdateRequest(
@@ -375,9 +374,9 @@ class AfternoteEditorViewModel
         ) {
             Log.e(TAG, "saveAfternote: FAILURE, category=${category.serverValue}", e)
             val validationError =
-                when (e) {
-                    is AfternoteValidationException -> e.validationError
-                    is HttpException if e.code() == 400 -> parseReceiversRequiredFromBody(e)
+                when {
+                    e is AfternoteValidationException -> e.validationError
+                    e is HttpException && e.code() == 400 -> parseReceiversRequiredFromBody(e)
                     else -> null
                 }
             val errorMessage =
@@ -403,7 +402,7 @@ class AfternoteEditorViewModel
         private fun parseReceiversRequiredFromBody(e: HttpException): AfternoteValidationError? {
             val body = e.response()?.errorBody()?.string() ?: return null
             return runCatching {
-                val parsed = Json.decodeFromString<ApiErrorBody>(body)
+                val parsed = apiErrorBodyJson.decodeFromString<ApiErrorBody>(body)
                 if (parsed.code == 475) AfternoteValidationError.RECEIVERS_REQUIRED else null
             }.getOrNull()
         }
@@ -432,7 +431,7 @@ sealed interface AfternoteEditorUiEvent {
 
     data class Save(
         val editingId: Long?,
-        val category: String,
+        val editorCategory: EditorCategory,
         val payload: RegisterAfternotePayload,
         val selectedReceiverIds: List<Long>,
         val playlistStateHolder: MemorialPlaylistStateHolder?,
