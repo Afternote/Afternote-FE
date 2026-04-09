@@ -22,7 +22,6 @@ import com.afternote.feature.afternote.presentation.author.editor.AfternoteEdito
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
-import com.afternote.feature.afternote.presentation.author.editor.provider.AfternoteEditorDataProvider
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteSaveState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
@@ -30,19 +29,13 @@ import com.afternote.feature.afternote.presentation.author.editor.state.Memorial
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.author.navigation.model.SELECTED_RECEIVER_ID_KEY
-import com.afternote.feature.afternote.presentation.shared.DataProviderLocals
 
 /**
  * 에디터에서 사용할 아이템 목록을 결정.
- * 홈에서 공유된 visibleItems가 비어 있으면 provider의 기본 아이템으로 폴백.
+ * 홈에서 공유된 visibleItems가 비어 있으면 빈 리스트를 반환합니다.
+ * (향후 API 기본 아이템은 ViewModel에서 직접 로딩)
  */
-internal fun resolveListItems(
-    afternoteVisibleItems: List<ListItem>,
-    afternoteProvider: AfternoteEditorDataProvider,
-): List<ListItem> =
-    afternoteVisibleItems.ifEmpty {
-        afternoteProvider.getDefaultAfternoteListItems()
-    }
+internal fun resolveListItems(afternoteVisibleItems: List<ListItem>): List<ListItem> = afternoteVisibleItems
 
 internal sealed class EditSaveErrorResult {
     data class Validation(
@@ -163,10 +156,9 @@ internal fun AfternoteEditorNavigation(
     editViewModel: AfternoteEditorViewModel = hiltViewModel(),
 ) {
     val route = params.backStackEntry.toRoute<AfternoteRoute.EditorRoute>()
-    val afternoteProvider = DataProviderLocals.LocalAfternoteEditorDataProvider.current
     val visibleItems =
-        remember(params.afternoteVisibleItems, afternoteProvider) {
-            resolveListItems(params.afternoteVisibleItems, afternoteProvider)
+        remember(params.afternoteVisibleItems) {
+            resolveListItems(params.afternoteVisibleItems)
         }
     val initialItem =
         remember(route.itemId, visibleItems) {

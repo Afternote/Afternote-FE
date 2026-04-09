@@ -2,7 +2,6 @@ package com.afternote.feature.afternote.presentation
 
 import androidx.lifecycle.ViewModel
 import com.afternote.feature.afternote.domain.model.ListItem
-import com.afternote.feature.afternote.presentation.author.editor.provider.AfternoteEditorDataProvider
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.MemorialPlaylistStateHolder
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,9 +16,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AfternoteHostViewModel
     @Inject
-    constructor(
-        val afternoteEditorDataProvider: AfternoteEditorDataProvider,
-    ) : ViewModel() {
+    constructor() : ViewModel() {
         private val _items = MutableStateFlow<List<ListItem>>(emptyList())
         val items: StateFlow<List<ListItem>> = _items.asStateFlow()
 

@@ -14,7 +14,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -30,7 +29,6 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.domain.model.ListItem
 import com.afternote.feature.afternote.presentation.author.editor.mapper.editScreenLabelRes
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
-import com.afternote.feature.afternote.presentation.author.editor.provider.FakeAfternoteEditorDataProvider
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.LoadFromExistingAccountParams
 import com.afternote.feature.afternote.presentation.author.editor.state.LoadFromExistingParams
@@ -38,7 +36,6 @@ import com.afternote.feature.afternote.presentation.author.editor.state.LoadFrom
 import com.afternote.feature.afternote.presentation.author.editor.state.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
-import com.afternote.feature.afternote.presentation.shared.DataProviderLocals
 
 private const val TAG = "AfternoteEditorScreen"
 
@@ -211,13 +208,9 @@ fun AfternoteEditorScreen(
 @Composable
 private fun AfternoteEditorScreenPreview() {
     AfternoteLightTheme {
-        CompositionLocalProvider(
-            DataProviderLocals.LocalAfternoteEditorDataProvider provides FakeAfternoteEditorDataProvider(),
-        ) {
-            AfternoteEditorScreen(
-                callbacks = AfternoteEditorScreenCallbacks(onBackClick = {}),
-            )
-        }
+        AfternoteEditorScreen(
+            callbacks = AfternoteEditorScreenCallbacks(onBackClick = {}),
+        )
     }
 }
 
@@ -229,18 +222,14 @@ private fun AfternoteEditorScreenPreview() {
 @Composable
 private fun AfternoteEditorScreenGalleryAndFilePreview() {
     AfternoteLightTheme {
-        CompositionLocalProvider(
-            DataProviderLocals.LocalAfternoteEditorDataProvider provides FakeAfternoteEditorDataProvider(),
-        ) {
-            val state =
-                rememberAfternoteEditorState().apply {
-                    onCategorySelected(CATEGORY_GALLERY_AND_FILE)
-                }
-            AfternoteEditorScreen(
-                callbacks = AfternoteEditorScreenCallbacks(onBackClick = {}),
-                state = state,
-            )
-        }
+        val state =
+            rememberAfternoteEditorState().apply {
+                onCategorySelected(CATEGORY_GALLERY_AND_FILE)
+            }
+        AfternoteEditorScreen(
+            callbacks = AfternoteEditorScreenCallbacks(onBackClick = {}),
+            state = state,
+        )
     }
 }
 
@@ -252,17 +241,13 @@ private fun AfternoteEditorScreenGalleryAndFilePreview() {
 @Composable
 private fun AfternoteEditorScreenMemorialGuidelinePreview() {
     AfternoteLightTheme {
-        CompositionLocalProvider(
-            DataProviderLocals.LocalAfternoteEditorDataProvider provides FakeAfternoteEditorDataProvider(),
-        ) {
-            val state =
-                rememberAfternoteEditorState().apply {
-                    onCategorySelected(CATEGORY_MEMORIAL_GUIDELINE)
-                }
-            AfternoteEditorScreen(
-                callbacks = AfternoteEditorScreenCallbacks(onBackClick = {}),
-                state = state,
-            )
-        }
+        val state =
+            rememberAfternoteEditorState().apply {
+                onCategorySelected(CATEGORY_MEMORIAL_GUIDELINE)
+            }
+        AfternoteEditorScreen(
+            callbacks = AfternoteEditorScreenCallbacks(onBackClick = {}),
+            state = state,
+        )
     }
 }
