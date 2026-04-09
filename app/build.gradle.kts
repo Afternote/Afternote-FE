@@ -48,7 +48,7 @@ dependencies {
 
     implementation(projects.core.ui)
     implementation(projects.core.di)
-    implementation(projects.core.datastore)
+    implementation(projects.core.domain)
     implementation(projects.feature.afternote.presentation)
     implementation(projects.feature.afternote.data)
     implementation(projects.feature.mindrecord.presentation)

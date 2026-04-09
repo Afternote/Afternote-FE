@@ -2,7 +2,7 @@ package com.afternote.afternote_fe
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.datastore.TokenManager
+import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.ui.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,7 +15,7 @@ import javax.inject.Inject
 class MainViewModel
     @Inject
     constructor(
-        private val tokenManager: TokenManager,
+        private val authRepository: AuthRepository,
     ) : ViewModel() {
         private val _isLoading = MutableStateFlow(true)
         val isLoading = _isLoading.asStateFlow()
@@ -25,7 +25,7 @@ class MainViewModel
 
         init {
             viewModelScope.launch {
-                val isLoggedIn = tokenManager.isLoggedInFlow.first()
+                val isLoggedIn = authRepository.isLoggedIn.first()
                 _startRoute.value = if (isLoggedIn) Route.Home else Route.Onboarding
                 _isLoading.value = false
             }

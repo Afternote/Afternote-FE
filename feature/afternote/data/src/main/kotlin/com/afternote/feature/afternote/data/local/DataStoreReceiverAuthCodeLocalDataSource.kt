@@ -3,10 +3,13 @@ package com.afternote.feature.afternote.data.local
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.afternote.feature.afternote.data.di.ReceiverAuthCodeDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -26,9 +29,16 @@ class DataStoreReceiverAuthCodeLocalDataSource
         @ReceiverAuthCodeDataStore private val dataStore: DataStore<Preferences>,
     ) : ReceiverAuthCodeLocalDataSource {
         override val savedCodeFlow: Flow<String?> =
-            dataStore.data.map { preferences ->
-                preferences[ReceiverAuthCodeKeys.AUTH_CODE]?.takeIf { it.isNotBlank() }
-            }
+            dataStore.data
+                .catch { exception ->
+                    if (exception is IOException) {
+                        emit(emptyPreferences())
+                    } else {
+                        throw exception
+                    }
+                }.map { preferences ->
+                    preferences[ReceiverAuthCodeKeys.AUTH_CODE]?.takeIf { it.isNotBlank() }
+                }
 
         override suspend fun saveCode(code: String) {
             val trimmed = code.trim()
