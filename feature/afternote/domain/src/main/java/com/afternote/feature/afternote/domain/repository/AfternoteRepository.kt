@@ -2,11 +2,10 @@ package com.afternote.feature.afternote.domain.repository
 
 import com.afternote.feature.afternote.domain.model.Detail
 import com.afternote.feature.afternote.domain.model.ListPage
-import com.afternote.feature.afternote.domain.model.input.CreateGalleryInput
-import com.afternote.feature.afternote.domain.model.input.CreatePlaylistInput
-import com.afternote.feature.afternote.domain.model.input.CreateSocialInput
-import com.afternote.feature.afternote.domain.model.input.GetListPageInput
-import com.afternote.feature.afternote.domain.model.input.UpdateInput
+import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
+import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
+import com.afternote.feature.afternote.domain.model.author.CreatePlaylistPayload
+import com.afternote.feature.afternote.domain.model.author.CreateSocialPayload
 
 /**
  * Afternote 도메인 Repository 인터페이스.
@@ -19,19 +18,23 @@ import com.afternote.feature.afternote.domain.model.input.UpdateInput
  * - DELETE /afternotes/{afternoteId} (삭제)
  */
 interface AfternoteRepository {
-    suspend fun getListPage(input: GetListPageInput): Result<ListPage>
+    suspend fun getListPage(
+        category: String?,
+        pageNumber: Int,
+        size: Int,
+    ): Result<ListPage>
 
-    suspend fun createSocial(input: CreateSocialInput): Result<Long>
+    suspend fun createSocial(payload: CreateSocialPayload): Result<Long>
 
-    suspend fun createGallery(input: CreateGalleryInput): Result<Long>
+    suspend fun createGallery(payload: CreateGalleryPayload): Result<Long>
 
     suspend fun getDetail(id: Long): Result<Detail>
 
-    suspend fun createPlaylist(input: CreatePlaylistInput): Result<Long>
+    suspend fun createPlaylist(payload: CreatePlaylistPayload): Result<Long>
 
     suspend fun update(
         id: Long,
-        input: UpdateInput,
+        payload: AfternoteUpdatePayload,
     ): Result<Long>
 
     suspend fun delete(id: Long): Result<Unit>
