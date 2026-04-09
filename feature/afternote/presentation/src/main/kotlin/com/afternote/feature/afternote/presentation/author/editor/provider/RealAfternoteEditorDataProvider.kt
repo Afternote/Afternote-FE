@@ -1,4 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.editor.provider
+
+import com.afternote.feature.afternote.domain.model.ListItem
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.playlist.Song
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
@@ -15,7 +17,7 @@ class RealAfternoteEditorDataProvider
 
         override fun getAfternoteEditorReceivers(): List<AfternoteEditorReceiver> = emptyList()
 
-        override fun getDefaultAfternoteItems(): List<Pair<String, String>> = emptyList()
+        override fun getDefaultAfternoteListItems(): List<ListItem> = emptyList()
 
         override fun getAlbumCovers(): List<AlbumCover> = emptyList()
 
