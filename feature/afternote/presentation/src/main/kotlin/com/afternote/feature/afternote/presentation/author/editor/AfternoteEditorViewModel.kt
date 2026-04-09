@@ -206,16 +206,16 @@ class AfternoteEditorViewModel
             MutableStateFlow(readFormSnapshotOrDefault())
 
         /** 비즈니스 폼 상태 (UDF 소스). */
-        val editorFormStateFlow: StateFlow<EditorFormState> = _editorForm.asStateFlow()
+        val editorFormStateFlow: StateFlow<EditorFormState> = editorForm.asStateFlow()
 
         val editorFormState: AfternoteEditorState =
             AfternoteEditorState(
                 ui = editorUi,
                 updateForm = { block ->
-                    _editorForm.update(block)
-                    persistFormSnapshot(_editorForm.value)
+                    editorForm.update(block)
+                    persistFormSnapshot(editorForm.value)
                 },
-                formStateSource = _editorForm.asStateFlow(),
+                formStateSource = editorForm.asStateFlow(),
             )
 
         private val apiErrorBodyJson =
