@@ -35,24 +35,26 @@ class ReceiverMemorialPlaylistViewModel
 
         init {
             val afternoteId = (savedStateHandle["afternoteId"] as? String)?.toLongOrNull()
-            val authCode = receiverRepository.currentAuthCode()
+            viewModelScope.launch {
+                val authCode = receiverRepository.currentAuthCode()
 
-            when {
-                authCode == null || authCode.isBlank() -> {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = "인증 정보가 없습니다.",
-                        )
+                when {
+                    authCode == null || authCode.isBlank() -> {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                errorMessage = "인증 정보가 없습니다.",
+                            )
+                        }
                     }
-                }
 
-                afternoteId != null -> {
-                    loadPlaylist(authCode = authCode, afternoteId = afternoteId)
-                }
+                    afternoteId != null -> {
+                        loadPlaylist(authCode = authCode, afternoteId = afternoteId)
+                    }
 
-                else -> {
-                    resolveFirstAfternoteAndLoad(authCode = authCode)
+                    else -> {
+                        resolveFirstAfternoteAndLoad(authCode = authCode)
+                    }
                 }
             }
         }

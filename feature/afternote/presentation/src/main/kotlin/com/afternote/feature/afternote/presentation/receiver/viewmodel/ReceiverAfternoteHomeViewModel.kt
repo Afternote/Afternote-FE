@@ -69,8 +69,8 @@ class ReceiverAfternoteHomeViewModel
         }
 
         private fun loadAfternotes() {
-            val authCode = receiverRepository.currentAuthCode() ?: return
             viewModelScope.launch {
+                val authCode = receiverRepository.currentAuthCode() ?: return@launch
                 receiverRepository
                     .getAfterNotesByAuthCode(authCode)
                     .onSuccess { result ->

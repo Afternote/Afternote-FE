@@ -6,6 +6,8 @@ import com.afternote.feature.afternote.domain.model.receiver.LoadCountResult
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedExportBundle
 import com.afternote.feature.afternote.domain.repository.ReceiverRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -19,13 +21,15 @@ class ReceiverRepositoryImpl
     constructor(
         private val localDataSource: ReceiverAuthCodeLocalDataSource,
     ) : ReceiverRepository {
-        override fun currentAuthCode(): String? = localDataSource.getSavedCode()
+        override val authCodeFlow: Flow<String?> = localDataSource.savedCodeFlow
 
-        override fun saveAuthCode(code: String) {
+        override suspend fun currentAuthCode(): String? = authCodeFlow.first()
+
+        override suspend fun saveAuthCode(code: String) {
             localDataSource.saveCode(code)
         }
 
-        override fun clearAuthCode() {
+        override suspend fun clearAuthCode() {
             localDataSource.clearCode()
         }
 

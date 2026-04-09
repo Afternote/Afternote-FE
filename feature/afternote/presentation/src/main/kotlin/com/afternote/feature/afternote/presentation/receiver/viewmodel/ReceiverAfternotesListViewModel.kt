@@ -29,7 +29,9 @@ class ReceiverAfternotesListViewModel
         val uiState: StateFlow<ReceiverAfternotesListUiState> = _uiState.asStateFlow()
 
         init {
-            receiverRepository.currentAuthCode()?.let { authCode -> loadAfterNotes(authCode) }
+            viewModelScope.launch {
+                receiverRepository.currentAuthCode()?.let { authCode -> loadAfterNotes(authCode) }
+            }
         }
 
         // region Event
@@ -88,7 +90,9 @@ class ReceiverAfternotesListViewModel
 
         private fun retry() {
             clearError()
-            receiverRepository.currentAuthCode()?.let { loadAfterNotes(it) }
+            viewModelScope.launch {
+                receiverRepository.currentAuthCode()?.let { loadAfterNotes(it) }
+            }
         }
 
         // endregion

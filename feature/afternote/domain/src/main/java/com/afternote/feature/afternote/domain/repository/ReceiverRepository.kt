@@ -4,18 +4,23 @@ import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResul
 import com.afternote.feature.afternote.domain.model.receiver.LoadCountResult
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedExportBundle
+import kotlinx.coroutines.flow.Flow
 
 /**
  * 수신자(auth code) 플로우의 데이터 접근. ViewModel은 이 인터페이스만 의존합니다.
  */
 interface ReceiverRepository {
-    fun currentAuthCode(): String?
+    /** 저장된 인증 코드 스트림(없거나 공백만 있으면 null 방출). */
+    val authCodeFlow: Flow<String?>
 
-    /** Persists the code the user entered (e.g. after successful verification). */
-    fun saveAuthCode(code: String)
+    /** 단발 조회; UI 스레드에서는 코루틴 안에서 호출하세요. */
+    suspend fun currentAuthCode(): String?
 
-    /** Clears persisted code (logout, account switch, user reset). */
-    fun clearAuthCode()
+    /** 사용자가 입력·검증한 코드를 저장합니다. */
+    suspend fun saveAuthCode(code: String)
+
+    /** 로그아웃·계정 전환·초기화 시 저장 코드를 제거합니다. */
+    suspend fun clearAuthCode()
 
     suspend fun getAfterNotesByAuthCode(authCode: String): Result<AfterNotesListResult>
 
