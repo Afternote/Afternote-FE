@@ -22,12 +22,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.domain.model.ListItem
-import com.afternote.feature.afternote.presentation.author.editor.mapper.AfternoteItemMapper
+import com.afternote.feature.afternote.presentation.author.editor.mapper.editScreenLabelRes
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.provider.FakeAfternoteEditorDataProvider
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
@@ -64,6 +65,8 @@ fun AfternoteEditorScreen(
 ) {
     val focusManager = LocalFocusManager.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val editScreenCategoryDisplayString =
+        initialListItem?.let { stringResource(it.type.editScreenLabelRes) }
 
     LaunchedEffect(saveError) {
         saveError?.let { err ->
@@ -74,7 +77,7 @@ fun AfternoteEditorScreen(
         }
     }
 
-    LaunchedEffect(initialListItem?.id) {
+    LaunchedEffect(initialListItem?.id, editScreenCategoryDisplayString) {
         val item =
             initialListItem ?: run {
                 Log.d(TAG, "LaunchedEffect: initialListItem is null, skipping loadFromExisting")
@@ -90,7 +93,7 @@ fun AfternoteEditorScreen(
                 LoadFromExistingParams(
                     itemId = item.id,
                     serviceName = item.serviceName,
-                    categoryDisplayString = AfternoteItemMapper.categoryStringForEditScreen(item.type),
+                    categoryDisplayString = editScreenCategoryDisplayString!!,
                     account =
                         LoadFromExistingAccountParams(
                             id = item.account.id,

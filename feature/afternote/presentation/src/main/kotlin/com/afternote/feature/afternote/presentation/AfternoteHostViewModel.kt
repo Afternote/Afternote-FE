@@ -2,9 +2,9 @@ package com.afternote.feature.afternote.presentation
 
 import androidx.lifecycle.ViewModel
 import com.afternote.feature.afternote.domain.model.ListItem
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorState
-import com.afternote.feature.afternote.presentation.author.editor.model.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.provider.AfternoteEditorDataProvider
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
+import com.afternote.feature.afternote.presentation.author.editor.state.MemorialPlaylistStateHolder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
