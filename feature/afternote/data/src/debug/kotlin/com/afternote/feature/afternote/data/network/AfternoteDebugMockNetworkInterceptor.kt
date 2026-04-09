@@ -33,21 +33,53 @@ class AfternoteDebugMockNetworkInterceptor
 
             val json =
                 when {
-                    path == "/auth/social/login" && method == "POST" -> MOCK_SOCIAL_LOGIN_JSON
-                    path == "/auth/login" && method == "POST" -> MOCK_LOGIN_JSON
-                    path == "/auth/logout" && method == "POST" -> MOCK_LOGOUT_JSON
+                    path == "/auth/social/login" && method == "POST" -> {
+                        MOCK_SOCIAL_LOGIN_JSON
+                    }
 
-                    path == "/music/search" && method == "GET" -> MOCK_MUSIC_SEARCH_JSON
-                    path == "/api/afternotes" && method == "GET" -> MOCK_LIST_JSON
-                    path == "/api/afternotes" && method == "POST" -> MOCK_CREATE_JSON
-                    path.matches(AFTERNOTE_ID_PATH_REGEX) ->
+                    path == "/auth/login" && method == "POST" -> {
+                        MOCK_LOGIN_JSON
+                    }
+
+                    path == "/auth/logout" && method == "POST" -> {
+                        MOCK_LOGOUT_JSON
+                    }
+
+                    path == "/music/search" && method == "GET" -> {
+                        MOCK_MUSIC_SEARCH_JSON
+                    }
+
+                    path == "/api/afternotes" && method == "GET" -> {
+                        MOCK_LIST_JSON
+                    }
+
+                    path == "/api/afternotes" && method == "POST" -> {
+                        MOCK_CREATE_JSON
+                    }
+
+                    path.matches(AFTERNOTE_ID_PATH_REGEX) -> {
                         when (method) {
-                            "GET" -> mockDetailJson(path)
-                            "PATCH" -> MOCK_PATCH_JSON
-                            "DELETE" -> MOCK_DELETE_JSON
-                            else -> return chain.proceed(request)
+                            "GET" -> {
+                                mockDetailJson(path)
+                            }
+
+                            "PATCH" -> {
+                                MOCK_PATCH_JSON
+                            }
+
+                            "DELETE" -> {
+                                MOCK_DELETE_JSON
+                            }
+
+                            else -> {
+                                return chain.proceed(request)
+                            }
                         }
-                    else -> return chain.proceed(request)
+                    }
+
+                    else -> {
+                        return chain.proceed(request)
+                    }
                 }
 
             Log.w(TAG, "⚠️ MOCK 응답 반환: $method $path")
