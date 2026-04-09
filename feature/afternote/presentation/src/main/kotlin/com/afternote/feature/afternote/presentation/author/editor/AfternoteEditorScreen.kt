@@ -27,14 +27,15 @@ import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.domain.model.ListItem
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorState
-import com.afternote.feature.afternote.presentation.author.editor.model.LoadFromExistingAccountParams
-import com.afternote.feature.afternote.presentation.author.editor.model.LoadFromExistingParams
-import com.afternote.feature.afternote.presentation.author.editor.model.LoadFromExistingProcessingParams
-import com.afternote.feature.afternote.presentation.author.editor.model.MemorialPlaylistStateHolder
-import com.afternote.feature.afternote.presentation.author.editor.model.rememberAfternoteEditorState
+import com.afternote.feature.afternote.presentation.author.editor.mapper.AfternoteItemMapper
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.provider.FakeAfternoteEditorDataProvider
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
+import com.afternote.feature.afternote.presentation.author.editor.state.LoadFromExistingAccountParams
+import com.afternote.feature.afternote.presentation.author.editor.state.LoadFromExistingParams
+import com.afternote.feature.afternote.presentation.author.editor.state.LoadFromExistingProcessingParams
+import com.afternote.feature.afternote.presentation.author.editor.state.MemorialPlaylistStateHolder
+import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.DataProviderLocals
 

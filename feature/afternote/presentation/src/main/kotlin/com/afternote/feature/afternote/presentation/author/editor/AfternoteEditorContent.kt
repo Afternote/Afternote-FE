@@ -19,7 +19,6 @@ import com.afternote.feature.afternote.presentation.author.editor.memorial.Memor
 import com.afternote.feature.afternote.presentation.author.editor.model.AccountSection
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverSection
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.model.InfoMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.selection.DropdownMenuStyle
@@ -27,6 +26,7 @@ import com.afternote.feature.afternote.presentation.author.editor.selection.Sele
 import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdownLabelParams
 import com.afternote.feature.afternote.presentation.author.editor.social.SocialNetworkEditorContent
 import com.afternote.feature.afternote.presentation.author.editor.social.SocialNetworkEditorContentParams
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 
 @Composable
 internal fun EditContent(

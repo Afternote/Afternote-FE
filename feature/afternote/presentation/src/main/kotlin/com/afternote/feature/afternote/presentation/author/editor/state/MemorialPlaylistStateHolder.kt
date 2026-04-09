@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.editor.model
+package com.afternote.feature.afternote.presentation.author.editor.state
 
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableStateListOf

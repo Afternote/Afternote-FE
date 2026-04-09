@@ -6,7 +6,7 @@ import androidx.compose.runtime.setValue
 
 /**
  * Holds processing method list state and actions for the afternote edit screen.
- * Extracted from [com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorState] to keep function count under the detekt threshold.
+ * Extracted from [com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState] to keep function count under the detekt threshold.
  */
 @Stable
 class ProcessingMethodManager {

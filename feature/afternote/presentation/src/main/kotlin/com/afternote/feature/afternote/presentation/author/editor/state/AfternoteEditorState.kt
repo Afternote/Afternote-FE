@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.editor.model
+package com.afternote.feature.afternote.presentation.author.editor.state
 
 import android.net.Uri
 import android.util.Log
@@ -15,8 +15,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.afternote.core.ui.LastWishOption
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
+import com.afternote.feature.afternote.domain.model.ProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.CATEGORY_MEMORIAL_GUIDELINE
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
+import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
+import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverCallbacks
+import com.afternote.feature.afternote.presentation.author.editor.model.InformationProcessingMethod
+import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
@@ -25,6 +30,8 @@ import com.afternote.feature.afternote.presentation.author.editor.selection.Sele
 import com.afternote.feature.afternote.presentation.shared.DataProviderLocals
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 private const val TAG = "AfternoteEditorState"
 private const val CATEGORY_GALLERY_AND_FILE = "갤러리 및 파일"
@@ -44,7 +51,7 @@ enum class DialogType {
  * AfternoteEditorScreen의 상태를 관리하는 State Holder
  *
  * Note: State Holder 패턴으로 인해 많은 함수가 필요합니다.
- * [com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodManager]로 처리 방법 목록 책임을 분리하여 함수 수를 20 이하로 유지합니다.
+ * [ProcessingMethodManager]로 처리 방법 목록 책임을 분리하여 함수 수를 20 이하로 유지합니다.
  * 추가 확장 시 AfternoteEditorReceiverManager, CategoryManager 등 분리 고려.
  */
 @Stable
@@ -56,7 +63,7 @@ class AfternoteEditorState(
     val phoneNumberState: TextFieldState,
     val customServiceNameState: TextFieldState,
     val customLastWishState: TextFieldState,
-    initialAfternoteEditorReceivers: List<com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver>,
+    initialAfternoteEditorReceivers: List<AfternoteEditorReceiver>,
     albumCovers: List<AlbumCover>,
 ) {
     // 남기실 말씀 (multiple messages)
@@ -89,7 +96,7 @@ class AfternoteEditorState(
     )
         private set
     var selectedInformationProcessingMethod by mutableStateOf(
-        com.afternote.feature.afternote.presentation.author.editor.model.InformationProcessingMethod.TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER,
+        InformationProcessingMethod.TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER,
     )
         private set
 
@@ -223,8 +230,8 @@ class AfternoteEditorState(
 
     // Callbacks (Composable 내부 람다 제거로 인지 복잡도 최소화)
     val galleryAfternoteEditorReceiverCallbacks:
-        com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverCallbacks by lazy {
-            com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverCallbacks(
+        AfternoteEditorReceiverCallbacks by lazy {
+            AfternoteEditorReceiverCallbacks(
                 onAddClick = ::showAddAfternoteEditorReceiverDialog,
                 onItemDeleteClick = ::onAfternoteEditorReceiverDelete,
                 onItemAdded = ::onAfternoteEditorReceiverItemAdded,
@@ -280,9 +287,7 @@ class AfternoteEditorState(
         selectedProcessingMethod = method
     }
 
-    fun onInformationProcessingMethodSelected(
-        method: com.afternote.feature.afternote.presentation.author.editor.model.InformationProcessingMethod,
-    ) {
+    fun onInformationProcessingMethodSelected(method: InformationProcessingMethod) {
         selectedInformationProcessingMethod = method
     }
 
@@ -354,7 +359,7 @@ class AfternoteEditorState(
         if (name.isEmpty()) return
 
         val newAfternoteEditorReceiver =
-            com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver(
+            AfternoteEditorReceiver(
                 id = (afternoteEditReceivers.size + 1).toString(),
                 name = name,
                 label = relationshipSelectedValue,
@@ -382,7 +387,7 @@ class AfternoteEditorState(
     ) {
         if (afternoteEditReceivers.any { it.id == receiverId.toString() }) return
         val newReceiver =
-            com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver(
+            AfternoteEditorReceiver(
                 id = receiverId.toString(),
                 name = name,
                 label = relation,
@@ -390,9 +395,19 @@ class AfternoteEditorState(
         afternoteEditReceivers = afternoteEditReceivers + newReceiver
     }
 
+    /**
+     * Fills the receiver list from [AuthorReceiversDirectoryPort] once loaded, only for new drafts
+     * where the user has not added receivers yet.
+     */
+    fun replaceFromAuthorDirectoryIfEmpty(receivers: List<AfternoteEditorReceiver>) {
+        if (receivers.isEmpty()) return
+        if (afternoteEditReceivers.isNotEmpty()) return
+        afternoteEditReceivers = receivers
+    }
+
     fun onAfternoteEditorReceiverItemAdded(text: String) {
         val newAfternoteEditorReceiver =
-            com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver(
+            AfternoteEditorReceiver(
                 id = (afternoteEditReceivers.size + 1).toString(),
                 name = text,
                 label = "친구",
@@ -489,25 +504,23 @@ class AfternoteEditorState(
     }
 
     /**
-     * 등록 버튼 클릭 시 [RegisterAfternotePayload]를 생성한다.
+     * 등록 버튼 클릭 시 [com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload]를 생성한다.
      */
     fun createRegisterPayload(): RegisterAfternotePayload {
         val date =
-            java.time.LocalDate
+            LocalDate
                 .now()
                 .format(
-                    java.time.format.DateTimeFormatter
+                    DateTimeFormatter
                         .ofPattern("yyyy.MM.dd"),
                 )
         val socialMethods =
             processingMethods.map {
-                com.afternote.feature.afternote.domain.model
-                    .ProcessingMethod(it.id, it.text)
+                ProcessingMethod(it.id, it.text)
             }
         val galleryMethods =
             galleryProcessingMethods.map {
-                com.afternote.feature.afternote.domain.model
-                    .ProcessingMethod(it.id, it.text)
+                ProcessingMethod(it.id, it.text)
             }
         val fullMessage =
             editorMessages
