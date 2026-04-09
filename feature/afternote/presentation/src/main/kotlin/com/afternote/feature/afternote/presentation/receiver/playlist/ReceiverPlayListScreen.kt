@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.receiver.screen.afternote
+package com.afternote.feature.afternote.presentation.receiver.playlist
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier

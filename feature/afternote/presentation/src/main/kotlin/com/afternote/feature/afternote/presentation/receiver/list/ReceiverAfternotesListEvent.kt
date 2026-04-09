@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.receiver.model
+package com.afternote.feature.afternote.presentation.receiver.list
 
 sealed interface ReceiverAfternotesListEvent {
     data class Load(

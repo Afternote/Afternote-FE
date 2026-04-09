@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.receiver.component
+package com.afternote.feature.afternote.presentation.receiver.summary
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size

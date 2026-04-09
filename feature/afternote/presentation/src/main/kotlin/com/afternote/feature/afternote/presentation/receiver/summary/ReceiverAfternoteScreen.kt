@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.receiver.screen
+package com.afternote.feature.afternote.presentation.receiver.summary
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.Spacer
@@ -31,14 +31,6 @@ import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.receiver.component.ContentSection
-import com.afternote.feature.afternote.presentation.receiver.component.HeroCard
-import com.afternote.feature.afternote.presentation.receiver.component.TopHeader
-import com.afternote.feature.afternote.presentation.receiver.model.uistate.ReceiverDownloadAllUiState
-import com.afternote.feature.afternote.presentation.receiver.model.uistate.ReceiverSummaryUiState
-import com.afternote.feature.afternote.presentation.receiver.viewmodel.ReceiverDownloadAllEvent
-import com.afternote.feature.afternote.presentation.receiver.viewmodel.ReceiverDownloadAllViewModel
-import com.afternote.feature.afternote.presentation.receiver.viewmodel.ReceiverDownloadAllViewModelContract
 
 /**
  * 수신자 애프터노트 메인 Entry.

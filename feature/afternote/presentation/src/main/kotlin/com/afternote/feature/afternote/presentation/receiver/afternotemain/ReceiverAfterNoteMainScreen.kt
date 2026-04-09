@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.receiver.screen.afternote
+package com.afternote.feature.afternote.presentation.receiver.afternotemain
 
 import android.content.Intent
 import android.content.pm.PackageManager

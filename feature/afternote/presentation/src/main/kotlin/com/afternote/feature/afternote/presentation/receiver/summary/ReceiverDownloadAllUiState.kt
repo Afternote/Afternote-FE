@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.receiver.model.uistate
+package com.afternote.feature.afternote.presentation.receiver.summary
 
 /**
  * 모든 기록 내려받기 다이얼로그/화면 UI 상태.

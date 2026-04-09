@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.receiver.model.uistate
+package com.afternote.feature.afternote.presentation.receiver.playlist
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
 /**

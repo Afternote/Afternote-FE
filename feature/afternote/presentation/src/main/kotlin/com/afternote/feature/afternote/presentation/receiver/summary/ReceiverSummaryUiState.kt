@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.receiver.model.uistate
+package com.afternote.feature.afternote.presentation.receiver.summary
 
 /**
  * 수신자 홈 화면에 표시할 요약 정보.

@@ -1,11 +1,9 @@
-package com.afternote.feature.afternote.presentation.receiver.viewmodel
+package com.afternote.feature.afternote.presentation.receiver.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItemDto
 import com.afternote.feature.afternote.domain.repository.ReceiverRepository
-import com.afternote.feature.afternote.presentation.receiver.model.ReceiverAfternoteHomeEvent
-import com.afternote.feature.afternote.presentation.receiver.model.uistate.ReceiverAfternoteHomeUiState
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
 import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog

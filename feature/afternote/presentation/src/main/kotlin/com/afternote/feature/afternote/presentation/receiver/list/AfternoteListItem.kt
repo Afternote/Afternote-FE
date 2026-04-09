@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.receiver.component
+package com.afternote.feature.afternote.presentation.receiver.list
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -24,7 +24,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.feature.afternote.presentation.receiver.model.AppNoteItem
 
 @Composable
 @Suppress("UNUSED")

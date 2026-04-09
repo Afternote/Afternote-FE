@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.receiver.model
+package com.afternote.feature.afternote.presentation.receiver.list
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector

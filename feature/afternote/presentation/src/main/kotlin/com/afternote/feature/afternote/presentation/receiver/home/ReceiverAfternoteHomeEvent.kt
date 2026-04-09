@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.receiver.model
+package com.afternote.feature.afternote.presentation.receiver.home
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 

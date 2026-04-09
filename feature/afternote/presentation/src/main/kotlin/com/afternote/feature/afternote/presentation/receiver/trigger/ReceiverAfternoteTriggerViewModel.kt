@@ -1,9 +1,8 @@
-package com.afternote.feature.afternote.presentation.receiver.viewmodel
+package com.afternote.feature.afternote.presentation.receiver.trigger
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.feature.afternote.domain.repository.ReceiverRepository
-import com.afternote.feature.afternote.presentation.receiver.model.ReceiverAfternoteTriggerEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
