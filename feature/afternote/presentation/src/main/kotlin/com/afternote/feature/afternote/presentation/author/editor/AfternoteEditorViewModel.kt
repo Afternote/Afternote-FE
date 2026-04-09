@@ -15,6 +15,7 @@ import com.afternote.feature.afternote.domain.usecase.author.editor.UpdateUseCas
 import com.afternote.feature.afternote.domain.usecase.author.editor.UploadMemorialPhotoUseCase
 import com.afternote.feature.afternote.domain.usecase.author.editor.UploadMemorialThumbnailUseCase
 import com.afternote.feature.afternote.domain.usecase.author.editor.UploadMemorialVideoUseCase
+import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteSaveState
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteValidationError
@@ -23,6 +24,7 @@ import com.afternote.feature.afternote.presentation.author.editor.model.EditorCa
 import com.afternote.feature.afternote.presentation.author.editor.model.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.playlist.Song
+import com.afternote.feature.afternote.presentation.author.editor.provider.EditorAuthorReceiversUiCache
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -61,6 +63,7 @@ class AfternoteEditorViewModel
         private val getDetailUseCase: GetDetailUseCase,
         private val currentAuthorUserId: CurrentAuthorUserIdPort,
         private val authorReceiversDirectory: AuthorReceiversDirectoryPort,
+        private val editorAuthorReceiversUiCache: EditorAuthorReceiversUiCache,
         private val uploadMemorialThumbnailUseCase: UploadMemorialThumbnailUseCase,
         private val uploadMemorialVideoUseCase: UploadMemorialVideoUseCase,
         private val uploadMemorialPhotoUseCase: UploadMemorialPhotoUseCase,
@@ -74,6 +77,10 @@ class AfternoteEditorViewModel
 
         /** Cached receiver list (GET /users/receivers) for lookup when returning from receiver selection. */
         private var cachedReceivers: List<AuthorReceiverDirectoryEntry> = emptyList()
+
+        /** Mapped UI rows; kept in sync with [cachedReceivers] for DataProvider / editor state. */
+        val authorDirectoryReceiversUi: StateFlow<List<AfternoteEditorReceiver>> =
+            editorAuthorReceiversUiCache.receivers
 
         /**
          * Category from the server when loading for edit. Used for update requests because the API
@@ -123,7 +130,10 @@ class AfternoteEditorViewModel
                 val userId = currentAuthorUserId() ?: return@launch
                 authorReceiversDirectory(userId)
                     .getOrNull()
-                    ?.let { cachedReceivers = it }
+                    ?.let {
+                        cachedReceivers = it
+                        editorAuthorReceiversUiCache.replaceFrom(it)
+                    }
             }
         }
 

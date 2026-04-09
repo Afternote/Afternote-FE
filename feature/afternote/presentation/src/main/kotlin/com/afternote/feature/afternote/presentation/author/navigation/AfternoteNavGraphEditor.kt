@@ -179,6 +179,7 @@ internal fun AfternoteEditorNavigation(
         )
     }
     val saveState by editViewModel.saveState.collectAsStateWithLifecycle()
+    val directoryReceivers by editViewModel.authorDirectoryReceiversUi.collectAsStateWithLifecycle()
     val newState = rememberAfternoteEditorState()
     val state = params.editState ?: newState
 
@@ -195,6 +196,12 @@ internal fun AfternoteEditorNavigation(
         }
     }
     LaunchedEffect(Unit) { editViewModel.onEvent(AfternoteEditorUiEvent.LoadReceivers) }
+
+    LaunchedEffect(directoryReceivers, route.itemId) {
+        if (route.itemId == null) {
+            state.replaceFromAuthorDirectoryIfEmpty(directoryReceivers)
+        }
+    }
 
     val isEditCurrentDestination =
         params.navController.currentBackStackEntry == params.backStackEntry
