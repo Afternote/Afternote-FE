@@ -5,7 +5,6 @@ import com.afternote.feature.afternote.domain.model.ListItem
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.model.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.provider.AfternoteEditorDataProvider
-import com.afternote.feature.afternote.presentation.author.editor.provider.DataProviderSwitch
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -19,7 +18,7 @@ import javax.inject.Inject
 class AfternoteHostViewModel
     @Inject
     constructor(
-        private val dataProviderSwitch: DataProviderSwitch,
+        val afternoteEditorDataProvider: AfternoteEditorDataProvider,
     ) : ViewModel() {
         private val _items = MutableStateFlow<List<ListItem>>(emptyList())
         val items: StateFlow<List<ListItem>> = _items.asStateFlow()
@@ -45,11 +44,6 @@ class AfternoteHostViewModel
             // 채널은 send하는 즉시 데이터를 발행하는 Hot Flow
             _homeRefreshEvents.trySend(Unit)
         }
-
-        val useFakeState: StateFlow<Boolean> = dataProviderSwitch.useFakeState
-
-        val currentAfternoteEditorDataProvider: AfternoteEditorDataProvider
-            get() = dataProviderSwitch.currentAfternoteEditorDataProvider
 
         /** 에디터 플로우에서 공유하는 플레이리스트 상태. Graph scope에 묶여 피처 이탈 시 자동 정리됨. */
         val playlistHolder = MemorialPlaylistStateHolder()

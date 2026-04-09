@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor.provider
+import com.afternote.feature.afternote.domain.model.ListItem
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.playlist.Song
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
@@ -13,7 +14,11 @@ interface AfternoteEditorDataProvider {
 
     fun getAfternoteEditorReceivers(): List<AfternoteEditorReceiver>
 
-    fun getDefaultAfternoteItems(): List<Pair<String, String>>
+    /**
+     * Fallback list when the editor opens without items from home (e.g. new draft).
+     * Fake impl returns dummy [ListItem]s; real impl returns empty until API-backed defaults exist.
+     */
+    fun getDefaultAfternoteListItems(): List<ListItem>
 
     fun getAlbumCovers(): List<AlbumCover>
 
