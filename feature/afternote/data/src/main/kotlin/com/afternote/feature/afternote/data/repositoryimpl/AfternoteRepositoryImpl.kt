@@ -10,11 +10,10 @@ import com.afternote.feature.afternote.data.mapper.toRequest
 import com.afternote.feature.afternote.data.service.AfternoteApiService
 import com.afternote.feature.afternote.domain.model.Detail
 import com.afternote.feature.afternote.domain.model.ListPage
-import com.afternote.feature.afternote.domain.model.input.CreateGalleryInput
-import com.afternote.feature.afternote.domain.model.input.CreatePlaylistInput
-import com.afternote.feature.afternote.domain.model.input.CreateSocialInput
-import com.afternote.feature.afternote.domain.model.input.GetListPageInput
-import com.afternote.feature.afternote.domain.model.input.UpdateInput
+import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
+import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
+import com.afternote.feature.afternote.domain.model.author.CreatePlaylistPayload
+import com.afternote.feature.afternote.domain.model.author.CreateSocialPayload
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
 import javax.inject.Inject
 
@@ -28,29 +27,33 @@ class AfternoteRepositoryImpl
     constructor(
         private val api: AfternoteApiService,
     ) : AfternoteRepository {
-        override suspend fun getListPage(input: GetListPageInput): Result<ListPage> =
+        override suspend fun getListPage(
+            category: String?,
+            pageNumber: Int,
+            size: Int,
+        ): Result<ListPage> =
             runCatching {
                 val response =
                     api.getAfternotes(
-                        category = input.category,
-                        pageNumber = input.pageNumber,
-                        size = input.size,
+                        category = category,
+                        pageNumber = pageNumber,
+                        size = size,
                     )
                 val data = response.requireData()
                 data.toListPage()
             }.logFailure()
 
-        override suspend fun createSocial(input: CreateSocialInput): Result<Long> =
+        override suspend fun createSocial(payload: CreateSocialPayload): Result<Long> =
             runCatching {
-                val request = input.toRequest()
+                val request = payload.toRequest()
                 val response = api.createAfternoteSocial(request)
                 val data = response.requireData()
                 getAfternoteId(data)
             }.logFailure()
 
-        override suspend fun createGallery(input: CreateGalleryInput): Result<Long> =
+        override suspend fun createGallery(payload: CreateGalleryPayload): Result<Long> =
             runCatching {
-                val request = input.toRequest()
+                val request = payload.toRequest()
                 val response = api.createAfternoteGallery(request)
                 val data = response.requireData()
                 getAfternoteId(data)
@@ -69,9 +72,9 @@ class AfternoteRepositoryImpl
         /**
          * POST /afternotes (PLAYLIST category).
          */
-        override suspend fun createPlaylist(input: CreatePlaylistInput): Result<Long> =
+        override suspend fun createPlaylist(payload: CreatePlaylistPayload): Result<Long> =
             runCatching {
-                val request = input.toRequest()
+                val request = payload.toRequest()
                 val response = api.createAfternotePlaylist(request)
                 val data = response.requireData()
                 getAfternoteId(data)
@@ -82,9 +85,9 @@ class AfternoteRepositoryImpl
          */
         override suspend fun update(
             id: Long,
-            input: UpdateInput,
+            payload: AfternoteUpdatePayload,
         ): Result<Long> {
-            val request = input.toRequest()
+            val request = payload.toRequest()
             return runCatching {
                 val response = api.updateAfternote(afternoteId = id, request = request)
                 val data = response.requireData()

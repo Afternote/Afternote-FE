@@ -2,10 +2,10 @@ package com.afternote.feature.afternote.data.mapper
 
 import com.afternote.feature.afternote.data.dto.AfternotePlaylist
 import com.afternote.feature.afternote.data.dto.AfternoteSong
-import com.afternote.feature.afternote.domain.model.input.PlaylistInput
-import com.afternote.feature.afternote.domain.model.input.SongInput
+import com.afternote.feature.afternote.domain.model.author.PlaylistSongPayload
+import com.afternote.feature.afternote.domain.model.author.PlaylistWritePayload
 
-fun PlaylistInput.toDto() =
+fun PlaylistWritePayload.toDto() =
     AfternotePlaylist(
         profilePhoto = profilePhoto,
         atmosphere = atmosphere,
@@ -14,7 +14,7 @@ fun PlaylistInput.toDto() =
         memorialVideo = memorialVideo?.toDto(),
     )
 
-fun SongInput.toDto() =
+fun PlaylistSongPayload.toDto() =
     AfternoteSong(
         id = id,
         title = title,
@@ -22,7 +22,7 @@ fun SongInput.toDto() =
         coverUrl = coverUrl,
     )
 
-fun List<SongInput>.toDto() =
+fun List<PlaylistSongPayload>.toDto() =
     map {
         it.toDto()
     }
