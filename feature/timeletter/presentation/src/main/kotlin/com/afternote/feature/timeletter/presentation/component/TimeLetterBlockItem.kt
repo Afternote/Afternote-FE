@@ -23,6 +23,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.timeletter.domain.LetterIdentity
 import com.afternote.feature.timeletter.domain.LetterSchedule
 import com.afternote.feature.timeletter.domain.OpenDate
+import com.afternote.feature.timeletter.domain.Recipient
 import com.afternote.feature.timeletter.domain.TimeLetter
 
 @Composable
@@ -57,7 +58,7 @@ fun TimeLetterBlockItem(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "수신인  ${schedule.recipientName}",
+                    text = "수신인  ${schedule.recipient.name}",
                     style = AfternoteDesign.typography.bodySmallR,
                     color = AfternoteDesign.colors.gray6,
                 )
@@ -106,7 +107,7 @@ private fun TimeLetterBlockItemPrev() {
                     ),
                 schedule =
                     LetterSchedule(
-                        recipientName = "박경민",
+                        recipient = Recipient(id = 1L, name = "박경민", relationship = "친구"),
                         openDate = OpenDate("2026-12-31"),
                     ),
             ),
