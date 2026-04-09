@@ -7,12 +7,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.afternote.core.datastore.TokenManager
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -24,13 +21,10 @@ import com.afternote.feature.timeletter.presentation.screen.sender.TimeletterScr
 
 @Composable
 fun AppNavigation(
-    tokenManager: TokenManager,
+    startDestination: Route,
     modifier: Modifier = Modifier,
     appState: AppState = rememberAfternoteAppState(),
 ) {
-    val isLoggedIn by tokenManager.isLoggedInFlow.collectAsStateWithLifecycle(initialValue = false)
-    val startDestination: Route = if (isLoggedIn) Route.Home else Route.Onboarding
-
     Scaffold(
         modifier = modifier,
         containerColor = AfternoteDesign.colors.gray1,
