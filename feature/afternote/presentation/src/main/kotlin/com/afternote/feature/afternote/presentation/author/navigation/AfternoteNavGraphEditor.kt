@@ -19,7 +19,6 @@ import com.afternote.feature.afternote.presentation.author.editor.AfternoteEdito
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorScreenCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorUiEvent
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
-import com.afternote.feature.afternote.presentation.author.editor.AfternoteItemMapper
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteSaveState
@@ -40,7 +39,7 @@ internal fun resolveListItems(
     afternoteProvider: AfternoteEditorDataProvider,
 ): List<ListItem> =
     afternoteVisibleItems.ifEmpty {
-        AfternoteItemMapper.toAfternoteItemsWithStableIds(afternoteProvider.getDefaultAfternoteItems())
+        afternoteProvider.getDefaultAfternoteListItems()
     }
 
 internal sealed class EditSaveErrorResult {
