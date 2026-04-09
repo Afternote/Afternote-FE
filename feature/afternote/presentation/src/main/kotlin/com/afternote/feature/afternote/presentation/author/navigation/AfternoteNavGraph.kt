@@ -64,10 +64,9 @@ fun NavGraphBuilder.afternoteNavGraph(params: AfternoteNavGraphParams) {
         afternoteComposable<AfternoteRoute.EditorRoute> { backStackEntry ->
             val hostViewModel = graphScopedHostViewModel(navController, backStackEntry)
             val items by hostViewModel.items.collectAsStateWithLifecycle()
-            val afternoteProvider = hostViewModel.afternoteEditorDataProvider
 
             CompositionLocalProvider(
-                DataProviderLocals.LocalAfternoteEditorDataProvider provides afternoteProvider,
+                DataProviderLocals.LocalAfternoteEditorDataProvider provides hostViewModel.afternoteEditorDataProvider,
             ) {
                 AfternoteEditorNavigation(
                     AfternoteEditorNavigationParams(
@@ -75,7 +74,6 @@ fun NavGraphBuilder.afternoteNavGraph(params: AfternoteNavGraphParams) {
                         navController = navController,
                         afternoteVisibleItems = items,
                         playlistStateHolder = hostViewModel.playlistHolder,
-                        afternoteProvider = afternoteProvider,
                         editState = hostViewModel.editState,
                         onEditStateChanged = hostViewModel::updateEditState,
                         onEditStateClear = hostViewModel::clearEditState,

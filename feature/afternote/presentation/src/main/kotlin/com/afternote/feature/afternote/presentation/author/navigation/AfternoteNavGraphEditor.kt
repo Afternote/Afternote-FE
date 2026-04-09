@@ -29,6 +29,7 @@ import com.afternote.feature.afternote.presentation.author.editor.model.remember
 import com.afternote.feature.afternote.presentation.author.editor.provider.AfternoteEditorDataProvider
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.author.navigation.model.SELECTED_RECEIVER_ID_KEY
+import com.afternote.feature.afternote.presentation.shared.DataProviderLocals
 
 /**
  * 에디터에서 사용할 아이템 목록을 결정.
@@ -85,7 +86,6 @@ internal data class AfternoteEditorNavigationParams(
     val navController: NavController,
     val afternoteVisibleItems: List<ListItem>,
     val playlistStateHolder: MemorialPlaylistStateHolder,
-    val afternoteProvider: AfternoteEditorDataProvider,
     val editState: AfternoteEditorState?,
     val onEditStateChanged: (AfternoteEditorState?) -> Unit,
     val onEditStateClear: () -> Unit,
@@ -162,9 +162,10 @@ internal fun AfternoteEditorNavigation(
     editViewModel: AfternoteEditorViewModel = hiltViewModel(),
 ) {
     val route = params.backStackEntry.toRoute<AfternoteRoute.EditorRoute>()
+    val afternoteProvider = DataProviderLocals.LocalAfternoteEditorDataProvider.current
     val visibleItems =
-        remember(params.afternoteVisibleItems, params.afternoteProvider) {
-            resolveListItems(params.afternoteVisibleItems, params.afternoteProvider)
+        remember(params.afternoteVisibleItems, afternoteProvider) {
+            resolveListItems(params.afternoteVisibleItems, afternoteProvider)
         }
     val initialItem =
         remember(route.itemId, visibleItems) {
