@@ -64,9 +64,7 @@ fun NavGraphBuilder.afternoteNavGraph(params: AfternoteNavGraphParams) {
         afternoteComposable<AfternoteRoute.EditorRoute> { backStackEntry ->
             val hostViewModel = graphScopedHostViewModel(navController, backStackEntry)
             val items by hostViewModel.items.collectAsStateWithLifecycle()
-            val useFake by hostViewModel.useFakeState.collectAsStateWithLifecycle()
-            val afternoteProvider =
-                remember(useFake) { hostViewModel.currentAfternoteEditorDataProvider }
+            val afternoteProvider = hostViewModel.afternoteEditorDataProvider
 
             CompositionLocalProvider(
                 DataProviderLocals.LocalAfternoteEditorDataProvider provides afternoteProvider,
