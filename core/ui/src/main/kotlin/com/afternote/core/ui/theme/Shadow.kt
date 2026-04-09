@@ -13,14 +13,6 @@ val shadow: Shadow =
         offset = DpOffset(x = 0.dp, 2.dp),
     )
 
-val shadow_I: Shadow =
-    Shadow(
-        radius = 8.dp,
-        spread = 0.dp,
-        color = Color(0xFF000000).copy(alpha = 0.05f),
-        offset = DpOffset(x = 0.dp, 1.dp),
-    )
-
 val toggleShadow_1: Shadow =
     Shadow(
         radius = 3.dp,
@@ -35,12 +27,4 @@ val toggleShadow_2: Shadow =
         spread = -1.dp,
         color = Color(0xFF000000).copy(alpha = 0.1f),
         offset = DpOffset(x = 0.dp, 1.dp),
-    )
-
-val emphasizeShadow: Shadow =
-    Shadow(
-        radius = 16.dp,
-        spread = 0.dp,
-        color = Color(0xFF000000).copy(alpha = 0.2f),
-        offset = DpOffset(x = 0.dp, 4.dp),
     )
