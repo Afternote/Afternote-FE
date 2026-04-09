@@ -207,10 +207,9 @@ class AfternoteEditorViewModel
                     .getDetail(id = afternoteId)
                     .onSuccess { detail ->
                         populatePlaylistFromDetail(detail, playlistStateHolder)
-                        val params = AfternoteEditorMapper.buildLoadFromExistingParams(detail)
-                        loadedCategoryForEdit =
-                            EditorCategory.fromDisplayLabel(params.categoryDisplayString)
-                        state.loadFromExisting(params)
+                        val prefill = AfternoteEditorMapper.buildEditorFormPrefill(detail)
+                        loadedCategoryForEdit = prefill.category
+                        state.applyFormPrefill(prefill)
                     }
             }
         }

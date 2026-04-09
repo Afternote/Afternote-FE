@@ -18,8 +18,8 @@ import com.afternote.feature.afternote.presentation.author.editor.AfternoteEdito
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorScreenCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorUiEvent
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
+import com.afternote.feature.afternote.presentation.author.editor.RegisterAfternotePayloadBuilder
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
-import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteSaveState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
@@ -113,7 +113,8 @@ internal fun buildEditScreenCallbacks(params: EditScreenCallbacksParams): Aftern
             params.onEditStateClear()
             params.navController.popBackStack()
         },
-        onRegisterClick = { payload: RegisterAfternotePayload ->
+        onRegisterClick = {
+            val payload = RegisterAfternotePayloadBuilder.fromEditorState(params.state)
             params.editViewModel.onEvent(
                 AfternoteEditorUiEvent.Save(
                     editingId = params.route.itemId?.toLongOrNull(),

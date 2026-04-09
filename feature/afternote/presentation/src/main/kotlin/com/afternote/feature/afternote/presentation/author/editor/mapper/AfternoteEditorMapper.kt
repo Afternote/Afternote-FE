@@ -10,20 +10,89 @@ import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
 import com.afternote.feature.afternote.domain.model.author.PlaylistSongPayload
 import com.afternote.feature.afternote.domain.model.author.PlaylistWritePayload
 import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
+import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessagesCodec
 import com.afternote.feature.afternote.presentation.author.editor.model.AccountProcessMethod
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
 import com.afternote.feature.afternote.presentation.author.editor.model.InfoProcessMethod
+import com.afternote.feature.afternote.presentation.author.editor.model.InformationProcessingMethod
+import com.afternote.feature.afternote.presentation.author.editor.model.LastWishPrefill
+import com.afternote.feature.afternote.presentation.author.editor.model.LoadFromExistingAccountParams
+import com.afternote.feature.afternote.presentation.author.editor.model.LoadFromExistingParams
+import com.afternote.feature.afternote.presentation.author.editor.model.LoadFromExistingProcessingParams
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
+import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
-import com.afternote.feature.afternote.presentation.author.editor.state.LoadFromExistingAccountParams
-import com.afternote.feature.afternote.presentation.author.editor.state.LoadFromExistingParams
-import com.afternote.feature.afternote.presentation.author.editor.state.LoadFromExistingProcessingParams
 import com.afternote.feature.afternote.presentation.author.editor.state.MemorialPlaylistStateHolder
+
+private const val LAST_WISH_DEFAULT_CALM = "차분하고 조용하게 보내주세요."
+private const val LAST_WISH_DEFAULT_BRIGHT = "슬퍼 하지 말고 밝고 따뜻하게 보내주세요."
 
 /**
  * ViewModel ↔ Domain 간 데이터 변환 로직을 담당합니다.
  */
 internal object AfternoteEditorMapper {
+    fun buildEditorFormPrefill(detail: Detail): EditorFormPrefill = editorFormPrefillFromLoadParams(buildLoadFromExistingParams(detail))
+
+    /**
+     * [LoadFromExistingParams]의 문자열·분기를 해석해 폼에 바로 넣을 [EditorFormPrefill]을 만든다.
+     * (Preview·테스트에서도 사용)
+     */
+    fun editorFormPrefillFromLoadParams(params: LoadFromExistingParams): EditorFormPrefill {
+        val category = EditorCategory.fromDisplayLabel(params.categoryDisplayString)
+        val messageBlocks = EditorMessagesCodec.parsePersistedToBlocks(params.processing.message)
+        val accountPm =
+            if (params.processing.accountMethodName.isNotEmpty()) {
+                runCatching {
+                    AccountProcessingMethod.valueOf(params.processing.accountMethodName)
+                }.getOrDefault(AccountProcessingMethod.MEMORIAL_ACCOUNT)
+            } else {
+                null
+            }
+        val informationPm =
+            if (params.processing.informationMethodName.isNotEmpty()) {
+                val infoMethodName =
+                    when (params.processing.informationMethodName) {
+                        "TRANSFER_TO_ADDITIONAL_AFTERNOTE_EDIT_RECEIVER",
+                        "ADDITIONAL",
+                        -> "TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER"
+
+                        else -> params.processing.informationMethodName
+                    }
+                runCatching {
+                    InformationProcessingMethod.valueOf(infoMethodName)
+                }.getOrDefault(InformationProcessingMethod.TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER)
+            } else {
+                null
+            }
+        val lastWish =
+            params.atmosphere?.let { atmosphereValue ->
+                val trimmed = atmosphereValue.trim()
+                when {
+                    trimmed.isEmpty() -> LastWishPrefill(selectedKey = null, customText = "")
+                    trimmed == LAST_WISH_DEFAULT_CALM -> LastWishPrefill(selectedKey = "calm", customText = "")
+                    trimmed == LAST_WISH_DEFAULT_BRIGHT -> LastWishPrefill(selectedKey = "bright", customText = "")
+                    else -> LastWishPrefill(selectedKey = "other", customText = trimmed)
+                }
+            }
+        return EditorFormPrefill(
+            loadedItemId = params.itemId,
+            serviceName = params.serviceName,
+            category = category,
+            accountId = params.account.id,
+            password = params.account.password,
+            messageBlocks = messageBlocks,
+            accountProcessingMethod = accountPm,
+            informationProcessingMethod = informationPm,
+            socialProcessingMethods = params.processing.methods,
+            galleryProcessingMethods = params.processing.galleryMethods,
+            lastWishUpdate = lastWish,
+            funeralVideoUrl = params.memorialVideoUrl,
+            funeralThumbnailUrl = params.memorialThumbnailUrl,
+            memorialPhotoUrl = params.memorialPhotoUrl,
+        )
+    }
+
     fun buildLoadFromExistingParams(detail: Detail): LoadFromExistingParams {
         val actionItems =
             detail.processing?.actions?.mapIndexed { index, text ->
@@ -195,7 +264,7 @@ internal object AfternoteEditorMapper {
         memorialMedia: MemorialMediaUrls,
     ): AfternoteUpdatePayload =
         when (category) {
-            EditorCategory.MEMORIAL ->
+            EditorCategory.MEMORIAL -> {
                 AfternoteUpdatePayload(
                     category = EditorCategory.MEMORIAL.serverValue,
                     title = payload.serviceName,
@@ -208,9 +277,11 @@ internal object AfternoteEditorMapper {
                             funeralThumbnailUrl = memorialMedia.funeralThumbnailUrl,
                         ),
                 )
+            }
 
-            EditorCategory.GALLERY, EditorCategory.SOCIAL ->
+            EditorCategory.GALLERY, EditorCategory.SOCIAL -> {
                 buildNonMemorialUpdatePayload(category, payload, selectedReceiverIds)
+            }
         }
 
     private fun buildNonMemorialUpdatePayload(

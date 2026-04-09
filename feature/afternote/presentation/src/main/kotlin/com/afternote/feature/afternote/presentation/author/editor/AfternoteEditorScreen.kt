@@ -27,13 +27,14 @@ import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.domain.model.ListItem
+import com.afternote.feature.afternote.presentation.author.editor.mapper.AfternoteEditorMapper
 import com.afternote.feature.afternote.presentation.author.editor.mapper.editScreenLabelRes
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
+import com.afternote.feature.afternote.presentation.author.editor.model.LoadFromExistingAccountParams
+import com.afternote.feature.afternote.presentation.author.editor.model.LoadFromExistingParams
+import com.afternote.feature.afternote.presentation.author.editor.model.LoadFromExistingProcessingParams
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
-import com.afternote.feature.afternote.presentation.author.editor.state.LoadFromExistingAccountParams
-import com.afternote.feature.afternote.presentation.author.editor.state.LoadFromExistingParams
-import com.afternote.feature.afternote.presentation.author.editor.state.LoadFromExistingProcessingParams
 import com.afternote.feature.afternote.presentation.author.editor.state.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
@@ -78,7 +79,7 @@ fun AfternoteEditorScreen(
     LaunchedEffect(initialListItem?.id, editScreenCategoryDisplayString) {
         val item =
             initialListItem ?: run {
-                Log.d(TAG, "LaunchedEffect: initialListItem is null, skipping loadFromExisting")
+                Log.d(TAG, "LaunchedEffect: initialListItem is null, skipping applyFormPrefill")
                 return@LaunchedEffect
             }
         Log.d(
@@ -87,36 +88,38 @@ fun AfternoteEditorScreen(
                 "needsLoad=${state.loadedItemId != item.id}",
         )
         if (state.loadedItemId != item.id) {
-            state.loadFromExisting(
-                LoadFromExistingParams(
-                    itemId = item.id,
-                    serviceName = item.serviceName,
-                    categoryDisplayString = editScreenCategoryDisplayString!!,
-                    account =
-                        LoadFromExistingAccountParams(
-                            id = item.account.id,
-                            password = item.account.password,
-                        ),
-                    processing =
-                        LoadFromExistingProcessingParams(
-                            message = item.processing.message,
-                            accountMethodName = item.processing.accountMethod,
-                            informationMethodName = item.processing.informationMethod,
-                            methods =
-                                item.processing.methods.map {
-                                    ProcessingMethodItem(
-                                        it.id,
-                                        it.text,
-                                    )
-                                },
-                            galleryMethods =
-                                item.processing.galleryMethods.map {
-                                    ProcessingMethodItem(
-                                        it.id,
-                                        it.text,
-                                    )
-                                },
-                        ),
+            state.applyFormPrefill(
+                AfternoteEditorMapper.editorFormPrefillFromLoadParams(
+                    LoadFromExistingParams(
+                        itemId = item.id,
+                        serviceName = item.serviceName,
+                        categoryDisplayString = editScreenCategoryDisplayString!!,
+                        account =
+                            LoadFromExistingAccountParams(
+                                id = item.account.id,
+                                password = item.account.password,
+                            ),
+                        processing =
+                            LoadFromExistingProcessingParams(
+                                message = item.processing.message,
+                                accountMethodName = item.processing.accountMethod,
+                                informationMethodName = item.processing.informationMethod,
+                                methods =
+                                    item.processing.methods.map {
+                                        ProcessingMethodItem(
+                                            it.id,
+                                            it.text,
+                                        )
+                                    },
+                                galleryMethods =
+                                    item.processing.galleryMethods.map {
+                                        ProcessingMethodItem(
+                                            it.id,
+                                            it.text,
+                                        )
+                                    },
+                            ),
+                    ),
                 ),
             )
         }
@@ -159,7 +162,7 @@ fun AfternoteEditorScreen(
                     TextButton(
                         onClick = {
                             focusManager.clearFocus()
-                            callbacks.onRegisterClick(state.createRegisterPayload())
+                            callbacks.onRegisterClick()
                         },
                     ) {
                         Text(
