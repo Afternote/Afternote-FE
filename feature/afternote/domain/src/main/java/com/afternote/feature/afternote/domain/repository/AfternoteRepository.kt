@@ -6,6 +6,7 @@ import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayloa
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreatePlaylistPayload
 import com.afternote.feature.afternote.domain.model.author.CreateSocialPayload
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Afternote 도메인 Repository 인터페이스.
@@ -18,6 +19,12 @@ import com.afternote.feature.afternote.domain.model.author.CreateSocialPayload
  * - DELETE /afternotes/{afternoteId} (삭제)
  */
 interface AfternoteRepository {
+    /**
+     * 작성자 애프터노트 목록을 다시 가져와야 할 때마다 증가합니다 (생성·수정·삭제 성공 시).
+     * UI는 이 값을 구독해 목록 화면을 새로고침할 수 있습니다.
+     */
+    val authorAfternoteListRevision: StateFlow<Long>
+
     suspend fun getListPage(
         category: String?,
         pageNumber: Int,

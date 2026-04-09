@@ -43,11 +43,11 @@ import com.afternote.feature.afternote.presentation.author.editor.state.remember
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlin.time.Duration.Companion.milliseconds
 
 private const val TAG = "AfternoteEditorScreen"
 
-private val EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE = 1_500.milliseconds
+/** 남기실 말씀: TextField → [EditorFormState.messageBlocks] / SavedState 백업 (과도한 스냅샷 방지). */
+private const val EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE_MS = 1_000L
 
 /**
  * 애프터노트 수정/작성 화면
@@ -59,7 +59,7 @@ private val EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE = 1_500.milliseconds
  * - 계정 정보 입력 (아이디, 비밀번호)
  * - 계정 처리 방법 선택 (라디오 버튼)
  * - 처리 방법 리스트 (체크박스)
- * - 남기실 말씀 (멀티라인 텍스트 필드)
+ * - 남기실 말씀 (멀티라인 텍스트 필드; Process Death 대비 [snapshotFlow] + debounce로 폼 동기화)
  */
 @Composable
 fun AfternoteEditorScreen(
@@ -80,6 +80,9 @@ fun AfternoteEditorScreen(
         if (form.messageBlocksRestoreGeneration != 0L) {
             state.syncEditorMessagesFromForm(form.messageBlocks)
         }
+    }
+
+    LaunchedEffect(state.editorMessages.size) {
         snapshotFlow {
             state.editorMessages.map { msg ->
                 EditorMessageTextBlock(
@@ -88,7 +91,7 @@ fun AfternoteEditorScreen(
                 )
             }
         }.distinctUntilChanged()
-            .debounce(EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE)
+            .debounce(EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE_MS)
             .collect { blocks ->
                 state.persistEditorMessagesFromTyping(blocks)
             }
