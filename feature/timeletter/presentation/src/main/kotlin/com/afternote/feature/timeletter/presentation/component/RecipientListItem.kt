@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.CircleCheckBox
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.timeletter.domain.Recipient
 import com.afternote.feature.timeletter.presentation.R
@@ -21,6 +22,8 @@ import com.afternote.feature.timeletter.presentation.R
 @Composable
 fun RecipientListItem(
     recipient: Recipient,
+    selected: Boolean,
+    onSelectedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -33,7 +36,7 @@ fun RecipientListItem(
             modifier = Modifier.size(50.dp),
         )
         Spacer(modifier = Modifier.width(10.dp))
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = recipient.name,
                 style = AfternoteDesign.typography.captionLargeB,
@@ -44,6 +47,10 @@ fun RecipientListItem(
                 color = AfternoteDesign.colors.gray6,
             )
         }
+        CircleCheckBox(
+            checked = selected,
+            onCheckedChange = onSelectedChange,
+        )
     }
 }
 
@@ -51,11 +58,8 @@ fun RecipientListItem(
 @Composable
 private fun RecipientListItemPrev() {
     RecipientListItem(
-        recipient =
-            Recipient(
-                id = 1L,
-                name = "박경민",
-                relationship = "친구",
-            ),
+        recipient = Recipient(id = 1L, name = "박경민", relationship = "친구"),
+        selected = false,
+        onSelectedChange = {},
     )
 }

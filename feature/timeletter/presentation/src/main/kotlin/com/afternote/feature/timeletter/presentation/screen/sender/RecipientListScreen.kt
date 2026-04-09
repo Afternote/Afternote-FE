@@ -1,6 +1,7 @@
 package com.afternote.feature.timeletter.presentation.screen.sender
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -12,11 +13,14 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateSetOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
+import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.timeletter.domain.Recipient
@@ -26,9 +30,11 @@ import com.afternote.feature.timeletter.presentation.component.RecipientListItem
 fun RecipientListScreen(
     recipients: List<Recipient>,
     onBackClick: () -> Unit,
+    onConfirmClick: (List<Recipient>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val searchState = rememberTextFieldState()
+    val selectedIds = remember { mutableStateSetOf<Long>() }
 
     Scaffold(
         modifier = modifier,
@@ -38,16 +44,26 @@ fun RecipientListScreen(
                 onBackClick = onBackClick,
             )
         },
+        bottomBar = {
+            AfternoteButton(
+                text = "수신자 선택 완료하기",
+                onClick = {
+                    onConfirmClick(recipients.filter { it.id in selectedIds })
+                },
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+            )
+        },
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 20.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 20.dp),
         ) {
             AfternoteTextField(
                 state = searchState,
-                placeholder = "이름으로 검색",
+                placeholder = "textfield",
                 trailingContent = {
                     Icon(
                         imageVector = Icons.Default.Search,
@@ -62,8 +78,19 @@ fun RecipientListScreen(
                 modifier = Modifier.padding(top = 12.dp),
             ) {
                 items(recipients) { recipient ->
-                    RecipientListItem(recipient = recipient)
+                    RecipientListItem(
+                        recipient = recipient,
+                        selected = recipient.id in selectedIds,
+                        onSelectedChange = { checked ->
+                            if (checked) {
+                                selectedIds.add(recipient.id)
+                            } else {
+                                selectedIds.remove(recipient.id)
+                            }
+                        },
+                    )
                 }
+                item { Spacer(modifier = Modifier.padding(14.dp)) }
             }
         }
     }
@@ -73,11 +100,13 @@ fun RecipientListScreen(
 @Composable
 private fun RecipientListScreenPrev() {
     RecipientListScreen(
-        recipients = listOf(
-            Recipient(id = 1L, name = "박경민", relationship = "친구"),
-            Recipient(id = 2L, name = "김철수", relationship = "가족"),
-            Recipient(id = 3L, name = "이영희", relationship = "연인"),
-        ),
+        recipients =
+            listOf(
+                Recipient(id = 1L, name = "박경민", relationship = "친구"),
+                Recipient(id = 2L, name = "김철수", relationship = "가족"),
+                Recipient(id = 3L, name = "이영희", relationship = "연인"),
+            ),
         onBackClick = {},
+        onConfirmClick = {},
     )
 }
