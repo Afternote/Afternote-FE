@@ -28,10 +28,12 @@ import com.afternote.feature.afternote.presentation.author.editor.selection.Sele
 import com.afternote.feature.afternote.presentation.author.editor.social.SocialNetworkEditorContent
 import com.afternote.feature.afternote.presentation.author.editor.social.SocialNetworkEditorContentParams
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
+import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 
 @Composable
 internal fun EditContent(
     state: AfternoteEditorState,
+    form: EditorFormState,
     onNavigateToAddSong: () -> Unit,
     onNavigateToSelectReceiver: () -> Unit,
     onPhotoAddClick: () -> Unit,
@@ -57,7 +59,7 @@ internal fun EditContent(
                     SelectionDropdownLabelParams(
                         label = "종류",
                     ),
-                selectedValue = state.selectedCategory.displayLabel,
+                selectedValue = form.selectedCategory.displayLabel,
                 options = state.categories,
                 onValueSelected = state::onCategorySelected,
                 menuStyle =
@@ -68,7 +70,7 @@ internal fun EditContent(
                 state = state.categoryDropdownState,
             )
 
-            if (state.selectedCategory != EditorCategory.MEMORIAL) {
+            if (form.selectedCategory != EditorCategory.MEMORIAL) {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 SelectionDropdown(
@@ -76,8 +78,8 @@ internal fun EditContent(
                         SelectionDropdownLabelParams(
                             label = "서비스명",
                         ),
-                    selectedValue = state.selectedService,
-                    options = state.currentServiceOptions,
+                    selectedValue = form.selectedService,
+                    options = form.currentServiceOptions,
                     onValueSelected = state::onServiceSelected,
                     menuStyle =
                         DropdownMenuStyle(
@@ -91,6 +93,7 @@ internal fun EditContent(
 
             CategoryContent(
                 state = state,
+                form = form,
                 onNavigateToAddSong = onNavigateToAddSong,
                 onNavigateToSelectReceiver = onNavigateToSelectReceiver,
                 onPhotoAddClick = onPhotoAddClick,
@@ -105,6 +108,7 @@ internal fun EditContent(
 @Composable
 internal fun CategoryContent(
     state: AfternoteEditorState,
+    form: EditorFormState,
     onNavigateToAddSong: () -> Unit,
     onNavigateToSelectReceiver: () -> Unit,
     onPhotoAddClick: () -> Unit,
@@ -112,23 +116,23 @@ internal fun CategoryContent(
     onThumbnailBytesReady: (ByteArray?) -> Unit,
     bottomPadding: PaddingValues,
 ) {
-    when (state.selectedCategory) {
+    when (form.selectedCategory) {
         EditorCategory.MEMORIAL -> {
             MemorialGuidelineEditorContent(
                 bottomPadding = bottomPadding,
                 params =
                     MemorialGuidelineEditorContentParams(
-                        displayMemorialPhotoUri = state.displayMemorialPhotoUri,
-                        playlistSongCount = state.livePlaylistSongCount,
-                        playlistAlbumCovers = state.displayAlbumCovers,
-                        selectedLastWish = state.selectedLastWish,
+                        displayMemorialPhotoUri = form.displayMemorialPhotoUri(),
+                        playlistSongCount = form.livePlaylistSongCount(state.playlistStateHolder),
+                        playlistAlbumCovers = form.displayAlbumCovers(state.playlistStateHolder),
+                        selectedLastWish = form.selectedLastWish,
                         lastWishOptions = state.lastWishOptions,
-                        funeralVideoUrl = state.funeralVideoUrl,
-                        funeralThumbnailUrl = state.funeralThumbnailUrl,
+                        funeralVideoUrl = form.funeralVideoUrl,
+                        funeralThumbnailUrl = form.funeralThumbnailUrl,
                         customLastWishState = state.customLastWishState,
                         recipientSection =
                             AfternoteEditorReceiverSection(
-                                afternoteEditReceivers = state.afternoteEditReceivers,
+                                afternoteEditReceivers = form.afternoteEditReceivers,
                                 callbacks =
                                     AfternoteEditorReceiverCallbacks(
                                         onAddClick = onNavigateToSelectReceiver,
@@ -156,12 +160,12 @@ internal fun CategoryContent(
                         onMessageAddClick = state::addEditorMessage,
                         infoMethodSection =
                             InfoMethodSection(
-                                selectedMethod = state.selectedInformationProcessingMethod,
+                                selectedMethod = form.selectedInformationProcessingMethod,
                                 onMethodSelected = state::onInformationProcessingMethodSelected,
                             ),
                         recipientSection =
                             AfternoteEditorReceiverSection(
-                                afternoteEditReceivers = state.afternoteEditReceivers,
+                                afternoteEditReceivers = form.afternoteEditReceivers,
                                 callbacks =
                                     AfternoteEditorReceiverCallbacks(
                                         onAddClick = state::showAddAfternoteEditorReceiverDialog,
@@ -171,7 +175,7 @@ internal fun CategoryContent(
                             ),
                         processingMethodSection =
                             ProcessingMethodSection(
-                                items = state.galleryProcessingMethods,
+                                items = form.galleryProcessingMethods,
                                 callbacks = state.galleryProcessingCallbacks,
                             ),
                     ),
@@ -191,12 +195,12 @@ internal fun CategoryContent(
                             AccountSection(
                                 idState = state.idState,
                                 passwordState = state.passwordState,
-                                selectedMethod = state.selectedProcessingMethod,
+                                selectedMethod = form.selectedProcessingMethod,
                                 onMethodSelected = state::onProcessingMethodSelected,
                             ),
                         recipientSection =
                             AfternoteEditorReceiverSection(
-                                afternoteEditReceivers = state.afternoteEditReceivers,
+                                afternoteEditReceivers = form.afternoteEditReceivers,
                                 callbacks =
                                     AfternoteEditorReceiverCallbacks(
                                         onAddClick = onNavigateToSelectReceiver,
@@ -206,7 +210,7 @@ internal fun CategoryContent(
                             ),
                         processingMethodSection =
                             ProcessingMethodSection(
-                                items = state.processingMethods,
+                                items = form.socialProcessingMethods,
                                 callbacks = state.socialProcessingCallbacks,
                             ),
                     ),

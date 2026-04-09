@@ -3,7 +3,6 @@ package com.afternote.feature.afternote.presentation.author.editor
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
-import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.MemorialPlaylistStateHolder
 
 /**
@@ -57,7 +56,6 @@ sealed interface AfternoteEditorUiEvent {
 
     data class LoadForEdit(
         val afternoteId: Long,
-        val state: AfternoteEditorState,
         val playlistStateHolder: MemorialPlaylistStateHolder?,
     ) : AfternoteEditorUiEvent
 }

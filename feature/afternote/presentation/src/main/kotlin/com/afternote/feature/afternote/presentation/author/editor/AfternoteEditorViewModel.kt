@@ -2,6 +2,7 @@ package com.afternote.feature.afternote.presentation.author.editor
 
 import android.util.Log
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.feature.afternote.domain.model.Detail
@@ -11,16 +12,25 @@ import com.afternote.feature.afternote.domain.repository.AuthorReceiverRepositor
 import com.afternote.feature.afternote.domain.repository.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.presentation.author.editor.mapper.AfternoteEditorMapper
 import com.afternote.feature.afternote.presentation.author.editor.mapper.toAfternoteEditorReceivers
+import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
+import com.afternote.feature.afternote.presentation.author.editor.model.InformationProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.playlist.Song
+import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
+import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorUiState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteSaveState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationException
+import com.afternote.feature.afternote.presentation.author.editor.state.DEFAULT_EDITOR_MESSAGE_BLOCKS
+import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.author.editor.state.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.usecase.SaveAfternoteUseCase
+import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
+import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,31 +47,175 @@ import javax.inject.Inject
 
 private const val TAG = "AfternoteEditorVM"
 
+private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v1"
+
+@Serializable
+private data class ReceiverSnap(
+    val id: String,
+    val name: String,
+    val label: String,
+)
+
+@Serializable
+private data class PmSnap(
+    val id: String,
+    val text: String,
+)
+
+@Serializable
+private data class AlbumSnap(
+    val id: String,
+    val imageUrl: String? = null,
+    val title: String? = null,
+)
+
+@Serializable
+private data class MessageBlockSnap(
+    val title: String = "",
+    val body: String = "",
+)
+
+@Serializable
+private data class EditorFormSnapshot(
+    val loadedItemId: String? = null,
+    val categoryName: String = "SOCIAL",
+    val selectedService: String = "",
+    val processingAccount: String = "MEMORIAL_ACCOUNT",
+    val processingInfo: String = "TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER",
+    val receivers: List<ReceiverSnap> = emptyList(),
+    val social: List<PmSnap> = emptyList(),
+    val gallery: List<PmSnap> = emptyList(),
+    val selectedLastWish: String? = null,
+    val pickedMemorialPhotoUri: String? = null,
+    val funeralVideoUrl: String? = null,
+    val funeralThumbnailUrl: String? = null,
+    val memorialPhotoUrl: String? = null,
+    val playlistSongCount: Int = 16,
+    val albumCovers: List<AlbumSnap> = emptyList(),
+    val editorMessages: List<MessageBlockSnap> = emptyList(),
+) {
+    fun toEditorFormState(restoreGeneration: Long): EditorFormState {
+        val category =
+            runCatching { EditorCategory.valueOf(categoryName) }.getOrElse { EditorCategory.SOCIAL }
+        val service =
+            selectedService.ifBlank {
+                if (category == EditorCategory.GALLERY) {
+                    AfternoteServiceCatalog.defaultGalleryService
+                } else {
+                    AfternoteServiceCatalog.defaultSocialService
+                }
+            }
+        val accountMethod =
+            runCatching { AccountProcessingMethod.valueOf(processingAccount) }
+                .getOrElse { AccountProcessingMethod.MEMORIAL_ACCOUNT }
+        val infoMethod =
+            runCatching { InformationProcessingMethod.valueOf(processingInfo) }
+                .getOrElse { InformationProcessingMethod.TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER }
+        val blocks: List<EditorMessageTextBlock> =
+            if (editorMessages.isEmpty()) {
+                DEFAULT_EDITOR_MESSAGE_BLOCKS
+            } else {
+                editorMessages.map { EditorMessageTextBlock(title = it.title, body = it.body) }
+            }
+        return EditorFormState(
+            loadedItemId = loadedItemId,
+            selectedCategory = category,
+            selectedService = service,
+            selectedProcessingMethod = accountMethod,
+            selectedInformationProcessingMethod = infoMethod,
+            afternoteEditReceivers =
+                receivers.map { AfternoteEditorReceiver(id = it.id, name = it.name, label = it.label) },
+            socialProcessingMethods = social.map { ProcessingMethodItem(it.id, it.text) },
+            galleryProcessingMethods = gallery.map { ProcessingMethodItem(it.id, it.text) },
+            selectedLastWish = selectedLastWish,
+            pickedMemorialPhotoUri = pickedMemorialPhotoUri,
+            funeralVideoUrl = funeralVideoUrl,
+            funeralThumbnailUrl = funeralThumbnailUrl,
+            memorialPhotoUrl = memorialPhotoUrl,
+            playlistSongCount = playlistSongCount,
+            playlistAlbumCovers =
+                albumCovers.map { AlbumCover(id = it.id, imageUrl = it.imageUrl, title = it.title) },
+            messageBlocks = blocks,
+            messageBlocksRestoreGeneration = restoreGeneration,
+        )
+    }
+
+    companion object {
+        fun from(form: EditorFormState): EditorFormSnapshot =
+            EditorFormSnapshot(
+                loadedItemId = form.loadedItemId,
+                categoryName = form.selectedCategory.name,
+                selectedService = form.selectedService,
+                processingAccount = form.selectedProcessingMethod.name,
+                processingInfo = form.selectedInformationProcessingMethod.name,
+                receivers =
+                    form.afternoteEditReceivers.map {
+                        ReceiverSnap(id = it.id, name = it.name, label = it.label)
+                    },
+                social = form.socialProcessingMethods.map { PmSnap(it.id, it.text) },
+                gallery = form.galleryProcessingMethods.map { PmSnap(it.id, it.text) },
+                selectedLastWish = form.selectedLastWish,
+                pickedMemorialPhotoUri = form.pickedMemorialPhotoUri,
+                funeralVideoUrl = form.funeralVideoUrl,
+                funeralThumbnailUrl = form.funeralThumbnailUrl,
+                memorialPhotoUrl = form.memorialPhotoUrl,
+                playlistSongCount = form.playlistSongCount,
+                albumCovers =
+                    form.playlistAlbumCovers.map {
+                        AlbumSnap(id = it.id, imageUrl = it.imageUrl, title = it.title)
+                    },
+                editorMessages =
+                    form.messageBlocks.map { MessageBlockSnap(title = it.title, body = it.body) },
+            )
+    }
+}
+
 /**
  * 애프터노트 생성/수정 ViewModel. 저장·미디어 해석은 [SaveAfternoteUseCase]에 위임합니다.
  *
- * **SSOT:** 수정 모드에서 폼에 채울 원본은 홈 리스트가 아니라 [AfternoteRepository.getDetail] 응답이다.
- * Navigation은 [com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute.EditorRoute]의
- * `itemId` 등 **최소 식별자**만 넘기고, 실제 로드는 [loadForEdit]에서 Repository를 호출해 수행한다
- * (Modern Android Architecture 권장과 동일한 방향).
+ * **SSOT:** 비즈니스 폼 필드는 [EditorFormState] + [editorFormStateFlow]이며, 프로세스 종료 시 [SavedStateHandle] JSON 스냅샷으로 복원합니다.
+ * 순수 UI는 [editorUi] ([AfternoteEditorUiState])가 담당합니다.
  */
 @HiltViewModel
 class AfternoteEditorViewModel
     @Inject
     constructor(
+        private val savedStateHandle: SavedStateHandle,
         private val authorReceiverRepository: AuthorReceiverRepository,
         private val afternoteRepository: AfternoteRepository,
         private val memorialThumbnailUploadRepository: MemorialThumbnailUploadRepository,
         private val saveAfternoteUseCase: SaveAfternoteUseCase,
     ) : ViewModel() {
-        val editorFormState: AfternoteEditorState =
-            AfternoteEditorState(
+        private val formSnapshotJson =
+            Json {
+                ignoreUnknownKeys = true
+                encodeDefaults = true
+            }
+
+        val editorUi: AfternoteEditorUiState =
+            AfternoteEditorUiState(
                 idState = TextFieldState(),
                 passwordState = TextFieldState(),
                 afternoteEditReceiverNameState = TextFieldState(),
                 phoneNumberState = TextFieldState(),
                 customServiceNameState = TextFieldState(),
                 customLastWishState = TextFieldState(),
+            )
+
+        private val editorForm =
+            MutableStateFlow(readFormSnapshotOrDefault())
+
+        /** 비즈니스 폼 상태 (UDF 소스). */
+        val editorFormStateFlow: StateFlow<EditorFormState> = _editorForm.asStateFlow()
+
+        val editorFormState: AfternoteEditorState =
+            AfternoteEditorState(
+                ui = editorUi,
+                updateForm = { block ->
+                    _editorForm.update(block)
+                    persistFormSnapshot(_editorForm.value)
+                },
+                formStateSource = _editorForm.asStateFlow(),
             )
 
         private val apiErrorBodyJson =
@@ -90,11 +244,38 @@ class AfternoteEditorViewModel
 
         private var loadedCategoryForEdit: EditorCategory? = null
 
+        private fun readFormSnapshotOrDefault(): EditorFormState {
+            val raw = savedStateHandle.get<String>(EDITOR_FORM_SNAPSHOT_KEY) ?: return EditorFormState()
+            return runCatching {
+                formSnapshotJson
+                    .decodeFromString(EditorFormSnapshot.serializer(), raw)
+                    .toEditorFormState(restoreGeneration = System.nanoTime())
+            }.getOrElse {
+                Log.w(TAG, "readFormSnapshotOrDefault: decode failed, using defaults", it)
+                EditorFormState()
+            }
+        }
+
+        private fun persistFormSnapshot(form: EditorFormState) {
+            runCatching {
+                savedStateHandle[EDITOR_FORM_SNAPSHOT_KEY] =
+                    formSnapshotJson.encodeToString(EditorFormSnapshot.serializer(), EditorFormSnapshot.from(form))
+            }.onFailure { e ->
+                Log.w(TAG, "persistFormSnapshot failed", e)
+            }
+        }
+
         fun onEvent(event: AfternoteEditorUiEvent) {
             when (event) {
-                is AfternoteEditorUiEvent.LoadReceivers -> loadReceivers()
-                is AfternoteEditorUiEvent.UploadThumbnail -> uploadMemorialThumbnail(event.jpegBytes)
-                is AfternoteEditorUiEvent.Save ->
+                is AfternoteEditorUiEvent.LoadReceivers -> {
+                    loadReceivers()
+                }
+
+                is AfternoteEditorUiEvent.UploadThumbnail -> {
+                    uploadMemorialThumbnail(event.jpegBytes)
+                }
+
+                is AfternoteEditorUiEvent.Save -> {
                     saveAfternote(
                         editingId = event.editingId,
                         category = event.editorCategory,
@@ -103,13 +284,14 @@ class AfternoteEditorViewModel
                         playlistStateHolder = event.playlistStateHolder,
                         memorialMedia = event.memorialMedia,
                     )
+                }
 
-                is AfternoteEditorUiEvent.LoadForEdit ->
+                is AfternoteEditorUiEvent.LoadForEdit -> {
                     loadForEdit(
                         afternoteId = event.afternoteId,
-                        state = event.state,
                         playlistStateHolder = event.playlistStateHolder,
                     )
+                }
             }
         }
 
@@ -191,15 +373,8 @@ class AfternoteEditorViewModel
             }
         }
 
-        /**
-         * 서버(또는 API) 기준 최신 상세를 가져와 폼에 반영한다. 목록 스냅샷은 사용하지 않는다.
-         *
-         * [MemorialPlaylistStateHolder]는 그래프 스코프 인메모리 초안이라 DI로 VM에 주입되지 않으며,
-         * 호출부(Compose)에서 [AfternoteEditorUiEvent.LoadForEdit]로 함께 넘긴다.
-         */
         private fun loadForEdit(
             afternoteId: Long,
-            state: AfternoteEditorState,
             playlistStateHolder: MemorialPlaylistStateHolder? = null,
         ) {
             viewModelScope.launch {
@@ -209,7 +384,7 @@ class AfternoteEditorViewModel
                         populatePlaylistFromDetail(detail, playlistStateHolder)
                         val prefill = AfternoteEditorMapper.buildEditorFormPrefill(detail)
                         loadedCategoryForEdit = prefill.category
-                        state.applyFormPrefill(prefill)
+                        editorFormState.applyFormPrefill(prefill)
                     }
             }
         }

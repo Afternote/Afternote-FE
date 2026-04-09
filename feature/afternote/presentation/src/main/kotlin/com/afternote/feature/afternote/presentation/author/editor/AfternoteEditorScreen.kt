@@ -18,17 +18,20 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.domain.model.ListItem
 import com.afternote.feature.afternote.presentation.author.editor.mapper.AfternoteEditorMapper
 import com.afternote.feature.afternote.presentation.author.editor.mapper.editScreenLabelRes
+import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.LoadFromExistingAccountParams
 import com.afternote.feature.afternote.presentation.author.editor.model.LoadFromExistingParams
@@ -38,8 +41,13 @@ import com.afternote.feature.afternote.presentation.author.editor.state.Afternot
 import com.afternote.feature.afternote.presentation.author.editor.state.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlin.time.Duration.Companion.milliseconds
 
 private const val TAG = "AfternoteEditorScreen"
+
+private val EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE = 1_500.milliseconds
 
 /**
  * 애프터노트 수정/작성 화면
@@ -62,10 +70,29 @@ fun AfternoteEditorScreen(
     initialListItem: ListItem? = null,
     saveError: AfternoteEditorSaveError? = null,
 ) {
+    val form by state.formState.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
     val snackbarHostState = remember { SnackbarHostState() }
     val editScreenCategoryDisplayString =
         initialListItem?.let { stringResource(it.type.editScreenLabelRes) }
+
+    LaunchedEffect(form.messageBlocksRestoreGeneration) {
+        if (form.messageBlocksRestoreGeneration != 0L) {
+            state.syncEditorMessagesFromForm(form.messageBlocks)
+        }
+        snapshotFlow {
+            state.editorMessages.map { msg ->
+                EditorMessageTextBlock(
+                    title = msg.titleState.text.toString(),
+                    body = msg.contentState.text.toString(),
+                )
+            }
+        }.distinctUntilChanged()
+            .debounce(EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE)
+            .collect { blocks ->
+                state.persistEditorMessagesFromTyping(blocks)
+            }
+    }
 
     LaunchedEffect(saveError) {
         saveError?.let { err ->
@@ -76,7 +103,7 @@ fun AfternoteEditorScreen(
         }
     }
 
-    LaunchedEffect(initialListItem?.id, editScreenCategoryDisplayString) {
+    LaunchedEffect(initialListItem?.id, editScreenCategoryDisplayString, form.loadedItemId) {
         val item =
             initialListItem ?: run {
                 Log.d(TAG, "LaunchedEffect: initialListItem is null, skipping applyFormPrefill")
@@ -84,10 +111,10 @@ fun AfternoteEditorScreen(
             }
         Log.d(
             TAG,
-            "LaunchedEffect: item.id=${item.id}, state.loadedItemId=${state.loadedItemId}, " +
-                "needsLoad=${state.loadedItemId != item.id}",
+            "LaunchedEffect: item.id=${item.id}, state.loadedItemId=${form.loadedItemId}, " +
+                "needsLoad=${form.loadedItemId != item.id}",
         )
-        if (state.loadedItemId != item.id) {
+        if (form.loadedItemId != item.id) {
             state.applyFormPrefill(
                 AfternoteEditorMapper.editorFormPrefillFromLoadParams(
                     LoadFromExistingParams(
@@ -132,7 +159,7 @@ fun AfternoteEditorScreen(
     val songCount by remember {
         playlistStateHolder?.songs?.let {
             derivedStateOf { it.size }
-        } ?: derivedStateOf { state.playlistSongCount }
+        } ?: derivedStateOf { form.playlistSongCount }
     }
 
     LaunchedEffect(songCount) {
@@ -184,6 +211,7 @@ fun AfternoteEditorScreen(
         ) {
             EditContent(
                 state = state,
+                form = form,
                 onNavigateToAddSong = callbacks.onNavigateToAddSong,
                 onNavigateToSelectReceiver = callbacks.onNavigateToSelectReceiver,
                 onPhotoAddClick = {

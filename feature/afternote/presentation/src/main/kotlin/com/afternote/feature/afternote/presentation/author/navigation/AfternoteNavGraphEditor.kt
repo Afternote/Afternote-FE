@@ -20,6 +20,7 @@ import com.afternote.feature.afternote.presentation.author.editor.AfternoteEdito
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.author.editor.RegisterAfternotePayloadBuilder
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
+import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteSaveState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
@@ -114,6 +115,14 @@ internal fun buildEditScreenCallbacks(params: EditScreenCallbacksParams): Aftern
             params.navController.popBackStack()
         },
         onRegisterClick = {
+            params.state.persistEditorMessagesFromTyping(
+                params.state.editorMessages.map { msg ->
+                    EditorMessageTextBlock(
+                        title = msg.titleState.text.toString(),
+                        body = msg.contentState.text.toString(),
+                    )
+                },
+            )
             val payload = RegisterAfternotePayloadBuilder.fromEditorState(params.state)
             params.editViewModel.onEvent(
                 AfternoteEditorUiEvent.Save(
@@ -152,6 +161,7 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
     val route = params.backStackEntry.toRoute<AfternoteRoute.EditorRoute>()
     val saveState by editViewModel.saveState.collectAsStateWithLifecycle()
     val authorReceivers by editViewModel.authorReceiversUi.collectAsStateWithLifecycle()
+    val form by editViewModel.editorFormStateFlow.collectAsStateWithLifecycle()
     val state = params.editState ?: editViewModel.editorFormState
 
     // 새 글 작성 시 기존 상태 초기화 (목적지 화면이 스스로 책임)
@@ -193,13 +203,12 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
     }
 
     // 수정 진입: 라우트 ID만 사용 → VM이 Repository(getDetail)로 SSOT 로드. holder는 그래프 스코프 초안 전달용.
-    LaunchedEffect(route.itemId) {
+    LaunchedEffect(route.itemId, form.loadedItemId) {
         val id = route.itemId?.toLongOrNull() ?: return@LaunchedEffect
-        if (state.loadedItemId != route.itemId) {
+        if (form.loadedItemId != route.itemId) {
             editViewModel.onEvent(
                 AfternoteEditorUiEvent.LoadForEdit(
                     afternoteId = id,
-                    state = state,
                     playlistStateHolder = params.playlistStateHolder,
                 ),
             )

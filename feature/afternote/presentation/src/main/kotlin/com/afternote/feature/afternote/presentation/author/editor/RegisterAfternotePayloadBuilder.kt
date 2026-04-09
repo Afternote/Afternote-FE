@@ -1,7 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
 import com.afternote.feature.afternote.domain.model.ProcessingMethod
-import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessagesCodec
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
@@ -16,37 +15,32 @@ object RegisterAfternotePayloadBuilder {
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
 
     fun fromEditorState(state: AfternoteEditorState): RegisterAfternotePayload {
+        val form = state.formState.value
         val date = LocalDate.now().format(dateFormatter)
         val socialMethods =
-            state.processingMethods.map {
+            form.socialProcessingMethods.map {
                 ProcessingMethod(it.id, it.text)
             }
         val galleryMethods =
-            state.galleryProcessingMethods.map {
+            form.galleryProcessingMethods.map {
                 ProcessingMethod(it.id, it.text)
             }
-        val messageBlocks =
-            state.editorMessages.map { msg ->
-                EditorMessageTextBlock(
-                    title = msg.titleState.text.toString(),
-                    body = msg.contentState.text.toString(),
-                )
-            }
-        val fullMessage = EditorMessagesCodec.serializeBlocksToPersisted(messageBlocks)
+        val fullMessage =
+            EditorMessagesCodec.serializeBlocksToPersisted(form.messageBlocks)
 
         return RegisterAfternotePayload(
             serviceName =
-                if (state.selectedCategory == EditorCategory.MEMORIAL) {
+                if (form.selectedCategory == EditorCategory.MEMORIAL) {
                     EditorCategory.MEMORIAL.displayLabel
                 } else {
-                    state.selectedService
+                    form.selectedService
                 },
             date = date,
             accountId = state.idState.text.toString(),
             password = state.passwordState.text.toString(),
             message = fullMessage,
-            accountProcessingMethod = state.selectedProcessingMethod.name,
-            informationProcessingMethod = state.selectedInformationProcessingMethod.name,
+            accountProcessingMethod = form.selectedProcessingMethod.name,
+            informationProcessingMethod = form.selectedInformationProcessingMethod.name,
             processingMethods = socialMethods,
             galleryProcessingMethods = galleryMethods,
             atmosphere = state.getAtmosphereForSave(),
