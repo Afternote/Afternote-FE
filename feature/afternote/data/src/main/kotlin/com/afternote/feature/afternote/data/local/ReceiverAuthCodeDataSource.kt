@@ -18,17 +18,16 @@ private object ReceiverAuthCodeKeys {
 }
 
 /**
- * [ReceiverAuthCodeLocalDataSource]의 DataStore(Preferences) 구현.
- *
- * 인증 코드는 민감할 수 있어, 필요 시 Keystore·암호화 저장소로 교체하는 것을 검토하세요.
+ * 수신 인증 코드 로컬 저장 (DataStore Preferences).
+ * 도메인 [com.afternote.feature.afternote.domain.repository.ReceiverRepository]는 구현체에서만 이 클래스를 사용합니다.
  */
 @Singleton
-class DataStoreReceiverAuthCodeLocalDataSource
+class ReceiverAuthCodeDataSource
     @Inject
     constructor(
         @ReceiverAuthCodeDataStore private val dataStore: DataStore<Preferences>,
-    ) : ReceiverAuthCodeLocalDataSource {
-        override val savedCodeFlow: Flow<String?> =
+    ) {
+        val savedCodeFlow: Flow<String?> =
             dataStore.data
                 .catch { exception ->
                     if (exception is IOException) {
@@ -40,7 +39,7 @@ class DataStoreReceiverAuthCodeLocalDataSource
                     preferences[ReceiverAuthCodeKeys.AUTH_CODE]?.takeIf { it.isNotBlank() }
                 }
 
-        override suspend fun saveCode(code: String) {
+        suspend fun saveCode(code: String) {
             val trimmed = code.trim()
             dataStore.edit { preferences ->
                 if (trimmed.isEmpty()) {
@@ -51,7 +50,7 @@ class DataStoreReceiverAuthCodeLocalDataSource
             }
         }
 
-        override suspend fun clearCode() {
+        suspend fun clearCode() {
             dataStore.edit { preferences ->
                 preferences.remove(ReceiverAuthCodeKeys.AUTH_CODE)
             }
