@@ -33,30 +33,21 @@ class AfternoteDebugMockNetworkInterceptor
 
             val json =
                 when {
-                    path == "/music/search" && method == "GET" -> {
-                        MOCK_MUSIC_SEARCH_JSON
-                    }
+                    path == "/auth/social/login" && method == "POST" -> MOCK_SOCIAL_LOGIN_JSON
+                    path == "/auth/login" && method == "POST" -> MOCK_LOGIN_JSON
+                    path == "/auth/logout" && method == "POST" -> MOCK_LOGOUT_JSON
 
-                    path == "/api/afternotes" && method == "GET" -> {
-                        MOCK_LIST_JSON
-                    }
-
-                    path == "/api/afternotes" && method == "POST" -> {
-                        MOCK_CREATE_JSON
-                    }
-
-                    path.matches(AFTERNOTE_ID_PATH_REGEX) -> {
+                    path == "/music/search" && method == "GET" -> MOCK_MUSIC_SEARCH_JSON
+                    path == "/api/afternotes" && method == "GET" -> MOCK_LIST_JSON
+                    path == "/api/afternotes" && method == "POST" -> MOCK_CREATE_JSON
+                    path.matches(AFTERNOTE_ID_PATH_REGEX) ->
                         when (method) {
                             "GET" -> mockDetailJson(path)
                             "PATCH" -> MOCK_PATCH_JSON
                             "DELETE" -> MOCK_DELETE_JSON
                             else -> return chain.proceed(request)
                         }
-                    }
-
-                    else -> {
-                        return chain.proceed(request)
-                    }
+                    else -> return chain.proceed(request)
                 }
 
             Log.w(TAG, "⚠️ MOCK 응답 반환: $method $path")
@@ -107,6 +98,21 @@ class AfternoteDebugMockNetworkInterceptor
             val MOCK_DELETE_JSON =
                 """
                 {"status":200,"code":0,"message":null,"data":{"afternoteId":1}}
+                """.trimIndent()
+
+            val MOCK_SOCIAL_LOGIN_JSON =
+                """
+                {"status":200,"code":0,"message":null,"data":{"accessToken":"mock_access_token","refreshToken":"mock_refresh_token","userId":1,"isNewUser":false}}
+                """.trimIndent()
+
+            val MOCK_LOGIN_JSON =
+                """
+                {"status":200,"code":0,"message":null,"data":{"accessToken":"mock_access_token","refreshToken":"mock_refresh_token","userId":1}}
+                """.trimIndent()
+
+            val MOCK_LOGOUT_JSON =
+                """
+                {"status":200,"code":0,"message":null,"data":null}
                 """.trimIndent()
 
             val MOCK_MUSIC_SEARCH_JSON =
