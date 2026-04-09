@@ -20,13 +20,11 @@ import com.afternote.feature.afternote.presentation.author.editor.AfternoteEdito
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorUiEvent
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteSaveState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
 import com.afternote.feature.afternote.presentation.author.editor.state.MemorialPlaylistStateHolder
-import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.author.navigation.model.SELECTED_RECEIVER_ID_KEY
 
@@ -122,7 +120,7 @@ internal fun buildEditScreenCallbacks(params: EditScreenCallbacksParams): Aftern
                     editingId =
                         params.route.itemId?.toLongOrNull()
                             ?: params.initialListItem?.id?.toLongOrNull(),
-                    editorCategory = EditorCategory.fromDisplayLabel(params.state.selectedCategory),
+                    editorCategory = params.state.selectedCategory,
                     payload = payload,
                     selectedReceiverIds = params.state.afternoteEditReceivers.mapNotNull { it.id.toLongOrNull() },
                     playlistStateHolder = params.playlistStateHolder,
@@ -151,10 +149,8 @@ internal fun buildEditScreenCallbacks(params: EditScreenCallbacksParams): Aftern
     )
 
 @Composable
-internal fun AfternoteEditorNavigation(
-    params: AfternoteEditorNavigationParams,
-    editViewModel: AfternoteEditorViewModel = hiltViewModel(),
-) {
+internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) {
+    val editViewModel = hiltViewModel<AfternoteEditorViewModel>(params.backStackEntry)
     val route = params.backStackEntry.toRoute<AfternoteRoute.EditorRoute>()
     val visibleItems =
         remember(params.afternoteVisibleItems) {
@@ -173,8 +169,7 @@ internal fun AfternoteEditorNavigation(
     }
     val saveState by editViewModel.saveState.collectAsStateWithLifecycle()
     val authorReceivers by editViewModel.authorReceiversUi.collectAsStateWithLifecycle()
-    val newState = rememberAfternoteEditorState()
-    val state = params.editState ?: newState
+    val state = params.editState ?: editViewModel.editorFormState
 
     // 새 글 작성 시 기존 상태 초기화 (목적지 화면이 스스로 책임)
     LaunchedEffect(Unit) {

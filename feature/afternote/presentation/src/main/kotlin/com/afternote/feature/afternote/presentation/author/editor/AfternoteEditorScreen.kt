@@ -28,6 +28,7 @@ import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.domain.model.ListItem
 import com.afternote.feature.afternote.presentation.author.editor.mapper.editScreenLabelRes
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.LoadFromExistingAccountParams
@@ -224,7 +225,7 @@ private fun AfternoteEditorScreenGalleryAndFilePreview() {
     AfternoteLightTheme {
         val state =
             rememberAfternoteEditorState().apply {
-                onCategorySelected(CATEGORY_GALLERY_AND_FILE)
+                onCategorySelected(EditorCategory.GALLERY.displayLabel)
             }
         AfternoteEditorScreen(
             callbacks = AfternoteEditorScreenCallbacks(onBackClick = {}),
@@ -243,7 +244,7 @@ private fun AfternoteEditorScreenMemorialGuidelinePreview() {
     AfternoteLightTheme {
         val state =
             rememberAfternoteEditorState().apply {
-                onCategorySelected(CATEGORY_MEMORIAL_GUIDELINE)
+                onCategorySelected(EditorCategory.MEMORIAL.displayLabel)
             }
         AfternoteEditorScreen(
             callbacks = AfternoteEditorScreenCallbacks(onBackClick = {}),

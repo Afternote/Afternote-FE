@@ -19,6 +19,7 @@ import com.afternote.feature.afternote.presentation.author.editor.memorial.Memor
 import com.afternote.feature.afternote.presentation.author.editor.model.AccountSection
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverSection
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.InfoMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.selection.DropdownMenuStyle
@@ -56,7 +57,7 @@ internal fun EditContent(
                     SelectionDropdownLabelParams(
                         label = "종류",
                     ),
-                selectedValue = state.selectedCategory,
+                selectedValue = state.selectedCategory.displayLabel,
                 options = state.categories,
                 onValueSelected = state::onCategorySelected,
                 menuStyle =
@@ -67,7 +68,7 @@ internal fun EditContent(
                 state = state.categoryDropdownState,
             )
 
-            if (state.selectedCategory != CATEGORY_MEMORIAL_GUIDELINE) {
+            if (state.selectedCategory != EditorCategory.MEMORIAL) {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 SelectionDropdown(
@@ -112,7 +113,7 @@ internal fun CategoryContent(
     bottomPadding: PaddingValues,
 ) {
     when (state.selectedCategory) {
-        CATEGORY_MEMORIAL_GUIDELINE -> {
+        EditorCategory.MEMORIAL -> {
             MemorialGuidelineEditorContent(
                 bottomPadding = bottomPadding,
                 params =
@@ -144,7 +145,7 @@ internal fun CategoryContent(
             )
         }
 
-        CATEGORY_GALLERY_AND_FILE -> {
+        EditorCategory.GALLERY -> {
             GalleryAndFileEditorContent(
                 bottomPadding = bottomPadding,
                 params =

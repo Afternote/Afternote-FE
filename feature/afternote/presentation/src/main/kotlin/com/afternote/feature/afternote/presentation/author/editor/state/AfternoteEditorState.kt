@@ -16,10 +16,10 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.afternote.core.ui.LastWishOption
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.feature.afternote.domain.model.ProcessingMethod
-import com.afternote.feature.afternote.presentation.author.editor.CATEGORY_MEMORIAL_GUIDELINE
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverCallbacks
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.InformationProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
@@ -27,14 +27,17 @@ import com.afternote.feature.afternote.presentation.author.editor.processing.mod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodManager
 import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdownState
-import com.afternote.feature.afternote.presentation.shared.DataProviderLocals
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 private const val TAG = "AfternoteEditorState"
-private const val CATEGORY_GALLERY_AND_FILE = "갤러리 및 파일"
+
+/** 여러 [EditorMessage] 블록을 API 단일 문자열로 합칠 때 사용 (본문에 쓰이지 않을 가능성이 높은 구분자). */
+private const val MESSAGE_TITLE_BODY_SEPARATOR = "\u001E"
+
+private const val MESSAGE_BLOCK_SEPARATOR = "\n---\n"
 private const val CUSTOM_ADD_OPTION = "직접 추가하기"
 private const val LAST_WISH_DEFAULT_CALM = "차분하고 조용하게 보내주세요."
 private const val LAST_WISH_DEFAULT_BRIGHT = "슬퍼 하지 말고 밝고 따뜻하게 보내주세요."
@@ -63,8 +66,6 @@ class AfternoteEditorState(
     val phoneNumberState: TextFieldState,
     val customServiceNameState: TextFieldState,
     val customLastWishState: TextFieldState,
-    initialAfternoteEditorReceivers: List<AfternoteEditorReceiver>,
-    albumCovers: List<AlbumCover>,
 ) {
     // 남기실 말씀 (multiple messages)
     val editorMessages: SnapshotStateList<EditorMessage> =
@@ -84,8 +85,8 @@ class AfternoteEditorState(
     var selectedBottomNavItem by mutableStateOf(BottomNavTab.NOTE)
         private set
 
-    // Category & Service
-    var selectedCategory by mutableStateOf("소셜네트워크")
+    // Category & Service (내부 식별은 [EditorCategory], 드롭다운은 [EditorCategory.displayLabel])
+    var selectedCategory by mutableStateOf(EditorCategory.SOCIAL)
         private set
     var selectedService by mutableStateOf(AfternoteServiceCatalog.defaultSocialService)
         private set
@@ -101,7 +102,7 @@ class AfternoteEditorState(
         private set
 
     // AfternoteEditorReceivers
-    var afternoteEditReceivers by mutableStateOf(initialAfternoteEditorReceivers)
+    var afternoteEditReceivers by mutableStateOf<List<AfternoteEditorReceiver>>(emptyList())
         private set
 
     // Dialog States
@@ -176,7 +177,7 @@ class AfternoteEditorState(
         private set
 
     // Constants (service names from single source: AfternoteServiceCatalog)
-    val categories = listOf("소셜네트워크", CATEGORY_GALLERY_AND_FILE, "추모 가이드라인")
+    val categories: List<String> = EditorCategory.entries.map { it.displayLabel }
     val services: List<String>
         get() = AfternoteServiceCatalog.socialServices
     val galleryServices: List<String>
@@ -197,7 +198,12 @@ class AfternoteEditorState(
                 value = "other",
             ),
         )
-    val playlistAlbumCovers = albumCovers
+    var playlistAlbumCovers by mutableStateOf<List<AlbumCover>>(emptyList())
+        private set
+
+    fun updateAlbumCovers(covers: List<AlbumCover>) {
+        playlistAlbumCovers = covers
+    }
 
     /** 플레이리스트 앨범 커버 (라이브 상태 우선, 없으면 초기 로드값) */
     val displayAlbumCovers: List<AlbumCover>
@@ -217,7 +223,7 @@ class AfternoteEditorState(
     // Computed Properties (Line 295 해결: 삼항 연산자 제거)
     val currentServiceOptions: List<String>
         get() =
-            if (selectedCategory == CATEGORY_GALLERY_AND_FILE) {
+            if (selectedCategory == EditorCategory.GALLERY) {
                 galleryServices
             } else {
                 services + CUSTOM_ADD_OPTION
@@ -264,11 +270,11 @@ class AfternoteEditorState(
     }
 
     // Actions (Line 279 해결: 람다 내부 중첩 조건문 제거)
-    fun onCategorySelected(category: String) {
-        selectedCategory = category
+    fun onCategorySelected(categoryDisplayLabel: String) {
+        selectedCategory = EditorCategory.fromDisplayLabel(categoryDisplayLabel)
         // 카테고리 변경 시 서비스를 해당 카테고리의 기본값으로 초기화
         selectedService =
-            if (category == CATEGORY_GALLERY_AND_FILE) {
+            if (selectedCategory == EditorCategory.GALLERY) {
                 AfternoteServiceCatalog.defaultGalleryService
             } else {
                 AfternoteServiceCatalog.defaultSocialService
@@ -396,10 +402,10 @@ class AfternoteEditorState(
     }
 
     /**
-     * Fills the receiver list from [com.afternote.feature.afternote.domain.repository.AuthorDirectoryRepository] once loaded, only for new drafts
+     * Fills the receiver list from [com.afternote.feature.afternote.domain.repository.AuthorReceiverRepository] once loaded, only for new drafts
      * where the user has not added receivers yet.
      */
-    fun replaceFromAuthorDirectoryIfEmpty(receivers: List<AfternoteEditorReceiver>) {
+    fun replaceReceiversIfEmpty(receivers: List<AfternoteEditorReceiver>) {
         if (receivers.isEmpty()) return
         if (afternoteEditReceivers.isNotEmpty()) return
         afternoteEditReceivers = receivers
@@ -420,6 +426,53 @@ class AfternoteEditorState(
     }
 
     /**
+     * API에 저장된 단일 문자열을 [editorMessages]로 복원한다.
+     * 블록은 [MESSAGE_BLOCK_SEPARATOR], 제목/본문은 [MESSAGE_TITLE_BODY_SEPARATOR](신규);
+     * 구버전(`title\nbody` 한 줄 제목 가정)은 첫 줄/나머지로 나눈다.
+     */
+    private fun restoreEditorMessagesFromPersistedString(persisted: String) {
+        editorMessages.clear()
+        val body = persisted.trim()
+        if (body.isEmpty()) {
+            editorMessages.add(EditorMessage())
+            return
+        }
+        val blocks = body.split(MESSAGE_BLOCK_SEPARATOR)
+        for (rawBlock in blocks) {
+            val block = rawBlock.trim()
+            if (block.isEmpty()) continue
+            val msg = EditorMessage()
+            val sepIdx = block.indexOf(MESSAGE_TITLE_BODY_SEPARATOR)
+            when {
+                sepIdx >= 0 -> {
+                    msg.titleState.edit { replace(0, length, block.substring(0, sepIdx)) }
+                    msg.contentState.edit {
+                        replace(
+                            0,
+                            length,
+                            block.substring(sepIdx + MESSAGE_TITLE_BODY_SEPARATOR.length),
+                        )
+                    }
+                }
+
+                else -> {
+                    val nl = block.indexOf('\n')
+                    if (nl >= 0) {
+                        msg.titleState.edit { replace(0, length, block.substring(0, nl)) }
+                        msg.contentState.edit { replace(0, length, block.substring(nl + 1)) }
+                    } else {
+                        msg.contentState.edit { replace(0, length, block) }
+                    }
+                }
+            }
+            editorMessages.add(msg)
+        }
+        if (editorMessages.isEmpty()) {
+            editorMessages.add(EditorMessage())
+        }
+    }
+
+    /**
      * Pre-fill state from an existing afternote item (when editing).
      * Sets category, service, text fields, and processing method lists.
      * `params.itemId` is stored so we do not overwrite the form when returning from a sub-route.
@@ -435,13 +488,11 @@ class AfternoteEditorState(
         )
         loadedItemId = params.itemId
         selectedService = params.serviceName
-        selectedCategory = params.categoryDisplayString
+        selectedCategory = EditorCategory.fromDisplayLabel(params.categoryDisplayString)
 
         idState.edit { replace(0, length, params.account.id) }
         passwordState.edit { replace(0, length, params.account.password) }
-        // 기존 메시지를 첫 번째 EditorMessage에 로드
-        val firstMessage = editorMessages.firstOrNull() ?: EditorMessage().also { editorMessages.add(it) }
-        firstMessage.contentState.edit { replace(0, length, params.processing.message) }
+        restoreEditorMessagesFromPersistedString(params.processing.message)
 
         if (params.processing.accountMethodName.isNotEmpty()) {
             selectedProcessingMethod =
@@ -527,14 +578,18 @@ class AfternoteEditorState(
                 .map { msg ->
                     val t = msg.titleState.text.toString()
                     val c = msg.contentState.text.toString()
-                    if (t.isNotEmpty()) "$t\n$c" else c
+                    if (t.isNotEmpty()) {
+                        "$t$MESSAGE_TITLE_BODY_SEPARATOR$c"
+                    } else {
+                        c
+                    }
                 }.filter { it.isNotBlank() }
-                .joinToString("\n---\n")
+                .joinToString(MESSAGE_BLOCK_SEPARATOR)
 
         return RegisterAfternotePayload(
             serviceName =
-                if (selectedCategory == CATEGORY_MEMORIAL_GUIDELINE) {
-                    CATEGORY_MEMORIAL_GUIDELINE
+                if (selectedCategory == EditorCategory.MEMORIAL) {
+                    EditorCategory.MEMORIAL.displayLabel
                 } else {
                     selectedService
                 },
@@ -587,9 +642,12 @@ data class LoadFromExistingProcessingParams(
     val galleryMethods: List<ProcessingMethodItem> = emptyList(),
 )
 
+/**
+ * Compose Preview·로컬 UI 테스트 전용. 실제 에디터는 [AfternoteEditorViewModel.editorFormState]를 쓰며
+ * 구성 변경(회전) 시에도 폼 상태가 유지됩니다.
+ */
 @Composable
 fun rememberAfternoteEditorState(): AfternoteEditorState {
-    val afternoteProvider = DataProviderLocals.LocalAfternoteEditorDataProvider.current
     val idState = rememberTextFieldState()
     val passwordState = rememberTextFieldState()
     val afternoteEditReceiverNameState = rememberTextFieldState()
@@ -597,7 +655,7 @@ fun rememberAfternoteEditorState(): AfternoteEditorState {
     val customServiceNameState = rememberTextFieldState()
     val customLastWishState = rememberTextFieldState()
 
-    return remember(afternoteProvider) {
+    return remember {
         AfternoteEditorState(
             idState = idState,
             passwordState = passwordState,
@@ -605,8 +663,6 @@ fun rememberAfternoteEditorState(): AfternoteEditorState {
             phoneNumberState = phoneNumberState,
             customServiceNameState = customServiceNameState,
             customLastWishState = customLastWishState,
-            initialAfternoteEditorReceivers = afternoteProvider.getAfternoteEditorReceivers(),
-            albumCovers = afternoteProvider.getAlbumCovers(),
         )
     }
 }
