@@ -10,8 +10,8 @@ import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
  * [afternoteNavGraph]는 `NavGraphBuilder` extension(= non-@Composable)이므로
  * 데이터 클래스에 람다를 포함해도 리컴포지션 동등성 비교 이슈는 없습니다.
  *
- * 홈 새로고침 플래그와 애프터노트 삭제/저장 이벤트는 그래프 내부(`AfternoteHostViewModel`)에
- * 캡슐화되어 있으므로 외부에서 주입할 필요가 없습니다.
+ * 작성자 목록 갱신은 [com.afternote.feature.afternote.domain.repository.AfternoteRepository.authorAfternoteListRevision]을
+ * 홈 ViewModel이 구독하여 처리합니다.
  */
 data class AfternoteNavGraphParams(
     val navController: NavController,

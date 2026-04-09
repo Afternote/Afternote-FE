@@ -39,6 +39,11 @@ private const val TAG = "AfternoteEditorVM"
 
 /**
  * 애프터노트 생성/수정 ViewModel. 저장·미디어 해석은 [SaveAfternoteUseCase]에 위임합니다.
+ *
+ * **SSOT:** 수정 모드에서 폼에 채울 원본은 홈 리스트가 아니라 [AfternoteRepository.getDetail] 응답이다.
+ * Navigation은 [com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute.EditorRoute]의
+ * `itemId` 등 **최소 식별자**만 넘기고, 실제 로드는 [loadForEdit]에서 Repository를 호출해 수행한다
+ * (Modern Android Architecture 권장과 동일한 방향).
  */
 @HiltViewModel
 class AfternoteEditorViewModel
@@ -186,6 +191,12 @@ class AfternoteEditorViewModel
             }
         }
 
+        /**
+         * 서버(또는 API) 기준 최신 상세를 가져와 폼에 반영한다. 목록 스냅샷은 사용하지 않는다.
+         *
+         * [MemorialPlaylistStateHolder]는 그래프 스코프 인메모리 초안이라 DI로 VM에 주입되지 않으며,
+         * 호출부(Compose)에서 [AfternoteEditorUiEvent.LoadForEdit]로 함께 넘긴다.
+         */
         private fun loadForEdit(
             afternoteId: Long,
             state: AfternoteEditorState,

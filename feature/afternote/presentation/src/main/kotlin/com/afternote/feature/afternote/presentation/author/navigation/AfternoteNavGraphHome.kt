@@ -3,22 +3,17 @@ package com.afternote.feature.afternote.presentation.author.navigation
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.feature.afternote.domain.model.ListItem
 import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeEntry
 import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeEntryActions
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
-import kotlinx.coroutines.flow.Flow
 
 @Composable
 internal fun AfternoteHomeNavigation(
     navController: NavController,
     onNavTabSelected: (BottomNavTab) -> Unit = {},
-    onVisibleItemsUpdated: (List<ListItem>) -> Unit = {},
-    homeRefreshEvents: Flow<Unit>,
 ) {
     AfternoteHomeEntry(
-        homeRefreshEvents = homeRefreshEvents,
         actions =
             AfternoteHomeEntryActions(
                 navigateToDetail = { itemId ->
@@ -37,6 +32,5 @@ internal fun AfternoteHomeNavigation(
                 },
                 onNavTabSelected = onNavTabSelected,
             ),
-        onVisibleItemsUpdated = onVisibleItemsUpdated,
     )
 }

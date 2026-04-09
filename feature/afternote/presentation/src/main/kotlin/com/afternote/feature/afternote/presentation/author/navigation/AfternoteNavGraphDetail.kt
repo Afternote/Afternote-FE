@@ -75,7 +75,6 @@ internal fun AfternoteDetailNavigation(
     navController: NavController,
     userName: String,
     viewModel: AfternoteDetailViewModel = hiltViewModel(),
-    onAfternoteDeleted: () -> Unit = {},
 ) {
     val route = backStackEntry.toRoute<AfternoteRoute.DetailRoute>()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -88,7 +87,6 @@ internal fun AfternoteDetailNavigation(
 
     LaunchedEffect(uiState.deleteSuccess) {
         if (uiState.deleteSuccess) {
-            onAfternoteDeleted()
             navController.popBackStack()
         }
     }
@@ -152,7 +150,6 @@ internal fun AfternoteGalleryDetailNavigation(
     navController: NavController,
     userName: String,
     viewModel: AfternoteDetailViewModel = hiltViewModel(),
-    onAfternoteDeleted: () -> Unit = {},
 ) {
     val route = backStackEntry.toRoute<AfternoteRoute.GalleryDetailRoute>()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -165,7 +162,6 @@ internal fun AfternoteGalleryDetailNavigation(
 
     LaunchedEffect(uiState.deleteSuccess) {
         if (uiState.deleteSuccess) {
-            onAfternoteDeleted()
             navController.popBackStack()
         }
     }
@@ -223,7 +219,6 @@ internal fun AfternoteMemorialGuidelineDetailNavigation(
     navController: NavController,
     userName: String,
     viewModel: AfternoteDetailViewModel = hiltViewModel(),
-    onAfternoteDeleted: () -> Unit = {},
 ) {
     val route = backStackEntry.toRoute<AfternoteRoute.MemorialGuidelineDetailRoute>()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -236,7 +231,6 @@ internal fun AfternoteMemorialGuidelineDetailNavigation(
 
     LaunchedEffect(uiState.deleteSuccess) {
         if (uiState.deleteSuccess) {
-            onAfternoteDeleted()
             navController.popBackStack()
         }
     }

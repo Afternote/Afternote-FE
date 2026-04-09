@@ -1,47 +1,24 @@
 package com.afternote.feature.afternote.presentation
 
 import androidx.lifecycle.ViewModel
-import com.afternote.feature.afternote.domain.model.ListItem
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.MemorialPlaylistStateHolder
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import javax.inject.Inject
 
+/**
+ * [com.afternote.core.ui.Route.Afternote] 서브그래프 스코프 공유 객체.
+ *
+ * 작성자 목록의 SSOT는 [com.afternote.feature.afternote.domain.repository.AfternoteRepository]이며,
+ * 홈↔에디터 간 **리스트 스냅샷을 여기서 전달하지 않는다** (과거 `items` 결합 제거).
+ *
+ * 이 VM이 들고 가는 것은 **세션 스코프 UI 초안**뿐이다: 플레이리스트 편집 버퍼, 에디터 폼 홀더 참조.
+ * 편집 본문의 진실은 에디터 쪽 [com.afternote.feature.afternote.domain.repository.AfternoteRepository.getDetail] 등 Data Layer가 담당한다.
+ */
 @HiltViewModel
 class AfternoteHostViewModel
     @Inject
     constructor() : ViewModel() {
-        private val _items = MutableStateFlow<List<ListItem>>(emptyList())
-        val items: StateFlow<List<ListItem>> = _items.asStateFlow()
-
-        /**
-         * 홈 화면 새로고침 one-shot 이벤트 스트림.
-         *
-         * 에디터 저장 성공·상세 삭제 등 그래프 내부에서 발생한 이벤트를 홈 화면에 전달한다.
-         * Boolean flag + consume 콜백 패턴 대신 [Channel] 기반 단발성 이벤트로 모델링하여
-         * "플래그를 껐다가 켰다가" 하는 보일러플레이트와 상태 동기화 버그 위험을 제거한다.
-         *
-         * `BUFFERED` capacity로 홈 화면이 백스택에 없는 짧은 시점에도 이벤트가 유실되지 않으며,
-         * 그래프 scope 종료 시 [Channel]은 ViewModel과 함께 정리된다.
-         *
-         * 데이터 내용이 Unit 타입이며 신호를 보내겠다는 의미
-         * 버퍼링을 위해 플로우 대신 채널 사용
-         * BUFFERED로 신호를 잃어 버리지 않게 보관
-         */
-        private val _homeRefreshEvents = Channel<Unit>(Channel.BUFFERED)
-        val homeRefreshEvents: Flow<Unit> = _homeRefreshEvents.receiveAsFlow()
-
-        fun requestHomeRefresh() {
-            // 채널은 send하는 즉시 데이터를 발행하는 Hot Flow
-            _homeRefreshEvents.trySend(Unit)
-        }
-
         /** 에디터 플로우에서 공유하는 플레이리스트 상태. Graph scope에 묶여 피처 이탈 시 자동 정리됨. */
         val playlistHolder = MemorialPlaylistStateHolder()
 
@@ -55,9 +32,5 @@ class AfternoteHostViewModel
 
         fun clearEditState() {
             editState = null
-        }
-
-        fun updateVisibleItems(newVisibleItems: List<ListItem>) {
-            _items.value = newVisibleItems
         }
     }

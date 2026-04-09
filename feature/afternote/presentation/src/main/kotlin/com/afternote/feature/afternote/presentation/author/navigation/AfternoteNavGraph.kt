@@ -1,10 +1,8 @@
 package com.afternote.feature.afternote.presentation.author.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
@@ -20,7 +18,8 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.Afte
  * Afternote 피처의 네비게이션 그래프.
  *
  * 앱 모듈의 NavHost에 직접 연결되며, [Route.Afternote]를 graph route로 사용합니다.
- * 내부 모든 화면은 graph-scoped [AfternoteHostViewModel]을 공유합니다.
+ * [AfternoteHostViewModel]은 **세션 스코프 UI 초안**(플레이리스트·에디트 상태 참조)만 공유하며,
+ * 작성자 목록 SSOT는 [com.afternote.feature.afternote.domain.repository.AfternoteRepository]이다.
  */
 @Suppress("LongMethod")
 fun NavGraphBuilder.afternoteNavGraph(params: AfternoteNavGraphParams) {
@@ -34,8 +33,6 @@ fun NavGraphBuilder.afternoteNavGraph(params: AfternoteNavGraphParams) {
             AfternoteHomeNavigation(
                 navController = navController,
                 onNavTabSelected = params.onNavTabSelected,
-                onVisibleItemsUpdated = hostViewModel::updateVisibleItems,
-                homeRefreshEvents = hostViewModel.homeRefreshEvents,
             )
         }
 
@@ -45,7 +42,6 @@ fun NavGraphBuilder.afternoteNavGraph(params: AfternoteNavGraphParams) {
                 backStackEntry = backStackEntry,
                 navController = navController,
                 userName = params.userName,
-                onAfternoteDeleted = hostViewModel::requestHomeRefresh,
             )
         }
 
@@ -55,24 +51,20 @@ fun NavGraphBuilder.afternoteNavGraph(params: AfternoteNavGraphParams) {
                 backStackEntry = backStackEntry,
                 navController = navController,
                 userName = params.userName,
-                onAfternoteDeleted = hostViewModel::requestHomeRefresh,
             )
         }
 
         afternoteComposable<AfternoteRoute.EditorRoute> { backStackEntry ->
             val hostViewModel = graphScopedHostViewModel(navController, backStackEntry)
-            val items by hostViewModel.items.collectAsStateWithLifecycle()
 
             AfternoteEditorNavigation(
                 AfternoteEditorNavigationParams(
                     backStackEntry = backStackEntry,
                     navController = navController,
-                    afternoteVisibleItems = items,
                     playlistStateHolder = hostViewModel.playlistHolder,
                     editState = hostViewModel.editState,
                     onEditStateChanged = hostViewModel::updateEditState,
                     onEditStateClear = hostViewModel::clearEditState,
-                    onRequestHomeRefresh = hostViewModel::requestHomeRefresh,
                     onNavigateToSelectReceiver = {},
                     onBottomNavTabSelected = params.onNavTabSelected,
                 ),
@@ -85,7 +77,6 @@ fun NavGraphBuilder.afternoteNavGraph(params: AfternoteNavGraphParams) {
                 backStackEntry = backStackEntry,
                 navController = navController,
                 userName = params.userName,
-                onAfternoteDeleted = hostViewModel::requestHomeRefresh,
             )
         }
 
