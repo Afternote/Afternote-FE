@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.afternote.feature.afternote.domain.model.Detail
 import com.afternote.feature.afternote.domain.model.author.AuthorReceiverDirectoryEntry
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
-import com.afternote.feature.afternote.domain.repository.AuthorDirectoryRepository
+import com.afternote.feature.afternote.domain.repository.AuthorReceiverRepository
 import com.afternote.feature.afternote.domain.repository.MemorialPhotoUploadRepository
 import com.afternote.feature.afternote.domain.repository.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.repository.MemorialVideoUploadRepository
@@ -55,7 +55,7 @@ private const val CONTENT_SCHEME = "content://"
 class AfternoteEditorViewModel
     @Inject
     constructor(
-        private val authorDirectoryRepository: AuthorDirectoryRepository,
+        private val authorReceiverRepository: AuthorReceiverRepository,
         private val afternoteRepository: AfternoteRepository,
         private val memorialThumbnailUploadRepository: MemorialThumbnailUploadRepository,
         private val memorialVideoUploadRepository: MemorialVideoUploadRepository,
@@ -82,7 +82,7 @@ class AfternoteEditorViewModel
 
         init {
             viewModelScope.launch {
-                authorDirectoryRepository
+                authorReceiverRepository
                     .observeReceiversDirectory()
                     .map { it.toAfternoteEditorReceivers() }
                     .collect { mapped -> _authorDirectoryReceiversUi.value = mapped }
@@ -134,7 +134,7 @@ class AfternoteEditorViewModel
 
         private fun loadReceivers() {
             viewModelScope.launch {
-                authorDirectoryRepository.refreshReceiversDirectory()
+                authorReceiverRepository.refreshReceiversDirectory()
             }
         }
 
@@ -392,7 +392,7 @@ class AfternoteEditorViewModel
         // region Utility
 
         fun getReceiverById(id: Long): AuthorReceiverDirectoryEntry? =
-            authorDirectoryRepository.currentReceiversDirectory().find { it.receiverId == id }
+            authorReceiverRepository.currentReceiversDirectory().find { it.receiverId == id }
 
         private fun parseReceiversRequiredFromBody(e: HttpException): AfternoteValidationError? {
             val body = e.response()?.errorBody()?.string() ?: return null

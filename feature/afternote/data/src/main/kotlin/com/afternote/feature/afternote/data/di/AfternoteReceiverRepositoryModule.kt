@@ -1,8 +1,8 @@
 package com.afternote.feature.afternote.data.di
 
-import com.afternote.feature.afternote.data.repositoryimpl.receiver.DefaultAuthorDirectoryRepository
-import com.afternote.feature.afternote.data.repositoryimpl.receiver.RealReceiverRepository
-import com.afternote.feature.afternote.domain.repository.AuthorDirectoryRepository
+import com.afternote.feature.afternote.data.repositoryimpl.receiver.AuthorReceiverRepositoryImpl
+import com.afternote.feature.afternote.data.repositoryimpl.receiver.ReceiverRepositoryImpl
+import com.afternote.feature.afternote.domain.repository.AuthorReceiverRepository
 import com.afternote.feature.afternote.domain.repository.ReceiverRepository
 import dagger.Binds
 import dagger.Module
@@ -15,9 +15,9 @@ import javax.inject.Singleton
 abstract class AfternoteReceiverRepositoryModule {
     @Binds
     @Singleton
-    abstract fun bindReceiverRepository(impl: RealReceiverRepository): ReceiverRepository
+    abstract fun bindReceiverRepository(impl: ReceiverRepositoryImpl): ReceiverRepository
 
     @Binds
     @Singleton
-    abstract fun bindAuthorDirectoryRepository(impl: DefaultAuthorDirectoryRepository): AuthorDirectoryRepository
+    abstract fun bindAuthorReceiverRepository(impl: AuthorReceiverRepositoryImpl): AuthorReceiverRepository
 }

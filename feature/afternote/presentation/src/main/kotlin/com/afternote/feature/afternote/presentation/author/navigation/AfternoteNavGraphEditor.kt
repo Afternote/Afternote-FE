@@ -192,7 +192,7 @@ internal fun AfternoteEditorNavigation(
 
     LaunchedEffect(directoryReceivers, route.itemId) {
         if (route.itemId == null) {
-            state.replaceFromAuthorDirectoryIfEmpty(directoryReceivers)
+            state.replaceReceiversIfEmpty(directoryReceivers)
         }
     }
 
