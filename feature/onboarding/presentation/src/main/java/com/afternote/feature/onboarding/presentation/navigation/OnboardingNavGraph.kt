@@ -182,7 +182,7 @@ fun NavGraphBuilder.onboardingNavGraph(
                 onEditProfileImageClick = {
                     // TODO: 이미지 선택기 연결
                 },
-                onCompleteClick = onOnboardingComplete,
+                onCompleteClick = { signUpViewModel.submitSignUp(onOnboardingComplete) },
                 onBackClick = { navController.popBackStack() },
             )
         }
