@@ -5,6 +5,9 @@ plugins {
 
 android {
     namespace = "com.afternote.core.di"
+    buildFeatures {
+        buildConfig = true
+    }
 }
 
 dependencies {
