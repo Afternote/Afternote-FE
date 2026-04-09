@@ -15,6 +15,10 @@ import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreatePlaylistPayload
 import com.afternote.feature.afternote.domain.model.author.CreateSocialPayload
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
 /**
@@ -27,6 +31,10 @@ class AfternoteRepositoryImpl
     constructor(
         private val api: AfternoteApiService,
     ) : AfternoteRepository {
+        private val _authorAfternoteListRevision = MutableStateFlow(0L)
+        override val authorAfternoteListRevision: StateFlow<Long> =
+            _authorAfternoteListRevision.asStateFlow()
+
         override suspend fun getListPage(
             category: String?,
             pageNumber: Int,
@@ -50,6 +58,7 @@ class AfternoteRepositoryImpl
                 val data = response.requireData()
                 getAfternoteId(data)
             }.logFailure()
+                .also { if (it.isSuccess) bumpAuthorListRevision() }
 
         override suspend fun createGallery(payload: CreateGalleryPayload): Result<Long> =
             runCatching {
@@ -58,6 +67,7 @@ class AfternoteRepositoryImpl
                 val data = response.requireData()
                 getAfternoteId(data)
             }.logFailure()
+                .also { if (it.isSuccess) bumpAuthorListRevision() }
 
         /**
          * GET /afternotes/{afternoteId} — 상세 조회. DTO → domain 매핑 포함.
@@ -79,6 +89,7 @@ class AfternoteRepositoryImpl
                 val data = response.requireData()
                 getAfternoteId(data)
             }.logFailure()
+                .also { if (it.isSuccess) bumpAuthorListRevision() }
 
         /**
          * PATCH /afternotes/{afternoteId} — 부분 수정 (수정할 필드만 전송).
@@ -93,6 +104,7 @@ class AfternoteRepositoryImpl
                 val data = response.requireData()
                 getAfternoteId(data)
             }.logFailure()
+                .also { if (it.isSuccess) bumpAuthorListRevision() }
         }
 
         /**
@@ -103,6 +115,11 @@ class AfternoteRepositoryImpl
                 val response = api.deleteAfternote(afternoteId = id)
                 response.requireStatus()
             }.logFailure()
+                .also { if (it.isSuccess) bumpAuthorListRevision() }
+
+        private fun bumpAuthorListRevision() {
+            _authorAfternoteListRevision.update { it + 1L }
+        }
     }
 
 private fun getAfternoteId(data: AfternoteIdResponse) = data.afternoteId
