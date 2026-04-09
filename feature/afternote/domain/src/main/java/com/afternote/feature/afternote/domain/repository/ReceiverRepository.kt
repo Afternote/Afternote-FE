@@ -11,6 +11,12 @@ import com.afternote.feature.afternote.domain.model.receiver.ReceivedExportBundl
 interface ReceiverRepository {
     fun currentAuthCode(): String?
 
+    /** Persists the code the user entered (e.g. after successful verification). */
+    fun saveAuthCode(code: String)
+
+    /** Clears persisted code (logout, account switch, user reset). */
+    fun clearAuthCode()
+
     suspend fun getAfterNotesByAuthCode(authCode: String): Result<AfterNotesListResult>
 
     suspend fun getAfternoteDetailByAuthCode(

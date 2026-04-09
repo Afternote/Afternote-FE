@@ -10,7 +10,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * 인증 코드는 로컬에서 읽고, 수신 REST는 아직 미연동이면 아래 폴백 값을 반환합니다.
+ * 인증 코드는 [ReceiverAuthCodeLocalDataSource]에서 읽고·쓰고·지우며, 수신 REST는 아직 미연동이면 아래 폴백 값을 반환합니다.
  * 작성자 애프터노트 HTTP는 DEBUG에서 `AfternoteDebugMockNetworkInterceptor`가 가로챕니다.
  */
 @Singleton
@@ -20,6 +20,14 @@ class ReceiverRepositoryImpl
         private val localDataSource: ReceiverAuthCodeLocalDataSource,
     ) : ReceiverRepository {
         override fun currentAuthCode(): String? = localDataSource.getSavedCode()
+
+        override fun saveAuthCode(code: String) {
+            localDataSource.saveCode(code)
+        }
+
+        override fun clearAuthCode() {
+            localDataSource.clearCode()
+        }
 
         override suspend fun getAfterNotesByAuthCode(authCode: String): Result<AfterNotesListResult> =
             Result.success(
