@@ -33,12 +33,7 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
     @Singleton
     fun provideLoggingInterceptor(): HttpLoggingInterceptor =
         HttpLoggingInterceptor().apply {
-            level = // 로깅을 어느 정도로 자세히 해 줄 건지
-                if (BuildConfig.DEBUG) {
-                    HttpLoggingInterceptor.Level.BODY
-                } else {
-                    HttpLoggingInterceptor.Level.NONE
-                }
+            level = HttpLoggingInterceptor.Level.BODY
             redactHeader("Authorization")
         }
 

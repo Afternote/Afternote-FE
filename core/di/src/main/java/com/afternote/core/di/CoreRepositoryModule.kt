@@ -22,10 +22,6 @@ import javax.inject.Singleton
 interface CoreRepositoryModule {
     @Binds
     @Singleton
-    fun bindAuthRepository(impl: AuthRepositoryImpl): AuthRepository
-
-    @Binds
-    @Singleton
     fun bindAccountRepository(impl: AccountRepositoryImpl): AccountRepository
 
     @Binds
@@ -35,6 +31,10 @@ interface CoreRepositoryModule {
     @Binds
     @Singleton
     fun bindKakaoAuthManager(impl: KakaoAuthManagerImpl): KakaoAuthManager
+
+    @Binds
+    @Singleton
+    fun bindAuthRepository(impl: AuthRepositoryImpl): AuthRepository
 
     companion object {
         @Provides

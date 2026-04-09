@@ -2,7 +2,6 @@ package com.afternote.feature.afternote.presentation.author.editor.provider
 
 import android.content.Context
 import androidx.core.content.edit
-import com.afternote.feature.afternote.presentation.BuildConfig
 import com.afternote.feature.afternote.presentation.author.editor.receiver.provider.FakeReceiverDataProvider
 import com.afternote.feature.afternote.presentation.author.editor.receiver.provider.RealReceiverDataProvider
 import com.afternote.feature.afternote.presentation.author.editor.receiver.provider.ReceiverDataProvider
@@ -18,7 +17,7 @@ private const val KEY_USE_FAKE = "use_fake_data"
 
 /**
  * Holds the runtime choice between Fake (mock) and Real data providers.
- * Persists the choice so it survives process death. Defaults to [BuildConfig.DEBUG] on first run.
+ * Persists the choice so it survives process death. Defaults to real data (`false`) on first run.
  */
 @Singleton
 class DataProviderSwitch
@@ -34,7 +33,7 @@ class DataProviderSwitch
 
         private val _useFakeState =
             MutableStateFlow(
-                prefs.getBoolean(KEY_USE_FAKE, BuildConfig.DEBUG),
+                prefs.getBoolean(KEY_USE_FAKE, false),
             )
         val useFakeState: StateFlow<Boolean> = _useFakeState.asStateFlow()
 
@@ -42,7 +41,7 @@ class DataProviderSwitch
          * Initial value for useFake (from persisted prefs). Use this for Compose initialValue
          * instead of reading [useFakeState].value inside composition.
          */
-        fun getInitialUseFake(): Boolean = prefs.getBoolean(KEY_USE_FAKE, BuildConfig.DEBUG)
+        fun getInitialUseFake(): Boolean = prefs.getBoolean(KEY_USE_FAKE, false)
 
         /**
          * Sets whether to use Fake (mock) or Real data. Persists the value.
