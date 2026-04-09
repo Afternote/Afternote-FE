@@ -1,15 +1,15 @@
 package com.afternote.feature.afternote.presentation.author.editor.mapper
 
 import com.afternote.feature.afternote.domain.model.Detail
-import com.afternote.feature.afternote.domain.model.input.CreateGalleryInput
-import com.afternote.feature.afternote.domain.model.input.CreatePlaylistInput
-import com.afternote.feature.afternote.domain.model.input.CreateSocialInput
-import com.afternote.feature.afternote.domain.model.input.CredentialsInput
-import com.afternote.feature.afternote.domain.model.input.MemorialVideoInput
-import com.afternote.feature.afternote.domain.model.input.PlaylistInput
-import com.afternote.feature.afternote.domain.model.input.ReceiverRefInput
-import com.afternote.feature.afternote.domain.model.input.SongInput
-import com.afternote.feature.afternote.domain.model.input.UpdateInput
+import com.afternote.feature.afternote.domain.model.author.AfternoteAccountCredentials
+import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
+import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
+import com.afternote.feature.afternote.domain.model.author.CreatePlaylistPayload
+import com.afternote.feature.afternote.domain.model.author.CreateSocialPayload
+import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
+import com.afternote.feature.afternote.domain.model.author.PlaylistSongPayload
+import com.afternote.feature.afternote.domain.model.author.PlaylistWritePayload
+import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
 import com.afternote.feature.afternote.presentation.author.editor.model.AccountProcessMethod
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.InfoProcessMethod
@@ -72,18 +72,18 @@ internal object AfternoteEditorMapper {
         )
     }
 
-    fun buildPlaylistInput(
+    fun buildPlaylistWritePayload(
         playlistStateHolder: MemorialPlaylistStateHolder?,
         atmosphere: String = "",
         memorialPhotoUrl: String? = null,
         funeralVideoUrl: String? = null,
         funeralThumbnailUrl: String? = null,
-    ): PlaylistInput {
+    ): PlaylistWritePayload {
         val songs =
             playlistStateHolder
                 ?.songs
                 ?.map { song ->
-                    SongInput(
+                    PlaylistSongPayload(
                         id = song.id.toLongOrNull(),
                         title = song.title,
                         artist = song.artist,
@@ -92,12 +92,12 @@ internal object AfternoteEditorMapper {
                 }.orEmpty()
         val memorialVideo =
             funeralVideoUrl?.ifBlank { null }?.let { url ->
-                MemorialVideoInput(
+                MemorialVideoPayload(
                     videoUrl = url,
                     thumbnailUrl = funeralThumbnailUrl?.ifBlank { null },
                 )
             }
-        return PlaylistInput(
+        return PlaylistWritePayload(
             atmosphere = atmosphere.ifBlank { null },
             memorialPhotoUrl = memorialPhotoUrl?.ifBlank { null },
             songs = songs,
@@ -140,7 +140,7 @@ internal object AfternoteEditorMapper {
             EditorCategory.GALLERY -> {
                 val galleryActions = actions.ifEmpty { listOf("정보 전달") }
                 CreateInput.Gallery(
-                    CreateGalleryInput(
+                    CreateGalleryPayload(
                         title = payload.serviceName,
                         processMethod = processMethod,
                         actions = galleryActions,
@@ -151,8 +151,8 @@ internal object AfternoteEditorMapper {
             }
 
             EditorCategory.MEMORIAL -> {
-                val playlistInput =
-                    buildPlaylistInput(
+                val playlistPayload =
+                    buildPlaylistWritePayload(
                         playlistStateHolder = playlistStateHolder,
                         atmosphere = payload.atmosphere,
                         memorialPhotoUrl = memorialPhotoUrl,
@@ -160,9 +160,9 @@ internal object AfternoteEditorMapper {
                         funeralThumbnailUrl = funeralThumbnailUrl,
                     )
                 CreateInput.Playlist(
-                    CreatePlaylistInput(
+                    CreatePlaylistPayload(
                         title = payload.serviceName,
-                        playlist = playlistInput,
+                        playlist = playlistPayload,
                         receiverIds = selectedReceiverIds,
                     ),
                 )
@@ -170,13 +170,13 @@ internal object AfternoteEditorMapper {
 
             EditorCategory.SOCIAL -> {
                 CreateInput.Social(
-                    CreateSocialInput(
+                    CreateSocialPayload(
                         title = payload.serviceName,
                         processMethod = processMethod,
                         actions = actions,
                         leaveMessage = leaveMessage,
                         credentials =
-                            CredentialsInput(
+                            AfternoteAccountCredentials(
                                 id = payload.accountId.ifBlank { null },
                                 password = payload.password.ifBlank { null },
                             ),
@@ -187,20 +187,20 @@ internal object AfternoteEditorMapper {
         }
     }
 
-    fun buildUpdateInput(
+    fun buildUpdatePayload(
         category: EditorCategory,
         payload: RegisterAfternotePayload,
         selectedReceiverIds: List<Long>,
         playlistStateHolder: MemorialPlaylistStateHolder?,
         memorialMedia: MemorialMediaUrls,
-    ): UpdateInput =
+    ): AfternoteUpdatePayload =
         when (category) {
             EditorCategory.MEMORIAL ->
-                UpdateInput(
+                AfternoteUpdatePayload(
                     category = EditorCategory.MEMORIAL.serverValue,
                     title = payload.serviceName,
                     playlist =
-                        buildPlaylistInput(
+                        buildPlaylistWritePayload(
                             playlistStateHolder = playlistStateHolder,
                             atmosphere = payload.atmosphere,
                             memorialPhotoUrl = memorialMedia.memorialPhotoUrl,
@@ -210,14 +210,14 @@ internal object AfternoteEditorMapper {
                 )
 
             EditorCategory.GALLERY, EditorCategory.SOCIAL ->
-                buildNonMemorialUpdateInput(category, payload, selectedReceiverIds)
+                buildNonMemorialUpdatePayload(category, payload, selectedReceiverIds)
         }
 
-    private fun buildNonMemorialUpdateInput(
+    private fun buildNonMemorialUpdatePayload(
         category: EditorCategory,
         payload: RegisterAfternotePayload,
         selectedReceiverIds: List<Long>,
-    ): UpdateInput {
+    ): AfternoteUpdatePayload {
         val actions =
             payload.processingMethods.map { it.text } +
                 payload.galleryProcessingMethods.map { it.text }
@@ -231,35 +231,35 @@ internal object AfternoteEditorMapper {
             if (isSocial) {
                 val id = payload.accountId.ifBlank { null }
                 val pw = payload.password.ifBlank { null }
-                if (id != null || pw != null) CredentialsInput(id = id, password = pw) else null
+                if (id != null || pw != null) AfternoteAccountCredentials(id = id, password = pw) else null
             } else {
                 null
             }
-        return UpdateInput(
+        return AfternoteUpdatePayload(
             category = category.serverValue,
             title = payload.serviceName,
             processMethod = processMethod.ifBlank { null },
             actions = actions.ifEmpty { null },
             leaveMessage = payload.message.ifBlank { null },
             credentials = credentials,
-            receivers = selectedReceiverIds.map { ReceiverRefInput(receiverId = it) },
+            receivers = selectedReceiverIds.map { ReceiverRefPayload(receiverId = it) },
             playlist = null,
         )
     }
 }
 
-/** Mapper에서 사용하는 생성 입력. ViewModel에서 적절한 UseCase를 호출할 때 분기합니다. */
+/** Mapper에서 사용하는 생성 입력. ViewModel에서 [AfternoteRepository] 호출 시 분기합니다. */
 internal sealed interface CreateInput {
     data class Social(
-        val input: CreateSocialInput,
+        val payload: CreateSocialPayload,
     ) : CreateInput
 
     data class Gallery(
-        val input: CreateGalleryInput,
+        val payload: CreateGalleryPayload,
     ) : CreateInput
 
     data class Playlist(
-        val input: CreatePlaylistInput,
+        val payload: CreatePlaylistPayload,
     ) : CreateInput
 }
 

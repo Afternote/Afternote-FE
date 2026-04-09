@@ -2,8 +2,7 @@ package com.afternote.feature.afternote.presentation.receiver.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.feature.afternote.domain.port.ReceiverAuthCodeProvider
-import com.afternote.feature.afternote.domain.usecase.receiver.GetAfterNotesByAuthCodeUseCase
+import com.afternote.feature.afternote.domain.repository.ReceiverRepository
 import com.afternote.feature.afternote.presentation.receiver.model.ReceiverAfternotesListEvent
 import com.afternote.feature.afternote.presentation.receiver.model.uistate.ReceivedAfternoteListItemUi
 import com.afternote.feature.afternote.presentation.receiver.model.uistate.ReceiverAfternotesListUiState
@@ -24,14 +23,13 @@ import javax.inject.Inject
 class ReceiverAfternotesListViewModel
     @Inject
     constructor(
-        private val receiverAuthCodeProvider: ReceiverAuthCodeProvider,
-        private val getAfterNotesByAuthCodeUseCase: GetAfterNotesByAuthCodeUseCase,
+        private val receiverRepository: ReceiverRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(ReceiverAfternotesListUiState())
         val uiState: StateFlow<ReceiverAfternotesListUiState> = _uiState.asStateFlow()
 
         init {
-            receiverAuthCodeProvider.currentAuthCode()?.let { authCode -> loadAfterNotes(authCode) }
+            receiverRepository.currentAuthCode()?.let { authCode -> loadAfterNotes(authCode) }
         }
 
         // region Event
@@ -51,7 +49,8 @@ class ReceiverAfternotesListViewModel
         private fun loadAfterNotes(authCode: String) {
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-                getAfterNotesByAuthCodeUseCase(authCode)
+                receiverRepository
+                    .getAfterNotesByAuthCode(authCode)
                     .onSuccess { data ->
                         _uiState.update {
                             it.copy(
@@ -89,7 +88,7 @@ class ReceiverAfternotesListViewModel
 
         private fun retry() {
             clearError()
-            receiverAuthCodeProvider.currentAuthCode()?.let { loadAfterNotes(it) }
+            receiverRepository.currentAuthCode()?.let { loadAfterNotes(it) }
         }
 
         // endregion

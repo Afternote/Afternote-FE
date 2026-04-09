@@ -20,6 +20,7 @@ import com.afternote.feature.afternote.presentation.author.editor.AfternoteEdito
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorUiEvent
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.provider.AfternoteEditorDataProvider
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
@@ -128,7 +129,7 @@ internal fun buildEditScreenCallbacks(params: EditScreenCallbacksParams): Aftern
                     editingId =
                         params.route.itemId?.toLongOrNull()
                             ?: params.initialListItem?.id?.toLongOrNull(),
-                    category = params.state.selectedCategory,
+                    editorCategory = EditorCategory.fromDisplayLabel(params.state.selectedCategory),
                     payload = payload,
                     selectedReceiverIds = params.state.afternoteEditReceivers.mapNotNull { it.id.toLongOrNull() },
                     playlistStateHolder = params.playlistStateHolder,

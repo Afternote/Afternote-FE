@@ -3,9 +3,7 @@ package com.afternote.feature.afternote.presentation.receiver.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.feature.afternote.domain.port.ReceiverAuthCodeProvider
-import com.afternote.feature.afternote.domain.usecase.receiver.GetAfterNotesByAuthCodeUseCase
-import com.afternote.feature.afternote.domain.usecase.receiver.GetAfternoteDetailByAuthCodeUseCase
+import com.afternote.feature.afternote.domain.repository.ReceiverRepository
 import com.afternote.feature.afternote.presentation.receiver.model.ReceiverMemorialPlaylistEvent
 import com.afternote.feature.afternote.presentation.receiver.model.uistate.ReceiverMemorialPlaylistUiState
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
@@ -28,9 +26,7 @@ class ReceiverMemorialPlaylistViewModel
     @Inject
     constructor(
         savedStateHandle: SavedStateHandle,
-        private val receiverAuthCodeProvider: ReceiverAuthCodeProvider,
-        private val getAfterNotesByAuthCodeUseCase: GetAfterNotesByAuthCodeUseCase,
-        private val getAfternoteDetailByAuthCodeUseCase: GetAfternoteDetailByAuthCodeUseCase,
+        private val receiverRepository: ReceiverRepository,
     ) : ViewModel() {
         // region State
         private val _uiState = MutableStateFlow(ReceiverMemorialPlaylistUiState())
@@ -39,7 +35,7 @@ class ReceiverMemorialPlaylistViewModel
 
         init {
             val afternoteId = (savedStateHandle["afternoteId"] as? String)?.toLongOrNull()
-            val authCode = receiverAuthCodeProvider.currentAuthCode()
+            val authCode = receiverRepository.currentAuthCode()
 
             when {
                 authCode == null || authCode.isBlank() -> {
@@ -77,7 +73,8 @@ class ReceiverMemorialPlaylistViewModel
         private fun resolveFirstAfternoteAndLoad(authCode: String) {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             viewModelScope.launch {
-                getAfterNotesByAuthCodeUseCase(authCode)
+                receiverRepository
+                    .getAfterNotesByAuthCode(authCode)
                     .onSuccess { result ->
                         val firstId = result.items.firstOrNull()?.id
                         if (firstId == null) {
@@ -107,39 +104,40 @@ class ReceiverMemorialPlaylistViewModel
         ) {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             viewModelScope.launch {
-                getAfternoteDetailByAuthCodeUseCase(
-                    authCode = authCode,
-                    afternoteId = afternoteId,
-                ).onSuccess { detail ->
-                    val playlist = detail.playlist
-                    val songs =
-                        playlist
-                            ?.songs
-                            ?.mapIndexed { index, song ->
-                                PlaylistSongDisplay(
-                                    id = index.toString(),
-                                    title = song.title,
-                                    artist = song.artist,
-                                    albumImageUrl = song.coverUrl,
-                                )
-                            }.orEmpty()
-                    _uiState.update {
-                        it.copy(
-                            songs = songs,
-                            memorialVideoUrl = playlist?.memorialVideoUrl,
-                            memorialThumbnailUrl = playlist?.memorialThumbnailUrl,
-                            isLoading = false,
-                            errorMessage = null,
-                        )
+                receiverRepository
+                    .getAfternoteDetailByAuthCode(
+                        authCode = authCode,
+                        afternoteId = afternoteId,
+                    ).onSuccess { detail ->
+                        val playlist = detail.playlist
+                        val songs =
+                            playlist
+                                ?.songs
+                                ?.mapIndexed { index, song ->
+                                    PlaylistSongDisplay(
+                                        id = index.toString(),
+                                        title = song.title,
+                                        artist = song.artist,
+                                        albumImageUrl = song.coverUrl,
+                                    )
+                                }.orEmpty()
+                        _uiState.update {
+                            it.copy(
+                                songs = songs,
+                                memorialVideoUrl = playlist?.memorialVideoUrl,
+                                memorialThumbnailUrl = playlist?.memorialThumbnailUrl,
+                                isLoading = false,
+                                errorMessage = null,
+                            )
+                        }
+                    }.onFailure { e ->
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                errorMessage = e.message ?: "플레이리스트를 불러오는데 실패했습니다.",
+                            )
+                        }
                     }
-                }.onFailure { e ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = e.message ?: "플레이리스트를 불러오는데 실패했습니다.",
-                        )
-                    }
-                }
             }
         }
         // endregion

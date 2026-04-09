@@ -5,20 +5,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.feature.afternote.domain.model.Detail
 import com.afternote.feature.afternote.domain.model.author.AuthorReceiverDirectoryEntry
-import com.afternote.feature.afternote.domain.port.AuthorReceiversDirectoryPort
-import com.afternote.feature.afternote.domain.port.CurrentAuthorUserIdPort
-import com.afternote.feature.afternote.domain.usecase.author.GetDetailUseCase
-import com.afternote.feature.afternote.domain.usecase.author.editor.CreateGalleryUseCase
-import com.afternote.feature.afternote.domain.usecase.author.editor.CreatePlaylistUseCase
-import com.afternote.feature.afternote.domain.usecase.author.editor.CreateSocialUseCase
-import com.afternote.feature.afternote.domain.usecase.author.editor.UpdateUseCase
-import com.afternote.feature.afternote.domain.usecase.author.editor.UploadMemorialPhotoUseCase
-import com.afternote.feature.afternote.domain.usecase.author.editor.UploadMemorialThumbnailUseCase
-import com.afternote.feature.afternote.domain.usecase.author.editor.UploadMemorialVideoUseCase
-import com.afternote.feature.afternote.presentation.author.editor.cache.EditorAuthorReceiversUiCache
+import com.afternote.feature.afternote.domain.repository.AfternoteRepository
+import com.afternote.feature.afternote.domain.repository.AuthorDirectoryRepository
+import com.afternote.feature.afternote.domain.repository.MemorialPhotoUploadRepository
+import com.afternote.feature.afternote.domain.repository.MemorialThumbnailUploadRepository
+import com.afternote.feature.afternote.domain.repository.MemorialVideoUploadRepository
 import com.afternote.feature.afternote.presentation.author.editor.mapper.AfternoteEditorMapper
 import com.afternote.feature.afternote.presentation.author.editor.mapper.CreateInput
 import com.afternote.feature.afternote.presentation.author.editor.mapper.MemorialMediaUrls
+import com.afternote.feature.afternote.presentation.author.editor.mapper.toAfternoteEditorReceivers
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
@@ -33,6 +28,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -59,17 +55,11 @@ private const val CONTENT_SCHEME = "content://"
 class AfternoteEditorViewModel
     @Inject
     constructor(
-        private val createSocialUseCase: CreateSocialUseCase,
-        private val createGalleryUseCase: CreateGalleryUseCase,
-        private val createPlaylistUseCase: CreatePlaylistUseCase,
-        private val updateUseCase: UpdateUseCase,
-        private val getDetailUseCase: GetDetailUseCase,
-        private val currentAuthorUserId: CurrentAuthorUserIdPort,
-        private val authorReceiversDirectory: AuthorReceiversDirectoryPort,
-        private val editorAuthorReceiversUiCache: EditorAuthorReceiversUiCache,
-        private val uploadMemorialThumbnailUseCase: UploadMemorialThumbnailUseCase,
-        private val uploadMemorialVideoUseCase: UploadMemorialVideoUseCase,
-        private val uploadMemorialPhotoUseCase: UploadMemorialPhotoUseCase,
+        private val authorDirectoryRepository: AuthorDirectoryRepository,
+        private val afternoteRepository: AfternoteRepository,
+        private val memorialThumbnailUploadRepository: MemorialThumbnailUploadRepository,
+        private val memorialVideoUploadRepository: MemorialVideoUploadRepository,
+        private val memorialPhotoUploadRepository: MemorialPhotoUploadRepository,
     ) : ViewModel() {
         /** 에러 바디에 알 수 없는 키가 있어도 파싱 실패로 크래시 나지 않도록. */
         private val apiErrorBodyJson =
@@ -84,12 +74,20 @@ class AfternoteEditorViewModel
         private val _events = Channel<AfternoteEditorEvent>(Channel.BUFFERED)
         val events = _events.receiveAsFlow()
 
-        /** Cached receiver list (GET /users/receivers) for lookup when returning from receiver selection. */
-        private var cachedReceivers: List<AuthorReceiverDirectoryEntry> = emptyList()
+        private val _authorDirectoryReceiversUi = MutableStateFlow<List<AfternoteEditorReceiver>>(emptyList())
 
-        /** Mapped UI rows; kept in sync with [cachedReceivers] for DataProvider / editor state. */
+        /** Repository SSOT → 편집기용 UI 모델. */
         val authorDirectoryReceiversUi: StateFlow<List<AfternoteEditorReceiver>> =
-            editorAuthorReceiversUiCache.receivers
+            _authorDirectoryReceiversUi.asStateFlow()
+
+        init {
+            viewModelScope.launch {
+                authorDirectoryRepository
+                    .observeReceiversDirectory()
+                    .map { it.toAfternoteEditorReceivers() }
+                    .collect { mapped -> _authorDirectoryReceiversUi.value = mapped }
+            }
+        }
 
         /**
          * Category from the server when loading for edit. Used for update requests because the API
@@ -136,19 +134,14 @@ class AfternoteEditorViewModel
 
         private fun loadReceivers() {
             viewModelScope.launch {
-                val userId = currentAuthorUserId() ?: return@launch
-                authorReceiversDirectory(userId)
-                    .getOrNull()
-                    ?.let {
-                        cachedReceivers = it
-                        editorAuthorReceiversUiCache.replaceFrom(it)
-                    }
+                authorDirectoryRepository.refreshReceiversDirectory()
             }
         }
 
         private fun uploadMemorialThumbnail(jpegBytes: ByteArray) {
             viewModelScope.launch {
-                uploadMemorialThumbnailUseCase(jpegBytes)
+                memorialThumbnailUploadRepository
+                    .uploadThumbnail(jpegBytes)
                     .onSuccess { url ->
                         Log.d(TAG, "uploadMemorialThumbnail: success, url=$url")
                         _events.send(AfternoteEditorEvent.ThumbnailUploaded(url))
@@ -231,8 +224,8 @@ class AfternoteEditorViewModel
 
                 val result =
                     if (editingId != null) {
-                        val updateInput =
-                            AfternoteEditorMapper.buildUpdateInput(
+                        val updatePayload =
+                            AfternoteEditorMapper.buildUpdatePayload(
                                 category = categoryForApi,
                                 payload = payload,
                                 selectedReceiverIds = selectedReceiverIds,
@@ -244,7 +237,7 @@ class AfternoteEditorViewModel
                                         memorialPhotoUrl = resolvedMemorialPhotoUrl,
                                     ),
                             )
-                        updateUseCase(id = editingId, updateInput = updateInput)
+                        afternoteRepository.update(id = editingId, payload = updatePayload)
                     } else {
                         performCreate(
                             category = categoryForApi,
@@ -276,7 +269,8 @@ class AfternoteEditorViewModel
             playlistStateHolder: MemorialPlaylistStateHolder? = null,
         ) {
             viewModelScope.launch {
-                getDetailUseCase(id = afternoteId)
+                afternoteRepository
+                    .getDetail(id = afternoteId)
                     .onSuccess { detail ->
                         populatePlaylistFromDetail(detail, playlistStateHolder)
                         val params = AfternoteEditorMapper.buildLoadFromExistingParams(detail)
@@ -326,16 +320,16 @@ class AfternoteEditorViewModel
                     memorialPhotoUrl = memorialPhotoUrl,
                 )
             return when (createInput) {
-                is CreateInput.Social -> createSocialUseCase(createInput.input)
-                is CreateInput.Gallery -> createGalleryUseCase(createInput.input)
-                is CreateInput.Playlist -> createPlaylistUseCase(createInput.input)
+                is CreateInput.Social -> afternoteRepository.createSocial(createInput.payload)
+                is CreateInput.Gallery -> afternoteRepository.createGallery(createInput.payload)
+                is CreateInput.Playlist -> afternoteRepository.createPlaylist(createInput.payload)
             }
         }
 
         private suspend fun resolveVideoUrlForSave(funeralVideoUrl: String?): Result<String?> {
             if (funeralVideoUrl.isNullOrBlank()) return Result.success(null)
             if (!funeralVideoUrl.startsWith(CONTENT_SCHEME)) return Result.success(funeralVideoUrl)
-            return uploadMemorialVideoUseCase(funeralVideoUrl).fold(
+            return memorialVideoUploadRepository.uploadVideo(funeralVideoUrl).fold(
                 onSuccess = { Result.success(it) },
                 onFailure = { Result.failure(it) },
             )
@@ -348,7 +342,7 @@ class AfternoteEditorViewModel
             if (!pickedMemorialPhotoUri.isNullOrBlank() &&
                 pickedMemorialPhotoUri.startsWith(CONTENT_SCHEME)
             ) {
-                return uploadMemorialPhotoUseCase(pickedMemorialPhotoUri).fold(
+                return memorialPhotoUploadRepository.upload(pickedMemorialPhotoUri).fold(
                     onSuccess = { Result.success(it) },
                     onFailure = { Result.failure(it) },
                 )
@@ -397,7 +391,8 @@ class AfternoteEditorViewModel
 
         // region Utility
 
-        fun getReceiverById(id: Long): AuthorReceiverDirectoryEntry? = cachedReceivers.find { it.receiverId == id }
+        fun getReceiverById(id: Long): AuthorReceiverDirectoryEntry? =
+            authorDirectoryRepository.currentReceiversDirectory().find { it.receiverId == id }
 
         private fun parseReceiversRequiredFromBody(e: HttpException): AfternoteValidationError? {
             val body = e.response()?.errorBody()?.string() ?: return null

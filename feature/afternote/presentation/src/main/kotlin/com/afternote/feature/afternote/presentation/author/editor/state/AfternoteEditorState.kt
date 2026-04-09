@@ -396,7 +396,7 @@ class AfternoteEditorState(
     }
 
     /**
-     * Fills the receiver list from [AuthorReceiversDirectoryPort] once loaded, only for new drafts
+     * Fills the receiver list from [com.afternote.feature.afternote.domain.repository.AuthorDirectoryRepository] once loaded, only for new drafts
      * where the user has not added receivers yet.
      */
     fun replaceFromAuthorDirectoryIfEmpty(receivers: List<AfternoteEditorReceiver>) {

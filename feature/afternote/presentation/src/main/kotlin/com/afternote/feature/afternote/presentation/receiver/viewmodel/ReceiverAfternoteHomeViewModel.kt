@@ -3,8 +3,7 @@ package com.afternote.feature.afternote.presentation.receiver.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItemDto
-import com.afternote.feature.afternote.domain.port.ReceiverAuthCodeProvider
-import com.afternote.feature.afternote.domain.usecase.receiver.GetAfterNotesByAuthCodeUseCase
+import com.afternote.feature.afternote.domain.repository.ReceiverRepository
 import com.afternote.feature.afternote.presentation.receiver.model.ReceiverAfternoteHomeEvent
 import com.afternote.feature.afternote.presentation.receiver.model.uistate.ReceiverAfternoteHomeUiState
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
@@ -23,15 +22,12 @@ import javax.inject.Inject
 
 /**
  * 수신자 애프터노트 목록(Home) 화면 ViewModel.
- *
- * [GetAfterNotesByAuthCodeUseCase]로 목록을 조회하고, 탭/카테고리 필터링 상태를 관리합니다.
  */
 @HiltViewModel
 class ReceiverAfternoteHomeViewModel
     @Inject
     constructor(
-        private val receiverAuthCodeProvider: ReceiverAuthCodeProvider,
-        private val getAfterNotesByAuthCodeUseCase: GetAfterNotesByAuthCodeUseCase,
+        private val receiverRepository: ReceiverRepository,
     ) : ViewModel() {
         private val allItems = MutableStateFlow<List<ListItemUiModel>>(emptyList())
         private val selectedTab = MutableStateFlow(AfternoteCategory.ALL)
@@ -73,9 +69,10 @@ class ReceiverAfternoteHomeViewModel
         }
 
         private fun loadAfternotes() {
-            val authCode = receiverAuthCodeProvider.currentAuthCode() ?: return
+            val authCode = receiverRepository.currentAuthCode() ?: return
             viewModelScope.launch {
-                getAfterNotesByAuthCodeUseCase(authCode)
+                receiverRepository
+                    .getAfterNotesByAuthCode(authCode)
                     .onSuccess { result ->
                         allItems.value = result.items.map { it.toUiModel() }
                     }

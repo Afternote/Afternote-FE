@@ -2,8 +2,7 @@ package com.afternote.feature.afternote.presentation.receiver.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.feature.afternote.domain.port.ExportReceivedRepository
-import com.afternote.feature.afternote.domain.usecase.receiver.DownloadAllReceivedUseCase
+import com.afternote.feature.afternote.domain.repository.ReceiverRepository
 import com.afternote.feature.afternote.presentation.receiver.model.uistate.ReceiverDownloadAllUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,23 +13,17 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * 모든 기록 내려받기 다이얼로그 확인 시 타임레터·마인드레코드·애프터노트를 조회한 뒤 JSON 파일로 저장하는 ViewModel.
- *
- * @param downloadAllReceivedUseCase 인증번호(authCode)로 세 목록을 순차 조회하는 UseCase
- * @param exportReceivedRepository 조회 결과를 JSON 파일로 저장하는 Repository
+ * 모든 기록 내려받기: 인증번호로 묶음을 조회한 뒤 파일로 저장합니다.
  */
 @HiltViewModel
 class ReceiverDownloadAllViewModel
     @Inject
     constructor(
-        private val downloadAllReceivedUseCase: DownloadAllReceivedUseCase,
-        private val exportReceivedRepository: ExportReceivedRepository,
+        private val receiverRepository: ReceiverRepository,
     ) : ViewModel(),
         ReceiverDownloadAllViewModelContract {
         private val _uiState = MutableStateFlow(ReceiverDownloadAllUiState())
         override val uiState: StateFlow<ReceiverDownloadAllUiState> = _uiState.asStateFlow()
-
-        // region Event
 
         override fun onEvent(event: ReceiverDownloadAllEvent) {
             when (event) {
@@ -40,24 +33,16 @@ class ReceiverDownloadAllViewModel
             }
         }
 
-        // endregion
-
-        // region Data Loading
-
-        /**
-         * 다이얼로그 "예" 선택 시 호출. 인증번호(마스터키)로 세 API를 순차 호출합니다.
-         *
-         * @param authCode 수신자 인증번호 (마스터키)
-         */
         private fun handleConfirmDownload(authCode: String) {
             viewModelScope.launch {
                 _uiState.update {
                     it.copy(isLoading = true, errorMessage = null, downloadSuccess = false)
                 }
-                downloadAllReceivedUseCase(authCode)
+                receiverRepository
+                    .downloadAllReceived(authCode)
                     .onSuccess { result ->
-                        exportReceivedRepository
-                            .saveToFile(result)
+                        receiverRepository
+                            .saveReceivedExportToFile(result)
                             .onSuccess {
                                 _uiState.update {
                                     it.copy(isLoading = false, downloadSuccess = true)
@@ -81,19 +66,11 @@ class ReceiverDownloadAllViewModel
             }
         }
 
-        // endregion
-
-        // region Utility
-
-        /** downloadSuccess 플래그를 초기화합니다. 다이얼로그를 닫은 뒤 호출합니다. */
         private fun handleClearDownloadSuccess() {
             _uiState.update { it.copy(downloadSuccess = false) }
         }
 
-        /** errorMessage를 초기화합니다. 스낵바/토스트 소비 후 호출합니다. */
         private fun handleClearError() {
             _uiState.update { it.copy(errorMessage = null) }
         }
-
-        // endregion
     }
