@@ -1,6 +1,7 @@
 package com.afternote.core.ui.scaffold.topbar
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
@@ -19,7 +20,10 @@ import com.afternote.core.ui.theme.AfternoteDesign
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeTopBar(modifier: Modifier = Modifier) {
+fun HomeTopBar(
+    modifier: Modifier = Modifier,
+    onSettingClick: () -> Unit = {},
+) {
     TopAppBar(
         navigationIcon = {
             Image(
@@ -49,7 +53,10 @@ fun HomeTopBar(modifier: Modifier = Modifier) {
                 Image(
                     painter = painterResource(R.drawable.core_ui_settings),
                     contentDescription = null,
-                    modifier = Modifier.size(18.dp),
+                    modifier =
+                        Modifier
+                            .size(18.dp)
+                            .clickable { onSettingClick() },
                 )
             }
         },

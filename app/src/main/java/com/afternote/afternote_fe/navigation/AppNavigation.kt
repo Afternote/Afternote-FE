@@ -19,6 +19,7 @@ import com.afternote.feature.afternote.presentation.author.navigation.afternoteN
 import com.afternote.feature.mindrecord.presentation.screen.memoryspace.MemorySpaceScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.HomeScreen
 import com.afternote.feature.onboarding.presentation.navigation.onboardingNavGraph
+import com.afternote.feature.setting.presentation.SettingScreen
 import com.afternote.feature.timeletter.presentation.screen.sender.TimeletterScreen
 
 @Composable
@@ -60,6 +61,18 @@ fun AppNavigation(
                 HomeTabScreen(
                     onMemoriesSectionClick = {
                         appState.navController.navigate(Route.MemorySpace)
+                    },
+                    onSettingClick = {
+                        appState.navController.navigate(Route.Setting)
+                    },
+                )
+            }
+            composable<Route.Setting> {
+                SettingScreen(
+                    onLogoutSuccess = {
+                        appState.navController.navigate(Route.Onboarding) {
+                            popUpTo<Route.Home> { inclusive = true }
+                        }
                     },
                 )
             }

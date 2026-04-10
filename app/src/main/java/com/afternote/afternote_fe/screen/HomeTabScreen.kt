@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -52,10 +53,11 @@ fun HomeTabScreen(
     onWeeklyCountClick: () -> Unit = {},
     onWeeklyRecentRecordClick: () -> Unit = {},
     onMemoriesSectionClick: () -> Unit = {},
+    onSettingClick: () -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier,
-        topBar = { HomeTopBar() },
+        topBar = { HomeTopBar(onSettingClick = onSettingClick) },
         containerColor = Color.Transparent,
     ) { paddingValues ->
         LazyColumn(
@@ -151,8 +153,8 @@ fun HomeTabScreen(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             RightArrowIcon(
+                                modifier = Modifier.size(12.dp),
                                 tint = AfternoteDesign.colors.gray5,
-                                size = 12.dp,
                             )
                         }
                     }
@@ -230,8 +232,8 @@ private fun RecipientDesignationChip(
             )
             Spacer(modifier = Modifier.width(4.dp))
             RightArrowIcon(
+                modifier = Modifier.size(12.dp),
                 tint = colors.gray5,
-                size = 12.dp,
             )
         }
     }
