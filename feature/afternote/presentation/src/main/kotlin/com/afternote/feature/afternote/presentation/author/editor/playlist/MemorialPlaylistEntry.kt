@@ -22,8 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.icon.ArrowIconSpec
-import com.afternote.core.ui.icon.RightArrowIcon
+import com.afternote.core.ui.icon.ArrowIcon
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
@@ -170,14 +169,12 @@ private fun MemorialPlaylistListHeader(
                                     ),
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            RightArrowIcon(
-                                iconSpec =
-                                    ArrowIconSpec(
-                                        iconRes = R.drawable.feature_afternote_ic_arrow_right_playlist,
-                                        contentDescription = "추가",
-                                    ),
-                                backgroundColor = AfternoteDesign.colors.gray9,
-                                size = 12.dp,
+                            ArrowIcon(
+                                iconRes = R.drawable.feature_afternote_ic_arrow_right_playlist,
+                                contentDescription = "추가",
+                                width = 12.dp,
+                                height = 12.dp,
+                                tint = AfternoteDesign.colors.white,
                             )
                         }
                         Spacer(modifier = Modifier.height(8.dp))

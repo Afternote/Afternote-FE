@@ -95,8 +95,8 @@ fun ContentSection(
                         )
 
                         RightArrowIcon(
-                            color = AfternoteDesign.colors.gray9,
                             modifier = Modifier.padding(start = 4.dp),
+                            tint = AfternoteDesign.colors.gray9,
                         )
                     }
                 }
