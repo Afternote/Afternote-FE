@@ -24,7 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.icon.AfternoteCircularCheckbox
-import com.afternote.core.ui.icon.AfternoteCircularCheckboxState
+import com.afternote.core.ui.icon.CheckboxState
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.scaffold.topbar.HomeTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -206,9 +206,9 @@ private fun RecipientDesignationChip(
             AfternoteCircularCheckbox(
                 state =
                     if (isDesignated) {
-                        AfternoteCircularCheckboxState.Checked
+                        CheckboxState.Checked
                     } else {
-                        AfternoteCircularCheckboxState.Unchecked
+                        CheckboxState.Unchecked
                     },
             )
             Spacer(modifier = Modifier.width(6.dp))
