@@ -1,13 +1,13 @@
 package com.afternote.core.common.notification
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Build
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -25,6 +25,7 @@ class DailyNotificationWorker(
         return Result.success()
     }
 
+    @SuppressLint("MissingPermission")
     private fun showNotification() {
         val pendingIntent = buildContentPendingIntent()
 
@@ -40,6 +41,7 @@ class DailyNotificationWorker(
                     pendingIntent?.let { setContentIntent(it) }
                 }.build()
 
+        // 런타임에서 POST_NOTIFICATIONS를 확인하므로 MissingPermission Lint는 억제해도 안전함.
         if (ActivityCompat.checkSelfPermission(
                 applicationContext,
                 Manifest.permission.POST_NOTIFICATIONS,
@@ -72,13 +74,11 @@ class DailyNotificationWorker(
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = applicationContext.getString(R.string.core_common_notification_daily_channel_name)
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val channel = NotificationChannel(CHANNEL_ID, name, importance)
-            val notificationManager = applicationContext.getSystemService(NotificationManager::class.java)
-            notificationManager?.createNotificationChannel(channel)
-        }
+        val name = applicationContext.getString(R.string.core_common_notification_daily_channel_name)
+        val importance = NotificationManager.IMPORTANCE_DEFAULT
+        val channel = NotificationChannel(CHANNEL_ID, name, importance)
+        val notificationManager = applicationContext.getSystemService(NotificationManager::class.java)
+        notificationManager?.createNotificationChannel(channel)
     }
 
     companion object {

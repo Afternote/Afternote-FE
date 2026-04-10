@@ -3,6 +3,7 @@ package com.afternote.core.common.notification
 import android.content.Context
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequest
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import java.time.Duration
@@ -37,7 +38,7 @@ object NotificationScheduler {
 
         val initialDelay = Duration.between(now, targetTime).toMillis()
 
-        val dailyWorkRequest =
+        val dailyWorkRequest: PeriodicWorkRequest =
             PeriodicWorkRequestBuilder<DailyNotificationWorker>(
                 24,
                 TimeUnit.HOURS,
