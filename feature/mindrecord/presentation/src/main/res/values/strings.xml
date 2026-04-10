@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- [WIP / 소속 미확정] MemorySpace 화면 전용. 모듈 이동 시 이 블록도 함께 검토. -->
     <string name="mindrecord_memory_space_title">MEMORY SPACE</string>
     <string name="mindrecord_memory_space_subtitle">손가락으로 공간을 탐색해 보세요</string>
     <string name="mindrecord_memory_space_back">돌아가기</string>
