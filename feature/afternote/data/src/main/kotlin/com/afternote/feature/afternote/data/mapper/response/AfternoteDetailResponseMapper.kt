@@ -7,14 +7,14 @@ import com.afternote.feature.afternote.data.dto.AfternotePlaylist
 import com.afternote.feature.afternote.data.dto.AfternoteSong
 import com.afternote.feature.afternote.data.mapper.categoryToServiceType
 import com.afternote.feature.afternote.data.mapper.formatDateFromServer
-import com.afternote.feature.afternote.domain.model.Detail
-import com.afternote.feature.afternote.domain.model.DetailCredentials
-import com.afternote.feature.afternote.domain.model.DetailProcessing
-import com.afternote.feature.afternote.domain.model.DetailReceiver
-import com.afternote.feature.afternote.domain.model.DetailTimestamps
-import com.afternote.feature.afternote.domain.model.playlist.DetailSong
-import com.afternote.feature.afternote.domain.model.playlist.PlaylistDetail
-import com.afternote.feature.afternote.domain.model.playlist.PlaylistDetailMemorialMedia
+import com.afternote.feature.afternote.domain.model.author.Detail
+import com.afternote.feature.afternote.domain.model.author.DetailCredentials
+import com.afternote.feature.afternote.domain.model.author.DetailProcessing
+import com.afternote.feature.afternote.domain.model.author.DetailReceiver
+import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
+import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
+import com.afternote.feature.afternote.domain.model.author.playlist.PlaylistDetail
+import com.afternote.feature.afternote.domain.model.author.playlist.PlaylistDetailMemorialMedia
 
 fun AfternoteDetailResponse.toDetailDomain(): Detail =
     Detail(
