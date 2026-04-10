@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Text
@@ -48,16 +49,17 @@ fun WelcomeScreen(
             modifier
                 .fillMaxSize()
                 .statusBarsPadding()
+                .navigationBarsPadding()
                 .addFocusCleaner(focusManager)
                 .padding(horizontal = 24.dp),
     ) {
         Column(
             modifier =
                 Modifier
-                    .fillMaxWidth()
+                    .fillMaxSize()
                     .padding(
                         top = 48.dp,
-                        bottom = 114.dp,
+                        bottom = 48.dp,
                     ),
         ) {
             // 로고
