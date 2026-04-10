@@ -8,6 +8,7 @@
     <string name="core_ui_request_verification_code">인증번호 받기</string>
     <string name="core_ui_content_description_add_file">파일 추가</string>
     <string name="core_ui_content_description_back">뒤로가기</string>
+    <string name="core_ui_content_description_close">닫기</string>
     <string name="core_ui_content_description_profile_edit">프로필 수정 버튼</string>
     <string name="core_ui_content_description_profile_image">프로필 이미지</string>
     <string name="core_ui_fab_content_description_add">추가</string>
