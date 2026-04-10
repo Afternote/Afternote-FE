@@ -10,28 +10,23 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
 /*
-* 원형 커스텀 체크박스의 시각·상호작용 상태.
-*
-* - [Checked]: 짙은 배경([AfternoteDesign.colors.gray9]) + 흰색 체크
-* - [CheckedDisabled]: 회색 배경([AfternoteDesign.colors.gray4]) + 흰색 체크, 탭 불가
-* - [Unchecked]: 투명 + [AfternoteDesign.colors.gray4] 테두리
-*/
+ * 원형 커스텀 체크박스의 시각·상호작용 상태.
+ *
+ * - [Checked]: 짙은 배경([AfternoteDesign.colors.gray9]) + 흰색 체크
+ * - [CheckedDisabled]: 회색 배경([AfternoteDesign.colors.gray4]) + 흰색 체크, 탭 불가
+ * - [Unchecked]: 투명 + [AfternoteDesign.colors.gray4] 테두리
+ */
 enum class CheckboxState {
     Checked,
     CheckedDisabled,
@@ -40,6 +35,8 @@ enum class CheckboxState {
 
 /**
  * 피그마 기준 원형 체크박스. 아이콘 크기·패딩은 모듈 내부 상수로 고정된다.
+ * (클릭 등의 인터랙션은 부모 컴포넌트에서 위임받아 처리)
+ *
  * @param state [CheckboxState]
  */
 @Composable
@@ -54,22 +51,15 @@ fun AfternoteCircularCheckbox(
             CheckboxState.Unchecked -> Color.Transparent
         }
 
-    val borderWidth: Dp =
-        if (state == CheckboxState.Unchecked) {
-            2.dp
-        } else {
-            0.dp
-        }
-
     Box(
         modifier =
             modifier
                 .size(20.dp)
                 .background(color = backgroundColor, shape = CircleShape)
                 .then(
-                    if (borderWidth > 0.dp) {
+                    if (state == CheckboxState.Unchecked) {
                         Modifier.border(
-                            width = borderWidth,
+                            width = 2.dp,
                             color = AfternoteDesign.colors.gray4,
                             shape = CircleShape,
                         )
@@ -94,15 +84,9 @@ fun AfternoteCircularCheckbox(
 @Composable
 private fun AfternoteCircularCheckboxPreview() {
     AfternoteTheme {
-        var checked by remember { mutableStateOf(true) }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             AfternoteCircularCheckbox(
-                state =
-                    if (checked) {
-                        CheckboxState.Checked
-                    } else {
-                        CheckboxState.Unchecked
-                    },
+                state = CheckboxState.Checked,
             )
             Spacer(modifier = Modifier.height(16.dp))
             AfternoteCircularCheckbox(
