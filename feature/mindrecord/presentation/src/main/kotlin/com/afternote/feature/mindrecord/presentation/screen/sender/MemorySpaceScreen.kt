@@ -115,7 +115,8 @@ fun MemorySpaceScreen(
         ) {
             val screenWidth = constraints.maxWidth.toFloat()
             val screenHeight = constraints.maxHeight.toFloat()
-            val maxTiltAngle = 40f // 최대 기울기 각도 (피그마 느낌 맞춰서 조절)
+            // 전체 뷰를 돌릴 때는 각도를 조금 줄여야 화면 밖으로 크게 벗어나지 않음
+            val maxTiltAngle = 20f
 
             val targetTiltX =
                 touchPosition?.let {
@@ -137,47 +138,52 @@ fun MemorySpaceScreen(
                 label = "tiltY",
             )
 
-            MemorySpacePhotoCard(
-                imageRes = photos[0],
-                baseRotationZ = -5f,
-                dynamicRotationX = tiltX,
-                dynamicRotationY = tiltY,
+            // 개별 카드가 아닌, 카드들을 담은 부모 Box 자체를 회전시켜 화면 중앙을 축으로 공간감을 만든다.
+            Box(
                 modifier =
                     Modifier
-                        .align(Alignment.CenterStart)
-                        .offset(x = 20.dp, y = (-100).dp),
-            )
-            MemorySpacePhotoCard(
-                imageRes = photos[1],
-                baseRotationZ = 2f,
-                dynamicRotationX = tiltX,
-                dynamicRotationY = tiltY,
-                shadowElevation = 10.dp,
-                modifier =
-                    Modifier
-                        .align(Alignment.Center)
-                        .offset(y = (-40).dp),
-            )
-            MemorySpacePhotoCard(
-                imageRes = photos[2],
-                baseRotationZ = -2f,
-                dynamicRotationX = tiltX,
-                dynamicRotationY = tiltY,
-                modifier =
-                    Modifier
-                        .align(Alignment.CenterEnd)
-                        .offset(x = (-10).dp, y = (-80).dp),
-            )
-            MemorySpacePhotoCard(
-                imageRes = photos[3],
-                baseRotationZ = 3f,
-                dynamicRotationX = tiltX,
-                dynamicRotationY = tiltY,
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .offset(y = (-120).dp),
-            )
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            // 카메라 거리를 넉넉히 줘서 외곽 카드의 심한 왜곡 방지
+                            cameraDistance = 32f * density
+                            rotationX = tiltX
+                            rotationY = tiltY
+                        },
+            ) {
+                MemorySpacePhotoCard(
+                    imageRes = photos[0],
+                    baseRotationZ = -5f,
+                    modifier =
+                        Modifier
+                            .align(Alignment.CenterStart)
+                            .offset(x = 20.dp, y = (-100).dp),
+                )
+                MemorySpacePhotoCard(
+                    imageRes = photos[1],
+                    baseRotationZ = 2f,
+                    shadowElevation = 10.dp,
+                    modifier =
+                        Modifier
+                            .align(Alignment.Center)
+                            .offset(y = (-40).dp),
+                )
+                MemorySpacePhotoCard(
+                    imageRes = photos[2],
+                    baseRotationZ = -2f,
+                    modifier =
+                        Modifier
+                            .align(Alignment.CenterEnd)
+                            .offset(x = (-10).dp, y = (-80).dp),
+                )
+                MemorySpacePhotoCard(
+                    imageRes = photos[3],
+                    baseRotationZ = 3f,
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .offset(y = (-120).dp),
+                )
+            }
         }
 
         Column(
@@ -246,8 +252,6 @@ private fun RowWithBackLabel() {
 private fun MemorySpacePhotoCard(
     imageRes: Int,
     baseRotationZ: Float,
-    dynamicRotationX: Float,
-    dynamicRotationY: Float,
     modifier: Modifier = Modifier,
     shadowElevation: Dp = 4.dp,
 ) {
@@ -257,10 +261,7 @@ private fun MemorySpacePhotoCard(
                 .width(160.dp)
                 .height(220.dp)
                 .graphicsLayer {
-                    cameraDistance = 16f * density // 3D 공간감 깊이 추가
                     rotationZ = baseRotationZ
-                    rotationX = dynamicRotationX
-                    rotationY = dynamicRotationY
                 },
         shape = RoundedCornerShape(8.dp),
         color = AfternoteDesign.colors.white,
