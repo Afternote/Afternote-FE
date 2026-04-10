@@ -33,6 +33,18 @@ private val Gray9 = Color(0xFF212121)
 /** 브랜드 강조 블루 (디자인 토큰 B1). */
 private val B1 = Color(0xFF6B8FF8)
 
+/** 데일리 질문 액션 버튼 배경 컬러 팔레트. */
+private val Accent1 = Color(0xFF4E5F4D)
+private val Accent2 = Color(0xFF2C6E63)
+private val Accent3 = Color(0xFF3F6B5B)
+private val Accent4 = Color(0xFF2F4F4A)
+private val Accent5 = Color(0xFF6E5A8D)
+private val Accent6 = Color(0xFF2F6F73)
+private val Accent7 = Color(0xFF4A657D)
+private val Accent8 = Color(0xFF6E5A7F)
+private val Accent9 = Color(0xFF24324A)
+private val Accent10 = Color(0xFF3A4A8A)
+
 internal fun lightColors() =
     AfternoteColors(
         white = White,
@@ -48,6 +60,16 @@ internal fun lightColors() =
         gray8 = Gray8,
         gray9 = Gray9,
         b1 = B1,
+        accent1 = Accent1,
+        accent2 = Accent2,
+        accent3 = Accent3,
+        accent4 = Accent4,
+        accent5 = Accent5,
+        accent6 = Accent6,
+        accent7 = Accent7,
+        accent8 = Accent8,
+        accent9 = Accent9,
+        accent10 = Accent10,
         isLightMode = true,
     )
 
@@ -66,6 +88,16 @@ internal fun darkColors() =
         gray8 = Gray2,
         gray9 = Gray1, // 가장 어두운 ↔ 가장 밝은
         b1 = B1,
+        accent1 = Accent1,
+        accent2 = Accent2,
+        accent3 = Accent3,
+        accent4 = Accent4,
+        accent5 = Accent5,
+        accent6 = Accent6,
+        accent7 = Accent7,
+        accent8 = Accent8,
+        accent9 = Accent9,
+        accent10 = Accent10,
         isLightMode = false,
     )
 
@@ -88,6 +120,16 @@ class AfternoteColors(
     gray8: Color,
     gray9: Color,
     b1: Color,
+    accent1: Color,
+    accent2: Color,
+    accent3: Color,
+    accent4: Color,
+    accent5: Color,
+    accent6: Color,
+    accent7: Color,
+    accent8: Color,
+    accent9: Color,
+    accent10: Color,
     isLightMode: Boolean,
 ) {
     var white by mutableStateOf(white)
@@ -116,6 +158,26 @@ class AfternoteColors(
         private set
     var b1 by mutableStateOf(b1)
         private set
+    var accent1 by mutableStateOf(accent1)
+        private set
+    var accent2 by mutableStateOf(accent2)
+        private set
+    var accent3 by mutableStateOf(accent3)
+        private set
+    var accent4 by mutableStateOf(accent4)
+        private set
+    var accent5 by mutableStateOf(accent5)
+        private set
+    var accent6 by mutableStateOf(accent6)
+        private set
+    var accent7 by mutableStateOf(accent7)
+        private set
+    var accent8 by mutableStateOf(accent8)
+        private set
+    var accent9 by mutableStateOf(accent9)
+        private set
+    var accent10 by mutableStateOf(accent10)
+        private set
     var isLightMode by mutableStateOf(isLightMode)
         private set
 
@@ -133,6 +195,16 @@ class AfternoteColors(
         gray8: Color = this.gray8,
         gray9: Color = this.gray9,
         b1: Color = this.b1,
+        accent1: Color = this.accent1,
+        accent2: Color = this.accent2,
+        accent3: Color = this.accent3,
+        accent4: Color = this.accent4,
+        accent5: Color = this.accent5,
+        accent6: Color = this.accent6,
+        accent7: Color = this.accent7,
+        accent8: Color = this.accent8,
+        accent9: Color = this.accent9,
+        accent10: Color = this.accent10,
         isLightMode: Boolean = this.isLightMode,
     ) = AfternoteColors(
         white = white,
@@ -148,6 +220,16 @@ class AfternoteColors(
         gray8 = gray8,
         gray9 = gray9,
         b1 = b1,
+        accent1 = accent1,
+        accent2 = accent2,
+        accent3 = accent3,
+        accent4 = accent4,
+        accent5 = accent5,
+        accent6 = accent6,
+        accent7 = accent7,
+        accent8 = accent8,
+        accent9 = accent9,
+        accent10 = accent10,
         isLightMode = isLightMode,
     )
 
@@ -165,6 +247,16 @@ class AfternoteColors(
         this.gray8 = other.gray8
         this.gray9 = other.gray9
         this.b1 = other.b1
+        this.accent1 = other.accent1
+        this.accent2 = other.accent2
+        this.accent3 = other.accent3
+        this.accent4 = other.accent4
+        this.accent5 = other.accent5
+        this.accent6 = other.accent6
+        this.accent7 = other.accent7
+        this.accent8 = other.accent8
+        this.accent9 = other.accent9
+        this.accent10 = other.accent10
         this.isLightMode = other.isLightMode
     }
 }
