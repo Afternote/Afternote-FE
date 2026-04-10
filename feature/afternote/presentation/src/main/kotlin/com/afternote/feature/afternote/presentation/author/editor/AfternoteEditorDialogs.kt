@@ -1,14 +1,14 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
 import androidx.compose.runtime.Composable
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorState
-import com.afternote.feature.afternote.presentation.author.editor.model.DialogType
 import com.afternote.feature.afternote.presentation.author.editor.processing.CustomServiceDialog
 import com.afternote.feature.afternote.presentation.author.editor.processing.CustomServiceDialogCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.processing.CustomServiceDialogParams
 import com.afternote.feature.afternote.presentation.author.editor.receiver.AddAfternoteEditorReceiverDialog
 import com.afternote.feature.afternote.presentation.author.editor.receiver.AddAfternoteEditorReceiverDialogCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.receiver.AddAfternoteEditorReceiverDialogParams
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
+import com.afternote.feature.afternote.presentation.author.editor.state.DialogType
 
 @Composable
 internal fun AfternoteEditorDialogs(state: AfternoteEditorState) {

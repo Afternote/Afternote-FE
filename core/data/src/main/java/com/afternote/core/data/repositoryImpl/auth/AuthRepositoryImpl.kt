@@ -1,7 +1,7 @@
 package com.afternote.core.data.repositoryImpl.auth
 
 import com.afternote.core.data.mapper.auth.AuthMapper
-import com.afternote.core.datastore.TokenManager
+import com.afternote.core.datastore.TokenDataSource
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.domain.repository.auth.KakaoAuthManager
 import com.afternote.core.model.Session
@@ -26,24 +26,23 @@ sealed class AuthException(
 class AuthRepositoryImpl
     @Inject
     constructor(
-        private val tokenManager: TokenManager,
+        private val tokenDataSource: TokenDataSource,
         private val authApiService: AuthApiService,
         private val kakaoAuthManager: KakaoAuthManager,
         private val tokenApiService: TokenApiService,
     ) : AuthRepository {
-        // 토큰 매니저 관련
-        override suspend fun clearSession() = runCatching { tokenManager.clearTokens() }
+        override suspend fun clearSession() = runCatching { tokenDataSource.clearTokens() }
 
-        override suspend fun getAccessToken() = runCatching { tokenManager.getAccessToken() }
+        override suspend fun getAccessToken() = runCatching { tokenDataSource.getAccessToken() }
 
-        override suspend fun getRefreshToken() = runCatching { tokenManager.getRefreshToken() }
+        override suspend fun getRefreshToken() = runCatching { tokenDataSource.getRefreshToken() }
 
         override suspend fun saveSession(
             accessToken: String,
             refreshToken: String,
             userId: Long,
         ) = runCatching {
-            tokenManager.saveTokens(
+            tokenDataSource.saveTokens(
                 accessToken = accessToken,
                 refreshToken = refreshToken,
                 userId = userId,
@@ -51,13 +50,13 @@ class AuthRepositoryImpl
         }
 
         override val isLoggedIn: Flow<Boolean>
-            get() = tokenManager.isLoggedInFlow
+            get() = tokenDataSource.isLoggedIn
 
         override suspend fun updateTokens(
             accessToken: String,
             refreshToken: String,
         ) = runCatching {
-            tokenManager.updateTokens(
+            tokenDataSource.updateTokens(
                 accessToken = accessToken,
                 refreshToken = refreshToken,
             )

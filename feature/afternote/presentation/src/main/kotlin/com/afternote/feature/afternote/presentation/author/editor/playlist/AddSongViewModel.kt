@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.editor.playlist
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.feature.afternote.domain.usecase.author.editor.SearchMusicUseCase
+import com.afternote.feature.afternote.domain.repository.MusicSearchRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -18,7 +18,7 @@ private const val SEARCH_DEBOUNCE_MS = 300L
 class AddSongViewModel
     @Inject
     constructor(
-        private val searchMusicUseCase: SearchMusicUseCase,
+        private val musicSearchRepository: MusicSearchRepository,
     ) : ViewModel(),
         AddSongViewModelContract {
         private val _uiState = MutableStateFlow(AddSongUiState())
@@ -50,7 +50,8 @@ class AddSongViewModel
                         return@launch
                     }
                     _uiState.update { it.copy(isLoading = true) }
-                    searchMusicUseCase(trimmed)
+                    musicSearchRepository
+                        .search(trimmed)
                         .onSuccess { list ->
                             _uiState.update {
                                 it.copy(songs = list.map { item -> item.toDisplay() }, isLoading = false, errorMessage = null)

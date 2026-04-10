@@ -5,12 +5,12 @@ import com.afternote.feature.afternote.data.dto.AfternoteCreatePlaylistRequest
 import com.afternote.feature.afternote.data.dto.AfternoteCreateSocialRequest
 import com.afternote.feature.afternote.data.dto.AfternoteReceiverRef
 import com.afternote.feature.afternote.data.dto.AfternoteUpdateRequest
-import com.afternote.feature.afternote.domain.model.input.CreateGalleryInput
-import com.afternote.feature.afternote.domain.model.input.CreatePlaylistInput
-import com.afternote.feature.afternote.domain.model.input.CreateSocialInput
-import com.afternote.feature.afternote.domain.model.input.UpdateInput
+import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
+import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
+import com.afternote.feature.afternote.domain.model.author.CreatePlaylistPayload
+import com.afternote.feature.afternote.domain.model.author.CreateSocialPayload
 
-fun UpdateInput.toRequest() =
+fun AfternoteUpdatePayload.toRequest() =
     AfternoteUpdateRequest(
         category = category,
         title = title,
@@ -22,7 +22,7 @@ fun UpdateInput.toRequest() =
         playlist = playlist?.toDto(),
     )
 
-fun CreateSocialInput.toRequest() =
+fun CreateSocialPayload.toRequest() =
     AfternoteCreateSocialRequest(
         category = "SOCIAL",
         title = title,
@@ -33,7 +33,7 @@ fun CreateSocialInput.toRequest() =
         receivers = receiverIds.map { AfternoteReceiverRef(receiverId = it) },
     )
 
-fun CreateGalleryInput.toRequest() =
+fun CreateGalleryPayload.toRequest() =
     AfternoteCreateGalleryRequest(
         category = "GALLERY",
         title = title,
@@ -43,7 +43,7 @@ fun CreateGalleryInput.toRequest() =
         receivers = receiverIds.map { AfternoteReceiverRef(receiverId = it) },
     )
 
-fun CreatePlaylistInput.toRequest() =
+fun CreatePlaylistPayload.toRequest() =
     AfternoteCreatePlaylistRequest(
         category = "PLAYLIST",
         title = title,
