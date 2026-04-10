@@ -1,5 +1,6 @@
 package com.afternote.core.ui.icon
 
+import android.R.attr.height
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -54,14 +55,12 @@ fun ArrowIcon(
     @DrawableRes iconRes: Int,
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
-    width: Dp = 12.dp,
-    height: Dp = 12.dp,
     tint: Color = LocalContentColor.current,
 ) {
     Icon(
         painter = painterResource(id = iconRes),
         contentDescription = contentDescription,
-        modifier = modifier.size(width = width, height = height),
+        modifier = modifier,
         tint = tint,
     )
 }
@@ -93,16 +92,16 @@ private fun ArrowIconDrawablePreview() {
                 iconRes = R.drawable.core_ui_arrow_left,
                 contentDescription = "미리보기",
                 tint = AfternoteDesign.colors.gray9,
-                width = 20.dp,
-                height = 20.dp,
+                modifier = Modifier.size(20.dp),
             )
             ArrowIcon(
                 iconRes = R.drawable.core_ui_arrow_left,
                 contentDescription = null,
-                modifier = Modifier.offset(x = 2.dp),
+                modifier =
+                    Modifier
+                        .size(20.dp)
+                        .offset(x = 2.dp),
                 tint = AfternoteDesign.colors.b1,
-                width = 18.dp,
-                height = 14.dp,
             )
         }
     }

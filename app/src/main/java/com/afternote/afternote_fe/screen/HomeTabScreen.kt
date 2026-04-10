@@ -78,12 +78,11 @@ fun HomeTabScreen(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
-                if (!uiState.isRecipientDesignated) {
-                    RecipientIncompleteChip(
-                        modifier = Modifier.padding(bottom = 32.dp),
-                        onClick = onRecipientChipClick,
-                    )
-                }
+                RecipientDesignationChip(
+                    isDesignated = uiState.isRecipientDesignated,
+                    modifier = Modifier.padding(bottom = 32.dp),
+                    onClick = onRecipientChipClick,
+                )
             }
 
             // 2. 오늘의 질문 카드
@@ -151,8 +150,7 @@ fun HomeTabScreen(
                             Spacer(modifier = Modifier.width(4.dp))
                             RightArrowIcon(
                                 tint = AfternoteDesign.colors.gray5,
-                                width = 12.dp,
-                                height = 12.dp,
+                                size = 12.dp,
                             )
                         }
                     }
@@ -181,14 +179,23 @@ fun HomeTabScreen(
     }
 }
 
+/**
+ * 수신인 지정 상태 칩.
+ * - 미지정: 배경 [AfternoteDesign.colors.gray2], 체크박스 미체크
+ * - 지정 완료: 배경 [AfternoteDesign.colors.white], 체크박스 체크
+ *
+ * 터치·리플은 [Surface]가 담당하고, 체크박스는 상태 표시만 한다 ([onClick] null).
+ */
 @Composable
-private fun RecipientIncompleteChip(
+private fun RecipientDesignationChip(
+    isDesignated: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val colors = AfternoteDesign.colors
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = AfternoteDesign.colors.gray1,
+        color = if (isDesignated) colors.white else colors.gray2,
         modifier = modifier,
         onClick = onClick,
     ) {
@@ -197,20 +204,28 @@ private fun RecipientIncompleteChip(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             AfternoteCircularCheckbox(
-                state = AfternoteCircularCheckboxState.Unchecked,
-                visualSize = 16.dp,
+                state =
+                    if (isDesignated) {
+                        AfternoteCircularCheckboxState.Checked
+                    } else {
+                        AfternoteCircularCheckboxState.Unchecked
+                    },
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
-                text = "수신인 지정 미완료",
-                style = AfternoteDesign.typography.captionLargeR,
-                color = AfternoteDesign.colors.gray7,
+                text =
+                    if (isDesignated) {
+                        "수신인 지정 완료"
+                    } else {
+                        "수신인 지정 미완료"
+                    },
+                style = AfternoteDesign.typography.captionLargeB,
+                color = colors.gray7,
             )
             Spacer(modifier = Modifier.width(4.dp))
             RightArrowIcon(
-                tint = AfternoteDesign.colors.gray5,
-                width = 12.dp,
-                height = 12.dp,
+                tint = colors.gray5,
+                size = 12.dp,
             )
         }
     }
