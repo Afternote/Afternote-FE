@@ -87,8 +87,7 @@ fun AfternoteListItem(
 
             RightArrowIcon(
                 tint = AfternoteDesign.colors.gray9,
-                width = 24.dp,
-                height = 24.dp,
+                size = 24.dp,
             )
         }
     }

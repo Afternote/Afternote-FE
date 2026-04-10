@@ -1,7 +1,6 @@
 package com.afternote.afternote_fe.screen
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -57,11 +55,12 @@ fun WeeklySummaryGrid(
                     .clickable(onClick = onImageClick),
         ) {
             // TODO: 실제 구현 시 AsyncImage(Coil) 사용 권장
-            Image(
-                painter = painterResource(id = android.R.color.darker_gray),
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
+            // painterResource는 drawable 전용 — color 리소스(android.R.color.*)는 쓰면 크래시남
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(AfternoteDesign.colors.gray4),
             )
 
             // 텍스트 가독성을 위한 하단 그라데이션 오버레이

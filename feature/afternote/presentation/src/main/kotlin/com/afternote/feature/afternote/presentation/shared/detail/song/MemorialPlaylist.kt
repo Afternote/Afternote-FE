@@ -76,8 +76,7 @@ private fun MemorialPlaylistSongCountRow(
             )
             RightArrowIcon(
                 tint = AfternoteDesign.colors.gray9,
-                width = 16.dp,
-                height = 16.dp,
+                size = 16.dp,
             )
         }
     } else {
@@ -116,8 +115,7 @@ private fun MemorialPlaylistAddButton(
         ArrowIcon(
             iconRes = R.drawable.feature_afternote_ic_arrow_right_playlist,
             contentDescription = "추가",
-            width = 12.dp,
-            height = 12.dp,
+            modifier = Modifier.size(12.dp),
             tint = AfternoteDesign.colors.white,
         )
     }
