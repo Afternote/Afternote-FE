@@ -29,7 +29,7 @@ fun DayCell(
     modifier: Modifier = Modifier,
 ) {
     if (model.day == null) {
-        Box(modifier = Modifier.aspectRatio(1f)) // 빈 셀
+        Box(modifier = Modifier.aspectRatio(1f))
         return
     }
 
@@ -63,35 +63,7 @@ fun DayCell(
                 )
                 if (model.state == DayState.ANSWERED || model.state == DayState.UNANSWERED) {
                     Spacer(modifier = Modifier.height(2.dp))
-                    when (type) {
-                        MindRecordCategory.DAILY_QUESTION -> {
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .size(4.dp)
-                                        .clip(CircleShape)
-                                        .background(textColor),
-                            )
-                        }
-
-                        MindRecordCategory.DIARY -> {
-                            model.emotion?.let {
-                                Text(
-                                    text = it,
-                                )
-                            }
-                        }
-
-                        MindRecordCategory.DEEP_THOUGHT -> {
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .size(4.dp)
-                                        .clip(CircleShape)
-                                        .background(textColor),
-                            )
-                        }
-                    }
+                    type.DayIndicator(model = model, textColor = textColor)
                 }
             }
         }

@@ -63,7 +63,7 @@ fun DeepThoughtCard(
                     )
                     Text(
                         text = deepThought.date.toString(),
-                        style = MaterialTheme.typography.displayMedium,
+                        style = AfternoteDesign.typography.captionLargeR,
                         color = Color(0xFF000000).copy(0.4f),
                     )
                 }
@@ -82,14 +82,14 @@ fun DeepThoughtCard(
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = deepThought.title,
-                style = MaterialTheme.typography.titleMedium,
+                style = AfternoteDesign.typography.bodyBase,
                 color = AfternoteDesign.colors.gray9,
             )
 
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = deepThought.content,
-                style = MaterialTheme.typography.bodySmall,
+                style = AfternoteDesign.typography.bodySmallR,
                 color = Color(0xFF000000).copy(0.5f),
             )
 
@@ -106,7 +106,7 @@ fun DeepThoughtCard(
                         Text(
                             text = "#${tag.name}",
                             color = AfternoteDesign.colors.gray6,
-                            style = MaterialTheme.typography.displaySmall,
+                            style = AfternoteDesign.typography.mono,
                         )
                     }
                 }

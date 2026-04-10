@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.model.Tag
 
 @Composable
@@ -31,7 +32,7 @@ fun FlowTags(
             label = {
                 Text(
                     "전체",
-                    style = MaterialTheme.typography.displayLarge,
+                    style = AfternoteDesign.typography.captionLargeB,
                     color = if (selectedTag == null) AfternoteDesign.colors.gray1 else AfternoteDesign.colors.gray6,
                 )
             },
@@ -46,7 +47,7 @@ fun FlowTags(
                 label = {
                     Text(
                         text = "#${tag.name} ${tag.count}",
-                        style = MaterialTheme.typography.displayLarge,
+                        style = AfternoteDesign.typography.captionLargeB,
                         color = if (selectedTag == tag) AfternoteDesign.colors.gray1 else AfternoteDesign.colors.gray6,
                     )
                 },

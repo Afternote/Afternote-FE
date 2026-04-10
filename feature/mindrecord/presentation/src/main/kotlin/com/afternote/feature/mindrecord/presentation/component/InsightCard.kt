@@ -31,7 +31,7 @@ fun InsightCard(modifier: Modifier = Modifier) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = "INSIGHTS",
-                style = MaterialTheme.typography.displaySmall,
+                style = AfternoteDesign.typography.mono,
                 color = AfternoteDesign.colors.gray6,
             )
 
@@ -39,7 +39,7 @@ fun InsightCard(modifier: Modifier = Modifier) {
 
             Text(
                 text = "이번주는 가족과 함께하는 시간을 가장 많이 기록하셨네요. 일상의 소중함을 느끼는 한주였던 것 같아요.",
-                style = MaterialTheme.typography.titleSmall,
+                style = AfternoteDesign.typography.bodySmallB,
                 color = Color(0xFF000000).copy(alpha = 0.7f),
             )
 
@@ -47,7 +47,7 @@ fun InsightCard(modifier: Modifier = Modifier) {
 
             Text(
                 text = "매일 꾸준히 기록하는 습관이 정말 멋져요!",
-                style = MaterialTheme.typography.displayMedium,
+                style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray6,
             )
         }
