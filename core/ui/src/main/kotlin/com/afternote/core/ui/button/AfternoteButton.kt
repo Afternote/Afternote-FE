@@ -10,10 +10,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -59,64 +61,68 @@ fun AfternoteButton(
     type: AfternoteButtonType = AfternoteButtonType.Default,
     secondaryText: String? = null,
 ) {
-    val containerColor =
-        when (type) {
-            AfternoteButtonType.Default -> AfternoteDesign.colors.gray9
-            AfternoteButtonType.Active -> AfternoteDesign.colors.gray6
-            AfternoteButtonType.Plain -> AfternoteDesign.colors.gray2
-            AfternoteButtonType.Un -> AfternoteDesign.colors.gray2
-            AfternoteButtonType.Variant5 -> AfternoteDesign.colors.gray9
-        }
-
-    val contentColor =
-        when (type) {
-            AfternoteButtonType.Plain -> AfternoteDesign.colors.gray9
-            AfternoteButtonType.Un -> AfternoteDesign.colors.gray5
-            else -> AfternoteDesign.colors.white
-        }
-
-    val shape = RoundedCornerShape(6.dp)
-    val outlinedPlainOrUn =
-        type == AfternoteButtonType.Plain || type == AfternoteButtonType.Un
-
-    Surface(
-        onClick = onClick,
-        modifier =
-            modifier.fillMaxWidth(),
-        enabled = type != AfternoteButtonType.Un,
-        shape = shape,
-        color = containerColor,
-        contentColor = contentColor,
-        border = if (outlinedPlainOrUn) BorderStroke(1.dp, AfternoteDesign.colors.gray3) else null,
+    CompositionLocalProvider(
+        LocalMinimumInteractiveComponentSize provides androidx.compose.ui.unit.Dp.Unspecified,
     ) {
-        Row(
-            modifier = Modifier.padding(vertical = 13.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
+        Surface(
+            onClick = onClick,
+            modifier =
+                modifier.fillMaxWidth(),
+            enabled = type != AfternoteButtonType.Un,
+            shape = RoundedCornerShape(6.dp),
+            color =
+                when (type) {
+                    AfternoteButtonType.Default -> AfternoteDesign.colors.gray9
+                    AfternoteButtonType.Active -> AfternoteDesign.colors.gray6
+                    AfternoteButtonType.Plain -> AfternoteDesign.colors.gray2
+                    AfternoteButtonType.Un -> AfternoteDesign.colors.gray2
+                    AfternoteButtonType.Variant5 -> AfternoteDesign.colors.gray9
+                },
+            contentColor =
+                when (type) {
+                    AfternoteButtonType.Plain -> AfternoteDesign.colors.gray9
+                    AfternoteButtonType.Un -> AfternoteDesign.colors.gray5
+                    else -> AfternoteDesign.colors.white
+                },
+            border =
+                if (type == AfternoteButtonType.Plain || type == AfternoteButtonType.Un) {
+                    BorderStroke(
+                        1.dp,
+                        AfternoteDesign.colors.gray3,
+                    )
+                } else {
+                    null
+                },
         ) {
-            if (type == AfternoteButtonType.Variant5 && secondaryText != null) {
-                Text(
-                    text = text,
-                    style = AfternoteDesign.typography.captionLargeB,
-                    textAlign = TextAlign.End,
-                    modifier = Modifier.weight(1f),
-                )
-                Spacer(modifier = Modifier.width(24.dp))
-                VerticalDivider(
-                    modifier = Modifier.height(12.dp),
-                    color = AfternoteDesign.colors.gray2,
-                )
-                Spacer(modifier = Modifier.width(24.dp))
-                Text(
-                    text = secondaryText,
-                    style = AfternoteDesign.typography.captionLargeB,
-                    modifier = Modifier.weight(1f),
-                )
-            } else {
-                Text(
-                    text = text,
-                    style = AfternoteDesign.typography.captionLargeB,
-                )
+            Row(
+                modifier = Modifier.padding(vertical = 13.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                if (type == AfternoteButtonType.Variant5 && secondaryText != null) {
+                    Text(
+                        text = text,
+                        style = AfternoteDesign.typography.captionLargeB,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(modifier = Modifier.width(24.dp))
+                    VerticalDivider(
+                        modifier = Modifier.height(12.dp),
+                        color = AfternoteDesign.colors.gray2,
+                    )
+                    Spacer(modifier = Modifier.width(24.dp))
+                    Text(
+                        text = secondaryText,
+                        style = AfternoteDesign.typography.captionLargeB,
+                        modifier = Modifier.weight(1f),
+                    )
+                } else {
+                    Text(
+                        text = text,
+                        style = AfternoteDesign.typography.captionLargeB,
+                    )
+                }
             }
         }
     }
@@ -126,10 +132,7 @@ fun AfternoteButton(
 @Composable
 private fun AfternoteButtonDefaultPreview() {
     AfternoteTheme {
-        Column(
-            modifier = Modifier.width(293.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        Column {
             AfternoteButton(
                 text = "시작하기",
                 onClick = {},

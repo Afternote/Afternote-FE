@@ -2,6 +2,7 @@ package com.afternote.feature.onboarding.presentation.welcome
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,17 +11,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.addFocusCleaner
@@ -52,43 +55,60 @@ fun WelcomeScreen(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(top = 80.dp),
+                    .padding(
+                        top = 48.dp,
+                        bottom = 114.dp,
+                    ),
         ) {
             // 로고
             Image(
                 painter = painterResource(CommonR.drawable.core_common_logo),
                 contentDescription = stringResource(R.string.welcome_logo_description),
-                modifier = Modifier.size(width = 160.dp, height = 60.dp),
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // 메인 타이틀
-            Text(
-                text = stringResource(R.string.welcome_title),
-                style = AfternoteDesign.typography.h2,
-                color = AfternoteDesign.colors.gray9,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            end = 59.dp,
+                        ),
+                contentScale = ContentScale.FillWidth,
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 설명 텍스트
+            // 메인 타이틀
             Text(
-                text = stringResource(R.string.welcome_description),
-                style = AfternoteDesign.typography.bodySmallR,
+                text = stringResource(R.string.welcome_title),
+                style = AfternoteDesign.typography.h1,
+                color = AfternoteDesign.colors.black,
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // 설명 텍스트 ("애프터노트"만 강조)
+            val descriptionText = stringResource(R.string.welcome_description)
+            val highlight = stringResource(R.string.welcome_brand_name)
+            Text(
+                text =
+                    buildAnnotatedString {
+                        val start = descriptionText.indexOf(highlight)
+                        if (start >= 0) {
+                            append(descriptionText.substring(0, start))
+                            withStyle(
+                                style = SpanStyle(color = AfternoteDesign.colors.gray9),
+                            ) {
+                                append(highlight)
+                            }
+                            append(descriptionText.substring(start + highlight.length))
+                        } else {
+                            append(descriptionText)
+                        }
+                    },
+                style = AfternoteDesign.typography.bodySmallB,
                 color = AfternoteDesign.colors.gray5,
             )
-        }
+            Spacer(Modifier.weight(1f))
+            // 하단 버튼 영역
 
-        // 하단 버튼 영역
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 40.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
             // 시작하기 버튼
             AfternoteButton(
                 text = stringResource(R.string.welcome_start),
@@ -98,12 +118,11 @@ fun WelcomeScreen(
                 },
                 modifier =
                     Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
+                        .fillMaxWidth(),
                 type = AfternoteButtonType.Default,
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // 전달 받은 기록 확인하기 버튼
             AfternoteButton(
@@ -114,15 +133,17 @@ fun WelcomeScreen(
                 },
                 modifier =
                     Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
+                        .fillMaxWidth(),
                 type = AfternoteButtonType.Plain,
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // 이미 가입하셨나요? 로그인하기
-            Row {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+            ) {
                 Text(
                     text = stringResource(R.string.welcome_already_signed_up),
                     style = AfternoteDesign.typography.captionLargeR,
@@ -149,7 +170,7 @@ fun WelcomeScreen(
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+@Preview(showBackground = true)
 @Composable
 private fun WelcomeScreenPreview() {
     AfternoteTheme {
