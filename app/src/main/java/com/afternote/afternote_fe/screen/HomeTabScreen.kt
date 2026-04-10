@@ -1,6 +1,7 @@
 package com.afternote.afternote_fe.screen
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -50,6 +51,7 @@ fun HomeTabScreen(
     onWeeklyImageClick: () -> Unit = {},
     onWeeklyCountClick: () -> Unit = {},
     onWeeklyRecentRecordClick: () -> Unit = {},
+    onMemoriesSectionClick: () -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier,
@@ -170,9 +172,13 @@ fun HomeTabScreen(
 
             // 6. MEMORIES 섹션
             item {
-                SectionHeader(title = "MEMORIES")
-                Spacer(modifier = Modifier.height(16.dp))
-                MemoriesCard()
+                Column(
+                    modifier = Modifier.clickable(onClick = onMemoriesSectionClick),
+                ) {
+                    SectionHeader(title = "MEMORIES")
+                    Spacer(modifier = Modifier.height(16.dp))
+                    MemoriesCard()
+                }
                 Spacer(modifier = Modifier.height(40.dp))
             }
         }

@@ -17,6 +17,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavGraphParams
 import com.afternote.feature.afternote.presentation.author.navigation.afternoteNavGraph
 import com.afternote.feature.mindrecord.presentation.screen.sender.HomeScreen
+import com.afternote.feature.mindrecord.presentation.screen.sender.MemorySpaceScreen
 import com.afternote.feature.onboarding.presentation.navigation.onboardingNavGraph
 import com.afternote.feature.timeletter.presentation.screen.sender.TimeletterScreen
 
@@ -55,7 +56,18 @@ fun AppNavigation(
                     }
                 },
             )
-            composable<Route.Home> { HomeTabScreen() }
+            composable<Route.Home> {
+                HomeTabScreen(
+                    onMemoriesSectionClick = {
+                        appState.navController.navigate(Route.MemorySpace)
+                    },
+                )
+            }
+            composable<Route.MemorySpace> {
+                MemorySpaceScreen(
+                    onBackClick = { appState.navController.popBackStack() },
+                )
+            }
             composable<Route.MindRecord> { HomeScreen() }
             composable<Route.TimeLetter> { TimeletterScreen() }
             afternoteNavGraph(
