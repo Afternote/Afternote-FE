@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.domain.model
+package com.afternote.feature.afternote.domain.model.author
 
 import com.afternote.feature.afternote.domain.AfternoteServiceType
 
