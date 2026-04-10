@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -172,8 +173,7 @@ private fun MemorialPlaylistListHeader(
                             ArrowIcon(
                                 iconRes = R.drawable.feature_afternote_ic_arrow_right_playlist,
                                 contentDescription = "추가",
-                                width = 12.dp,
-                                height = 12.dp,
+                                modifier = Modifier.size(12.dp),
                                 tint = AfternoteDesign.colors.white,
                             )
                         }
