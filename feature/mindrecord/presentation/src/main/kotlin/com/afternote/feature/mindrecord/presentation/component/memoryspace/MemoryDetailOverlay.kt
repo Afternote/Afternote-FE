@@ -98,6 +98,7 @@ fun MemoryDetailOverlay(
                                     end = 16.dp,
                                 ),
                         color = AfternoteDesign.colors.white,
+                        shadowElevation = 10.dp,
                     ) {
                         CloseIcon(
                             modifier =
