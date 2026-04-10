@@ -7,11 +7,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.ripple
@@ -24,10 +23,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
@@ -46,20 +47,23 @@ enum class AfternoteCircularCheckboxState {
 
 /**
  * 피그마 기준 원형 체크박스.
+ * 전체 지름은 [iconSize] + [contentPadding] × 2에 맞춰 자연스럽게 결정된다.
  *
  * [onClick]이 있으면 최소 48×48dp 터치 영역·리플·[Role.Checkbox] [Modifier.toggleable]을 사용합니다.
- * 부모 행이 [toggleable]로 처리하는 경우 [onClick]을 null로 두면 시각 크기만 차지합니다.
+ * 부모 행이 클릭을 처리하는 경우 [onClick]을 null로 두면 시각 크기만 차지합니다.
  *
  * @param state [AfternoteCircularCheckboxState]
  * @param onClick 탭 시 콜백 ([AfternoteCircularCheckboxState.CheckedDisabled]이면 호출되지 않음)
- * @param visualSize 원의 직경 (기본 24.dp)
+ * @param iconSize 체크 아이콘(또는 미체크 시 공간 유지용 [Spacer]) 한 변 크기 (기본 14.dp)
+ * @param contentPadding 아이콘 주변 여백 (기본 4.dp)
  */
 @Composable
 fun AfternoteCircularCheckbox(
     state: AfternoteCircularCheckboxState,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
-    visualSize: Dp = 24.dp,
+    iconSize: Dp = 14.dp,
+    contentPadding: Dp = 4.dp,
 ) {
     val colors = AfternoteDesign.colors
     val backgroundColor: Color =
@@ -68,9 +72,10 @@ fun AfternoteCircularCheckbox(
             AfternoteCircularCheckboxState.CheckedDisabled -> colors.gray4
             AfternoteCircularCheckboxState.Unchecked -> Color.Transparent
         }
+
     val borderWidth: Dp =
         if (state == AfternoteCircularCheckboxState.Unchecked) {
-            if (visualSize < 20.dp) 1.5.dp else 2.dp
+            if (iconSize < 16.dp) 1.5.dp else 2.dp
         } else {
             0.dp
         }
@@ -80,8 +85,6 @@ fun AfternoteCircularCheckbox(
         state == AfternoteCircularCheckboxState.Checked ||
             state == AfternoteCircularCheckboxState.CheckedDisabled
     val interactionSource = remember { MutableInteractionSource() }
-
-    val checkIconSize = (visualSize * 0.55f).coerceIn(10.dp, 18.dp)
 
     Box(
         modifier =
@@ -106,7 +109,6 @@ fun AfternoteCircularCheckbox(
         Box(
             modifier =
                 Modifier
-                    .size(visualSize)
                     .clip(CircleShape)
                     .background(color = backgroundColor, shape = CircleShape)
                     .then(
@@ -119,16 +121,18 @@ fun AfternoteCircularCheckbox(
                         } else {
                             Modifier
                         },
-                    ),
+                    ).padding(contentPadding),
             contentAlignment = Alignment.Center,
         ) {
             if (checked) {
                 Icon(
-                    imageVector = Icons.Filled.Check,
+                    painter = painterResource(R.drawable.core_ui_ic_check),
                     contentDescription = null,
                     tint = colors.white,
-                    modifier = Modifier.size(checkIconSize),
+                    modifier = Modifier.size(iconSize),
                 )
+            } else {
+                Spacer(modifier = Modifier.size(iconSize))
             }
         }
     }
@@ -158,6 +162,13 @@ private fun AfternoteCircularCheckboxPreview() {
             AfternoteCircularCheckbox(
                 state = AfternoteCircularCheckboxState.Unchecked,
                 onClick = { checked = true },
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            AfternoteCircularCheckbox(
+                state = AfternoteCircularCheckboxState.Unchecked,
+                onClick = { checked = true },
+                iconSize = 20.dp,
+                contentPadding = 8.dp,
             )
         }
     }

@@ -46,7 +46,7 @@ fun AfternoteActionButton(
                 color = contentColor,
             )
             Spacer(modifier = Modifier.width(6.dp))
-            RightArrowIcon(width = 14.dp, height = 14.dp)
+            RightArrowIcon(size = 14.dp)
         }
     }
 }
