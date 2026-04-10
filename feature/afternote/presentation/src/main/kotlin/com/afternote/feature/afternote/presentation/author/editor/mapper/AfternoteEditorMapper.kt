@@ -1,11 +1,11 @@
 package com.afternote.feature.afternote.presentation.author.editor.mapper
 
-import com.afternote.feature.afternote.domain.model.Detail
 import com.afternote.feature.afternote.domain.model.author.AfternoteAccountCredentials
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreatePlaylistPayload
 import com.afternote.feature.afternote.domain.model.author.CreateSocialPayload
+import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
 import com.afternote.feature.afternote.domain.model.author.PlaylistSongPayload
 import com.afternote.feature.afternote.domain.model.author.PlaylistWritePayload
@@ -319,7 +319,6 @@ internal object AfternoteEditorMapper {
     }
 }
 
-/** Mapper에서 사용하는 생성 입력. ViewModel에서 [AfternoteRepository] 호출 시 분기합니다. */
 internal sealed interface CreateInput {
     data class Social(
         val payload: CreateSocialPayload,

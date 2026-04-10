@@ -1,5 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.detail.model
-import com.afternote.feature.afternote.domain.model.Detail
+import com.afternote.feature.afternote.domain.model.author.Detail
 
 /**
  * 애프터노트 상세 화면 UI 상태.

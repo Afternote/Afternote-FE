@@ -3,7 +3,7 @@ package com.afternote.feature.afternote.presentation.author.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.feature.afternote.domain.model.ListItem
+import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
 import com.afternote.feature.afternote.presentation.author.home.model.AfternoteHomeEvent
 import com.afternote.feature.afternote.presentation.author.home.model.AfternoteHomeUiState
