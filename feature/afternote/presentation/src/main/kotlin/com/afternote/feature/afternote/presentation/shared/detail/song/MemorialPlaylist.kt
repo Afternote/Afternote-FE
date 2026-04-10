@@ -75,8 +75,8 @@ private fun MemorialPlaylistSongCountRow(
                     ),
             )
             RightArrowIcon(
+                modifier = Modifier.size(16.dp),
                 tint = AfternoteDesign.colors.gray9,
-                size = 16.dp,
             )
         }
     } else {
