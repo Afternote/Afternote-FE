@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -27,8 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.FadingEdgeDirection
 import com.afternote.core.ui.bottomBorder
 import com.afternote.core.ui.horizontalFadingEdge
-import com.afternote.core.ui.icon.ArrowIconSpec
-import com.afternote.core.ui.icon.RightArrowIcon
+import com.afternote.core.ui.icon.ArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
@@ -101,16 +101,12 @@ fun AfternoteCategoryRow(
 
         // 오른쪽 끝에 화살표 아이콘 (스크롤 가능할 때만 표시)
         if (canScrollRight) {
-            RightArrowIcon(
-                iconSpec =
-                    ArrowIconSpec(
-                        iconRes = R.drawable.feature_afternote_ic_arrow_right_tab,
-                        contentDescription = "더 보기",
-                    ),
-                backgroundColor = AfternoteDesign.colors.gray9,
-                size = 16.dp,
+            ArrowIcon(
+                iconRes = R.drawable.feature_afternote_ic_arrow_right_tab,
+                contentDescription = "더 보기",
                 modifier =
                     Modifier
+                        .size(16.dp)
                         .align(Alignment.CenterEnd)
                         .pointerInput(Unit) { detectTapGestures { } },
             )

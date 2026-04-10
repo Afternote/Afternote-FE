@@ -1,8 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.detail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.feature.afternote.domain.usecase.author.DeleteUseCase
-import com.afternote.feature.afternote.domain.usecase.author.GetDetailUseCase
+import com.afternote.feature.afternote.domain.repository.AfternoteRepository
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailEvent
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,8 +22,7 @@ import javax.inject.Inject
 class AfternoteDetailViewModel
     @Inject
     constructor(
-        private val getDetailUseCase: GetDetailUseCase,
-        private val deleteUseCase: DeleteUseCase,
+        private val afternoteRepository: AfternoteRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(AfternoteDetailUiState())
         val uiState: StateFlow<AfternoteDetailUiState> = _uiState.asStateFlow()
@@ -46,7 +44,8 @@ class AfternoteDetailViewModel
         private fun loadDetail(afternoteId: Long) {
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoading = true, error = null) }
-                getDetailUseCase(id = afternoteId)
+                afternoteRepository
+                    .getDetail(id = afternoteId)
                     .onSuccess { detail ->
                         _uiState.update {
                             it.copy(isLoading = false, detail = detail, error = null)
@@ -65,7 +64,8 @@ class AfternoteDetailViewModel
         private fun deleteAfternote(afternoteId: Long) {
             viewModelScope.launch {
                 _uiState.update { it.copy(isDeleting = true, deleteError = null) }
-                deleteUseCase(id = afternoteId)
+                afternoteRepository
+                    .delete(id = afternoteId)
                     .onSuccess {
                         _uiState.update {
                             it.copy(isDeleting = false, deleteSuccess = true)

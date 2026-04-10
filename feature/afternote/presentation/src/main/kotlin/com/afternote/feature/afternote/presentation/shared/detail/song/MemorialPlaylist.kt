@@ -38,7 +38,7 @@ import coil3.network.httpHeaders
 import coil3.request.ImageRequest
 import com.afternote.core.ui.FadingEdgeDirection
 import com.afternote.core.ui.horizontalFadingEdge
-import com.afternote.core.ui.icon.ArrowIconSpec
+import com.afternote.core.ui.icon.ArrowIcon
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -74,7 +74,10 @@ private fun MemorialPlaylistSongCountRow(
                         color = AfternoteDesign.colors.black,
                     ),
             )
-            RightArrowIcon(color = AfternoteDesign.colors.gray9, size = 16.dp)
+            RightArrowIcon(
+                tint = AfternoteDesign.colors.gray9,
+                size = 16.dp,
+            )
         }
     } else {
         Text(
@@ -109,14 +112,11 @@ private fun MemorialPlaylistAddButton(
                     color = AfternoteDesign.colors.gray9,
                 ),
         )
-        RightArrowIcon(
-            iconSpec =
-                ArrowIconSpec(
-                    iconRes = R.drawable.feature_afternote_ic_arrow_right_playlist,
-                    contentDescription = "추가",
-                ),
-            backgroundColor = AfternoteDesign.colors.gray9,
-            size = 12.dp,
+        ArrowIcon(
+            iconRes = R.drawable.feature_afternote_ic_arrow_right_playlist,
+            contentDescription = "추가",
+            modifier = Modifier.size(12.dp),
+            tint = AfternoteDesign.colors.white,
         )
     }
 }

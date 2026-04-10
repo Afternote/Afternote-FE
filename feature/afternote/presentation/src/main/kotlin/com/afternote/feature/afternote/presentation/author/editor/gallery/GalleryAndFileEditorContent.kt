@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -26,9 +25,7 @@ import com.afternote.feature.afternote.presentation.author.editor.processing.Opt
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodList
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListParams
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
-import com.afternote.feature.afternote.presentation.author.editor.provider.FakeAfternoteEditorDataProvider
 import com.afternote.feature.afternote.presentation.author.editor.receiver.RecipientDesignationSection
-import com.afternote.feature.afternote.presentation.shared.DataProviderLocals
 
 /**
  * 갤러리 및 파일 선택 시 표시되는 콘텐츠
@@ -170,33 +167,28 @@ private fun GalleryAndFileEditorContentPreview() {
 @Composable
 private fun GalleryAndFileEditorContentWithAfternoteEditorReceiversPreview() {
     AfternoteTheme {
-        CompositionLocalProvider(
-            DataProviderLocals.LocalAfternoteEditorDataProvider provides FakeAfternoteEditorDataProvider(),
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
         ) {
-            val provider = DataProviderLocals.LocalAfternoteEditorDataProvider.current
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-            ) {
-                GalleryAndFileEditorContent(
-                    bottomPadding = PaddingValues(bottom = 88.dp),
-                    params =
-                        GalleryAndFileEditorContentParams(
-                            editorMessages = listOf(EditorMessage()),
-                            infoMethodSection =
-                                InfoMethodSection(
-                                    selectedMethod = InformationProcessingMethod.TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER,
-                                    onMethodSelected = {},
-                                ),
-                            recipientSection =
-                                AfternoteEditorReceiverSection(
-                                    afternoteEditReceivers = provider.getAfternoteEditorReceivers(),
-                                ),
-                        ),
-                )
-            }
+            GalleryAndFileEditorContent(
+                bottomPadding = PaddingValues(bottom = 88.dp),
+                params =
+                    GalleryAndFileEditorContentParams(
+                        editorMessages = listOf(EditorMessage()),
+                        infoMethodSection =
+                            InfoMethodSection(
+                                selectedMethod = InformationProcessingMethod.TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER,
+                                onMethodSelected = {},
+                            ),
+                        recipientSection =
+                            AfternoteEditorReceiverSection(
+                                afternoteEditReceivers = emptyList(),
+                            ),
+                    ),
+            )
         }
     }
 }
