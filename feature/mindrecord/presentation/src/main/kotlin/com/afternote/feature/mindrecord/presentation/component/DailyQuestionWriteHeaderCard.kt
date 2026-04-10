@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -75,20 +74,20 @@ fun DailyQuestionWriteHeaderCard(modifier: Modifier = Modifier) {
             )
 
             Spacer(modifier = Modifier.height(7.5.dp))
-            androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = "답변하러가기",
                     style = AfternoteDesign.typography.captionLargeR,
                     color = AfternoteDesign.colors.gray6,
                 )
                 IconButton(
-                    onClick = {}
+                    onClick = {},
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.core_ui_right),
                         contentDescription = null,
                         tint = AfternoteDesign.colors.gray6,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(20.dp),
                     )
                 }
             }

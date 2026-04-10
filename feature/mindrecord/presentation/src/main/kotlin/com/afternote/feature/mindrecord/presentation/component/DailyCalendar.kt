@@ -79,7 +79,7 @@ fun DailyCalendar(
                     containerColor = Color(0xFFFFFFFF),
                 ),
             border = BorderStroke(1.dp, color = Color(0xFF000000).copy(alpha = 0.05f)),
-            modifier = modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Column {
                 val dayLabels = listOf("일", "월", "화", "수", "목", "금", "토")
