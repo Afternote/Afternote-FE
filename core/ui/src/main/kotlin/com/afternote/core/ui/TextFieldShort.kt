@@ -270,14 +270,14 @@ fun AfternoteTextField(
 // 3. 피그마 9종 카탈로그 프리뷰 (타입 이름으로만 호출)
 // ============================================================================
 
-@Preview(showBackground = true, backgroundColor = 0xFFC0C0C0, name = "AfternoteTextField 피그마 9종")
+@Preview(showBackground = true, backgroundColor = 0xFFC0C0C0, name = "AfternoteTextField 피그마 9종 (ALL EMPTY)")
 @Composable
 private fun AfternoteTextFieldFigmaPreview() {
     AfternoteTheme {
         val focusReqWriting = remember { FocusRequester() }
         val focusReqWrite = remember { FocusRequester() }
 
-        // 프리뷰 환경에서 '포커스된 상태'를 강제로 보여주기 위함
+        // 포커스 상태 시뮬레이션
         LaunchedEffect(Unit) {
             focusReqWriting.requestFocus()
         }
@@ -286,59 +286,35 @@ private fun AfternoteTextFieldFigmaPreview() {
             modifier = Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            // 1. nonfield
+            // 1. nonfield (포커스 X, 빈 값)
             AfternoteTextField(
                 type = TextFieldType.Basic,
-                state = rememberTextFieldState(),
+                state = rememberTextFieldState(), // 👈 괄호 안을 비우면 빈 값!
                 placeholder = "Text Field",
             )
 
-            // 2. writing (포커스 O)
-            AfternoteTextField(
-                type = TextFieldType.Basic,
-                state = rememberTextFieldState(),
-                focusRequester = focusReqWriting,
-            )
-
-            // 3. write (글자 O, 포커스 O)
-            AfternoteTextField(
-                type = TextFieldType.Basic,
-                state = rememberTextFieldState("Text Field"),
-                focusRequester = focusReqWrite,
-            )
-
-            // 4. field (글자 O)
-            AfternoteTextField(
-                type = TextFieldType.Basic,
-                state = rememberTextFieldState("Text Field"),
-            )
-
-            // 5. nonsearch
+            // 5. nonsearch (검색창, 빈 값)
             AfternoteTextField(
                 type = TextFieldType.Search,
                 state = rememberTextFieldState(),
-                placeholder = "Text Field",
+                placeholder = "Search",
             )
 
-            // 6. search
-            AfternoteTextField(
-                type = TextFieldType.Search,
-                state = rememberTextFieldState("Text Field"),
-            )
-
-            // 7. Variant7
+            // 7. Variant7 (빈 값)
             AfternoteTextField(
                 type = TextFieldType.Variant7,
-                state = rememberTextFieldState("Text Field"),
+                state = rememberTextFieldState(),
+                placeholder = "Variant 7 Placeholder",
             )
 
-            // 8. Variant8
+            // 8. Variant8 (빈 값)
             AfternoteTextField(
                 type = TextFieldType.Variant8,
-                state = rememberTextFieldState("Text Field"),
+                state = rememberTextFieldState(),
+                placeholder = "Variant 8 Placeholder",
             )
 
-            // 9. Variant9
+            // 9. Variant9 (URL, 빈 값)
             AfternoteTextField(
                 type = TextFieldType.Variant9,
                 state = rememberTextFieldState(),
