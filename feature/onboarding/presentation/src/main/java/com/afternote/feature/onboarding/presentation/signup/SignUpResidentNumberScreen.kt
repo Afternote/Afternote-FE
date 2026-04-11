@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -18,21 +17,18 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.Label
+import com.afternote.core.ui.StepProgressBar
 import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
-import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
 import kotlinx.coroutines.flow.collectLatest
@@ -96,17 +92,10 @@ private fun ResidentNumberContent(
     Column(
         modifier = modifier.fillMaxSize(),
     ) {
-        // 진행바
-        LinearProgressIndicator(
-            progress = { currentStep.toFloat() / SIGN_UP_TOTAL_STEPS },
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(4.dp)
-                    .semantics { contentDescription = progressDescription },
-            color = AfternoteDesign.colors.gray9,
-            trackColor = AfternoteDesign.colors.gray3,
-            strokeCap = StrokeCap.Square,
+        StepProgressBar(
+            currentStep = currentStep,
+            totalSteps = SIGN_UP_TOTAL_STEPS,
+            contentDescription = progressDescription,
         )
 
         // 입력 폼
