@@ -38,6 +38,10 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
+// ============================================================================
+// 1. 공통 내부 구현체 (건드릴 필요 없음)
+// ============================================================================
+
 @Composable
 private fun TextFieldShort(
     state: TextFieldState,
@@ -120,6 +124,10 @@ private fun TextFieldShort(
     )
 }
 
+// ============================================================================
+// 2. 타입 정의 + 메인 Public API
+// ============================================================================
+
 sealed interface TextFieldType {
     data object Basic : TextFieldType
 
@@ -163,91 +171,99 @@ fun AfternoteTextField(
         trailingContent =
             when (type) {
                 TextFieldType.Search -> {
-                    {
-                        Icon(
-                            painter = painterResource(R.drawable.core_ui_ic_tabler_search),
-                            contentDescription = "검색",
-                            modifier = Modifier.size(18.dp),
-                        )
-                    }
+                    { SearchIcon() }
                 }
 
-                else -> {
-                    null
-                }
+                else -> null
             },
         suffix =
             when (type) {
                 is TextFieldType.Variant7 -> {
-                    {
-                        Text(
-                            text = type.text,
-                            modifier =
-                                Modifier.clickable(onClick = type.onClick),
-                            style = AfternoteDesign.typography.captionLargeR,
-                            color = AfternoteDesign.colors.gray7,
-                        )
-                    }
+                    { Variant7Suffix(type) }
                 }
 
                 is TextFieldType.Variant8 -> {
-                    {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            // 1. 고정된 하이픈
-                            Text(
-                                text = "-",
-                                style = AfternoteDesign.typography.textField,
-                                color = AfternoteDesign.colors.black,
-                            )
-
-                            // 2. 첫 자리 숫자 (플레이스홀더 vs 실제 입력값)
-                            val isPlaceholder = type.firstDigit.isEmpty()
-//                            Box(
-//                                Modifier.size(20.dp),
-//                                contentAlignment = Alignment.Center,
-//                            ) {
-                            Text(
-                                text = if (isPlaceholder) type.placeholder else type.firstDigit,
-                                style = AfternoteDesign.typography.textField,
-                                color =
-                                    if (isPlaceholder) {
-                                        AfternoteDesign.colors.gray4
-                                    } else {
-                                        AfternoteDesign.colors.black
-                                    },
-                            )
-//                            }
-
-                            // 3. 고정된 마스킹 점
-                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                repeat(type.dotCount) {
-                                    Box(
-                                        modifier =
-                                            Modifier
-                                                .size(14.dp)
-                                                .background(
-                                                    color = AfternoteDesign.colors.black,
-                                                    shape = CircleShape,
-                                                ),
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    { Variant8Suffix(type) }
                 }
 
-                else -> {
-                    null
-                }
+                else -> null
             },
     )
 }
 
 // ============================================================================
-// 3. 피그마 9종 카탈로그 프리뷰 (타입 이름으로만 호출)
+// 3. 컴포넌트 파편화 (UI 덩어리들을 밖으로 빼냄)
+// ============================================================================
+
+@Composable
+private fun SearchIcon() {
+    Icon(
+        painter = painterResource(R.drawable.core_ui_ic_tabler_search),
+        contentDescription = "검색",
+        modifier = Modifier.size(18.dp),
+    )
+}
+
+@Composable
+private fun Variant7Suffix(type: TextFieldType.Variant7) {
+    Text(
+        text = type.text,
+        modifier = Modifier.clickable(onClick = type.onClick),
+        style = AfternoteDesign.typography.captionLargeR,
+        color = AfternoteDesign.colors.gray7,
+    )
+}
+
+@Composable
+private fun Variant8Suffix(type: TextFieldType.Variant8) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        // 1. 고정된 하이픈
+        Text(
+            text = "-",
+            style = AfternoteDesign.typography.textField,
+            color = AfternoteDesign.colors.black,
+        )
+
+        // 2. 첫 자리 숫자 (플레이스홀더 vs 실제 입력값)
+        val isPlaceholder = type.firstDigit.isEmpty()
+        Text(
+            text = if (isPlaceholder) type.placeholder else type.firstDigit,
+            style = AfternoteDesign.typography.textField,
+            color =
+                if (isPlaceholder) {
+                    AfternoteDesign.colors.gray4
+                } else {
+                    AfternoteDesign.colors.black
+                },
+        )
+
+        // 3. 고정된 마스킹 점
+        Variant8MaskDots(dotCount = type.dotCount)
+    }
+}
+
+@Composable
+private fun Variant8MaskDots(dotCount: Int) {
+    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        repeat(dotCount) {
+            Box(
+                modifier =
+                    Modifier
+                        .size(14.dp)
+                        .background(
+                            color = AfternoteDesign.colors.black,
+                            shape = CircleShape,
+                        ),
+            )
+        }
+    }
+}
+
+// ============================================================================
+// 4. 피그마 9종 카탈로그 프리뷰 (타입 이름으로만 호출)
 // ============================================================================
 
 @Preview(
