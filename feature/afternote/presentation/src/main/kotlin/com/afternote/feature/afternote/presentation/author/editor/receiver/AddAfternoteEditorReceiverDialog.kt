@@ -22,9 +22,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.PhoneNumberInputTransformation
 import com.afternote.core.ui.PhoneNumberVisualTransformation
-import com.afternote.core.ui.TextFieldShort
+import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.popup.AfternotePopupCardLayout
@@ -140,10 +141,10 @@ fun AddAfternoteEditorReceiverDialog(
                     color = AfternoteDesign.colors.gray9,
                 )
                 Spacer(modifier = Modifier.height(6.dp))
-                TextFieldShort(
+                AfternoteTextField(
+                    type = TextFieldType.Variant9,
                     state = params.afternoteEditReceiverNameState,
                     keyboardType = KeyboardType.Text,
-                    containerColor = AfternoteDesign.colors.gray1,
                 )
             }
 
@@ -172,12 +173,12 @@ fun AddAfternoteEditorReceiverDialog(
                     color = AfternoteDesign.colors.gray9,
                 )
                 Spacer(modifier = Modifier.height(6.dp))
-                TextFieldShort(
+                AfternoteTextField(
+                    type = TextFieldType.Variant9,
                     state = params.phoneNumberState,
                     keyboardType = KeyboardType.Phone,
                     inputTransformation = PhoneNumberInputTransformation,
                     outputTransformation = PhoneNumberVisualTransformation,
-                    containerColor = AfternoteDesign.colors.gray1,
                 )
             }
 

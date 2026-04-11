@@ -63,7 +63,7 @@ private fun processingMethodTextStyle(): TextStyle =
  * - 텍스트: 14sp, Regular, AfternoteDesign.colors.gray9
  * - 더보기 아이콘: 오른쪽 정렬
  *
- * [isEditing]이 true이면 텍스트 영역이 [TextFieldShort]로 전환되어 인라인 편집을 지원합니다.
+ * [isEditing]이 true이면 텍스트 영역이 [BasicTextField]로 전환되어 인라인 편집을 지원합니다.
  */
 @Composable
 fun ProcessingMethodCheckbox(

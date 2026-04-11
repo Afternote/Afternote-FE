@@ -31,8 +31,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.PasswordMaskTransformation
-import com.afternote.core.ui.TextFieldShort
+import com.afternote.core.ui.AfternoteTextField
+import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
@@ -130,7 +130,8 @@ private fun SignUpContent(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 // 이메일 입력 + 인증번호 받기
-                TextFieldShort(
+                AfternoteTextField(
+                    type = TextFieldType.Basic,
                     state = emailState,
                     placeholder = stringResource(R.string.signup_email_placeholder),
                     keyboardType = KeyboardType.Email,
@@ -152,12 +153,12 @@ private fun SignUpContent(
                 )
 
                 // 비밀번호 입력
-                TextFieldShort(
+                AfternoteTextField(
+                    type = TextFieldType.Basic,
                     state = passwordState,
                     placeholder = stringResource(R.string.signup_password_placeholder),
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done,
-                    outputTransformation = PasswordMaskTransformation,
                 )
             }
 
