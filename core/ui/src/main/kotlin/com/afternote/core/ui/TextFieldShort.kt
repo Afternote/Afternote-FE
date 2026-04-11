@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -174,7 +175,9 @@ fun AfternoteTextField(
                     { SearchIcon() }
                 }
 
-                else -> null
+                else -> {
+                    null
+                }
             },
         suffix =
             when (type) {
@@ -186,7 +189,9 @@ fun AfternoteTextField(
                     { Variant8Suffix(type) }
                 }
 
-                else -> null
+                else -> {
+                    null
+                }
             },
     )
 }
@@ -220,11 +225,15 @@ private fun Variant8Suffix(type: TextFieldType.Variant8) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // 1. 고정된 하이픈
-        Text(
-            text = "-",
-            style = AfternoteDesign.typography.textField,
-            color = AfternoteDesign.colors.black,
+        // 1. 고정된 하이픈 — 폰트 여백 없이 정확히 14x2 크기로 고정
+        Box(
+            modifier =
+                Modifier
+                    .width(14.dp)
+                    .height(1.dp)
+                    .background(
+                        color = AfternoteDesign.colors.gray9,
+                    ),
         )
 
         // 2. 첫 자리 숫자 (플레이스홀더 vs 실제 입력값)
