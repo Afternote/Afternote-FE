@@ -32,7 +32,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
@@ -73,14 +72,12 @@ private fun TextFieldShort(
     imeAction: ImeAction = ImeAction.Default,
     inputTransformation: InputTransformation? = null,
     outputTransformation: OutputTransformation? = null,
-    containerColor: Color? = null,
     focusRequester: FocusRequester? = null,
     onImeAction: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource? = null,
     onFocusChanged: ((Boolean) -> Unit)? = null,
 ) {
     val resolvedInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
-    val bgColor = containerColor ?: AfternoteDesign.colors.white
 
     val borderColor = AfternoteDesign.colors.gray2
 
