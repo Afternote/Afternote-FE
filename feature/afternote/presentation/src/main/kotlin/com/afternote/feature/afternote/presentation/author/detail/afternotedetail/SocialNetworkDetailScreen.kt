@@ -176,7 +176,7 @@ private fun SocialNetworkDetailScrollContent(
                 CircleCheckBox(
                     checked = true,
                     onCheckedChange = null,
-                    size = 16.dp,
+                    modifier = Modifier.size(16.dp),
                 )
                 Text(
                     text = stringResource(content.badgeTextResId),
@@ -300,7 +300,6 @@ private fun SocialNetworkDetailScrollContent(
                             CircleCheckBox(
                                 checked = true,
                                 onCheckedChange = null,
-                                size = 20.dp,
                             )
                             Text(
                                 text = method,

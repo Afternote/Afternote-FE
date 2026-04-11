@@ -193,7 +193,7 @@ private fun GalleryDetailScrollContent(
                 CircleCheckBox(
                     checked = true,
                     onCheckedChange = null,
-                    size = 16.dp,
+                    modifier = Modifier.size(16.dp),
                 )
                 Text(
                     text = stringResource(R.string.feature_afternote_detail_additional_receiver_badge),
@@ -268,7 +268,6 @@ private fun GalleryDetailScrollContent(
                             CircleCheckBox(
                                 checked = true,
                                 onCheckedChange = null,
-                                size = 20.dp,
                             )
                             Text(
                                 text = method,
