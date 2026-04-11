@@ -46,8 +46,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.PasswordMaskTransformation
-import com.afternote.core.ui.TextFieldShort
+import com.afternote.core.ui.AfternoteTextField
+import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
@@ -118,7 +118,8 @@ fun LoginScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 // 아이디 (이메일) 입력 필드
-                TextFieldShort(
+                AfternoteTextField(
+                    type = TextFieldType.Basic,
                     state = emailState,
                     placeholder = stringResource(R.string.login_email_label),
                     keyboardType = KeyboardType.Email,
@@ -128,12 +129,12 @@ fun LoginScreen(
                 )
 
                 // 비밀번호 입력 필드
-                TextFieldShort(
+                AfternoteTextField(
+                    type = TextFieldType.Basic,
                     state = passwordState,
                     placeholder = stringResource(R.string.login_password_label),
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done,
-                    outputTransformation = PasswordMaskTransformation,
                     modifier =
                         Modifier.semantics { contentType = ContentType.Password },
                 )
