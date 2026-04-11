@@ -196,7 +196,7 @@ fun AfternoteTextField(
                     Text(
                         text = "Text Field",
                         style = AfternoteDesign.typography.captionLargeR,
-                        color = AfternoteDesign.colors.gray4,
+                        color = AfternoteDesign.colors.gray7,
                     )
                 }
             }

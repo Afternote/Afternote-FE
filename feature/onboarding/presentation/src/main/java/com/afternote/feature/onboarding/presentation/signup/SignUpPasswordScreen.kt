@@ -4,18 +4,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -32,16 +28,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.Label
-import com.afternote.core.ui.StepProgressBar
-import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
-import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
+import com.afternote.feature.onboarding.presentation.signup.component.SignUpStepScaffold
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpPasswordScreen(
     currentStep: Int,
@@ -52,66 +45,35 @@ fun SignUpPasswordScreen(
     modifier: Modifier = Modifier,
 ) {
     val focusManager = LocalFocusManager.current
-    val progressDescription =
-        stringResource(R.string.signup_progress_description, currentStep, SIGN_UP_TOTAL_STEPS)
 
-    Scaffold(
+    SignUpStepScaffold(
+        currentStep = currentStep,
+        onBackClick = onBackClick,
         modifier = modifier,
-        topBar = {
-            DetailTopBar(
-                title = stringResource(R.string.signup_title),
-                onBackClick = {
+        containerColor = AfternoteDesign.colors.white,
+        horizontalPadding = 24.dp,
+        bottomButton = {
+            AfternoteButton(
+                text = stringResource(R.string.signup_next),
+                onClick = {
                     focusManager.clearFocus()
-                    onBackClick()
+                    onNextClick()
                 },
+                modifier =
+                    Modifier
+                        .navigationBarsPadding()
+                        .fillMaxWidth()
+                        .padding(vertical = 20.dp)
+                        .height(48.dp),
+                type = AfternoteButtonType.Default,
             )
         },
-        containerColor = AfternoteDesign.colors.white,
-    ) { innerPadding ->
-        SignUpPasswordContent(
-            currentStep = currentStep,
-            passwordState = passwordState,
-            passwordConfirmState = passwordConfirmState,
-            onNextClick = onNextClick,
-            progressDescription = progressDescription,
-            modifier =
-                Modifier
-                    .padding(innerPadding)
-                    .consumeWindowInsets(innerPadding)
-                    .imePadding(),
-        )
-    }
-}
-
-@Composable
-private fun SignUpPasswordContent(
-    currentStep: Int,
-    passwordState: TextFieldState,
-    passwordConfirmState: TextFieldState,
-    onNextClick: () -> Unit,
-    progressDescription: String,
-    modifier: Modifier = Modifier,
-) {
-    val focusManager = LocalFocusManager.current
-
-    Column(
-        modifier = modifier.fillMaxSize(),
     ) {
-        StepProgressBar(
-            currentStep = currentStep,
-            totalSteps = SIGN_UP_TOTAL_STEPS,
-            contentDescription = progressDescription,
-        )
-
-        // 입력 폼 (스크롤 가능)
         Column(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .weight(1f)
                     .verticalScroll(rememberScrollState())
-                    .addFocusCleaner(focusManager)
-                    .padding(horizontal = 24.dp)
                     .padding(top = 32.dp, bottom = 16.dp),
         ) {
             Label(
@@ -155,21 +117,6 @@ private fun SignUpPasswordContent(
                 textColor = AfternoteDesign.colors.b1,
             )
         }
-
-        // 다음 버튼
-        AfternoteButton(
-            text = stringResource(R.string.signup_next),
-            onClick = {
-                focusManager.clearFocus()
-                onNextClick()
-            },
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 20.dp)
-                    .height(48.dp),
-            type = AfternoteButtonType.Default,
-        )
     }
 }
 
@@ -213,12 +160,12 @@ private fun PasswordRuleItem(
 @Composable
 private fun SignUpPasswordScreenPreview() {
     AfternoteTheme {
-        SignUpPasswordContent(
+        SignUpPasswordScreen(
             currentStep = 3,
             passwordState = rememberTextFieldState(),
             passwordConfirmState = rememberTextFieldState(),
             onNextClick = {},
-            progressDescription = "회원가입 진행도 4단계 중 3단계",
+            onBackClick = {},
         )
     }
 }
