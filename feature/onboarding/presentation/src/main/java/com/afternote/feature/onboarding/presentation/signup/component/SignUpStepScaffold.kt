@@ -1,11 +1,10 @@
 package com.afternote.feature.onboarding.presentation.signup.component
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -81,7 +80,8 @@ internal fun SignUpStepScaffold(
         Column(
             modifier =
                 Modifier
-                    .padding(top = innerPadding.calculateTopPadding())
+                    .padding(top = innerPadding.calculateTopPadding(), bottom = 49.dp)
+                    .padding(horizontal = 20.dp)
                     // "방금 적용한 여백은 이미 처리했어!" 라고 시스템에 신고합니다. (중복 방지)
                     .consumeWindowInsets(innerPadding)
                     // 이제 안심하고 키보드(IME) 높이만큼만 순수하게 추가 패딩을 밀어 넣습니다.
@@ -95,30 +95,16 @@ internal fun SignUpStepScaffold(
                 contentDescription = progressDescription,
             )
 
-            val horizontalPadding = 20.dp
-            Column(
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .padding(horizontal = horizontalPadding),
-                content = content,
-            )
+            content()
+            Spacer(Modifier.weight(1f))
 
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = horizontalPadding),
-            ) {
-                AfternoteButton(
-                    text = stringResource(R.string.signup_next),
-                    onClick = {
-                        focusManager.clearFocus()
-                        onNextClick()
-                    },
-                    modifier = Modifier.padding(bottom = 49.dp),
-                )
-            }
+            AfternoteButton(
+                text = stringResource(R.string.signup_next),
+                onClick = {
+                    focusManager.clearFocus()
+                    onNextClick()
+                },
+            )
         }
     }
 }
