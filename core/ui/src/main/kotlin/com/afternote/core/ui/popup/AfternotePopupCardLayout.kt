@@ -16,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -56,7 +55,7 @@ fun AfternotePopupCardLayout(
                 Modifier
                     .fillMaxWidth()
                     .padding(
-                        horizontal = 20.dp,
+                        horizontal = 24.dp,
                         vertical = 32.dp,
                     ),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -81,11 +80,10 @@ fun AfternotePopupCardLayout(
         Text(
             text = message,
             style =
-                AfternoteDesign.typography.textField.copy(
-                    fontWeight = FontWeight.Medium,
-                    color = AfternoteDesign.colors.gray9,
-                    textAlign = TextAlign.Center,
-                ),
+                AfternoteDesign.typography.bodyBase
+                    .copy(
+                        textAlign = TextAlign.Center,
+                    ),
         )
 
         Spacer(modifier = Modifier.height(20.dp))
