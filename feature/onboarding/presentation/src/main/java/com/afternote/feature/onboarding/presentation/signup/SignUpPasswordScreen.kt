@@ -13,7 +13,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -22,7 +21,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.Label
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -50,13 +48,13 @@ fun SignUpPasswordScreen(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .padding(top = 32.dp, bottom = 16.dp),
+                        .padding(top = 44.dp),
             ) {
                 Label(
                     text = stringResource(R.string.signup_password_input_label),
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(17.dp))
 
                 // 비밀번호 입력
                 AfternoteTextField(
@@ -66,7 +64,7 @@ fun SignUpPasswordScreen(
                     imeAction = ImeAction.Next,
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // 비밀번호 확인
                 AfternoteTextField(
@@ -80,17 +78,15 @@ fun SignUpPasswordScreen(
                     },
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // 안내 문구
                 PasswordRuleItem(
                     text = stringResource(R.string.signup_password_rule_combination),
-                    textColor = AfternoteDesign.colors.b1,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 PasswordRuleItem(
                     text = stringResource(R.string.signup_password_rule_reuse),
-                    textColor = AfternoteDesign.colors.b1,
                 )
             }
         },
@@ -100,7 +96,6 @@ fun SignUpPasswordScreen(
 @Composable
 private fun PasswordRuleItem(
     text: String,
-    textColor: Color,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -115,20 +110,14 @@ private fun PasswordRuleItem(
             text = "\u2022",
             modifier = Modifier.clearAndSetSemantics {},
             style =
-                AfternoteDesign.typography.captionLargeR.copy(
-                    fontSize = 12.sp,
-                    lineHeight = 18.sp,
-                ),
-            color = textColor,
+                AfternoteDesign.typography.captionLargeB,
+            color = AfternoteDesign.colors.b1,
         )
         Text(
             text = text,
             style =
-                AfternoteDesign.typography.captionLargeR.copy(
-                    fontSize = 12.sp,
-                    lineHeight = 18.sp,
-                ),
-            color = textColor,
+                AfternoteDesign.typography.captionLargeB,
+            color = AfternoteDesign.colors.b1,
         )
     }
 }
