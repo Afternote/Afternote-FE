@@ -19,9 +19,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -45,9 +42,6 @@ import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
-
-private const val PASSWORD_MIN_LENGTH = 8
-private const val PASSWORD_MAX_LENGTH = 16
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -101,12 +95,6 @@ private fun SignUpPasswordContent(
     modifier: Modifier = Modifier,
 ) {
     val focusManager = LocalFocusManager.current
-    val isNextEnabled by remember {
-        derivedStateOf {
-            passwordState.text.length in PASSWORD_MIN_LENGTH..PASSWORD_MAX_LENGTH &&
-                passwordState.text.contentEquals(passwordConfirmState.text)
-        }
-    }
 
     Column(
         modifier = modifier.fillMaxSize(),
@@ -158,10 +146,8 @@ private fun SignUpPasswordContent(
                 keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Done,
                 onImeAction = {
-                    if (isNextEnabled) {
-                        focusManager.clearFocus()
-                        onNextClick()
-                    }
+                    focusManager.clearFocus()
+                    onNextClick()
                 },
             )
 
@@ -191,12 +177,7 @@ private fun SignUpPasswordContent(
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp, vertical = 20.dp)
                     .height(48.dp),
-            type =
-                if (isNextEnabled) {
-                    AfternoteButtonType.Default
-                } else {
-                    AfternoteButtonType.Un
-                },
+            type = AfternoteButtonType.Default,
         )
     }
 }

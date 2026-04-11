@@ -2,11 +2,9 @@ package com.afternote.feature.onboarding.presentation.signup
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -19,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -40,14 +39,12 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
 
 private const val FRONT_NUMBER_LENGTH = 6
-private const val BACK_NUMBER_LENGTH = 1
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpResidentNumberScreen(
     currentStep: Int,
     frontNumberState: TextFieldState,
-    backNumberState: TextFieldState,
     onNextClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -76,19 +73,14 @@ fun SignUpResidentNumberScreen(
                 },
             )
         },
-        containerColor = AfternoteDesign.colors.white,
+        containerColor = Color.Transparent,
     ) { innerPadding ->
         ResidentNumberContent(
             currentStep = currentStep,
-            frontNumberState = frontNumberState,
-            backNumberState = backNumberState,
             onNextClick = onNextClick,
             progressDescription = progressDescription,
-            modifier =
-                Modifier
-                    .padding(innerPadding)
-                    .consumeWindowInsets(innerPadding)
-                    .imePadding(),
+            Modifier
+                .padding(innerPadding),
         )
     }
 }
@@ -96,8 +88,6 @@ fun SignUpResidentNumberScreen(
 @Composable
 private fun ResidentNumberContent(
     currentStep: Int,
-    frontNumberState: TextFieldState,
-    backNumberState: TextFieldState,
     onNextClick: () -> Unit,
     progressDescription: String,
     modifier: Modifier = Modifier,
@@ -133,7 +123,7 @@ private fun ResidentNumberContent(
                 text = stringResource(R.string.signup_resident_number_label),
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
             AfternoteTextField(
                 state = rememberTextFieldState(),
@@ -143,9 +133,6 @@ private fun ResidentNumberContent(
         }
 
         // 다음 버튼
-        val isNextEnabled =
-            frontNumberState.text.length == FRONT_NUMBER_LENGTH &&
-                backNumberState.text.length == BACK_NUMBER_LENGTH
         AfternoteButton(
             text = stringResource(R.string.signup_next),
             onClick = {
@@ -158,23 +145,18 @@ private fun ResidentNumberContent(
                     .padding(horizontal = 24.dp, vertical = 20.dp)
                     .height(48.dp),
             type =
-                if (isNextEnabled) {
-                    AfternoteButtonType.Default
-                } else {
-                    AfternoteButtonType.Un
-                },
+                AfternoteButtonType.Default,
         )
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+@Preview(showBackground = true)
 @Composable
 private fun SignUpResidentNumberScreenPreview() {
     AfternoteTheme {
         SignUpResidentNumberScreen(
             currentStep = 2,
             frontNumberState = rememberTextFieldState(),
-            backNumberState = rememberTextFieldState(),
             onNextClick = {},
             onBackClick = {},
         )
