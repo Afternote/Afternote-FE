@@ -90,6 +90,7 @@ fun SignUpPasswordScreen(
                     text = stringResource(R.string.signup_password_rule_reuse),
                 )
             }
+            Spacer(modifier = Modifier.weight(1f))
         },
     )
 }

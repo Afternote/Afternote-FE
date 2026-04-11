@@ -62,6 +62,7 @@ fun SignUpResidentNumberScreen(
                     placeholder = "주민등록번호",
                 )
             }
+            Spacer(modifier = Modifier.weight(1f))
         },
     )
 }

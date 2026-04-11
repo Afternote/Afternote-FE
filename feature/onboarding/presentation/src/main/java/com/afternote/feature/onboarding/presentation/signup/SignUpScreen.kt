@@ -2,6 +2,7 @@ package com.afternote.feature.onboarding.presentation.signup
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -67,6 +68,7 @@ fun SignUpScreen(
                     )
                 }
             }
+            Spacer(modifier = Modifier.weight(1f))
         },
     )
 }
