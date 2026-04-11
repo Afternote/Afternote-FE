@@ -15,12 +15,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.StepProgressBar
 import com.afternote.core.ui.addFocusCleaner
+import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
-import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.signup.SIGN_UP_TOTAL_STEPS
 
@@ -54,10 +53,8 @@ import com.afternote.feature.onboarding.presentation.signup.SIGN_UP_TOTAL_STEPS
 internal fun SignUpStepScaffold(
     currentStep: Int,
     onBackClick: () -> Unit,
+    onNextClick: () -> Unit,
     modifier: Modifier = Modifier,
-    containerColor: Color = AfternoteDesign.colors.white,
-    horizontalPadding: Dp = 20.dp,
-    bottomButton: @Composable (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
@@ -79,7 +76,7 @@ internal fun SignUpStepScaffold(
                 },
             )
         },
-        containerColor = containerColor,
+        containerColor = Color.Transparent,
     ) { innerPadding ->
         Column(
             modifier =
@@ -98,6 +95,7 @@ internal fun SignUpStepScaffold(
                 contentDescription = progressDescription,
             )
 
+            val horizontalPadding = 20.dp
             Column(
                 modifier =
                     Modifier
@@ -106,15 +104,20 @@ internal fun SignUpStepScaffold(
                 content = content,
             )
 
-            if (bottomButton != null) {
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = horizontalPadding),
-                ) {
-                    bottomButton()
-                }
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = horizontalPadding),
+            ) {
+                AfternoteButton(
+                    text = stringResource(R.string.signup_next),
+                    onClick = {
+                        focusManager.clearFocus()
+                        onNextClick()
+                    },
+                    modifier = Modifier.padding(bottom = 49.dp),
+                )
             }
         }
     }
