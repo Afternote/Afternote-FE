@@ -1,7 +1,6 @@
 package com.afternote.feature.onboarding.presentation.signup
 
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -11,11 +10,6 @@ import com.afternote.feature.onboarding.presentation.terms.TermsState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-private const val PASSWORD_MIN_LENGTH = 8
-private const val PASSWORD_MAX_LENGTH = 16
-private const val FRONT_NUMBER_LENGTH = 6
-private const val BACK_NUMBER_LENGTH = 1
 
 /**
  * 회원가입 플로우 전체에서 공유되는 뷰모델.
@@ -37,16 +31,10 @@ class SignUpViewModel
 
         // Step 2: 주민등록번호
         val frontNumberState = TextFieldState()
-        val backNumberState = TextFieldState()
 
         // Step 3: 비밀번호 설정
         val signUpPasswordState = TextFieldState()
         val signUpPasswordConfirmState = TextFieldState()
-
-        val isPasswordValid by derivedStateOf {
-            signUpPasswordState.text.length in PASSWORD_MIN_LENGTH..PASSWORD_MAX_LENGTH &&
-                signUpPasswordState.text.contentEquals(signUpPasswordConfirmState.text)
-        }
 
         // Step 4: 약관 동의
         var termsState by mutableStateOf(TermsState())
@@ -76,11 +64,6 @@ class SignUpViewModel
             viewModelScope.launch {
                 isLoading = true
                 try {
-                    val email = emailState.text.toString()
-                    val residentNumber = "${frontNumberState.text}-${backNumberState.text}"
-                    val password = signUpPasswordState.text.toString()
-                    val name = nameState.text.toString()
-
                     // TODO: signUpUseCase(email, password, name, residentNumber, termsState)
 
                     onSuccess()

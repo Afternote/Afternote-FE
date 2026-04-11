@@ -96,6 +96,7 @@ fun NavGraphBuilder.onboardingNavGraph(
                 emailState = signUpViewModel.emailState,
                 passwordState = signUpViewModel.passwordState,
                 isVerificationSent = signUpViewModel.isVerificationSent,
+                onRequestVerification = signUpViewModel::requestVerification,
                 onNextClick = {
                     navController.navigate(OnboardingRoute.SignUpResidentNumberRoute)
                 },

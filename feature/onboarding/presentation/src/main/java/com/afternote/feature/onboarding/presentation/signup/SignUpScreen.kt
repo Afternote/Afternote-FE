@@ -27,6 +27,7 @@ fun SignUpScreen(
     emailState: TextFieldState,
     passwordState: TextFieldState,
     isVerificationSent: Boolean,
+    onRequestVerification: () -> Unit,
     onNextClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -43,7 +44,7 @@ fun SignUpScreen(
             ) {
                 // 이메일 입력 + 인증번호 받기
                 AfternoteTextField(
-                    type = TextFieldType.Variant7,
+                    type = TextFieldType.Variant7(onClick = onRequestVerification),
                     state = emailState,
                     placeholder = stringResource(R.string.signup_email_placeholder),
                     keyboardType = KeyboardType.Email,
@@ -79,6 +80,7 @@ private fun SignUpScreenPreview() {
             emailState = rememberTextFieldState(),
             passwordState = rememberTextFieldState(),
             isVerificationSent = true,
+            onRequestVerification = {},
             onNextClick = {},
             onBackClick = {},
         )
