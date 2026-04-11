@@ -49,7 +49,8 @@ import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
-import com.afternote.core.ui.popup.InfoPopup
+import com.afternote.core.ui.popup.Popup
+import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -171,7 +172,8 @@ private fun SocialLoginGroup(
     var showFindAccountPopup by remember { mutableStateOf(false) }
 
     if (showFindAccountPopup) {
-        InfoPopup(
+        Popup(
+            type = PopupType.Default,
             message = stringResource(R.string.login_find_account_message),
             onConfirm = { showFindAccountPopup = false },
         )
@@ -270,6 +272,7 @@ private fun SocialLoginGroup(
             modifier =
                 Modifier.clickable {
                     focusManager.clearFocus()
+                    showFindAccountPopup = true
                 },
         )
     }

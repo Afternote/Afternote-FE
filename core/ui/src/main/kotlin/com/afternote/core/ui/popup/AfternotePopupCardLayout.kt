@@ -69,7 +69,7 @@ fun AfternotePopupCardLayout(
 /**
  * 피그마 기준 공통 알림 카드: 흰 배경·16dp 라운드·본문 메시지·하단 액션 영역.
  *
- * [InfoPopupContent](단일 버튼), [ConfirmationPopupContent](이중 버튼)에서 공유합니다.
+ * [Popup] / [PopupContent]의 [PopupType.Default](단일 버튼), [PopupType.Variant2](이중 버튼)에서 공유합니다.
  */
 @Composable
 fun AfternotePopupCardLayout(
@@ -108,14 +108,16 @@ private fun AfternotePopupCardLayoutsPreview() {
             verticalArrangement = Arrangement.spacedBy(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            InfoPopupContent(
+            PopupContent(
+                type = PopupType.Default,
                 message = "아이디/비밀번호 찾기의 경우,\n고객센터로 문의 바랍니다.",
                 onConfirm = {},
             )
-            ConfirmationPopupContent(
+            PopupContent(
+                type = PopupType.Variant2,
                 message = "아이디/비밀번호 찾기의 경우,\n고객센터로 문의 바랍니다.",
-                onDismiss = {},
                 onConfirm = {},
+                onDismiss = {},
             )
         }
     }

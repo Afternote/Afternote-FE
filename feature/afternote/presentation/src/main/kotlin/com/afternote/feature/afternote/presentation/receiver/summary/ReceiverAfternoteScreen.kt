@@ -26,7 +26,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.button.AfternoteButton
-import com.afternote.core.ui.popup.ConfirmationPopup
+import com.afternote.core.ui.popup.Popup
+import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.scaffold.bottombar.BottomBar
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -99,13 +100,14 @@ fun ReceiverAfterNoteScreen(
     var showDialog by remember { mutableStateOf(false) }
 
     if (showDialog) {
-        ConfirmationPopup(
+        Popup(
+            type = PopupType.Variant2,
             message = stringResource(R.string.receiver_download_all_dialog_message),
-            onDismiss = { showDialog = false },
             onConfirm = {
                 onDownloadConfirm()
                 showDialog = false
             },
+            onDismiss = { showDialog = false },
             isLoading = downloadUiState.isLoading,
         )
     }
