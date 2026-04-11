@@ -31,36 +31,6 @@ import com.afternote.core.ui.popup.InfoPopup
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.onboarding.presentation.R
 
-enum class LoginButtonStyle {
-    /** gray9 배경 (로그인) */
-    Primary,
-
-    /** gray2 + 테두리 스타일 (간편 회원가입) */
-    Secondary,
-}
-
-@Composable
-fun LoginButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    style: LoginButtonStyle = LoginButtonStyle.Primary,
-) {
-    val type =
-        when {
-            !enabled -> AfternoteButtonType.Un
-            style == LoginButtonStyle.Secondary -> AfternoteButtonType.Plain
-            else -> AfternoteButtonType.Default
-        }
-    AfternoteButton(
-        text = text,
-        onClick = onClick,
-        modifier = modifier.height(48.dp),
-        type = type,
-    )
-}
-
 @Composable
 fun BottomButtons(
     onSignUpClick: () -> Unit,
@@ -82,9 +52,9 @@ fun BottomButtons(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         // 간편 회원가입하기 버튼
-        LoginButton(
+        AfternoteButton(
             text = stringResource(R.string.login_signup_simple),
-            style = LoginButtonStyle.Secondary,
+            type = AfternoteButtonType.Plain,
             onClick = {
                 focusManager.clearFocus()
                 onSignUpClick()
