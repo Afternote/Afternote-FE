@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -22,27 +21,6 @@ import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.signup.SIGN_UP_TOTAL_STEPS
 
-/**
- * 회원가입 스텝 화면 공용 스캐폴드.
- *
- * - 상단: [DetailTopBar] + 뒤로가기 시 포커스 클리어
- * - 본문: [StepProgressBar] (full-width) + 화면별 [content] slot (weight(1f))
- *
- * 본문 Column 과 버튼의 좌우 정렬이 구조적으로 어긋날 수 없게 합니다.
- * [StepProgressBar] 는 의도적으로 이 padding 밖에 두어 화면 폭을 가득 채웁니다.
- *
- * Window Insets 전략: 상단 inset 만 직접 padding 으로 소비하고, 나머지는
- * [consumeWindowInsets] 로 하류에 "이미 소비됨"을 알린 뒤 [imePadding] 으로 키보드에 반응.
- * 네비게이션 바 inset 은 의도적으로 padding 으로 잡지 않아, 화면이 edge-to-edge 로
- * 있게 합니다.
- *
- * @param currentStep 현재 단계(1부터)
- * @param onBackClick 뒤로가기 콜백. 내부에서 focusClear 후 호출됩니다.
- * @param onNextClick 다음 버튼 콜백. 내부에서 focusClear 후 호출됩니다.
- * @param modifier Scaffold 에 적용할 Modifier
- * @param content 스텝바 아래 본문 영역. ColumnScope 를 제공하며 남은 공간(weight(1f))을 채웁니다.
- */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun SignUpStepScaffold(
     currentStep: Int,
@@ -75,13 +53,19 @@ internal fun SignUpStepScaffold(
         Column(
             modifier =
                 Modifier
-                    .padding(top = innerPadding.calculateTopPadding(), bottom = 49.dp)
-                    .padding(horizontal = 20.dp)
+                    .fillMaxSize()
+                    // 디자인 가이드상 "시스템 바 끝에서 버튼까지 총 49dp"를 만족시키되,
+                    // 시스템 바가 49dp보다 큰 기기(구형/3버튼 내비게이션)에서는 가려지지 않도록 방어
+                    .padding(
+                        top = innerPadding.calculateTopPadding(),
+                        start = 20.dp,
+                        end = 20.dp,
+                        bottom = maxOf(innerPadding.calculateBottomPadding(), 49.dp),
+                    )
                     // "방금 적용한 여백은 이미 처리했어!" 라고 시스템에 신고합니다. (중복 방지)
                     .consumeWindowInsets(innerPadding)
                     // 이제 안심하고 키보드(IME) 높이만큼만 순수하게 추가 패딩을 밀어 넣습니다.
                     .imePadding()
-                    .fillMaxSize()
                     .addFocusCleaner(focusManager),
         ) {
             StepProgressBar(
@@ -91,7 +75,8 @@ internal fun SignUpStepScaffold(
             )
 
             content()
-            Spacer(Modifier.weight(1f))
+
+            Spacer(modifier = Modifier.weight(1f))
 
             AfternoteButton(
                 text = stringResource(R.string.signup_next),
