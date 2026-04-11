@@ -9,11 +9,13 @@
     <string name="welcome_already_signed_up">이미 가입하셨나요?\u0020\u0020</string>
     <string name="welcome_login">로그인하기</string>
 
+    <string name="login_top_bar_title">로그인</string>
     <string name="login_email_label">아이디 (이메일)</string>
     <string name="login_password_label">비밀번호</string>
     <string name="login_button">로그인</string>
     <string name="login_signup_simple">간편 회원가입하기</string>
     <string name="login_kakao">카카오 로그인</string>
+    <string name="login_google">Google 계정으로 로그인</string>
     <string name="login_find_account">아이디/비밀번호 찾기</string>
     <string name="login_find_account_message">아이디/비밀번호 찾기의 경우,\n고객센터로 문의 바랍니다.</string>
 
