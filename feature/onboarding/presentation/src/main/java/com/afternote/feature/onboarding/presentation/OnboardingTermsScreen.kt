@@ -141,6 +141,7 @@ fun OnboardingTermsScreen(
                     isOptional = true,
                     titleStyle = AfternoteDesign.typography.bodySmallB,
                 ) { onViewTermsClick(TermsType.MARKETING) }
+                Spacer(Modifier.height(71.dp))
             }
         },
     )

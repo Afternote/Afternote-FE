@@ -2,7 +2,6 @@ package com.afternote.feature.onboarding.presentation
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
@@ -66,8 +65,6 @@ internal fun OnboardingStepScaffold(
             )
 
             content()
-
-            Spacer(modifier = Modifier.weight(1f))
 
             AfternoteButton(
                 text = buttonText,
