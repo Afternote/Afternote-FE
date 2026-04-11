@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -141,8 +142,8 @@ fun OnboardingTermsScreen(
                     isOptional = true,
                     titleStyle = AfternoteDesign.typography.bodySmallB,
                 ) { onViewTermsClick(TermsType.MARKETING) }
-                Spacer(Modifier.height(71.dp))
             }
+            Spacer(Modifier.height(71.dp))
         },
     )
 }
@@ -172,6 +173,7 @@ private fun TermsRow(
                         role = Role.Checkbox,
                         onValueChange = { onToggle() },
                     ),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             CircleCheckBox(
                 checked = isChecked,
