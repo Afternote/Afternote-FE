@@ -213,7 +213,7 @@ fun AfternoteTextField(
                             color = AfternoteDesign.colors.black,
                         )
                         Text(
-                            "T",
+                            "0",
                             style = AfternoteDesign.typography.textField,
                             color = AfternoteDesign.colors.gray4,
                         )

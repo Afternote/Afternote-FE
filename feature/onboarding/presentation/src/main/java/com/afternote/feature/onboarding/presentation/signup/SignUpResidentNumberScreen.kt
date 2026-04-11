@@ -3,7 +3,6 @@ package com.afternote.feature.onboarding.presentation.signup
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.input.TextFieldState
@@ -90,7 +89,11 @@ private fun ResidentNumberContent(
 ) {
     val focusManager = LocalFocusManager.current
     Column(
-        modifier = modifier.fillMaxSize(),
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(20.dp)
+                .addFocusCleaner(focusManager),
     ) {
         StepProgressBar(
             currentStep = currentStep,
@@ -98,28 +101,21 @@ private fun ResidentNumberContent(
             contentDescription = progressDescription,
         )
 
-        // 입력 폼
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .addFocusCleaner(focusManager)
-                    .padding(horizontal = 24.dp)
-                    .padding(top = 45.dp),
-        ) {
-            Label(
-                text = stringResource(R.string.signup_resident_number_label),
-            )
+        Spacer(Modifier.height(43.dp))
 
-            Spacer(modifier = Modifier.height(18.dp))
+        Label(
+            text = stringResource(R.string.signup_resident_number_label),
+        )
 
-            AfternoteTextField(
-                state = rememberTextFieldState(),
-                type = TextFieldType.Variant8,
-                placeholder = "주민등록번호",
-            )
-        }
+        Spacer(modifier = Modifier.height(18.dp))
+
+        AfternoteTextField(
+            state = rememberTextFieldState(),
+            type = TextFieldType.Variant8,
+            placeholder = "주민등록번호",
+        )
+
+        Spacer(Modifier.weight(1f))
 
         // 다음 버튼
         AfternoteButton(
@@ -128,13 +124,7 @@ private fun ResidentNumberContent(
                 focusManager.clearFocus()
                 onNextClick()
             },
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 20.dp)
-                    .height(48.dp),
-            type =
-                AfternoteButtonType.Default,
+            type = AfternoteButtonType.Default,
         )
     }
 }
