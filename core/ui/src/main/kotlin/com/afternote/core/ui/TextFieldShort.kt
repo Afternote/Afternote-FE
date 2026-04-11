@@ -290,35 +290,35 @@ private fun AfternoteTextFieldFigmaPreview() {
             AfternoteTextField(
                 type = TextFieldType.Basic,
                 state = rememberTextFieldState(), // 👈 괄호 안을 비우면 빈 값!
-                placeholder = "Text Field",
+                placeholder = "nonfield/writing/write/field",
             )
 
             // 5. nonsearch (검색창, 빈 값)
             AfternoteTextField(
                 type = TextFieldType.Search,
                 state = rememberTextFieldState(),
-                placeholder = "Search",
+                placeholder = "nonsearch/search",
             )
 
             // 7. Variant7 (빈 값)
             AfternoteTextField(
                 type = TextFieldType.Variant7,
                 state = rememberTextFieldState(),
-                placeholder = "Variant 7 Placeholder",
+                placeholder = "Variant 7",
             )
 
             // 8. Variant8 (빈 값)
             AfternoteTextField(
                 type = TextFieldType.Variant8,
                 state = rememberTextFieldState(),
-                placeholder = "Variant 8 Placeholder",
+                placeholder = "Variant 8",
             )
 
             // 9. Variant9 (URL, 빈 값)
             AfternoteTextField(
                 type = TextFieldType.Variant9,
                 state = rememberTextFieldState(),
-                placeholder = "URL을 입력하세요.",
+                placeholder = "Variant 9",
             )
         }
     }
