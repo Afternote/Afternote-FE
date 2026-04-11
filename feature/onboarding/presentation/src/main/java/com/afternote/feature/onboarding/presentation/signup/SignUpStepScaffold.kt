@@ -1,4 +1,4 @@
-package com.afternote.feature.onboarding.presentation.signup.component
+package com.afternote.feature.onboarding.presentation.signup
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -19,7 +19,6 @@ import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.feature.onboarding.presentation.R
-import com.afternote.feature.onboarding.presentation.signup.SIGN_UP_TOTAL_STEPS
 
 @Composable
 internal fun SignUpStepScaffold(
