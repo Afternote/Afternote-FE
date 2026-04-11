@@ -5,9 +5,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,7 +22,9 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -28,7 +32,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.CircleCheckBox
-import com.afternote.core.ui.TextFieldShort
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
@@ -144,27 +147,26 @@ private fun InlineEditTextField(
         }
     }
 
-    TextFieldShort(
+    BasicTextField(
         state = state,
-        modifier = modifier,
-        focusRequester = focusRequester,
-        minHeight = 24.dp,
-        contentPadding = PaddingValues(0.dp),
-        showOutline = false,
-        containerColor = Color.Transparent,
-        imeAction = ImeAction.Done,
-        onImeAction = {
+        modifier =
+            modifier
+                .focusRequester(focusRequester)
+                .onFocusChanged { focusState ->
+                    if (focusState.isFocused) {
+                        hasGainedFocus = true
+                    } else if (hasGainedFocus && !hasConfirmed) {
+                        confirmEdit()
+                    }
+                },
+        lineLimits = TextFieldLineLimits.SingleLine,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        onKeyboardAction = {
             confirmEdit()
             focusManager.clearFocus()
         },
         textStyle = processingMethodTextStyle(),
-        onFocusChanged = { focused ->
-            if (focused) {
-                hasGainedFocus = true
-            } else if (hasGainedFocus && !hasConfirmed) {
-                confirmEdit()
-            }
-        },
+        cursorBrush = SolidColor(AfternoteDesign.colors.black),
     )
 
     LaunchedEffect(Unit) {

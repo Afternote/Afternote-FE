@@ -1,15 +1,19 @@
 package com.afternote.core.ui
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -21,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
@@ -198,19 +203,58 @@ private fun LastWishOtherCard(
                 )
             }
             if (selected) {
-                TextFieldShort(
-                    modifier = Modifier,
-                    state = otherState.textFieldState,
-                    placeholder = stringResource(R.string.core_ui_text_field_placeholder),
-                    containerColor = AfternoteDesign.colors.gray1,
-                    minHeight = 160.dp,
-                    shape = RoundedCornerShape(16.dp),
-                    lineLimits = TextFieldLineLimits.MultiLine(),
-                    contentPadding = PaddingValues(all = 16.dp),
-                )
+                LastWishOtherTextField(state = otherState.textFieldState)
             }
         }
     }
+}
+
+/**
+ * "기타(직접 입력)" 선택 시 노출되는 멀티라인 텍스트 필드.
+ *
+ * 160dp 최소 높이·16dp 전방향 패딩·16dp radius는 이 화면 고유 사양이라
+ * [BasicTextField]로 직접 구현합니다.
+ */
+@Composable
+private fun LastWishOtherTextField(
+    state: TextFieldState,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(16.dp)
+    val placeholder = stringResource(R.string.core_ui_text_field_placeholder)
+    BasicTextField(
+        state = state,
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = 160.dp)
+                .background(AfternoteDesign.colors.gray1, shape)
+                .border(1.dp, Color.Transparent, shape),
+        lineLimits = TextFieldLineLimits.MultiLine(),
+        textStyle =
+            AfternoteDesign.typography.textField.copy(
+                color = AfternoteDesign.colors.gray9,
+            ),
+        cursorBrush = SolidColor(AfternoteDesign.colors.black),
+        decorator = { innerTextField ->
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(all = 16.dp),
+                contentAlignment = Alignment.TopStart,
+            ) {
+                if (state.text.isEmpty()) {
+                    Text(
+                        text = placeholder,
+                        style = AfternoteDesign.typography.textField,
+                        color = AfternoteDesign.colors.gray4,
+                    )
+                }
+                innerTextField()
+            }
+        },
+    )
 }
 
 @Composable

@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.editor.processing
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -78,13 +79,19 @@ fun CustomServiceDialog(
             Spacer(modifier = Modifier.height(24.dp))
 
             // 추가 서비스명 입력 필드
-            TextFieldShort(
-                state = params.serviceNameState,
-                label = "추가 서비스명",
-                keyboardType = KeyboardType.Text,
-                containerColor = AfternoteDesign.colors.gray1,
-                labelSpacing = 8.dp,
-            )
+            Column {
+                Text(
+                    text = "추가 서비스명",
+                    style = AfternoteDesign.typography.captionLargeR,
+                    color = AfternoteDesign.colors.gray9,
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                TextFieldShort(
+                    state = params.serviceNameState,
+                    keyboardType = KeyboardType.Text,
+                    containerColor = AfternoteDesign.colors.gray1,
+                )
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 

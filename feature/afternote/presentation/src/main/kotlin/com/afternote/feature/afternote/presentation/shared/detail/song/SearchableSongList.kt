@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.presentation.shared.detail.song
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,6 +20,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -36,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -43,7 +50,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.afternote.core.ui.TextFieldShort
 import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.CustomRadioButton
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
@@ -473,38 +479,74 @@ private fun SongSearchSection(
                 .distinctUntilChanged()
                 .collect { onSearchQueryChange(it) }
         }
-        TextFieldShort(
+        SongSearchTextField(
             state = searchFieldState,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
             placeholder = "Text Field",
-            minHeight = 52.dp,
-            contentPadding =
-                PaddingValues(
-                    horizontal = 16.dp,
-                    vertical = 14.dp,
-                ),
-            trailingContent = {
+        )
+    }
+}
+
+/**
+ * 곡 검색용 텍스트 필드.
+ *
+ * 52dp 최소 높이·14dp 세로 패딩·검색 아이콘은 이 섹션 고유 사양이라
+ * [BasicTextField]로 직접 구현합니다.
+ */
+@Composable
+private fun SongSearchTextField(
+    state: TextFieldState,
+    placeholder: String,
+) {
+    val shape = RoundedCornerShape(8.dp)
+    BasicTextField(
+        state = state,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = 52.dp)
+                .background(AfternoteDesign.colors.white, shape)
+                .border(1.dp, AfternoteDesign.colors.gray2, shape),
+        lineLimits = TextFieldLineLimits.SingleLine,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        textStyle =
+            AfternoteDesign.typography.bodySmallR.copy(
+                color = AfternoteDesign.colors.gray9,
+            ),
+        cursorBrush = SolidColor(AfternoteDesign.colors.black),
+        decorator = { innerTextField ->
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    if (state.text.isEmpty()) {
+                        Text(
+                            text = placeholder,
+                            style =
+                                AfternoteDesign.typography.bodyBase.copy(
+                                    lineHeight = 20.sp,
+                                ),
+                            color = AfternoteDesign.colors.gray4,
+                        )
+                    }
+                    innerTextField()
+                }
+                Spacer(modifier = Modifier.width(8.dp))
                 Icon(
                     imageVector = Icons.Default.Search,
                     contentDescription = stringResource(R.string.song_search_label),
                     tint = AfternoteDesign.colors.gray9,
                     modifier = Modifier.size(24.dp),
                 )
-            },
-            imeAction = ImeAction.Search,
-            textStyle =
-                AfternoteDesign.typography.bodySmallR.copy(
-                    color = AfternoteDesign.colors.gray9,
-                ),
-            placeholderTextStyle =
-                AfternoteDesign.typography.bodyBase.copy(
-                    lineHeight = 20.sp,
-                ),
-        )
-    }
+            }
+        },
+    )
 }
 
 /**

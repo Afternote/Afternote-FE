@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor.social
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -6,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -19,6 +21,7 @@ import com.afternote.core.ui.LabelStyle
 import com.afternote.core.ui.PasswordMaskTransformation
 import com.afternote.core.ui.SelectableRadioCard
 import com.afternote.core.ui.TextFieldShort
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
@@ -73,17 +76,27 @@ private fun SocialNetworkEditorContentContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        Text(
+            text = "아이디",
+            style = AfternoteDesign.typography.captionLargeR,
+            color = AfternoteDesign.colors.gray9,
+        )
+        Spacer(modifier = Modifier.height(6.dp))
         TextFieldShort(
             state = params.accountSection.idState,
-            label = "아이디",
             keyboardType = KeyboardType.Text,
         )
 
         Spacer(modifier = Modifier.height(10.dp))
 
+        Text(
+            text = "비밀번호",
+            style = AfternoteDesign.typography.captionLargeR,
+            color = AfternoteDesign.colors.gray9,
+        )
+        Spacer(modifier = Modifier.height(6.dp))
         TextFieldShort(
             state = params.accountSection.passwordState,
-            label = "비밀번호",
             keyboardType = KeyboardType.Password,
             outputTransformation = PasswordMaskTransformation,
         )

@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,20 +37,21 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
 private val TextFieldShape = RoundedCornerShape(8.dp)
 private val TextFieldMinHeight = 56.dp
+private val TextFieldContentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp)
+private val SuffixGap = 4.dp
+private val TrailingContentGap = 8.dp
+private val BorderWidth = 1.dp
 
 private const val PASSWORD_MASK_CHAR = '\u2022'
 
@@ -66,33 +66,25 @@ val PasswordMaskTransformation =
     }
 
 /**
- * Afternote 디자인 시스템 공용 텍스트 필드.
+ * Afternote 디자인 시스템 공용 단일 라인 텍스트 필드.
  *
  * Foundation [BasicTextField] + decorator 기반으로 Material3 강제 패딩 없이
- * 디자인 시안을 픽셀 단위로 제어합니다.
- * 싱글라인·멀티라인·패스워드 등 모든 용도를 이 하나의 컴포넌트로 커버합니다.
+ * 디자인 시안을 픽셀 단위로 제어합니다. 피그마 기본 사양(56dp 높이, 16dp 패딩,
+ * 8dp radius) 하나에만 대응합니다. 멀티라인·인라인·라벨 있는 필드 등
+ * 변형 사양이 필요한 호출부는 [BasicTextField]로 직접 구현해 주세요.
  *
  * @param suffix 텍스트 바로 옆에 붙는 요소 (e.g. 단위, 도트). 텍스트 길이에 따라 위치가 움직입니다.
  * @param trailingContent 항상 필드 맨 우측 끝에 고정되는 요소 (e.g. 검색 아이콘).
- * @param showOutline false면 테두리를 그리지 않습니다 (복합 입력·인라인 편집 등).
+ * @param showOutline false면 테두리를 그리지 않습니다.
  * @param textStyle null이면 [AfternoteDesign.typography.textField] 기준.
- * @param placeholderTextStyle placeholder 전용 스타일. null이면 [AfternoteDesign.typography.textField].
  * @param interactionSource 포커스 감지 등 외부에서 구독할 때 전달. null이면 내부에서 생성.
  * @param onFocusChanged 포커스 진입/이탈 알림.
- * @param expandTextAreaToAvailableWidth `true`이면 텍스트 박스가 가로 남는 공간을 채우고 [Alignment.Center]로 둡니다
- * (주민번호 앞자리처럼 `textStyle`에 `TextAlign.Center`를 쓰는 경우).
- * 넓은 슬롯에 왼쪽 정렬만 필요하면 `false`로 두어 [Alignment.CenterStart]가 쓰이게 합니다.
- *
- * **주의:** [suffix]가 null이 아니면 위 확장 동작은 적용되지 않으며, 텍스트 박스는 내용 너비에 맞게 두고
- * 접미가 텍스트 바로 옆에 붙습니다.
- * @param minWidth [BasicTextField] 최소 너비 (e.g. 한 자리 숫자 칸).
  */
 @Composable
 fun TextFieldShort(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     placeholder: String? = null,
-    label: String? = null,
     suffix: @Composable (() -> Unit)? = null,
     trailingContent: @Composable (() -> Unit)? = null,
     keyboardType: KeyboardType = KeyboardType.Text,
@@ -100,21 +92,13 @@ fun TextFieldShort(
     inputTransformation: InputTransformation? = null,
     outputTransformation: OutputTransformation? = null,
     containerColor: Color? = null,
-    minHeight: Dp = TextFieldMinHeight,
-    minWidth: Dp? = null,
-    lineLimits: TextFieldLineLimits = TextFieldLineLimits.SingleLine,
-    shape: Shape = TextFieldShape,
-    labelSpacing: Dp = 6.dp,
-    contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
     focusRequester: FocusRequester? = null,
     /** [imeAction]으로 지정한 IME 액션(예: Done)이 눌릴 때. */
     onImeAction: (() -> Unit)? = null,
     showOutline: Boolean = true,
     textStyle: TextStyle? = null,
-    placeholderTextStyle: TextStyle? = null,
     interactionSource: MutableInteractionSource? = null,
     onFocusChanged: ((Boolean) -> Unit)? = null,
-    expandTextAreaToAvailableWidth: Boolean = false,
 ) {
     val resolvedInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
     val isFocused by resolvedInteractionSource.collectIsFocusedAsState()
@@ -132,157 +116,100 @@ fun TextFieldShort(
         outputTransformation
             ?: if (keyboardType == KeyboardType.Password) PasswordMaskTransformation else null
 
-    val isMultiline = lineLimits !is TextFieldLineLimits.SingleLine
-
     val resolvedTextStyle =
         textStyle
             ?: AfternoteDesign.typography.textField.copy(
                 color = AfternoteDesign.colors.gray9,
             )
-    val resolvedPlaceholderStyle = placeholderTextStyle ?: AfternoteDesign.typography.textField
 
-    // expandTextAreaToAvailableWidth == true → 슬롯을 채운 뒤 수평·수직 중앙 (PIN/주민번호 앞자리 + TextAlign.Center)
-    val textBoxAlignment =
-        when {
-            isMultiline -> Alignment.TopStart
-            expandTextAreaToAvailableWidth -> Alignment.Center
-            else -> Alignment.CenterStart
-        }
-
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(labelSpacing),
-    ) {
-        if (label != null) {
-            Text(
-                text = label,
-                style =
-                    AfternoteDesign.typography.captionLargeR.copy(
-                        fontWeight = FontWeight.Normal,
-                    ),
-                color = AfternoteDesign.colors.gray9,
-            )
-        }
-
-        BasicTextField(
-            state = state,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .defaultMinSize(
-                        minWidth = minWidth ?: Dp.Unspecified,
-                        minHeight = minHeight,
-                    ).background(bgColor, shape)
-                    .then(
-                        if (showOutline) {
-                            Modifier.border(1.dp, borderColor, shape)
-                        } else {
-                            Modifier
-                        },
-                    ).then(
-                        if (focusRequester != null) {
-                            Modifier.focusRequester(focusRequester)
-                        } else {
-                            Modifier
-                        },
-                    ).then(
-                        if (onFocusChanged != null) {
-                            Modifier.onFocusChanged { onFocusChanged(it.isFocused) }
-                        } else {
-                            Modifier
-                        },
-                    ),
-            lineLimits = lineLimits,
-            keyboardOptions =
-                KeyboardOptions(
-                    keyboardType = keyboardType,
-                    imeAction = imeAction,
-                ),
-            onKeyboardAction =
-                if (onImeAction != null) {
-                    { onImeAction.invoke() }
-                } else {
-                    null
-                },
-            inputTransformation = inputTransformation,
-            outputTransformation = actualOutputTransformation,
-            interactionSource = resolvedInteractionSource,
-            textStyle = resolvedTextStyle,
-            cursorBrush = SolidColor(AfternoteDesign.colors.black),
-            decorator = { innerTextField ->
-                Row(
-                    modifier =
+    BasicTextField(
+        state = state,
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = TextFieldMinHeight)
+                .background(bgColor, TextFieldShape)
+                .then(
+                    if (showOutline) {
+                        Modifier.border(BorderWidth, borderColor, TextFieldShape)
+                    } else {
                         Modifier
-                            .fillMaxWidth()
-                            .padding(contentPadding),
-                    verticalAlignment = if (isMultiline) Alignment.Top else Alignment.CenterVertically,
+                    },
+                ).then(
+                    if (focusRequester != null) {
+                        Modifier.focusRequester(focusRequester)
+                    } else {
+                        Modifier
+                    },
+                ).then(
+                    if (onFocusChanged != null) {
+                        Modifier.onFocusChanged { onFocusChanged(it.isFocused) }
+                    } else {
+                        Modifier
+                    },
+                ),
+        lineLimits = TextFieldLineLimits.SingleLine,
+        keyboardOptions =
+            KeyboardOptions(
+                keyboardType = keyboardType,
+                imeAction = imeAction,
+            ),
+        onKeyboardAction =
+            if (onImeAction != null) {
+                { onImeAction.invoke() }
+            } else {
+                null
+            },
+        inputTransformation = inputTransformation,
+        outputTransformation = actualOutputTransformation,
+        interactionSource = resolvedInteractionSource,
+        textStyle = resolvedTextStyle,
+        cursorBrush = SolidColor(AfternoteDesign.colors.black),
+        decorator = { innerTextField ->
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(TextFieldContentPadding),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // 텍스트 + suffix를 하나로 묶어 왼쪽 정렬 유지
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // 텍스트 + suffix를 하나로 묶어 왼쪽 정렬 유지
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        verticalAlignment = if (isMultiline) Alignment.Top else Alignment.CenterVertically,
+                    Box(
+                        modifier = Modifier.weight(1f, fill = false),
+                        contentAlignment = Alignment.CenterStart,
                     ) {
-                        TextFieldTextBox(
-                            expandTextAreaToAvailableWidth = expandTextAreaToAvailableWidth,
-                            hasSuffix = suffix != null,
-                            textBoxAlignment = textBoxAlignment,
-                            placeholder = placeholder,
-                            resolvedPlaceholderStyle = resolvedPlaceholderStyle,
-                            state = state,
-                            innerTextField = innerTextField,
-                        )
-
-                        if (suffix != null) {
-                            Spacer(modifier = Modifier.width(4.dp))
-                            suffix()
+                        if (state.text.isEmpty() && placeholder != null) {
+                            Text(
+                                text = placeholder,
+                                style = AfternoteDesign.typography.textField,
+                                color = AfternoteDesign.colors.gray4,
+                            )
                         }
+                        innerTextField()
                     }
 
-                    // trailingContent는 항상 필드 맨 우측 끝에 고정
-                    if (trailingContent != null) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        trailingContent()
+                    if (suffix != null) {
+                        Spacer(modifier = Modifier.width(SuffixGap))
+                        suffix()
                     }
                 }
-            },
-        )
-    }
-}
 
-@Composable
-private fun RowScope.TextFieldTextBox(
-    expandTextAreaToAvailableWidth: Boolean,
-    hasSuffix: Boolean,
-    textBoxAlignment: Alignment,
-    placeholder: String?,
-    resolvedPlaceholderStyle: TextStyle,
-    state: TextFieldState,
-    innerTextField: @Composable () -> Unit,
-) {
-    // suffix가 있으면 weight(1f)로 박스가 가로를 전부 먹어 접미가 우측 끝으로 밀리므로 확장 비활성화
-    val shouldExpand = expandTextAreaToAvailableWidth && !hasSuffix
-    Box(
-        modifier =
-            if (shouldExpand) {
-                Modifier.weight(1f)
-            } else {
-                Modifier.weight(1f, fill = false)
-            },
-        contentAlignment = textBoxAlignment,
-    ) {
-        if (state.text.isEmpty() && placeholder != null) {
-            Text(
-                text = placeholder,
-                style = resolvedPlaceholderStyle,
-                color = AfternoteDesign.colors.gray4,
-            )
-        }
-        innerTextField()
-    }
+                // trailingContent는 항상 필드 맨 우측 끝에 고정
+                if (trailingContent != null) {
+                    Spacer(modifier = Modifier.width(TrailingContentGap))
+                    trailingContent()
+                }
+            }
+        },
+    )
 }
 
 // ============================================================================
-// Previews — 피그마 디자인 시스템의 모든 텍스트 필드 상태
+// Previews — 피그마 디자인 시스템의 텍스트 필드 상태
 // ============================================================================
 
 @Preview(showBackground = true, backgroundColor = 0xFFC0C0C0, name = "전체 상태 카탈로그")
@@ -316,12 +243,7 @@ private fun TextFieldShortCatalogPreview() {
                 state = rememberTextFieldState("Text Field"),
             )
 
-            // 4. 입력 완료
-            TextFieldShort(
-                state = rememberTextFieldState("Text Field"),
-            )
-
-            // 5. 검색 아이콘 (trailingContent → 우측 끝 고정)
+            // 4. 검색 아이콘 (trailingContent → 우측 끝 고정)
             TextFieldShort(
                 state = rememberTextFieldState(),
                 placeholder = "Text Field",
@@ -335,20 +257,7 @@ private fun TextFieldShortCatalogPreview() {
                 },
             )
 
-            // 6. 검색 아이콘 (입력됨)
-            TextFieldShort(
-                state = rememberTextFieldState("Text Field"),
-                trailingContent = {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = null,
-                        tint = AfternoteDesign.colors.gray9,
-                        modifier = Modifier.size(24.dp),
-                    )
-                },
-            )
-
-            // 7. 우측 힌트 텍스트 (suffix → 텍스트 바로 옆)
+            // 5. 우측 힌트 텍스트 (suffix → 텍스트 바로 옆)
             TextFieldShort(
                 state = rememberTextFieldState(),
                 placeholder = "Text Field",
@@ -361,75 +270,11 @@ private fun TextFieldShortCatalogPreview() {
                 },
             )
 
-            // 8. 복합 suffix (대시 + T + 도트 → 텍스트 바로 옆)
-            TextFieldShort(
-                state = rememberTextFieldState(),
-                placeholder = "Text Field",
-                suffix = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(14.dp),
-                    ) {
-                        Text(
-                            text = "—",
-                            style = AfternoteDesign.typography.textField,
-                            color = AfternoteDesign.colors.black,
-                        )
-                        Text(
-                            text = "T",
-                            style = AfternoteDesign.typography.textField,
-                            color = AfternoteDesign.colors.gray4,
-                        )
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            repeat(6) {
-                                Box(
-                                    modifier =
-                                        Modifier
-                                            .size(8.dp)
-                                            .background(
-                                                AfternoteDesign.colors.black,
-                                                RoundedCornerShape(50),
-                                            ),
-                                )
-                            }
-                        }
-                    }
-                },
-            )
-
-            // 9. URL 입력 필드
+            // 6. URL 입력 필드
             TextFieldShort(
                 state = rememberTextFieldState(),
                 placeholder = "URL을 입력하세요.",
                 containerColor = AfternoteDesign.colors.gray1,
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "라벨")
-@Composable
-private fun TextFieldShortLabeledPreview() {
-    AfternoteTheme {
-        val previewFocusRequester = remember { FocusRequester() }
-        LaunchedEffect(Unit) {
-            previewFocusRequester.requestFocus()
-        }
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            TextFieldShort(
-                state = rememberTextFieldState(),
-                label = "아이디",
-                placeholder = "Text Field",
-                focusRequester = previewFocusRequester,
-            )
-            TextFieldShort(
-                state = rememberTextFieldState(),
-                label = "비밀번호",
-                placeholder = "Text Field",
-                keyboardType = KeyboardType.Password,
             )
         }
     }

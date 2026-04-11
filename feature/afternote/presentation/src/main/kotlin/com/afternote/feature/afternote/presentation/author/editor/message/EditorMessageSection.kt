@@ -1,14 +1,20 @@
 package com.afternote.feature.afternote.presentation.author.editor.message
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -16,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -91,23 +98,26 @@ private fun EditorMessageItem(
                     .fillMaxWidth()
                     .bottomBorder(color = AfternoteDesign.colors.gray2, width = 1.dp),
         ) {
+            Text(
+                text = "제목",
+                style = AfternoteDesign.typography.captionLargeR,
+                color = AfternoteDesign.colors.gray9,
+            )
+            Spacer(modifier = Modifier.height(6.dp))
             TextFieldShort(
                 state = message.titleState,
-                label = "제목",
                 placeholder = "Text Field",
             )
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            TextFieldShort(
-                state = message.contentState,
-                label = "내용",
-                placeholder = "Text Field",
-                lineLimits = TextFieldLineLimits.MultiLine(),
-                minHeight = 160.dp,
-                shape = RoundedCornerShape(16.dp),
-                contentPadding = PaddingValues(all = 16.dp),
+            Text(
+                text = "내용",
+                style = AfternoteDesign.typography.captionLargeR,
+                color = AfternoteDesign.colors.gray9,
             )
+            Spacer(modifier = Modifier.height(6.dp))
+            EditorMessageContentField(state = message.contentState)
 
             Spacer(modifier = Modifier.height(8.dp))
         }
@@ -144,6 +154,53 @@ private fun EditorMessageItem(
             }
         }
     }
+}
+
+/**
+ * "남기실 말씀" 내용 입력 필드.
+ *
+ * 멀티라인·160dp 최소 높이·16dp 전방향 패딩·16dp radius는
+ * 이 섹션 고유 사양이라 [TextFieldShort] 대신 [BasicTextField]로 직접 구현합니다.
+ */
+@Composable
+private fun EditorMessageContentField(
+    state: TextFieldState,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(16.dp)
+    BasicTextField(
+        state = state,
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = 160.dp)
+                .background(AfternoteDesign.colors.white, shape)
+                .border(1.dp, AfternoteDesign.colors.gray2, shape),
+        lineLimits = TextFieldLineLimits.MultiLine(),
+        textStyle =
+            AfternoteDesign.typography.textField.copy(
+                color = AfternoteDesign.colors.gray9,
+            ),
+        cursorBrush = SolidColor(AfternoteDesign.colors.black),
+        decorator = { innerTextField ->
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(all = 16.dp),
+                contentAlignment = Alignment.TopStart,
+            ) {
+                if (state.text.isEmpty()) {
+                    Text(
+                        text = "Text Field",
+                        style = AfternoteDesign.typography.textField,
+                        color = AfternoteDesign.colors.gray4,
+                    )
+                }
+                innerTextField()
+            }
+        },
+    )
 }
 
 @Preview(showBackground = true)

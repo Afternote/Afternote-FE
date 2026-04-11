@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.editor.receiver
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -132,13 +133,19 @@ fun AddAfternoteEditorReceiverDialog(
             Spacer(modifier = Modifier.height(24.dp))
 
             // 수신자 이름 입력 필드
-            TextFieldShort(
-                state = params.afternoteEditReceiverNameState,
-                label = "수신자 이름",
-                keyboardType = KeyboardType.Text,
-                containerColor = AfternoteDesign.colors.gray1,
-                labelSpacing = 7.95.dp,
-            )
+            Column {
+                Text(
+                    text = "수신자 이름",
+                    style = AfternoteDesign.typography.captionLargeR,
+                    color = AfternoteDesign.colors.gray9,
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                TextFieldShort(
+                    state = params.afternoteEditReceiverNameState,
+                    keyboardType = KeyboardType.Text,
+                    containerColor = AfternoteDesign.colors.gray1,
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -158,15 +165,21 @@ fun AddAfternoteEditorReceiverDialog(
             Spacer(modifier = Modifier.height(24.dp))
 
             // 전화번호로 추가하기 입력 필드
-            TextFieldShort(
-                state = params.phoneNumberState,
-                label = "전화번호로 추가하기",
-                keyboardType = KeyboardType.Phone,
-                inputTransformation = PhoneNumberInputTransformation,
-                outputTransformation = PhoneNumberVisualTransformation,
-                containerColor = AfternoteDesign.colors.gray1,
-                labelSpacing = 7.95.dp,
-            )
+            Column {
+                Text(
+                    text = "전화번호로 추가하기",
+                    style = AfternoteDesign.typography.captionLargeR,
+                    color = AfternoteDesign.colors.gray9,
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                TextFieldShort(
+                    state = params.phoneNumberState,
+                    keyboardType = KeyboardType.Phone,
+                    inputTransformation = PhoneNumberInputTransformation,
+                    outputTransformation = PhoneNumberVisualTransformation,
+                    containerColor = AfternoteDesign.colors.gray1,
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
