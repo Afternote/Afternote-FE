@@ -27,13 +27,11 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.ProfileImage
-import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
@@ -163,10 +161,8 @@ private fun OnboardingProfileContent(
         Spacer(modifier = Modifier.height(56.dp))
 
         AfternoteTextField(
-            type = TextFieldType.Basic,
             state = nameState,
             placeholder = stringResource(R.string.profile_name_placeholder),
-            keyboardType = KeyboardType.Text,
             imeAction = ImeAction.Done,
         )
 

@@ -45,7 +45,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
-import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
@@ -115,24 +114,22 @@ fun LoginScreen(
             ) {
                 // 아이디 (이메일) 입력 필드
                 AfternoteTextField(
-                    type = TextFieldType.Basic,
                     state = emailState,
+                    modifier =
+                        Modifier.semantics { contentType = ContentType.Username },
                     placeholder = stringResource(R.string.login_email_label),
                     keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Next,
-                    modifier =
-                        Modifier.semantics { contentType = ContentType.Username },
                 )
 
                 // 비밀번호 입력 필드
                 AfternoteTextField(
-                    type = TextFieldType.Basic,
                     state = passwordState,
+                    modifier =
+                        Modifier.semantics { contentType = ContentType.Password },
                     placeholder = stringResource(R.string.login_password_label),
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done,
-                    modifier =
-                        Modifier.semantics { contentType = ContentType.Password },
                 )
             }
 

@@ -31,7 +31,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -39,8 +38,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.Label
-import com.afternote.core.ui.LabelStyle
-import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
@@ -51,13 +48,6 @@ import com.afternote.feature.onboarding.presentation.R
 
 private const val PASSWORD_MIN_LENGTH = 8
 private const val PASSWORD_MAX_LENGTH = 16
-
-private val SignUpCaptionLabelStyle =
-    LabelStyle(
-        fontSize = 12.sp,
-        lineHeight = 18.sp,
-        fontWeight = FontWeight.Medium,
-    )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -147,14 +137,12 @@ private fun SignUpPasswordContent(
         ) {
             Label(
                 text = stringResource(R.string.signup_password_input_label),
-                style = SignUpCaptionLabelStyle,
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             // 비밀번호 입력
             AfternoteTextField(
-                type = TextFieldType.Basic,
                 state = passwordState,
                 placeholder = stringResource(R.string.signup_password_placeholder),
                 keyboardType = KeyboardType.Password,
@@ -165,7 +153,6 @@ private fun SignUpPasswordContent(
 
             // 비밀번호 확인
             AfternoteTextField(
-                type = TextFieldType.Basic,
                 state = passwordConfirmState,
                 placeholder = stringResource(R.string.signup_password_confirm_placeholder),
                 keyboardType = KeyboardType.Password,

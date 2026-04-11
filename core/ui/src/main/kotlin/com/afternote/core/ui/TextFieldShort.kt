@@ -169,7 +169,7 @@ fun AfternoteTextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     type: TextFieldType = TextFieldType.Basic,
-    placeholder: String? = null,
+    placeholder: String = "Text Field",
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Default,
     onImeAction: (() -> Unit)? = null,
