@@ -47,7 +47,7 @@ fun DailyCalendar(
 
     Column {
         Row(
-            modifier = Modifier.clickable {},
+            modifier = modifier.clickable {},
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -122,7 +122,7 @@ fun DailyCalendar(
     }
 }
 
-private fun buildDays(
+fun buildDays(
     year: Int,
     month: Int,
 ): List<DayUiModel> {
@@ -150,43 +150,6 @@ private fun buildDays(
                     else -> DayState.ANSWERED // ViewModel에서 실제 데이터로 교체
                 }
             add(DayUiModel(day = day, state = state))
-        }
-    }
-}
-
-@Composable
-fun Legend(modifier: Modifier = Modifier) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        listOf(
-            DayState.TODAY to "오늘",
-            DayState.ANSWERED to "답변완료",
-            DayState.UNANSWERED to "미답변",
-        ).forEach { (state, label) ->
-            val color =
-                when (state) {
-                    DayState.TODAY -> Color(0xFF1A1A1A)
-                    DayState.ANSWERED -> Color(0xFFAAAAAA)
-                    DayState.UNANSWERED -> Color(0xFFDDDDDD)
-                    else -> Color.Transparent
-                }
-            Box(
-                modifier =
-                    Modifier
-                        .size(8.dp)
-                        .clip(CircleShape)
-                        .background(color),
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = label,
-                style = AfternoteDesign.typography.footnoteCaption,
-                color = AfternoteDesign.colors.gray5,
-            )
-            Spacer(modifier = Modifier.width(16.dp))
         }
     }
 }

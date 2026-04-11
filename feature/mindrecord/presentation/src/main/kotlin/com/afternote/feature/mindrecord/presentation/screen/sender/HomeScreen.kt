@@ -95,8 +95,8 @@ fun HomeScreen(modifier: Modifier = Modifier) {
             }
             Spacer(modifier = Modifier.height(20.dp))
 
-            HorizontalPager(state = pagerState) { page ->
-                when (MindRecordCategory.entries[page]) {
+            HorizontalPager(state = pagerState) { _ ->
+                when (selectedCategory) {
                     MindRecordCategory.DAILY_QUESTION -> DailyQuestionAnswerListScreen(isListView = isListView)
                     MindRecordCategory.DIARY -> DiaryScreen(isListView = isListView)
                     MindRecordCategory.DEEP_THOUGHT -> DeepThoughtScreen(isListView = isListView)
