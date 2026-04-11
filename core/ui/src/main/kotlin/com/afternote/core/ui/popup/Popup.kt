@@ -40,7 +40,7 @@ fun Popup(
     isLoading: Boolean = false,
 ) {
     Dialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { if (!isLoading) onDismiss() },
         properties =
             DialogProperties(
                 dismissOnBackPress = !isLoading,
