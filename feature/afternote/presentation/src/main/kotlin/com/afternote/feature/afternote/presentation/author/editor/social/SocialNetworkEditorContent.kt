@@ -18,9 +18,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.Label
-import com.afternote.core.ui.LabelStyle
 import com.afternote.core.ui.SelectableRadioCard
-import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
@@ -71,7 +69,6 @@ private fun SocialNetworkEditorContentContent(
         Label(
             text = "계정 정보",
             isRequired = true,
-            style = LabelStyle(requiredDotOffsetY = 4.dp),
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -83,9 +80,7 @@ private fun SocialNetworkEditorContentContent(
         )
         Spacer(modifier = Modifier.height(6.dp))
         AfternoteTextField(
-            type = TextFieldType.Basic,
             state = params.accountSection.idState,
-            keyboardType = KeyboardType.Text,
         )
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -97,7 +92,6 @@ private fun SocialNetworkEditorContentContent(
         )
         Spacer(modifier = Modifier.height(6.dp))
         AfternoteTextField(
-            type = TextFieldType.Basic,
             state = params.accountSection.passwordState,
             keyboardType = KeyboardType.Password,
         )
@@ -108,7 +102,6 @@ private fun SocialNetworkEditorContentContent(
         Label(
             text = "계정 처리 방법",
             isRequired = true,
-            style = LabelStyle(requiredDotOffsetY = 2.dp),
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -141,7 +134,6 @@ private fun SocialNetworkEditorContentContent(
         Label(
             text = "처리 방법 리스트",
             isRequired = true,
-            style = LabelStyle(requiredDotOffsetY = 2.dp),
         )
 
         Spacer(modifier = Modifier.height(16.dp))

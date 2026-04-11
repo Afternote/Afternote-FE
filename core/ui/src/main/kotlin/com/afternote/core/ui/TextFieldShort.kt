@@ -93,7 +93,7 @@ private fun TextFieldShort(
         modifier =
             modifier
                 .fillMaxWidth()
-                .background(bgColor, TextFieldShape)
+                .background(AfternoteDesign.colors.white, TextFieldShape)
                 .border(BorderWidth, borderColor, TextFieldShape)
                 .then(
                     if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier,
@@ -162,14 +162,13 @@ enum class TextFieldType {
     Search,
     Variant7,
     Variant8,
-    Variant9,
 }
 
 @Composable
 fun AfternoteTextField(
     state: TextFieldState,
-    type: TextFieldType,
     modifier: Modifier = Modifier,
+    type: TextFieldType = TextFieldType.Basic,
     placeholder: String? = null,
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Default,
@@ -179,9 +178,6 @@ fun AfternoteTextField(
     focusRequester: FocusRequester? = null,
     trailingContent: @Composable (() -> Unit)? = null,
 ) {
-    val containerColor =
-        if (type == TextFieldType.Variant9) AfternoteDesign.colors.gray1 else null
-
     val effectiveTrailingContent: @Composable (() -> Unit)? =
         trailingContent
             ?: if (type == TextFieldType.Search) {
@@ -256,7 +252,6 @@ fun AfternoteTextField(
         inputTransformation = inputTransformation,
         outputTransformation = outputTransformation,
         focusRequester = focusRequester,
-        containerColor = containerColor, // 👈 아까 white로 고정하셨던 버그 수정완료
         trailingContent = effectiveTrailingContent,
         suffix = suffix,
     )
@@ -270,7 +265,11 @@ fun AfternoteTextField(
 // 3. 피그마 9종 카탈로그 프리뷰 (타입 이름으로만 호출)
 // ============================================================================
 
-@Preview(showBackground = true, backgroundColor = 0xFFC0C0C0, name = "AfternoteTextField 피그마 9종 (ALL EMPTY)")
+@Preview(
+    showBackground = true,
+    backgroundColor = 0xFFC0C0C0,
+    name = "AfternoteTextField 피그마 9종 (ALL EMPTY)",
+)
 @Composable
 private fun AfternoteTextFieldFigmaPreview() {
     AfternoteTheme {
@@ -286,39 +285,27 @@ private fun AfternoteTextFieldFigmaPreview() {
             modifier = Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            // 1. nonfield (포커스 X, 빈 값)
             AfternoteTextField(
-                type = TextFieldType.Basic,
-                state = rememberTextFieldState(), // 👈 괄호 안을 비우면 빈 값!
+                state = rememberTextFieldState(),
                 placeholder = "nonfield/writing/write/field",
             )
 
-            // 5. nonsearch (검색창, 빈 값)
             AfternoteTextField(
-                type = TextFieldType.Search,
                 state = rememberTextFieldState(),
+                type = TextFieldType.Search,
                 placeholder = "nonsearch/search",
             )
 
-            // 7. Variant7 (빈 값)
             AfternoteTextField(
-                type = TextFieldType.Variant7,
                 state = rememberTextFieldState(),
+                type = TextFieldType.Variant7,
                 placeholder = "Variant 7",
             )
 
-            // 8. Variant8 (빈 값)
             AfternoteTextField(
+                state = rememberTextFieldState(),
                 type = TextFieldType.Variant8,
-                state = rememberTextFieldState(),
                 placeholder = "Variant 8",
-            )
-
-            // 9. Variant9 (URL, 빈 값)
-            AfternoteTextField(
-                type = TextFieldType.Variant9,
-                state = rememberTextFieldState(),
-                placeholder = "Variant 9",
             )
         }
     }

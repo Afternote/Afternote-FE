@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.Label
-import com.afternote.core.ui.LabelStyle
 import com.afternote.core.ui.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -44,13 +43,6 @@ private const val CATEGORY_MEMORIAL_PREVIEW = "추모 가이드라인"
 data class SelectionDropdownLabelParams(
     val label: String,
     val isRequired: Boolean = false,
-    val labelStyle: LabelStyle =
-        LabelStyle(
-            fontSize = 12.sp,
-            lineHeight = 18.sp,
-            fontWeight = FontWeight.Normal,
-            requiredDotOffsetY = 2.dp,
-        ),
 )
 
 /**
@@ -109,7 +101,6 @@ fun SelectionDropdown(
         Label(
             text = labelParams.label,
             isRequired = labelParams.isRequired,
-            style = labelParams.labelStyle,
         )
 
         // 드롭다운 필드 (메뉴 너비는 BoxWithConstraints 제약으로 맞춤 — 측정 후 state 갱신 없음)
@@ -214,12 +205,6 @@ private fun SelectionDropdownRequiredLabelPreview() {
                 SelectionDropdownLabelParams(
                     label = "관계",
                     isRequired = true,
-                    labelStyle =
-                        LabelStyle(
-                            fontSize = 16.sp,
-                            lineHeight = 22.sp,
-                            fontWeight = FontWeight.Medium,
-                        ),
                 ),
             selectedValue = "딸",
             options = listOf("딸", "아들", "친구", "가족"),

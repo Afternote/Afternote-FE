@@ -28,7 +28,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.Label
-import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.bottomBorder
 import com.afternote.core.ui.button.AddCircleButton
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -106,7 +105,6 @@ private fun EditorMessageItem(
             )
             Spacer(modifier = Modifier.height(6.dp))
             AfternoteTextField(
-                type = TextFieldType.Basic,
                 state = message.titleState,
                 placeholder = "Text Field",
             )

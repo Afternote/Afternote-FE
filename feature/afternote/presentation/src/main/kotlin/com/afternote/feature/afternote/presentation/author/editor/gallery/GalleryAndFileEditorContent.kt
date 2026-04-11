@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor.gallery
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -13,7 +14,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.Label
-import com.afternote.core.ui.LabelStyle
 import com.afternote.core.ui.SelectableRadioCard
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
@@ -66,7 +66,6 @@ private fun GalleryAndFileEditorContentBody(
         Label(
             text = "계정 처리 방법",
             isRequired = true,
-            style = LabelStyle(requiredDotOffsetY = 2.dp),
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -102,7 +101,6 @@ private fun GalleryAndFileEditorContentBody(
         Label(
             text = "처리 방법 리스트",
             isRequired = true,
-            style = LabelStyle(requiredDotOffsetY = 2.dp),
         )
 
         Spacer(modifier = Modifier.height(20.dp))
