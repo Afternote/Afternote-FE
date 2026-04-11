@@ -1,37 +1,31 @@
 package com.afternote.feature.onboarding.presentation.signup
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
+import com.afternote.core.ui.StepProgressBar
 import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
@@ -99,6 +93,7 @@ private fun SignUpContent(
     modifier: Modifier = Modifier,
 ) {
     val focusManager = LocalFocusManager.current
+
     Column(
         modifier =
             modifier
@@ -106,21 +101,10 @@ private fun SignUpContent(
                 .padding(bottom = 49.dp)
                 .addFocusCleaner(focusManager),
     ) {
-        // 진행바
-        LinearProgressIndicator(
-            progress = { currentStep.toFloat() / SIGN_UP_TOTAL_STEPS },
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(4.dp)
-                    .background(
-                        color = AfternoteDesign.colors.gray3, // 👈 1. 둥근 1자형 회색 배경을 직접 렌더링
-                        shape = CircleShape,
-                    ).semantics { contentDescription = progressDescription },
-            color = AfternoteDesign.colors.gray9,
-            trackColor = Color.Transparent, // 👈 2. M3가 기본으로 그리는 '충돌하는 회색 트랙'을 투명하게 숨김
-            strokeCap = StrokeCap.Round, // 👈 3. 검은색 진행바의 끝부분은 둥글게 유지
-            drawStopIndicator = {},
+        StepProgressBar(
+            currentStep = currentStep,
+            totalSteps = SIGN_UP_TOTAL_STEPS,
+            contentDescription = progressDescription,
         )
         Spacer(Modifier.height(35.dp))
         Column(
