@@ -12,46 +12,40 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
- * 라벨 컴포넌트 (필수 표시 옵션 포함)
+ * 서비스 전반에서 사용되는 공통 라벨 컴포넌트입니다.
  *
- * 피그마 디자인 기반:
- * 텍스트 오른쪽 8.dp 간격, 세로는 [requiredDotOffsetY]만큼 아래로 내려 배치
- *
- * 레이아웃은 [Row]로 한 번에 측정·배치하여 이중 리컴포지션을 피합니다.
- *
- * @param text Label text
- * @param modifier Modifier for the component
- * @param isRequired Whether to show the required indicator (blue dot)
- * @param style Typography style for the label (default: theme textField)
- * @param color Text color (default: theme gray9)
- * @param requiredDotOffsetY Top padding of the required dot (default: 4.dp)
+ * @param text 라벨에 표시될 문구
+ * @param modifier 레이아웃 수정을 위한 모디파이어
+ * @param isRequired 필수 항목 여부 (true일 경우 우측에 점 표시)
+ * @param style 텍스트 스타일 (기본값: AfternoteDesign.typography.bodyBase)
+ * @param color 텍스트 색상 (기본값: AfternoteDesign.colors.gray9)
  */
 @Composable
 fun Label(
     text: String,
     modifier: Modifier = Modifier,
     isRequired: Boolean = false,
-    style: TextStyle = AfternoteDesign.typography.bodyBase, // 핵심: 정의한 테마를 기본값으로 직접 사용
-    color: Color = AfternoteDesign.colors.gray9, // 핵심: 정의한 색상을 기본값으로 직접 사용
-    requiredDotOffsetY: Dp = 4.dp,
+    style: TextStyle = AfternoteDesign.typography.bodyBase,
+    color: Color = AfternoteDesign.colors.gray9,
 ) {
     Row(
         modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = text,
-            style = style, // Text 컴포넌트가 style과 color를 분리해서 받으므로 copy 불필요
+            style = style,
             color = color,
         )
 
@@ -60,10 +54,9 @@ fun Label(
             Box(
                 modifier =
                     Modifier
-                        .padding(top = requiredDotOffsetY)
                         .size(4.dp)
                         .background(
-                            color = AfternoteDesign.colors.b1, // 정의한 테마 직접 사용
+                            color = AfternoteDesign.colors.b1,
                             shape = CircleShape,
                         ),
             )
@@ -129,7 +122,6 @@ private fun LabelVariantsPreview() {
                 text = "작은 필수 라벨",
                 isRequired = true,
                 style = AfternoteDesign.typography.textField.copy(fontSize = 12.sp),
-                requiredDotOffsetY = 2.dp,
             )
         }
     }
