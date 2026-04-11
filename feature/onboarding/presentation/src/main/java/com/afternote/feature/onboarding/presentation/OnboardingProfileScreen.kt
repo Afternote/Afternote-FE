@@ -1,4 +1,4 @@
-package com.afternote.feature.onboarding.presentation.profile
+package com.afternote.feature.onboarding.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -38,7 +38,6 @@ import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.onboarding.presentation.R
 
 /**
  * 온보딩 프로필 설정 화면.

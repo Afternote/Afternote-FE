@@ -19,8 +19,8 @@ import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.Label
 import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.onboarding.presentation.OnboardingStepScaffold
 import com.afternote.feature.onboarding.presentation.R
-import com.afternote.feature.onboarding.presentation.component.OnboardingStepScaffold
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
 

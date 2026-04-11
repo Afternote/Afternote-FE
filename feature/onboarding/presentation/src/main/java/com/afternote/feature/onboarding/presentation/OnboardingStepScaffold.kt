@@ -1,4 +1,4 @@
-package com.afternote.feature.onboarding.presentation.component
+package com.afternote.feature.onboarding.presentation
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -19,7 +19,6 @@ import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
-import com.afternote.feature.onboarding.presentation.R
 
 @Composable
 internal fun OnboardingStepScaffold(

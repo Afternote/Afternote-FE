@@ -1,4 +1,4 @@
-package com.afternote.feature.onboarding.presentation.welcome
+package com.afternote.feature.onboarding.presentation
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -33,7 +33,6 @@ import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.noRippleClickable
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.onboarding.presentation.R
 import com.afternote.core.common.R as CommonR
 
 @Composable
