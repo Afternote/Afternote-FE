@@ -38,8 +38,9 @@ import com.afternote.feature.onboarding.presentation.signup.SIGN_UP_TOTAL_STEPS
  *
  * @param currentStep 현재 단계(1부터)
  * @param onBackClick 뒤로가기 콜백. 내부에서 focusClear 후 호출됩니다.
+ * @param onNextClick 다음 버튼 콜백. 내부에서 focusClear 후 호출됩니다.
  * @param modifier Scaffold 에 적용할 Modifier
- * @param content 스텝바 아래 본문 영역. ColumnScope 를 제공하며 기본 weight(1f).
+ * @param content 스텝바 아래 본문 영역. ColumnScope 를 제공하며 남은 공간(weight(1f))을 채웁니다.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

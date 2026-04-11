@@ -6,12 +6,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -28,8 +25,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.Label
-import com.afternote.core.ui.button.AfternoteButton
-import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
@@ -37,7 +32,6 @@ import com.afternote.feature.onboarding.presentation.signup.component.SignUpStep
 
 @Composable
 fun SignUpPasswordScreen(
-    currentStep: Int,
     passwordState: TextFieldState,
     passwordConfirmState: TextFieldState,
     onNextClick: () -> Unit,
@@ -47,77 +41,60 @@ fun SignUpPasswordScreen(
     val focusManager = LocalFocusManager.current
 
     SignUpStepScaffold(
-        currentStep = currentStep,
+        currentStep = 3,
         onBackClick = onBackClick,
+        onNextClick = onNextClick,
         modifier = modifier,
-        containerColor = AfternoteDesign.colors.white,
-        horizontalPadding = 24.dp,
-        bottomButton = {
-            AfternoteButton(
-                text = stringResource(R.string.signup_next),
-                onClick = {
-                    focusManager.clearFocus()
-                    onNextClick()
-                },
+        content = {
+            Column(
                 modifier =
                     Modifier
-                        .navigationBarsPadding()
                         .fillMaxWidth()
-                        .padding(vertical = 20.dp)
-                        .height(48.dp),
-                type = AfternoteButtonType.Default,
-            )
+                        .padding(top = 32.dp, bottom = 16.dp),
+            ) {
+                Label(
+                    text = stringResource(R.string.signup_password_input_label),
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 비밀번호 입력
+                AfternoteTextField(
+                    state = passwordState,
+                    placeholder = stringResource(R.string.signup_password_placeholder),
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Next,
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // 비밀번호 확인
+                AfternoteTextField(
+                    state = passwordConfirmState,
+                    placeholder = stringResource(R.string.signup_password_confirm_placeholder),
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done,
+                    onImeAction = {
+                        focusManager.clearFocus()
+                        onNextClick()
+                    },
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 안내 문구
+                PasswordRuleItem(
+                    text = stringResource(R.string.signup_password_rule_combination),
+                    textColor = AfternoteDesign.colors.b1,
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                PasswordRuleItem(
+                    text = stringResource(R.string.signup_password_rule_reuse),
+                    textColor = AfternoteDesign.colors.b1,
+                )
+            }
         },
-    ) {
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(top = 32.dp, bottom = 16.dp),
-        ) {
-            Label(
-                text = stringResource(R.string.signup_password_input_label),
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // 비밀번호 입력
-            AfternoteTextField(
-                state = passwordState,
-                placeholder = stringResource(R.string.signup_password_placeholder),
-                keyboardType = KeyboardType.Password,
-                imeAction = ImeAction.Next,
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 비밀번호 확인
-            AfternoteTextField(
-                state = passwordConfirmState,
-                placeholder = stringResource(R.string.signup_password_confirm_placeholder),
-                keyboardType = KeyboardType.Password,
-                imeAction = ImeAction.Done,
-                onImeAction = {
-                    focusManager.clearFocus()
-                    onNextClick()
-                },
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // 안내 문구
-            PasswordRuleItem(
-                text = stringResource(R.string.signup_password_rule_combination),
-                textColor = AfternoteDesign.colors.b1,
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            PasswordRuleItem(
-                text = stringResource(R.string.signup_password_rule_reuse),
-                textColor = AfternoteDesign.colors.b1,
-            )
-        }
-    }
+    )
 }
 
 @Composable
@@ -156,12 +133,11 @@ private fun PasswordRuleItem(
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+@Preview(showBackground = true)
 @Composable
 private fun SignUpPasswordScreenPreview() {
     AfternoteTheme {
         SignUpPasswordScreen(
-            currentStep = 3,
             passwordState = rememberTextFieldState(),
             passwordConfirmState = rememberTextFieldState(),
             onNextClick = {},
