@@ -2,30 +2,28 @@ package com.afternote.feature.onboarding.presentation.login.component
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -86,9 +84,7 @@ fun LoginScreen(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .background(AfternoteDesign.colors.white)
-                        .navigationBarsPadding()
-                        .padding(horizontal = 24.dp, vertical = 20.dp),
+                        .padding(horizontal = 24.dp, vertical = 45.dp),
             ) {
                 SocialLoginGroup(
                     onSignUpClick = onSignUpClick,
@@ -106,16 +102,15 @@ fun LoginScreen(
                     .consumeWindowInsets(innerPadding)
                     .fillMaxSize()
                     .imePadding()
-                    .verticalScroll(rememberScrollState())
                     .addFocusCleaner(focusManager)
                     .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(39.dp))
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 // 아이디 (이메일) 입력 필드
                 AfternoteTextField(
@@ -143,21 +138,17 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // 로그인 버튼
-            val isLoginEnabled =
-                emailState.text.isNotBlank() && passwordState.text.isNotBlank()
             AfternoteButton(
                 text = stringResource(R.string.login_button),
                 onClick = {
                     focusManager.clearFocus()
                     onLoginClick()
                 },
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                type =
-                    if (isLoginEnabled) {
-                        AfternoteButtonType.Default
-                    } else {
-                        AfternoteButtonType.Un
-                    },
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                type = AfternoteButtonType.Default,
             )
         }
     }
@@ -231,48 +222,56 @@ private fun SocialLoginGroup(
         Spacer(modifier = Modifier.height(12.dp))
 
         // 구글 로그인 버튼
-        // TODO: 공식 Google 로고 자산 도입 시 카카오 버튼처럼 Image 컴포넌트로 교체.
         OutlinedButton(
             onClick = {
                 focusManager.clearFocus()
                 onGoogleLoginClick()
             },
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(4.dp),
+            // 💡 외곽선과 내부 컨텐츠(Text) 사이의 패딩을 정확히 12.dp로 고정합니다.
+            contentPadding = PaddingValues(12.dp),
             colors =
                 ButtonDefaults.outlinedButtonColors(
-                    containerColor = AfternoteDesign.colors.white,
-                    contentColor = AfternoteDesign.colors.gray9,
+                    // 💡 주의: 0xF2F2F2 앞에 투명도(FF)를 붙여야 색상이 정상적으로 보입니다.
+                    containerColor = Color(0xFFF2F2F2),
+                    contentColor = AfternoteDesign.colors.gray8,
                 ),
             border = BorderStroke(1.dp, AfternoteDesign.colors.gray3),
         ) {
+            Row(
+                Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Image(
+                    painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_img_google_logo),
+                    contentDescription = "구글 로그인",
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+
             Text(
                 text = stringResource(R.string.login_google),
-                style = AfternoteDesign.typography.bodySmallB,
+                style = AfternoteDesign.typography.captionLargeB,
             )
+            Spacer(Modifier.weight(1f))
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
         // 아이디/비밀번호 찾기
-        TextButton(
-            onClick = {
-                focusManager.clearFocus()
-                showFindAccountPopup = true
-            },
-        ) {
-            Text(
-                text = stringResource(R.string.login_find_account),
-                style =
-                    AfternoteDesign.typography.captionLargeR.copy(
-                        color = AfternoteDesign.colors.gray6,
-                        textDecoration = TextDecoration.Underline,
-                    ),
-            )
-        }
+        Text(
+            text = stringResource(R.string.login_find_account),
+            style =
+                AfternoteDesign.typography.captionLargeR.copy(
+                    color = AfternoteDesign.colors.gray6,
+                    textDecoration = TextDecoration.Underline,
+                ),
+            modifier =
+                Modifier.clickable {
+                    focusManager.clearFocus()
+                },
+        )
     }
 }
 
