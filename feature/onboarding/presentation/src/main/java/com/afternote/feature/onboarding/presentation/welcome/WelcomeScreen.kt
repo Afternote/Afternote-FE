@@ -58,8 +58,7 @@ fun WelcomeScreen(
                 Modifier
                     .fillMaxSize()
                     .padding(
-                        top = 48.dp,
-                        bottom = 48.dp,
+                        vertical = 48.dp,
                     ),
         ) {
             // 로고
