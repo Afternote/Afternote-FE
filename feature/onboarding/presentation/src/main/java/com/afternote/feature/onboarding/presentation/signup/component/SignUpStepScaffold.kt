@@ -27,24 +27,18 @@ import com.afternote.feature.onboarding.presentation.signup.SIGN_UP_TOTAL_STEPS
  *
  * - 상단: [DetailTopBar] + 뒤로가기 시 포커스 클리어
  * - 본문: [StepProgressBar] (full-width) + 화면별 [content] slot (weight(1f))
- * - 하단: 선택적 [bottomButton] slot
  *
- * [horizontalPadding] 은 [content] 와 [bottomButton] 양쪽에 공통으로 적용되어,
  * 본문 Column 과 버튼의 좌우 정렬이 구조적으로 어긋날 수 없게 합니다.
  * [StepProgressBar] 는 의도적으로 이 padding 밖에 두어 화면 폭을 가득 채웁니다.
  *
  * Window Insets 전략: 상단 inset 만 직접 padding 으로 소비하고, 나머지는
  * [consumeWindowInsets] 로 하류에 "이미 소비됨"을 알린 뒤 [imePadding] 으로 키보드에 반응.
  * 네비게이션 바 inset 은 의도적으로 padding 으로 잡지 않아, 화면이 edge-to-edge 로
- * 렌더되고 [bottomButton] 쪽에서 원하는 피그마 수치(예: `bottom = 49.dp`)를 직접 제어할 수
  * 있게 합니다.
  *
  * @param currentStep 현재 단계(1부터)
  * @param onBackClick 뒤로가기 콜백. 내부에서 focusClear 후 호출됩니다.
  * @param modifier Scaffold 에 적용할 Modifier
- * @param containerColor Scaffold containerColor
- * @param horizontalPadding 본문/버튼 양쪽에 공통으로 적용될 좌우 padding
- * @param bottomButton 하단 고정 버튼 slot. null 이면 자리 차지 없음.
  * @param content 스텝바 아래 본문 영역. ColumnScope 를 제공하며 기본 weight(1f).
  */
 @OptIn(ExperimentalMaterial3Api::class)
