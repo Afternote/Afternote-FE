@@ -20,10 +20,9 @@ import com.afternote.core.ui.Label
 import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
+import com.afternote.feature.onboarding.presentation.component.OnboardingStepScaffold
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
-
-private const val FRONT_NUMBER_LENGTH = 6
 
 @Composable
 fun SignUpResidentNumberScreen(
@@ -37,12 +36,13 @@ fun SignUpResidentNumberScreen(
     // 앞자리 6자리 입력 완료 시 뒷자리로 포커스 자동 이동
     LaunchedEffect(frontNumberState) {
         snapshotFlow { frontNumberState.text }
-            .filter { it.length == FRONT_NUMBER_LENGTH }
+            .filter { it.length == 6 }
             .collectLatest { backFocusRequester.requestFocus() }
     }
 
-    SignUpStepScaffold(
+    OnboardingStepScaffold(
         currentStep = 2,
+        buttonText = stringResource(R.string.signup_next),
         onBackClick = onBackClick,
         onNextClick = onNextClick,
         modifier = modifier,

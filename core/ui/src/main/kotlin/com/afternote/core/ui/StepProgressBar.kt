@@ -20,26 +20,14 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
-/**
- * 회원가입 등 다단계 플로우에서 사용하는 진행바.
- *
- *   M3 기본 트랙/스탑 인디케이터는 숨겨 디자인 가이드와 일치시킵니다.
- * - [currentStep] 변경 시 500ms `FastOutSlowInEasing` 으로 부드럽게 차오릅니다.
- *
- * @param currentStep 현재 단계 (1부터 시작)
- * @param totalSteps 전체 단계 수
- * @param modifier 외부에서 적용할 Modifier
- * @param contentDescription 스크린리더에 읽힐 설명. null 이면 semantics 를 추가하지 않습니다.
- */
 @Composable
 fun StepProgressBar(
     currentStep: Int,
-    totalSteps: Int,
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
 ) {
     val animatedProgress by animateFloatAsState(
-        targetValue = currentStep.toFloat() / totalSteps,
+        targetValue = currentStep.toFloat() / 4,
         animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing),
         label = "StepProgressBarAnimation",
     )
@@ -72,7 +60,7 @@ fun StepProgressBar(
 @Composable
 private fun StepProgressBarStep1Preview() {
     AfternoteTheme {
-        StepProgressBar(currentStep = 1, totalSteps = 4)
+        StepProgressBar(currentStep = 1)
     }
 }
 
@@ -80,6 +68,6 @@ private fun StepProgressBarStep1Preview() {
 @Composable
 private fun StepProgressBarStep3Preview() {
     AfternoteTheme {
-        StepProgressBar(currentStep = 3, totalSteps = 4)
+        StepProgressBar(currentStep = 3)
     }
 }

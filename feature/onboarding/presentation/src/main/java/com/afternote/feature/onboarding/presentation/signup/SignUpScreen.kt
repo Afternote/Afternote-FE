@@ -18,6 +18,7 @@ import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
+import com.afternote.feature.onboarding.presentation.component.OnboardingStepScaffold
 
 internal const val SIGN_UP_TOTAL_STEPS = 4
 
@@ -31,8 +32,9 @@ fun SignUpScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    SignUpStepScaffold(
+    OnboardingStepScaffold(
         currentStep = 1,
+        buttonText = stringResource(R.string.signup_next),
         onBackClick = onBackClick,
         onNextClick = onNextClick,
         modifier = modifier,

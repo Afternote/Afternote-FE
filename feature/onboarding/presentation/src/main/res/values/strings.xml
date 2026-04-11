@@ -19,12 +19,13 @@
     <string name="login_find_account">아이디/비밀번호 찾기</string>
     <string name="login_find_account_message">아이디/비밀번호 찾기의 경우,\n고객센터로 문의 바랍니다.</string>
 
+    <string name="onboarding_step_description">회원가입 진행도 4단계 중 %1$d단계</string>
+
     <string name="signup_title">회원가입</string>
     <string name="signup_email_placeholder">이메일 주소</string>
     <string name="signup_password_placeholder">비밀번호</string>
     <string name="signup_verification_sent">인증번호가 전송되었습니다.\n수신 된 인증번호를 입력해 주세요.</string>
     <string name="signup_next">다음</string>
-    <string name="signup_progress_description">회원가입 진행도 %1$d단계 중 %2$d단계</string>
     <string name="signup_resident_number_label">주민등록번호</string>
     <string name="signup_resident_number_placeholder">주민등록번호</string>
     <string name="signup_resident_number_back_placeholder">0</string>
@@ -44,7 +45,6 @@
     <string name="terms_marketing_description">다양한 프로모션 소식을 전해드립니다.</string>
     <string name="terms_view_detail">전체보기</string>
     <string name="terms_next">프로필 설정하러가기</string>
-    <string name="terms_progress_description">회원가입 진행도 %1$d단계 중 %2$d단계</string>
 
     <string name="profile_top_bar_title">프로필 설정</string>
     <string name="profile_headline">애프터노트에서의\n프로필을 설정해주세요</string>

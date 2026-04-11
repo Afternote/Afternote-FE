@@ -26,6 +26,7 @@ import com.afternote.core.ui.Label
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
+import com.afternote.feature.onboarding.presentation.component.OnboardingStepScaffold
 
 @Composable
 fun SignUpPasswordScreen(
@@ -37,8 +38,9 @@ fun SignUpPasswordScreen(
 ) {
     val focusManager = LocalFocusManager.current
 
-    SignUpStepScaffold(
+    OnboardingStepScaffold(
         currentStep = 3,
+        buttonText = stringResource(R.string.signup_next),
         onBackClick = onBackClick,
         onNextClick = onNextClick,
         modifier = modifier,
