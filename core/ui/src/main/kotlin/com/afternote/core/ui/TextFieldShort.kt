@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -25,20 +24,14 @@ import androidx.compose.foundation.text.input.OutputTransformation
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -51,59 +44,16 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Red
 
 private val TextFieldShape = RoundedCornerShape(8.dp)
 private val TextFieldMinHeight = 56.dp
 
 private const val PASSWORD_MASK_CHAR = '\u2022'
-
-/**
- * [TextFieldShort] 테두리 등 상태별 색상. 호출부에서 덮어써 이벤트·변형 UI에 맞출 수 있습니다.
- */
-data class AfternoteTextFieldColors(
-    val defaultBorderColor: Color,
-    val focusedBorderColor: Color,
-    val errorBorderColor: Color,
-    val transparentBorderColor: Color = Color.Transparent,
-) {
-    fun borderColor(
-        showOutline: Boolean,
-        isError: Boolean,
-        isFocused: Boolean,
-        hasContainerColor: Boolean,
-    ): Color =
-        when {
-            !showOutline -> transparentBorderColor
-            isError -> errorBorderColor
-            isFocused -> focusedBorderColor
-            hasContainerColor -> transparentBorderColor
-            else -> defaultBorderColor
-        }
-}
-
-/** [TextFieldShort] 기본값 팩토리 (Afternote 디자인 토큰). */
-object AfternoteTextFieldDefaults {
-    @Composable
-    fun colors(
-        defaultBorderColor: Color = AfternoteDesign.colors.gray2,
-        focusedBorderColor: Color = AfternoteDesign.colors.black,
-        errorBorderColor: Color = Red,
-        transparentBorderColor: Color = Color.Transparent,
-    ): AfternoteTextFieldColors =
-        AfternoteTextFieldColors(
-            defaultBorderColor = defaultBorderColor,
-            focusedBorderColor = focusedBorderColor,
-            errorBorderColor = errorBorderColor,
-            transparentBorderColor = transparentBorderColor,
-        )
-}
 
 /**
  * 비밀번호 마스킹용 OutputTransformation.
@@ -134,9 +84,8 @@ val PasswordMaskTransformation =
  * 넓은 슬롯에 왼쪽 정렬만 필요하면 `false`로 두어 [Alignment.CenterStart]가 쓰이게 합니다.
  *
  * **주의:** [suffix]가 null이 아니면 위 확장 동작은 적용되지 않으며, 텍스트 박스는 내용 너비에 맞게 두고
- * 접미가 텍스트 바로 옆에 붙습니다 (`hasSuffix`로 확장이 꺼짐).
+ * 접미가 텍스트 바로 옆에 붙습니다.
  * @param minWidth [BasicTextField] 최소 너비 (e.g. 한 자리 숫자 칸).
- * @param colors 테두리 등 상태 색상. 기본은 디자인 시스템; 필요 시 [AfternoteTextFieldDefaults.colors]로 일부만 오버라이드.
  */
 @Composable
 fun TextFieldShort(
@@ -144,16 +93,12 @@ fun TextFieldShort(
     modifier: Modifier = Modifier,
     placeholder: String? = null,
     label: String? = null,
-    prefix: @Composable (() -> Unit)? = null,
     suffix: @Composable (() -> Unit)? = null,
     trailingContent: @Composable (() -> Unit)? = null,
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Default,
     inputTransformation: InputTransformation? = null,
     outputTransformation: OutputTransformation? = null,
-    enabled: Boolean = true,
-    readOnly: Boolean = false,
-    isError: Boolean = false,
     containerColor: Color? = null,
     minHeight: Dp = TextFieldMinHeight,
     minWidth: Dp? = null,
@@ -170,19 +115,18 @@ fun TextFieldShort(
     interactionSource: MutableInteractionSource? = null,
     onFocusChanged: ((Boolean) -> Unit)? = null,
     expandTextAreaToAvailableWidth: Boolean = false,
-    colors: AfternoteTextFieldColors = AfternoteTextFieldDefaults.colors(),
 ) {
     val resolvedInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
     val isFocused by resolvedInteractionSource.collectIsFocusedAsState()
     val bgColor = containerColor ?: AfternoteDesign.colors.white
 
     val borderColor =
-        colors.borderColor(
-            showOutline = showOutline,
-            isError = isError,
-            isFocused = isFocused,
-            hasContainerColor = containerColor != null,
-        )
+        when {
+            !showOutline -> Color.Transparent
+            isFocused -> AfternoteDesign.colors.black
+            containerColor != null -> Color.Transparent
+            else -> AfternoteDesign.colors.gray2
+        }
 
     val actualOutputTransformation =
         outputTransformation
@@ -249,7 +193,6 @@ fun TextFieldShort(
                         },
                     ),
             lineLimits = lineLimits,
-            readOnly = readOnly,
             keyboardOptions =
                 KeyboardOptions(
                     keyboardType = keyboardType,
@@ -264,7 +207,6 @@ fun TextFieldShort(
             inputTransformation = inputTransformation,
             outputTransformation = actualOutputTransformation,
             interactionSource = resolvedInteractionSource,
-            enabled = enabled,
             textStyle = resolvedTextStyle,
             cursorBrush = SolidColor(AfternoteDesign.colors.black),
             decorator = { innerTextField ->
@@ -275,11 +217,6 @@ fun TextFieldShort(
                             .padding(contentPadding),
                     verticalAlignment = if (isMultiline) Alignment.Top else Alignment.CenterVertically,
                 ) {
-                    if (prefix != null) {
-                        prefix()
-                        Spacer(modifier = Modifier.width(8.dp))
-                    }
-
                     // 텍스트 + suffix를 하나로 묶어 왼쪽 정렬 유지
                     Row(
                         modifier = Modifier.weight(1f),
@@ -470,7 +407,7 @@ private fun TextFieldShortCatalogPreview() {
     }
 }
 
-@Preview(showBackground = true, name = "라벨 + 에러")
+@Preview(showBackground = true, name = "라벨")
 @Composable
 private fun TextFieldShortLabeledPreview() {
     AfternoteTheme {
@@ -493,221 +430,7 @@ private fun TextFieldShortLabeledPreview() {
                 label = "비밀번호",
                 placeholder = "Text Field",
                 keyboardType = KeyboardType.Password,
-                isError = true,
             )
-        }
-    }
-}
-
-private enum class TextFieldShortPlaygroundSlot {
-    None,
-    Prefix,
-    Suffix,
-    Trailing,
-}
-
-@Composable
-private fun TextFieldShortPlaygroundLabeledCheckbox(
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    label: String,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Checkbox(checked = checked, onCheckedChange = onCheckedChange)
-        Text(
-            text = label,
-            style = AfternoteDesign.typography.bodyBase,
-            color = AfternoteDesign.colors.gray9,
-        )
-    }
-}
-
-@Composable
-private fun TextFieldShortPlaygroundSlotRow(
-    selected: Boolean,
-    onClick: () -> Unit,
-    title: String,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        RadioButton(selected = selected, onClick = onClick)
-        Text(
-            text = title,
-            style = AfternoteDesign.typography.bodyBase,
-            color = AfternoteDesign.colors.gray9,
-        )
-    }
-}
-
-/**
- * 개발용: [TextFieldShort] 파라미터를 프리뷰에서 조작해 레이아웃·테두리 동작을 확인합니다.
- */
-@Preview(
-    name = "인터랙티브 플레이그라운드",
-    showBackground = true,
-    heightDp = 900,
-    widthDp = 392,
-)
-@Composable
-private fun TextFieldShortInteractivePlaygroundPreview() {
-    AfternoteTheme {
-        val scroll = rememberScrollState()
-        var showLabel by remember { mutableStateOf(true) }
-        var placeholderText by remember { mutableStateOf("Text Field") }
-        val fieldState = rememberTextFieldState()
-        var isError by remember { mutableStateOf(false) }
-        var expandWidth by remember { mutableStateOf(false) }
-        var showOutline by remember { mutableStateOf(true) }
-        var slot by remember { mutableStateOf(TextFieldShortPlaygroundSlot.None) }
-
-        val hasSuffix = slot == TextFieldShortPlaygroundSlot.Suffix
-        val demoTextStyle =
-            if (expandWidth && !hasSuffix) {
-                AfternoteDesign.typography.textField.copy(
-                    color = AfternoteDesign.colors.gray9,
-                    textAlign = TextAlign.Center,
-                )
-            } else {
-                null
-            }
-
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(scroll)
-                    .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Text(
-                text = "TextFieldShort playground",
-                style = AfternoteDesign.typography.h3,
-                color = AfternoteDesign.colors.gray9,
-            )
-
-            TextFieldShort(
-                state = fieldState,
-                label = if (showLabel) "아이디" else null,
-                placeholder = placeholderText,
-                isError = isError,
-                expandTextAreaToAvailableWidth = expandWidth,
-                showOutline = showOutline,
-                textStyle = demoTextStyle,
-                prefix =
-                    if (slot == TextFieldShortPlaygroundSlot.Prefix) {
-                        {
-                            Text(
-                                text = "@",
-                                style = AfternoteDesign.typography.textField,
-                                color = AfternoteDesign.colors.gray9,
-                            )
-                        }
-                    } else {
-                        null
-                    },
-                suffix =
-                    if (slot == TextFieldShortPlaygroundSlot.Suffix) {
-                        {
-                            Text(
-                                text = ".com",
-                                style = AfternoteDesign.typography.textField,
-                                color = AfternoteDesign.colors.gray9,
-                            )
-                        }
-                    } else {
-                        null
-                    },
-                trailingContent =
-                    if (slot == TextFieldShortPlaygroundSlot.Trailing) {
-                        {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = null,
-                                tint = AfternoteDesign.colors.gray9,
-                                modifier = Modifier.size(24.dp),
-                            )
-                        }
-                    } else {
-                        null
-                    },
-            )
-
-            Text(
-                text = "Controls",
-                style = AfternoteDesign.typography.captionLargeR,
-                color = AfternoteDesign.colors.gray6,
-            )
-
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                value = fieldState.text.toString(),
-                onValueChange = { new ->
-                    fieldState.edit { replace(0, length, new) }
-                },
-                label = { Text("값 (필드와 동기화)") },
-                singleLine = true,
-            )
-
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth(),
-                value = placeholderText,
-                onValueChange = { placeholderText = it },
-                label = { Text("Placeholder") },
-                singleLine = true,
-            )
-
-            TextFieldShortPlaygroundLabeledCheckbox(showLabel, { showLabel = it }, "라벨 표시 (아이디)")
-            TextFieldShortPlaygroundLabeledCheckbox(isError, { isError = it }, "isError (빨간 테두리)")
-            TextFieldShortPlaygroundLabeledCheckbox(
-                expandWidth,
-                { expandWidth = it },
-                "expandTextAreaToAvailableWidth",
-            )
-            TextFieldShortPlaygroundLabeledCheckbox(
-                showOutline,
-                { showOutline = it },
-                "showOutline",
-            )
-
-            Text(
-                text = "슬롯 (하나만)",
-                style = AfternoteDesign.typography.captionLargeR,
-                color = AfternoteDesign.colors.gray6,
-            )
-
-            TextFieldShortPlaygroundSlotRow(
-                selected = slot == TextFieldShortPlaygroundSlot.None,
-                onClick = { slot = TextFieldShortPlaygroundSlot.None },
-                title = "없음",
-            )
-            TextFieldShortPlaygroundSlotRow(
-                selected = slot == TextFieldShortPlaygroundSlot.Prefix,
-                onClick = { slot = TextFieldShortPlaygroundSlot.Prefix },
-                title = "Prefix (@)",
-            )
-            TextFieldShortPlaygroundSlotRow(
-                selected = slot == TextFieldShortPlaygroundSlot.Suffix,
-                onClick = { slot = TextFieldShortPlaygroundSlot.Suffix },
-                title = "Suffix (.com)",
-            )
-            TextFieldShortPlaygroundSlotRow(
-                selected = slot == TextFieldShortPlaygroundSlot.Trailing,
-                onClick = { slot = TextFieldShortPlaygroundSlot.Trailing },
-                title = "Trailing (검색 아이콘)",
-            )
-
-            if (expandWidth && hasSuffix) {
-                Text(
-                    text = "참고: suffix가 있으면 실제 컴포넌트는 가로 확장을 적용하지 않습니다.",
-                    style = AfternoteDesign.typography.captionLargeR,
-                    color = AfternoteDesign.colors.gray6,
-                )
-            }
         }
     }
 }
