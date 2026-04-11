@@ -1,5 +1,6 @@
 package com.afternote.feature.onboarding.presentation.signup
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -111,10 +113,14 @@ private fun SignUpContent(
                 Modifier
                     .fillMaxWidth()
                     .height(4.dp)
-                    .semantics { contentDescription = progressDescription },
+                    .background(
+                        color = AfternoteDesign.colors.gray3, // 👈 1. 둥근 1자형 회색 배경을 직접 렌더링
+                        shape = CircleShape,
+                    ).semantics { contentDescription = progressDescription },
             color = AfternoteDesign.colors.gray9,
-            trackColor = AfternoteDesign.colors.gray3,
-            strokeCap = StrokeCap.Square,
+            trackColor = Color.Transparent, // 👈 2. M3가 기본으로 그리는 '충돌하는 회색 트랙'을 투명하게 숨김
+            strokeCap = StrokeCap.Round, // 👈 3. 검은색 진행바의 끝부분은 둥글게 유지
+            drawStopIndicator = {},
         )
         Spacer(Modifier.height(35.dp))
         Column(
