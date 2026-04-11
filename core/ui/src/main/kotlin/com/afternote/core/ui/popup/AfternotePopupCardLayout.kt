@@ -79,6 +79,7 @@ fun AfternotePopupCardLayout(
     AfternotePopupCardLayout(modifier = modifier) {
         Text(
             text = message,
+            modifier = Modifier.fillMaxWidth(),
             style =
                 AfternoteDesign.typography.bodyBase
                     .copy(
@@ -110,6 +111,7 @@ private fun AfternotePopupCardLayoutsPreview() {
                 type = PopupType.Default,
                 message = "아이디/비밀번호 찾기의 경우,\n고객센터로 문의 바랍니다.",
                 onConfirm = {},
+                onDismiss = {},
             )
             PopupContent(
                 type = PopupType.Variant2,
