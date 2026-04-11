@@ -49,7 +49,7 @@ fun SignUpPasswordScreen(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .padding(top = 44.dp),
+                        .padding(top = 43.dp),
             ) {
                 Label(
                     text = stringResource(R.string.signup_password_input_label),

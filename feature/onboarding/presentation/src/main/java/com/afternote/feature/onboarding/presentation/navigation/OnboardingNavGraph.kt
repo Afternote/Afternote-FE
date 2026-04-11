@@ -136,7 +136,6 @@ fun NavGraphBuilder.onboardingNavGraph(
             val signUpViewModel = graphScopedSignUpViewModel(navController, backStackEntry)
 
             OnboardingTermsScreen(
-                currentStep = 4,
                 termsState = signUpViewModel.termsState,
                 onTermsToggle = {
                     signUpViewModel.updateTermsState(

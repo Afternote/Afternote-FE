@@ -48,7 +48,7 @@ fun SignUpResidentNumberScreen(
         modifier = modifier,
         content = {
             Column(
-                modifier = Modifier.padding(top = 44.dp),
+                modifier = Modifier.padding(top = 43.dp),
             ) {
                 Label(
                     text = stringResource(R.string.signup_resident_number_label),
