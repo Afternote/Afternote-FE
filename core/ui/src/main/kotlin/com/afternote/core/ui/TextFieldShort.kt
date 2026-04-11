@@ -57,6 +57,47 @@ private val TextFieldMinHeight = 56.dp
 private const val PASSWORD_MASK_CHAR = '\u2022'
 
 /**
+ * [TextFieldShort] 테두리 등 상태별 색상. 호출부에서 덮어써 이벤트·변형 UI에 맞출 수 있습니다.
+ */
+data class AfternoteTextFieldColors(
+    val defaultBorderColor: Color,
+    val focusedBorderColor: Color,
+    val errorBorderColor: Color,
+    val transparentBorderColor: Color = Color.Transparent,
+) {
+    fun borderColor(
+        showOutline: Boolean,
+        isError: Boolean,
+        isFocused: Boolean,
+        hasContainerColor: Boolean,
+    ): Color =
+        when {
+            !showOutline -> transparentBorderColor
+            isError -> errorBorderColor
+            isFocused -> focusedBorderColor
+            hasContainerColor -> transparentBorderColor
+            else -> defaultBorderColor
+        }
+}
+
+/** [TextFieldShort] 기본값 팩토리 (Afternote 디자인 토큰). */
+object AfternoteTextFieldDefaults {
+    @Composable
+    fun colors(
+        defaultBorderColor: Color = AfternoteDesign.colors.gray4,
+        focusedBorderColor: Color = AfternoteDesign.colors.black,
+        errorBorderColor: Color = Red,
+        transparentBorderColor: Color = Color.Transparent,
+    ): AfternoteTextFieldColors =
+        AfternoteTextFieldColors(
+            defaultBorderColor = defaultBorderColor,
+            focusedBorderColor = focusedBorderColor,
+            errorBorderColor = errorBorderColor,
+            transparentBorderColor = transparentBorderColor,
+        )
+}
+
+/**
  * 비밀번호 마스킹용 OutputTransformation.
  * [TextFieldShort]에서 keyboardType이 [KeyboardType.Password]일 때 자동 적용됩니다.
  */
@@ -82,8 +123,10 @@ val PasswordMaskTransformation =
  * @param onFocusChanged 포커스 진입/이탈 알림.
  * @param expandTextAreaToAvailableWidth `true`이면 텍스트 박스가 가로 남는 공간을 채우고 [Alignment.Center]로 둡니다
  * (주민번호 앞자리처럼 `textStyle`에 `TextAlign.Center`를 쓰는 경우).
+ * [suffix]가 있으면 접미 요소가 텍스트 바로 옆에 붙도록 확장은 적용되지 않습니다.
  * 넓은 슬롯에 왼쪽 정렬만 필요하면 `false`로 두어 [Alignment.CenterStart]가 쓰이게 합니다.
  * @param minWidth [BasicTextField] 최소 너비 (e.g. 한 자리 숫자 칸).
+ * @param colors 테두리 등 상태 색상. 기본은 디자인 시스템; 필요 시 [AfternoteTextFieldDefaults.colors]로 일부만 오버라이드.
  */
 @Composable
 fun TextFieldShort(
@@ -117,20 +160,19 @@ fun TextFieldShort(
     interactionSource: MutableInteractionSource? = null,
     onFocusChanged: ((Boolean) -> Unit)? = null,
     expandTextAreaToAvailableWidth: Boolean = false,
+    colors: AfternoteTextFieldColors = AfternoteTextFieldDefaults.colors(),
 ) {
-    val fallbackInteractionSource = remember { MutableInteractionSource() }
-    val resolvedInteractionSource = interactionSource ?: fallbackInteractionSource
+    val resolvedInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
     val isFocused by resolvedInteractionSource.collectIsFocusedAsState()
     val bgColor = containerColor ?: AfternoteDesign.colors.white
 
     val borderColor =
-        when {
-            !showOutline -> Color.Transparent
-            isError -> Red
-            isFocused -> AfternoteDesign.colors.black
-            containerColor != null -> Color.Transparent
-            else -> AfternoteDesign.colors.gray4
-        }
+        colors.borderColor(
+            showOutline = showOutline,
+            isError = isError,
+            isFocused = isFocused,
+            hasContainerColor = containerColor != null,
+        )
 
     val actualOutputTransformation =
         outputTransformation
@@ -235,6 +277,7 @@ fun TextFieldShort(
                     ) {
                         TextFieldTextBox(
                             expandTextAreaToAvailableWidth = expandTextAreaToAvailableWidth,
+                            hasSuffix = suffix != null,
                             textBoxAlignment = textBoxAlignment,
                             placeholder = placeholder,
                             resolvedPlaceholderStyle = resolvedPlaceholderStyle,
@@ -262,15 +305,18 @@ fun TextFieldShort(
 @Composable
 private fun RowScope.TextFieldTextBox(
     expandTextAreaToAvailableWidth: Boolean,
+    hasSuffix: Boolean,
     textBoxAlignment: Alignment,
     placeholder: String?,
     resolvedPlaceholderStyle: TextStyle,
     state: TextFieldState,
     innerTextField: @Composable () -> Unit,
 ) {
+    // suffix가 있으면 weight(1f)로 박스가 가로를 전부 먹어 접미가 우측 끝으로 밀리므로 확장 비활성화
+    val shouldExpand = expandTextAreaToAvailableWidth && !hasSuffix
     Box(
         modifier =
-            if (expandTextAreaToAvailableWidth) {
+            if (shouldExpand) {
                 Modifier.weight(1f)
             } else {
                 Modifier.weight(1f, fill = false)
