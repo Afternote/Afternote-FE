@@ -19,8 +19,8 @@ import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.Label
+import com.afternote.core.ui.TextFieldShort
 import com.afternote.core.ui.bottomBorder
 import com.afternote.core.ui.button.AddCircleButton
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -91,7 +91,7 @@ private fun EditorMessageItem(
                     .fillMaxWidth()
                     .bottomBorder(color = AfternoteDesign.colors.gray2, width = 1.dp),
         ) {
-            AfternoteTextField(
+            TextFieldShort(
                 state = message.titleState,
                 label = "제목",
                 placeholder = "Text Field",
@@ -99,7 +99,7 @@ private fun EditorMessageItem(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            AfternoteTextField(
+            TextFieldShort(
                 state = message.contentState,
                 label = "내용",
                 placeholder = "Text Field",

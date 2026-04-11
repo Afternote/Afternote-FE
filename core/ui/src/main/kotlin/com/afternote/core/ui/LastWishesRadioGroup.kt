@@ -198,7 +198,7 @@ private fun LastWishOtherCard(
                 )
             }
             if (selected) {
-                AfternoteTextField(
+                TextFieldShort(
                     modifier = Modifier,
                     state = otherState.textFieldState,
                     placeholder = stringResource(R.string.core_ui_text_field_placeholder),

@@ -42,9 +42,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.Label
 import com.afternote.core.ui.LabelStyle
+import com.afternote.core.ui.TextFieldShort
 import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
@@ -218,7 +218,7 @@ private fun ResidentNumberInputField(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // 앞자리 6자리
-        AfternoteTextField(
+        TextFieldShort(
             state = frontState,
             modifier = Modifier.weight(1f),
             placeholder = stringResource(R.string.signup_resident_number_placeholder),
@@ -248,7 +248,7 @@ private fun ResidentNumberInputField(
         )
 
         // 뒷자리 (1자리 입력 + 마스킹)
-        AfternoteTextField(
+        TextFieldShort(
             state = backState,
             modifier = Modifier.weight(1f),
             focusRequester = backFocusRequester,

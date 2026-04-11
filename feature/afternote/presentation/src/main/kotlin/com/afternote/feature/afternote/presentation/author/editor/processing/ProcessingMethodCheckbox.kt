@@ -27,8 +27,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.CircleCheckBox
+import com.afternote.core.ui.TextFieldShort
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
@@ -60,7 +60,7 @@ private fun processingMethodTextStyle(): TextStyle =
  * - 텍스트: 14sp, Regular, AfternoteDesign.colors.gray9
  * - 더보기 아이콘: 오른쪽 정렬
  *
- * [isEditing]이 true이면 텍스트 영역이 [AfternoteTextField]로 전환되어 인라인 편집을 지원합니다.
+ * [isEditing]이 true이면 텍스트 영역이 [TextFieldShort]로 전환되어 인라인 편집을 지원합니다.
  */
 @Composable
 fun ProcessingMethodCheckbox(
@@ -144,7 +144,7 @@ private fun InlineEditTextField(
         }
     }
 
-    AfternoteTextField(
+    TextFieldShort(
         state = state,
         modifier = modifier,
         focusRequester = focusRequester,

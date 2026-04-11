@@ -23,7 +23,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.afternote.core.ui.AfternoteTextField
+import com.afternote.core.ui.TextFieldShort
 import com.afternote.core.ui.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -77,7 +77,7 @@ fun AddItemTextField(
                     .bottomBorder(color = AfternoteDesign.colors.gray2, width = 1.dp)
                     .padding(horizontal = 8.dp, vertical = 4.dp),
         ) {
-            AfternoteTextField(
+            TextFieldShort(
                 state = textFieldState,
                 lineLimits = TextFieldLineLimits.SingleLine,
                 placeholder = placeholder,

@@ -21,9 +21,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.PhoneNumberInputTransformation
 import com.afternote.core.ui.PhoneNumberVisualTransformation
+import com.afternote.core.ui.TextFieldShort
 import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.popup.AfternotePopupCardLayout
@@ -132,7 +132,7 @@ fun AddAfternoteEditorReceiverDialog(
             Spacer(modifier = Modifier.height(24.dp))
 
             // 수신자 이름 입력 필드
-            AfternoteTextField(
+            TextFieldShort(
                 state = params.afternoteEditReceiverNameState,
                 label = "수신자 이름",
                 keyboardType = KeyboardType.Text,
@@ -158,7 +158,7 @@ fun AddAfternoteEditorReceiverDialog(
             Spacer(modifier = Modifier.height(24.dp))
 
             // 전화번호로 추가하기 입력 필드
-            AfternoteTextField(
+            TextFieldShort(
                 state = params.phoneNumberState,
                 label = "전화번호로 추가하기",
                 keyboardType = KeyboardType.Phone,

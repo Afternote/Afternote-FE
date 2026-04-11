@@ -31,8 +31,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.ProfileImage
+import com.afternote.core.ui.TextFieldShort
 import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
@@ -45,7 +45,7 @@ import com.afternote.feature.onboarding.presentation.R
  * 온보딩 프로필 설정 화면.
  *
  * - 상단: [DetailTopBar] (Material 3 [androidx.compose.material3.CenterAlignedTopAppBar] 기반)
- * - 본문: 스크롤 + [ProfileImage] + 이름 입력 ([AfternoteTextField])
+ * - 본문: 스크롤 + [ProfileImage] + 이름 입력 ([TextFieldShort])
  * - 하단 CTA: [Scaffold]의 [bottomBar]로 고정, 시스템 내비게이션 영역은 [navigationBarsPadding] 처리
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -161,7 +161,7 @@ private fun OnboardingProfileContent(
 
         Spacer(modifier = Modifier.height(56.dp))
 
-        AfternoteTextField(
+        TextFieldShort(
             state = nameState,
             placeholder = stringResource(R.string.profile_name_placeholder),
             keyboardType = KeyboardType.Text,

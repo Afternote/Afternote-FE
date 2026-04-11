@@ -81,6 +81,10 @@ fun NavGraphBuilder.onboardingNavGraph(
                 onKakaoLoginClick = {
                     viewModel.login(LoginType.Kakao)
                 },
+                onGoogleLoginClick = {
+                    viewModel.login(LoginType.Google)
+                },
+                onBackClick = { navController.popBackStack() },
             )
         }
 

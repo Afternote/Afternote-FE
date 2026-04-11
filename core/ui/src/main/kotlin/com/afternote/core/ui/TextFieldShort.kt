@@ -58,7 +58,7 @@ private const val PASSWORD_MASK_CHAR = '\u2022'
 
 /**
  * 비밀번호 마스킹용 OutputTransformation.
- * [AfternoteTextField]에서 keyboardType이 [KeyboardType.Password]일 때 자동 적용됩니다.
+ * [TextFieldShort]에서 keyboardType이 [KeyboardType.Password]일 때 자동 적용됩니다.
  */
 val PasswordMaskTransformation =
     OutputTransformation {
@@ -86,7 +86,7 @@ val PasswordMaskTransformation =
  * @param minWidth [BasicTextField] 최소 너비 (e.g. 한 자리 숫자 칸).
  */
 @Composable
-fun AfternoteTextField(
+fun TextFieldShort(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     placeholder: String? = null,
@@ -294,7 +294,7 @@ private fun RowScope.TextFieldTextBox(
 
 @Preview(showBackground = true, backgroundColor = 0xFFC0C0C0, name = "전체 상태 카탈로그")
 @Composable
-private fun AfternoteTextFieldCatalogPreview() {
+private fun TextFieldShortCatalogPreview() {
     AfternoteTheme {
         val previewFocusRequester = remember { FocusRequester() }
 
@@ -307,29 +307,29 @@ private fun AfternoteTextFieldCatalogPreview() {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // 1. 기본 (Placeholder만 표시)
-            AfternoteTextField(
+            TextFieldShort(
                 state = rememberTextFieldState(),
                 placeholder = "Text Field",
             )
 
             // 2. 활성 (포커스 테두리 + 커서)
-            AfternoteTextField(
+            TextFieldShort(
                 state = rememberTextFieldState(),
                 focusRequester = previewFocusRequester,
             )
 
             // 3. 입력 중 (텍스트)
-            AfternoteTextField(
+            TextFieldShort(
                 state = rememberTextFieldState("Text Field"),
             )
 
             // 4. 입력 완료
-            AfternoteTextField(
+            TextFieldShort(
                 state = rememberTextFieldState("Text Field"),
             )
 
             // 5. 검색 아이콘 (trailingContent → 우측 끝 고정)
-            AfternoteTextField(
+            TextFieldShort(
                 state = rememberTextFieldState(),
                 placeholder = "Text Field",
                 trailingContent = {
@@ -343,7 +343,7 @@ private fun AfternoteTextFieldCatalogPreview() {
             )
 
             // 6. 검색 아이콘 (입력됨)
-            AfternoteTextField(
+            TextFieldShort(
                 state = rememberTextFieldState("Text Field"),
                 trailingContent = {
                     Icon(
@@ -356,7 +356,7 @@ private fun AfternoteTextFieldCatalogPreview() {
             )
 
             // 7. 우측 힌트 텍스트 (suffix → 텍스트 바로 옆)
-            AfternoteTextField(
+            TextFieldShort(
                 state = rememberTextFieldState(),
                 placeholder = "Text Field",
                 suffix = {
@@ -369,7 +369,7 @@ private fun AfternoteTextFieldCatalogPreview() {
             )
 
             // 8. 복합 suffix (대시 + T + 도트 → 텍스트 바로 옆)
-            AfternoteTextField(
+            TextFieldShort(
                 state = rememberTextFieldState(),
                 placeholder = "Text Field",
                 suffix = {
@@ -405,7 +405,7 @@ private fun AfternoteTextFieldCatalogPreview() {
             )
 
             // 9. URL 입력 필드
-            AfternoteTextField(
+            TextFieldShort(
                 state = rememberTextFieldState(),
                 placeholder = "URL을 입력하세요.",
                 containerColor = AfternoteDesign.colors.gray1,
@@ -416,7 +416,7 @@ private fun AfternoteTextFieldCatalogPreview() {
 
 @Preview(showBackground = true, name = "라벨 + 에러")
 @Composable
-private fun AfternoteTextFieldLabeledPreview() {
+private fun TextFieldShortLabeledPreview() {
     AfternoteTheme {
         val previewFocusRequester = remember { FocusRequester() }
         LaunchedEffect(Unit) {
@@ -426,13 +426,13 @@ private fun AfternoteTextFieldLabeledPreview() {
             modifier = Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            AfternoteTextField(
+            TextFieldShort(
                 state = rememberTextFieldState(),
                 label = "아이디",
                 placeholder = "Text Field",
                 focusRequester = previewFocusRequester,
             )
-            AfternoteTextField(
+            TextFieldShort(
                 state = rememberTextFieldState(),
                 label = "비밀번호",
                 placeholder = "Text Field",

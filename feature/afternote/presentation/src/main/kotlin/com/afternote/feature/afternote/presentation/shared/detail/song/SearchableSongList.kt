@@ -43,7 +43,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.afternote.core.ui.AfternoteTextField
+import com.afternote.core.ui.TextFieldShort
 import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.CustomRadioButton
 import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
@@ -473,7 +473,7 @@ private fun SongSearchSection(
                 .distinctUntilChanged()
                 .collect { onSearchQueryChange(it) }
         }
-        AfternoteTextField(
+        TextFieldShort(
             state = searchFieldState,
             modifier =
                 Modifier

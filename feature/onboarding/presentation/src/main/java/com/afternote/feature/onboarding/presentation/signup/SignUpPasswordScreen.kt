@@ -37,10 +37,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.Label
 import com.afternote.core.ui.LabelStyle
 import com.afternote.core.ui.PasswordMaskTransformation
+import com.afternote.core.ui.TextFieldShort
 import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
@@ -153,7 +153,7 @@ private fun SignUpPasswordContent(
             Spacer(modifier = Modifier.height(16.dp))
 
             // 비밀번호 입력
-            AfternoteTextField(
+            TextFieldShort(
                 state = passwordState,
                 placeholder = stringResource(R.string.signup_password_placeholder),
                 keyboardType = KeyboardType.Password,
@@ -164,7 +164,7 @@ private fun SignUpPasswordContent(
             Spacer(modifier = Modifier.height(12.dp))
 
             // 비밀번호 확인
-            AfternoteTextField(
+            TextFieldShort(
                 state = passwordConfirmState,
                 placeholder = stringResource(R.string.signup_password_confirm_placeholder),
                 keyboardType = KeyboardType.Password,

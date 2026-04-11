@@ -15,7 +15,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.afternote.core.ui.AfternoteTextField
+import com.afternote.core.ui.TextFieldShort
 import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.popup.AfternotePopupCardLayout
@@ -78,7 +78,7 @@ fun CustomServiceDialog(
             Spacer(modifier = Modifier.height(24.dp))
 
             // 추가 서비스명 입력 필드
-            AfternoteTextField(
+            TextFieldShort(
                 state = params.serviceNameState,
                 label = "추가 서비스명",
                 keyboardType = KeyboardType.Text,
