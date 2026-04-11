@@ -6,7 +6,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -121,11 +120,16 @@ private fun TextFieldShort(
                     modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    // 이렇게 해야 피그마랑 똑같아지긴 하는데 무슨 의도인지 모르겠어서 주석 처리함
+//                    Box(
+//                        modifier =
+//                            Modifier
+//                                .weight(1f, fill = false)
+//                                .width(IntrinsicSize.Max),
+//                        contentAlignment = Alignment.CenterStart,
+//                    ) {
                     Box(
-                        modifier =
-                            Modifier
-                                .weight(1f, fill = false)
-                                .width(IntrinsicSize.Max),
+                        modifier = Modifier.weight(1f),
                         contentAlignment = Alignment.CenterStart,
                     ) {
                         if (state.text.isEmpty() && placeholder != null) {
