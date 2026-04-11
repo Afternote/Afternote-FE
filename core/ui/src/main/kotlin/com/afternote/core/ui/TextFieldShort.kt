@@ -2,6 +2,7 @@ package com.afternote.core.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,13 +26,9 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
@@ -72,10 +69,8 @@ private fun TextFieldShort(
     imeAction: ImeAction = ImeAction.Default,
     inputTransformation: InputTransformation? = null,
     outputTransformation: OutputTransformation? = null,
-    focusRequester: FocusRequester? = null,
     onImeAction: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource? = null,
-    onFocusChanged: ((Boolean) -> Unit)? = null,
 ) {
     val resolvedInteractionSource = interactionSource ?: remember { MutableInteractionSource() }
 
@@ -91,12 +86,7 @@ private fun TextFieldShort(
             modifier
                 .fillMaxWidth()
                 .background(AfternoteDesign.colors.white, TextFieldShape)
-                .border(BorderWidth, borderColor, TextFieldShape)
-                .then(
-                    if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier,
-                ).then(
-                    if (onFocusChanged != null) Modifier.onFocusChanged { onFocusChanged(it.isFocused) } else Modifier,
-                ),
+                .border(BorderWidth, borderColor, TextFieldShape),
         lineLimits = TextFieldLineLimits.SingleLine,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
         onKeyboardAction = onImeAction?.let { action -> { action() } },
@@ -154,11 +144,22 @@ private fun TextFieldShort(
     )
 }
 
-enum class TextFieldType {
-    Basic,
-    Search,
-    Variant7,
-    Variant8,
+sealed interface TextFieldType {
+    data object Basic : TextFieldType
+
+    data object Search : TextFieldType
+
+    // Variant7을 쓸 때만 텍스트와 클릭 이벤트를 '필수'로 강제합니다.
+    data class Variant7(
+        val text: String = "인증번호 받기",
+        val onClick: () -> Unit,
+    ) : TextFieldType
+
+    // Variant8: 남은 시간 텍스트와 점의 개수를 외부에서 주입.
+    data class Variant8(
+        val timeText: String = "— 0",
+        val dotCount: Int = 6,
+    ) : TextFieldType
 }
 
 @Composable
@@ -172,12 +173,12 @@ fun AfternoteTextField(
     onImeAction: (() -> Unit)? = null,
     inputTransformation: InputTransformation? = null,
     outputTransformation: OutputTransformation? = null,
-    focusRequester: FocusRequester? = null,
-    trailingContent: @Composable (() -> Unit)? = null,
 ) {
-    val effectiveTrailingContent: @Composable (() -> Unit)? =
-        trailingContent
-            ?: if (type == TextFieldType.Search) {
+    // 디자인 시스템의 일관성을 위해, trailingContent 는 외부 주입 없이
+    // 온전히 [TextFieldType] 에 따라 내부에서 결정됩니다.
+    val trailingContent: @Composable (() -> Unit)? =
+        when (type) {
+            TextFieldType.Search -> {
                 {
                     Icon(
                         painter = painterResource(R.drawable.core_ui_ic_tabler_search),
@@ -185,40 +186,40 @@ fun AfternoteTextField(
                         modifier = Modifier.size(18.dp),
                     )
                 }
-            } else {
+            }
+
+            else -> {
                 null
             }
+        }
 
     val suffix: @Composable (() -> Unit)? =
         when (type) {
-            TextFieldType.Variant7 -> {
+            is TextFieldType.Variant7 -> {
                 {
                     Text(
-                        text = "Text Field",
+                        text = type.text,
+                        modifier =
+                            Modifier.clickable(onClick = type.onClick),
                         style = AfternoteDesign.typography.captionLargeR,
                         color = AfternoteDesign.colors.gray7,
                     )
                 }
             }
 
-            TextFieldType.Variant8 -> {
+            is TextFieldType.Variant8 -> {
                 {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(15.dp),
                     ) {
                         Text(
-                            "—",
+                            text = type.timeText,
                             style = AfternoteDesign.typography.textField,
                             color = AfternoteDesign.colors.black,
                         )
-                        Text(
-                            "0",
-                            style = AfternoteDesign.typography.textField,
-                            color = AfternoteDesign.colors.gray4,
-                        )
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            repeat(6) {
+                            repeat(type.dotCount) {
                                 Box(
                                     modifier =
                                         Modifier
@@ -248,15 +249,10 @@ fun AfternoteTextField(
         onImeAction = onImeAction,
         inputTransformation = inputTransformation,
         outputTransformation = outputTransformation,
-        focusRequester = focusRequester,
-        trailingContent = effectiveTrailingContent,
+        trailingContent = trailingContent,
         suffix = suffix,
     )
 }
-
-// ============================================================================
-// 프리뷰 생략 (위의 코드 그대로 쓰시면 됩니다!)
-// ============================================================================
 
 // ============================================================================
 // 3. 피그마 9종 카탈로그 프리뷰 (타입 이름으로만 호출)
@@ -270,14 +266,6 @@ fun AfternoteTextField(
 @Composable
 private fun AfternoteTextFieldFigmaPreview() {
     AfternoteTheme {
-        val focusReqWriting = remember { FocusRequester() }
-        val focusReqWrite = remember { FocusRequester() }
-
-        // 포커스 상태 시뮬레이션
-        LaunchedEffect(Unit) {
-            focusReqWriting.requestFocus()
-        }
-
         Column(
             modifier = Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -295,13 +283,17 @@ private fun AfternoteTextFieldFigmaPreview() {
 
             AfternoteTextField(
                 state = rememberTextFieldState(),
-                type = TextFieldType.Variant7,
+                type =
+                    TextFieldType.Variant7(
+                        text = "인증번호 받기",
+                        onClick = { },
+                    ),
                 placeholder = "Variant 7",
             )
 
             AfternoteTextField(
                 state = rememberTextFieldState(),
-                type = TextFieldType.Variant8,
+                type = TextFieldType.Variant8(),
                 placeholder = "Variant 8",
             )
         }

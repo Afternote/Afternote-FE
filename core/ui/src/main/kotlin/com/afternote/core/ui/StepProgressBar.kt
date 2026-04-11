@@ -23,7 +23,6 @@ import com.afternote.core.ui.theme.AfternoteTheme
 /**
  * 회원가입 등 다단계 플로우에서 사용하는 진행바.
  *
- * - 트랙은 [AfternoteDesign.colors.gray3] 원형으로 직접 렌더하고,
  *   M3 기본 트랙/스탑 인디케이터는 숨겨 디자인 가이드와 일치시킵니다.
  * - [currentStep] 변경 시 500ms `FastOutSlowInEasing` 으로 부드럽게 차오릅니다.
  *

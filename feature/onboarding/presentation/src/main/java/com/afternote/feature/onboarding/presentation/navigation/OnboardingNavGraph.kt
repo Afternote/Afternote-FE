@@ -93,11 +93,9 @@ fun NavGraphBuilder.onboardingNavGraph(
             val signUpViewModel = graphScopedSignUpViewModel(navController, backStackEntry)
 
             SignUpScreen(
-                currentStep = 1,
                 emailState = signUpViewModel.emailState,
                 passwordState = signUpViewModel.passwordState,
                 isVerificationSent = signUpViewModel.isVerificationSent,
-                onRequestVerification = signUpViewModel::requestVerification,
                 onNextClick = {
                     navController.navigate(OnboardingRoute.SignUpResidentNumberRoute)
                 },
@@ -110,7 +108,6 @@ fun NavGraphBuilder.onboardingNavGraph(
             val signUpViewModel = graphScopedSignUpViewModel(navController, backStackEntry)
 
             SignUpResidentNumberScreen(
-                currentStep = 2,
                 frontNumberState = signUpViewModel.frontNumberState,
                 onNextClick = {
                     navController.navigate(OnboardingRoute.SignUpPasswordRoute)
@@ -124,7 +121,6 @@ fun NavGraphBuilder.onboardingNavGraph(
             val signUpViewModel = graphScopedSignUpViewModel(navController, backStackEntry)
 
             SignUpPasswordScreen(
-                currentStep = 3,
                 passwordState = signUpViewModel.signUpPasswordState,
                 passwordConfirmState = signUpViewModel.signUpPasswordConfirmState,
                 onNextClick = {
