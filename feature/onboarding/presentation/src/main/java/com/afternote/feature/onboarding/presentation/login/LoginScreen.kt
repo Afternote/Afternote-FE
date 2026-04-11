@@ -176,6 +176,7 @@ private fun SocialLoginGroup(
             type = PopupType.Default,
             message = stringResource(R.string.login_find_account_message),
             onConfirm = { showFindAccountPopup = false },
+            onDismiss = { showFindAccountPopup = false },
         )
     }
 

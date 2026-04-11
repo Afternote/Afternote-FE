@@ -29,13 +29,13 @@ fun Popup(
     type: PopupType,
     message: String,
     onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     confirmText: String =
         when (type) {
             PopupType.Default -> "확인"
             PopupType.Variant2 -> "예"
         },
-    onDismiss: () -> Unit = onConfirm,
     dismissText: String = "아니요",
     isLoading: Boolean = false,
 ) {
@@ -51,9 +51,9 @@ fun Popup(
             type = type,
             message = message,
             onConfirm = onConfirm,
+            onDismiss = onDismiss,
             modifier = modifier,
             confirmText = confirmText,
-            onDismiss = onDismiss,
             dismissText = dismissText,
             isLoading = isLoading,
         )
@@ -68,13 +68,13 @@ internal fun PopupContent(
     type: PopupType,
     message: String,
     onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     confirmText: String =
         when (type) {
             PopupType.Default -> "확인"
             PopupType.Variant2 -> "예"
         },
-    onDismiss: () -> Unit = onConfirm,
     dismissText: String = "아니요",
     isLoading: Boolean = false,
 ) {
