@@ -28,6 +28,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.bottombar.BottomBar
 import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.core.ui.button.AfternoteButton
+import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.popup.Popup
 import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -200,6 +201,7 @@ fun ReceiverAfterNoteScreen(
             AfternoteButton(
                 text = stringResource(R.string.receiver_download_all_button),
                 onClick = { showDialog = true },
+                type = AfternoteButtonType.Default,
             )
         }
     }

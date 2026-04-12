@@ -1,14 +1,12 @@
 package com.afternote.feature.onboarding.presentation
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
@@ -18,11 +16,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -44,14 +40,11 @@ fun OnboardingProfileScreen(
     nameState: TextFieldState,
     displayImageUri: String?,
     onEditProfileImageClick: () -> Unit,
-    onCompleteClick: () -> Unit,
     onBackClick: () -> Unit,
+    onCompleteClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val focusManager = LocalFocusManager.current
-    val isCompleteEnabled by remember {
-        derivedStateOf { nameState.text.isNotBlank() }
-    }
 
     Scaffold(
         modifier = modifier,
@@ -64,35 +57,7 @@ fun OnboardingProfileScreen(
                 },
             )
         },
-        bottomBar = {
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .background(AfternoteDesign.colors.white)
-                        .navigationBarsPadding(),
-            ) {
-                AfternoteButton(
-                    text = stringResource(R.string.profile_complete),
-                    onClick = {
-                        focusManager.clearFocus()
-                        onCompleteClick()
-                    },
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp, vertical = 20.dp)
-                            .height(48.dp),
-                    type =
-                        if (isCompleteEnabled) {
-                            AfternoteButtonType.Default
-                        } else {
-                            AfternoteButtonType.Un
-                        },
-                )
-            }
-        },
-        containerColor = AfternoteDesign.colors.white,
+        containerColor = Color.Transparent,
     ) { innerPadding ->
         OnboardingProfileContent(
             nameState = nameState,
@@ -102,8 +67,8 @@ fun OnboardingProfileScreen(
                 Modifier
                     .padding(innerPadding)
                     .consumeWindowInsets(innerPadding)
-                    .imePadding()
                     .fillMaxSize(),
+            onCompleteClick = onCompleteClick,
         )
     }
 }
@@ -113,6 +78,7 @@ private fun OnboardingProfileContent(
     nameState: TextFieldState,
     displayImageUri: String?,
     onEditProfileImageClick: () -> Unit,
+    onCompleteClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val focusManager = LocalFocusManager.current
@@ -121,28 +87,25 @@ private fun OnboardingProfileContent(
             modifier
                 .verticalScroll(rememberScrollState())
                 .addFocusCleaner(focusManager)
-                .padding(horizontal = 24.dp),
+                .padding(horizontal = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(56.dp),
     ) {
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(39.dp))
 
         Text(
             text = stringResource(R.string.profile_headline),
             modifier = Modifier.fillMaxWidth(),
             style =
                 AfternoteDesign.typography.h1,
-            color = AfternoteDesign.colors.gray9,
+            color = AfternoteDesign.colors.black,
             textAlign = TextAlign.Start,
         )
-
-        Spacer(modifier = Modifier.height(48.dp))
 
         ProfileImage(
             onClick = onEditProfileImageClick,
             displayImageUri = displayImageUri,
         )
-
-        Spacer(modifier = Modifier.height(56.dp))
 
         AfternoteTextField(
             state = nameState,
@@ -150,7 +113,14 @@ private fun OnboardingProfileContent(
             imeAction = ImeAction.Done,
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        AfternoteButton(
+            text = stringResource(R.string.profile_complete),
+            onClick = {
+                focusManager.clearFocus()
+                onCompleteClick()
+            },
+            type = AfternoteButtonType.Default,
+        )
     }
 }
 
@@ -159,11 +129,11 @@ private fun OnboardingProfileContent(
 private fun OnboardingProfileScreenPreview() {
     AfternoteTheme {
         OnboardingProfileScreen(
-            nameState = rememberTextFieldState(),
+            nameState = rememberTextFieldState("Afternote"),
             displayImageUri = null,
             onEditProfileImageClick = {},
-            onCompleteClick = {},
             onBackClick = {},
+            onCompleteClick = {},
         )
     }
 }

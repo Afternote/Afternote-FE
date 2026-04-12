@@ -39,8 +39,8 @@ enum class AfternoteButtonType {
 fun AfternoteButton(
     text: String,
     onClick: () -> Unit,
+    type: AfternoteButtonType,
     modifier: Modifier = Modifier,
-    type: AfternoteButtonType = AfternoteButtonType.Default,
     secondaryText: String? = null,
 ) {
     CompositionLocalProvider(

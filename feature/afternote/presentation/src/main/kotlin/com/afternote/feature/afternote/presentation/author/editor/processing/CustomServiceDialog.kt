@@ -17,6 +17,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.button.AfternoteButton
+import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.modifierextention.addFocusCleaner
 import com.afternote.core.ui.popup.AfternotePopupCardLayout
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -99,6 +100,7 @@ fun CustomServiceDialog(
                     focusManager.clearFocus()
                     params.callbacks.onAddClick()
                 },
+                type = AfternoteButtonType.Default,
             )
         }
     }

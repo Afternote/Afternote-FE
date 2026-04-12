@@ -49,6 +49,7 @@ import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.bottombar.BottomBar
 import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.core.ui.button.AfternoteButton
+import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
@@ -156,6 +157,7 @@ fun ReceiverAfterNoteMainScreen(
                 AfternoteButton(
                     text = "애프터노트 확인하기",
                     onClick = onNavigateToFullList,
+                    type = AfternoteButtonType.Default,
                 )
                 Spacer(modifier = Modifier.height(20.dp))
             }
