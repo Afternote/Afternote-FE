@@ -30,7 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.ViewModeSwitcher
-import com.afternote.core.ui.scaffold.FAB.PlusFAB
+import com.afternote.core.ui.button.AfternoteFloatingActionButton
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -110,7 +110,7 @@ fun DiaryScreen(modifier: Modifier = Modifier) {
             )
         },
         floatingActionButton = {
-            PlusFAB(
+            AfternoteFloatingActionButton(
                 onClick = {},
             )
         },

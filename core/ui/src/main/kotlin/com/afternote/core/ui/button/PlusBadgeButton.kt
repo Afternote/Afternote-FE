@@ -19,8 +19,14 @@ import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
+/**
+ * 다른 UI 요소(프로필 사진 등)에 붙어있는 뱃지형/인라인 원형 버튼.
+ *
+ * [FloatingActionButton][androidx.compose.material3.FloatingActionButton]과 달리
+ * 그림자·최소 터치 영역 강제가 없어 작은 크기로 밀착 배치할 수 있습니다.
+ */
 @Composable
-fun AddCircleButton(
+fun PlusBadgeButton(
     contentDescription: String,
     onClick: () -> Unit,
     paddingValues: PaddingValues,
@@ -45,9 +51,9 @@ fun AddCircleButton(
 
 @Preview(showBackground = true)
 @Composable
-private fun AddCircleButtonPreview() {
+private fun PlusBadgeButtonPreview() {
     AfternoteTheme {
-        AddCircleButton(
+        PlusBadgeButton(
             contentDescription = "Add",
             onClick = {},
             paddingValues = PaddingValues(12.dp),

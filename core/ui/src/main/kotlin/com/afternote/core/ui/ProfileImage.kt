@@ -15,7 +15,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.afternote.core.ui.button.AddCircleButton
+import com.afternote.core.ui.button.PlusBadgeButton
 import com.afternote.core.ui.theme.AfternoteTheme
 
 @Composable
@@ -37,7 +37,7 @@ fun ProfileImage(
                     .clip(CircleShape),
         )
         if (isEditable) {
-            AddCircleButton(
+            PlusBadgeButton(
                 contentDescription = stringResource(R.string.core_ui_content_description_profile_edit),
                 onClick = onClick,
                 paddingValues = PaddingValues(14.dp),

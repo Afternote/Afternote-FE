@@ -24,7 +24,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.button.AddCircleButton
+import com.afternote.core.ui.button.PlusBadgeButton
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
@@ -82,7 +82,7 @@ fun AfternoteEditorReceiverList(
         Spacer(modifier = Modifier.height(8.dp))
 
         // 추가 버튼 (파란 원형 버튼)
-        AddCircleButton(
+        PlusBadgeButton(
             contentDescription = "수신자 추가",
             onClick = {
                 state.toggleTextField()

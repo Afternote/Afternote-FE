@@ -45,7 +45,7 @@ import coil3.compose.AsyncImagePainter
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
-import com.afternote.core.ui.button.AddCircleButton
+import com.afternote.core.ui.button.PlusBadgeButton
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
@@ -150,7 +150,7 @@ fun FuneralVideoUpload(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Spacer(modifier = Modifier.height(24.dp))
-                    AddCircleButton(
+                    PlusBadgeButton(
                         contentDescription = addContentDescription,
                         onClick = {},
                         paddingValues = PaddingValues(12.dp),

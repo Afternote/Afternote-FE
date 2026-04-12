@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.Label
 import com.afternote.core.ui.bottomBorder
-import com.afternote.core.ui.button.AddCircleButton
+import com.afternote.core.ui.button.PlusBadgeButton
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
@@ -72,7 +72,7 @@ fun EditorMessageSection(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        AddCircleButton(
+        PlusBadgeButton(
             contentDescription = "남기실 말씀 추가",
             onClick = {
                 focusManager.clearFocus()

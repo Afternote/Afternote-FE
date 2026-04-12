@@ -17,7 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.button.AddCircleButton
+import com.afternote.core.ui.button.PlusBadgeButton
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
@@ -97,7 +97,7 @@ fun ProcessingMethodList(
         Spacer(modifier = Modifier.height(16.dp))
 
         // 추가 버튼 (텍스트 필드 표시만 토글; 부모 알림 없음)
-        AddCircleButton(
+        PlusBadgeButton(
             contentDescription = "추가",
             onClick = { state.toggleTextField() },
             paddingValues = PaddingValues(12.dp),
