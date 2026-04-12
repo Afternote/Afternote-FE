@@ -16,7 +16,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
 @Composable
-fun AfternoteFab(
+fun PlusFAB(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -37,8 +37,8 @@ fun AfternoteFab(
 
 @Preview(showBackground = true)
 @Composable
-private fun AfternoteFabPreview() {
+private fun PlusFABPreview() {
     AfternoteTheme {
-        AfternoteFab(onClick = {})
+        PlusFAB(onClick = {})
     }
 }

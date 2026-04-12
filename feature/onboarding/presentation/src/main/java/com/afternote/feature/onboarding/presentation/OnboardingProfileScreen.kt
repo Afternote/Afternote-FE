@@ -138,6 +138,7 @@ private fun OnboardingProfileContent(
         Spacer(modifier = Modifier.height(48.dp))
 
         ProfileImage(
+            onClick = onEditProfileImageClick,
             displayImageUri = displayImageUri,
         )
 

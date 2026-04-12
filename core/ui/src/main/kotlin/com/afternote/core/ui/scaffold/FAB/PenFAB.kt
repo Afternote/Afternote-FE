@@ -16,7 +16,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
 @Composable
-fun PlusButtonFAB(
+fun PenFAB(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -37,8 +37,8 @@ fun PlusButtonFAB(
 
 @Preview(showBackground = true)
 @Composable
-private fun PlusButtonFABPreview() {
+private fun PenFABPreview() {
     AfternoteTheme {
-        PlusButtonFAB(onClick = {})
+        PenFAB(onClick = {})
     }
 }

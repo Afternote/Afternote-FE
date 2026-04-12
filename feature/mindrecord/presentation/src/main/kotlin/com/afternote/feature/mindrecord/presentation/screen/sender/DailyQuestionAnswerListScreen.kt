@@ -26,7 +26,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.ViewModeSwitcher
-import com.afternote.core.ui.scaffold.FAB.AfternoteFab
+import com.afternote.core.ui.scaffold.FAB.PlusFAB
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -90,7 +90,7 @@ fun DailyQuestionAnswerListScreen(modifier: Modifier = Modifier) {
             )
         },
         floatingActionButton = {
-            AfternoteFab(
+            PlusFAB(
                 onClick = { },
             )
         },
