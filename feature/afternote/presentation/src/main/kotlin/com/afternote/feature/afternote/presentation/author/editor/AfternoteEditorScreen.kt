@@ -25,9 +25,9 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.afternote.core.ui.addFocusCleaner
-import com.afternote.core.ui.scaffold.topbar.DetailTopBar
+import com.afternote.core.ui.modifierextention.addFocusCleaner
 import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.presentation.author.editor.mapper.AfternoteEditorMapper
 import com.afternote.feature.afternote.presentation.author.editor.mapper.editScreenLabelRes

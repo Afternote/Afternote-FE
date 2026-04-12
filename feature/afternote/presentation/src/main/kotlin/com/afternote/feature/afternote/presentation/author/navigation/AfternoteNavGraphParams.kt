@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.navigation
 
 import androidx.navigation.NavController
-import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
+import com.afternote.core.ui.bottombar.BottomNavTab
 
 /**
  * [afternoteNavGraph]에 전달되는 파라미터 묶음.

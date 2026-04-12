@@ -47,11 +47,11 @@ import coil3.compose.AsyncImage
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
-import com.afternote.core.ui.FadingEdgeDirection
 import com.afternote.core.ui.ProfileImage
-import com.afternote.core.ui.horizontalFadingEdge
-import com.afternote.core.ui.scaffold.topbar.DetailTopBar
+import com.afternote.core.ui.modifierextention.FadingEdgeDirection
+import com.afternote.core.ui.modifierextention.horizontalFadingEdge
 import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme

@@ -3,7 +3,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
+import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScreen
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 

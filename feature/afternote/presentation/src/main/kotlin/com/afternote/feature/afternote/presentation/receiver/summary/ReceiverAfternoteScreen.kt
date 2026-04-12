@@ -25,11 +25,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.bottombar.BottomBar
+import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.popup.Popup
 import com.afternote.core.ui.popup.PopupType
-import com.afternote.core.ui.scaffold.bottombar.BottomBar
-import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
 

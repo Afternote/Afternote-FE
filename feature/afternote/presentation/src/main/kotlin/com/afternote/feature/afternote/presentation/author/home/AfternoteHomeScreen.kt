@@ -7,10 +7,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
-import com.afternote.core.ui.scaffold.FAB.PenFAB
-import com.afternote.core.ui.scaffold.topbar.DetailTopBar
-import com.afternote.core.ui.scaffold.topbar.HomeTopBar
+import com.afternote.core.ui.button.FAB.PenFloatingActionButton
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.core.ui.topbar.DetailTopBar
+import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.body.EmptyListBody
@@ -38,7 +38,7 @@ fun AfternoteHomeScreen(
                 DetailTopBar(title = "애프터노트")
             }
         },
-        floatingActionButton = { PenFAB(onClick = onFabClick) },
+        floatingActionButton = { PenFloatingActionButton(onClick = onFabClick) },
     ) { paddingValues ->
         if (listState.visibleItems.isNotEmpty()) {
             InfiniteListBody(

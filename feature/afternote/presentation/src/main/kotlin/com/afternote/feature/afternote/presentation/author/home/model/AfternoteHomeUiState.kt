@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.home.model
 
-import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
+import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 

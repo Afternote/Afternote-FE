@@ -2,7 +2,7 @@ package com.afternote.feature.afternote.presentation.author.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
-import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
+import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeEntry
 import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeEntryActions
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute

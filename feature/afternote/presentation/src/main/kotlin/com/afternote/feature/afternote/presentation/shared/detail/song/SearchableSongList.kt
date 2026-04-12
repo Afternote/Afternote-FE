@@ -50,11 +50,11 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.afternote.core.ui.addFocusCleaner
+import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.core.ui.button.CustomRadioButton
-import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.core.ui.scaffold.topbar.DetailTopBar
+import com.afternote.core.ui.modifierextention.addFocusCleaner
 import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 import kotlinx.coroutines.flow.distinctUntilChanged

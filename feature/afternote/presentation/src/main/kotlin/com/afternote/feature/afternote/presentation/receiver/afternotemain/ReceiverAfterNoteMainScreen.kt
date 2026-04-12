@@ -48,12 +48,12 @@ import coil3.request.ImageRequest
 import com.afternote.core.ui.LastWishesRadioGroup
 import com.afternote.core.ui.MemorialGuidelineContent
 import com.afternote.core.ui.ProfileImage
+import com.afternote.core.ui.bottombar.BottomBar
+import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.core.ui.button.AfternoteButton
-import com.afternote.core.ui.scaffold.bottombar.BottomBar
-import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
