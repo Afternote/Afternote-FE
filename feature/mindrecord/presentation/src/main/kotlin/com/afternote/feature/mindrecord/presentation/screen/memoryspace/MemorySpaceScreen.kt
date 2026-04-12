@@ -47,6 +47,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -55,6 +56,7 @@ import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.component.memoryspace.MemoryDetailOverlay
 import com.afternote.feature.mindrecord.presentation.component.memoryspace.MemorySpaceGridBackground
 import com.afternote.feature.mindrecord.presentation.component.memoryspace.MemorySpacePhotoCard
+import com.afternote.feature.mindrecord.presentation.model.memoryspace.CardTransform
 import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryItem
 import com.afternote.feature.mindrecord.presentation.viewmodel.MemorySpaceViewModel
 import com.afternote.core.ui.R as CoreUiR
@@ -191,44 +193,56 @@ private fun MemorySpaceContent(
                                 rotationY = tiltY
                             },
                 ) {
-                    if (memories.size >= 4) {
-                        MemorySpacePhotoCard(
-                            imageRes = memories[0].imageRes,
-                            baseRotationZ = -5f,
-                            onClick = { selectedMemory = memories[0] },
-                            modifier =
-                                Modifier
-                                    .align(Alignment.CenterStart)
-                                    .offset(x = 20.dp, y = (-100).dp),
+                    val transforms =
+                        listOf(
+                            CardTransform(
+                                offsetX = (-80).dp,
+                                offsetY = (-150).dp,
+                                rotationX = 15f,
+                                rotationY = 25f,
+                                rotationZ = -10f,
+                                zIndex = 1f,
+                            ),
+                            CardTransform(
+                                offsetX = 40.dp,
+                                offsetY = (-200).dp,
+                                rotationX = -20f,
+                                rotationY = -15f,
+                                rotationZ = 5f,
+                                zIndex = 0f,
+                            ),
+                            CardTransform(
+                                offsetX = (-30).dp,
+                                offsetY = 20.dp,
+                                rotationX = -10f,
+                                rotationY = 40f,
+                                rotationZ = -5f,
+                                zIndex = 2f,
+                            ),
+                            CardTransform(
+                                offsetX = 90.dp,
+                                offsetY = 60.dp,
+                                rotationX = 30f,
+                                rotationY = -25f,
+                                rotationZ = 12f,
+                                zIndex = 3f,
+                            ),
                         )
-                        MemorySpacePhotoCard(
-                            imageRes = memories[1].imageRes,
-                            baseRotationZ = 2f,
-                            onClick = { selectedMemory = memories[1] },
-                            shadowElevation = 10.dp,
-                            modifier =
-                                Modifier
-                                    .align(Alignment.Center)
-                                    .offset(y = (-40).dp),
-                        )
-                        MemorySpacePhotoCard(
-                            imageRes = memories[2].imageRes,
-                            baseRotationZ = -2f,
-                            onClick = { selectedMemory = memories[2] },
-                            modifier =
-                                Modifier
-                                    .align(Alignment.CenterEnd)
-                                    .offset(x = (-10).dp, y = (-80).dp),
-                        )
-                        MemorySpacePhotoCard(
-                            imageRes = memories[3].imageRes,
-                            baseRotationZ = 3f,
-                            onClick = { selectedMemory = memories[3] },
-                            modifier =
-                                Modifier
-                                    .align(Alignment.BottomCenter)
-                                    .offset(y = (-120).dp),
-                        )
+
+                    memories.forEachIndexed { index, memory ->
+                        if (index < transforms.size) {
+                            val transform = transforms[index]
+                            MemorySpacePhotoCard(
+                                memory = memory,
+                                transform = transform,
+                                onClick = { selectedMemory = memory },
+                                modifier =
+                                    Modifier
+                                        .align(Alignment.Center)
+                                        .offset(x = transform.offsetX, y = transform.offsetY)
+                                        .zIndex(transform.zIndex),
+                            )
+                        }
                     }
                 }
             }
