@@ -3,20 +3,18 @@ package com.afternote.core.ui
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import coil3.network.NetworkHeaders
-import coil3.network.httpHeaders
-import coil3.request.ImageRequest
 import com.afternote.core.ui.button.AddCircleButton
 import com.afternote.core.ui.theme.AfternoteTheme
 
@@ -28,11 +26,15 @@ fun ProfileImage(
     displayImageUri: String? = null,
 ) {
     Box(
-        modifier = modifier,
+        modifier = modifier.size(134.dp),
         contentAlignment = Alignment.Center,
     ) {
         ProfileImageContent(
             displayImageUri = displayImageUri,
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .clip(CircleShape),
         )
         if (isEditable) {
             AddCircleButton(
@@ -51,40 +53,30 @@ private fun ProfileImageContent(
     displayImageUri: String?,
     modifier: Modifier = Modifier,
 ) {
-    val size = 134.dp
+    val placeholder = painterResource(R.drawable.core_ui_ic_profile_placeholder)
+    val contentDescription = stringResource(R.string.core_ui_content_description_profile_image)
+    stringResource(R.string.core_ui_content_description_profile_image)
+
     if (!displayImageUri.isNullOrBlank()) {
-        val context = LocalContext.current
-        val imageRequest =
-            remember(displayImageUri) {
-                ImageRequest
-                    .Builder(context)
-                    .data(displayImageUri)
-                    .httpHeaders(
-                        NetworkHeaders
-                            .Builder()
-                            .apply {
-                                this["User-Agent"] = "Afternote Android App"
-                            }.build(),
-                    ).build()
-            }
         AsyncImage(
-            model = imageRequest,
-            contentDescription = stringResource(R.string.core_ui_content_description_profile_image),
-            modifier = modifier.size(size),
-            error = painterResource(R.drawable.core_ui_ic_profile_placeholder),
+            model = displayImageUri,
+            contentDescription = contentDescription,
+            modifier = modifier,
+            placeholder = placeholder,
+            error = placeholder,
         )
     } else {
         Image(
-            painter = painterResource(R.drawable.core_ui_ic_profile_placeholder),
-            contentDescription = stringResource(R.string.core_ui_content_description_profile_image),
-            modifier = modifier.size(size),
+            painter = placeholder,
+            contentDescription = contentDescription,
+            modifier = modifier,
         )
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun ProfileImagePreview() {
+private fun ProfileImageEditablePreview() {
     AfternoteTheme {
         ProfileImage(
             onClick = {},
