@@ -133,6 +133,10 @@ fun LoginScreen(
                     placeholder = stringResource(R.string.login_password_label),
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done,
+                    onImeAction = {
+                        focusManager.clearFocus()
+                        onLoginClick()
+                    },
                 )
             }
 

@@ -1,5 +1,9 @@
 package com.afternote.feature.onboarding.presentation
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -39,13 +43,19 @@ import com.afternote.core.ui.topbar.DetailTopBar
 @Composable
 fun OnboardingProfileScreen(
     nameState: TextFieldState,
-    displayImageUri: String?,
-    onEditProfileImageClick: () -> Unit,
+    displayImageUri: Uri?,
+    onProfileImagePick: (Uri?) -> Unit,
     onBackClick: () -> Unit,
     onCompleteClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val focusManager = LocalFocusManager.current
+
+    val photoPickerLauncher =
+        rememberLauncherForActivityResult(
+            contract = PickVisualMedia(),
+            onResult = onProfileImagePick,
+        )
 
     Scaffold(
         modifier = modifier,
@@ -85,14 +95,22 @@ fun OnboardingProfileScreen(
                     textAlign = TextAlign.Start,
                 )
                 ProfileImage(
-                    onClick = onEditProfileImageClick,
-                    displayImageUri = displayImageUri,
+                    onClick = {
+                        photoPickerLauncher.launch(
+                            PickVisualMediaRequest(PickVisualMedia.ImageOnly),
+                        )
+                    },
+                    displayImageUri = displayImageUri?.toString(),
                 )
 
                 AfternoteTextField(
                     state = nameState,
                     placeholder = stringResource(R.string.profile_name_placeholder),
                     imeAction = ImeAction.Done,
+                    onImeAction = {
+                        focusManager.clearFocus()
+                        onCompleteClick()
+                    },
                 )
 
                 AfternoteButton(
@@ -115,7 +133,7 @@ private fun OnboardingProfileScreenPreview() {
         OnboardingProfileScreen(
             nameState = rememberTextFieldState("Afternote"),
             displayImageUri = null,
-            onEditProfileImageClick = {},
+            onProfileImagePick = {},
             onBackClick = {},
             onCompleteClick = {},
         )

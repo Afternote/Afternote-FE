@@ -62,6 +62,9 @@ fun SignUpScreen(
                     placeholder = stringResource(R.string.signup_password_placeholder),
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done,
+                    onImeAction = {
+                        onNextClick()
+                    },
                 )
 
                 // 인증번호 전송 안내 메시지
