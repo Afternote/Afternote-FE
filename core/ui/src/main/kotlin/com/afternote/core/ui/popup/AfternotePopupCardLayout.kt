@@ -19,17 +19,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.dropShadow
+import com.afternote.core.ui.modifierextention.dropShadow
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
 private val PopupCardShape = RoundedCornerShape(16.dp)
 
-/**
- * 피그마 기준 공통 팝업 카드 껍데기: 흰 배경·16dp 라운드·그림자·내부 패딩.
- *
- * 메시지+버튼 패턴은 [AfternotePopupCardLayout] (메시지 오버로드), 폼 다이얼로그는 이 슬롯 버전을 씁니다.
- */
 @Composable
 fun AfternotePopupCardLayout(
     modifier: Modifier = Modifier,

@@ -212,10 +212,11 @@ private fun RecipientDesignationChip(
             AfternoteCircularCheckbox(
                 state =
                     if (isDesignated) {
-                        CheckboxState.Checked
+                        CheckboxState.Default
                     } else {
-                        CheckboxState.Unchecked
+                        CheckboxState.None
                     },
+                onClick = null,
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(

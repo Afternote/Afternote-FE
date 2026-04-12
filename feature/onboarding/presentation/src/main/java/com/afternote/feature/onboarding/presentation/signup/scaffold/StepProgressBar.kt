@@ -1,4 +1,4 @@
-package com.afternote.core.ui
+package com.afternote.feature.onboarding.presentation.signup.scaffold
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
