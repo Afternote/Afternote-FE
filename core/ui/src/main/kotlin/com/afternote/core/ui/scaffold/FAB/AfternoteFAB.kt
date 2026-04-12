@@ -28,7 +28,7 @@ fun AfternoteFab(
         contentColor = Color.White,
     ) {
         Icon(
-            painter = painterResource(id = R.drawable.core_ui_floating_action_button_plus),
+            painter = painterResource(id = R.drawable.core_ui_circle_button_plus),
             contentDescription = stringResource(R.string.core_ui_fab_content_description_add),
             modifier = Modifier.size(20.dp),
         )

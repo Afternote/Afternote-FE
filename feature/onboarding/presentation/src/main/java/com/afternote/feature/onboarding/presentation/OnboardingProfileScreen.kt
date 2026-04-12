@@ -139,12 +139,6 @@ private fun OnboardingProfileContent(
 
         ProfileImage(
             displayImageUri = displayImageUri,
-            profileImageSize = 120.dp,
-            isEditable = true,
-            onEditClick = {
-                focusManager.clearFocus()
-                onEditProfileImageClick()
-            },
         )
 
         Spacer(modifier = Modifier.height(56.dp))

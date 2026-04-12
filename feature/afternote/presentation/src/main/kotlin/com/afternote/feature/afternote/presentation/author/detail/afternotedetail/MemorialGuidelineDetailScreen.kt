@@ -240,8 +240,7 @@ private fun PhotoCard(
                         ),
                 )
                 ProfileImage(
-                    fallbackImageRes = R.drawable.feature_afternote_img_default_profile_deceased,
-                    profileImageSize = 144.dp,
+                    placeholder = R.drawable.feature_afternote_img_default_profile_deceased,
                     isEditable = false,
                     displayImageUri = profileImageUri,
                 )
