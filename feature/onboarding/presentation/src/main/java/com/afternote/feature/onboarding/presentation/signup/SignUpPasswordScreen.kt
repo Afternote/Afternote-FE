@@ -25,8 +25,8 @@ import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.Label
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.onboarding.presentation.OnboardingStepScaffold
 import com.afternote.feature.onboarding.presentation.R
+import com.afternote.feature.onboarding.presentation.scaffold.OnboardingStepScaffold
 
 @Composable
 fun SignUpPasswordScreen(

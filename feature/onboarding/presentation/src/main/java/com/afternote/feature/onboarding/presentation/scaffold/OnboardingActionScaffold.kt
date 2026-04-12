@@ -1,4 +1,4 @@
-package com.afternote.feature.onboarding.presentation
+package com.afternote.feature.onboarding.presentation.scaffold
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
