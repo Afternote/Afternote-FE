@@ -6,6 +6,9 @@
     <string name="mindrecord_total_label">TOTAL</string>
     <string name="mindrecord_record_category_accessibility">%1$s 카테고리, 총 %2$s개</string>
 
+    <string name="mindrecord_today_question_header">TODAY\'S QUESTION</string>
+    <string name="mindrecord_today_question_answer_cta">데일리질문 답변하기</string>
+
     <!-- MemorySpace 화면 -->
     <string name="mindrecord_memory_space_title">MEMORY SPACE</string>
     <string name="mindrecord_memory_space_subtitle">손가락으로 공간을 탐색해 보세요</string>
