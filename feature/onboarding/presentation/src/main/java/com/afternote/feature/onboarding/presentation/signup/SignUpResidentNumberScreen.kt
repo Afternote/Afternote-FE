@@ -42,7 +42,6 @@ fun SignUpResidentNumberScreen(
 
     ProgressBarScaffold(
         currentStep = 2,
-        buttonText = stringResource(R.string.signup_next),
         onBackClick = onBackClick,
         onNextClick = onNextClick,
         modifier = modifier,

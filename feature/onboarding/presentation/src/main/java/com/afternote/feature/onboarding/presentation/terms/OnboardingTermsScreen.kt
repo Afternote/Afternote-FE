@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.HorizontalDivider
@@ -21,11 +20,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.CircleCheckBox
@@ -64,7 +63,6 @@ fun OnboardingTermsScreen(
 ) {
     ProgressBarScaffold(
         currentStep = 4,
-        buttonText = stringResource(R.string.terms_next),
         onBackClick = onBackClick,
         onNextClick = onNextClick,
         modifier = modifier,
@@ -75,10 +73,11 @@ fun OnboardingTermsScreen(
             Image(
                 painter = painterResource(CommonR.drawable.core_common_logo),
                 contentDescription = stringResource(R.string.welcome_logo_description),
-                modifier = Modifier.size(width = 160.dp, height = 60.dp),
+                modifier = Modifier.height(55.dp),
+                contentScale = ContentScale.FillHeight,
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // 환영 텍스트
             Text(
@@ -87,14 +86,12 @@ fun OnboardingTermsScreen(
                 color = AfternoteDesign.colors.gray9,
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
             Text(
                 text = stringResource(R.string.terms_description),
                 style =
-                    AfternoteDesign.typography.bodyLargeR.copy(
-                        fontWeight = FontWeight.Medium,
-                    ),
+                    AfternoteDesign.typography.bodySmallB,
                 color = AfternoteDesign.colors.gray9,
             )
 

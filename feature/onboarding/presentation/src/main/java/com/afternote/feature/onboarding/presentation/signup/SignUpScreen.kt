@@ -33,7 +33,6 @@ fun SignUpScreen(
 ) {
     ProgressBarScaffold(
         currentStep = 1,
-        buttonText = stringResource(R.string.signup_next),
         onBackClick = onBackClick,
         onNextClick = onNextClick,
         modifier = modifier,

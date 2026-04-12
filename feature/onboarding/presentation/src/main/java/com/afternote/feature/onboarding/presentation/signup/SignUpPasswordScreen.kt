@@ -40,7 +40,6 @@ fun SignUpPasswordScreen(
 
     ProgressBarScaffold(
         currentStep = 3,
-        buttonText = stringResource(R.string.signup_next),
         onBackClick = onBackClick,
         onNextClick = onNextClick,
         modifier = modifier,
