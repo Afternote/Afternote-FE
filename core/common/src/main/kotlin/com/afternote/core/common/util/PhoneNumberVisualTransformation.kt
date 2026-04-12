@@ -1,4 +1,4 @@
-package com.afternote.core.ui
+package com.afternote.core.common.util
 
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.OutputTransformation
@@ -20,7 +20,7 @@ val PhoneNumberInputTransformation: InputTransformation =
     }
 
 /**
- * 한국 전화번호 표시 포맷 (`010-XXX-XXXX` 또는 `010-XXXX-XXXX`)용 [OutputTransformation].
+ * 한국 전화번호 표시 포맷 (`010-XXX-XXXX` 또는 `010-XXXX-XXXX`)용 [androidx.compose.foundation.text.input.OutputTransformation].
  *
  * 상태에는 하이픈 없이 숫자만 두고, 화면에만 하이픈을 넣습니다.
  * [PhoneNumberInputTransformation] 등으로 숫자만 들어오게 맞추는 것을 권장합니다.

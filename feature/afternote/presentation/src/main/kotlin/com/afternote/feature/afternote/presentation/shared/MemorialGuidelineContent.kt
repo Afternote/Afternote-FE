@@ -1,4 +1,4 @@
-package com.afternote.core.ui
+package com.afternote.feature.afternote.presentation.shared
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

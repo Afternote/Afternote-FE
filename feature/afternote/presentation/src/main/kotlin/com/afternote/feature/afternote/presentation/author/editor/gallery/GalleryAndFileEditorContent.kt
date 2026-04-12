@@ -14,7 +14,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.Label
-import com.afternote.core.ui.SelectableRadioCard
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
@@ -26,6 +25,7 @@ import com.afternote.feature.afternote.presentation.author.editor.processing.Pro
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListParams
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.receiver.RecipientDesignationSection
+import com.afternote.feature.afternote.presentation.shared.SelectableRadioCard
 
 /**
  * 갤러리 및 파일 선택 시 표시되는 콘텐츠

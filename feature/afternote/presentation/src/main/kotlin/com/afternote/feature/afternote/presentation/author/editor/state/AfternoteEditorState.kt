@@ -8,7 +8,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import com.afternote.core.ui.LastWishOption
 import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
@@ -20,6 +19,7 @@ import com.afternote.feature.afternote.presentation.author.editor.model.Informat
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
+import com.afternote.feature.afternote.presentation.shared.LastWishOption
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -366,9 +366,12 @@ class AfternoteEditorState(
                 loadedItemId = prefill.loadedItemId,
                 selectedCategory = prefill.category,
                 selectedService = prefill.serviceName,
-                selectedProcessingMethod = prefill.accountProcessingMethod ?: withLastWish.selectedProcessingMethod,
+                selectedProcessingMethod =
+                    prefill.accountProcessingMethod
+                        ?: withLastWish.selectedProcessingMethod,
                 selectedInformationProcessingMethod =
-                    prefill.informationProcessingMethod ?: withLastWish.selectedInformationProcessingMethod,
+                    prefill.informationProcessingMethod
+                        ?: withLastWish.selectedInformationProcessingMethod,
                 socialProcessingMethods = prefill.socialProcessingMethods,
                 galleryProcessingMethods = prefill.galleryProcessingMethods,
                 funeralVideoUrl = prefill.funeralVideoUrl,

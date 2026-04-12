@@ -45,8 +45,6 @@ import coil3.compose.AsyncImage
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
-import com.afternote.core.ui.LastWishesRadioGroup
-import com.afternote.core.ui.MemorialGuidelineContent
 import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.bottombar.BottomBar
 import com.afternote.core.ui.bottombar.BottomNavTab
@@ -55,6 +53,8 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.shared.LastWishesRadioGroup
+import com.afternote.feature.afternote.presentation.shared.MemorialGuidelineContent
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist

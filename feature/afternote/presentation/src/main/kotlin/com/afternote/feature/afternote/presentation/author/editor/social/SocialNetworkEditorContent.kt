@@ -18,7 +18,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.Label
-import com.afternote.core.ui.SelectableRadioCard
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
@@ -29,6 +28,7 @@ import com.afternote.feature.afternote.presentation.author.editor.processing.Pro
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListParams
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.receiver.RecipientDesignationSection
+import com.afternote.feature.afternote.presentation.shared.SelectableRadioCard
 
 /**
  * 소셜네트워크 등 일반적인 종류 선택 시 표시되는 콘텐츠

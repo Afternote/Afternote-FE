@@ -1,4 +1,4 @@
-package com.afternote.core.ui
+package com.afternote.feature.afternote.presentation.shared
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.interaction.MutableInteractionSource
