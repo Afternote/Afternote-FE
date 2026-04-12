@@ -11,6 +11,7 @@ android {
 dependencies {
     implementation(projects.feature.mindrecord.domain)
     implementation(projects.core.common)
+    implementation(projects.core.model)
     implementation(projects.core.ui)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.compose.material.icons.core)

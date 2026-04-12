@@ -8,6 +8,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.domain.usecase.account.SendEmailCodeUseCase
+import com.afternote.core.domain.usecase.account.SignUpUseCase
 import com.afternote.feature.onboarding.presentation.terms.TermsState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,7 +28,8 @@ import javax.inject.Inject
 class SignUpViewModel
     @Inject
     constructor(
-        // private val signUpUseCase: SignUpUseCase,
+        private val signUpUseCase: SignUpUseCase,
+        private val sendEmailCodeUseCase: SendEmailCodeUseCase,
     ) : ViewModel() {
         companion object {
             /** 주민등록번호 앞자리(생년월일) 자릿수 */
@@ -94,8 +97,13 @@ class SignUpViewModel
         }
 
         fun requestVerification() {
-            // TODO: 이메일 인증 요청 로직
-            isVerificationSent = true
+            viewModelScope.launch {
+                sendEmailCodeUseCase(emailState.text.toString())
+                    .onSuccess { isVerificationSent = true }
+                    .onFailure {
+                        // TODO: 에러 UI 처리
+                    }
+            }
         }
 
         fun updateTermsState(newState: TermsState) {
@@ -132,24 +140,17 @@ class SignUpViewModel
                 if (isLoading) return@launch
 
                 isLoading = true
-                try {
-                    @Suppress("UNUSED_VARIABLE")
-                    val signUpData =
-                        mapOf(
-                            "email" to emailState.text.toString(),
-                            "rrnFront" to frontNumberState.text.toString(),
-                            "rrnBack" to backNumberState.text.toString(),
-                            "name" to nameState.text.toString(),
-                            "imageUri" to _profileImageUri.value,
-                        )
-                    // TODO: signUpUseCase(signUpData) 또는 전용 Params로 매핑
-
+                signUpUseCase(
+                    email = emailState.text.toString(),
+                    password = passwordState.text.toString(),
+                    name = nameState.text.toString(),
+                    profileUrl = _profileImageUri.value?.toString(),
+                ).onSuccess {
                     onSuccess()
-                } catch (_: Exception) {
-                    // TODO: 에러 처리 로직
-                } finally {
-                    isLoading = false
+                }.onFailure {
+                    // TODO: 에러 UI 처리
                 }
+                isLoading = false
             }
         }
     }

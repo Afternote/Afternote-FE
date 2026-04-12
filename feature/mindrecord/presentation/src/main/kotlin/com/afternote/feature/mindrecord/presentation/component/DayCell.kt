@@ -17,10 +17,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.afternote.core.model.MindRecordCategory
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.mindrecord.presentation.model.DayState
 import com.afternote.feature.mindrecord.presentation.model.DayUiModel
-import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 
 @Composable
 fun DayCell(
