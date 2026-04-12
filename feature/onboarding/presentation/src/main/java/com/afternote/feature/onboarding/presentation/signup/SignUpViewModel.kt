@@ -31,6 +31,7 @@ class SignUpViewModel
 
         // Step 2: 주민등록번호
         val frontNumberState = TextFieldState()
+        val backNumberState = TextFieldState()
 
         // Step 3: 비밀번호 설정
         val signUpPasswordState = TextFieldState()

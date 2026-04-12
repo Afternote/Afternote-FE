@@ -110,6 +110,7 @@ fun NavGraphBuilder.onboardingNavGraph(
 
             SignUpResidentNumberScreen(
                 frontNumberState = signUpViewModel.frontNumberState,
+                backNumberState = signUpViewModel.backNumberState,
                 onNextClick = {
                     navController.navigate(OnboardingRoute.SignUpPasswordRoute)
                 },

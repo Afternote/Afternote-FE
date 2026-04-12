@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -23,6 +24,7 @@ import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.OutputTransformation
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.maxLength
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -30,14 +32,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import android.view.KeyEvent as NativeKeyEvent
 
 // ============================================================================
 // 1. 공통 내부 구현체 (건드릴 필요 없음)
@@ -56,13 +68,20 @@ private fun TextFieldShort(
     outputTransformation: OutputTransformation? = null,
     onImeAction: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource? = null,
+    focusRequester: FocusRequester? = null,
 ) {
     val textFieldShape = RoundedCornerShape(8.dp)
     BasicTextField(
         state = state,
         modifier =
             modifier
-                .fillMaxWidth()
+                .then(
+                    if (focusRequester != null) {
+                        Modifier.focusRequester(focusRequester)
+                    } else {
+                        Modifier
+                    },
+                ).fillMaxWidth()
                 .background(AfternoteDesign.colors.white, textFieldShape)
                 .border(1.dp, AfternoteDesign.colors.gray2, textFieldShape),
         lineLimits = TextFieldLineLimits.SingleLine,
@@ -94,10 +113,7 @@ private fun TextFieldShort(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(
-                        modifier =
-                            Modifier
-                                .weight(1f, fill = false)
-                                .width(IntrinsicSize.Max),
+                        modifier = Modifier.weight(1f),
                         contentAlignment = Alignment.CenterStart,
                     ) {
                         if (state.text.isEmpty() && placeholder != null) {
@@ -140,11 +156,13 @@ sealed interface TextFieldType {
         val onClick: () -> Unit,
     ) : TextFieldType
 
-    // Variant8: 하이픈 + 첫 자리 숫자(플레이스홀더/입력값) + 마스킹 점들을 독립 요소로 조합.
+    // Variant8: 하이픈 + 뒷자리 첫 숫자(실제 [BasicTextField]) + 마스킹 점.
     data class Variant8(
-        val firstDigit: String = "", // 사용자가 입력한 숫자 (비어있으면 플레이스홀더 노출)
-        val placeholder: String = "0", // 0은 순수 플레이스홀더 역할
+        val backState: TextFieldState,
+        val placeholder: String = "0",
         val dotCount: Int = 6,
+        val backFocusRequester: FocusRequester? = null,
+        val frontFocusRequester: FocusRequester? = null,
     ) : TextFieldType
 }
 
@@ -159,6 +177,7 @@ fun AfternoteTextField(
     onImeAction: (() -> Unit)? = null,
     inputTransformation: InputTransformation? = null,
     outputTransformation: OutputTransformation? = null,
+    focusRequester: FocusRequester? = null,
 ) {
     TextFieldShort(
         state = state,
@@ -169,6 +188,7 @@ fun AfternoteTextField(
         onImeAction = onImeAction,
         inputTransformation = inputTransformation,
         outputTransformation = outputTransformation,
+        focusRequester = focusRequester,
         trailingContent =
             when (type) {
                 TextFieldType.Search -> {
@@ -186,7 +206,7 @@ fun AfternoteTextField(
                 }
 
                 is TextFieldType.Variant8 -> {
-                    { Variant8Suffix(type) }
+                    { Variant8Suffix(type = type, onImeAction = onImeAction) }
                 }
 
                 else -> {
@@ -219,9 +239,25 @@ private fun Variant7Suffix(type: TextFieldType.Variant7) {
     )
 }
 
+/** 숫자만 허용하고 최대 1글자(붙여넣기 포함). `maxLength`로 TalkBack 등 max 길이 시맨틱 반영. */
+private val Variant8BackDigitInputTransformation =
+    InputTransformation {
+        val seq = asCharSequence()
+        if (seq.any { !it.isDigit() } || seq.length > 1) {
+            revertAllChanges()
+        }
+    }.maxLength(1)
+
 @Composable
-private fun Variant8Suffix(type: TextFieldType.Variant8) {
+private fun Variant8Suffix(
+    type: TextFieldType.Variant8,
+    onImeAction: (() -> Unit)?,
+) {
     Row(
+        modifier =
+            Modifier.semantics(mergeDescendants = true) {
+                contentDescription = "주민등록번호 뒷자리 입력"
+            },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -236,17 +272,56 @@ private fun Variant8Suffix(type: TextFieldType.Variant8) {
                     ),
         )
 
-        // 2. 첫 자리 숫자 (플레이스홀더 vs 실제 입력값)
-        val isPlaceholder = type.firstDigit.isEmpty()
-        Text(
-            text = if (isPlaceholder) type.placeholder else type.firstDigit,
-            style = AfternoteDesign.typography.textField,
-            color =
-                if (isPlaceholder) {
-                    AfternoteDesign.colors.gray4
-                } else {
-                    AfternoteDesign.colors.black
-                },
+        // 2. 뒷자리 첫 숫자 (실제 입력)
+        BasicTextField(
+            state = type.backState,
+            modifier =
+                Modifier
+                    .widthIn(min = 12.dp)
+                    .width(IntrinsicSize.Min)
+                    .then(
+                        if (type.backFocusRequester != null) {
+                            Modifier.focusRequester(type.backFocusRequester)
+                        } else {
+                            Modifier
+                        },
+                    ).onPreviewKeyEvent { event ->
+                        val isBackspace =
+                            event.key == Key.Backspace ||
+                                event.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DEL
+                        if (isBackspace &&
+                            event.type == KeyEventType.KeyDown &&
+                            type.backState.text.isEmpty()
+                        ) {
+                            type.frontFocusRequester?.requestFocus()
+                            true
+                        } else {
+                            false
+                        }
+                    },
+            lineLimits = TextFieldLineLimits.SingleLine,
+            keyboardOptions =
+                KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done,
+                ),
+            onKeyboardAction = { onImeAction?.invoke() },
+            inputTransformation = Variant8BackDigitInputTransformation,
+            textStyle = AfternoteDesign.typography.textField.copy(color = AfternoteDesign.colors.black),
+            cursorBrush = SolidColor(AfternoteDesign.colors.black),
+            interactionSource = remember { MutableInteractionSource() },
+            decorator = { innerTextField ->
+                Box(contentAlignment = Alignment.Center) {
+                    if (type.backState.text.isEmpty()) {
+                        Text(
+                            text = type.placeholder,
+                            style = AfternoteDesign.typography.textField,
+                            color = AfternoteDesign.colors.gray4,
+                        )
+                    }
+                    innerTextField()
+                }
+            },
         )
 
         // 3. 고정된 마스킹 점
@@ -256,7 +331,9 @@ private fun Variant8Suffix(type: TextFieldType.Variant8) {
 
 @Composable
 private fun Variant8MaskDots(dotCount: Int) {
-    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
         repeat(dotCount) {
             Box(
                 modifier =
@@ -308,9 +385,10 @@ private fun AfternoteTextFieldFigmaPreview() {
                 placeholder = "Variant 7",
             )
 
+            val variant8Back = rememberTextFieldState()
             AfternoteTextField(
                 state = rememberTextFieldState(),
-                type = TextFieldType.Variant8(),
+                type = TextFieldType.Variant8(backState = variant8Back),
                 placeholder = "Variant 8",
             )
         }
