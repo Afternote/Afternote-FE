@@ -26,25 +26,24 @@ internal fun ProgressBarScaffold(
         onBackClick = onBackClick,
         onActionButtonClick = onNextClick,
         modifier = modifier,
-        {
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxSize(),
-            ) {
-                // 온보딩 전용 UI인 프로그레스 바는 여기에 위치
-                StepProgressBar(
-                    currentStep = currentStep,
-                    contentDescription =
-                        stringResource(
-                            R.string.onboarding_step_description,
-                            currentStep,
-                        ),
-                )
-                content()
-            }
-        },
-    ) // 기존 온보딩 투명 배경 유지
+    ) {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxSize(),
+        ) {
+            // 온보딩 전용 UI인 프로그레스 바는 여기에 위치
+            StepProgressBar(
+                currentStep = currentStep,
+                contentDescription =
+                    stringResource(
+                        R.string.onboarding_step_description,
+                        currentStep,
+                    ),
+            )
+            content()
+        } // 기존 온보딩 투명 배경 유지
+    }
 }
 
 @Preview(showBackground = true)
