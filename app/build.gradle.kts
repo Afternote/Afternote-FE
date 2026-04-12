@@ -24,10 +24,12 @@ android {
 }
 
 dependencies {
+    implementation(libs.coil.compose)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.hilt.navigation.compose)
 
     // Core
+    implementation(projects.core.network)
     implementation(projects.core.ui)
     implementation(projects.core.model)
     implementation(projects.core.startup)

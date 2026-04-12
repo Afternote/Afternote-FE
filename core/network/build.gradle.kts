@@ -13,6 +13,8 @@ android {
 }
 
 dependencies {
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
     implementation(projects.core.domain)
     implementation(projects.core.model)
 //    순환 의존

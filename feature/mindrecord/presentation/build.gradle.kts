@@ -21,4 +21,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.navigation.common.ktx)
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
 }
