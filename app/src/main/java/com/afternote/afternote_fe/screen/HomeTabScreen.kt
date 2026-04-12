@@ -218,12 +218,13 @@ private fun RecipientDesignationChip(
             color = AfternoteDesign.colors.gray9,
         )
 
-        Spacer(modifier = Modifier.width(10.dp))
-
-        RightArrowIcon(
-            modifier = Modifier.size(12.dp),
-            tint = AfternoteDesign.colors.gray5,
-        )
+        if (!isDesignated) {
+            Spacer(modifier = Modifier.width(10.dp))
+            RightArrowIcon(
+                modifier = Modifier.size(12.dp),
+                tint = AfternoteDesign.colors.gray5,
+            )
+        }
     }
 }
 
