@@ -84,6 +84,7 @@ fun AfternotePopupCardLayout(
                 AfternoteDesign.typography.bodyBase
                     .copy(
                         textAlign = TextAlign.Center,
+                        color = AfternoteDesign.colors.gray9,
                     ),
         )
 

@@ -1,4 +1,4 @@
-package com.afternote.feature.onboarding.presentation.scaffold
+package com.afternote.feature.onboarding.presentation.signup.scaffold
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope

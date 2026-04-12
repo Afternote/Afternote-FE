@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
-import com.afternote.feature.onboarding.presentation.scaffold.OnboardingScaffold
+import com.afternote.feature.onboarding.presentation.signup.scaffold.OnboardingScaffold
 
 @Composable
 fun TermsDetailScreen(
@@ -45,13 +45,13 @@ fun TermsDetailScreen(
                 Text(
                     text = stringResource(R.string.terms_detail_intro),
                     style = AfternoteDesign.typography.bodySmallR,
-                    color = AfternoteDesign.colors.gray8,
+                    color = AfternoteDesign.colors.gray9,
                 )
                 // 인트로 텍스트
                 Text(
                     text = stringResource(R.string.terms_detail_intro),
                     style = AfternoteDesign.typography.bodySmallR,
-                    color = AfternoteDesign.colors.gray8,
+                    color = AfternoteDesign.colors.gray9,
                 )
 
                 // 각 약관 섹션들 (반복되는 구조는 별도 컴포저블로 분리하여 가독성 확보)
@@ -107,7 +107,7 @@ private fun TermsSectionText(
         Text(
             text = content,
             style = AfternoteDesign.typography.bodySmallR,
-            color = AfternoteDesign.colors.gray7,
+            color = AfternoteDesign.colors.gray9,
         )
     }
 }

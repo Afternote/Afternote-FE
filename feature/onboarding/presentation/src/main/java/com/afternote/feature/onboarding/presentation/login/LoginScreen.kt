@@ -253,6 +253,7 @@ private fun SocialLoginGroup(
             Text(
                 text = stringResource(R.string.login_google),
                 style = AfternoteDesign.typography.captionLargeB,
+                color = AfternoteDesign.colors.gray8,
             )
             Spacer(Modifier.weight(1f))
         }

@@ -31,7 +31,7 @@ import com.afternote.core.ui.CircleCheckBox
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
-import com.afternote.feature.onboarding.presentation.scaffold.ProgressBarScaffold
+import com.afternote.feature.onboarding.presentation.signup.scaffold.ProgressBarScaffold
 import com.afternote.core.common.R as CommonR
 
 enum class TermsType {
@@ -83,7 +83,7 @@ fun OnboardingTermsScreen(
             Text(
                 text = stringResource(R.string.terms_welcome),
                 style = AfternoteDesign.typography.h1,
-                color = AfternoteDesign.colors.gray9,
+                color = AfternoteDesign.colors.black,
             )
 
             Spacer(modifier = Modifier.height(32.dp))

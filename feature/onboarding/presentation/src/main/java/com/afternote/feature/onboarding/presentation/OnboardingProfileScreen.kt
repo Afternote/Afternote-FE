@@ -25,7 +25,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -39,13 +38,6 @@ import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
-/**
- * 온보딩 프로필 설정 화면.
- *
- * - 상단: [DetailTopBar] (Material 3 [androidx.compose.material3.CenterAlignedTopAppBar] 기반)
- * - 본문: 스크롤 + [ProfileImage] + 이름 입력 ([AfternoteTextField])
- * - 하단 CTA: [Scaffold]의 [bottomBar]로 고정, 시스템 내비게이션 영역은 [navigationBarsPadding] 처리
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnboardingProfileScreen(
@@ -138,9 +130,7 @@ private fun OnboardingProfileContent(
             text = stringResource(R.string.profile_headline),
             modifier = Modifier.fillMaxWidth(),
             style =
-                AfternoteDesign.typography.h1.copy(
-                    fontWeight = FontWeight.Bold,
-                ),
+                AfternoteDesign.typography.h1,
             color = AfternoteDesign.colors.gray9,
             textAlign = TextAlign.Start,
         )
@@ -169,7 +159,7 @@ private fun OnboardingProfileContent(
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+@Preview(showBackground = true)
 @Composable
 private fun OnboardingProfileScreenPreview() {
     AfternoteTheme {

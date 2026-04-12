@@ -19,7 +19,7 @@ import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
-import com.afternote.feature.onboarding.presentation.scaffold.ProgressBarScaffold
+import com.afternote.feature.onboarding.presentation.signup.scaffold.ProgressBarScaffold
 
 @Composable
 fun SignUpScreen(
