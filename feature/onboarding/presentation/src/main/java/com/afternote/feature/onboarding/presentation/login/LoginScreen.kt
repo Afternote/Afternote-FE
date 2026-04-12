@@ -86,7 +86,7 @@ fun LoginScreen(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 45.dp),
+                        .padding(horizontal = 20.dp, vertical = 45.dp),
             ) {
                 SocialLoginGroup(
                     onSignUpClick = onSignUpClick,
@@ -106,7 +106,7 @@ fun LoginScreen(
                     .verticalScroll(rememberScrollState())
                     .imePadding()
                     .addFocusCleaner(focusManager)
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(modifier = Modifier.height(39.dp))

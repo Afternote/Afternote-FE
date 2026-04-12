@@ -39,6 +39,7 @@ import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 data class HomeTabUiState(
     val userName: String = "박서연",
     val isRecipientDesignated: Boolean = false,
+    val categoryCounts: Map<MindRecordCategory, Int> = emptyMap(),
 )
 
 @Composable
@@ -114,7 +115,7 @@ fun HomeTabScreen(
                                 iconResId = category.imageUrl,
                                 title = category.title,
                                 subtitle = category.description,
-                                totalCount = 18, // TODO: ViewModel UiState에서 전달
+                                totalCount = uiState.categoryCounts[category] ?: 0,
                                 onClick = { onRecordCategoryClick(category) },
                             )
                         }

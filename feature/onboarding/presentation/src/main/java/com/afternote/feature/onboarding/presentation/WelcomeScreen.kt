@@ -48,7 +48,7 @@ fun WelcomeScreen(
                 .statusBarsPadding()
                 .navigationBarsPadding()
                 .addFocusCleaner(focusManager)
-                .padding(horizontal = 24.dp),
+                .padding(horizontal = 20.dp),
     ) {
         Column(
             modifier =
