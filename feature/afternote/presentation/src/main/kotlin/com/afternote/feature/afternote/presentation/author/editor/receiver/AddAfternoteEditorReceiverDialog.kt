@@ -22,9 +22,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.afternote.core.common.util.PhoneNumberInputTransformation
-import com.afternote.core.common.util.PhoneNumberVisualTransformation
 import com.afternote.core.ui.AfternoteTextField
+import com.afternote.core.ui.PhoneNumberInputTransformation
+import com.afternote.core.ui.PhoneNumberVisualTransformation
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.modifierextention.addFocusCleaner
 import com.afternote.core.ui.popup.AfternotePopupCardLayout

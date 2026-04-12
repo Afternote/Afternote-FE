@@ -1,4 +1,4 @@
-package com.afternote.core.common.util
+package com.afternote.core.ui
 
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.OutputTransformation
