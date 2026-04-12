@@ -1,7 +1,3 @@
-// [WIP / 소속 미확정] MemorySpace — UI 컴포넌트(Photo card).
-// 경로: feature/mindrecord/presentation/.../component/memoryspace/
-// 화면 전용이며 screen/memoryspace 와 같은 묶음으로 유지할 것.
-
 package com.afternote.feature.mindrecord.presentation.component.memoryspace
 
 import androidx.compose.foundation.Image

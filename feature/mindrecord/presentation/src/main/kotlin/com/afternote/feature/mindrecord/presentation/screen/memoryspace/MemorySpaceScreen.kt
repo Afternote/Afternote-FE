@@ -1,8 +1,3 @@
-// [WIP / 소속 미확정] MemorySpace — 화면(Screen).
-// 경로: feature/mindrecord/presentation/.../screen/memoryspace/
-// mindrecord 소속이 확정되지 않았고, 다른 feature 모듈로 옮겨질 수 있음.
-// 담당자(마이드레코드 등) 확인 전에는 네비·모듈 경계를 크게 바꾸지 말 것.
-
 package com.afternote.feature.mindrecord.presentation.screen.memoryspace
 
 import androidx.activity.ComponentActivity
@@ -64,7 +59,11 @@ import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryIte
 import com.afternote.feature.mindrecord.presentation.viewmodel.MemorySpaceViewModel
 import com.afternote.core.ui.R as CoreUiR
 
-/** Hilt [MemorySpaceViewModel]에서 목록을 구독하고, UI는 [MemorySpaceContent]에만 상태를 넘깁니다. */
+/**
+ * 마인드레코드 피처의 기억 공간(MEMORIES). [com.afternote.core.ui.Route.MemorySpace]로 앱 셸에서 직접 진입한다.
+ *
+ * [MemorySpaceViewModel]에서 목록을 구독하고, UI는 [MemorySpaceContent]에만 상태를 넘긴다.
+ */
 @Composable
 fun MemorySpaceScreen(
     onBackClick: () -> Unit,

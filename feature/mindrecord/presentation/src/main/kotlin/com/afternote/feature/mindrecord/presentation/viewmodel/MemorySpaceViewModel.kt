@@ -1,7 +1,3 @@
-// [WIP / 소속 미확정] MemorySpace — ViewModel (더미 상태 방출).
-// 경로: feature/mindrecord/presentation/.../viewmodel/
-// API 스펙 확정 후 loadDummyMemories()를 Repository 연동으로 교체하면 UI는 그대로 둔 채 데이터 소스만 갈아끼울 수 있음.
-
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -13,7 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 
-/** MemorySpace 화면용. init에서 더미 목록을 채우며, API 연동 시 Repository 주입으로 데이터 소스만 교체하면 됨. */
+/** 마인드레코드 MemorySpace 화면용. 더미 목록은 추후 Repository 연동으로 교체 가능. */
 @HiltViewModel
 class MemorySpaceViewModel
     @Inject

@@ -1,6 +1,3 @@
-// [WIP / 소속 미확정] MemorySpace — UI 컴포넌트(상세 오버레이).
-// 경로: feature/mindrecord/presentation/.../component/memoryspace/
-
 package com.afternote.feature.mindrecord.presentation.component.memoryspace
 
 import androidx.compose.foundation.Image
