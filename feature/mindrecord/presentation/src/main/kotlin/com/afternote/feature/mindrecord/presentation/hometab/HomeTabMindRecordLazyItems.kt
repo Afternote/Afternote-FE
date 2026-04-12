@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -32,8 +31,8 @@ import com.afternote.feature.mindrecord.presentation.component.MemoriesCard
 import com.afternote.feature.mindrecord.presentation.component.TodayQuestionCard
 import com.afternote.feature.mindrecord.presentation.component.hometab.RecordCategoryCard
 import com.afternote.feature.mindrecord.presentation.model.description
-import com.afternote.feature.mindrecord.presentation.model.imageUrl
 import com.afternote.feature.mindrecord.presentation.model.title
+import com.afternote.core.ui.R as CoreUiR
 
 /**
  * `:app`은 셸·애프터노트/주간 등 다른 섹션만 담당하고, 마인드레코드 UI는 이 모듈에 둔다.
@@ -47,29 +46,33 @@ fun LazyListScope.homeTabMindRecordQuestionAndCategories(
         TodayQuestionCard(
             onAnswerClick = onAnswerClick,
         )
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(8.dp))
     }
 
     item(key = "mind_record_categories") {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            MindRecordCategory.entries
-                .filter { it != MindRecordCategory.DAILY_QUESTION }
-                .forEach { category ->
-                    RecordCategoryCard(
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .aspectRatio(1.1f),
-                        iconResId = category.imageUrl,
-                        title = category.title,
-                        subtitle = category.description,
-                        totalCount = categoryCounts[category] ?: 0,
-                        onClick = { onRecordCategoryClick(category) },
-                    )
-                }
+            RecordCategoryCard(
+                modifier =
+                    Modifier.weight(1f),
+                iconResId = CoreUiR.drawable.core_ui_ic_diary,
+                title = MindRecordCategory.DIARY.title,
+                subtitle = MindRecordCategory.DIARY.description,
+                totalCount = categoryCounts[MindRecordCategory.DIARY] ?: 0,
+                onClick = { onRecordCategoryClick(MindRecordCategory.DIARY) },
+                useDiaryIconLayout = true,
+            )
+            RecordCategoryCard(
+                modifier =
+                    Modifier.weight(1f),
+                iconResId = CoreUiR.drawable.core_ui_ic_deep_thought,
+                title = MindRecordCategory.DEEP_THOUGHT.title,
+                subtitle = MindRecordCategory.DEEP_THOUGHT.description,
+                totalCount = categoryCounts[MindRecordCategory.DEEP_THOUGHT] ?: 0,
+                onClick = { onRecordCategoryClick(MindRecordCategory.DEEP_THOUGHT) },
+            )
         }
         Spacer(modifier = Modifier.height(40.dp))
     }
@@ -111,18 +114,18 @@ private fun HomeTabMemoriesSectionHeader(modifier: Modifier = Modifier) {
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
             text = stringResource(mindrecord_home_tab_memories_section_title),
             style = AfternoteDesign.typography.mono,
-            color = AfternoteDesign.colors.black.copy(alpha = 0.4f),
+            color = AfternoteDesign.colors.gray6,
         )
         HorizontalDivider(
             modifier =
                 Modifier
-                    .weight(1f)
-                    .padding(start = 12.dp),
-            color = AfternoteDesign.colors.black.copy(alpha = 0.1f),
+                    .weight(1f),
+            color = AfternoteDesign.colors.gray3,
         )
     }
 }

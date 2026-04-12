@@ -1,6 +1,7 @@
 package com.afternote.afternote_fe.screen
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -226,18 +227,18 @@ private fun SectionHeader(
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
             text = title,
             style = AfternoteDesign.typography.mono,
-            color = AfternoteDesign.colors.black.copy(alpha = 0.4f),
+            color = AfternoteDesign.colors.gray6,
         )
         HorizontalDivider(
             modifier =
                 Modifier
-                    .weight(1f)
-                    .padding(start = 12.dp),
-            color = AfternoteDesign.colors.black.copy(alpha = 0.1f),
+                    .weight(1f),
+            color = AfternoteDesign.colors.gray3,
         )
     }
 }
