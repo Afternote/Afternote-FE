@@ -16,3 +16,12 @@
 - **Navigation**: Type-safe Navigation Compose (Class 기반 루트 정의)
 - **DI**: Hilt 기반 의존성 주입
 - **Async**: Coroutines & Flow (StateFlow 활용)
+
+## 4. 실무 패턴 및 컨벤션 (추가)
+- **State Management**: `sealed interface UiState`를 사용하여 상태를 정의한다. (Loading, Success, Error 등)
+- **Error Handling**: Data 계층에서는 `Result<T>`를 반환하고, UI 계층에서 이를 처리하여 사용자에게 알맞은 에러 UI를 보여준다.
+- **Naming Convention**:
+    - Screen: `[Name]Screen.kt`
+    - ViewModel: `[Name]ViewModel.kt`
+    - Route: `[Name]Route` (Navigation 목적지)
+- **Testing**: 비즈니스 로직이 포함된 `ViewModel`과 `UseCase`는 JUnit5 기반 **Unit Test**를 필수 작성하며, 의존성은 `Turbine`과 `MockK`를 활용한다.
