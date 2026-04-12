@@ -21,7 +21,10 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.afternote.core.ui.icon.CloseIcon
 import com.afternote.core.ui.icon.RightArrowIcon
+import com.afternote.core.ui.modifierextention.shimmerLoadingPlaceholder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryItem
@@ -75,10 +79,22 @@ fun MemoryDetailOverlay(
                             .fillMaxWidth()
                             .aspectRatio(4f / 3f),
                 ) {
+                    var showShimmer by remember(memory.imageUrl) { mutableStateOf(true) }
+                    if (showShimmer) {
+                        Box(
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .shimmerLoadingPlaceholder(),
+                        )
+                    }
                     AsyncImage(
                         model = memory.imageUrl,
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
+                        onLoading = { showShimmer = true },
+                        onSuccess = { showShimmer = false },
+                        onError = { showShimmer = false },
                         modifier = Modifier.fillMaxSize(),
                     )
 

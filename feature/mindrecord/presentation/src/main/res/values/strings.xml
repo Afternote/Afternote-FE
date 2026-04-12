@@ -11,7 +11,7 @@
 
     <!-- MemorySpace 화면 -->
     <string name="mindrecord_memory_space_title">MEMORY SPACE</string>
-    <string name="mindrecord_memory_space_subtitle">손가락으로 공간을 탐색해 보세요</string>
+    <string name="mindrecord_memory_space_subtitle">마우스를 움직여 공간을 탐색하세요</string>
     <string name="mindrecord_memory_space_back">돌아가기</string>
 
     <string name="mindrecord_read_again">그날의 기록 다시 읽기</string>

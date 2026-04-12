@@ -1,7 +1,6 @@
 package com.afternote.feature.mindrecord.presentation.screen.memoryspace
 
-import androidx.activity.ComponentActivity
-import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -11,6 +10,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -29,10 +29,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,11 +43,11 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -86,8 +87,23 @@ private fun MemorySpaceContent(
     memories: List<MemoryItem>,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
-    var selectedMemory by remember { mutableStateOf<MemoryItem?>(null) }
+    var selectedMemoryId: Int? by rememberSaveable { mutableStateOf(null) }
+    val selectedMemory = selectedMemoryId?.let { id -> memories.firstOrNull { it.id == id } }
+
+    LaunchedEffect(memories, selectedMemoryId) {
+        val id = selectedMemoryId ?: return@LaunchedEffect
+        if (memories.none { it.id == id }) {
+            selectedMemoryId = null
+        }
+    }
+
+    BackHandler {
+        if (selectedMemoryId != null) {
+            selectedMemoryId = null
+        } else {
+            onBackClick()
+        }
+    }
 
     // 카드 선택 시 뒷배경을 뿌옇게 만드는 블러 강도. 선택 해제 시 0dp로 복귀.
     val backgroundBlurAmount by animateDpAsState(
@@ -95,26 +111,6 @@ private fun MemorySpaceContent(
         animationSpec = spring(dampingRatio = 0.7f, stiffness = Spring.StiffnessLow),
         label = "backgroundBlur",
     )
-
-    DisposableEffect(context, onBackClick, selectedMemory) {
-        val activity = context as? ComponentActivity
-        if (activity != null) {
-            val callback =
-                object : OnBackPressedCallback(true) {
-                    override fun handleOnBackPressed() {
-                        if (selectedMemory != null) {
-                            selectedMemory = null
-                        } else {
-                            onBackClick()
-                        }
-                    }
-                }
-            activity.onBackPressedDispatcher.addCallback(callback)
-            onDispose { callback.remove() }
-        } else {
-            onDispose { }
-        }
-    }
 
     Box(
         modifier =
@@ -150,7 +146,10 @@ private fun MemorySpaceContent(
                         .pointerInput(Unit) {
                             detectDragGestures(
                                 onDragStart = { touchPosition = it },
-                                onDrag = { change, _ -> touchPosition = change.position },
+                                onDrag = { change, _ ->
+                                    change.consume()
+                                    touchPosition = change.position
+                                },
                                 onDragEnd = { touchPosition = null },
                                 onDragCancel = { touchPosition = null },
                             )
@@ -194,40 +193,42 @@ private fun MemorySpaceContent(
                             },
                 ) {
                     val transforms =
-                        listOf(
-                            CardTransform(
-                                offsetX = (-80).dp,
-                                offsetY = (-150).dp,
-                                rotationX = 15f,
-                                rotationY = 25f,
-                                rotationZ = -10f,
-                                zIndex = 1f,
-                            ),
-                            CardTransform(
-                                offsetX = 40.dp,
-                                offsetY = (-200).dp,
-                                rotationX = -20f,
-                                rotationY = -15f,
-                                rotationZ = 5f,
-                                zIndex = 0f,
-                            ),
-                            CardTransform(
-                                offsetX = (-30).dp,
-                                offsetY = 20.dp,
-                                rotationX = -10f,
-                                rotationY = 40f,
-                                rotationZ = -5f,
-                                zIndex = 2f,
-                            ),
-                            CardTransform(
-                                offsetX = 90.dp,
-                                offsetY = 60.dp,
-                                rotationX = 30f,
-                                rotationY = -25f,
-                                rotationZ = 12f,
-                                zIndex = 3f,
-                            ),
-                        )
+                        remember {
+                            listOf(
+                                CardTransform(
+                                    offsetX = (-80).dp,
+                                    offsetY = (-150).dp,
+                                    rotationX = 15f,
+                                    rotationY = 25f,
+                                    rotationZ = -10f,
+                                    zIndex = 1f,
+                                ),
+                                CardTransform(
+                                    offsetX = 40.dp,
+                                    offsetY = (-200).dp,
+                                    rotationX = -20f,
+                                    rotationY = -15f,
+                                    rotationZ = 5f,
+                                    zIndex = 0f,
+                                ),
+                                CardTransform(
+                                    offsetX = (-30).dp,
+                                    offsetY = 20.dp,
+                                    rotationX = -10f,
+                                    rotationY = 40f,
+                                    rotationZ = -5f,
+                                    zIndex = 2f,
+                                ),
+                                CardTransform(
+                                    offsetX = 90.dp,
+                                    offsetY = 60.dp,
+                                    rotationX = 30f,
+                                    rotationY = -25f,
+                                    rotationZ = 12f,
+                                    zIndex = 3f,
+                                ),
+                            )
+                        }
 
                     memories.forEachIndexed { index, memory ->
                         if (index < transforms.size) {
@@ -235,7 +236,7 @@ private fun MemorySpaceContent(
                             MemorySpacePhotoCard(
                                 memory = memory,
                                 transform = transform,
-                                onClick = { selectedMemory = memory },
+                                onClick = { selectedMemoryId = memory.id },
                                 modifier =
                                     Modifier
                                         .align(Alignment.Center)
@@ -252,14 +253,14 @@ private fun MemorySpaceContent(
                     Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
-                        .padding(top = 16.dp),
+                        .padding(top = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Box(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 20.dp),
+                            .padding(horizontal = 24.dp),
                 ) {
                     Surface(
                         onClick = onBackClick,
@@ -269,35 +270,41 @@ private fun MemorySpaceContent(
                         modifier = Modifier.align(Alignment.CenterStart),
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            modifier =
+                                Modifier
+                                    .padding(
+                                        start = 20.dp,
+                                        end = 15.dp,
+                                    ).padding(
+                                        vertical = 9.dp,
+                                    ),
                             verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             Icon(
                                 painter = painterResource(CoreUiR.drawable.core_ui_arrow_left),
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp),
-                                tint = AfternoteDesign.colors.gray9,
+                                contentDescription = stringResource(R.string.mindrecord_memory_space_back),
+                                modifier = Modifier.size(width = 4.dp, height = 7.dp),
+                                tint = AfternoteDesign.colors.gray7,
                             )
                             Text(
                                 text = stringResource(R.string.mindrecord_memory_space_back),
-                                style = AfternoteDesign.typography.bodySmallR,
+                                style = AfternoteDesign.typography.inter,
                                 color = AfternoteDesign.colors.gray7,
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
-
                 Text(
                     text = stringResource(R.string.mindrecord_memory_space_title),
-                    style = AfternoteDesign.typography.mono,
+                    style = AfternoteDesign.typography.inter,
                     color = AfternoteDesign.colors.gray6,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = stringResource(R.string.mindrecord_memory_space_subtitle),
-                    style = AfternoteDesign.typography.captionLargeR,
+                    style = AfternoteDesign.typography.inter.copy(fontSize = 9.sp),
                     color = AfternoteDesign.colors.gray5,
                 )
             }
@@ -313,7 +320,7 @@ private fun MemorySpaceContent(
             selectedMemory?.let { memory ->
                 MemoryDetailOverlay(
                     memory = memory,
-                    onClose = { selectedMemory = null },
+                    onClose = { selectedMemoryId = null },
                 )
             }
         }
@@ -329,10 +336,38 @@ private fun MemorySpaceScreenPreview() {
             modifier = Modifier.fillMaxSize(),
             memories =
                 listOf(
-                    MemoryItem(1, "https://picsum.photos/400/600?random=1", "기억 1", "2024.11.11", "미리보기", listOf("태그")),
-                    MemoryItem(2, "https://picsum.photos/400/600?random=2", "기억 2", "2024.11.12", "미리보기", emptyList()),
-                    MemoryItem(3, "https://picsum.photos/400/600?random=3", "기억 3", "2024.11.13", "미리보기", emptyList()),
-                    MemoryItem(4, "https://picsum.photos/400/600?random=4", "기억 4", "2024.11.14", "미리보기", emptyList()),
+                    MemoryItem(
+                        1,
+                        "https://picsum.photos/400/600?random=1",
+                        "기억 1",
+                        "2024.11.11",
+                        "미리보기",
+                        listOf("태그"),
+                    ),
+                    MemoryItem(
+                        2,
+                        "https://picsum.photos/400/600?random=2",
+                        "기억 2",
+                        "2024.11.12",
+                        "미리보기",
+                        emptyList(),
+                    ),
+                    MemoryItem(
+                        3,
+                        "https://picsum.photos/400/600?random=3",
+                        "기억 3",
+                        "2024.11.13",
+                        "미리보기",
+                        emptyList(),
+                    ),
+                    MemoryItem(
+                        4,
+                        "https://picsum.photos/400/600?random=4",
+                        "기억 4",
+                        "2024.11.14",
+                        "미리보기",
+                        emptyList(),
+                    ),
                 ),
         )
     }

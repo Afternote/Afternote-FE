@@ -25,16 +25,22 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.afternote.core.ui.modifierextention.shimmerLoadingPlaceholder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.model.memoryspace.CardTransform
@@ -51,6 +57,12 @@ fun MemorySpacePhotoCard(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+    val haptic = LocalHapticFeedback.current
+
+    val contentAlpha by animateFloatAsState(
+        targetValue = if (isPressed) 0.6f else 1f,
+        label = "contentAlpha",
+    )
 
     val imageZoomScale by animateFloatAsState(
         targetValue = if (isPressed) 1.1f else 1f,
@@ -59,7 +71,10 @@ fun MemorySpacePhotoCard(
     )
 
     Surface(
-        onClick = onClick,
+        onClick = {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            onClick()
+        },
         interactionSource = interactionSource,
         modifier =
             modifier
@@ -72,73 +87,101 @@ fun MemorySpacePhotoCard(
                     rotationZ = transform.rotationZ
                 },
         shape = RoundedCornerShape(8.dp),
-        color = AfternoteDesign.colors.gray4,
+        color = AfternoteDesign.colors.gray4.copy(alpha = contentAlpha),
         shadowElevation = shadowElevation,
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
+            var imageReady by remember(memory.imageUrl) { mutableStateOf(false) }
+
             AsyncImage(
                 model = memory.imageUrl,
-                contentDescription = null,
+                contentDescription = memory.title,
                 contentScale = ContentScale.Crop,
+                onLoading = { imageReady = false },
+                onSuccess = { imageReady = true },
+                onError = { imageReady = true },
                 modifier =
                     Modifier
                         .fillMaxSize()
                         .graphicsLayer {
                             scaleX = imageZoomScale
                             scaleY = imageZoomScale
-                        },
+                            alpha = contentAlpha
+                        }.then(
+                            if (!imageReady) {
+                                Modifier.shimmerLoadingPlaceholder()
+                            } else {
+                                Modifier
+                            },
+                        ),
             )
 
-            AnimatedVisibility(
-                visible = isPressed,
-                enter = fadeIn(),
-                exit = fadeOut(),
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .background(AfternoteDesign.colors.black.copy(alpha = 0.2f)),
-                ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = AfternoteDesign.colors.white.copy(alpha = 0.9f),
-                        modifier =
-                            Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(8.dp)
-                                .size(32.dp),
-                    ) {
-                        Icon(
-                            painter = painterResource(id = CoreUiR.drawable.core_ui_right_arrow),
-                            contentDescription = null,
-                            modifier = Modifier.padding(6.dp),
-                            tint = AfternoteDesign.colors.gray8,
-                        )
-                    }
+            PressedOverlay(
+                isVisible = isPressed,
+                date = memory.date,
+                title = memory.title,
+            )
+        }
+    }
+}
 
-                    Column(
-                        modifier =
-                            Modifier
-                                .align(Alignment.BottomCenter)
-                                .fillMaxWidth()
-                                .background(AfternoteDesign.colors.white)
-                                .padding(horizontal = 12.dp, vertical = 10.dp),
-                    ) {
-                        Text(
-                            text = memory.date,
-                            style = AfternoteDesign.typography.bodySmallB,
-                            color = AfternoteDesign.colors.gray8,
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = memory.title,
-                            style = AfternoteDesign.typography.captionLargeR,
-                            color = AfternoteDesign.colors.gray5,
-                        )
-                    }
-                }
+@Composable
+private fun PressedOverlay(
+    isVisible: Boolean,
+    date: String,
+    title: String,
+    modifier: Modifier = Modifier,
+) {
+    AnimatedVisibility(
+        visible = isVisible,
+        enter = fadeIn(),
+        exit = fadeOut(),
+        modifier = modifier.fillMaxSize(),
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(AfternoteDesign.colors.black.copy(alpha = 0.15f)),
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = AfternoteDesign.colors.white.copy(alpha = 0.9f),
+                modifier =
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                        .size(28.dp),
+            ) {
+                Icon(
+                    painter = painterResource(id = CoreUiR.drawable.core_ui_right_arrow),
+                    contentDescription = null,
+                    modifier = Modifier.padding(6.dp),
+                    tint = AfternoteDesign.colors.gray8,
+                )
+            }
+
+            Column(
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .background(AfternoteDesign.colors.white.copy(alpha = 0.85f))
+                        .padding(horizontal = 10.dp, vertical = 8.dp),
+            ) {
+                Text(
+                    text = date,
+                    style = AfternoteDesign.typography.bodySmallB,
+                    color = AfternoteDesign.colors.gray8,
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = title,
+                    style = AfternoteDesign.typography.captionLargeR,
+                    color = AfternoteDesign.colors.gray6,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
     }
