@@ -1,6 +1,9 @@
 package com.afternote.afternote_fe.screen
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -19,8 +22,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.afternote_fe.R
@@ -168,53 +173,56 @@ private fun RecipientDesignationChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = if (isDesignated) AfternoteDesign.colors.white else AfternoteDesign.colors.gray2,
-        border =
-            BorderStroke(
-                width = 1.dp,
-                color = AfternoteDesign.colors.gray3,
-            ),
-        modifier = modifier,
-        onClick = onClick,
+    Row(
+        modifier =
+            modifier
+                // 1. 테두리 (Border)
+                .border(
+                    width = 1.dp,
+                    color = AfternoteDesign.colors.gray3,
+                    shape = RoundedCornerShape(20.dp),
+                )
+                // 2. 자르기 (Clip): Ripple 효과와 배경색이 모서리 밖으로 나가지 않게 가둠
+                .clip(RoundedCornerShape(20.dp))
+                // 3. 배경색 (Background)
+                .background(color = if (isDesignated) AfternoteDesign.colors.white else AfternoteDesign.colors.gray2)
+                // 4. 클릭 (Clickable): 접근성 Role.Button 추가
+                .clickable(
+                    role = Role.Button,
+                    onClick = onClick,
+                )
+                // 5. 내부 여백 (Padding): 기존 Row에 있던 패딩을 가장 마지막에 배치
+                .padding(vertical = 9.dp)
+                .padding(start = 15.dp, end = 20.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier =
-                Modifier
-                    .padding(vertical = 9.dp)
-                    .padding(start = 15.dp, end = 20.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            AfternoteCircularCheckbox(
-                state =
+        AfternoteCircularCheckbox(
+            state = if (isDesignated) CheckboxState.Default else CheckboxState.None,
+            onClick = null,
+            size = 12.dp,
+        )
+
+        Spacer(modifier = Modifier.width(4.dp))
+
+        Text(
+            text =
+                stringResource(
                     if (isDesignated) {
-                        CheckboxState.Default
+                        R.string.home_tab_recipient_designated
                     } else {
-                        CheckboxState.None
+                        R.string.home_tab_recipient_not_designated
                     },
-                onClick = null,
-                size = 12.dp,
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text =
-                    stringResource(
-                        if (isDesignated) {
-                            R.string.home_tab_recipient_designated
-                        } else {
-                            R.string.home_tab_recipient_not_designated
-                        },
-                    ),
-                style = AfternoteDesign.typography.captionLargeB,
-                color = AfternoteDesign.colors.gray9,
-            )
-            Spacer(modifier = Modifier.width(10.dp))
-            RightArrowIcon(
-                modifier = Modifier.size(12.dp),
-                tint = AfternoteDesign.colors.gray5,
-            )
-        }
+                ),
+            style = AfternoteDesign.typography.captionLargeB,
+            color = AfternoteDesign.colors.gray9,
+        )
+
+        Spacer(modifier = Modifier.width(10.dp))
+
+        RightArrowIcon(
+            modifier = Modifier.size(12.dp),
+            tint = AfternoteDesign.colors.gray5,
+        )
     }
 }
 

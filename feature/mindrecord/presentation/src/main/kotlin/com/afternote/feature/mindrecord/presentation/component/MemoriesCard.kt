@@ -1,30 +1,33 @@
 package com.afternote.feature.mindrecord.presentation.component
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R
@@ -82,28 +85,46 @@ fun MemoriesCard(modifier: Modifier = Modifier) {
             Text(
                 text = "- 아이가 태어났을 때...",
                 style = AfternoteDesign.typography.captionLargeR,
-                color = Color(0xFF000000).copy(alpha = 0.3f),
+                color = AfternoteDesign.colors.gray6,
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = {},
-                colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF000000).copy(alpha = 0.03f),
-                    ),
-                border = BorderStroke(1.dp, Color(0xFF000000).copy(alpha = 0.05f)),
+            Row(
+                modifier =
+                    Modifier
+                        // 1. 테두리 (Border)
+                        .border(
+                            width = 1.dp,
+                            color = AfternoteDesign.colors.gray3,
+                            shape = RoundedCornerShape(20.dp),
+                        )
+                        // 2. 자르기 (Clip): Ripple 효과와 배경색이 모서리 밖으로 나가지 않게 가둠
+                        .clip(RoundedCornerShape(20.dp))
+                        // 3. 배경색 (Background)
+                        .background(color = AfternoteDesign.colors.gray2)
+                        // 4. 클릭 (Clickable): 접근성 Role.Button 추가
+                        .clickable(
+                            role = Role.Button,
+                            onClick = {},
+                        )
+                        // 5. 내부 여백 (Padding): 기존 Row에 있던 패딩을 가장 마지막에 배치
+                        .padding(
+                            horizontal = 17.dp,
+                            vertical = 9.dp,
+                        ),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = "그날의 기록 다시 읽기",
-                    style =
-                        TextStyle(
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Normal,
-                            lineHeight = 16.5.sp,
-                            letterSpacing = 0.06.sp,
-                        ),
-                    color = Color(0xFF000000).copy(alpha = 0.6f),
+                    style = AfternoteDesign.typography.inter,
+                    color = AfternoteDesign.colors.gray7,
+                )
+
+                Spacer(modifier = Modifier.width(9.dp))
+
+                RightArrowIcon(
+                    modifier = Modifier.size(width = 4.dp, height = 7.dp),
+                    tint = AfternoteDesign.colors.gray5,
                 )
             }
         }
