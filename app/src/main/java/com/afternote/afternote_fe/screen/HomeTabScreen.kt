@@ -2,6 +2,7 @@ package com.afternote.afternote_fe.screen
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,9 +20,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.afternote_fe.R
 import com.afternote.core.model.MindRecordCategory
 import com.afternote.core.ui.button.AfternoteCircularCheckbox
 import com.afternote.core.ui.button.CheckboxState
@@ -36,7 +38,8 @@ import com.afternote.feature.mindrecord.presentation.hometab.homeTabMindRecordQu
 data class HomeTabUiState(
     val userName: String = "",
     val isRecipientDesignated: Boolean = false,
-    val categoryCounts: Map<MindRecordCategory, Int> = emptyMap(),
+    val categoryCounts: Map<MindRecordCategory, Int> =
+        MindRecordCategory.entries.associateWith { 0 },
     val isLoading: Boolean = false,
     val isError: Boolean = false,
 )
@@ -58,25 +61,23 @@ fun HomeTabScreen(
     Scaffold(
         modifier = modifier,
         topBar = { HomeTopBar(onSettingClick = onSettingClick) },
-        containerColor = Color.Transparent,
+        containerColor = AfternoteDesign.colors.gray1,
     ) { paddingValues ->
         LazyColumn(
-            modifier =
-                Modifier
-                    .padding(paddingValues)
-                    .padding(horizontal = 20.dp),
+            modifier = Modifier.padding(paddingValues),
+            contentPadding = PaddingValues(horizontal = 20.dp),
         ) {
             // 1. 헤더 영역 (인사말 & 수신인 지정 칩)
             item {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "안녕하세요,\n${uiState.userName}님",
+                    text = stringResource(R.string.home_tab_greeting, uiState.userName),
                     style = AfternoteDesign.typography.h1,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "오늘도 당신의 하루를 차분히 기록해보세요.",
+                    text = stringResource(R.string.home_tab_tagline),
                     style = AfternoteDesign.typography.captionLargeR,
                     color = AfternoteDesign.colors.gray5,
                 )
@@ -97,7 +98,7 @@ fun HomeTabScreen(
 
             // 4. AFTER NOTE NEXT STEP 섹션
             item {
-                SectionHeader(title = "AFTER NOTE NEXT STEP")
+                SectionHeader(title = stringResource(R.string.home_tab_next_step_section_title))
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Surface(
@@ -111,7 +112,7 @@ fun HomeTabScreen(
                         modifier = Modifier.padding(20.dp),
                     ) {
                         Text(
-                            text = "가족들의 '주거래 은행' 정보를\n입력하신 건 확인하셨나요?",
+                            text = stringResource(R.string.home_tab_next_step_body),
                             style = AfternoteDesign.typography.captionLargeR,
                             color = AfternoteDesign.colors.black,
                         )
@@ -120,7 +121,7 @@ fun HomeTabScreen(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                text = "애프터노트 입력하러가기",
+                                text = stringResource(R.string.home_tab_next_step_cta),
                                 style = AfternoteDesign.typography.captionLargeR,
                                 color = AfternoteDesign.colors.gray5,
                             )
@@ -186,11 +187,13 @@ private fun RecipientDesignationChip(
             Spacer(modifier = Modifier.width(6.dp))
             Text(
                 text =
-                    if (isDesignated) {
-                        "수신인 지정 완료"
-                    } else {
-                        "수신인 지정 미완료"
-                    },
+                    stringResource(
+                        if (isDesignated) {
+                            R.string.home_tab_recipient_designated
+                        } else {
+                            R.string.home_tab_recipient_not_designated
+                        },
+                    ),
                 style = AfternoteDesign.typography.captionLargeB,
                 color = colors.gray7,
             )
@@ -218,7 +221,10 @@ private fun SectionHeader(
             color = AfternoteDesign.colors.black.copy(alpha = 0.4f),
         )
         HorizontalDivider(
-            modifier = Modifier.padding(start = 12.dp),
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .padding(start = 12.dp),
             color = AfternoteDesign.colors.black.copy(alpha = 0.1f),
         )
     }

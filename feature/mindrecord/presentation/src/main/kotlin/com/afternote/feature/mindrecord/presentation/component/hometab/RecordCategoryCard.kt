@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -36,6 +37,9 @@ import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_total_l
 import java.text.NumberFormat
 import java.util.Locale
 
+/** 글꼴 확대·좁은 가로에서도 카드가 과도하게 눌리지 않도록 쓰는 최소 높이. */
+private val RecordCategoryCardMinHeight = 136.dp
+
 @Composable
 fun RecordCategoryCard(
     iconResId: Int,
@@ -54,9 +58,11 @@ fun RecordCategoryCard(
 
     Surface(
         modifier =
-            modifier.semantics(mergeDescendants = true) {
-                contentDescription = categoryContentDescription
-            },
+            modifier
+                .heightIn(min = RecordCategoryCardMinHeight)
+                .semantics(mergeDescendants = true) {
+                    contentDescription = categoryContentDescription
+                },
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(1.dp, AfternoteDesign.colors.gray2),
         color = AfternoteDesign.colors.white,
@@ -128,12 +134,18 @@ fun RecordCategoryCard(
     }
 }
 
-@Preview(showBackground = true)
+private fun Modifier.recordCategoryCardPreviewSizing(): Modifier =
+    this
+        .width(160.dp)
+        .heightIn(min = RecordCategoryCardMinHeight)
+        .aspectRatio(1.1f)
+
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "기본")
 @Composable
 private fun RecordCategoryCardPreview() {
     AfternoteTheme {
         RecordCategoryCard(
-            modifier = Modifier.aspectRatio(1.1f),
+            modifier = Modifier.recordCategoryCardPreviewSizing(),
             iconResId = android.R.drawable.ic_menu_edit,
             title = "일기",
             subtitle = "나의 매일을 기록하세요",
@@ -143,16 +155,36 @@ private fun RecordCategoryCardPreview() {
     }
 }
 
-@Preview(showBackground = true, name = "큰 수")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "큰 수")
 @Composable
 private fun RecordCategoryCardLargeCountPreview() {
     AfternoteTheme {
         RecordCategoryCard(
-            modifier = Modifier.aspectRatio(1.1f),
+            modifier = Modifier.recordCategoryCardPreviewSizing(),
             iconResId = android.R.drawable.ic_menu_edit,
             title = "깊은 생각",
             subtitle = "오늘의 생각을 남기세요",
             totalCount = 12_345,
+            onClick = {},
+        )
+    }
+}
+
+@Preview(
+    showBackground = true,
+    backgroundColor = 0xFFFFFFFF,
+    fontScale = 1.5f,
+    name = "글꼴 확대",
+)
+@Composable
+private fun RecordCategoryCardFontScalePreview() {
+    AfternoteTheme {
+        RecordCategoryCard(
+            modifier = Modifier.recordCategoryCardPreviewSizing(),
+            iconResId = android.R.drawable.ic_menu_edit,
+            title = "일기",
+            subtitle = "나의 매일을 기록하세요. 글꼴이 커져도 레이아웃이 무너지지 않는지 확인합니다.",
+            totalCount = 18,
             onClick = {},
         )
     }
