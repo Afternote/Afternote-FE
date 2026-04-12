@@ -1,6 +1,8 @@
-package com.afternote.core.ui
+package com.afternote.core.ui.modifierextention
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.input.pointer.pointerInput
@@ -23,3 +25,16 @@ fun Modifier.addFocusCleaner(focusManager: FocusManager): Modifier =
             },
         )
     }
+
+/**
+ * 리플 없이 클릭 가능하게 만드는 Modifier 확장 함수.
+ */
+fun Modifier.noRippleClickable(
+    interactionSource: MutableInteractionSource,
+    onClick: () -> Unit,
+): Modifier =
+    this.clickable(
+        interactionSource = interactionSource,
+        indication = null,
+        onClick = onClick,
+    )

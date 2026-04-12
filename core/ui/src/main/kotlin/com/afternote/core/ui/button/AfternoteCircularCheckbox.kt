@@ -1,4 +1,4 @@
-package com.afternote.core.ui.icon
+package com.afternote.core.ui.button
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
