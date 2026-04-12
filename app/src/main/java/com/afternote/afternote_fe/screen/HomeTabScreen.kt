@@ -37,7 +37,7 @@ import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 
 @Immutable
 data class HomeTabUiState(
-    val userName: String = "박서연",
+    val userName: String = "",
     val isRecipientDesignated: Boolean = false,
     val categoryCounts: Map<MindRecordCategory, Int> = emptyMap(),
 )
@@ -65,23 +65,23 @@ fun HomeTabScreen(
             modifier =
                 Modifier
                     .padding(paddingValues)
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = 20.dp),
         ) {
             // 1. 헤더 영역 (인사말 & 수신인 지정 칩)
             item {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "안녕하세요,\n${uiState.userName}님",
                     style = AfternoteDesign.typography.h1,
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
                     text = "오늘도 당신의 하루를 차분히 기록해보세요.",
                     style = AfternoteDesign.typography.captionLargeR,
                     color = AfternoteDesign.colors.gray5,
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 RecipientDesignationChip(
                     isDesignated = uiState.isRecipientDesignated,
