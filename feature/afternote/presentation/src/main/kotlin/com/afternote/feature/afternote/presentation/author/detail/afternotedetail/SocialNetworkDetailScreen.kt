@@ -177,6 +177,7 @@ private fun SocialNetworkDetailScrollContent(
                 AfternoteCircularCheckbox(
                     state = CheckboxState.Default,
                     onClick = null,
+                    size = 20.dp,
                 )
                 Text(
                     text = stringResource(content.badgeTextResId),
@@ -300,6 +301,7 @@ private fun SocialNetworkDetailScrollContent(
                             AfternoteCircularCheckbox(
                                 state = CheckboxState.Default,
                                 onClick = null,
+                                size = 20.dp,
                             )
                             Text(
                                 text = method,

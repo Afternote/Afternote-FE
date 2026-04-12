@@ -5,7 +5,7 @@
     <string name="home_tab_greeting">안녕하세요,\n%1$s님</string>
     <string name="home_tab_tagline">오늘도 당신의 하루를 차분히 기록해보세요.</string>
     <string name="home_tab_next_step_section_title">AFTER NOTE NEXT STEP</string>
-    <string name="home_tab_next_step_body">가족들의 &apos;주거래 은행&apos; 정보를\n입력하신 건 확인하셨나요?</string>
+    <string name="home_tab_next_step_body">가족들의 \u2018주거래 은행\u2019 정보를\n입력하신 건 확인하셨나요?</string>
     <string name="home_tab_next_step_cta">애프터노트 입력하러가기</string>
     <string name="home_tab_recipient_designated">수신인 지정 완료</string>
     <string name="home_tab_recipient_not_designated">수신인 지정 미완료</string>

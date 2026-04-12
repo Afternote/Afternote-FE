@@ -194,6 +194,7 @@ private fun GalleryDetailScrollContent(
                 AfternoteCircularCheckbox(
                     state = CheckboxState.Default,
                     onClick = null,
+                    size = 20.dp,
                 )
                 Text(
                     text = stringResource(R.string.feature_afternote_detail_additional_receiver_badge),
@@ -268,6 +269,7 @@ private fun GalleryDetailScrollContent(
                             AfternoteCircularCheckbox(
                                 state = CheckboxState.Default,
                                 onClick = null,
+                                size = 20.dp,
                             )
                             Text(
                                 text = method,

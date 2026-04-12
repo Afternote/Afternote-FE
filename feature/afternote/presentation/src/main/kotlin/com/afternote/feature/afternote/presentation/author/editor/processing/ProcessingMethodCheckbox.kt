@@ -82,6 +82,7 @@ fun ProcessingMethodCheckbox(
         AfternoteCircularCheckbox(
             state = CheckboxState.Default,
             onClick = null,
+            size = 20.dp,
         )
 
         if (isEditing) {
