@@ -59,7 +59,6 @@ import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
 
-@Suppress("AssignedValueIsNeverRead")
 @Composable
 fun ReceiverAfterNoteMainScreen(
     senderName: String,
@@ -74,7 +73,8 @@ fun ReceiverAfterNoteMainScreen(
     showBottomBar: Boolean = true,
 ) {
     var selectedBottomNavItem by remember { mutableStateOf(BottomNavTab.TIMELETTER) }
-    val profileResId = profileImageResId ?: R.drawable.feature_afternote_img_default_profile_deceased
+    val profileResId =
+        profileImageResId ?: R.drawable.feature_afternote_img_default_profile_deceased
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -122,7 +122,7 @@ fun ReceiverAfterNoteMainScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             ProfileImage(
-                                placeholder = profileResId,
+                                onClick = {},
                                 isEditable = false,
                             )
                         }

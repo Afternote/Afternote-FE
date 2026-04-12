@@ -240,7 +240,7 @@ private fun PhotoCard(
                         ),
                 )
                 ProfileImage(
-                    placeholder = R.drawable.feature_afternote_img_default_profile_deceased,
+                    onClick = {}, // TODO:
                     isEditable = false,
                     displayImageUri = profileImageUri,
                 )

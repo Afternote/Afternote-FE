@@ -2,6 +2,7 @@ package com.afternote.feature.afternote.presentation.author.editor.processing
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -99,6 +100,8 @@ fun ProcessingMethodList(
         AddCircleButton(
             contentDescription = "추가",
             onClick = { state.toggleTextField() },
+            paddingValues = PaddingValues(12.dp),
+            plusSize = 24.dp,
         )
     }
 }
