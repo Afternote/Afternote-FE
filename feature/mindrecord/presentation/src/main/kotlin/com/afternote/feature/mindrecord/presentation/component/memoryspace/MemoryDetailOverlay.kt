@@ -1,6 +1,5 @@
 package com.afternote.feature.mindrecord.presentation.component.memoryspace
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -27,14 +26,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import com.afternote.core.ui.icon.CloseIcon
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryItem
 
 @Composable
@@ -77,8 +75,8 @@ fun MemoryDetailOverlay(
                             .fillMaxWidth()
                             .aspectRatio(4f / 3f),
                 ) {
-                    Image(
-                        painter = painterResource(id = memory.imageRes),
+                    AsyncImage(
+                        model = memory.imageUrl,
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize(),
@@ -177,7 +175,7 @@ private fun MemoryDetailOverlayPreview() {
             memory =
                 MemoryItem(
                     id = 1,
-                    imageRes = R.drawable.mindrecord_img,
+                    imageUrl = "https://picsum.photos/400/600?random=1",
                     title = "오늘의 기억",
                     date = "2024.11.11",
                     content = "오늘은 소중한 사람들과 함께 보낸 행복한 하루였다. 날씨도 맑고 기분도 좋아서 오랫동안 기억에 남을 것 같다.",

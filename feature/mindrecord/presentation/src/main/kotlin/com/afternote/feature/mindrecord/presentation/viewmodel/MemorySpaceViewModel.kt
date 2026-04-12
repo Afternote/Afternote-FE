@@ -1,7 +1,6 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
-import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,7 +26,7 @@ class MemorySpaceViewModel
                 listOf(
                     MemoryItem(
                         id = 1,
-                        imageRes = R.drawable.mindrecord_img,
+                        imageUrl = "https://mock.image/1",
                         title = "기억 1",
                         date = "2024.11.11",
                         content =
@@ -37,7 +36,7 @@ class MemorySpaceViewModel
                     ),
                     MemoryItem(
                         id = 2,
-                        imageRes = R.drawable.mindrecord_img,
+                        imageUrl = "https://mock.image/2",
                         title = "기억 2",
                         date = "2024.11.12",
                         content = "두 번째 기억 내용.",
@@ -45,7 +44,7 @@ class MemorySpaceViewModel
                     ),
                     MemoryItem(
                         id = 3,
-                        imageRes = R.drawable.mindrecord_img,
+                        imageUrl = "https://mock.image/3",
                         title = "기억 3",
                         date = "2024.11.13",
                         content = "세 번째 기억 내용.",
@@ -53,7 +52,7 @@ class MemorySpaceViewModel
                     ),
                     MemoryItem(
                         id = 4,
-                        imageRes = R.drawable.mindrecord_img,
+                        imageUrl = "https://mock.image/4",
                         title = "기억 4",
                         date = "2024.11.14",
                         content = "네 번째 기억 내용.",

@@ -329,10 +329,10 @@ private fun MemorySpaceScreenPreview() {
             modifier = Modifier.fillMaxSize(),
             memories =
                 listOf(
-                    MemoryItem(1, R.drawable.mindrecord_img, "기억 1", "2024.11.11", "미리보기", listOf("태그")),
-                    MemoryItem(2, R.drawable.mindrecord_img, "기억 2", "2024.11.12", "미리보기", emptyList()),
-                    MemoryItem(3, R.drawable.mindrecord_img, "기억 3", "2024.11.13", "미리보기", emptyList()),
-                    MemoryItem(4, R.drawable.mindrecord_img, "기억 4", "2024.11.14", "미리보기", emptyList()),
+                    MemoryItem(1, "https://picsum.photos/400/600?random=1", "기억 1", "2024.11.11", "미리보기", listOf("태그")),
+                    MemoryItem(2, "https://picsum.photos/400/600?random=2", "기억 2", "2024.11.12", "미리보기", emptyList()),
+                    MemoryItem(3, "https://picsum.photos/400/600?random=3", "기억 3", "2024.11.13", "미리보기", emptyList()),
+                    MemoryItem(4, "https://picsum.photos/400/600?random=4", "기억 4", "2024.11.14", "미리보기", emptyList()),
                 ),
         )
     }

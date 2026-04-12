@@ -6,7 +6,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -35,9 +34,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.memoryspace.CardTransform
 import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryItem
 import com.afternote.core.ui.R as CoreUiR
@@ -77,8 +76,8 @@ fun MemorySpacePhotoCard(
         shadowElevation = shadowElevation,
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            Image(
-                painter = painterResource(id = memory.imageRes),
+            AsyncImage(
+                model = memory.imageUrl,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier =
@@ -150,7 +149,7 @@ fun MemorySpacePhotoCard(
 private fun MemorySpacePhotoCardPreview() {
     AfternoteTheme {
         MemorySpacePhotoCard(
-            memory = MemoryItem(1, R.drawable.mindrecord_img, "기억 1", "2024.11.11", "미리보기", listOf("태그")),
+            memory = MemoryItem(1, "https://picsum.photos/400/600?random=1", "기억 1", "2024.11.11", "미리보기", listOf("태그")),
             transform =
                 CardTransform(
                     offsetX = 0.dp,
