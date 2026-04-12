@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -27,10 +28,8 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_today_question_answer_cta
 import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_today_question_header
 
-private val TodayQuestionCardGradientTop =
-    Color(0xFFF8F8F7)
-private val TodayQuestionCardGradientBottom =
-    Color(0xFFB7CDC0)
+private val TodayQuestionCardGradientStart = Color(0xFFF8F8F7)
+private val TodayQuestionCardGradientEnd = Color(0xFFB7CDC0)
 
 @Composable
 fun TodayQuestionCard(
@@ -41,8 +40,10 @@ fun TodayQuestionCard(
 ) {
     val gradientBrush =
         remember {
-            Brush.verticalGradient(
-                listOf(TodayQuestionCardGradientTop, TodayQuestionCardGradientBottom),
+            Brush.linearGradient(
+                colors = listOf(TodayQuestionCardGradientStart, TodayQuestionCardGradientEnd),
+                start = Offset.Zero,
+                end = Offset.Infinite,
             )
         }
 
@@ -61,13 +62,17 @@ fun TodayQuestionCard(
         ) {
             Text(
                 text = stringResource(mindrecord_today_question_header),
-                style = AfternoteDesign.typography.mono,
-                color = AfternoteDesign.colors.gray5,
+                style =
+                    AfternoteDesign.typography.mono.copy(
+                        lineHeight = 15.sp,
+                        fontSize = 10.sp,
+                    ),
+                color = AfternoteDesign.colors.gray6,
             )
             Text(
                 text = dateText,
                 style = AfternoteDesign.typography.mono,
-                color = AfternoteDesign.colors.gray5,
+                color = AfternoteDesign.colors.gray6,
             )
         }
 
@@ -82,7 +87,7 @@ fun TodayQuestionCard(
             color = AfternoteDesign.colors.black,
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(18.dp))
 
         AfternoteActionButton(
             text = stringResource(mindrecord_today_question_answer_cta),

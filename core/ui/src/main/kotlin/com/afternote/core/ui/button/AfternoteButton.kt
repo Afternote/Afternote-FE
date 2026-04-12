@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -167,11 +168,12 @@ fun AfternoteActionButton(
         ) {
             Text(
                 text = text,
-                style = AfternoteDesign.typography.captionLargeB,
+                style =
+                    AfternoteDesign.typography.bodySmallB.copy(fontSize = 13.sp),
                 color = contentColor,
             )
-            Spacer(modifier = Modifier.width(6.dp))
-            RightArrowIcon(modifier = Modifier.Companion.size(14.dp))
+            Spacer(modifier = Modifier.width(9.dp))
+            RightArrowIcon(modifier = Modifier.Companion.size(width = 5.dp, height = 9.dp))
         }
     }
 }
