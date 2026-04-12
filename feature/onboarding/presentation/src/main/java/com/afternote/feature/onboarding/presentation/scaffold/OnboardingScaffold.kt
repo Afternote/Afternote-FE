@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.addFocusCleaner
@@ -18,10 +19,10 @@ import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.onboarding.presentation.R
 
 @Composable
 fun OnboardingScaffold(
-    title: String,
     buttonText: String,
     onBackClick: () -> Unit,
     onActionButtonClick: () -> Unit,
@@ -36,7 +37,7 @@ fun OnboardingScaffold(
         containerColor = Color.Transparent,
         topBar = {
             DetailTopBar(
-                title = title,
+                title = stringResource(id = R.string.signup_title),
                 onBackClick = {
                     focusManager.clearFocus()
                     onBackClick()
@@ -79,12 +80,12 @@ fun OnboardingScaffold(
 private fun OnboardingScaffoldPreview() {
     AfternoteTheme {
         OnboardingScaffold(
-            title = "Onboarding Title",
             buttonText = "Next",
             onBackClick = {},
             onActionButtonClick = {},
-        ) {
-            Text(text = "This is the onboarding content area.")
-        }
+            content = {
+                Text(text = "This is the onboarding content area.")
+            },
+        )
     }
 }

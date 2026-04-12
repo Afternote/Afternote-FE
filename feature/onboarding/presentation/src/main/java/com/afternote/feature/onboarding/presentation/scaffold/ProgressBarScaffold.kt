@@ -17,36 +17,35 @@ import com.afternote.feature.onboarding.presentation.R
 @Composable
 internal fun ProgressBarScaffold(
     currentStep: Int,
-    buttonText: String,
     onBackClick: () -> Unit,
     onNextClick: () -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     OnboardingScaffold(
-        title = stringResource(id = R.string.signup_title),
-        buttonText = buttonText,
+        buttonText = stringResource(R.string.signup_next),
         onBackClick = onBackClick,
         onActionButtonClick = onNextClick,
         modifier = modifier,
-    ) {
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize(),
-        ) {
-            // 온보딩 전용 UI인 프로그레스 바는 여기에 위치
-            StepProgressBar(
-                currentStep = currentStep,
-                contentDescription =
-                    stringResource(
-                        R.string.onboarding_step_description,
-                        currentStep,
-                    ),
-            )
-            content()
-        }
-    } // 기존 온보딩 투명 배경 유지
+        {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxSize(),
+            ) {
+                // 온보딩 전용 UI인 프로그레스 바는 여기에 위치
+                StepProgressBar(
+                    currentStep = currentStep,
+                    contentDescription =
+                        stringResource(
+                            R.string.onboarding_step_description,
+                            currentStep,
+                        ),
+                )
+                content()
+            }
+        },
+    ) // 기존 온보딩 투명 배경 유지
 }
 
 @Preview(showBackground = true)
@@ -55,14 +54,14 @@ private fun ProgressBarScaffoldPreview() {
     AfternoteTheme {
         ProgressBarScaffold(
             currentStep = 1,
-            buttonText = "Next",
             onBackClick = {},
             onNextClick = {},
-        ) {
-            Text(
-                text = "Onboarding Content",
-                modifier = Modifier.padding(top = 16.dp),
-            )
-        }
+            content = {
+                Text(
+                    text = "Onboarding Content",
+                    modifier = Modifier.padding(top = 16.dp),
+                )
+            },
+        )
     }
 }
