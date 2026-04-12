@@ -6,10 +6,10 @@ import okhttp3.Response
 import javax.inject.Inject
 
 /**
- * `https://mock.image/{seed}` 요청을 Lorem Picsum으로 치환한다. 도메인 데이터는 가짜 URL만 유지하고
- * 실제 바이트는 네트워크 단에서만 바꾼다.
+ * `https://mock.image/{slot}` 요청을 Lorem Picsum 고정 ID 이미지로 치환한다. (400×600 유지)
  *
- * 애플리케이션 인터셉터에서 307을 반환하면 OkHttp 리다이렉트가 적용되지 않으므로 [chain.proceed]로 URL만 바꾼다.
+ * 경로의 숫자는 **슬롯 번호**로만 쓰이고, 실제 다운로드 URL은 엄선한 ID 목록을 순환해 고정되므로
+ * Coil 디스크/메모리 캐시 적중률이 높다. [chain.proceed]로 URL만 바꾼다.
  */
 class ImageMockInterceptor
     @Inject
@@ -19,13 +19,33 @@ class ImageMockInterceptor
             val url = request.url
             if (url.host != MOCK_IMAGE_HOST) return chain.proceed(request)
 
-            val seed = url.pathSegments.lastOrNull()?.takeIf { it.isNotBlank() } ?: "1"
-            val picsumUrl = "https://picsum.photos/seed/$seed/400/600".toHttpUrl()
+            val slot =
+                url.pathSegments
+                    .lastOrNull()
+                    ?.toIntOrNull()
+                    ?.coerceAtLeast(1) ?: 1
+            val picId = BEAUTIFUL_PIC_IDS[(slot - 1) % BEAUTIFUL_PIC_IDS.size]
+            val picsumUrl = "https://picsum.photos/id/$picId/400/600".toHttpUrl()
             val newRequest = request.newBuilder().url(picsumUrl).build()
             return chain.proceed(newRequest)
         }
 
         private companion object {
             const val MOCK_IMAGE_HOST = "mock.image"
+
+            /** 고정 이미지 ID — 매 요청마다 바뀌는 seed 대신 캐시 친화적. */
+            private val BEAUTIFUL_PIC_IDS =
+                listOf(
+                    "1015",
+                    "1016",
+                    "1018",
+                    "1025",
+                    "1032",
+                    "1043",
+                    "1050",
+                    "1060",
+                    "1074",
+                    "1084",
+                )
         }
     }
