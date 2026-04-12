@@ -20,7 +20,7 @@ import com.afternote.core.ui.Label
 import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
-import com.afternote.feature.onboarding.presentation.scaffold.OnboardingStepScaffold
+import com.afternote.feature.onboarding.presentation.scaffold.ProgressBarScaffold
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
 
@@ -40,7 +40,7 @@ fun SignUpResidentNumberScreen(
             .collectLatest { backFocusRequester.requestFocus() }
     }
 
-    OnboardingStepScaffold(
+    ProgressBarScaffold(
         currentStep = 2,
         buttonText = stringResource(R.string.signup_next),
         onBackClick = onBackClick,

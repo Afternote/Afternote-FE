@@ -20,7 +20,7 @@ import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteTheme
 
 @Composable
-fun OnboardingActionScaffold(
+fun OnboardingScaffold(
     title: String,
     buttonText: String,
     onBackClick: () -> Unit,
@@ -76,9 +76,9 @@ fun OnboardingActionScaffold(
 
 @Preview(showBackground = true)
 @Composable
-private fun OnboardingActionScaffoldPreview() {
+private fun OnboardingScaffoldPreview() {
     AfternoteTheme {
-        OnboardingActionScaffold(
+        OnboardingScaffold(
             title = "Onboarding Title",
             buttonText = "Next",
             onBackClick = {},

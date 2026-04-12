@@ -19,7 +19,7 @@ import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
-import com.afternote.feature.onboarding.presentation.scaffold.OnboardingStepScaffold
+import com.afternote.feature.onboarding.presentation.scaffold.ProgressBarScaffold
 
 @Composable
 fun SignUpScreen(
@@ -31,7 +31,7 @@ fun SignUpScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    OnboardingStepScaffold(
+    ProgressBarScaffold(
         currentStep = 1,
         buttonText = stringResource(R.string.signup_next),
         onBackClick = onBackClick,

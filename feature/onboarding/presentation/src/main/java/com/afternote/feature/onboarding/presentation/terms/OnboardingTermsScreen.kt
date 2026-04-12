@@ -32,7 +32,7 @@ import com.afternote.core.ui.CircleCheckBox
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
-import com.afternote.feature.onboarding.presentation.scaffold.OnboardingStepScaffold
+import com.afternote.feature.onboarding.presentation.scaffold.ProgressBarScaffold
 import com.afternote.core.common.R as CommonR
 
 enum class TermsType {
@@ -62,7 +62,7 @@ fun OnboardingTermsScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    OnboardingStepScaffold(
+    ProgressBarScaffold(
         currentStep = 4,
         buttonText = stringResource(R.string.terms_next),
         onBackClick = onBackClick,

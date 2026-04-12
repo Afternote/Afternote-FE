@@ -15,7 +15,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
 
 @Composable
-internal fun OnboardingStepScaffold(
+internal fun ProgressBarScaffold(
     currentStep: Int,
     buttonText: String,
     onBackClick: () -> Unit,
@@ -23,7 +23,7 @@ internal fun OnboardingStepScaffold(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    OnboardingActionScaffold(
+    OnboardingScaffold(
         title = stringResource(id = R.string.signup_title),
         buttonText = buttonText,
         onBackClick = onBackClick,
@@ -51,9 +51,9 @@ internal fun OnboardingStepScaffold(
 
 @Preview(showBackground = true)
 @Composable
-private fun OnboardingStepScaffoldPreview() {
+private fun ProgressBarScaffoldPreview() {
     AfternoteTheme {
-        OnboardingStepScaffold(
+        ProgressBarScaffold(
             currentStep = 1,
             buttonText = "Next",
             onBackClick = {},
