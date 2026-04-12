@@ -1,7 +1,7 @@
 package com.afternote.afternote_fe.screen
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,12 +22,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
@@ -43,39 +44,24 @@ fun WeeklySummaryGrid(
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         // [좌측] 이미지 카드 (1:1 정사각형 비율 유지)
         Box(
             modifier =
                 Modifier
                     .weight(1f)
-                    .aspectRatio(1f)
-                    .clip(RoundedCornerShape(12.dp))
-                    .clickable(onClick = onImageClick),
+                    .aspectRatio(1f),
         ) {
-            // TODO: 실제 구현 시 AsyncImage(Coil) 사용 권장
-            // painterResource는 drawable 전용 — color 리소스(android.R.color.*)는 쓰면 크래시남
-            Box(
+            Image(
+                painter = painterResource(R.drawable.core_ui_img_recorded_moment),
+                contentDescription = "recoreded moment",
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .background(AfternoteDesign.colors.gray4),
+                        .clip(RoundedCornerShape(6.dp))
+                        .clickable(onClick = onImageClick),
             )
-
-            // 텍스트 가독성을 위한 하단 그라데이션 오버레이
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, AfternoteDesign.colors.black.copy(alpha = 0.6f)),
-                                startY = 150f,
-                            ),
-                        ),
-            )
-
             Text(
                 text = "RECORDED MOMENT",
                 style = AfternoteDesign.typography.mono,
@@ -83,7 +69,7 @@ fun WeeklySummaryGrid(
                 modifier =
                     Modifier
                         .align(Alignment.BottomStart)
-                        .padding(16.dp),
+                        .padding(12.dp),
             )
         }
 
@@ -91,39 +77,47 @@ fun WeeklySummaryGrid(
         Column(
             modifier =
                 Modifier
-                    .weight(1f)
-                    .aspectRatio(1f),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                    .weight(0.5f),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             // [우측 상단] 이번 주 기록 횟수 카드
             Surface(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .weight(1f),
-                shape = RoundedCornerShape(12.dp),
+//                        .weight(1f)
+                        .aspectRatio(1f),
+                shape = RoundedCornerShape(6.dp),
                 border = BorderStroke(1.dp, AfternoteDesign.colors.gray2),
                 color = AfternoteDesign.colors.white,
                 onClick = onCountCardClick,
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(vertical = 12.dp, horizontal = 17.dp),
+                    verticalArrangement = Arrangement.spacedBy(5.dp),
                 ) {
                     Text(
                         text = "THIS WEEK",
                         style = AfternoteDesign.typography.mono,
-                        color = AfternoteDesign.colors.gray5,
+                        color = AfternoteDesign.colors.gray6,
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "기록된 순간들",
-                        style = AfternoteDesign.typography.captionLargeR,
-                        color = AfternoteDesign.colors.gray7,
+                        style =
+                            AfternoteDesign.typography.footnoteCaption.copy(
+                                fontSize = 11.sp,
+                                letterSpacing = 0.005.em,
+                            ),
+                        color = AfternoteDesign.colors.gray6,
                     )
-                    Spacer(modifier = Modifier.weight(1f))
                     Text(
                         text = recordedCount.toString(),
-                        style = AfternoteDesign.typography.h1,
+                        style =
+                            AfternoteDesign.typography.inter.copy(
+                                fontSize = 24.sp,
+                                lineHeight = 36.sp,
+                                letterSpacing = (0.07).sp,
+                            ),
                         color = AfternoteDesign.colors.black,
                         modifier = Modifier.align(Alignment.End),
                     )
@@ -135,8 +129,9 @@ fun WeeklySummaryGrid(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .weight(1f),
-                shape = RoundedCornerShape(12.dp),
+//                        .weight(1f)
+                        .aspectRatio(1f),
+                shape = RoundedCornerShape(6.dp),
                 color = AfternoteDesign.colors.gray8,
                 onClick = onRecentRecordClick,
             ) {
@@ -170,12 +165,10 @@ fun WeeklySummaryGrid(
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
+@Preview(showBackground = true)
 @Composable
 private fun WeeklySummaryGridPreview() {
     AfternoteTheme {
-        WeeklySummaryGrid(
-            modifier = Modifier.padding(24.dp),
-        )
+        WeeklySummaryGrid()
     }
 }

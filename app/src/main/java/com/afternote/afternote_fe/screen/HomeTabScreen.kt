@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -108,36 +109,36 @@ fun HomeTabScreen(
             // 4. AFTER NOTE NEXT STEP 섹션
             item {
                 AfternoteSectionHeader(title = stringResource(R.string.home_tab_next_step_section_title))
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, AfternoteDesign.colors.gray2),
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, AfternoteDesign.colors.gray3),
                     color = AfternoteDesign.colors.white,
                     onClick = onNextStepClick,
                 ) {
                     Column(
-                        modifier = Modifier.padding(20.dp),
+                        modifier = Modifier.padding(16.dp),
                     ) {
                         Text(
                             text = stringResource(R.string.home_tab_next_step_body),
-                            style = AfternoteDesign.typography.captionLargeR,
-                            color = AfternoteDesign.colors.black,
+                            style = AfternoteDesign.typography.inter,
+                            color = AfternoteDesign.colors.gray8,
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(18.dp))
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             Text(
                                 text = stringResource(R.string.home_tab_next_step_cta),
                                 style = AfternoteDesign.typography.captionLargeR,
-                                color = AfternoteDesign.colors.gray5,
+                                color = AfternoteDesign.colors.gray6,
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
                             RightArrowIcon(
-                                modifier = Modifier.size(12.dp),
-                                tint = AfternoteDesign.colors.gray5,
+                                modifier = Modifier.size(width = 4.dp, height = 7.dp),
+                                tint = AfternoteDesign.colors.gray6,
                             )
                         }
                     }
