@@ -1,4 +1,4 @@
-package com.afternote.core.ui.scaffold.FAB
+package com.afternote.core.ui.button.FAB
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -16,7 +16,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
 @Composable
-fun PenFAB(
+fun PenFloatingActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -37,8 +37,8 @@ fun PenFAB(
 
 @Preview(showBackground = true)
 @Composable
-private fun PenFABPreview() {
+private fun PenFloatingActionButtonPreview() {
     AfternoteTheme {
-        PenFAB(onClick = {})
+        PenFloatingActionButton(onClick = {})
     }
 }

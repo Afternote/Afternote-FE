@@ -1,4 +1,4 @@
-package com.afternote.core.ui.scaffold.bottombar
+package com.afternote.core.ui.bottombar
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes

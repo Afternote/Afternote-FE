@@ -1,4 +1,4 @@
-package com.afternote.core.ui.button
+package com.afternote.core.ui.button.FAB
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape

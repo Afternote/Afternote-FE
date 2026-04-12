@@ -28,9 +28,9 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.icon.AfternoteCircularCheckbox
 import com.afternote.core.ui.icon.CheckboxState
 import com.afternote.core.ui.icon.RightArrowIcon
-import com.afternote.core.ui.scaffold.topbar.HomeTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.mindrecord.presentation.component.MemoriesCard
 import com.afternote.feature.mindrecord.presentation.component.TodayQuestionCard
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
@@ -189,8 +189,6 @@ fun HomeTabScreen(
 
 /**
  * 수신인 지정 상태 칩.
- * - 미지정: 배경 [AfternoteDesign.colors.gray2], 체크박스 미체크
- * - 지정 완료: 배경 [AfternoteDesign.colors.white], 체크박스 체크
  *
  * 터치·리플은 [Surface]가 담당하고, 체크박스는 상태 표시만 한다 ([onClick] null).
  */

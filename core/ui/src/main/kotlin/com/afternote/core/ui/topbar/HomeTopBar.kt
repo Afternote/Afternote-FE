@@ -1,4 +1,4 @@
-package com.afternote.core.ui.scaffold.topbar
+package com.afternote.core.ui.topbar
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
