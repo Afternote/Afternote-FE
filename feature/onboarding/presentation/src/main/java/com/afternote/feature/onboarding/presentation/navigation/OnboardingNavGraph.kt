@@ -15,7 +15,6 @@ import androidx.navigation.navigation
 import com.afternote.core.domain.usecase.auth.LoginType
 import com.afternote.core.ui.Route
 import com.afternote.feature.onboarding.presentation.OnboardingProfileScreen
-import com.afternote.feature.onboarding.presentation.OnboardingTermsScreen
 import com.afternote.feature.onboarding.presentation.WelcomeScreen
 import com.afternote.feature.onboarding.presentation.login.LoginViewModel
 import com.afternote.feature.onboarding.presentation.login.component.LoginScreen
@@ -23,6 +22,7 @@ import com.afternote.feature.onboarding.presentation.signup.SignUpPasswordScreen
 import com.afternote.feature.onboarding.presentation.signup.SignUpResidentNumberScreen
 import com.afternote.feature.onboarding.presentation.signup.SignUpScreen
 import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel
+import com.afternote.feature.onboarding.presentation.terms.OnboardingTermsScreen
 
 /**
  * 온보딩 피처의 네비게이션 그래프.

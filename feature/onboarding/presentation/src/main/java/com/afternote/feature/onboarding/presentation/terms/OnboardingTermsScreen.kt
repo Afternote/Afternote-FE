@@ -1,4 +1,4 @@
-package com.afternote.feature.onboarding.presentation
+package com.afternote.feature.onboarding.presentation.terms
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.CircleCheckBox
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.onboarding.presentation.OnboardingStepScaffold
+import com.afternote.feature.onboarding.presentation.R
 import com.afternote.core.common.R as CommonR
 
 enum class TermsType {
