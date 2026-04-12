@@ -1,12 +1,9 @@
 package com.afternote.afternote_fe.screen
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -25,21 +22,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.model.MindRecordCategory
 import com.afternote.core.ui.button.AfternoteCircularCheckbox
 import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.HomeTopBar
-import com.afternote.feature.mindrecord.presentation.component.MemoriesCard
-import com.afternote.feature.mindrecord.presentation.component.TodayQuestionCard
-import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
+import com.afternote.feature.mindrecord.presentation.hometab.homeTabMindRecordMemoriesSection
+import com.afternote.feature.mindrecord.presentation.hometab.homeTabMindRecordQuestionAndCategories
 
 @Immutable
 data class HomeTabUiState(
     val userName: String = "",
     val isRecipientDesignated: Boolean = false,
     val categoryCounts: Map<MindRecordCategory, Int> = emptyMap(),
+    val isLoading: Boolean = false,
+    val isError: Boolean = false,
 )
 
 @Composable
@@ -90,38 +89,11 @@ fun HomeTabScreen(
                 )
             }
 
-            // 2. 오늘의 질문 카드
-            item {
-                TodayQuestionCard(
-                    onAnswerClick = onAnswerClick,
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-            }
-
-            // 3. 기록 카테고리 (일기, 깊은 생각)
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    MindRecordCategory.entries
-                        .filter { it != MindRecordCategory.DAILY_QUESTION }
-                        .forEach { category ->
-                            RecordCategoryCard(
-                                modifier =
-                                    Modifier
-                                        .weight(1f)
-                                        .aspectRatio(1.1f),
-                                iconResId = category.imageUrl,
-                                title = category.title,
-                                subtitle = category.description,
-                                totalCount = uiState.categoryCounts[category] ?: 0,
-                                onClick = { onRecordCategoryClick(category) },
-                            )
-                        }
-                }
-                Spacer(modifier = Modifier.height(40.dp))
-            }
+            homeTabMindRecordQuestionAndCategories(
+                categoryCounts = uiState.categoryCounts,
+                onAnswerClick = onAnswerClick,
+                onRecordCategoryClick = onRecordCategoryClick,
+            )
 
             // 4. AFTER NOTE NEXT STEP 섹션
             item {
@@ -173,17 +145,9 @@ fun HomeTabScreen(
                 Spacer(modifier = Modifier.height(40.dp))
             }
 
-            // 6. MEMORIES 섹션
-            item {
-                Column(
-                    modifier = Modifier.clickable(onClick = onMemoriesSectionClick),
-                ) {
-                    SectionHeader(title = "MEMORIES")
-                    Spacer(modifier = Modifier.height(16.dp))
-                    MemoriesCard()
-                }
-                Spacer(modifier = Modifier.height(40.dp))
-            }
+            homeTabMindRecordMemoriesSection(
+                onMemoriesSectionClick = onMemoriesSectionClick,
+            )
         }
     }
 }

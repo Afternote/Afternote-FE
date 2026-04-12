@@ -25,9 +25,11 @@ android {
 
 dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.androidx.hilt.navigation.compose)
 
     // Core
     implementation(projects.core.ui)
+    implementation(projects.core.model)
     implementation(projects.core.startup)
     implementation(projects.core.di)
     implementation(projects.core.domain)
