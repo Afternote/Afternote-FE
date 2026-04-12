@@ -37,7 +37,7 @@ fun MemoriesCard(modifier: Modifier = Modifier) {
                 .fillMaxWidth()
                 .border(
                     1.dp,
-                    color = Color(0xFF000000).copy(alpha = 0.05f),
+                    color = AfternoteDesign.colors.gray3,
                     shape = RoundedCornerShape(8.dp),
                 ),
     ) {
@@ -71,13 +71,14 @@ fun MemoriesCard(modifier: Modifier = Modifier) {
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 15.dp),
+                    .padding(16.dp),
         ) {
             Text(
                 text = "\"내 인생에서 가장 소중했던 순간은?\"",
                 style = AfternoteDesign.typography.bodySmallR,
-                color = Color(0xFF000000).copy(alpha = 0.8f),
+                color = AfternoteDesign.colors.gray8,
             )
+            Spacer(Modifier.height(1.dp))
             Text(
                 text = "- 아이가 태어났을 때...",
                 style = AfternoteDesign.typography.captionLargeR,

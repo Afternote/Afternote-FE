@@ -8,22 +8,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.model.MindRecordCategory
-import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.core.ui.AfternoteSectionHeader
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_home_tab_memories_section_click_label
 import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_home_tab_memories_section_title
@@ -101,45 +96,18 @@ private fun HomeTabMindRecordMemoriesItem(onMemoriesSectionClick: () -> Unit) {
                         onClick = onMemoriesSectionClick,
                     ),
         ) {
-            HomeTabMemoriesSectionHeader()
-            Spacer(modifier = Modifier.height(16.dp))
+            AfternoteSectionHeader(title = stringResource(mindrecord_home_tab_memories_section_title))
+            Spacer(modifier = Modifier.height(12.dp))
             MemoriesCard()
         }
-        Spacer(modifier = Modifier.height(40.dp))
     }
 }
 
-@Composable
-private fun HomeTabMemoriesSectionHeader(modifier: Modifier = Modifier) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(
-            text = stringResource(mindrecord_home_tab_memories_section_title),
-            style = AfternoteDesign.typography.mono,
-            color = AfternoteDesign.colors.gray6,
-        )
-        HorizontalDivider(
-            modifier =
-                Modifier
-                    .weight(1f),
-            color = AfternoteDesign.colors.gray3,
-        )
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "오늘의 질문 + 기록 카테고리")
+@Preview(showBackground = true, name = "오늘의 질문 + 기록 카테고리")
 @Composable
 private fun HomeTabMindRecordQuestionAndCategoriesPreview() {
     AfternoteTheme {
-        LazyColumn(
-            modifier =
-                Modifier
-                    .width(360.dp)
-                    .padding(horizontal = 20.dp),
-        ) {
+        LazyColumn {
             homeTabMindRecordQuestionAndCategories(
                 categoryCounts =
                     mapOf(
@@ -153,7 +121,7 @@ private fun HomeTabMindRecordQuestionAndCategoriesPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "MEMORIES 섹션 + 카드")
+@Preview(showBackground = true, name = "MEMORIES 섹션 + 카드")
 @Composable
 private fun HomeTabMindRecordMemoriesItemPreview() {
     AfternoteTheme {

@@ -1,7 +1,6 @@
 package com.afternote.afternote_fe.screen
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -27,6 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.afternote_fe.R
 import com.afternote.core.model.MindRecordCategory
+import com.afternote.core.ui.AfternoteSectionHeader
 import com.afternote.core.ui.button.AfternoteCircularCheckbox
 import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.icon.RightArrowIcon
@@ -103,7 +102,7 @@ fun HomeTabScreen(
 
             // 4. AFTER NOTE NEXT STEP 섹션
             item {
-                SectionHeader(title = stringResource(R.string.home_tab_next_step_section_title))
+                AfternoteSectionHeader(title = stringResource(R.string.home_tab_next_step_section_title))
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Surface(
@@ -216,30 +215,6 @@ private fun RecipientDesignationChip(
                 tint = AfternoteDesign.colors.gray5,
             )
         }
-    }
-}
-
-@Composable
-private fun SectionHeader(
-    title: String,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(
-            text = title,
-            style = AfternoteDesign.typography.mono,
-            color = AfternoteDesign.colors.gray6,
-        )
-        HorizontalDivider(
-            modifier =
-                Modifier
-                    .weight(1f),
-            color = AfternoteDesign.colors.gray3,
-        )
     }
 }
 
