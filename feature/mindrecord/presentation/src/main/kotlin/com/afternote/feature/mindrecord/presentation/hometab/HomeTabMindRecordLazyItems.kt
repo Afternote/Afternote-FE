@@ -127,14 +127,6 @@ private fun HomeTabMemoriesSectionHeader(modifier: Modifier = Modifier) {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "MEMORIES 섹션 + 카드")
-@Composable
-private fun HomeTabMindRecordMemoriesItemPreview() {
-    AfternoteTheme {
-        HomeTabMindRecordMemoriesItem(onMemoriesSectionClick = {})
-    }
-}
-
 @Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "오늘의 질문 + 기록 카테고리")
 @Composable
 private fun HomeTabMindRecordQuestionAndCategoriesPreview() {
@@ -155,5 +147,13 @@ private fun HomeTabMindRecordQuestionAndCategoriesPreview() {
                 onRecordCategoryClick = {},
             )
         }
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "MEMORIES 섹션 + 카드")
+@Composable
+private fun HomeTabMindRecordMemoriesItemPreview() {
+    AfternoteTheme {
+        HomeTabMindRecordMemoriesItem(onMemoriesSectionClick = {})
     }
 }

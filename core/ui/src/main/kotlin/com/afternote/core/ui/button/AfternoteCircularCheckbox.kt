@@ -84,7 +84,7 @@ fun AfternoteCircularCheckbox(
                 .clip(CircleShape)
                 .background(backgroundColor)
                 .border(
-                    width = if (state == CheckboxState.None) 2.dp else 0.dp,
+                    width = if (state == CheckboxState.None) 1.dp else 0.dp,
                     color = borderColor,
                     shape = CircleShape,
                 ).then(

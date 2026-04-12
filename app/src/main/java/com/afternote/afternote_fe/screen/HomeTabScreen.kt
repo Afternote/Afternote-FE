@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -61,7 +62,7 @@ fun HomeTabScreen(
     Scaffold(
         modifier = modifier,
         topBar = { HomeTopBar(onSettingClick = onSettingClick) },
-        containerColor = AfternoteDesign.colors.gray1,
+        containerColor = Color.Transparent,
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier.padding(paddingValues),
@@ -73,6 +74,7 @@ fun HomeTabScreen(
                 Text(
                     text = stringResource(R.string.home_tab_greeting, uiState.userName),
                     style = AfternoteDesign.typography.h1,
+                    modifier = Modifier.padding(start = 4.dp),
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -80,14 +82,16 @@ fun HomeTabScreen(
                     text = stringResource(R.string.home_tab_tagline),
                     style = AfternoteDesign.typography.captionLargeR,
                     color = AfternoteDesign.colors.gray5,
+                    modifier = Modifier.padding(start = 4.dp),
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
                 RecipientDesignationChip(
                     isDesignated = uiState.isRecipientDesignated,
-                    modifier = Modifier.padding(bottom = 32.dp),
                     onClick = onRecipientChipClick,
                 )
+
+                Spacer(Modifier.height(32.dp))
             }
 
             homeTabMindRecordQuestionAndCategories(
@@ -164,15 +168,22 @@ private fun RecipientDesignationChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val colors = AfternoteDesign.colors
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = if (isDesignated) colors.white else colors.gray2,
+        color = if (isDesignated) AfternoteDesign.colors.white else AfternoteDesign.colors.gray2,
+        border =
+            BorderStroke(
+                width = 1.dp,
+                color = AfternoteDesign.colors.gray3,
+            ),
         modifier = modifier,
         onClick = onClick,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            modifier =
+                Modifier
+                    .padding(vertical = 9.dp)
+                    .padding(start = 15.dp, end = 20.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             AfternoteCircularCheckbox(
@@ -183,8 +194,9 @@ private fun RecipientDesignationChip(
                         CheckboxState.None
                     },
                 onClick = null,
+                size = 12.dp,
             )
-            Spacer(modifier = Modifier.width(6.dp))
+            Spacer(modifier = Modifier.width(4.dp))
             Text(
                 text =
                     stringResource(
@@ -195,12 +207,12 @@ private fun RecipientDesignationChip(
                         },
                     ),
                 style = AfternoteDesign.typography.captionLargeB,
-                color = colors.gray7,
+                color = AfternoteDesign.colors.gray9,
             )
-            Spacer(modifier = Modifier.width(4.dp))
+            Spacer(modifier = Modifier.width(10.dp))
             RightArrowIcon(
                 modifier = Modifier.size(12.dp),
-                tint = colors.gray5,
+                tint = AfternoteDesign.colors.gray5,
             )
         }
     }
