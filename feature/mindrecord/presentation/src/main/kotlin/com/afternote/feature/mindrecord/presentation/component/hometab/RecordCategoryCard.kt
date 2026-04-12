@@ -18,13 +18,23 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_record_category_accessibility
+import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_total_label
+import java.text.NumberFormat
+import java.util.Locale
 
 @Composable
 fun RecordCategoryCard(
@@ -35,8 +45,18 @@ fun RecordCategoryCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val formattedCount =
+        remember(totalCount) {
+            NumberFormat.getNumberInstance(Locale.getDefault()).format(totalCount)
+        }
+    val categoryContentDescription =
+        stringResource(mindrecord_record_category_accessibility, title, formattedCount)
+
     Surface(
-        modifier = modifier,
+        modifier =
+            modifier.semantics(mergeDescendants = true) {
+                contentDescription = categoryContentDescription
+            },
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(1.dp, AfternoteDesign.colors.gray2),
         color = AfternoteDesign.colors.white,
@@ -67,6 +87,8 @@ fun RecordCategoryCard(
                     text = title,
                     style = AfternoteDesign.typography.bodyLargeB,
                     color = AfternoteDesign.colors.black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
 
@@ -76,6 +98,9 @@ fun RecordCategoryCard(
                 text = subtitle,
                 style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray5,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                lineHeight = 18.sp,
             )
 
             Spacer(modifier = Modifier.weight(1f))
@@ -86,15 +111,17 @@ fun RecordCategoryCard(
                 verticalAlignment = Alignment.Bottom,
             ) {
                 Text(
-                    text = "TOTAL",
+                    text = stringResource(mindrecord_total_label),
                     style = AfternoteDesign.typography.mono,
                     color = AfternoteDesign.colors.gray5,
                     modifier = Modifier.padding(bottom = 4.dp),
                 )
                 Text(
-                    text = totalCount.toString(),
+                    text = formattedCount,
                     style = AfternoteDesign.typography.h1,
                     color = AfternoteDesign.colors.black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
@@ -111,6 +138,21 @@ private fun RecordCategoryCardPreview() {
             title = "일기",
             subtitle = "나의 매일을 기록하세요",
             totalCount = 18,
+            onClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "큰 수")
+@Composable
+private fun RecordCategoryCardLargeCountPreview() {
+    AfternoteTheme {
+        RecordCategoryCard(
+            modifier = Modifier.aspectRatio(1.1f),
+            iconResId = android.R.drawable.ic_menu_edit,
+            title = "깊은 생각",
+            subtitle = "오늘의 생각을 남기세요",
+            totalCount = 12_345,
             onClick = {},
         )
     }
