@@ -20,14 +20,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.button.AfternoteActionButton
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_today_question_answer_cta
 import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_today_question_header
 
-private val TodayQuestionCardGradientTop = Color(0xFFF7F9F7)
-private val TodayQuestionCardGradientBottom = Color(0xFFDCEBDE)
+private val TodayQuestionCardGradientTop =
+    Color(0xFFF8F8F7)
+private val TodayQuestionCardGradientBottom =
+    Color(0xFFB7CDC0)
 
 @Composable
 fun TodayQuestionCard(
@@ -72,7 +75,10 @@ fun TodayQuestionCard(
 
         Text(
             text = questionText,
-            style = AfternoteDesign.typography.h1,
+            style =
+                AfternoteDesign.typography.h3.copy(
+                    lineHeight = 30.sp,
+                ),
             color = AfternoteDesign.colors.black,
         )
 
