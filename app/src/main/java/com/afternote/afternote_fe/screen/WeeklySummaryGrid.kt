@@ -2,7 +2,6 @@ package com.afternote.afternote_fe.screen
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -21,7 +20,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -54,30 +52,28 @@ fun WeeklySummaryGrid(
             horizontalArrangement = Arrangement.spacedBy(gap),
         ) {
             // [좌측] 큰 정사각형 카드 (RECORDED MOMENT)
-            Box(
-                modifier =
-                    Modifier
-                        .size(largeSquareSize)
-                        .clip(RoundedCornerShape(6.dp)),
+            Surface(
+                modifier = Modifier.size(largeSquareSize),
+                shape = RoundedCornerShape(6.dp),
+                onClick = onImageClick,
             ) {
-                Image(
-                    painter = painterResource(R.drawable.core_ui_img_recorded_moment),
-                    contentDescription = "recorded moment",
-                    contentScale = ContentScale.Crop,
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .clickable(onClick = onImageClick),
-                )
-                Text(
-                    text = "RECORDED MOMENT",
-                    style = AfternoteDesign.typography.mono,
-                    color = AfternoteDesign.colors.white,
-                    modifier =
-                        Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(12.dp),
-                )
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Image(
+                        painter = painterResource(R.drawable.core_ui_img_recorded_moment),
+                        contentDescription = "recorded moment",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    Text(
+                        text = "RECORDED MOMENT",
+                        style = AfternoteDesign.typography.mono,
+                        color = AfternoteDesign.colors.white,
+                        modifier =
+                            Modifier
+                                .align(Alignment.BottomStart)
+                                .padding(12.dp),
+                    )
+                }
             }
 
             // [우측] 작은 정사각형 카드 2개를 담은 컬럼
