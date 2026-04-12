@@ -8,10 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -59,68 +57,49 @@ fun OnboardingProfileScreen(
         },
         containerColor = Color.Transparent,
     ) { innerPadding ->
-        OnboardingProfileContent(
-            nameState = nameState,
-            displayImageUri = displayImageUri,
-            onEditProfileImageClick = onEditProfileImageClick,
+        Column(
             modifier =
                 Modifier
                     .padding(innerPadding)
                     .consumeWindowInsets(innerPadding)
-                    .fillMaxSize(),
-            onCompleteClick = onCompleteClick,
-        )
-    }
-}
+                    .fillMaxSize()
+                    .addFocusCleaner(focusManager)
+                    .padding(horizontal = 20.dp),
+        ) {
+            Spacer(modifier = Modifier.height(39.dp))
+            Column(
+                verticalArrangement = Arrangement.spacedBy(56.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = stringResource(R.string.profile_headline),
+                    modifier = Modifier.fillMaxWidth(),
+                    style =
+                        AfternoteDesign.typography.h1,
+                    color = AfternoteDesign.colors.black,
+                    textAlign = TextAlign.Start,
+                )
+                ProfileImage(
+                    onClick = onEditProfileImageClick,
+                    displayImageUri = displayImageUri,
+                )
 
-@Composable
-private fun OnboardingProfileContent(
-    nameState: TextFieldState,
-    displayImageUri: String?,
-    onEditProfileImageClick: () -> Unit,
-    onCompleteClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val focusManager = LocalFocusManager.current
-    Column(
-        modifier =
-            modifier
-                .verticalScroll(rememberScrollState())
-                .addFocusCleaner(focusManager)
-                .padding(horizontal = 20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(56.dp),
-    ) {
-        Spacer(modifier = Modifier.height(39.dp))
+                AfternoteTextField(
+                    state = nameState,
+                    placeholder = stringResource(R.string.profile_name_placeholder),
+                    imeAction = ImeAction.Done,
+                )
 
-        Text(
-            text = stringResource(R.string.profile_headline),
-            modifier = Modifier.fillMaxWidth(),
-            style =
-                AfternoteDesign.typography.h1,
-            color = AfternoteDesign.colors.black,
-            textAlign = TextAlign.Start,
-        )
-
-        ProfileImage(
-            onClick = onEditProfileImageClick,
-            displayImageUri = displayImageUri,
-        )
-
-        AfternoteTextField(
-            state = nameState,
-            placeholder = stringResource(R.string.profile_name_placeholder),
-            imeAction = ImeAction.Done,
-        )
-
-        AfternoteButton(
-            text = stringResource(R.string.profile_complete),
-            onClick = {
-                focusManager.clearFocus()
-                onCompleteClick()
-            },
-            type = AfternoteButtonType.Default,
-        )
+                AfternoteButton(
+                    text = stringResource(R.string.profile_complete),
+                    onClick = {
+                        focusManager.clearFocus()
+                        onCompleteClick()
+                    },
+                    type = AfternoteButtonType.Default,
+                )
+            }
+        }
     }
 }
 
