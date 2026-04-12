@@ -27,7 +27,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.CircleCheckBox
+import com.afternote.core.ui.button.AfternoteCircularCheckbox
+import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
@@ -174,9 +175,9 @@ private fun TermsRow(
                     ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            CircleCheckBox(
-                checked = isChecked,
-                onCheckedChange = null,
+            AfternoteCircularCheckbox(
+                state = if (isChecked) CheckboxState.Default else CheckboxState.None,
+                onClick = null,
             )
 
             Spacer(Modifier.width(8.dp))
