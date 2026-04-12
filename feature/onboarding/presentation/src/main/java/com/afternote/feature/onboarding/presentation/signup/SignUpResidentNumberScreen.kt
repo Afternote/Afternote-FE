@@ -16,6 +16,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
@@ -30,10 +31,12 @@ import kotlinx.coroutines.flow.filter
 @Composable
 fun SignUpResidentNumberScreen(
     frontNumberState: TextFieldState,
+    backNumberState: TextFieldState,
     onNextClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val frontFocusRequester = remember { FocusRequester() }
     val backFocusRequester = remember { FocusRequester() }
 
     // 앞자리 6자리 입력 완료 시 뒷자리로 포커스 자동 이동
@@ -41,6 +44,11 @@ fun SignUpResidentNumberScreen(
         snapshotFlow { frontNumberState.text }
             .filter { it.length == 6 }
             .collectLatest { backFocusRequester.requestFocus() }
+    }
+
+    // 화면 진입 시 앞자리 필드에 포커스 → 키보드 표시
+    LaunchedEffect(Unit) {
+        frontFocusRequester.requestFocus()
     }
 
     ProgressBarScaffold(
@@ -63,9 +71,18 @@ fun SignUpResidentNumberScreen(
                 Spacer(modifier = Modifier.height(18.dp))
 
                 AfternoteTextField(
-                    state = rememberTextFieldState(),
-                    type = TextFieldType.Variant8(),
-                    placeholder = "주민등록번호",
+                    state = frontNumberState,
+                    focusRequester = frontFocusRequester,
+                    type =
+                        TextFieldType.Variant8(
+                            backState = backNumberState,
+                            placeholder = stringResource(R.string.signup_resident_number_back_placeholder),
+                            backFocusRequester = backFocusRequester,
+                            frontFocusRequester = frontFocusRequester,
+                        ),
+                    placeholder = stringResource(R.string.signup_resident_number_placeholder),
+                    keyboardType = KeyboardType.Number,
+                    onImeAction = onNextClick,
                 )
             }
         },
@@ -78,6 +95,7 @@ private fun SignUpResidentNumberScreenPreview() {
     AfternoteTheme {
         SignUpResidentNumberScreen(
             frontNumberState = rememberTextFieldState(),
+            backNumberState = rememberTextFieldState(),
             onNextClick = {},
             onBackClick = {},
         )
