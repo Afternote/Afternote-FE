@@ -2,10 +2,12 @@ package com.afternote.feature.onboarding.presentation.signup
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -38,7 +40,11 @@ fun SignUpScreen(
         modifier = modifier,
         content = {
             Column(
-                modifier = Modifier.padding(top = 35.dp),
+                modifier =
+                    Modifier
+                        .imePadding()
+                        .verticalScroll(rememberScrollState())
+                        .padding(top = 35.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 // 이메일 입력 + 인증번호 받기
@@ -67,7 +73,6 @@ fun SignUpScreen(
                     )
                 }
             }
-            Spacer(modifier = Modifier.weight(1f))
         },
     )
 }

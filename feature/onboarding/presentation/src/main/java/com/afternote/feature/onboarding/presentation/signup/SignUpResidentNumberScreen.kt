@@ -3,9 +3,12 @@ package com.afternote.feature.onboarding.presentation.signup
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -47,7 +50,11 @@ fun SignUpResidentNumberScreen(
         modifier = modifier,
         content = {
             Column(
-                modifier = Modifier.padding(top = 43.dp),
+                modifier =
+                    Modifier
+                        .imePadding()
+                        .verticalScroll(rememberScrollState())
+                        .padding(top = 43.dp),
             ) {
                 Label(
                     text = stringResource(R.string.signup_resident_number_label),
@@ -61,7 +68,6 @@ fun SignUpResidentNumberScreen(
                     placeholder = "주민등록번호",
                 )
             }
-            Spacer(modifier = Modifier.weight(1f))
         },
     )
 }
