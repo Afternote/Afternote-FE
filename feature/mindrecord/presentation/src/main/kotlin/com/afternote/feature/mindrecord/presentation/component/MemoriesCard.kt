@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -34,42 +35,39 @@ import com.afternote.feature.mindrecord.presentation.R
 
 @Composable
 fun MemoriesCard(modifier: Modifier = Modifier) {
+    val cardShape = RoundedCornerShape(8.dp)
+    val buttonShape = RoundedCornerShape(20.dp)
+
     Column(
         modifier =
             modifier
                 .fillMaxWidth()
-                .border(
-                    1.dp,
-                    color = AfternoteDesign.colors.gray3,
-                    shape = RoundedCornerShape(8.dp),
-                ),
+                .border(1.dp, color = AfternoteDesign.colors.gray3, shape = cardShape)
+                .clip(cardShape),
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Image(
-                painter = painterResource(R.drawable.mindrecord_img),
-                contentDescription = null,
-                contentScale = ContentScale.FillWidth,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .graphicsLayer {
-                            this.alpha = 0.7f
-                        }.drawWithContent {
-                            drawContent()
-                            drawRect(
-                                brush =
-                                    Brush.verticalGradient(
-                                        colorStops =
-                                            arrayOf(
-                                                0.0f to Color(0xFF000000).copy(alpha = 0.0f),
-                                                0.5f to Color(0xFFFFFFFF).copy(alpha = 0.2f),
-                                                1.0f to Color(0xFFF8F8F7),
-                                            ),
-                                    ),
-                            )
-                        },
-            )
-        }
+        Image(
+            painter = painterResource(R.drawable.mindrecord_img),
+            contentDescription = null,
+            contentScale = ContentScale.FillWidth,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .graphicsLayer { alpha = 0.7f }
+                    .drawWithContent {
+                        drawContent()
+                        drawRect(
+                            brush =
+                                Brush.verticalGradient(
+                                    colorStops =
+                                        arrayOf(
+                                            0.0f to Color.Transparent,
+                                            0.5f to Color.White.copy(alpha = 0.2f),
+                                            1.0f to Color(0xFFF8F8F7),
+                                        ),
+                                ),
+                        )
+                    },
+        )
         Column(
             modifier =
                 Modifier
@@ -89,33 +87,19 @@ fun MemoriesCard(modifier: Modifier = Modifier) {
             )
 
             Spacer(modifier = Modifier.height(16.dp))
+
             Row(
                 modifier =
                     Modifier
-                        // 1. 테두리 (Border)
-                        .border(
-                            width = 1.dp,
-                            color = AfternoteDesign.colors.gray3,
-                            shape = RoundedCornerShape(20.dp),
-                        )
-                        // 2. 자르기 (Clip): Ripple 효과와 배경색이 모서리 밖으로 나가지 않게 가둠
-                        .clip(RoundedCornerShape(20.dp))
-                        // 3. 배경색 (Background)
+                        .border(width = 1.dp, color = AfternoteDesign.colors.gray3, shape = buttonShape)
+                        .clip(buttonShape)
                         .background(color = AfternoteDesign.colors.gray2)
-                        // 4. 클릭 (Clickable): 접근성 Role.Button 추가
-                        .clickable(
-                            role = Role.Button,
-                            onClick = {},
-                        )
-                        // 5. 내부 여백 (Padding): 기존 Row에 있던 패딩을 가장 마지막에 배치
-                        .padding(
-                            horizontal = 17.dp,
-                            vertical = 9.dp,
-                        ),
+                        .clickable(role = Role.Button, onClick = {})
+                        .padding(horizontal = 17.dp, vertical = 9.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "그날의 기록 다시 읽기",
+                    text = stringResource(R.string.mindrecord_read_again),
                     style = AfternoteDesign.typography.inter,
                     color = AfternoteDesign.colors.gray7,
                 )
