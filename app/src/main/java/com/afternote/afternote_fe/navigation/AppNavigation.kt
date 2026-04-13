@@ -40,22 +40,23 @@ fun AppNavigation(
     modifier: Modifier = Modifier,
     appState: AppState = rememberAfternoteAppState(),
 ) {
+    val navEntry by appState.navController.currentBackStackEntryAsState()
+    val currentDestination = navEntry?.destination
+    val showBottomBar = appState.shouldShowBottomBar(currentDestination)
+    val currentTab = appState.getCurrentNavTab(currentDestination)
+
     if (BuildConfig.DEBUG) {
-        val navEntry by appState.navController.currentBackStackEntryAsState()
-        val destination = navEntry?.destination
-        val showBottomBar = appState.shouldShowBottomBar
-        val navTab = appState.currentNavTab
         val hierarchyRoutes =
-            destination?.hierarchy?.mapNotNull { it.route }?.joinToString(prefix = "[", postfix = "]")
-        val hasRouteAfternoteGraph = destination?.hasRoute(Route.Afternote::class) == true
-        val hasRouteAfternoteHome = destination?.hasRoute(AfternoteRoute.AfternoteHomeRoute::class) == true
-        val hasRouteEditor = destination?.hasRoute(AfternoteRoute.EditorRoute::class) == true
-        LaunchedEffect(navEntry?.id, destination?.route, showBottomBar, navTab) {
+            currentDestination?.hierarchy?.mapNotNull { it.route }?.joinToString(prefix = "[", postfix = "]")
+        val hasRouteAfternoteGraph = currentDestination?.hasRoute(Route.Afternote::class) == true
+        val hasRouteAfternoteHome = currentDestination?.hasRoute(AfternoteRoute.AfternoteHomeRoute::class) == true
+        val hasRouteEditor = currentDestination?.hasRoute(AfternoteRoute.EditorRoute::class) == true
+        LaunchedEffect(navEntry?.id, currentDestination?.route, showBottomBar, currentTab) {
             Log.d(
                 NAV_BOTTOM_BAR_DEBUG_TAG,
-                "entryId=${navEntry?.id} destRoute=${destination?.route} " +
+                "entryId=${navEntry?.id} destRoute=${currentDestination?.route} " +
                     "hierarchyRoutes=$hierarchyRoutes " +
-                    "shouldShowBottomBar=$showBottomBar currentNavTab=$navTab " +
+                    "shouldShowBottomBar=$showBottomBar currentNavTab=$currentTab " +
                     "hasRoute(Route.Afternote)=$hasRouteAfternoteGraph " +
                     "hasRoute(AfternoteHomeRoute)=$hasRouteAfternoteHome " +
                     "hasRoute(EditorRoute)=$hasRouteEditor",
@@ -71,10 +72,10 @@ fun AppNavigation(
                 WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom,
             ),
         bottomBar = {
-            if (appState.shouldShowBottomBar) {
+            if (showBottomBar) {
                 BottomBar(
                     onTabClick = { item -> appState.navigateToBottomBarRoute(item.route) },
-                    selectedNavTab = appState.currentNavTab,
+                    selectedNavTab = currentTab,
                 )
             }
         },
