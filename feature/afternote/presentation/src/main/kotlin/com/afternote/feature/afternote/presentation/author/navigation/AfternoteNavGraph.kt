@@ -4,10 +4,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
-import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.navigation
 import com.afternote.core.ui.Route
+import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.AfternoteHostViewModel
 import com.afternote.feature.afternote.presentation.author.editor.playlist.AddSongViewModel
 import com.afternote.feature.afternote.presentation.author.editor.playlist.MemorialPlaylistEntry
@@ -20,49 +20,70 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.Afte
  * 앱 모듈의 NavHost에 직접 연결되며, [Route.Afternote]를 graph route로 사용합니다.
  * [AfternoteHostViewModel]은 **세션 스코프 UI 초안**(플레이리스트·에디트 상태 참조)만 공유하며,
  * 작성자 목록 SSOT는 [com.afternote.feature.afternote.domain.repository.AfternoteRepository]이다.
+ *
+ * 실제 [androidx.navigation.NavController] 호출은 앱 루트에서만 수행하고, 이 그래프에는 이벤트만 전달합니다.
+ * 작성자 표시명 등 UI 데이터는 그래프 인자가 아니라 각 화면 ViewModel이 Repository로 조회한다.
  */
-@Suppress("LongMethod")
-fun NavGraphBuilder.afternoteNavGraph(params: AfternoteNavGraphParams) {
-    val navController = params.navController
+@Suppress("LongMethod", "LongParameterList")
+fun NavGraphBuilder.afternoteNavGraph(
+    /** [Route.Afternote] 그래프 엔트리 — 그래프 스코프 Host ViewModel 바인딩에 사용 */
+    graphScopedParentEntry: () -> NavBackStackEntry,
+    onBottomNavTabSelected: (BottomNavTab) -> Unit = {},
+    /** 현재 백스택 상단이 에디터 라우트인지(수신인 선택 결과 반영 등에 사용). 호출부에서 관찰 가능한 값으로 계산해 전달한다. */
+    isEditorRouteCurrent: Boolean,
+    onPopBackStack: () -> Unit,
+    onNavigateToAfternoteDetail: (itemId: String) -> Unit,
+    onNavigateToGalleryDetail: (itemId: String) -> Unit,
+    onNavigateToMemorialGuidelineDetail: (itemId: String) -> Unit,
+    onNavigateToNewEditor: (initialCategory: String?) -> Unit,
+    onNavigateToEditorForEdit: (itemId: String) -> Unit,
+    onNavigateToMemorialPlaylist: () -> Unit,
+    onNavigateToAddSong: () -> Unit,
+    onFingerprintAuthSuccess: () -> Unit,
+    onEditorSaveSuccessNavigateHome: () -> Unit,
+) {
     navigation<Route.Afternote>(startDestination = AfternoteRoute.FingerprintLoginRoute) {
         afternoteComposable<AfternoteRoute.AfternoteHomeRoute> {
-            // 이 목적지가 생성될 때 발급된 교유한 엔트리. 스택에 머무는 동안 변하지 않음
-            // Composable Destination: 화면을 정의 하고 의존성을 주입하는 컴포저블 함수
-            // 네비게이트할 때마다 엔트리가 추가되면서 블록을 실행
             AfternoteHomeNavigation(
-                navController = navController,
-                onNavTabSelected = params.onNavTabSelected,
+                onNavigateToDetail = onNavigateToAfternoteDetail,
+                onNavigateToGalleryDetail = onNavigateToGalleryDetail,
+                onNavigateToMemorialGuidelineDetail = onNavigateToMemorialGuidelineDetail,
+                onNavigateToNewEditor = onNavigateToNewEditor,
+                onNavTabSelected = onBottomNavTabSelected,
             )
         }
 
         afternoteComposable<AfternoteRoute.DetailRoute> {
             AfternoteDetailNavigation(
                 backStackEntry = it,
-                navController = navController,
-                userName = params.userName,
+                onBack = onPopBackStack,
+                onNavigateToEditor = onNavigateToEditorForEdit,
             )
         }
 
         afternoteComposable<AfternoteRoute.GalleryDetailRoute> {
             AfternoteGalleryDetailNavigation(
                 backStackEntry = it,
-                navController = navController,
-                userName = params.userName,
+                onBack = onPopBackStack,
+                onNavigateToEditor = onNavigateToEditorForEdit,
             )
         }
 
         afternoteComposable<AfternoteRoute.EditorRoute> { backStackEntry ->
-            val hostViewModel = graphScopedHostViewModel(navController, backStackEntry)
+            val hostViewModel = graphScopedHostViewModel(graphScopedParentEntry)
             AfternoteEditorNavigation(
                 AfternoteEditorNavigationParams(
                     backStackEntry = backStackEntry,
-                    navController = navController,
                     playlistStateHolder = hostViewModel.playlistHolder,
                     editState = hostViewModel.editState,
                     onEditStateChanged = hostViewModel::updateEditState,
                     onEditStateClear = hostViewModel::clearEditState,
-                    onNavigateToSelectReceiver = {},
-                    onBottomNavTabSelected = params.onNavTabSelected,
+                    onNavigateToSelectReceiver = {}, // TODO: 수신인 선택 화면 라우팅 연결
+                    onBottomNavTabSelected = onBottomNavTabSelected,
+                    isEditorRouteCurrent = isEditorRouteCurrent,
+                    onPopBackStack = onPopBackStack,
+                    onNavigateToMemorialPlaylist = onNavigateToMemorialPlaylist,
+                    onSaveSuccessNavigateHome = onEditorSaveSuccessNavigateHome,
                 ),
             )
         }
@@ -70,36 +91,34 @@ fun NavGraphBuilder.afternoteNavGraph(params: AfternoteNavGraphParams) {
         afternoteComposable<AfternoteRoute.MemorialGuidelineDetailRoute> {
             AfternoteMemorialGuidelineDetailNavigation(
                 backStackEntry = it,
-                navController = navController,
-                userName = params.userName,
+                onBack = onPopBackStack,
+                onNavigateToEditor = onNavigateToEditorForEdit,
             )
         }
 
-        afternoteComposable<AfternoteRoute.MemorialPlaylistRoute> { backStackEntry ->
-            val hostViewModel = graphScopedHostViewModel(navController, backStackEntry)
+        afternoteComposable<AfternoteRoute.MemorialPlaylistRoute> {
+            val hostViewModel = graphScopedHostViewModel(graphScopedParentEntry)
             MemorialPlaylistEntry(
                 playlistStateHolder = hostViewModel.playlistHolder,
                 actions =
                     MemorialPlaylistEntryActions(
-                        onBackClick = { navController.popBackStack() },
-                        onNavigateToAddSongScreen = {
-                            navController.navigate(AfternoteRoute.AddSongRoute)
-                        },
+                        onBackClick = onPopBackStack,
+                        onNavigateToAddSongScreen = onNavigateToAddSong,
                     ),
             )
         }
 
         afternoteComposable<AfternoteRoute.FingerprintLoginRoute> {
             AfternoteFingerprintLoginNavigation(
-                navController = navController,
+                onAuthenticationSuccess = onFingerprintAuthSuccess,
             )
         }
 
-        afternoteComposable<AfternoteRoute.AddSongRoute> { backStackEntry ->
-            val hostViewModel = graphScopedHostViewModel(navController, backStackEntry)
+        afternoteComposable<AfternoteRoute.AddSongRoute> {
+            val hostViewModel = graphScopedHostViewModel(graphScopedParentEntry)
             val addSongViewModel: AddSongViewModel = hiltViewModel()
             AfternoteAddSongNavigation(
-                navController = navController,
+                onPopBackStack = onPopBackStack,
                 playlistStateHolder = hostViewModel.playlistHolder,
                 viewModel = addSongViewModel,
             )
@@ -110,21 +129,9 @@ fun NavGraphBuilder.afternoteNavGraph(params: AfternoteNavGraphParams) {
 /**
  * navigation graph scope에 묶인 [AfternoteHostViewModel]을 가져옵니다.
  * 같은 graph 내 모든 화면이 동일한 인스턴스를 공유합니다.
- *
- * [childEntry]를 remember 키로 써서, 팝 후 리컴포지션 시 잘못된 백스택 엔트리를 조회하는 크래시를 피합니다.
  */
 @Composable
-private fun graphScopedHostViewModel(
-    navController: NavController,
-    // 컴포저블 데스티네이션의 엔트리 스냅샷
-    // 이렇게 하지 않고 현재 엔트리를 직접 가져오면 다른 탭 라우트로 이동했을 때 리멤버 블록을 재실행하여 팝된 라우트를 찾으려고 해서 크래시
-    childEntry: NavBackStackEntry,
-): AfternoteHostViewModel {
-    val parentEntry =
-        remember(childEntry) {
-            navController.getBackStackEntry<Route.Afternote>() // 해당 라우트의 그래프 엔트리 가져 옴
-        }
-    return hiltViewModel(parentEntry) // 뷰모델의 생명 주기를 parentEntry 백스택 엔트리에 스코핑
-    // hiltViewModel의 제네릭 타입 추론을 통해 함수의 리턴 시그니처에 맞는 타입으로 반환
-    // 리컴포지션 시 parentEntry에 스코핑된 AfternoteHostViewModel가 있다면 재사용, 그렇지 않다면 새로 생성
+private fun graphScopedHostViewModel(graphScopedParentEntry: () -> NavBackStackEntry): AfternoteHostViewModel {
+    val parentEntry = remember { graphScopedParentEntry() }
+    return hiltViewModel(parentEntry)
 }
