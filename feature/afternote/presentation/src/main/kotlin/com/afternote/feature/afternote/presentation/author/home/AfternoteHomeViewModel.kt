@@ -56,6 +56,7 @@ class AfternoteHomeViewModel
                     // 연산 완료했으면 새로운 _uiState.value가 발행될 때까지 suspend
                     val listState = homeState.listState
                     AfternoteBodyUiState(
+                        isLoading = listState.isLoading,
                         visibleItems = listState.visibleItems.map { it.toUiModel() },
                         selectedCategory = homeState.categoryState.selectedCategory,
                         hasNext = listState.hasNext,

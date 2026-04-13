@@ -31,9 +31,10 @@ class ReceiverAfternoteHomeViewModel
     ) : ViewModel() {
         private val allItems = MutableStateFlow<List<ListItemUiModel>>(emptyList())
         private val selectedTab = MutableStateFlow(AfternoteCategory.ALL)
+        private val isListLoading = MutableStateFlow(true)
 
         private val uiState: StateFlow<ReceiverAfternoteHomeUiState> =
-            combine(allItems, selectedTab) { items, tab ->
+            combine(allItems, selectedTab, isListLoading) { items, tab, loading ->
                 val filtered =
                     if (tab == AfternoteCategory.ALL) {
                         items
@@ -45,6 +46,7 @@ class ReceiverAfternoteHomeViewModel
                 ReceiverAfternoteHomeUiState(
                     selectedTab = tab,
                     visibleItems = filtered,
+                    isLoading = loading,
                 )
             }.stateIn(
                 scope = viewModelScope,
@@ -56,6 +58,7 @@ class ReceiverAfternoteHomeViewModel
             uiState
                 .map { state ->
                     AfternoteBodyUiState(
+                        isLoading = state.isLoading,
                         visibleItems = state.visibleItems,
                         selectedCategory = state.selectedTab,
                     )
@@ -83,12 +86,18 @@ class ReceiverAfternoteHomeViewModel
 
         private fun loadAfternotes() {
             viewModelScope.launch {
-                val authCode = receiverRepository.currentAuthCode() ?: return@launch
+                isListLoading.value = true
+                val authCode = receiverRepository.currentAuthCode()
+                if (authCode == null) {
+                    isListLoading.value = false
+                    return@launch
+                }
                 receiverRepository
                     .getAfterNotesByAuthCode(authCode)
                     .onSuccess { result ->
                         allItems.value = result.items.map { it.toUiModel() }
                     }
+                isListLoading.value = false
             }
         }
     }

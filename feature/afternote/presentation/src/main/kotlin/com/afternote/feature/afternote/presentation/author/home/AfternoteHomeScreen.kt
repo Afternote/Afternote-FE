@@ -14,6 +14,7 @@ import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.body.EmptyListBody
+import com.afternote.feature.afternote.presentation.shared.body.LoadingListBody
 import com.afternote.feature.afternote.presentation.shared.body.infinite.AfternoteBodyUiState
 import com.afternote.feature.afternote.presentation.shared.body.infinite.InfiniteListBody
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
@@ -40,16 +41,23 @@ fun AfternoteHomeScreen(
         },
         floatingActionButton = { PenFloatingActionButton(onClick = onFabClick) },
     ) { paddingValues ->
-        if (listState.visibleItems.isNotEmpty()) {
-            InfiniteListBody(
-                modifier = Modifier.padding(paddingValues),
-                uiState = listState,
-                onCategorySelected = onCategorySelected,
-                onListItemClick = onListItemClick,
-                onLoadMore = onLoadMore,
-            )
-        } else {
-            EmptyListBody(modifier = Modifier.padding(paddingValues))
+        val bodyModifier = Modifier.padding(paddingValues)
+        when {
+            listState.isLoading && listState.visibleItems.isEmpty() -> {
+                LoadingListBody(modifier = bodyModifier)
+            }
+            listState.visibleItems.isNotEmpty() -> {
+                InfiniteListBody(
+                    modifier = bodyModifier,
+                    uiState = listState,
+                    onCategorySelected = onCategorySelected,
+                    onListItemClick = onListItemClick,
+                    onLoadMore = onLoadMore,
+                )
+            }
+            else -> {
+                EmptyListBody(modifier = bodyModifier)
+            }
         }
     }
 }
@@ -61,6 +69,7 @@ private fun AfternoteHomeScreenPreview() {
         AfternoteHomeScreen(
             listState =
                 AfternoteBodyUiState(
+                    isLoading = false,
                     visibleItems =
                         listOf(
                             ListItemUiModel(
@@ -91,6 +100,7 @@ private fun AfternoteHomeScreenEmptyPreview() {
         AfternoteHomeScreen(
             listState =
                 AfternoteBodyUiState(
+                    isLoading = false,
                     visibleItems = emptyList(),
                     selectedCategory = AfternoteCategory.ALL,
                 ),

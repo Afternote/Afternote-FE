@@ -44,5 +44,5 @@ data class AfternoteListState(
 data class AfternoteHomeUiState(
     val navState: AfternoteNavTabState = AfternoteNavTabState(),
     val categoryState: BodyCategoryState = BodyCategoryState(),
-    val listState: AfternoteListState = AfternoteListState(),
+    val listState: AfternoteListState = AfternoteListState(isLoading = true),
 )
