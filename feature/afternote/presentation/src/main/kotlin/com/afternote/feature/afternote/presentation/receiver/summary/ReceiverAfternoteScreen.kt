@@ -49,7 +49,7 @@ fun ReceiverAfterNoteEntry(
     onNavigateToRecord: () -> Unit = {},
     onNavigateToTimeLetter: () -> Unit = {},
     onNavigateToAfternote: () -> Unit = {},
-    viewModel: ReceiverDownloadAllViewModelContract = hiltViewModel<ReceiverDownloadAllViewModel>(),
+    viewModel: ReceiverDownloadAllViewModel = hiltViewModel(),
 ) {
     val downloadUiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current

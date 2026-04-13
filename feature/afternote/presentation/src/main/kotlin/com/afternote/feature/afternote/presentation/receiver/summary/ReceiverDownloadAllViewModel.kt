@@ -19,12 +19,11 @@ class ReceiverDownloadAllViewModel
     @Inject
     constructor(
         private val receiverRepository: ReceiverRepository,
-    ) : ViewModel(),
-        ReceiverDownloadAllViewModelContract {
+    ) : ViewModel() {
         private val _uiState = MutableStateFlow(ReceiverDownloadAllUiState())
-        override val uiState: StateFlow<ReceiverDownloadAllUiState> = _uiState.asStateFlow()
+        val uiState: StateFlow<ReceiverDownloadAllUiState> = _uiState.asStateFlow()
 
-        override fun onEvent(event: ReceiverDownloadAllEvent) {
+        fun onEvent(event: ReceiverDownloadAllEvent) {
             when (event) {
                 is ReceiverDownloadAllEvent.ConfirmDownload -> handleConfirmDownload(event.authCode)
                 is ReceiverDownloadAllEvent.DownloadSuccessConsumed -> handleClearDownloadSuccess()

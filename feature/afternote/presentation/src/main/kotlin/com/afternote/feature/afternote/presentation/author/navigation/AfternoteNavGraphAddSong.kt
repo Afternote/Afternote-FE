@@ -3,7 +3,7 @@ package com.afternote.feature.afternote.presentation.author.navigation
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
 import com.afternote.feature.afternote.presentation.author.editor.playlist.AddSongCallbacks
-import com.afternote.feature.afternote.presentation.author.editor.playlist.AddSongScreen
+import com.afternote.feature.afternote.presentation.author.editor.playlist.AddSongEntry
 import com.afternote.feature.afternote.presentation.author.editor.playlist.AddSongViewModel
 import com.afternote.feature.afternote.presentation.author.editor.state.MemorialPlaylistStateHolder
 
@@ -13,7 +13,7 @@ internal fun AfternoteAddSongNavigation(
     playlistStateHolder: MemorialPlaylistStateHolder,
     viewModel: AddSongViewModel,
 ) {
-    AddSongScreen(
+    AddSongEntry(
         viewModel = viewModel,
         callbacks =
             AddSongCallbacks(

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItemDto
 import com.afternote.feature.afternote.domain.repository.ReceiverRepository
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
+import com.afternote.feature.afternote.presentation.shared.body.infinite.AfternoteBodyUiState
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
 import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 import com.afternote.feature.afternote.presentation.shared.util.getAfternoteDisplayRes
@@ -14,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -30,7 +32,7 @@ class ReceiverAfternoteHomeViewModel
         private val allItems = MutableStateFlow<List<ListItemUiModel>>(emptyList())
         private val selectedTab = MutableStateFlow(AfternoteCategory.ALL)
 
-        val uiState: StateFlow<ReceiverAfternoteHomeUiState> =
+        private val uiState: StateFlow<ReceiverAfternoteHomeUiState> =
             combine(allItems, selectedTab) { items, tab ->
                 val filtered =
                     if (tab == AfternoteCategory.ALL) {
@@ -49,6 +51,19 @@ class ReceiverAfternoteHomeViewModel
                 started = SharingStarted.WhileSubscribed(5_000L),
                 initialValue = ReceiverAfternoteHomeUiState(),
             )
+
+        val bodyUiState: StateFlow<AfternoteBodyUiState> =
+            uiState
+                .map { state ->
+                    AfternoteBodyUiState(
+                        visibleItems = state.visibleItems,
+                        selectedCategory = state.selectedTab,
+                    )
+                }.stateIn(
+                    scope = viewModelScope,
+                    started = SharingStarted.WhileSubscribed(5_000L),
+                    initialValue = AfternoteBodyUiState(visibleItems = emptyList()),
+                )
 
         init {
             loadAfternotes()

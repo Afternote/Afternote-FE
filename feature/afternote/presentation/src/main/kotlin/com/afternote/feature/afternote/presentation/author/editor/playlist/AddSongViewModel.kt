@@ -19,16 +19,15 @@ class AddSongViewModel
     @Inject
     constructor(
         private val musicSearchRepository: MusicSearchRepository,
-    ) : ViewModel(),
-        AddSongViewModelContract {
+    ) : ViewModel() {
         private val _uiState = MutableStateFlow(AddSongUiState())
-        override val uiState: StateFlow<AddSongUiState> = _uiState.asStateFlow()
+        val uiState: StateFlow<AddSongUiState> = _uiState.asStateFlow()
 
         private var searchJob: Job? = null
 
         // region Event
 
-        override fun onEvent(event: AddSongEvent) {
+        fun onEvent(event: AddSongEvent) {
             when (event) {
                 is AddSongEvent.SearchQueryChange -> handleSearchQueryChange(event.query)
             }
