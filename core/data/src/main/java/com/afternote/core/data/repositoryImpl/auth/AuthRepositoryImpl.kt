@@ -3,8 +3,6 @@ package com.afternote.core.data.repositoryImpl.auth
 import com.afternote.core.data.mapper.auth.AuthMapper
 import com.afternote.core.datastore.TokenDataSource
 import com.afternote.core.domain.repository.auth.AuthRepository
-import com.afternote.core.domain.repository.auth.GoogleAuthManager
-import com.afternote.core.domain.repository.auth.KakaoAuthManager
 import com.afternote.core.model.Session
 import com.afternote.core.model.TokenBundle
 import com.afternote.core.network.dto.LoginRequest
@@ -17,22 +15,11 @@ import com.afternote.core.network.service.TokenApiService
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-// Auth와 관련된 에러 정의
-sealed class AuthException(
-    message: String,
-) : Exception(message) {
-    class KakaoTokenNotFound : AuthException("카카오 인증 토큰이 없습니다.")
-
-    class GoogleTokenNotFound : AuthException("구글 인증 토큰이 없습니다.")
-}
-
 class AuthRepositoryImpl
     @Inject
     constructor(
         private val tokenDataSource: TokenDataSource,
         private val authApiService: AuthApiService,
-        private val kakaoAuthManager: KakaoAuthManager,
-        private val googleAuthManager: GoogleAuthManager,
         private val tokenApiService: TokenApiService,
     ) : AuthRepository {
         override suspend fun clearSession() = runCatching { tokenDataSource.clearTokens() }
@@ -40,6 +27,8 @@ class AuthRepositoryImpl
         override suspend fun getAccessToken() = runCatching { tokenDataSource.getAccessToken() }
 
         override suspend fun getRefreshToken() = runCatching { tokenDataSource.getRefreshToken() }
+
+        override suspend fun getUserId() = runCatching { tokenDataSource.getUserId() }
 
         override suspend fun saveSession(
             accessToken: String,
@@ -77,47 +66,49 @@ class AuthRepositoryImpl
                 AuthMapper.toDefaultLoginResult(response.requireData())
             }
 
-        override suspend fun kakaoLogin(): Result<Session.SocialSession> =
+        override suspend fun kakaoLogin(oauthToken: String): Result<Session.SocialSession> =
             runCatching {
-                val socialAccessToken =
-                    kakaoAuthManager.getAccessToken() ?: throw AuthException.KakaoTokenNotFound()
                 val response =
                     authApiService.socialLogin(
                         SocialLoginRequest(
                             provider = "KAKAO",
-                            accessToken = socialAccessToken,
+                            accessToken = oauthToken,
                         ),
                     )
                 AuthMapper.toSocialLoginResult(response.requireData())
             }
 
-        override suspend fun googleLogin(): Result<Session.SocialSession> =
+        override suspend fun googleLogin(idToken: String): Result<Session.SocialSession> =
             runCatching {
-                val socialAccessToken =
-                    googleAuthManager.getAccessToken() ?: throw AuthException.GoogleTokenNotFound()
                 val response =
                     authApiService.socialLogin(
                         SocialLoginRequest(
                             provider = "GOOGLE",
-                            accessToken = socialAccessToken,
+                            accessToken = idToken,
                         ),
                     )
                 AuthMapper.toSocialLoginResult(response.requireData())
             }
 
-        override suspend fun rotateToken(refreshToken: String): Result<TokenBundle> =
+        override suspend fun rotateToken(): Result<TokenBundle> =
             runCatching {
+                val refreshToken =
+                    getRefreshToken().getOrNull()
+                        ?: error("리프레시 토큰이 존재하지 않습니다.")
                 val response = tokenApiService.reissue(ReissueRequest(refreshToken))
                 val tokenBundleResult = AuthMapper.toRotateTokenResult(response.requireData())
                 updateTokens(
                     accessToken = tokenBundleResult.accessToken,
                     refreshToken = tokenBundleResult.refreshToken,
-                )
+                ).getOrThrow()
                 tokenBundleResult
             }
 
-        override suspend fun logout(refreshToken: String): Result<Unit> =
+        override suspend fun logout(): Result<Unit> =
             runCatching {
+                val refreshToken =
+                    getRefreshToken().getOrNull()
+                        ?: error("리프레시 토큰이 존재하지 않습니다.")
                 authApiService.logout(LogoutRequest(refreshToken))
             }
     }
