@@ -42,7 +42,7 @@ class SignUpViewModel
             private const val MIN_ACCOUNT_PASSWORD_LENGTH = 8
         }
 
-        private val eventChannel = Channel<SignUpEvent>()
+        private val eventChannel = Channel<SignUpEvent>(Channel.BUFFERED)
         val eventFlow: Flow<SignUpEvent> = eventChannel.receiveAsFlow()
 
         // Step 1: 이메일 & 비밀번호
