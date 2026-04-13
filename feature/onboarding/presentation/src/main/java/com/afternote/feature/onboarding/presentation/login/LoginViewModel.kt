@@ -6,8 +6,11 @@ import androidx.lifecycle.viewModelScope
 import com.afternote.core.domain.usecase.auth.LoginType
 import com.afternote.core.domain.usecase.auth.LoginUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -20,6 +23,9 @@ class LoginViewModel
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(LoginUiState())
         val uiState = _uiState.asStateFlow()
+
+        private val eventChannel = Channel<LoginEvent>(Channel.BUFFERED)
+        val eventFlow: Flow<LoginEvent> = eventChannel.receiveAsFlow()
 
         val emailState = TextFieldState()
         val passwordState = TextFieldState()
@@ -36,21 +42,16 @@ class LoginViewModel
         fun login(loginType: LoginType) {
             if (_uiState.value.isLoading) return
             viewModelScope.launch {
-                _uiState.update { it.copy(isLoading = true, error = null) }
-                val loginResult =
-                    loginUseCase(
-                        loginType = loginType,
-                    )
-
-                loginResult
+                _uiState.update { it.copy(isLoading = true) }
+                loginUseCase(loginType = loginType)
                     .onSuccess {
-                        _uiState.update {
-                            it.copy(isLoading = false, isSuccess = true)
-                        }
+                        _uiState.update { it.copy(isLoading = false) }
+                        eventChannel.send(LoginEvent.LoginSuccess)
                     }.onFailure { exception ->
-                        _uiState.update {
-                            it.copy(isLoading = false, error = exception.message)
-                        }
+                        _uiState.update { it.copy(isLoading = false) }
+                        eventChannel.send(
+                            LoginEvent.ShowError(exception.message ?: "로그인 실패"),
+                        )
                     }
             }
         }
