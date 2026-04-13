@@ -1,22 +1,17 @@
 package com.afternote.feature.onboarding.presentation.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
-import com.afternote.core.domain.usecase.auth.LoginType
 import com.afternote.core.ui.Route
-import com.afternote.feature.onboarding.presentation.OnboardingProfileScreen
+import com.afternote.feature.onboarding.presentation.OnboardingProfileEntry
 import com.afternote.feature.onboarding.presentation.WelcomeScreen
-import com.afternote.feature.onboarding.presentation.login.LoginViewModel
-import com.afternote.feature.onboarding.presentation.login.component.LoginScreen
+import com.afternote.feature.onboarding.presentation.login.LoginEntry
 import com.afternote.feature.onboarding.presentation.signup.SignUpPasswordScreen
 import com.afternote.feature.onboarding.presentation.signup.SignUpResidentNumberScreen
 import com.afternote.feature.onboarding.presentation.signup.SignUpScreen
@@ -50,29 +45,12 @@ fun NavGraphBuilder.onboardingNavGraph(
 
         // ── Login ──
         composable<OnboardingRoute.LoginRoute> {
-            val viewModel: LoginViewModel = hiltViewModel()
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-            LaunchedEffect(uiState.isSuccess) {
-                if (uiState.isSuccess) {
-                    onOnboardingComplete()
-                }
-            }
-
-            LoginScreen(
-                emailState = viewModel.emailState,
-                passwordState = viewModel.passwordState,
-                onLoginClick = viewModel::loginWithEmail,
+            LoginEntry(
+                onLoginSuccess = onOnboardingComplete,
                 onSignUpClick = {
                     navController.navigate(OnboardingRoute.SignUpRoute) {
                         popUpTo<OnboardingRoute.LoginRoute> { inclusive = true }
                     }
-                },
-                onKakaoLoginClick = {
-                    viewModel.login(LoginType.Kakao)
-                },
-                onGoogleLoginClick = {
-                    viewModel.login(LoginType.Google)
                 },
                 onBackClick = { navController.popBackStack() },
             )
@@ -146,13 +124,9 @@ fun NavGraphBuilder.onboardingNavGraph(
         composable<OnboardingRoute.ProfileRoute> { backStackEntry ->
             val signUpViewModel = graphScopedSignUpViewModel(navController, backStackEntry)
 
-            val profileImageUri by signUpViewModel.profileImageUri.collectAsStateWithLifecycle()
-
-            OnboardingProfileScreen(
-                nameState = signUpViewModel.nameState,
-                displayImageUri = profileImageUri,
-                onProfileImagePick = signUpViewModel::onProfileImagePicked,
-                onCompleteClick = { signUpViewModel.submitSignUp(onOnboardingComplete) },
+            OnboardingProfileEntry(
+                viewModel = signUpViewModel,
+                onOnboardingComplete = onOnboardingComplete,
                 onBackClick = { navController.popBackStack() },
             )
         }
