@@ -177,38 +177,43 @@ class AfternoteHomeViewModel
         /**
          * 다음 페이지를 로드하여 목록에 이어붙입니다.
          */
+        private var loadMoreJob: Job? = null
+
         private fun loadMoreListItems() {
-            viewModelScope.launch {
-                val state = _uiState.value
-                val list = state.listState
-                if (!list.hasNext || list.isLoadingMore) return@launch
-                updateListState { listState ->
-                    listState.copy(isLoadingMore = true)
-                }
-                val nextPageNumber = list.currentPageNumber + 1
-                afternoteRepository
-                    .getListPage(
-                        category = state.categoryState.selectedCategory.toCategoryParam(),
-                        pageNumber = nextPageNumber,
-                        size = PAGE_SIZE,
-                    ).onSuccess { listPage ->
-                        updateListState { listState ->
-                            listState.copy(
-                                visibleItems = listState.visibleItems + listPage.listItems,
-                                currentPageNumber = nextPageNumber,
-                                isLoadingMore = false,
-                                hasNext = listPage.hasNext,
-                            )
-                        }
-                    }.onFailure { e ->
-                        updateListState { listState ->
-                            listState.copy(
-                                isLoadingMore = false,
-                                paginationError = e.message ?: "애프터노트 추가 목록을 불러오지 못했습니다.",
-                            )
-                        }
+            if (loadMoreJob?.isActive == true) return
+
+            loadMoreJob =
+                viewModelScope.launch {
+                    val state = _uiState.value
+                    val list = state.listState
+                    if (!list.hasNext || list.isLoadingMore) return@launch
+                    updateListState { listState ->
+                        listState.copy(isLoadingMore = true)
                     }
-            }
+                    val nextPageNumber = list.currentPageNumber + 1
+                    afternoteRepository
+                        .getListPage(
+                            category = state.categoryState.selectedCategory.toCategoryParam(),
+                            pageNumber = nextPageNumber,
+                            size = PAGE_SIZE,
+                        ).onSuccess { listPage ->
+                            updateListState { listState ->
+                                listState.copy(
+                                    visibleItems = listState.visibleItems + listPage.listItems,
+                                    currentPageNumber = nextPageNumber,
+                                    isLoadingMore = false,
+                                    hasNext = listPage.hasNext,
+                                )
+                            }
+                        }.onFailure { e ->
+                            updateListState { listState ->
+                                listState.copy(
+                                    isLoadingMore = false,
+                                    paginationError = e.message ?: "애프터노트 추가 목록을 불러오지 못했습니다.",
+                                )
+                            }
+                        }
+                }
         }
 
         // endregion
@@ -216,11 +221,7 @@ class AfternoteHomeViewModel
         // region Utility
 
         /** AfternoteCategory → API category 파라미터 변환. ALL이면 null. */
-        private fun AfternoteCategory.toCategoryParam(): String? =
-            when (this) {
-                AfternoteCategory.ALL -> null
-                else -> label
-            }
+        private fun AfternoteCategory.toCategoryParam(): String? = navKey
 
         private fun updateListState(reducer: (AfternoteListState) -> AfternoteListState) {
             _uiState.update { uiState ->
