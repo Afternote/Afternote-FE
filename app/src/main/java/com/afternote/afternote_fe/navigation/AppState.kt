@@ -6,7 +6,6 @@ import androidx.compose.runtime.remember
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -63,9 +62,15 @@ class AppState(
 
     fun navigateToBottomBarRoute(route: Route) {
         navController.navigate(route) {
-            popUpTo(navController.graph.findStartDestination().id) { saveState = true } // 제거할 데스티네이션의 상태를 저장
-            launchSingleTop = true // 푸시되는 데스티네이션이 탑 데스티네이션과 라우트가 같다면 엔트리를 새로 생성하지 않음
-            restoreState = true // 이동할 라우트가 saveState한 적 있다면 복원
+            // Route.Home은 바텀바가 보이는 모든 시점에서 반드시 백스택에 존재한다.
+            // findStartDestination()을 쓰면 startDestination이 Route.Onboarding일 때
+            // 로그인 이후 백스택에 없는 온보딩 화면을 가리켜 popUpTo가 무시되는 버그가 발생한다.
+            popUpTo<Route.Home> {
+                saveState = true
+                // inclusive = false — Home을 백스택에 유지한다 (기본값이나 의도를 명시)
+            }
+            launchSingleTop = true
+            restoreState = true
         }
     }
 }

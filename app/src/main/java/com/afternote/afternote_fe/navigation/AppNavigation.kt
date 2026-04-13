@@ -73,7 +73,7 @@ fun AppNavigation(
                         // TODO: 데일리 질문 답변 화면 Route 추가 후 연결
                     },
                     onNextStepClick = {
-                        appState.navController.navigate(Route.Afternote)
+                        appState.navigateToBottomBarRoute(Route.Afternote)
                     },
                     onRecordCategoryClick = { category ->
                         appState.navController.navigate(Route.MindRecord)
