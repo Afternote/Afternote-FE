@@ -60,7 +60,9 @@ class AppState(
                 // inclusive = false — Home을 백스택에 유지한다 (기본값이나 의도를 명시)
             }
             launchSingleTop = true
-            restoreState = true
+            // 애프터노트 서브그래프의 start는 인증 화면이다. restoreState = true이면
+            // 저장된 홈 등으로 복원되어 인증을 건너뛴다. 진입점은 피처 NavGraph가 단일로 결정한다.
+            restoreState = route != Route.Afternote
         }
     }
 }
