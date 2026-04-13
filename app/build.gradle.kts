@@ -6,6 +6,10 @@ plugins {
 android {
     namespace = "com.afternote.afternote_fe"
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         applicationId = "com.afternote.afternote_fe"
         versionCode = 1
