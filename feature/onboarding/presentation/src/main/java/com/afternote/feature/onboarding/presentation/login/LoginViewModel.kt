@@ -39,16 +39,25 @@ class LoginViewModel
             )
         }
 
-        fun login(loginType: LoginType) {
+        fun loginWithKakao(oauthToken: String) {
+            login(LoginType.Kakao(oauthToken))
+        }
+
+        fun loginWithGoogle(idToken: String) {
+            login(LoginType.Google(idToken))
+        }
+
+        private fun login(loginType: LoginType) {
             if (_uiState.value.isLoading) return
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoading = true) }
-                loginUseCase(loginType = loginType)
+                val result = loginUseCase(loginType = loginType)
+                _uiState.update { it.copy(isLoading = false) }
+
+                result
                     .onSuccess {
-                        _uiState.update { it.copy(isLoading = false) }
                         eventChannel.send(LoginEvent.LoginSuccess)
                     }.onFailure { exception ->
-                        _uiState.update { it.copy(isLoading = false) }
                         eventChannel.send(
                             LoginEvent.ShowError(exception.message ?: "로그인 실패"),
                         )
