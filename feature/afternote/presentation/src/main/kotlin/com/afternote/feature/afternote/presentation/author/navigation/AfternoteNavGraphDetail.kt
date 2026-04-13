@@ -73,7 +73,6 @@ internal fun AfternoteDetailNavigation(
     backStackEntry: NavBackStackEntry,
     onBack: () -> Unit,
     onNavigateToEditor: (itemId: String) -> Unit,
-    userName: String,
     viewModel: AfternoteDetailViewModel = hiltViewModel(),
 ) {
     val route = backStackEntry.toRoute<AfternoteRoute.DetailRoute>()
@@ -114,7 +113,7 @@ internal fun AfternoteDetailNavigation(
                 content =
                     SocialNetworkDetailContent(
                         serviceName = detail.title,
-                        userName = userName,
+                        userName = uiState.authorDisplayName,
                         accountId = detail.credentials?.id ?: "",
                         password = detail.credentials?.password ?: "",
                         accountProcessingMethod = method,
@@ -147,7 +146,6 @@ internal fun AfternoteGalleryDetailNavigation(
     backStackEntry: NavBackStackEntry,
     onBack: () -> Unit,
     onNavigateToEditor: (itemId: String) -> Unit,
-    userName: String,
     viewModel: AfternoteDetailViewModel = hiltViewModel(),
 ) {
     val route = backStackEntry.toRoute<AfternoteRoute.GalleryDetailRoute>()
@@ -183,7 +181,7 @@ internal fun AfternoteGalleryDetailNavigation(
                 detailState =
                     GalleryDetailState(
                         serviceName = detail.title,
-                        userName = userName,
+                        userName = uiState.authorDisplayName,
                         finalWriteDate = detail.timestamps.updatedAt.ifEmpty { detail.timestamps.createdAt },
                         afternoteEditReceivers =
                             detail.receivers.map { r ->
@@ -215,7 +213,6 @@ internal fun AfternoteMemorialGuidelineDetailNavigation(
     backStackEntry: NavBackStackEntry,
     onBack: () -> Unit,
     onNavigateToEditor: (itemId: String) -> Unit,
-    userName: String,
     viewModel: AfternoteDetailViewModel = hiltViewModel(),
 ) {
     val route = backStackEntry.toRoute<AfternoteRoute.MemorialGuidelineDetailRoute>()
@@ -250,7 +247,7 @@ internal fun AfternoteMemorialGuidelineDetailNavigation(
             MemorialGuidelineDetailScreen(
                 detailState =
                     MemorialGuidelineDetailState(
-                        userName = userName,
+                        userName = uiState.authorDisplayName,
                         finalWriteDate = detail.timestamps.updatedAt.ifEmpty { detail.timestamps.createdAt },
                         profileImageUri = detail.playlist?.playlistDetailMemorialMedia?.photoUrl,
                         afternoteEditReceivers =

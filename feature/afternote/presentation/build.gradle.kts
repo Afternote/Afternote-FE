@@ -13,6 +13,8 @@ android {
 
 dependencies {
     implementation(projects.feature.afternote.domain)
+    implementation(projects.core.domain)
+    implementation(projects.core.model)
     implementation(projects.core.common)
     implementation(projects.core.ui)
     implementation(libs.androidx.compose.material.icons.core)

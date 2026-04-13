@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.detail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.domain.repository.HomeRepository
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailEvent
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailUiState
@@ -17,15 +18,27 @@ import javax.inject.Inject
  *
  * - 상세 조회: GET /api/afternotes/{id}
  * - 삭제: DELETE /api/afternotes/{id}
+ * - 작성자 표시명: [HomeRepository.getHomeSummary] (네비게이션 인자로 전달하지 않음)
  */
 @HiltViewModel
 class AfternoteDetailViewModel
     @Inject
     constructor(
         private val afternoteRepository: AfternoteRepository,
+        private val homeRepository: HomeRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(AfternoteDetailUiState())
         val uiState: StateFlow<AfternoteDetailUiState> = _uiState.asStateFlow()
+
+        init {
+            viewModelScope.launch {
+                homeRepository
+                    .getHomeSummary()
+                    .onSuccess { summary ->
+                        _uiState.update { it.copy(authorDisplayName = summary.userName) }
+                    }
+            }
+        }
 
         // region Event
 
