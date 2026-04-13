@@ -10,9 +10,13 @@ sealed class LoginType {
         val password: String,
     ) : LoginType()
 
-    object Kakao : LoginType()
+    data class Kakao(
+        val oauthToken: String,
+    ) : LoginType()
 
-    object Google : LoginType()
+    data class Google(
+        val idToken: String,
+    ) : LoginType()
 }
 
 class LoginUseCase
@@ -20,40 +24,31 @@ class LoginUseCase
     constructor(
         private val authRepository: AuthRepository,
     ) {
-        suspend operator fun invoke(loginType: LoginType) =
-            runCatching {
-                val session =
-                    getSession(
-                        authRepository = authRepository,
-                        loginType = loginType,
-                    )
+        suspend operator fun invoke(loginType: LoginType): Result<Unit> {
+            val sessionResult: Result<Session> =
+                when (loginType) {
+                    is LoginType.Email ->
+                        authRepository.defaultLogin(
+                            email = loginType.email,
+                            password = loginType.password,
+                        )
 
-                authRepository.saveSession(
-                    accessToken = session.accessToken,
-                    refreshToken = session.refreshToken,
-                    userId = session.userId,
-                )
-            }
+                    is LoginType.Kakao ->
+                        authRepository.kakaoLogin(oauthToken = loginType.oauthToken)
+
+                    is LoginType.Google ->
+                        authRepository.googleLogin(idToken = loginType.idToken)
+                }
+
+            val session =
+                sessionResult.getOrElse { exception ->
+                    return Result.failure(exception)
+                }
+
+            return authRepository.saveSession(
+                accessToken = session.accessToken,
+                refreshToken = session.refreshToken,
+                userId = session.userId,
+            )
+        }
     }
-
-private suspend fun getSession(
-    authRepository: AuthRepository,
-    loginType: LoginType,
-): Session =
-    when (loginType) {
-        is LoginType.Email -> {
-            authRepository
-                .defaultLogin(
-                    email = loginType.email,
-                    password = loginType.password,
-                )
-        }
-
-        is LoginType.Kakao -> {
-            authRepository.kakaoLogin()
-        }
-
-        is LoginType.Google -> {
-            authRepository.googleLogin()
-        }
-    }.getOrNull() ?: error("세션 획득 실패")
