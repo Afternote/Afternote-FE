@@ -23,18 +23,19 @@ interface AuthRepository {
     suspend fun getAccessToken(): Result<String?>
 
     suspend fun getRefreshToken(): Result<String?>
-    // 레거시 레포 기준
+
+    suspend fun getUserId(): Result<Long?>
 
     suspend fun defaultLogin(
         email: String,
         password: String,
     ): Result<Session.DefaultSession>
 
-    suspend fun kakaoLogin(): Result<Session.SocialSession>
+    suspend fun kakaoLogin(oauthToken: String): Result<Session.SocialSession>
 
-    suspend fun googleLogin(): Result<Session.SocialSession>
+    suspend fun googleLogin(idToken: String): Result<Session.SocialSession>
 
-    suspend fun rotateToken(refreshToken: String): Result<TokenBundle>
+    suspend fun rotateToken(): Result<TokenBundle>
 
-    suspend fun logout(refreshToken: String): Result<Unit>
+    suspend fun logout(): Result<Unit>
 }
