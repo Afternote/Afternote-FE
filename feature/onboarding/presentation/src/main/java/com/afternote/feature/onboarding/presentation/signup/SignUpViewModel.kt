@@ -8,13 +8,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.domain.usecase.account.SendEmailCodeUseCase
-import com.afternote.core.domain.usecase.account.SignUpUseCase
+import com.afternote.core.domain.repository.account.AccountRepository
 import com.afternote.feature.onboarding.presentation.terms.TermsState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -28,8 +30,7 @@ import javax.inject.Inject
 class SignUpViewModel
     @Inject
     constructor(
-        private val signUpUseCase: SignUpUseCase,
-        private val sendEmailCodeUseCase: SendEmailCodeUseCase,
+        private val accountRepository: AccountRepository,
     ) : ViewModel() {
         companion object {
             /** 주민등록번호 앞자리(생년월일) 자릿수 */
@@ -40,6 +41,9 @@ class SignUpViewModel
 
             private const val MIN_ACCOUNT_PASSWORD_LENGTH = 8
         }
+
+        private val eventChannel = Channel<SignUpEvent>()
+        val eventFlow: Flow<SignUpEvent> = eventChannel.receiveAsFlow()
 
         // Step 1: 이메일 & 비밀번호
         val emailState = TextFieldState()
@@ -98,10 +102,13 @@ class SignUpViewModel
 
         fun requestVerification() {
             viewModelScope.launch {
-                sendEmailCodeUseCase(emailState.text.toString())
+                accountRepository
+                    .sendEmailCode(emailState.text.toString())
                     .onSuccess { isVerificationSent = true }
-                    .onFailure {
-                        // TODO: 에러 UI 처리
+                    .onFailure { error ->
+                        eventChannel.send(
+                            SignUpEvent.ShowError(error.message ?: "인증번호 요청 실패"),
+                        )
                     }
             }
         }
@@ -135,21 +142,24 @@ class SignUpViewModel
          * 최종 회원가입 제출.
          * 1~4단계와 프로필에서 수집한 데이터를 취합하여 서버에 전송합니다.
          */
-        fun submitSignUp(onSuccess: () -> Unit) {
+        fun submitSignUp() {
             viewModelScope.launch {
                 if (isLoading) return@launch
 
                 isLoading = true
-                signUpUseCase(
-                    email = emailState.text.toString(),
-                    password = passwordState.text.toString(),
-                    name = nameState.text.toString(),
-                    profileUrl = _profileImageUri.value?.toString(),
-                ).onSuccess {
-                    onSuccess()
-                }.onFailure {
-                    // TODO: 에러 UI 처리
-                }
+                accountRepository
+                    .signUp(
+                        email = emailState.text.toString(),
+                        password = passwordState.text.toString(),
+                        name = nameState.text.toString(),
+                        profileUrl = _profileImageUri.value?.toString(),
+                    ).onSuccess {
+                        eventChannel.send(SignUpEvent.SignUpSuccess)
+                    }.onFailure { error ->
+                        eventChannel.send(
+                            SignUpEvent.ShowError(error.message ?: "회원가입 실패"),
+                        )
+                    }
                 isLoading = false
             }
         }
