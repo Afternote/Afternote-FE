@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -46,9 +45,9 @@ import java.time.LocalDate
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BottomSheetCalendar(
-    initialDate: LocalDate = LocalDate.now(),
     onDismiss: () -> Unit,
-    onDateSelected: (LocalDate) -> Unit,
+    onDateSelect: (LocalDate) -> Unit,
+    initialDate: LocalDate = LocalDate.now(),
 ) {
     var currentYear by remember { mutableIntStateOf(initialDate.year) }
     var currentMonth by remember { mutableIntStateOf(initialDate.monthValue) }
@@ -90,9 +89,9 @@ fun BottomSheetCalendar(
                     currentMonth++
                 }
             },
-            onDaySelected = { day ->
+            onDateSelect = { day ->
                 selectedDate = LocalDate.of(currentYear, currentMonth, day)
-                onDateSelected(selectedDate)
+                onDateSelect(selectedDate)
             },
         )
     }
@@ -105,7 +104,7 @@ fun DatePickerContent(
     selectedDate: LocalDate,
     onPrevMonth: () -> Unit,
     onNextMonth: () -> Unit,
-    onDaySelected: (Int) -> Unit,
+    onDateSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val formattedDate =
@@ -225,7 +224,7 @@ fun DatePickerContent(
                             Box(modifier = Modifier.weight(1f)) {
                                 PickerDayCell(
                                     model = dayModel,
-                                    onSelected = { dayModel.day?.let(onDaySelected) },
+                                    onSelect = { dayModel.day?.let(onDateSelect) },
                                 )
                             }
                         }
@@ -236,7 +235,6 @@ fun DatePickerContent(
                 }
             }
             Spacer(modifier = Modifier.height(50.dp))
-
         }
     }
 }
@@ -244,7 +242,7 @@ fun DatePickerContent(
 @Composable
 fun PickerDayCell(
     model: PickerDayUiModel,
-    onSelected: () -> Unit,
+    onSelect: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (model.day == null) {
@@ -262,7 +260,7 @@ fun PickerDayCell(
                 .padding(4.dp)
                 .clip(CircleShape)
                 .background(bgColor)
-                .clickable(enabled = true, onClick = onSelected),
+                .clickable(enabled = true, onClick = onSelect),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -327,7 +325,7 @@ private fun DatePickerContentPreview() {
                     month++
                 }
             },
-            onDaySelected = { day -> selectedDate = LocalDate.of(year, month, day) },
+            onDateSelect = { day -> selectedDate = LocalDate.of(year, month, day) },
         )
     }
 }

@@ -63,7 +63,12 @@ fun DeepThoughtWriteScreen(modifier: Modifier = Modifier) {
         },
         modifier = modifier,
     ) { paddingValues ->
-        Column(modifier = Modifier.padding(paddingValues).padding(horizontal = 20.dp)) {
+        Column(
+            modifier =
+                Modifier
+                    .padding(paddingValues)
+                    .padding(horizontal = 20.dp),
+        ) {
             DailyDeepThoughtCard(modifier = Modifier.height(150.dp))
 
             Row(
@@ -94,9 +99,7 @@ fun DeepThoughtWriteScreen(modifier: Modifier = Modifier) {
                     }
 
                     HorizontalDivider()
-
                 }
-
             }
 
             WriteTextField()
@@ -104,15 +107,16 @@ fun DeepThoughtWriteScreen(modifier: Modifier = Modifier) {
 
         if (showCategorySheet) {
             CategorySettingBottomSheet(
-                categories = listOf(
-                    CategoryUiModel("1", "나의 가치관", Color(0xFF1A1A1A)),
-                    CategoryUiModel("2", "오늘 떠올린 생각", Color(0xFFFFB3A7)),
-                    CategoryUiModel("3", "인생을 되돌아 보며", Color(0xFFA8C8E8)),
-                ),
+                categories =
+                    listOf(
+                        CategoryUiModel("1", "나의 가치관", Color(0xFF1A1A1A)),
+                        CategoryUiModel("2", "오늘 떠올린 생각", Color(0xFFFFB3A7)),
+                        CategoryUiModel("3", "인생을 되돌아 보며", Color(0xFFA8C8E8)),
+                    ),
                 onDismiss = { showCategorySheet = false },
                 onBackClick = { showCategorySheet = false },
                 onAddCategory = { /* 새 카테고리 생성 화면으로 */ },
-                onMenuClick = { category -> /* 수정/삭제 메뉴 */ },
+                onMenuClick = { /* 수정/삭제 메뉴 */ },
             )
         }
     }
