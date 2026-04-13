@@ -119,6 +119,10 @@
     <string name="biometric_prompt_subtitle">사용자 인증 후 조회가 가능합니다.</string>
     <string name="biometric_prompt_negative">취소</string>
     <string name="biometric_not_available">지문 인증을 사용할 수 없습니다.</string>
+    <string name="biometric_init_failed">인증 화면을 불러오지 못했습니다. 앱을 다시 시작해 주세요.</string>
+    <string name="biometric_no_hardware">이 기기는 생체 인식을 지원하지 않습니다.</string>
+    <string name="biometric_none_enrolled">등록된 지문이나 화면 잠금이 없습니다. 설정에서 등록해 주세요.</string>
+    <string name="biometric_hw_unavailable">생체 인식을 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.</string>
 
     <string name="setting_menu_not_connected">이 메뉴는 아직 연결되지 않았습니다.</string>
     <string name="setting_logout">로그아웃</string>
