@@ -24,31 +24,28 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.Afte
 @Suppress("LongMethod")
 fun NavGraphBuilder.afternoteNavGraph(params: AfternoteNavGraphParams) {
     val navController = params.navController
-    navigation<Route.Afternote>(startDestination = AfternoteRoute.AfternoteHomeRoute) {
-        afternoteComposable<AfternoteRoute.AfternoteHomeRoute> { backStackEntry ->
+    navigation<Route.Afternote>(startDestination = AfternoteRoute.FingerprintLoginRoute) {
+        afternoteComposable<AfternoteRoute.AfternoteHomeRoute> {
             // 이 목적지가 생성될 때 발급된 교유한 엔트리. 스택에 머무는 동안 변하지 않음
             // Composable Destination: 화면을 정의 하고 의존성을 주입하는 컴포저블 함수
             // 네비게이트할 때마다 엔트리가 추가되면서 블록을 실행
-            val hostViewModel = graphScopedHostViewModel(navController, backStackEntry)
             AfternoteHomeNavigation(
                 navController = navController,
                 onNavTabSelected = params.onNavTabSelected,
             )
         }
 
-        afternoteComposable<AfternoteRoute.DetailRoute> { backStackEntry ->
-            val hostViewModel = graphScopedHostViewModel(navController, backStackEntry)
+        afternoteComposable<AfternoteRoute.DetailRoute> {
             AfternoteDetailNavigation(
-                backStackEntry = backStackEntry,
+                backStackEntry = it,
                 navController = navController,
                 userName = params.userName,
             )
         }
 
-        afternoteComposable<AfternoteRoute.GalleryDetailRoute> { backStackEntry ->
-            val hostViewModel = graphScopedHostViewModel(navController, backStackEntry)
+        afternoteComposable<AfternoteRoute.GalleryDetailRoute> {
             AfternoteGalleryDetailNavigation(
-                backStackEntry = backStackEntry,
+                backStackEntry = it,
                 navController = navController,
                 userName = params.userName,
             )
@@ -56,7 +53,6 @@ fun NavGraphBuilder.afternoteNavGraph(params: AfternoteNavGraphParams) {
 
         afternoteComposable<AfternoteRoute.EditorRoute> { backStackEntry ->
             val hostViewModel = graphScopedHostViewModel(navController, backStackEntry)
-
             AfternoteEditorNavigation(
                 AfternoteEditorNavigationParams(
                     backStackEntry = backStackEntry,
@@ -71,10 +67,9 @@ fun NavGraphBuilder.afternoteNavGraph(params: AfternoteNavGraphParams) {
             )
         }
 
-        afternoteComposable<AfternoteRoute.MemorialGuidelineDetailRoute> { backStackEntry ->
-            val hostViewModel = graphScopedHostViewModel(navController, backStackEntry)
+        afternoteComposable<AfternoteRoute.MemorialGuidelineDetailRoute> {
             AfternoteMemorialGuidelineDetailNavigation(
-                backStackEntry = backStackEntry,
+                backStackEntry = it,
                 navController = navController,
                 userName = params.userName,
             )
@@ -115,6 +110,8 @@ fun NavGraphBuilder.afternoteNavGraph(params: AfternoteNavGraphParams) {
 /**
  * navigation graph scope에 묶인 [AfternoteHostViewModel]을 가져옵니다.
  * 같은 graph 내 모든 화면이 동일한 인스턴스를 공유합니다.
+ *
+ * [childEntry]를 remember 키로 써서, 팝 후 리컴포지션 시 잘못된 백스택 엔트리를 조회하는 크래시를 피합니다.
  */
 @Composable
 private fun graphScopedHostViewModel(
