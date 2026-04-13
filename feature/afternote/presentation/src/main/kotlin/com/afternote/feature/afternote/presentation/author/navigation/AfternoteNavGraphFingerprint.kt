@@ -1,5 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.navigation
 
+import android.content.Context
+import android.content.ContextWrapper
 import android.util.Log
 import android.widget.Toast
 import androidx.biometric.BiometricManager
@@ -20,35 +22,55 @@ import com.afternote.feature.afternote.presentation.shared.fingerprint.Fingerpri
 @Composable
 internal fun AfternoteFingerprintLoginNavigation(navController: NavController) {
     val context = LocalContext.current
-    val activity = context as? FragmentActivity
+    val activity = remember(context) { context.findFragmentActivity() }
+
     val promptTitle = stringResource(R.string.biometric_prompt_title)
     val promptSubtitle = stringResource(R.string.biometric_prompt_subtitle)
     val notAvailableMessage = stringResource(R.string.biometric_not_available)
+
     val biometricPrompt =
         remember(activity) {
+            if (activity == null) return@remember null
             try {
-                activity?.let { fragActivity ->
-                    val executor = ContextCompat.getMainExecutor(fragActivity)
-                    BiometricPrompt(
-                        fragActivity,
-                        executor,
-                        object : BiometricPrompt.AuthenticationCallback() {
-                            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                                navController.navigate(AfternoteRoute.AfternoteHomeRoute) {
-                                    popUpTo(AfternoteRoute.FingerprintLoginRoute) {
-                                        inclusive = true
-                                    }
-                                    launchSingleTop = true
+                val executor = ContextCompat.getMainExecutor(activity)
+                BiometricPrompt(
+                    activity,
+                    executor,
+                    object : BiometricPrompt.AuthenticationCallback() {
+                        override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                            navController.navigate(AfternoteRoute.AfternoteHomeRoute) {
+                                popUpTo(AfternoteRoute.FingerprintLoginRoute) {
+                                    inclusive = true
                                 }
+                                launchSingleTop = true
                             }
-                        },
-                    )
-                }
+                        }
+
+                        override fun onAuthenticationError(
+                            errorCode: Int,
+                            errString: CharSequence,
+                        ) {
+                            super.onAuthenticationError(errorCode, errString)
+                            Log.w(TAG_FINGERPRINT, "Auth Error [$errorCode]: $errString")
+                            if (errorCode == BiometricPrompt.ERROR_USER_CANCELED ||
+                                errorCode == BiometricPrompt.ERROR_NEGATIVE_BUTTON
+                            ) {
+                                // 필요 시: navController.popBackStack()
+                            }
+                        }
+
+                        override fun onAuthenticationFailed() {
+                            super.onAuthenticationFailed()
+                            Log.d(TAG_FINGERPRINT, "Auth Failed: Not recognized")
+                        }
+                    },
+                )
             } catch (e: Throwable) {
-                Log.e(TAG_FINGERPRINT, "FingerprintLoginRoute: BiometricPrompt failed", e)
+                Log.e(TAG_FINGERPRINT, "BiometricPrompt init failed", e)
                 null
             }
         }
+
     val promptInfo =
         remember(promptTitle, promptSubtitle) {
             BiometricPrompt.PromptInfo
@@ -58,13 +80,14 @@ internal fun AfternoteFingerprintLoginNavigation(navController: NavController) {
                 .setAllowedAuthenticators(BIOMETRIC_STRONG or DEVICE_CREDENTIAL)
                 .build()
         }
+
     FingerprintLoginScreen(
         onFingerprintAuthClick = {
-            if (activity == null) return@FingerprintLoginScreen
+            if (activity == null || biometricPrompt == null) return@FingerprintLoginScreen
             val biometricManager = BiometricManager.from(context)
             when (biometricManager.canAuthenticate(BIOMETRIC_STRONG or DEVICE_CREDENTIAL)) {
                 BiometricManager.BIOMETRIC_SUCCESS -> {
-                    biometricPrompt?.authenticate(promptInfo)
+                    biometricPrompt.authenticate(promptInfo)
                 }
 
                 else -> {
@@ -76,3 +99,14 @@ internal fun AfternoteFingerprintLoginNavigation(navController: NavController) {
         },
     )
 }
+
+/**
+ * [ContextWrapper] 체인을 따라가 [FragmentActivity]를 찾는다.
+ * [LocalContext]가 래핑된 경우에도 생체 프롬프트에 필요한 Activity를 얻기 위함이다.
+ */
+private tailrec fun Context.findFragmentActivity(): FragmentActivity? =
+    when (this) {
+        is FragmentActivity -> this
+        is ContextWrapper -> baseContext.findFragmentActivity()
+        else -> null
+    }
