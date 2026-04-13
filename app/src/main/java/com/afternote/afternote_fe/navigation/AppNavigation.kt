@@ -11,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -20,6 +21,7 @@ import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.author.navigation.afternoteNavGraph
+import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.mindrecord.presentation.navigation.mindRecordNavGraph
 import com.afternote.feature.onboarding.presentation.navigation.onboardingNavGraph
 import com.afternote.feature.setting.presentation.SettingScreen
@@ -33,6 +35,9 @@ fun AppNavigation(
 ) {
     val navEntry by appState.navController.currentBackStackEntryAsState()
     val currentDestination = navEntry?.destination
+    // EditorRoute는 서브 그래프가 아닌 단일 화면이므로 hierarchy 순회 없이 직접 비교한다.
+    val isEditorRouteCurrent =
+        currentDestination?.hasRoute(AfternoteRoute.EditorRoute::class) == true
     val showBottomBar = appState.shouldShowBottomBar(currentDestination)
     val currentTab = appState.getCurrentNavTab(currentDestination)
 
@@ -71,7 +76,11 @@ fun AppNavigation(
             composable<Route.Home> {
                 val viewModel: HomeTabViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-                val homeTabActions = rememberHomeTabActions(appState, viewModel)
+                val homeTabActions =
+                    rememberHomeTabActions(
+                        appState = appState,
+                        onRetryLoad = { viewModel.loadHomeSummary(isRefresh = true) },
+                    )
                 HomeTabScreen(
                     uiState = uiState,
                     actions = homeTabActions,
@@ -95,7 +104,7 @@ fun AppNavigation(
                     appState.navController.getBackStackEntry<Route.Afternote>()
                 },
                 onBottomNavTabSelected = afternoteNavCallbacks.onBottomNavTabSelected,
-                isEditorRouteCurrent = afternoteNavCallbacks.isEditorRouteCurrent,
+                isEditorRouteCurrent = isEditorRouteCurrent,
                 onPopBackStack = afternoteNavCallbacks.onPopBackStack,
                 onNavigateToAfternoteDetail = afternoteNavCallbacks.onNavigateToAfternoteDetail,
                 onNavigateToGalleryDetail = afternoteNavCallbacks.onNavigateToGalleryDetail,
