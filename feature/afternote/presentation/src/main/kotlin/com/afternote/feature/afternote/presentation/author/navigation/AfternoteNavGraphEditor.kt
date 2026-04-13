@@ -83,7 +83,7 @@ internal data class AfternoteEditorNavigationParams(
     val onEditStateClear: () -> Unit,
     val onNavigateToSelectReceiver: () -> Unit = {},
     val onBottomNavTabSelected: (BottomNavTab) -> Unit = {},
-    val isEditorRouteCurrent: () -> Boolean,
+    val isEditorRouteCurrent: Boolean,
     val onPopBackStack: () -> Unit,
     val onNavigateToMemorialPlaylist: () -> Unit,
     val onSaveSuccessNavigateHome: () -> Unit,
@@ -184,8 +184,7 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
         }
     }
 
-    val isEditCurrentDestination =
-        params.isEditorRouteCurrent()
+    val isEditCurrentDestination = params.isEditorRouteCurrent
     LaunchedEffect(isEditCurrentDestination) {
         if (isEditCurrentDestination) {
             tryApplyReceiverSelectionFromSavedState(
