@@ -13,6 +13,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
@@ -23,6 +25,7 @@ import com.afternote.afternote_fe.screen.HomeTabScreen
 import com.afternote.afternote_fe.screen.HomeTabViewModel
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomBar
+import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavGraphParams
 import com.afternote.feature.afternote.presentation.author.navigation.afternoteNavGraph
@@ -45,24 +48,7 @@ fun AppNavigation(
     val showBottomBar = appState.shouldShowBottomBar(currentDestination)
     val currentTab = appState.getCurrentNavTab(currentDestination)
 
-    if (BuildConfig.DEBUG) {
-        val hierarchyRoutes =
-            currentDestination?.hierarchy?.mapNotNull { it.route }?.joinToString(prefix = "[", postfix = "]")
-        val hasRouteAfternoteGraph = currentDestination?.hasRoute(Route.Afternote::class) == true
-        val hasRouteAfternoteHome = currentDestination?.hasRoute(AfternoteRoute.AfternoteHomeRoute::class) == true
-        val hasRouteEditor = currentDestination?.hasRoute(AfternoteRoute.EditorRoute::class) == true
-        LaunchedEffect(navEntry?.id, currentDestination?.route, showBottomBar, currentTab) {
-            Log.d(
-                NAV_BOTTOM_BAR_DEBUG_TAG,
-                "entryId=${navEntry?.id} destRoute=${currentDestination?.route} " +
-                    "hierarchyRoutes=$hierarchyRoutes " +
-                    "shouldShowBottomBar=$showBottomBar currentNavTab=$currentTab " +
-                    "hasRoute(Route.Afternote)=$hasRouteAfternoteGraph " +
-                    "hasRoute(AfternoteHomeRoute)=$hasRouteAfternoteHome " +
-                    "hasRoute(EditorRoute)=$hasRouteEditor",
-            )
-        }
-    }
+    NavigationDebugLogger(navEntry, currentDestination, showBottomBar, currentTab)
 
     Scaffold(
         modifier = modifier,
@@ -138,6 +124,33 @@ fun AppNavigation(
                         navController = appState.navController,
                         onNavTabSelected = { tab -> appState.navigateToBottomBarRoute(tab.route) },
                     ),
+            )
+        }
+    }
+}
+
+@Composable
+private fun NavigationDebugLogger(
+    navEntry: NavBackStackEntry?,
+    currentDestination: NavDestination?,
+    showBottomBar: Boolean,
+    currentTab: BottomNavTab,
+) {
+    if (BuildConfig.DEBUG) {
+        val hierarchyRoutes =
+            currentDestination?.hierarchy?.mapNotNull { it.route }?.joinToString(prefix = "[", postfix = "]")
+        val hasRouteAfternoteGraph = currentDestination?.hasRoute(Route.Afternote::class) == true
+        val hasRouteAfternoteHome = currentDestination?.hasRoute(AfternoteRoute.AfternoteHomeRoute::class) == true
+        val hasRouteEditor = currentDestination?.hasRoute(AfternoteRoute.EditorRoute::class) == true
+        LaunchedEffect(navEntry?.id, currentDestination?.route, showBottomBar, currentTab) {
+            Log.d(
+                NAV_BOTTOM_BAR_DEBUG_TAG,
+                "entryId=${navEntry?.id} destRoute=${currentDestination?.route} " +
+                    "hierarchyRoutes=$hierarchyRoutes " +
+                    "shouldShowBottomBar=$showBottomBar currentNavTab=$currentTab " +
+                    "hasRoute(Route.Afternote)=$hasRouteAfternoteGraph " +
+                    "hasRoute(AfternoteHomeRoute)=$hasRouteAfternoteHome " +
+                    "hasRoute(EditorRoute)=$hasRouteEditor",
             )
         }
     }
