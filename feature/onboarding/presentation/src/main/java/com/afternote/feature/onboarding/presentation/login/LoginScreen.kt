@@ -1,4 +1,4 @@
-package com.afternote.feature.onboarding.presentation.login.component
+package com.afternote.feature.onboarding.presentation.login
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -68,6 +68,7 @@ fun LoginScreen(
     onGoogleLoginClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isLoading: Boolean = false,
 ) {
     val focusManager = LocalFocusManager.current
     Scaffold(
@@ -134,8 +135,10 @@ fun LoginScreen(
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done,
                     onImeAction = {
-                        focusManager.clearFocus()
-                        onLoginClick()
+                        if (!isLoading) {
+                            focusManager.clearFocus()
+                            onLoginClick()
+                        }
                     },
                 )
             }
@@ -146,8 +149,10 @@ fun LoginScreen(
             AfternoteButton(
                 text = stringResource(R.string.login_button),
                 onClick = {
-                    focusManager.clearFocus()
-                    onLoginClick()
+                    if (!isLoading) {
+                        focusManager.clearFocus()
+                        onLoginClick()
+                    }
                 },
                 modifier =
                     Modifier
