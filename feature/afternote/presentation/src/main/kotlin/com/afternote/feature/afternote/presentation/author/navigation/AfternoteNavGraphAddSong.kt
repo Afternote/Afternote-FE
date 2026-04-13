@@ -1,7 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.navigation.NavController
 import com.afternote.feature.afternote.presentation.author.editor.playlist.AddSongCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.playlist.AddSongEntry
 import com.afternote.feature.afternote.presentation.author.editor.playlist.AddSongViewModel
@@ -9,7 +8,7 @@ import com.afternote.feature.afternote.presentation.author.editor.state.Memorial
 
 @Composable
 internal fun AfternoteAddSongNavigation(
-    navController: NavController,
+    onPopBackStack: () -> Unit,
     playlistStateHolder: MemorialPlaylistStateHolder,
     viewModel: AddSongViewModel,
 ) {
@@ -17,10 +16,10 @@ internal fun AfternoteAddSongNavigation(
         viewModel = viewModel,
         callbacks =
             AddSongCallbacks(
-                onBackClick = { navController.popBackStack() },
+                onBackClick = onPopBackStack,
                 onSongsAdded = { added ->
                     added.forEach { playlistStateHolder.addSong(it) }
-                    navController.popBackStack()
+                    onPopBackStack()
                 },
             ),
     )

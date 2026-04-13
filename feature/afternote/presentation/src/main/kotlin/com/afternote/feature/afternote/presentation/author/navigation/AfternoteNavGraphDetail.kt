@@ -16,7 +16,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
-import androidx.navigation.NavController
 import androidx.navigation.toRoute
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.domain.AfternoteServiceType
@@ -72,7 +71,8 @@ internal fun DesignPendingDetailContent(onBackClick: () -> Unit) {
 @Composable
 internal fun AfternoteDetailNavigation(
     backStackEntry: NavBackStackEntry,
-    navController: NavController,
+    onBack: () -> Unit,
+    onNavigateToEditor: (itemId: String) -> Unit,
     userName: String,
     viewModel: AfternoteDetailViewModel = hiltViewModel(),
 ) {
@@ -87,7 +87,7 @@ internal fun AfternoteDetailNavigation(
 
     LaunchedEffect(uiState.deleteSuccess) {
         if (uiState.deleteSuccess) {
-            navController.popBackStack()
+            onBack()
         }
     }
 
@@ -99,7 +99,7 @@ internal fun AfternoteDetailNavigation(
         }
 
         detail == null || detail.type !in designedDetailTypes -> {
-            DesignPendingDetailContent(onBackClick = { navController.popBackStack() })
+            DesignPendingDetailContent(onBackClick = onBack)
         }
 
         else -> {
@@ -132,11 +132,9 @@ internal fun AfternoteDetailNavigation(
                         iconResId = getIconResForServiceName(detail.title),
                         badgeTextResId = badgeResId,
                     ),
-                onBackClick = { navController.popBackStack() },
+                onBackClick = onBack,
                 onEditClick = {
-                    navController.navigate(
-                        AfternoteRoute.EditorRoute(itemId = detail.id.toString()),
-                    )
+                    onNavigateToEditor(detail.id.toString())
                 },
                 onDeleteConfirm = { viewModel.onEvent(AfternoteDetailEvent.Delete(detail.id)) },
             )
@@ -147,7 +145,8 @@ internal fun AfternoteDetailNavigation(
 @Composable
 internal fun AfternoteGalleryDetailNavigation(
     backStackEntry: NavBackStackEntry,
-    navController: NavController,
+    onBack: () -> Unit,
+    onNavigateToEditor: (itemId: String) -> Unit,
     userName: String,
     viewModel: AfternoteDetailViewModel = hiltViewModel(),
 ) {
@@ -162,7 +161,7 @@ internal fun AfternoteGalleryDetailNavigation(
 
     LaunchedEffect(uiState.deleteSuccess) {
         if (uiState.deleteSuccess) {
-            navController.popBackStack()
+            onBack()
         }
     }
 
@@ -175,7 +174,7 @@ internal fun AfternoteGalleryDetailNavigation(
 
         detail == null -> {
             DesignPendingDetailContent(
-                onBackClick = { navController.popBackStack() },
+                onBackClick = onBack,
             )
         }
 
@@ -200,11 +199,9 @@ internal fun AfternoteGalleryDetailNavigation(
                     ),
                 callbacks =
                     GalleryDetailCallbacks(
-                        onBackClick = { navController.popBackStack() },
+                        onBackClick = onBack,
                         onEditClick = {
-                            navController.navigate(
-                                AfternoteRoute.EditorRoute(itemId = detail.id.toString()),
-                            )
+                            onNavigateToEditor(detail.id.toString())
                         },
                         onDeleteConfirm = { viewModel.onEvent(AfternoteDetailEvent.Delete(detail.id)) },
                     ),
@@ -216,7 +213,8 @@ internal fun AfternoteGalleryDetailNavigation(
 @Composable
 internal fun AfternoteMemorialGuidelineDetailNavigation(
     backStackEntry: NavBackStackEntry,
-    navController: NavController,
+    onBack: () -> Unit,
+    onNavigateToEditor: (itemId: String) -> Unit,
     userName: String,
     viewModel: AfternoteDetailViewModel = hiltViewModel(),
 ) {
@@ -231,7 +229,7 @@ internal fun AfternoteMemorialGuidelineDetailNavigation(
 
     LaunchedEffect(uiState.deleteSuccess) {
         if (uiState.deleteSuccess) {
-            navController.popBackStack()
+            onBack()
         }
     }
 
@@ -244,7 +242,7 @@ internal fun AfternoteMemorialGuidelineDetailNavigation(
 
         detail == null -> {
             DesignPendingDetailContent(
-                onBackClick = { navController.popBackStack() },
+                onBackClick = onBack,
             )
         }
 
@@ -278,11 +276,9 @@ internal fun AfternoteMemorialGuidelineDetailNavigation(
                     ),
                 callbacks =
                     MemorialGuidelineDetailCallbacks(
-                        onBackClick = { navController.popBackStack() },
+                        onBackClick = onBack,
                         onEditClick = {
-                            navController.navigate(
-                                AfternoteRoute.EditorRoute(itemId = detail.id.toString()),
-                            )
+                            onNavigateToEditor(detail.id.toString())
                         },
                         onDeleteConfirm = { viewModel.onEvent(AfternoteDetailEvent.Delete(detail.id)) },
                     ),
