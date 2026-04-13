@@ -4,18 +4,23 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
@@ -39,124 +44,235 @@ import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.mindrecord.presentation.hometab.homeTabMindRecordMemoriesSection
 import com.afternote.feature.mindrecord.presentation.hometab.homeTabMindRecordQuestionAndCategories
 
-@Immutable
-data class HomeTabUiState(
-    val userName: String = "",
-    val isRecipientDesignated: Boolean = false,
-    val categoryCounts: Map<MindRecordCategory, Int> =
-        MindRecordCategory.entries.associateWith { 0 },
-    val isLoading: Boolean = false,
-    val isError: Boolean = false,
-)
+sealed interface HomeTabUiState {
+    data object Loading : HomeTabUiState
 
+    @Immutable
+    data class Success(
+        val userName: String,
+        val isRecipientDesignated: Boolean,
+        val categoryCounts: Map<MindRecordCategory, Int>,
+        val isRefreshing: Boolean = false,
+    ) : HomeTabUiState
+
+    data class Error(
+        val throwable: Throwable,
+    ) : HomeTabUiState
+}
+
+/** 홈 탭에서 발생하는 사용자 이벤트를 한곳에 모은다. */
+interface HomeTabActions {
+    fun onRecipientChipClick()
+
+    fun onAnswerClick()
+
+    fun onNextStepClick()
+
+    fun onRecordCategoryClick(category: MindRecordCategory)
+
+    fun onWeeklyImageClick()
+
+    fun onWeeklyCountClick()
+
+    fun onWeeklyRecentRecordClick()
+
+    fun onMemoriesSectionClick()
+
+    fun onSettingClick()
+
+    fun onRetryLoad()
+}
+
+private object HomeTabActionsNoop : HomeTabActions {
+    override fun onRecipientChipClick() {}
+
+    override fun onAnswerClick() {}
+
+    override fun onNextStepClick() {}
+
+    override fun onRecordCategoryClick(category: MindRecordCategory) {}
+
+    override fun onWeeklyImageClick() {}
+
+    override fun onWeeklyCountClick() {}
+
+    override fun onWeeklyRecentRecordClick() {}
+
+    override fun onMemoriesSectionClick() {}
+
+    override fun onSettingClick() {}
+
+    override fun onRetryLoad() {}
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeTabScreen(
     modifier: Modifier = Modifier,
-    uiState: HomeTabUiState = HomeTabUiState(),
-    onRecipientChipClick: () -> Unit = {},
-    onAnswerClick: () -> Unit = {},
-    onNextStepClick: () -> Unit = {},
-    onRecordCategoryClick: (MindRecordCategory) -> Unit = {},
-    onWeeklyImageClick: () -> Unit = {},
-    onWeeklyCountClick: () -> Unit = {},
-    onWeeklyRecentRecordClick: () -> Unit = {},
-    onMemoriesSectionClick: () -> Unit = {},
-    onSettingClick: () -> Unit = {},
+    uiState: HomeTabUiState = HomeTabUiState.Loading,
+    actions: HomeTabActions = HomeTabActionsNoop,
 ) {
     Scaffold(
         modifier = modifier,
-        topBar = { HomeTopBar(onSettingClick = onSettingClick) },
+        topBar = { HomeTopBar(onSettingClick = actions::onSettingClick) },
         containerColor = Color.Transparent,
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier.padding(paddingValues),
-            contentPadding = PaddingValues(horizontal = 20.dp),
-        ) {
-            // 1. 헤더 영역 (인사말 & 수신인 지정 칩)
-            item {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = stringResource(R.string.home_tab_greeting, uiState.userName),
-                    style = AfternoteDesign.typography.h1,
-                    modifier = Modifier.padding(start = 4.dp),
+        when (uiState) {
+            is HomeTabUiState.Loading -> {
+                HomeTabScrollContent(
+                    paddingValues = paddingValues,
+                    userName = "\u2026",
+                    isRecipientDesignated = false,
+                    categoryCounts = MindRecordCategory.entries.associateWith { 0 },
+                    categoryCountsLoading = true,
+                    actions = actions,
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = stringResource(R.string.home_tab_tagline),
-                    style = AfternoteDesign.typography.captionLargeR,
-                    color = AfternoteDesign.colors.gray5,
-                    modifier = Modifier.padding(start = 4.dp),
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                RecipientDesignationChip(
-                    isDesignated = uiState.isRecipientDesignated,
-                    onClick = onRecipientChipClick,
-                )
-
-                Spacer(Modifier.height(32.dp))
             }
 
-            homeTabMindRecordQuestionAndCategories(
-                categoryCounts = uiState.categoryCounts,
-                onAnswerClick = onAnswerClick,
-                onRecordCategoryClick = onRecordCategoryClick,
-            )
+            is HomeTabUiState.Success -> {
+                PullToRefreshBox(
+                    isRefreshing = uiState.isRefreshing,
+                    onRefresh = actions::onRetryLoad,
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues),
+                ) {
+                    HomeTabScrollContent(
+                        paddingValues = PaddingValues(0.dp),
+                        userName = uiState.userName,
+                        isRecipientDesignated = uiState.isRecipientDesignated,
+                        categoryCounts = uiState.categoryCounts,
+                        categoryCountsLoading = false,
+                        actions = actions,
+                    )
+                }
+            }
 
-            // 4. AFTER NOTE NEXT STEP 섹션
-            item {
-                AfternoteSectionHeader(title = stringResource(R.string.home_tab_next_step_section_title))
-                Spacer(modifier = Modifier.height(12.dp))
-
-                AfternoteOutlinedCard(onClick = onNextStepClick) {
-                    Column {
+            is HomeTabUiState.Error -> {
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = stringResource(R.string.home_tab_next_step_body),
-                            style = AfternoteDesign.typography.inter,
-                            color = AfternoteDesign.colors.gray8,
+                            text = stringResource(R.string.home_tab_error_message),
+                            style = AfternoteDesign.typography.bodySmallR,
+                            color = AfternoteDesign.colors.gray7,
                         )
-                        Spacer(modifier = Modifier.height(18.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        TextButton(onClick = actions::onRetryLoad) {
                             Text(
-                                text = stringResource(R.string.home_tab_next_step_cta),
-                                style = AfternoteDesign.typography.captionLargeR,
-                                color = AfternoteDesign.colors.gray6,
-                            )
-                            RightArrowIcon(
-                                modifier = Modifier.size(width = 4.dp, height = 7.dp),
-                                tint = AfternoteDesign.colors.gray6,
+                                text = stringResource(R.string.home_tab_retry),
+                                style = AfternoteDesign.typography.captionLargeB,
+                                color = AfternoteDesign.colors.gray9,
                             )
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(40.dp))
             }
-
-            // 5. 주간 기록 요약
-            item {
-                WeeklySummaryGrid(
-                    onImageClick = onWeeklyImageClick,
-                    onCountCardClick = onWeeklyCountClick,
-                    onRecentRecordClick = onWeeklyRecentRecordClick,
-                )
-                Spacer(modifier = Modifier.height(40.dp))
-            }
-
-            homeTabMindRecordMemoriesSection(
-                onMemoriesSectionClick = onMemoriesSectionClick,
-            )
         }
+    }
+}
+
+@Composable
+private fun HomeTabScrollContent(
+    paddingValues: PaddingValues,
+    userName: String,
+    isRecipientDesignated: Boolean,
+    categoryCounts: Map<MindRecordCategory, Int>,
+    categoryCountsLoading: Boolean,
+    actions: HomeTabActions,
+) {
+    LazyColumn(
+        modifier = Modifier.padding(paddingValues),
+        contentPadding = PaddingValues(horizontal = 20.dp),
+    ) {
+        item {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.home_tab_greeting, userName),
+                style = AfternoteDesign.typography.h1,
+                modifier = Modifier.padding(start = 4.dp),
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = stringResource(R.string.home_tab_tagline),
+                style = AfternoteDesign.typography.captionLargeR,
+                color = AfternoteDesign.colors.gray5,
+                modifier = Modifier.padding(start = 4.dp),
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            RecipientDesignationChip(
+                isDesignated = isRecipientDesignated,
+                onClick = actions::onRecipientChipClick,
+            )
+
+            Spacer(Modifier.height(32.dp))
+        }
+
+        homeTabMindRecordQuestionAndCategories(
+            categoryCounts = categoryCounts,
+            onAnswerClick = actions::onAnswerClick,
+            onRecordCategoryClick = actions::onRecordCategoryClick,
+            isCategoryCountLoading = categoryCountsLoading,
+        )
+
+        item {
+            AfternoteSectionHeader(title = stringResource(R.string.home_tab_next_step_section_title))
+            Spacer(modifier = Modifier.height(12.dp))
+
+            AfternoteOutlinedCard(onClick = actions::onNextStepClick) {
+                Column {
+                    Text(
+                        text = stringResource(R.string.home_tab_next_step_body),
+                        style = AfternoteDesign.typography.inter,
+                        color = AfternoteDesign.colors.gray8,
+                    )
+                    Spacer(modifier = Modifier.height(18.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.home_tab_next_step_cta),
+                            style = AfternoteDesign.typography.captionLargeR,
+                            color = AfternoteDesign.colors.gray6,
+                        )
+                        RightArrowIcon(
+                            modifier = Modifier.size(width = 4.dp, height = 7.dp),
+                            tint = AfternoteDesign.colors.gray6,
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(40.dp))
+        }
+
+        item {
+            WeeklySummaryGrid(
+                onImageClick = actions::onWeeklyImageClick,
+                onCountCardClick = actions::onWeeklyCountClick,
+                onRecentRecordClick = actions::onWeeklyRecentRecordClick,
+            )
+            Spacer(modifier = Modifier.height(40.dp))
+        }
+
+        homeTabMindRecordMemoriesSection(
+            onMemoriesSectionClick = actions::onMemoriesSectionClick,
+        )
     }
 }
 
 /**
  * 수신인 지정 상태 칩.
  *
- * 터치·리플은 [Surface]가 담당하고, 체크박스는 상태 표시만 한다 ([onClick] null).
+ * 터치·리플은 [Modifier.clickable]이 담당하고, 체크박스는 상태 표시만 한다 ([onClick] null).
  */
 @Composable
 private fun RecipientDesignationChip(
@@ -167,23 +283,16 @@ private fun RecipientDesignationChip(
     Row(
         modifier =
             modifier
-                // 1. 테두리 (Border)
                 .border(
                     width = 1.dp,
                     color = AfternoteDesign.colors.gray3,
                     shape = RoundedCornerShape(20.dp),
-                )
-                // 2. 자르기 (Clip): Ripple 효과와 배경색이 모서리 밖으로 나가지 않게 가둠
-                .clip(RoundedCornerShape(20.dp))
-                // 3. 배경색 (Background)
+                ).clip(RoundedCornerShape(20.dp))
                 .background(color = if (isDesignated) AfternoteDesign.colors.white else AfternoteDesign.colors.gray2)
-                // 4. 클릭 (Clickable): 접근성 Role.Button 추가
                 .clickable(
                     role = Role.Button,
                     onClick = onClick,
-                )
-                // 5. 내부 여백 (Padding): 기존 Row에 있던 패딩을 가장 마지막에 배치
-                .padding(vertical = 9.dp)
+                ).padding(vertical = 9.dp)
                 .padding(start = 15.dp, end = 20.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
