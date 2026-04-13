@@ -20,22 +20,18 @@ class MainActivity : FragmentActivity() {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
 
-        // 로딩 중이거나 시작 라우트가 아직 없으면 시스템 스플래시를 유지한다.
+        // 시작 라우트가 null이면(아직 Auth 스트림 미확정) 시스템 스플래시를 유지한다.
         splashScreen.setKeepOnScreenCondition {
-            viewModel.isLoading.value || viewModel.startRoute.value == null
+            viewModel.startRoute.value == null
         }
 
         enableEdgeToEdge()
 
         setContent {
             AfternoteTheme {
-                val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
                 val startRoute by viewModel.startRoute.collectAsStateWithLifecycle()
-
-                if (!isLoading) {
-                    startRoute?.let { route ->
-                        AppNavigation(startDestination = route)
-                    }
+                startRoute?.let { route ->
+                    AppNavigation(startDestination = route)
                 }
             }
         }
