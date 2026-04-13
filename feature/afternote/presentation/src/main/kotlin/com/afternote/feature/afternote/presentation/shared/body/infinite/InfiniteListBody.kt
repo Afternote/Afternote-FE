@@ -43,7 +43,7 @@ fun InfiniteListBody(
     }
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 private fun InfiniteListBodyPreview() {
     AfternoteTheme {

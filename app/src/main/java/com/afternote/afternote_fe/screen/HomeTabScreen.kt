@@ -1,6 +1,5 @@
 package com.afternote.afternote_fe.screen
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -17,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -31,6 +28,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.afternote_fe.R
 import com.afternote.core.model.MindRecordCategory
+import com.afternote.core.ui.AfternoteOutlinedCard
 import com.afternote.core.ui.AfternoteSectionHeader
 import com.afternote.core.ui.button.AfternoteCircularCheckbox
 import com.afternote.core.ui.button.CheckboxState
@@ -111,16 +109,8 @@ fun HomeTabScreen(
                 AfternoteSectionHeader(title = stringResource(R.string.home_tab_next_step_section_title))
                 Spacer(modifier = Modifier.height(12.dp))
 
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                    border = BorderStroke(1.dp, AfternoteDesign.colors.gray3),
-                    color = AfternoteDesign.colors.white,
-                    onClick = onNextStepClick,
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                    ) {
+                AfternoteOutlinedCard(onClick = onNextStepClick) {
+                    Column {
                         Text(
                             text = stringResource(R.string.home_tab_next_step_body),
                             style = AfternoteDesign.typography.inter,
