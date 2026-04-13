@@ -77,7 +77,10 @@
     <string name="receiver_mindrecord_no_record_yet">이 기록은 아직 확인할 수 없어요</string>
     <string name="receiver_mindrecord_today_empty">오늘의 기록이 없어요</string>
     <string name="receiver_mindrecord_card_logo">오늘의 기록 카드 로고</string>
-    <string name="afternote_category_social_network">소셜 네트워크</string>
+    <string name="afternote_category_all">전체</string>
+    <string name="afternote_category_social_network">소셜네트워크</string>
+    <string name="afternote_category_gallery_and_files">갤러리 및 파일</string>
+    <string name="afternote_category_memorial">추모 가이드라인</string>
     <!-- Edit-screen category dropdown; must stay in sync with [EditorCategory.displayLabel] for [EditorCategory.fromDisplayLabel]. -->
     <string name="afternote_editor_category_social">소셜네트워크</string>
     <string name="afternote_editor_category_gallery">갤러리 및 파일</string>
