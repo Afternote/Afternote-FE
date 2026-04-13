@@ -94,7 +94,6 @@ fun AppNavigation(
                 graphScopedParentEntry = {
                     appState.navController.getBackStackEntry<Route.Afternote>()
                 },
-                userName = "",
                 onBottomNavTabSelected = afternoteNavCallbacks.onBottomNavTabSelected,
                 isEditorRouteCurrent = afternoteNavCallbacks.isEditorRouteCurrent,
                 onPopBackStack = afternoteNavCallbacks.onPopBackStack,
