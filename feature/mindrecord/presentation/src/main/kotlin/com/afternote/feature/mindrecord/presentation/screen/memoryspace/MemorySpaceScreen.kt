@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.component.memoryspace.MemoryDetailOverlay
 import com.afternote.feature.mindrecord.presentation.component.memoryspace.MemorySpaceCardField
@@ -122,6 +123,7 @@ private fun MemorySpaceContent(
                 MemoryDetailOverlay(
                     memory = memory,
                     onClose = { selectedMemoryId = null },
+                    modifier = Modifier.background(AfternoteDesign.colors.black.copy(alpha = 0.4f)),
                 )
             }
         }
