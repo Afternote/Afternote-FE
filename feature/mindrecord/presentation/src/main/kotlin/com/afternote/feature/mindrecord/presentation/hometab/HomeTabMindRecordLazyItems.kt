@@ -36,6 +36,7 @@ fun LazyListScope.homeTabMindRecordQuestionAndCategories(
     categoryCounts: Map<MindRecordCategory, Int>,
     onAnswerClick: () -> Unit,
     onRecordCategoryClick: (MindRecordCategory) -> Unit,
+    isCategoryCountLoading: Boolean = false,
 ) {
     item(key = "mind_record_question") {
         TodayQuestionCard(
@@ -58,6 +59,7 @@ fun LazyListScope.homeTabMindRecordQuestionAndCategories(
                 totalCount = categoryCounts[MindRecordCategory.DIARY] ?: 0,
                 onClick = { onRecordCategoryClick(MindRecordCategory.DIARY) },
                 useDiaryIconLayout = true,
+                isCountLoading = isCategoryCountLoading,
             )
             RecordCategoryCard(
                 modifier =
@@ -67,6 +69,7 @@ fun LazyListScope.homeTabMindRecordQuestionAndCategories(
                 subtitle = MindRecordCategory.DEEP_THOUGHT.description,
                 totalCount = categoryCounts[MindRecordCategory.DEEP_THOUGHT] ?: 0,
                 onClick = { onRecordCategoryClick(MindRecordCategory.DEEP_THOUGHT) },
+                isCountLoading = isCategoryCountLoading,
             )
         }
         Spacer(modifier = Modifier.height(40.dp))

@@ -29,6 +29,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.modifierextention.shimmerLoadingPlaceholder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_total_label
@@ -48,6 +49,7 @@ fun RecordCategoryCard(
     modifier: Modifier = Modifier,
     // TODO: Vector Asset(xml)의 viewport 여백을 맞추면 이 플래그를 제거할 수 있습니다.
     useDiaryIconLayout: Boolean = false,
+    isCountLoading: Boolean = false,
 ) {
     val formattedCount =
         remember(totalCount) {
@@ -128,11 +130,22 @@ fun RecordCategoryCard(
                 style = AfternoteDesign.typography.mono,
                 color = AfternoteDesign.colors.gray5,
             )
-            Text(
-                text = formattedCount,
-                style = AfternoteDesign.typography.h3,
-                color = AfternoteDesign.colors.gray9,
-            )
+            if (isCountLoading) {
+                Box(
+                    modifier =
+                        Modifier
+                            .width(40.dp)
+                            .height(24.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .shimmerLoadingPlaceholder(),
+                )
+            } else {
+                Text(
+                    text = formattedCount,
+                    style = AfternoteDesign.typography.h3,
+                    color = AfternoteDesign.colors.gray9,
+                )
+            }
         }
     }
 }

@@ -103,6 +103,7 @@ fun AppNavigation(
                     onSettingClick = {
                         appState.navController.navigate(Route.Setting)
                     },
+                    onRetryLoad = { viewModel.loadHomeSummary(isRefresh = true) },
                 )
             }
             composable<Route.Setting> {
