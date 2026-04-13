@@ -21,8 +21,6 @@ import com.afternote.feature.onboarding.presentation.terms.OnboardingTermsScreen
  * 온보딩 피처의 네비게이션 그래프.
  *
  * 플로우: Welcome -> Login / SignUp(1~4단계) -> Profile -> 완료(Home 이동)
- *
- * [NavController]는 앱 루트에서만 보유하고, 이 그래프에는 이동 이벤트만 전달합니다.
  */
 fun NavGraphBuilder.onboardingNavGraph(
     /** [Route.Onboarding] 그래프 엔트리 — SignUp/Profile 스코프 ViewModel 바인딩에 사용 */
