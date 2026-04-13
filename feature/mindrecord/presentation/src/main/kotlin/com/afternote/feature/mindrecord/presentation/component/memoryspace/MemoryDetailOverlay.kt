@@ -5,6 +5,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,8 +13,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -98,7 +101,12 @@ fun MemoryDetailOverlay(
                 }
             }
 
-            Column(modifier = Modifier.padding(32.dp)) {
+            Column(
+                modifier =
+                    Modifier
+                        .padding(32.dp)
+                        .verticalScroll(rememberScrollState()),
+            ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth(),
@@ -127,11 +135,10 @@ fun MemoryDetailOverlay(
                     color = AfternoteDesign.colors.gray5,
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
                 HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 16.dp),
                     color = AfternoteDesign.colors.gray4,
                 )
-                Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
                     text = memory.content,
@@ -145,7 +152,10 @@ fun MemoryDetailOverlay(
 
                 Spacer(modifier = Modifier.height(15.dp))
 
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     memory.tags.forEach { tag ->
                         Text(
                             text = "#$tag",
