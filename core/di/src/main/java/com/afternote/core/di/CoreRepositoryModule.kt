@@ -1,11 +1,11 @@
 package com.afternote.core.di
 
-import com.afternote.core.data.repositoryImpl.HomeRepositoryImpl
-import com.afternote.core.data.repositoryImpl.PhotoUploadRepositoryImpl
-import com.afternote.core.data.repositoryImpl.account.AccountRepositoryImpl
-import com.afternote.core.data.repositoryImpl.auth.AuthRepositoryImpl
-import com.afternote.core.data.repositoryImpl.auth.GoogleAuthManagerImpl
-import com.afternote.core.data.repositoryImpl.auth.KakaoAuthManagerImpl
+import com.afternote.core.data.repoimpl.HomeRepositoryImpl
+import com.afternote.core.data.repoimpl.PhotoUploadRepositoryImpl
+import com.afternote.core.data.repoimpl.account.AccountRepositoryImpl
+import com.afternote.core.data.repoimpl.auth.AuthRepositoryImpl
+import com.afternote.core.data.repoimpl.auth.GoogleAuthManagerImpl
+import com.afternote.core.data.repoimpl.auth.KakaoAuthManagerImpl
 import com.afternote.core.domain.repository.HomeRepository
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.domain.repository.account.AccountRepository
