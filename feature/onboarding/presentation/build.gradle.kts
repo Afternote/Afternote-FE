@@ -16,4 +16,6 @@ dependencies {
     implementation(projects.core.ui)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kakao.sdk.auth)
+    implementation(libs.kakao.sdk.user)
 }
