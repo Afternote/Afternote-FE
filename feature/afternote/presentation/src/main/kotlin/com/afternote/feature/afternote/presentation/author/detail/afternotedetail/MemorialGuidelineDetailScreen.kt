@@ -54,10 +54,10 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
-import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
-import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
-import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
-import com.afternote.feature.afternote.presentation.shared.detail.ReceiversCard
+import com.afternote.feature.afternote.presentation.shared.detail.components.DeleteConfirmDialog
+import com.afternote.feature.afternote.presentation.shared.detail.components.EditDropdownMenu
+import com.afternote.feature.afternote.presentation.shared.detail.components.InfoCard
+import com.afternote.feature.afternote.presentation.shared.detail.components.ReceiversCard
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 import com.afternote.feature.afternote.presentation.shared.model.dummy.AlbumDummies

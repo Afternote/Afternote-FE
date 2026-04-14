@@ -42,12 +42,12 @@ import com.afternote.feature.afternote.presentation.author.navigation.DesignPend
 import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadingContent
 import com.afternote.feature.afternote.presentation.author.navigation.HandleDeleteResult
 import com.afternote.feature.afternote.presentation.shared.detail.AfternoteDetailServiceHeaderWithRecipientChip
-import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.DetailInfoRow
 import com.afternote.feature.afternote.presentation.shared.detail.DetailSection
-import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.ProcessingMethodsSection
+import com.afternote.feature.afternote.presentation.shared.detail.components.DeleteConfirmDialog
+import com.afternote.feature.afternote.presentation.shared.detail.components.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 import com.afternote.feature.afternote.presentation.shared.util.getIconResForServiceName
 

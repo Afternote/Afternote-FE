@@ -30,7 +30,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverCallbacks
-import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
+import com.afternote.feature.afternote.presentation.shared.detail.components.EditDropdownMenu
 
 /**
  * 수신자 리스트 컴포넌트
