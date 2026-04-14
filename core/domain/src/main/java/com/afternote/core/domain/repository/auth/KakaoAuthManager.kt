@@ -1,5 +1,7 @@
 package com.afternote.core.domain.repository.auth
 
-fun interface KakaoAuthManager {
-    fun getAccessToken(): String?
+import android.app.Activity
+
+interface KakaoAuthManager {
+    suspend fun login(activity: Activity): Result<String>
 }
