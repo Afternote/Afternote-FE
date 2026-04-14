@@ -18,7 +18,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.toRoute
 import com.afternote.core.ui.topbar.DetailTopBar
-import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel
 import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.GalleryDetailCallbacks
@@ -27,17 +26,13 @@ import com.afternote.feature.afternote.presentation.author.detail.afternotedetai
 import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.MemorialGuidelineDetailCallbacks
 import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.MemorialGuidelineDetailScreen
 import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.MemorialGuidelineDetailState
-import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.SocialNetworkDetailContent
-import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.SocialNetworkDetailScreen
+import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.SocialNetworkDetailRoute
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDeleteState
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailEvent
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailUiState
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
-import com.afternote.feature.afternote.presentation.shared.util.getIconResForServiceName
-
-private val designedDetailTypes = setOf(AfternoteServiceType.SOCIAL_NETWORK)
 
 @Composable
 internal fun DetailLoadingContent() {
@@ -75,7 +70,7 @@ internal fun DesignPendingDetailContent(onBackClick: () -> Unit) {
  * Succeeded → onBack, 이후 VM 에 Consumed 이벤트를 전달해 상태를 Idle 로 복귀시킨다.
  */
 @Composable
-private fun HandleDeleteResult(
+internal fun HandleDeleteResult(
     deleteState: AfternoteDeleteState,
     onBack: () -> Unit,
     onConsumed: () -> Unit,
@@ -102,70 +97,17 @@ internal fun AfternoteDetailNavigation(
     backStackEntry: NavBackStackEntry,
     onBack: () -> Unit,
     onNavigateToEditor: (itemId: String) -> Unit,
-    viewModel: AfternoteDetailViewModel = hiltViewModel(),
 ) {
     val route = backStackEntry.toRoute<AfternoteRoute.DetailRoute>()
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    LaunchedEffect(route.itemId) {
-        route.itemId.toLongOrNull()?.let {
-            viewModel.onEvent(AfternoteDetailEvent.LoadDetail(it))
-        }
-    }
-
-    when (val state = uiState) {
-        AfternoteDetailUiState.Loading -> DetailLoadingContent()
-
-        is AfternoteDetailUiState.Error -> DesignPendingDetailContent(onBackClick = onBack)
-
-        is AfternoteDetailUiState.Success -> {
-            HandleDeleteResult(
-                deleteState = state.deleteState,
-                onBack = onBack,
-                onConsumed = { viewModel.onEvent(AfternoteDetailEvent.DeleteResultConsumed) },
-            )
-
-            val detail = state.detail
-            if (detail.type !in designedDetailTypes) {
-                DesignPendingDetailContent(onBackClick = onBack)
-            } else {
-                val method = detail.processing?.method ?: ""
-                val badgeResId =
-                    when {
-                        method.contains("TRANSFER") -> R.string.feature_afternote_detail_receiver_info_transfer_badge
-                        else -> R.string.feature_afternote_detail_receiver_assigned
-                    }
-
-                SocialNetworkDetailScreen(
-                    content =
-                        SocialNetworkDetailContent(
-                            serviceName = detail.title,
-                            userName = state.authorDisplayName,
-                            accountId = detail.credentials?.id ?: "",
-                            password = detail.credentials?.password ?: "",
-                            accountProcessingMethod = method,
-                            processingMethods = detail.processing?.actions ?: emptyList(),
-                            message = detail.processing?.leaveMessage ?: "",
-                            finalWriteDate = detail.timestamps.updatedAt.ifEmpty { detail.timestamps.createdAt },
-                            afternoteEditReceivers =
-                                detail.receivers.map { r ->
-                                    AfternoteEditorReceiver(
-                                        id = "",
-                                        name = r.name,
-                                        label = r.relation,
-                                    )
-                                },
-                            iconResId = getIconResForServiceName(detail.title),
-                            badgeTextResId = badgeResId,
-                        ),
-                    onBackClick = onBack,
-                    onEditClick = {
-                        onNavigateToEditor(detail.id.toString())
-                    },
-                    onDeleteConfirm = { viewModel.onEvent(AfternoteDetailEvent.Delete(detail.id)) },
-                )
-            }
-        }
+    val afternoteId = route.itemId.toLongOrNull()
+    if (afternoteId == null) {
+        DesignPendingDetailContent(onBackClick = onBack)
+    } else {
+        SocialNetworkDetailRoute(
+            afternoteId = afternoteId,
+            onBack = onBack,
+            onNavigateToEditor = onNavigateToEditor,
+        )
     }
 }
 

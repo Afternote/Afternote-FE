@@ -22,6 +22,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,18 +37,110 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.badge.RecipientDesignationBadge
 import com.afternote.core.ui.modifierextention.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
+import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel
+import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailEvent
+import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailUiState
+import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
+import com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent
+import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadingContent
+import com.afternote.feature.afternote.presentation.author.navigation.HandleDeleteResult
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.DetailCard
 import com.afternote.feature.afternote.presentation.shared.detail.DetailSectionHeader
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.ProcessingMethodsSection
+import com.afternote.feature.afternote.presentation.shared.util.getIconResForServiceName
+
+/**
+ * 소셜 네트워크 상세 Stateful Route.
+ *
+ * Now in Android 가이드의 Route + Screen 분리 패턴을 따른다.
+ * - 상세/작성자/삭제 상태는 공용 [AfternoteDetailViewModel] 에서 관리한다
+ *   (세 가지 detail 화면이 동일한 VM 을 공유하므로 화면별 VM 을 새로 만들지 않는다).
+ * - UI 는 [SocialNetworkDetailScreen] (Stateless) 에 위임한다.
+ * - 방어적으로 `detail.type` 을 검사해 SOCIAL_NETWORK 가 아닌 타입이 들어오면
+ *   [DesignPendingDetailContent] 로 폴백한다.
+ */
+@Composable
+internal fun SocialNetworkDetailRoute(
+    afternoteId: Long,
+    onBack: () -> Unit,
+    onNavigateToEditor: (itemId: String) -> Unit,
+    viewModel: AfternoteDetailViewModel = hiltViewModel(),
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(afternoteId) {
+        viewModel.onEvent(AfternoteDetailEvent.LoadDetail(afternoteId))
+    }
+
+    when (val state = uiState) {
+        AfternoteDetailUiState.Loading -> {
+            DetailLoadingContent()
+        }
+
+        is AfternoteDetailUiState.Error -> {
+            DesignPendingDetailContent(onBackClick = onBack)
+        }
+
+        is AfternoteDetailUiState.Success -> {
+            HandleDeleteResult(
+                deleteState = state.deleteState,
+                onBack = onBack,
+                onConsumed = { viewModel.onEvent(AfternoteDetailEvent.DeleteResultConsumed) },
+            )
+
+            val detail = state.detail
+            if (detail.type != AfternoteServiceType.SOCIAL_NETWORK) {
+                DesignPendingDetailContent(onBackClick = onBack)
+            } else {
+                val method = detail.processing?.method ?: ""
+                val badgeResId =
+                    when {
+                        method.contains("TRANSFER") -> R.string.feature_afternote_detail_receiver_info_transfer_badge
+                        else -> R.string.feature_afternote_detail_receiver_assigned
+                    }
+
+                SocialNetworkDetailScreen(
+                    content =
+                        SocialNetworkDetailContent(
+                            serviceName = detail.title,
+                            userName = state.authorDisplayName,
+                            accountId = detail.credentials?.id ?: "",
+                            password = detail.credentials?.password ?: "",
+                            accountProcessingMethod = method,
+                            processingMethods = detail.processing?.actions ?: emptyList(),
+                            message = detail.processing?.leaveMessage ?: "",
+                            finalWriteDate = detail.timestamps.updatedAt.ifEmpty { detail.timestamps.createdAt },
+                            afternoteEditReceivers =
+                                detail.receivers.map { r ->
+                                    AfternoteEditorReceiver(
+                                        id = "",
+                                        name = r.name,
+                                        label = r.relation,
+                                    )
+                                },
+                            iconResId = getIconResForServiceName(detail.title),
+                            badgeTextResId = badgeResId,
+                        ),
+                    onBackClick = onBack,
+                    onEditClick = { onNavigateToEditor(detail.id.toString()) },
+                    onDeleteConfirm = { viewModel.onEvent(AfternoteDetailEvent.Delete(detail.id)) },
+                )
+            }
+        }
+    }
+}
 
 /**
  * 소셜 네트워크 애프터노트 상세 화면.
@@ -292,12 +385,36 @@ private fun SocialNetworkDetailScrollContent(
 
 // endregion
 
+/**
+ * Android Studio @Preview 전용. Debug 빌드 런타임 목업은
+ * `AfternoteDebugMockNetworkInterceptor`의 GET `/api/afternotes/{id}` (예: id 1, 3)를 사용한다.
+ */
+private val PreviewSocialNetworkInstaContent =
+    SocialNetworkDetailContent(
+        serviceName = "인스타그램",
+        userName = "서영",
+        accountId = "qwerty123",
+        password = "qwerty123",
+        accountProcessingMethod = "MEMORIAL",
+        processingMethods = listOf("게시물 내리기", "추모 게시물 올리기", "추모 계정으로 전환하기"),
+        message = "이 계정에는 우리 가족 여행 사진이 많아.\n계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
+        finalWriteDate = "2025.11.26",
+        afternoteEditReceivers =
+            listOf(
+                AfternoteEditorReceiver(
+                    id = "1",
+                    name = "황규운",
+                    label = "친구",
+                ),
+            ),
+    )
+
 @Preview(showBackground = true)
 @Composable
 private fun SocialNetworkDetailScreenPreview() {
     AfternoteTheme {
         SocialNetworkDetailScreen(
-            content = PREVIEW_CONTENT,
+            content = PreviewSocialNetworkInstaContent,
             onBackClick = {},
             onEditClick = {},
         )
@@ -315,7 +432,7 @@ private fun SocialNetworkDetailScreenWithDropdownPreview() {
                 }
             }
         SocialNetworkDetailScreen(
-            content = PREVIEW_CONTENT,
+            content = PreviewSocialNetworkInstaContent,
             onBackClick = {},
             onEditClick = {},
             state = stateWithDropdown,
