@@ -2,13 +2,17 @@ package com.afternote.feature.afternote.presentation.author.detail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.domain.repository.HomeRepository
+import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
+import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDeleteState
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailEvent
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -19,6 +23,9 @@ import javax.inject.Inject
  * - 상세 조회: GET /api/afternotes/{id}
  * - 삭제: DELETE /api/afternotes/{id}
  * - 작성자 표시명: [HomeRepository.getHomeSummary] (네비게이션 인자로 전달하지 않음)
+ *
+ * 내부 [InternalState] (flat) 로 조회·작성자·삭제 단계를 각각 관리하고, public [uiState] 는
+ * [AfternoteDetailUiState] 로 매핑해 Loading/Success/Error 3분기로 노출한다.
  */
 @HiltViewModel
 class AfternoteDetailViewModel
@@ -27,15 +34,23 @@ class AfternoteDetailViewModel
         private val afternoteRepository: AfternoteRepository,
         private val homeRepository: HomeRepository,
     ) : ViewModel() {
-        private val _uiState = MutableStateFlow(AfternoteDetailUiState())
-        val uiState: StateFlow<AfternoteDetailUiState> = _uiState.asStateFlow()
+        private val internalState = MutableStateFlow(InternalState())
+
+        val uiState: StateFlow<AfternoteDetailUiState> =
+            internalState
+                .map { it.toUiState() }
+                .stateIn(
+                    scope = viewModelScope,
+                    started = SharingStarted.Eagerly,
+                    initialValue = AfternoteDetailUiState.Loading,
+                )
 
         init {
             viewModelScope.launch {
                 homeRepository
                     .getHomeSummary()
                     .onSuccess { summary ->
-                        _uiState.update { it.copy(authorDisplayName = summary.userName) }
+                        internalState.update { it.copy(authorDisplayName = summary.userName) }
                     }
             }
         }
@@ -46,7 +61,7 @@ class AfternoteDetailViewModel
             when (event) {
                 is AfternoteDetailEvent.LoadDetail -> loadDetail(event.afternoteId)
                 is AfternoteDetailEvent.Delete -> deleteAfternote(event.afternoteId)
-                AfternoteDetailEvent.DeleteResultConsumed -> clearDeleteResult()
+                AfternoteDetailEvent.DeleteResultConsumed -> consumeDeleteResult()
             }
         }
 
@@ -56,18 +71,15 @@ class AfternoteDetailViewModel
 
         private fun loadDetail(afternoteId: Long) {
             viewModelScope.launch {
-                _uiState.update { it.copy(isLoading = true, error = null) }
+                internalState.update { it.copy(loadPhase = LoadPhase.Loading) }
                 afternoteRepository
                     .getDetail(id = afternoteId)
                     .onSuccess { detail ->
-                        _uiState.update {
-                            it.copy(isLoading = false, detail = detail, error = null)
-                        }
+                        internalState.update { it.copy(loadPhase = LoadPhase.Loaded(detail)) }
                     }.onFailure { e ->
-                        _uiState.update {
+                        internalState.update {
                             it.copy(
-                                isLoading = false,
-                                error = e.message ?: "상세 정보를 불러오지 못했습니다.",
+                                loadPhase = LoadPhase.Failed(e.message ?: "상세 정보를 불러오지 못했습니다."),
                             )
                         }
                     }
@@ -76,18 +88,15 @@ class AfternoteDetailViewModel
 
         private fun deleteAfternote(afternoteId: Long) {
             viewModelScope.launch {
-                _uiState.update { it.copy(isDeleting = true, deleteError = null) }
+                internalState.update { it.copy(deleteState = AfternoteDeleteState.InProgress) }
                 afternoteRepository
                     .delete(id = afternoteId)
                     .onSuccess {
-                        _uiState.update {
-                            it.copy(isDeleting = false, deleteSuccess = true)
-                        }
+                        internalState.update { it.copy(deleteState = AfternoteDeleteState.Succeeded) }
                     }.onFailure { e ->
-                        _uiState.update {
+                        internalState.update {
                             it.copy(
-                                isDeleting = false,
-                                deleteError = e.message ?: "삭제에 실패했습니다.",
+                                deleteState = AfternoteDeleteState.Failed(e.message ?: "삭제에 실패했습니다."),
                             )
                         }
                     }
@@ -98,9 +107,47 @@ class AfternoteDetailViewModel
 
         // region Utility
 
-        private fun clearDeleteResult() {
-            _uiState.update { it.copy(deleteSuccess = false, deleteError = null) }
+        private fun consumeDeleteResult() {
+            internalState.update { it.copy(deleteState = AfternoteDeleteState.Idle) }
         }
+
+        // endregion
+
+        // region Internal state shaping
+
+        /**
+         * VM 내부에서만 다루는 평탄한 상태.
+         * public [AfternoteDetailUiState] 는 이 값을 [toUiState] 로 매핑해 노출한다.
+         */
+        private data class InternalState(
+            val loadPhase: LoadPhase = LoadPhase.Loading,
+            val authorDisplayName: String = "",
+            val deleteState: AfternoteDeleteState = AfternoteDeleteState.Idle,
+        )
+
+        private sealed interface LoadPhase {
+            data object Loading : LoadPhase
+
+            data class Loaded(
+                val detail: Detail,
+            ) : LoadPhase
+
+            data class Failed(
+                val message: String,
+            ) : LoadPhase
+        }
+
+        private fun InternalState.toUiState(): AfternoteDetailUiState =
+            when (val phase = loadPhase) {
+                LoadPhase.Loading -> AfternoteDetailUiState.Loading
+                is LoadPhase.Loaded ->
+                    AfternoteDetailUiState.Success(
+                        detail = phase.detail,
+                        authorDisplayName = authorDisplayName,
+                        deleteState = deleteState,
+                    )
+                is LoadPhase.Failed -> AfternoteDetailUiState.Error(phase.message)
+            }
 
         // endregion
     }

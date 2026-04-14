@@ -29,7 +29,9 @@ import com.afternote.feature.afternote.presentation.author.detail.afternotedetai
 import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.MemorialGuidelineDetailState
 import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.SocialNetworkDetailContent
 import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.SocialNetworkDetailScreen
+import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDeleteState
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailEvent
+import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailUiState
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
@@ -68,6 +70,33 @@ internal fun DesignPendingDetailContent(onBackClick: () -> Unit) {
     }
 }
 
+/**
+ * 삭제 결과(Succeeded/Failed) 를 감지해 뒤로가기·소비 신호를 송출하는 공용 이펙트.
+ * Succeeded → onBack, 이후 VM 에 Consumed 이벤트를 전달해 상태를 Idle 로 복귀시킨다.
+ */
+@Composable
+private fun HandleDeleteResult(
+    deleteState: AfternoteDeleteState,
+    onBack: () -> Unit,
+    onConsumed: () -> Unit,
+) {
+    LaunchedEffect(deleteState) {
+        when (deleteState) {
+            AfternoteDeleteState.Succeeded -> {
+                onBack()
+                onConsumed()
+            }
+            is AfternoteDeleteState.Failed -> {
+                // 에러 UI 처리는 화면별 Snackbar/Dialog 에서 담당. 여기서는 상태만 소비.
+                onConsumed()
+            }
+            AfternoteDeleteState.Idle,
+            AfternoteDeleteState.InProgress,
+            -> Unit
+        }
+    }
+}
+
 @Composable
 internal fun AfternoteDetailNavigation(
     backStackEntry: NavBackStackEntry,
@@ -84,59 +113,58 @@ internal fun AfternoteDetailNavigation(
         }
     }
 
-    LaunchedEffect(uiState.deleteSuccess) {
-        if (uiState.deleteSuccess) {
-            onBack()
-        }
-    }
+    when (val state = uiState) {
+        AfternoteDetailUiState.Loading -> DetailLoadingContent()
 
-    val detail = uiState.detail
+        is AfternoteDetailUiState.Error -> DesignPendingDetailContent(onBackClick = onBack)
 
-    when {
-        uiState.isLoading -> {
-            DetailLoadingContent()
-        }
-
-        detail == null || detail.type !in designedDetailTypes -> {
-            DesignPendingDetailContent(onBackClick = onBack)
-        }
-
-        else -> {
-            val method = detail.processing?.method ?: ""
-            val badgeResId =
-                when {
-                    method.contains("TRANSFER") -> R.string.feature_afternote_detail_receiver_info_transfer_badge
-                    else -> R.string.feature_afternote_detail_receiver_assigned
-                }
-
-            SocialNetworkDetailScreen(
-                content =
-                    SocialNetworkDetailContent(
-                        serviceName = detail.title,
-                        userName = uiState.authorDisplayName,
-                        accountId = detail.credentials?.id ?: "",
-                        password = detail.credentials?.password ?: "",
-                        accountProcessingMethod = method,
-                        processingMethods = detail.processing?.actions ?: emptyList(),
-                        message = detail.processing?.leaveMessage ?: "",
-                        finalWriteDate = detail.timestamps.updatedAt.ifEmpty { detail.timestamps.createdAt },
-                        afternoteEditReceivers =
-                            detail.receivers.map { r ->
-                                AfternoteEditorReceiver(
-                                    id = "",
-                                    name = r.name,
-                                    label = r.relation,
-                                )
-                            },
-                        iconResId = getIconResForServiceName(detail.title),
-                        badgeTextResId = badgeResId,
-                    ),
-                onBackClick = onBack,
-                onEditClick = {
-                    onNavigateToEditor(detail.id.toString())
-                },
-                onDeleteConfirm = { viewModel.onEvent(AfternoteDetailEvent.Delete(detail.id)) },
+        is AfternoteDetailUiState.Success -> {
+            HandleDeleteResult(
+                deleteState = state.deleteState,
+                onBack = onBack,
+                onConsumed = { viewModel.onEvent(AfternoteDetailEvent.DeleteResultConsumed) },
             )
+
+            val detail = state.detail
+            if (detail.type !in designedDetailTypes) {
+                DesignPendingDetailContent(onBackClick = onBack)
+            } else {
+                val method = detail.processing?.method ?: ""
+                val badgeResId =
+                    when {
+                        method.contains("TRANSFER") -> R.string.feature_afternote_detail_receiver_info_transfer_badge
+                        else -> R.string.feature_afternote_detail_receiver_assigned
+                    }
+
+                SocialNetworkDetailScreen(
+                    content =
+                        SocialNetworkDetailContent(
+                            serviceName = detail.title,
+                            userName = state.authorDisplayName,
+                            accountId = detail.credentials?.id ?: "",
+                            password = detail.credentials?.password ?: "",
+                            accountProcessingMethod = method,
+                            processingMethods = detail.processing?.actions ?: emptyList(),
+                            message = detail.processing?.leaveMessage ?: "",
+                            finalWriteDate = detail.timestamps.updatedAt.ifEmpty { detail.timestamps.createdAt },
+                            afternoteEditReceivers =
+                                detail.receivers.map { r ->
+                                    AfternoteEditorReceiver(
+                                        id = "",
+                                        name = r.name,
+                                        label = r.relation,
+                                    )
+                                },
+                            iconResId = getIconResForServiceName(detail.title),
+                            badgeTextResId = badgeResId,
+                        ),
+                    onBackClick = onBack,
+                    onEditClick = {
+                        onNavigateToEditor(detail.id.toString())
+                    },
+                    onDeleteConfirm = { viewModel.onEvent(AfternoteDetailEvent.Delete(detail.id)) },
+                )
+            }
         }
     }
 }
@@ -157,31 +185,24 @@ internal fun AfternoteGalleryDetailNavigation(
         }
     }
 
-    LaunchedEffect(uiState.deleteSuccess) {
-        if (uiState.deleteSuccess) {
-            onBack()
-        }
-    }
+    when (val state = uiState) {
+        AfternoteDetailUiState.Loading -> DetailLoadingContent()
 
-    val detail = uiState.detail
+        is AfternoteDetailUiState.Error -> DesignPendingDetailContent(onBackClick = onBack)
 
-    when {
-        uiState.isLoading -> {
-            DetailLoadingContent()
-        }
-
-        detail == null -> {
-            DesignPendingDetailContent(
-                onBackClick = onBack,
+        is AfternoteDetailUiState.Success -> {
+            HandleDeleteResult(
+                deleteState = state.deleteState,
+                onBack = onBack,
+                onConsumed = { viewModel.onEvent(AfternoteDetailEvent.DeleteResultConsumed) },
             )
-        }
 
-        else -> {
+            val detail = state.detail
             GalleryDetailScreen(
                 detailState =
                     GalleryDetailState(
                         serviceName = detail.title,
-                        userName = uiState.authorDisplayName,
+                        userName = state.authorDisplayName,
                         finalWriteDate = detail.timestamps.updatedAt.ifEmpty { detail.timestamps.createdAt },
                         afternoteEditReceivers =
                             detail.receivers.map { r ->
@@ -224,30 +245,23 @@ internal fun AfternoteMemorialGuidelineDetailNavigation(
         }
     }
 
-    LaunchedEffect(uiState.deleteSuccess) {
-        if (uiState.deleteSuccess) {
-            onBack()
-        }
-    }
+    when (val state = uiState) {
+        AfternoteDetailUiState.Loading -> DetailLoadingContent()
 
-    val detail = uiState.detail
+        is AfternoteDetailUiState.Error -> DesignPendingDetailContent(onBackClick = onBack)
 
-    when {
-        uiState.isLoading -> {
-            DetailLoadingContent()
-        }
-
-        detail == null -> {
-            DesignPendingDetailContent(
-                onBackClick = onBack,
+        is AfternoteDetailUiState.Success -> {
+            HandleDeleteResult(
+                deleteState = state.deleteState,
+                onBack = onBack,
+                onConsumed = { viewModel.onEvent(AfternoteDetailEvent.DeleteResultConsumed) },
             )
-        }
 
-        else -> {
+            val detail = state.detail
             MemorialGuidelineDetailScreen(
                 detailState =
                     MemorialGuidelineDetailState(
-                        userName = uiState.authorDisplayName,
+                        userName = state.authorDisplayName,
                         finalWriteDate = detail.timestamps.updatedAt.ifEmpty { detail.timestamps.createdAt },
                         profileImageUri = detail.playlist?.playlistDetailMemorialMedia?.photoUrl,
                         afternoteEditReceivers =

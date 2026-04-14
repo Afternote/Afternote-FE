@@ -37,7 +37,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.badge.RecipientDesignationBadge
-import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.core.ui.modifierextention.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -320,53 +319,6 @@ private fun SocialNetworkDetailScreenWithDropdownPreview() {
             onBackClick = {},
             onEditClick = {},
             state = stateWithDropdown,
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SocialNetworkDetailScreenWithDeleteDialogPreview() {
-    AfternoteTheme {
-        val stateWithDialog =
-            remember {
-                AfternoteDetailState().apply {
-                    showDeleteDialog()
-                }
-            }
-        SocialNetworkDetailScreen(
-            content = PREVIEW_CONTENT,
-            onBackClick = {},
-            onEditClick = {},
-            state = stateWithDialog,
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SocialNetworkDetailScreenReceiverModePreview() {
-    AfternoteTheme {
-        SocialNetworkDetailScreen(
-            content = PREVIEW_CONTENT,
-            isEditable = false,
-            onBackClick = {},
-            state =
-                rememberAfternoteDetailState(
-                    defaultBottomNavItem = BottomNavTab.NOTE,
-                ),
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun NaverMailDetailScreenPreview() {
-    AfternoteTheme {
-        SocialNetworkDetailScreen(
-            content = NAVER_MAIL_PREVIEW_CONTENT,
-            onBackClick = {},
-            onEditClick = {},
         )
     }
 }
