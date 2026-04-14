@@ -21,5 +21,4 @@ data class SocialNetworkDetailContent(
     val finalWriteDate: String = "",
     val afternoteEditReceivers: List<AfternoteEditorReceiver> = emptyList(),
     val iconResId: Int = R.drawable.feature_afternote_img_insta_pattern,
-    val badgeTextResId: Int = R.string.feature_afternote_detail_receiver_assigned,
 )

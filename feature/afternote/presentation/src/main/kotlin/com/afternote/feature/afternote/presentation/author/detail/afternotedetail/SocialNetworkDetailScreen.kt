@@ -1,7 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.detail.afternotedetail
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,8 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,9 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -39,7 +33,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.afternote.core.ui.badge.RecipientDesignationBadge
+import com.afternote.core.ui.badge.RecipientDesignationBadgeState
 import com.afternote.core.ui.modifierextention.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -53,6 +47,7 @@ import com.afternote.feature.afternote.presentation.author.editor.model.Afternot
 import com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent
 import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadingContent
 import com.afternote.feature.afternote.presentation.author.navigation.HandleDeleteResult
+import com.afternote.feature.afternote.presentation.shared.detail.AfternoteDetailServiceHeaderWithRecipientChip
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.DetailCard
 import com.afternote.feature.afternote.presentation.shared.detail.DetailSectionHeader
@@ -105,11 +100,6 @@ internal fun SocialNetworkDetailRoute(
                 DesignPendingDetailContent(onBackClick = onBack)
             } else {
                 val method = detail.processing?.method ?: ""
-                val badgeResId =
-                    when {
-                        method.contains("TRANSFER") -> R.string.feature_afternote_detail_receiver_info_transfer_badge
-                        else -> R.string.feature_afternote_detail_receiver_assigned
-                    }
 
                 SocialNetworkDetailScreen(
                     content =
@@ -131,7 +121,6 @@ internal fun SocialNetworkDetailRoute(
                                     )
                                 },
                             iconResId = getIconResForServiceName(detail.title),
-                            badgeTextResId = badgeResId,
                         ),
                     onBackClick = onBack,
                     onEditClick = { onNavigateToEditor(detail.id.toString()) },
@@ -225,55 +214,19 @@ private fun SocialNetworkDetailScrollContent(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp),
     ) {
-        Spacer(modifier = Modifier.height(topInset + 24.dp))
-
-        // — 서비스 아이콘 + 이름 + 날짜
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Box(
-                Modifier
-                    .clip(CircleShape)
-                    .size(64.dp)
-                    .border(1.dp, shape = CircleShape, color = AfternoteDesign.colors.gray2),
-                contentAlignment = Alignment.Center,
-            ) {
-                Image(
-                    painter = painterResource(content.iconResId),
-                    contentDescription = content.serviceName,
-                    modifier =
-                        Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(16.dp)),
-                    contentScale = ContentScale.Crop,
-                )
+        val recipientBadgeState =
+            if (content.afternoteEditReceivers.isNotEmpty()) {
+                RecipientDesignationBadgeState.Completed
+            } else {
+                RecipientDesignationBadgeState.Incomplete()
             }
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = content.serviceName,
-                    style = AfternoteDesign.typography.h2,
-                    color = AfternoteDesign.colors.gray9,
-                )
-                Text(
-                    text =
-                        stringResource(
-                            R.string.afternote_last_written_date,
-                            content.finalWriteDate,
-                        ),
-                    style = AfternoteDesign.typography.inter,
-                    color = AfternoteDesign.colors.gray6,
-                )
-            }
-        }
-
-        // — 수신인 지정 완료 뱃지
-        if (content.afternoteEditReceivers.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(16.dp))
-            RecipientDesignationBadge(
-                text = stringResource(content.badgeTextResId),
-            )
-        }
+        AfternoteDetailServiceHeaderWithRecipientChip(
+            topInset = topInset,
+            iconResId = content.iconResId,
+            serviceName = content.serviceName,
+            finalWriteDate = content.finalWriteDate,
+            recipientBadgeState = recipientBadgeState,
+        )
 
         Spacer(modifier = Modifier.height(31.dp))
 
