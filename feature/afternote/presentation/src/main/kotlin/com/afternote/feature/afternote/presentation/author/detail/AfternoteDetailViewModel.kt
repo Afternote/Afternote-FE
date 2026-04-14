@@ -7,7 +7,6 @@ import com.afternote.core.domain.repository.HomeRepository
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDeleteState
-import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailEvent
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +29,7 @@ import javax.inject.Inject
  *
  * 내부 [InternalState] (flat) 로 조회·작성자·삭제 단계를 각각 관리하고, public [uiState] 는
  * [AfternoteDetailUiState] 로 매핑해 Loading/Success/Error 3분기로 노출한다.
+ * UI 액션은 [deleteAfternote]·[consumeDeleteResult] 등 명시 메서드로만 노출한다.
  */
 @HiltViewModel
 class AfternoteDetailViewModel
@@ -79,18 +79,6 @@ class AfternoteDetailViewModel
             private const val NAV_ARG_ITEM_ID = "itemId"
         }
 
-        // region Event
-
-        fun onEvent(event: AfternoteDetailEvent) {
-            when (event) {
-                is AfternoteDetailEvent.LoadDetail -> loadDetail(event.afternoteId)
-                is AfternoteDetailEvent.Delete -> deleteAfternote(event.afternoteId)
-                AfternoteDetailEvent.DeleteResultConsumed -> consumeDeleteResult()
-            }
-        }
-
-        // endregion
-
         // region Data Loading
 
         private fun loadDetail(afternoteId: Long) {
@@ -110,7 +98,7 @@ class AfternoteDetailViewModel
             }
         }
 
-        private fun deleteAfternote(afternoteId: Long) {
+        fun deleteAfternote(afternoteId: Long) {
             viewModelScope.launch {
                 internalState.update { it.copy(deleteState = AfternoteDeleteState.InProgress) }
                 afternoteRepository
@@ -131,7 +119,7 @@ class AfternoteDetailViewModel
 
         // region Utility
 
-        private fun consumeDeleteResult() {
+        fun consumeDeleteResult() {
             internalState.update { it.copy(deleteState = AfternoteDeleteState.Idle) }
         }
 
@@ -164,12 +152,18 @@ class AfternoteDetailViewModel
         private fun InternalState.toUiState(): AfternoteDetailUiState =
             when (val phase = loadPhase) {
                 LoadPhase.Loading -> AfternoteDetailUiState.Loading
-                is LoadPhase.Loaded ->
+                is LoadPhase.Loaded -> {
+                    val detail = phase.detail
+                    val (gallery, social, memorial) = detail.toSuccessUiSlices(authorDisplayName)
                     AfternoteDetailUiState.Success(
-                        detail = phase.detail,
+                        detailId = detail.id,
                         authorDisplayName = authorDisplayName,
                         deleteState = deleteState,
+                        galleryContent = gallery,
+                        socialNetworkContent = social,
+                        memorialGuidelineContent = memorial,
                     )
+                }
                 is LoadPhase.Failed -> AfternoteDetailUiState.Error(phase.message)
             }
 

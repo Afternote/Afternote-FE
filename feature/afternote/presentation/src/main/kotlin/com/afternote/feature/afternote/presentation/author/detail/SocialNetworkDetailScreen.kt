@@ -33,9 +33,7 @@ import com.afternote.core.ui.badge.RecipientDesignationBadgeState
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
-import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailEvent
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailUiState
 import com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent
 import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadingContent
@@ -48,7 +46,6 @@ import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMe
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.ProcessingMethodsSection
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
-import com.afternote.feature.afternote.presentation.shared.util.getIconResForServiceName
 
 /**
  * 소셜 네트워크 상세 Stateful Route.
@@ -58,7 +55,7 @@ import com.afternote.feature.afternote.presentation.shared.util.getIconResForSer
  *   (상세 목적지마다 별도의 백스택 엔트리이므로 VM 인스턴스는 화면마다 갈리지만 클래스는 동일).
  *   초기 상세 로드는 ViewModel 의 `init` 과 네비게이션 인자(`itemId`)로만 트리거한다.
  * - UI 는 [SocialNetworkDetailScreen] (Stateless) 에 위임한다.
- * - 방어적으로 `detail.type` 을 검사해 SOCIAL_NETWORK 가 아닌 타입이 들어오면
+ * - 방어적으로 ViewModel 이 준 [AfternoteDetailUiState.Success.socialNetworkContent] 가 없으면
  *   [DesignPendingDetailContent] 로 폴백한다.
  */
 @Composable
@@ -82,39 +79,18 @@ internal fun SocialNetworkDetailRoute(
             HandleDeleteResult(
                 deleteState = state.deleteState,
                 onBack = onBack,
-                onConsumed = { viewModel.onEvent(AfternoteDetailEvent.DeleteResultConsumed) },
+                onConsumed = viewModel::consumeDeleteResult,
             )
 
-            val detail = state.detail
-            if (detail.type != AfternoteServiceType.SOCIAL_NETWORK) {
+            val content = state.socialNetworkContent
+            if (content == null) {
                 DesignPendingDetailContent(onBackClick = onBack)
             } else {
-                val method = detail.processing?.method ?: ""
-
                 SocialNetworkDetailScreen(
-                    content =
-                        SocialNetworkDetailContent(
-                            serviceName = detail.title,
-                            userName = state.authorDisplayName,
-                            accountId = detail.credentials?.id ?: "",
-                            password = detail.credentials?.password ?: "",
-                            accountProcessingMethod = method,
-                            processingMethods = detail.processing?.actions ?: emptyList(),
-                            message = detail.processing?.leaveMessage ?: "",
-                            finalWriteDate = detail.timestamps.updatedAt.ifEmpty { detail.timestamps.createdAt },
-                            afternoteEditReceivers =
-                                detail.receivers.map { r ->
-                                    ReceiverUiModel(
-                                        id = "",
-                                        name = r.name,
-                                        label = r.relation,
-                                    )
-                                },
-                            iconResId = getIconResForServiceName(detail.title),
-                        ),
+                    content = content,
                     onBackClick = onBack,
-                    onEditClick = { onNavigateToEditor(detail.id.toString()) },
-                    onDeleteConfirm = { viewModel.onEvent(AfternoteDetailEvent.Delete(detail.id)) },
+                    onEditClick = { onNavigateToEditor(state.detailId.toString()) },
+                    onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
                 )
             }
         }

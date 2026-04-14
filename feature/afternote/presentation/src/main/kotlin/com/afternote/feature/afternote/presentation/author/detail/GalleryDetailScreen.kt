@@ -27,9 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.badge.RecipientDesignationBadgeState
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
-import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailEvent
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailUiState
 import com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent
 import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadingContent
@@ -47,7 +45,7 @@ import com.afternote.feature.afternote.presentation.shared.util.getIconResForSer
  * 갤러리 상세 Stateful Route.
  *
  * [SocialNetworkDetailRoute] 와 동일하게 공용 [AfternoteDetailViewModel]·[AfternoteDetailUiState] 를 쓰고,
- * 성공 시 [AfternoteServiceType.GALLERY_AND_FILES] 타입을 검사해 폴백한다.
+ * 성공 시 ViewModel 이 준비한 [AfternoteDetailUiState.Success.galleryContent] 가 없으면 폴백한다.
  */
 @Composable
 internal fun GalleryDetailRoute(
@@ -70,33 +68,18 @@ internal fun GalleryDetailRoute(
             HandleDeleteResult(
                 deleteState = state.deleteState,
                 onBack = onBack,
-                onConsumed = { viewModel.onEvent(AfternoteDetailEvent.DeleteResultConsumed) },
+                onConsumed = viewModel::consumeDeleteResult,
             )
 
-            val detail = state.detail
-            if (detail.type != AfternoteServiceType.GALLERY_AND_FILES) {
+            val content = state.galleryContent
+            if (content == null) {
                 DesignPendingDetailContent(onBackClick = onBack)
             } else {
                 GalleryDetailScreen(
-                    content =
-                        GalleryDetailContent(
-                            serviceName = detail.title,
-                            userName = state.authorDisplayName,
-                            finalWriteDate = detail.timestamps.updatedAt.ifEmpty { detail.timestamps.createdAt },
-                            afternoteEditReceivers =
-                                detail.receivers.map { r ->
-                                    ReceiverUiModel(
-                                        id = "",
-                                        name = r.name,
-                                        label = r.relation,
-                                    )
-                                },
-                            processingMethods = detail.processing?.actions ?: emptyList(),
-                            message = detail.processing?.leaveMessage ?: "",
-                        ),
+                    content = content,
                     onBackClick = onBack,
-                    onEditClick = { onNavigateToEditor(detail.id.toString()) },
-                    onDeleteConfirm = { viewModel.onEvent(AfternoteDetailEvent.Delete(detail.id)) },
+                    onEditClick = { onNavigateToEditor(state.detailId.toString()) },
+                    onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
                 )
             }
         }

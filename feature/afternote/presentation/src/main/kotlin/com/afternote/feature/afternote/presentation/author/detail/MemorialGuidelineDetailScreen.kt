@@ -53,9 +53,7 @@ import com.afternote.core.ui.modifierextention.horizontalFadingEdge
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
-import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailEvent
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailUiState
 import com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent
 import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadingContent
@@ -73,7 +71,7 @@ import com.afternote.core.ui.R as CoreUiR
  * 추모 가이드라인 상세 Stateful Route.
  *
  * [SocialNetworkDetailRoute]·[GalleryDetailRoute] 와 동일한 VM·UiState·삭제 이펙트 패턴을 따르며,
- * 성공 시 [AfternoteServiceType.MEMORIAL] 타입을 검사해 폴백한다.
+ * 성공 시 ViewModel 이 준 [AfternoteDetailUiState.Success.memorialGuidelineContent] 가 없으면 폴백한다.
  */
 @Composable
 internal fun MemorialGuidelineDetailRoute(
@@ -96,43 +94,18 @@ internal fun MemorialGuidelineDetailRoute(
             HandleDeleteResult(
                 deleteState = state.deleteState,
                 onBack = onBack,
-                onConsumed = { viewModel.onEvent(AfternoteDetailEvent.DeleteResultConsumed) },
+                onConsumed = viewModel::consumeDeleteResult,
             )
 
-            val detail = state.detail
-            if (detail.type != AfternoteServiceType.MEMORIAL) {
+            val content = state.memorialGuidelineContent
+            if (content == null) {
                 DesignPendingDetailContent(onBackClick = onBack)
             } else {
                 MemorialGuidelineDetailScreen(
-                    content =
-                        MemorialGuidelineDetailContent(
-                            userName = state.authorDisplayName,
-                            finalWriteDate = detail.timestamps.updatedAt.ifEmpty { detail.timestamps.createdAt },
-                            profileImageUri = detail.playlist?.playlistDetailMemorialMedia?.photoUrl,
-                            afternoteEditReceivers =
-                                detail.receivers.map { r ->
-                                    ReceiverUiModel(
-                                        id = "",
-                                        name = r.name,
-                                        label = r.relation,
-                                    )
-                                },
-                            albumCovers =
-                                detail.playlist?.songs?.map { s ->
-                                    AlbumCover(
-                                        id = (s.id ?: 0L).toString(),
-                                        imageUrl = s.coverUrl,
-                                        title = s.title,
-                                    )
-                                } ?: emptyList(),
-                            songCount = detail.playlist?.songs?.size ?: 0,
-                            lastWish = detail.playlist?.atmosphere ?: "",
-                            memorialVideoUrl = detail.playlist?.playlistDetailMemorialMedia?.videoUrl,
-                            memorialThumbnailUrl = detail.playlist?.playlistDetailMemorialMedia?.thumbnailUrl,
-                        ),
+                    content = content,
                     onBackClick = onBack,
-                    onEditClick = { onNavigateToEditor(detail.id.toString()) },
-                    onDeleteConfirm = { viewModel.onEvent(AfternoteDetailEvent.Delete(detail.id)) },
+                    onEditClick = { onNavigateToEditor(state.detailId.toString()) },
+                    onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
                 )
             }
         }
