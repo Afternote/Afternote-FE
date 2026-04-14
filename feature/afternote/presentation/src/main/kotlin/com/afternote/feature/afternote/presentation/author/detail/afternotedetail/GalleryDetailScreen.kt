@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -46,6 +45,8 @@ import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmD
 import com.afternote.feature.afternote.presentation.shared.detail.DetailCard
 import com.afternote.feature.afternote.presentation.shared.detail.DetailSectionHeader
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
+import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
+import com.afternote.feature.afternote.presentation.shared.detail.ProcessingMethodsSection
 
 /**
  * 갤러리 상세 화면의 데이터 상태
@@ -253,77 +254,10 @@ private fun GalleryDetailScrollContent(
         }
 
         // — 처리방법 섹션
-        if (detailState.processingMethods.isNotEmpty()) {
-            DetailSectionHeader(
-                iconResId = com.afternote.core.ui.R.drawable.core_ui_settings,
-                label = stringResource(R.string.feature_afternote_detail_section_processing),
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            DetailCard {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    detailState.processingMethods.forEach { method ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            AfternoteCircularCheckbox(
-                                state = CheckboxState.Default,
-                                onClick = null,
-                                size = 20.dp,
-                            )
-                            Text(
-                                text = method,
-                                style = AfternoteDesign.typography.bodySmallR,
-                                color = AfternoteDesign.colors.gray9,
-                            )
-                        }
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(24.dp))
-        }
+        ProcessingMethodsSection(methods = detailState.processingMethods)
 
         // — 남기신 말씀 섹션
-        DetailSectionHeader(
-            iconResId = com.afternote.core.ui.R.drawable.core_ui_ic_mail,
-            label = stringResource(R.string.feature_afternote_detail_section_message),
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        DetailCard {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Bottom,
-            ) {
-                val hasMessage = detailState.message.isNotEmpty()
-                val displayMessage =
-                    if (hasMessage) detailState.message else stringResource(R.string.feature_afternote_detail_no_message)
-                val textColor =
-                    if (hasMessage) AfternoteDesign.colors.gray9 else AfternoteDesign.colors.gray5
-                Row(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.feature_afternote_detail_quote_mark),
-                        style = AfternoteDesign.typography.bodyLargeR,
-                        color = AfternoteDesign.colors.gray4,
-                    )
-                    Text(
-                        text = displayMessage,
-                        style = AfternoteDesign.typography.bodySmallR,
-                        color = textColor,
-                    )
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Image(
-                    painter = painterResource(R.drawable.feature_afternote_img_logo),
-                    contentDescription = null,
-                    modifier =
-                        Modifier
-                            .size(36.dp)
-                            .clip(RoundedCornerShape(18.dp)),
-                    contentScale = ContentScale.Crop,
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(24.dp))
+        MessageSection(message = detailState.message)
     }
 }
 

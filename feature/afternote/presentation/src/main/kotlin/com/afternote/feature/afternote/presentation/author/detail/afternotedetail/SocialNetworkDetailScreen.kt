@@ -12,12 +12,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -36,10 +34,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.badge.RecipientDesignationBadge
 import com.afternote.core.ui.bottombar.BottomNavTab
-import com.afternote.core.ui.button.AfternoteCircularCheckbox
-import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.modifierextention.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -49,6 +47,8 @@ import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmD
 import com.afternote.feature.afternote.presentation.shared.detail.DetailCard
 import com.afternote.feature.afternote.presentation.shared.detail.DetailSectionHeader
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
+import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
+import com.afternote.feature.afternote.presentation.shared.detail.ProcessingMethodsSection
 
 /**
  * 소셜 네트워크 애프터노트 상세 화면.
@@ -86,9 +86,9 @@ fun SocialNetworkDetailScreen(
                         Box {
                             IconButton(onClick = state::toggleDropdownMenu) {
                                 Icon(
-                                    Icons.Outlined.Edit,
+                                    painter = painterResource(R.drawable.afternote_ui_detail_edit),
                                     contentDescription = stringResource(R.string.feature_afternote_detail_edit),
-                                    modifier = Modifier.size(20.dp),
+                                    modifier = Modifier.size(16.dp),
                                 )
                             }
                             EditDropdownMenu(
@@ -103,9 +103,14 @@ fun SocialNetworkDetailScreen(
             )
         },
     ) { paddingValues ->
+        // Edge-to-Edge: 스크롤 컨테이너 자체를 paddingValues 로 잘라내면 탑바 아래 영역이 스크롤 밖으로 밀려
+        // 오버스크롤·제스처 네비게이션 UX 가 어색해진다. 스크롤 내부 Spacer 로 인셋을 소비해 콘텐츠가
+        // 탑바 뒤로 자연스럽게 지나가도록 한다.
         SocialNetworkDetailScrollContent(
             content = content,
-            modifier = Modifier.padding(paddingValues),
+            topInset = paddingValues.calculateTopPadding(),
+            bottomInset = paddingValues.calculateBottomPadding(),
+            modifier = Modifier.fillMaxSize(),
         )
     }
 }
@@ -115,6 +120,8 @@ fun SocialNetworkDetailScreen(
 @Composable
 private fun SocialNetworkDetailScrollContent(
     content: SocialNetworkDetailContent,
+    topInset: Dp,
+    bottomInset: Dp,
     modifier: Modifier = Modifier,
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
@@ -126,26 +133,34 @@ private fun SocialNetworkDetailScrollContent(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp),
     ) {
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(topInset + 24.dp))
 
         // — 서비스 아이콘 + 이름 + 날짜
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Image(
-                painter = painterResource(content.iconResId),
-                contentDescription = content.serviceName,
-                modifier =
-                    Modifier
-                        .size(64.dp)
-                        .clip(RoundedCornerShape(16.dp)),
-                contentScale = ContentScale.Crop,
-            )
+            Box(
+                Modifier
+                    .clip(CircleShape)
+                    .size(64.dp)
+                    .border(1.dp, shape = CircleShape, color = AfternoteDesign.colors.gray2),
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(
+                    painter = painterResource(content.iconResId),
+                    contentDescription = content.serviceName,
+                    modifier =
+                        Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(16.dp)),
+                    contentScale = ContentScale.Crop,
+                )
+            }
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     text = content.serviceName,
-                    style = AfternoteDesign.typography.h3,
+                    style = AfternoteDesign.typography.h2,
                     color = AfternoteDesign.colors.gray9,
                 )
                 Text(
@@ -154,40 +169,21 @@ private fun SocialNetworkDetailScrollContent(
                             R.string.afternote_last_written_date,
                             content.finalWriteDate,
                         ),
-                    style = AfternoteDesign.typography.captionLargeR,
-                    color = AfternoteDesign.colors.gray5,
+                    style = AfternoteDesign.typography.inter,
+                    color = AfternoteDesign.colors.gray6,
                 )
             }
         }
 
         // — 수신인 지정 완료 뱃지
         if (content.afternoteEditReceivers.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(
-                modifier =
-                    Modifier
-                        .border(
-                            width = 1.dp,
-                            color = AfternoteDesign.colors.gray3,
-                            shape = RoundedCornerShape(20.dp),
-                        ).padding(horizontal = 12.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                AfternoteCircularCheckbox(
-                    state = CheckboxState.Default,
-                    onClick = null,
-                    size = 20.dp,
-                )
-                Text(
-                    text = stringResource(content.badgeTextResId),
-                    style = AfternoteDesign.typography.captionLargeR,
-                    color = AfternoteDesign.colors.gray7,
-                )
-            }
+            Spacer(modifier = Modifier.height(16.dp))
+            RecipientDesignationBadge(
+                text = stringResource(content.badgeTextResId),
+            )
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(31.dp))
 
         // — ACCOUNT 섹션
         DetailSectionHeader(
@@ -285,83 +281,19 @@ private fun SocialNetworkDetailScrollContent(
         Spacer(modifier = Modifier.height(24.dp))
 
         // — 처리방법 섹션
-        if (content.processingMethods.isNotEmpty()) {
-            DetailSectionHeader(
-                iconResId = com.afternote.core.ui.R.drawable.core_ui_settings,
-                label = stringResource(R.string.feature_afternote_detail_section_processing),
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            DetailCard {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    content.processingMethods.forEach { method ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            AfternoteCircularCheckbox(
-                                state = CheckboxState.Default,
-                                onClick = null,
-                                size = 20.dp,
-                            )
-                            Text(
-                                text = method,
-                                style = AfternoteDesign.typography.bodySmallR,
-                                color = AfternoteDesign.colors.gray9,
-                            )
-                        }
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(24.dp))
-        }
+        ProcessingMethodsSection(methods = content.processingMethods)
 
         // — 남기신 말씀 섹션
-        DetailSectionHeader(
-            iconResId = com.afternote.core.ui.R.drawable.core_ui_ic_mail,
-            label = stringResource(R.string.feature_afternote_detail_section_message),
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        DetailCard {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Bottom,
-            ) {
-                val hasMessage = content.message.isNotEmpty()
-                val displayMessage =
-                    if (hasMessage) content.message else stringResource(R.string.feature_afternote_detail_no_message)
-                val textColor =
-                    if (hasMessage) AfternoteDesign.colors.gray9 else AfternoteDesign.colors.gray5
-                Row(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.feature_afternote_detail_quote_mark),
-                        style = AfternoteDesign.typography.bodyLargeR,
-                        color = AfternoteDesign.colors.gray4,
-                    )
-                    Text(
-                        text = displayMessage,
-                        style = AfternoteDesign.typography.bodySmallR,
-                        color = textColor,
-                    )
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Image(
-                    painter = painterResource(R.drawable.feature_afternote_img_logo),
-                    contentDescription = null,
-                    modifier =
-                        Modifier
-                            .size(36.dp)
-                            .clip(RoundedCornerShape(18.dp)),
-                    contentScale = ContentScale.Crop,
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(24.dp))
+        MessageSection(message = content.message)
+
+        // 하단 인셋(제스처 네비게이션 바 등) 을 스크롤 내부에서 소비.
+        Spacer(modifier = Modifier.height(bottomInset))
     }
 }
 
 // endregion
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 private fun SocialNetworkDetailScreenPreview() {
     AfternoteTheme {
@@ -373,7 +305,7 @@ private fun SocialNetworkDetailScreenPreview() {
     }
 }
 
-@Preview(name = "Edit Dropdown Menu")
+@Preview(showBackground = true)
 @Composable
 private fun SocialNetworkDetailScreenWithDropdownPreview() {
     AfternoteTheme {
@@ -392,7 +324,7 @@ private fun SocialNetworkDetailScreenWithDropdownPreview() {
     }
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 private fun SocialNetworkDetailScreenWithDeleteDialogPreview() {
     AfternoteTheme {
@@ -411,7 +343,7 @@ private fun SocialNetworkDetailScreenWithDeleteDialogPreview() {
     }
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 private fun SocialNetworkDetailScreenReceiverModePreview() {
     AfternoteTheme {
@@ -427,7 +359,7 @@ private fun SocialNetworkDetailScreenReceiverModePreview() {
     }
 }
 
-@Preview(name = "Naver Mail")
+@Preview(showBackground = true)
 @Composable
 private fun NaverMailDetailScreenPreview() {
     AfternoteTheme {
