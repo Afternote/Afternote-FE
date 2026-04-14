@@ -84,7 +84,8 @@ fun DetailCard(
 /**
  * "처리방법" 섹션.
  *
- * 헤더 + 체크박스 리스트 + 하단 Spacer 까지 완성된 섹션을 제공한다.
+ * 헤더 + 체크박스 리스트 카드까지만 책임진다.
+ * 섹션 아래 외부 간격은 호출하는 부모 레이아웃에서 둔다.
  * [methods] 가 비어 있으면 아무것도 렌더링하지 않는다.
  */
 @Composable
@@ -120,14 +121,14 @@ fun ProcessingMethodsSection(
                 }
             }
         }
-        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 
 /**
  * "남기신 말씀" 섹션.
  *
- * 헤더 + 인용 부호와 로고가 포함된 메시지 카드 + 하단 Spacer 까지 완성된 섹션을 제공한다.
+ * 헤더 + 인용 부호와 로고가 포함된 메시지 카드까지만 책임진다.
+ * 섹션 아래 외부 간격은 호출하는 부모 레이아웃에서 둔다.
  * [message] 가 비어 있으면 "남기신 말씀이 없습니다." 플레이스홀더가 gray5 로 표시된다.
  */
 @Composable
@@ -175,7 +176,6 @@ fun MessageSection(
                 )
             }
         }
-        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 

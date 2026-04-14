@@ -253,11 +253,14 @@ private fun GalleryDetailScrollContent(
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // — 처리방법 섹션
         ProcessingMethodsSection(methods = detailState.processingMethods)
+        if (detailState.processingMethods.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(24.dp))
+        }
 
-        // — 남기신 말씀 섹션
         MessageSection(message = detailState.message)
+
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 
