@@ -8,31 +8,19 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.toRoute
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel
-import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.GalleryDetailCallbacks
-import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.GalleryDetailScreen
-import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.GalleryDetailState
-import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.MemorialGuidelineDetailCallbacks
-import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.MemorialGuidelineDetailScreen
-import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.MemorialGuidelineDetailState
+import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.GalleryDetailRoute
+import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.MemorialGuidelineDetailRoute
 import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.SocialNetworkDetailRoute
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDeleteState
-import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailEvent
-import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailUiState
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
-import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
-import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 
 @Composable
 internal fun DetailLoadingContent() {
@@ -114,111 +102,20 @@ internal fun AfternoteDetailNavigation(
 internal fun AfternoteGalleryDetailNavigation(
     onBack: () -> Unit,
     onNavigateToEditor: (itemId: String) -> Unit,
-    viewModel: AfternoteDetailViewModel = hiltViewModel(),
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    when (val state = uiState) {
-        AfternoteDetailUiState.Loading -> DetailLoadingContent()
-
-        is AfternoteDetailUiState.Error -> DesignPendingDetailContent(onBackClick = onBack)
-
-        is AfternoteDetailUiState.Success -> {
-            HandleDeleteResult(
-                deleteState = state.deleteState,
-                onBack = onBack,
-                onConsumed = { viewModel.onEvent(AfternoteDetailEvent.DeleteResultConsumed) },
-            )
-
-            val detail = state.detail
-            GalleryDetailScreen(
-                detailState =
-                    GalleryDetailState(
-                        serviceName = detail.title,
-                        userName = state.authorDisplayName,
-                        finalWriteDate = detail.timestamps.updatedAt.ifEmpty { detail.timestamps.createdAt },
-                        afternoteEditReceivers =
-                            detail.receivers.map { r ->
-                                ReceiverUiModel(
-                                    id = "",
-                                    name = r.name,
-                                    label = r.relation,
-                                )
-                            },
-                        informationProcessingMethod = detail.processing?.method ?: "",
-                        processingMethods = detail.processing?.actions ?: emptyList(),
-                        message = detail.processing?.leaveMessage ?: "",
-                    ),
-                callbacks =
-                    GalleryDetailCallbacks(
-                        onBackClick = onBack,
-                        onEditClick = {
-                            onNavigateToEditor(detail.id.toString())
-                        },
-                        onDeleteConfirm = { viewModel.onEvent(AfternoteDetailEvent.Delete(detail.id)) },
-                    ),
-            )
-        }
-    }
+    GalleryDetailRoute(
+        onBack = onBack,
+        onNavigateToEditor = onNavigateToEditor,
+    )
 }
 
 @Composable
 internal fun AfternoteMemorialGuidelineDetailNavigation(
     onBack: () -> Unit,
     onNavigateToEditor: (itemId: String) -> Unit,
-    viewModel: AfternoteDetailViewModel = hiltViewModel(),
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    when (val state = uiState) {
-        AfternoteDetailUiState.Loading -> DetailLoadingContent()
-
-        is AfternoteDetailUiState.Error -> DesignPendingDetailContent(onBackClick = onBack)
-
-        is AfternoteDetailUiState.Success -> {
-            HandleDeleteResult(
-                deleteState = state.deleteState,
-                onBack = onBack,
-                onConsumed = { viewModel.onEvent(AfternoteDetailEvent.DeleteResultConsumed) },
-            )
-
-            val detail = state.detail
-            MemorialGuidelineDetailScreen(
-                detailState =
-                    MemorialGuidelineDetailState(
-                        userName = state.authorDisplayName,
-                        finalWriteDate = detail.timestamps.updatedAt.ifEmpty { detail.timestamps.createdAt },
-                        profileImageUri = detail.playlist?.playlistDetailMemorialMedia?.photoUrl,
-                        afternoteEditReceivers =
-                            detail.receivers.map { r ->
-                                ReceiverUiModel(
-                                    id = "",
-                                    name = r.name,
-                                    label = r.relation,
-                                )
-                            },
-                        albumCovers =
-                            detail.playlist?.songs?.map { s ->
-                                AlbumCover(
-                                    id = (s.id ?: 0L).toString(),
-                                    imageUrl = s.coverUrl,
-                                    title = s.title,
-                                )
-                            } ?: emptyList(),
-                        songCount = detail.playlist?.songs?.size ?: 0,
-                        lastWish = detail.playlist?.atmosphere ?: "",
-                        memorialVideoUrl = detail.playlist?.playlistDetailMemorialMedia?.videoUrl,
-                        memorialThumbnailUrl = detail.playlist?.playlistDetailMemorialMedia?.thumbnailUrl,
-                    ),
-                callbacks =
-                    MemorialGuidelineDetailCallbacks(
-                        onBackClick = onBack,
-                        onEditClick = {
-                            onNavigateToEditor(detail.id.toString())
-                        },
-                        onDeleteConfirm = { viewModel.onEvent(AfternoteDetailEvent.Delete(detail.id)) },
-                    ),
-            )
-        }
-    }
+    MemorialGuidelineDetailRoute(
+        onBack = onBack,
+        onNavigateToEditor = onNavigateToEditor,
+    )
 }
