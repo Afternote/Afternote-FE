@@ -26,6 +26,8 @@ ktlintGradle = "14.2.0"
 datastoreCore = "1.2.1"
 datastorePreferences = "1.3.0-alpha07"
 kakaoSdk = "2.23.2"
+credentials = "1.5.0"
+googleid = "1.1.1"
 lifecycleViewmodelKtx = "2.11.0-alpha03"
 hiltNavigationCompose = "1.4.0-alpha01"
 coilNetworkOkhttp = "3.2.0"
@@ -80,6 +82,9 @@ androidx-datastore-core = { group = "androidx.datastore", name = "datastore-core
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
 kakao-sdk-user = { group = "com.kakao.sdk", name = "v2-user", version.ref = "kakaoSdk" }
 kakao-sdk-auth = { group = "com.kakao.sdk", name = "v2-auth", version.ref = "kakaoSdk" }
+androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentials" }
+androidx-credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentials" }
+googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
 androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycleViewmodelKtx" }
 androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coilNetworkOkhttp" }
