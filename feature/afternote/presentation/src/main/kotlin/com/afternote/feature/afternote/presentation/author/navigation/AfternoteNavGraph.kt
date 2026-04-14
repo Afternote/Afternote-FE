@@ -40,6 +40,7 @@ fun NavGraphBuilder.afternoteNavGraph(
     onNavigateToMemorialPlaylist: () -> Unit,
     onNavigateToAddSong: () -> Unit,
     onFingerprintAuthSuccess: () -> Unit,
+    onFingerprintAuthError: (String) -> Unit,
     onEditorSaveSuccessNavigateHome: () -> Unit,
 ) {
     navigation<Route.Afternote>(startDestination = AfternoteRoute.FingerprintLoginRoute) {
@@ -111,6 +112,7 @@ fun NavGraphBuilder.afternoteNavGraph(
         afternoteComposable<AfternoteRoute.FingerprintLoginRoute> {
             AfternoteFingerprintLoginNavigation(
                 onAuthenticationSuccess = onFingerprintAuthSuccess,
+                onShowError = onFingerprintAuthError,
             )
         }
 
