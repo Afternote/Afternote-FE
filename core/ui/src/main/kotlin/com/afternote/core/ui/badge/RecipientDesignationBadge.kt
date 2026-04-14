@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
@@ -26,42 +27,76 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
+ * 수신인 지정 칩의 유효한 상태만 표현한다.
+ *
+ * - [Completed]: 지정 완료(상호작용 없음).
+ * - [Incomplete]: 미완료. [Incomplete.onClick] 이 null 이 아니면 탭 가능(홈), null 이면 표시만(애프터노트 상세).
+ */
+sealed interface RecipientDesignationBadgeState {
+    data object Completed : RecipientDesignationBadgeState
+
+    data class Incomplete(
+        val onClick: (() -> Unit)? = null,
+    ) : RecipientDesignationBadgeState
+}
+
+private data class RecipientDesignationChipStyle(
+    val labelRes: Int,
+    val borderColor: Color,
+    val backgroundColor: Color,
+    val checkboxState: CheckboxState,
+    val showTrailingArrow: Boolean,
+)
+
+@Composable
+private fun chipStyleFor(state: RecipientDesignationBadgeState): RecipientDesignationChipStyle =
+    when (state) {
+        RecipientDesignationBadgeState.Completed ->
+            RecipientDesignationChipStyle(
+                labelRes = R.string.core_ui_recipient_designated,
+                borderColor = AfternoteDesign.colors.gray2,
+                backgroundColor = AfternoteDesign.colors.white,
+                checkboxState = CheckboxState.Default,
+                showTrailingArrow = false,
+            )
+        is RecipientDesignationBadgeState.Incomplete ->
+            RecipientDesignationChipStyle(
+                labelRes = R.string.core_ui_recipient_not_designated,
+                borderColor = AfternoteDesign.colors.gray3,
+                backgroundColor = AfternoteDesign.colors.gray2,
+                checkboxState = CheckboxState.None,
+                showTrailingArrow = true,
+            )
+    }
+
+/**
  * 수신인 지정 완료/미완료 상태를 한 가지 칩 UI로 표시한다.
  *
- * 외부에서는 [isCompleted] 만 넘기고, 문구·색·체크·테두리·화살표·클릭 가능 여부는 모두 내부에서 결정한다.
- * - [onClick] 은 **미완료**이고 null 이 아닐 때만 적용한다. 완료 상태에서는 무시된다.
- * - 미완료 시 화살표는 항상 표시한다(홈·애프터노트 상세 동일). 클릭만 [onClick] 유무로 갈린다.
- *   (애프터노트 상세의 전달/지정 완료 등 구분).
+ * [RecipientDesignationBadgeState] 로 완료 상태에 클릭을 붙이는 식의 조합을 막는다.
+ * 색·체크·문구·화살표는 [chipStyleFor] 의 exhaustive `when` 으로 [state] 에 매핑한다.
  */
 @Composable
 fun RecipientDesignationBadge(
-    isCompleted: Boolean,
+    state: RecipientDesignationBadgeState,
     modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null,
 ) {
+    val style = chipStyleFor(state)
+    val clickHandler =
+        when (state) {
+            is RecipientDesignationBadgeState.Incomplete -> state.onClick
+            else -> null
+        }
+
     val shape = RoundedCornerShape(20.dp)
     Row(
         modifier =
             modifier
-                .border(
-                    width = 1.dp,
-                    color =
-                        if (isCompleted) {
-                            AfternoteDesign.colors.gray2
-                        } else {
-                            AfternoteDesign.colors.gray3
-                        },
-                    shape = shape,
-                ).clip(shape)
-                .background(
-                    if (isCompleted) {
-                        AfternoteDesign.colors.white
-                    } else {
-                        AfternoteDesign.colors.gray2
-                    },
-                ).then(
-                    if (!isCompleted && onClick != null) {
-                        Modifier.clickable(role = Role.Button, onClick = onClick)
+                .border(width = 1.dp, color = style.borderColor, shape = shape)
+                .clip(shape)
+                .background(style.backgroundColor)
+                .then(
+                    if (clickHandler != null) {
+                        Modifier.clickable(role = Role.Button, onClick = clickHandler)
                     } else {
                         Modifier
                     },
@@ -69,29 +104,17 @@ fun RecipientDesignationBadge(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         AfternoteCircularCheckbox(
-            state =
-                if (isCompleted) {
-                    CheckboxState.Default
-                } else {
-                    CheckboxState.None
-                },
+            state = style.checkboxState,
             onClick = null,
             size = 12.dp,
         )
         Spacer(modifier = Modifier.width(4.dp))
         Text(
-            text =
-                stringResource(
-                    if (isCompleted) {
-                        R.string.core_ui_recipient_designated
-                    } else {
-                        R.string.core_ui_recipient_not_designated
-                    },
-                ),
+            text = stringResource(style.labelRes),
             style = AfternoteDesign.typography.captionLargeB,
             color = AfternoteDesign.colors.gray9,
         )
-        if (!isCompleted) {
+        if (style.showTrailingArrow) {
             Spacer(modifier = Modifier.width(10.dp))
             RightArrowIcon(
                 modifier = Modifier.size(9.dp),
@@ -105,17 +128,16 @@ fun RecipientDesignationBadge(
 @Composable
 private fun RecipientDesignationBadgeCompletePreview() {
     AfternoteTheme {
-        RecipientDesignationBadge(isCompleted = true)
+        RecipientDesignationBadge(state = RecipientDesignationBadgeState.Completed)
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "수신인 지정 미완료(클릭)")
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF, name = "수신인 지정 미완료")
 @Composable
 private fun RecipientDesignationBadgeIncompletePreview() {
     AfternoteTheme {
         RecipientDesignationBadge(
-            isCompleted = false,
-            onClick = {},
+            state = RecipientDesignationBadgeState.Incomplete(onClick = {}),
         )
     }
 }
