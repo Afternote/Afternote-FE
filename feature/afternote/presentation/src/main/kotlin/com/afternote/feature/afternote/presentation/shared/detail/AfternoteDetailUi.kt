@@ -13,19 +13,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
@@ -232,7 +234,6 @@ fun EditDropdownMenu(
             if (showEditItem) {
                 CustomDropdownItem(
                     text = stringResource(R.string.feature_afternote_menu_edit),
-                    textColor = AfternoteDesign.colors.gray9,
                     onClick = {
                         onDismissRequest()
                         onEditClick()
@@ -241,7 +242,6 @@ fun EditDropdownMenu(
             }
             CustomDropdownItem(
                 text = stringResource(R.string.feature_afternote_menu_delete_record),
-                textColor = MaterialTheme.colorScheme.error,
                 onClick = {
                     onDismissRequest()
                     onDeleteClick()
@@ -255,7 +255,6 @@ fun EditDropdownMenu(
 private fun CustomDropdownItem(
     text: String,
     onClick: () -> Unit,
-    textColor: Color = AfternoteDesign.colors.gray9,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -266,9 +265,8 @@ private fun CustomDropdownItem(
     ) {
         Text(
             text = text,
-            modifier = Modifier.align(Alignment.CenterStart),
             style = AfternoteDesign.typography.bodyBase,
-            color = textColor,
+            color = AfternoteDesign.colors.gray9,
         )
     }
 }
@@ -283,6 +281,19 @@ private fun EditDropdownMenuPreview() {
             onDeleteClick = {},
             onEditClick = {},
             showEditItem = true,
+            // 🚀 프리뷰 전용 더미 포지션 프로바이더 주입
+            popupPositionProvider =
+                object : PopupPositionProvider {
+                    override fun calculatePosition(
+                        anchorBounds: IntRect,
+                        windowSize: IntSize,
+                        layoutDirection: LayoutDirection,
+                        popupContentSize: IntSize,
+                    ): IntOffset {
+                        // 프리뷰 캔버스 내의 고정된 좌표(x, y)로 강제 지정하여 화면 안으로 끌어옵니다.
+                        return IntOffset(x = 50, y = 50)
+                    }
+                },
         )
     }
 }
