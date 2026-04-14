@@ -21,7 +21,7 @@ import com.afternote.feature.onboarding.presentation.login.social.requestKakaoAc
 import kotlinx.coroutines.launch
 
 // TODO: Google Cloud Console Web Client ID. `local.properties` + BuildConfig(`core/startup`의 카카오 키 패턴 참고)
-//  또는 DI로 주입하도록 대체 필요. 저장소에 실제 키를 커밋하지 말 것.
+//  또는 DI로 주입하도록 대체 필요. 저장소에 실제 키를 커밋하지 말 것. + 검토
 private const val GOOGLE_WEB_CLIENT_ID = "YOUR_WEB_CLIENT_ID"
 
 /**

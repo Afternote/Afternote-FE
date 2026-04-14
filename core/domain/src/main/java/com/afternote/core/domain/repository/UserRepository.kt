@@ -9,7 +9,7 @@ import com.afternote.core.model.setting.ReceiverDetail
 import com.afternote.core.model.setting.ReceiverListItem
 import com.afternote.core.model.user.UserProfileModel
 
-// TODO:리팩토링
+// TODO:검토
 interface UserRepository {
     suspend fun getMyProfile(userId: Long): Result<UserProfileModel>
 
