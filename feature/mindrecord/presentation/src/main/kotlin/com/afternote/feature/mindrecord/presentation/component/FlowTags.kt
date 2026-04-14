@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -31,7 +30,7 @@ fun FlowTags(
             label = {
                 Text(
                     "전체",
-                    style = MaterialTheme.typography.displayLarge,
+                    style = AfternoteDesign.typography.captionLargeB,
                     color = if (selectedTag == null) AfternoteDesign.colors.gray1 else AfternoteDesign.colors.gray6,
                 )
             },
@@ -46,7 +45,7 @@ fun FlowTags(
                 label = {
                     Text(
                         text = "#${tag.name} ${tag.count}",
-                        style = MaterialTheme.typography.displayLarge,
+                        style = AfternoteDesign.typography.captionLargeB,
                         color = if (selectedTag == tag) AfternoteDesign.colors.gray1 else AfternoteDesign.colors.gray6,
                     )
                 },

@@ -111,8 +111,8 @@ private fun DayCell(
                 is DayContent.NumberOnly -> {
                     Text(
                         text = content.day.toString(),
-                        style = MaterialTheme.typography.displayMedium,
-                        color = AfternoteDesign.colors.gray9,
+                        style = AfternoteDesign.typography.captionLargeB,
+                        color = AfternoteDesign.colors.gray6,
                     )
                 }
 
@@ -123,11 +123,10 @@ private fun DayCell(
                     ) {
                         Text(
                             text = content.day.toString(),
-                            style = MaterialTheme.typography.displayMedium,
+                            style = AfternoteDesign.typography.captionLargeB,
                             color = AfternoteDesign.colors.gray9,
                         )
                         Spacer(modifier = Modifier.height(1.dp))
-                        // 하단 점
                         Box(
                             modifier =
                                 Modifier

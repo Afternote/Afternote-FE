@@ -57,6 +57,7 @@ private fun HomeTabUiState.toSuccessState(summary: HomeSummary): HomeTabUiState 
                     MindRecordCategory.DIARY -> summary.diaryCategoryCount
                     MindRecordCategory.DEEP_THOUGHT -> summary.deepThoughtCategoryCount
                     MindRecordCategory.DAILY_QUESTION -> 0
+                    MindRecordCategory.WEEKLY_REPORT -> 0
                 }
             },
         isLoading = false,

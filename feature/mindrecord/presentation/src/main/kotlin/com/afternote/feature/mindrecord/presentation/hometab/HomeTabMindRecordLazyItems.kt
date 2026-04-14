@@ -20,13 +20,11 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.model.MindRecordCategory
 import com.afternote.core.ui.AfternoteSectionHeader
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_home_tab_memories_section_click_label
-import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_home_tab_memories_section_title
+import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.component.MemoriesCard
 import com.afternote.feature.mindrecord.presentation.component.TodayQuestionCard
 import com.afternote.feature.mindrecord.presentation.component.hometab.RecordCategoryCard
-import com.afternote.feature.mindrecord.presentation.model.description
-import com.afternote.feature.mindrecord.presentation.model.title
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.core.ui.R as CoreUiR
 
 /**
@@ -35,12 +33,10 @@ import com.afternote.core.ui.R as CoreUiR
 fun LazyListScope.homeTabMindRecordQuestionAndCategories(
     categoryCounts: Map<MindRecordCategory, Int>,
     onAnswerClick: () -> Unit,
-    onRecordCategoryClick: (MindRecordCategory) -> Unit,
+    onRecordCategoryClick: (MindRecordCategory) -> Unit, // CoreCategory 유지
 ) {
     item(key = "mind_record_question") {
-        TodayQuestionCard(
-            onAnswerClick = onAnswerClick,
-        )
+        TodayQuestionCard(onAnswerClick = onAnswerClick)
         Spacer(modifier = Modifier.height(8.dp))
     }
 
@@ -50,21 +46,19 @@ fun LazyListScope.homeTabMindRecordQuestionAndCategories(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             RecordCategoryCard(
-                modifier =
-                    Modifier.weight(1f),
+                modifier = Modifier.weight(1f),
                 iconResId = CoreUiR.drawable.core_ui_ic_diary,
-                title = MindRecordCategory.DIARY.title,
-                subtitle = MindRecordCategory.DIARY.description,
+                title = MindRecordCategoryUi.Diary.title,
+                subtitle = MindRecordCategoryUi.Diary.description,
                 totalCount = categoryCounts[MindRecordCategory.DIARY] ?: 0,
                 onClick = { onRecordCategoryClick(MindRecordCategory.DIARY) },
                 useDiaryIconLayout = true,
             )
             RecordCategoryCard(
-                modifier =
-                    Modifier.weight(1f),
+                modifier = Modifier.weight(1f),
                 iconResId = CoreUiR.drawable.core_ui_ic_deep_thought,
-                title = MindRecordCategory.DEEP_THOUGHT.title,
-                subtitle = MindRecordCategory.DEEP_THOUGHT.description,
+                title = MindRecordCategoryUi.DeepThought.title,
+                subtitle = MindRecordCategoryUi.DeepThought.description,
                 totalCount = categoryCounts[MindRecordCategory.DEEP_THOUGHT] ?: 0,
                 onClick = { onRecordCategoryClick(MindRecordCategory.DEEP_THOUGHT) },
             )
@@ -81,7 +75,8 @@ fun LazyListScope.homeTabMindRecordMemoriesSection(onMemoriesSectionClick: () ->
 
 @Composable
 private fun HomeTabMindRecordMemoriesItem(onMemoriesSectionClick: () -> Unit) {
-    val memoriesClickLabel = stringResource(mindrecord_home_tab_memories_section_click_label)
+    val memoriesClickLabel =
+        stringResource(R.string.mindrecord_home_tab_memories_section_click_label)
     val interactionSource = remember { MutableInteractionSource() }
     Column(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -96,7 +91,7 @@ private fun HomeTabMindRecordMemoriesItem(onMemoriesSectionClick: () -> Unit) {
                         onClick = onMemoriesSectionClick,
                     ),
         ) {
-            AfternoteSectionHeader(title = stringResource(mindrecord_home_tab_memories_section_title))
+            AfternoteSectionHeader(title = stringResource(R.string.mindrecord_home_tab_memories_section_title))
             Spacer(modifier = Modifier.height(12.dp))
             MemoriesCard()
         }

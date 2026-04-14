@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -63,7 +62,7 @@ fun DeepThoughtCard(
                     )
                     Text(
                         text = deepThought.date.toString(),
-                        style = MaterialTheme.typography.displayMedium,
+                        style = AfternoteDesign.typography.captionLargeR,
                         color = Color(0xFF000000).copy(0.4f),
                     )
                 }
@@ -82,14 +81,14 @@ fun DeepThoughtCard(
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = deepThought.title,
-                style = MaterialTheme.typography.titleMedium,
+                style = AfternoteDesign.typography.bodyBase,
                 color = AfternoteDesign.colors.gray9,
             )
 
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = deepThought.content,
-                style = MaterialTheme.typography.bodySmall,
+                style = AfternoteDesign.typography.bodySmallR,
                 color = Color(0xFF000000).copy(0.5f),
             )
 
@@ -106,7 +105,7 @@ fun DeepThoughtCard(
                         Text(
                             text = "#${tag.name}",
                             color = AfternoteDesign.colors.gray6,
-                            style = MaterialTheme.typography.displaySmall,
+                            style = AfternoteDesign.typography.mono,
                         )
                     }
                 }
