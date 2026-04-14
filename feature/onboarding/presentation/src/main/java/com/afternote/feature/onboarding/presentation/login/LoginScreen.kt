@@ -25,6 +25,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -67,12 +69,14 @@ fun LoginScreen(
     onKakaoLoginClick: () -> Unit,
     onGoogleLoginClick: () -> Unit,
     onBackClick: () -> Unit,
+    snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     isLoading: Boolean = false,
 ) {
     val focusManager = LocalFocusManager.current
     Scaffold(
         modifier = modifier,
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             DetailTopBar(
                 title = stringResource(R.string.login_top_bar_title),
@@ -301,6 +305,7 @@ private fun LoginScreenPreview() {
             onKakaoLoginClick = {},
             onGoogleLoginClick = {},
             onBackClick = {},
+            snackbarHostState = remember { SnackbarHostState() },
         )
     }
 }
