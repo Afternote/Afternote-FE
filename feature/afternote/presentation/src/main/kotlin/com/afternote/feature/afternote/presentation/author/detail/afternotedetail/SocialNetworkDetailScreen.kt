@@ -1,19 +1,15 @@
 package com.afternote.feature.afternote.presentation.author.detail.afternotedetail
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -25,9 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -44,17 +38,17 @@ import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailEvent
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailUiState
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent
 import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadingContent
 import com.afternote.feature.afternote.presentation.author.navigation.HandleDeleteResult
 import com.afternote.feature.afternote.presentation.shared.detail.AfternoteDetailServiceHeaderWithRecipientChip
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
-import com.afternote.feature.afternote.presentation.shared.detail.DetailCard
-import com.afternote.feature.afternote.presentation.shared.detail.DetailSectionHeader
+import com.afternote.feature.afternote.presentation.shared.detail.DetailInfoRow
+import com.afternote.feature.afternote.presentation.shared.detail.DetailSection
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.ProcessingMethodsSection
+import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 import com.afternote.feature.afternote.presentation.shared.util.getIconResForServiceName
 
 /**
@@ -111,7 +105,7 @@ internal fun SocialNetworkDetailRoute(
                             finalWriteDate = detail.timestamps.updatedAt.ifEmpty { detail.timestamps.createdAt },
                             afternoteEditReceivers =
                                 detail.receivers.map { r ->
-                                    AfternoteEditorReceiver(
+                                    ReceiverUiModel(
                                         id = "",
                                         name = r.name,
                                         label = r.relation,
@@ -219,29 +213,22 @@ private fun SocialNetworkDetailScrollContent(
         )
 
         Spacer(modifier = Modifier.height(31.dp))
-
-        AccountSection(
-            accountId = content.accountId,
-            password = content.password,
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        ProcessingMethodsSection(methods = content.processingMethods)
-        if (content.processingMethods.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(24.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            AccountSection(
+                accountId = content.accountId,
+                password = content.password,
+            )
+            ProcessingMethodsSection(methods = content.processingMethods)
+            MessageSection(message = content.message)
         }
-
-        MessageSection(message = content.message)
-
-        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 
 /**
  * 소셜 네트워크 상세 전용 ACCOUNT(아이디·비밀번호) 섹션.
  *
- * 비밀번호 표시 토글은 이 블록 안의 로컬 상태로만 둔다 (`shared/detail` 패키지로의 조기 추출은 하지 않음).
+ * 섹션 뼈대는 공용 [DetailSection], 행 레이아웃은 [DetailInfoRow] 를 쓰고,
+ * 비밀번호 표시 토글 상태·동작만 이 블록에 둔다.
  */
 @Composable
 private fun AccountSection(
@@ -251,93 +238,31 @@ private fun AccountSection(
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
 
-    Column(modifier = modifier) {
-        DetailSectionHeader(
-            iconResId = com.afternote.core.ui.R.drawable.core_ui_user,
-            label = stringResource(R.string.feature_afternote_detail_section_account),
-        )
-
-        Spacer(modifier = Modifier.height(13.dp))
-
-        DetailCard {
-            Column(
-                modifier = Modifier,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Box(
-                        Modifier
-                            .clip(CircleShape)
-                            .size(32.dp)
-                            .background(AfternoteDesign.colors.gray2),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_user),
-                            contentDescription = null,
-                            tint = AfternoteDesign.colors.gray9,
-                            modifier = Modifier.size(16.dp),
-                        )
-                    }
-                    Column {
-                        Text(
-                            text = stringResource(R.string.feature_afternote_detail_label_id),
-                            style = AfternoteDesign.typography.footnoteCaption,
-                            color = AfternoteDesign.colors.gray6,
-                        )
-                        Text(
-                            text = accountId,
-                            style = AfternoteDesign.typography.bodySmallB,
-                            color = AfternoteDesign.colors.gray9,
-                        )
-                    }
-                }
-
-                HorizontalDivider(
-                    color = AfternoteDesign.colors.gray2,
-                    thickness = 1.dp,
-                )
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(
-                        Modifier
-                            .clip(CircleShape)
-                            .size(32.dp)
-                            .background(AfternoteDesign.colors.gray2),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_ic_deep_thought_moon),
-                            contentDescription = null,
-                            tint = AfternoteDesign.colors.gray9,
-                            modifier = Modifier.size(16.dp),
-                        )
-                    }
-
-                    Spacer(Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = stringResource(R.string.feature_afternote_detail_label_password),
-                            style = AfternoteDesign.typography.footnoteCaption,
-                            color = AfternoteDesign.colors.gray6,
-                        )
-                        Text(
-                            text =
-                                if (passwordVisible) {
-                                    password
-                                } else {
-                                    stringResource(R.string.feature_afternote_detail_password_mask)
-                                },
-                            style = AfternoteDesign.typography.bodySmallB,
-                            color = AfternoteDesign.colors.gray9,
-                        )
-                    }
-                    Spacer(Modifier.weight(1f))
+    DetailSection(
+        iconResId = com.afternote.core.ui.R.drawable.core_ui_user,
+        label = stringResource(R.string.feature_afternote_detail_section_account),
+        modifier = modifier,
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            DetailInfoRow(
+                iconResId = com.afternote.core.ui.R.drawable.core_ui_user,
+                label = stringResource(R.string.feature_afternote_detail_label_id),
+                value = accountId,
+            )
+            HorizontalDivider(
+                color = AfternoteDesign.colors.gray2,
+                thickness = 1.dp,
+            )
+            DetailInfoRow(
+                iconResId = com.afternote.core.ui.R.drawable.core_ui_ic_deep_thought_moon,
+                label = stringResource(R.string.feature_afternote_detail_label_password),
+                value =
+                    if (passwordVisible) {
+                        password
+                    } else {
+                        stringResource(R.string.feature_afternote_detail_password_mask)
+                    },
+                trailingContent = {
                     Text(
                         text =
                             if (passwordVisible) {
@@ -348,12 +273,12 @@ private fun AccountSection(
                         style = AfternoteDesign.typography.captionLargeR,
                         color = AfternoteDesign.colors.b1,
                         modifier =
-                            Modifier.clickable(onClick = {
+                            Modifier.clickable {
                                 passwordVisible = !passwordVisible
-                            }),
+                            },
                     )
-                }
-            }
+                },
+            )
         }
     }
 }
@@ -376,7 +301,7 @@ private val PreviewSocialNetworkInstaContent =
         finalWriteDate = "2025.11.26",
         afternoteEditReceivers =
             listOf(
-                AfternoteEditorReceiver(
+                ReceiverUiModel(
                     id = "1",
                     name = "황규운",
                     label = "친구",

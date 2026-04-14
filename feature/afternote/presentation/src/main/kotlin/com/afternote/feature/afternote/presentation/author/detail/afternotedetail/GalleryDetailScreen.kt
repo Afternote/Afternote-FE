@@ -39,14 +39,13 @@ import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
-import com.afternote.feature.afternote.presentation.shared.detail.DetailCard
-import com.afternote.feature.afternote.presentation.shared.detail.DetailSectionHeader
+import com.afternote.feature.afternote.presentation.shared.detail.DetailSection
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.ProcessingMethodsSection
+import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 
 /**
  * 갤러리 상세 화면의 데이터 상태
@@ -56,7 +55,7 @@ data class GalleryDetailState(
     val serviceName: String = "",
     val userName: String = "",
     val finalWriteDate: String = "",
-    val afternoteEditReceivers: List<AfternoteEditorReceiver> = emptyList(),
+    val afternoteEditReceivers: List<ReceiverUiModel> = emptyList(),
     val informationProcessingMethod: String = "",
     val processingMethods: List<String> = emptyList(),
     val message: String = "",
@@ -194,8 +193,8 @@ private fun GalleryDetailScrollContent(
             ) {
                 AfternoteCircularCheckbox(
                     state = CheckboxState.Default,
-                    onClick = null,
                     size = 20.dp,
+                    onClick = null,
                 )
                 Text(
                     text = stringResource(R.string.feature_afternote_detail_additional_receiver_badge),
@@ -209,12 +208,10 @@ private fun GalleryDetailScrollContent(
 
         // — 추가 수신자 섹션
         if (detailState.afternoteEditReceivers.isNotEmpty()) {
-            DetailSectionHeader(
+            DetailSection(
                 iconResId = com.afternote.core.ui.R.drawable.core_ui_user,
                 label = stringResource(R.string.feature_afternote_detail_section_additional_receiver),
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            DetailCard {
+            ) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     detailState.afternoteEditReceivers.forEach { receiver ->
                         Row(
@@ -275,8 +272,8 @@ internal val GALLERY_PREVIEW_CONTENT =
         processingMethods = listOf("'엽사' 폴더 박선호에게 전송", "'흑역사' 폴더 삭제"),
         afternoteEditReceivers =
             listOf(
-                AfternoteEditorReceiver(id = "1", name = "김지은", label = "친구"),
-                AfternoteEditorReceiver(id = "2", name = "김혜성", label = "친구"),
+                ReceiverUiModel(id = "1", name = "김지은", label = "친구"),
+                ReceiverUiModel(id = "2", name = "김혜성", label = "친구"),
             ),
     )
 

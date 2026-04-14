@@ -105,8 +105,8 @@ fun RecipientDesignationBadge(
     ) {
         AfternoteCircularCheckbox(
             state = style.checkboxState,
-            onClick = null,
             size = 12.dp,
+            onClick = null,
         )
         Spacer(modifier = Modifier.width(4.dp))
         Text(

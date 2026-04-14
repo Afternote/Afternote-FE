@@ -2,7 +2,7 @@ package com.afternote.feature.afternote.presentation.author.detail.afternotedeta
 
 import androidx.compose.runtime.Immutable
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
+import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 
 /**
  * Display data for [SocialNetworkDetailScreen].
@@ -19,6 +19,6 @@ data class SocialNetworkDetailContent(
     val processingMethods: List<String> = emptyList(),
     val message: String = "",
     val finalWriteDate: String = "",
-    val afternoteEditReceivers: List<AfternoteEditorReceiver> = emptyList(),
+    val afternoteEditReceivers: List<ReceiverUiModel> = emptyList(),
     val iconResId: Int = R.drawable.feature_afternote_img_insta_pattern,
 )

@@ -53,13 +53,13 @@ import com.afternote.core.ui.modifierextention.horizontalFadingEdge
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.ReceiversCard
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
+import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 import com.afternote.feature.afternote.presentation.shared.model.dummy.AlbumDummies
 import com.afternote.core.ui.R as CoreUiR
 
@@ -74,7 +74,7 @@ data class MemorialGuidelineDetailState(
     val albumCovers: List<AlbumCover> = emptyList(),
     val songCount: Int = 0,
     val lastWish: String = "",
-    val afternoteEditReceivers: List<AfternoteEditorReceiver> =
+    val afternoteEditReceivers: List<ReceiverUiModel> =
         emptyList(),
     val memorialVideoUrl: String? = null,
     val memorialThumbnailUrl: String? = null,

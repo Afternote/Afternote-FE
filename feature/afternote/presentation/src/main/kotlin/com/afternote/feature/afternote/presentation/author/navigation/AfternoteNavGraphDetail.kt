@@ -30,9 +30,9 @@ import com.afternote.feature.afternote.presentation.author.detail.afternotedetai
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDeleteState
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailEvent
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailUiState
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
+import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 
 @Composable
 internal fun DetailLoadingContent() {
@@ -139,7 +139,7 @@ internal fun AfternoteGalleryDetailNavigation(
                         finalWriteDate = detail.timestamps.updatedAt.ifEmpty { detail.timestamps.createdAt },
                         afternoteEditReceivers =
                             detail.receivers.map { r ->
-                                AfternoteEditorReceiver(
+                                ReceiverUiModel(
                                     id = "",
                                     name = r.name,
                                     label = r.relation,
@@ -191,7 +191,7 @@ internal fun AfternoteMemorialGuidelineDetailNavigation(
                         profileImageUri = detail.playlist?.playlistDetailMemorialMedia?.photoUrl,
                         afternoteEditReceivers =
                             detail.receivers.map { r ->
-                                AfternoteEditorReceiver(
+                                ReceiverUiModel(
                                     id = "",
                                     name = r.name,
                                     label = r.relation,
