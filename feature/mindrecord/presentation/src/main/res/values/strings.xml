@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mindrecord_home_tab_memories_section_title">MEMORIES</string>
+    <string name="mindrecord_home_tab_memories_section_click_label">기억 공간으로 이동</string>
+
+    <string name="mindrecord_total_label">TOTAL</string>
+    <string name="mindrecord_record_category_accessibility">%1$s 카테고리, 총 %2$s개</string>
+
+    <string name="mindrecord_today_question_header">TODAY\'S QUESTION</string>
+    <string name="mindrecord_today_question_answer_cta">데일리질문 답변하기</string>
+
+    <!-- MemorySpace 화면 -->
+    <string name="mindrecord_memory_space_title">MEMORY SPACE</string>
+    <string name="mindrecord_memory_space_subtitle">마우스를 움직여 공간을 탐색하세요</string>
+    <string name="mindrecord_memory_space_back">돌아가기</string>
+
+    <string name="mindrecord_read_again">그날의 기록 다시 읽기</string>
+</resources>

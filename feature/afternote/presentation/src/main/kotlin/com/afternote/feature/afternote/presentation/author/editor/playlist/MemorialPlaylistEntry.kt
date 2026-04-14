@@ -10,11 +10,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,18 +23,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.icon.ArrowIconSpec
-import com.afternote.core.ui.icon.RightArrowIcon
-import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
+import com.afternote.core.ui.bottombar.BottomNavTab
+import com.afternote.core.ui.icon.ArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.editor.model.MemorialPlaylistStateHolder
-import com.afternote.feature.afternote.presentation.author.editor.provider.FakeAfternoteEditorDataProvider
+import com.afternote.feature.afternote.presentation.author.editor.state.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
-import com.afternote.feature.afternote.presentation.shared.DataProviderLocals
 import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScreen
 import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScreenManagementContent
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
+import com.afternote.feature.afternote.presentation.shared.model.dummy.afternote.AfternoteEditorDummies
 
 data class MemorialPlaylistEntryActions(
     val onBackClick: () -> Unit = {},
@@ -172,14 +170,11 @@ private fun MemorialPlaylistListHeader(
                                     ),
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            RightArrowIcon(
-                                iconSpec =
-                                    ArrowIconSpec(
-                                        iconRes = R.drawable.feature_afternote_ic_arrow_right_playlist,
-                                        contentDescription = "추가",
-                                    ),
-                                backgroundColor = AfternoteDesign.colors.gray9,
-                                size = 12.dp,
+                            ArrowIcon(
+                                iconRes = R.drawable.feature_afternote_ic_arrow_right_playlist,
+                                contentDescription = "추가",
+                                modifier = Modifier.size(12.dp),
+                                tint = AfternoteDesign.colors.white,
                             )
                         }
                         Spacer(modifier = Modifier.height(8.dp))
@@ -262,19 +257,14 @@ private fun MemorialPlaylistActionBar(
 @Composable
 private fun MemorialPlaylistEntryPreview() {
     AfternoteLightTheme {
-        CompositionLocalProvider(
-            DataProviderLocals.LocalAfternoteEditorDataProvider provides FakeAfternoteEditorDataProvider(),
-        ) {
-            val provider = DataProviderLocals.LocalAfternoteEditorDataProvider.current
-            val holder =
-                MemorialPlaylistStateHolder().apply {
-                    initializeSongs(provider.getSongs().take(3))
-                }
-            MemorialPlaylistEntry(
-                playlistStateHolder = holder,
-                actions = MemorialPlaylistEntryActions(),
-            )
-        }
+        val holder =
+            MemorialPlaylistStateHolder().apply {
+                initializeSongs(AfternoteEditorDummies.defaultSongs().take(3))
+            }
+        MemorialPlaylistEntry(
+            playlistStateHolder = holder,
+            actions = MemorialPlaylistEntryActions(),
+        )
     }
 }
 
@@ -282,19 +272,14 @@ private fun MemorialPlaylistEntryPreview() {
 @Composable
 private fun MemorialPlaylistEntrySelectionModePreview() {
     AfternoteLightTheme {
-        CompositionLocalProvider(
-            DataProviderLocals.LocalAfternoteEditorDataProvider provides FakeAfternoteEditorDataProvider(),
-        ) {
-            val provider = DataProviderLocals.LocalAfternoteEditorDataProvider.current
-            val holder =
-                MemorialPlaylistStateHolder().apply {
-                    initializeSongs(provider.getSongs().take(4))
-                }
-            MemorialPlaylistEntry(
-                playlistStateHolder = holder,
-                actions = MemorialPlaylistEntryActions(),
-                initialSelectedSongIds = setOf("1", "3"),
-            )
-        }
+        val holder =
+            MemorialPlaylistStateHolder().apply {
+                initializeSongs(AfternoteEditorDummies.defaultSongs().take(4))
+            }
+        MemorialPlaylistEntry(
+            playlistStateHolder = holder,
+            actions = MemorialPlaylistEntryActions(),
+            initialSelectedSongIds = setOf("1", "3"),
+        )
     }
 }

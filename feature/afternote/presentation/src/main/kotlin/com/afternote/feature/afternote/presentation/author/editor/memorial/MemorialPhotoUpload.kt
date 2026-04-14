@@ -13,19 +13,7 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.presentation.R
 
-/**
- * 영정사진 추가 컴포넌트
- *
- * 피그마 디자인 기반:
- * - 라벨: 12sp, Regular, AfternoteDesign.colors.gray9
- * - 라벨과 이미지 간 간격: 6dp
- * - 큰 원형 배경: AfternoteDesign.colors.gray9, 120dp
- * - 프로필 아이콘: 중앙에 위치, 48dp
- * - 작은 플러스 버튼: 우하단에 오버레이, 40dp, AfternoteDesign.colors.gray9
- * - 플러스 아이콘: 흰색, 24dp
- */
 @Composable
 fun MemorialPhotoUpload(
     modifier: Modifier = Modifier,
@@ -50,10 +38,8 @@ fun MemorialPhotoUpload(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             ProfileImage(
-                fallbackImageRes = R.drawable.feature_afternote_img_default_profile_deceased,
-                profileImageSize = 144.dp,
+                onClick = onAddPhotoClick,
                 displayImageUri = displayImageUri,
-                onEditClick = onAddPhotoClick,
             )
         }
     }

@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor.gallery
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -6,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -14,8 +14,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.Label
-import com.afternote.core.ui.LabelStyle
-import com.afternote.core.ui.SelectableRadioCard
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
@@ -26,9 +24,8 @@ import com.afternote.feature.afternote.presentation.author.editor.processing.Opt
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodList
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListParams
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
-import com.afternote.feature.afternote.presentation.author.editor.provider.FakeAfternoteEditorDataProvider
 import com.afternote.feature.afternote.presentation.author.editor.receiver.RecipientDesignationSection
-import com.afternote.feature.afternote.presentation.shared.DataProviderLocals
+import com.afternote.feature.afternote.presentation.shared.SelectableRadioCard
 
 /**
  * 갤러리 및 파일 선택 시 표시되는 콘텐츠
@@ -69,7 +66,6 @@ private fun GalleryAndFileEditorContentBody(
         Label(
             text = "계정 처리 방법",
             isRequired = true,
-            style = LabelStyle(requiredDotOffsetY = 2.dp),
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -105,7 +101,6 @@ private fun GalleryAndFileEditorContentBody(
         Label(
             text = "처리 방법 리스트",
             isRequired = true,
-            style = LabelStyle(requiredDotOffsetY = 2.dp),
         )
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -170,33 +165,28 @@ private fun GalleryAndFileEditorContentPreview() {
 @Composable
 private fun GalleryAndFileEditorContentWithAfternoteEditorReceiversPreview() {
     AfternoteTheme {
-        CompositionLocalProvider(
-            DataProviderLocals.LocalAfternoteEditorDataProvider provides FakeAfternoteEditorDataProvider(),
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
         ) {
-            val provider = DataProviderLocals.LocalAfternoteEditorDataProvider.current
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-            ) {
-                GalleryAndFileEditorContent(
-                    bottomPadding = PaddingValues(bottom = 88.dp),
-                    params =
-                        GalleryAndFileEditorContentParams(
-                            editorMessages = listOf(EditorMessage()),
-                            infoMethodSection =
-                                InfoMethodSection(
-                                    selectedMethod = InformationProcessingMethod.TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER,
-                                    onMethodSelected = {},
-                                ),
-                            recipientSection =
-                                AfternoteEditorReceiverSection(
-                                    afternoteEditReceivers = provider.getAfternoteEditorReceivers(),
-                                ),
-                        ),
-                )
-            }
+            GalleryAndFileEditorContent(
+                bottomPadding = PaddingValues(bottom = 88.dp),
+                params =
+                    GalleryAndFileEditorContentParams(
+                        editorMessages = listOf(EditorMessage()),
+                        infoMethodSection =
+                            InfoMethodSection(
+                                selectedMethod = InformationProcessingMethod.TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER,
+                                onMethodSelected = {},
+                            ),
+                        recipientSection =
+                            AfternoteEditorReceiverSection(
+                                afternoteEditReceivers = emptyList(),
+                            ),
+                    ),
+            )
         }
     }
 }

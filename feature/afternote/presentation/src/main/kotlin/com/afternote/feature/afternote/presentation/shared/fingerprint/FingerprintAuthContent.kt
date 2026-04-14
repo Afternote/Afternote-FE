@@ -16,6 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.AfternoteButton
+import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
@@ -61,6 +62,7 @@ fun FingerprintAuthContent(
         AfternoteButton(
             text = stringResource(R.string.feature_afternote_fingerprint_auth_button),
             onClick = onFingerprintAuthClick,
+            type = AfternoteButtonType.Default,
         )
         Spacer(Modifier.weight(0.65f))
     }

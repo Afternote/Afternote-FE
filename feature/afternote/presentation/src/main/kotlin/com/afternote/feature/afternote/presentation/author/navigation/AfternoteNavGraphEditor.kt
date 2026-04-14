@@ -11,38 +11,33 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.toRoute
-import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.feature.afternote.domain.model.ListItem
+import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorEvent
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorSaveError
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorScreen
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorScreenCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorUiEvent
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
-import com.afternote.feature.afternote.presentation.author.editor.AfternoteItemMapper
+import com.afternote.feature.afternote.presentation.author.editor.RegisterAfternotePayloadBuilder
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorState
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteSaveState
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteValidationError
-import com.afternote.feature.afternote.presentation.author.editor.model.MemorialPlaylistStateHolder
-import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
-import com.afternote.feature.afternote.presentation.author.editor.model.rememberAfternoteEditorState
-import com.afternote.feature.afternote.presentation.author.editor.provider.AfternoteEditorDataProvider
+import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteSaveState
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
+import com.afternote.feature.afternote.presentation.author.editor.state.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.author.navigation.model.SELECTED_RECEIVER_ID_KEY
 
 /**
- * 에디터에서 사용할 아이템 목록을 결정.
- * 홈에서 공유된 visibleItems가 비어 있으면 provider의 기본 아이템으로 폴백.
+ * 작성자 에디터 플로우: type-safe [AfternoteRoute.EditorRoute] + 단방향 이벤트.
+ *
+ * **데이터 SSOT:** 편집 본문은 [com.afternote.feature.afternote.domain.repository.AfternoteRepository]가 담당한다.
+ * 홈의 `visibleItems` 스냅샷은 에디터에 전달하지 않는다. 식별은 라우트의 `itemId`·`initialCategory` 정도로 최소화한다.
+ *
+ * **LoadForEdit 트리거가 Compose에 있는 이유:** [MemorialPlaylistStateHolder]는
+ * [com.afternote.feature.afternote.presentation.AfternoteHostViewModel]에 묶인 세션 초안이라,
+ * VM 생성자 주입만으로는 함께 쥐기 어렵다. 실제 원본 로드는 여전히 ViewModel → Repository 경로다.
  */
-internal fun resolveListItems(
-    afternoteVisibleItems: List<ListItem>,
-    afternoteProvider: AfternoteEditorDataProvider,
-): List<ListItem> =
-    afternoteVisibleItems.ifEmpty {
-        AfternoteItemMapper.toAfternoteItemsWithStableIds(afternoteProvider.getDefaultAfternoteItems())
-    }
-
 internal sealed class EditSaveErrorResult {
     data class Validation(
         val messageResId: Int,
@@ -75,7 +70,6 @@ internal data class EditScreenCallbacksParams(
     val onEditStateClear: () -> Unit,
     val state: AfternoteEditorState,
     val route: AfternoteRoute.EditorRoute,
-    val initialListItem: ListItem?,
     val playlistStateHolder: MemorialPlaylistStateHolder,
     val onNavigateToSelectReceiver: () -> Unit,
     val onBottomNavTabSelected: (BottomNavTab) -> Unit,
@@ -84,13 +78,10 @@ internal data class EditScreenCallbacksParams(
 internal data class AfternoteEditorNavigationParams(
     val backStackEntry: NavBackStackEntry,
     val navController: NavController,
-    val afternoteVisibleItems: List<ListItem>,
     val playlistStateHolder: MemorialPlaylistStateHolder,
-    val afternoteProvider: AfternoteEditorDataProvider,
     val editState: AfternoteEditorState?,
     val onEditStateChanged: (AfternoteEditorState?) -> Unit,
     val onEditStateClear: () -> Unit,
-    val onRequestHomeRefresh: () -> Unit = {},
     val onNavigateToSelectReceiver: () -> Unit = {},
     val onBottomNavTabSelected: (BottomNavTab) -> Unit = {},
 )
@@ -123,13 +114,20 @@ internal fun buildEditScreenCallbacks(params: EditScreenCallbacksParams): Aftern
             params.onEditStateClear()
             params.navController.popBackStack()
         },
-        onRegisterClick = { payload: RegisterAfternotePayload ->
+        onRegisterClick = {
+            params.state.persistEditorMessagesFromTyping(
+                params.state.editorMessages.map { msg ->
+                    EditorMessageTextBlock(
+                        title = msg.titleState.text.toString(),
+                        body = msg.contentState.text.toString(),
+                    )
+                },
+            )
+            val payload = RegisterAfternotePayloadBuilder.fromEditorState(params.state)
             params.editViewModel.onEvent(
                 AfternoteEditorUiEvent.Save(
-                    editingId =
-                        params.route.itemId?.toLongOrNull()
-                            ?: params.initialListItem?.id?.toLongOrNull(),
-                    category = params.state.selectedCategory,
+                    editingId = params.route.itemId?.toLongOrNull(),
+                    editorCategory = params.state.selectedCategory,
                     payload = payload,
                     selectedReceiverIds = params.state.afternoteEditReceivers.mapNotNull { it.id.toLongOrNull() },
                     playlistStateHolder = params.playlistStateHolder,
@@ -158,29 +156,13 @@ internal fun buildEditScreenCallbacks(params: EditScreenCallbacksParams): Aftern
     )
 
 @Composable
-internal fun AfternoteEditorNavigation(
-    params: AfternoteEditorNavigationParams,
-    editViewModel: AfternoteEditorViewModel = hiltViewModel(),
-) {
+internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) {
+    val editViewModel = hiltViewModel<AfternoteEditorViewModel>(params.backStackEntry)
     val route = params.backStackEntry.toRoute<AfternoteRoute.EditorRoute>()
-    val visibleItems =
-        remember(params.afternoteVisibleItems, params.afternoteProvider) {
-            resolveListItems(params.afternoteVisibleItems, params.afternoteProvider)
-        }
-    val initialItem =
-        remember(route.itemId, visibleItems) {
-            route.itemId?.let { id -> visibleItems.find { it.id == id } }
-        }
-    if (route.itemId != null && initialItem == null) {
-        Log.w(
-            TAG_AFTERNOTE_EDIT,
-            "Edit opened but item not found: itemId=${route.itemId}, " +
-                "listSize=${visibleItems.size}",
-        )
-    }
     val saveState by editViewModel.saveState.collectAsStateWithLifecycle()
-    val newState = rememberAfternoteEditorState()
-    val state = params.editState ?: newState
+    val authorReceivers by editViewModel.authorReceiversUi.collectAsStateWithLifecycle()
+    val form by editViewModel.editorFormStateFlow.collectAsStateWithLifecycle()
+    val state = params.editState ?: editViewModel.editorFormState
 
     // 새 글 작성 시 기존 상태 초기화 (목적지 화면이 스스로 책임)
     LaunchedEffect(Unit) {
@@ -195,6 +177,12 @@ internal fun AfternoteEditorNavigation(
         }
     }
     LaunchedEffect(Unit) { editViewModel.onEvent(AfternoteEditorUiEvent.LoadReceivers) }
+
+    LaunchedEffect(authorReceivers, route.itemId) {
+        if (route.itemId == null) {
+            state.replaceReceiversIfEmpty(authorReceivers)
+        }
+    }
 
     val isEditCurrentDestination =
         params.navController.currentBackStackEntry == params.backStackEntry
@@ -214,13 +202,13 @@ internal fun AfternoteEditorNavigation(
         }
     }
 
-    LaunchedEffect(route.itemId) {
+    // 수정 진입: 라우트 ID만 사용 → VM이 Repository(getDetail)로 SSOT 로드. holder는 그래프 스코프 초안 전달용.
+    LaunchedEffect(route.itemId, form.loadedItemId) {
         val id = route.itemId?.toLongOrNull() ?: return@LaunchedEffect
-        if (state.loadedItemId != route.itemId) {
+        if (form.loadedItemId != route.itemId) {
             editViewModel.onEvent(
                 AfternoteEditorUiEvent.LoadForEdit(
                     afternoteId = id,
-                    state = state,
                     playlistStateHolder = params.playlistStateHolder,
                 ),
             )
@@ -231,7 +219,6 @@ internal fun AfternoteEditorNavigation(
         editViewModel.events.collect { event ->
             when (event) {
                 is AfternoteEditorEvent.SaveSuccess -> {
-                    params.onRequestHomeRefresh()
                     navigateToAfternoteHomeOnSaveSuccess(
                         params.onEditStateClear,
                         params.navController,
@@ -276,14 +263,13 @@ internal fun AfternoteEditorNavigation(
                     onEditStateClear = params.onEditStateClear,
                     state = state,
                     route = route,
-                    initialListItem = initialItem,
                     playlistStateHolder = params.playlistStateHolder,
                     onNavigateToSelectReceiver = params.onNavigateToSelectReceiver,
                     onBottomNavTabSelected = params.onBottomNavTabSelected,
                 ),
             ),
         playlistStateHolder = params.playlistStateHolder,
-        initialListItem = if (route.itemId != null) null else initialItem,
+        initialListItem = null,
         state = state,
         saveError = saveError,
     )

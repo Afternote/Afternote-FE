@@ -2,10 +2,9 @@ package com.afternote.feature.afternote.presentation.author.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.feature.afternote.domain.model.ListItem
-import com.afternote.feature.afternote.domain.model.input.GetListPageInput
-import com.afternote.feature.afternote.domain.usecase.author.GetListPageUseCase
+import com.afternote.core.ui.bottombar.BottomNavTab
+import com.afternote.feature.afternote.domain.model.author.ListItem
+import com.afternote.feature.afternote.domain.repository.AfternoteRepository
 import com.afternote.feature.afternote.presentation.author.home.model.AfternoteHomeEvent
 import com.afternote.feature.afternote.presentation.author.home.model.AfternoteHomeUiState
 import com.afternote.feature.afternote.presentation.author.home.model.AfternoteListState
@@ -19,6 +18,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -35,7 +35,7 @@ private const val SUBSCRIBE_TIMEOUT_MS = 5_000L
 class AfternoteHomeViewModel
     @Inject
     constructor(
-        private val getListPageUseCase: GetListPageUseCase,
+        private val afternoteRepository: AfternoteRepository,
     ) : ViewModel() {
         // MutableStateFlow는 인자로 받은 객체 타입의 MutableStateFlow 객체를 만든다
         // 인자 객체에 대해 equals()를 통해 직전 객체와 비교하여 다를 때마다 리컴포지션하라는 신호를 보낸다
@@ -71,6 +71,15 @@ class AfternoteHomeViewModel
 
         init {
             refreshList()
+            viewModelScope.launch {
+                afternoteRepository.authorAfternoteListRevision.drop(1).collect {
+                    refreshList(
+                        category =
+                            _uiState.value.categoryState.selectedCategory
+                                .toCategoryParam(),
+                    )
+                }
+            }
         }
 
         // region Event
@@ -133,14 +142,12 @@ class AfternoteHomeViewModel
                             visibleItems = emptyList(),
                         )
                     }
-                    val input =
-                        GetListPageInput(
+                    afternoteRepository
+                        .getListPage(
                             category = category,
-                            pageNumber = 0, // 항상 첫 페이지 불러 옴
+                            pageNumber = 0,
                             size = PAGE_SIZE,
-                        )
-                    getListPageUseCase(input)
-                        .onSuccess { listPage ->
+                        ).onSuccess { listPage ->
                             updateListState { listState ->
                                 listState.copy(
                                     isLoading = false,
@@ -178,14 +185,12 @@ class AfternoteHomeViewModel
                     listState.copy(isLoadingMore = true)
                 }
                 val nextPageNumber = list.currentPageNumber + 1
-                val input =
-                    GetListPageInput(
+                afternoteRepository
+                    .getListPage(
                         category = state.categoryState.selectedCategory.toCategoryParam(),
                         pageNumber = nextPageNumber,
                         size = PAGE_SIZE,
-                    )
-                getListPageUseCase(input)
-                    .onSuccess { listPage ->
+                    ).onSuccess { listPage ->
                         updateListState { listState ->
                             listState.copy(
                                 visibleItems = listState.visibleItems + listPage.listItems,

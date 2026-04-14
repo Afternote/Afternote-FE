@@ -1,13 +1,19 @@
 package com.afternote.core.network.di
 
+import android.content.Context
+import coil3.ImageLoader
+import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import com.afternote.core.network.BuildConfig
 import com.afternote.core.network.interceptor.AuthInterceptor
+import com.afternote.core.network.interceptor.OptionalDebugNetworkInterceptor
 import com.afternote.core.network.interceptor.TokenAuthenticator
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.serialization.json.Json
+import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -33,7 +39,7 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
     @Singleton
     fun provideLoggingInterceptor(): HttpLoggingInterceptor =
         HttpLoggingInterceptor().apply {
-            level = // 로깅을 어느 정도로 자세히 해 줄 건지
+            level =
                 if (BuildConfig.DEBUG) {
                     HttpLoggingInterceptor.Level.BODY
                 } else {
@@ -57,12 +63,15 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
     @Singleton
     @Named("MainClient")
     fun provideMainOkHttpClient(
+        @OptionalDebugNetworkInterceptor debugInterceptors: Set<@JvmSuppressWildcards Interceptor>,
         loggingInterceptor: HttpLoggingInterceptor,
         authInterceptor: AuthInterceptor,
         tokenAuthenticator: TokenAuthenticator,
-    ): OkHttpClient =
-        OkHttpClient
-            .Builder()
+    ): OkHttpClient {
+        val builder = OkHttpClient.Builder()
+        // 디버그 전용(피처 모듈) 인터셉터: 네트워크로 나가기 전에 가짜 응답을 반환할 수 있음
+        debugInterceptors.forEach { builder.addInterceptor(it) }
+        return builder
             // 요청은 인터셉터를 추가한 순서대로 인터셉터를 거쳐 서버로 가고 응답은 그 반대 순서로
             .addInterceptor(authInterceptor) // 액세스 토큰을 리퀘스트 헤더에 달아 주는 인터셉터
             // 액세스 토큰이 필요한 서비스가 많기 때문에 요청 필드로 일일이 보내는 대신 모든 요청의 헤더로 담는다
@@ -71,6 +80,7 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
             // 401 응답을 받았을 때 응답이 앱 쪽으로 넘어가기 전에 낚아채 곧바로 요청을 다시 보내는 투명한 재시도
             // 요청을 다시 보낼 때 다른 요청처럼 인터셉터를 거침
             .build()
+    }
 
     // S3에 우리 앱의 액세스 토큰이 헤더로 전달되면 400/403이 뜨기 때문에 토큰 없는 순수한 클라이언트 필요
     @Provides
@@ -81,6 +91,31 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
             .Builder()
             .addInterceptor(loggingInterceptor)
             .build()
+
+    /** Coil 전용. 인증 헤더 없이 이미지 호스트만 다루며, DEBUG 멀티바인딩 인터셉터(예: mock.image → Picsum)를 동일하게 적용한다. */
+    @Provides
+    @Singleton
+    @Named("CoilImage")
+    fun provideCoilImageOkHttpClient(
+        @OptionalDebugNetworkInterceptor debugInterceptors: Set<@JvmSuppressWildcards Interceptor>,
+        loggingInterceptor: HttpLoggingInterceptor,
+    ): OkHttpClient {
+        val builder = OkHttpClient.Builder()
+        debugInterceptors.forEach { builder.addInterceptor(it) }
+        return builder.addInterceptor(loggingInterceptor).build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideImageLoader(
+        @ApplicationContext context: Context,
+        @Named("CoilImage") coilOkHttpClient: OkHttpClient,
+    ): ImageLoader =
+        ImageLoader
+            .Builder(context)
+            .components {
+                add(OkHttpNetworkFetcherFactory(callFactory = coilOkHttpClient))
+            }.build()
 
     @Provides
     @Singleton

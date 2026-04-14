@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.domain.repository
 
-import com.afternote.feature.afternote.domain.model.playlist.SearchedSong
+import com.afternote.feature.afternote.domain.model.author.playlist.SearchedSong
 
 /**
  * Music search by keyword (artist or title).

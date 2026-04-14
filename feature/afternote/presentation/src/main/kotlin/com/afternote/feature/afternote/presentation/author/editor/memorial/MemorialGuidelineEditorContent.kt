@@ -8,12 +8,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.LastWishOption
-import com.afternote.core.ui.LastWishOtherState
-import com.afternote.core.ui.LastWishesRadioGroup
-import com.afternote.core.ui.MemorialGuidelineContent
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.author.editor.receiver.RecipientDesignationSection
+import com.afternote.feature.afternote.presentation.shared.LastWishOption
+import com.afternote.feature.afternote.presentation.shared.LastWishOtherState
+import com.afternote.feature.afternote.presentation.shared.LastWishesRadioGroup
+import com.afternote.feature.afternote.presentation.shared.MemorialGuidelineContent
 import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
 
 /**

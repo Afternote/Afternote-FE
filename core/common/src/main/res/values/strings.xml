@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="core_common_notification_daily_channel_name">Daily reminders</string>
+    <string name="core_common_notification_daily_title">AFTERNOTE</string>
+    <string name="core_common_notification_daily_text">오늘 하루 누구한테 가장 고마웠나요?</string>
+</resources>

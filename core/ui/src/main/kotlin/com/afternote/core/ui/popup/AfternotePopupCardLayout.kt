@@ -16,21 +16,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.dropShadow
+import com.afternote.core.ui.modifierextention.dropShadow
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
 private val PopupCardShape = RoundedCornerShape(16.dp)
 
-/**
- * 피그마 기준 공통 팝업 카드 껍데기: 흰 배경·16dp 라운드·그림자·내부 패딩.
- *
- * 메시지+버튼 패턴은 [AfternotePopupCardLayout] (메시지 오버로드), 폼 다이얼로그는 이 슬롯 버전을 씁니다.
- */
 @Composable
 fun AfternotePopupCardLayout(
     modifier: Modifier = Modifier,
@@ -56,7 +50,7 @@ fun AfternotePopupCardLayout(
                 Modifier
                     .fillMaxWidth()
                     .padding(
-                        horizontal = 20.dp,
+                        horizontal = 24.dp,
                         vertical = 32.dp,
                     ),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -69,7 +63,7 @@ fun AfternotePopupCardLayout(
 /**
  * 피그마 기준 공통 알림 카드: 흰 배경·16dp 라운드·본문 메시지·하단 액션 영역.
  *
- * [InfoPopupContent](단일 버튼), [ConfirmationPopupContent](이중 버튼)에서 공유합니다.
+ * [Popup] / [PopupContent]의 [PopupType.Default](단일 버튼), [PopupType.Variant2](이중 버튼)에서 공유합니다.
  */
 @Composable
 fun AfternotePopupCardLayout(
@@ -80,12 +74,13 @@ fun AfternotePopupCardLayout(
     AfternotePopupCardLayout(modifier = modifier) {
         Text(
             text = message,
+            modifier = Modifier.fillMaxWidth(),
             style =
-                AfternoteDesign.typography.textField.copy(
-                    fontWeight = FontWeight.Medium,
-                    color = AfternoteDesign.colors.gray9,
-                    textAlign = TextAlign.Center,
-                ),
+                AfternoteDesign.typography.bodyBase
+                    .copy(
+                        textAlign = TextAlign.Center,
+                        color = AfternoteDesign.colors.gray9,
+                    ),
         )
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -108,14 +103,17 @@ private fun AfternotePopupCardLayoutsPreview() {
             verticalArrangement = Arrangement.spacedBy(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            InfoPopupContent(
+            PopupContent(
+                type = PopupType.Default,
                 message = "아이디/비밀번호 찾기의 경우,\n고객센터로 문의 바랍니다.",
                 onConfirm = {},
-            )
-            ConfirmationPopupContent(
-                message = "아이디/비밀번호 찾기의 경우,\n고객센터로 문의 바랍니다.",
                 onDismiss = {},
+            )
+            PopupContent(
+                type = PopupType.Variant2,
+                message = "아이디/비밀번호 찾기의 경우,\n고객센터로 문의 바랍니다.",
                 onConfirm = {},
+                onDismiss = {},
             )
         }
     }
