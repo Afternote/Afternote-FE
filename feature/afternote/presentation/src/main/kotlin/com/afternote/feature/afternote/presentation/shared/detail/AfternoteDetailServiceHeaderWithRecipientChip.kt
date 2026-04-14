@@ -19,21 +19,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.badge.RecipientDesignationBadge
 import com.afternote.core.ui.badge.RecipientDesignationBadgeState
 import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 
 /**
  * 애프터노트 작성자 상세에서 공통으로 쓰는 상단 블록.
  *
- * Edge-to-Edge 상단 인셋 소비용 [topInset] + 서비스 아이콘·이름·최종 작성일 + [RecipientDesignationBadge] 까지 한 덩어리로 묶는다.
+ * 시스템 인셋은 부모 스크롤 [Column] 의 [Spacer] 로 처리하고, 여기서는 서비스 아이콘·이름·최종 작성일 + [RecipientDesignationBadge] 만 담당한다.
  */
 @Composable
 fun AfternoteDetailServiceHeaderWithRecipientChip(
-    topInset: Dp,
     iconResId: Int,
     serviceName: String,
     finalWriteDate: String,
@@ -41,8 +41,6 @@ fun AfternoteDetailServiceHeaderWithRecipientChip(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
-        Spacer(modifier = Modifier.height(topInset + 24.dp))
-
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -80,5 +78,18 @@ fun AfternoteDetailServiceHeaderWithRecipientChip(
 
         Spacer(modifier = Modifier.height(16.dp))
         RecipientDesignationBadge(state = recipientBadgeState)
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AfternoteDetailServiceHeaderWithRecipientChipPreview() {
+    AfternoteTheme {
+        AfternoteDetailServiceHeaderWithRecipientChip(
+            iconResId = R.drawable.feature_afternote_ic_memorial_guideline,
+            serviceName = "서비스 이름",
+            finalWriteDate = "2024.05.20",
+            recipientBadgeState = RecipientDesignationBadgeState.Completed,
+        )
     }
 }

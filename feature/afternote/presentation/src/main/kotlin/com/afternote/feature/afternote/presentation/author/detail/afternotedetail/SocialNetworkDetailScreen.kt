@@ -18,7 +18,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,7 +28,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -61,23 +59,19 @@ import com.afternote.feature.afternote.presentation.shared.util.getIconResForSer
  *
  * Now in Android 가이드의 Route + Screen 분리 패턴을 따른다.
  * - 상세/작성자/삭제 상태는 공용 [AfternoteDetailViewModel] 에서 관리한다
- *   (세 가지 detail 화면이 동일한 VM 을 공유하므로 화면별 VM 을 새로 만들지 않는다).
+ *   (상세 목적지마다 별도의 백스택 엔트리이므로 VM 인스턴스는 화면마다 갈리지만 클래스는 동일).
+ *   초기 상세 로드는 ViewModel 의 `init` 과 네비게이션 인자(`itemId`)로만 트리거한다.
  * - UI 는 [SocialNetworkDetailScreen] (Stateless) 에 위임한다.
  * - 방어적으로 `detail.type` 을 검사해 SOCIAL_NETWORK 가 아닌 타입이 들어오면
  *   [DesignPendingDetailContent] 로 폴백한다.
  */
 @Composable
 internal fun SocialNetworkDetailRoute(
-    afternoteId: Long,
     onBack: () -> Unit,
     onNavigateToEditor: (itemId: String) -> Unit,
     viewModel: AfternoteDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    LaunchedEffect(afternoteId) {
-        viewModel.onEvent(AfternoteDetailEvent.LoadDetail(afternoteId))
-    }
 
     when (val state = uiState) {
         AfternoteDetailUiState.Loading -> {
@@ -184,14 +178,12 @@ fun SocialNetworkDetailScreen(
             )
         },
     ) { paddingValues ->
-        // Edge-to-Edge: 스크롤 컨테이너 자체를 paddingValues 로 잘라내면 탑바 아래 영역이 스크롤 밖으로 밀려
-        // 오버스크롤·제스처 네비게이션 UX 가 어색해진다. 스크롤 내부 Spacer 로 인셋을 소비해 콘텐츠가
-        // 탑바 뒤로 자연스럽게 지나가도록 한다.
         SocialNetworkDetailScrollContent(
             content = content,
-            topInset = paddingValues.calculateTopPadding(),
-            bottomInset = paddingValues.calculateBottomPadding(),
-            modifier = Modifier.fillMaxSize(),
+            modifier =
+                Modifier
+                    .padding(paddingValues)
+                    .fillMaxSize(),
         )
     }
 }
@@ -201,8 +193,6 @@ fun SocialNetworkDetailScreen(
 @Composable
 private fun SocialNetworkDetailScrollContent(
     content: SocialNetworkDetailContent,
-    topInset: Dp,
-    bottomInset: Dp,
     modifier: Modifier = Modifier,
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
@@ -221,7 +211,6 @@ private fun SocialNetworkDetailScrollContent(
                 RecipientDesignationBadgeState.Incomplete()
             }
         AfternoteDetailServiceHeaderWithRecipientChip(
-            topInset = topInset,
             iconResId = content.iconResId,
             serviceName = content.serviceName,
             finalWriteDate = content.finalWriteDate,
@@ -330,9 +319,6 @@ private fun SocialNetworkDetailScrollContent(
 
         // — 남기신 말씀 섹션
         MessageSection(message = content.message)
-
-        // 하단 인셋(제스처 네비게이션 바 등) 을 스크롤 내부에서 소비.
-        Spacer(modifier = Modifier.height(bottomInset))
     }
 }
 

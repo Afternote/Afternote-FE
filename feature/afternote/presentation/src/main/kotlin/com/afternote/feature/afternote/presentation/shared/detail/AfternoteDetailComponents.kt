@@ -23,10 +23,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.AfternoteCircularCheckbox
 import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 
 @Composable
@@ -172,5 +174,35 @@ fun MessageSection(
             }
         }
         Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ProcessingMethodsSectionPreview() {
+    AfternoteTheme {
+        ProcessingMethodsSection(
+            methods = listOf("계정 삭제", "게시물 유지", "메모리얼 계정 전환"),
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun MessageSectionPreview() {
+    AfternoteTheme {
+        MessageSection(
+            message = "소중한 사람들에게 남기는 마지막 메시지입니다.",
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun MessageSectionEmptyPreview() {
+    AfternoteTheme {
+        MessageSection(
+            message = "",
+        )
     }
 }

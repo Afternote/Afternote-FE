@@ -104,7 +104,6 @@ internal fun AfternoteDetailNavigation(
         DesignPendingDetailContent(onBackClick = onBack)
     } else {
         SocialNetworkDetailRoute(
-            afternoteId = afternoteId,
             onBack = onBack,
             onNavigateToEditor = onNavigateToEditor,
         )
@@ -113,19 +112,11 @@ internal fun AfternoteDetailNavigation(
 
 @Composable
 internal fun AfternoteGalleryDetailNavigation(
-    backStackEntry: NavBackStackEntry,
     onBack: () -> Unit,
     onNavigateToEditor: (itemId: String) -> Unit,
     viewModel: AfternoteDetailViewModel = hiltViewModel(),
 ) {
-    val route = backStackEntry.toRoute<AfternoteRoute.GalleryDetailRoute>()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    LaunchedEffect(route.itemId) {
-        route.itemId.toLongOrNull()?.let {
-            viewModel.onEvent(AfternoteDetailEvent.LoadDetail(it))
-        }
-    }
 
     when (val state = uiState) {
         AfternoteDetailUiState.Loading -> DetailLoadingContent()
@@ -173,19 +164,11 @@ internal fun AfternoteGalleryDetailNavigation(
 
 @Composable
 internal fun AfternoteMemorialGuidelineDetailNavigation(
-    backStackEntry: NavBackStackEntry,
     onBack: () -> Unit,
     onNavigateToEditor: (itemId: String) -> Unit,
     viewModel: AfternoteDetailViewModel = hiltViewModel(),
 ) {
-    val route = backStackEntry.toRoute<AfternoteRoute.MemorialGuidelineDetailRoute>()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    LaunchedEffect(route.itemId) {
-        route.itemId.toLongOrNull()?.let {
-            viewModel.onEvent(AfternoteDetailEvent.LoadDetail(it))
-        }
-    }
 
     when (val state = uiState) {
         AfternoteDetailUiState.Loading -> DetailLoadingContent()

@@ -53,9 +53,8 @@ fun NavGraphBuilder.afternoteNavGraph(
             )
         }
 
-        afternoteComposable<AfternoteRoute.GalleryDetailRoute> {
+        afternoteComposable<AfternoteRoute.GalleryDetailRoute> { _ ->
             AfternoteGalleryDetailNavigation(
-                backStackEntry = it,
                 onBack = actions::onPopBackStack,
                 onNavigateToEditor = actions::onNavigateToEditorForEdit,
             )
@@ -85,9 +84,8 @@ fun NavGraphBuilder.afternoteNavGraph(
             )
         }
 
-        afternoteComposable<AfternoteRoute.MemorialGuidelineDetailRoute> {
+        afternoteComposable<AfternoteRoute.MemorialGuidelineDetailRoute> { _ ->
             AfternoteMemorialGuidelineDetailNavigation(
-                backStackEntry = it,
                 onBack = actions::onPopBackStack,
                 onNavigateToEditor = actions::onNavigateToEditorForEdit,
             )
