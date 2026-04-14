@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.shared.detail.components
+package com.afternote.feature.afternote.presentation.shared.detail
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement

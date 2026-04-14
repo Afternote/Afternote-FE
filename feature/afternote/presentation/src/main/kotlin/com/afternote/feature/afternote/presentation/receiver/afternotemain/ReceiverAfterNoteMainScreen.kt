@@ -56,7 +56,7 @@ import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.LastWishesRadioGroup
 import com.afternote.feature.afternote.presentation.shared.MemorialGuidelineContent
-import com.afternote.feature.afternote.presentation.shared.detail.components.InfoCard
+import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
 
