@@ -70,7 +70,8 @@ private fun HomeSummary.toHomeTabSuccess(): HomeTabUiState.Success =
                 when (category) {
                     MindRecordCategory.DIARY -> diaryCategoryCount
                     MindRecordCategory.DEEP_THOUGHT -> deepThoughtCategoryCount
-                    MindRecordCategory.DAILY_QUESTION -> 0 // TODO: API 스펙 확정 후 실제 카운트로 교체
+                    MindRecordCategory.DAILY_QUESTION -> 0
+                    MindRecordCategory.WEEKLY_REPORT -> 0
                 }
             },
     )

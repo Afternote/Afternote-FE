@@ -25,8 +25,7 @@ import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_home_ta
 import com.afternote.feature.mindrecord.presentation.component.MemoriesCard
 import com.afternote.feature.mindrecord.presentation.component.TodayQuestionCard
 import com.afternote.feature.mindrecord.presentation.component.hometab.RecordCategoryCard
-import com.afternote.feature.mindrecord.presentation.model.description
-import com.afternote.feature.mindrecord.presentation.model.title
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.core.ui.R as CoreUiR
 
 /**
@@ -54,8 +53,8 @@ fun LazyListScope.homeTabMindRecordQuestionAndCategories(
                 modifier =
                     Modifier.weight(1f),
                 iconResId = CoreUiR.drawable.core_ui_ic_diary,
-                title = MindRecordCategory.DIARY.title,
-                subtitle = MindRecordCategory.DIARY.description,
+                title = MindRecordCategoryUi.Diary.title,
+                subtitle = MindRecordCategoryUi.Diary.description,
                 totalCount = categoryCounts[MindRecordCategory.DIARY] ?: 0,
                 onClick = { onRecordCategoryClick(MindRecordCategory.DIARY) },
                 useDiaryIconLayout = true,
@@ -65,8 +64,8 @@ fun LazyListScope.homeTabMindRecordQuestionAndCategories(
                 modifier =
                     Modifier.weight(1f),
                 iconResId = CoreUiR.drawable.core_ui_ic_deep_thought,
-                title = MindRecordCategory.DEEP_THOUGHT.title,
-                subtitle = MindRecordCategory.DEEP_THOUGHT.description,
+                title = MindRecordCategoryUi.DeepThought.title,
+                subtitle = MindRecordCategoryUi.DeepThought.description,
                 totalCount = categoryCounts[MindRecordCategory.DEEP_THOUGHT] ?: 0,
                 onClick = { onRecordCategoryClick(MindRecordCategory.DEEP_THOUGHT) },
                 isCountLoading = isCategoryCountLoading,
