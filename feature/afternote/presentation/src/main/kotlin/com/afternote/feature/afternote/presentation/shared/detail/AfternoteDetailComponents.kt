@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.presentation.shared.detail
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,18 +41,18 @@ fun DetailSectionHeader(
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Icon(
             painter = painterResource(iconResId),
             contentDescription = null,
             modifier = Modifier.size(14.dp),
-            tint = AfternoteDesign.colors.gray5,
+            tint = AfternoteDesign.colors.gray6,
         )
         Text(
             text = label,
             style = AfternoteDesign.typography.mono,
-            color = AfternoteDesign.colors.gray5,
+            color = AfternoteDesign.colors.gray6,
         )
         HorizontalDivider(
             modifier = Modifier.weight(1f),
@@ -69,10 +70,11 @@ fun DetailCard(
         modifier =
             modifier
                 .fillMaxWidth()
+                .background(AfternoteDesign.colors.white)
                 .border(
                     width = 1.dp,
                     color = AfternoteDesign.colors.gray2,
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(6.dp),
                 ).padding(16.dp),
     ) {
         content()

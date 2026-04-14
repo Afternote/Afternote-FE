@@ -195,36 +195,62 @@ private fun SocialNetworkDetailScrollContent(
     content: SocialNetworkDetailContent,
     modifier: Modifier = Modifier,
 ) {
-    var passwordVisible by remember { mutableStateOf(false) }
-
     Column(
         modifier =
             modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
+                .padding(top = 24.dp)
                 .padding(horizontal = 20.dp),
     ) {
-        val recipientBadgeState =
-            if (content.afternoteEditReceivers.isNotEmpty()) {
-                RecipientDesignationBadgeState.Completed
-            } else {
-                RecipientDesignationBadgeState.Incomplete()
-            }
         AfternoteDetailServiceHeaderWithRecipientChip(
             iconResId = content.iconResId,
             serviceName = content.serviceName,
             finalWriteDate = content.finalWriteDate,
-            recipientBadgeState = recipientBadgeState,
+            recipientBadgeState =
+                if (content.afternoteEditReceivers.isNotEmpty()) {
+                    RecipientDesignationBadgeState.Completed
+                } else {
+                    RecipientDesignationBadgeState.Incomplete()
+                },
         )
 
         Spacer(modifier = Modifier.height(31.dp))
 
-        // — ACCOUNT 섹션
+        AccountSection(
+            accountId = content.accountId,
+            password = content.password,
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // — 처리방법 섹션
+        ProcessingMethodsSection(methods = content.processingMethods)
+
+        // — 남기신 말씀 섹션
+        MessageSection(message = content.message)
+    }
+}
+
+/**
+ * 소셜 네트워크 상세 전용 ACCOUNT(아이디·비밀번호) 섹션.
+ *
+ * 비밀번호 표시 토글은 이 블록 안의 로컬 상태로만 둔다 (`shared/detail` 패키지로의 조기 추출은 하지 않음).
+ */
+@Composable
+private fun AccountSection(
+    accountId: String,
+    password: String,
+    modifier: Modifier = Modifier,
+) {
+    var passwordVisible by remember { mutableStateOf(false) }
+
+    Column(modifier = modifier) {
         DetailSectionHeader(
             iconResId = com.afternote.core.ui.R.drawable.core_ui_user,
             label = stringResource(R.string.feature_afternote_detail_section_account),
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(13.dp))
         DetailCard {
             Column {
                 Column(
@@ -233,7 +259,6 @@ private fun SocialNetworkDetailScrollContent(
                             .fillMaxWidth()
                             .bottomBorder(color = AfternoteDesign.colors.gray2, width = 1.dp),
                 ) {
-                    // 아이디
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -251,7 +276,7 @@ private fun SocialNetworkDetailScrollContent(
                                 color = AfternoteDesign.colors.gray5,
                             )
                             Text(
-                                text = content.accountId,
+                                text = accountId,
                                 style = AfternoteDesign.typography.bodySmallB,
                                 color = AfternoteDesign.colors.gray9,
                             )
@@ -260,7 +285,6 @@ private fun SocialNetworkDetailScrollContent(
                     Spacer(modifier = Modifier.height(12.dp))
                 }
                 Spacer(modifier = Modifier.height(12.dp))
-                // 비밀번호
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -285,11 +309,9 @@ private fun SocialNetworkDetailScrollContent(
                             Text(
                                 text =
                                     if (passwordVisible) {
-                                        content.password
+                                        password
                                     } else {
-                                        stringResource(
-                                            R.string.feature_afternote_detail_password_mask,
-                                        )
+                                        stringResource(R.string.feature_afternote_detail_password_mask)
                                     },
                                 style = AfternoteDesign.typography.bodySmallB,
                                 color = AfternoteDesign.colors.gray9,
@@ -311,14 +333,6 @@ private fun SocialNetworkDetailScrollContent(
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // — 처리방법 섹션
-        ProcessingMethodsSection(methods = content.processingMethods)
-
-        // — 남기신 말씀 섹션
-        MessageSection(message = content.message)
     }
 }
 
