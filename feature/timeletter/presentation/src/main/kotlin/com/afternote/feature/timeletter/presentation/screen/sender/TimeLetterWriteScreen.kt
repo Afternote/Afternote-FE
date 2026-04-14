@@ -9,13 +9,12 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.scaffold.topbar.DetailTopBar
+import com.afternote.feature.timeletter.presentation.component.TimeLetterTextButton
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.timeletter.presentation.component.RecipientCard
@@ -54,13 +53,10 @@ fun TimeLetterWriteScreen(
                 title = "",
                 onBackClick = onBackClick,
                 actions = {
-                    TextButton(onClick = onRegisterClick) {
-                        Text(
-                            text = "등록",
-                            style = AfternoteDesign.typography.bodySmallR,
-                            color = AfternoteDesign.colors.gray9,
-                        )
-                    }
+                    TimeLetterTextButton(
+                        text = "등록",
+                        onClick = onRegisterClick,
+                    )
                 },
             )
         },
