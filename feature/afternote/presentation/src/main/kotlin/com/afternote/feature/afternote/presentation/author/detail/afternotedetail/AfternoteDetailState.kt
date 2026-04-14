@@ -6,10 +6,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.afternote.core.ui.bottombar.BottomNavTab
 
 /**
- * Detail screen UI state (dropdown, delete dialog, bottom nav).
+ * Detail screen UI state (dropdown, delete dialog).
  * Used by [SocialNetworkDetailScreen], [GalleryDetailScreen], and
  * [MemorialGuidelineDetailScreen].
  */
@@ -51,13 +50,11 @@ class AfternoteDetailState {
 }
 
 /**
- * Creates [AfternoteDetailState] for detail screens (social network, gallery).
- *
- * @param defaultBottomNavItem 기본 선택된 하단 네비게이션 아이템
+ * 상세 화면 생명주기 동안 한 번만 [AfternoteDetailState] 를 유지한다.
+ * (불필요한 `remember` 키로 인해 바텀 탭 등 외부 값 변화 시 드롭다운·다이얼로그 상태가 초기화되는 것을 방지)
  */
-@Stable
 @Composable
-fun rememberAfternoteDetailState(defaultBottomNavItem: BottomNavTab = BottomNavTab.NOTE): AfternoteDetailState =
-    remember(defaultBottomNavItem) {
+fun rememberAfternoteDetailState(): AfternoteDetailState =
+    remember {
         AfternoteDetailState()
     }

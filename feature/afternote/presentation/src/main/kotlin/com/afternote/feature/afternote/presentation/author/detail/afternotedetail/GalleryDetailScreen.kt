@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.badge.RecipientDesignationBadgeState
-import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.domain.AfternoteServiceType
@@ -297,10 +296,7 @@ private fun GalleryDetailScreenReceiverModePreview() {
             isEditable = false,
             onBackClick = {},
             onEditClick = {},
-            state =
-                rememberAfternoteDetailState(
-                    defaultBottomNavItem = BottomNavTab.NOTE,
-                ),
+            state = rememberAfternoteDetailState(),
         )
     }
 }
