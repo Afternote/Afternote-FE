@@ -93,7 +93,6 @@ internal fun GalleryDetailRoute(
                                         label = r.relation,
                                     )
                                 },
-                            informationProcessingMethod = detail.processing?.method ?: "",
                             processingMethods = detail.processing?.actions ?: emptyList(),
                             message = detail.processing?.leaveMessage ?: "",
                         ),
@@ -115,7 +114,6 @@ data class GalleryDetailContent(
     val userName: String = "",
     val finalWriteDate: String = "",
     val afternoteEditReceivers: List<ReceiverUiModel> = emptyList(),
-    val informationProcessingMethod: String = "",
     val processingMethods: List<String> = emptyList(),
     val message: String = "",
 )
@@ -228,7 +226,6 @@ internal val GALLERY_PREVIEW_CONTENT =
         serviceName = "갤러리",
         userName = "서영",
         finalWriteDate = "2025.11.26",
-        informationProcessingMethod = "TRANSFER_TO_ADDITIONAL_AFTERNOTE_EDIT_RECEIVER",
         processingMethods = listOf("'엽사' 폴더 박선호에게 전송", "'흑역사' 폴더 삭제"),
         afternoteEditReceivers =
             listOf(
