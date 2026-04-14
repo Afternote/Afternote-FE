@@ -2,24 +2,30 @@ package com.afternote.feature.mindrecord.presentation.component
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
@@ -56,23 +62,35 @@ fun DailyQuestionWriteHeaderCard(modifier: Modifier = Modifier) {
         ) {
             Text(
                 text = "TODAY'S QUESTION",
-                style = MaterialTheme.typography.displaySmall,
+                style = AfternoteDesign.typography.mono,
                 color = AfternoteDesign.colors.gray6,
             )
 
             Spacer(modifier = Modifier.height(7.5.dp))
             Text(
-                text = "오늘 하루, \n 누구에게 가장 고마웠나요?",
-                style = MaterialTheme.typography.headlineSmall,
+                text = "오늘 하루, \n누구에게 가장 고마웠나요?",
+                style = AfternoteDesign.typography.h3,
                 color = AfternoteDesign.colors.gray9,
             )
 
             Spacer(modifier = Modifier.height(7.5.dp))
-            Text(
-                text = "· Day 21",
-                style = MaterialTheme.typography.displaySmall,
-                color = AfternoteDesign.colors.gray6,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "답변하러가기",
+                    style = AfternoteDesign.typography.captionLargeR,
+                    color = AfternoteDesign.colors.gray6,
+                )
+                IconButton(
+                    onClick = {},
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.core_ui_right),
+                        contentDescription = null,
+                        tint = AfternoteDesign.colors.gray6,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
         }
     }
 }

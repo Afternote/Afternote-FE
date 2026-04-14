@@ -15,8 +15,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -24,10 +29,15 @@ import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
+import com.afternote.feature.mindrecord.presentation.component.CategorySettingBottomSheet
 import com.afternote.feature.mindrecord.presentation.component.DailyDeepThoughtCard
+import com.afternote.feature.mindrecord.presentation.component.WriteTextField
+import com.afternote.feature.mindrecord.presentation.model.CategoryUiModel
 
 @Composable
 fun DeepThoughtWriteScreen(modifier: Modifier = Modifier) {
+    var showCategorySheet by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             DetailTopBar(
@@ -53,7 +63,12 @@ fun DeepThoughtWriteScreen(modifier: Modifier = Modifier) {
         },
         modifier = modifier,
     ) { paddingValues ->
-        Column(modifier = Modifier.padding(paddingValues)) {
+        Column(
+            modifier =
+                Modifier
+                    .padding(paddingValues)
+                    .padding(horizontal = 20.dp),
+        ) {
             DailyDeepThoughtCard(modifier = Modifier.height(150.dp))
 
             Row(
@@ -62,7 +77,7 @@ fun DeepThoughtWriteScreen(modifier: Modifier = Modifier) {
             ) {
                 Text(
                     text = "카테고리",
-                    style = MaterialTheme.typography.titleSmall,
+                    style = AfternoteDesign.typography.bodySmallB,
                     color = AfternoteDesign.colors.gray7,
                 )
                 Column {
@@ -73,7 +88,7 @@ fun DeepThoughtWriteScreen(modifier: Modifier = Modifier) {
                     ) {
                         Text(
                             text = "나의 가치관",
-                            style = MaterialTheme.typography.displayMedium,
+                            style = AfternoteDesign.typography.captionLargeR,
                             color = AfternoteDesign.colors.gray9,
                         )
 
@@ -86,6 +101,23 @@ fun DeepThoughtWriteScreen(modifier: Modifier = Modifier) {
                     HorizontalDivider()
                 }
             }
+
+            WriteTextField()
+        }
+
+        if (showCategorySheet) {
+            CategorySettingBottomSheet(
+                categories =
+                    listOf(
+                        CategoryUiModel("1", "나의 가치관", Color(0xFF1A1A1A)),
+                        CategoryUiModel("2", "오늘 떠올린 생각", Color(0xFFFFB3A7)),
+                        CategoryUiModel("3", "인생을 되돌아 보며", Color(0xFFA8C8E8)),
+                    ),
+                onDismiss = { showCategorySheet = false },
+                onBackClick = { showCategorySheet = false },
+                onAddCategory = { /* 새 카테고리 생성 화면으로 */ },
+                onMenuClick = { /* 수정/삭제 메뉴 */ },
+            )
         }
     }
 }

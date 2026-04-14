@@ -68,6 +68,7 @@ fun DiaryComponent(
                         )
                     }
 
+                    Spacer(modifier = Modifier.weight(1f))
                     Box(
                         modifier = Modifier.clickable {},
                     ) {
