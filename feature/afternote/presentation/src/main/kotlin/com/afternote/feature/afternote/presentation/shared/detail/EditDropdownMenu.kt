@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.shared.detail.components
+package com.afternote.feature.afternote.presentation.shared.detail
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,6 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
@@ -30,14 +33,19 @@ import androidx.compose.ui.window.Popup as ComposePopup
  *
  * Material3 [androidx.compose.material3.DropdownMenu] 는 그림자/애니메이션 시작점/
  * 아이템 최소 높이(48dp) 등이 가이드라인에 맞게 강제돼 있어 우회 시 코드가 지저분해진다.
- * 둥글기·폰트·그림자·패딩은 이 컴포저블이 담당하고, **등장 위치는 [popupPositionProvider] 로만** 결정한다.
+ * 둥글기·폰트·그림자·패딩은 이 컴포저블이 담당하고, 등장 위치는 [popupPositionProvider] 로만 결정한다.
  * 기본값은 창 우측 15dp · 앵커 아래 12dp ([rememberFixedRightPopupPositionProvider]).
+ *
+ * Material3 `DropdownMenu` 과 달리 `androidx.compose.ui.window.Popup` 기반이라
+ * 등장 페이드·스케일 애니메이션은 없다. 필요하면 메뉴 `Column` 을
+ * `androidx.compose.animation.AnimatedVisibility` 로 감싸면 된다.
  */
 @Composable
 fun EditDropdownMenu(
     expanded: Boolean,
     onDismissRequest: () -> Unit,
     onDeleteClick: () -> Unit,
+    modifier: Modifier = Modifier,
     onEditClick: () -> Unit = {},
     showEditItem: Boolean = true,
     popupPositionProvider: PopupPositionProvider = rememberFixedRightPopupPositionProvider(),
@@ -51,7 +59,7 @@ fun EditDropdownMenu(
     ) {
         Column(
             modifier =
-                Modifier
+                modifier
                     .shadow(
                         elevation = 8.dp,
                         shape = RoundedCornerShape(8.dp),
@@ -88,6 +96,7 @@ private fun CustomDropdownItem(
     Box(
         modifier =
             modifier
+                .semantics { role = Role.Button }
                 .clickable(onClick = onClick)
                 .padding(horizontal = 26.dp, vertical = 16.dp),
     ) {
