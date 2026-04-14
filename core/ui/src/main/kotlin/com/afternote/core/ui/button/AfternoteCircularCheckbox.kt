@@ -29,6 +29,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -44,11 +45,8 @@ enum class CheckboxState {
 fun AfternoteCircularCheckbox(
     state: CheckboxState,
     onClick: (() -> Unit)?,
+    size: Dp,
     modifier: Modifier = Modifier,
-    defaultColor: Color = AfternoteDesign.colors.gray9,
-    variant2Color: Color = AfternoteDesign.colors.gray4,
-    noneBorderColor: Color = AfternoteDesign.colors.gray4,
-    checkIconColor: Color = AfternoteDesign.colors.white,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
 
@@ -57,12 +55,16 @@ fun AfternoteCircularCheckbox(
 
     val targetBackgroundColor =
         when (state) {
-            CheckboxState.Default -> defaultColor
-            CheckboxState.Variant2 -> variant2Color
+            CheckboxState.Default -> AfternoteDesign.colors.gray9
+            CheckboxState.Variant2 -> AfternoteDesign.colors.gray4
             CheckboxState.None -> Color.Transparent
         }
     val targetBorderColor =
-        if (state == CheckboxState.None) noneBorderColor else Color.Transparent
+        if (state == CheckboxState.None) {
+            AfternoteDesign.colors.gray4
+        } else {
+            Color.Transparent
+        }
 
     val backgroundColor by animateColorAsState(
         targetValue = targetBackgroundColor,
@@ -78,20 +80,20 @@ fun AfternoteCircularCheckbox(
     Box(
         modifier =
             modifier
-                .size(20.dp)
+                .size(size)
                 .clip(CircleShape)
                 .background(backgroundColor)
                 .border(
-                    width = if (state == CheckboxState.None) 2.dp else 0.dp,
+                    width = if (state == CheckboxState.None) 1.dp else 0.dp,
                     color = borderColor,
                     shape = CircleShape,
                 ).then(
                     if (isClickable) {
                         Modifier.clickable(
                             interactionSource = interactionSource,
-                            indication = ripple(bounded = false, radius = 16.dp),
+                            indication = ripple(bounded = false, radius = size * 0.8f),
                             role = Role.Checkbox,
-                            onClick = onClick!!,
+                            onClick = onClick,
                         )
                     } else {
                         Modifier.semantics { role = Role.Checkbox }
@@ -107,8 +109,12 @@ fun AfternoteCircularCheckbox(
             Icon(
                 painter = painterResource(R.drawable.core_ui_ic_check),
                 contentDescription = null,
-                tint = checkIconColor,
-                modifier = Modifier.size(width = 10.dp, height = 8.dp),
+                tint = AfternoteDesign.colors.white,
+                modifier =
+                    Modifier.size(
+                        width = size * 0.5f,
+                        height = size * 0.4f,
+                    ),
             )
         }
     }
@@ -122,16 +128,19 @@ private fun AfternoteCircularCheckboxPreview() {
             AfternoteCircularCheckbox(
                 state = CheckboxState.Default,
                 onClick = {},
+                size = 20.dp,
             )
             Spacer(modifier = Modifier.height(16.dp))
             AfternoteCircularCheckbox(
                 state = CheckboxState.Variant2,
                 onClick = null,
+                size = 20.dp,
             )
             Spacer(modifier = Modifier.height(16.dp))
             AfternoteCircularCheckbox(
                 state = CheckboxState.None,
                 onClick = {},
+                size = 20.dp,
             )
         }
     }

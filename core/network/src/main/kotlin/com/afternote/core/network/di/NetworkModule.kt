@@ -1,5 +1,8 @@
 package com.afternote.core.network.di
 
+import android.content.Context
+import coil3.ImageLoader
+import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import com.afternote.core.network.BuildConfig
 import com.afternote.core.network.interceptor.AuthInterceptor
 import com.afternote.core.network.interceptor.OptionalDebugNetworkInterceptor
@@ -7,6 +10,7 @@ import com.afternote.core.network.interceptor.TokenAuthenticator
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.serialization.json.Json
 import okhttp3.Interceptor
@@ -35,7 +39,12 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
     @Singleton
     fun provideLoggingInterceptor(): HttpLoggingInterceptor =
         HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level =
+                if (BuildConfig.DEBUG) {
+                    HttpLoggingInterceptor.Level.BODY
+                } else {
+                    HttpLoggingInterceptor.Level.NONE
+                }
             redactHeader("Authorization")
         }
 
@@ -82,6 +91,31 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
             .Builder()
             .addInterceptor(loggingInterceptor)
             .build()
+
+    /** Coil 전용. 인증 헤더 없이 이미지 호스트만 다루며, DEBUG 멀티바인딩 인터셉터(예: mock.image → Picsum)를 동일하게 적용한다. */
+    @Provides
+    @Singleton
+    @Named("CoilImage")
+    fun provideCoilImageOkHttpClient(
+        @OptionalDebugNetworkInterceptor debugInterceptors: Set<@JvmSuppressWildcards Interceptor>,
+        loggingInterceptor: HttpLoggingInterceptor,
+    ): OkHttpClient {
+        val builder = OkHttpClient.Builder()
+        debugInterceptors.forEach { builder.addInterceptor(it) }
+        return builder.addInterceptor(loggingInterceptor).build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideImageLoader(
+        @ApplicationContext context: Context,
+        @Named("CoilImage") coilOkHttpClient: OkHttpClient,
+    ): ImageLoader =
+        ImageLoader
+            .Builder(context)
+            .components {
+                add(OkHttpNetworkFetcherFactory(callFactory = coilOkHttpClient))
+            }.build()
 
     @Provides
     @Singleton

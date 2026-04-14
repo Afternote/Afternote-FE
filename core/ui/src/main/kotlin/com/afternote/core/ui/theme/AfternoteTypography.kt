@@ -146,8 +146,8 @@ data class AfternoteTypography(
             fontFamily = com.afternote.core.ui.theme.inter,
             fontWeight = FontWeight.Medium,
             fontSize = 13.sp,
-            lineHeight = 21.1.sp,
-            letterSpacing = (-0.08).sp,
+            lineHeight = 21.sp,
+            letterSpacing = (-0.006).em,
         ),
 //    val fedraMono: TextStyle =
 //        TextStyle(

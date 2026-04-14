@@ -1,4 +1,4 @@
-package com.kuit.afternote.feature.auth.domain.usecase.auth
+package com.afternote.core.domain.usecase.account
 
 import com.afternote.core.domain.repository.account.AccountRepository
 import javax.inject.Inject

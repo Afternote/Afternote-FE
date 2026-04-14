@@ -1,12 +1,14 @@
 package com.afternote.afternote_fe.screen
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -14,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -22,24 +23,32 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.afternote_fe.R
+import com.afternote.core.model.MindRecordCategory
+import com.afternote.core.ui.AfternoteSectionHeader
 import com.afternote.core.ui.button.AfternoteCircularCheckbox
 import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.HomeTopBar
-import com.afternote.feature.mindrecord.presentation.component.MemoriesCard
-import com.afternote.feature.mindrecord.presentation.component.TodayQuestionCard
-import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
+import com.afternote.feature.mindrecord.presentation.hometab.homeTabMindRecordMemoriesSection
+import com.afternote.feature.mindrecord.presentation.hometab.homeTabMindRecordQuestionAndCategories
 
 @Immutable
 data class HomeTabUiState(
-    val userName: String = "박서연",
+    val userName: String = "",
     val isRecipientDesignated: Boolean = false,
-    val categoryCounts: Map<MindRecordCategory, Int> = emptyMap(),
+    val categoryCounts: Map<MindRecordCategory, Int> =
+        MindRecordCategory.entries.associateWith { 0 },
+    val isLoading: Boolean = false,
+    val isError: Boolean = false,
 )
 
 @Composable
@@ -62,100 +71,74 @@ fun HomeTabScreen(
         containerColor = Color.Transparent,
     ) { paddingValues ->
         LazyColumn(
-            modifier =
-                Modifier
-                    .padding(paddingValues)
-                    .padding(horizontal = 24.dp),
+            modifier = Modifier.padding(paddingValues),
+            contentPadding = PaddingValues(horizontal = 20.dp),
         ) {
             // 1. 헤더 영역 (인사말 & 수신인 지정 칩)
             item {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "안녕하세요,\n${uiState.userName}님",
+                    text = stringResource(R.string.home_tab_greeting, uiState.userName),
                     style = AfternoteDesign.typography.h1,
+                    modifier = Modifier.padding(start = 4.dp),
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "오늘도 당신의 하루를 차분히 기록해보세요.",
+                    text = stringResource(R.string.home_tab_tagline),
                     style = AfternoteDesign.typography.captionLargeR,
                     color = AfternoteDesign.colors.gray5,
+                    modifier = Modifier.padding(start = 4.dp),
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 RecipientDesignationChip(
                     isDesignated = uiState.isRecipientDesignated,
-                    modifier = Modifier.padding(bottom = 32.dp),
                     onClick = onRecipientChipClick,
                 )
+
+                Spacer(Modifier.height(32.dp))
             }
 
-            // 2. 오늘의 질문 카드
-            item {
-                TodayQuestionCard(
-                    onAnswerClick = onAnswerClick,
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-            }
-
-            // 3. 기록 카테고리 (일기, 깊은 생각)
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    MindRecordCategory.entries
-                        .filter { it != MindRecordCategory.DAILY_QUESTION }
-                        .forEach { category ->
-                            RecordCategoryCard(
-                                modifier =
-                                    Modifier
-                                        .weight(1f)
-                                        .aspectRatio(1.1f),
-                                iconResId = category.imageUrl,
-                                title = category.title,
-                                subtitle = category.description,
-                                totalCount = uiState.categoryCounts[category] ?: 0,
-                                onClick = { onRecordCategoryClick(category) },
-                            )
-                        }
-                }
-                Spacer(modifier = Modifier.height(40.dp))
-            }
+            homeTabMindRecordQuestionAndCategories(
+                categoryCounts = uiState.categoryCounts,
+                onAnswerClick = onAnswerClick,
+                onRecordCategoryClick = onRecordCategoryClick,
+            )
 
             // 4. AFTER NOTE NEXT STEP 섹션
             item {
-                SectionHeader(title = "AFTER NOTE NEXT STEP")
-                Spacer(modifier = Modifier.height(16.dp))
+                AfternoteSectionHeader(title = stringResource(R.string.home_tab_next_step_section_title))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, AfternoteDesign.colors.gray2),
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, AfternoteDesign.colors.gray3),
                     color = AfternoteDesign.colors.white,
                     onClick = onNextStepClick,
                 ) {
                     Column(
-                        modifier = Modifier.padding(20.dp),
+                        modifier = Modifier.padding(16.dp),
                     ) {
                         Text(
-                            text = "가족들의 '주거래 은행' 정보를\n입력하신 건 확인하셨나요?",
-                            style = AfternoteDesign.typography.captionLargeR,
-                            color = AfternoteDesign.colors.black,
+                            text = stringResource(R.string.home_tab_next_step_body),
+                            style = AfternoteDesign.typography.inter,
+                            color = AfternoteDesign.colors.gray8,
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(18.dp))
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             Text(
-                                text = "애프터노트 입력하러가기",
+                                text = stringResource(R.string.home_tab_next_step_cta),
                                 style = AfternoteDesign.typography.captionLargeR,
-                                color = AfternoteDesign.colors.gray5,
+                                color = AfternoteDesign.colors.gray6,
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
                             RightArrowIcon(
-                                modifier = Modifier.size(12.dp),
-                                tint = AfternoteDesign.colors.gray5,
+                                modifier = Modifier.size(width = 4.dp, height = 7.dp),
+                                tint = AfternoteDesign.colors.gray6,
                             )
                         }
                     }
@@ -173,17 +156,9 @@ fun HomeTabScreen(
                 Spacer(modifier = Modifier.height(40.dp))
             }
 
-            // 6. MEMORIES 섹션
-            item {
-                Column(
-                    modifier = Modifier.clickable(onClick = onMemoriesSectionClick),
-                ) {
-                    SectionHeader(title = "MEMORIES")
-                    Spacer(modifier = Modifier.height(16.dp))
-                    MemoriesCard()
-                }
-                Spacer(modifier = Modifier.height(40.dp))
-            }
+            homeTabMindRecordMemoriesSection(
+                onMemoriesSectionClick = onMemoriesSectionClick,
+            )
         }
     }
 }
@@ -199,64 +174,57 @@ private fun RecipientDesignationChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val colors = AfternoteDesign.colors
-    Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = if (isDesignated) colors.white else colors.gray2,
-        modifier = modifier,
-        onClick = onClick,
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            AfternoteCircularCheckbox(
-                state =
-                    if (isDesignated) {
-                        CheckboxState.Default
-                    } else {
-                        CheckboxState.None
-                    },
-                onClick = null,
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text =
-                    if (isDesignated) {
-                        "수신인 지정 완료"
-                    } else {
-                        "수신인 지정 미완료"
-                    },
-                style = AfternoteDesign.typography.captionLargeB,
-                color = colors.gray7,
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            RightArrowIcon(
-                modifier = Modifier.size(12.dp),
-                tint = colors.gray5,
-            )
-        }
-    }
-}
-
-@Composable
-private fun SectionHeader(
-    title: String,
-    modifier: Modifier = Modifier,
-) {
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier =
+            modifier
+                // 1. 테두리 (Border)
+                .border(
+                    width = 1.dp,
+                    color = AfternoteDesign.colors.gray3,
+                    shape = RoundedCornerShape(20.dp),
+                )
+                // 2. 자르기 (Clip): Ripple 효과와 배경색이 모서리 밖으로 나가지 않게 가둠
+                .clip(RoundedCornerShape(20.dp))
+                // 3. 배경색 (Background)
+                .background(color = if (isDesignated) AfternoteDesign.colors.white else AfternoteDesign.colors.gray2)
+                // 4. 클릭 (Clickable): 접근성 Role.Button 추가
+                .clickable(
+                    role = Role.Button,
+                    onClick = onClick,
+                )
+                // 5. 내부 여백 (Padding): 기존 Row에 있던 패딩을 가장 마지막에 배치
+                .padding(vertical = 9.dp)
+                .padding(start = 15.dp, end = 20.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        AfternoteCircularCheckbox(
+            state = if (isDesignated) CheckboxState.Default else CheckboxState.None,
+            onClick = null,
+            size = 12.dp,
+        )
+
+        Spacer(modifier = Modifier.width(4.dp))
+
         Text(
-            text = title,
-            style = AfternoteDesign.typography.mono,
-            color = AfternoteDesign.colors.black.copy(alpha = 0.4f),
+            text =
+                stringResource(
+                    if (isDesignated) {
+                        R.string.home_tab_recipient_designated
+                    } else {
+                        R.string.home_tab_recipient_not_designated
+                    },
+                ),
+            style = AfternoteDesign.typography.captionLargeB,
+            color = AfternoteDesign.colors.gray9,
         )
-        HorizontalDivider(
-            modifier = Modifier.padding(start = 12.dp),
-            color = AfternoteDesign.colors.black.copy(alpha = 0.1f),
-        )
+
+        if (!isDesignated) {
+            Spacer(modifier = Modifier.width(10.dp))
+            RightArrowIcon(
+                modifier = Modifier.size(12.dp),
+                tint = AfternoteDesign.colors.gray5,
+            )
+        }
     }
 }
 

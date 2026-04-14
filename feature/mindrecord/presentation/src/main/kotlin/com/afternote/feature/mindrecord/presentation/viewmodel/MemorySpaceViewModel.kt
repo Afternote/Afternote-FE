@@ -1,11 +1,6 @@
-// [WIP / 소속 미확정] MemorySpace — ViewModel (더미 상태 방출).
-// 경로: feature/mindrecord/presentation/.../viewmodel/
-// API 스펙 확정 후 loadDummyMemories()를 Repository 연동으로 교체하면 UI는 그대로 둔 채 데이터 소스만 갈아끼울 수 있음.
-
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
-import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,7 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 
-/** MemorySpace 화면용. init에서 더미 목록을 채우며, API 연동 시 Repository 주입으로 데이터 소스만 교체하면 됨. */
+/** 마인드레코드 MemorySpace 화면용. 더미 목록은 추후 Repository 연동으로 교체 가능. */
 @HiltViewModel
 class MemorySpaceViewModel
     @Inject
@@ -31,7 +26,7 @@ class MemorySpaceViewModel
                 listOf(
                     MemoryItem(
                         id = 1,
-                        imageRes = R.drawable.mindrecord_img,
+                        imageUrl = "https://mock.image/1",
                         title = "기억 1",
                         date = "2024.11.11",
                         content =
@@ -41,7 +36,7 @@ class MemorySpaceViewModel
                     ),
                     MemoryItem(
                         id = 2,
-                        imageRes = R.drawable.mindrecord_img,
+                        imageUrl = "https://mock.image/2",
                         title = "기억 2",
                         date = "2024.11.12",
                         content = "두 번째 기억 내용.",
@@ -49,7 +44,7 @@ class MemorySpaceViewModel
                     ),
                     MemoryItem(
                         id = 3,
-                        imageRes = R.drawable.mindrecord_img,
+                        imageUrl = "https://mock.image/3",
                         title = "기억 3",
                         date = "2024.11.13",
                         content = "세 번째 기억 내용.",
@@ -57,7 +52,7 @@ class MemorySpaceViewModel
                     ),
                     MemoryItem(
                         id = 4,
-                        imageRes = R.drawable.mindrecord_img,
+                        imageUrl = "https://mock.image/4",
                         title = "기억 4",
                         date = "2024.11.14",
                         content = "네 번째 기억 내용.",

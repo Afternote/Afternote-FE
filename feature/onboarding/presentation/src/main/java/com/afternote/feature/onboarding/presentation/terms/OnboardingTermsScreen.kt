@@ -178,6 +178,7 @@ private fun TermsRow(
             AfternoteCircularCheckbox(
                 state = if (isChecked) CheckboxState.Default else CheckboxState.None,
                 onClick = null,
+                size = 20.dp,
             )
 
             Spacer(Modifier.width(8.dp))

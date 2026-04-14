@@ -49,6 +49,10 @@ class AfternoteDebugMockNetworkInterceptor
                         MOCK_MUSIC_SEARCH_JSON
                     }
 
+                    path == "/api/home/summary" && method == "GET" -> {
+                        MOCK_HOME_SUMMARY_JSON
+                    }
+
                     path == "/api/afternotes" && method == "GET" -> {
                         MOCK_LIST_JSON
                     }
@@ -145,6 +149,11 @@ class AfternoteDebugMockNetworkInterceptor
             val MOCK_LOGOUT_JSON =
                 """
                 {"status":200,"code":0,"message":null,"data":null}
+                """.trimIndent()
+
+            val MOCK_HOME_SUMMARY_JSON =
+                """
+                {"status":200,"code":0,"message":null,"data":{"userName":"박서연","isRecipientDesignated":false,"diaryCategoryCount":12,"deepThoughtCategoryCount":6}}
                 """.trimIndent()
 
             val MOCK_MUSIC_SEARCH_JSON =
