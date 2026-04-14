@@ -1,4 +1,4 @@
-package com.afternote.core.data.repositoryImpl
+package com.afternote.core.data.repoimpl
 
 import com.afternote.core.domain.repository.HomeRepository
 import com.afternote.core.model.HomeSummary

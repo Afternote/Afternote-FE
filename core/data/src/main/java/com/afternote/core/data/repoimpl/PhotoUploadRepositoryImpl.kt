@@ -1,4 +1,4 @@
-package com.afternote.core.data.repositoryImpl
+package com.afternote.core.data.repoimpl
 
 import android.content.Context
 import android.webkit.MimeTypeMap

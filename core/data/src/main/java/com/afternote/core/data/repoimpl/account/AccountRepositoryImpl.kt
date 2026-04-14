@@ -1,4 +1,4 @@
-package com.afternote.core.data.repositoryImpl.account
+package com.afternote.core.data.repoimpl.account
 
 import com.afternote.core.data.mapper.auth.AuthMapper
 import com.afternote.core.domain.repository.account.AccountRepository

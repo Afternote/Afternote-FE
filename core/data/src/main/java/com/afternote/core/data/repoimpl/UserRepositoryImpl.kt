@@ -1,4 +1,4 @@
-package com.afternote.core.data.repositoryImpl
+package com.afternote.core.data.repoimpl
 
 import android.util.Log
 import com.afternote.core.data.mapper.user.UserMapper

@@ -1,4 +1,4 @@
-package com.afternote.core.data.repositoryImpl.auth
+package com.afternote.core.data.repoimpl.auth
 
 import android.app.Activity
 import com.afternote.core.domain.repository.auth.GoogleAuthManager
