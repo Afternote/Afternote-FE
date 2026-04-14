@@ -16,7 +16,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -241,58 +240,6 @@ private fun GalleryDetailScreenPreview() {
             content = GALLERY_PREVIEW_CONTENT,
             onBackClick = {},
             onEditClick = {},
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Edit Dropdown Menu")
-@Composable
-private fun GalleryDetailScreenWithDropdownPreview() {
-    AfternoteTheme {
-        val stateWithDropdown =
-            remember {
-                AfternoteDetailState().apply {
-                    toggleDropdownMenu()
-                }
-            }
-        GalleryDetailScreen(
-            content = GALLERY_PREVIEW_CONTENT,
-            onBackClick = {},
-            onEditClick = {},
-            state = stateWithDropdown,
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun GalleryDetailScreenWithDeleteDialogPreview() {
-    AfternoteTheme {
-        val stateWithDialog =
-            remember {
-                AfternoteDetailState().apply {
-                    showDeleteDialog()
-                }
-            }
-        GalleryDetailScreen(
-            content = GALLERY_PREVIEW_CONTENT,
-            onBackClick = {},
-            onEditClick = {},
-            state = stateWithDialog,
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun GalleryDetailScreenReceiverModePreview() {
-    AfternoteTheme {
-        GalleryDetailScreen(
-            content = GALLERY_PREVIEW_CONTENT,
-            isEditable = false,
-            onBackClick = {},
-            onEditClick = {},
-            state = rememberAfternoteDetailState(),
         )
     }
 }
