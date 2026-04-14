@@ -6,12 +6,15 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -21,11 +24,11 @@ import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.author.navigation.afternoteNavGraph
-import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.mindrecord.presentation.navigation.mindRecordNavGraph
 import com.afternote.feature.onboarding.presentation.navigation.onboardingNavGraph
 import com.afternote.feature.setting.presentation.SettingScreen
 import com.afternote.feature.timeletter.presentation.screen.sender.TimeletterScreen
+import kotlinx.coroutines.launch
 
 @Composable
 fun AppNavigation(
@@ -35,20 +38,26 @@ fun AppNavigation(
 ) {
     val navEntry by appState.navController.currentBackStackEntryAsState()
     val currentDestination = navEntry?.destination
-    // EditorRoute는 서브 그래프가 아닌 단일 화면이므로 hierarchy 순회 없이 직접 비교한다.
-    val isEditorRouteCurrent =
-        currentDestination?.hasRoute(AfternoteRoute.EditorRoute::class) == true
     val showBottomBar = appState.shouldShowBottomBar(currentDestination)
     val currentTab = appState.getCurrentNavTab(currentDestination)
 
     NavigationDebugLogger(navEntry, currentDestination, showBottomBar, currentTab)
 
     val onboardingNavActions = rememberOnboardingNavActions(appState.navController)
-    val afternoteNavCallbacks = rememberAfternoteAppNavCallbacks(appState)
+    val mindRecordNavActions = rememberMindRecordNavActions(appState)
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val afternoteNavActions =
+        rememberAfternoteNavActions(appState) { message ->
+            scope.launch {
+                snackbarHostState.showSnackbar(message)
+            }
+        }
 
     Scaffold(
         modifier = modifier,
         containerColor = AfternoteDesign.colors.gray1,
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         contentWindowInsets =
             WindowInsets.systemBars.only(
                 WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom,
@@ -90,33 +99,18 @@ fun AppNavigation(
                 SettingScreen(
                     onLogoutSuccess = {
                         appState.navController.navigate(Route.Onboarding) {
-                            popUpTo(appState.navController.graph.id) { inclusive = true }
+                            popUpTo(0) { inclusive = true }
                         }
                     },
                 )
             }
-            mindRecordNavGraph(
-                onMemorySpaceBack = { appState.navController.popBackStack() },
-            )
+            mindRecordNavGraph(actions = mindRecordNavActions)
             composable<Route.TimeLetter> { TimeletterScreen() }
             afternoteNavGraph(
                 graphScopedParentEntry = {
                     appState.navController.getBackStackEntry<Route.Afternote>()
                 },
-                onBottomNavTabSelected = afternoteNavCallbacks.onBottomNavTabSelected,
-                isEditorRouteCurrent = isEditorRouteCurrent,
-                onPopBackStack = afternoteNavCallbacks.onPopBackStack,
-                onNavigateToAfternoteDetail = afternoteNavCallbacks.onNavigateToAfternoteDetail,
-                onNavigateToGalleryDetail = afternoteNavCallbacks.onNavigateToGalleryDetail,
-                onNavigateToMemorialGuidelineDetail =
-                    afternoteNavCallbacks.onNavigateToMemorialGuidelineDetail,
-                onNavigateToNewEditor = afternoteNavCallbacks.onNavigateToNewEditor,
-                onNavigateToEditorForEdit = afternoteNavCallbacks.onNavigateToEditorForEdit,
-                onNavigateToMemorialPlaylist = afternoteNavCallbacks.onNavigateToMemorialPlaylist,
-                onNavigateToAddSong = afternoteNavCallbacks.onNavigateToAddSong,
-                onFingerprintAuthSuccess = afternoteNavCallbacks.onFingerprintAuthSuccess,
-                onEditorSaveSuccessNavigateHome =
-                    afternoteNavCallbacks.onEditorSaveSuccessNavigateHome,
+                actions = afternoteNavActions,
             )
         }
     }
