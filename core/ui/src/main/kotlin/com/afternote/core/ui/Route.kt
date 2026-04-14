@@ -22,4 +22,8 @@ sealed interface Route {
 
     @Serializable
     data object Afternote : Route
+
+    /** 임시 로그아웃 진입용 설정 화면. 정식 설정 IA 확정 전까지 단일 화면. */
+    @Serializable
+    data object Setting : Route
 }

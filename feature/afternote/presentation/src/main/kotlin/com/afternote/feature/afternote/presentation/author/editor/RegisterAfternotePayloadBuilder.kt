@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
-import com.afternote.feature.afternote.domain.model.ProcessingMethod
+import com.afternote.feature.afternote.domain.model.author.ProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessagesCodec
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload

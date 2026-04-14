@@ -32,6 +32,8 @@ interface AuthRepository {
 
     suspend fun kakaoLogin(): Result<Session.SocialSession>
 
+    suspend fun googleLogin(): Result<Session.SocialSession>
+
     suspend fun rotateToken(refreshToken: String): Result<TokenBundle>
 
     suspend fun logout(refreshToken: String): Result<Unit>

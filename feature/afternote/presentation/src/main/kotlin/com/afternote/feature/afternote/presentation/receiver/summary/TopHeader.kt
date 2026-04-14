@@ -10,8 +10,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.scaffold.topbar.DetailTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.core.ui.topbar.DetailTopBar
 
 @Composable
 fun TopHeader(modifier: Modifier = Modifier) {

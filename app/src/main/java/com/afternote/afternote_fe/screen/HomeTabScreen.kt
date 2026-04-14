@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,12 +25,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.icon.AfternoteCircularCheckbox
-import com.afternote.core.ui.icon.CheckboxState
+import com.afternote.core.ui.button.AfternoteCircularCheckbox
+import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.icon.RightArrowIcon
-import com.afternote.core.ui.scaffold.topbar.HomeTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.mindrecord.presentation.component.MemoriesCard
 import com.afternote.feature.mindrecord.presentation.component.TodayQuestionCard
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
@@ -38,6 +39,7 @@ import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 data class HomeTabUiState(
     val userName: String = "박서연",
     val isRecipientDesignated: Boolean = false,
+    val categoryCounts: Map<MindRecordCategory, Int> = emptyMap(),
 )
 
 @Composable
@@ -52,10 +54,11 @@ fun HomeTabScreen(
     onWeeklyCountClick: () -> Unit = {},
     onWeeklyRecentRecordClick: () -> Unit = {},
     onMemoriesSectionClick: () -> Unit = {},
+    onSettingClick: () -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier,
-        topBar = { HomeTopBar() },
+        topBar = { HomeTopBar(onSettingClick = onSettingClick) },
         containerColor = Color.Transparent,
     ) { paddingValues ->
         LazyColumn(
@@ -112,7 +115,7 @@ fun HomeTabScreen(
                                 iconResId = category.imageUrl,
                                 title = category.title,
                                 subtitle = category.description,
-                                totalCount = 18, // TODO: ViewModel UiState에서 전달
+                                totalCount = uiState.categoryCounts[category] ?: 0,
                                 onClick = { onRecordCategoryClick(category) },
                             )
                         }
@@ -151,8 +154,8 @@ fun HomeTabScreen(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             RightArrowIcon(
+                                modifier = Modifier.size(12.dp),
                                 tint = AfternoteDesign.colors.gray5,
-                                size = 12.dp,
                             )
                         }
                     }
@@ -187,8 +190,6 @@ fun HomeTabScreen(
 
 /**
  * 수신인 지정 상태 칩.
- * - 미지정: 배경 [AfternoteDesign.colors.gray2], 체크박스 미체크
- * - 지정 완료: 배경 [AfternoteDesign.colors.white], 체크박스 체크
  *
  * 터치·리플은 [Surface]가 담당하고, 체크박스는 상태 표시만 한다 ([onClick] null).
  */
@@ -212,10 +213,11 @@ private fun RecipientDesignationChip(
             AfternoteCircularCheckbox(
                 state =
                     if (isDesignated) {
-                        CheckboxState.Checked
+                        CheckboxState.Default
                     } else {
-                        CheckboxState.Unchecked
+                        CheckboxState.None
                     },
+                onClick = null,
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
@@ -230,8 +232,8 @@ private fun RecipientDesignationChip(
             )
             Spacer(modifier = Modifier.width(4.dp))
             RightArrowIcon(
+                modifier = Modifier.size(12.dp),
                 tint = colors.gray5,
-                size = 12.dp,
             )
         }
     }

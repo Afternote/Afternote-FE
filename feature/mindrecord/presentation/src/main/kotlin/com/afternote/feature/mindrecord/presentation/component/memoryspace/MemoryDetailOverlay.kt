@@ -21,11 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,8 +31,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.icon.CloseIcon
+import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryItem
 
 @Composable
@@ -89,21 +90,23 @@ fun MemoryDetailOverlay(
                     Surface(
                         onClick = onClose,
                         shape = CircleShape,
-                        color = AfternoteDesign.colors.white,
                         modifier =
                             Modifier
                                 .align(Alignment.TopEnd)
-                                .padding(12.dp)
-                                .size(32.dp),
+                                .padding(
+                                    top = 16.dp,
+                                    end = 16.dp,
+                                ),
+                        color = AfternoteDesign.colors.white,
+                        shadowElevation = 10.dp,
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Close",
-                                modifier = Modifier.size(20.dp),
-                                tint = AfternoteDesign.colors.gray7,
-                            )
-                        }
+                        CloseIcon(
+                            modifier =
+                                Modifier
+                                    .padding(10.dp)
+                                    .size(20.dp),
+                            tint = AfternoteDesign.colors.gray7,
+                        )
                     }
                 }
 
@@ -118,10 +121,8 @@ fun MemoryDetailOverlay(
                             color = AfternoteDesign.colors.gray9,
                         )
                         Spacer(modifier = Modifier.weight(1f))
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = null,
-                            tint = AfternoteDesign.colors.gray6,
+                        RightArrowIcon(
+                            modifier = Modifier.size(width = 6.dp, height = 11.dp),
                         )
                     }
 
@@ -168,5 +169,24 @@ fun MemoryDetailOverlay(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun MemoryDetailOverlayPreview() {
+    AfternoteTheme {
+        MemoryDetailOverlay(
+            memory =
+                MemoryItem(
+                    id = 1,
+                    imageRes = R.drawable.mindrecord_img,
+                    title = "오늘의 기억",
+                    date = "2024.11.11",
+                    content = "오늘은 소중한 사람들과 함께 보낸 행복한 하루였다. 날씨도 맑고 기분도 좋아서 오랫동안 기억에 남을 것 같다.",
+                    tags = listOf("일상", "행복", "기억"),
+                ),
+            onClose = {},
+        )
     }
 }

@@ -1,6 +1,5 @@
 package com.afternote.feature.onboarding.presentation.navigation
 
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -14,15 +13,15 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import com.afternote.core.domain.usecase.auth.LoginType
 import com.afternote.core.ui.Route
+import com.afternote.feature.onboarding.presentation.OnboardingProfileScreen
+import com.afternote.feature.onboarding.presentation.WelcomeScreen
 import com.afternote.feature.onboarding.presentation.login.LoginViewModel
 import com.afternote.feature.onboarding.presentation.login.component.LoginScreen
-import com.afternote.feature.onboarding.presentation.profile.OnboardingProfileScreen
 import com.afternote.feature.onboarding.presentation.signup.SignUpPasswordScreen
 import com.afternote.feature.onboarding.presentation.signup.SignUpResidentNumberScreen
 import com.afternote.feature.onboarding.presentation.signup.SignUpScreen
 import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel
 import com.afternote.feature.onboarding.presentation.terms.OnboardingTermsScreen
-import com.afternote.feature.onboarding.presentation.welcome.WelcomeScreen
 
 /**
  * 온보딩 피처의 네비게이션 그래프.
@@ -53,8 +52,6 @@ fun NavGraphBuilder.onboardingNavGraph(
         composable<OnboardingRoute.LoginRoute> {
             val viewModel: LoginViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-            val emailState = rememberTextFieldState()
-            val passwordState = rememberTextFieldState()
 
             LaunchedEffect(uiState.isSuccess) {
                 if (uiState.isSuccess) {
@@ -63,16 +60,9 @@ fun NavGraphBuilder.onboardingNavGraph(
             }
 
             LoginScreen(
-                emailState = emailState,
-                passwordState = passwordState,
-                onLoginClick = {
-                    viewModel.login(
-                        LoginType.Email(
-                            email = emailState.text.toString(),
-                            password = passwordState.text.toString(),
-                        ),
-                    )
-                },
+                emailState = viewModel.emailState,
+                passwordState = viewModel.passwordState,
+                onLoginClick = viewModel::loginWithEmail,
                 onSignUpClick = {
                     navController.navigate(OnboardingRoute.SignUpRoute) {
                         popUpTo<OnboardingRoute.LoginRoute> { inclusive = true }
@@ -81,6 +71,10 @@ fun NavGraphBuilder.onboardingNavGraph(
                 onKakaoLoginClick = {
                     viewModel.login(LoginType.Kakao)
                 },
+                onGoogleLoginClick = {
+                    viewModel.login(LoginType.Google)
+                },
+                onBackClick = { navController.popBackStack() },
             )
         }
 
@@ -89,7 +83,6 @@ fun NavGraphBuilder.onboardingNavGraph(
             val signUpViewModel = graphScopedSignUpViewModel(navController, backStackEntry)
 
             SignUpScreen(
-                currentStep = 1,
                 emailState = signUpViewModel.emailState,
                 passwordState = signUpViewModel.passwordState,
                 isVerificationSent = signUpViewModel.isVerificationSent,
@@ -106,7 +99,6 @@ fun NavGraphBuilder.onboardingNavGraph(
             val signUpViewModel = graphScopedSignUpViewModel(navController, backStackEntry)
 
             SignUpResidentNumberScreen(
-                currentStep = 2,
                 frontNumberState = signUpViewModel.frontNumberState,
                 backNumberState = signUpViewModel.backNumberState,
                 onNextClick = {
@@ -121,7 +113,6 @@ fun NavGraphBuilder.onboardingNavGraph(
             val signUpViewModel = graphScopedSignUpViewModel(navController, backStackEntry)
 
             SignUpPasswordScreen(
-                currentStep = 3,
                 passwordState = signUpViewModel.signUpPasswordState,
                 passwordConfirmState = signUpViewModel.signUpPasswordConfirmState,
                 onNextClick = {
@@ -136,32 +127,11 @@ fun NavGraphBuilder.onboardingNavGraph(
             val signUpViewModel = graphScopedSignUpViewModel(navController, backStackEntry)
 
             OnboardingTermsScreen(
-                currentStep = 4,
                 termsState = signUpViewModel.termsState,
-                onTermsToggle = {
-                    signUpViewModel.updateTermsState(
-                        signUpViewModel.termsState.copy(isTermsAgreed = it),
-                    )
-                },
-                onPrivacyToggle = {
-                    signUpViewModel.updateTermsState(
-                        signUpViewModel.termsState.copy(isPrivacyAgreed = it),
-                    )
-                },
-                onMarketingToggle = {
-                    signUpViewModel.updateTermsState(
-                        signUpViewModel.termsState.copy(isMarketingAgreed = it),
-                    )
-                },
-                onToggleAll = { isChecked ->
-                    signUpViewModel.updateTermsState(
-                        signUpViewModel.termsState.copy(
-                            isTermsAgreed = isChecked,
-                            isPrivacyAgreed = isChecked,
-                            isMarketingAgreed = isChecked,
-                        ),
-                    )
-                },
+                onTermsToggle = signUpViewModel::toggleTermsAgreed,
+                onPrivacyToggle = signUpViewModel::togglePrivacyAgreed,
+                onMarketingToggle = signUpViewModel::toggleMarketingAgreed,
+                onToggleAll = signUpViewModel::toggleAllTerms,
                 onViewTermsClick = {
                     // TODO: 약관 상세 보기 웹뷰 또는 화면 연결
                 },
@@ -176,12 +146,12 @@ fun NavGraphBuilder.onboardingNavGraph(
         composable<OnboardingRoute.ProfileRoute> { backStackEntry ->
             val signUpViewModel = graphScopedSignUpViewModel(navController, backStackEntry)
 
+            val profileImageUri by signUpViewModel.profileImageUri.collectAsStateWithLifecycle()
+
             OnboardingProfileScreen(
                 nameState = signUpViewModel.nameState,
-                displayImageUri = null,
-                onEditProfileImageClick = {
-                    // TODO: 이미지 선택기 연결
-                },
+                displayImageUri = profileImageUri,
+                onProfileImagePick = signUpViewModel::onProfileImagePicked,
                 onCompleteClick = { signUpViewModel.submitSignUp(onOnboardingComplete) },
                 onBackClick = { navController.popBackStack() },
             )
@@ -196,10 +166,10 @@ fun NavGraphBuilder.onboardingNavGraph(
 @Composable
 private fun graphScopedSignUpViewModel(
     navController: NavController,
-    childEntry: NavBackStackEntry,
+    currentEntry: NavBackStackEntry,
 ): SignUpViewModel {
     val parentEntry =
-        remember(childEntry) {
+        remember(currentEntry) {
             navController.getBackStackEntry<Route.Onboarding>()
         }
     return hiltViewModel(parentEntry)

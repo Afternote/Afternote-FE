@@ -37,6 +37,7 @@ dependencies {
     implementation(projects.feature.mindrecord.presentation)
     implementation(projects.feature.timeletter.presentation)
     implementation(projects.feature.onboarding.presentation)
+    implementation(projects.feature.setting.presentation)
 
     // Feature — data (Hilt @Module / 바인딩이 루트 그래프에 포함되도록 app이 classpath에 둔다)
     implementation(projects.feature.afternote.data)

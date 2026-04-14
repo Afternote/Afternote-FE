@@ -5,8 +5,8 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.feature.afternote.domain.model.Detail
 import com.afternote.feature.afternote.domain.model.author.AuthorReceiverEntry
+import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
 import com.afternote.feature.afternote.domain.repository.AuthorReceiverRepository
 import com.afternote.feature.afternote.domain.repository.MemorialThumbnailUploadRepository
@@ -414,9 +414,9 @@ class AfternoteEditorViewModel
         ) {
             Log.e(TAG, "saveAfternote: FAILURE, category=${category.serverValue}", e)
             val validationError =
-                when {
-                    e is AfternoteValidationException -> e.validationError
-                    e is HttpException && e.code() == 400 -> parseReceiversRequiredFromBody(e)
+                when (e) {
+                    is AfternoteValidationException -> e.validationError
+                    is HttpException if e.code() == 400 -> parseReceiversRequiredFromBody(e)
                     else -> null
                 }
             val errorMessage =

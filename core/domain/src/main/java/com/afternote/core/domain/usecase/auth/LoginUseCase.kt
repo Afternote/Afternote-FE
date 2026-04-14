@@ -11,6 +11,8 @@ sealed class LoginType {
     ) : LoginType()
 
     object Kakao : LoginType()
+
+    object Google : LoginType()
 }
 
 class LoginUseCase
@@ -49,5 +51,9 @@ private suspend fun getSession(
 
         is LoginType.Kakao -> {
             authRepository.kakaoLogin()
+        }
+
+        is LoginType.Google -> {
+            authRepository.googleLogin()
         }
     }.getOrNull() ?: error("세션 획득 실패")

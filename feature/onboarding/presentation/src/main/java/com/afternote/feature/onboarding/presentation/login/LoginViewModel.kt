@@ -1,5 +1,6 @@
 package com.afternote.feature.onboarding.presentation.login
 
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.domain.usecase.auth.LoginType
@@ -19,6 +20,18 @@ class LoginViewModel
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(LoginUiState())
         val uiState = _uiState.asStateFlow()
+
+        val emailState = TextFieldState()
+        val passwordState = TextFieldState()
+
+        fun loginWithEmail() {
+            login(
+                LoginType.Email(
+                    email = emailState.text.toString(),
+                    password = passwordState.text.toString(),
+                ),
+            )
+        }
 
         fun login(loginType: LoginType) {
             if (_uiState.value.isLoading) return

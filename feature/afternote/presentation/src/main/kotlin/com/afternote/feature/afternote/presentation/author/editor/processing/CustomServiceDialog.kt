@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.editor.processing
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -10,14 +11,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.afternote.core.ui.AfternoteTextField
-import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
+import com.afternote.core.ui.button.AfternoteButtonType
+import com.afternote.core.ui.modifierextention.addFocusCleaner
 import com.afternote.core.ui.popup.AfternotePopupCardLayout
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -78,13 +79,17 @@ fun CustomServiceDialog(
             Spacer(modifier = Modifier.height(24.dp))
 
             // 추가 서비스명 입력 필드
-            AfternoteTextField(
-                state = params.serviceNameState,
-                label = "추가 서비스명",
-                keyboardType = KeyboardType.Text,
-                containerColor = AfternoteDesign.colors.gray1,
-                labelSpacing = 8.dp,
-            )
+            Column {
+                Text(
+                    text = "추가 서비스명",
+                    style = AfternoteDesign.typography.captionLargeR,
+                    color = AfternoteDesign.colors.gray9,
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                AfternoteTextField(
+                    state = params.serviceNameState,
+                )
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -95,6 +100,7 @@ fun CustomServiceDialog(
                     focusManager.clearFocus()
                     params.callbacks.onAddClick()
                 },
+                type = AfternoteButtonType.Default,
             )
         }
     }

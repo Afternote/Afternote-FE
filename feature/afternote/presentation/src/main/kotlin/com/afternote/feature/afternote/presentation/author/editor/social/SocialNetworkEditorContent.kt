@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor.social
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -6,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -16,9 +18,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.Label
-import com.afternote.core.ui.LabelStyle
-import com.afternote.core.ui.PasswordMaskTransformation
-import com.afternote.core.ui.SelectableRadioCard
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
@@ -28,6 +28,7 @@ import com.afternote.feature.afternote.presentation.author.editor.processing.Pro
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListParams
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.receiver.RecipientDesignationSection
+import com.afternote.feature.afternote.presentation.shared.SelectableRadioCard
 
 /**
  * 소셜네트워크 등 일반적인 종류 선택 시 표시되는 콘텐츠
@@ -68,24 +69,31 @@ private fun SocialNetworkEditorContentContent(
         Label(
             text = "계정 정보",
             isRequired = true,
-            style = LabelStyle(requiredDotOffsetY = 4.dp),
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        Text(
+            text = "아이디",
+            style = AfternoteDesign.typography.captionLargeR,
+            color = AfternoteDesign.colors.gray9,
+        )
+        Spacer(modifier = Modifier.height(6.dp))
         AfternoteTextField(
             state = params.accountSection.idState,
-            label = "아이디",
-            keyboardType = KeyboardType.Text,
         )
 
         Spacer(modifier = Modifier.height(10.dp))
 
+        Text(
+            text = "비밀번호",
+            style = AfternoteDesign.typography.captionLargeR,
+            color = AfternoteDesign.colors.gray9,
+        )
+        Spacer(modifier = Modifier.height(6.dp))
         AfternoteTextField(
             state = params.accountSection.passwordState,
-            label = "비밀번호",
             keyboardType = KeyboardType.Password,
-            outputTransformation = PasswordMaskTransformation,
         )
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -94,7 +102,6 @@ private fun SocialNetworkEditorContentContent(
         Label(
             text = "계정 처리 방법",
             isRequired = true,
-            style = LabelStyle(requiredDotOffsetY = 2.dp),
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -127,7 +134,6 @@ private fun SocialNetworkEditorContentContent(
         Label(
             text = "처리 방법 리스트",
             isRequired = true,
-            style = LabelStyle(requiredDotOffsetY = 2.dp),
         )
 
         Spacer(modifier = Modifier.height(16.dp))

@@ -1,8 +1,8 @@
 package com.afternote.feature.afternote.presentation.author.editor.memorial
 
 import androidx.compose.foundation.text.input.TextFieldState
-import com.afternote.core.ui.LastWishOption
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverSection
+import com.afternote.feature.afternote.presentation.shared.LastWishOption
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 
 /**
@@ -16,7 +16,7 @@ data class MemorialGuidelineEditorContentParams(
     val lastWishOptions: List<LastWishOption>,
     val funeralVideoUrl: String?,
     val funeralThumbnailUrl: String? = null,
-    /** 기타(직접 입력) 필드 — [com.afternote.core.ui.LastWishesRadioGroup]에 호이스팅 */
+    /** 기타(직접 입력) 필드 — [com.afternote.feature.afternote.presentation.shared.LastWishesRadioGroup]에 호이스팅 */
     val customLastWishState: TextFieldState,
     val recipientSection: AfternoteEditorReceiverSection? = null,
     val onSongAddClick: () -> Unit,

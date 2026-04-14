@@ -2,7 +2,7 @@ package com.afternote.feature.afternote.data.repositoryimpl
 
 import com.afternote.feature.afternote.data.dto.MusicTrack
 import com.afternote.feature.afternote.data.service.MusicApiService
-import com.afternote.feature.afternote.domain.model.playlist.SearchedSong
+import com.afternote.feature.afternote.domain.model.author.playlist.SearchedSong
 import com.afternote.feature.afternote.domain.repository.MusicSearchRepository
 import javax.inject.Inject
 

@@ -8,12 +8,12 @@ import com.afternote.feature.afternote.data.mapper.response.toDetailDomain
 import com.afternote.feature.afternote.data.mapper.response.toListPage
 import com.afternote.feature.afternote.data.mapper.toRequest
 import com.afternote.feature.afternote.data.service.AfternoteApiService
-import com.afternote.feature.afternote.domain.model.Detail
-import com.afternote.feature.afternote.domain.model.ListPage
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreatePlaylistPayload
 import com.afternote.feature.afternote.domain.model.author.CreateSocialPayload
+import com.afternote.feature.afternote.domain.model.author.Detail
+import com.afternote.feature.afternote.domain.model.author.ListPage
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

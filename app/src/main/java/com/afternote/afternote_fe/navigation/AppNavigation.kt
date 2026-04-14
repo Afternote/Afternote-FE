@@ -12,13 +12,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.afternote.afternote_fe.screen.HomeTabScreen
 import com.afternote.core.ui.Route
-import com.afternote.core.ui.scaffold.bottombar.BottomBar
+import com.afternote.core.ui.bottombar.BottomBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavGraphParams
 import com.afternote.feature.afternote.presentation.author.navigation.afternoteNavGraph
 import com.afternote.feature.mindrecord.presentation.screen.memoryspace.MemorySpaceScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.HomeScreen
 import com.afternote.feature.onboarding.presentation.navigation.onboardingNavGraph
+import com.afternote.feature.setting.presentation.SettingScreen
 import com.afternote.feature.timeletter.presentation.screen.sender.TimeletterScreen
 
 @Composable
@@ -60,6 +61,18 @@ fun AppNavigation(
                 HomeTabScreen(
                     onMemoriesSectionClick = {
                         appState.navController.navigate(Route.MemorySpace)
+                    },
+                    onSettingClick = {
+                        appState.navController.navigate(Route.Setting)
+                    },
+                )
+            }
+            composable<Route.Setting> {
+                SettingScreen(
+                    onLogoutSuccess = {
+                        appState.navController.navigate(Route.Onboarding) {
+                            popUpTo<Route.Home> { inclusive = true }
+                        }
                     },
                 )
             }

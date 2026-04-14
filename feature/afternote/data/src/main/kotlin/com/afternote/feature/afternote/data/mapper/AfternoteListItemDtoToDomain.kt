@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.data.mapper
 
 import com.afternote.feature.afternote.data.dto.AfternoteListItem
-import com.afternote.feature.afternote.domain.model.ListItem
+import com.afternote.feature.afternote.domain.model.author.ListItem
 
 /**
  * Maps server DTOs to domain models at the boundary only.

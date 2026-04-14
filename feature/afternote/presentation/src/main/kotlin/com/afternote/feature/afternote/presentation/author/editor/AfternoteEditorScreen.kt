@@ -25,10 +25,10 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.afternote.core.ui.addFocusCleaner
-import com.afternote.core.ui.scaffold.topbar.DetailTopBar
+import com.afternote.core.ui.modifierextention.addFocusCleaner
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.feature.afternote.domain.model.ListItem
+import com.afternote.core.ui.topbar.DetailTopBar
+import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.presentation.author.editor.mapper.AfternoteEditorMapper
 import com.afternote.feature.afternote.presentation.author.editor.mapper.editScreenLabelRes
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
@@ -41,12 +41,12 @@ import com.afternote.feature.afternote.presentation.author.editor.state.Afternot
 import com.afternote.feature.afternote.presentation.author.editor.state.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 private const val TAG = "AfternoteEditorScreen"
 
-/** 남기실 말씀: TextField → [EditorFormState.messageBlocks] / SavedState 백업 (과도한 스냅샷 방지). */
 private const val EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE_MS = 1_000L
 
 /**
@@ -61,6 +61,7 @@ private const val EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE_MS = 1_000L
  * - 처리 방법 리스트 (체크박스)
  * - 남기실 말씀 (멀티라인 텍스트 필드; Process Death 대비 [snapshotFlow] + debounce로 폼 동기화)
  */
+@OptIn(FlowPreview::class)
 @Composable
 fun AfternoteEditorScreen(
     modifier: Modifier = Modifier,

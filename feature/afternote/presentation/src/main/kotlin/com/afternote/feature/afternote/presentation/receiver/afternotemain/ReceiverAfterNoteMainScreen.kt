@@ -45,21 +45,21 @@ import coil3.compose.AsyncImage
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
-import com.afternote.core.ui.LastWishesRadioGroup
-import com.afternote.core.ui.MemorialGuidelineContent
 import com.afternote.core.ui.ProfileImage
+import com.afternote.core.ui.bottombar.BottomBar
+import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.core.ui.button.AfternoteButton
-import com.afternote.core.ui.scaffold.bottombar.BottomBar
-import com.afternote.core.ui.scaffold.bottombar.BottomNavTab
-import com.afternote.core.ui.scaffold.topbar.DetailTopBar
+import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.shared.LastWishesRadioGroup
+import com.afternote.feature.afternote.presentation.shared.MemorialGuidelineContent
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
 
-@Suppress("AssignedValueIsNeverRead")
 @Composable
 fun ReceiverAfterNoteMainScreen(
     senderName: String,
@@ -74,7 +74,8 @@ fun ReceiverAfterNoteMainScreen(
     showBottomBar: Boolean = true,
 ) {
     var selectedBottomNavItem by remember { mutableStateOf(BottomNavTab.TIMELETTER) }
-    val profileResId = profileImageResId ?: R.drawable.feature_afternote_img_default_profile_deceased
+    val profileResId =
+        profileImageResId ?: R.drawable.feature_afternote_img_default_profile_deceased
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -122,8 +123,7 @@ fun ReceiverAfterNoteMainScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             ProfileImage(
-                                fallbackImageRes = profileResId,
-                                profileImageSize = 140.dp,
+                                onClick = {},
                                 isEditable = false,
                             )
                         }
@@ -157,6 +157,7 @@ fun ReceiverAfterNoteMainScreen(
                 AfternoteButton(
                     text = "애프터노트 확인하기",
                     onClick = onNavigateToFullList,
+                    type = AfternoteButtonType.Default,
                 )
                 Spacer(modifier = Modifier.height(20.dp))
             }

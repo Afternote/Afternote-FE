@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.editor.receiver
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,8 +25,9 @@ import androidx.compose.ui.window.DialogProperties
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.PhoneNumberInputTransformation
 import com.afternote.core.ui.PhoneNumberVisualTransformation
-import com.afternote.core.ui.addFocusCleaner
 import com.afternote.core.ui.button.AfternoteButton
+import com.afternote.core.ui.button.AfternoteButtonType
+import com.afternote.core.ui.modifierextention.addFocusCleaner
 import com.afternote.core.ui.popup.AfternotePopupCardLayout
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -132,13 +134,17 @@ fun AddAfternoteEditorReceiverDialog(
             Spacer(modifier = Modifier.height(24.dp))
 
             // 수신자 이름 입력 필드
-            AfternoteTextField(
-                state = params.afternoteEditReceiverNameState,
-                label = "수신자 이름",
-                keyboardType = KeyboardType.Text,
-                containerColor = AfternoteDesign.colors.gray1,
-                labelSpacing = 7.95.dp,
-            )
+            Column {
+                Text(
+                    text = "수신자 이름",
+                    style = AfternoteDesign.typography.captionLargeR,
+                    color = AfternoteDesign.colors.gray9,
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                AfternoteTextField(
+                    state = params.afternoteEditReceiverNameState,
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -158,15 +164,20 @@ fun AddAfternoteEditorReceiverDialog(
             Spacer(modifier = Modifier.height(24.dp))
 
             // 전화번호로 추가하기 입력 필드
-            AfternoteTextField(
-                state = params.phoneNumberState,
-                label = "전화번호로 추가하기",
-                keyboardType = KeyboardType.Phone,
-                inputTransformation = PhoneNumberInputTransformation,
-                outputTransformation = PhoneNumberVisualTransformation,
-                containerColor = AfternoteDesign.colors.gray1,
-                labelSpacing = 7.95.dp,
-            )
+            Column {
+                Text(
+                    text = "전화번호로 추가하기",
+                    style = AfternoteDesign.typography.captionLargeR,
+                    color = AfternoteDesign.colors.gray9,
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                AfternoteTextField(
+                    state = params.phoneNumberState,
+                    keyboardType = KeyboardType.Phone,
+                    inputTransformation = PhoneNumberInputTransformation,
+                    outputTransformation = PhoneNumberVisualTransformation,
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -187,6 +198,7 @@ fun AddAfternoteEditorReceiverDialog(
                     focusManager.clearFocus()
                     params.callbacks.onImportContactsClick()
                 },
+                type = AfternoteButtonType.Default,
             )
         }
     }

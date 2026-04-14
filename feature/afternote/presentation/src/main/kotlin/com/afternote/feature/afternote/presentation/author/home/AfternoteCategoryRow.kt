@@ -25,10 +25,10 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.FadingEdgeDirection
-import com.afternote.core.ui.bottomBorder
-import com.afternote.core.ui.horizontalFadingEdge
 import com.afternote.core.ui.icon.ArrowIcon
+import com.afternote.core.ui.modifierextention.FadingEdgeDirection
+import com.afternote.core.ui.modifierextention.bottomBorder
+import com.afternote.core.ui.modifierextention.horizontalFadingEdge
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R

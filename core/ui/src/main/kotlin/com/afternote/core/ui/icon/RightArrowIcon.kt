@@ -1,13 +1,10 @@
 package com.afternote.core.ui.icon
 
-import android.R.attr.height
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
@@ -16,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -24,22 +20,20 @@ import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
  * Material Icons 기반 오른쪽 화살표 (RTL에서 자동 반전).
- * Material 아이콘은 1:1 비율이므로 [size] 단일 파라미터를 쓴다.
+ * 크기는 호출부에서 [Modifier.size] 등으로 지정한다.
  *
- * @param modifier 외부 레이아웃 조정 (padding, offset 등)
- * @param size 아이콘 크기 (정사각형, 기본 12.dp)
+ * @param modifier 레이아웃·크기 ([Modifier.size]), padding, offset 등
  * @param tint 기본값은 상위 [LocalContentColor] (예: [androidx.compose.material3.Surface]의 contentColor).
  */
 @Composable
 fun RightArrowIcon(
     modifier: Modifier = Modifier,
-    size: Dp = 12.dp,
     tint: Color = LocalContentColor.current,
 ) {
     Icon(
-        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+        painter = painterResource(R.drawable.core_ui_right_arrow),
         contentDescription = null,
-        modifier = modifier.size(size),
+        modifier = modifier,
         tint = tint,
     )
 }
@@ -73,9 +67,18 @@ private fun RightArrowIconMaterialPreview() {
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            RightArrowIcon(tint = AfternoteDesign.colors.gray9)
-            RightArrowIcon(tint = AfternoteDesign.colors.gray9, size = 16.dp)
-            RightArrowIcon(tint = AfternoteDesign.colors.b1, size = 18.dp)
+            RightArrowIcon(
+                modifier = Modifier.size(12.dp),
+                tint = AfternoteDesign.colors.gray9,
+            )
+            RightArrowIcon(
+                modifier = Modifier.size(16.dp),
+                tint = AfternoteDesign.colors.gray9,
+            )
+            RightArrowIcon(
+                modifier = Modifier.size(18.dp),
+                tint = AfternoteDesign.colors.b1,
+            )
         }
     }
 }

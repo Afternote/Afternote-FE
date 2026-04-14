@@ -3,6 +3,7 @@ package com.afternote.core.data.repositoryImpl.auth
 import com.afternote.core.data.mapper.auth.AuthMapper
 import com.afternote.core.datastore.TokenDataSource
 import com.afternote.core.domain.repository.auth.AuthRepository
+import com.afternote.core.domain.repository.auth.GoogleAuthManager
 import com.afternote.core.domain.repository.auth.KakaoAuthManager
 import com.afternote.core.model.Session
 import com.afternote.core.model.TokenBundle
@@ -21,6 +22,8 @@ sealed class AuthException(
     message: String,
 ) : Exception(message) {
     class KakaoTokenNotFound : AuthException("카카오 인증 토큰이 없습니다.")
+
+    class GoogleTokenNotFound : AuthException("구글 인증 토큰이 없습니다.")
 }
 
 class AuthRepositoryImpl
@@ -29,6 +32,7 @@ class AuthRepositoryImpl
         private val tokenDataSource: TokenDataSource,
         private val authApiService: AuthApiService,
         private val kakaoAuthManager: KakaoAuthManager,
+        private val googleAuthManager: GoogleAuthManager,
         private val tokenApiService: TokenApiService,
     ) : AuthRepository {
         override suspend fun clearSession() = runCatching { tokenDataSource.clearTokens() }
@@ -81,6 +85,20 @@ class AuthRepositoryImpl
                     authApiService.socialLogin(
                         SocialLoginRequest(
                             provider = "KAKAO",
+                            accessToken = socialAccessToken,
+                        ),
+                    )
+                AuthMapper.toSocialLoginResult(response.requireData())
+            }
+
+        override suspend fun googleLogin(): Result<Session.SocialSession> =
+            runCatching {
+                val socialAccessToken =
+                    googleAuthManager.getAccessToken() ?: throw AuthException.GoogleTokenNotFound()
+                val response =
+                    authApiService.socialLogin(
+                        SocialLoginRequest(
+                            provider = "GOOGLE",
                             accessToken = socialAccessToken,
                         ),
                     )
