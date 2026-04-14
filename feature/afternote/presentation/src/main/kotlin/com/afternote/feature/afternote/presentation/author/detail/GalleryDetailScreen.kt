@@ -43,7 +43,7 @@ import com.afternote.feature.afternote.presentation.shared.util.getIconResForSer
 /**
  * 갤러리 상세 Stateful Route.
  *
- * [SocialNetworkDetailRoute] 와 동일하게 공용 [AfternoteDetailViewModel]·[AfternoteDetailUiState] 를 쓰고,
+ * [com.afternote.feature.afternote.presentation.author.detail.socialnetwork.SocialNetworkDetailRoute] 와 동일하게 공용 [AfternoteDetailViewModel]·[AfternoteDetailUiState] 를 쓰고,
  * 성공 시 [AfternoteDetailUiState.Success.contentUiModel] 이 갤러리가 아니면 폴백한다.
  */
 @Composable
@@ -104,7 +104,7 @@ data class GalleryDetailContent(
 /**
  * 갤러리 애프터노트 상세 화면 (Stateless).
  *
- * [SocialNetworkDetailScreen] 과 동일한 Scaffold·TopBar·드롭다운·스크롤 modifier 패턴을 따른다.
+ * [com.afternote.feature.afternote.presentation.author.detail.socialnetwork.SocialNetworkDetailScreen] 과 동일한 Scaffold·TopBar·드롭다운·스크롤 modifier 패턴을 따른다.
  */
 @Composable
 fun GalleryDetailScreen(

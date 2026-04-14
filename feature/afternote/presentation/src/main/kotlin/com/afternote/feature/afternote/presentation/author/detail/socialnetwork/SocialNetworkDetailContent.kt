@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.detail
+package com.afternote.feature.afternote.presentation.author.detail.socialnetwork
 
 import androidx.compose.runtime.Immutable
 import com.afternote.feature.afternote.presentation.R

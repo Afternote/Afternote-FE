@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.detail
+package com.afternote.feature.afternote.presentation.author.detail.socialnetwork
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -34,6 +34,11 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailState
+import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailUiState
+import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel
+import com.afternote.feature.afternote.presentation.author.detail.DetailContentUiModel
+import com.afternote.feature.afternote.presentation.author.detail.rememberAfternoteDetailState
 import com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent
 import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadingContent
 import com.afternote.feature.afternote.presentation.author.navigation.HandleDeleteResult
@@ -50,11 +55,11 @@ import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
  * 소셜 네트워크 상세 Stateful Route.
  *
  * Now in Android 가이드의 Route + Screen 분리 패턴을 따른다.
- * - 상세/작성자/삭제 상태는 공용 [AfternoteDetailViewModel] 에서 관리한다
+ * - 상세/작성자/삭제 상태는 공용 [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel] 에서 관리한다
  *   (상세 목적지마다 별도의 백스택 엔트리이므로 VM 인스턴스는 화면마다 갈리지만 클래스는 동일).
  *   초기 상세 로드는 ViewModel 의 `init` 과 네비게이션 인자(`itemId`)로만 트리거한다.
  * - UI 는 [SocialNetworkDetailScreen] (Stateless) 에 위임한다.
- * - [AfternoteDetailUiState.Success.contentUiModel] 이 소셜이 아니면 [DesignPendingDetailContent] 로 폴백한다.
+ * - [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailUiState.Success.contentUiModel] 이 소셜이 아니면 [DesignPendingDetailContent] 로 폴백한다.
  */
 @Composable
 internal fun SocialNetworkDetailRoute(

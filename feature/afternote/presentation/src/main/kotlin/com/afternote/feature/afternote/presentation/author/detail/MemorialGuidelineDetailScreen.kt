@@ -69,7 +69,7 @@ import com.afternote.core.ui.R as CoreUiR
 /**
  * 추모 가이드라인 상세 Stateful Route.
  *
- * [SocialNetworkDetailRoute]·[GalleryDetailRoute] 와 동일한 VM·UiState·삭제 이펙트 패턴을 따르며,
+ * [com.afternote.feature.afternote.presentation.author.detail.socialnetwork.SocialNetworkDetailRoute]·[GalleryDetailRoute] 와 동일한 VM·UiState·삭제 이펙트 패턴을 따르며,
  * 성공 시 [AfternoteDetailUiState.Success.contentUiModel] 이 추모가 아니면 폴백한다.
  */
 @Composable
@@ -133,7 +133,7 @@ data class MemorialGuidelineDetailContent(
 /**
  * 추모 가이드라인 애프터노트 상세 화면 (Stateless).
  *
- * [SocialNetworkDetailScreen] 과 동일한 Scaffold·TopBar·드롭다운 배치·스크롤 modifier 패턴을 따른다.
+ * [com.afternote.feature.afternote.presentation.author.detail.socialnetwork.SocialNetworkDetailScreen] 과 동일한 Scaffold·TopBar·드롭다운 배치·스크롤 modifier 패턴을 따른다.
  */
 @Composable
 fun MemorialGuidelineDetailScreen(

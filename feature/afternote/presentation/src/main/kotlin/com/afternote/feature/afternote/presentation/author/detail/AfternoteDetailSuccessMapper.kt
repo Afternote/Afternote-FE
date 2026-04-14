@@ -2,14 +2,15 @@ package com.afternote.feature.afternote.presentation.author.detail
 
 import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.domain.model.author.Detail
+import com.afternote.feature.afternote.presentation.author.detail.socialnetwork.SocialNetworkDetailContent
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 import com.afternote.feature.afternote.presentation.shared.util.getIconResForServiceName
 
 internal fun Detail.toReceiverUiModels(): List<ReceiverUiModel> =
-    receivers.map { r ->
+    receivers.mapIndexed { index, r ->
         ReceiverUiModel(
-            id = "",
+            id = r.receiverId?.toString() ?: "receiver_$index",
             name = r.name,
             label = r.relation,
         )
@@ -80,12 +81,15 @@ sealed interface DetailContentUiModel {
 
 internal fun Detail.toDetailContentUiModel(authorDisplayName: String): DetailContentUiModel =
     when (type) {
-        AfternoteServiceType.GALLERY_AND_FILES ->
+        AfternoteServiceType.GALLERY_AND_FILES -> {
             DetailContentUiModel.Gallery(toGalleryDetailContent(authorDisplayName))
+        }
 
-        AfternoteServiceType.SOCIAL_NETWORK ->
+        AfternoteServiceType.SOCIAL_NETWORK -> {
             DetailContentUiModel.SocialNetwork(toSocialNetworkDetailContent(authorDisplayName))
+        }
 
-        AfternoteServiceType.MEMORIAL ->
+        AfternoteServiceType.MEMORIAL -> {
             DetailContentUiModel.Memorial(toMemorialGuidelineDetailContent(authorDisplayName))
+        }
     }
