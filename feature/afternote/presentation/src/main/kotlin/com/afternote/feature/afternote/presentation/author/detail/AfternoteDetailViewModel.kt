@@ -6,8 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.afternote.core.domain.repository.HomeRepository
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
-import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDeleteState
-import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -151,7 +149,10 @@ class AfternoteDetailViewModel
 
         private fun InternalState.toUiState(): AfternoteDetailUiState =
             when (val phase = loadPhase) {
-                LoadPhase.Loading -> AfternoteDetailUiState.Loading
+                LoadPhase.Loading -> {
+                    AfternoteDetailUiState.Loading
+                }
+
                 is LoadPhase.Loaded -> {
                     val detail = phase.detail
                     AfternoteDetailUiState.Success(
@@ -161,7 +162,10 @@ class AfternoteDetailViewModel
                         contentUiModel = detail.toDetailContentUiModel(authorDisplayName),
                     )
                 }
-                is LoadPhase.Failed -> AfternoteDetailUiState.Error(phase.message)
+
+                is LoadPhase.Failed -> {
+                    AfternoteDetailUiState.Error(phase.message)
+                }
             }
 
         // endregion
