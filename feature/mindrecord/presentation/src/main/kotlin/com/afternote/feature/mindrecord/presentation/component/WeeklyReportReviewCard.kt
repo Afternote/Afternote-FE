@@ -33,11 +33,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.model.MindRecordCategory
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R
-import com.afternote.feature.mindrecord.presentation.model.title
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 
 @Composable
 fun WeeklyReportReviewCard(modifier: Modifier = Modifier) {
@@ -53,9 +52,9 @@ fun WeeklyReportReviewCard(modifier: Modifier = Modifier) {
         )
     val report =
         listOf(
-            5 to MindRecordCategory.DAILY_QUESTION,
-            4 to MindRecordCategory.DIARY,
-            3 to MindRecordCategory.DEEP_THOUGHT,
+            5 to MindRecordCategoryUi.DailyQuestion,
+            4 to MindRecordCategoryUi.Diary,
+            3 to MindRecordCategoryUi.DeepThought,
         )
 
     OutlinedCard(
@@ -150,7 +149,6 @@ fun WeeklyReportReviewCard(modifier: Modifier = Modifier) {
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // ✅ 날짜/통계도 Column 안에
             Text(
                 text = "2025.11.10. - 2025.11.16.",
                 style = AfternoteDesign.typography.bodySmallR,

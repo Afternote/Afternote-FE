@@ -22,7 +22,7 @@ import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionListCard
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionWriteHeaderCard
 import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
-import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import java.time.LocalDate
 
 @Composable
@@ -80,7 +80,7 @@ fun DailyQuestionAnswerListScreen(
                 DailyCalendar(
                     year = 2026,
                     month = 3,
-                    type = MindRecordCategory.DAILY_QUESTION,
+                    type = MindRecordCategoryUi.DailyQuestion,
                     onPrevMonth = {},
                     onNextMonth = {},
                 )

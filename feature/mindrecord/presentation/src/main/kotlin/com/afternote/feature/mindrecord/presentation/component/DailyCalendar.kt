@@ -25,14 +25,14 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.model.DayState
 import com.afternote.feature.mindrecord.presentation.model.DayUiModel
-import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import java.util.Calendar
 
 @Composable
 fun DailyCalendar(
     year: Int,
     month: Int,
-    type: MindRecordCategory,
+    type: MindRecordCategoryUi,
     onPrevMonth: () -> Unit,
     onNextMonth: () -> Unit,
     modifier: Modifier = Modifier,
@@ -155,7 +155,7 @@ private fun DailyCalendarPreview() {
         DailyCalendar(
             year = 2022,
             month = 1,
-            type = MindRecordCategory.DAILY_QUESTION,
+            type = MindRecordCategoryUi.DailyQuestion,
             onNextMonth = {},
             onPrevMonth = {},
         )

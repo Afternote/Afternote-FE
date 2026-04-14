@@ -34,7 +34,7 @@ import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
 import com.afternote.feature.mindrecord.presentation.component.DeepThoughtCard
 import com.afternote.feature.mindrecord.presentation.component.FlowTags
 import com.afternote.feature.mindrecord.presentation.model.DeepThoughtModel
-import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.model.Tag
 import java.time.LocalDate
 
@@ -164,7 +164,7 @@ fun DeepThoughtScreen(
                 DailyCalendar(
                     year = 2026,
                     month = 3,
-                    type = MindRecordCategory.DEEP_THOUGHT,
+                    type = MindRecordCategoryUi.DeepThought,
                     onNextMonth = {},
                     onPrevMonth = {},
                 )

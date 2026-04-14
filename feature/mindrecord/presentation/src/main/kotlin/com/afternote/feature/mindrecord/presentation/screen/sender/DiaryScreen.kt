@@ -26,7 +26,7 @@ import com.afternote.feature.mindrecord.presentation.component.DiaryCard
 import com.afternote.feature.mindrecord.presentation.component.DiaryComponent
 import com.afternote.feature.mindrecord.presentation.component.DiaryReportCard
 import com.afternote.feature.mindrecord.presentation.model.DailyDiary
-import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import java.time.LocalDate
 
 @Composable
@@ -90,7 +90,7 @@ fun DiaryScreen(
                 DailyCalendar(
                     year = 2026,
                     month = 3,
-                    type = MindRecordCategory.DIARY,
+                    type = MindRecordCategoryUi.Diary,
                     onNextMonth = {},
                     onPrevMonth = {},
                 )

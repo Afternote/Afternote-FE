@@ -27,21 +27,24 @@ import com.afternote.core.ui.ViewModeSwitcher
 import com.afternote.core.ui.scaffold.topbar.TitleTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier) {
+    val categories = remember { MindRecordCategoryUi.entries() }
+
     var isListView by remember { mutableStateOf(true) }
     var selectedIndex by remember { mutableIntStateOf(0) }
-    val selectedCategory = MindRecordCategory.entries[selectedIndex]
+    val selectedCategory = categories[selectedIndex]
 
-    val pagerState = rememberPagerState { MindRecordCategory.entries.size }
+    val pagerState = rememberPagerState { categories.size }
     LaunchedEffect(selectedIndex) {
         pagerState.animateScrollToPage(selectedIndex)
     }
     LaunchedEffect(pagerState.currentPage) {
         selectedIndex = pagerState.currentPage
     }
+
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -80,7 +83,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                     )
                 },
             ) {
-                MindRecordCategory.entries.forEachIndexed { index, category ->
+                categories.forEachIndexed { index, category ->
                     Tab(
                         selected = selectedIndex == index,
                         onClick = { selectedIndex = index },
@@ -93,14 +96,15 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                     )
                 }
             }
+
             Spacer(modifier = Modifier.height(20.dp))
 
             HorizontalPager(state = pagerState) { _ ->
                 when (selectedCategory) {
-                    MindRecordCategory.DAILY_QUESTION -> DailyQuestionAnswerListScreen(isListView = isListView)
-                    MindRecordCategory.DIARY -> DiaryScreen(isListView = isListView)
-                    MindRecordCategory.DEEP_THOUGHT -> DeepThoughtScreen(isListView = isListView)
-                    MindRecordCategory.WEEKLY_REPORT -> WeeklyReportScreen()
+                    MindRecordCategoryUi.DailyQuestion -> DailyQuestionAnswerListScreen(isListView = isListView)
+                    MindRecordCategoryUi.Diary -> DiaryScreen(isListView = isListView)
+                    MindRecordCategoryUi.DeepThought -> DeepThoughtScreen(isListView = isListView)
+                    MindRecordCategoryUi.WeeklyReport -> WeeklyReportScreen()
                 }
             }
         }
