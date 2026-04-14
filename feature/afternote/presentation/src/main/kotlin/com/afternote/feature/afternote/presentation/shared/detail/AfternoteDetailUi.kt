@@ -63,19 +63,6 @@ fun InfoCard(
     )
 }
 
-@Composable
-fun ProcessingMethodItem(
-    text: String,
-    modifier: Modifier = Modifier,
-) {
-    Text(
-        text = text,
-        modifier = modifier.fillMaxWidth(),
-        style = AfternoteDesign.typography.bodyLargeR,
-        color = AfternoteDesign.colors.gray9,
-    )
-}
-
 /**
  * 수신자 목록 카드. 애프터노트 상세 화면(갤러리/소셜/추모 가이드라인)에서 공통 사용.
  * 수신자가 없으면 아무것도 표시하지 않음.
@@ -145,28 +132,6 @@ private fun ReceiverDetailItem(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-private fun ReceiversCardPreview() {
-    AfternoteTheme {
-        ReceiversCard(
-            receivers =
-                listOf(
-                    ReceiverUiModel(
-                        id = "1",
-                        name = "황규운",
-                        label = "친구",
-                    ),
-                    ReceiverUiModel(
-                        id = "2",
-                        name = "김소희",
-                        label = "가족",
-                    ),
-                ),
-        )
-    }
-}
-
 @Composable
 fun DeleteConfirmDialog(
     serviceName: String,
@@ -183,18 +148,6 @@ fun DeleteConfirmDialog(
         dismissText = stringResource(R.string.feature_afternote_dialog_delete_cancel),
         confirmText = stringResource(R.string.feature_afternote_dialog_delete_confirm),
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun DeleteConfirmDialogPreview() {
-    AfternoteTheme {
-        DeleteConfirmDialog(
-            serviceName = "인스타그램",
-            onDismiss = {},
-            onConfirm = {},
-        )
-    }
 }
 
 /**
@@ -267,6 +220,40 @@ private fun CustomDropdownItem(
             text = text,
             style = AfternoteDesign.typography.bodyBase,
             color = AfternoteDesign.colors.gray9,
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ReceiversCardPreview() {
+    AfternoteTheme {
+        ReceiversCard(
+            receivers =
+                listOf(
+                    ReceiverUiModel(
+                        id = "1",
+                        name = "황규운",
+                        label = "친구",
+                    ),
+                    ReceiverUiModel(
+                        id = "2",
+                        name = "김소희",
+                        label = "가족",
+                    ),
+                ),
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun DeleteConfirmDialogPreview() {
+    AfternoteTheme {
+        DeleteConfirmDialog(
+            serviceName = "인스타그램",
+            onDismiss = {},
+            onConfirm = {},
         )
     }
 }
