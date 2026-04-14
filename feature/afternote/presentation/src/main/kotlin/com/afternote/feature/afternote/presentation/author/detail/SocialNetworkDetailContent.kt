@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.detail.afternotedetail
+package com.afternote.feature.afternote.presentation.author.detail
 
 import androidx.compose.runtime.Immutable
 import com.afternote.feature.afternote.presentation.R

@@ -16,9 +16,9 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.toRoute
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.GalleryDetailRoute
-import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.MemorialGuidelineDetailRoute
-import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.SocialNetworkDetailRoute
+import com.afternote.feature.afternote.presentation.author.detail.GalleryDetailRoute
+import com.afternote.feature.afternote.presentation.author.detail.MemorialGuidelineDetailRoute
+import com.afternote.feature.afternote.presentation.author.detail.SocialNetworkDetailRoute
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDeleteState
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 

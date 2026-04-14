@@ -137,7 +137,7 @@
     <string name="withdrawal_complete_confirm">확인하기</string>
 
     <string name="design_pending">디자인 예정</string>
-    <string name="afternote_detail_receivers_label">수신자</string>
+    <string name="afternote_detail_extra_receivers_label">추가 수신자</string>
     <string name="afternote_detail_invalid_id">잘못된 항목 ID입니다.</string>
     <string name="afternote_detail_load_error">상세 정보를 불러오지 못했습니다.</string>
     <string name="afternote_edit_item_not_found">항목을 찾을 수 없습니다.</string>

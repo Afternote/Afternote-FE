@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.detail.afternotedetail
+package com.afternote.feature.afternote.presentation.author.detail
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -55,7 +55,6 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailEvent
 import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailUiState
 import com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent

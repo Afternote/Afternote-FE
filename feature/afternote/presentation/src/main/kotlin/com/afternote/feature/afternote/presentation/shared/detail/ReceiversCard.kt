@@ -22,9 +22,12 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
+import com.afternote.core.ui.R as CoreUiR
 
 /**
  * 수신자 목록 카드. 애프터노트 상세 화면(갤러리/소셜/추모 가이드라인)에서 공통 사용.
+ *
+ * [DetailSection] 뼈대를 재활용해 헤더(아이콘·라벨·가로선)와 아웃라인 카드 레이아웃을 맞춘다.
  * 수신자가 없으면 아무것도 표시하지 않음.
  */
 @Composable
@@ -34,18 +37,15 @@ fun ReceiversCard(
 ) {
     if (receivers.isEmpty()) return
 
-    InfoCard(modifier = modifier.fillMaxWidth()) {
+    DetailSection(
+        iconResId = CoreUiR.drawable.core_ui_user,
+        label = stringResource(R.string.afternote_detail_extra_receivers_label),
+        modifier = modifier.fillMaxWidth(),
+    ) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(space = 8.dp),
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            Text(
-                text = stringResource(R.string.afternote_detail_receivers_label),
-                style =
-                    AfternoteDesign.typography.textField.copy(
-                        fontWeight = FontWeight.Medium,
-                        color = AfternoteDesign.colors.gray9,
-                    ),
-            )
             receivers.forEach { receiver ->
                 ReceiverDetailItem(receiver = receiver)
             }
@@ -68,11 +68,13 @@ private fun ReceiverDetailItem(
             contentDescription = stringResource(R.string.feature_afternote_content_description_recipient_profile),
             modifier =
                 Modifier
-                    .size(58.dp)
+                    .size(48.dp)
                     .clip(CircleShape),
             contentScale = ContentScale.Crop,
         )
-        Column {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
             Text(
                 text = receiver.name,
                 style =
@@ -85,14 +87,14 @@ private fun ReceiverDetailItem(
                 text = receiver.label,
                 style =
                     AfternoteDesign.typography.captionLargeR.copy(
-                        color = AfternoteDesign.colors.gray8,
+                        color = AfternoteDesign.colors.gray6,
                     ),
             )
         }
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, backgroundColor = 0xFFF5F5F5)
 @Composable
 private fun ReceiversCardPreview() {
     AfternoteTheme {
@@ -101,13 +103,13 @@ private fun ReceiversCardPreview() {
                 listOf(
                     ReceiverUiModel(
                         id = "1",
-                        name = "황규운",
+                        name = "김지은",
                         label = "친구",
                     ),
                     ReceiverUiModel(
                         id = "2",
-                        name = "김소희",
-                        label = "가족",
+                        name = "김혜성",
+                        label = "친구",
                     ),
                 ),
         )
