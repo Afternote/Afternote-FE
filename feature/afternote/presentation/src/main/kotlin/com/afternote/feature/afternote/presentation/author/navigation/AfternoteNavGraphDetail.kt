@@ -45,7 +45,7 @@ internal fun DesignPendingDetailContent(onBackClick: () -> Unit) {
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .then(Modifier.padding(paddingValues)),
+                    .padding(paddingValues),
             contentAlignment = Alignment.Center,
         ) {
             Text(text = stringResource(R.string.design_pending))
@@ -87,8 +87,7 @@ internal fun AfternoteDetailNavigation(
     onNavigateToEditor: (itemId: String) -> Unit,
 ) {
     val route = backStackEntry.toRoute<AfternoteRoute.DetailRoute>()
-    val afternoteId = route.itemId.toLongOrNull()
-    if (afternoteId == null) {
+    if (route.itemId.isBlank()) {
         DesignPendingDetailContent(onBackClick = onBack)
     } else {
         SocialNetworkDetailRoute(
