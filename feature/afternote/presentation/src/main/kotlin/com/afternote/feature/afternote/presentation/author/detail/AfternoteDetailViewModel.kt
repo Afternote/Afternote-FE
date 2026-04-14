@@ -154,14 +154,11 @@ class AfternoteDetailViewModel
                 LoadPhase.Loading -> AfternoteDetailUiState.Loading
                 is LoadPhase.Loaded -> {
                     val detail = phase.detail
-                    val (gallery, social, memorial) = detail.toSuccessUiSlices(authorDisplayName)
                     AfternoteDetailUiState.Success(
                         detailId = detail.id,
                         authorDisplayName = authorDisplayName,
                         deleteState = deleteState,
-                        galleryContent = gallery,
-                        socialNetworkContent = social,
-                        memorialGuidelineContent = memorial,
+                        contentUiModel = detail.toDetailContentUiModel(authorDisplayName),
                     )
                 }
                 is LoadPhase.Failed -> AfternoteDetailUiState.Error(phase.message)

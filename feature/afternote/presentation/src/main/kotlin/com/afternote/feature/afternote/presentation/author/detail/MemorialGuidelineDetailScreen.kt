@@ -71,7 +71,7 @@ import com.afternote.core.ui.R as CoreUiR
  * 추모 가이드라인 상세 Stateful Route.
  *
  * [SocialNetworkDetailRoute]·[GalleryDetailRoute] 와 동일한 VM·UiState·삭제 이펙트 패턴을 따르며,
- * 성공 시 ViewModel 이 준 [AfternoteDetailUiState.Success.memorialGuidelineContent] 가 없으면 폴백한다.
+ * 성공 시 [AfternoteDetailUiState.Success.contentUiModel] 이 추모가 아니면 폴백한다.
  */
 @Composable
 internal fun MemorialGuidelineDetailRoute(
@@ -97,16 +97,19 @@ internal fun MemorialGuidelineDetailRoute(
                 onConsumed = viewModel::consumeDeleteResult,
             )
 
-            val content = state.memorialGuidelineContent
-            if (content == null) {
-                DesignPendingDetailContent(onBackClick = onBack)
-            } else {
-                MemorialGuidelineDetailScreen(
-                    content = content,
-                    onBackClick = onBack,
-                    onEditClick = { onNavigateToEditor(state.detailId.toString()) },
-                    onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
-                )
+            when (val model = state.contentUiModel) {
+                is DetailContentUiModel.Memorial -> {
+                    MemorialGuidelineDetailScreen(
+                        content = model.content,
+                        onBackClick = onBack,
+                        onEditClick = { onNavigateToEditor(state.detailId.toString()) },
+                        onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
+                    )
+                }
+
+                else -> {
+                    DesignPendingDetailContent(onBackClick = onBack)
+                }
             }
         }
     }

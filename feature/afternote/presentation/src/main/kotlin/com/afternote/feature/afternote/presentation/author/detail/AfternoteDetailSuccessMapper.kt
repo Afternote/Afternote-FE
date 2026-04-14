@@ -59,28 +59,33 @@ internal fun Detail.toMemorialGuidelineDetailContent(authorDisplayName: String):
         memorialThumbnailUrl = playlist?.playlistDetailMemorialMedia?.thumbnailUrl,
     )
 
-internal fun Detail.toSuccessUiSlices(
-    authorDisplayName: String,
-): Triple<GalleryDetailContent?, SocialNetworkDetailContent?, MemorialGuidelineDetailContent?> =
+/**
+ * 상세 타입별로 배타적인 UI 모델. Nullable Triple 대신 exhaustive `when` 으로 소비한다.
+ *
+ * [AfternoteDetailUiState.Success] 에서 참조되므로 모듈 공개(public)로 둔다.
+ */
+sealed interface DetailContentUiModel {
+    data class Gallery(
+        val content: GalleryDetailContent,
+    ) : DetailContentUiModel
+
+    data class SocialNetwork(
+        val content: SocialNetworkDetailContent,
+    ) : DetailContentUiModel
+
+    data class Memorial(
+        val content: MemorialGuidelineDetailContent,
+    ) : DetailContentUiModel
+}
+
+internal fun Detail.toDetailContentUiModel(authorDisplayName: String): DetailContentUiModel =
     when (type) {
         AfternoteServiceType.GALLERY_AND_FILES ->
-            Triple(
-                toGalleryDetailContent(authorDisplayName),
-                null,
-                null,
-            )
+            DetailContentUiModel.Gallery(toGalleryDetailContent(authorDisplayName))
 
         AfternoteServiceType.SOCIAL_NETWORK ->
-            Triple(
-                null,
-                toSocialNetworkDetailContent(authorDisplayName),
-                null,
-            )
+            DetailContentUiModel.SocialNetwork(toSocialNetworkDetailContent(authorDisplayName))
 
         AfternoteServiceType.MEMORIAL ->
-            Triple(
-                null,
-                null,
-                toMemorialGuidelineDetailContent(authorDisplayName),
-            )
+            DetailContentUiModel.Memorial(toMemorialGuidelineDetailContent(authorDisplayName))
     }

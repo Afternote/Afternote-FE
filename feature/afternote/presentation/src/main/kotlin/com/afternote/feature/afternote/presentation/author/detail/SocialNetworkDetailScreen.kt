@@ -55,8 +55,7 @@ import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
  *   (상세 목적지마다 별도의 백스택 엔트리이므로 VM 인스턴스는 화면마다 갈리지만 클래스는 동일).
  *   초기 상세 로드는 ViewModel 의 `init` 과 네비게이션 인자(`itemId`)로만 트리거한다.
  * - UI 는 [SocialNetworkDetailScreen] (Stateless) 에 위임한다.
- * - 방어적으로 ViewModel 이 준 [AfternoteDetailUiState.Success.socialNetworkContent] 가 없으면
- *   [DesignPendingDetailContent] 로 폴백한다.
+ * - [AfternoteDetailUiState.Success.contentUiModel] 이 소셜이 아니면 [DesignPendingDetailContent] 로 폴백한다.
  */
 @Composable
 internal fun SocialNetworkDetailRoute(
@@ -82,16 +81,19 @@ internal fun SocialNetworkDetailRoute(
                 onConsumed = viewModel::consumeDeleteResult,
             )
 
-            val content = state.socialNetworkContent
-            if (content == null) {
-                DesignPendingDetailContent(onBackClick = onBack)
-            } else {
-                SocialNetworkDetailScreen(
-                    content = content,
-                    onBackClick = onBack,
-                    onEditClick = { onNavigateToEditor(state.detailId.toString()) },
-                    onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
-                )
+            when (val model = state.contentUiModel) {
+                is DetailContentUiModel.SocialNetwork -> {
+                    SocialNetworkDetailScreen(
+                        content = model.content,
+                        onBackClick = onBack,
+                        onEditClick = { onNavigateToEditor(state.detailId.toString()) },
+                        onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
+                    )
+                }
+
+                else -> {
+                    DesignPendingDetailContent(onBackClick = onBack)
+                }
             }
         }
     }

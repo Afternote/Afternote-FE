@@ -45,7 +45,7 @@ import com.afternote.feature.afternote.presentation.shared.util.getIconResForSer
  * 갤러리 상세 Stateful Route.
  *
  * [SocialNetworkDetailRoute] 와 동일하게 공용 [AfternoteDetailViewModel]·[AfternoteDetailUiState] 를 쓰고,
- * 성공 시 ViewModel 이 준비한 [AfternoteDetailUiState.Success.galleryContent] 가 없으면 폴백한다.
+ * 성공 시 [AfternoteDetailUiState.Success.contentUiModel] 이 갤러리가 아니면 폴백한다.
  */
 @Composable
 internal fun GalleryDetailRoute(
@@ -71,16 +71,19 @@ internal fun GalleryDetailRoute(
                 onConsumed = viewModel::consumeDeleteResult,
             )
 
-            val content = state.galleryContent
-            if (content == null) {
-                DesignPendingDetailContent(onBackClick = onBack)
-            } else {
-                GalleryDetailScreen(
-                    content = content,
-                    onBackClick = onBack,
-                    onEditClick = { onNavigateToEditor(state.detailId.toString()) },
-                    onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
-                )
+            when (val model = state.contentUiModel) {
+                is DetailContentUiModel.Gallery -> {
+                    GalleryDetailScreen(
+                        content = model.content,
+                        onBackClick = onBack,
+                        onEditClick = { onNavigateToEditor(state.detailId.toString()) },
+                        onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
+                    )
+                }
+
+                else -> {
+                    DesignPendingDetailContent(onBackClick = onBack)
+                }
             }
         }
     }
