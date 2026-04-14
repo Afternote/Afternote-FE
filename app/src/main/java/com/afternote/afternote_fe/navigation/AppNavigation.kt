@@ -44,7 +44,7 @@ fun AppNavigation(
     NavigationDebugLogger(navEntry, currentDestination, showBottomBar, currentTab)
 
     val onboardingNavActions = rememberOnboardingNavActions(appState.navController)
-    val mindRecordNavActions = rememberMindRecordNavActions(appState)
+    val mindRecordNavActions = rememberMindRecordNavActions(appState.navController)
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val afternoteNavActions =

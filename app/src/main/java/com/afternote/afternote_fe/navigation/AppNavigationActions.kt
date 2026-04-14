@@ -9,7 +9,9 @@ import com.afternote.afternote_fe.screen.HomeTabActions
 import com.afternote.core.model.MindRecordCategory
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomNavTab
+import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavActions
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
+import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavActions
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingRoute
 
@@ -19,7 +21,7 @@ fun rememberOnboardingNavActions(navController: NavController): OnboardingNavAct
         object : OnboardingNavActions {
             override fun onOnboardingComplete() {
                 navController.navigate(Route.Home) {
-                    popUpTo<Route.Onboarding> { inclusive = true }
+                    popUpTo(0) { inclusive = true }
                 }
             }
 
@@ -80,6 +82,16 @@ fun rememberOnboardingNavActions(navController: NavController): OnboardingNavAct
     }
 
 @Composable
+fun rememberMindRecordNavActions(navController: NavController): MindRecordNavActions =
+    remember(navController) {
+        object : MindRecordNavActions {
+            override fun onMemorySpaceBack() {
+                navController.popBackStack()
+            }
+        }
+    }
+
+@Composable
 fun rememberHomeTabActions(
     appState: AppState,
     onRetryLoad: () -> Unit,
@@ -125,64 +137,72 @@ fun rememberHomeTabActions(
 }
 
 /**
- * Afternote 서브그래프에 넘길 루트 레벨 네비게이션 **이벤트** 묶음.
- * 현재 목적지 같은 관찰 가능한 상태는 [AppNavigation]에서 계산해 `afternoteNavGraph` 인자로 전달한다.
+ * Afternote 서브그래프에 넘길 루트 레벨 네비게이션 [AfternoteNavActions] 구현체.
  * [NavGraphBuilder] DSL 밖에서 `remember`로 안정화한다.
  */
-data class AfternoteAppNavCallbacks(
-    val onBottomNavTabSelected: (BottomNavTab) -> Unit,
-    val onPopBackStack: () -> Unit,
-    val onNavigateToAfternoteDetail: (itemId: String) -> Unit,
-    val onNavigateToGalleryDetail: (itemId: String) -> Unit,
-    val onNavigateToMemorialGuidelineDetail: (itemId: String) -> Unit,
-    val onNavigateToNewEditor: (initialCategory: String?) -> Unit,
-    val onNavigateToEditorForEdit: (itemId: String) -> Unit,
-    val onNavigateToMemorialPlaylist: () -> Unit,
-    val onNavigateToAddSong: () -> Unit,
-    val onFingerprintAuthSuccess: () -> Unit,
-    val onEditorSaveSuccessNavigateHome: () -> Unit,
-)
-
 @Composable
-fun rememberAfternoteAppNavCallbacks(appState: AppState): AfternoteAppNavCallbacks =
-    remember(appState) {
-        AfternoteAppNavCallbacks(
-            onBottomNavTabSelected = { tab -> appState.navigateToBottomBarRoute(tab.route) },
-            onPopBackStack = { appState.navController.popBackStack() },
-            onNavigateToAfternoteDetail = { itemId ->
+fun rememberAfternoteNavActions(
+    appState: AppState,
+    onFingerprintAuthError: (String) -> Unit,
+): AfternoteNavActions {
+    val onFingerprintErrorState by rememberUpdatedState(onFingerprintAuthError)
+    return remember(appState) {
+        object : AfternoteNavActions {
+            override fun onBottomNavTabSelected(tab: BottomNavTab) {
+                appState.navigateToBottomBarRoute(tab.route)
+            }
+
+            override fun onPopBackStack() {
+                appState.navController.popBackStack()
+            }
+
+            override fun onNavigateToAfternoteDetail(itemId: String) {
                 appState.navController.navigate(AfternoteRoute.DetailRoute(itemId = itemId))
-            },
-            onNavigateToGalleryDetail = { itemId ->
+            }
+
+            override fun onNavigateToGalleryDetail(itemId: String) {
                 appState.navController.navigate(AfternoteRoute.GalleryDetailRoute(itemId = itemId))
-            },
-            onNavigateToMemorialGuidelineDetail = { itemId ->
+            }
+
+            override fun onNavigateToMemorialGuidelineDetail(itemId: String) {
                 appState.navController.navigate(
                     AfternoteRoute.MemorialGuidelineDetailRoute(itemId = itemId),
                 )
-            },
-            onNavigateToNewEditor = { initialCategory ->
+            }
+
+            override fun onNavigateToNewEditor(initialCategory: String?) {
                 appState.navController.navigate(AfternoteRoute.EditorRoute(initialCategory = initialCategory))
-            },
-            onNavigateToEditorForEdit = { itemId ->
+            }
+
+            override fun onNavigateToEditorForEdit(itemId: String) {
                 appState.navController.navigate(AfternoteRoute.EditorRoute(itemId = itemId))
-            },
-            onNavigateToMemorialPlaylist = {
+            }
+
+            override fun onNavigateToMemorialPlaylist() {
                 appState.navController.navigate(AfternoteRoute.MemorialPlaylistRoute)
-            },
-            onNavigateToAddSong = {
+            }
+
+            override fun onNavigateToAddSong() {
                 appState.navController.navigate(AfternoteRoute.AddSongRoute)
-            },
-            onFingerprintAuthSuccess = {
+            }
+
+            override fun onFingerprintAuthSuccess() {
                 appState.navController.navigate(AfternoteRoute.AfternoteHomeRoute) {
                     popUpTo<AfternoteRoute.FingerprintLoginRoute> { inclusive = true }
                     launchSingleTop = true
                 }
-            },
-            onEditorSaveSuccessNavigateHome = {
+            }
+
+            override fun onFingerprintAuthError(message: String) {
+                onFingerprintErrorState(message)
+            }
+
+            override fun onEditorSaveSuccessNavigateHome() {
                 appState.navController.navigate(AfternoteRoute.AfternoteHomeRoute) {
                     popUpTo<AfternoteRoute.AfternoteHomeRoute> { inclusive = false }
                     launchSingleTop = true
                 }
-            },
-        )
+            }
+        }
     }
+}
