@@ -8,4 +8,5 @@ android {
 
 dependencies {
     implementation(libs.kakao.sdk.auth)
+    implementation(libs.kakao.sdk.user)
 }
