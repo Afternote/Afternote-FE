@@ -201,13 +201,15 @@ fun ProcessingMethodsSection(
  *
  * [DetailSection] 슬롯 안에 인용 부호·본문·로고 행만 둔다.
  * 섹션 아래 외부 간격은 호출하는 부모 레이아웃에서 둔다.
- * [message] 가 비어 있으면 "남기신 말씀이 없습니다." 플레이스홀더가 gray5 로 표시된다.
+ * [message] 가 공백만 있거나 비어 있으면(`isBlank`) `feature_afternote_detail_no_message` 문구를 gray5 로 표시한다.
  */
 @Composable
 fun MessageSection(
     message: String,
     modifier: Modifier = Modifier,
 ) {
+    val isMessageEmpty = message.isBlank()
+
     DetailSection(
         iconResId = R.drawable.afternote_ui_ic_leave_message_header,
         label = stringResource(R.string.feature_afternote_detail_section_message),
@@ -223,9 +225,19 @@ fun MessageSection(
                 modifier = Modifier.size(15.dp),
             )
             Text(
-                text = message,
+                text =
+                    if (isMessageEmpty) {
+                        stringResource(R.string.feature_afternote_detail_no_message)
+                    } else {
+                        message
+                    },
                 style = AfternoteDesign.typography.bodySmallR,
-                color = AfternoteDesign.colors.gray8,
+                color =
+                    if (isMessageEmpty) {
+                        AfternoteDesign.colors.gray5
+                    } else {
+                        AfternoteDesign.colors.gray8
+                    },
             )
         }
     }
