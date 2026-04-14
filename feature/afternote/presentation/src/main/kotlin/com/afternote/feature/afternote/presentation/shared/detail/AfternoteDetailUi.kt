@@ -13,22 +13,25 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import com.afternote.core.ui.popup.Popup
 import com.afternote.core.ui.popup.PopupType
+import com.afternote.core.ui.popup.rememberFixedRightPopupPositionProvider
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
@@ -197,8 +200,8 @@ private fun DeleteConfirmDialogPreview() {
  *
  * Material3 [androidx.compose.material3.DropdownMenu] 는 그림자/애니메이션 시작점/
  * 아이템 최소 높이(48dp) 등이 가이드라인에 맞게 강제돼 있어 우회 시 코드가 지저분해진다.
- * 둥글기·폰트·그림자·패딩·등장 위치를 100% 제어하기 위해 순수 [ComposePopup] 위에
- * 디자인 시스템 토큰만 얹어 직접 구성했다.
+ * 둥글기·폰트·그림자·패딩은 이 컴포저블이 담당하고, **등장 위치는 [popupPositionProvider] 로만** 결정한다.
+ * 기본값은 창 우측 15dp · 앵커 아래 12dp ([rememberFixedRightPopupPositionProvider]).
  */
 @Composable
 fun EditDropdownMenu(
@@ -207,12 +210,12 @@ fun EditDropdownMenu(
     onDeleteClick: () -> Unit,
     onEditClick: () -> Unit = {},
     showEditItem: Boolean = true,
+    popupPositionProvider: PopupPositionProvider = rememberFixedRightPopupPositionProvider(),
 ) {
     if (!expanded) return
 
     ComposePopup(
-        alignment = Alignment.TopEnd,
-        offset = IntOffset(x = 0, y = 0),
+        popupPositionProvider = popupPositionProvider,
         onDismissRequest = onDismissRequest,
         properties = PopupProperties(focusable = true),
     ) {
@@ -222,13 +225,14 @@ fun EditDropdownMenu(
                     .shadow(
                         elevation = 8.dp,
                         shape = RoundedCornerShape(8.dp),
+                        clip = true,
                         spotColor = AfternoteDesign.colors.black.copy(alpha = 0.15f),
-                    ).clip(RoundedCornerShape(8.dp))
-                    .background(AfternoteDesign.colors.white),
+                    ).background(AfternoteDesign.colors.white),
         ) {
             if (showEditItem) {
                 CustomDropdownItem(
                     text = stringResource(R.string.feature_afternote_menu_edit),
+                    textColor = AfternoteDesign.colors.gray9,
                     onClick = {
                         onDismissRequest()
                         onEditClick()
@@ -237,6 +241,7 @@ fun EditDropdownMenu(
             }
             CustomDropdownItem(
                 text = stringResource(R.string.feature_afternote_menu_delete_record),
+                textColor = MaterialTheme.colorScheme.error,
                 onClick = {
                     onDismissRequest()
                     onDeleteClick()
@@ -250,6 +255,7 @@ fun EditDropdownMenu(
 private fun CustomDropdownItem(
     text: String,
     onClick: () -> Unit,
+    textColor: Color = AfternoteDesign.colors.gray9,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -262,7 +268,21 @@ private fun CustomDropdownItem(
             text = text,
             modifier = Modifier.align(Alignment.CenterStart),
             style = AfternoteDesign.typography.bodyBase,
-            color = AfternoteDesign.colors.gray9,
+            color = textColor,
+        )
+    }
+}
+
+@Preview(showBackground = true, widthDp = 300, heightDp = 300)
+@Composable
+private fun EditDropdownMenuPreview() {
+    AfternoteTheme {
+        EditDropdownMenu(
+            expanded = true,
+            onDismissRequest = {},
+            onDeleteClick = {},
+            onEditClick = {},
+            showEditItem = true,
         )
     }
 }
