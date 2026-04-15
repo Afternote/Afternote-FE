@@ -167,6 +167,15 @@ class AfternoteEditorState(
         syncMemorialPlaylistSongsFromHolder()
     }
 
+    /**
+     * 에디터가 그래프에서 다시 포그라운드가 될 때(플레이리스트·곡 추가 등 서브화면에서 복귀) 호출한다.
+     * [MemorialPlaylistStateHolder]만 갱신되고 Compose 이펙트가 한 번 건너뛴 경우에도
+     * [EditorFormState.memorialPlaylistSongs]와 SavedState 스냅샷이 홀더와 맞도록 한다.
+     */
+    fun syncMemorialPlaylistFromGraphHolderIfAttached() {
+        syncMemorialPlaylistSongsFromHolder()
+    }
+
     /** 신규 작성 진입 시 폼에 남은 추모 플레이리스트 스냅샷을 비운다 (홀더 clear는 호출부에서). */
     fun resetMemorialPlaylistFormSnapshot() {
         updateForm {

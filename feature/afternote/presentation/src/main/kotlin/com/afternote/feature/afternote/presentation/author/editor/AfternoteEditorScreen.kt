@@ -119,7 +119,7 @@ fun AfternoteEditorScreen(
         )
         if (form.loadedItemId != item.id) {
             state.applyFormPrefill(
-                AfternoteEditorSuccessMapper.editorFormPrefillFromLoadParams(
+                AfternoteEditorFormMapper.editorFormPrefillFromLoadParams(
                     LoadFromExistingParams(
                         itemId = item.id,
                         serviceName = item.serviceName,

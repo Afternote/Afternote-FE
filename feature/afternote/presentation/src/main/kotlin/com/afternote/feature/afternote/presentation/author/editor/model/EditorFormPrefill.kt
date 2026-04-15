@@ -38,7 +38,7 @@ data class LastWishPrefill(
 )
 
 /**
- * Preview·테스트용 중간 표현. [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorSuccessMapper.editorFormPrefillFromLoadParams]로
+ * Preview·테스트용 중간 표현. [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorFormMapper.editorFormPrefillFromLoadParams]로
  * [EditorFormPrefill]로 변환한다.
  */
 data class LoadFromExistingParams(

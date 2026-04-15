@@ -75,6 +75,10 @@ private data class MessageBlockSnap(
     val body: String = "",
 )
 
+/**
+ * [SavedStateHandle]에 JSON으로 넣는 폼 스냅샷. 번들 전체 크기는 대략 500KB~1MB를 넘기지 않도록 설계해야 하며,
+ * 그렇지 않으면 [android.os.TransactionTooLargeException]이 날 수 있다. 큰 Base64/data URL은 폼에 넣지 말고 URL·URI 문자열만 저장한다.
+ */
 @Serializable
 private data class EditorFormSnapshot(
     val loadedItemId: String? = null,
@@ -269,6 +273,7 @@ class AfternoteEditorViewModel
             }
         }
 
+        /** [EditorFormSnapshot] 직렬화. 실패 시 로그만 남긴다(용량 초과 등은 [EditorFormSnapshot] KDoc 참고). */
         private fun persistFormSnapshot(form: EditorFormState) {
             runCatching {
                 savedStateHandle[EDITOR_FORM_SNAPSHOT_KEY] =
@@ -361,7 +366,7 @@ class AfternoteEditorViewModel
                 afternoteRepository
                     .getDetail(id = afternoteId)
                     .onSuccess { detail ->
-                        val prefill = AfternoteEditorSuccessMapper.buildEditorFormPrefill(detail)
+                        val prefill = AfternoteEditorFormMapper.buildEditorFormPrefill(detail)
                         loadedCategoryForEdit = prefill.category
                         editorFormState.applyFormPrefill(prefill)
                     }

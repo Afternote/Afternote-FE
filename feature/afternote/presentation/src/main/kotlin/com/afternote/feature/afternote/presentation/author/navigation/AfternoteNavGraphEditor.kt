@@ -35,6 +35,7 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.SELE
  * **수정 진입 데이터 로드:** 상세 화면과 같이 [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel]의 `init`에서
  * [androidx.lifecycle.SavedStateHandle]의 `itemId`만 보고 Repository `getDetail`을 호출한다 (Compose `LaunchedEffect` 위임 없음).
  * [MemorialPlaylistStateHolder]는 그래프 스코프 런타임 버퍼이며, 곡 목록 복원 SSOT는 폼·스냅샷의 `memorialPlaylistSongs`이다.
+ * 서브화면에서 복귀 시 [com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState.syncMemorialPlaylistFromGraphHolderIfAttached]로 홀더→폼을 맞춘다.
  */
 internal sealed class EditSaveErrorResult {
     data class Validation(
@@ -185,6 +186,7 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
                 editViewModel,
                 state,
             )
+            state.syncMemorialPlaylistFromGraphHolderIfAttached()
         }
     }
 

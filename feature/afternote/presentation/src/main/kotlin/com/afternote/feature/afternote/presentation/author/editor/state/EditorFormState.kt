@@ -31,6 +31,9 @@ private const val LAST_WISH_DEFAULT_BRIGHT = "슬퍼 하지 말고 밝고 따뜻
  *
  * **추모 플레이리스트:** [memorialPlaylistSongs]는 [com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder]와 동기화되어
  * [androidx.lifecycle.SavedStateHandle] JSON에 포함된다 (프로세스 종료·설정 변경 복원).
+ *
+ * **Bundle 용량:** 스냅샷이 들어가는 SavedState/번들은 대략 500KB~1MB를 넘기면 [android.os.TransactionTooLargeException] 위험이 있다.
+ * 사진·썸네일은 Base64/data URL 같은 거대 문자열이 아니라 짧은 HTTPS URL 또는 content [android.net.Uri] 문자열만 두는 것이 안전하다.
  */
 data class EditorFormState(
     val loadedItemId: String? = null,

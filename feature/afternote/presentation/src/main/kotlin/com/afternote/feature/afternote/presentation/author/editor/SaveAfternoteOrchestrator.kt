@@ -38,7 +38,7 @@ class SaveAfternoteOrchestrator
 
             return if (editingId != null) {
                 val updatePayload =
-                    AfternoteEditorSuccessMapper.buildUpdatePayload(
+                    AfternoteEditorFormMapper.buildUpdatePayload(
                         category = categoryForApi,
                         payload = payload,
                         selectedReceiverIds = selectedReceiverIds,
@@ -74,7 +74,7 @@ class SaveAfternoteOrchestrator
             memorialPhotoUrl: String?,
         ): Result<Long> {
             val createInput =
-                AfternoteEditorSuccessMapper.buildCreateInput(
+                AfternoteEditorFormMapper.buildCreateInput(
                     category = category,
                     payload = payload,
                     selectedReceiverIds = selectedReceiverIds,
