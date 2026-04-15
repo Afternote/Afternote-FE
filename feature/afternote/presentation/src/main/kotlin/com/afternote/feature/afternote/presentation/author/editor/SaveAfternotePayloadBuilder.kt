@@ -9,9 +9,10 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 /**
- * 등록 API용 [RegisterAfternotePayload] 조립. 날짜·메시지 직렬화 등은 State Holder가 아닌 여기서 처리한다.
+ * 신규 생성·수정 저장 공통으로 서버에 보낼 [RegisterAfternotePayload] 조립.
+ * 날짜·메시지 직렬화 등은 State Holder가 아닌 여기서 처리한다.
  */
-object RegisterAfternotePayloadBuilder {
+object SaveAfternotePayloadBuilder {
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
 
     fun fromEditorState(state: AfternoteEditorState): RegisterAfternotePayload {

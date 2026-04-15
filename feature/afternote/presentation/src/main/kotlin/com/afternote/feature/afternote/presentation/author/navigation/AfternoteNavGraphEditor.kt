@@ -16,8 +16,8 @@ import com.afternote.feature.afternote.presentation.author.editor.AfternoteEdito
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorScreen
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorScreenCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
-import com.afternote.feature.afternote.presentation.author.editor.RegisterAfternotePayloadBuilder
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
+import com.afternote.feature.afternote.presentation.author.editor.SaveAfternotePayloadBuilder
 import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
@@ -37,31 +37,31 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.SELE
  * [MemorialPlaylistStateHolder]는 그래프 스코프 런타임 버퍼이며, 곡 목록 복원 SSOT는 폼·스냅샷의 `memorialPlaylistSongs`이다.
  * 서브화면에서 복귀 시 [com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState.syncMemorialPlaylistFromGraphHolderIfAttached]로 홀더→폼을 맞춘다.
  */
-internal sealed class EditSaveErrorResult {
+internal sealed class EditorSaveErrorResult {
     data class Validation(
         val messageResId: Int,
-    ) : EditSaveErrorResult()
+    ) : EditorSaveErrorResult()
 
     data class Raw(
         val message: String,
-    ) : EditSaveErrorResult()
+    ) : EditorSaveErrorResult()
 }
 
-internal fun editSaveErrorFromState(
+internal fun editorSaveErrorFromState(
     saveState: AfternoteSaveState,
     playlistSongCount: Int,
-): EditSaveErrorResult? {
+): EditorSaveErrorResult? {
     if (saveState.validationError == AfternoteValidationError.PLAYLIST_SONGS_REQUIRED &&
         playlistSongCount > 0
     ) {
         return null
     }
-    saveState.validationError?.let { return EditSaveErrorResult.Validation(it.messageResId) }
-    saveState.error?.let { return EditSaveErrorResult.Raw(it) }
+    saveState.validationError?.let { return EditorSaveErrorResult.Validation(it.messageResId) }
+    saveState.error?.let { return EditorSaveErrorResult.Raw(it) }
     return null
 }
 
-internal data class EditScreenCallbacksParams(
+internal data class EditorScreenCallbacksParams(
     val onPopBackStack: () -> Unit,
     val onNavigateToMemorialPlaylist: () -> Unit,
     val editViewModel: AfternoteEditorViewModel,
@@ -108,7 +108,7 @@ internal fun tryApplyReceiverSelectionFromSavedState(
     state.addReceiverFromSelection(receiver.receiverId, receiver.name, receiver.relation)
 }
 
-internal fun buildEditScreenCallbacks(params: EditScreenCallbacksParams): AfternoteEditorScreenCallbacks =
+internal fun buildEditorScreenCallbacks(params: EditorScreenCallbacksParams): AfternoteEditorScreenCallbacks =
     AfternoteEditorScreenCallbacks(
         onBackClick = {
             params.onEditStateClear()
@@ -123,7 +123,7 @@ internal fun buildEditScreenCallbacks(params: EditScreenCallbacksParams): Aftern
                     )
                 },
             )
-            val payload = RegisterAfternotePayloadBuilder.fromEditorState(params.state)
+            val payload = SaveAfternotePayloadBuilder.fromEditorState(params.state)
             params.editViewModel.saveAfternote(
                 editingId = params.route.itemId?.toLongOrNull(),
                 category = params.state.selectedCategory,
@@ -178,9 +178,8 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
         }
     }
 
-    val isEditCurrentDestination = params.isEditorRouteCurrent
-    LaunchedEffect(isEditCurrentDestination) {
-        if (isEditCurrentDestination) {
+    LaunchedEffect(params.isEditorRouteCurrent) {
+        if (params.isEditorRouteCurrent) {
             tryApplyReceiverSelectionFromSavedState(
                 params.backStackEntry,
                 editViewModel,
@@ -225,18 +224,18 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
             saveState.validationError,
             saveState.error,
             params.playlistStateHolder.songs.size,
-        ) { editSaveErrorFromState(saveState, params.playlistStateHolder.songs.size) }
+        ) { editorSaveErrorFromState(saveState, params.playlistStateHolder.songs.size) }
     val saveError =
         when (errorResult) {
-            is EditSaveErrorResult.Validation -> AfternoteEditorSaveError(stringResource(errorResult.messageResId))
-            is EditSaveErrorResult.Raw -> AfternoteEditorSaveError(errorResult.message)
+            is EditorSaveErrorResult.Validation -> AfternoteEditorSaveError(stringResource(errorResult.messageResId))
+            is EditorSaveErrorResult.Raw -> AfternoteEditorSaveError(errorResult.message)
             null -> null
         }
 
     AfternoteEditorScreen(
         callbacks =
-            buildEditScreenCallbacks(
-                EditScreenCallbacksParams(
+            buildEditorScreenCallbacks(
+                EditorScreenCallbacksParams(
                     onPopBackStack = params.onPopBackStack,
                     onNavigateToMemorialPlaylist = params.onNavigateToMemorialPlaylist,
                     editViewModel = editViewModel,

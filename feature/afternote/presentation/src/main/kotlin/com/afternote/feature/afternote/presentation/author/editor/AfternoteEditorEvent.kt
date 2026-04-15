@@ -7,7 +7,7 @@ import com.afternote.core.ui.bottombar.BottomNavTab
  */
 data class AfternoteEditorScreenCallbacks(
     val onBackClick: () -> Unit = {},
-    /** 등록: [RegisterAfternotePayloadBuilder] 등에서 페이로드를 만든 뒤 저장 이벤트로 넘기도록 상위에서 구성한다. */
+    /** 저장: [SaveAfternotePayloadBuilder]에서 페이로드를 만든 뒤 [AfternoteEditorViewModel.saveAfternote]로 넘기도록 상위에서 구성한다. */
     val onRegisterClick: () -> Unit = {},
     val onNavigateToAddSong: () -> Unit = {},
     val onNavigateToSelectReceiver: () -> Unit = {},
