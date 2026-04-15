@@ -26,16 +26,17 @@ import com.afternote.core.ui.badge.RecipientDesignationBadgeState
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.shared.model.AfternoteServiceDisplay
 
 /**
  * 애프터노트 작성자 상세에서 공통으로 쓰는 상단 블록.
  *
  * 시스템 인셋은 부모 스크롤 [Column] 의 [Spacer] 로 처리하고, 여기서는 서비스 아이콘·이름·최종 작성일 + [RecipientDesignationBadge] 만 담당한다.
+ * 서비스 아이콘과 이름은 [AfternoteServiceDisplay] 묶음으로 받아 호출부에서 둘이 어긋나지 않도록 보장한다.
  */
 @Composable
 fun AfternoteDetailServiceHeaderWithRecipientChip(
-    iconResId: Int,
-    serviceName: String,
+    service: AfternoteServiceDisplay,
     finalWriteDate: String,
     recipientBadgeState: RecipientDesignationBadgeState,
     modifier: Modifier = Modifier,
@@ -53,8 +54,8 @@ fun AfternoteDetailServiceHeaderWithRecipientChip(
                 contentAlignment = Alignment.Center,
             ) {
                 Image(
-                    painter = painterResource(iconResId),
-                    contentDescription = serviceName,
+                    painter = painterResource(service.iconResId),
+                    contentDescription = service.serviceName,
                     modifier =
                         Modifier
                             .size(40.dp)
@@ -64,7 +65,7 @@ fun AfternoteDetailServiceHeaderWithRecipientChip(
             }
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = serviceName,
+                    text = service.serviceName,
                     style = AfternoteDesign.typography.h2,
                     color = AfternoteDesign.colors.gray9,
                 )
@@ -86,8 +87,11 @@ fun AfternoteDetailServiceHeaderWithRecipientChip(
 private fun AfternoteDetailServiceHeaderWithRecipientChipPreview() {
     AfternoteTheme {
         AfternoteDetailServiceHeaderWithRecipientChip(
-            iconResId = R.drawable.feature_afternote_ic_memorial_guideline,
-            serviceName = "서비스 이름",
+            service =
+                AfternoteServiceDisplay(
+                    serviceName = "서비스 이름",
+                    iconResId = R.drawable.feature_afternote_ic_memorial_guideline,
+                ),
             finalWriteDate = "2024.05.20",
             recipientBadgeState = RecipientDesignationBadgeState.Completed,
         )

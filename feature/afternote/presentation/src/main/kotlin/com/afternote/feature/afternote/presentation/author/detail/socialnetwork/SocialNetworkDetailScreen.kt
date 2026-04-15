@@ -49,6 +49,7 @@ import com.afternote.feature.afternote.presentation.shared.detail.DetailSection
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.ProcessingMethodsSection
+import com.afternote.feature.afternote.presentation.shared.model.AfternoteServiceDisplay
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 
 /**
@@ -182,8 +183,11 @@ private fun SocialNetworkDetailScrollContent(
                 .padding(horizontal = 20.dp),
     ) {
         AfternoteDetailServiceHeaderWithRecipientChip(
-            iconResId = content.iconResId,
-            serviceName = content.serviceName,
+            service =
+                AfternoteServiceDisplay(
+                    serviceName = content.serviceName,
+                    iconResId = content.iconResId,
+                ),
             finalWriteDate = content.finalWriteDate,
             recipientBadgeState =
                 if (content.afternoteEditReceivers.isNotEmpty()) {

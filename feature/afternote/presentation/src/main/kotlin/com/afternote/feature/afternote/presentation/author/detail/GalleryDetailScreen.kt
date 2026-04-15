@@ -37,8 +37,8 @@ import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMe
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.ProcessingMethodsSection
 import com.afternote.feature.afternote.presentation.shared.detail.ReceiversCard
+import com.afternote.feature.afternote.presentation.shared.model.AfternoteServiceDisplay
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
-import com.afternote.feature.afternote.presentation.shared.util.getIconResForServiceName
 
 /**
  * 갤러리 상세 Stateful Route.
@@ -182,8 +182,7 @@ private fun GalleryDetailScrollContent(
                 .padding(horizontal = 20.dp),
     ) {
         AfternoteDetailServiceHeaderWithRecipientChip(
-            iconResId = getIconResForServiceName(content.serviceName),
-            serviceName = content.serviceName,
+            service = AfternoteServiceDisplay.fromServiceName(content.serviceName),
             finalWriteDate = content.finalWriteDate,
             recipientBadgeState =
                 if (content.afternoteEditReceivers.isNotEmpty()) {
