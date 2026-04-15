@@ -2,10 +2,8 @@ package com.afternote.feature.afternote.presentation.author.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
-import com.afternote.feature.afternote.presentation.author.home.model.AfternoteHomeEvent
 import com.afternote.feature.afternote.presentation.author.home.model.AfternoteHomeUiState
 import com.afternote.feature.afternote.presentation.author.home.model.AfternoteListState
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
@@ -30,6 +28,8 @@ private const val SUBSCRIBE_TIMEOUT_MS = 5_000L
 
 /**
  * 애프터노트 목록 화면 ViewModel.
+ *
+ * UI 액션은 개별 public 메서드로 노출한다 (MVI 식 단일 onEvent 래퍼 미사용).
  */
 @HiltViewModel
 class AfternoteHomeViewModel
@@ -38,16 +38,17 @@ class AfternoteHomeViewModel
         private val afternoteRepository: AfternoteRepository,
     ) : ViewModel() {
         // MutableStateFlow는 인자로 받은 객체 타입의 MutableStateFlow 객체를 만든다
-        // 인자 객체에 대해 equals()를 통해 직전 객체와 비교하여 다를 때마다 리컴포지션하라는 신호를 보낸다
+        // 인자 객체에 대해 equals()를 통해 직전 객체와 비교하여 다를 때마다 리컴포지션하라는 신호를 보낸다 (distinctUntilChanged)
         // 이런 StateFlow의 특성 때문에 상태가 변했을 때만 _uiState가 업데이트됨
         // .value가 set 될 때마다 collect 안으로 _uiState.value를 발행하는 Hot Flow
         private val _uiState = MutableStateFlow(AfternoteHomeUiState())
 
         // 관찰만 하고 수정할 수 없는 StateFlow 타입으로 변환
         val uiState: StateFlow<AfternoteHomeUiState> = _uiState.asStateFlow()
+
         val bodyUiState: StateFlow<AfternoteBodyUiState> =
-            // 새로운 상태를 파생시킬 때 순수한 원천 데이터를 사용하기 위해 uiState가 아닌 원본을 가져 옴
-            // 내부 로직은 내부용 변수 _uiState를 쓰는 것이 안전
+            // _uiState나 uiState나 내부적으로는 동일한 데이터 스트림이지만,
+            // ViewModel 내부 조작임을 명시적으로 나타내기 위해 보통 _uiState 원본을 참조한다
             _uiState
                 // uiState가 관찰되는 순간 수집되기 전에 전처리처럼 수행될 연산의 설계도
                 // 관찰을 시작하는 순간 stateIn을 통해 list의 map처럼 작동 시작
@@ -57,6 +58,7 @@ class AfternoteHomeViewModel
                     val listState = homeState.listState
                     AfternoteBodyUiState(
                         isLoading = listState.isLoading,
+                        isRefreshing = listState.isRefreshing,
                         visibleItems = listState.visibleItems.map { it.toUiModel() },
                         selectedCategory = homeState.categoryState.selectedCategory,
                         hasNext = listState.hasNext,
@@ -70,8 +72,15 @@ class AfternoteHomeViewModel
                     initialValue = AfternoteBodyUiState(visibleItems = emptyList()), // bodyUiState의 초기값
                 )
 
+        private var fetchJob: Job? = null
+        private var loadMoreJob: Job? = null
+
         init {
             refreshList()
+            observeRevisionChanges()
+        }
+
+        private fun observeRevisionChanges() {
             viewModelScope.launch {
                 afternoteRepository.authorAfternoteListRevision.drop(1).collect {
                     refreshList(
@@ -83,113 +92,39 @@ class AfternoteHomeViewModel
             }
         }
 
-        // region Event
+        // region UI Actions
 
-        fun onEvent(event: AfternoteHomeEvent) {
-            when (event) {
-                is AfternoteHomeEvent.SelectTab -> handleSelectTab(event.tab)
-                is AfternoteHomeEvent.SelectBottomNav -> handleSelectBottomNav(event.navItem)
-                AfternoteHomeEvent.Refresh -> refreshList()
-                AfternoteHomeEvent.LoadMore -> loadMoreListItems()
-                AfternoteHomeEvent.PaginationErrorConsumed -> clearPaginationError()
-            }
-        }
-
-        private fun handleSelectTab(tab: AfternoteCategory) {
-            val currentState = _uiState.value
-            if (currentState.categoryState.selectedCategory == tab) return
+        fun selectTab(tab: AfternoteCategory) {
+            if (_uiState.value.categoryState.selectedCategory == tab) return
 
             _uiState.update {
-                it.copy(
-                    categoryState = it.categoryState.copy(selectedCategory = tab),
-                )
+                it.copy(categoryState = it.categoryState.copy(selectedCategory = tab))
             }
             refreshList(category = tab.toCategoryParam())
         }
 
-        private fun clearPaginationError() {
-            updateListState { it.copy(paginationError = null) }
-        }
-
-        private fun handleSelectBottomNav(navItem: BottomNavTab) {
-            _uiState.update {
-                it.copy(
-                    navState =
-                        it.navState.copy(
-                            selectedBottomNavItem = navItem,
-                        ),
-                )
-            }
-        }
-
-        // endregion
-
-        // region Data Loading
-
-        /**
-         * API에서 애프터노트 목록 첫 페이지를 로드합니다.
-         * 탭 변경 시에도 이 함수를 호출하여 0페이지부터 새로 요청합니다.
-         */
-        private var fetchJob: Job? = null
-
-        private fun refreshList(category: String? = null) {
-            fetchJob?.cancel()
-            fetchJob =
-                viewModelScope.launch {
-                    updateListState { listState ->
-                        listState.copy(
-                            isLoading = true,
-                            loadError = null,
-                            visibleItems = emptyList(),
-                        )
-                    }
-                    afternoteRepository
-                        .getListPage(
-                            category = category,
-                            pageNumber = 0,
-                            size = PAGE_SIZE,
-                        ).onSuccess { listPage ->
-                            updateListState { listState ->
-                                listState.copy(
-                                    isLoading = false,
-                                    loadError = null,
-                                    visibleItems = listPage.listItems,
-                                    currentPageNumber = 0,
-                                    hasNext = listPage.hasNext,
-                                    isLoadingMore = false,
-                                )
-                            }
-                        }.onFailure { e ->
-                            updateListState { listState ->
-                                listState.copy(
-                                    isLoading = false,
-                                    visibleItems = emptyList(),
-                                    currentPageNumber = 0,
-                                    loadError = e.message ?: "애프터노트 목록을 불러오지 못했습니다.",
-                                    hasNext = false,
-                                    isLoadingMore = false,
-                                )
-                            }
-                        }
-                }
+        fun refresh() {
+            refreshList(
+                category =
+                    _uiState.value.categoryState.selectedCategory
+                        .toCategoryParam(),
+                preserveVisibleItems = true,
+            )
         }
 
         /**
          * 다음 페이지를 로드하여 목록에 이어붙입니다.
          */
-        private var loadMoreJob: Job? = null
-
-        private fun loadMoreListItems() {
+        fun loadMore() {
             if (loadMoreJob?.isActive == true) return
+
+            val state = _uiState.value
+            val list = state.listState
+            if (!list.hasNext || list.isLoadingMore) return
 
             loadMoreJob =
                 viewModelScope.launch {
-                    val state = _uiState.value
-                    val list = state.listState
-                    if (!list.hasNext || list.isLoadingMore) return@launch
-                    updateListState { listState ->
-                        listState.copy(isLoadingMore = true)
-                    }
+                    updateListState { it.copy(isLoadingMore = true) }
                     val nextPageNumber = list.currentPageNumber + 1
                     afternoteRepository
                         .getListPage(
@@ -211,6 +146,79 @@ class AfternoteHomeViewModel
                                     isLoadingMore = false,
                                     paginationError = e.message ?: "애프터노트 추가 목록을 불러오지 못했습니다.",
                                 )
+                            }
+                        }
+                }
+        }
+
+        fun consumePaginationError() {
+            updateListState { it.copy(paginationError = null) }
+        }
+
+        // endregion
+
+        // region Data Loading
+
+        /**
+         * API에서 애프터노트 목록 첫 페이지를 로드합니다.
+         * 탭 변경 시에도 이 함수를 호출하여 0페이지부터 새로 요청합니다.
+         *
+         * @param preserveVisibleItems PullToRefresh 경로처럼 기존 리스트를 유지한 채
+         *  갱신할 때 true. 이 경우 전체 로딩 UI 대신 [AfternoteListState.isRefreshing] 스피너만 노출한다.
+         */
+        private fun refreshList(
+            category: String? = null,
+            preserveVisibleItems: Boolean = false,
+        ) {
+            fetchJob?.cancel()
+            loadMoreJob?.cancel() // race condition 방지: 진행 중이던 페이징 응답이 refresh 이후 상태를 덮어쓰는 걸 차단
+            fetchJob =
+                viewModelScope.launch {
+                    updateListState { listState ->
+                        listState.copy(
+                            isLoading = !preserveVisibleItems,
+                            isRefreshing = preserveVisibleItems,
+                            loadError = null,
+                            visibleItems = if (preserveVisibleItems) listState.visibleItems else emptyList(),
+                        )
+                    }
+                    afternoteRepository
+                        .getListPage(
+                            category = category,
+                            pageNumber = 0,
+                            size = PAGE_SIZE,
+                        ).onSuccess { listPage ->
+                            updateListState { listState ->
+                                listState.copy(
+                                    isLoading = false,
+                                    isRefreshing = false,
+                                    loadError = null,
+                                    visibleItems = listPage.listItems,
+                                    currentPageNumber = 0,
+                                    hasNext = listPage.hasNext,
+                                    isLoadingMore = false,
+                                )
+                            }
+                        }.onFailure { e ->
+                            updateListState { listState ->
+                                if (preserveVisibleItems) {
+                                    listState.copy(
+                                        isRefreshing = false,
+                                        paginationError =
+                                            e.message ?: "목록을 새로고침하지 못했습니다.",
+                                    )
+                                } else {
+                                    listState.copy(
+                                        isLoading = false,
+                                        isRefreshing = false,
+                                        visibleItems = emptyList(),
+                                        currentPageNumber = 0,
+                                        loadError =
+                                            e.message ?: "애프터노트 목록을 불러오지 못했습니다.",
+                                        hasNext = false,
+                                        isLoadingMore = false,
+                                    )
+                                }
                             }
                         }
                 }
