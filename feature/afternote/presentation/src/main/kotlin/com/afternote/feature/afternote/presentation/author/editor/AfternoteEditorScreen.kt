@@ -149,7 +149,7 @@ fun AfternoteEditorScreen(
                     .padding(paddingValues)
                     .addFocusCleaner(focusManager),
         ) {
-            EditContent(
+            EditorContent(
                 state = state,
                 form = form,
                 onNavigateToAddSong = callbacks.onNavigateToAddSong,
