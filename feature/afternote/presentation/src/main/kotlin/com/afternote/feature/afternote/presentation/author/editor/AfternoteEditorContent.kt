@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -42,66 +41,65 @@ internal fun EditContent(
     bottomPadding: PaddingValues,
 ) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp),
     ) {
-        Column(
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp),
-        ) {
-            Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(24.dp))
+
+        SelectionDropdown(
+            labelParams =
+                SelectionDropdownLabelParams(
+                    label = "종류",
+                ),
+            selectedValue = form.selectedCategory.displayLabel,
+            options = state.categories,
+            onValueSelected = state::onCategorySelected,
+            menuStyle =
+                DropdownMenuStyle(
+                    shadowElevation = 10.dp,
+                    tonalElevation = 10.dp,
+                ),
+            state = state.categoryDropdownState,
+        )
+
+        if (form.selectedCategory != EditorCategory.MEMORIAL) {
+            Spacer(modifier = Modifier.height(16.dp))
 
             SelectionDropdown(
                 labelParams =
                     SelectionDropdownLabelParams(
-                        label = "종류",
+                        label = "서비스명",
                     ),
-                selectedValue = form.selectedCategory.displayLabel,
-                options = state.categories,
-                onValueSelected = state::onCategorySelected,
+                selectedValue = form.selectedService,
+                options = form.currentServiceOptions,
+                onValueSelected = state::onServiceSelected,
                 menuStyle =
                     DropdownMenuStyle(
                         shadowElevation = 10.dp,
                         tonalElevation = 10.dp,
                     ),
-                state = state.categoryDropdownState,
-            )
-
-            if (form.selectedCategory != EditorCategory.MEMORIAL) {
-                Spacer(modifier = Modifier.height(16.dp))
-
-                SelectionDropdown(
-                    labelParams =
-                        SelectionDropdownLabelParams(
-                            label = "서비스명",
-                        ),
-                    selectedValue = form.selectedService,
-                    options = form.currentServiceOptions,
-                    onValueSelected = state::onServiceSelected,
-                    menuStyle =
-                        DropdownMenuStyle(
-                            shadowElevation = 10.dp,
-                            tonalElevation = 10.dp,
-                        ),
-                    state = state.serviceDropdownState,
-                )
-            }
-            Spacer(modifier = Modifier.height(24.dp))
-
-            CategoryContent(
-                state = state,
-                form = form,
-                onNavigateToAddSong = onNavigateToAddSong,
-                onNavigateToSelectReceiver = onNavigateToSelectReceiver,
-                onPhotoAddClick = onPhotoAddClick,
-                onVideoAddClick = onVideoAddClick,
-                onThumbnailBytesReady = onThumbnailBytesReady,
-                bottomPadding = bottomPadding,
+                state = state.serviceDropdownState,
             )
         }
+        Spacer(modifier = Modifier.height(24.dp))
+
+        CategoryContent(
+            state = state,
+            form = form,
+            onNavigateToAddSong = onNavigateToAddSong,
+            onNavigateToSelectReceiver = onNavigateToSelectReceiver,
+            onPhotoAddClick = onPhotoAddClick,
+            onVideoAddClick = onVideoAddClick,
+            onThumbnailBytesReady = onThumbnailBytesReady,
+        )
+
+        Spacer(
+            modifier =
+                Modifier.height(bottomPadding.calculateBottomPadding() + 24.dp),
+        )
     }
 }
 
@@ -114,12 +112,10 @@ internal fun CategoryContent(
     onPhotoAddClick: () -> Unit,
     onVideoAddClick: () -> Unit,
     onThumbnailBytesReady: (ByteArray?) -> Unit,
-    bottomPadding: PaddingValues,
 ) {
     when (form.selectedCategory) {
         EditorCategory.MEMORIAL -> {
             MemorialGuidelineEditorContent(
-                bottomPadding = bottomPadding,
                 params =
                     MemorialGuidelineEditorContentParams(
                         displayMemorialPhotoUri = form.displayMemorialPhotoUri(),
@@ -151,7 +147,6 @@ internal fun CategoryContent(
 
         EditorCategory.GALLERY -> {
             GalleryAndFileEditorContent(
-                bottomPadding = bottomPadding,
                 params =
                     GalleryAndFileEditorContentParams(
                         editorMessages = state.editorMessages,
@@ -184,7 +179,6 @@ internal fun CategoryContent(
 
         else -> {
             SocialNetworkEditorContent(
-                bottomPadding = bottomPadding,
                 params =
                     SocialNetworkEditorContentParams(
                         editorMessages = state.editorMessages,

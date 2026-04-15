@@ -1,11 +1,8 @@
 package com.afternote.feature.afternote.presentation.author.editor.memorial.guideline
 
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -26,18 +23,8 @@ import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialP
 @Composable
 fun MemorialGuidelineEditorContent(
     modifier: Modifier = Modifier,
-    bottomPadding: PaddingValues,
     params: MemorialGuidelineEditorContentParams,
 ) {
-    val density = LocalDensity.current
-    val windowInfo = LocalWindowInfo.current
-    val bottomPaddingDp = bottomPadding.calculateBottomPadding()
-    val viewportHeight =
-        with(density) {
-            windowInfo.containerSize.height.toDp() - bottomPaddingDp
-        }
-    val trailingSpacerHeight = viewportHeight * 0.1f
-
     MemorialGuidelineContent(
         introContent = { LastMomentQuestion() },
         photoContent = {
@@ -66,7 +53,6 @@ fun MemorialGuidelineEditorContent(
         },
         modifier = modifier,
         sectionSpacing = 32.dp,
-        trailingSpacerHeight = trailingSpacerHeight,
         recipientContent = {
             params.recipientSection?.let { RecipientDesignationSection(section = it) }
         },
@@ -103,7 +89,6 @@ private fun MemorialGuidelineEditorContentPreview() {
             )
 
         MemorialGuidelineEditorContent(
-            bottomPadding = PaddingValues(bottom = 88.dp),
             params =
                 MemorialGuidelineEditorContentParams(
                     displayMemorialPhotoUri = null,
