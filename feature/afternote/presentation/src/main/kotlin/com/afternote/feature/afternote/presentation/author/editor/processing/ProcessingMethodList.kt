@@ -5,9 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -68,52 +66,48 @@ fun ProcessingMethodList(
                     color = AfternoteDesign.colors.gray2,
                     shape = RoundedCornerShape(6.dp),
                 ).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(17.dp)) {
-            items.forEach { item ->
-                key(item.id) {
-                    ProcessingMethodCheckbox(
-                        item = item,
-                        expanded = state.expandedStates[item.id] ?: false,
-                        isEditing = state.editingItemId == item.id,
-                        callbacks =
-                            ProcessingMethodCheckboxCallbacks(
-                                onMoreClick = {
-                                    focusManager.clearFocus()
-                                    state.toggleItemExpanded(item.id)
-                                },
-                                onDismissDropdown = {
-                                    state.expandedStates[item.id] = false
-                                },
-                                onEditClick = {
-                                    state.expandedStates[item.id] = false
-                                    // Defer editing to next frame so DropdownMenu dismiss settles first
-                                    scope.launch {
-                                        withFrameNanos { }
-                                        state.startEditing(item.id)
-                                    }
-                                },
-                                onDeleteClick = { onItemDeleteClick(item.id) },
-                                onEditConfirmed = { newText ->
-                                    onItemEdited(item.id, newText)
-                                    state.stopEditing()
-                                },
-                            ),
-                    )
-                }
+        items.forEach { item ->
+            key(item.id) {
+                ProcessingMethodCheckbox(
+                    item = item,
+                    expanded = state.expandedStates[item.id] ?: false,
+                    isEditing = state.editingItemId == item.id,
+                    callbacks =
+                        ProcessingMethodCheckboxCallbacks(
+                            onMoreClick = {
+                                focusManager.clearFocus()
+                                state.toggleItemExpanded(item.id)
+                            },
+                            onDismissDropdown = {
+                                state.expandedStates[item.id] = false
+                            },
+                            onEditClick = {
+                                state.expandedStates[item.id] = false
+                                // Defer editing to next frame so DropdownMenu dismiss settles first
+                                scope.launch {
+                                    withFrameNanos { }
+                                    state.startEditing(item.id)
+                                }
+                            },
+                            onDeleteClick = { onItemDeleteClick(item.id) },
+                            onEditConfirmed = { newText ->
+                                onItemEdited(item.id, newText)
+                                state.stopEditing()
+                            },
+                        ),
+                )
             }
         }
 
         if (state.showTextField) {
-            Spacer(modifier = Modifier.height(6.dp))
             AddItemTextField(
                 onItemAdded = onItemAdded,
                 onVisibilityChanged = onTextFieldVisibilityChanged,
             )
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
 
         PlusBadgeButton(
             contentDescription = stringResource(R.string.afternote_editor_content_description_add),
