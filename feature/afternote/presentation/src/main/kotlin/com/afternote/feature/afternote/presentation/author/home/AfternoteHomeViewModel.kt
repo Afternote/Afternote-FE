@@ -45,30 +45,15 @@ class AfternoteHomeViewModel
         /**
          * 외부(Compose UI)로 노출하는 단일 StateFlow(SSOT).
          *
-         * 내부 [_uiState]를 UI가 그대로 소비할 수 있는 형태로 map 하여 파생시킨 상태이므로,
-         * UI는 이 하나의 창구만 구독하면 된다.
+         * 내부 [_uiState]를 [AfternoteBodyUiState]로 매핑해 파생시키며, 매핑은 [AfternoteHomeUiState.toBodyUiState]에 둔다.
          */
         val uiState: StateFlow<AfternoteBodyUiState> =
             _uiState
-                // 관찰을 시작하는 순간 stateIn을 통해 list의 map처럼 작동 시작
-                .map { homeState ->
-                    // _uiState.value가 발행될 때마다 실행
-                    // 연산 완료했으면 새로운 _uiState.value가 발행될 때까지 suspend
-                    val listState = homeState.listState
-                    AfternoteBodyUiState(
-                        isLoading = listState.isLoading,
-                        isRefreshing = listState.isRefreshing,
-                        visibleItems = listState.visibleItems.map { it.toUiModel() },
-                        selectedCategory = homeState.categoryState.selectedCategory,
-                        hasNext = listState.hasNext,
-                        isLoadingMore = listState.isLoadingMore,
-                        paginationError = listState.paginationError,
-                    )
-                }.stateIn(
-                    // map이 Flow로 매핑했던 것들을 StateFlow로 변환
-                    scope = viewModelScope, // map 연산을 수행할 코루틴의 스코프
-                    started = SharingStarted.WhileSubscribed(SUBSCRIBE_TIMEOUT_MS), // 관찰자가 있을 때만 map 연산을 수행하게 함
-                    initialValue = AfternoteBodyUiState(visibleItems = emptyList()), // uiState의 초기값
+                .map { it.toBodyUiState() }
+                .stateIn(
+                    scope = viewModelScope,
+                    started = SharingStarted.WhileSubscribed(SUBSCRIBE_TIMEOUT_MS),
+                    initialValue = AfternoteBodyUiState(visibleItems = emptyList()),
                 )
 
         private var fetchJob: Job? = null
@@ -238,6 +223,19 @@ class AfternoteHomeViewModel
 
         // endregion
     }
+
+private fun AfternoteHomeUiState.toBodyUiState(): AfternoteBodyUiState {
+    val listState = listState
+    return AfternoteBodyUiState(
+        isLoading = listState.isLoading,
+        isRefreshing = listState.isRefreshing,
+        visibleItems = listState.visibleItems.map { it.toUiModel() },
+        selectedCategory = categoryState.selectedCategory,
+        hasNext = listState.hasNext,
+        isLoadingMore = listState.isLoadingMore,
+        paginationError = listState.paginationError,
+    )
+}
 
 private fun ListItem.toUiModel(): ListItemUiModel =
     ListItemUiModel(
