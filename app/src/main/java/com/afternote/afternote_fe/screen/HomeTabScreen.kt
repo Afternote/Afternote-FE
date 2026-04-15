@@ -1,8 +1,5 @@
 package com.afternote.afternote_fe.screen
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,9 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -25,18 +20,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.afternote_fe.R
 import com.afternote.core.model.MindRecordCategory
 import com.afternote.core.ui.AfternoteOutlinedCard
 import com.afternote.core.ui.AfternoteSectionHeader
-import com.afternote.core.ui.button.AfternoteCircularCheckbox
-import com.afternote.core.ui.button.CheckboxState
+import com.afternote.core.ui.badge.RecipientDesignationBadge
+import com.afternote.core.ui.badge.RecipientDesignationBadgeState
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -208,9 +201,15 @@ private fun HomeTabScrollContent(
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            RecipientDesignationChip(
-                isDesignated = isRecipientDesignated,
-                onClick = actions::onRecipientChipClick,
+            RecipientDesignationBadge(
+                state =
+                    if (isRecipientDesignated) {
+                        RecipientDesignationBadgeState.Completed
+                    } else {
+                        RecipientDesignationBadgeState.Incomplete(
+                            onClick = actions::onRecipientChipClick,
+                        )
+                    },
             )
 
             Spacer(Modifier.height(32.dp))
@@ -266,64 +265,6 @@ private fun HomeTabScrollContent(
         homeTabMindRecordMemoriesSection(
             onMemoriesSectionClick = actions::onMemoriesSectionClick,
         )
-    }
-}
-
-/**
- * 수신인 지정 상태 칩.
- *
- * 터치·리플은 [Modifier.clickable]이 담당하고, 체크박스는 상태 표시만 한다 ([onClick] null).
- */
-@Composable
-private fun RecipientDesignationChip(
-    isDesignated: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier =
-            modifier
-                .border(
-                    width = 1.dp,
-                    color = AfternoteDesign.colors.gray3,
-                    shape = RoundedCornerShape(20.dp),
-                ).clip(RoundedCornerShape(20.dp))
-                .background(color = if (isDesignated) AfternoteDesign.colors.white else AfternoteDesign.colors.gray2)
-                .clickable(
-                    role = Role.Button,
-                    onClick = onClick,
-                ).padding(vertical = 9.dp)
-                .padding(start = 15.dp, end = 20.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        AfternoteCircularCheckbox(
-            state = if (isDesignated) CheckboxState.Default else CheckboxState.None,
-            onClick = null,
-            size = 12.dp,
-        )
-
-        Spacer(modifier = Modifier.width(4.dp))
-
-        Text(
-            text =
-                stringResource(
-                    if (isDesignated) {
-                        R.string.home_tab_recipient_designated
-                    } else {
-                        R.string.home_tab_recipient_not_designated
-                    },
-                ),
-            style = AfternoteDesign.typography.captionLargeB,
-            color = AfternoteDesign.colors.gray9,
-        )
-
-        if (!isDesignated) {
-            Spacer(modifier = Modifier.width(10.dp))
-            RightArrowIcon(
-                modifier = Modifier.size(12.dp),
-                tint = AfternoteDesign.colors.gray5,
-            )
-        }
     }
 }
 
