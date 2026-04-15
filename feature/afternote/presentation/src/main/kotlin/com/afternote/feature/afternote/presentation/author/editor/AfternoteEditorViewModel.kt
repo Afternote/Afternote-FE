@@ -5,6 +5,7 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.model.AlbumCover
 import com.afternote.feature.afternote.domain.model.author.AuthorReceiverEntry
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
@@ -12,12 +13,13 @@ import com.afternote.feature.afternote.domain.repository.AuthorReceiverRepositor
 import com.afternote.feature.afternote.domain.repository.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.presentation.author.editor.mapper.AfternoteEditorMapper
 import com.afternote.feature.afternote.presentation.author.editor.mapper.toAfternoteEditorReceivers
+import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.InformationProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
-import com.afternote.feature.afternote.presentation.author.editor.playlist.Song
+import com.afternote.feature.afternote.presentation.author.editor.orchestration.SaveAfternoteOrchestrator
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
@@ -28,8 +30,6 @@ import com.afternote.feature.afternote.presentation.author.editor.state.Afternot
 import com.afternote.feature.afternote.presentation.author.editor.state.DEFAULT_EDITOR_MESSAGE_BLOCKS
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.author.editor.state.MemorialPlaylistStateHolder
-import com.afternote.feature.afternote.presentation.author.editor.usecase.SaveAfternoteUseCase
-import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -171,7 +171,7 @@ private data class EditorFormSnapshot(
 }
 
 /**
- * 애프터노트 생성/수정 ViewModel. 저장·미디어 해석은 [SaveAfternoteUseCase]에 위임합니다.
+ * 애프터노트 생성/수정 ViewModel. 저장·미디어 해석은 [SaveAfternoteOrchestrator]에 위임합니다.
  *
  * **SSOT:** 비즈니스 폼 필드는 [EditorFormState] + [editorFormStateFlow]이며, 프로세스 종료 시 [SavedStateHandle] JSON 스냅샷으로 복원합니다.
  * 순수 UI는 [editorUi] ([AfternoteEditorUiState])가 담당합니다.
@@ -184,7 +184,7 @@ class AfternoteEditorViewModel
         private val authorReceiverRepository: AuthorReceiverRepository,
         private val afternoteRepository: AfternoteRepository,
         private val memorialThumbnailUploadRepository: MemorialThumbnailUploadRepository,
-        private val saveAfternoteUseCase: SaveAfternoteUseCase,
+        private val saveAfternoteOrchestrator: SaveAfternoteOrchestrator,
     ) : ViewModel() {
         private val formSnapshotJson =
             Json {
@@ -353,7 +353,7 @@ class AfternoteEditorViewModel
                 _saveState.update {
                     it.copy(isSaving = true, error = null, validationError = null)
                 }
-                saveAfternoteUseCase(
+                saveAfternoteOrchestrator(
                     editingId = editingId,
                     categoryForApi = categoryForApi,
                     payload = payload,

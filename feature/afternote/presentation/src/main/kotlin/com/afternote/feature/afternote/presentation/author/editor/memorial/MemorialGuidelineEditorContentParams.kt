@@ -1,13 +1,15 @@
 package com.afternote.feature.afternote.presentation.author.editor.memorial
 
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.runtime.Stable
+import com.afternote.core.model.AlbumCover
 import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverSection
 import com.afternote.feature.afternote.presentation.shared.LastWishOption
-import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 
 /**
  * 추모 가이드라인 콘텐츠 파라미터
  */
+@Stable
 data class MemorialGuidelineEditorContentParams(
     val displayMemorialPhotoUri: String?,
     val playlistSongCount: Int,

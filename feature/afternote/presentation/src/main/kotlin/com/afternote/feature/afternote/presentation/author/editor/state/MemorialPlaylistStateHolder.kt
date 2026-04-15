@@ -3,7 +3,7 @@ package com.afternote.feature.afternote.presentation.author.editor.state
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import com.afternote.feature.afternote.presentation.author.editor.playlist.Song
+import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 
 /**
  * 추모 플레이리스트 상태 홀더
