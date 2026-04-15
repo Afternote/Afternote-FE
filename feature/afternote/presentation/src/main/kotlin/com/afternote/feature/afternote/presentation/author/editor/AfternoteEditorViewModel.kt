@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.lifecycle.SavedStateHandle
@@ -12,6 +13,7 @@ import com.afternote.feature.afternote.domain.model.author.AuthorReceiverEntry
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
 import com.afternote.feature.afternote.domain.repository.AuthorReceiverRepository
 import com.afternote.feature.afternote.domain.repository.MemorialThumbnailUploadRepository
+import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.mapper.toAfternoteEditorReceivers
 import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
@@ -31,6 +33,7 @@ import com.afternote.feature.afternote.presentation.author.editor.state.DEFAULT_
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -197,6 +200,7 @@ private data class EditorFormSnapshot(
 class AfternoteEditorViewModel
     @Inject
     constructor(
+        @ApplicationContext private val appContext: Context,
         private val savedStateHandle: SavedStateHandle,
         private val authorReceiverRepository: AuthorReceiverRepository,
         private val afternoteRepository: AfternoteRepository,
@@ -383,19 +387,26 @@ class AfternoteEditorViewModel
             Log.e(TAG, "saveAfternote: FAILURE, category=${category.serverValue}", e)
             val validationError =
                 when (e) {
-                    is AfternoteAuthoringValidationException ->
+                    is AfternoteAuthoringValidationException -> {
                         when (e.kind) {
-                            AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED ->
+                            AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED -> {
                                 AfternoteValidationError.RECEIVERS_REQUIRED
+                            }
                         }
+                    }
 
-                    is AfternoteValidationException -> e.validationError
-                    else -> null
+                    is AfternoteValidationException -> {
+                        e.validationError
+                    }
+
+                    else -> {
+                        null
+                    }
                 }
             val errorMessage =
                 when {
                     validationError != null -> null
-                    else -> e.message ?: "저장에 실패했습니다."
+                    else -> e.message ?: appContext.getString(R.string.afternote_editor_save_failed_generic)
                 }
             _saveState.update {
                 it.copy(

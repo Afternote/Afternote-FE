@@ -212,4 +212,37 @@
     <string name="feature_afternote_detail_receiver_info_transfer_badge">수신자에게 정보전달</string>
     <string name="feature_afternote_detail_additional_receiver_badge">추가 수신자에게 정보 전달</string>
     <string name="feature_afternote_detail_section_additional_receiver">추가  수신자</string>
+
+    <!-- Afternote editor (author) — UI strings -->
+    <string name="afternote_editor_screen_title">애프터노트 작성하기</string>
+    <string name="afternote_editor_submit">등록</string>
+    <string name="afternote_editor_receiver_name_label">수신자 이름</string>
+    <string name="afternote_editor_add_by_phone_label">전화번호로 추가하기</string>
+    <string name="afternote_editor_contact_import_section">연락처에서 추가하기</string>
+    <string name="afternote_editor_import_contacts_button">연락처 가져오기</string>
+    <string name="afternote_editor_relationship_friend">친구</string>
+    <string name="afternote_editor_relationship_family">가족</string>
+    <string name="afternote_editor_relationship_lover">연인</string>
+    <string name="afternote_editor_last_wish_calm">차분하고 조용하게 보내주세요.</string>
+    <string name="afternote_editor_last_wish_bright">슬퍼 하지 말고 밝고 따뜻하게 보내주세요.</string>
+    <string name="afternote_editor_last_wish_other">기타(직접 입력)</string>
+    <string name="afternote_editor_custom_service_dialog_title">직접 입력하기</string>
+    <string name="afternote_editor_custom_service_name_label">추가 서비스명</string>
+    <string name="afternote_editor_playlist_screen_title">추모 플레이리스트</string>
+    <string name="afternote_editor_playlist_add_screen_title">추모 플레이리스트 추가</string>
+    <string name="afternote_editor_playlist_current_header">현재 플레이리스트</string>
+    <string name="afternote_editor_playlist_song_count_format">총 %1$d곡</string>
+    <string name="afternote_editor_playlist_add_songs">노래 추가하기</string>
+    <string name="afternote_editor_playlist_delete_all">전체 삭제</string>
+    <string name="afternote_editor_playlist_delete_selected">선택 삭제</string>
+    <string name="afternote_editor_content_description_dropdown">드롭다운</string>
+    <string name="afternote_editor_content_description_add">추가</string>
+    <string name="afternote_editor_content_description_more">더보기</string>
+    <string name="afternote_editor_funeral_video_label">장례식에 남길 영상</string>
+    <string name="afternote_editor_funeral_video_cd_change">영상 변경</string>
+    <string name="afternote_editor_funeral_video_cd_add">영상 추가</string>
+    <string name="afternote_editor_memorial_photo_label">영정사진 추가</string>
+    <string name="afternote_editor_last_moment_question_default">마지막 순간,\n당신을 어떤 모습으로 기억해 주길 바라나요?</string>
+    <string name="afternote_editor_save_failed_generic">저장에 실패했습니다.</string>
+    <string name="afternote_editor_search_failed_generic">검색 실패</string>
 </resources>

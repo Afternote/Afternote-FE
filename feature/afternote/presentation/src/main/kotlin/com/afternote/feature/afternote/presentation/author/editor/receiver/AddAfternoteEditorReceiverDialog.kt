@@ -33,6 +33,7 @@ import com.afternote.core.ui.popup.AfternotePopupCardLayout
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.author.editor.editorRelationshipOptions
 import com.afternote.feature.afternote.presentation.author.editor.selection.DropdownMenuStyle
 import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdown
 import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdownLabelParams
@@ -101,7 +102,7 @@ fun AddAfternoteEditorReceiverDialog(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "수신자 추가",
+                    text = stringResource(R.string.afternote_editor_label_receiver_add),
                     style = AfternoteDesign.typography.bodyLargeB,
                 )
 
@@ -123,7 +124,7 @@ fun AddAfternoteEditorReceiverDialog(
                         ),
                 ) {
                     Text(
-                        text = "추가하기",
+                        text = stringResource(R.string.add_button),
                         style =
                             AfternoteDesign.typography.captionLargeR.copy(
                                 fontWeight = FontWeight.Medium,
@@ -138,7 +139,7 @@ fun AddAfternoteEditorReceiverDialog(
             // 수신자 이름 입력 필드
             Column {
                 Text(
-                    text = "수신자 이름",
+                    text = stringResource(R.string.afternote_editor_receiver_name_label),
                     style = AfternoteDesign.typography.captionLargeR,
                     color = AfternoteDesign.colors.gray9,
                 )
@@ -168,7 +169,7 @@ fun AddAfternoteEditorReceiverDialog(
             // 전화번호로 추가하기 입력 필드
             Column {
                 Text(
-                    text = "전화번호로 추가하기",
+                    text = stringResource(R.string.afternote_editor_add_by_phone_label),
                     style = AfternoteDesign.typography.captionLargeR,
                     color = AfternoteDesign.colors.gray9,
                 )
@@ -184,7 +185,7 @@ fun AddAfternoteEditorReceiverDialog(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "연락처에서 추가하기",
+                text = stringResource(R.string.afternote_editor_contact_import_section),
                 style =
                     AfternoteDesign.typography.captionLargeR.copy(
                         color = AfternoteDesign.colors.gray9,
@@ -195,7 +196,7 @@ fun AddAfternoteEditorReceiverDialog(
 
             // 연락처에서 추가하기 버튼
             AfternoteButton(
-                text = "연락처 가져오기",
+                text = stringResource(R.string.afternote_editor_import_contacts_button),
                 onClick = {
                     focusManager.clearFocus()
                     params.callbacks.onImportContactsClick()
@@ -210,13 +211,14 @@ fun AddAfternoteEditorReceiverDialog(
 @Composable
 private fun AddAfternoteEditorReceiverDialogPreview() {
     AfternoteTheme {
+        val friend = stringResource(R.string.afternote_editor_relationship_friend)
         AddAfternoteEditorReceiverDialog(
             params =
                 AddAfternoteEditorReceiverDialogParams(
                     afternoteEditReceiverNameState = rememberTextFieldState(),
                     phoneNumberState = rememberTextFieldState(),
-                    relationshipSelectedValue = "친구",
-                    relationshipOptions = listOf("친구", "가족", "연인"),
+                    relationshipSelectedValue = friend,
+                    relationshipOptions = editorRelationshipOptions(),
                 ),
         )
     }

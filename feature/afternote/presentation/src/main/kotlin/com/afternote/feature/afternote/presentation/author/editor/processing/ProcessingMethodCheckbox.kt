@@ -27,6 +27,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
@@ -102,7 +103,7 @@ fun ProcessingMethodCheckbox(
         Box {
             Image(
                 painter = painterResource(R.drawable.feature_afternote_ic_more_horizontal_1),
-                contentDescription = "더보기",
+                contentDescription = stringResource(R.string.afternote_editor_content_description_more),
                 modifier =
                     Modifier
                         .clickable(onClick = callbacks.onMoreClick),

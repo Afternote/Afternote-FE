@@ -70,7 +70,7 @@ private const val TAG = "FuneralVideoUpload"
 @Composable
 fun FuneralVideoUpload(
     modifier: Modifier = Modifier,
-    label: String = "장례식에 남길 영상",
+    label: String? = null,
     videoUrl: String? = null,
     thumbnailUrl: String? = null,
     onAddVideoClick: () -> Unit,
@@ -78,7 +78,13 @@ fun FuneralVideoUpload(
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     val hasVideo = !videoUrl.isNullOrBlank()
-    val addContentDescription = if (hasVideo) "영상 변경" else "영상 추가"
+    val labelText = label ?: stringResource(R.string.afternote_editor_funeral_video_label)
+    val addContentDescription =
+        if (hasVideo) {
+            stringResource(R.string.afternote_editor_funeral_video_cd_change)
+        } else {
+            stringResource(R.string.afternote_editor_funeral_video_cd_add)
+        }
     val context = LocalContext.current
     var thumbnailBitmap by remember(videoUrl) { mutableStateOf<ImageBitmap?>(null) }
 
@@ -123,7 +129,7 @@ fun FuneralVideoUpload(
         verticalArrangement = Arrangement.spacedBy(space = 16.dp),
     ) {
         Text(
-            text = label,
+            text = labelText,
             style =
                 AfternoteDesign.typography.textField.copy(
                     fontWeight = FontWeight.Medium,

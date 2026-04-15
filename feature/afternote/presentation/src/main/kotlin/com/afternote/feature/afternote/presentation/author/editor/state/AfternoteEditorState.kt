@@ -21,7 +21,6 @@ import com.afternote.feature.afternote.presentation.author.editor.processing.mod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverCallbacks
-import com.afternote.feature.afternote.presentation.shared.LastWishOption
 import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -82,27 +81,10 @@ class AfternoteEditorState(
     val displayAlbumCovers get() = formState.value.displayAlbumCovers(ui.playlistStateHolder)
     val currentServiceOptions get() = formState.value.currentServiceOptions
 
-    val categories: List<String> = EditorCategory.entries.map { it.displayLabel }
     val services: List<String>
         get() = AfternoteServiceCatalog.socialServices
     val galleryServices: List<String>
         get() = AfternoteServiceCatalog.galleryServices
-    val relationshipOptions = listOf("친구", "가족", "연인")
-    val lastWishOptions =
-        listOf(
-            LastWishOption(
-                text = "차분하고 조용하게 보내주세요.",
-                value = "calm",
-            ),
-            LastWishOption(
-                text = "슬퍼 하지 말고 밝고 따뜻하게 보내주세요.",
-                value = "bright",
-            ),
-            LastWishOption(
-                text = "기타(직접 입력)",
-                value = "other",
-            ),
-        )
 
     val galleryAfternoteEditorReceiverCallbacks: AfternoteEditorReceiverCallbacks by lazy {
         AfternoteEditorReceiverCallbacks(

@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -22,6 +23,7 @@ import com.afternote.core.ui.modifierextention.addFocusCleaner
 import com.afternote.core.ui.popup.AfternotePopupCardLayout
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.presentation.R
 
 /**
  * 직접 입력하기 다이얼로그 콜백
@@ -72,7 +74,7 @@ fun CustomServiceDialog(
         ) {
             // 타이틀
             Text(
-                text = "직접 입력하기",
+                text = stringResource(R.string.afternote_editor_custom_service_dialog_title),
                 style = AfternoteDesign.typography.bodyLargeB,
             )
 
@@ -81,7 +83,7 @@ fun CustomServiceDialog(
             // 추가 서비스명 입력 필드
             Column {
                 Text(
-                    text = "추가 서비스명",
+                    text = stringResource(R.string.afternote_editor_custom_service_name_label),
                     style = AfternoteDesign.typography.captionLargeR,
                     color = AfternoteDesign.colors.gray9,
                 )
@@ -95,7 +97,7 @@ fun CustomServiceDialog(
 
             // 추가하기 버튼
             AfternoteButton(
-                text = "추가하기",
+                text = stringResource(R.string.add_button),
                 onClick = {
                     focusManager.clearFocus()
                     params.callbacks.onAddClick()

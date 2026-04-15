@@ -24,7 +24,7 @@ internal fun AfternoteEditorDialogs(state: AfternoteEditorState) {
                         afternoteEditReceiverNameState = state.afternoteEditReceiverNameState,
                         phoneNumberState = state.phoneNumberState,
                         relationshipSelectedValue = state.relationshipSelectedValue,
-                        relationshipOptions = state.relationshipOptions,
+                        relationshipOptions = editorRelationshipOptions(),
                         callbacks =
                             AddAfternoteEditorReceiverDialogCallbacks(
                                 onDismiss = state::dismissDialog,

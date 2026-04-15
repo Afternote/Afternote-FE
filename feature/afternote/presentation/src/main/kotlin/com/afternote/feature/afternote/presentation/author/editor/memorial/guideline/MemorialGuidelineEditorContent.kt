@@ -6,11 +6,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.presentation.author.editor.editorLastWishOptions
 import com.afternote.feature.afternote.presentation.author.editor.memorial.FuneralVideoUpload
 import com.afternote.feature.afternote.presentation.author.editor.memorial.LastMomentQuestion
 import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPhotoUpload
 import com.afternote.feature.afternote.presentation.author.editor.receiver.RecipientDesignationSection
-import com.afternote.feature.afternote.presentation.shared.LastWishOption
 import com.afternote.feature.afternote.presentation.shared.LastWishOtherState
 import com.afternote.feature.afternote.presentation.shared.LastWishesRadioGroup
 import com.afternote.feature.afternote.presentation.shared.MemorialGuidelineContent
@@ -72,22 +72,6 @@ fun MemorialGuidelineEditorContent(
 private fun MemorialGuidelineEditorContentPreview() {
     AfternoteTheme {
         val customLastWishState = rememberTextFieldState()
-        val lastWishOptions =
-            listOf(
-                LastWishOption(
-                    text = "차분하고 조용하게 보내주세요.",
-                    value = "calm",
-                ),
-                LastWishOption(
-                    text = "슬퍼 하지 말고 밝고 따뜻하게 보내주세요.",
-                    value = "bright",
-                ),
-                LastWishOption(
-                    text = "기타(직접 입력)",
-                    value = "other",
-                ),
-            )
-
         MemorialGuidelineEditorContent(
             params =
                 MemorialGuidelineEditorContentParams(
@@ -95,7 +79,7 @@ private fun MemorialGuidelineEditorContentPreview() {
                     playlistSongCount = 16,
                     playlistAlbumCovers = emptyList(),
                     selectedLastWish = "calm",
-                    lastWishOptions = lastWishOptions,
+                    lastWishOptions = editorLastWishOptions(),
                     funeralVideoUrl = null,
                     customLastWishState = customLastWishState,
                     onSongAddClick = {},

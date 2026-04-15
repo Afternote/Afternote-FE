@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -65,7 +66,7 @@ fun MemorialPlaylistEntry(
         }
     SongPlaylistScreen(
         modifier = modifier,
-        title = "추모 플레이리스트",
+        title = stringResource(R.string.afternote_editor_playlist_screen_title),
         onBackClick = actions.onBackClick,
         songs = songs,
         managementContent =
@@ -105,6 +106,7 @@ private fun MemorialPlaylistListHeader(
     onAddSongClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val songCountText = stringResource(R.string.afternote_editor_playlist_song_count_format, songCount)
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -113,7 +115,7 @@ private fun MemorialPlaylistListHeader(
             Column {
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = "현재 플레이리스트",
+                    text = stringResource(R.string.afternote_editor_playlist_current_header),
                     style =
                         AfternoteDesign.typography.textField.copy(
                             fontWeight = FontWeight.Medium,
@@ -125,7 +127,7 @@ private fun MemorialPlaylistListHeader(
             Column {
                 Spacer(modifier = Modifier.height(25.dp))
                 Text(
-                    text = "총 ${songCount}곡",
+                    text = songCountText,
                     style =
                         AfternoteDesign.typography.bodySmallR.copy(
                             color = AfternoteDesign.colors.gray9,
@@ -137,7 +139,7 @@ private fun MemorialPlaylistListHeader(
             Column {
                 Spacer(modifier = Modifier.height(25.dp))
                 Text(
-                    text = "총 ${songCount}곡",
+                    text = songCountText,
                     style =
                         AfternoteDesign.typography.bodySmallR.copy(
                             color = AfternoteDesign.colors.gray9,
@@ -161,7 +163,7 @@ private fun MemorialPlaylistListHeader(
                         Spacer(modifier = Modifier.height(8.dp))
                         Row {
                             Text(
-                                text = "노래 추가하기",
+                                text = stringResource(R.string.afternote_editor_playlist_add_songs),
                                 style =
                                     AfternoteDesign.typography.captionLargeR.copy(
                                         fontWeight = FontWeight.Medium,
@@ -171,7 +173,7 @@ private fun MemorialPlaylistListHeader(
                             Spacer(modifier = Modifier.width(4.dp))
                             ArrowIcon(
                                 iconRes = R.drawable.feature_afternote_ic_arrow_right_playlist,
-                                contentDescription = "추가",
+                                contentDescription = stringResource(R.string.afternote_editor_content_description_add),
                                 modifier = Modifier.size(12.dp),
                                 tint = AfternoteDesign.colors.white,
                             )
@@ -217,7 +219,7 @@ private fun MemorialPlaylistActionBar(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                text = "전체 삭제",
+                text = stringResource(R.string.afternote_editor_playlist_delete_all),
                 style =
                     AfternoteDesign.typography.textField.copy(
                         color = AfternoteDesign.colors.gray9,
@@ -241,7 +243,7 @@ private fun MemorialPlaylistActionBar(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                text = "선택 삭제",
+                text = stringResource(R.string.afternote_editor_playlist_delete_selected),
                 style =
                     AfternoteDesign.typography.textField.copy(
                         color = AfternoteDesign.colors.gray9,

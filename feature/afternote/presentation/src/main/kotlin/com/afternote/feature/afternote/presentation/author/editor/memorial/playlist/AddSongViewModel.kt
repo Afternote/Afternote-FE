@@ -1,8 +1,12 @@
 package com.afternote.feature.afternote.presentation.author.editor.memorial.playlist
+
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.feature.afternote.domain.repository.MusicSearchRepository
+import com.afternote.feature.afternote.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +22,7 @@ private const val SEARCH_DEBOUNCE_MS = 300L
 class AddSongViewModel
     @Inject
     constructor(
+        @ApplicationContext private val appContext: Context,
         private val musicSearchRepository: MusicSearchRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(AddSongUiState())
@@ -60,7 +65,9 @@ class AddSongViewModel
                                 it.copy(
                                     songs = emptyList(),
                                     isLoading = false,
-                                    errorMessage = e.message ?: "검색 실패",
+                                    errorMessage =
+                                        e.message
+                                            ?: appContext.getString(R.string.afternote_editor_search_failed_generic),
                                 )
                             }
                         }

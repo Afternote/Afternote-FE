@@ -9,6 +9,7 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -16,6 +17,7 @@ import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.Label
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.account.AccountSection
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
@@ -37,14 +39,14 @@ fun SocialNetworkEditorContent(
     Column(modifier = modifier.fillMaxWidth()) {
         // 계정 정보 섹션
         Label(
-            text = "계정 정보",
+            text = stringResource(R.string.afternote_editor_label_account_info),
             isRequired = true,
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "아이디",
+            text = stringResource(R.string.feature_afternote_detail_label_id),
             style = AfternoteDesign.typography.captionLargeR,
             color = AfternoteDesign.colors.gray9,
         )
@@ -56,7 +58,7 @@ fun SocialNetworkEditorContent(
         Spacer(modifier = Modifier.height(10.dp))
 
         Text(
-            text = "비밀번호",
+            text = stringResource(R.string.feature_afternote_detail_label_password),
             style = AfternoteDesign.typography.captionLargeR,
             color = AfternoteDesign.colors.gray9,
         )
@@ -70,7 +72,7 @@ fun SocialNetworkEditorContent(
 
         // 계정 처리 방법 섹션
         Label(
-            text = "계정 처리 방법",
+            text = stringResource(R.string.afternote_editor_label_account_process_method),
             isRequired = true,
         )
 
@@ -102,7 +104,7 @@ fun SocialNetworkEditorContent(
 
         // 처리 방법 리스트 섹션
         Label(
-            text = "처리 방법 리스트",
+            text = stringResource(R.string.afternote_editor_label_process_method_list),
             isRequired = true,
         )
 

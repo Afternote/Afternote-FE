@@ -21,10 +21,12 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.modifierextention.addFocusCleaner
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
+import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
@@ -121,11 +123,11 @@ fun AfternoteEditorScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             DetailTopBar(
-                title = "애프터노트 작성하기",
+                title = stringResource(R.string.afternote_editor_screen_title),
                 onBackClick = callbacks.onBackClick,
                 actions = {
                     Text(
-                        text = "등록",
+                        text = stringResource(R.string.afternote_editor_submit),
                         style = AfternoteDesign.typography.bodySmallB,
                         color = AfternoteDesign.colors.gray9,
                         modifier =

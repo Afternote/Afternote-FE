@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -83,7 +84,7 @@ fun AfternoteEditorReceiverList(
 
         // 추가 버튼 (파란 원형 버튼)
         PlusBadgeButton(
-            contentDescription = "수신자 추가",
+            contentDescription = stringResource(R.string.afternote_editor_label_receiver_add),
             onClick = {
                 state.toggleTextField()
                 events.onAddClick()
@@ -123,7 +124,7 @@ private fun AfternoteEditorReceiverItem(
         // 아바타 (기본 프로필 이미지)
         Image(
             painter = painterResource(R.drawable.feature_afternote_img_recipient_profile),
-            contentDescription = "프로필 사진",
+            contentDescription = stringResource(R.string.feature_afternote_content_description_recipient_profile),
             modifier = Modifier.size(58.dp),
         )
 
@@ -152,7 +153,7 @@ private fun AfternoteEditorReceiverItem(
         Box {
             Image(
                 painter = painterResource(R.drawable.feature_afternote_ic_more_horizontal_1),
-                contentDescription = "더보기",
+                contentDescription = stringResource(R.string.afternote_editor_content_description_more),
                 modifier =
                     Modifier
                         .clickable(onClick = onMoreClick),

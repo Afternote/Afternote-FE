@@ -11,9 +11,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.account.AccountSection
 import com.afternote.feature.afternote.presentation.author.editor.gallery.GalleryAndFileEditorContent
 import com.afternote.feature.afternote.presentation.author.editor.gallery.GalleryAndFileEditorContentParams
@@ -57,10 +59,10 @@ internal fun EditContent(
         SelectionDropdown(
             labelParams =
                 SelectionDropdownLabelParams(
-                    label = "종류",
+                    label = stringResource(R.string.afternote_editor_label_category),
                 ),
-            selectedValue = form.selectedCategory.displayLabel,
-            options = state.categories,
+            selectedValue = form.selectedCategory.toDropdownLabel(),
+            options = editorCategoryDropdownLabels(),
             onValueSelected = state::onCategorySelected,
             menuStyle =
                 DropdownMenuStyle(
@@ -71,12 +73,12 @@ internal fun EditContent(
         )
 
         if (form.selectedCategory != EditorCategory.MEMORIAL) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             SelectionDropdown(
                 labelParams =
                     SelectionDropdownLabelParams(
-                        label = "서비스명",
+                        label = stringResource(R.string.afternote_editor_label_service_name),
                     ),
                 selectedValue = form.selectedService,
                 options = form.currentServiceOptions,
@@ -89,7 +91,7 @@ internal fun EditContent(
                 state = state.serviceDropdownState,
             )
         }
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
         CategoryContent(
             state = state,
@@ -99,11 +101,6 @@ internal fun EditContent(
             onPhotoAddClick = onPhotoAddClick,
             onVideoAddClick = onVideoAddClick,
             onThumbnailBytesReady = onThumbnailBytesReady,
-        )
-
-        Spacer(
-            modifier =
-                Modifier.height(bottomPadding.calculateBottomPadding() + 24.dp),
         )
     }
 }
@@ -127,7 +124,7 @@ internal fun CategoryContent(
                         playlistSongCount = form.livePlaylistSongCount(state.playlistStateHolder),
                         playlistAlbumCovers = form.displayAlbumCovers(state.playlistStateHolder),
                         selectedLastWish = form.selectedLastWish,
-                        lastWishOptions = state.lastWishOptions,
+                        lastWishOptions = editorLastWishOptions(),
                         funeralVideoUrl = form.funeralVideoUrl,
                         funeralThumbnailUrl = form.funeralThumbnailUrl,
                         customLastWishState = state.customLastWishState,

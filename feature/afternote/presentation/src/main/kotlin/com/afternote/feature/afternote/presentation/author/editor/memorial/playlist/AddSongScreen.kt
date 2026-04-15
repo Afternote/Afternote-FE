@@ -2,7 +2,9 @@ package com.afternote.feature.afternote.presentation.author.editor.memorial.play
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScreen
 import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScreenSelectableOptions
@@ -31,7 +33,7 @@ fun AddSongScreen(
 ) {
     SongPlaylistScreen(
         modifier = modifier,
-        title = "추모 플레이리스트 추가",
+        title = stringResource(R.string.afternote_editor_playlist_add_screen_title),
         onBackClick = callbacks.onBackClick,
         songs = uiState.songs,
         onSongsSelected = { selected ->
@@ -70,7 +72,7 @@ fun AddSongScreen(
 ) {
     SongPlaylistScreen(
         modifier = modifier,
-        title = "추모 플레이리스트 추가",
+        title = stringResource(R.string.afternote_editor_playlist_add_screen_title),
         onBackClick = callbacks.onBackClick,
         songs = songs,
         onSongsSelected = { selected ->
