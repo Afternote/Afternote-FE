@@ -10,6 +10,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.toRoute
+import com.afternote.core.ui.ObserveAsEvents
 import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorEvent
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorSaveError
@@ -36,6 +37,8 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.SELE
  * [androidx.lifecycle.SavedStateHandle]의 `itemId`만 보고 Repository `getDetail`을 호출한다 (Compose `LaunchedEffect` 위임 없음).
  * [MemorialPlaylistStateHolder]는 그래프 스코프 런타임 버퍼이며, 곡 목록 복원 SSOT는 폼·스냅샷의 `memorialPlaylistSongs`이다.
  * 서브화면에서 복귀 시 [com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState.syncMemorialPlaylistFromGraphHolderIfAttached]로 홀더→폼을 맞춘다.
+ *
+ * ViewModel 단발 이벤트는 [com.afternote.core.ui.ObserveAsEvents]로만 수집한다 (백그라운드에서 네비게이션 부수 효과 방지).
  */
 internal sealed class EditorSaveErrorResult {
     data class Validation(
@@ -195,26 +198,24 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
         }
     }
 
-    LaunchedEffect(Unit) {
-        editViewModel.events.collect { event ->
-            when (event) {
-                is AfternoteEditorEvent.SaveSuccess -> {
-                    navigateToAfternoteHomeOnSaveSuccess(
-                        params.onEditStateClear,
-                        params.onSaveSuccessNavigateHome,
-                    )
-                }
+    ObserveAsEvents(flow = editViewModel.events) { event ->
+        when (event) {
+            is AfternoteEditorEvent.SaveSuccess -> {
+                navigateToAfternoteHomeOnSaveSuccess(
+                    params.onEditStateClear,
+                    params.onSaveSuccessNavigateHome,
+                )
+            }
 
-                is AfternoteEditorEvent.ThumbnailUploaded -> {
-                    runCatching { state.onFuneralThumbnailDataUrlReady(event.url) }
-                        .onFailure { e ->
-                            Log.e(
-                                TAG_AFTERNOTE_EDIT,
-                                "apply thumbnailUrl failed",
-                                e,
-                            )
-                        }
-                }
+            is AfternoteEditorEvent.ThumbnailUploaded -> {
+                runCatching { state.onFuneralThumbnailDataUrlReady(event.url) }
+                    .onFailure { e ->
+                        Log.e(
+                            TAG_AFTERNOTE_EDIT,
+                            "apply thumbnailUrl failed",
+                            e,
+                        )
+                    }
             }
         }
     }
@@ -232,8 +233,20 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
             null -> null
         }
 
-    AfternoteEditorScreen(
-        callbacks =
+    val callbacks =
+        remember(
+            params.onPopBackStack,
+            params.onNavigateToMemorialPlaylist,
+            params.onNavigateToSelectReceiver,
+            params.onBottomNavTabSelected,
+            params.onEditStateClear,
+            params.onEditStateChanged,
+            params.editState,
+            editViewModel,
+            state,
+            route,
+            params.playlistStateHolder,
+        ) {
             buildEditorScreenCallbacks(
                 EditorScreenCallbacksParams(
                     onPopBackStack = params.onPopBackStack,
@@ -248,7 +261,11 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
                     onNavigateToSelectReceiver = params.onNavigateToSelectReceiver,
                     onBottomNavTabSelected = params.onBottomNavTabSelected,
                 ),
-            ),
+            )
+        }
+
+    AfternoteEditorScreen(
+        callbacks = callbacks,
         playlistStateHolder = params.playlistStateHolder,
         initialListItem = null,
         state = state,

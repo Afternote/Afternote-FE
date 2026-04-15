@@ -6,6 +6,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.model.AlbumCover
+import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationException
+import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationKind
 import com.afternote.feature.afternote.domain.model.author.AuthorReceiverEntry
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
 import com.afternote.feature.afternote.domain.repository.AuthorReceiverRepository
@@ -39,12 +41,14 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import retrofit2.HttpException
 import javax.inject.Inject
 
 private const val TAG = "AfternoteEditorVM"
 
 private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v1"
+
+/** 수정 진입 시 서버 원본 카테고리(API `categoryForApi`). 폼 스냅샷과 별도로 두어 프로세스 데스 후에도 유지한다. */
+private const val EDITOR_ORIGINAL_CATEGORY_FOR_API_KEY = "editor_original_category_for_api_v1"
 
 /** 타입 안전 [com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute.EditorRoute] 직렬화 인자명 (상세 [AfternoteDetailViewModel]과 동일). */
 private const val NAV_ARG_ITEM_ID = "itemId"
@@ -185,6 +189,8 @@ private data class EditorFormSnapshot(
  * 순수 UI는 [editorUi] ([AfternoteEditorUiState])가 담당합니다.
  *
  * 수정 모드(`itemId` 있음)의 상세 로드는 [AfternoteDetailViewModel]과 같이 `init`에서만 트리거한다 (`LaunchedEffect`로 네비게이션에 위임하지 않음).
+ * 서버 원본 카테고리(저장 API용)는 전용 [SavedStateHandle] 키에 보관해 폼 JSON과 함께 프로세스 데스 후 복원된다.
+ * 저장 API의 HTTP·에러 바디 해석은 [com.afternote.feature.afternote.domain.repository.AfternoteRepository] 구현에서 도메인 예외로 변환되며, 여기서는 Retrofit 타입을 알지 않는다.
  * UI 액션은 개별 public 메서드로 노출한다 (작성자 홈 화면 ViewModel과 동일).
  */
 @HiltViewModel
@@ -229,11 +235,6 @@ class AfternoteEditorViewModel
                 formStateSource = editorForm.asStateFlow(),
             )
 
-        private val apiErrorBodyJson =
-            Json {
-                ignoreUnknownKeys = true
-            }
-
         private val _saveState = MutableStateFlow(AfternoteSaveState())
         val saveState: StateFlow<AfternoteSaveState> = _saveState.asStateFlow()
 
@@ -252,14 +253,15 @@ class AfternoteEditorViewModel
                     .collect { mapped -> _authorReceiversUi.value = mapped }
             }
             val editItemId = savedStateHandle.get<String>(NAV_ARG_ITEM_ID)?.toLongOrNull()
+            if (editItemId == null) {
+                savedStateHandle.remove<String>(EDITOR_ORIGINAL_CATEGORY_FOR_API_KEY)
+            }
             if (editItemId != null) {
                 viewModelScope.launch {
                     loadExistingAfternoteForEdit(editItemId)
                 }
             }
         }
-
-        private var loadedCategoryForEdit: EditorCategory? = null
 
         private fun readFormSnapshotOrDefault(): EditorFormState {
             val raw = savedStateHandle.get<String>(EDITOR_FORM_SNAPSHOT_KEY) ?: return EditorFormState()
@@ -328,8 +330,9 @@ class AfternoteEditorViewModel
                 return
             }
 
+            val originalCategoryForApi = readOriginalCategoryForApiFromSavedState()
             val categoryForApi =
-                if (editingId != null) (loadedCategoryForEdit ?: category) else category
+                if (editingId != null) (originalCategoryForApi ?: category) else category
 
             Log.d(
                 TAG,
@@ -367,7 +370,7 @@ class AfternoteEditorViewModel
                     .getDetail(id = afternoteId)
                     .onSuccess { detail ->
                         val prefill = AfternoteEditorFormMapper.buildEditorFormPrefill(detail)
-                        loadedCategoryForEdit = prefill.category
+                        savedStateHandle[EDITOR_ORIGINAL_CATEGORY_FOR_API_KEY] = prefill.category.name
                         editorFormState.applyFormPrefill(prefill)
                     }
             }
@@ -380,8 +383,13 @@ class AfternoteEditorViewModel
             Log.e(TAG, "saveAfternote: FAILURE, category=${category.serverValue}", e)
             val validationError =
                 when (e) {
+                    is AfternoteAuthoringValidationException ->
+                        when (e.kind) {
+                            AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED ->
+                                AfternoteValidationError.RECEIVERS_REQUIRED
+                        }
+
                     is AfternoteValidationException -> e.validationError
-                    is HttpException if e.code() == 400 -> parseReceiversRequiredFromBody(e)
                     else -> null
                 }
             val errorMessage =
@@ -400,16 +408,8 @@ class AfternoteEditorViewModel
 
         fun getReceiverById(id: Long): AuthorReceiverEntry? = authorReceiverRepository.currentReceivers().find { it.receiverId == id }
 
-        private fun parseReceiversRequiredFromBody(e: HttpException): AfternoteValidationError? {
-            val body = e.response()?.errorBody()?.string() ?: return null
-            return runCatching {
-                val parsed = apiErrorBodyJson.decodeFromString<ApiErrorBody>(body)
-                if (parsed.code == 475) AfternoteValidationError.RECEIVERS_REQUIRED else null
-            }.getOrNull()
-        }
+        private fun readOriginalCategoryForApiFromSavedState(): EditorCategory? =
+            savedStateHandle
+                .get<String>(EDITOR_ORIGINAL_CATEGORY_FOR_API_KEY)
+                ?.let { name -> runCatching { EditorCategory.valueOf(name) }.getOrNull() }
     }
-
-@Serializable
-private data class ApiErrorBody(
-    val code: Int? = null,
-)
