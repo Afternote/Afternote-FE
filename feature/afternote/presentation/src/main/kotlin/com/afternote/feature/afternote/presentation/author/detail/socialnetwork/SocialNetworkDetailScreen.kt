@@ -183,11 +183,7 @@ private fun SocialNetworkDetailScrollContent(
                 .padding(horizontal = 20.dp),
     ) {
         AfternoteDetailServiceHeaderWithRecipientChip(
-            service =
-                AfternoteServiceDisplay(
-                    serviceName = content.serviceName,
-                    iconResId = content.iconResId,
-                ),
+            service = AfternoteServiceDisplay.fromServiceName(content.serviceName),
             finalWriteDate = content.finalWriteDate,
             recipientBadgeState =
                 if (content.afternoteEditReceivers.isNotEmpty()) {

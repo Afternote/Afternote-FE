@@ -1,7 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.detail.socialnetwork
 
 import androidx.compose.runtime.Immutable
-import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 
 /**
@@ -20,5 +19,4 @@ data class SocialNetworkDetailContent(
     val message: String = "",
     val finalWriteDate: String = "",
     val afternoteEditReceivers: List<ReceiverUiModel> = emptyList(),
-    val iconResId: Int = R.drawable.feature_afternote_img_insta_pattern,
 )

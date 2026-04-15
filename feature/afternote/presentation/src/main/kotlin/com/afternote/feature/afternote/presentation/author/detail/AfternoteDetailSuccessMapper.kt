@@ -5,7 +5,6 @@ import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.presentation.author.detail.socialnetwork.SocialNetworkDetailContent
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
-import com.afternote.feature.afternote.presentation.shared.util.getIconResForServiceName
 
 internal fun Detail.toReceiverUiModels(): List<ReceiverUiModel> =
     receivers.mapIndexed { index, r ->
@@ -37,7 +36,6 @@ internal fun Detail.toSocialNetworkDetailContent(authorDisplayName: String): Soc
         message = processing?.leaveMessage ?: "",
         finalWriteDate = timestamps.updatedAt.ifEmpty { timestamps.createdAt },
         afternoteEditReceivers = toReceiverUiModels(),
-        iconResId = getIconResForServiceName(title),
     )
 
 internal fun Detail.toMemorialGuidelineDetailContent(authorDisplayName: String): MemorialGuidelineDetailContent =
