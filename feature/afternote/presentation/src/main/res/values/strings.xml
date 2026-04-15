@@ -86,6 +86,22 @@
     <string name="afternote_editor_category_gallery">갤러리 및 파일</string>
     <string name="afternote_editor_category_memorial">추모 가이드라인</string>
 
+    <string name="afternote_editor_label_account_info">계정 정보</string>
+    <string name="afternote_editor_label_account_process_method">계정 처리 방법</string>
+    <string name="afternote_editor_label_process_method_list">처리 방법 리스트</string>
+    <string name="afternote_editor_label_receiver_add">수신자 추가</string>
+    <string name="afternote_editor_label_messages">남기실 말씀</string>
+    <string name="afternote_editor_label_category">종류</string>
+    <string name="afternote_editor_label_service_name">서비스명</string>
+    <string name="afternote_editor_label_receiver_relation">수신자와의 관계</string>
+
+    <string name="afternote_editor_message_field_title">제목</string>
+    <string name="afternote_editor_message_field_body">내용</string>
+    <string name="afternote_editor_message_action_register">등록</string>
+    <string name="afternote_editor_message_action_delete">삭제</string>
+    <string name="afternote_editor_message_add_content_description">남기실 말씀 추가</string>
+    <string name="afternote_editor_message_text_field_placeholder">Text Field</string>
+
     <string name="receiver_verify_title">수신자 인증</string>
     <string name="receiver_verify_self_title">수신자 본인 확인</string>
     <string name="receiver_verify_intro">고객의 소중한 정보를 보호하기 위해\n가족관계 및 사망 사실 확인이 필요합니다.</string>

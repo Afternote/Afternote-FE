@@ -5,10 +5,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.Label
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverSection
 
@@ -23,7 +25,7 @@ fun RecipientDesignationSection(
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Label(
-            text = "수신자 추가",
+            text = stringResource(R.string.afternote_editor_label_receiver_add),
             isRequired = true,
         )
         Spacer(modifier = Modifier.height(9.dp))

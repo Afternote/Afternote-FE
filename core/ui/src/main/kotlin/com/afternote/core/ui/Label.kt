@@ -2,7 +2,6 @@ package com.afternote.core.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +13,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -36,7 +38,7 @@ fun Label(
     isRequired: Boolean = false,
 ) {
     Row(
-        modifier = modifier,
+        modifier = modifier.semantics(mergeDescendants = true) {},
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -46,6 +48,7 @@ fun Label(
         )
 
         if (isRequired) {
+            val requiredMarkerDescription = stringResource(R.string.core_ui_semantics_required_field)
             Spacer(modifier = Modifier.width(8.dp))
             Box(
                 modifier =
@@ -54,7 +57,9 @@ fun Label(
                         .background(
                             color = AfternoteDesign.colors.b1,
                             shape = CircleShape,
-                        ),
+                        ).semantics {
+                            contentDescription = requiredMarkerDescription
+                        },
             )
         }
     }
@@ -79,22 +84,6 @@ private fun LabelRequiredPreview() {
                 text = "정보 처리 방법",
                 isRequired = true,
             )
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "다양한 라벨 스타일")
-@Composable
-private fun LabelVariantsPreview() {
-    AfternoteTheme {
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
-        ) {
-            Label(text = "일반 라벨")
-            Label(text = "필수 라벨", isRequired = true)
         }
     }
 }

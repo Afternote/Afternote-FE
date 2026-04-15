@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
@@ -33,6 +34,7 @@ import com.afternote.core.ui.button.PlusBadgeButton
 import com.afternote.core.ui.modifierextention.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.presentation.R
 
 /**
  * 남기실 말씀 섹션 - 여러 개의 메시지를 추가/삭제/등록할 수 있는 컴포넌트
@@ -52,7 +54,7 @@ fun EditorMessageSection(
 ) {
     val focusManager = LocalFocusManager.current
     Column(modifier = modifier.fillMaxWidth()) {
-        Label(text = "남기실 말씀")
+        Label(text = stringResource(R.string.afternote_editor_label_messages))
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -73,7 +75,7 @@ fun EditorMessageSection(
         Spacer(modifier = Modifier.height(16.dp))
 
         PlusBadgeButton(
-            contentDescription = "남기실 말씀 추가",
+            contentDescription = stringResource(R.string.afternote_editor_message_add_content_description),
             onClick = {
                 focusManager.clearFocus()
                 onAddClick()
@@ -102,20 +104,20 @@ private fun EditorMessageItem(
                     .bottomBorder(color = AfternoteDesign.colors.gray2, width = 1.dp),
         ) {
             Text(
-                text = "제목",
+                text = stringResource(R.string.afternote_editor_message_field_title),
                 style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray9,
             )
             Spacer(modifier = Modifier.height(6.dp))
             AfternoteTextField(
                 state = message.titleState,
-                placeholder = "Text Field",
+                placeholder = stringResource(R.string.afternote_editor_message_text_field_placeholder),
             )
 
             Spacer(modifier = Modifier.height(10.dp))
 
             Text(
-                text = "내용",
+                text = stringResource(R.string.afternote_editor_message_field_body),
                 style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray9,
             )
@@ -137,7 +139,7 @@ private fun EditorMessageItem(
                     },
                 ) {
                     Text(
-                        text = "삭제",
+                        text = stringResource(R.string.afternote_editor_message_action_delete),
                         style = AfternoteDesign.typography.bodySmallR,
                         color = AfternoteDesign.colors.gray5,
                     )
@@ -150,7 +152,7 @@ private fun EditorMessageItem(
                 },
             ) {
                 Text(
-                    text = "등록",
+                    text = stringResource(R.string.afternote_editor_message_action_register),
                     style = AfternoteDesign.typography.bodySmallR,
                     color = AfternoteDesign.colors.gray5,
                 )
@@ -195,7 +197,7 @@ private fun EditorMessageContentField(
             ) {
                 if (state.text.isEmpty()) {
                     Text(
-                        text = "Text Field",
+                        text = stringResource(R.string.afternote_editor_message_text_field_placeholder),
                         style = AfternoteDesign.typography.textField,
                         color = AfternoteDesign.colors.gray4,
                     )
