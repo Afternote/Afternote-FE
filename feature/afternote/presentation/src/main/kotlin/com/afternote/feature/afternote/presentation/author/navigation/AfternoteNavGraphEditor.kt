@@ -32,10 +32,9 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.SELE
  * **데이터 SSOT:** 편집 본문은 [com.afternote.feature.afternote.domain.repository.AfternoteRepository]가 담당한다.
  * 홈의 `visibleItems` 스냅샷은 에디터에 전달하지 않는다. 식별은 라우트의 `itemId`·`initialCategory` 정도로 최소화한다.
  *
- * **LoadForEdit 트리거가 Compose에 있는 이유:** [MemorialPlaylistStateHolder]는
- * [com.afternote.feature.afternote.presentation.AfternoteHostViewModel]에 묶인 그래프 스코프 런타임 버퍼이고,
- * 곡 목록의 복원용 SSOT는 [com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState.memorialPlaylistSongs]
- * + [androidx.lifecycle.SavedStateHandle] 스냅샷이다. 실제 상세 로드는 ViewModel → Repository 경로다.
+ * **수정 진입 데이터 로드:** 상세 화면과 같이 [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel]의 `init`에서
+ * [androidx.lifecycle.SavedStateHandle]의 `itemId`만 보고 Repository `getDetail`을 호출한다 (Compose `LaunchedEffect` 위임 없음).
+ * [MemorialPlaylistStateHolder]는 그래프 스코프 런타임 버퍼이며, 곡 목록 복원 SSOT는 폼·스냅샷의 `memorialPlaylistSongs`이다.
  */
 internal sealed class EditSaveErrorResult {
     data class Validation(
@@ -155,7 +154,6 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
     val route = params.backStackEntry.toRoute<AfternoteRoute.EditorRoute>()
     val saveState by editViewModel.saveState.collectAsStateWithLifecycle()
     val authorReceivers by editViewModel.authorReceiversUi.collectAsStateWithLifecycle()
-    val form by editViewModel.editorFormStateFlow.collectAsStateWithLifecycle()
     val state = params.editState ?: editViewModel.editorFormState
 
     // 새 글 작성 시 기존 상태 초기화 (목적지 화면이 스스로 책임)
@@ -193,17 +191,6 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
     LaunchedEffect(route.initialCategory, route.itemId) {
         if (route.itemId == null && route.initialCategory != null) {
             state.selectCategoryByNavKey(route.initialCategory)
-        }
-    }
-
-    // 수정 진입: 라우트 ID만 사용 → VM이 Repository(getDetail)로 SSOT 로드. holder는 그래프 스코프 초안 전달용.
-    LaunchedEffect(route.itemId, form.loadedItemId) {
-        val id = route.itemId?.toLongOrNull() ?: return@LaunchedEffect
-        if (form.loadedItemId != route.itemId) {
-            editViewModel.loadAfternoteForEdit(
-                afternoteId = id,
-                playlistStateHolder = params.playlistStateHolder,
-            )
         }
     }
 

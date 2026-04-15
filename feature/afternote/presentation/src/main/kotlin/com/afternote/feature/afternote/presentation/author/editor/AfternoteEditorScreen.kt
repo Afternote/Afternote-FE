@@ -29,7 +29,6 @@ import com.afternote.core.ui.modifierextention.addFocusCleaner
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.domain.model.author.ListItem
-import com.afternote.feature.afternote.presentation.author.editor.mapper.AfternoteEditorMapper
 import com.afternote.feature.afternote.presentation.author.editor.mapper.editScreenLabelRes
 import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
@@ -120,7 +119,7 @@ fun AfternoteEditorScreen(
         )
         if (form.loadedItemId != item.id) {
             state.applyFormPrefill(
-                AfternoteEditorMapper.editorFormPrefillFromLoadParams(
+                AfternoteEditorSuccessMapper.editorFormPrefillFromLoadParams(
                     LoadFromExistingParams(
                         itemId = item.id,
                         serviceName = item.serviceName,

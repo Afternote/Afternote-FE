@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.editor.mapper
+package com.afternote.feature.afternote.presentation.author.editor
 
 import com.afternote.feature.afternote.domain.model.author.AfternoteAccountCredentials
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
@@ -13,6 +13,7 @@ import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
 import com.afternote.feature.afternote.presentation.author.editor.account.AccountProcessMethod
 import com.afternote.feature.afternote.presentation.author.editor.account.InfoProcessMethod
 import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
+import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessagesCodec
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
@@ -29,10 +30,13 @@ private const val LAST_WISH_DEFAULT_CALM = "차분하고 조용하게 보내주�
 private const val LAST_WISH_DEFAULT_BRIGHT = "슬퍼 하지 말고 밝고 따뜻하게 보내주세요."
 
 /**
- * ViewModel ↔ Domain 간 데이터 변환 로직을 담당합니다.
+ * 수정/작성 화면용 Domain ↔ UI 매핑.
+ *
+ * 상세 쪽 [AfternoteDetailSuccessMapper]와 같이 `author/editor` 패키지 루트에 둔다.
  */
-internal object AfternoteEditorMapper {
-    fun buildEditorFormPrefill(detail: Detail): EditorFormPrefill = editorFormPrefillFromLoadParams(buildLoadFromExistingParams(detail))
+internal object AfternoteEditorSuccessMapper {
+    fun buildEditorFormPrefill(detail: Detail): EditorFormPrefill =
+        editorFormPrefillFromLoadParams(buildLoadFromExistingParams(detail))
 
     /**
      * [LoadFromExistingParams]의 문자열·분기를 해석해 폼에 바로 넣을 [EditorFormPrefill]을 만든다.
@@ -90,6 +94,7 @@ internal object AfternoteEditorMapper {
             funeralVideoUrl = params.memorialVideoUrl,
             funeralThumbnailUrl = params.memorialThumbnailUrl,
             memorialPhotoUrl = params.memorialPhotoUrl,
+            memorialPlaylistSongs = params.memorialSongs,
         )
     }
 
@@ -117,6 +122,19 @@ internal object AfternoteEditorMapper {
             } else {
                 ""
             }
+        val memorialSongs: List<Song> =
+            if (editorCategory == EditorCategory.MEMORIAL) {
+                detail.playlist?.songs?.mapIndexed { index, s ->
+                    Song(
+                        id = (s.id ?: index.toLong()).toString(),
+                        title = s.title,
+                        artist = s.artist,
+                        albumCoverUrl = s.coverUrl,
+                    )
+                } ?: emptyList()
+            } else {
+                emptyList()
+            }
         return LoadFromExistingParams(
             itemId = detail.id.toString(),
             serviceName = detail.title,
@@ -138,6 +156,7 @@ internal object AfternoteEditorMapper {
             memorialVideoUrl = detail.playlist?.playlistDetailMemorialMedia?.videoUrl,
             memorialThumbnailUrl = detail.playlist?.playlistDetailMemorialMedia?.thumbnailUrl,
             memorialPhotoUrl = detail.playlist?.playlistDetailMemorialMedia?.photoUrl,
+            memorialSongs = memorialSongs,
         )
     }
 

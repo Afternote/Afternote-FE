@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.editor.model
 
+import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
@@ -27,6 +28,7 @@ data class EditorFormPrefill(
     val funeralVideoUrl: String?,
     val funeralThumbnailUrl: String?,
     val memorialPhotoUrl: String?,
+    val memorialPlaylistSongs: List<Song> = emptyList(),
 )
 
 /** "남기고 싶은 당부" UI 반영용 (이미 API 문자열과 기본 문구 매칭이 끝난 상태). */
@@ -36,7 +38,7 @@ data class LastWishPrefill(
 )
 
 /**
- * Preview·테스트용 중간 표현. [com.afternote.feature.afternote.presentation.author.editor.mapper.AfternoteEditorMapper.editorFormPrefillFromLoadParams]로
+ * Preview·테스트용 중간 표현. [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorSuccessMapper.editorFormPrefillFromLoadParams]로
  * [EditorFormPrefill]로 변환한다.
  */
 data class LoadFromExistingParams(
@@ -49,6 +51,7 @@ data class LoadFromExistingParams(
     val memorialVideoUrl: String? = null,
     val memorialThumbnailUrl: String? = null,
     val memorialPhotoUrl: String? = null,
+    val memorialSongs: List<Song> = emptyList(),
 )
 
 data class LoadFromExistingAccountParams(

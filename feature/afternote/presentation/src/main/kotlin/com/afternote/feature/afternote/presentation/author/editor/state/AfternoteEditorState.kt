@@ -409,8 +409,18 @@ class AfternoteEditorState(
                 funeralVideoUrl = prefill.funeralVideoUrl,
                 funeralThumbnailUrl = prefill.funeralThumbnailUrl,
                 memorialPhotoUrl = prefill.memorialPhotoUrl,
+                memorialPlaylistSongs = prefill.memorialPlaylistSongs,
+                playlistSongCount =
+                    if (prefill.memorialPlaylistSongs.isNotEmpty()) {
+                        prefill.memorialPlaylistSongs.size
+                    } else {
+                        withLastWish.playlistSongCount
+                    },
                 messageBlocks = prefillBlocks,
             )
+        }
+        if (prefill.category == EditorCategory.MEMORIAL) {
+            ui.playlistStateHolder?.replaceSongs(prefill.memorialPlaylistSongs)
         }
         ui.idState.edit { replace(0, length, prefill.accountId) }
         ui.passwordState.edit { replace(0, length, prefill.password) }

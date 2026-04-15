@@ -7,11 +7,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.model.AlbumCover
 import com.afternote.feature.afternote.domain.model.author.AuthorReceiverEntry
-import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
 import com.afternote.feature.afternote.domain.repository.AuthorReceiverRepository
 import com.afternote.feature.afternote.domain.repository.MemorialThumbnailUploadRepository
-import com.afternote.feature.afternote.presentation.author.editor.mapper.AfternoteEditorMapper
 import com.afternote.feature.afternote.presentation.author.editor.mapper.toAfternoteEditorReceivers
 import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
@@ -47,6 +45,9 @@ import javax.inject.Inject
 private const val TAG = "AfternoteEditorVM"
 
 private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v1"
+
+/** 타입 안전 [com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute.EditorRoute] 직렬화 인자명 (상세 [AfternoteDetailViewModel]과 동일). */
+private const val NAV_ARG_ITEM_ID = "itemId"
 
 @Serializable
 private data class ReceiverSnap(
@@ -179,6 +180,7 @@ private data class EditorFormSnapshot(
  * 추모 플레이리스트 곡 목록은 폼의 [EditorFormState.memorialPlaylistSongs]와 그래프 스코프 [MemorialPlaylistStateHolder]가 동기화된 뒤 스냅샷에 포함됩니다.
  * 순수 UI는 [editorUi] ([AfternoteEditorUiState])가 담당합니다.
  *
+ * 수정 모드(`itemId` 있음)의 상세 로드는 [AfternoteDetailViewModel]과 같이 `init`에서만 트리거한다 (`LaunchedEffect`로 네비게이션에 위임하지 않음).
  * UI 액션은 개별 public 메서드로 노출한다 (작성자 홈 화면 ViewModel과 동일).
  */
 @HiltViewModel
@@ -244,6 +246,12 @@ class AfternoteEditorViewModel
                     .observeReceivers()
                     .map { it.toAfternoteEditorReceivers() }
                     .collect { mapped -> _authorReceiversUi.value = mapped }
+            }
+            val editItemId = savedStateHandle.get<String>(NAV_ARG_ITEM_ID)?.toLongOrNull()
+            if (editItemId != null) {
+                viewModelScope.launch {
+                    loadExistingAfternoteForEdit(editItemId)
+                }
             }
         }
 
@@ -348,39 +356,16 @@ class AfternoteEditorViewModel
             }
         }
 
-        fun loadAfternoteForEdit(
-            afternoteId: Long,
-            playlistStateHolder: MemorialPlaylistStateHolder? = null,
-        ) {
+        private fun loadExistingAfternoteForEdit(afternoteId: Long) {
             viewModelScope.launch {
                 afternoteRepository
                     .getDetail(id = afternoteId)
                     .onSuccess { detail ->
-                        populatePlaylistFromDetail(detail, playlistStateHolder)
-                        val prefill = AfternoteEditorMapper.buildEditorFormPrefill(detail)
+                        val prefill = AfternoteEditorSuccessMapper.buildEditorFormPrefill(detail)
                         loadedCategoryForEdit = prefill.category
                         editorFormState.applyFormPrefill(prefill)
                     }
             }
-        }
-
-        private fun populatePlaylistFromDetail(
-            detail: Detail,
-            playlistStateHolder: MemorialPlaylistStateHolder?,
-        ) {
-            val detailCategory = EditorCategory.fromServerValue(detail.category)
-            if (detailCategory != EditorCategory.MEMORIAL || playlistStateHolder == null) return
-            val playlist = detail.playlist ?: return
-            playlistStateHolder.replaceSongs(
-                playlist.songs.mapIndexed { index, s ->
-                    Song(
-                        id = (s.id ?: index.toLong()).toString(),
-                        title = s.title,
-                        artist = s.artist,
-                        albumCoverUrl = s.coverUrl,
-                    )
-                },
-            )
         }
 
         private fun handleSaveFailure(

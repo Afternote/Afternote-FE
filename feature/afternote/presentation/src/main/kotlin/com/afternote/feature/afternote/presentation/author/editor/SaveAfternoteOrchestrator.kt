@@ -2,9 +2,6 @@ package com.afternote.feature.afternote.presentation.author.editor
 
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
-import com.afternote.feature.afternote.presentation.author.editor.mapper.AfternoteEditorMapper
-import com.afternote.feature.afternote.presentation.author.editor.mapper.CreateInput
-import com.afternote.feature.afternote.presentation.author.editor.mapper.MemorialMediaUrls
 import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
@@ -41,7 +38,7 @@ class SaveAfternoteOrchestrator
 
             return if (editingId != null) {
                 val updatePayload =
-                    AfternoteEditorMapper.buildUpdatePayload(
+                    AfternoteEditorSuccessMapper.buildUpdatePayload(
                         category = categoryForApi,
                         payload = payload,
                         selectedReceiverIds = selectedReceiverIds,
@@ -77,7 +74,7 @@ class SaveAfternoteOrchestrator
             memorialPhotoUrl: String?,
         ): Result<Long> {
             val createInput =
-                AfternoteEditorMapper.buildCreateInput(
+                AfternoteEditorSuccessMapper.buildCreateInput(
                     category = category,
                     payload = payload,
                     selectedReceiverIds = selectedReceiverIds,
