@@ -55,7 +55,6 @@ private fun ProfileImageContent(
 ) {
     val placeholder = painterResource(R.drawable.core_ui_ic_profile_placeholder)
     val contentDescription = stringResource(R.string.core_ui_content_description_profile_image)
-    stringResource(R.string.core_ui_content_description_profile_image)
 
     if (!displayImageUri.isNullOrBlank()) {
         AsyncImage(
