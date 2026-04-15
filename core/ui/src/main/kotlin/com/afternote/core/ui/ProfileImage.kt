@@ -40,7 +40,7 @@ fun ProfileImage(
             PlusBadgeButton(
                 contentDescription = stringResource(R.string.core_ui_content_description_profile_edit),
                 onClick = onClick,
-                paddingValues = PaddingValues(18.dp),
+                paddingValues = PaddingValues(17.dp),
                 modifier = Modifier.align(Alignment.BottomEnd),
                 size = 48.dp,
             )

@@ -81,8 +81,8 @@ fun EditorMessageSection(
                 onAddClick()
             },
             paddingValues = PaddingValues(12.dp),
-            plusSize = 24.dp,
             modifier = Modifier.align(Alignment.CenterHorizontally),
+            size = 24.dp,
         )
     }
 }

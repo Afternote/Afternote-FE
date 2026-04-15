@@ -90,7 +90,7 @@ fun AfternoteEditorReceiverList(
                 events.onAddClick()
             },
             paddingValues = PaddingValues(12.dp),
-            plusSize = 24.dp,
+            size = 24.dp,
         )
     }
 }

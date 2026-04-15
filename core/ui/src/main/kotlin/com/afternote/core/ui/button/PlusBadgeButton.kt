@@ -13,10 +13,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
  * 다른 UI 요소(프로필 사진 등)에 붙어있는 뱃지형/인라인 원형 버튼.
@@ -45,6 +47,18 @@ fun PlusBadgeButton(
             contentDescription = contentDescription,
             tint = AfternoteDesign.colors.white,
             modifier = Modifier.fillMaxSize(),
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PlusBadgeButtonPreview() {
+    AfternoteTheme {
+        PlusBadgeButton(
+            contentDescription = "Plus Button",
+            onClick = {},
+            paddingValues = PaddingValues(8.dp),
         )
     }
 }

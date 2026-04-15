@@ -160,7 +160,7 @@ fun FuneralVideoUpload(
                         contentDescription = addContentDescription,
                         onClick = {},
                         paddingValues = PaddingValues(12.dp),
-                        plusSize = 24.dp,
+                        size = 24.dp,
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                 }
