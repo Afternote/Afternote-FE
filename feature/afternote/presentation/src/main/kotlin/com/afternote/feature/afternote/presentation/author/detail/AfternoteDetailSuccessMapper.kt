@@ -6,6 +6,10 @@ import com.afternote.feature.afternote.presentation.author.detail.socialnetwork.
 import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 
+/** 상세 화면에 쓰는 "최종 작성일": 갱신일이 있으면 그것, 공백이면 생성일. */
+private val Detail.finalWriteDate: String
+    get() = timestamps.updatedAt.ifBlank { timestamps.createdAt }
+
 internal fun Detail.toReceiverUiModels(): List<ReceiverUiModel> =
     receivers.mapIndexed { index, r ->
         ReceiverUiModel(
@@ -19,7 +23,7 @@ internal fun Detail.toGalleryDetailContent(authorDisplayName: String): GalleryDe
     GalleryDetailContent(
         serviceName = title,
         userName = authorDisplayName,
-        finalWriteDate = timestamps.updatedAt.ifEmpty { timestamps.createdAt },
+        finalWriteDate = finalWriteDate,
         afternoteEditReceivers = toReceiverUiModels(),
         processingMethodTitle = processing?.method ?: "",
         processingMethods = processing?.actions ?: emptyList(),
@@ -35,14 +39,14 @@ internal fun Detail.toSocialNetworkDetailContent(authorDisplayName: String): Soc
         accountProcessingMethod = processing?.method ?: "",
         processingMethods = processing?.actions ?: emptyList(),
         message = processing?.leaveMessage ?: "",
-        finalWriteDate = timestamps.updatedAt.ifEmpty { timestamps.createdAt },
+        finalWriteDate = finalWriteDate,
         afternoteEditReceivers = toReceiverUiModels(),
     )
 
 internal fun Detail.toMemorialGuidelineDetailContent(authorDisplayName: String): MemorialGuidelineDetailContent =
     MemorialGuidelineDetailContent(
         userName = authorDisplayName,
-        finalWriteDate = timestamps.updatedAt.ifEmpty { timestamps.createdAt },
+        finalWriteDate = finalWriteDate,
         profileImageUri = playlist?.playlistDetailMemorialMedia?.photoUrl,
         afternoteEditReceivers = toReceiverUiModels(),
         albumCovers =

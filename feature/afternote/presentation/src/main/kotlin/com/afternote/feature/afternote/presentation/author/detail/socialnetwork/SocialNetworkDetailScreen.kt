@@ -29,7 +29,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.afternote.core.ui.badge.RecipientDesignationBadgeState
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
@@ -42,7 +41,7 @@ import com.afternote.feature.afternote.presentation.author.detail.rememberAftern
 import com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent
 import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadingContent
 import com.afternote.feature.afternote.presentation.author.navigation.HandleDeleteResult
-import com.afternote.feature.afternote.presentation.shared.detail.AfternoteDetailServiceHeaderWithRecipientChip
+import com.afternote.feature.afternote.presentation.shared.detail.AfternoteDetailServiceHeader
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.DetailInfoRow
 import com.afternote.feature.afternote.presentation.shared.detail.DetailSection
@@ -182,15 +181,10 @@ private fun SocialNetworkDetailScrollContent(
                 .padding(top = 24.dp)
                 .padding(horizontal = 20.dp),
     ) {
-        AfternoteDetailServiceHeaderWithRecipientChip(
+        AfternoteDetailServiceHeader(
             service = AfternoteServiceDisplay.fromServiceName(content.serviceName),
             finalWriteDate = content.finalWriteDate,
-            recipientBadgeState =
-                if (content.afternoteEditReceivers.isNotEmpty()) {
-                    RecipientDesignationBadgeState.Completed
-                } else {
-                    RecipientDesignationBadgeState.Incomplete()
-                },
+            processingMethodChipLabel = content.accountProcessingMethod.trim(),
         )
 
         Spacer(modifier = Modifier.height(31.dp))
