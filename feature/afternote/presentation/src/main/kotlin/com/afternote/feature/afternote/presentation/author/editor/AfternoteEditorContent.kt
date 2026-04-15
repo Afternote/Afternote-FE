@@ -1,10 +1,11 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -40,17 +41,19 @@ import com.afternote.feature.afternote.presentation.author.navigation.AfternoteL
 internal fun EditContent(
     state: AfternoteEditorState,
     form: EditorFormState,
+    modifier: Modifier = Modifier,
     onNavigateToAddSong: () -> Unit,
     onNavigateToSelectReceiver: () -> Unit,
     onPhotoAddClick: () -> Unit,
     onVideoAddClick: () -> Unit,
     onThumbnailBytesReady: (ByteArray?) -> Unit,
-    bottomPadding: PaddingValues,
 ) {
     Column(
         modifier =
-            Modifier
+            modifier
                 .fillMaxSize()
+                .imePadding()
+                .navigationBarsPadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp),
     ) {
@@ -229,7 +232,6 @@ private fun EditContentSocialPreview() {
             onPhotoAddClick = {},
             onVideoAddClick = {},
             onThumbnailBytesReady = {},
-            bottomPadding = PaddingValues(0.dp),
         )
     }
 }
@@ -251,7 +253,6 @@ private fun EditContentGalleryPreview() {
             onPhotoAddClick = {},
             onVideoAddClick = {},
             onThumbnailBytesReady = {},
-            bottomPadding = PaddingValues(0.dp),
         )
     }
 }
@@ -273,7 +274,6 @@ private fun EditContentMemorialPreview() {
             onPhotoAddClick = {},
             onVideoAddClick = {},
             onThumbnailBytesReady = {},
-            bottomPadding = PaddingValues(0.dp),
         )
     }
 }

@@ -165,7 +165,6 @@ fun AfternoteEditorScreen(
                     )
                 },
                 onThumbnailBytesReady = callbacks.onThumbnailBytesReady,
-                bottomPadding = paddingValues,
             )
 
             AfternoteEditorDialogs(state = state)
