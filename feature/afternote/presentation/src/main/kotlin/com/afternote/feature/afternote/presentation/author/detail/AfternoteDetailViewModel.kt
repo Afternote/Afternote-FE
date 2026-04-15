@@ -27,6 +27,7 @@ import javax.inject.Inject
  *
  * 내부 [InternalState] (flat) 로 조회·작성자·삭제 단계를 각각 관리하고, public [uiState] 는
  * [AfternoteDetailUiState] 로 매핑해 Loading/Success/Error 3분기로 노출한다.
+ * [SharingStarted.WhileSubscribed] 로 UI 구독이 없을 때 업스트림 [map] 을 중지해 백그라운드 리소스를 절약한다.
  * UI 액션은 [deleteAfternote]·[consumeDeleteResult] 등 명시 메서드로만 노출한다.
  */
 @HiltViewModel
@@ -46,7 +47,7 @@ class AfternoteDetailViewModel
                 .map { it.toUiState() }
                 .stateIn(
                     scope = viewModelScope,
-                    started = SharingStarted.Eagerly,
+                    started = SharingStarted.WhileSubscribed(5_000),
                     initialValue = AfternoteDetailUiState.Loading,
                 )
 

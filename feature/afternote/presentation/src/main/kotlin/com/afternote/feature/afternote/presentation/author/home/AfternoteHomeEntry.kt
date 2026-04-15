@@ -5,7 +5,6 @@ import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.bottombar.BottomNavTab
-import com.afternote.feature.afternote.presentation.author.home.model.AfternoteHomeEvent
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 
 data class AfternoteHomeEntryActions(
@@ -35,8 +34,8 @@ fun AfternoteHomeEntry(
 
     AfternoteHomeScreen(
         listState = bodyUiState,
-        onCategorySelected = { viewModel.onEvent(AfternoteHomeEvent.SelectTab(it)) },
+        onCategorySelected = viewModel::selectTab,
         onListItemClick = actions.navigateToDetail,
-        onLoadMore = { viewModel.onEvent(AfternoteHomeEvent.LoadMore) },
+        onLoadMore = viewModel::loadMore,
     ) { actions.navigateToAdd(uiState.categoryState.selectedCategory) }
 }
