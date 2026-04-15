@@ -35,83 +35,82 @@ fun SocialNetworkEditorContent(
     modifier: Modifier = Modifier,
     params: SocialNetworkEditorContentParams,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(32.dp),
+    ) {
         // 계정 정보 섹션
-        Label(
-            text = stringResource(R.string.afternote_editor_label_account_info),
-            isRequired = true,
-            style = AfternoteDesign.typography.textField,
-            color = AfternoteDesign.colors.gray8,
-        )
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Label(
+                text = stringResource(R.string.afternote_editor_label_account_info),
+                isRequired = true,
+                style = AfternoteDesign.typography.textField,
+                color = AfternoteDesign.colors.gray8,
+            )
 
-        Spacer(modifier = Modifier.height(12.dp))
+            AfternoteCaptionLabeledTextField(
+                label = stringResource(R.string.feature_afternote_detail_label_id),
+                state = params.accountSection.idState,
+            )
 
-        AfternoteCaptionLabeledTextField(
-            label = stringResource(R.string.feature_afternote_detail_label_id),
-            state = params.accountSection.idState,
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        AfternoteCaptionLabeledTextField(
-            label = stringResource(R.string.feature_afternote_detail_label_password),
-            state = params.accountSection.passwordState,
-            keyboardType = KeyboardType.Password,
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
+            AfternoteCaptionLabeledTextField(
+                label = stringResource(R.string.feature_afternote_detail_label_password),
+                state = params.accountSection.passwordState,
+                keyboardType = KeyboardType.Password,
+            )
+        }
 
         // 계정 처리 방법 섹션
-        Label(
-            text = stringResource(R.string.afternote_editor_label_account_process_method),
-            isRequired = true,
-        )
+        Column {
+            Label(
+                text = stringResource(R.string.afternote_editor_label_account_process_method),
+                isRequired = true,
+            )
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            AccountProcessingMethod.entries.forEach { method ->
-                SelectableRadioCard(
-                    selected = params.accountSection.selectedMethod == method,
-                    onClick = { params.accountSection.onMethodSelected(method) },
-                    modifier = Modifier.fillMaxWidth(),
-                    content = {
-                        OptionRadioCardContent(
-                            option = method,
-                            selected = params.accountSection.selectedMethod == method,
-                        )
-                    },
-                )
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                AccountProcessingMethod.entries.forEach { method ->
+                    SelectableRadioCard(
+                        selected = params.accountSection.selectedMethod == method,
+                        onClick = { params.accountSection.onMethodSelected(method) },
+                        modifier = Modifier.fillMaxWidth(),
+                        content = {
+                            OptionRadioCardContent(
+                                option = method,
+                                selected = params.accountSection.selectedMethod == method,
+                            )
+                        },
+                    )
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
-
         if (params.recipientSection != null) {
             RecipientDesignationSection(section = params.recipientSection)
-            Spacer(modifier = Modifier.height(32.dp))
         }
+        Column {
+            // 처리 방법 리스트 섹션
+            Label(
+                text = stringResource(R.string.afternote_editor_label_process_method_list),
+                isRequired = true,
+            )
 
-        // 처리 방법 리스트 섹션
-        Label(
-            text = stringResource(R.string.afternote_editor_label_process_method_list),
-            isRequired = true,
-        )
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        ProcessingMethodList(
-            params =
-                ProcessingMethodListParams(
-                    items = params.processingMethodSection.items,
-                    onItemDeleteClick = params.processingMethodSection.callbacks.onItemDeleteClick,
-                    onItemAdded = params.processingMethodSection.callbacks.onItemAdded,
-                    onTextFieldVisibilityChanged = params.processingMethodSection.callbacks.onTextFieldVisibilityChanged,
-                    onItemEdited = params.processingMethodSection.callbacks.onItemEdited,
-                ),
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
+            ProcessingMethodList(
+                params =
+                    ProcessingMethodListParams(
+                        items = params.processingMethodSection.items,
+                        onItemDeleteClick = params.processingMethodSection.callbacks.onItemDeleteClick,
+                        onItemAdded = params.processingMethodSection.callbacks.onItemAdded,
+                        onTextFieldVisibilityChanged = params.processingMethodSection.callbacks.onTextFieldVisibilityChanged,
+                        onItemEdited = params.processingMethodSection.callbacks.onItemEdited,
+                    ),
+            )
+        }
 
         // 남기실 말씀
         EditorMessageSection(
