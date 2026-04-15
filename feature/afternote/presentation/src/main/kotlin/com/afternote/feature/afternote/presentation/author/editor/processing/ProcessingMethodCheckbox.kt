@@ -60,11 +60,6 @@ private fun processingMethodTextStyle(): TextStyle =
 /**
  * 처리 방법 체크박스 컴포넌트
  *
- * 피그마 디자인 기반:
- * - 체크박스: 16dp
- * - 텍스트: 14sp, Regular, AfternoteDesign.colors.gray9
- * - 더보기 아이콘: 오른쪽 정렬
- *
  * [isEditing]이 true이면 텍스트 영역이 [BasicTextField]로 전환되어 인라인 편집을 지원합니다.
  */
 @Composable
@@ -78,7 +73,7 @@ fun ProcessingMethodCheckbox(
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         AfternoteCircularCheckbox(
             state = CheckboxState.Default,
