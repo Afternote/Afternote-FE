@@ -7,14 +7,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.Label
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -48,25 +46,15 @@ fun SocialNetworkEditorContent(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        Text(
-            text = stringResource(R.string.feature_afternote_detail_label_id),
-            style = AfternoteDesign.typography.captionLargeR,
-            color = AfternoteDesign.colors.gray6,
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        AfternoteTextField(
+        AfternoteCaptionLabeledTextField(
+            label = stringResource(R.string.feature_afternote_detail_label_id),
             state = params.accountSection.idState,
         )
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        Text(
-            text = stringResource(R.string.feature_afternote_detail_label_password),
-            style = AfternoteDesign.typography.captionLargeR,
-            color = AfternoteDesign.colors.gray9,
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        AfternoteTextField(
+        AfternoteCaptionLabeledTextField(
+            label = stringResource(R.string.feature_afternote_detail_label_password),
             state = params.accountSection.passwordState,
             keyboardType = KeyboardType.Password,
         )
