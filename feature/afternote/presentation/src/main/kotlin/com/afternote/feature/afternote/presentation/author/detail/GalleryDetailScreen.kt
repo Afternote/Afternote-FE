@@ -24,14 +24,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.afternote.core.ui.badge.RecipientDesignationBadgeState
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent
 import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadingContent
 import com.afternote.feature.afternote.presentation.author.navigation.HandleDeleteResult
-import com.afternote.feature.afternote.presentation.shared.detail.AfternoteDetailServiceHeaderWithRecipientChip
+import com.afternote.feature.afternote.presentation.shared.detail.AfternoteDetailServiceHeader
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
@@ -97,6 +96,7 @@ data class GalleryDetailContent(
     val userName: String = "",
     val finalWriteDate: String = "",
     val afternoteEditReceivers: List<ReceiverUiModel> = emptyList(),
+    val processingMethodTitle: String = "",
     val processingMethods: List<String> = emptyList(),
     val message: String = "",
 )
@@ -181,14 +181,12 @@ private fun GalleryDetailScrollContent(
                 .padding(top = 24.dp)
                 .padding(horizontal = 20.dp),
     ) {
-        AfternoteDetailServiceHeaderWithRecipientChip(
+        AfternoteDetailServiceHeader(
             service = AfternoteServiceDisplay.fromServiceName(content.serviceName),
             finalWriteDate = content.finalWriteDate,
-            recipientBadgeState =
-                if (content.afternoteEditReceivers.isNotEmpty()) {
-                    RecipientDesignationBadgeState.Completed
-                } else {
-                    RecipientDesignationBadgeState.Incomplete()
+            processingMethodChipLabel =
+                content.processingMethodTitle.trim().ifEmpty {
+                    stringResource(R.string.feature_afternote_detail_processing_method_chip_empty)
                 },
         )
 
@@ -208,6 +206,7 @@ internal val GALLERY_PREVIEW_CONTENT =
         serviceName = "갤러리",
         userName = "서영",
         finalWriteDate = "2025.11.26",
+        processingMethodTitle = "가족 공유 앨범으로 이전",
         processingMethods = listOf("'엽사' 폴더 박선호에게 전송", "'흑역사' 폴더 삭제"),
         afternoteEditReceivers =
             listOf(

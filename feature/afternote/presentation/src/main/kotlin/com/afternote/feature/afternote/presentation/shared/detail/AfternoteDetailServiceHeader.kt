@@ -21,24 +21,24 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.badge.RecipientDesignationBadge
-import com.afternote.core.ui.badge.RecipientDesignationBadgeState
+import com.afternote.core.ui.badge.CircularCheckboxOutlineChip
+import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.AfternoteServiceDisplay
 
 /**
- * 애프터노트 작성자 상세에서 공통으로 쓰는 상단 블록.
+ * 애프터노트 작성자 상세 공통 상단: 서비스 아이콘·이름·최종 작성일 + 처리 방법 칩.
  *
- * 시스템 인셋은 부모 스크롤 [Column] 의 [Spacer] 로 처리하고, 여기서는 서비스 아이콘·이름·최종 작성일 + [RecipientDesignationBadge] 만 담당한다.
- * 서비스 아이콘과 이름은 [AfternoteServiceDisplay] 묶음으로 받아 호출부에서 둘이 어긋나지 않도록 보장한다.
+ * 하단 칩은 [CircularCheckboxOutlineChip]으로만 그리며, [processingMethodChipLabel]은 호출부(갤러리/소셜)에서
+ * `processing.method` 등 **계정·정보 처리 방법 제목**을 넘긴다. 수신인 지정([RecipientDesignationBadge])과 무관하다.
  */
 @Composable
-fun AfternoteDetailServiceHeaderWithRecipientChip(
+fun AfternoteDetailServiceHeader(
     service: AfternoteServiceDisplay,
     finalWriteDate: String,
-    recipientBadgeState: RecipientDesignationBadgeState,
+    processingMethodChipLabel: String,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
@@ -78,22 +78,29 @@ fun AfternoteDetailServiceHeaderWithRecipientChip(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-        RecipientDesignationBadge(state = recipientBadgeState)
+        CircularCheckboxOutlineChip(
+            label = processingMethodChipLabel,
+            borderColor = AfternoteDesign.colors.gray2,
+            backgroundColor = AfternoteDesign.colors.white,
+            checkboxState = CheckboxState.Default,
+            showTrailingArrow = false,
+            onClick = null,
+        )
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun AfternoteDetailServiceHeaderWithRecipientChipPreview() {
+private fun AfternoteDetailServiceHeaderPreview() {
     AfternoteTheme {
-        AfternoteDetailServiceHeaderWithRecipientChip(
+        AfternoteDetailServiceHeader(
             service =
                 AfternoteServiceDisplay(
                     serviceName = "서비스 이름",
                     iconResId = R.drawable.feature_afternote_ic_memorial_guideline,
                 ),
             finalWriteDate = "2024.05.20",
-            recipientBadgeState = RecipientDesignationBadgeState.Completed,
+            processingMethodChipLabel = "가족 공유 앨범으로 이전",
         )
     }
 }

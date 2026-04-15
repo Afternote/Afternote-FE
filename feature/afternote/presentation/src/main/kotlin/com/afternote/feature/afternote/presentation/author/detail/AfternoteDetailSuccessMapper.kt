@@ -21,6 +21,7 @@ internal fun Detail.toGalleryDetailContent(authorDisplayName: String): GalleryDe
         userName = authorDisplayName,
         finalWriteDate = timestamps.updatedAt.ifEmpty { timestamps.createdAt },
         afternoteEditReceivers = toReceiverUiModels(),
+        processingMethodTitle = processing?.method ?: "",
         processingMethods = processing?.actions ?: emptyList(),
         message = processing?.leaveMessage ?: "",
     )
