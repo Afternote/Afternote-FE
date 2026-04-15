@@ -64,11 +64,11 @@ private fun ReceiverDetailItem(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Image(
-            painter = painterResource(R.drawable.feature_afternote_img_recipient_profile),
+            painter = painterResource(CoreUiR.drawable.core_ui_ic_profile_placeholder),
             contentDescription = stringResource(R.string.feature_afternote_content_description_recipient_profile),
             modifier =
                 Modifier
-                    .size(48.dp)
+                    .size(50.dp)
                     .clip(CircleShape),
             contentScale = ContentScale.Crop,
         )
