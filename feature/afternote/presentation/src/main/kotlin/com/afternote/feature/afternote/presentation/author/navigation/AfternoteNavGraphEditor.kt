@@ -267,7 +267,6 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
     AfternoteEditorScreen(
         callbacks = callbacks,
         playlistStateHolder = params.playlistStateHolder,
-        initialListItem = null,
         state = state,
         saveError = saveError,
     )

@@ -17,6 +17,9 @@ import kotlinx.coroutines.flow.StateFlow
  * - POST /afternotes (SOCIAL / GALLERY / PLAYLIST 생성)
  * - PATCH /afternotes/{afternoteId} (수정)
  * - DELETE /afternotes/{afternoteId} (삭제)
+ *
+ * POST/PATCH 실패 시 구현체는 서버 검증 응답을
+ * [com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationException]으로 올릴 수 있다.
  */
 interface AfternoteRepository {
     /**
@@ -31,11 +34,11 @@ interface AfternoteRepository {
         size: Int,
     ): Result<ListPage>
 
+    suspend fun getDetail(id: Long): Result<Detail>
+
     suspend fun createSocial(payload: CreateSocialPayload): Result<Long>
 
     suspend fun createGallery(payload: CreateGalleryPayload): Result<Long>
-
-    suspend fun getDetail(id: Long): Result<Detail>
 
     suspend fun createPlaylist(payload: CreatePlaylistPayload): Result<Long>
 
