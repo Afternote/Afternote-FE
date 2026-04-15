@@ -18,7 +18,6 @@ import com.afternote.feature.afternote.presentation.author.editor.message.Editor
 import com.afternote.feature.afternote.presentation.author.editor.model.InfoMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.model.InformationProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodList
-import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListParams
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.receiver.RecipientDesignationSection
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverSection
@@ -73,14 +72,11 @@ fun GalleryAndFileEditorContent(
         Spacer(modifier = Modifier.height(20.dp))
 
         ProcessingMethodList(
-            params =
-                ProcessingMethodListParams(
-                    items = params.processingMethodSection.items,
-                    onItemDeleteClick = params.processingMethodSection.callbacks.onItemDeleteClick,
-                    onItemAdded = params.processingMethodSection.callbacks.onItemAdded,
-                    onTextFieldVisibilityChanged = params.processingMethodSection.callbacks.onTextFieldVisibilityChanged,
-                    onItemEdited = params.processingMethodSection.callbacks.onItemEdited,
-                ),
+            items = params.processingMethodSection.items,
+            onItemAdded = params.processingMethodSection.callbacks.onItemAdded,
+            onItemDeleteClick = params.processingMethodSection.callbacks.onItemDeleteClick,
+            onItemEdited = params.processingMethodSection.callbacks.onItemEdited,
+            onTextFieldVisibilityChanged = params.processingMethodSection.callbacks.onTextFieldVisibilityChanged,
         )
 
         Spacer(modifier = Modifier.height(32.dp))

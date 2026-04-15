@@ -19,7 +19,6 @@ import com.afternote.feature.afternote.presentation.author.editor.account.Accoun
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodList
-import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListParams
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.shared.SelectableRadioCard
 
@@ -91,14 +90,11 @@ fun SocialNetworkEditorContent(
                 isRequired = true,
             )
             ProcessingMethodList(
-                params =
-                    ProcessingMethodListParams(
-                        items = params.processingMethodSection.items,
-                        onItemDeleteClick = params.processingMethodSection.callbacks.onItemDeleteClick,
-                        onItemAdded = params.processingMethodSection.callbacks.onItemAdded,
-                        onTextFieldVisibilityChanged = params.processingMethodSection.callbacks.onTextFieldVisibilityChanged,
-                        onItemEdited = params.processingMethodSection.callbacks.onItemEdited,
-                    ),
+                items = params.processingMethodSection.items,
+                onItemAdded = params.processingMethodSection.callbacks.onItemAdded,
+                onItemDeleteClick = params.processingMethodSection.callbacks.onItemDeleteClick,
+                onItemEdited = params.processingMethodSection.callbacks.onItemEdited,
+                onTextFieldVisibilityChanged = params.processingMethodSection.callbacks.onTextFieldVisibilityChanged,
             )
         }
 
