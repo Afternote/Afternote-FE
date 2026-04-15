@@ -37,7 +37,6 @@ import com.afternote.core.ui.theme.AfternoteTheme
 @Composable
 fun AddItemTextField(
     modifier: Modifier = Modifier,
-    visible: Boolean,
     onItemAdded: (String) -> Unit,
     onVisibilityChanged: (Boolean) -> Unit,
     placeholder: String = "Text Field",
@@ -61,51 +60,52 @@ fun AddItemTextField(
         focusManager.clearFocus()
     }
 
-    LaunchedEffect(visible, isFocused) {
-        if (visible && wasFocused && !isFocused) {
+    LaunchedEffect(isFocused) {
+        if (wasFocused && !isFocused) {
             addItemIfNotEmpty()
         }
         wasFocused = isFocused
     }
 
-    if (visible) {
-        Spacer(modifier = Modifier.height(7.dp))
-        // 텍스트 필드 컨테이너 (하단 보더 포함)
-        Box(
+    Spacer(modifier = Modifier.height(7.dp))
+    // 텍스트 필드 컨테이너 (하단 보더 포함)
+    Box(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .bottomBorder(color = AfternoteDesign.colors.gray2, width = 1.dp)
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+    ) {
+        BasicTextField(
+            state = textFieldState,
             modifier =
-                modifier
+                Modifier
                     .fillMaxWidth()
-                    .bottomBorder(color = AfternoteDesign.colors.gray2, width = 1.dp)
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-        ) {
-            BasicTextField(
-                state = textFieldState,
-                modifier = Modifier.fillMaxWidth().height(24.dp),
-                lineLimits = TextFieldLineLimits.SingleLine,
-                interactionSource = interactionSource,
-                textStyle =
-                    AfternoteDesign.typography.bodyBase.copy(
-                        lineHeight = 20.sp,
-                        color = AfternoteDesign.colors.gray9,
-                    ),
-                cursorBrush = SolidColor(AfternoteDesign.colors.black),
-                decorator = { innerTextField ->
-                    Box(contentAlignment = Alignment.CenterStart) {
-                        if (textFieldState.text.isEmpty()) {
-                            Text(
-                                text = placeholder,
-                                style =
-                                    AfternoteDesign.typography.bodyBase.copy(
-                                        lineHeight = 20.sp,
-                                    ),
-                                color = AfternoteDesign.colors.gray4,
-                            )
-                        }
-                        innerTextField()
+                    .height(24.dp),
+            lineLimits = TextFieldLineLimits.SingleLine,
+            interactionSource = interactionSource,
+            textStyle =
+                AfternoteDesign.typography.bodyBase.copy(
+                    lineHeight = 20.sp,
+                    color = AfternoteDesign.colors.gray9,
+                ),
+            cursorBrush = SolidColor(AfternoteDesign.colors.black),
+            decorator = { innerTextField ->
+                Box(contentAlignment = Alignment.CenterStart) {
+                    if (textFieldState.text.isEmpty()) {
+                        Text(
+                            text = placeholder,
+                            style =
+                                AfternoteDesign.typography.bodyBase.copy(
+                                    lineHeight = 20.sp,
+                                ),
+                            color = AfternoteDesign.colors.gray4,
+                        )
                     }
-                },
-            )
-        }
+                    innerTextField()
+                }
+            },
+        )
     }
 }
 
@@ -114,7 +114,6 @@ fun AddItemTextField(
 private fun AddItemTextFieldPreview() {
     AfternoteTheme {
         AddItemTextField(
-            visible = true,
             onItemAdded = {},
             onVisibilityChanged = {},
         )

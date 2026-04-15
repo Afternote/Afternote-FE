@@ -28,13 +28,28 @@ class ProcessingMethodListState(
     private val defaultExpandedItemId: String? = initialExpandedItemId
 
     /**
-     * 초기화: 아이템들의 expanded 상태 설정
-     * @param initialExpandedItemId 아이템 id; null이면 생성자에서 받은 [defaultExpandedItemId] 사용
+     * 현재 [items]에 맞춰 expanded 맵을 동기화한다.
+     *
+     * - 목록에서 사라진 id의 expanded 항목은 제거한다.
+     * - 편집 중이던 행이 목록에서 제거되면 편집 모드를 해제한다.
+     * - **이미 존재하는 id**의 expanded 값은 덮어쓰지 않는다(열림/드롭다운 상태 보존).
+     * - **새로 나타난 id**만 [initialExpandedItemId]·[defaultExpandedItemId] 기준으로 시드한다.
      */
     fun initializeExpandedStates(
         items: List<ProcessingMethodItem>,
         initialExpandedItemId: String?,
     ) {
+        val itemIds = items.mapTo(mutableSetOf()) { it.id }
+        expandedStates.keys.toList().forEach { id ->
+            if (id !in itemIds) {
+                expandedStates.remove(id)
+            }
+        }
+        val editing = editingItemId
+        if (editing != null && editing !in itemIds) {
+            editingItemId = null
+        }
+
         val expandedId = initialExpandedItemId ?: defaultExpandedItemId
         items.forEach { item ->
             if (!expandedStates.containsKey(item.id)) {
@@ -72,11 +87,7 @@ class ProcessingMethodListState(
     }
 }
 
-/**
- * MainPageEditReceiverListState를 생성하는 Composable 함수
- *
- * ProcessingMethodListState를 생성하는 Composable 함수
- */
+/** [ProcessingMethodListState]를 composition 경계마다 한 번 기억한다. */
 @Composable
 fun rememberProcessingMethodListState(initialShowTextField: Boolean = false): ProcessingMethodListState =
     remember {

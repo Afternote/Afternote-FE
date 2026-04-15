@@ -1,6 +1,8 @@
 package com.afternote.feature.afternote.presentation.author.editor.processing
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -42,7 +44,8 @@ fun ProcessingMethodList(
     val focusManager = LocalFocusManager.current
     val scope = rememberCoroutineScope()
 
-    // 초기화: 아이템들의 expanded 상태 설정
+    // items 참조가 바뀔 때마다 실행되지만, [ProcessingMethodListState.initializeExpandedStates]는
+    // 기존 키의 expanded/편집 상태를 보존하고 신규 id만 시드하며, 제거된 행의 상태만 정리한다.
     LaunchedEffect(items, params.initialExpandedItemId) {
         state.initializeExpandedStates(items, params.initialExpandedItemId)
     }
@@ -51,59 +54,65 @@ fun ProcessingMethodList(
         modifier =
             modifier
                 .fillMaxWidth()
-                .background(color = AfternoteDesign.colors.white, shape = RoundedCornerShape(16.dp))
-                .padding(16.dp),
+                .background(color = AfternoteDesign.colors.white, shape = RoundedCornerShape(6.dp))
+                .border(
+                    1.dp,
+                    color = AfternoteDesign.colors.gray2,
+                    shape = RoundedCornerShape(6.dp),
+                ).padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        items.forEach { item ->
-            ProcessingMethodCheckbox(
-                item = item,
-                expanded = state.expandedStates[item.id] ?: false,
-                isEditing = state.editingItemId == item.id,
-                callbacks =
-                    ProcessingMethodCheckboxCallbacks(
-                        onMoreClick = {
-                            focusManager.clearFocus()
-                            state.toggleItemExpanded(item.id)
-                        },
-                        onDismissDropdown = {
-                            state.expandedStates[item.id] = false
-                        },
-                        onEditClick = {
-                            state.expandedStates[item.id] = false
-                            // Defer editing to next frame so DropdownMenu dismiss settles first
-                            scope.launch {
-                                withFrameNanos { }
-                                state.startEditing(item.id)
-                            }
-                        },
-                        onDeleteClick = { params.onItemDeleteClick(item.id) },
-                        onEditConfirmed = { newText ->
-                            params.onItemEdited(item.id, newText)
-                            state.stopEditing()
-                        },
-                    ),
-            )
-            Spacer(modifier = Modifier.height(6.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(17.dp)) {
+            items.forEach { item ->
+                ProcessingMethodCheckbox(
+                    item = item,
+                    expanded = state.expandedStates[item.id] ?: false,
+                    isEditing = state.editingItemId == item.id,
+                    callbacks =
+                        ProcessingMethodCheckboxCallbacks(
+                            onMoreClick = {
+                                focusManager.clearFocus()
+                                state.toggleItemExpanded(item.id)
+                            },
+                            onDismissDropdown = {
+                                state.expandedStates[item.id] = false
+                            },
+                            onEditClick = {
+                                state.expandedStates[item.id] = false
+                                // Defer editing to next frame so DropdownMenu dismiss settles first
+                                scope.launch {
+                                    withFrameNanos { }
+                                    state.startEditing(item.id)
+                                }
+                            },
+                            onDeleteClick = { params.onItemDeleteClick(item.id) },
+                            onEditConfirmed = { newText ->
+                                params.onItemEdited(item.id, newText)
+                                state.stopEditing()
+                            },
+                        ),
+                )
+            }
         }
 
-        // 텍스트 필드 (버튼 클릭 시 표시)
-        AddItemTextField(
-            visible = state.showTextField,
-            onItemAdded = onItemAdded,
-            onVisibilityChanged = { isVisible ->
-                params.onTextFieldVisibilityChanged(isVisible)
-            },
-        )
-
+        if (state.showTextField) {
+            Spacer(modifier = Modifier.height(6.dp))
+            // 텍스트 필드 (버튼 클릭 시 표시)
+            AddItemTextField(
+                onItemAdded = onItemAdded,
+                onVisibilityChanged = { isVisible ->
+                    params.onTextFieldVisibilityChanged(isVisible)
+                },
+            )
+        }
         Spacer(modifier = Modifier.height(16.dp))
 
         // 추가 버튼 (텍스트 필드 표시만 토글; 부모 알림 없음)
         PlusBadgeButton(
             contentDescription = stringResource(R.string.afternote_editor_content_description_add),
             onClick = { state.toggleTextField() },
-            paddingValues = PaddingValues(12.dp),
-            plusSize = 24.dp,
+            paddingValues = PaddingValues(8.dp),
+            plusSize = 30.dp,
         )
     }
 }
