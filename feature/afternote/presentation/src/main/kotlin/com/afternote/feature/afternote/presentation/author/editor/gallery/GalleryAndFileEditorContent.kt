@@ -17,7 +17,6 @@ import com.afternote.feature.afternote.presentation.author.editor.message.Editor
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
 import com.afternote.feature.afternote.presentation.author.editor.model.InfoMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.model.InformationProcessingMethod
-import com.afternote.feature.afternote.presentation.author.editor.processing.OptionRadioCardContent
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodList
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListParams
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
@@ -47,15 +46,11 @@ fun GalleryAndFileEditorContent(
                 Spacer(modifier = Modifier.height(8.dp))
             }
             SelectableRadioCard(
+                title = method.title,
+                description = method.description,
                 selected = params.infoMethodSection.selectedMethod == method,
                 onClick = { params.infoMethodSection.onMethodSelected(method) },
                 modifier = Modifier.fillMaxWidth(),
-                content = {
-                    OptionRadioCardContent(
-                        option = method,
-                        selected = params.infoMethodSection.selectedMethod == method,
-                    )
-                },
             )
         }
 

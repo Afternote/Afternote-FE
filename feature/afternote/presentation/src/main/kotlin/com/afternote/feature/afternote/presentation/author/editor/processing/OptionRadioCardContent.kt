@@ -11,7 +11,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodOption
 import com.afternote.feature.afternote.presentation.shared.SelectableRadioCard
 
@@ -53,15 +52,11 @@ fun OptionRadioCardContent(
 private fun OptionRadioCardContentPreview() {
     AfternoteTheme {
         SelectableRadioCard(
+            title = "제목",
+            description = "설명",
             selected = true,
             onClick = {},
             modifier = Modifier.fillMaxWidth(),
-            content = {
-                OptionRadioCardContent(
-                    option = AccountProcessingMethod.MEMORIAL_ACCOUNT,
-                    selected = true,
-                )
-            },
         )
     }
 }

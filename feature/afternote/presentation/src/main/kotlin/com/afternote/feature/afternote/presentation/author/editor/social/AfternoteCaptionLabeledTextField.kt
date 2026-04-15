@@ -6,16 +6,19 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.OutputTransformation
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.core.ui.theme.AfternoteTheme
 
 private val CaptionToFieldSpacing = 6.dp
 
@@ -53,6 +56,18 @@ internal fun AfternoteCaptionLabeledTextField(
             inputTransformation = inputTransformation,
             outputTransformation = outputTransformation,
             focusRequester = focusRequester,
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AfternoteCaptionLabeledTextFieldPreview() {
+    AfternoteTheme {
+        AfternoteCaptionLabeledTextField(
+            label = "Account",
+            state = rememberTextFieldState("afternote_official"),
+            placeholder = "Enter your account",
         )
     }
 }

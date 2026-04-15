@@ -24,20 +24,21 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
- * 선택 가능한 라디오 버튼 카드 컴포넌트 (Slot API 패턴)
+ * 선택 가능한 라디오 버튼 카드 컴포넌트
  *
- * 공통 껍데기를 제공하고, 내용물(content)은 호출부에서 주입받는 방식입니다.
- * Material Design의 Slot API 패턴을 따릅니다.
- *
+ * @param title 카드 제목
+ * @param description 카드 설명. null이거나 공백이면 표시하지 않습니다.
  * @param selected 선택 여부
  * @param onClick 클릭 이벤트
  * @param modifier Modifier
  */
 @Composable
 fun SelectableRadioCard(
+    title: String,
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    description: String? = null,
 ) {
     Surface(
         modifier =
@@ -80,7 +81,7 @@ fun SelectableRadioCard(
                 verticalArrangement = Arrangement.spacedBy(5.dp),
             ) {
                 Text(
-                    text = "제목 텍스트",
+                    text = title,
                     style =
                         if (selected) {
                             AfternoteDesign.typography.primaryButton.copy(
@@ -92,13 +93,15 @@ fun SelectableRadioCard(
                             )
                         },
                 )
-                Text(
-                    text = "설명 텍스트",
-                    style =
-                        AfternoteDesign.typography.bodySmallR.copy(
-                            color = AfternoteDesign.colors.gray6,
-                        ),
-                )
+                if (!description.isNullOrBlank()) {
+                    Text(
+                        text = description,
+                        style =
+                            AfternoteDesign.typography.bodySmallR.copy(
+                                color = AfternoteDesign.colors.gray6,
+                            ),
+                    )
+                }
             }
         }
     }
@@ -110,6 +113,8 @@ private fun SelectableRadioCardPreview() {
     AfternoteTheme {
         // 선택됨 - 제목 + 설명
         SelectableRadioCard(
+            title = "제목 텍스트",
+            description = "설명 텍스트",
             selected = true,
             onClick = {},
         )

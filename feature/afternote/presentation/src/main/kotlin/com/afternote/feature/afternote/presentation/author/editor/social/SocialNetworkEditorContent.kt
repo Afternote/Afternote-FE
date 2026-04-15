@@ -2,9 +2,7 @@ package com.afternote.feature.afternote.presentation.author.editor.social
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
@@ -20,11 +18,9 @@ import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.account.AccountSection
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
-import com.afternote.feature.afternote.presentation.author.editor.processing.OptionRadioCardContent
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodList
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListParams
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
-import com.afternote.feature.afternote.presentation.author.editor.receiver.RecipientDesignationSection
 import com.afternote.feature.afternote.presentation.shared.SelectableRadioCard
 
 /**
@@ -63,43 +59,37 @@ fun SocialNetworkEditorContent(
         }
 
         // 계정 처리 방법 섹션
-        Column {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
             Label(
                 text = stringResource(R.string.afternote_editor_label_account_process_method),
                 isRequired = true,
             )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 AccountProcessingMethod.entries.forEach { method ->
                     SelectableRadioCard(
+                        title = method.title,
+                        description = method.description,
                         selected = params.accountSection.selectedMethod == method,
                         onClick = { params.accountSection.onMethodSelected(method) },
                         modifier = Modifier.fillMaxWidth(),
-                        content = {
-                            OptionRadioCardContent(
-                                option = method,
-                                selected = params.accountSection.selectedMethod == method,
-                            )
-                        },
                     )
                 }
             }
         }
 
-        if (params.recipientSection != null) {
-            RecipientDesignationSection(section = params.recipientSection)
-        }
-        Column {
+//        if (params.recipientSection != null) {
+//            RecipientDesignationSection(section = params.recipientSection)
+//        }
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
             // 처리 방법 리스트 섹션
             Label(
                 text = stringResource(R.string.afternote_editor_label_process_method_list),
                 isRequired = true,
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
             ProcessingMethodList(
                 params =
                     ProcessingMethodListParams(
