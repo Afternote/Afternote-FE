@@ -35,8 +35,7 @@ private const val LAST_WISH_DEFAULT_BRIGHT = "슬퍼 하지 말고 밝고 따뜻
  * 상세 쪽 [AfternoteDetailSuccessMapper]와 같이 `author/editor` 패키지 루트에 둔다.
  */
 internal object AfternoteEditorSuccessMapper {
-    fun buildEditorFormPrefill(detail: Detail): EditorFormPrefill =
-        editorFormPrefillFromLoadParams(buildLoadFromExistingParams(detail))
+    fun buildEditorFormPrefill(detail: Detail): EditorFormPrefill = editorFormPrefillFromLoadParams(buildLoadFromExistingParams(detail))
 
     /**
      * [LoadFromExistingParams]의 문자열·분기를 해석해 폼에 바로 넣을 [EditorFormPrefill]을 만든다.
