@@ -86,6 +86,8 @@ fun SelectionDropdown(
         Label(
             text = labelParams.label,
             isRequired = labelParams.isRequired,
+            style = AfternoteDesign.typography.captionLargeR,
+            color = AfternoteDesign.colors.gray7,
         )
 
         // Material 3 ExposedDropdownMenuBox: 앵커–메뉴 너비·접근성, 서브컴포지션 없이 처리
