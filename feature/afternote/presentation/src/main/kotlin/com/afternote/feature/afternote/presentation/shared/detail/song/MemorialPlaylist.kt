@@ -36,7 +36,6 @@ import coil3.compose.AsyncImagePainter
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
-import com.afternote.core.model.AfternotePlaylistAlbumMockSeeds
 import com.afternote.core.model.AlbumCover
 import com.afternote.core.ui.icon.ArrowIcon
 import com.afternote.core.ui.icon.RightArrowIcon
@@ -302,7 +301,7 @@ private fun MemorialPlaylistEditPreview() {
         ) {
             MemorialPlaylist(
                 songCount = 4,
-                albumCovers = AfternotePlaylistAlbumMockSeeds.defaultCovers,
+                albumCovers = PlaylistAlbumRowPreviewFixtures.albumCovers,
                 onAddSongClick = {},
             )
         }
@@ -319,7 +318,7 @@ private fun MemorialPlaylistViewPreview() {
         ) {
             MemorialPlaylist(
                 songCount = 16,
-                albumCovers = AfternotePlaylistAlbumMockSeeds.defaultCovers,
+                albumCovers = PlaylistAlbumRowPreviewFixtures.albumCovers,
                 onAddSongClick = null,
             )
         }

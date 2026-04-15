@@ -1,6 +1,5 @@
 package com.afternote.feature.afternote.data.network
 
-import com.afternote.core.model.AfternotePlaylistAlbumMockSeeds
 import com.afternote.core.model.AlbumCover
 import com.afternote.feature.afternote.data.dto.MusicSearchResponse
 import com.afternote.feature.afternote.data.dto.MusicTrack
@@ -34,9 +33,14 @@ internal object AfternoteMockFixtures {
             "카카오톡" to "2025.01.10",
         )
 
-    /** 프리뷰·상세 플레이리스트 행 등에서 쓰는 앨범 커버 시드 (단일 출처: [AfternotePlaylistAlbumMockSeeds]). */
-    val playlistAlbumCoverSeeds: List<AlbumCover>
-        get() = AfternotePlaylistAlbumMockSeeds.defaultCovers
+    /** 플레이리스트 앨범 행 목업 시드 (이 모듈 DEBUG가 유일한 정의). */
+    val playlistAlbumCoverSeeds: List<AlbumCover> =
+        listOf(
+            AlbumCover(id = "1"),
+            AlbumCover(id = "2"),
+            AlbumCover(id = "3"),
+            AlbumCover(id = "4"),
+        )
 
     val musicSearchResponseJson: String
         get() =
