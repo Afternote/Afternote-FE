@@ -9,8 +9,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.feature.afternote.presentation.author.editor.account.AccountSection
 import com.afternote.feature.afternote.presentation.author.editor.gallery.GalleryAndFileEditorContent
 import com.afternote.feature.afternote.presentation.author.editor.gallery.GalleryAndFileEditorContentParams
@@ -28,6 +31,8 @@ import com.afternote.feature.afternote.presentation.author.editor.social.SocialN
 import com.afternote.feature.afternote.presentation.author.editor.social.SocialNetworkEditorContentParams
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
+import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
+import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
 
 @Composable
 internal fun EditContent(
@@ -47,7 +52,7 @@ internal fun EditContent(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp),
     ) {
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         SelectionDropdown(
             labelParams =
@@ -210,5 +215,68 @@ internal fun CategoryContent(
                     ),
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun EditContentSocialPreview() {
+    AfternoteLightTheme {
+        val state = rememberAfternoteEditorState()
+        val form by state.formState.collectAsStateWithLifecycle()
+        EditContent(
+            state = state,
+            form = form,
+            onNavigateToAddSong = {},
+            onNavigateToSelectReceiver = {},
+            onPhotoAddClick = {},
+            onVideoAddClick = {},
+            onThumbnailBytesReady = {},
+            bottomPadding = PaddingValues(0.dp),
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Gallery")
+@Composable
+private fun EditContentGalleryPreview() {
+    AfternoteLightTheme {
+        val state =
+            rememberAfternoteEditorState().apply {
+                onCategorySelected(EditorCategory.GALLERY.displayLabel)
+            }
+        val form by state.formState.collectAsStateWithLifecycle()
+        EditContent(
+            state = state,
+            form = form,
+            onNavigateToAddSong = {},
+            onNavigateToSelectReceiver = {},
+            onPhotoAddClick = {},
+            onVideoAddClick = {},
+            onThumbnailBytesReady = {},
+            bottomPadding = PaddingValues(0.dp),
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Memorial")
+@Composable
+private fun EditContentMemorialPreview() {
+    AfternoteLightTheme {
+        val state =
+            rememberAfternoteEditorState().apply {
+                onCategorySelected(EditorCategory.MEMORIAL.displayLabel)
+            }
+        val form by state.formState.collectAsStateWithLifecycle()
+        EditContent(
+            state = state,
+            form = form,
+            onNavigateToAddSong = {},
+            onNavigateToSelectReceiver = {},
+            onPhotoAddClick = {},
+            onVideoAddClick = {},
+            onThumbnailBytesReady = {},
+            bottomPadding = PaddingValues(0.dp),
+        )
     }
 }

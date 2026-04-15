@@ -21,17 +21,14 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.modifierextention.addFocusCleaner
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
-import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -171,56 +168,5 @@ fun AfternoteEditorScreen(
 
             AfternoteEditorDialogs(state = state)
         }
-    }
-}
-
-@Preview(
-    showBackground = true,
-    device = "spec:width=390dp,height=844dp,dpi=420,isRound=false",
-)
-@Composable
-private fun AfternoteEditorScreenPreview() {
-    AfternoteLightTheme {
-        AfternoteEditorScreen(
-            callbacks = AfternoteEditorScreenCallbacks(onBackClick = {}),
-        )
-    }
-}
-
-@Preview(
-    showBackground = true,
-    device = "spec:width=390dp,height=844dp,dpi=420,isRound=false",
-    name = "갤러리 및 파일",
-)
-@Composable
-private fun AfternoteEditorScreenGalleryAndFilePreview() {
-    AfternoteLightTheme {
-        val state =
-            rememberAfternoteEditorState().apply {
-                onCategorySelected(EditorCategory.GALLERY.displayLabel)
-            }
-        AfternoteEditorScreen(
-            callbacks = AfternoteEditorScreenCallbacks(onBackClick = {}),
-            state = state,
-        )
-    }
-}
-
-@Preview(
-    showBackground = true,
-    device = "spec:width=390dp,height=844dp,dpi=420,isRound=false",
-    name = "추모 가이드라인",
-)
-@Composable
-private fun AfternoteEditorScreenMemorialGuidelinePreview() {
-    AfternoteLightTheme {
-        val state =
-            rememberAfternoteEditorState().apply {
-                onCategorySelected(EditorCategory.MEMORIAL.displayLabel)
-            }
-        AfternoteEditorScreen(
-            callbacks = AfternoteEditorScreenCallbacks(onBackClick = {}),
-            state = state,
-        )
     }
 }
