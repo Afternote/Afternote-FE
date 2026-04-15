@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.editor.state
+package com.afternote.feature.afternote.presentation.author.editor.memorial
 
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableStateListOf
@@ -18,7 +18,15 @@ class MemorialPlaylistStateHolder {
     fun initializeSongs(initialSongs: List<Song>) {
         if (songs.isEmpty()) {
             songs.addAll(initialSongs)
+            onSongCountChanged?.invoke()
         }
+    }
+
+    /** 기존 목록을 통째로 바꿀 때 한 번만 알림 (상세 로드 등). */
+    fun replaceSongs(newSongs: List<Song>) {
+        songs.clear()
+        songs.addAll(newSongs)
+        onSongCountChanged?.invoke()
     }
 
     fun addSong(song: Song) {

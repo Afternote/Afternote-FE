@@ -9,8 +9,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.Label
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverCallbacks
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverSection
+import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverCallbacks
+import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverSection
 
 /**
  * 수신자 지정 섹션 (Figma 수신자 지정 컴포넌트).

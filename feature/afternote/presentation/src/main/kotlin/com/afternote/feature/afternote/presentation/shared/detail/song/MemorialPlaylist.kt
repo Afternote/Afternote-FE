@@ -291,6 +291,14 @@ private fun MemorialPlaylistAlbumCoverBox(album: AlbumCover) {
     }
 }
 
+private fun memorialPlaylistPreviewAlbumCovers(): List<AlbumCover> =
+    listOf(
+        AlbumCover(id = "1"),
+        AlbumCover(id = "2"),
+        AlbumCover(id = "3"),
+        AlbumCover(id = "4"),
+    )
+
 @Preview(showBackground = true, name = "Edit mode")
 @Composable
 private fun MemorialPlaylistEditPreview() {
@@ -301,7 +309,7 @@ private fun MemorialPlaylistEditPreview() {
         ) {
             MemorialPlaylist(
                 songCount = 4,
-                albumCovers = PlaylistAlbumRowPreviewFixtures.albumCovers,
+                albumCovers = memorialPlaylistPreviewAlbumCovers(),
                 onAddSongClick = {},
             )
         }
@@ -318,7 +326,7 @@ private fun MemorialPlaylistViewPreview() {
         ) {
             MemorialPlaylist(
                 songCount = 16,
-                albumCovers = PlaylistAlbumRowPreviewFixtures.albumCovers,
+                albumCovers = memorialPlaylistPreviewAlbumCovers(),
                 onAddSongClick = null,
             )
         }

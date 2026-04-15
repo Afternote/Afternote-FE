@@ -1,12 +1,14 @@
 package com.afternote.feature.afternote.presentation.author.editor.state
 
 import com.afternote.core.model.AlbumCover
+import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
+import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.InformationProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
+import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 
 internal const val CUSTOM_ADD_OPTION = "직접 추가하기"
@@ -26,6 +28,9 @@ private const val LAST_WISH_DEFAULT_BRIGHT = "슬퍼 하지 말고 밝고 따뜻
  *
  * **남기실 말씀:** [messageBlocks]는 SavedState 스냅샷·Process Death 복원용 SSOT이며,
  * 화면의 [androidx.compose.foundation.text.input.TextFieldState]와 디바운스 동기화된다.
+ *
+ * **추모 플레이리스트:** [memorialPlaylistSongs]는 [com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder]와 동기화되어
+ * [androidx.lifecycle.SavedStateHandle] JSON에 포함된다 (프로세스 종료·설정 변경 복원).
  */
 data class EditorFormState(
     val loadedItemId: String? = null,
@@ -43,6 +48,8 @@ data class EditorFormState(
     val funeralThumbnailUrl: String? = null,
     val memorialPhotoUrl: String? = null,
     val playlistSongCount: Int = 16,
+    /** 추모(PLAYLIST) 곡 목록 — 홀더와 양방향 동기화 후 스냅샷에 저장. */
+    val memorialPlaylistSongs: List<Song> = emptyList(),
     val playlistAlbumCovers: List<AlbumCover> = emptyList(),
     /** 저장·복원용 남기실 말씀 블록 (화면 TextField와 주기적으로 맞춘다). */
     val messageBlocks: List<EditorMessageTextBlock> = DEFAULT_EDITOR_MESSAGE_BLOCKS,
@@ -64,12 +71,30 @@ data class EditorFormState(
     fun displayMemorialPhotoUri(): String? = pickedMemorialPhotoUri ?: memorialPhotoUrl
 
     fun displayAlbumCovers(playlistStateHolder: MemorialPlaylistStateHolder?): List<AlbumCover> =
-        playlistStateHolder?.songs?.map { s ->
-            AlbumCover(id = s.id, imageUrl = s.albumCoverUrl, title = s.title)
-        } ?: playlistAlbumCovers
+        when {
+            playlistStateHolder?.songs?.isNotEmpty() == true -> {
+                playlistStateHolder.songs.map { s ->
+                    AlbumCover(id = s.id, imageUrl = s.albumCoverUrl, title = s.title)
+                }
+            }
+
+            memorialPlaylistSongs.isNotEmpty() -> {
+                memorialPlaylistSongs.map { s ->
+                    AlbumCover(id = s.id, imageUrl = s.albumCoverUrl, title = s.title)
+                }
+            }
+
+            else -> {
+                playlistAlbumCovers
+            }
+        }
 
     fun livePlaylistSongCount(playlistStateHolder: MemorialPlaylistStateHolder?): Int =
-        playlistStateHolder?.songs?.size ?: playlistSongCount
+        when {
+            playlistStateHolder?.songs?.isNotEmpty() == true -> playlistStateHolder.songs.size
+            memorialPlaylistSongs.isNotEmpty() -> memorialPlaylistSongs.size
+            else -> playlistSongCount
+        }
 
     val currentServiceOptions: List<String>
         get() =

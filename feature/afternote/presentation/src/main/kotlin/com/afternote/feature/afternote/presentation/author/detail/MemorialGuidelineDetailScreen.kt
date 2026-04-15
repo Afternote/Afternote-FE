@@ -47,6 +47,7 @@ import coil3.compose.AsyncImage
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
+import com.afternote.core.model.AlbumCover
 import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.modifierextention.FadingEdgeDirection
 import com.afternote.core.ui.modifierextention.horizontalFadingEdge
@@ -61,9 +62,7 @@ import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmD
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.ReceiversCard
-import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
-import com.afternote.feature.afternote.presentation.shared.model.dummy.AlbumDummies
 import com.afternote.core.ui.R as CoreUiR
 
 /**
@@ -545,6 +544,14 @@ private fun LastWishCard(lastWish: String) {
     )
 }
 
+private fun memorialGuidelineDetailPreviewAlbumCovers(): List<AlbumCover> =
+    listOf(
+        AlbumCover(id = "1"),
+        AlbumCover(id = "2"),
+        AlbumCover(id = "3"),
+        AlbumCover(id = "4"),
+    )
+
 @Preview(
     showBackground = true,
     device = "spec:width=390dp,height=844dp,dpi=420,isRound=false",
@@ -556,7 +563,7 @@ private fun MemorialGuidelineDetailScreenPreview() {
             content =
                 MemorialGuidelineDetailContent(
                     songCount = 16,
-                    albumCovers = AlbumDummies.list,
+                    albumCovers = memorialGuidelineDetailPreviewAlbumCovers(),
                     lastWish = "차분하고 조용하게 보내주세요.",
                 ),
             onBackClick = {},
@@ -583,7 +590,7 @@ private fun MemorialGuidelineDetailScreenDeleteDialogPreview() {
             content =
                 MemorialGuidelineDetailContent(
                     songCount = 16,
-                    albumCovers = AlbumDummies.list,
+                    albumCovers = memorialGuidelineDetailPreviewAlbumCovers(),
                     lastWish = "차분하고 조용하게 보내주세요.1",
                 ),
             onBackClick = {},

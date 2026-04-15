@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.editor.model
+package com.afternote.feature.afternote.presentation.author.editor.account
 
 /**
  * 계정 처리 방법 (소셜네트워크 카테고리).

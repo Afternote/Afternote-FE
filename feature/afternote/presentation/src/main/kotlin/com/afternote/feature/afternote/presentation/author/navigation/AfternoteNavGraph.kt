@@ -11,9 +11,9 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.navigation
 import com.afternote.core.ui.Route
 import com.afternote.feature.afternote.presentation.AfternoteHostViewModel
-import com.afternote.feature.afternote.presentation.author.editor.playlist.AddSongViewModel
-import com.afternote.feature.afternote.presentation.author.editor.playlist.MemorialPlaylistEntry
-import com.afternote.feature.afternote.presentation.author.editor.playlist.MemorialPlaylistEntryActions
+import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.AddSongViewModel
+import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.MemorialPlaylistEntry
+import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.MemorialPlaylistEntryActions
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 
 /**

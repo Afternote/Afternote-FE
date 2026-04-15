@@ -28,8 +28,8 @@ import com.afternote.core.ui.button.PlusBadgeButton
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverCallbacks
+import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
+import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverCallbacks
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 
 /**

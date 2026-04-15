@@ -10,16 +10,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.afternote.core.model.AlbumCover
 import com.afternote.core.ui.bottombar.BottomNavTab
+import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
 import com.afternote.feature.afternote.presentation.author.editor.model.InformationProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
+import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
+import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverCallbacks
 import com.afternote.feature.afternote.presentation.shared.LastWishOption
 import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -141,13 +142,35 @@ class AfternoteEditorState(
     }
 
     fun setPlaylistStateHolder(stateHolder: MemorialPlaylistStateHolder) {
+        if (formState.value.selectedCategory == EditorCategory.MEMORIAL &&
+            stateHolder.songs.isEmpty() &&
+            formState.value.memorialPlaylistSongs.isNotEmpty()
+        ) {
+            stateHolder.initializeSongs(formState.value.memorialPlaylistSongs)
+        }
         ui.setPlaylistStateHolder(stateHolder)
-        updatePlaylistSongCount()
+        stateHolder.onSongCountChanged = { syncMemorialPlaylistSongsFromHolder() }
+        syncMemorialPlaylistSongsFromHolder()
+    }
+
+    private fun syncMemorialPlaylistSongsFromHolder() {
+        val holder = ui.playlistStateHolder ?: return
+        updateForm {
+            it.copy(
+                memorialPlaylistSongs = holder.songs.toList(),
+                playlistSongCount = holder.songs.size,
+            )
+        }
     }
 
     fun updatePlaylistSongCount() {
+        syncMemorialPlaylistSongsFromHolder()
+    }
+
+    /** 신규 작성 진입 시 폼에 남은 추모 플레이리스트 스냅샷을 비운다 (홀더 clear는 호출부에서). */
+    fun resetMemorialPlaylistFormSnapshot() {
         updateForm {
-            it.copy(playlistSongCount = ui.playlistStateHolder?.songs?.size ?: it.playlistSongCount)
+            it.copy(memorialPlaylistSongs = emptyList(), playlistSongCount = 16)
         }
     }
 

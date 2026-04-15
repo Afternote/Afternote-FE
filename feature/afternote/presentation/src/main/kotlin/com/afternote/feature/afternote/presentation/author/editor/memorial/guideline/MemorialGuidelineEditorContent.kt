@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.editor.memorial
+package com.afternote.feature.afternote.presentation.author.editor.memorial.guideline
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -9,6 +9,9 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.presentation.author.editor.memorial.FuneralVideoUpload
+import com.afternote.feature.afternote.presentation.author.editor.memorial.LastMomentQuestion
+import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPhotoUpload
 import com.afternote.feature.afternote.presentation.author.editor.receiver.RecipientDesignationSection
 import com.afternote.feature.afternote.presentation.shared.LastWishOption
 import com.afternote.feature.afternote.presentation.shared.LastWishOtherState

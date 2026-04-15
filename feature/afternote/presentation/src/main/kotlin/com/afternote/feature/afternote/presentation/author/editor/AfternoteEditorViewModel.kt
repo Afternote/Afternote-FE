@@ -13,15 +13,15 @@ import com.afternote.feature.afternote.domain.repository.AuthorReceiverRepositor
 import com.afternote.feature.afternote.domain.repository.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.presentation.author.editor.mapper.AfternoteEditorMapper
 import com.afternote.feature.afternote.presentation.author.editor.mapper.toAfternoteEditorReceivers
+import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.InformationProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
-import com.afternote.feature.afternote.presentation.author.editor.orchestration.SaveAfternoteOrchestrator
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
+import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorUiState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteSaveState
@@ -29,7 +29,6 @@ import com.afternote.feature.afternote.presentation.author.editor.state.Afternot
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationException
 import com.afternote.feature.afternote.presentation.author.editor.state.DEFAULT_EDITOR_MESSAGE_BLOCKS
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
-import com.afternote.feature.afternote.presentation.author.editor.state.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -91,6 +90,7 @@ private data class EditorFormSnapshot(
     val funeralThumbnailUrl: String? = null,
     val memorialPhotoUrl: String? = null,
     val playlistSongCount: Int = 16,
+    val memorialPlaylistSongs: List<Song> = emptyList(),
     val albumCovers: List<AlbumSnap> = emptyList(),
     val editorMessages: List<MessageBlockSnap> = emptyList(),
 ) {
@@ -133,6 +133,7 @@ private data class EditorFormSnapshot(
             funeralThumbnailUrl = funeralThumbnailUrl,
             memorialPhotoUrl = memorialPhotoUrl,
             playlistSongCount = playlistSongCount,
+            memorialPlaylistSongs = memorialPlaylistSongs,
             playlistAlbumCovers =
                 albumCovers.map { AlbumCover(id = it.id, imageUrl = it.imageUrl, title = it.title) },
             messageBlocks = blocks,
@@ -160,6 +161,7 @@ private data class EditorFormSnapshot(
                 funeralThumbnailUrl = form.funeralThumbnailUrl,
                 memorialPhotoUrl = form.memorialPhotoUrl,
                 playlistSongCount = form.playlistSongCount,
+                memorialPlaylistSongs = form.memorialPlaylistSongs,
                 albumCovers =
                     form.playlistAlbumCovers.map {
                         AlbumSnap(id = it.id, imageUrl = it.imageUrl, title = it.title)
@@ -174,7 +176,10 @@ private data class EditorFormSnapshot(
  * 애프터노트 생성/수정 ViewModel. 저장·미디어 해석은 [SaveAfternoteOrchestrator]에 위임합니다.
  *
  * **SSOT:** 비즈니스 폼 필드는 [EditorFormState] + [editorFormStateFlow]이며, 프로세스 종료 시 [SavedStateHandle] JSON 스냅샷으로 복원합니다.
+ * 추모 플레이리스트 곡 목록은 폼의 [EditorFormState.memorialPlaylistSongs]와 그래프 스코프 [MemorialPlaylistStateHolder]가 동기화된 뒤 스냅샷에 포함됩니다.
  * 순수 UI는 [editorUi] ([AfternoteEditorUiState])가 담당합니다.
+ *
+ * UI 액션은 개별 public 메서드로 노출한다 (작성자 홈 화면 ViewModel과 동일).
  */
 @HiltViewModel
 class AfternoteEditorViewModel
@@ -265,43 +270,13 @@ class AfternoteEditorViewModel
             }
         }
 
-        fun onEvent(event: AfternoteEditorUiEvent) {
-            when (event) {
-                is AfternoteEditorUiEvent.LoadReceivers -> {
-                    loadReceivers()
-                }
-
-                is AfternoteEditorUiEvent.UploadThumbnail -> {
-                    uploadMemorialThumbnail(event.jpegBytes)
-                }
-
-                is AfternoteEditorUiEvent.Save -> {
-                    saveAfternote(
-                        editingId = event.editingId,
-                        category = event.editorCategory,
-                        payload = event.payload,
-                        selectedReceiverIds = event.selectedReceiverIds,
-                        playlistStateHolder = event.playlistStateHolder,
-                        memorialMedia = event.memorialMedia,
-                    )
-                }
-
-                is AfternoteEditorUiEvent.LoadForEdit -> {
-                    loadForEdit(
-                        afternoteId = event.afternoteId,
-                        playlistStateHolder = event.playlistStateHolder,
-                    )
-                }
-            }
-        }
-
-        private fun loadReceivers() {
+        fun refreshAuthorReceivers() {
             viewModelScope.launch {
                 authorReceiverRepository.refreshReceivers()
             }
         }
 
-        private fun uploadMemorialThumbnail(jpegBytes: ByteArray) {
+        fun uploadMemorialThumbnail(jpegBytes: ByteArray) {
             viewModelScope.launch {
                 memorialThumbnailUploadRepository
                     .uploadThumbnail(jpegBytes)
@@ -314,7 +289,7 @@ class AfternoteEditorViewModel
             }
         }
 
-        private fun saveAfternote(
+        fun saveAfternote(
             editingId: Long?,
             category: EditorCategory,
             payload: RegisterAfternotePayload,
@@ -373,7 +348,7 @@ class AfternoteEditorViewModel
             }
         }
 
-        private fun loadForEdit(
+        fun loadAfternoteForEdit(
             afternoteId: Long,
             playlistStateHolder: MemorialPlaylistStateHolder? = null,
         ) {
@@ -396,16 +371,16 @@ class AfternoteEditorViewModel
             val detailCategory = EditorCategory.fromServerValue(detail.category)
             if (detailCategory != EditorCategory.MEMORIAL || playlistStateHolder == null) return
             val playlist = detail.playlist ?: return
-            playlistStateHolder.clearAllSongs()
-            playlist.songs
-                .mapIndexed { index, s ->
+            playlistStateHolder.replaceSongs(
+                playlist.songs.mapIndexed { index, s ->
                     Song(
                         id = (s.id ?: index.toLong()).toString(),
                         title = s.title,
                         artist = s.artist,
                         albumCoverUrl = s.coverUrl,
                     )
-                }.forEach { playlistStateHolder.addSong(it) }
+                },
+            )
         }
 
         private fun handleSaveFailure(

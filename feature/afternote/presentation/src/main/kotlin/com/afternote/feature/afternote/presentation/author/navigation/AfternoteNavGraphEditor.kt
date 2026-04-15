@@ -15,15 +15,14 @@ import com.afternote.feature.afternote.presentation.author.editor.AfternoteEdito
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorSaveError
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorScreen
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorScreenCallbacks
-import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorUiEvent
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.author.editor.RegisterAfternotePayloadBuilder
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
+import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteSaveState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
-import com.afternote.feature.afternote.presentation.author.editor.state.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.author.navigation.model.SELECTED_RECEIVER_ID_KEY
 
@@ -34,8 +33,9 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.SELE
  * 홈의 `visibleItems` 스냅샷은 에디터에 전달하지 않는다. 식별은 라우트의 `itemId`·`initialCategory` 정도로 최소화한다.
  *
  * **LoadForEdit 트리거가 Compose에 있는 이유:** [MemorialPlaylistStateHolder]는
- * [com.afternote.feature.afternote.presentation.AfternoteHostViewModel]에 묶인 세션 초안이라,
- * VM 생성자 주입만으로는 함께 쥐기 어렵다. 실제 원본 로드는 여전히 ViewModel → Repository 경로다.
+ * [com.afternote.feature.afternote.presentation.AfternoteHostViewModel]에 묶인 그래프 스코프 런타임 버퍼이고,
+ * 곡 목록의 복원용 SSOT는 [com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState.memorialPlaylistSongs]
+ * + [androidx.lifecycle.SavedStateHandle] 스냅샷이다. 실제 상세 로드는 ViewModel → Repository 경로다.
  */
 internal sealed class EditSaveErrorResult {
     data class Validation(
@@ -124,21 +124,19 @@ internal fun buildEditScreenCallbacks(params: EditScreenCallbacksParams): Aftern
                 },
             )
             val payload = RegisterAfternotePayloadBuilder.fromEditorState(params.state)
-            params.editViewModel.onEvent(
-                AfternoteEditorUiEvent.Save(
-                    editingId = params.route.itemId?.toLongOrNull(),
-                    editorCategory = params.state.selectedCategory,
-                    payload = payload,
-                    selectedReceiverIds = params.state.afternoteEditReceivers.mapNotNull { it.id.toLongOrNull() },
-                    playlistStateHolder = params.playlistStateHolder,
-                    memorialMedia =
-                        SaveAfternoteMemorialMedia(
-                            funeralVideoUrl = params.state.funeralVideoUrl,
-                            funeralThumbnailUrl = params.state.funeralThumbnailUrl,
-                            memorialPhotoUrl = params.state.memorialPhotoUrl,
-                            pickedMemorialPhotoUri = params.state.pickedMemorialPhotoUri,
-                        ),
-                ),
+            params.editViewModel.saveAfternote(
+                editingId = params.route.itemId?.toLongOrNull(),
+                category = params.state.selectedCategory,
+                payload = payload,
+                selectedReceiverIds = params.state.afternoteEditReceivers.mapNotNull { it.id.toLongOrNull() },
+                playlistStateHolder = params.playlistStateHolder,
+                memorialMedia =
+                    SaveAfternoteMemorialMedia(
+                        funeralVideoUrl = params.state.funeralVideoUrl,
+                        funeralThumbnailUrl = params.state.funeralThumbnailUrl,
+                        memorialPhotoUrl = params.state.memorialPhotoUrl,
+                        pickedMemorialPhotoUri = params.state.pickedMemorialPhotoUri,
+                    ),
             )
         },
         onNavigateToAddSong = params.onNavigateToMemorialPlaylist,
@@ -146,11 +144,7 @@ internal fun buildEditScreenCallbacks(params: EditScreenCallbacksParams): Aftern
         onBottomNavTabSelected = params.onBottomNavTabSelected,
         onThumbnailBytesReady = { bytes ->
             if (bytes != null) {
-                params.editViewModel.onEvent(
-                    AfternoteEditorUiEvent.UploadThumbnail(
-                        bytes,
-                    ),
-                )
+                params.editViewModel.uploadMemorialThumbnail(bytes)
             }
         },
     )
@@ -169,6 +163,7 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
         if (route.itemId == null) {
             params.onEditStateClear()
             params.playlistStateHolder.clearAllSongs()
+            state.resetMemorialPlaylistFormSnapshot()
         }
     }
     LaunchedEffect(Unit) {
@@ -176,7 +171,7 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
             params.onEditStateChanged(state)
         }
     }
-    LaunchedEffect(Unit) { editViewModel.onEvent(AfternoteEditorUiEvent.LoadReceivers) }
+    LaunchedEffect(Unit) { editViewModel.refreshAuthorReceivers() }
 
     LaunchedEffect(authorReceivers, route.itemId) {
         if (route.itemId == null) {
@@ -205,11 +200,9 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
     LaunchedEffect(route.itemId, form.loadedItemId) {
         val id = route.itemId?.toLongOrNull() ?: return@LaunchedEffect
         if (form.loadedItemId != route.itemId) {
-            editViewModel.onEvent(
-                AfternoteEditorUiEvent.LoadForEdit(
-                    afternoteId = id,
-                    playlistStateHolder = params.playlistStateHolder,
-                ),
+            editViewModel.loadAfternoteForEdit(
+                afternoteId = id,
+                playlistStateHolder = params.playlistStateHolder,
             )
         }
     }

@@ -17,7 +17,6 @@ import com.afternote.core.ui.Label
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverSection
 import com.afternote.feature.afternote.presentation.author.editor.model.InfoMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.model.InformationProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.OptionRadioCardContent
@@ -25,6 +24,7 @@ import com.afternote.feature.afternote.presentation.author.editor.processing.Pro
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListParams
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.receiver.RecipientDesignationSection
+import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverSection
 import com.afternote.feature.afternote.presentation.shared.SelectableRadioCard
 
 /**

@@ -20,9 +20,9 @@ import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.Label
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.presentation.author.editor.account.AccountSection
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
-import com.afternote.feature.afternote.presentation.author.editor.model.AccountSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.OptionRadioCardContent
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodList
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListParams

@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.editor.model
+package com.afternote.feature.afternote.presentation.author.editor.account
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.Immutable
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod

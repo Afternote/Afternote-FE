@@ -1,9 +1,9 @@
-package com.afternote.feature.afternote.presentation.author.editor.memorial
+package com.afternote.feature.afternote.presentation.author.editor.memorial.guideline
 
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.Stable
 import com.afternote.core.model.AlbumCover
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverSection
+import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverSection
 import com.afternote.feature.afternote.presentation.shared.LastWishOption
 
 /**

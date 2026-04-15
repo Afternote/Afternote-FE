@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.editor.model
+package com.afternote.feature.afternote.presentation.author.editor.receiver.model
 import androidx.compose.runtime.Immutable
 
 /**

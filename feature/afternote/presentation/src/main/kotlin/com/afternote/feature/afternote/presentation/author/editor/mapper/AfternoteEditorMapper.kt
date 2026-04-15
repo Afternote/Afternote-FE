@@ -10,11 +10,12 @@ import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
 import com.afternote.feature.afternote.domain.model.author.PlaylistSongPayload
 import com.afternote.feature.afternote.domain.model.author.PlaylistWritePayload
 import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
+import com.afternote.feature.afternote.presentation.author.editor.account.AccountProcessMethod
+import com.afternote.feature.afternote.presentation.author.editor.account.InfoProcessMethod
+import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessagesCodec
-import com.afternote.feature.afternote.presentation.author.editor.model.AccountProcessMethod
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
-import com.afternote.feature.afternote.presentation.author.editor.model.InfoProcessMethod
 import com.afternote.feature.afternote.presentation.author.editor.model.InformationProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.model.LastWishPrefill
 import com.afternote.feature.afternote.presentation.author.editor.model.LoadFromExistingAccountParams
@@ -23,7 +24,6 @@ import com.afternote.feature.afternote.presentation.author.editor.model.LoadFrom
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
-import com.afternote.feature.afternote.presentation.author.editor.state.MemorialPlaylistStateHolder
 
 private const val LAST_WISH_DEFAULT_CALM = "차분하고 조용하게 보내주세요."
 private const val LAST_WISH_DEFAULT_BRIGHT = "슬퍼 하지 말고 밝고 따뜻하게 보내주세요."
