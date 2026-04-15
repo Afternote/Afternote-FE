@@ -63,6 +63,7 @@ fun AfternoteHomeScreen(
                 listState.isLoading && listState.visibleItems.isEmpty() -> {
                     LoadingListBody(modifier = bodyModifier)
                 }
+
                 listState.visibleItems.isNotEmpty() -> {
                     InfiniteListBody(
                         modifier = bodyModifier,
@@ -72,6 +73,7 @@ fun AfternoteHomeScreen(
                         onLoadMore = onLoadMore,
                     )
                 }
+
                 else -> {
                     EmptyListBody(modifier = bodyModifier)
                 }

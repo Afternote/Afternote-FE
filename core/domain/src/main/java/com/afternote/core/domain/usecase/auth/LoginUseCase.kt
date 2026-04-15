@@ -27,17 +27,20 @@ class LoginUseCase
         suspend operator fun invoke(loginType: LoginType): Result<Unit> {
             val sessionResult: Result<Session> =
                 when (loginType) {
-                    is LoginType.Email ->
+                    is LoginType.Email -> {
                         authRepository.defaultLogin(
                             email = loginType.email,
                             password = loginType.password,
                         )
+                    }
 
-                    is LoginType.Kakao ->
+                    is LoginType.Kakao -> {
                         authRepository.kakaoLogin(oauthToken = loginType.oauthToken)
+                    }
 
-                    is LoginType.Google ->
+                    is LoginType.Google -> {
                         authRepository.googleLogin(idToken = loginType.idToken)
+                    }
                 }
 
             val session =

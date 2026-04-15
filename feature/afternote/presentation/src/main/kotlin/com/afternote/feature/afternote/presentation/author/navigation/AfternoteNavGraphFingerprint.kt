@@ -44,12 +44,15 @@ internal fun AfternoteFingerprintLoginNavigation(
     FingerprintLoginScreen(
         onFingerprintAuthClick = {
             when {
-                isAuthenticating -> Unit
+                isAuthenticating -> {
+                }
+
                 activity == null -> {
                     // MainActivity가 FragmentActivity를 상속하지 않은 설정 누락 상황.
                     // 프로덕션 크래시 대신 에러 UI로 폴백한다.
                     onShowError(messages.initFailed)
                 }
+
                 else -> {
                     isAuthenticating = true
                     coroutineScope.launch {

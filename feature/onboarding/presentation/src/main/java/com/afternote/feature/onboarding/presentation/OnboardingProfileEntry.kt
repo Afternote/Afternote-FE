@@ -24,7 +24,10 @@ fun OnboardingProfileEntry(
 
     ObserveAsEvents(viewModel.eventFlow) { event ->
         when (event) {
-            is SignUpEvent.SignUpSuccess -> onOnboardingComplete()
+            is SignUpEvent.SignUpSuccess -> {
+                onOnboardingComplete()
+            }
+
             is SignUpEvent.ShowError -> {
                 // TODO: 스낵바 또는 토스트로 에러 표시
             }

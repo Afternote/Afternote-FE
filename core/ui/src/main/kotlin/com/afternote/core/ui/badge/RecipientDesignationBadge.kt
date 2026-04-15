@@ -34,7 +34,7 @@ fun RecipientDesignationBadge(
     modifier: Modifier = Modifier,
 ) {
     when (state) {
-        RecipientDesignationBadgeState.Completed ->
+        RecipientDesignationBadgeState.Completed -> {
             CircularCheckboxOutlineChip(
                 label = stringResource(R.string.core_ui_recipient_designated),
                 borderColor = AfternoteDesign.colors.gray2,
@@ -44,7 +44,9 @@ fun RecipientDesignationBadge(
                 onClick = null,
                 modifier = modifier,
             )
-        is RecipientDesignationBadgeState.Incomplete ->
+        }
+
+        is RecipientDesignationBadgeState.Incomplete -> {
             CircularCheckboxOutlineChip(
                 label = stringResource(R.string.core_ui_recipient_not_designated),
                 borderColor = AfternoteDesign.colors.gray3,
@@ -54,6 +56,7 @@ fun RecipientDesignationBadge(
                 onClick = state.onClick,
                 modifier = modifier,
             )
+        }
     }
 }
 
