@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
@@ -15,7 +16,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -44,7 +44,7 @@ fun ReceiversCard(
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             receivers.forEach { receiver ->
                 ReceiverDetailItem(receiver = receiver)
@@ -61,7 +61,7 @@ private fun ReceiverDetailItem(
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Image(
             painter = painterResource(CoreUiR.drawable.core_ui_ic_profile_placeholder),
@@ -73,21 +73,20 @@ private fun ReceiverDetailItem(
             contentScale = ContentScale.Crop,
         )
         Column(
-            verticalArrangement = Arrangement.spacedBy(2.dp),
+            modifier = Modifier.padding(top = 9.dp, bottom = 5.dp),
         ) {
             Text(
                 text = receiver.name,
                 style =
-                    AfternoteDesign.typography.captionLargeR.copy(
-                        fontWeight = FontWeight.Medium,
-                        color = AfternoteDesign.colors.black,
+                    AfternoteDesign.typography.captionLargeB.copy(
+                        color = AfternoteDesign.colors.gray9,
                     ),
             )
             Text(
                 text = receiver.label,
                 style =
                     AfternoteDesign.typography.captionLargeR.copy(
-                        color = AfternoteDesign.colors.gray6,
+                        color = AfternoteDesign.colors.gray8,
                     ),
             )
         }

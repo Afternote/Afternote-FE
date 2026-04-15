@@ -184,10 +184,7 @@ private fun GalleryDetailScrollContent(
         AfternoteDetailServiceHeader(
             service = AfternoteServiceDisplay.fromServiceName(content.serviceName),
             finalWriteDate = content.finalWriteDate,
-            processingMethodChipLabel =
-                content.processingMethodTitle.trim().ifEmpty {
-                    stringResource(R.string.feature_afternote_detail_processing_method_chip_empty)
-                },
+            processingMethodChipLabel = content.processingMethodTitle.trim(),
         )
 
         Spacer(modifier = Modifier.height(31.dp))

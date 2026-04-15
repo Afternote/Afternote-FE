@@ -188,7 +188,6 @@
     <string name="feature_afternote_detail_label_password">비밀번호</string>
     <string name="feature_afternote_detail_password_show">표시</string>
     <string name="feature_afternote_detail_password_hide">숨김</string>
-    <string name="feature_afternote_detail_processing_method_chip_empty">선택된 처리 방법 없음</string>
     <string name="feature_afternote_detail_section_processing">처리방법</string>
     <string name="feature_afternote_detail_section_message">남기신  말씀</string>
     <string name="feature_afternote_detail_no_message">남기신 말씀이 없습니다.</string>
