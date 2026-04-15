@@ -3,11 +3,9 @@ package com.afternote.core.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -53,18 +51,18 @@ fun Label(
         )
 
         if (isRequired) {
-            val requiredMarkerDescription = stringResource(R.string.core_ui_semantics_required_field)
-            Spacer(modifier = Modifier.width(8.dp))
+            val requiredMarkerDescription =
+                stringResource(R.string.core_ui_semantics_required_field)
             Box(
                 modifier =
                     Modifier
                         .size(4.dp)
                         .background(
-                            color = AfternoteDesign.colors.b1,
+                            color = Color(0xFFFF3647),
                             shape = CircleShape,
                         ).semantics {
                             contentDescription = requiredMarkerDescription
-                        },
+                        }.align(Alignment.Top),
             )
         }
     }
@@ -74,7 +72,12 @@ fun Label(
 @Composable
 private fun LabelPreview() {
     AfternoteTheme {
-        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+        ) {
             Label(text = "이름")
         }
     }
@@ -84,7 +87,12 @@ private fun LabelPreview() {
 @Composable
 private fun LabelRequiredPreview() {
     AfternoteTheme {
-        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+        ) {
             Label(
                 text = "정보 처리 방법",
                 isRequired = true,
@@ -97,7 +105,12 @@ private fun LabelRequiredPreview() {
 @Composable
 private fun LabelCustomStylePreview() {
     AfternoteTheme {
-        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+        ) {
             Label(
                 text = "경고 항목",
                 color = AfternoteDesign.colors.b1,

@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.editor.social
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -41,14 +42,16 @@ fun SocialNetworkEditorContent(
         Label(
             text = stringResource(R.string.afternote_editor_label_account_info),
             isRequired = true,
+            style = AfternoteDesign.typography.textField,
+            color = AfternoteDesign.colors.gray8,
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         Text(
             text = stringResource(R.string.feature_afternote_detail_label_id),
             style = AfternoteDesign.typography.captionLargeR,
-            color = AfternoteDesign.colors.gray9,
+            color = AfternoteDesign.colors.gray6,
         )
         Spacer(modifier = Modifier.height(6.dp))
         AfternoteTextField(
@@ -78,27 +81,26 @@ fun SocialNetworkEditorContent(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        AccountProcessingMethod.entries.forEachIndexed { index, method ->
-            if (index > 0) {
-                Spacer(modifier = Modifier.height(8.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            AccountProcessingMethod.entries.forEach { method ->
+                SelectableRadioCard(
+                    selected = params.accountSection.selectedMethod == method,
+                    onClick = { params.accountSection.onMethodSelected(method) },
+                    modifier = Modifier.fillMaxWidth(),
+                    content = {
+                        OptionRadioCardContent(
+                            option = method,
+                            selected = params.accountSection.selectedMethod == method,
+                        )
+                    },
+                )
             }
-            SelectableRadioCard(
-                selected = params.accountSection.selectedMethod == method,
-                onClick = { params.accountSection.onMethodSelected(method) },
-                modifier = Modifier.fillMaxWidth(),
-                content = {
-                    OptionRadioCardContent(
-                        option = method,
-                        selected = params.accountSection.selectedMethod == method,
-                    )
-                },
-            )
         }
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        params.recipientSection?.let { section ->
-            RecipientDesignationSection(section = section)
+        if (params.recipientSection != null) {
+            RecipientDesignationSection(section = params.recipientSection)
             Spacer(modifier = Modifier.height(32.dp))
         }
 
