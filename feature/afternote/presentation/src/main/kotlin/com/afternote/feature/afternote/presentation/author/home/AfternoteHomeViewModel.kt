@@ -15,7 +15,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -43,14 +42,14 @@ class AfternoteHomeViewModel
         // .value가 set 될 때마다 collect 안으로 _uiState.value를 발행하는 Hot Flow
         private val _uiState = MutableStateFlow(AfternoteHomeUiState())
 
-        // 관찰만 하고 수정할 수 없는 StateFlow 타입으로 변환
-        val uiState: StateFlow<AfternoteHomeUiState> = _uiState.asStateFlow()
-
-        val bodyUiState: StateFlow<AfternoteBodyUiState> =
-            // _uiState나 uiState나 내부적으로는 동일한 데이터 스트림이지만,
-            // ViewModel 내부 조작임을 명시적으로 나타내기 위해 보통 _uiState 원본을 참조한다
+        /**
+         * 외부(Compose UI)로 노출하는 단일 StateFlow(SSOT).
+         *
+         * 내부 [_uiState]를 UI가 그대로 소비할 수 있는 형태로 map 하여 파생시킨 상태이므로,
+         * UI는 이 하나의 창구만 구독하면 된다.
+         */
+        val uiState: StateFlow<AfternoteBodyUiState> =
             _uiState
-                // uiState가 관찰되는 순간 수집되기 전에 전처리처럼 수행될 연산의 설계도
                 // 관찰을 시작하는 순간 stateIn을 통해 list의 map처럼 작동 시작
                 .map { homeState ->
                     // _uiState.value가 발행될 때마다 실행
@@ -69,7 +68,7 @@ class AfternoteHomeViewModel
                     // map이 Flow로 매핑했던 것들을 StateFlow로 변환
                     scope = viewModelScope, // map 연산을 수행할 코루틴의 스코프
                     started = SharingStarted.WhileSubscribed(SUBSCRIBE_TIMEOUT_MS), // 관찰자가 있을 때만 map 연산을 수행하게 함
-                    initialValue = AfternoteBodyUiState(visibleItems = emptyList()), // bodyUiState의 초기값
+                    initialValue = AfternoteBodyUiState(visibleItems = emptyList()), // uiState의 초기값
                 )
 
         private var fetchJob: Job? = null

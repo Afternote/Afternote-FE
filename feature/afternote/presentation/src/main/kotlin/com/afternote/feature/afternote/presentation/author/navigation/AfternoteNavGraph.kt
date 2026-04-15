@@ -41,7 +41,6 @@ fun NavGraphBuilder.afternoteNavGraph(
                 onNavigateToGalleryDetail = actions::onNavigateToGalleryDetail,
                 onNavigateToMemorialGuidelineDetail = actions::onNavigateToMemorialGuidelineDetail,
                 onNavigateToNewEditor = actions::onNavigateToNewEditor,
-                onNavTabSelected = actions::onBottomNavTabSelected,
             )
         }
 
