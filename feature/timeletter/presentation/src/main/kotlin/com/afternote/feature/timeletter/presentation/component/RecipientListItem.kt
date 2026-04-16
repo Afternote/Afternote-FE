@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
@@ -28,7 +29,10 @@ fun RecipientListItem(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Image(
@@ -42,6 +46,7 @@ fun RecipientListItem(
                 text = recipient.name,
                 style = AfternoteDesign.typography.captionLargeB,
             )
+            Spacer(modifier = Modifier.padding(top = 5.dp))
             Text(
                 text = recipient.relationship,
                 style = AfternoteDesign.typography.captionLargeR,

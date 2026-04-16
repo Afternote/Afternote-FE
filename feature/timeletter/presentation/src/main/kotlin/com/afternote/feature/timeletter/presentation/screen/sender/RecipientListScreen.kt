@@ -57,16 +57,17 @@ fun RecipientListScreen(
                 Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
+                    .padding(top = 10.dp)
                     .padding(horizontal = 20.dp),
         ) {
             AfternoteTextField(
                 state = searchState,
-                placeholder = "textfield",
+                placeholder = "Text Field",
                 type = TextFieldType.Search,
                 imeAction = ImeAction.Search,
             )
             LazyColumn(
-                modifier = Modifier.padding(top = 12.dp),
+                modifier = Modifier.fillMaxSize(),
             ) {
                 items(recipients) { recipient ->
                     RecipientListItem(

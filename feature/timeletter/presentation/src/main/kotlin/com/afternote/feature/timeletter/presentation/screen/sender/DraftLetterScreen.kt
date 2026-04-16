@@ -57,23 +57,7 @@ fun DraftLetterScreen(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-private fun DraftLetterScreenPrev() {
-    DraftLetterScreen()
-}
 
-// 1. 기본 상태 (빈 목록, 수정 모드 아님)
-@Preview(showBackground = true, name = "기본 - 빈 목록")
-@Composable
-private fun DraftLetterScreenEmptyPreview() {
-    DraftLetterScreen(
-        uiState = DraftLetterUiState(
-            drafts = emptyList(),
-            isEditMode = false,
-        )
-    )
-}
 
 // 2. 일반 보기 상태 (목록 있음)
 @Preview(showBackground = true, name = "일반 - 목록 있음")
