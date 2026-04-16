@@ -9,4 +9,5 @@ enum class MindRecordCategory {
     DAILY_QUESTION,
     DIARY,
     DEEP_THOUGHT,
+    WEEKLY_REPORT,
 }

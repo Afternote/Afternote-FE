@@ -18,12 +18,16 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,12 +39,16 @@ import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
+import com.afternote.feature.mindrecord.presentation.component.BottomSheetCalendar
 import com.afternote.feature.mindrecord.presentation.component.WriteTextField
 import java.time.LocalDate
 
 @Composable
 fun DiaryWriteScreen(modifier: Modifier = Modifier) {
     var titleState = rememberTextFieldState()
+    var showPicker by remember { mutableStateOf(false) }
+    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+
     Scaffold(
         topBar = {
             DetailTopBar(
@@ -57,7 +65,7 @@ fun DiaryWriteScreen(modifier: Modifier = Modifier) {
                     ) {
                         Text(
                             text = "등록",
-                            style = MaterialTheme.typography.titleSmall,
+                            style = AfternoteDesign.typography.bodySmallB,
                             color = AfternoteDesign.colors.gray6,
                         )
                     }
@@ -66,22 +74,30 @@ fun DiaryWriteScreen(modifier: Modifier = Modifier) {
         },
         modifier = modifier,
     ) { paddingValues ->
-        Column(modifier = Modifier.padding(paddingValues).padding(horizontal = 20.dp)) {
+        Column(
+            modifier =
+                Modifier
+                    .padding(paddingValues)
+                    .padding(horizontal = 20.dp),
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = LocalDate.now().toString(),
-                    style = MaterialTheme.typography.displayMedium,
+                    text = selectedDate.toString(),
+                    style = AfternoteDesign.typography.captionLargeR,
                     color = AfternoteDesign.colors.gray9,
                 )
-
-                Icon(
-                    painter = painterResource(R.drawable.core_ui_arrowdown),
-                    contentDescription = null,
-                )
+                IconButton(
+                    onClick = { showPicker = !showPicker },
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.core_ui_arrowdown),
+                        contentDescription = null,
+                    )
+                }
             }
 
             HorizontalDivider()
@@ -98,7 +114,7 @@ fun DiaryWriteScreen(modifier: Modifier = Modifier) {
                 label = {
                     Text(
                         text = "제목을 입력하세요.",
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = AfternoteDesign.typography.h2,
                         color = Color(0xFF000000).copy(0.2f),
                     )
                 },
@@ -117,7 +133,7 @@ fun DiaryWriteScreen(modifier: Modifier = Modifier) {
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "오늘의 기분",
-                    style = MaterialTheme.typography.displayMedium,
+                    style = AfternoteDesign.typography.captionLargeR,
                     color = Color(0xFF000000).copy(0.4f),
                 )
                 Spacer(modifier = Modifier.width(12.dp))
@@ -179,7 +195,7 @@ fun DiaryWriteScreen(modifier: Modifier = Modifier) {
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = "위치 추가",
-                        style = MaterialTheme.typography.displayMedium,
+                        style = AfternoteDesign.typography.captionLargeR,
                         color = Color(0xFF000000).copy(0.6f),
                     )
                 }
@@ -203,13 +219,24 @@ fun DiaryWriteScreen(modifier: Modifier = Modifier) {
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = "사진 추가",
-                        style = MaterialTheme.typography.displayMedium,
+                        style = AfternoteDesign.typography.captionLargeR,
                         color = Color(0xFF000000).copy(0.6f),
                     )
                 }
             }
 
             WriteTextField()
+        }
+
+        if (showPicker) {
+            BottomSheetCalendar(
+                initialDate = selectedDate,
+                onDismiss = { showPicker = false },
+                onDateSelect = { date ->
+                    selectedDate = date
+                    showPicker = false
+                },
+            )
         }
     }
 }
