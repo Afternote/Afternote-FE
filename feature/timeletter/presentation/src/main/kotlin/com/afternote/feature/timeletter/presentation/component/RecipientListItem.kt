@@ -14,7 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.CircleCheckBox
+import com.afternote.core.ui.button.AfternoteCircularCheckbox
+import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.timeletter.domain.Recipient
 import com.afternote.feature.timeletter.presentation.R
@@ -47,9 +48,10 @@ fun RecipientListItem(
                 color = AfternoteDesign.colors.gray6,
             )
         }
-        CircleCheckBox(
-            checked = selected,
-            onCheckedChange = onSelectedChange,
+        AfternoteCircularCheckbox(
+            state = if (selected) CheckboxState.Default else CheckboxState.None,
+            onClick = { onSelectedChange(!selected) },
+            size = 20.dp,
         )
     }
 }

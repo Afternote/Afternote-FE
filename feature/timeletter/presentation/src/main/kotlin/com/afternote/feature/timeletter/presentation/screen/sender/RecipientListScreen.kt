@@ -4,13 +4,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateSetOf
@@ -20,9 +16,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
+import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.button.AfternoteButton
-import com.afternote.core.ui.scaffold.topbar.DetailTopBar
-import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.core.ui.button.AfternoteButtonType
+import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.timeletter.domain.Recipient
 import com.afternote.feature.timeletter.presentation.component.RecipientListItem
 
@@ -50,6 +47,7 @@ fun RecipientListScreen(
                 onClick = {
                     onConfirmClick(recipients.filter { it.id in selectedIds })
                 },
+                type = AfternoteButtonType.Default,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
             )
         },
@@ -64,14 +62,7 @@ fun RecipientListScreen(
             AfternoteTextField(
                 state = searchState,
                 placeholder = "textfield",
-                trailingContent = {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = null,
-                        tint = AfternoteDesign.colors.gray9,
-                        modifier = Modifier.size(24.dp),
-                    )
-                },
+                type = TextFieldType.Search,
                 imeAction = ImeAction.Search,
             )
             LazyColumn(

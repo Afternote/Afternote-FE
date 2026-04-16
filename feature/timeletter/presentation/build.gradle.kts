@@ -12,5 +12,5 @@ dependencies {
     implementation(projects.feature.timeletter.res)
     implementation(projects.core.common)
     implementation(projects.core.ui)
-    implementation(libs.androidx.material.icons.extended)
+    implementation(libs.androidx.compose.material.icons.extended)
 }

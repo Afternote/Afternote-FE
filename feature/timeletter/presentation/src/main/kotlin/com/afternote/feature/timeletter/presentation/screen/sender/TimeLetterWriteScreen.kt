@@ -13,14 +13,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.scaffold.topbar.DetailTopBar
-import com.afternote.feature.timeletter.presentation.component.TimeLetterTextButton
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.timeletter.presentation.component.RecipientCard
 import com.afternote.feature.timeletter.presentation.component.SendScheduleRow
 import com.afternote.feature.timeletter.presentation.component.TimeLetterBodyTextField
 import com.afternote.feature.timeletter.presentation.component.TimeLetterBottomBar
+import com.afternote.feature.timeletter.presentation.component.TimeLetterTextButton
 import com.afternote.feature.timeletter.presentation.component.TimeLetterTitleTextField
 
 data class TimeLetterWriteUiState(
