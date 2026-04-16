@@ -1,7 +1,8 @@
 package com.afternote.feature.timeletter.presentation.screen.sender
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
@@ -22,13 +23,7 @@ import com.afternote.feature.timeletter.presentation.component.TimeLetterBodyTex
 import com.afternote.feature.timeletter.presentation.component.TimeLetterBottomBar
 import com.afternote.feature.timeletter.presentation.component.TimeLetterTextButton
 import com.afternote.feature.timeletter.presentation.component.TimeLetterTitleTextField
-
-data class TimeLetterWriteUiState(
-    val recipientName: String = "박채연",
-    val sendDate: String = "2026.03.22.",
-    val sendTime: String = "09:22",
-    val draftCount: Int = 1,
-)
+import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteUiState
 
 @Composable
 fun TimeLetterWriteScreen(
@@ -50,7 +45,7 @@ fun TimeLetterWriteScreen(
     Scaffold(
         topBar = {
             DetailTopBar(
-                title = "",
+                title = "타임레터",
                 onBackClick = onBackClick,
                 actions = {
                     TimeLetterTextButton(
@@ -76,7 +71,8 @@ fun TimeLetterWriteScreen(
         Column(
             modifier =
                 Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
+                    .height(115.dp)
                     .padding(innerPadding)
                     .verticalScroll(rememberScrollState()),
         ) {
@@ -106,7 +102,7 @@ fun TimeLetterWriteScreen(
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+@Preview(showBackground = true)
 @Composable
 private fun TimeLetterWriteScreenPreview() {
     AfternoteTheme {
