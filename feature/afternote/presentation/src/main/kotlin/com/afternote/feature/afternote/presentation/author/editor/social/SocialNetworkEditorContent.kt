@@ -11,6 +11,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.CaptionLabeledTextField
 import com.afternote.core.ui.Label
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -45,12 +46,12 @@ fun SocialNetworkEditorContent(
                 color = AfternoteDesign.colors.gray8,
             )
 
-            AfternoteCaptionLabeledTextField(
+            CaptionLabeledTextField(
                 label = stringResource(R.string.feature_afternote_detail_label_id),
                 state = params.accountSection.idState,
             )
 
-            AfternoteCaptionLabeledTextField(
+            CaptionLabeledTextField(
                 label = stringResource(R.string.feature_afternote_detail_label_password),
                 state = params.accountSection.passwordState,
                 keyboardType = KeyboardType.Password,

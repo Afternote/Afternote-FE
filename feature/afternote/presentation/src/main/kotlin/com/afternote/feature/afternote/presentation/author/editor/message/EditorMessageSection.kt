@@ -20,6 +20,7 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
@@ -29,6 +30,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
+import com.afternote.core.ui.CaptionLabeledField
 import com.afternote.core.ui.Label
 import com.afternote.core.ui.button.PlusBadgeButton
 import com.afternote.core.ui.modifierextention.bottomBorder
@@ -59,16 +61,18 @@ fun EditorMessageSection(
         Spacer(modifier = Modifier.height(16.dp))
 
         messages.forEachIndexed { index, message ->
-            EditorMessageItem(
-                message = message,
-                showDeleteButton = index > 0,
-                onRegisterClick = { onRegisterClick(message) },
-                onDeleteClick = { onDeleteClick(message) },
-                focusManager = focusManager,
-            )
+            key(message.id) {
+                EditorMessageItem(
+                    message = message,
+                    showDeleteButton = index > 0,
+                    onRegisterClick = { onRegisterClick(message) },
+                    onDeleteClick = { onDeleteClick(message) },
+                    focusManager = focusManager,
+                )
 
-            if (index < messages.lastIndex) {
-                Spacer(modifier = Modifier.height(16.dp))
+                if (index < messages.lastIndex) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
             }
         }
 
@@ -99,30 +103,26 @@ private fun EditorMessageItem(
     Column(modifier = modifier.fillMaxWidth()) {
         Column(
             modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .bottomBorder(color = AfternoteDesign.colors.gray2, width = 1.dp),
+                Modifier.bottomBorder(color = AfternoteDesign.colors.gray2, width = 1.dp),
         ) {
-            Text(
-                text = stringResource(R.string.afternote_editor_message_field_title),
-                style = AfternoteDesign.typography.captionLargeR,
-                color = AfternoteDesign.colors.gray9,
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            AfternoteTextField(
-                state = message.titleState,
-                placeholder = stringResource(R.string.afternote_editor_message_text_field_placeholder),
-            )
+            CaptionLabeledField(
+                label = stringResource(R.string.afternote_editor_message_field_title),
+                labelColor = AfternoteDesign.colors.gray9,
+            ) {
+                AfternoteTextField(
+                    state = message.titleState,
+                    placeholder = stringResource(R.string.afternote_editor_message_text_field_placeholder),
+                )
+            }
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            Text(
-                text = stringResource(R.string.afternote_editor_message_field_body),
-                style = AfternoteDesign.typography.captionLargeR,
-                color = AfternoteDesign.colors.gray9,
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            EditorMessageContentField(state = message.contentState)
+            CaptionLabeledField(
+                label = stringResource(R.string.afternote_editor_message_field_body),
+                labelColor = AfternoteDesign.colors.gray9,
+            ) {
+                EditorMessageContentField(state = message.contentState)
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
         }
@@ -219,25 +219,6 @@ private fun EditorMessageSectionPreview() {
                         titleState = rememberTextFieldState("남긴말1"),
                         contentState = rememberTextFieldState(),
                     ),
-                    EditorMessage(
-                        titleState = rememberTextFieldState(),
-                        contentState = rememberTextFieldState(),
-                    ),
-                ),
-            onRegisterClick = {},
-            onDeleteClick = {},
-            onAddClick = {},
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "단일 메시지")
-@Composable
-private fun EditorMessageSectionSinglePreview() {
-    AfternoteTheme {
-        EditorMessageSection(
-            messages =
-                listOf(
                     EditorMessage(
                         titleState = rememberTextFieldState(),
                         contentState = rememberTextFieldState(),
