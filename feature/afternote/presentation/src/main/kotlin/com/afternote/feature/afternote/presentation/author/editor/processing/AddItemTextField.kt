@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
@@ -25,6 +26,9 @@ import com.afternote.feature.afternote.presentation.R
  *
  * 포커스가 해제되거나 키보드에서 완료(Done) 액션이 들어오면 비어 있지 않을 때 항목을 추가하고,
  * 부모에 표시 종료를 알립니다. 입력 UI는 [AfternoteTextField] 기본([TextFieldType.Basic]) 스타일입니다.
+ *
+ * 등장 직후 [LocalSoftwareKeyboardController]로 키보드를 명시적으로 띄우고, 완료·포커스 해제 시 숨겨
+ * 일부 단말·전환 직후 포커스만 잡히는 경우를 줄입니다.
  */
 @Composable
 fun AddItemTextField(
@@ -34,6 +38,7 @@ fun AddItemTextField(
 ) {
     val textFieldState = rememberTextFieldState()
     val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
     val focusRequester = remember { FocusRequester() }
 
     var wasFocused by remember { mutableStateOf(false) }
@@ -46,10 +51,12 @@ fun AddItemTextField(
         }
         onVisibilityChanged(false)
         focusManager.clearFocus()
+        keyboardController?.hide()
     }
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
+        keyboardController?.show()
     }
     AfternoteTextField(
         state = textFieldState,
