@@ -1,5 +1,6 @@
 package com.afternote.feature.timeletter.presentation.component
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,8 +22,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.timeletter.presentation.R
 
 @Composable
 fun MediaBottomSheetContent(
@@ -41,22 +46,35 @@ fun MediaBottomSheetContent(
             textAlign = TextAlign.Center,
         )
 
-        MediaItem(icon = Icons.Default.Image, text = "이미지 추가하기", onClick = onImageClick)
+        MediaItem(painter = painterResource(id = R.drawable.ic_image), text = "이미지 추가하기", onClick = onImageClick)
         HorizontalDivider()
-        MediaItem(icon = Icons.Default.Mic, text = "음성 추가하기", onClick = onVoiceClick)
+        MediaItem(painter = painterResource(id = R.drawable.ic_mic), text = "음성 추가하기", onClick = onVoiceClick)
         HorizontalDivider()
-        MediaItem(icon = Icons.Default.Description, text = "파일 추가하기", onClick = onFileClick)
+        MediaItem(painter = painterResource(id = R.drawable.ic_file), text = "파일 추가하기", onClick = onFileClick)
         HorizontalDivider()
-        MediaItem(icon = Icons.Default.Link, text = "링크 추가하기", onClick = onLinkClick)
+        MediaItem(painter = painterResource(id = R.drawable.ic_link), text = "링크 추가하기", onClick = onLinkClick)
         HorizontalDivider()
 
         Spacer(modifier = Modifier.height(32.dp))
     }
 }
 
+@Preview(showBackground = true)
+@Composable
+private fun MediaBottomSheetContentPreview() {
+    AfternoteTheme {
+        MediaBottomSheetContent(
+            onImageClick = {},
+            onVoiceClick = {},
+            onFileClick = {},
+            onLinkClick = {},
+        )
+    }
+}
+
 @Composable
 private fun MediaItem(
-    icon: ImageVector,
+    painter: androidx.compose.ui.graphics.painter.Painter,
     text: String,
     onClick: () -> Unit,
 ) {
@@ -69,10 +87,9 @@ private fun MediaItem(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Icon(
-            imageVector = icon,
+        Image(
+            painter = painter,
             contentDescription = null,
-            tint = Color.Gray,
         )
         Text(text = text)
     }
