@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -27,6 +29,7 @@ import com.afternote.feature.timeletter.presentation.R
 @Composable
 fun TimeLetterBottomBar(
     draftCount: Int,
+    onMediaAddClick: () -> Unit,
     onLinkClick: () -> Unit,
     onTextStyleClick: () -> Unit,
     onAlignCenterClick: () -> Unit,
@@ -44,6 +47,15 @@ fun TimeLetterBottomBar(
                 .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        IconButton(onClick = onMediaAddClick) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "미디어 추가",
+                tint = AfternoteDesign.colors.gray7,
+                modifier = Modifier.size(22.dp),
+            )
+        }
+
         IconButton(onClick = onLinkClick) {
             Icon(
                 painter = painterResource(R.drawable.ic_link),
@@ -113,6 +125,7 @@ fun TimeLetterBottomBar(
 fun TimeLetterBottomBarPreview() {
     TimeLetterBottomBar(
         draftCount = 3,
+        onMediaAddClick = {},
         onLinkClick = {},
         onTextStyleClick = {},
         onAlignCenterClick = {},
