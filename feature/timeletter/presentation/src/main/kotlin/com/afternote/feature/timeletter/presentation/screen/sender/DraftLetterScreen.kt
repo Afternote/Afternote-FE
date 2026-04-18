@@ -57,26 +57,31 @@ fun DraftLetterScreen(
     }
 }
 
-
-
 // 2. 일반 보기 상태 (목록 있음)
 @Preview(showBackground = true, name = "일반 - 목록 있음")
 @Composable
 private fun DraftLetterScreenNormalPreview() {
     DraftLetterScreen(
-        uiState = DraftLetterUiState(
-            drafts = listOf(
-                DraftLetter(id = 1L, title = "첫 번째 레터", recipientName = "김철수", opendate = "2026-12-25"),
-                DraftLetter(
-                    id = 2L,
-                    title = "두 번째 레터",
-                    recipientName = "이영희",
-                    opendate = "2026-06-01"
-                ),
-                DraftLetter(id = 3L, title = null, recipientName = null, opendate = null),
+        uiState =
+            DraftLetterUiState(
+                drafts =
+                    listOf(
+                        DraftLetter(
+                            id = 1L,
+                            title = "첫 번째 레터",
+                            recipientName = "김철수",
+                            opendate = "2026-12-25",
+                        ),
+                        DraftLetter(
+                            id = 2L,
+                            title = "두 번째 레터",
+                            recipientName = "이영희",
+                            opendate = "2026-06-01",
+                        ),
+                        DraftLetter(id = 3L, title = null, recipientName = null, opendate = null),
+                    ),
+                isEditMode = false,
             ),
-            isEditMode = false,
-        )
     )
 }
 
@@ -85,13 +90,25 @@ private fun DraftLetterScreenNormalPreview() {
 @Composable
 private fun DraftLetterScreenEditModePreview() {
     DraftLetterScreen(
-        uiState = DraftLetterUiState(
-            drafts = listOf(
-                DraftLetter(id = 1L, title = "첫 번째 레터", recipientName = "김철수", opendate = "2026-12-25"),
-                DraftLetter(id = 2L, title = "두 번째 레터", recipientName = "이영희", opendate = "2026-06-01"),
+        uiState =
+            DraftLetterUiState(
+                drafts =
+                    listOf(
+                        DraftLetter(
+                            id = 1L,
+                            title = "첫 번째 레터",
+                            recipientName = "김철수",
+                            opendate = "2026-12-25",
+                        ),
+                        DraftLetter(
+                            id = 2L,
+                            title = "두 번째 레터",
+                            recipientName = "이영희",
+                            opendate = "2026-06-01",
+                        ),
+                    ),
+                isEditMode = true,
+                selectedIds = setOf(1L),
             ),
-            isEditMode = true,
-            selectedIds = setOf(1L),
-        )
     )
 }

@@ -40,15 +40,15 @@ fun TimeLetterBlockItem(
                     width = 1.dp,
                     color = AfternoteDesign.colors.gray4,
                     shape = RoundedCornerShape(size = 6.dp),
-                )
-                .fillMaxWidth(),
+                ).fillMaxWidth(),
     ) {
         Image(
             painterResource(com.afternote.feature.timeletter.presentation.R.drawable.container),
             contentDescription = "예시 블록",
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(100.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(100.dp),
         )
         Column(
             modifier = Modifier.padding(vertical = 16.dp, horizontal = 15.dp),
