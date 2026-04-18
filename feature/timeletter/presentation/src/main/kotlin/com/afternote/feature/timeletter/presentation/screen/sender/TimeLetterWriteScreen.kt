@@ -65,10 +65,22 @@ fun TimeLetterWriteScreen(
             containerColor = Color.White,
         ) {
             MediaBottomSheetContent(
-                onImageClick = { showMediaSheet = false; onMediaImageClick() },
-                onVoiceClick = { showMediaSheet = false; onMediaVoiceClick() },
-                onFileClick = { showMediaSheet = false; onMediaFileClick() },
-                onLinkClick = { showMediaSheet = false; onMediaLinkClick() },
+                onImageClick = {
+                    showMediaSheet = false
+                    onMediaImageClick()
+                },
+                onVoiceClick = {
+                    showMediaSheet = false
+                    onMediaVoiceClick()
+                },
+                onFileClick = {
+                    showMediaSheet = false
+                    onMediaFileClick()
+                },
+                onLinkClick = {
+                    showMediaSheet = false
+                    onMediaLinkClick()
+                },
             )
         }
     }

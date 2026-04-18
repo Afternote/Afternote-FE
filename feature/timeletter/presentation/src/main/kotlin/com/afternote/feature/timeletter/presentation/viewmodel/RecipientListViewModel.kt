@@ -6,6 +6,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel
-class RecipientListViewModel @Inject constructor() : ViewModel() {
-    val searchState = TextFieldState()
-}
+class RecipientListViewModel
+    @Inject
+    constructor() : ViewModel() {
+        val searchState = TextFieldState()
+    }
