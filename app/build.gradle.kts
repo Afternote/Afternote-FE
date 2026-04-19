@@ -6,6 +6,10 @@ plugins {
 android {
     namespace = "com.afternote.afternote_fe"
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         applicationId = "com.afternote.afternote_fe"
         versionCode = 1
@@ -27,6 +31,7 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.core.splashscreen)
 
     // Core
     implementation(projects.core.network)

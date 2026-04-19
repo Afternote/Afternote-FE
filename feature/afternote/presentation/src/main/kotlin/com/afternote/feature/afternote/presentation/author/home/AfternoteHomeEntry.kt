@@ -1,11 +1,12 @@
 package com.afternote.feature.afternote.presentation.author.home
 
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.afternote.core.ui.bottombar.BottomNavTab
-import com.afternote.feature.afternote.presentation.author.home.model.AfternoteHomeEvent
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 
 data class AfternoteHomeEntryActions(
@@ -13,7 +14,6 @@ data class AfternoteHomeEntryActions(
     val navigateToGalleryDetail: (String) -> Unit = {},
     val navigateToMemorialGuidelineDetail: (String) -> Unit = {},
     val navigateToAdd: (AfternoteCategory) -> Unit = {},
-    val onNavTabSelected: (BottomNavTab) -> Unit = {},
 )
 
 /**
@@ -29,14 +29,22 @@ fun AfternoteHomeEntry(
     val uiState by viewModel
         .uiState
         .collectAsStateWithLifecycle() // 내부의 collect로 viewModel.uiState를 관찰/수집
-    val bodyUiState by viewModel
-        .bodyUiState
-        .collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // 페이징 에러는 상태 기반 one-shot 패턴: Snackbar 노출 후 즉시 소비해 화면 회전 등 재구독 시 재표출 방지
+    uiState.paginationError?.let { errorMessage ->
+        LaunchedEffect(errorMessage) {
+            snackbarHostState.showSnackbar(message = errorMessage)
+            viewModel.consumePaginationError()
+        }
+    }
 
     AfternoteHomeScreen(
-        listState = bodyUiState,
-        onCategorySelected = { viewModel.onEvent(AfternoteHomeEvent.SelectTab(it)) },
+        listState = uiState,
+        snackbarHostState = snackbarHostState,
+        onCategorySelected = viewModel::selectTab,
         onListItemClick = actions.navigateToDetail,
-        onLoadMore = { viewModel.onEvent(AfternoteHomeEvent.LoadMore) },
-    ) { actions.navigateToAdd(uiState.categoryState.selectedCategory) }
+        onLoadMore = viewModel::loadMore,
+        onRefresh = viewModel::refresh,
+    ) { actions.navigateToAdd(uiState.selectedCategory) }
 }

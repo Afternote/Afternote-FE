@@ -9,7 +9,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
-import androidx.navigation.NavController
 import androidx.navigation.toRoute
 import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorEvent
@@ -63,7 +62,8 @@ internal fun editSaveErrorFromState(
 }
 
 internal data class EditScreenCallbacksParams(
-    val navController: NavController,
+    val onPopBackStack: () -> Unit,
+    val onNavigateToMemorialPlaylist: () -> Unit,
     val editViewModel: AfternoteEditorViewModel,
     val editState: AfternoteEditorState?,
     val onEditStateChanged: (AfternoteEditorState?) -> Unit,
@@ -77,24 +77,24 @@ internal data class EditScreenCallbacksParams(
 
 internal data class AfternoteEditorNavigationParams(
     val backStackEntry: NavBackStackEntry,
-    val navController: NavController,
     val playlistStateHolder: MemorialPlaylistStateHolder,
     val editState: AfternoteEditorState?,
     val onEditStateChanged: (AfternoteEditorState?) -> Unit,
     val onEditStateClear: () -> Unit,
     val onNavigateToSelectReceiver: () -> Unit = {},
     val onBottomNavTabSelected: (BottomNavTab) -> Unit = {},
+    val isEditorRouteCurrent: Boolean,
+    val onPopBackStack: () -> Unit,
+    val onNavigateToMemorialPlaylist: () -> Unit,
+    val onSaveSuccessNavigateHome: () -> Unit,
 )
 
 internal fun navigateToAfternoteHomeOnSaveSuccess(
     onEditStateClear: () -> Unit,
-    navController: NavController,
+    onSaveSuccessNavigateHome: () -> Unit,
 ) {
     onEditStateClear()
-    navController.navigate(AfternoteRoute.AfternoteHomeRoute) {
-        popUpTo(AfternoteRoute.AfternoteHomeRoute) { inclusive = true }
-        launchSingleTop = true
-    }
+    onSaveSuccessNavigateHome()
 }
 
 internal fun tryApplyReceiverSelectionFromSavedState(
@@ -112,7 +112,7 @@ internal fun buildEditScreenCallbacks(params: EditScreenCallbacksParams): Aftern
     AfternoteEditorScreenCallbacks(
         onBackClick = {
             params.onEditStateClear()
-            params.navController.popBackStack()
+            params.onPopBackStack()
         },
         onRegisterClick = {
             params.state.persistEditorMessagesFromTyping(
@@ -141,7 +141,7 @@ internal fun buildEditScreenCallbacks(params: EditScreenCallbacksParams): Aftern
                 ),
             )
         },
-        onNavigateToAddSong = { params.navController.navigate(AfternoteRoute.MemorialPlaylistRoute) },
+        onNavigateToAddSong = params.onNavigateToMemorialPlaylist,
         onNavigateToSelectReceiver = params.onNavigateToSelectReceiver,
         onBottomNavTabSelected = params.onBottomNavTabSelected,
         onThumbnailBytesReady = { bytes ->
@@ -184,8 +184,7 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
         }
     }
 
-    val isEditCurrentDestination =
-        params.navController.currentBackStackEntry == params.backStackEntry
+    val isEditCurrentDestination = params.isEditorRouteCurrent
     LaunchedEffect(isEditCurrentDestination) {
         if (isEditCurrentDestination) {
             tryApplyReceiverSelectionFromSavedState(
@@ -198,7 +197,7 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
 
     LaunchedEffect(route.initialCategory, route.itemId) {
         if (route.itemId == null && route.initialCategory != null) {
-            state.onCategorySelected(route.initialCategory)
+            state.selectCategoryByNavKey(route.initialCategory)
         }
     }
 
@@ -221,7 +220,7 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
                 is AfternoteEditorEvent.SaveSuccess -> {
                     navigateToAfternoteHomeOnSaveSuccess(
                         params.onEditStateClear,
-                        params.navController,
+                        params.onSaveSuccessNavigateHome,
                     )
                 }
 
@@ -256,7 +255,8 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
         callbacks =
             buildEditScreenCallbacks(
                 EditScreenCallbacksParams(
-                    navController = params.navController,
+                    onPopBackStack = params.onPopBackStack,
+                    onNavigateToMemorialPlaylist = params.onNavigateToMemorialPlaylist,
                     editViewModel = editViewModel,
                     editState = params.editState,
                     onEditStateChanged = params.onEditStateChanged,

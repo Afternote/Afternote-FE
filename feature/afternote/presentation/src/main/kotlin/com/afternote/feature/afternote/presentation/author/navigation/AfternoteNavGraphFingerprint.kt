@@ -1,76 +1,75 @@
 package com.afternote.feature.afternote.presentation.author.navigation
 
-import android.util.Log
-import android.widget.Toast
-import androidx.biometric.BiometricManager
-import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
-import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
-import androidx.biometric.BiometricPrompt
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
-import androidx.navigation.NavController
+import com.afternote.core.ui.findActivity
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
+import com.afternote.feature.afternote.presentation.shared.fingerprint.BiometricAuthResult
+import com.afternote.feature.afternote.presentation.shared.fingerprint.BiometricMessages
 import com.afternote.feature.afternote.presentation.shared.fingerprint.FingerprintLoginScreen
+import com.afternote.feature.afternote.presentation.shared.fingerprint.authenticateBiometric
+import kotlinx.coroutines.launch
 
 @Composable
-internal fun AfternoteFingerprintLoginNavigation(navController: NavController) {
+internal fun AfternoteFingerprintLoginNavigation(
+    onAuthenticationSuccess: () -> Unit,
+    onShowError: (String) -> Unit,
+) {
     val context = LocalContext.current
-    val activity = context as? FragmentActivity
+    val activity = remember(context) { context.findActivity<FragmentActivity>() }
+    val coroutineScope = rememberCoroutineScope()
+
+    // 생체 인증 프롬프트가 떠 있는 동안의 중복 클릭(연타)을 방어한다.
+    // suspend 확장이 취소-안전하긴 하지만, OS 프롬프트가 이미 표시된 상태에서의 재호출은 회피하는 편이 UX상 안전.
+    var isAuthenticating by remember { mutableStateOf(false) }
+
+    val messages =
+        BiometricMessages(
+            initFailed = stringResource(R.string.biometric_init_failed),
+            noHardware = stringResource(R.string.biometric_no_hardware),
+            noneEnrolled = stringResource(R.string.biometric_none_enrolled),
+            hwUnavailable = stringResource(R.string.biometric_hw_unavailable),
+            notAvailable = stringResource(R.string.biometric_not_available),
+        )
     val promptTitle = stringResource(R.string.biometric_prompt_title)
     val promptSubtitle = stringResource(R.string.biometric_prompt_subtitle)
-    val notAvailableMessage = stringResource(R.string.biometric_not_available)
-    val biometricPrompt =
-        remember(activity) {
-            try {
-                activity?.let { fragActivity ->
-                    val executor = ContextCompat.getMainExecutor(fragActivity)
-                    BiometricPrompt(
-                        fragActivity,
-                        executor,
-                        object : BiometricPrompt.AuthenticationCallback() {
-                            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                                navController.navigate(AfternoteRoute.AfternoteHomeRoute) {
-                                    popUpTo(AfternoteRoute.FingerprintLoginRoute) {
-                                        inclusive = true
-                                    }
-                                    launchSingleTop = true
-                                }
-                            }
-                        },
-                    )
-                }
-            } catch (e: Throwable) {
-                Log.e(TAG_FINGERPRINT, "FingerprintLoginRoute: BiometricPrompt failed", e)
-                null
-            }
-        }
-    val promptInfo =
-        remember(promptTitle, promptSubtitle) {
-            BiometricPrompt.PromptInfo
-                .Builder()
-                .setTitle(promptTitle)
-                .setSubtitle(promptSubtitle)
-                .setAllowedAuthenticators(BIOMETRIC_STRONG or DEVICE_CREDENTIAL)
-                .build()
-        }
+
     FingerprintLoginScreen(
         onFingerprintAuthClick = {
-            if (activity == null) return@FingerprintLoginScreen
-            val biometricManager = BiometricManager.from(context)
-            when (biometricManager.canAuthenticate(BIOMETRIC_STRONG or DEVICE_CREDENTIAL)) {
-                BiometricManager.BIOMETRIC_SUCCESS -> {
-                    biometricPrompt?.authenticate(promptInfo)
+            when {
+                isAuthenticating -> {
+                }
+
+                activity == null -> {
+                    // MainActivity가 FragmentActivity를 상속하지 않은 설정 누락 상황.
+                    // 프로덕션 크래시 대신 에러 UI로 폴백한다.
+                    onShowError(messages.initFailed)
                 }
 
                 else -> {
-                    Toast
-                        .makeText(context, notAvailableMessage, Toast.LENGTH_SHORT)
-                        .show()
+                    isAuthenticating = true
+                    coroutineScope.launch {
+                        try {
+                            when (
+                                val result =
+                                    activity.authenticateBiometric(promptTitle, promptSubtitle, messages)
+                            ) {
+                                BiometricAuthResult.Success -> onAuthenticationSuccess()
+                                BiometricAuthResult.Canceled -> Unit
+                                is BiometricAuthResult.Error -> onShowError(result.message)
+                            }
+                        } finally {
+                            // 결과·예외·취소 어느 경로로 끝나든 가드 해제
+                            isAuthenticating = false
+                        }
+                    }
                 }
             }
         },

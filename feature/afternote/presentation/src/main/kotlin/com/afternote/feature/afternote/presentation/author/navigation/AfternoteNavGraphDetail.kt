@@ -8,35 +8,19 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
-import androidx.navigation.NavController
 import androidx.navigation.toRoute
 import com.afternote.core.ui.topbar.DetailTopBar
-import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel
-import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.GalleryDetailCallbacks
-import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.GalleryDetailScreen
-import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.GalleryDetailState
-import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.MemorialGuidelineDetailCallbacks
-import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.MemorialGuidelineDetailScreen
-import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.MemorialGuidelineDetailState
-import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.SocialNetworkDetailContent
-import com.afternote.feature.afternote.presentation.author.detail.afternotedetail.SocialNetworkDetailScreen
-import com.afternote.feature.afternote.presentation.author.detail.model.AfternoteDetailEvent
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
+import com.afternote.feature.afternote.presentation.author.detail.AfternoteDeleteState
+import com.afternote.feature.afternote.presentation.author.detail.GalleryDetailRoute
+import com.afternote.feature.afternote.presentation.author.detail.MemorialGuidelineDetailRoute
+import com.afternote.feature.afternote.presentation.author.detail.socialnetwork.SocialNetworkDetailRoute
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
-import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
-import com.afternote.feature.afternote.presentation.shared.util.getIconResForServiceName
-
-private val designedDetailTypes = setOf(AfternoteServiceType.SOCIAL_NETWORK)
 
 @Composable
 internal fun DetailLoadingContent() {
@@ -61,7 +45,7 @@ internal fun DesignPendingDetailContent(onBackClick: () -> Unit) {
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .then(Modifier.padding(paddingValues)),
+                    .padding(paddingValues),
             contentAlignment = Alignment.Center,
         ) {
             Text(text = stringResource(R.string.design_pending))
@@ -69,224 +53,72 @@ internal fun DesignPendingDetailContent(onBackClick: () -> Unit) {
     }
 }
 
+/**
+ * 삭제 결과(Succeeded/Failed) 를 감지해 뒤로가기·소비 신호를 송출하는 공용 이펙트.
+ * Succeeded → onBack, 이후 VM 에 Consumed 이벤트를 전달해 상태를 Idle 로 복귀시킨다.
+ */
+@Composable
+internal fun HandleDeleteResult(
+    deleteState: AfternoteDeleteState,
+    onBack: () -> Unit,
+    onConsumed: () -> Unit,
+) {
+    LaunchedEffect(deleteState) {
+        when (deleteState) {
+            AfternoteDeleteState.Succeeded -> {
+                onBack()
+                onConsumed()
+            }
+
+            is AfternoteDeleteState.Failed -> {
+                // 에러 UI 처리는 화면별 Snackbar/Dialog 에서 담당. 여기서는 상태만 소비.
+                onConsumed()
+            }
+
+            AfternoteDeleteState.Idle,
+            AfternoteDeleteState.InProgress,
+            -> {
+                Unit
+            }
+        }
+    }
+}
+
 @Composable
 internal fun AfternoteDetailNavigation(
     backStackEntry: NavBackStackEntry,
-    navController: NavController,
-    userName: String,
-    viewModel: AfternoteDetailViewModel = hiltViewModel(),
+    onBack: () -> Unit,
+    onNavigateToEditor: (itemId: String) -> Unit,
 ) {
     val route = backStackEntry.toRoute<AfternoteRoute.DetailRoute>()
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    LaunchedEffect(route.itemId) {
-        route.itemId.toLongOrNull()?.let {
-            viewModel.onEvent(AfternoteDetailEvent.LoadDetail(it))
-        }
-    }
-
-    LaunchedEffect(uiState.deleteSuccess) {
-        if (uiState.deleteSuccess) {
-            navController.popBackStack()
-        }
-    }
-
-    val detail = uiState.detail
-
-    when {
-        uiState.isLoading -> {
-            DetailLoadingContent()
-        }
-
-        detail == null || detail.type !in designedDetailTypes -> {
-            DesignPendingDetailContent(onBackClick = { navController.popBackStack() })
-        }
-
-        else -> {
-            val method = detail.processing?.method ?: ""
-            val badgeResId =
-                when {
-                    method.contains("TRANSFER") -> R.string.feature_afternote_detail_receiver_info_transfer_badge
-                    else -> R.string.feature_afternote_detail_receiver_assigned
-                }
-
-            SocialNetworkDetailScreen(
-                content =
-                    SocialNetworkDetailContent(
-                        serviceName = detail.title,
-                        userName = userName,
-                        accountId = detail.credentials?.id ?: "",
-                        password = detail.credentials?.password ?: "",
-                        accountProcessingMethod = method,
-                        processingMethods = detail.processing?.actions ?: emptyList(),
-                        message = detail.processing?.leaveMessage ?: "",
-                        finalWriteDate = detail.timestamps.updatedAt.ifEmpty { detail.timestamps.createdAt },
-                        afternoteEditReceivers =
-                            detail.receivers.map { r ->
-                                AfternoteEditorReceiver(
-                                    id = "",
-                                    name = r.name,
-                                    label = r.relation,
-                                )
-                            },
-                        iconResId = getIconResForServiceName(detail.title),
-                        badgeTextResId = badgeResId,
-                    ),
-                onBackClick = { navController.popBackStack() },
-                onEditClick = {
-                    navController.navigate(
-                        AfternoteRoute.EditorRoute(itemId = detail.id.toString()),
-                    )
-                },
-                onDeleteConfirm = { viewModel.onEvent(AfternoteDetailEvent.Delete(detail.id)) },
-            )
-        }
+    if (route.itemId.isBlank()) {
+        DesignPendingDetailContent(onBackClick = onBack)
+    } else {
+        SocialNetworkDetailRoute(
+            onBack = onBack,
+            onNavigateToEditor = onNavigateToEditor,
+        )
     }
 }
 
 @Composable
 internal fun AfternoteGalleryDetailNavigation(
-    backStackEntry: NavBackStackEntry,
-    navController: NavController,
-    userName: String,
-    viewModel: AfternoteDetailViewModel = hiltViewModel(),
+    onBack: () -> Unit,
+    onNavigateToEditor: (itemId: String) -> Unit,
 ) {
-    val route = backStackEntry.toRoute<AfternoteRoute.GalleryDetailRoute>()
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    LaunchedEffect(route.itemId) {
-        route.itemId.toLongOrNull()?.let {
-            viewModel.onEvent(AfternoteDetailEvent.LoadDetail(it))
-        }
-    }
-
-    LaunchedEffect(uiState.deleteSuccess) {
-        if (uiState.deleteSuccess) {
-            navController.popBackStack()
-        }
-    }
-
-    val detail = uiState.detail
-
-    when {
-        uiState.isLoading -> {
-            DetailLoadingContent()
-        }
-
-        detail == null -> {
-            DesignPendingDetailContent(
-                onBackClick = { navController.popBackStack() },
-            )
-        }
-
-        else -> {
-            GalleryDetailScreen(
-                detailState =
-                    GalleryDetailState(
-                        serviceName = detail.title,
-                        userName = userName,
-                        finalWriteDate = detail.timestamps.updatedAt.ifEmpty { detail.timestamps.createdAt },
-                        afternoteEditReceivers =
-                            detail.receivers.map { r ->
-                                AfternoteEditorReceiver(
-                                    id = "",
-                                    name = r.name,
-                                    label = r.relation,
-                                )
-                            },
-                        informationProcessingMethod = detail.processing?.method ?: "",
-                        processingMethods = detail.processing?.actions ?: emptyList(),
-                        message = detail.processing?.leaveMessage ?: "",
-                    ),
-                callbacks =
-                    GalleryDetailCallbacks(
-                        onBackClick = { navController.popBackStack() },
-                        onEditClick = {
-                            navController.navigate(
-                                AfternoteRoute.EditorRoute(itemId = detail.id.toString()),
-                            )
-                        },
-                        onDeleteConfirm = { viewModel.onEvent(AfternoteDetailEvent.Delete(detail.id)) },
-                    ),
-            )
-        }
-    }
+    GalleryDetailRoute(
+        onBack = onBack,
+        onNavigateToEditor = onNavigateToEditor,
+    )
 }
 
 @Composable
 internal fun AfternoteMemorialGuidelineDetailNavigation(
-    backStackEntry: NavBackStackEntry,
-    navController: NavController,
-    userName: String,
-    viewModel: AfternoteDetailViewModel = hiltViewModel(),
+    onBack: () -> Unit,
+    onNavigateToEditor: (itemId: String) -> Unit,
 ) {
-    val route = backStackEntry.toRoute<AfternoteRoute.MemorialGuidelineDetailRoute>()
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    LaunchedEffect(route.itemId) {
-        route.itemId.toLongOrNull()?.let {
-            viewModel.onEvent(AfternoteDetailEvent.LoadDetail(it))
-        }
-    }
-
-    LaunchedEffect(uiState.deleteSuccess) {
-        if (uiState.deleteSuccess) {
-            navController.popBackStack()
-        }
-    }
-
-    val detail = uiState.detail
-
-    when {
-        uiState.isLoading -> {
-            DetailLoadingContent()
-        }
-
-        detail == null -> {
-            DesignPendingDetailContent(
-                onBackClick = { navController.popBackStack() },
-            )
-        }
-
-        else -> {
-            MemorialGuidelineDetailScreen(
-                detailState =
-                    MemorialGuidelineDetailState(
-                        userName = userName,
-                        finalWriteDate = detail.timestamps.updatedAt.ifEmpty { detail.timestamps.createdAt },
-                        profileImageUri = detail.playlist?.playlistDetailMemorialMedia?.photoUrl,
-                        afternoteEditReceivers =
-                            detail.receivers.map { r ->
-                                AfternoteEditorReceiver(
-                                    id = "",
-                                    name = r.name,
-                                    label = r.relation,
-                                )
-                            },
-                        albumCovers =
-                            detail.playlist?.songs?.map { s ->
-                                AlbumCover(
-                                    id = (s.id ?: 0L).toString(),
-                                    imageUrl = s.coverUrl,
-                                    title = s.title,
-                                )
-                            } ?: emptyList(),
-                        songCount = detail.playlist?.songs?.size ?: 0,
-                        lastWish = detail.playlist?.atmosphere ?: "",
-                        memorialVideoUrl = detail.playlist?.playlistDetailMemorialMedia?.videoUrl,
-                        memorialThumbnailUrl = detail.playlist?.playlistDetailMemorialMedia?.thumbnailUrl,
-                    ),
-                callbacks =
-                    MemorialGuidelineDetailCallbacks(
-                        onBackClick = { navController.popBackStack() },
-                        onEditClick = {
-                            navController.navigate(
-                                AfternoteRoute.EditorRoute(itemId = detail.id.toString()),
-                            )
-                        },
-                        onDeleteConfirm = { viewModel.onEvent(AfternoteDetailEvent.Delete(detail.id)) },
-                    ),
-            )
-        }
-    }
+    MemorialGuidelineDetailRoute(
+        onBack = onBack,
+        onNavigateToEditor = onNavigateToEditor,
+    )
 }

@@ -1,16 +1,12 @@
 package com.afternote.feature.afternote.presentation.author.editor.playlist
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScreen
 import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScreenSelectableOptions
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * 노래 추가 화면의 콜백
@@ -23,15 +19,16 @@ data class AddSongCallbacks(
 
 /**
  * 노래 추가하기 화면 (API 검색 연동).
- * [viewModel]의 검색어로 GET /music/search 호출 결과를 표시.
+ *
+ * ViewModel 의존성 없이 순수하게 UI만 그립니다.
  */
 @Composable
 fun AddSongScreen(
-    viewModel: AddSongViewModelContract,
+    uiState: AddSongUiState,
+    onSearchQueryChange: (String) -> Unit,
     callbacks: AddSongCallbacks,
     modifier: Modifier = Modifier,
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     SongPlaylistScreen(
         modifier = modifier,
         title = "추모 플레이리스트 추가",
@@ -52,7 +49,7 @@ fun AddSongScreen(
         options =
             SongPlaylistScreenSelectableOptions(
                 searchQuery = uiState.searchQuery,
-                onSearchQueryChange = { viewModel.onEvent(AddSongEvent.SearchQueryChange(it)) },
+                onSearchQueryChange = onSearchQueryChange,
             ),
     )
 }
@@ -129,36 +126,24 @@ private fun AddSongScreenAddButtonPreview() {
     }
 }
 
-/**
- * Fake [AddSongViewModelContract] for Preview (no Hilt).
- */
-private class FakeAddSongViewModel : AddSongViewModelContract {
-    override val uiState =
-        MutableStateFlow(
-            AddSongUiState(
-                songs =
-                    (1..5).map { i ->
-                        PlaylistSongDisplay(
-                            id = "f$i",
-                            title = "노래 $i",
-                            artist = "가수",
-                        )
-                    },
-                searchQuery = "아이유",
-            ),
-        ).asStateFlow()
-
-    override fun onEvent(event: AddSongEvent) {
-        // No-op for Preview; real ViewModel triggers API search.
-    }
-}
-
-@Preview(showBackground = true, name = "API 검색 연동 (Fake VM)")
+@Preview(showBackground = true, name = "API 검색 연동")
 @Composable
-private fun AddSongScreenWithViewModelPreview() {
+private fun AddSongScreenWithSearchPreview() {
     AfternoteLightTheme {
         AddSongScreen(
-            viewModel = FakeAddSongViewModel(),
+            uiState =
+                AddSongUiState(
+                    songs =
+                        (1..5).map { i ->
+                            PlaylistSongDisplay(
+                                id = "f$i",
+                                title = "노래 $i",
+                                artist = "가수",
+                            )
+                        },
+                    searchQuery = "아이유",
+                ),
+            onSearchQueryChange = {},
             callbacks = AddSongCallbacks(onBackClick = {}, onSongsAdded = {}),
         )
     }

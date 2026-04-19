@@ -1,5 +1,7 @@
 package com.afternote.feature.afternote.presentation.shared.util
+
 import com.afternote.feature.afternote.domain.AfternoteServiceType
+import com.afternote.feature.afternote.presentation.shared.model.AfternoteService
 
 /**
  * Single source of truth for afternote service names by category.
@@ -10,33 +12,33 @@ object AfternoteServiceCatalog {
     /** Display names for 소셜 네트워크 (SOCIAL) category. */
     val socialServices: List<String> =
         listOf(
-            "인스타그램",
-            "페이스북",
-            "X",
-            "스레드",
-            "틱톡",
-            "유튜브",
-            "카카오톡",
-            "카카오스토리",
-            "네이버 블로그",
-            "네이버 카페",
-            "네이버 밴드",
-            "디스코드",
+            AfternoteService.INSTAGRAM.displayKey,
+            AfternoteService.FACEBOOK.displayKey,
+            AfternoteService.X.displayKey,
+            AfternoteService.THREAD.displayKey,
+            AfternoteService.TIKTOK.displayKey,
+            AfternoteService.YOUTUBE.displayKey,
+            AfternoteService.KAKAOTALK.displayKey,
+            AfternoteService.KAKAOSTORY.displayKey,
+            AfternoteService.NAVER_BLOG.displayKey,
+            AfternoteService.NAVER_CAFE.displayKey,
+            AfternoteService.NAVER_BAND.displayKey,
+            AfternoteService.DISCORD.displayKey,
         )
 
     /** Display names for 갤러리 및 파일 (GALLERY) category. */
     val galleryServices: List<String> =
         listOf(
-            "갤러리",
-            "파일",
-            "구글 포토",
-            "네이버 MYBOX",
-            "아이클라우드",
-            "Onedrive",
-            "카카오톡 톡서랍",
+            AfternoteService.GALLERY.displayKey,
+            AfternoteService.FILES.displayKey,
+            AfternoteService.GOOGLE_PHOTO.displayKey,
+            AfternoteService.MYBOX.displayKey,
+            AfternoteService.ICLOUD.displayKey,
+            AfternoteService.ONEDRIVE.displayKey,
+            AfternoteService.TALKDRIVE.displayKey,
         )
 
-    private const val MEMORIAL_SERVICE_NAME = "추모 가이드라인"
+    private val MEMORIAL_SERVICE_NAME: String = AfternoteService.MEMORIAL_GUIDELINE.displayKey
 
     /**
      * Infers [AfternoteServiceType] from a service display name.

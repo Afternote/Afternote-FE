@@ -1,22 +1,16 @@
 package com.afternote.feature.onboarding.presentation.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
-import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
-import com.afternote.core.domain.usecase.auth.LoginType
 import com.afternote.core.ui.Route
-import com.afternote.feature.onboarding.presentation.OnboardingProfileScreen
+import com.afternote.feature.onboarding.presentation.OnboardingProfileEntry
 import com.afternote.feature.onboarding.presentation.WelcomeScreen
-import com.afternote.feature.onboarding.presentation.login.LoginViewModel
-import com.afternote.feature.onboarding.presentation.login.component.LoginScreen
+import com.afternote.feature.onboarding.presentation.login.LoginEntry
 import com.afternote.feature.onboarding.presentation.signup.SignUpPasswordScreen
 import com.afternote.feature.onboarding.presentation.signup.SignUpResidentNumberScreen
 import com.afternote.feature.onboarding.presentation.signup.SignUpScreen
@@ -29,102 +23,72 @@ import com.afternote.feature.onboarding.presentation.terms.OnboardingTermsScreen
  * 플로우: Welcome -> Login / SignUp(1~4단계) -> Profile -> 완료(Home 이동)
  */
 fun NavGraphBuilder.onboardingNavGraph(
-    navController: NavController,
-    onOnboardingComplete: () -> Unit,
+    /** [Route.Onboarding] 그래프 엔트리 — SignUp/Profile 스코프 ViewModel 바인딩에 사용 */
+    graphScopedParentEntry: () -> NavBackStackEntry,
+    actions: OnboardingNavActions,
 ) {
     navigation<Route.Onboarding>(startDestination = OnboardingRoute.WelcomeRoute) {
         // ── Welcome ──
         composable<OnboardingRoute.WelcomeRoute> {
             WelcomeScreen(
-                onStartClick = {
-                    navController.navigate(OnboardingRoute.SignUpRoute)
-                },
+                onStartClick = actions::onNavigateWelcomeToSignUp,
                 onCheckRecordsClick = {
                     // TODO: 수신자 플로우 연결
                 },
-                onLoginClick = {
-                    navController.navigate(OnboardingRoute.LoginRoute)
-                },
+                onLoginClick = actions::onNavigateWelcomeToLogin,
             )
         }
 
         // ── Login ──
         composable<OnboardingRoute.LoginRoute> {
-            val viewModel: LoginViewModel = hiltViewModel()
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-            LaunchedEffect(uiState.isSuccess) {
-                if (uiState.isSuccess) {
-                    onOnboardingComplete()
-                }
-            }
-
-            LoginScreen(
-                emailState = viewModel.emailState,
-                passwordState = viewModel.passwordState,
-                onLoginClick = viewModel::loginWithEmail,
-                onSignUpClick = {
-                    navController.navigate(OnboardingRoute.SignUpRoute) {
-                        popUpTo<OnboardingRoute.LoginRoute> { inclusive = true }
-                    }
-                },
-                onKakaoLoginClick = {
-                    viewModel.login(LoginType.Kakao)
-                },
-                onGoogleLoginClick = {
-                    viewModel.login(LoginType.Google)
-                },
-                onBackClick = { navController.popBackStack() },
+            LoginEntry(
+                onLoginSuccess = actions::onOnboardingComplete,
+                onSignUpClick = actions::onReplaceLoginWithSignUp,
+                onBackClick = actions::onLoginBack,
             )
         }
 
         // ── SignUp Step 1: 이메일 & 비밀번호 ──
-        composable<OnboardingRoute.SignUpRoute> { backStackEntry ->
-            val signUpViewModel = graphScopedSignUpViewModel(navController, backStackEntry)
+        composable<OnboardingRoute.SignUpRoute> {
+            val signUpViewModel = graphScopedSignUpViewModel(graphScopedParentEntry)
 
             SignUpScreen(
                 emailState = signUpViewModel.emailState,
                 passwordState = signUpViewModel.passwordState,
                 isVerificationSent = signUpViewModel.isVerificationSent,
                 onRequestVerification = signUpViewModel::requestVerification,
-                onNextClick = {
-                    navController.navigate(OnboardingRoute.SignUpResidentNumberRoute)
-                },
-                onBackClick = { navController.popBackStack() },
+                onNextClick = actions::onSignUpEmailNext,
+                onBackClick = actions::onSignUpEmailBack,
             )
         }
 
         // ── SignUp Step 2: 주민등록번호 ──
-        composable<OnboardingRoute.SignUpResidentNumberRoute> { backStackEntry ->
-            val signUpViewModel = graphScopedSignUpViewModel(navController, backStackEntry)
+        composable<OnboardingRoute.SignUpResidentNumberRoute> {
+            val signUpViewModel = graphScopedSignUpViewModel(graphScopedParentEntry)
 
             SignUpResidentNumberScreen(
                 frontNumberState = signUpViewModel.frontNumberState,
                 backNumberState = signUpViewModel.backNumberState,
-                onNextClick = {
-                    navController.navigate(OnboardingRoute.SignUpPasswordRoute)
-                },
-                onBackClick = { navController.popBackStack() },
+                onNextClick = actions::onSignUpResidentNext,
+                onBackClick = actions::onSignUpResidentBack,
             )
         }
 
         // ── SignUp Step 3: 비밀번호 설정 ──
-        composable<OnboardingRoute.SignUpPasswordRoute> { backStackEntry ->
-            val signUpViewModel = graphScopedSignUpViewModel(navController, backStackEntry)
+        composable<OnboardingRoute.SignUpPasswordRoute> {
+            val signUpViewModel = graphScopedSignUpViewModel(graphScopedParentEntry)
 
             SignUpPasswordScreen(
                 passwordState = signUpViewModel.signUpPasswordState,
                 passwordConfirmState = signUpViewModel.signUpPasswordConfirmState,
-                onNextClick = {
-                    navController.navigate(OnboardingRoute.TermsRoute)
-                },
-                onBackClick = { navController.popBackStack() },
+                onNextClick = actions::onSignUpPasswordNext,
+                onBackClick = actions::onSignUpPasswordBack,
             )
         }
 
         // ── SignUp Step 4: 약관 동의 ──
-        composable<OnboardingRoute.TermsRoute> { backStackEntry ->
-            val signUpViewModel = graphScopedSignUpViewModel(navController, backStackEntry)
+        composable<OnboardingRoute.TermsRoute> {
+            val signUpViewModel = graphScopedSignUpViewModel(graphScopedParentEntry)
 
             OnboardingTermsScreen(
                 termsState = signUpViewModel.termsState,
@@ -135,25 +99,19 @@ fun NavGraphBuilder.onboardingNavGraph(
                 onViewTermsClick = {
                     // TODO: 약관 상세 보기 웹뷰 또는 화면 연결
                 },
-                onNextClick = {
-                    navController.navigate(OnboardingRoute.ProfileRoute)
-                },
-                onBackClick = { navController.popBackStack() },
+                onNextClick = actions::onTermsNext,
+                onBackClick = actions::onTermsBack,
             )
         }
 
         // ── Profile 설정 ──
-        composable<OnboardingRoute.ProfileRoute> { backStackEntry ->
-            val signUpViewModel = graphScopedSignUpViewModel(navController, backStackEntry)
+        composable<OnboardingRoute.ProfileRoute> {
+            val signUpViewModel = graphScopedSignUpViewModel(graphScopedParentEntry)
 
-            val profileImageUri by signUpViewModel.profileImageUri.collectAsStateWithLifecycle()
-
-            OnboardingProfileScreen(
-                nameState = signUpViewModel.nameState,
-                displayImageUri = profileImageUri,
-                onProfileImagePick = signUpViewModel::onProfileImagePicked,
-                onCompleteClick = { signUpViewModel.submitSignUp(onOnboardingComplete) },
-                onBackClick = { navController.popBackStack() },
+            OnboardingProfileEntry(
+                viewModel = signUpViewModel,
+                onOnboardingComplete = actions::onOnboardingComplete,
+                onBackClick = actions::onProfileBack,
             )
         }
     }
@@ -164,13 +122,7 @@ fun NavGraphBuilder.onboardingNavGraph(
  * SignUp Step 1~4와 Profile 화면이 동일한 인스턴스를 공유합니다.
  */
 @Composable
-private fun graphScopedSignUpViewModel(
-    navController: NavController,
-    currentEntry: NavBackStackEntry,
-): SignUpViewModel {
-    val parentEntry =
-        remember(currentEntry) {
-            navController.getBackStackEntry<Route.Onboarding>()
-        }
+private fun graphScopedSignUpViewModel(graphScopedParentEntry: () -> NavBackStackEntry): SignUpViewModel {
+    val parentEntry = remember { graphScopedParentEntry() }
     return hiltViewModel(parentEntry)
 }

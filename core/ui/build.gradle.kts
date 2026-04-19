@@ -9,6 +9,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.fragment.ktx)
     implementation(projects.core.common)
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)

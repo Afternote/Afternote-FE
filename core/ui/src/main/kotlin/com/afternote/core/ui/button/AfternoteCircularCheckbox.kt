@@ -44,9 +44,9 @@ enum class CheckboxState {
 @Composable
 fun AfternoteCircularCheckbox(
     state: CheckboxState,
-    onClick: (() -> Unit)?,
     size: Dp,
     modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
 
@@ -127,21 +127,18 @@ private fun AfternoteCircularCheckboxPreview() {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             AfternoteCircularCheckbox(
                 state = CheckboxState.Default,
-                onClick = {},
                 size = 20.dp,
-            )
+            ) {}
             Spacer(modifier = Modifier.height(16.dp))
             AfternoteCircularCheckbox(
                 state = CheckboxState.Variant2,
-                onClick = null,
                 size = 20.dp,
             )
             Spacer(modifier = Modifier.height(16.dp))
             AfternoteCircularCheckbox(
                 state = CheckboxState.None,
-                onClick = {},
                 size = 20.dp,
-            )
+            ) {}
         }
     }
 }

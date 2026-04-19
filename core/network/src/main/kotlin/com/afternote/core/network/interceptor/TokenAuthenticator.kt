@@ -20,13 +20,17 @@ class TokenAuthenticator
             response: Response,
         ): Request? {
             if (responseCount(response) >= 3) {
-                // 리프레시 토큰이 유효하지 않은 액세스 토큰을 계속 준다면 재시도가 계속 일어날 수 있다
-                Log.e("TokenAuthenticator", "❌ 무한 루프 방지: 재시도 횟수 3회 이상. 로그아웃 처리 요망")
+                Log.e("TokenAuthenticator", "❌ 무한 루프 방지: 재시도 횟수 3회 이상. 세션 만료 처리")
+                runBlocking { authRepository.get().clearSession() }
                 return null
             }
 
             val originalRequest = response.request
-            val oldAccessToken = originalRequest.header("Authorization")?.removePrefix("Bearer ")
+            val authHeader = originalRequest.header("Authorization")
+            val oldAccessToken =
+                authHeader?.let {
+                    if (it.startsWith("Bearer ", ignoreCase = true)) it.substring(7) else it
+                }
             if (oldAccessToken == null) {
                 Log.e("TokenAuthenticator", "❌ 인증 실패: 직전 요청이 애초에 토큰을 포함하지 않았음")
                 return null
@@ -43,23 +47,19 @@ class TokenAuthenticator
                     )
                 }
 
-                val refreshToken =
-                    runBlocking {
-                        authRepository.get().getRefreshToken()
-                    }.getOrNull() ?: return null
                 val tokenBundle =
                     runBlocking {
-                        authRepository.get().rotateToken(
-                            refreshToken = refreshToken,
-                        )
+                        authRepository.get().rotateToken()
                     }.getOrNull()
                 val newAccessToken = tokenBundle?.accessToken
                 if (newAccessToken.isNullOrEmpty()) {
-                    Log.e("TokenAuthenticator", "❌ 리이슈 실패: 서버가 새 토큰을 주지 않음")
+                    Log.e("TokenAuthenticator", "❌ 리이슈 실패: 세션 만료. 로그아웃 처리 진행")
+                    runBlocking { authRepository.get().clearSession() }
                     return null
                 }
                 if (newAccessToken == oldAccessToken) {
                     Log.e("TokenAuthenticator", "❌ 리이슈 실패: 서버가 이전과 동일한 토큰을 반환함")
+                    runBlocking { authRepository.get().clearSession() }
                     return null
                 }
                 return buildRequest(

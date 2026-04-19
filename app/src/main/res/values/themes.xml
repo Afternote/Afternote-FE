@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.Afternotefe" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Compose/일반 Activity용 (스플래시 이후 postSplashScreenTheme) -->
+    <style name="Theme.Afternotefe.Main" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- 런처(MainActivity) 전용: Theme.SplashScreen + installSplashScreen() -->
+    <style name="Theme.Afternotefe.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.Afternotefe.Main</item>
+    </style>
 </resources>

@@ -151,8 +151,17 @@ class AfternoteEditorState(
         }
     }
 
+    /** 드롭다운 UI에서 [displayLabel] 문자열로 카테고리를 선택한다. */
     fun onCategorySelected(categoryDisplayLabel: String) {
-        val category = EditorCategory.fromDisplayLabel(categoryDisplayLabel)
+        selectCategory(EditorCategory.fromDisplayLabel(categoryDisplayLabel))
+    }
+
+    /** 네비게이션 인자([EditorCategory.name])로 카테고리를 선택한다. */
+    fun selectCategoryByNavKey(navKey: String) {
+        selectCategory(EditorCategory.fromNavKey(navKey))
+    }
+
+    private fun selectCategory(category: EditorCategory) {
         updateForm {
             it.copy(
                 selectedCategory = category,

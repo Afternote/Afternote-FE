@@ -1,14 +1,13 @@
 package com.afternote.feature.afternote.presentation.author.home
 
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.HorizontalDivider
@@ -21,7 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -108,7 +107,11 @@ fun AfternoteCategoryRow(
                     Modifier
                         .size(16.dp)
                         .align(Alignment.CenterEnd)
-                        .pointerInput(Unit) { detectTapGestures { } },
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {},
+                        ),
             )
         }
     }
@@ -127,7 +130,6 @@ private fun CategoryItem(
     Box(
         modifier =
             modifier
-                .width(IntrinsicSize.Max)
                 .selectable(
                     selected = isSelected,
                     onClick = onClick,
@@ -135,7 +137,7 @@ private fun CategoryItem(
                 ),
     ) {
         Text(
-            text = category.label,
+            text = stringResource(category.labelResId),
             style =
                 AfternoteDesign.typography.bodySmallB.copy(
                     color =

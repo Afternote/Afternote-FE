@@ -7,7 +7,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeScreen
-import com.afternote.feature.afternote.presentation.shared.body.infinite.AfternoteBodyUiState
 
 data class ReceiverAfternoteHomeEntryActions(
     val navigateToDetail: (String) -> Unit = {},
@@ -25,14 +24,10 @@ fun ReceiverAfternoteHomeEntry(
     viewModel: ReceiverAfternoteHomeViewModel = hiltViewModel(),
     actions: ReceiverAfternoteHomeEntryActions = ReceiverAfternoteHomeEntryActions(),
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val bodyUiState by viewModel.bodyUiState.collectAsStateWithLifecycle()
 
     AfternoteHomeScreen(
-        listState =
-            AfternoteBodyUiState(
-                visibleItems = uiState.visibleItems,
-                selectedCategory = uiState.selectedTab,
-            ),
+        listState = bodyUiState,
         onCategorySelected = { viewModel.onEvent(ReceiverAfternoteHomeEvent.SelectTab(it)) },
         onListItemClick = actions.navigateToDetail,
         modifier = modifier,

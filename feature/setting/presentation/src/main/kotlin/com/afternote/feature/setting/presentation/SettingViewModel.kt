@@ -10,10 +10,10 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * 임시 설정 화면용 ViewModel.
+ * 설정 화면용 ViewModel.
  *
- * 정식 LogoutUseCase가 비어 있어 [AuthRepository]를 직접 호출한다.
  * 서버 logout 호출은 best-effort, 로컬 토큰 [AuthRepository.clearSession]은 실패 여부와 무관하게 실행한다.
+ * 서버 logout이 실패(토큰 없음, 네트워크 에러 등)하더라도 로컬 세션은 반드시 삭제한다.
  */
 @HiltViewModel
 class SettingViewModel
@@ -26,10 +26,7 @@ class SettingViewModel
 
         fun logout() {
             viewModelScope.launch {
-                val refreshToken = authRepository.getRefreshToken().getOrNull()
-                if (!refreshToken.isNullOrBlank()) {
-                    authRepository.logout(refreshToken)
-                }
+                runCatching { authRepository.logout() }
                 authRepository.clearSession()
                 _logoutCompleted.value = true
             }

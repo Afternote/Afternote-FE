@@ -19,6 +19,9 @@ enum class EditorCategory(
         /** UI 표시 문자열 → EditorCategory. 일치하지 않으면 SOCIAL 반환. */
         fun fromDisplayLabel(label: String): EditorCategory = entries.find { it.displayLabel == label } ?: SOCIAL
 
+        /** 네비게이션 키(enum name) → EditorCategory. 일치하지 않으면 SOCIAL 반환. */
+        fun fromNavKey(key: String): EditorCategory = entries.find { it.name == key } ?: SOCIAL
+
         /** 서버 카테고리 코드 → EditorCategory. */
         fun fromServerValue(value: String): EditorCategory =
             when (value.uppercase()) {

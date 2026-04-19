@@ -12,11 +12,11 @@ import com.afternote.feature.mindrecord.presentation.screen.sender.HomeScreen
  * [Route.MindRecord]는 바텀 탭의 기록 허브이고, [Route.MemorySpace]는 홈 MEMORIES 등에서
  * 직접 진입하는 몰입형 화면으로 IA상 분리되어 있지만, 소속 모듈·`composable` 정의는 여기서만 관리한다.
  */
-fun NavGraphBuilder.mindRecordNavGraph(onMemorySpaceBack: () -> Unit) {
+fun NavGraphBuilder.mindRecordNavGraph(actions: MindRecordNavActions) {
     composable<Route.MindRecord> {
         HomeScreen()
     }
     composable<Route.MemorySpace> {
-        MemorySpaceScreen(onBackClick = onMemorySpaceBack)
+        MemorySpaceScreen(onBackClick = actions::onMemorySpaceBack)
     }
 }

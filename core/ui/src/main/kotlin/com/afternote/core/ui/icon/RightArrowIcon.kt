@@ -3,7 +3,6 @@ package com.afternote.core.ui.icon
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
@@ -70,41 +69,6 @@ private fun RightArrowIconMaterialPreview() {
             RightArrowIcon(
                 modifier = Modifier.size(12.dp),
                 tint = AfternoteDesign.colors.gray9,
-            )
-            RightArrowIcon(
-                modifier = Modifier.size(16.dp),
-                tint = AfternoteDesign.colors.gray9,
-            )
-            RightArrowIcon(
-                modifier = Modifier.size(18.dp),
-                tint = AfternoteDesign.colors.b1,
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "Drawable (Custom Size)")
-@Composable
-private fun ArrowIconDrawablePreview() {
-    AfternoteTheme {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            ArrowIcon(
-                iconRes = R.drawable.core_ui_arrow_left,
-                contentDescription = "미리보기",
-                tint = AfternoteDesign.colors.gray9,
-                modifier = Modifier.size(20.dp),
-            )
-            ArrowIcon(
-                iconRes = R.drawable.core_ui_arrow_left,
-                contentDescription = null,
-                modifier =
-                    Modifier
-                        .size(20.dp)
-                        .offset(x = 2.dp),
-                tint = AfternoteDesign.colors.b1,
             )
         }
     }
