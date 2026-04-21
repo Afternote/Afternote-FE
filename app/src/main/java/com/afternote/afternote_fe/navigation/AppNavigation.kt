@@ -26,7 +26,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.author.navigation.afternoteNavGraph
 import com.afternote.feature.mindrecord.presentation.navigation.mindRecordNavGraph
 import com.afternote.feature.onboarding.presentation.navigation.onboardingNavGraph
-import com.afternote.feature.setting.presentation.SettingScreen
+import com.afternote.feature.setting.presentation.screen.SettingScreen
 import com.afternote.feature.timeletter.presentation.screen.sender.TimeletterScreen
 import kotlinx.coroutines.launch
 

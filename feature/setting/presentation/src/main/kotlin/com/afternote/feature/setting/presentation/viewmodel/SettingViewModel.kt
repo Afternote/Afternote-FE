@@ -1,4 +1,4 @@
-package com.afternote.feature.setting.presentation
+package com.afternote.feature.setting.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,8 +12,15 @@ import javax.inject.Inject
 
 sealed interface SettingUiState {
     data object Loading : SettingUiState
-    data class Success(val name: String, val email: String) : SettingUiState
-    data class Error(val message: String) : SettingUiState
+
+    data class Success(
+        val name: String,
+        val email: String,
+    ) : SettingUiState
+
+    data class Error(
+        val message: String,
+    ) : SettingUiState
 }
 
 /**
@@ -41,18 +48,20 @@ class SettingViewModel
 
         private fun loadProfile() {
             viewModelScope.launch {
-                val userId = authRepository.getUserId().getOrNull() ?: run {
-                    _uiState.value = SettingUiState.Error("사용자 정보를 불러올 수 없습니다.")
-                    return@launch
-                }
-                userRepository.getMyProfile(userId)
-                    .onSuccess { profile ->
-                        _uiState.value = SettingUiState.Success(
-                            name = profile.name,
-                            email = profile.email,
-                        )
+                val userId =
+                    authRepository.getUserId().getOrNull() ?: run {
+                        _uiState.value = SettingUiState.Error("사용자 정보를 불러올 수 없습니다.")
+                        return@launch
                     }
-                    .onFailure {
+                userRepository
+                    .getMyProfile(userId)
+                    .onSuccess { profile ->
+                        _uiState.value =
+                            SettingUiState.Success(
+                                name = profile.name,
+                                email = profile.email,
+                            )
+                    }.onFailure {
                         _uiState.value = SettingUiState.Error("프로필을 불러올 수 없습니다.")
                     }
             }
