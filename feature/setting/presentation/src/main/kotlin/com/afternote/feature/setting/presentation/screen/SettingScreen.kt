@@ -2,12 +2,11 @@ package com.afternote.feature.setting.presentation.screen
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Text
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -19,9 +18,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.SettingMenuItem
 import com.afternote.feature.setting.presentation.component.SettingProfile
+import com.afternote.feature.setting.presentation.component.SettingSection
 import com.afternote.feature.setting.presentation.viewmodel.SettingUiState
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
 
@@ -56,26 +57,33 @@ fun SettingScreen(
         }
     }
 
-    SettingScreenContent(
-        uiState = uiState,
-        onLogoutClick = viewModel::logout,
-        onProfileEditClick = onProfileEditClick,
-        onPasswordChangeClick = onPasswordChangeClick,
-        onLinkedAccountClick = onLinkedAccountClick,
-        onNotificationClick = onNotificationClick,
-        onRecipientListClick = onRecipientListClick,
-        onRecipientRegisterClick = onRecipientRegisterClick,
-        onAfterDeliveryClick = onAfterDeliveryClick,
-        onPasskeyClick = onPasskeyClick,
-        onAppLockClick = onAppLockClick,
-        onFaqClick = onFaqClick,
-        onInquiryClick = onInquiryClick,
-        onNoticeClick = onNoticeClick,
-        onTermsClick = onTermsClick,
-        onPrivacyClick = onPrivacyClick,
-        onServiceInfoClick = onServiceInfoClick,
+    Scaffold(
+        topBar = {
+            DetailTopBar(title = stringResource(R.string.settings_title))
+        },
         modifier = modifier,
-    )
+    ) { innerPadding ->
+        SettingScreenContent(
+            uiState = uiState,
+            onLogoutClick = viewModel::logout,
+            onProfileEditClick = onProfileEditClick,
+            onPasswordChangeClick = onPasswordChangeClick,
+            onLinkedAccountClick = onLinkedAccountClick,
+            onNotificationClick = onNotificationClick,
+            onRecipientListClick = onRecipientListClick,
+            onRecipientRegisterClick = onRecipientRegisterClick,
+            onAfterDeliveryClick = onAfterDeliveryClick,
+            onPasskeyClick = onPasskeyClick,
+            onAppLockClick = onAppLockClick,
+            onFaqClick = onFaqClick,
+            onInquiryClick = onInquiryClick,
+            onNoticeClick = onNoticeClick,
+            onTermsClick = onTermsClick,
+            onPrivacyClick = onPrivacyClick,
+            onServiceInfoClick = onServiceInfoClick,
+            modifier = Modifier.padding(innerPadding),
+        )
+    }
 }
 
 @Composable
@@ -111,9 +119,10 @@ private fun SettingScreenContent(
 
         is SettingUiState.Success -> {
             Column(
-                modifier = modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState()),
+                modifier =
+                    modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState()),
             ) {
                 SettingProfile(name = state.name, email = state.email)
 
@@ -211,40 +220,31 @@ private fun SettingScreenContent(
     }
 }
 
-@Composable
-private fun SettingSection(
-    title: String,
-    content: @Composable () -> Unit,
-) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = title,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
-        )
-        content()
-    }
-}
-
 @Preview(showBackground = true)
 @Composable
 private fun SettingScreenPrev() {
-    SettingScreenContent(
-        uiState = SettingUiState.Success(name = "박서연", email = "afternote@email.com"),
-        onLogoutClick = {},
-        onProfileEditClick = {},
-        onPasswordChangeClick = {},
-        onLinkedAccountClick = {},
-        onNotificationClick = {},
-        onRecipientListClick = {},
-        onRecipientRegisterClick = {},
-        onAfterDeliveryClick = {},
-        onPasskeyClick = {},
-        onAppLockClick = {},
-        onFaqClick = {},
-        onInquiryClick = {},
-        onNoticeClick = {},
-        onTermsClick = {},
-        onPrivacyClick = {},
-        onServiceInfoClick = {},
-    )
+    Scaffold(
+        topBar = { DetailTopBar(title = "설정") },
+    ) { innerPadding ->
+        SettingScreenContent(
+            uiState = SettingUiState.Success(name = "박서연", email = "afternote@email.com"),
+            onLogoutClick = {},
+            onProfileEditClick = {},
+            onPasswordChangeClick = {},
+            onLinkedAccountClick = {},
+            onNotificationClick = {},
+            onRecipientListClick = {},
+            onRecipientRegisterClick = {},
+            onAfterDeliveryClick = {},
+            onPasskeyClick = {},
+            onAppLockClick = {},
+            onFaqClick = {},
+            onInquiryClick = {},
+            onNoticeClick = {},
+            onTermsClick = {},
+            onPrivacyClick = {},
+            onServiceInfoClick = {},
+            modifier = Modifier.padding(innerPadding),
+        )
+    }
 }
