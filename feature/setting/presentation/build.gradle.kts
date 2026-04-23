@@ -14,4 +14,5 @@ dependencies {
     implementation(projects.core.model)
     implementation(projects.core.ui)
     implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.compose.runtime)
 }
