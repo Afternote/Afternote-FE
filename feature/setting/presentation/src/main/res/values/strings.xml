@@ -97,4 +97,13 @@
     <string name="mind_record">마음의 기록</string>
     <string name="afternote">애프터노트</string>
     <string name="push_notification_device_guide">전체 알림 수신 설정은 기기 알림 설정에서 가능합니다.</string>
+
+    <!-- 패스키 관리 화면 -->
+    <string name="passkey_management_title">패스키 관리</string>
+    <string name="passkey_management_description">패스키를 만들어 비밀번호 대신 지문 및 얼굴 인식으로\n 쉽고 안전하게 로그인 할 수 있습니다.\n패스키는 본인 소유의 기기에서만 생성해주세요.</string>
+    <string name="passkey_register">패스키 등록</string>
+
+    <string name="passkey_fingerprint_guide">패스키로 사용할 지문을 인식해 주세요.</string>
+    <string name="btn_fingerprint_auth">지문 인증하기</string>
+    <string name="btn_password_auth">비밀번호로 인증하기</string>
 </resources>
