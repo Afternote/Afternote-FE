@@ -106,4 +106,5 @@
     <string name="passkey_fingerprint_guide">패스키로 사용할 지문을 인식해 주세요.</string>
     <string name="btn_fingerprint_auth">지문 인증하기</string>
     <string name="btn_password_auth">비밀번호로 인증하기</string>
+    <string name="insert_password">비밀번호를 입력해주세요</string>
 </resources>
