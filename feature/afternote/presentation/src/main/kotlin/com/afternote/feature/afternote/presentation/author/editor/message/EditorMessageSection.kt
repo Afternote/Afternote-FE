@@ -27,10 +27,11 @@ import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.AfternoteTextField
-import com.afternote.core.ui.CaptionLabeledField
+import com.afternote.core.ui.CaptionLabeledTextField
 import com.afternote.core.ui.button.PlusBadgeButton
 import com.afternote.core.ui.modifierextention.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -58,10 +59,9 @@ fun EditorMessageSection(
     Column(modifier = modifier.fillMaxWidth()) {
         EditorSectionLabel(
             text = stringResource(R.string.afternote_editor_label_messages),
-            color = AfternoteDesign.colors.gray8,
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         messages.forEachIndexed { index, message ->
             key(message.id) {
@@ -108,22 +108,22 @@ private fun EditorMessageItem(
             modifier =
                 Modifier.bottomBorder(color = AfternoteDesign.colors.gray2, width = 1.dp),
         ) {
-            CaptionLabeledField(
+            CaptionLabeledTextField(
                 label = stringResource(R.string.afternote_editor_message_field_title),
-                labelColor = AfternoteDesign.colors.gray9,
-            ) {
-                AfternoteTextField(
-                    state = message.titleState,
-                    placeholder = stringResource(R.string.afternote_editor_message_text_field_placeholder),
-                )
-            }
+                state = message.titleState,
+            )
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            CaptionLabeledField(
-                label = stringResource(R.string.afternote_editor_message_field_body),
-                labelColor = AfternoteDesign.colors.gray9,
+            Column(
+                modifier = Modifier.semantics { isTraversalGroup = true },
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                Text(
+                    text = stringResource(R.string.afternote_editor_message_field_body),
+                    style = AfternoteDesign.typography.captionLargeR,
+                    color = AfternoteDesign.colors.gray6,
+                )
                 EditorMessageContentField(state = message.contentState)
             }
 
