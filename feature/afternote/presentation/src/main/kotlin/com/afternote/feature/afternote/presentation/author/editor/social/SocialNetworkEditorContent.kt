@@ -12,10 +12,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.CaptionLabeledTextField
-import com.afternote.core.ui.Label
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.author.editor.EditorSectionLabel
 import com.afternote.feature.afternote.presentation.author.editor.account.AccountSection
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
@@ -39,7 +39,7 @@ fun SocialNetworkEditorContent(
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Label(
+            EditorSectionLabel(
                 text = stringResource(R.string.afternote_editor_label_account_info),
                 isRequired = true,
                 style = AfternoteDesign.typography.textField,
@@ -62,7 +62,7 @@ fun SocialNetworkEditorContent(
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Label(
+            EditorSectionLabel(
                 text = stringResource(R.string.afternote_editor_label_account_process_method),
                 isRequired = true,
             )
@@ -86,7 +86,7 @@ fun SocialNetworkEditorContent(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // 처리 방법 리스트 섹션
-            Label(
+            EditorSectionLabel(
                 text = stringResource(R.string.afternote_editor_label_process_method_list),
                 isRequired = true,
             )

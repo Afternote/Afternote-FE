@@ -24,11 +24,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.Label
 import com.afternote.core.ui.modifierextention.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.author.editor.EditorSectionLabel
 
 /**
  * Label configuration for [SelectionDropdown].
@@ -83,7 +83,7 @@ fun SelectionDropdown(
             ),
     ) {
         // 라벨
-        Label(
+        EditorSectionLabel(
             text = labelParams.label,
             isRequired = labelParams.isRequired,
             style = AfternoteDesign.typography.captionLargeR,

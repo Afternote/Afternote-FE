@@ -8,9 +8,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.Label
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.author.editor.EditorSectionLabel
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverSection
 
@@ -24,7 +24,7 @@ fun RecipientDesignationSection(
     section: AfternoteEditorReceiverSection,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Label(
+        EditorSectionLabel(
             text = stringResource(R.string.afternote_editor_label_receiver_add),
             isRequired = true,
         )

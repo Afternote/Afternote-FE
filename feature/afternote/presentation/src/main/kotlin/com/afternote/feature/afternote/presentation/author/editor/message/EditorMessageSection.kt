@@ -31,12 +31,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.CaptionLabeledField
-import com.afternote.core.ui.Label
 import com.afternote.core.ui.button.PlusBadgeButton
 import com.afternote.core.ui.modifierextention.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.author.editor.EditorSectionLabel
 
 /**
  * 남기실 말씀 섹션 - 여러 개의 메시지를 추가/삭제/등록할 수 있는 컴포넌트
@@ -56,7 +56,10 @@ fun EditorMessageSection(
 ) {
     val focusManager = LocalFocusManager.current
     Column(modifier = modifier.fillMaxWidth()) {
-        Label(text = stringResource(R.string.afternote_editor_label_messages))
+        EditorSectionLabel(
+            text = stringResource(R.string.afternote_editor_label_messages),
+            color = AfternoteDesign.colors.gray8,
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 

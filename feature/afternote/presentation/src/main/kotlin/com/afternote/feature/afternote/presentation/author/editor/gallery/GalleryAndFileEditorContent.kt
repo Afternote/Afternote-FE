@@ -10,9 +10,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.Label
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.author.editor.EditorSectionLabel
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
 import com.afternote.feature.afternote.presentation.author.editor.model.InfoMethodSection
@@ -33,7 +33,7 @@ fun GalleryAndFileEditorContent(
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         // 계정 처리 방법 섹션
-        Label(
+        EditorSectionLabel(
             text = stringResource(R.string.afternote_editor_label_account_process_method),
             isRequired = true,
         )
@@ -64,7 +64,7 @@ fun GalleryAndFileEditorContent(
         Spacer(modifier = Modifier.height(32.dp))
 
         // 처리 방법 리스트 섹션
-        Label(
+        EditorSectionLabel(
             text = stringResource(R.string.afternote_editor_label_process_method_list),
             isRequired = true,
         )

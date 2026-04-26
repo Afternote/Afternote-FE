@@ -239,6 +239,7 @@
     <string name="afternote_editor_content_description_dropdown">드롭다운</string>
     <string name="afternote_editor_content_description_add">추가</string>
     <string name="afternote_editor_content_description_more">더보기</string>
+    <string name="afternote_editor_semantics_required_field">필수 항목</string>
     <string name="afternote_editor_funeral_video_label">장례식에 남길 영상</string>
     <string name="afternote_editor_funeral_video_cd_change">영상 변경</string>
     <string name="afternote_editor_funeral_video_cd_add">영상 추가</string>
