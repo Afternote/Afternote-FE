@@ -6,6 +6,6 @@ value class OpenDate(
 )
 
 data class LetterSchedule(
-    val recipientName: String,
+    val recipient: Recipient,
     val openDate: OpenDate,
 )
