@@ -29,10 +29,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
-import com.afternote.core.ui.R as CoreR
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
+import com.afternote.core.ui.R as CoreR
 
 private val relationOptions = listOf("가족", "친구", "직장동료", "기타")
 
@@ -77,12 +77,13 @@ fun ReceiverRegisterScreen(modifier: Modifier = Modifier) {
                 val shape = RoundedCornerShape(8.dp)
                 Box {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(AfternoteDesign.colors.white, shape)
-                            .border(1.dp, AfternoteDesign.colors.gray2, shape)
-                            .clickable { relationExpanded = true }
-                            .padding(horizontal = 24.dp, vertical = 13.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .background(AfternoteDesign.colors.white, shape)
+                                .border(1.dp, AfternoteDesign.colors.gray2, shape)
+                                .clickable { relationExpanded = true }
+                                .padding(horizontal = 24.dp, vertical = 13.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
@@ -94,9 +95,10 @@ fun ReceiverRegisterScreen(modifier: Modifier = Modifier) {
                         Icon(
                             painter = painterResource(CoreR.drawable.core_ui_arrowdown),
                             contentDescription = null,
-                            modifier = Modifier
-                                .size(18.dp)
-                                .rotate(if (relationExpanded) 180f else 0f),
+                            modifier =
+                                Modifier
+                                    .size(18.dp)
+                                    .rotate(if (relationExpanded) 180f else 0f),
                             tint = AfternoteDesign.colors.gray6,
                         )
                     }
