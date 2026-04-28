@@ -24,8 +24,10 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.timeletter.domain.LetterIdentity
 import com.afternote.feature.timeletter.domain.LetterSchedule
 import com.afternote.feature.timeletter.domain.OpenDate
+import com.afternote.feature.timeletter.domain.Recipient
 import com.afternote.feature.timeletter.domain.TimeLetter
 import com.afternote.feature.timeletter.domain.TimeLetters
+import com.afternote.feature.timeletter.presentation.viewmodel.ViewMode
 
 @Composable
 fun TimeLetterContent(
@@ -106,13 +108,17 @@ private val previewLetters =
                         title = "미래의 나에게",
                         body = "지금 이 순간을 잊지 마. 열심히 살고 있는 너를 응원해.",
                     ),
-                schedule = LetterSchedule(recipientName = "박경민", openDate = OpenDate("2026-12-31")),
+                schedule =
+                    LetterSchedule(
+                        recipient = Recipient(id = 1L, name = "박경민", relationship = "친구"),
+                        openDate = OpenDate("2026-12-31"),
+                    ),
             ),
             TimeLetter(
                 identity = LetterIdentity(id = 2L, title = "10년 후의 나에게", body = "지금보다 더 행복하길 바라."),
                 schedule =
                     LetterSchedule(
-                        recipientName = "미래의 나",
+                        recipient = Recipient(id = 2L, name = "미래의 나", relationship = "나"),
                         openDate = OpenDate("2035-01-01"),
                     ),
             ),
