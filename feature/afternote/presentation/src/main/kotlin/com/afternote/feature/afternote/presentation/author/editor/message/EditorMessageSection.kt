@@ -2,6 +2,7 @@ package com.afternote.feature.afternote.presentation.author.editor.message
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,13 +13,14 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
@@ -74,12 +76,12 @@ fun EditorMessageSection(
                 )
 
                 if (index < messages.lastIndex) {
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    HorizontalDivider(color = AfternoteDesign.colors.gray2)
                 }
+                Spacer(modifier = Modifier.height(12.dp))
             }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
 
         PlusBadgeButton(
             contentDescription = stringResource(R.string.afternote_editor_message_add_content_description),
@@ -103,17 +105,19 @@ private fun EditorMessageItem(
     focusManager: FocusManager,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
         Column(
             modifier =
                 Modifier.bottomBorder(color = AfternoteDesign.colors.gray2, width = 1.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             CaptionLabeledTextField(
                 label = stringResource(R.string.afternote_editor_message_field_title),
                 state = message.titleState,
             )
-
-            Spacer(modifier = Modifier.height(10.dp))
 
             Column(
                 modifier = Modifier.semantics { isTraversalGroup = true },
@@ -126,8 +130,6 @@ private fun EditorMessageItem(
                 )
                 EditorMessageContentField(state = message.contentState)
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
         }
 
         Row(
@@ -135,31 +137,29 @@ private fun EditorMessageItem(
             horizontalArrangement = Arrangement.End,
         ) {
             if (showDeleteButton) {
-                TextButton(
-                    onClick = {
-                        focusManager.clearFocus()
-                        onDeleteClick()
-                    },
-                ) {
-                    Text(
-                        text = stringResource(R.string.afternote_editor_message_action_delete),
-                        style = AfternoteDesign.typography.bodySmallR,
-                        color = AfternoteDesign.colors.gray5,
-                    )
-                }
-            }
-            TextButton(
-                onClick = {
-                    focusManager.clearFocus()
-                    onRegisterClick()
-                },
-            ) {
                 Text(
-                    text = stringResource(R.string.afternote_editor_message_action_register),
-                    style = AfternoteDesign.typography.bodySmallR,
-                    color = AfternoteDesign.colors.gray5,
+                    text = stringResource(R.string.afternote_editor_message_action_delete),
+                    style = AfternoteDesign.typography.bodySmallB,
+                    color = AfternoteDesign.colors.gray6,
+                    modifier =
+                        Modifier.clickable {
+                            focusManager.clearFocus()
+                            onDeleteClick()
+                        },
                 )
+                Spacer(Modifier.width(16.dp))
             }
+
+            Text(
+                text = stringResource(R.string.afternote_editor_message_action_register),
+                style = AfternoteDesign.typography.bodySmallB,
+                color = AfternoteDesign.colors.gray6,
+                modifier =
+                    Modifier.clickable {
+                        focusManager.clearFocus()
+                        onRegisterClick()
+                    },
+            )
         }
     }
 }
@@ -181,7 +181,7 @@ private fun EditorMessageContentField(
         modifier =
             modifier
                 .fillMaxWidth()
-                .defaultMinSize(minHeight = 160.dp)
+                .defaultMinSize(minHeight = 180.dp)
                 .background(AfternoteDesign.colors.white, shape)
                 .border(1.dp, AfternoteDesign.colors.gray2, shape),
         lineLimits = TextFieldLineLimits.MultiLine(),
@@ -195,7 +195,7 @@ private fun EditorMessageContentField(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .padding(all = 16.dp),
+                        .padding(horizontal = 24.dp, vertical = 12.dp),
                 contentAlignment = Alignment.TopStart,
             ) {
                 if (state.text.isEmpty()) {
