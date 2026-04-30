@@ -26,7 +26,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.author.navigation.afternoteNavGraph
 import com.afternote.feature.mindrecord.presentation.navigation.mindRecordNavGraph
 import com.afternote.feature.onboarding.presentation.navigation.onboardingNavGraph
-import com.afternote.feature.setting.presentation.screen.SettingScreen
+import com.afternote.feature.setting.presentation.navigation.settingNavGraph
 import com.afternote.feature.timeletter.presentation.screen.sender.TimeletterScreen
 import kotlinx.coroutines.launch
 
@@ -45,6 +45,7 @@ fun AppNavigation(
 
     val onboardingNavActions = rememberOnboardingNavActions(appState.navController)
     val mindRecordNavActions = rememberMindRecordNavActions(appState.navController)
+    val settingNavActions = rememberSettingNavActions(appState)
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val afternoteNavActions =
@@ -95,15 +96,7 @@ fun AppNavigation(
                     actions = homeTabActions,
                 )
             }
-            composable<Route.Setting> {
-                SettingScreen(
-                    onLogoutSuccess = {
-                        appState.navController.navigate(Route.Onboarding) {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    },
-                )
-            }
+            settingNavGraph(actions = settingNavActions)
             mindRecordNavGraph(actions = mindRecordNavActions)
             composable<Route.TimeLetter> { TimeletterScreen() }
             afternoteNavGraph(

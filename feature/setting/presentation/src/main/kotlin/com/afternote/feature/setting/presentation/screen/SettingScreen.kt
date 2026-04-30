@@ -51,6 +51,7 @@ fun SettingScreen(
     onTermsClick: () -> Unit,
     onPrivacyClick: () -> Unit,
     onServiceInfoClick: () -> Unit,
+    onWithdrawGuideClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingViewModel = hiltViewModel(),
 ) {
@@ -91,6 +92,7 @@ fun SettingScreen(
             onTermsClick = onTermsClick,
             onPrivacyClick = onPrivacyClick,
             onServiceInfoClick = onServiceInfoClick,
+            onWithdrawGuideClick = onWithdrawGuideClick,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -115,6 +117,7 @@ private fun SettingScreenContent(
     onTermsClick: () -> Unit,
     onPrivacyClick: () -> Unit,
     onServiceInfoClick: () -> Unit,
+    onWithdrawGuideClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
@@ -229,6 +232,10 @@ private fun SettingScreenContent(
                     onClick = { showLogoutDialog = true },
                     modifier = Modifier.padding(top = 8.dp),
                 )
+                SettingMenuItem(
+                    label = stringResource(R.string.settings_account_withdraw),
+                    onClick = onWithdrawGuideClick,
+                )
             }
         }
 
@@ -270,6 +277,7 @@ private fun SettingScreenPrev() {
             onTermsClick = {},
             onPrivacyClick = {},
             onServiceInfoClick = {},
+            onWithdrawGuideClick = {},
             modifier = Modifier.padding(innerPadding),
         )
     }

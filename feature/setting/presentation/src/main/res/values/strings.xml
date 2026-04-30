@@ -65,6 +65,17 @@
     <string name="withdraw_cancel_button">취소하기</string>
     <string name="withdraw_confirm_button">탈퇴하기</string>
 
+    <!-- 탈퇴 확인 화면 -->
+    <string name="withdraw_confirm_top_message">안전한 탈퇴 진행을 위해 아래 문장을 입력해 주세요.</string>
+    <string name="withdraw_confirm_placeholder">탈퇴하겠습니다</string>
+    <string name="withdraw_confirm_error">문장이 일치하지 않습니다. 재입력해 주세요.</string>
+    <string name="withdraw_confirm_prev_button">이전으로</string>
+    <string name="withdraw_complete_message">회원 탈퇴가 완료되었습니다.\n애프터노트를 이용해 주셔서 감사합니다.</string>
+    <string name="withdraw_complete_button">확인하기</string>
+
+    <!-- 설정 - 회원 탈퇴 메뉴 -->
+    <string name="settings_account_withdraw">회원 탈퇴</string>
+
     <!-- Connected Accounts Screen -->
     <string name="connected_accounts_title">연결된 계정</string>
     <string name="sns_login_section_title">SNS 계정 연결</string>
