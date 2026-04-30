@@ -1,29 +1,38 @@
 package com.afternote.feature.setting.presentation.screen
 
+import android.widget.Space
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 
+// 설정 - 프로필 수정, 설정
 @Composable
 fun ProfileEditScreen(
     onBackClick: () -> Unit,
@@ -32,7 +41,7 @@ fun ProfileEditScreen(
     Scaffold(
         topBar = {
             DetailTopBar(
-                title = "프로필 수정",
+                title = "프로필 설정",
                 onBackClick = onBackClick,
             )
         },
@@ -63,14 +72,19 @@ fun ProfileEditScreen(
                             contentDescription = "기본",
                             modifier = Modifier.fillMaxSize(),
                         )
-                        Image(
-                            painter = painterResource(R.drawable.ic_plus),
-                            contentDescription = "추가",
+                        Box(
                             modifier =
                                 Modifier
-                                    .size(80.dp)
-                                    .align(Alignment.BottomEnd),
-                        )
+                                    .align(Alignment.BottomEnd)
+                                    .size(48.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Image(
+                                painter = painterResource(R.drawable.ic_plus),
+                                contentDescription = "추가",
+                                modifier = Modifier.requiredSize(72.dp), // 숫자 조절해서 원하는 크기로
+                            )
+                        }
                     }
                 }
             }
@@ -86,6 +100,7 @@ fun ProfileEditScreen(
                 ) {
                     Text(
                         text = "이름",
+                        style = AfternoteDesign.typography.bodySmallR,
                     )
                     Spacer(modifier = Modifier.padding(top = 8.dp))
                     AfternoteTextField(
@@ -132,18 +147,32 @@ fun ProfileEditScreen(
                 }
             }
             item {
+                Spacer(modifier = Modifier.height(56.dp))
                 AfternoteButton(
                     text = "수정하기",
                     onClick = { },
                     type = AfternoteButtonType.Default,
-                    modifier = Modifier
-                        .padding(horizontal = 20.dp)
-                        .fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .padding(horizontal = 20.dp)
+                            .fillMaxWidth(),
                 )
             }
-            item{
-                Text("회원탈퇴하기")
-
+            item {
+                Spacer(modifier = Modifier.height(54.dp))
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            "회원탈퇴하기",
+                            style = AfternoteDesign.typography.textField,
+                            color = AfternoteDesign.colors.gray4,
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.width(80.dp),
+                            thickness = 1.dp,
+                        )
+                    }
+                }
             }
         }
     }

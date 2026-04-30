@@ -10,7 +10,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -18,6 +21,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.popup.Popup
+import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.SettingMenuItem
@@ -26,8 +31,10 @@ import com.afternote.feature.setting.presentation.component.SettingSection
 import com.afternote.feature.setting.presentation.viewmodel.SettingUiState
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
 
+// 설정-메인
 @Composable
 fun SettingScreen(
+    onBackClick: () -> Unit,
     onLogoutSuccess: () -> Unit,
     onProfileEditClick: () -> Unit,
     onPasswordChangeClick: () -> Unit,
@@ -59,7 +66,10 @@ fun SettingScreen(
 
     Scaffold(
         topBar = {
-            DetailTopBar(title = stringResource(R.string.settings_title))
+            DetailTopBar(
+                title = stringResource(R.string.settings_title),
+                onBackClick = onBackClick,
+            )
         },
         modifier = modifier,
     ) { innerPadding ->
@@ -107,6 +117,22 @@ private fun SettingScreenContent(
     onServiceInfoClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var showLogoutDialog by remember { mutableStateOf(false) }
+
+    if (showLogoutDialog) {
+        Popup(
+            type = PopupType.Variant2,
+            message = stringResource(R.string.settings_logout_dialog_message),
+            confirmText = stringResource(R.string.settings_logout_dialog_confirm),
+            dismissText = stringResource(R.string.settings_logout_dialog_cancel),
+            onConfirm = {
+                showLogoutDialog = false
+                onLogoutClick()
+            },
+            onDismiss = { showLogoutDialog = false },
+        )
+    }
+
     when (val state = uiState) {
         is SettingUiState.Loading -> {
             Column(
@@ -200,7 +226,7 @@ private fun SettingScreenContent(
 
                 SettingMenuItem(
                     label = stringResource(R.string.settings_logout),
-                    onClick = onLogoutClick,
+                    onClick = { showLogoutDialog = true },
                     modifier = Modifier.padding(top = 8.dp),
                 )
             }
@@ -213,7 +239,7 @@ private fun SettingScreenContent(
             ) {
                 SettingMenuItem(
                     label = stringResource(R.string.settings_logout),
-                    onClick = onLogoutClick,
+                    onClick = { showLogoutDialog = true },
                 )
             }
         }

@@ -1,5 +1,6 @@
 package com.afternote.feature.setting.presentation.component
 
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -42,7 +43,7 @@ fun NoticeListItem(
             modifier = Modifier.fillMaxHeight(),
         ) {
             Text(
-                notice.date.format(noticeDateFormatter),
+                "작성일: ${notice.date.format(noticeDateFormatter)}",
                 style = AfternoteDesign.typography.footnoteCaption,
                 color = AfternoteDesign.colors.gray6,
             )
@@ -50,7 +51,11 @@ fun NoticeListItem(
             Text(notice.title, style = AfternoteDesign.typography.bodySmallR)
         }
         Spacer(modifier = Modifier.weight(1f))
-        Image(painterResource(R.drawable.ic_right_arrow), contentDescription = "화살표")
+        Image(
+            painterResource(R.drawable.ic_right_arrow),
+            contentDescription = "화살표",
+            colorFilter = ColorFilter.tint(AfternoteDesign.colors.gray9),
+        )
     }
 }
 
@@ -58,10 +63,11 @@ fun NoticeListItem(
 @Composable
 private fun NoticeListItemPrev() {
     NoticeListItem(
-        notice = Notice(
-            date = LocalDate.of(2022, 11, 20),
-            title = "서비스 점검 안내",
-            content = "서버 점검으로 인해 서비스가 일시 중단됩니다.",
-        ),
+        notice =
+            Notice(
+                date = LocalDate.of(2022, 11, 20),
+                title = "서비스 점검 안내",
+                content = "서버 점검으로 인해 서비스가 일시 중단됩니다.",
+            ),
     )
 }
