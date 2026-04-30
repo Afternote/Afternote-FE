@@ -96,7 +96,12 @@ fun AppNavigation(
                     actions = homeTabActions,
                 )
             }
-            settingNavGraph(actions = settingNavActions)
+            settingNavGraph(
+                graphScopedParentEntry = {
+                    appState.navController.getBackStackEntry<Route.Setting>()
+                },
+                actions = settingNavActions,
+            )
             mindRecordNavGraph(actions = mindRecordNavActions)
             composable<Route.TimeLetter> { TimeletterScreen() }
             afternoteNavGraph(

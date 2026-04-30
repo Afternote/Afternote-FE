@@ -32,17 +32,19 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.Red
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
+import com.afternote.feature.setting.presentation.viewmodel.SettingUiState
 
 private const val WITHDRAW_CONFIRM_TEXT = "탈퇴하겠습니다"
 
 @Composable
 fun WithdrawConfirmScreen(
-    userName: String,
-    userEmail: String,
+    uiState: SettingUiState,
     onBackClick: () -> Unit,
     onWithdrawSuccess: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val userName = (uiState as? SettingUiState.Success)?.name.orEmpty()
+    val userEmail = (uiState as? SettingUiState.Success)?.email.orEmpty()
     val textState = rememberTextFieldState()
     var showError by remember { mutableStateOf(false) }
     var showCompletionDialog by remember { mutableStateOf(false) }
@@ -176,8 +178,7 @@ private fun WithdrawConfirmBottomButtons(
 @Composable
 private fun WithdrawConfirmScreenPreview() {
     WithdrawConfirmScreen(
-        userName = "박서연",
-        userEmail = "example@mail.com",
+        uiState = SettingUiState.Success(name = "박서연", email = "example@mail.com"),
         onBackClick = {},
         onWithdrawSuccess = {},
     )

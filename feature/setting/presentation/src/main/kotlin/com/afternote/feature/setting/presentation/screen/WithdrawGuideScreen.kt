@@ -32,17 +32,19 @@ import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
+import com.afternote.feature.setting.presentation.viewmodel.SettingUiState
 
 // 설정 - 회원 탈퇴 안내
 @Composable
 fun WithdrawGuideScreen(
-    userName: String,
-    userEmail: String,
+    uiState: SettingUiState,
     onBackClick: () -> Unit,
     onCancelClick: () -> Unit,
     onConfirmClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val userName = (uiState as? SettingUiState.Success)?.name.orEmpty()
+    val userEmail = (uiState as? SettingUiState.Success)?.email.orEmpty()
     var agreed by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
@@ -281,8 +283,7 @@ private fun BulletItem(text: String) {
 @Composable
 private fun WithdrawGuideScreenPrev() {
     WithdrawGuideScreen(
-        userName = "홍길동",
-        userEmail = "hong@example.com",
+        uiState = SettingUiState.Success(name = "홍길동", email = "hong@example.com"),
         onBackClick = {},
         onCancelClick = {},
         onConfirmClick = {},
