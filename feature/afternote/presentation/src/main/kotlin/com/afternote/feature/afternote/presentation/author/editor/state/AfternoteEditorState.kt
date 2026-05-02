@@ -39,12 +39,9 @@ private fun normalizeEditorMessageBlocks(blocks: List<EditorMessageTextBlock>): 
 class AfternoteEditorState(
     val ui: AfternoteEditorUiState,
     private val updateForm: ((EditorFormState) -> EditorFormState) -> Unit,
-    formStateSource: StateFlow<EditorFormState>,
+    val formState: StateFlow<EditorFormState>,
 ) {
-    val formState: StateFlow<EditorFormState> = formStateSource
-
-    val editorMessages: SnapshotStateList<EditorMessage>
-        get() = ui.editorMessages
+    val editorMessages: SnapshotStateList<EditorMessage> get() = ui.editorMessages
 
     val idState: TextFieldState get() = ui.idState
     val passwordState: TextFieldState get() = ui.passwordState
@@ -57,15 +54,6 @@ class AfternoteEditorState(
     val relationshipSelectedValue get() = ui.relationshipSelectedValue
     val categoryDropdownExpanded get() = ui.categoryDropdownExpanded
     val serviceDropdownExpanded get() = ui.serviceDropdownExpanded
-
-    fun onCategoryDropdownExpandedChange(expanded: Boolean) {
-        ui.onCategoryDropdownExpandedChange(expanded)
-    }
-
-    fun onServiceDropdownExpandedChange(expanded: Boolean) {
-        ui.onServiceDropdownExpandedChange(expanded)
-    }
-
     val playlistStateHolder get() = ui.playlistStateHolder
 
     /** 콜백·일회성 읽기용. Compose 표시는 [formState]를 collect한 스냅샷을 쓰는 것이 안전하다. */
@@ -76,23 +64,25 @@ class AfternoteEditorState(
     val pickedMemorialPhotoUri get() = formState.value.pickedMemorialPhotoUri
     val afternoteEditReceivers get() = formState.value.afternoteEditReceivers
 
-    val galleryProcessingCallbacks: ProcessingMethodCallbacks by lazy {
+    val galleryProcessingCallbacks: ProcessingMethodCallbacks =
         ProcessingMethodCallbacks(
             onItemDeleteClick = ::deleteGalleryProcessingMethod,
             onItemAdded = ::addGalleryProcessingMethod,
             onTextFieldVisibilityChanged = { },
             onItemEdited = ::editGalleryProcessingMethod,
         )
-    }
 
-    val socialProcessingCallbacks: ProcessingMethodCallbacks by lazy {
+    val socialProcessingCallbacks: ProcessingMethodCallbacks =
         ProcessingMethodCallbacks(
             onItemDeleteClick = ::deleteProcessingMethod,
             onItemAdded = ::addProcessingMethod,
             onTextFieldVisibilityChanged = { },
             onItemEdited = ::editProcessingMethod,
         )
-    }
+
+    fun onCategoryDropdownExpandedChange(expanded: Boolean) = ui.onCategoryDropdownExpandedChange(expanded)
+
+    fun onServiceDropdownExpandedChange(expanded: Boolean) = ui.onServiceDropdownExpandedChange(expanded)
 
     fun setPlaylistStateHolder(stateHolder: MemorialPlaylistStateHolder) {
         if (formState.value.selectedCategory == EditorCategory.MEMORIAL &&
@@ -116,18 +106,14 @@ class AfternoteEditorState(
         }
     }
 
-    fun updatePlaylistSongCount() {
-        syncMemorialPlaylistSongsFromHolder()
-    }
+    fun updatePlaylistSongCount() = syncMemorialPlaylistSongsFromHolder()
 
     /**
      * 에디터가 그래프에서 다시 포그라운드가 될 때(플레이리스트·곡 추가 등 서브화면에서 복귀) 호출한다.
      * [MemorialPlaylistStateHolder]만 갱신되고 Compose 이펙트가 한 번 건너뛴 경우에도
      * [EditorFormState.memorialPlaylistSongs]와 SavedState 스냅샷이 홀더와 맞도록 한다.
      */
-    fun syncMemorialPlaylistFromGraphHolderIfAttached() {
-        syncMemorialPlaylistSongsFromHolder()
-    }
+    fun syncMemorialPlaylistFromGraphHolderIfAttached() = syncMemorialPlaylistSongsFromHolder()
 
     /** 신규 작성 진입 시 폼에 남은 추모 플레이리스트 스냅샷을 비운다 (홀더 clear는 호출부에서). */
     fun resetMemorialPlaylistFormSnapshot() {
@@ -194,9 +180,7 @@ class AfternoteEditorState(
         updateForm { it.copy(funeralThumbnailUrl = dataUrl) }
     }
 
-    fun showAddAfternoteEditorReceiverDialog() {
-        ui.showAddAfternoteEditorReceiverDialog()
-    }
+    fun showAddAfternoteEditorReceiverDialog() = ui.showAddAfternoteEditorReceiverDialog()
 
     fun dismissDialog() {
         ui.dismissDialogInternal {
@@ -234,9 +218,7 @@ class AfternoteEditorState(
         dismissDialog()
     }
 
-    fun onRelationshipSelected(relationship: String) {
-        ui.onRelationshipSelected(relationship)
-    }
+    fun onRelationshipSelected(relationship: String) = ui.onRelationshipSelected(relationship)
 
     fun onAfternoteEditorReceiverDelete(afternoteEditReceiverId: String) {
         updateForm { prev ->
@@ -475,7 +457,7 @@ fun rememberAfternoteEditorState(): AfternoteEditorState {
         AfternoteEditorState(
             ui = ui,
             updateForm = { block -> flow.update(block) },
-            formStateSource = flow.asStateFlow(),
+            formState = flow.asStateFlow(),
         )
     }
 }
