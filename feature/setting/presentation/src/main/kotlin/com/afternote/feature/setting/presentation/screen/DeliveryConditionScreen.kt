@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -130,11 +131,16 @@ private fun DeliveryConditionContent(
                 state = farewellMessageState,
                 placeholder = stringResource(R.string.farewell_message_hint),
             )
+            Spacer(modifier = Modifier.height(32.dp))
+            Divider(thickness = 0.8.dp, color = AfternoteDesign.colors.gray3)
+            Spacer(modifier = Modifier.height(24.dp))
             Text(
                 text = stringResource(R.string.after_delivery_notice_1),
+                style = AfternoteDesign.typography.captionLargeR,
             )
             Text(
                 text = stringResource(R.string.after_delivery_notice_2),
+                style = AfternoteDesign.typography.captionLargeR,
             )
         }
     }
@@ -152,7 +158,6 @@ private fun SectionLabel(
         color = AfternoteDesign.colors.gray9,
     )
 }
-
 
 @Preview(showBackground = true)
 @Composable
