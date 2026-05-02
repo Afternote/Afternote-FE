@@ -30,8 +30,8 @@ import com.afternote.core.ui.theme.AfternoteTheme
 fun PlusBadgeButton(
     contentDescription: String,
     onClick: () -> Unit,
-    paddingValues: PaddingValues,
     modifier: Modifier = Modifier,
+    paddingValues: PaddingValues = PaddingValues(8.dp),
     size: Dp = 30.dp,
 ) {
     Box(

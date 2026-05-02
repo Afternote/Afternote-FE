@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -112,8 +111,6 @@ fun ProcessingMethodList(
         PlusBadgeButton(
             contentDescription = stringResource(R.string.afternote_editor_content_description_add),
             onClick = { state.toggleTextField() },
-            paddingValues = PaddingValues(8.dp),
-            size = 30.dp,
         )
     }
 }
