@@ -1,9 +1,8 @@
 package com.afternote.feature.afternote.presentation.author.editor.processing
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Text
@@ -57,7 +56,6 @@ fun CustomServiceDialog(
     modifier: Modifier = Modifier,
     params: CustomServiceDialogParams,
 ) {
-    val focusManager = LocalFocusManager.current
     Dialog(
         onDismissRequest = params.callbacks.onDismiss,
         properties =
@@ -66,45 +64,58 @@ fun CustomServiceDialog(
                 dismissOnClickOutside = true,
             ),
     ) {
-        AfternotePopupCardLayout(
-            modifier =
-                modifier
-                    .fillMaxWidth()
-                    .addFocusCleaner(focusManager),
-        ) {
-            // 타이틀
-            Text(
-                text = stringResource(R.string.afternote_editor_custom_service_dialog_title),
-                style = AfternoteDesign.typography.bodyLargeB,
-            )
+        CustomServiceDialogContent(
+            params = params,
+            modifier = modifier,
+        )
+    }
+}
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // 추가 서비스명 입력 필드
-            Column {
-                Text(
-                    text = stringResource(R.string.afternote_editor_custom_service_name_label),
-                    style = AfternoteDesign.typography.captionLargeR,
+@Composable
+private fun CustomServiceDialogContent(
+    params: CustomServiceDialogParams,
+    modifier: Modifier = Modifier,
+) {
+    val focusManager = LocalFocusManager.current
+    AfternotePopupCardLayout(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .addFocusCleaner(focusManager),
+        verticalArrangement = Arrangement.spacedBy(34.14.dp),
+    ) {
+        // 타이틀
+        Text(
+            text = stringResource(R.string.afternote_editor_custom_service_dialog_title),
+            style =
+                AfternoteDesign.typography.bodyLargeB.copy(
                     color = AfternoteDesign.colors.gray9,
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                AfternoteTextField(
-                    state = params.serviceNameState,
-                )
-            }
+                ),
+        )
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // 추가하기 버튼
-            AfternoteButton(
-                text = stringResource(R.string.add_button),
-                onClick = {
-                    focusManager.clearFocus()
-                    params.callbacks.onAddClick()
-                },
-                type = AfternoteButtonType.Default,
+        // 추가 서비스명 입력 필드
+        Column(
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.afternote_editor_custom_service_name_label),
+                style = AfternoteDesign.typography.bodySmallR,
+                color = AfternoteDesign.colors.gray6,
+            )
+            AfternoteTextField(
+                state = params.serviceNameState,
             )
         }
+
+        // 추가하기 버튼
+        AfternoteButton(
+            text = stringResource(R.string.add_button),
+            onClick = {
+                focusManager.clearFocus()
+                params.callbacks.onAddClick()
+            },
+            type = AfternoteButtonType.Default,
+        )
     }
 }
 
@@ -112,7 +123,7 @@ fun CustomServiceDialog(
 @Composable
 private fun CustomServiceDialogPreview() {
     AfternoteTheme {
-        CustomServiceDialog(
+        CustomServiceDialogContent(
             params =
                 CustomServiceDialogParams(
                     serviceNameState = rememberTextFieldState(),
