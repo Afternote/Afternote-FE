@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -33,7 +34,6 @@ fun SocialAccountRow(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp)
                 .height(56.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -56,9 +56,9 @@ fun SocialAccountRow(
                 style = AfternoteDesign.typography.captionLargeR,
                 color =
                     if (account.isConnected) {
-                        AfternoteDesign.colors.gray5
-                    } else {
                         AfternoteDesign.colors.b1
+                    } else {
+                        AfternoteDesign.colors.gray5
                     },
             )
         }
@@ -66,6 +66,15 @@ fun SocialAccountRow(
         Switch(
             checked = account.isConnected,
             onCheckedChange = onToggle,
+            thumbContent = {},
+            colors = SwitchDefaults.colors(
+                checkedTrackColor = AfternoteDesign.colors.black,
+                uncheckedTrackColor = AfternoteDesign.colors.gray2,
+                checkedThumbColor = AfternoteDesign.colors.white,
+                uncheckedThumbColor = AfternoteDesign.colors.white,
+                checkedBorderColor = AfternoteDesign.colors.black,
+                uncheckedBorderColor = AfternoteDesign.colors.gray2,
+            ),
         )
     }
 }
