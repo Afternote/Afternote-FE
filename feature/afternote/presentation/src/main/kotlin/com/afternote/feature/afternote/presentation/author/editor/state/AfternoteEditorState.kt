@@ -59,8 +59,17 @@ class AfternoteEditorState(
     val activeDialog get() = ui.activeDialog
     val selectedBottomNavItem get() = ui.selectedBottomNavItem
     val relationshipSelectedValue get() = ui.relationshipSelectedValue
-    val categoryDropdownState get() = ui.categoryDropdownState
-    val serviceDropdownState get() = ui.serviceDropdownState
+    val categoryDropdownExpanded get() = ui.categoryDropdownExpanded
+    val serviceDropdownExpanded get() = ui.serviceDropdownExpanded
+
+    fun onCategoryDropdownExpandedChange(expanded: Boolean) {
+        ui.onCategoryDropdownExpandedChange(expanded)
+    }
+
+    fun onServiceDropdownExpandedChange(expanded: Boolean) {
+        ui.onServiceDropdownExpandedChange(expanded)
+    }
+
     val playlistStateHolder get() = ui.playlistStateHolder
 
     /** 콜백·일회성 읽기용. Compose 표시는 [formState]를 collect한 스냅샷을 쓰는 것이 안전하다. */

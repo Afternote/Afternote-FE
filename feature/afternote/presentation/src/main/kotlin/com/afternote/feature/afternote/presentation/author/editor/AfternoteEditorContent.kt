@@ -65,12 +65,13 @@ internal fun EditorContent(
             selectedValue = form.selectedCategory.toDropdownLabel(),
             options = editorCategoryDropdownLabels(),
             onValueSelected = state::onCategorySelected,
+            expanded = state.categoryDropdownExpanded,
+            onExpandedChange = state::onCategoryDropdownExpandedChange,
             menuStyle =
                 DropdownMenuStyle(
                     shadowElevation = 10.dp,
                     tonalElevation = 10.dp,
                 ),
-            state = state.categoryDropdownState,
         )
 
         if (form.selectedCategory != EditorCategory.MEMORIAL) {
@@ -84,12 +85,13 @@ internal fun EditorContent(
                 selectedValue = form.selectedService,
                 options = form.currentServiceOptions,
                 onValueSelected = state::onServiceSelected,
+                expanded = state.serviceDropdownExpanded,
+                onExpandedChange = state::onServiceDropdownExpandedChange,
                 menuStyle =
                     DropdownMenuStyle(
                         shadowElevation = 10.dp,
                         tonalElevation = 10.dp,
                     ),
-                state = state.serviceDropdownState,
             )
         }
         Spacer(modifier = Modifier.height(32.dp))

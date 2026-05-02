@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.editor.selection
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,11 +15,16 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -54,24 +60,26 @@ data class DropdownMenuStyle(
 )
 
 /**
- * @param modifier Modifier for the component
  * @param labelParams Label text, required indicator, and style
  * @param selectedValue Currently selected value
  * @param options List of selectable options
  * @param onValueSelected Callback when an option is selected
+ * @param expanded Whether the dropdown menu is currently expanded
+ * @param onExpandedChange Callback invoked when the user requests to open/close the menu
+ * @param modifier Modifier for the component
  * @param menuStyle Style configuration for the dropdown menu
- * @param state State holder for the dropdown
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SelectionDropdown(
-    modifier: Modifier = Modifier,
     labelParams: SelectionDropdownLabelParams,
     selectedValue: String,
     options: List<String>,
     onValueSelected: (String) -> Unit,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
     menuStyle: DropdownMenuStyle = DropdownMenuStyle(),
-    state: SelectionDropdownState = rememberSelectionDropdownState(),
 ) {
     val menuBackgroundResolved = menuStyle.menuBackgroundColor ?: AfternoteDesign.colors.white
 
@@ -92,16 +100,17 @@ fun SelectionDropdown(
 
         // Material 3 ExposedDropdownMenuBox: 앵커–메뉴 너비·접근성, 서브컴포지션 없이 처리
         ExposedDropdownMenuBox(
-            expanded = state.expanded,
-            onExpandedChange = { state.expanded = it },
+            expanded = expanded,
+            onExpandedChange = onExpandedChange,
             modifier = Modifier.fillMaxWidth(),
         ) {
             Row(
                 modifier =
                     Modifier
-                        .fillMaxWidth()
                         .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                        .fillMaxWidth()
                         .bottomBorder(color = AfternoteDesign.colors.gray3, width = 0.5.dp)
+                        .clickable(role = Role.DropdownList) { onExpandedChange(!expanded) }
                         .padding(all = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -122,8 +131,8 @@ fun SelectionDropdown(
             }
 
             ExposedDropdownMenu(
-                expanded = state.expanded,
-                onDismissRequest = { state.expanded = false },
+                expanded = expanded,
+                onDismissRequest = { onExpandedChange(false) },
                 modifier = Modifier.offset(y = menuStyle.menuOffset),
                 containerColor = menuBackgroundResolved,
                 shadowElevation = menuStyle.shadowElevation,
@@ -145,7 +154,7 @@ fun SelectionDropdown(
                         },
                         onClick = {
                             onValueSelected(option)
-                            state.expanded = false
+                            onExpandedChange(false)
                         },
                         contentPadding = PaddingValues(vertical = 16.dp),
                     )
@@ -160,6 +169,7 @@ fun SelectionDropdown(
 private fun SelectionDropdownPreview() {
     AfternoteTheme {
         val social = stringResource(R.string.afternote_editor_category_social)
+        var expanded by remember { mutableStateOf(false) }
         SelectionDropdown(
             labelParams =
                 SelectionDropdownLabelParams(
@@ -173,6 +183,8 @@ private fun SelectionDropdownPreview() {
                     stringResource(R.string.afternote_editor_category_memorial),
                 ),
             onValueSelected = {},
+            expanded = expanded,
+            onExpandedChange = { expanded = it },
         )
     }
 }

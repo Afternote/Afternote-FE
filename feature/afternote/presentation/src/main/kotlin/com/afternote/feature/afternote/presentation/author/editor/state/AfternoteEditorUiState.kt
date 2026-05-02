@@ -12,7 +12,6 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
-import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdownState
 
 /**
  * 다이얼로그 타입 (순수 UI).
@@ -50,14 +49,14 @@ class AfternoteEditorUiState(
     var playlistStateHolder: MemorialPlaylistStateHolder? = null
         private set
 
-    var categoryDropdownState by mutableStateOf(SelectionDropdownState())
+    var categoryDropdownExpanded by mutableStateOf(false)
         private set
 
-    var serviceDropdownState by mutableStateOf(SelectionDropdownState())
+    var serviceDropdownExpanded by mutableStateOf(false)
         private set
 
     @Suppress("UNUSED")
-    var relationshipDropdownState by mutableStateOf(SelectionDropdownState())
+    var relationshipDropdownExpanded by mutableStateOf(false)
         private set
 
     fun addEditorMessage() {
@@ -94,6 +93,14 @@ class AfternoteEditorUiState(
 
     fun onRelationshipSelected(relationship: String) {
         relationshipSelectedValue = relationship
+    }
+
+    fun onCategoryDropdownExpandedChange(expanded: Boolean) {
+        categoryDropdownExpanded = expanded
+    }
+
+    fun onServiceDropdownExpandedChange(expanded: Boolean) {
+        serviceDropdownExpanded = expanded
     }
 }
 

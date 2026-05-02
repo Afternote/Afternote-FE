@@ -13,6 +13,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
@@ -37,7 +41,6 @@ import com.afternote.feature.afternote.presentation.author.editor.editorRelation
 import com.afternote.feature.afternote.presentation.author.editor.selection.DropdownMenuStyle
 import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdown
 import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdownLabelParams
-import com.afternote.feature.afternote.presentation.author.editor.selection.rememberSelectionDropdownState
 
 /**
  * 수신자와의 관계 드롭다운 (로컬 상태 사용)
@@ -49,8 +52,7 @@ private fun RelationshipDropdown(
     onValueSelected: (String) -> Unit,
     menuStyle: DropdownMenuStyle,
 ) {
-    val dropdownState =
-        rememberSelectionDropdownState()
+    var expanded by remember { mutableStateOf(false) }
 
     SelectionDropdown(
         labelParams =
@@ -60,8 +62,9 @@ private fun RelationshipDropdown(
         selectedValue = selectedValue,
         options = options,
         onValueSelected = onValueSelected,
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
         menuStyle = menuStyle,
-        state = dropdownState,
     )
 }
 
