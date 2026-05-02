@@ -11,7 +11,7 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.EditorSectionLabel
-import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverCallbacks
+import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverSection
 
 /**
@@ -45,8 +45,11 @@ private fun RecipientDesignationSectionPreview() {
         RecipientDesignationSection(
             section =
                 AfternoteEditorReceiverSection(
-                    afternoteEditReceivers = emptyList(),
-                    callbacks = AfternoteEditorReceiverCallbacks(),
+                    afternoteEditReceivers =
+                        listOf(
+                            AfternoteEditorReceiver(id = "1", name = "홍길동", label = "가족"),
+                            AfternoteEditorReceiver(id = "2", name = "김철수", label = "친구"),
+                        ),
                 ),
         )
     }
