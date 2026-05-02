@@ -25,8 +25,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -86,9 +84,7 @@ fun SelectionDropdown(
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement =
-            Arrangement.spacedBy(
-                space = 12.dp,
-            ),
+            Arrangement.spacedBy(8.dp),
     ) {
         // 라벨
         EditorSectionLabel(
@@ -109,9 +105,9 @@ fun SelectionDropdown(
                     Modifier
                         .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                         .fillMaxWidth()
-                        .bottomBorder(color = AfternoteDesign.colors.gray3, width = 0.5.dp)
-                        .clickable(role = Role.DropdownList) { onExpandedChange(!expanded) }
-                        .padding(all = 8.dp),
+                        .padding(top = 4.dp, bottom = 8.dp)
+                        .bottomBorder(color = AfternoteDesign.colors.gray3, width = 0.58.dp)
+                        .clickable(role = Role.DropdownList) { onExpandedChange(!expanded) },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
@@ -138,28 +134,42 @@ fun SelectionDropdown(
                 shadowElevation = menuStyle.shadowElevation,
                 tonalElevation = menuStyle.tonalElevation,
             ) {
-                options.forEach { option ->
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = option,
-                                style =
-                                    AfternoteDesign.typography.textField.copy(
-                                        fontWeight = FontWeight.Medium,
-                                        color = AfternoteDesign.colors.gray9,
-                                        textAlign = TextAlign.Center,
-                                    ),
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        },
-                        onClick = {
-                            onValueSelected(option)
-                            onExpandedChange(false)
-                        },
-                        contentPadding = PaddingValues(vertical = 16.dp),
-                    )
-                }
+                SelectionDropdownMenuItems(
+                    options = options,
+                    onSelect = { selected ->
+                        onValueSelected(selected)
+                        onExpandedChange(false)
+                    },
+                )
             }
+        }
+    }
+}
+
+/**
+ * 펼친 메뉴 항목 리스트 — Popup 컨텍스트 밖에서도 그릴 수 있어 Preview로 단독 확인 가능.
+ */
+@Composable
+private fun SelectionDropdownMenuItems(
+    options: List<String>,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        options.forEach { option ->
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        text = option,
+                        style =
+                            AfternoteDesign.typography.bodyBase.copy(
+                                color = AfternoteDesign.colors.gray9,
+                            ),
+                    )
+                },
+                onClick = { onSelect(option) },
+                contentPadding = PaddingValues(16.dp),
+            )
         }
     }
 }
@@ -185,6 +195,22 @@ private fun SelectionDropdownPreview() {
             onValueSelected = {},
             expanded = expanded,
             onExpandedChange = { expanded = it },
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Expanded menu items")
+@Composable
+private fun SelectionDropdownMenuItemsPreview() {
+    AfternoteTheme {
+        SelectionDropdownMenuItems(
+            options =
+                listOf(
+                    "인스타그램",
+                    "페이스북",
+                    "직접 추가하기",
+                ),
+            onSelect = {},
         )
     }
 }
