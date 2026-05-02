@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.editor.selection
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -13,6 +14,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -182,22 +184,24 @@ private fun SelectionDropdownPreview() {
     AfternoteTheme {
         val social = stringResource(R.string.afternote_editor_category_social)
         var expanded by remember { mutableStateOf(false) }
-        SelectionDropdown(
-            labelParams =
-                SelectionDropdownLabelParams(
-                    label = stringResource(R.string.afternote_editor_label_category),
-                ),
-            selectedValue = social,
-            options =
-                listOf(
-                    social,
-                    stringResource(R.string.afternote_editor_category_gallery),
-                    stringResource(R.string.afternote_editor_category_memorial),
-                ),
-            onValueSelected = {},
-            expanded = expanded,
-            onExpandedChange = { expanded = it },
-        )
+        Box(modifier = Modifier.padding(24.dp)) {
+            SelectionDropdown(
+                labelParams =
+                    SelectionDropdownLabelParams(
+                        label = stringResource(R.string.afternote_editor_label_category),
+                    ),
+                selectedValue = social,
+                options =
+                    listOf(
+                        social,
+                        stringResource(R.string.afternote_editor_category_gallery),
+                        stringResource(R.string.afternote_editor_category_memorial),
+                    ),
+                onValueSelected = {},
+                expanded = expanded,
+                onExpandedChange = { expanded = it },
+            )
+        }
     }
 }
 
@@ -205,14 +209,22 @@ private fun SelectionDropdownPreview() {
 @Composable
 private fun SelectionDropdownMenuItemsPreview() {
     AfternoteTheme {
-        SelectionDropdownMenuItems(
-            options =
-                listOf(
-                    "인스타그램",
-                    "페이스북",
-                    "직접 추가하기",
-                ),
-            onSelect = {},
-        )
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            shadowElevation = 4.dp,
+            tonalElevation = 0.dp,
+            color = AfternoteDesign.colors.white,
+            modifier = Modifier.padding(24.dp),
+        ) {
+            SelectionDropdownMenuItems(
+                options =
+                    listOf(
+                        "인스타그램",
+                        "페이스북",
+                        "직접 추가하기",
+                    ),
+                onSelect = {},
+            )
+        }
     }
 }
