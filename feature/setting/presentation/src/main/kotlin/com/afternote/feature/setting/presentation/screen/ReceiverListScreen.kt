@@ -1,27 +1,42 @@
 package com.afternote.feature.setting.presentation.screen
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.common.util.KoreanConsonantUtil
 import com.afternote.core.model.setting.ReceiverListItem
 import com.afternote.core.ui.AfternoteTextField
+import com.afternote.core.ui.KoreanConsonantIndex
 import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.component.ReceiverListItem
+import kotlinx.coroutines.launch
 
 @Composable
 fun ReceiverListScreen(
@@ -32,6 +47,35 @@ fun ReceiverListScreen(
 ) {
     val searchState = rememberTextFieldState()
     val selectedIds = remember { mutableStateSetOf<Long>() }
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    var selectedConsonant by remember { mutableStateOf<Char?>(null) }
+
+    val groupedReceivers =
+        remember(receivers, searchState.text) {
+            val query = searchState.text.toString()
+            val filtered = if (query.isBlank()) receivers else receivers.filter { it.name.contains(query) }
+            KoreanConsonantUtil.groupByInitialConsonant(filtered) { it.name }
+        }
+
+    val consonantIndexMap =
+        remember(groupedReceivers) {
+            var index = 0
+            buildMap {
+                groupedReceivers.forEach { (consonant, items) ->
+                    put(consonant, index)
+                    index += 1 + items.size
+                }
+            }
+        }
+
+    LaunchedEffect(listState.firstVisibleItemIndex) {
+        selectedConsonant =
+            consonantIndexMap.entries
+                .filter { it.value <= listState.firstVisibleItemIndex }
+                .maxByOrNull { it.value }
+                ?.key
+    }
 
     Scaffold(
         modifier = modifier,
@@ -43,7 +87,7 @@ fun ReceiverListScreen(
         },
         bottomBar = {
             AfternoteButton(
-                text = "수신자 선택 완료하기",
+                text = "수신자 등록하기",
                 onClick = {
                     onConfirmClick(receivers.filter { it.receiverId in selectedIds })
                 },
@@ -57,35 +101,73 @@ fun ReceiverListScreen(
                 Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(top = 10.dp)
-                    .padding(horizontal = 20.dp),
+                    .padding(top = 10.dp),
         ) {
             AfternoteTextField(
                 state = searchState,
                 placeholder = "Text Field",
                 type = TextFieldType.Search,
                 imeAction = ImeAction.Search,
+                modifier = Modifier.padding(horizontal = 20.dp),
             )
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                items(receivers) { receiver ->
-                    ReceiverListItem(
-                        receiver = receiver,
-                        selected = receiver.receiverId in selectedIds,
-                        onSelectedChange = { checked ->
-                            if (checked) {
-                                selectedIds.add(receiver.receiverId)
-                            } else {
-                                selectedIds.remove(receiver.receiverId)
+            Row(modifier = Modifier.fillMaxSize()) {
+                LazyColumn(
+                    state = listState,
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .padding(start = 20.dp),
+                ) {
+                    groupedReceivers.forEach { (consonant, items) ->
+                        stickyHeader(key = "header_$consonant") {
+                            ConsonantSectionHeader(consonant = consonant)
+                        }
+                        items(items, key = { it.receiverId }) { receiver ->
+                            ReceiverListItem(
+                                receiver = receiver,
+                                selected = receiver.receiverId in selectedIds,
+                                onSelectedChange = { checked ->
+                                    if (checked) {
+                                        selectedIds.add(receiver.receiverId)
+                                    } else {
+                                        selectedIds.remove(receiver.receiverId)
+                                    }
+                                },
+                            )
+                        }
+                    }
+                    item { Spacer(modifier = Modifier.padding(14.dp)) }
+                }
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxHeight()
+                            .padding(end = 8.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    KoreanConsonantIndex(
+                        selectedConsonant = selectedConsonant,
+                        onConsonantSelected = { consonant ->
+                            selectedConsonant = consonant
+                            consonantIndexMap[consonant]?.let { index ->
+                                coroutineScope.launch { listState.scrollToItem(index) }
                             }
                         },
                     )
                 }
-                item { Spacer(modifier = Modifier.padding(14.dp)) }
             }
         }
     }
+}
+
+@Composable
+private fun ConsonantSectionHeader(consonant: Char) {
+    Text(
+        text = consonant.toString(),
+        style = AfternoteDesign.typography.captionLargeB,
+        color = AfternoteDesign.colors.gray5,
+        modifier = Modifier.padding(vertical = 8.dp),
+    )
 }
 
 @Preview(showBackground = true)

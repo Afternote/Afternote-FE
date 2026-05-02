@@ -50,7 +50,7 @@ fun ReceiverListItem(
             Text(
                 text = receiver.relation,
                 style = AfternoteDesign.typography.captionLargeR,
-                color = AfternoteDesign.colors.gray6,
+                color = AfternoteDesign.colors.gray8,
             )
         }
         AfternoteCircularCheckbox(
