@@ -9,7 +9,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 
@@ -36,9 +35,6 @@ class AfternoteEditorUiState(
 ) {
     val editorMessages: SnapshotStateList<EditorMessage> =
         mutableStateListOf(EditorMessage())
-
-    var selectedBottomNavItem by mutableStateOf(BottomNavTab.NOTE)
-        private set
 
     var relationshipSelectedValue by mutableStateOf("친구")
         private set
@@ -85,10 +81,6 @@ class AfternoteEditorUiState(
         activeDialog = null
         clearReceiverFields()
         relationshipSelectedValue = "친구"
-    }
-
-    fun onBottomNavItemSelected(item: BottomNavTab) {
-        selectedBottomNavItem = item
     }
 
     fun onRelationshipSelected(relationship: String) {

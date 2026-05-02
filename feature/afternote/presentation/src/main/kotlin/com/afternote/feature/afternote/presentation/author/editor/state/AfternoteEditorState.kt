@@ -8,8 +8,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import com.afternote.core.model.AlbumCover
-import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
@@ -20,7 +18,6 @@ import com.afternote.feature.afternote.presentation.author.editor.processing.mod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
-import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverCallbacks
 import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -57,7 +54,6 @@ class AfternoteEditorState(
     val customLastWishState: TextFieldState get() = ui.customLastWishState
 
     val activeDialog get() = ui.activeDialog
-    val selectedBottomNavItem get() = ui.selectedBottomNavItem
     val relationshipSelectedValue get() = ui.relationshipSelectedValue
     val categoryDropdownExpanded get() = ui.categoryDropdownExpanded
     val serviceDropdownExpanded get() = ui.serviceDropdownExpanded
@@ -74,35 +70,11 @@ class AfternoteEditorState(
 
     /** 콜백·일회성 읽기용. Compose 표시는 [formState]를 collect한 스냅샷을 쓰는 것이 안전하다. */
     val selectedCategory get() = formState.value.selectedCategory
-    val selectedService get() = formState.value.selectedService
-    val loadedItemId get() = formState.value.loadedItemId
     val funeralVideoUrl get() = formState.value.funeralVideoUrl
     val funeralThumbnailUrl get() = formState.value.funeralThumbnailUrl
     val memorialPhotoUrl get() = formState.value.memorialPhotoUrl
     val pickedMemorialPhotoUri get() = formState.value.pickedMemorialPhotoUri
     val afternoteEditReceivers get() = formState.value.afternoteEditReceivers
-    val selectedProcessingMethod get() = formState.value.selectedProcessingMethod
-    val selectedInformationProcessingMethod get() = formState.value.selectedInformationProcessingMethod
-    val selectedLastWish get() = formState.value.selectedLastWish
-    val playlistSongCount get() = formState.value.playlistSongCount
-    val displayMemorialPhotoUri get() = formState.value.displayMemorialPhotoUri()
-    val livePlaylistSongCount get() = formState.value.livePlaylistSongCount(ui.playlistStateHolder)
-    val displayAlbumCovers get() = formState.value.displayAlbumCovers(ui.playlistStateHolder)
-    val currentServiceOptions get() = formState.value.currentServiceOptions
-
-    val services: List<String>
-        get() = AfternoteServiceCatalog.socialServices
-    val galleryServices: List<String>
-        get() = AfternoteServiceCatalog.galleryServices
-
-    val galleryAfternoteEditorReceiverCallbacks: AfternoteEditorReceiverCallbacks by lazy {
-        AfternoteEditorReceiverCallbacks(
-            onAddClick = ::showAddAfternoteEditorReceiverDialog,
-            onItemDeleteClick = ::onAfternoteEditorReceiverDelete,
-            onItemAdded = ::onAfternoteEditorReceiverItemAdded,
-            onTextFieldVisibilityChanged = { },
-        )
-    }
 
     val galleryProcessingCallbacks: ProcessingMethodCallbacks by lazy {
         ProcessingMethodCallbacks(
@@ -120,16 +92,6 @@ class AfternoteEditorState(
             onTextFieldVisibilityChanged = { },
             onItemEdited = ::editProcessingMethod,
         )
-    }
-
-    val processingMethods: List<ProcessingMethodItem>
-        get() = formState.value.socialProcessingMethods
-
-    val galleryProcessingMethods: List<ProcessingMethodItem>
-        get() = formState.value.galleryProcessingMethods
-
-    fun updateAlbumCovers(covers: List<AlbumCover>) {
-        updateForm { it.copy(playlistAlbumCovers = covers) }
     }
 
     fun setPlaylistStateHolder(stateHolder: MemorialPlaylistStateHolder) {
@@ -174,7 +136,7 @@ class AfternoteEditorState(
         }
     }
 
-    /** 드롭다운 UI에서 [displayLabel] 문자열로 카테고리를 선택한다. */
+    /** 드롭다운 UI에서 [categoryDisplayLabel] 문자열로 카테고리를 선택한다. */
     fun onCategorySelected(categoryDisplayLabel: String) {
         selectCategory(EditorCategory.fromDisplayLabel(categoryDisplayLabel))
     }
@@ -200,7 +162,7 @@ class AfternoteEditorState(
 
     fun onServiceSelected(service: String) {
         if (formState.value.isCustomAddOption(service)) {
-            showCustomServiceDialog()
+            ui.showCustomServiceDialog()
         } else {
             updateForm { it.copy(selectedService = service) }
         }
@@ -234,10 +196,6 @@ class AfternoteEditorState(
 
     fun showAddAfternoteEditorReceiverDialog() {
         ui.showAddAfternoteEditorReceiverDialog()
-    }
-
-    fun showCustomServiceDialog() {
-        ui.showCustomServiceDialog()
     }
 
     fun dismissDialog() {
@@ -324,10 +282,6 @@ class AfternoteEditorState(
                 )
             prev.copy(afternoteEditReceivers = prev.afternoteEditReceivers + newReceiver)
         }
-    }
-
-    fun onBottomNavItemSelected(item: BottomNavTab) {
-        ui.onBottomNavItemSelected(item)
     }
 
     fun addEditorMessage() {
