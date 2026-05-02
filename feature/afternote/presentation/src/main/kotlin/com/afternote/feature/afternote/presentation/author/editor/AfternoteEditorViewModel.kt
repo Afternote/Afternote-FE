@@ -48,7 +48,7 @@ private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v1"
 /** 수정 진입 시 서버 원본 카테고리(API `categoryForApi`). 폼 스냅샷과 별도로 두어 프로세스 데스 후에도 유지한다. */
 private const val EDITOR_ORIGINAL_CATEGORY_FOR_API_KEY = "editor_original_category_for_api_v1"
 
-/** 타입 안전 [com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute.EditorRoute] 직렬화 인자명 (상세 [AfternoteDetailViewModel]과 동일). */
+/** 타입 안전 [com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute.EditorRoute] 직렬화 인자명 (상세 [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel]과 동일). */
 private const val NAV_ARG_ITEM_ID = "itemId"
 
 @Serializable
@@ -189,7 +189,7 @@ private data class EditorFormSnapshot(
  * UI 레이어는 `rememberAfternoteEditorState(formStateSource = editorFormStateFlow, updateForm = ::updateForm)`로
  * 자체 파사드를 만들고, prefill 등 UI 상태 변경은 [AfternoteEditorEvent.PrefillLoaded] 이벤트로 위임받습니다.
  *
- * 수정 모드(`itemId` 있음)의 상세 로드는 [AfternoteDetailViewModel]과 같이 `init`에서만 트리거한다 (`LaunchedEffect`로 네비게이션에 위임하지 않음).
+ * 수정 모드(`itemId` 있음)의 상세 로드는 [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel]과 같이 `init`에서만 트리거한다 (`LaunchedEffect`로 네비게이션에 위임하지 않음).
  * 서버 원본 카테고리(저장 API용)는 전용 [SavedStateHandle] 키에 보관해 폼 JSON과 함께 프로세스 데스 후 복원된다.
  * 저장 API의 HTTP·에러 바디 해석은 [com.afternote.feature.afternote.domain.repository.AfternoteRepository] 구현에서 도메인 예외로 변환되며, 여기서는 Retrofit 타입을 알지 않는다.
  * UI 액션은 개별 public 메서드로 노출한다 (작성자 홈 화면 ViewModel과 동일).

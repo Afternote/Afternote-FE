@@ -430,18 +430,23 @@ class AfternoteEditorState(
 }
 
 /**
- * Compose Preview·로컬 UI 테스트 전용.
+ * 프로덕션용 팩토리.
+ *
+ * ViewModel의 [EditorFormState] [StateFlow]와 `updateForm` 인텐트 함수를 받아
+ * UI 레이어가 소유한 [TextFieldState]와 [AfternoteEditorUiState]를 결합한 파사드를 만든다. ViewModel은
+ * Compose UI 상태를 들지 않으므로, 이 팩토리는 반드시 Composable 스코프에서 호출되어야 한다.
  */
 @Composable
-fun rememberAfternoteEditorState(): AfternoteEditorState {
+fun rememberAfternoteEditorState(
+    formStateSource: StateFlow<EditorFormState>,
+    updateForm: ((EditorFormState) -> EditorFormState) -> Unit,
+): AfternoteEditorState {
     val idState = rememberTextFieldState()
     val passwordState = rememberTextFieldState()
     val afternoteEditReceiverNameState = rememberTextFieldState()
     val phoneNumberState = rememberTextFieldState()
     val customServiceNameState = rememberTextFieldState()
     val customLastWishState = rememberTextFieldState()
-
-    val flow = remember { MutableStateFlow(EditorFormState()) }
 
     val ui =
         rememberAfternoteEditorUiState(
@@ -453,11 +458,24 @@ fun rememberAfternoteEditorState(): AfternoteEditorState {
             customLastWishState = customLastWishState,
         )
 
-    return remember(flow, ui) {
+    return remember(ui, formStateSource) {
         AfternoteEditorState(
             ui = ui,
-            updateForm = { block -> flow.update(block) },
-            formState = flow.asStateFlow(),
+            updateForm = updateForm,
+            formState = formStateSource,
         )
     }
+}
+
+/**
+ * Compose Preview·로컬 UI 테스트 전용. 내부 [MutableStateFlow]로 자체 SSOT를 만든다.
+ */
+@Composable
+fun rememberAfternoteEditorState(): AfternoteEditorState {
+    val flow = remember { MutableStateFlow(EditorFormState()) }
+    val formStateSource = remember(flow) { flow.asStateFlow() }
+    return rememberAfternoteEditorState(
+        formStateSource = formStateSource,
+        updateForm = { block -> flow.update(block) },
+    )
 }
