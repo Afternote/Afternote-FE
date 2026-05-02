@@ -2,8 +2,6 @@ package com.afternote.feature.afternote.presentation.author.editor
 
 import androidx.compose.runtime.Composable
 import com.afternote.feature.afternote.presentation.author.editor.processing.CustomServiceDialog
-import com.afternote.feature.afternote.presentation.author.editor.processing.CustomServiceDialogCallbacks
-import com.afternote.feature.afternote.presentation.author.editor.processing.CustomServiceDialogParams
 import com.afternote.feature.afternote.presentation.author.editor.receiver.AddAfternoteEditorReceiverDialog
 import com.afternote.feature.afternote.presentation.author.editor.receiver.AddAfternoteEditorReceiverDialogCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.receiver.AddAfternoteEditorReceiverDialogParams
@@ -40,15 +38,9 @@ internal fun AfternoteEditorDialogs(state: AfternoteEditorState) {
 
         DialogType.CUSTOM_SERVICE -> {
             CustomServiceDialog(
-                params =
-                    CustomServiceDialogParams(
-                        serviceNameState = state.customServiceNameState,
-                        callbacks =
-                            CustomServiceDialogCallbacks(
-                                onDismiss = state::dismissDialog,
-                                onAddClick = state::onAddCustomService,
-                            ),
-                    ),
+                serviceNameState = state.customServiceNameState,
+                onDismiss = state::dismissDialog,
+                onAddClick = state::onAddCustomService,
             )
         }
     }

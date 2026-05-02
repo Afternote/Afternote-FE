@@ -7,7 +7,6 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -25,24 +24,6 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 
 /**
- * 직접 입력하기 다이얼로그 콜백
- */
-@Immutable
-data class CustomServiceDialogCallbacks(
-    val onDismiss: () -> Unit = {},
-    val onAddClick: () -> Unit = {},
-)
-
-/**
- * 직접 입력하기 다이얼로그 파라미터
- */
-@Immutable
-data class CustomServiceDialogParams(
-    val serviceNameState: TextFieldState,
-    val callbacks: CustomServiceDialogCallbacks = CustomServiceDialogCallbacks(),
-)
-
-/**
  * 직접 입력하기 다이얼로그 컴포넌트
  *
  * 피그마 디자인 기반:
@@ -53,11 +34,13 @@ data class CustomServiceDialogParams(
  */
 @Composable
 fun CustomServiceDialog(
+    serviceNameState: TextFieldState,
+    onDismiss: () -> Unit,
+    onAddClick: () -> Unit,
     modifier: Modifier = Modifier,
-    params: CustomServiceDialogParams,
 ) {
     Dialog(
-        onDismissRequest = params.callbacks.onDismiss,
+        onDismissRequest = onDismiss,
         properties =
             DialogProperties(
                 dismissOnBackPress = true,
@@ -65,7 +48,8 @@ fun CustomServiceDialog(
             ),
     ) {
         CustomServiceDialogContent(
-            params = params,
+            serviceNameState = serviceNameState,
+            onAddClick = onAddClick,
             modifier = modifier,
         )
     }
@@ -73,7 +57,8 @@ fun CustomServiceDialog(
 
 @Composable
 private fun CustomServiceDialogContent(
-    params: CustomServiceDialogParams,
+    serviceNameState: TextFieldState,
+    onAddClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val focusManager = LocalFocusManager.current
@@ -103,7 +88,7 @@ private fun CustomServiceDialogContent(
                 color = AfternoteDesign.colors.gray6,
             )
             AfternoteTextField(
-                state = params.serviceNameState,
+                state = serviceNameState,
             )
         }
 
@@ -112,7 +97,7 @@ private fun CustomServiceDialogContent(
             text = stringResource(R.string.add_button),
             onClick = {
                 focusManager.clearFocus()
-                params.callbacks.onAddClick()
+                onAddClick()
             },
             type = AfternoteButtonType.Default,
         )
@@ -124,10 +109,8 @@ private fun CustomServiceDialogContent(
 private fun CustomServiceDialogPreview() {
     AfternoteTheme {
         CustomServiceDialogContent(
-            params =
-                CustomServiceDialogParams(
-                    serviceNameState = rememberTextFieldState(),
-                ),
+            serviceNameState = rememberTextFieldState(),
+            onAddClick = {},
         )
     }
 }
