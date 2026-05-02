@@ -24,6 +24,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.timeletter.domain.LetterIdentity
 import com.afternote.feature.timeletter.domain.LetterSchedule
 import com.afternote.feature.timeletter.domain.OpenDate
+import com.afternote.feature.timeletter.domain.Recipient
 import com.afternote.feature.timeletter.domain.TimeLetter
 
 @Composable
@@ -41,14 +42,14 @@ fun TimeLetterListItem(
                     color = AfternoteDesign.colors.gray4,
                     shape = RoundedCornerShape(size = 6.dp),
                 ).fillMaxWidth()
-                .padding(vertical = 19.dp),
+                .padding(vertical = 19.dp, horizontal = 15.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "수신인  ${schedule.recipientName}",
+                text = "수신인  ${schedule.recipient.name}",
                 style = AfternoteDesign.typography.bodySmallR,
                 color = AfternoteDesign.colors.gray6,
             )
@@ -106,7 +107,7 @@ private fun TimeLetterItemPreview() {
                     ),
                 schedule =
                     LetterSchedule(
-                        recipientName = "박경민",
+                        recipient = Recipient(id = 1L, name = "박경민", relationship = "친구"),
                         openDate = OpenDate("2026-12-31"),
                     ),
             ),
