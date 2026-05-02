@@ -38,12 +38,13 @@ enum class AfternoteValidationError(
  * [savedId]는 성공 직후 스냅샷용으로 남겨 둔 값입니다. 화면에 ID를 계속 표시할 필요가 없고
  * 네비게이션 등도 이벤트만 쓴다면, 중복 소스를 피하기 위해 이벤트 쪽만 두는 편이 MVI/UDF에 가깝습니다.
  *
- * [error]는 네트워크 등 원시 메시지용입니다. 리소스 기반 문구와 통합하려면 프로젝트의 `UiText` 등
- * 공통 타입으로 감싸는 방식을 검토할 수 있습니다.
+ * [error]는 네트워크 등 원시 메시지용입니다. ViewModel은 `Context`에 의존하지 않고
+ * 리소스 기반 일반 실패 메시지는 [errorRes]에 [StringRes] ID로 담아 UI에서 [Composable.stringResource]로 해석합니다.
  */
 data class AfternoteSaveState(
     val isSaving: Boolean = false,
     val savedId: Long? = null,
     val error: String? = null,
+    @StringRes val errorRes: Int? = null,
     val validationError: AfternoteValidationError? = null,
 )

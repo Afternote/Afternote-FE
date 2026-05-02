@@ -1,6 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
-import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.lifecycle.SavedStateHandle
@@ -33,7 +32,6 @@ import com.afternote.feature.afternote.presentation.author.editor.state.DEFAULT_
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -200,7 +198,6 @@ private data class EditorFormSnapshot(
 class AfternoteEditorViewModel
     @Inject
     constructor(
-        @ApplicationContext private val appContext: Context,
         private val savedStateHandle: SavedStateHandle,
         private val authorReceiverRepository: AuthorReceiverRepository,
         private val afternoteRepository: AfternoteRepository,
@@ -236,7 +233,7 @@ class AfternoteEditorViewModel
                     editorForm.update(block)
                     persistFormSnapshot(editorForm.value)
                 },
-                formStateSource = editorForm.asStateFlow(),
+                formState = editorForm.asStateFlow(),
             )
 
         private val _saveState = MutableStateFlow(AfternoteSaveState())
@@ -403,16 +400,19 @@ class AfternoteEditorViewModel
                         null
                     }
                 }
-            val errorMessage =
-                when {
-                    validationError != null -> null
-                    else -> e.message ?: appContext.getString(R.string.afternote_editor_save_failed_generic)
+            val errorMessage = if (validationError == null) e.message else null
+            val errorRes =
+                if (validationError == null && errorMessage == null) {
+                    R.string.afternote_editor_save_failed_generic
+                } else {
+                    null
                 }
             _saveState.update {
                 it.copy(
                     isSaving = false,
                     validationError = validationError,
                     error = errorMessage,
+                    errorRes = errorRes,
                 )
             }
         }

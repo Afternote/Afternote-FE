@@ -48,6 +48,10 @@ internal sealed class EditorSaveErrorResult {
     data class Raw(
         val message: String,
     ) : EditorSaveErrorResult()
+
+    data class Generic(
+        val messageResId: Int,
+    ) : EditorSaveErrorResult()
 }
 
 internal fun editorSaveErrorFromState(
@@ -61,6 +65,7 @@ internal fun editorSaveErrorFromState(
     }
     saveState.validationError?.let { return EditorSaveErrorResult.Validation(it.messageResId) }
     saveState.error?.let { return EditorSaveErrorResult.Raw(it) }
+    saveState.errorRes?.let { return EditorSaveErrorResult.Generic(it) }
     return null
 }
 
@@ -224,12 +229,14 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
         remember(
             saveState.validationError,
             saveState.error,
+            saveState.errorRes,
             params.playlistStateHolder.songs.size,
         ) { editorSaveErrorFromState(saveState, params.playlistStateHolder.songs.size) }
     val saveError =
         when (errorResult) {
             is EditorSaveErrorResult.Validation -> AfternoteEditorSaveError(stringResource(errorResult.messageResId))
             is EditorSaveErrorResult.Raw -> AfternoteEditorSaveError(errorResult.message)
+            is EditorSaveErrorResult.Generic -> AfternoteEditorSaveError(stringResource(errorResult.messageResId))
             null -> null
         }
 
