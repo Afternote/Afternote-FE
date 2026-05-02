@@ -21,6 +21,7 @@ fun InsertPasswordContent(
     passwordLength: Int,
     onDigitClick: (String) -> Unit,
     onDeleteClick: () -> Unit,
+    onConfirmClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -35,7 +36,7 @@ fun InsertPasswordContent(
         Spacer(modifier = Modifier.height(24.dp))
         Text(
             text = titleText,
-            style = AfternoteDesign.typography.h2,
+            style = AfternoteDesign.typography.bodyLargeR,
         )
         Spacer(modifier = Modifier.height(32.dp))
         PasswordDots(passwordLength = passwordLength)
@@ -43,6 +44,7 @@ fun InsertPasswordContent(
         NumberKeypad(
             onDigitClick = onDigitClick,
             onDeleteClick = onDeleteClick,
+            onConfirmClick = onConfirmClick,
         )
         Spacer(modifier = Modifier.height(40.dp))
     }

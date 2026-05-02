@@ -22,13 +22,14 @@ private val keyRows = listOf(
     listOf("1", "2", "3"),
     listOf("4", "5", "6"),
     listOf("7", "8", "9"),
-    listOf("", "0", "del"),
+    listOf("del", "0", "확인"),
 )
 
 @Composable
 fun NumberKeypad(
     onDigitClick: (String) -> Unit,
     onDeleteClick: () -> Unit,
+    onConfirmClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -45,10 +46,10 @@ fun NumberKeypad(
                         modifier = Modifier
                             .weight(1f)
                             .aspectRatio(2f)
-                            .clickable(enabled = key.isNotEmpty()) {
+                            .clickable {
                                 when (key) {
                                     "del" -> onDeleteClick()
-                                    "" -> Unit
+                                    "확인" -> onConfirmClick()
                                     else -> onDigitClick(key)
                                 }
                             },
@@ -59,7 +60,10 @@ fun NumberKeypad(
                                 painter = painterResource(R.drawable.core_ui_arrow_left),
                                 contentDescription = stringResource(R.string.core_ui_content_description_back),
                             )
-                            "" -> Unit
+                            "확인" -> Text(
+                                text = "확인",
+                                style = AfternoteDesign.typography.h2,
+                            )
                             else -> Text(
                                 text = key,
                                 style = AfternoteDesign.typography.h2,
