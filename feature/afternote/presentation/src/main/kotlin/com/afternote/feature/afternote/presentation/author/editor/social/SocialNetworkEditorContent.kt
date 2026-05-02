@@ -79,9 +79,6 @@ fun SocialNetworkEditorContent(
             }
         }
 
-//        if (params.recipientSection != null) {
-//            RecipientDesignationSection(section = params.recipientSection)
-//        }
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {

@@ -60,7 +60,6 @@ fun EditorMessageSection(
     val focusManager = LocalFocusManager.current
     Column(
         modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         EditorSectionLabel(
             text = stringResource(R.string.afternote_editor_label_messages),
@@ -92,6 +91,7 @@ fun EditorMessageSection(
                 focusManager.clearFocus()
                 onAddClick()
             },
+            modifier = Modifier.align(Alignment.CenterHorizontally),
         )
     }
 }
@@ -171,7 +171,7 @@ private fun EditorMessageItem(
  * "남기실 말씀" 내용 입력 필드.
  *
  * 멀티라인·160dp 최소 높이·16dp 전방향 패딩·16dp radius는
- * 이 섹션 고유 사양이라 [AfternoteTextField] 대신 [BasicTextField]로 직접 구현합니다.
+ * 이 섹션 고유 사양이라 [com.afternote.core.ui.AfternoteTextField] 대신 [BasicTextField]로 직접 구현합니다.
  */
 @Composable
 private fun EditorMessageContentField(
