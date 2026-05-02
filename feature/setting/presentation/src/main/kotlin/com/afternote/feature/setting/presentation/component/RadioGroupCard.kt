@@ -7,6 +7,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement.Absolute.spacedBy
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
@@ -39,39 +40,39 @@ fun RadioGroupCard(
     )
 
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .border(
-                width = 1.5.dp,
-                color = borderColor,
-                shape = RoundedCornerShape(12.dp),
-            )
-            .selectable(
-                selected = selected,
-                onClick = onClick,
-                role = Role.RadioButton,
-                indication = ripple(),
-                interactionSource = remember { MutableInteractionSource() },
-            )
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-        horizontalArrangement = spacedBy(12.dp),
-        verticalAlignment = Alignment.Top,
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(6.dp))
+                .border(
+                    width = 1.dp,
+                    color = borderColor,
+                    shape = RoundedCornerShape(6.dp),
+                ).selectable(
+                    selected = selected,
+                    onClick = onClick,
+                    role = Role.RadioButton,
+                    indication = ripple(),
+                    interactionSource = remember { MutableInteractionSource() },
+                ).padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         CustomRadioButton(
             selected = selected,
             // onClick null → Row에서 처리
         )
+        Spacer(modifier = Modifier.padding(start = 16.dp))
         Column(verticalArrangement = spacedBy(4.dp)) {
             Text(
                 text = item.title,
                 color = AfternoteDesign.colors.gray9,
+                style = AfternoteDesign.typography.primaryButton,
             )
             Text(
                 text = item.description,
                 color = AfternoteDesign.colors.gray6,
+                style = AfternoteDesign.typography.bodySmallR,
             )
         }
     }
 }
-
