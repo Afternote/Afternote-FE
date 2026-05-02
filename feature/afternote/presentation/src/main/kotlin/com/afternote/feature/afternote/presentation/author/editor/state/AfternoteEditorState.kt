@@ -84,6 +84,11 @@ class AfternoteEditorState(
 
     fun onServiceDropdownExpandedChange(expanded: Boolean) = ui.onServiceDropdownExpandedChange(expanded)
 
+    /**
+     * `stateHolder.onSongCountChanged` 콜백은 의도적으로 등록하지 않는다 — 그래프 스코프 홀더가
+     * 화면보다 오래 살아 facade 참조를 잡아두는 누수 위험을 피하기 위함. 폼 동기화는 화면 복귀 시
+     * [syncMemorialPlaylistFromGraphHolderIfAttached] 가 처리한다.
+     */
     fun setPlaylistStateHolder(stateHolder: MemorialPlaylistStateHolder) {
         if (formState.value.selectedCategory == EditorCategory.MEMORIAL &&
             stateHolder.songs.isEmpty() &&
@@ -92,7 +97,6 @@ class AfternoteEditorState(
             stateHolder.initializeSongs(formState.value.memorialPlaylistSongs)
         }
         ui.setPlaylistStateHolder(stateHolder)
-        stateHolder.onSongCountChanged = { syncMemorialPlaylistSongsFromHolder() }
         syncMemorialPlaylistSongsFromHolder()
     }
 
