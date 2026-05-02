@@ -16,7 +16,7 @@ import com.afternote.feature.afternote.presentation.author.editor.message.Editor
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
 import com.afternote.feature.afternote.presentation.author.editor.model.InfoMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.model.InformationProcessingMethod
-import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodList
+import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.receiver.RecipientDesignationSection
@@ -66,21 +66,7 @@ fun GalleryAndFileEditorContent(
         }
 
         // 처리 방법 리스트 섹션
-        Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            EditorSectionLabel(
-                text = stringResource(R.string.afternote_editor_label_process_method_list),
-                isRequired = true,
-            )
-            ProcessingMethodList(
-                items = params.processingMethodSection.items,
-                onItemAdded = params.processingMethodSection.callbacks.onItemAdded,
-                onItemDeleteClick = params.processingMethodSection.callbacks.onItemDeleteClick,
-                onItemEdited = params.processingMethodSection.callbacks.onItemEdited,
-                onTextFieldVisibilityChanged = params.processingMethodSection.callbacks.onTextFieldVisibilityChanged,
-            )
-        }
+        ProcessingMethodListSection(section = params.processingMethodSection)
 
         // 남기실 말씀
         EditorMessageSection(

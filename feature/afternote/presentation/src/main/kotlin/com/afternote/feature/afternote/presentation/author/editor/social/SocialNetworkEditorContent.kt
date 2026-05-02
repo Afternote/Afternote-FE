@@ -19,7 +19,7 @@ import com.afternote.feature.afternote.presentation.author.editor.EditorSectionL
 import com.afternote.feature.afternote.presentation.author.editor.account.AccountSection
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
-import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodList
+import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.shared.SelectableRadioCard
 
@@ -79,22 +79,8 @@ fun SocialNetworkEditorContent(
             }
         }
 
-        Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            // 처리 방법 리스트 섹션
-            EditorSectionLabel(
-                text = stringResource(R.string.afternote_editor_label_process_method_list),
-                isRequired = true,
-            )
-            ProcessingMethodList(
-                items = params.processingMethodSection.items,
-                onItemAdded = params.processingMethodSection.callbacks.onItemAdded,
-                onItemDeleteClick = params.processingMethodSection.callbacks.onItemDeleteClick,
-                onItemEdited = params.processingMethodSection.callbacks.onItemEdited,
-                onTextFieldVisibilityChanged = params.processingMethodSection.callbacks.onTextFieldVisibilityChanged,
-            )
-        }
+        // 처리 방법 리스트 섹션
+        ProcessingMethodListSection(section = params.processingMethodSection)
 
         // 남기실 말씀
         EditorMessageSection(
