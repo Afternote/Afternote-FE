@@ -9,9 +9,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.account.AccountSection
 import com.afternote.feature.afternote.presentation.author.editor.gallery.GalleryAndFileEditorContent
@@ -30,6 +34,7 @@ import com.afternote.feature.afternote.presentation.author.editor.social.SocialN
 import com.afternote.feature.afternote.presentation.author.editor.social.SocialNetworkEditorContentParams
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
+import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
 
 @Composable
 internal fun EditorContent(
@@ -208,5 +213,59 @@ internal fun CategoryContent(
                     ),
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun EditorContentSocialPreview() {
+    AfternoteTheme {
+        val state = rememberAfternoteEditorState()
+        val form by state.formState.collectAsStateWithLifecycle()
+        EditorContent(
+            state = state,
+            form = form.copy(selectedCategory = EditorCategory.SOCIAL),
+            onNavigateToAddSong = {},
+            onNavigateToSelectReceiver = {},
+            onPhotoAddClick = {},
+            onVideoAddClick = {},
+            onThumbnailBytesReady = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun EditorContentGalleryPreview() {
+    AfternoteTheme {
+        val state = rememberAfternoteEditorState()
+        val form by state.formState.collectAsStateWithLifecycle()
+        EditorContent(
+            state = state,
+            form = form.copy(selectedCategory = EditorCategory.GALLERY),
+            onNavigateToAddSong = {},
+            onNavigateToSelectReceiver = {},
+            onPhotoAddClick = {},
+            onVideoAddClick = {},
+            onThumbnailBytesReady = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun EditorContentMemorialPreview() {
+    AfternoteTheme {
+        val state = rememberAfternoteEditorState()
+        val form by state.formState.collectAsStateWithLifecycle()
+        EditorContent(
+            state = state,
+            form = form.copy(selectedCategory = EditorCategory.MEMORIAL),
+            onNavigateToAddSong = {},
+            onNavigateToSelectReceiver = {},
+            onPhotoAddClick = {},
+            onVideoAddClick = {},
+            onThumbnailBytesReady = {},
+        )
     }
 }
