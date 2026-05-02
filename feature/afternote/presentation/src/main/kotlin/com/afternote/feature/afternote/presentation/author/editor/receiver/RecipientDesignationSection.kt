@@ -1,8 +1,8 @@
 package com.afternote.feature.afternote.presentation.author.editor.receiver
+
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -23,12 +23,14 @@ fun RecipientDesignationSection(
     modifier: Modifier = Modifier,
     section: AfternoteEditorReceiverSection,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
         EditorSectionLabel(
             text = stringResource(R.string.afternote_editor_label_receiver_add),
             isRequired = true,
         )
-        Spacer(modifier = Modifier.height(9.dp))
         AfternoteEditorReceiverList(
             afternoteEditReceivers = section.afternoteEditReceivers,
             events = section.callbacks,

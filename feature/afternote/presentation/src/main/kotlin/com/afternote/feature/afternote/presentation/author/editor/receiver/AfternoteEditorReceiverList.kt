@@ -6,11 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -62,6 +59,7 @@ fun AfternoteEditorReceiverList(
                 .background(color = AfternoteDesign.colors.white, shape = RoundedCornerShape(16.dp))
                 .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         afternoteEditReceivers.forEachIndexed { _, receiver ->
             AfternoteEditorReceiverItem(
@@ -77,20 +75,11 @@ fun AfternoteEditorReceiverList(
                 showEditItem = false,
                 onDeleteClick = { events.onItemDeleteClick(receiver.id) },
             )
-            Spacer(modifier = Modifier.height(8.dp))
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // 추가 버튼 (파란 원형 버튼)
         PlusBadgeButton(
-            contentDescription = stringResource(R.string.afternote_editor_label_receiver_add),
-            onClick = {
-                state.toggleTextField()
-                events.onAddClick()
-            },
-            paddingValues = PaddingValues(12.dp),
-            size = 24.dp,
+            contentDescription = stringResource(R.string.afternote_editor_content_description_add),
+            onClick = { state.toggleTextField() },
         )
     }
 }
@@ -125,7 +114,7 @@ private fun AfternoteEditorReceiverItem(
         Image(
             painter = painterResource(R.drawable.feature_afternote_img_recipient_profile),
             contentDescription = stringResource(R.string.feature_afternote_content_description_recipient_profile),
-            modifier = Modifier.size(58.dp),
+            modifier = Modifier.size(50.dp),
         )
 
         // 이름과 라벨
