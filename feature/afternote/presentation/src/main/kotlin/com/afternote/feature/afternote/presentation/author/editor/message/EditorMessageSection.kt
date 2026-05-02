@@ -24,17 +24,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.CaptionLabeledTextField
 import com.afternote.core.ui.button.PlusBadgeButton
-import com.afternote.core.ui.modifierextention.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
@@ -109,8 +110,6 @@ private fun EditorMessageItem(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Column(
-            modifier =
-                Modifier.bottomBorder(color = AfternoteDesign.colors.gray2, width = 1.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             CaptionLabeledTextField(
@@ -134,6 +133,7 @@ private fun EditorMessageItem(
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             if (showDeleteButton) {
                 Text(
@@ -141,12 +141,14 @@ private fun EditorMessageItem(
                     style = AfternoteDesign.typography.bodySmallB,
                     color = AfternoteDesign.colors.gray6,
                     modifier =
-                        Modifier.clickable {
-                            focusManager.clearFocus()
-                            onDeleteClick()
-                        },
+                        Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .clickable(role = Role.Button) {
+                                focusManager.clearFocus()
+                                onDeleteClick()
+                            }.padding(horizontal = 8.dp, vertical = 8.dp),
                 )
-                Spacer(Modifier.width(16.dp))
+                Spacer(Modifier.width(8.dp))
             }
 
             Text(
@@ -154,10 +156,12 @@ private fun EditorMessageItem(
                 style = AfternoteDesign.typography.bodySmallB,
                 color = AfternoteDesign.colors.gray6,
                 modifier =
-                    Modifier.clickable {
-                        focusManager.clearFocus()
-                        onRegisterClick()
-                    },
+                    Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .clickable(role = Role.Button) {
+                            focusManager.clearFocus()
+                            onRegisterClick()
+                        }.padding(horizontal = 8.dp, vertical = 8.dp),
             )
         }
     }
