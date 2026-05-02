@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -22,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -49,12 +51,14 @@ data class SelectionDropdownLabelParams(
  * @param menuBackgroundColor 드롭다운 메뉴 배경색 (기본: AfternoteDesign.colors.white)
  * @param shadowElevation 드롭다운 메뉴 그림자 elevation (기본: 0.dp)
  * @param tonalElevation 드롭다운 메뉴 톤 elevation (기본: 0.dp)
+ * @param shape 드롭다운 메뉴 컨테이너 모양 (기본: 4.dp 라운드 — Material3 extraSmall 동등)
  */
 data class DropdownMenuStyle(
     val menuOffset: Dp = 4.dp,
     val menuBackgroundColor: Color? = null,
     val shadowElevation: Dp = 0.dp,
     val tonalElevation: Dp = 0.dp,
+    val shape: Shape = RoundedCornerShape(8.dp),
 )
 
 /**
@@ -130,6 +134,7 @@ fun SelectionDropdown(
                 expanded = expanded,
                 onDismissRequest = { onExpandedChange(false) },
                 modifier = Modifier.offset(y = menuStyle.menuOffset),
+                shape = menuStyle.shape,
                 containerColor = menuBackgroundResolved,
                 shadowElevation = menuStyle.shadowElevation,
                 tonalElevation = menuStyle.tonalElevation,
