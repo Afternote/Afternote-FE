@@ -1,7 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
 import android.util.Log
-import androidx.compose.foundation.text.input.TextFieldState
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -23,8 +22,6 @@ import com.afternote.feature.afternote.presentation.author.editor.model.Register
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
-import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
-import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorUiState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteSaveState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationException
@@ -187,7 +184,10 @@ private data class EditorFormSnapshot(
  *
  * **SSOT:** 비즈니스 폼 필드는 [EditorFormState] + [editorFormStateFlow]이며, 프로세스 종료 시 [SavedStateHandle] JSON 스냅샷으로 복원합니다.
  * 추모 플레이리스트 곡 목록은 폼의 [EditorFormState.memorialPlaylistSongs]와 그래프 스코프 [MemorialPlaylistStateHolder]가 동기화된 뒤 스냅샷에 포함됩니다.
- * 순수 UI는 [editorUi] ([AfternoteEditorUiState])가 담당합니다.
+ *
+ * **UI Layer 분리:** ViewModel은 Compose UI 객체(`TextFieldState`, `SnapshotStateList`, 파사드)를 들지 않습니다.
+ * UI 레이어는 `rememberAfternoteEditorState(formStateSource = editorFormStateFlow, updateForm = ::updateForm)`로
+ * 자체 파사드를 만들고, prefill 등 UI 상태 변경은 [AfternoteEditorEvent.PrefillLoaded] 이벤트로 위임받습니다.
  *
  * 수정 모드(`itemId` 있음)의 상세 로드는 [AfternoteDetailViewModel]과 같이 `init`에서만 트리거한다 (`LaunchedEffect`로 네비게이션에 위임하지 않음).
  * 서버 원본 카테고리(저장 API용)는 전용 [SavedStateHandle] 키에 보관해 폼 JSON과 함께 프로세스 데스 후 복원된다.
@@ -210,31 +210,20 @@ class AfternoteEditorViewModel
                 encodeDefaults = true
             }
 
-        val editorUi: AfternoteEditorUiState =
-            AfternoteEditorUiState(
-                idState = TextFieldState(),
-                passwordState = TextFieldState(),
-                afternoteEditReceiverNameState = TextFieldState(),
-                phoneNumberState = TextFieldState(),
-                customServiceNameState = TextFieldState(),
-                customLastWishState = TextFieldState(),
-            )
-
         private val editorForm =
             MutableStateFlow(readFormSnapshotOrDefault())
 
-        /** 비즈니스 폼 상태 (UDF 소스). */
+        /** 비즈니스 폼 상태 (UDF 소스). UI 레이어 파사드는 [updateForm]을 통해 갱신한다. */
         val editorFormStateFlow: StateFlow<EditorFormState> = editorForm.asStateFlow()
 
-        val editorFormState: AfternoteEditorState =
-            AfternoteEditorState(
-                ui = editorUi,
-                updateForm = { block ->
-                    editorForm.update(block)
-                    persistFormSnapshot(editorForm.value)
-                },
-                formState = editorForm.asStateFlow(),
-            )
+        /**
+         * UI 레이어(파사드)에서 폼 상태를 단방향으로 갱신할 때 호출하는 인텐트.
+         * SavedState 스냅샷 직렬화도 함께 수행한다.
+         */
+        fun updateForm(block: (EditorFormState) -> EditorFormState) {
+            editorForm.update(block)
+            persistFormSnapshot(editorForm.value)
+        }
 
         private val _saveState = MutableStateFlow(AfternoteSaveState())
         val saveState: StateFlow<AfternoteSaveState> = _saveState.asStateFlow()
@@ -372,7 +361,8 @@ class AfternoteEditorViewModel
                     .onSuccess { detail ->
                         val prefill = AfternoteEditorFormMapper.buildEditorFormPrefill(detail)
                         savedStateHandle[EDITOR_ORIGINAL_CATEGORY_FOR_API_KEY] = prefill.category.name
-                        editorFormState.applyFormPrefill(prefill)
+                        // UI 레이어 파사드가 TextFieldState·SnapshotStateList 등 UI 상태를 갱신하도록 위임.
+                        _events.send(AfternoteEditorEvent.PrefillLoaded(prefill))
                     }
             }
         }

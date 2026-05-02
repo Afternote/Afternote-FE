@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
 import com.afternote.core.ui.bottombar.BottomNavTab
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
 
 /**
  * 콜백 그룹 (S107: 파라미터 7개 이하 유지).
@@ -35,6 +36,14 @@ sealed interface AfternoteEditorEvent {
 
     data class ThumbnailUploaded(
         val url: String,
+    ) : AfternoteEditorEvent
+
+    /**
+     * 수정 모드 진입 시 서버에서 가져온 [EditorFormPrefill]을 UI 레이어 파사드 ([com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState])에
+     * 적용하라는 신호. ViewModel은 UI 상태(TextFieldState 등)를 소유하지 않으므로 이벤트로 위임한다.
+     */
+    data class PrefillLoaded(
+        val prefill: EditorFormPrefill,
     ) : AfternoteEditorEvent
 }
 

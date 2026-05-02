@@ -24,6 +24,7 @@ import com.afternote.feature.afternote.presentation.author.editor.message.Editor
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteSaveState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
+import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.author.navigation.model.SELECTED_RECEIVER_ID_KEY
 
@@ -163,7 +164,12 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
     val route = params.backStackEntry.toRoute<AfternoteRoute.EditorRoute>()
     val saveState by editViewModel.saveState.collectAsStateWithLifecycle()
     val authorReceivers by editViewModel.authorReceiversUi.collectAsStateWithLifecycle()
-    val state = params.editState ?: editViewModel.editorFormState
+    val fallbackState =
+        rememberAfternoteEditorState(
+            formStateSource = editViewModel.editorFormStateFlow,
+            updateForm = editViewModel::updateForm,
+        )
+    val state = params.editState ?: fallbackState
 
     // 새 글 작성 시 기존 상태 초기화 (목적지 화면이 스스로 책임)
     LaunchedEffect(Unit) {
@@ -218,6 +224,17 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
                         Log.e(
                             TAG_AFTERNOTE_EDIT,
                             "apply thumbnailUrl failed",
+                            e,
+                        )
+                    }
+            }
+
+            is AfternoteEditorEvent.PrefillLoaded -> {
+                runCatching { state.applyFormPrefill(event.prefill) }
+                    .onFailure { e ->
+                        Log.e(
+                            TAG_AFTERNOTE_EDIT,
+                            "apply prefill failed",
                             e,
                         )
                     }
