@@ -80,7 +80,10 @@ fun AfternoteEditorReceiverList(
 
         PlusBadgeButton(
             contentDescription = stringResource(R.string.afternote_editor_content_description_add),
-            onClick = { state.toggleTextField() },
+            onClick = {
+                state.toggleTextField()
+                events.onAddClick()
+            },
         )
     }
 }
