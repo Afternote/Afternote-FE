@@ -25,6 +25,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.viewmodel.SocialAccountState
 
+// 설정 - 연결된 계정
 @Composable
 fun SocialAccountRow(
     account: SocialAccountState,
@@ -67,14 +68,15 @@ fun SocialAccountRow(
             checked = account.isConnected,
             onCheckedChange = onToggle,
             thumbContent = {},
-            colors = SwitchDefaults.colors(
-                checkedTrackColor = AfternoteDesign.colors.black,
-                uncheckedTrackColor = AfternoteDesign.colors.gray2,
-                checkedThumbColor = AfternoteDesign.colors.white,
-                uncheckedThumbColor = AfternoteDesign.colors.white,
-                checkedBorderColor = AfternoteDesign.colors.black,
-                uncheckedBorderColor = AfternoteDesign.colors.gray2,
-            ),
+            colors =
+                SwitchDefaults.colors(
+                    checkedTrackColor = AfternoteDesign.colors.black,
+                    uncheckedTrackColor = AfternoteDesign.colors.gray2,
+                    checkedThumbColor = AfternoteDesign.colors.white,
+                    uncheckedThumbColor = AfternoteDesign.colors.white,
+                    checkedBorderColor = AfternoteDesign.colors.black,
+                    uncheckedBorderColor = AfternoteDesign.colors.gray2,
+                ),
         )
     }
 }
