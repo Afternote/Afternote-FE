@@ -7,15 +7,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.feature.timeletter.presentation.R
 
 @Composable
 fun SendScheduleRow(
@@ -48,7 +48,7 @@ fun SendScheduleRow(
                 color = AfternoteDesign.colors.gray9,
             )
             Icon(
-                imageVector = Icons.Default.KeyboardArrowDown,
+                painter = painterResource(R.drawable.down_vector),
                 contentDescription = "날짜 변경",
                 tint = AfternoteDesign.colors.gray6,
                 modifier = Modifier.size(20.dp),
@@ -73,7 +73,7 @@ fun SendScheduleRow(
                 color = AfternoteDesign.colors.gray9,
             )
             Icon(
-                imageVector = Icons.Default.KeyboardArrowDown,
+                painter = painterResource(R.drawable.down_vector),
                 contentDescription = "시간 변경",
                 tint = AfternoteDesign.colors.gray6,
                 modifier = Modifier.size(20.dp),

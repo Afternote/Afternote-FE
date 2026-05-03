@@ -20,10 +20,10 @@ import com.afternote.feature.timeletter.domain.DraftLetter
 @Composable
 fun DraftLetterItem(
     draft: DraftLetter,
+    modifier: Modifier = Modifier,
     isEditMode: Boolean = false,
     isSelected: Boolean = false,
     onToggle: () -> Unit = {},
-    modifier: Modifier = Modifier,
 ) {
     Row(
         modifier =
