@@ -54,7 +54,8 @@ fun ReceiverListScreen(
     val groupedReceivers =
         remember(receivers, searchState.text) {
             val query = searchState.text.toString()
-            val filtered = if (query.isBlank()) receivers else receivers.filter { it.name.contains(query) }
+            val filtered =
+                if (query.isBlank()) receivers else receivers.filter { it.name.contains(query) }
             KoreanConsonantUtil.groupByInitialConsonant(filtered) { it.name }
         }
 

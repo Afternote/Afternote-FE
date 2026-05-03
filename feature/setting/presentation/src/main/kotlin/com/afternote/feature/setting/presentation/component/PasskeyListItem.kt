@@ -18,17 +18,20 @@ import com.afternote.feature.setting.presentation.R
 
 @Composable
 fun PasskeyListItem(modifier: Modifier = Modifier) {
-    Row(modifier = modifier
-        .fillMaxWidth()
-        .padding(horizontal = 20.dp),
-        verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Image(painterResource(R.drawable.ic_apple_login), contentDescription = "패스키기본")
-        Spacer(modifier= Modifier.weight(1f))
+        Spacer(modifier = Modifier.weight(1f))
         Column {
             Text("이름")
             Text("생성일시")
         }
-        Spacer(modifier= Modifier.weight(1f))
+        Spacer(modifier = Modifier.weight(1f))
         Box {
             Image(painterResource(R.drawable.ic_vector1), contentDescription = "왼쪽 막대기")
             Image(painterResource(R.drawable.ic_vector2), contentDescription = "오른쪽 막대기")

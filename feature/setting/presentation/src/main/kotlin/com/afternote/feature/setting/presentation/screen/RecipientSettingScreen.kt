@@ -59,12 +59,15 @@ fun RecipientSetScreen(modifier: Modifier = Modifier) {
                     Image(
                         painterResource(R.drawable.ic_default_profile),
                         contentDescription = "프로필",
-                        modifier = Modifier.size(134.dp)
+                        modifier = Modifier.size(134.dp),
                     )
                 }
             }
             item {
-                Column(modifier = Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement . spacedBy (4.dp)) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
                     Text("이름", style = AfternoteDesign.typography.bodySmallB)
                     Text("관계", style = AfternoteDesign.typography.bodySmallB)
                 }

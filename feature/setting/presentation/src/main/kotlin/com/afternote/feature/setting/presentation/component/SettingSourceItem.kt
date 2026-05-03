@@ -86,9 +86,10 @@ fun SettingSourceItem(
                 )
                 Text(
                     text = item.date,
-                    style = AfternoteDesign.typography.footnoteCaption.copy(
-                        color = AfternoteDesign.colors.gray5,
-                    ),
+                    style =
+                        AfternoteDesign.typography.footnoteCaption.copy(
+                            color = AfternoteDesign.colors.gray5,
+                        ),
                 )
             }
 
@@ -109,11 +110,12 @@ private fun SettingSourceItemPreview() {
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             SettingSourceItem(
-                item = SettingSourceItemData(
-                    name = "갤러리",
-                    date = "최종 작성일 2025.11.26.",
-                    iconBgColor = Color(0xFFF5F5F5),
-                ),
+                item =
+                    SettingSourceItemData(
+                        name = "갤러리",
+                        date = "최종 작성일 2025.11.26.",
+                        iconBgColor = Color(0xFFF5F5F5),
+                    ),
                 icon = painterResource(R.drawable.ic_default_profile),
                 onClick = {},
             )

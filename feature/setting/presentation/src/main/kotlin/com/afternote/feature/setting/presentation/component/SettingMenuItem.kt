@@ -25,11 +25,12 @@ fun SettingMenuItem(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .clickable(onClick = onClick)
+                .padding(horizontal = 20.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(label, style = AfternoteDesign.typography.bodyBase)

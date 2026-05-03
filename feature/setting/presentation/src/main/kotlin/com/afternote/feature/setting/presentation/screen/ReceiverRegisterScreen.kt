@@ -89,7 +89,7 @@ fun ReceiverRegisterScreen(
                 }
             }
             item {
-                Spacer(modifier= Modifier.height(56.dp))
+                Spacer(modifier = Modifier.height(56.dp))
                 Text("이름", modifier = Modifier.fillMaxWidth())
                 AfternoteTextField(
                     state = nameState,
@@ -97,16 +97,16 @@ fun ReceiverRegisterScreen(
                 )
             }
             item {
-                Spacer(modifier= Modifier.height(24.dp))
-                Text("연락처", modifier= Modifier.fillMaxWidth())
+                Spacer(modifier = Modifier.height(24.dp))
+                Text("연락처", modifier = Modifier.fillMaxWidth())
                 AfternoteTextField(
                     state = nameState,
                     placeholder = "연락처를 지정해주세요",
                 )
             }
             item {
-                Spacer(modifier= Modifier.height(24.dp))
-                Text("관계", modifier= Modifier.fillMaxWidth())
+                Spacer(modifier = Modifier.height(24.dp))
+                Text("관계", modifier = Modifier.fillMaxWidth())
                 val shape = RoundedCornerShape(8.dp)
                 Box(modifier = Modifier.fillMaxWidth()) {
                     Row(
@@ -138,9 +138,10 @@ fun ReceiverRegisterScreen(
                     DropdownMenu(
                         expanded = relationExpanded,
                         onDismissRequest = { relationExpanded = false },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(AfternoteDesign.colors.white),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .background(AfternoteDesign.colors.white),
                     ) {
                         relationOptions.forEach { option ->
                             DropdownMenuItem(
@@ -161,8 +162,8 @@ fun ReceiverRegisterScreen(
                 }
             }
             item {
-                Spacer(modifier= Modifier.height(24.dp))
-                Text("이메일", modifier= Modifier.fillMaxWidth())
+                Spacer(modifier = Modifier.height(24.dp))
+                Text("이메일", modifier = Modifier.fillMaxWidth())
                 AfternoteTextField(
                     state = nameState,
                     placeholder = "afternote@email.com",

@@ -59,9 +59,10 @@ fun PassKeyMakingScreen(
                 )
             }
             Column(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 63.dp),
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 63.dp),
             ) {
                 AfternoteButton(
                     text = "지문 인증하기",
