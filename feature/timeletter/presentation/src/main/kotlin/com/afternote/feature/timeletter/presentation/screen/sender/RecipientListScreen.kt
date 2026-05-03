@@ -39,7 +39,7 @@ import com.afternote.feature.timeletter.presentation.component.RecipientListItem
 import kotlinx.coroutines.launch
 
 @Composable
-fun RecipntListScreen(
+fun RecipientListScreen(
     recipients: List<Recipient>,
     onBackClick: () -> Unit,
     onConfirmClick: (List<Recipient>) -> Unit,
