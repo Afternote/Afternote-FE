@@ -79,8 +79,10 @@ fun TimeLetterBottomBar(
                 Modifier
                     .width(106.dp)
                     .height(43.dp)
-                    .background(color = AfternoteDesign.colors.gray2, shape = RoundedCornerShape(size = 20132640.dp))
-                    .padding(start = 6.dp, end = 6.dp),
+                    .background(
+                        color = AfternoteDesign.colors.gray2,
+                        shape = RoundedCornerShape(size = 20132640.dp),
+                    ).padding(start = 6.dp, end = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             AlignButton(

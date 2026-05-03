@@ -25,7 +25,8 @@ fun TimeLetterTextButton(
     isActive: Boolean = false,
 ) {
     val shape = RoundedCornerShape(6.dp)
-    val backgroundColor = if (isActive) AfternoteDesign.colors.black else AfternoteDesign.colors.gray2
+    val backgroundColor =
+        if (isActive) AfternoteDesign.colors.black else AfternoteDesign.colors.gray2
     val textColor = if (isActive) AfternoteDesign.colors.white else AfternoteDesign.colors.gray6
 
     Row(

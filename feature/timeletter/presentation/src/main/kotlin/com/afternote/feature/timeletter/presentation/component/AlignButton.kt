@@ -33,7 +33,8 @@ fun AlignButton(
                     } else {
                         Modifier
                     },
-                ).clickable(onClick = onClick),
+                )
+                .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Icon(

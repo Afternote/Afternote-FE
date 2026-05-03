@@ -40,7 +40,8 @@ fun TimeLetterBlockItem(
                     width = 1.dp,
                     color = AfternoteDesign.colors.gray4,
                     shape = RoundedCornerShape(size = 6.dp),
-                ).fillMaxWidth(),
+                )
+                .fillMaxWidth(),
     ) {
         Image(
             painterResource(com.afternote.feature.timeletter.presentation.R.drawable.container),
