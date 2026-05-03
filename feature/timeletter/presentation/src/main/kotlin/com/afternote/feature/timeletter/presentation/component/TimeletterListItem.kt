@@ -41,8 +41,7 @@ fun TimeLetterListItem(
                     width = 1.dp,
                     color = AfternoteDesign.colors.gray4,
                     shape = RoundedCornerShape(size = 6.dp),
-                )
-                .fillMaxWidth()
+                ).fillMaxWidth()
                 .padding(vertical = 19.dp, horizontal = 15.dp),
     ) {
         Row(
