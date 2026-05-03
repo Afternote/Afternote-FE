@@ -38,9 +38,10 @@ fun AfternoteIconCountCard(
         border = BorderStroke(1.dp, AfternoteDesign.colors.gray2),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 18.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 18.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -58,9 +59,10 @@ fun AfternoteIconCountCard(
             )
             Text(
                 text = "${count}건",
-                style = AfternoteDesign.typography.bodySmallR.copy(
-                    textDecoration = TextDecoration.Underline,
-                ),
+                style =
+                    AfternoteDesign.typography.bodySmallR.copy(
+                        textDecoration = TextDecoration.Underline,
+                    ),
                 color = AfternoteDesign.colors.gray7,
             )
             Spacer(Modifier.width(4.dp))

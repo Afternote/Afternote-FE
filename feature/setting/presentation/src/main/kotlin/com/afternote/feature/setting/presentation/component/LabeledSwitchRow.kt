@@ -29,7 +29,7 @@ fun LabeledSwitchRow(
         Text(
             text = label,
             style = AfternoteDesign.typography.textField,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
         )
         Switch(
             checked = checked,

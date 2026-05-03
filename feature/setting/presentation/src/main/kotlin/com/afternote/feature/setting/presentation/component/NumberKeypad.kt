@@ -18,12 +18,13 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
 
-private val keyRows = listOf(
-    listOf("1", "2", "3"),
-    listOf("4", "5", "6"),
-    listOf("7", "8", "9"),
-    listOf("del", "0", "확인"),
-)
+private val keyRows =
+    listOf(
+        listOf("1", "2", "3"),
+        listOf("4", "5", "6"),
+        listOf("7", "8", "9"),
+        listOf("del", "0", "확인"),
+    )
 
 @Composable
 fun NumberKeypad(
@@ -43,31 +44,40 @@ fun NumberKeypad(
             ) {
                 row.forEach { key ->
                     Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .aspectRatio(2f)
-                            .clickable {
-                                when (key) {
-                                    "del" -> onDeleteClick()
-                                    "확인" -> onConfirmClick()
-                                    else -> onDigitClick(key)
-                                }
-                            },
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .aspectRatio(2f)
+                                .clickable {
+                                    when (key) {
+                                        "del" -> onDeleteClick()
+                                        "확인" -> onConfirmClick()
+                                        else -> onDigitClick(key)
+                                    }
+                                },
                         contentAlignment = Alignment.Center,
                     ) {
                         when (key) {
-                            "del" -> Icon(
-                                painter = painterResource(R.drawable.core_ui_arrow_left),
-                                contentDescription = stringResource(R.string.core_ui_content_description_back),
-                            )
-                            "확인" -> Text(
-                                text = "확인",
-                                style = AfternoteDesign.typography.h2,
-                            )
-                            else -> Text(
-                                text = key,
-                                style = AfternoteDesign.typography.h2,
-                            )
+                            "del" -> {
+                                Icon(
+                                    painter = painterResource(R.drawable.core_ui_arrow_left),
+                                    contentDescription = stringResource(R.string.core_ui_content_description_back),
+                                )
+                            }
+
+                            "확인" -> {
+                                Text(
+                                    text = "확인",
+                                    style = AfternoteDesign.typography.h2,
+                                )
+                            }
+
+                            else -> {
+                                Text(
+                                    text = key,
+                                    style = AfternoteDesign.typography.h2,
+                                )
+                            }
                         }
                     }
                 }
