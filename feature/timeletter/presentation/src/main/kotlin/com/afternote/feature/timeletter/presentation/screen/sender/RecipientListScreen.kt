@@ -51,27 +51,31 @@ fun RecipientListScreen(
     val coroutineScope = rememberCoroutineScope()
     var selectedConsonant by remember { mutableStateOf<Char?>(null) }
 
-    val groupedRecipients = remember(recipients, searchState.text) {
-        val query = searchState.text.toString()
-        val filtered = if (query.isBlank()) recipients else recipients.filter { it.name.contains(query) }
-        KoreanConsonantUtil.groupByInitialConsonant(filtered) { it.name }
-    }
+    val groupedRecipients =
+        remember(recipients, searchState.text) {
+            val query = searchState.text.toString()
+            val filtered =
+                if (query.isBlank()) recipients else recipients.filter { it.name.contains(query) }
+            KoreanConsonantUtil.groupByInitialConsonant(filtered) { it.name }
+        }
 
-    val consonantIndexMap = remember(groupedRecipients) {
-        var index = 0
-        buildMap {
-            groupedRecipients.forEach { (consonant, items) ->
-                put(consonant, index)
-                index += 1 + items.size
+    val consonantIndexMap =
+        remember(groupedRecipients) {
+            var index = 0
+            buildMap {
+                groupedRecipients.forEach { (consonant, items) ->
+                    put(consonant, index)
+                    index += 1 + items.size
+                }
             }
         }
-    }
 
     LaunchedEffect(listState.firstVisibleItemIndex) {
-        selectedConsonant = consonantIndexMap.entries
-            .filter { it.value <= listState.firstVisibleItemIndex }
-            .maxByOrNull { it.value }
-            ?.key
+        selectedConsonant =
+            consonantIndexMap.entries
+                .filter { it.value <= listState.firstVisibleItemIndex }
+                .maxByOrNull { it.value }
+                ?.key
     }
 
     Scaffold(
@@ -94,10 +98,11 @@ fun RecipientListScreen(
         },
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(top = 10.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(top = 10.dp),
         ) {
             AfternoteTextField(
                 state = searchState,
@@ -109,9 +114,10 @@ fun RecipientListScreen(
             Row(modifier = Modifier.fillMaxSize()) {
                 LazyColumn(
                     state = listState,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 20.dp),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .padding(start = 20.dp),
                 ) {
                     groupedRecipients.forEach { (consonant, items) ->
                         stickyHeader(key = "header_$consonant") {
@@ -122,8 +128,11 @@ fun RecipientListScreen(
                                 recipient = recipient,
                                 selected = recipient.id in selectedIds,
                                 onSelectedChange = { checked ->
-                                    if (checked) selectedIds.add(recipient.id)
-                                    else selectedIds.remove(recipient.id)
+                                    if (checked) {
+                                        selectedIds.add(recipient.id)
+                                    } else {
+                                        selectedIds.remove(recipient.id)
+                                    }
                                 },
                             )
                         }
@@ -131,9 +140,10 @@ fun RecipientListScreen(
                     item { Spacer(modifier = Modifier.padding(14.dp)) }
                 }
                 Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .padding(end = 8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxHeight()
+                            .padding(end = 8.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     KoreanConsonantIndex(

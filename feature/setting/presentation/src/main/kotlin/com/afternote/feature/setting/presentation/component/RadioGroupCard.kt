@@ -48,15 +48,13 @@ fun RadioGroupCard(
                     width = 1.dp,
                     color = borderColor,
                     shape = RoundedCornerShape(6.dp),
-                )
-                .selectable(
+                ).selectable(
                     selected = selected,
                     onClick = onClick,
                     role = Role.RadioButton,
                     indication = ripple(),
                     interactionSource = remember { MutableInteractionSource() },
-                )
-                .padding(16.dp),
+                ).padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         CustomRadioButton(
