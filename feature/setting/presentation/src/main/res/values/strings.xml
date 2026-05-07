@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 설정 공통 -->
+    <string name="settings_title">설정</string>
+    <!-- 섹션 헤더 -->
+    <string name="settings_section_account">계정</string>
+    <string name="settings_section_recipient">수신자 관리</string>
+    <string name="settings_section_security">보안</string>
+    <string name="settings_section_support">고객지원</string>
+    <!-- 계정 -->
+    <string name="settings_account_profile_edit">프로필 수정</string>
+    <string name="settings_account_password_change">비밀번호 변경</string>
+    <string name="settings_account_linked_account">연결된 계정</string>
+    <string name="settings_account_notification">알림 설정</string>
+    <!-- 수신자 관리 -->
+    <string name="settings_recipient_list">수신자 목록</string>
+    <string name="settings_recipient_register">수신자 등록</string>
+    <string name="settings_recipient_after_delivery">사후 전달 조건</string>
+    <!-- 보안 -->
+    <string name="settings_security_passkey">패스키 관리</string>
+    <string name="settings_security_app_lock">앱 잠금 설정</string>
+    <!-- 고객지원 -->
+    <string name="settings_support_faq">FAQ</string>
+    <string name="settings_support_inquiry">고객센터</string>
+    <string name="settings_support_notice">공지사항</string>
+    <string name="settings_support_terms">이용약관</string>
+    <string name="settings_support_privacy">개인정보 취급방침</string>
+    <string name="settings_support_service_info">애프터노트 서비스 안내</string>
+    <!-- 로그아웃 -->
+    <string name="settings_logout">로그아웃</string>
+    <string name="settings_logout_dialog_message">애프터노트를 로그아웃하시겠습니까?</string>
+    <string name="settings_logout_dialog_cancel">아니요</string>
+    <string name="settings_logout_dialog_confirm">예</string>
+
+
+    <string name="withdraw_top_message">애프터노트를 정말 탈퇴하시겠습니까?\n서비스 탈퇴 전 아래 내용을 꼭 확인해 주세요.</string>
+
+    <!-- 탈퇴할 계정 -->
+    <string name="withdraw_account_section">탈퇴할 계정</string>
+
+    <!-- 탈퇴 시 삭제되는 내용 -->
+    <string name="withdraw_delete_section">탈퇴 시 삭제되는 내용</string>
+    <string name="withdraw_delete_description">다음 정보는 탈퇴와 동시에 영구적으로 삭제됩니다.</string>
+    <string name="withdraw_delete_item_1">작성한 모든 기록 및 메세지</string>
+    <string name="withdraw_delete_item_2">예약된 데이터 전달 설정</string>
+    <string name="withdraw_delete_item_3">업로드한 파일 및 첨부 데이터</string>
+    <string name="withdraw_delete_item_4">계정 정보 및 프로필 정보</string>
+    <string name="withdraw_delete_warning">삭제된 데이터는 어떠한 경우에도 복구할 수 없습니다.</string>
+
+    <!-- 탈퇴 전 확인 사항 -->
+    <string name="withdraw_check_section">탈퇴 전 확인 사항</string>
+    <string name="withdraw_check_item_1">전달이 예정된 메세지는 모두 취소됩니다.</string>
+    <string name="withdraw_check_item_2">삭제된 기록은 다시 확인할 수 없습니다.</string>
+    <string name="withdraw_check_item_3">탈퇴일로부터 30일 이후, 해당 계정의 이메일 주소로 새로 가입할 수 있습니다.</string>
+    <string name="withdraw_check_item_4">단 기존 정보는 파기되어 복구할 수 없습니다.</string>
+
+    <!-- 개인정보 처리 안내 -->
+    <string name="withdraw_privacy_section">개인정보 처리 안내</string>
+    <string name="withdraw_privacy_description">회원 탈퇴 시 개인정보는 즉시 삭제됩니다.\n단, 관련 법령에 따라 일정 기간 보관이 필요한 경우 해당 정보는 법적 기준에 따라 보관 후 삭제됩니다.</string>
+
+    <!-- 동의 체크박스 -->
+    <string name="withdraw_agree_checkbox">탈퇴 주의사항을 모두 확인했으며, 이에 동의합니다.</string>
+
+    <!-- 버튼 -->
+    <string name="withdraw_cancel_button">취소하기</string>
+    <string name="withdraw_confirm_button">탈퇴하기</string>
+
+    <!-- 탈퇴 확인 화면 -->
+    <string name="withdraw_confirm_top_message">안전한 탈퇴 진행을 위해 아래 문장을 입력해 주세요.</string>
+    <string name="withdraw_confirm_placeholder">탈퇴하겠습니다</string>
+    <string name="withdraw_confirm_error">문장이 일치하지 않습니다. 재입력해 주세요.</string>
+    <string name="withdraw_confirm_prev_button">이전으로</string>
+    <string name="withdraw_complete_message">회원 탈퇴가 완료되었습니다.\n애프터노트를 이용해 주셔서 감사합니다.</string>
+    <string name="withdraw_complete_button">확인하기</string>
+
+    <!-- 설정 - 회원 탈퇴 메뉴 -->
+    <string name="settings_account_withdraw">회원 탈퇴</string>
+
+    <!-- Connected Accounts Screen -->
+    <string name="connected_accounts_title">연결된 계정</string>
+    <string name="sns_login_section_title">SNS 계정 연결</string>
+    <string name="sns_login_section_desc">자주 사용하는 소셜 계정을 연결하고,\n빠르게 로그인 할 수 있습니다.</string>
+
+    <!-- Social Login Labels -->
+    <string name="login_with_naver">네이버 계정으로 로그인</string>
+    <string name="login_with_google">구글 계정으로 로그인</string>
+    <string name="login_with_kakao">카카오톡 계정으로 로그인</string>
+    <string name="login_with_apple">애플 계정으로 로그인</string>
+
+    <!-- Connection Status -->
+    <string name="status_not_connected">연결되지 않음</string>
+
+    <!--푸시 알림 string-->
+    <string name="push_notification_title">푸시 알림 설정</string>
+    <string name="device_alarm_setting">기기 알림 설정</string>
+    <string name="device_alarm_off">꺼짐</string>
+    <string name="device_alarm_guide">전체 알림 수신 설정은 기기 알림 설정에서 가능합니다.</string>
+    <string name="marketing_alarm_setting">마케팅 및 광고 알림 설정</string>
+    <string name="sms">문자 메시지</string>
+    <string name="email">E-mail</string>
+    <string name="push_alarm">푸시 알림</string>
+    <string name="marketing_guide_1">서비스의 중요 안내사항 및 수신인 관련 정보는 위 수신 여부와 관계없이 발송됩니다.</string>
+    <string name="marketing_guide_2">문자, 이메일, 푸시 메세지 수신을 선택하면 광고성 정보 수신에 자동 동의 처리됩니다.</string>
+    <string name="marketing_guide_3">앱 푸시 알림은 애프터노트 앱 로그인 › 설정 › 푸시 알림 설정에서 알림을 끌 수 있습니다.</string>
+
+
+    <string name="timeletter">타임레터</string>
+    <string name="mind_record">마음의 기록</string>
+    <string name="afternote">애프터노트</string>
+    <string name="push_notification_device_guide">전체 알림 수신 설정은 기기 알림 설정에서 가능합니다.</string>
+
+    <!-- 패스키 관리 화면 -->
+    <string name="passkey_management_title">패스키 관리</string>
+    <string name="passkey_management_description">패스키를 만들어 비밀번호 대신 지문 및 얼굴 인식으로\n 쉽고 안전하게 로그인 할 수 있습니다.\n패스키는 본인 소유의 기기에서만 생성해주세요.</string>
+    <string name="passkey_register">패스키 등록</string>
+
+    <string name="passkey_fingerprint_guide">패스키로 사용할 지문을 인식해 주세요.</string>
+    <string name="btn_fingerprint_auth">지문 인증하기</string>
+    <string name="btn_password_auth">비밀번호로 인증하기</string>
+    <string name="insert_password">비밀번호를 입력해주세요</string>
+
+    <!-- 안내 텍스트 -->
+    <string name="passkey_section_title">패스키 관리</string>
+    <string name="passkey_description">패스키를 만들어 비밀번호 대신 지문 및 얼굴 인식으로\n쉽고 안전하게 로그인할 수 있습니다.\n패스키는 본인 소유의 기기에서만 생성해주세요.</string>
+
+    <!-- 패스키 목록 -->
+    <string name="passkey_list_header">패스키 목록</string>
+
+
+    <string name="delivery_method_section_title">정보 전달 방법</string>
+
+    <string name="delivery_method_auto_title">자동 전달</string>
+    <string name="delivery_method_auto_description">설정된 조건 충족 시, 별도의 요청 없이 지정한 수신자에게 자동으로 전달됩니다.</string>
+
+    <string name="delivery_method_recipient_approval_title">수신자 승인 후 전달</string>
+    <string name="delivery_method_recipient_approval_description">수신자의 요청과 확인 절차를 거친 후, 안전하게 정보가 전달됩니다.</string>
+
+    <!-- 정보 처리 방법 섹션 -->
+    <string name="processing_method_section_title">정보 처리 방법</string>
+
+    <string name="processing_method_inactive_title">일정 기간 앱 미사용 시</string>
+    <string name="processing_method_inactive_description">1년 이상의 기간 동안 앱 사용이 없을 경우 전달 조건이 자동으로 충족됩니다.</string>
+
+    <string name="processing_method_specific_date_title">특정 날짜에 전달</string>
+    <string name="processing_method_specific_date_description">미리 정한 날짜에 맞추어 정보가 자동으로 전달됩니다.</string>
+
+    <string name="processing_method_recipient_request_title">수신자 요청 이후</string>
+    <string name="processing_method_recipient_request_description">수신자의 요청이 접수된 후, 확인 절차를 거쳐 전달이 진행됩니다.</string>
+
+    <!-- 마지막 인삿말 섹션 -->
+    <string name="farewell_message_section_title">마지막 인삿말</string>
+    <string name="farewell_message_hint">마지막 인삿말을 입력해주세요</string>
+
+    <!-- 하단 안내 문구 -->
+    <string name="after_delivery_notice_1">해당 정보는 지정된 조건이 충족 시에만 전달됩니다.</string>
+    <string name="after_delivery_notice_2">예기치 않은 상황에서도 설정된 방식에 따라 안전하게 전달됩니다.</string>
+</resources>

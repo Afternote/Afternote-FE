@@ -1,4 +1,4 @@
-package com.afternote.feature.timeletter.presentation.screen.sender
+package com.afternote.feature.setting.presentation.screen
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,6 +27,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.common.util.KoreanConsonantUtil
+import com.afternote.core.model.setting.ReceiverListItem
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.KoreanConsonantIndex
 import com.afternote.core.ui.TextFieldType
@@ -34,15 +35,14 @@ import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
-import com.afternote.feature.timeletter.domain.Recipient
-import com.afternote.feature.timeletter.presentation.component.RecipientListItem
+import com.afternote.feature.setting.presentation.component.ReceiverListItem
 import kotlinx.coroutines.launch
 
 @Composable
-fun RecipientListScreen(
-    recipients: List<Recipient>,
+fun ReceiverListScreen(
+    receivers: List<ReceiverListItem>,
     onBackClick: () -> Unit,
-    onConfirmClick: (List<Recipient>) -> Unit,
+    onConfirmClick: (List<ReceiverListItem>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val searchState = rememberTextFieldState()
@@ -51,19 +51,19 @@ fun RecipientListScreen(
     val coroutineScope = rememberCoroutineScope()
     var selectedConsonant by remember { mutableStateOf<Char?>(null) }
 
-    val groupedRecipients =
-        remember(recipients, searchState.text) {
+    val groupedReceivers =
+        remember(receivers, searchState.text) {
             val query = searchState.text.toString()
             val filtered =
-                if (query.isBlank()) recipients else recipients.filter { it.name.contains(query) }
+                if (query.isBlank()) receivers else receivers.filter { it.name.contains(query) }
             KoreanConsonantUtil.groupByInitialConsonant(filtered) { it.name }
         }
 
     val consonantIndexMap =
-        remember(groupedRecipients) {
+        remember(groupedReceivers) {
             var index = 0
             buildMap {
-                groupedRecipients.forEach { (consonant, items) ->
+                groupedReceivers.forEach { (consonant, items) ->
                     put(consonant, index)
                     index += 1 + items.size
                 }
@@ -82,15 +82,15 @@ fun RecipientListScreen(
         modifier = modifier,
         topBar = {
             DetailTopBar(
-                title = "수신인 목록",
+                title = "수신자 목록",
                 onBackClick = onBackClick,
             )
         },
         bottomBar = {
             AfternoteButton(
-                text = "수신자 선택 완료하기",
+                text = "수신자 등록하기",
                 onClick = {
-                    onConfirmClick(recipients.filter { it.id in selectedIds })
+                    onConfirmClick(receivers.filter { it.receiverId in selectedIds })
                 },
                 type = AfternoteButtonType.Default,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
@@ -119,19 +119,19 @@ fun RecipientListScreen(
                             .weight(1f)
                             .padding(start = 20.dp),
                 ) {
-                    groupedRecipients.forEach { (consonant, items) ->
+                    groupedReceivers.forEach { (consonant, items) ->
                         stickyHeader(key = "header_$consonant") {
                             ConsonantSectionHeader(consonant = consonant)
                         }
-                        items(items, key = { it.id }) { recipient ->
-                            RecipientListItem(
-                                recipient = recipient,
-                                selected = recipient.id in selectedIds,
+                        items(items, key = { it.receiverId }) { receiver ->
+                            ReceiverListItem(
+                                receiver = receiver,
+                                selected = receiver.receiverId in selectedIds,
                                 onSelectedChange = { checked ->
                                     if (checked) {
-                                        selectedIds.add(recipient.id)
+                                        selectedIds.add(receiver.receiverId)
                                     } else {
-                                        selectedIds.remove(recipient.id)
+                                        selectedIds.remove(receiver.receiverId)
                                     }
                                 },
                             )
@@ -173,13 +173,13 @@ private fun ConsonantSectionHeader(consonant: Char) {
 
 @Preview(showBackground = true)
 @Composable
-private fun RecipientListScreenPrev() {
-    RecipientListScreen(
-        recipients =
+private fun ReceiverListScreenPrev() {
+    ReceiverListScreen(
+        receivers =
             listOf(
-                Recipient(id = 1L, name = "박경민", relationship = "친구"),
-                Recipient(id = 2L, name = "김철수", relationship = "가족"),
-                Recipient(id = 3L, name = "이영희", relationship = "연인"),
+                ReceiverListItem(receiverId = 1L, name = "박경민", relation = "친구"),
+                ReceiverListItem(receiverId = 2L, name = "김철수", relation = "가족"),
+                ReceiverListItem(receiverId = 3L, name = "이영희", relation = "연인"),
             ),
         onBackClick = {},
         onConfirmClick = {},

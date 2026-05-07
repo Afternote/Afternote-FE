@@ -14,6 +14,8 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.Afte
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavActions
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingRoute
+import com.afternote.feature.setting.presentation.navigation.SettingNavActions
+import com.afternote.feature.setting.presentation.navigation.SettingRoute
 
 @Composable
 fun rememberOnboardingNavActions(navController: NavController): OnboardingNavActions =
@@ -87,6 +89,40 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
         object : MindRecordNavActions {
             override fun onMemorySpaceBack() {
                 navController.popBackStack()
+            }
+        }
+    }
+
+@Composable
+fun rememberSettingNavActions(appState: AppState): SettingNavActions =
+    remember(appState) {
+        object : SettingNavActions {
+            override fun onLogoutSuccess() {
+                appState.navController.navigate(Route.Onboarding) {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
+
+            override fun onNavigateToWithdrawGuide() {
+                appState.navController.navigate(SettingRoute.WithdrawGuideRoute)
+            }
+
+            override fun onNavigateToWithdrawConfirm() {
+                appState.navController.navigate(SettingRoute.WithdrawConfirmRoute)
+            }
+
+            override fun onWithdrawGuideBack() {
+                appState.navController.popBackStack()
+            }
+
+            override fun onWithdrawConfirmBack() {
+                appState.navController.popBackStack()
+            }
+
+            override fun onWithdrawSuccess() {
+                appState.navController.navigate(Route.Onboarding) {
+                    popUpTo(0) { inclusive = true }
+                }
             }
         }
     }
