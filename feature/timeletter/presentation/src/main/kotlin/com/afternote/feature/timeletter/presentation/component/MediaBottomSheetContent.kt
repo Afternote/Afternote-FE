@@ -46,13 +46,29 @@ fun MediaBottomSheetContent(
             textAlign = TextAlign.Center,
         )
 
-        MediaItem(painter = painterResource(id = R.drawable.ic_image), text = "이미지 추가하기", onClick = onImageClick)
+        MediaItem(
+            painter = painterResource(id = R.drawable.ic_image),
+            text = "이미지 추가하기",
+            onClick = onImageClick,
+        )
         HorizontalDivider()
-        MediaItem(painter = painterResource(id = R.drawable.ic_mic), text = "음성 추가하기", onClick = onVoiceClick)
+        MediaItem(
+            painter = painterResource(id = R.drawable.ic_mic),
+            text = "음성 추가하기",
+            onClick = onVoiceClick,
+        )
         HorizontalDivider()
-        MediaItem(painter = painterResource(id = R.drawable.ic_file), text = "파일 추가하기", onClick = onFileClick)
+        MediaItem(
+            painter = painterResource(id = R.drawable.ic_file),
+            text = "파일 추가하기",
+            onClick = onFileClick,
+        )
         HorizontalDivider()
-        MediaItem(painter = painterResource(id = R.drawable.ic_link), text = "링크 추가하기", onClick = onLinkClick)
+        MediaItem(
+            painter = painterResource(id = R.drawable.ic_link),
+            text = "링크 추가하기",
+            onClick = onLinkClick,
+        )
         HorizontalDivider()
 
         Spacer(modifier = Modifier.height(32.dp))

@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -49,7 +47,7 @@ fun TimeLetterBottomBar(
     ) {
         IconButton(onClick = onMediaAddClick) {
             Icon(
-                imageVector = Icons.Default.Add,
+                painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_add),
                 contentDescription = "미디어 추가",
                 tint = AfternoteDesign.colors.gray7,
                 modifier = Modifier.size(22.dp),
@@ -79,8 +77,10 @@ fun TimeLetterBottomBar(
                 Modifier
                     .width(106.dp)
                     .height(43.dp)
-                    .background(color = AfternoteDesign.colors.gray2, shape = RoundedCornerShape(size = 20132640.dp))
-                    .padding(start = 6.dp, end = 6.dp),
+                    .background(
+                        color = AfternoteDesign.colors.gray2,
+                        shape = RoundedCornerShape(size = 20132640.dp),
+                    ).padding(start = 6.dp, end = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             AlignButton(
