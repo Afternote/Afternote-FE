@@ -2,10 +2,12 @@ package com.afternote.core.di
 
 import com.afternote.core.data.repoimpl.HomeRepositoryImpl
 import com.afternote.core.data.repoimpl.PhotoUploadRepositoryImpl
+import com.afternote.core.data.repoimpl.UserRepositoryImpl
 import com.afternote.core.data.repoimpl.account.AccountRepositoryImpl
 import com.afternote.core.data.repoimpl.auth.AuthRepositoryImpl
 import com.afternote.core.domain.repository.HomeRepository
 import com.afternote.core.domain.repository.PhotoUploadRepository
+import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.account.AccountRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import dagger.Binds
@@ -32,4 +34,8 @@ interface CoreRepositoryModule {
     @Binds
     @Singleton
     fun bindAuthRepository(impl: AuthRepositoryImpl): AuthRepository
+
+    @Binds
+    @Singleton
+    fun bindUserRepository(impl: UserRepositoryImpl): UserRepository
 }
