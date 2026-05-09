@@ -164,13 +164,7 @@ class AfternoteEditorState(
 
     fun showAddAfternoteEditorReceiverDialog() = ui.showAddAfternoteEditorReceiverDialog()
 
-    fun dismissDialog() {
-        ui.dismissDialogInternal {
-            ui.afternoteEditReceiverNameState.edit { replace(0, length, "") }
-            ui.phoneNumberState.edit { replace(0, length, "") }
-            ui.customServiceNameState.edit { replace(0, length, "") }
-        }
-    }
+    fun dismissDialog() = ui.dismissDialog()
 
     fun onAddCustomService() {
         val serviceName =
