@@ -17,9 +17,7 @@ data class ReceiverAfternoteHomeEntryActions(
 /**
  * 수신자 애프터노트 목록 Entry.
  *
- * 단일 호출 결과를 [androidx.paging.PagingData.from]으로 감싸 작성자 화면과 동일한
- * [AfternoteHomeScreen]을 재사용한다. 정적 PagingData는 LoadState로 로딩을 표현하지
- * 못하므로 초기 로딩 여부는 ViewModel uiState에서 직접 계산해 전달한다.
+ * 작성자 측과 동일한 Paging 3 스트림 + [AfternoteHomeScreen]을 그대로 재사용한다.
  */
 @Composable
 fun ReceiverAfternoteHomeEntry(
@@ -27,17 +25,14 @@ fun ReceiverAfternoteHomeEntry(
     viewModel: ReceiverAfternoteHomeViewModel = hiltViewModel(),
     actions: ReceiverAfternoteHomeEntryActions = ReceiverAfternoteHomeEntryActions(),
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
     val items = viewModel.pagedAfternotes.collectAsLazyPagingItems()
 
     AfternoteHomeScreen(
         items = items,
-        selectedCategory = uiState.selectedTab,
-        isInitialLoading = uiState.isLoading && items.itemCount == 0,
-        isRefreshing = false,
-        onCategorySelected = { viewModel.onEvent(ReceiverAfternoteHomeEvent.SelectTab(it)) },
+        selectedCategory = selectedTab,
+        onCategorySelected = viewModel::selectTab,
         onListItemClick = { id, _ -> actions.navigateToDetail(id) },
-        onRefresh = {},
         modifier = modifier,
     )
 }

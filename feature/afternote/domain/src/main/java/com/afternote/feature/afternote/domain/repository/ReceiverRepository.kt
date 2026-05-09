@@ -1,5 +1,7 @@
 package com.afternote.feature.afternote.domain.repository
 
+import androidx.paging.PagingData
+import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItemDto
 import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResult
 import com.afternote.feature.afternote.domain.model.receiver.LoadCountResult
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
@@ -21,6 +23,11 @@ interface ReceiverRepository {
 
     /** 로그아웃·계정 전환·초기화 시 저장 코드를 제거합니다. */
     suspend fun clearAuthCode()
+
+    /**
+     * 서버 페이지네이션 기반 수신 애프터노트 스트림. 인증 코드는 네트워크 계층에서 주입된다.
+     */
+    fun getPagedReceivedAfternotes(category: String?): Flow<PagingData<AfterNoteListItemDto>>
 
     suspend fun getAfterNotesByAuthCode(authCode: String): Result<AfterNotesListResult>
 
