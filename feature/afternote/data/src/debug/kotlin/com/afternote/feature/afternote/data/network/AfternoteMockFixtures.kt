@@ -1,9 +1,7 @@
 package com.afternote.feature.afternote.data.network
 
-import com.afternote.core.model.AlbumCover
 import com.afternote.feature.afternote.data.dto.MusicSearchResponse
 import com.afternote.feature.afternote.data.dto.MusicTrack
-import com.afternote.feature.afternote.data.network.AfternoteMockFixtures.MOCK_LIST_JSON
 import kotlinx.serialization.json.Json
 
 /**
@@ -18,29 +16,6 @@ internal object AfternoteMockFixtures {
             encodeDefaults = false
             ignoreUnknownKeys = true
         }
-
-    /**
-     * 작성자 홈 등에서 쓰던 애프터노트 목 시드 (서비스명 → 날짜).
-     * 목록 API [MOCK_LIST_JSON]과 항목 수가 다를 수 있음.
-     */
-    val authorHomeListSeeds: List<Pair<String, String>> =
-        listOf(
-            "인스타그램" to "2025.02.01",
-            "갤러리" to "2025.01.28",
-            "추모 가이드라인" to "2025.01.28",
-            "페이스북" to "2025.01.20",
-            "파일" to "2025.01.15",
-            "카카오톡" to "2025.01.10",
-        )
-
-    /** 플레이리스트 앨범 행 목업 시드 (이 모듈 DEBUG가 유일한 정의). */
-    val playlistAlbumCoverSeeds: List<AlbumCover> =
-        listOf(
-            AlbumCover(id = "1"),
-            AlbumCover(id = "2"),
-            AlbumCover(id = "3"),
-            AlbumCover(id = "4"),
-        )
 
     val musicSearchResponseJson: String
         get() =
@@ -157,12 +132,12 @@ internal object AfternoteMockFixtures {
 
     val MOCK_SOCIAL_LOGIN_JSON =
         """
-        {"status":200,"code":0,"message":null,"data":{"accessToken":"mock_access_token","refreshToken":"mock_refresh_token","userId":1,"isNewUser":false}}
+        {"status":200,"code":0,"message":null,"data":{"accessToken":"mock_access_token","refreshToken":"mock_refresh_token","newUser":false}}
         """.trimIndent()
 
     val MOCK_LOGIN_JSON =
         """
-        {"status":200,"code":0,"message":null,"data":{"accessToken":"mock_access_token","refreshToken":"mock_refresh_token","userId":1}}
+        {"status":200,"code":0,"message":null,"data":{"accessToken":"mock_access_token","refreshToken":"mock_refresh_token"}}
         """.trimIndent()
 
     val MOCK_LOGOUT_JSON =
