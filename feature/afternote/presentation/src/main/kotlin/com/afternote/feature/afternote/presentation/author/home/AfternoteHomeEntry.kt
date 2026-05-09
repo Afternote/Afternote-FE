@@ -5,8 +5,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
+import com.afternote.feature.afternote.domain.AfternoteServiceType
+import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 
 data class AfternoteHomeEntryActions(
@@ -19,32 +24,46 @@ data class AfternoteHomeEntryActions(
 /**
  * 애프터노트 목록 Entry.
  *
- * ViewModel에서 데이터를 로드·가공하고, Entry는 Screen에 전달만 합니다.
+ * Paging 3 스트림을 LazyPagingItems로 수집해 Screen에 그대로 전달한다.
+ * append 단계 에러는 Snackbar로만 노출하며, 사용자가 다음 페이지에 다시 진입하면
+ * Paging이 자동으로 재시도한다.
  */
 @Composable
 fun AfternoteHomeEntry(
     viewModel: AfternoteHomeViewModel = hiltViewModel(),
     actions: AfternoteHomeEntryActions = AfternoteHomeEntryActions(),
 ) {
-    val uiState by viewModel
-        .uiState
-        .collectAsStateWithLifecycle() // 내부의 collect로 viewModel.uiState를 관찰/수집
+    val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
+    val items = viewModel.pagedAfternotes.collectAsLazyPagingItems()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // 페이징 에러는 상태 기반 one-shot 패턴: Snackbar 노출 후 즉시 소비해 화면 회전 등 재구독 시 재표출 방지
-    uiState.paginationError?.let { errorMessage ->
-        LaunchedEffect(errorMessage) {
-            snackbarHostState.showSnackbar(message = errorMessage)
-            viewModel.consumePaginationError()
+    val refreshState = items.loadState.refresh
+    val isInitialLoading = refreshState is LoadState.Loading && items.itemCount == 0
+    val isRefreshing = refreshState is LoadState.Loading && items.itemCount > 0
+
+    val appendState = items.loadState.append
+    val appendErrorMessage = stringResource(R.string.afternote_home_append_error)
+    LaunchedEffect(appendState) {
+        if (appendState is LoadState.Error) {
+            snackbarHostState.showSnackbar(message = appendErrorMessage)
         }
     }
 
     AfternoteHomeScreen(
-        listState = uiState,
+        items = items,
+        selectedCategory = selectedCategory,
+        isInitialLoading = isInitialLoading,
+        isRefreshing = isRefreshing,
         snackbarHostState = snackbarHostState,
         onCategorySelected = viewModel::selectTab,
-        onListItemClick = actions.navigateToDetail,
-        onLoadMore = viewModel::loadMore,
-        onRefresh = viewModel::refresh,
-    ) { actions.navigateToAdd(uiState.selectedCategory) }
+        onListItemClick = { id, type ->
+            when (type) {
+                AfternoteServiceType.GALLERY_AND_FILES -> actions.navigateToGalleryDetail(id)
+                AfternoteServiceType.MEMORIAL -> actions.navigateToMemorialGuidelineDetail(id)
+                AfternoteServiceType.SOCIAL_NETWORK -> actions.navigateToDetail(id)
+            }
+        },
+        onRefresh = items::refresh,
+        onFabClick = { actions.navigateToAdd(selectedCategory) },
+    )
 }
