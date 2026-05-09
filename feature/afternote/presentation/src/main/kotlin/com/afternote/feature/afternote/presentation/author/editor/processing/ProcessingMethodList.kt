@@ -1,107 +1,116 @@
 package com.afternote.feature.afternote.presentation.author.editor.processing
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.PlusBadgeButton
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import kotlinx.coroutines.launch
 
 /**
  * 처리 방법 리스트 컴포넌트
+ *
+ * 람다 등 불안정한 참조를 단일 data class로 묶지 않고 평탄한 인자로 받아, 부모 리컴포지션 시
+ * 스킵 가능 범위를 넓힙니다(호출부에서 [androidx.compose.runtime.rememberUpdatedState] 등과 함께 사용 권장).
  */
 @Composable
 fun ProcessingMethodList(
+    items: List<ProcessingMethodItem>,
+    onItemAdded: (String) -> Unit,
+    onItemDeleteClick: (String) -> Unit,
+    onItemEdited: (String, String) -> Unit,
+    onTextFieldVisibilityChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    params: ProcessingMethodListParams,
+    initialShowTextField: Boolean = false,
+    initialExpandedItemId: String? = null,
     state: ProcessingMethodListState =
         rememberProcessingMethodListState(
-            initialShowTextField = params.initialShowTextField,
+            initialShowTextField = initialShowTextField,
         ),
 ) {
-    val items = params.items
-    val onItemAdded = params.onItemAdded
     val focusManager = LocalFocusManager.current
     val scope = rememberCoroutineScope()
 
-    // 초기화: 아이템들의 expanded 상태 설정
-    LaunchedEffect(items, params.initialExpandedItemId) {
-        state.initializeExpandedStates(items, params.initialExpandedItemId)
+    // items 참조가 바뀔 때마다 실행되지만, [ProcessingMethodListState.initializeExpandedStates]는
+    // 기존 키의 expanded/편집 상태를 보존하고 신규 id만 시드하며, 제거된 행의 상태만 정리한다.
+    LaunchedEffect(items, initialExpandedItemId) {
+        state.initializeExpandedStates(items, initialExpandedItemId)
     }
 
     Column(
         modifier =
             modifier
                 .fillMaxWidth()
-                .background(color = AfternoteDesign.colors.white, shape = RoundedCornerShape(16.dp))
-                .padding(16.dp),
+                .background(color = AfternoteDesign.colors.white, shape = RoundedCornerShape(6.dp))
+                .border(
+                    width = 1.dp,
+                    color = AfternoteDesign.colors.gray2,
+                    shape = RoundedCornerShape(6.dp),
+                ).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         items.forEach { item ->
-            ProcessingMethodCheckbox(
-                item = item,
-                expanded = state.expandedStates[item.id] ?: false,
-                isEditing = state.editingItemId == item.id,
-                callbacks =
-                    ProcessingMethodCheckboxCallbacks(
-                        onMoreClick = {
-                            focusManager.clearFocus()
-                            state.toggleItemExpanded(item.id)
-                        },
-                        onDismissDropdown = {
-                            state.expandedStates[item.id] = false
-                        },
-                        onEditClick = {
-                            state.expandedStates[item.id] = false
-                            // Defer editing to next frame so DropdownMenu dismiss settles first
-                            scope.launch {
-                                withFrameNanos { }
-                                state.startEditing(item.id)
-                            }
-                        },
-                        onDeleteClick = { params.onItemDeleteClick(item.id) },
-                        onEditConfirmed = { newText ->
-                            params.onItemEdited(item.id, newText)
-                            state.stopEditing()
-                        },
-                    ),
-            )
-            Spacer(modifier = Modifier.height(6.dp))
+            key(item.id) {
+                ProcessingMethodCheckbox(
+                    item = item,
+                    expanded = state.expandedStates[item.id] ?: false,
+                    isEditing = state.editingItemId == item.id,
+                    callbacks =
+                        ProcessingMethodCheckboxCallbacks(
+                            onMoreClick = {
+                                focusManager.clearFocus()
+                                state.toggleItemExpanded(item.id)
+                            },
+                            onDismissDropdown = {
+                                state.expandedStates[item.id] = false
+                            },
+                            onEditClick = {
+                                state.expandedStates[item.id] = false
+                                // Defer editing to next frame so DropdownMenu dismiss settles first
+                                scope.launch {
+                                    withFrameNanos { }
+                                    state.startEditing(item.id)
+                                }
+                            },
+                            onDeleteClick = { onItemDeleteClick(item.id) },
+                            onEditConfirmed = { newText ->
+                                onItemEdited(item.id, newText)
+                                state.stopEditing()
+                            },
+                        ),
+                )
+            }
         }
 
-        // 텍스트 필드 (버튼 클릭 시 표시)
-        AddItemTextField(
-            visible = state.showTextField,
-            onItemAdded = onItemAdded,
-            onVisibilityChanged = { isVisible ->
-                params.onTextFieldVisibilityChanged(isVisible)
-            },
-        )
+        if (state.showTextField) {
+            AddItemTextField(
+                onItemAdded = onItemAdded,
+                onVisibilityChanged = onTextFieldVisibilityChanged,
+            )
+        }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // 추가 버튼 (텍스트 필드 표시만 토글; 부모 알림 없음)
         PlusBadgeButton(
-            contentDescription = "추가",
+            contentDescription = stringResource(R.string.afternote_editor_content_description_add),
             onClick = { state.toggleTextField() },
-            paddingValues = PaddingValues(12.dp),
-            plusSize = 24.dp,
         )
     }
 }
@@ -111,18 +120,16 @@ fun ProcessingMethodList(
 private fun ProcessingMethodListPreview() {
     AfternoteTheme {
         ProcessingMethodList(
-            params =
-                ProcessingMethodListParams(
-                    items =
-                        listOf(
-                            ProcessingMethodItem("1", "게시물 내리기"),
-                            ProcessingMethodItem("2", "댓글 비활성화"),
-                        ),
-                    onItemDeleteClick = {},
-                    onItemAdded = {},
-                    onTextFieldVisibilityChanged = {},
-                    initialShowTextField = true,
+            items =
+                listOf(
+                    ProcessingMethodItem("1", "게시물 내리기"),
+                    ProcessingMethodItem("2", "댓글 비활성화"),
                 ),
+            onItemDeleteClick = {},
+            onItemAdded = {},
+            onItemEdited = { _, _ -> },
+            onTextFieldVisibilityChanged = {},
+            initialShowTextField = true,
         )
     }
 }
@@ -132,20 +139,18 @@ private fun ProcessingMethodListPreview() {
 private fun ProcessingMethodListWithDropdownPreview() {
     AfternoteTheme {
         ProcessingMethodList(
-            params =
-                ProcessingMethodListParams(
-                    items =
-                        listOf(
-                            ProcessingMethodItem("1", "게시물 내리기"),
-                            ProcessingMethodItem("2", "댓글 비활성화"),
-                            ProcessingMethodItem("3", "추모 계정으로 전환하기"),
-                        ),
-                    onItemDeleteClick = {},
-                    onItemAdded = {},
-                    onTextFieldVisibilityChanged = {},
-                    initialShowTextField = false,
-                    initialExpandedItemId = "1",
+            items =
+                listOf(
+                    ProcessingMethodItem("1", "게시물 내리기"),
+                    ProcessingMethodItem("2", "댓글 비활성화"),
+                    ProcessingMethodItem("3", "추모 계정으로 전환하기"),
                 ),
+            onItemDeleteClick = {},
+            onItemAdded = {},
+            onItemEdited = { _, _ -> },
+            onTextFieldVisibilityChanged = {},
+            initialShowTextField = false,
+            initialExpandedItemId = "1",
         )
     }
 }

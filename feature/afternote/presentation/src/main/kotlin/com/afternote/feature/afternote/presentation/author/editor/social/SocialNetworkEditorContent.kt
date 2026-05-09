@@ -1,34 +1,27 @@
 package com.afternote.feature.afternote.presentation.author.editor.social
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.AfternoteTextField
-import com.afternote.core.ui.Label
+import com.afternote.core.ui.CaptionLabeledTextField
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.author.editor.EditorSectionLabel
+import com.afternote.feature.afternote.presentation.author.editor.account.AccountSection
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
-import com.afternote.feature.afternote.presentation.author.editor.model.AccountSection
-import com.afternote.feature.afternote.presentation.author.editor.processing.OptionRadioCardContent
-import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodList
-import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListParams
+import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListSection
+import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodRadioSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
-import com.afternote.feature.afternote.presentation.author.editor.receiver.RecipientDesignationSection
-import com.afternote.feature.afternote.presentation.shared.SelectableRadioCard
 
 /**
  * 소셜네트워크 등 일반적인 종류 선택 시 표시되는 콘텐츠
@@ -36,120 +29,45 @@ import com.afternote.feature.afternote.presentation.shared.SelectableRadioCard
 @Composable
 fun SocialNetworkEditorContent(
     modifier: Modifier = Modifier,
-    bottomPadding: PaddingValues,
     params: SocialNetworkEditorContentParams,
 ) {
-    val density = LocalDensity.current
-    val windowInfo = LocalWindowInfo.current
-    // Scaffold가 제공하는 bottomPadding을 사용 (네비게이션 바 높이 + 시스템 바 높이 자동 계산)
-    val bottomPaddingDp = bottomPadding.calculateBottomPadding()
-    // Viewport 높이 = 창 높이 - bottomPadding (네비게이션 바 상단까지의 높이)
-    // 하단 여백은 네비게이션 바 상단까지의 Viewport 높이의 10%로 계산
-    val viewportHeight =
-        with(density) {
-            windowInfo.containerSize.height.toDp() - bottomPaddingDp
-        }
-    val spacerHeight = viewportHeight * 0.1f
-
-    SocialNetworkEditorContentContent(
-        modifier = modifier,
-        params = params,
-        spacerHeight = spacerHeight,
-    )
-}
-
-@Composable
-private fun SocialNetworkEditorContentContent(
-    modifier: Modifier = Modifier,
-    params: SocialNetworkEditorContentParams,
-    spacerHeight: Dp,
-) {
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(32.dp),
+    ) {
         // 계정 정보 섹션
-        Label(
-            text = "계정 정보",
-            isRequired = true,
-        )
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            EditorSectionLabel(
+                text = stringResource(R.string.afternote_editor_label_account_info),
+                isRequired = true,
+                style = AfternoteDesign.typography.textField,
+                color = AfternoteDesign.colors.gray8,
+            )
 
-        Spacer(modifier = Modifier.height(16.dp))
+            CaptionLabeledTextField(
+                label = stringResource(R.string.feature_afternote_detail_label_id),
+                state = params.accountSection.idState,
+            )
 
-        Text(
-            text = "아이디",
-            style = AfternoteDesign.typography.captionLargeR,
-            color = AfternoteDesign.colors.gray9,
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        AfternoteTextField(
-            state = params.accountSection.idState,
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Text(
-            text = "비밀번호",
-            style = AfternoteDesign.typography.captionLargeR,
-            color = AfternoteDesign.colors.gray9,
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        AfternoteTextField(
-            state = params.accountSection.passwordState,
-            keyboardType = KeyboardType.Password,
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // 계정 처리 방법 섹션
-        Label(
-            text = "계정 처리 방법",
-            isRequired = true,
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        AccountProcessingMethod.entries.forEachIndexed { index, method ->
-            if (index > 0) {
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-            SelectableRadioCard(
-                selected = params.accountSection.selectedMethod == method,
-                onClick = { params.accountSection.onMethodSelected(method) },
-                modifier = Modifier.fillMaxWidth(),
-                content = {
-                    OptionRadioCardContent(
-                        option = method,
-                        selected = params.accountSection.selectedMethod == method,
-                    )
-                },
+            CaptionLabeledTextField(
+                label = stringResource(R.string.feature_afternote_detail_label_password),
+                state = params.accountSection.passwordState,
+                keyboardType = KeyboardType.Password,
             )
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
-
-        params.recipientSection?.let { section ->
-            RecipientDesignationSection(section = section)
-            Spacer(modifier = Modifier.height(32.dp))
-        }
+        // 계정 처리 방법 섹션
+        ProcessingMethodRadioSection(
+            label = stringResource(R.string.afternote_editor_label_account_process_method),
+            options = AccountProcessingMethod.entries,
+            selected = params.accountSection.selectedMethod,
+            onSelect = params.accountSection.onMethodSelected,
+        )
 
         // 처리 방법 리스트 섹션
-        Label(
-            text = "처리 방법 리스트",
-            isRequired = true,
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        ProcessingMethodList(
-            params =
-                ProcessingMethodListParams(
-                    items = params.processingMethodSection.items,
-                    onItemDeleteClick = params.processingMethodSection.callbacks.onItemDeleteClick,
-                    onItemAdded = params.processingMethodSection.callbacks.onItemAdded,
-                    onTextFieldVisibilityChanged = params.processingMethodSection.callbacks.onTextFieldVisibilityChanged,
-                    onItemEdited = params.processingMethodSection.callbacks.onItemEdited,
-                ),
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
+        ProcessingMethodListSection(section = params.processingMethodSection)
 
         // 남기실 말씀
         EditorMessageSection(
@@ -158,10 +76,6 @@ private fun SocialNetworkEditorContentContent(
             onDeleteClick = params.onMessageDeleteClick,
             onAddClick = params.onMessageAddClick,
         )
-
-        // 소셜네트워크 탭 하단 여백 (Viewport 높이의 10%, 800dp 기준 약 80dp)
-        // LocalWindowInfo를 사용하여 창 높이를 기준으로 계산
-        Spacer(modifier = Modifier.height(spacerHeight))
     }
 }
 
@@ -177,7 +91,6 @@ private fun SocialNetworkEditorContentPreview() {
         ) {
             // 첫 번째 옵션 선택됨 (파란 테두리), 나머지는 선택 안 됨 (테두리 없음) 상태를 한 화면에 표시
             SocialNetworkEditorContent(
-                bottomPadding = PaddingValues(bottom = 88.dp),
                 params =
                     SocialNetworkEditorContentParams(
                         editorMessages =

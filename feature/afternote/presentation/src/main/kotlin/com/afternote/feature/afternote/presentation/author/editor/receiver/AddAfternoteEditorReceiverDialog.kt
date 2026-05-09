@@ -1,22 +1,27 @@
 package com.afternote.feature.afternote.presentation.author.editor.receiver
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -26,15 +31,14 @@ import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.PhoneNumberInputTransformation
 import com.afternote.core.ui.PhoneNumberVisualTransformation
 import com.afternote.core.ui.button.AfternoteButton
-import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.modifierextention.addFocusCleaner
 import com.afternote.core.ui.popup.AfternotePopupCardLayout
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.selection.DropdownMenuStyle
 import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdown
 import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdownLabelParams
-import com.afternote.feature.afternote.presentation.author.editor.selection.rememberSelectionDropdownState
 
 /**
  * 수신자와의 관계 드롭다운 (로컬 상태 사용)
@@ -46,19 +50,19 @@ private fun RelationshipDropdown(
     onValueSelected: (String) -> Unit,
     menuStyle: DropdownMenuStyle,
 ) {
-    val dropdownState =
-        rememberSelectionDropdownState()
+    var expanded by remember { mutableStateOf(false) }
 
     SelectionDropdown(
         labelParams =
             SelectionDropdownLabelParams(
-                label = "수신자와의 관계",
+                label = stringResource(R.string.afternote_editor_label_receiver_relation),
             ),
         selectedValue = selectedValue,
         options = options,
         onValueSelected = onValueSelected,
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
         menuStyle = menuStyle,
-        state = dropdownState,
     )
 }
 
@@ -77,7 +81,6 @@ fun AddAfternoteEditorReceiverDialog(
     modifier: Modifier = Modifier,
     params: AddAfternoteEditorReceiverDialogParams,
 ) {
-    val focusManager = LocalFocusManager.current
     Dialog(
         onDismissRequest = params.callbacks.onDismiss,
         properties =
@@ -86,119 +89,122 @@ fun AddAfternoteEditorReceiverDialog(
                 dismissOnClickOutside = true,
             ),
     ) {
-        AfternotePopupCardLayout(
-            modifier =
-                modifier
-                    .fillMaxWidth()
-                    .addFocusCleaner(focusManager),
+        AddAfternoteEditorReceiverDialogContent(
+            params = params,
+            modifier = modifier,
+        )
+    }
+}
+
+@Composable
+private fun AddAfternoteEditorReceiverDialogContent(
+    params: AddAfternoteEditorReceiverDialogParams,
+    modifier: Modifier = Modifier,
+) {
+    val focusManager = LocalFocusManager.current
+    AfternotePopupCardLayout(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .addFocusCleaner(focusManager),
+        verticalArrangement = Arrangement.spacedBy(24.dp),
+    ) {
+        // 헤더: 타이틀과 추가하기 버튼
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            // 헤더: 타이틀과 추가하기 버튼
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+            Text(
+                text = stringResource(R.string.afternote_editor_label_receiver_add),
+                style = AfternoteDesign.typography.bodyLargeB,
+                color = AfternoteDesign.colors.gray9,
+            )
+
+            Box(
+                modifier =
+                    Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(AfternoteDesign.colors.gray9)
+                        .clickable(
+                            role = Role.Button,
+                            onClick = {
+                                focusManager.clearFocus()
+                                params.callbacks.onAddClick()
+                            },
+                        ).padding(horizontal = 16.dp, vertical = 8.dp),
             ) {
                 Text(
-                    text = "수신자 추가",
-                    style = AfternoteDesign.typography.bodyLargeB,
-                )
-
-                Button(
-                    onClick = {
-                        focusManager.clearFocus()
-                        params.callbacks.onAddClick()
-                    },
-                    modifier = Modifier.height(32.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = AfternoteDesign.colors.gray9,
+                    text = stringResource(R.string.add_button),
+                    style =
+                        AfternoteDesign.typography.captionLargeR.copy(
+                            color = AfternoteDesign.colors.white,
                         ),
-                    contentPadding =
-                        PaddingValues(
-                            horizontal = 16.dp,
-                            vertical = 8.dp,
-                        ),
-                ) {
-                    Text(
-                        text = "추가하기",
-                        style =
-                            AfternoteDesign.typography.captionLargeR.copy(
-                                fontWeight = FontWeight.Medium,
-                                color = AfternoteDesign.colors.white,
-                            ),
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // 수신자 이름 입력 필드
-            Column {
-                Text(
-                    text = "수신자 이름",
-                    style = AfternoteDesign.typography.captionLargeR,
-                    color = AfternoteDesign.colors.gray9,
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                AfternoteTextField(
-                    state = params.afternoteEditReceiverNameState,
                 )
             }
+        }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // 수신자와의 관계 드롭다운
-            RelationshipDropdown(
-                selectedValue = params.relationshipSelectedValue,
-                options = params.relationshipOptions,
-                onValueSelected = params.callbacks.onRelationshipSelected,
-                menuStyle =
-                    DropdownMenuStyle(
-                        menuOffset = 5.2.dp,
-                        menuBackgroundColor = AfternoteDesign.colors.gray1,
-                        shadowElevation = 0.dp,
-                        tonalElevation = 0.dp,
-                    ),
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // 전화번호로 추가하기 입력 필드
-            Column {
-                Text(
-                    text = "전화번호로 추가하기",
-                    style = AfternoteDesign.typography.captionLargeR,
-                    color = AfternoteDesign.colors.gray9,
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                AfternoteTextField(
-                    state = params.phoneNumberState,
-                    keyboardType = KeyboardType.Phone,
-                    inputTransformation = PhoneNumberInputTransformation,
-                    outputTransformation = PhoneNumberVisualTransformation,
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
+        // 수신자 이름 입력 필드
+        Column(
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
             Text(
-                text = "연락처에서 추가하기",
+                text = stringResource(R.string.afternote_editor_receiver_name_label),
+                style = AfternoteDesign.typography.bodySmallR,
+                color = AfternoteDesign.colors.gray6,
+            )
+            AfternoteTextField(
+                state = params.afternoteEditReceiverNameState,
+            )
+        }
+
+        // 수신자와의 관계 드롭다운
+        RelationshipDropdown(
+            selectedValue = params.relationshipSelectedValue,
+            options = params.relationshipOptions,
+            onValueSelected = params.callbacks.onRelationshipSelected,
+            menuStyle =
+                DropdownMenuStyle(
+                    menuOffset = 5.2.dp,
+                    menuBackgroundColor = AfternoteDesign.colors.gray1,
+                    shadowElevation = 0.dp,
+                    tonalElevation = 0.dp,
+                ),
+        )
+        // 전화번호로 추가하기 입력 필드
+        Column(
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.afternote_editor_add_by_phone_label),
+                style = AfternoteDesign.typography.bodySmallR,
+                color = AfternoteDesign.colors.gray6,
+            )
+            AfternoteTextField(
+                state = params.phoneNumberState,
+                keyboardType = KeyboardType.Phone,
+                inputTransformation = PhoneNumberInputTransformation,
+                outputTransformation = PhoneNumberVisualTransformation,
+            )
+        }
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.afternote_editor_contact_import_section),
                 style =
-                    AfternoteDesign.typography.captionLargeR.copy(
-                        color = AfternoteDesign.colors.gray9,
+                    AfternoteDesign.typography.bodySmallR.copy(
+                        color = AfternoteDesign.colors.gray6,
                     ),
             )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
             // 연락처에서 추가하기 버튼
             AfternoteButton(
-                text = "연락처 가져오기",
+                text = stringResource(R.string.afternote_editor_import_contacts_button),
                 onClick = {
                     focusManager.clearFocus()
                     params.callbacks.onImportContactsClick()
                 },
-                type = AfternoteButtonType.Default,
             )
         }
     }
@@ -208,13 +214,13 @@ fun AddAfternoteEditorReceiverDialog(
 @Composable
 private fun AddAfternoteEditorReceiverDialogPreview() {
     AfternoteTheme {
-        AddAfternoteEditorReceiverDialog(
+        AddAfternoteEditorReceiverDialogContent(
             params =
                 AddAfternoteEditorReceiverDialogParams(
-                    afternoteEditReceiverNameState = rememberTextFieldState(),
-                    phoneNumberState = rememberTextFieldState(),
+                    afternoteEditReceiverNameState = rememberTextFieldState("홍길동"),
+                    phoneNumberState = rememberTextFieldState("01012345678"),
                     relationshipSelectedValue = "친구",
-                    relationshipOptions = listOf("친구", "가족", "연인"),
+                    relationshipOptions = listOf("가족", "친구", "동료", "기타"),
                 ),
         )
     }

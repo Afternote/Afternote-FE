@@ -36,6 +36,7 @@ import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteUi
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimeLetterWriteScreen(
+    modifier: Modifier = Modifier,
     uiState: TimeLetterWriteUiState = TimeLetterWriteUiState(),
     titleState: TextFieldState = rememberTextFieldState(),
     bodyState: TextFieldState = rememberTextFieldState(),
@@ -86,6 +87,7 @@ fun TimeLetterWriteScreen(
     }
 
     Scaffold(
+        modifier = modifier,
         topBar = {
             DetailTopBar(
                 title = "타임레터",

@@ -1,16 +1,14 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
 import com.afternote.core.ui.bottombar.BottomNavTab
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
-import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
-import com.afternote.feature.afternote.presentation.author.editor.state.MemorialPlaylistStateHolder
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
 
 /**
  * 콜백 그룹 (S107: 파라미터 7개 이하 유지).
  */
 data class AfternoteEditorScreenCallbacks(
     val onBackClick: () -> Unit = {},
-    /** 등록: [RegisterAfternotePayloadBuilder] 등에서 페이로드를 만든 뒤 저장 이벤트로 넘기도록 상위에서 구성한다. */
+    /** 저장: [SaveAfternotePayloadBuilder]에서 페이로드를 만든 뒤 [AfternoteEditorViewModel.saveAfternote]로 넘기도록 상위에서 구성한다. */
     val onRegisterClick: () -> Unit = {},
     val onNavigateToAddSong: () -> Unit = {},
     val onNavigateToSelectReceiver: () -> Unit = {},
@@ -26,7 +24,11 @@ data class AfternoteEditorSaveError(
     val message: String,
 )
 
-/** 단발성 이벤트. ViewModel [kotlinx.coroutines.channels.Channel]로 한 번만 소비됩니다. */
+/**
+ * ViewModel → UI **단발성** 이벤트 (토스트·네비 등).
+ * [kotlinx.coroutines.channels.Channel]로 한 번만 소비되며, UI → ViewModel 인텐트는
+ * [AfternoteEditorViewModel]의 개별 public 메서드로 보낸다 (작성자 홈 화면과 동일 패턴).
+ */
 sealed interface AfternoteEditorEvent {
     data class SaveSuccess(
         val savedId: Long,
@@ -35,29 +37,14 @@ sealed interface AfternoteEditorEvent {
     data class ThumbnailUploaded(
         val url: String,
     ) : AfternoteEditorEvent
-}
 
-/** UI → ViewModel 사용자 액션. */
-sealed interface AfternoteEditorUiEvent {
-    data object LoadReceivers : AfternoteEditorUiEvent
-
-    data class UploadThumbnail(
-        val jpegBytes: ByteArray,
-    ) : AfternoteEditorUiEvent
-
-    data class Save(
-        val editingId: Long?,
-        val editorCategory: EditorCategory,
-        val payload: RegisterAfternotePayload,
-        val selectedReceiverIds: List<Long>,
-        val playlistStateHolder: MemorialPlaylistStateHolder?,
-        val memorialMedia: SaveAfternoteMemorialMedia,
-    ) : AfternoteEditorUiEvent
-
-    data class LoadForEdit(
-        val afternoteId: Long,
-        val playlistStateHolder: MemorialPlaylistStateHolder?,
-    ) : AfternoteEditorUiEvent
+    /**
+     * 수정 모드 진입 시 서버에서 가져온 [EditorFormPrefill]을 UI 레이어 파사드 ([com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState])에
+     * 적용하라는 신호. ViewModel은 UI 상태(TextFieldState 등)를 소유하지 않으므로 이벤트로 위임한다.
+     */
+    data class PrefillLoaded(
+        val prefill: EditorFormPrefill,
+    ) : AfternoteEditorEvent
 }
 
 /** 저장 시 추모 미디어 필드 (로컬 URI / 기존 URL 혼재). */

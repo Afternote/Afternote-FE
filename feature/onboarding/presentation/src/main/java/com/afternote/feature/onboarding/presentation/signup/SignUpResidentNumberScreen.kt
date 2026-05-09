@@ -20,7 +20,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
-import com.afternote.core.ui.Label
 import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
@@ -64,7 +63,7 @@ fun SignUpResidentNumberScreen(
                         .verticalScroll(rememberScrollState())
                         .padding(top = 43.dp),
             ) {
-                Label(
+                SignUpInputLabel(
                     text = stringResource(R.string.signup_resident_number_label),
                 )
 

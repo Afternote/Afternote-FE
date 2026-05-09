@@ -28,6 +28,8 @@ private val PopupCardShape = RoundedCornerShape(16.dp)
 @Composable
 fun AfternotePopupCardLayout(
     modifier: Modifier = Modifier,
+    verticalArrangement: Arrangement.Vertical = Arrangement.Top,
+    horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Surface(
@@ -53,7 +55,8 @@ fun AfternotePopupCardLayout(
                         horizontal = 24.dp,
                         vertical = 32.dp,
                     ),
-            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = verticalArrangement,
+            horizontalAlignment = horizontalAlignment,
         ) {
             content()
         }

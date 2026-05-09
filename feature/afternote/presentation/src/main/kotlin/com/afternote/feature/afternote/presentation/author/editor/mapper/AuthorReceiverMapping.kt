@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.editor.mapper
 
 import com.afternote.feature.afternote.domain.model.author.AuthorReceiverEntry
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
+import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 
 internal fun AuthorReceiverEntry.toAfternoteEditorReceiver(): AfternoteEditorReceiver =
     AfternoteEditorReceiver(

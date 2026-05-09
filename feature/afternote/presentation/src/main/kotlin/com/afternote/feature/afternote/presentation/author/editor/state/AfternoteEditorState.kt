@@ -8,19 +8,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import com.afternote.core.ui.bottombar.BottomNavTab
+import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
 import com.afternote.feature.afternote.presentation.author.editor.model.InformationProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
-import com.afternote.feature.afternote.presentation.shared.LastWishOption
-import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
+import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,12 +39,9 @@ private fun normalizeEditorMessageBlocks(blocks: List<EditorMessageTextBlock>): 
 class AfternoteEditorState(
     val ui: AfternoteEditorUiState,
     private val updateForm: ((EditorFormState) -> EditorFormState) -> Unit,
-    formStateSource: StateFlow<EditorFormState>,
+    val formState: StateFlow<EditorFormState>,
 ) {
-    val formState: StateFlow<EditorFormState> = formStateSource
-
-    val editorMessages: SnapshotStateList<EditorMessage>
-        get() = ui.editorMessages
+    val editorMessages: SnapshotStateList<EditorMessage> get() = ui.editorMessages
 
     val idState: TextFieldState get() = ui.idState
     val passwordState: TextFieldState get() = ui.passwordState
@@ -57,101 +51,82 @@ class AfternoteEditorState(
     val customLastWishState: TextFieldState get() = ui.customLastWishState
 
     val activeDialog get() = ui.activeDialog
-    val selectedBottomNavItem get() = ui.selectedBottomNavItem
     val relationshipSelectedValue get() = ui.relationshipSelectedValue
-    val categoryDropdownState get() = ui.categoryDropdownState
-    val serviceDropdownState get() = ui.serviceDropdownState
+    val categoryDropdownExpanded get() = ui.categoryDropdownExpanded
+    val serviceDropdownExpanded get() = ui.serviceDropdownExpanded
     val playlistStateHolder get() = ui.playlistStateHolder
 
     /** 콜백·일회성 읽기용. Compose 표시는 [formState]를 collect한 스냅샷을 쓰는 것이 안전하다. */
     val selectedCategory get() = formState.value.selectedCategory
-    val selectedService get() = formState.value.selectedService
-    val loadedItemId get() = formState.value.loadedItemId
     val funeralVideoUrl get() = formState.value.funeralVideoUrl
     val funeralThumbnailUrl get() = formState.value.funeralThumbnailUrl
     val memorialPhotoUrl get() = formState.value.memorialPhotoUrl
     val pickedMemorialPhotoUri get() = formState.value.pickedMemorialPhotoUri
     val afternoteEditReceivers get() = formState.value.afternoteEditReceivers
-    val selectedProcessingMethod get() = formState.value.selectedProcessingMethod
-    val selectedInformationProcessingMethod get() = formState.value.selectedInformationProcessingMethod
-    val selectedLastWish get() = formState.value.selectedLastWish
-    val playlistSongCount get() = formState.value.playlistSongCount
-    val displayMemorialPhotoUri get() = formState.value.displayMemorialPhotoUri()
-    val livePlaylistSongCount get() = formState.value.livePlaylistSongCount(ui.playlistStateHolder)
-    val displayAlbumCovers get() = formState.value.displayAlbumCovers(ui.playlistStateHolder)
-    val currentServiceOptions get() = formState.value.currentServiceOptions
 
-    val categories: List<String> = EditorCategory.entries.map { it.displayLabel }
-    val services: List<String>
-        get() = AfternoteServiceCatalog.socialServices
-    val galleryServices: List<String>
-        get() = AfternoteServiceCatalog.galleryServices
-    val relationshipOptions = listOf("친구", "가족", "연인")
-    val lastWishOptions =
-        listOf(
-            LastWishOption(
-                text = "차분하고 조용하게 보내주세요.",
-                value = "calm",
-            ),
-            LastWishOption(
-                text = "슬퍼 하지 말고 밝고 따뜻하게 보내주세요.",
-                value = "bright",
-            ),
-            LastWishOption(
-                text = "기타(직접 입력)",
-                value = "other",
-            ),
-        )
-
-    val galleryAfternoteEditorReceiverCallbacks: AfternoteEditorReceiverCallbacks by lazy {
-        AfternoteEditorReceiverCallbacks(
-            onAddClick = ::showAddAfternoteEditorReceiverDialog,
-            onItemDeleteClick = ::onAfternoteEditorReceiverDelete,
-            onItemAdded = ::onAfternoteEditorReceiverItemAdded,
-            onTextFieldVisibilityChanged = { },
-        )
-    }
-
-    val galleryProcessingCallbacks: ProcessingMethodCallbacks by lazy {
+    val galleryProcessingCallbacks: ProcessingMethodCallbacks =
         ProcessingMethodCallbacks(
             onItemDeleteClick = ::deleteGalleryProcessingMethod,
             onItemAdded = ::addGalleryProcessingMethod,
             onTextFieldVisibilityChanged = { },
             onItemEdited = ::editGalleryProcessingMethod,
         )
-    }
 
-    val socialProcessingCallbacks: ProcessingMethodCallbacks by lazy {
+    val socialProcessingCallbacks: ProcessingMethodCallbacks =
         ProcessingMethodCallbacks(
             onItemDeleteClick = ::deleteProcessingMethod,
             onItemAdded = ::addProcessingMethod,
             onTextFieldVisibilityChanged = { },
             onItemEdited = ::editProcessingMethod,
         )
-    }
 
-    val processingMethods: List<ProcessingMethodItem>
-        get() = formState.value.socialProcessingMethods
+    fun onCategoryDropdownExpandedChange(expanded: Boolean) = ui.onCategoryDropdownExpandedChange(expanded)
 
-    val galleryProcessingMethods: List<ProcessingMethodItem>
-        get() = formState.value.galleryProcessingMethods
+    fun onServiceDropdownExpandedChange(expanded: Boolean) = ui.onServiceDropdownExpandedChange(expanded)
 
-    fun updateAlbumCovers(covers: List<AlbumCover>) {
-        updateForm { it.copy(playlistAlbumCovers = covers) }
-    }
-
+    /**
+     * `stateHolder.onSongCountChanged` 콜백은 의도적으로 등록하지 않는다 — 그래프 스코프 홀더가
+     * 화면보다 오래 살아 facade 참조를 잡아두는 누수 위험을 피하기 위함. 폼 동기화는 화면 복귀 시
+     * [syncMemorialPlaylistFromGraphHolderIfAttached] 가 처리한다.
+     */
     fun setPlaylistStateHolder(stateHolder: MemorialPlaylistStateHolder) {
+        if (formState.value.selectedCategory == EditorCategory.MEMORIAL &&
+            stateHolder.songs.isEmpty() &&
+            formState.value.memorialPlaylistSongs.isNotEmpty()
+        ) {
+            stateHolder.initializeSongs(formState.value.memorialPlaylistSongs)
+        }
         ui.setPlaylistStateHolder(stateHolder)
-        updatePlaylistSongCount()
+        syncMemorialPlaylistSongsFromHolder()
     }
 
-    fun updatePlaylistSongCount() {
+    private fun syncMemorialPlaylistSongsFromHolder() {
+        val holder = ui.playlistStateHolder ?: return
         updateForm {
-            it.copy(playlistSongCount = ui.playlistStateHolder?.songs?.size ?: it.playlistSongCount)
+            it.copy(
+                memorialPlaylistSongs = holder.songs.toList(),
+                playlistSongCount = holder.songs.size,
+            )
         }
     }
 
-    /** 드롭다운 UI에서 [displayLabel] 문자열로 카테고리를 선택한다. */
+    fun updatePlaylistSongCount() = syncMemorialPlaylistSongsFromHolder()
+
+    /**
+     * 에디터가 그래프에서 다시 포그라운드가 될 때(플레이리스트·곡 추가 등 서브화면에서 복귀) 호출한다.
+     * [MemorialPlaylistStateHolder]만 갱신되고 Compose 이펙트가 한 번 건너뛴 경우에도
+     * [EditorFormState.memorialPlaylistSongs]와 SavedState 스냅샷이 홀더와 맞도록 한다.
+     */
+    fun syncMemorialPlaylistFromGraphHolderIfAttached() = syncMemorialPlaylistSongsFromHolder()
+
+    /** 신규 작성 진입 시 폼에 남은 추모 플레이리스트 스냅샷을 비운다 (홀더 clear는 호출부에서). */
+    fun resetMemorialPlaylistFormSnapshot() {
+        updateForm {
+            it.copy(memorialPlaylistSongs = emptyList(), playlistSongCount = 16)
+        }
+    }
+
+    /** 드롭다운 UI에서 [categoryDisplayLabel] 문자열로 카테고리를 선택한다. */
     fun onCategorySelected(categoryDisplayLabel: String) {
         selectCategory(EditorCategory.fromDisplayLabel(categoryDisplayLabel))
     }
@@ -177,7 +152,7 @@ class AfternoteEditorState(
 
     fun onServiceSelected(service: String) {
         if (formState.value.isCustomAddOption(service)) {
-            showCustomServiceDialog()
+            ui.showCustomServiceDialog()
         } else {
             updateForm { it.copy(selectedService = service) }
         }
@@ -209,13 +184,7 @@ class AfternoteEditorState(
         updateForm { it.copy(funeralThumbnailUrl = dataUrl) }
     }
 
-    fun showAddAfternoteEditorReceiverDialog() {
-        ui.showAddAfternoteEditorReceiverDialog()
-    }
-
-    fun showCustomServiceDialog() {
-        ui.showCustomServiceDialog()
-    }
+    fun showAddAfternoteEditorReceiverDialog() = ui.showAddAfternoteEditorReceiverDialog()
 
     fun dismissDialog() {
         ui.dismissDialogInternal {
@@ -253,9 +222,7 @@ class AfternoteEditorState(
         dismissDialog()
     }
 
-    fun onRelationshipSelected(relationship: String) {
-        ui.onRelationshipSelected(relationship)
-    }
+    fun onRelationshipSelected(relationship: String) = ui.onRelationshipSelected(relationship)
 
     fun onAfternoteEditorReceiverDelete(afternoteEditReceiverId: String) {
         updateForm { prev ->
@@ -301,10 +268,6 @@ class AfternoteEditorState(
                 )
             prev.copy(afternoteEditReceivers = prev.afternoteEditReceivers + newReceiver)
         }
-    }
-
-    fun onBottomNavItemSelected(item: BottomNavTab) {
-        ui.onBottomNavItemSelected(item)
     }
 
     fun addEditorMessage() {
@@ -386,8 +349,18 @@ class AfternoteEditorState(
                 funeralVideoUrl = prefill.funeralVideoUrl,
                 funeralThumbnailUrl = prefill.funeralThumbnailUrl,
                 memorialPhotoUrl = prefill.memorialPhotoUrl,
+                memorialPlaylistSongs = prefill.memorialPlaylistSongs,
+                playlistSongCount =
+                    if (prefill.memorialPlaylistSongs.isNotEmpty()) {
+                        prefill.memorialPlaylistSongs.size
+                    } else {
+                        withLastWish.playlistSongCount
+                    },
                 messageBlocks = prefillBlocks,
             )
+        }
+        if (prefill.category == EditorCategory.MEMORIAL) {
+            ui.playlistStateHolder?.replaceSongs(prefill.memorialPlaylistSongs)
         }
         ui.idState.edit { replace(0, length, prefill.accountId) }
         ui.passwordState.edit { replace(0, length, prefill.password) }
@@ -461,18 +434,23 @@ class AfternoteEditorState(
 }
 
 /**
- * Compose Preview·로컬 UI 테스트 전용.
+ * 프로덕션용 팩토리.
+ *
+ * ViewModel의 [EditorFormState] [StateFlow]와 `updateForm` 인텐트 함수를 받아
+ * UI 레이어가 소유한 [TextFieldState]와 [AfternoteEditorUiState]를 결합한 파사드를 만든다. ViewModel은
+ * Compose UI 상태를 들지 않으므로, 이 팩토리는 반드시 Composable 스코프에서 호출되어야 한다.
  */
 @Composable
-fun rememberAfternoteEditorState(): AfternoteEditorState {
+fun rememberAfternoteEditorState(
+    formStateSource: StateFlow<EditorFormState>,
+    updateForm: ((EditorFormState) -> EditorFormState) -> Unit,
+): AfternoteEditorState {
     val idState = rememberTextFieldState()
     val passwordState = rememberTextFieldState()
     val afternoteEditReceiverNameState = rememberTextFieldState()
     val phoneNumberState = rememberTextFieldState()
     val customServiceNameState = rememberTextFieldState()
     val customLastWishState = rememberTextFieldState()
-
-    val flow = remember { MutableStateFlow(EditorFormState()) }
 
     val ui =
         rememberAfternoteEditorUiState(
@@ -484,11 +462,24 @@ fun rememberAfternoteEditorState(): AfternoteEditorState {
             customLastWishState = customLastWishState,
         )
 
-    return remember(flow, ui) {
+    return remember(ui, formStateSource) {
         AfternoteEditorState(
             ui = ui,
-            updateForm = { block -> flow.update(block) },
-            formStateSource = flow.asStateFlow(),
+            updateForm = updateForm,
+            formState = formStateSource,
         )
     }
+}
+
+/**
+ * Compose Preview·로컬 UI 테스트 전용. 내부 [MutableStateFlow]로 자체 SSOT를 만든다.
+ */
+@Composable
+fun rememberAfternoteEditorState(): AfternoteEditorState {
+    val flow = remember { MutableStateFlow(EditorFormState()) }
+    val formStateSource = remember(flow) { flow.asStateFlow() }
+    return rememberAfternoteEditorState(
+        formStateSource = formStateSource,
+        updateForm = { block -> flow.update(block) },
+    )
 }

@@ -6,13 +6,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,15 +19,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.PlusBadgeButton
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverCallbacks
+import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
+import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverCallbacks
+import com.afternote.feature.afternote.presentation.shared.ReceiverAvatar
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 
 /**
@@ -61,6 +60,7 @@ fun AfternoteEditorReceiverList(
                 .background(color = AfternoteDesign.colors.white, shape = RoundedCornerShape(16.dp))
                 .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         afternoteEditReceivers.forEachIndexed { _, receiver ->
             AfternoteEditorReceiverItem(
@@ -76,20 +76,14 @@ fun AfternoteEditorReceiverList(
                 showEditItem = false,
                 onDeleteClick = { events.onItemDeleteClick(receiver.id) },
             )
-            Spacer(modifier = Modifier.height(8.dp))
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // 추가 버튼 (파란 원형 버튼)
         PlusBadgeButton(
-            contentDescription = "수신자 추가",
+            contentDescription = stringResource(R.string.afternote_editor_content_description_add),
             onClick = {
                 state.toggleTextField()
                 events.onAddClick()
             },
-            paddingValues = PaddingValues(12.dp),
-            plusSize = 24.dp,
         )
     }
 }
@@ -118,24 +112,15 @@ private fun AfternoteEditorReceiverItem(
             modifier
                 .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // 아바타 (기본 프로필 이미지)
-        Image(
-            painter = painterResource(R.drawable.feature_afternote_img_recipient_profile),
-            contentDescription = "프로필 사진",
-            modifier = Modifier.size(58.dp),
-        )
-
+        ReceiverAvatar()
+        Spacer(Modifier.width(10.dp))
         // 이름과 라벨
-        Column(
-            modifier = Modifier.weight(1f),
-        ) {
+        Column {
             Text(
                 text = receiver.name,
                 style =
-                    AfternoteDesign.typography.bodySmallR.copy(
-                        fontWeight = FontWeight.Medium,
+                    AfternoteDesign.typography.captionLargeB.copy(
                         color = AfternoteDesign.colors.gray9,
                     ),
             )
@@ -143,16 +128,16 @@ private fun AfternoteEditorReceiverItem(
                 text = receiver.label,
                 style =
                     AfternoteDesign.typography.captionLargeR.copy(
-                        color = AfternoteDesign.colors.gray5,
+                        color = AfternoteDesign.colors.gray8,
                     ),
             )
         }
-
+        Spacer(Modifier.weight(1f))
         // 더보기 아이콘 + 드롭다운 메뉴
         Box {
             Image(
                 painter = painterResource(R.drawable.feature_afternote_ic_more_horizontal_1),
-                contentDescription = "더보기",
+                contentDescription = stringResource(R.string.afternote_editor_content_description_more),
                 modifier =
                     Modifier
                         .clickable(onClick = onMoreClick),
@@ -172,8 +157,12 @@ private fun AfternoteEditorReceiverItem(
 private fun AfternoteEditorReceiverListPreview() {
     AfternoteTheme {
         AfternoteEditorReceiverList(
-            afternoteEditReceivers = emptyList(),
-            events = AfternoteEditorReceiverCallbacks(),
+            afternoteEditReceivers =
+                listOf(
+                    AfternoteEditorReceiver(id = "1", name = "홍길동", label = "가족"),
+                    AfternoteEditorReceiver(id = "2", name = "김철수", label = "친구"),
+                    AfternoteEditorReceiver(id = "3", name = "이영희", label = "동료"),
+                ),
         )
     }
 }

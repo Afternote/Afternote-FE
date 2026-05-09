@@ -1,41 +1,40 @@
 package com.afternote.feature.afternote.presentation.author.editor.selection
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.DropdownMenu
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.afternote.core.ui.Label
 import com.afternote.core.ui.modifierextention.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
-
-private const val CATEGORY_SOCIAL_NETWORK = "소셜네트워크"
-private const val CATEGORY_GALLERY_AND_FILE_PREVIEW = "갤러리 및 파일"
-private const val CATEGORY_MEMORIAL_PREVIEW = "추모 가이드라인"
+import com.afternote.feature.afternote.presentation.author.editor.EditorSectionLabel
 
 /**
  * Label configuration for [SelectionDropdown].
@@ -48,132 +47,133 @@ data class SelectionDropdownLabelParams(
 /**
  * 드롭다운 메뉴 스타일 설정
  *
- * @param menuOffset 드롭다운 메뉴가 필드 아래 나타나는 간격 (기본: 4.dp)
+ * @param menuOffset 앵커 대비 메뉴 패널에 더할 수직 간격 (기본: 4.dp, 메뉴 modifier 세로 offset으로 반영)
  * @param menuBackgroundColor 드롭다운 메뉴 배경색 (기본: AfternoteDesign.colors.white)
  * @param shadowElevation 드롭다운 메뉴 그림자 elevation (기본: 0.dp)
  * @param tonalElevation 드롭다운 메뉴 톤 elevation (기본: 0.dp)
+ * @param shape 드롭다운 메뉴 컨테이너 모양 (기본: 4.dp 라운드 — Material3 extraSmall 동등)
  */
 data class DropdownMenuStyle(
     val menuOffset: Dp = 4.dp,
     val menuBackgroundColor: Color? = null,
     val shadowElevation: Dp = 0.dp,
     val tonalElevation: Dp = 0.dp,
+    val shape: Shape = RoundedCornerShape(8.dp),
 )
 
 /**
- * 선택 드롭다운 컴포넌트
- *
- * 피그마 디자인 기반:
- * - 라벨: 기본 12sp, Regular, AfternoteDesign.colors.gray9 (LabelStyle로 커스터마이징 가능)
- * - 드롭다운 필드: 흰색 배경, 하단 보더
- * - 선택된 값: 16sp, Regular, AfternoteDesign.colors.gray8
- * - 드롭다운 아이콘: 오른쪽 정렬
- * - 드롭다운 메뉴 offset: 기본 4.dp
- *
- * @param modifier Modifier for the component
  * @param labelParams Label text, required indicator, and style
  * @param selectedValue Currently selected value
  * @param options List of selectable options
  * @param onValueSelected Callback when an option is selected
+ * @param expanded Whether the dropdown menu is currently expanded
+ * @param onExpandedChange Callback invoked when the user requests to open/close the menu
+ * @param modifier Modifier for the component
  * @param menuStyle Style configuration for the dropdown menu
- * @param state State holder for the dropdown
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SelectionDropdown(
-    modifier: Modifier = Modifier,
     labelParams: SelectionDropdownLabelParams,
     selectedValue: String,
     options: List<String>,
     onValueSelected: (String) -> Unit,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
     menuStyle: DropdownMenuStyle = DropdownMenuStyle(),
-    state: SelectionDropdownState = rememberSelectionDropdownState(),
 ) {
     val menuBackgroundResolved = menuStyle.menuBackgroundColor ?: AfternoteDesign.colors.white
 
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement =
-            Arrangement.spacedBy(
-                space = 8.dp,
-            ),
+            Arrangement.spacedBy(8.dp),
     ) {
         // 라벨
-        Label(
+        EditorSectionLabel(
             text = labelParams.label,
             isRequired = labelParams.isRequired,
+            style = AfternoteDesign.typography.captionLargeR,
+            color = AfternoteDesign.colors.gray7,
         )
 
-        // 드롭다운 필드 (메뉴 너비는 BoxWithConstraints 제약으로 맞춤 — 측정 후 state 갱신 없음)
-        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val menuModifier =
-                if (constraints.hasBoundedWidth) {
-                    Modifier.width(maxWidth)
-                } else {
-                    Modifier.fillMaxWidth()
-                }
-            Box(modifier = Modifier.fillMaxWidth()) {
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable { state.expanded = !state.expanded }
-                            .bottomBorder(color = AfternoteDesign.colors.gray3, width = 0.5.dp)
-                            .padding(all = 8.dp),
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Text(
-                            text = selectedValue,
-                            style =
-                                AfternoteDesign.typography.bodyBase.copy(
-                                    lineHeight = 20.sp,
-                                    color = AfternoteDesign.colors.gray8,
-                                ),
-                        )
+        // Material 3 ExposedDropdownMenuBox: 앵커–메뉴 너비·접근성, 서브컴포지션 없이 처리
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = onExpandedChange,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Row(
+                modifier =
+                    Modifier
+                        .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                        .fillMaxWidth()
+                        .bottomBorder(color = AfternoteDesign.colors.gray3, width = 0.58.dp)
+                        .padding(top = 4.dp, bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = selectedValue,
+                    style =
+                        AfternoteDesign.typography.bodyBase.copy(
+                            color = AfternoteDesign.colors.gray8,
+                        ),
+                )
 
-                        Image(
-                            painter = painterResource(R.drawable.feature_afternote_ic_dropdown_vector),
-                            contentDescription = "드롭다운",
-                        )
-                    }
-                }
-
-                // 드롭다운 메뉴
-                DropdownMenu(
-                    expanded = state.expanded,
-                    onDismissRequest = { state.expanded = false },
-                    offset = DpOffset(x = 0.dp, y = menuStyle.menuOffset),
-                    containerColor = menuBackgroundResolved,
-                    shadowElevation = menuStyle.shadowElevation,
-                    tonalElevation = menuStyle.tonalElevation,
-                    modifier = menuModifier,
-                ) {
-                    options.forEach { option ->
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    text = option,
-                                    style =
-                                        AfternoteDesign.typography.textField.copy(
-                                            fontWeight = FontWeight.Medium,
-                                            color = AfternoteDesign.colors.gray9,
-                                            textAlign = TextAlign.Center,
-                                        ),
-                                    modifier = Modifier.fillMaxWidth(),
-                                )
-                            },
-                            onClick = {
-                                onValueSelected(option)
-                                state.expanded = false
-                            },
-                            contentPadding = PaddingValues(vertical = 16.dp),
-                        )
-                    }
-                }
+                Icon(
+                    painter = painterResource(R.drawable.feature_afternote_ic_dropdown_vector),
+                    contentDescription = stringResource(R.string.afternote_editor_content_description_dropdown),
+                    tint = AfternoteDesign.colors.gray8,
+                )
             }
+
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { onExpandedChange(false) },
+                modifier = Modifier.offset(y = menuStyle.menuOffset),
+                shape = menuStyle.shape,
+                containerColor = menuBackgroundResolved,
+                shadowElevation = menuStyle.shadowElevation,
+                tonalElevation = menuStyle.tonalElevation,
+            ) {
+                SelectionDropdownMenuItems(
+                    options = options,
+                    onSelect = { selected ->
+                        onValueSelected(selected)
+                        onExpandedChange(false)
+                    },
+                )
+            }
+        }
+    }
+}
+
+/**
+ * 펼친 메뉴 항목 리스트 — Popup 컨텍스트 밖에서도 그릴 수 있어 Preview로 단독 확인 가능.
+ */
+@Composable
+private fun SelectionDropdownMenuItems(
+    options: List<String>,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        options.forEach { option ->
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        text = option,
+                        style =
+                            AfternoteDesign.typography.bodyBase.copy(
+                                color = AfternoteDesign.colors.gray9,
+                            ),
+                    )
+                },
+                onClick = { onSelect(option) },
+                contentPadding = PaddingValues(16.dp),
+            )
         }
     }
 }
@@ -182,222 +182,49 @@ fun SelectionDropdown(
 @Composable
 private fun SelectionDropdownPreview() {
     AfternoteTheme {
-        SelectionDropdown(
-            labelParams = SelectionDropdownLabelParams(label = "종류"),
-            selectedValue = CATEGORY_SOCIAL_NETWORK,
-            options =
-                listOf(
-                    CATEGORY_SOCIAL_NETWORK,
-                    CATEGORY_GALLERY_AND_FILE_PREVIEW,
-                    CATEGORY_MEMORIAL_PREVIEW,
-                ),
-            onValueSelected = {},
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Required label")
-@Composable
-private fun SelectionDropdownRequiredLabelPreview() {
-    AfternoteTheme {
-        SelectionDropdown(
-            labelParams =
-                SelectionDropdownLabelParams(
-                    label = "관계",
-                    isRequired = true,
-                ),
-            selectedValue = "딸",
-            options = listOf("딸", "아들", "친구", "가족"),
-            onValueSelected = {},
-        )
-    }
-}
-
-@Preview(
-    showBackground = true,
-    name = "펼쳐진 드롭다운 메뉴 (기본)",
-)
-@Composable
-private fun ExpandedDropdownMenuPreview() {
-    AfternoteTheme {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-        ) {
-            DropdownMenu(
-                expanded = true,
-                onDismissRequest = {},
-                offset = DpOffset(x = 0.dp, y = 4.dp),
-                containerColor = AfternoteDesign.colors.white,
-                shadowElevation = 0.dp,
-                tonalElevation = 0.dp,
-                modifier = Modifier.width(200.dp),
-            ) {
-                listOf(
-                    CATEGORY_SOCIAL_NETWORK,
-                    CATEGORY_GALLERY_AND_FILE_PREVIEW,
-                    CATEGORY_MEMORIAL_PREVIEW,
-                ).forEach { option ->
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = option,
-                                style =
-                                    AfternoteDesign.typography.bodyBase.copy(
-                                        lineHeight = 22.sp,
-                                        color = AfternoteDesign.colors.gray9,
-                                        textAlign = TextAlign.Center,
-                                    ),
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        },
-                        onClick = {},
-                    )
-                }
-            }
+        val social = stringResource(R.string.afternote_editor_category_social)
+        var expanded by remember { mutableStateOf(false) }
+        Box(modifier = Modifier.padding(24.dp)) {
+            SelectionDropdown(
+                labelParams =
+                    SelectionDropdownLabelParams(
+                        label = stringResource(R.string.afternote_editor_label_category),
+                    ),
+                selectedValue = social,
+                options =
+                    listOf(
+                        social,
+                        stringResource(R.string.afternote_editor_category_gallery),
+                        stringResource(R.string.afternote_editor_category_memorial),
+                    ),
+                onValueSelected = {},
+                expanded = expanded,
+                onExpandedChange = { expanded = it },
+            )
         }
     }
 }
 
-@Preview(
-    showBackground = true,
-    name = "펼쳐진 드롭다운 메뉴 (높은 Elevation)",
-)
+@Preview(showBackground = true, name = "Expanded menu items")
 @Composable
-private fun ExpandedDropdownMenuWithElevationPreview() {
+private fun SelectionDropdownMenuItemsPreview() {
     AfternoteTheme {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            shadowElevation = 4.dp,
+            tonalElevation = 0.dp,
+            color = AfternoteDesign.colors.white,
+            modifier = Modifier.padding(24.dp),
         ) {
-            DropdownMenu(
-                expanded = true,
-                onDismissRequest = {},
-                offset = DpOffset(x = 0.dp, y = 4.dp),
-                containerColor = AfternoteDesign.colors.white,
-                shadowElevation = 10.dp,
-                tonalElevation = 10.dp,
-                modifier = Modifier.width(200.dp),
-            ) {
-                listOf("인스타그램", "페이스북", "트위터", "링크드인").forEach { option ->
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = option,
-                                style =
-                                    AfternoteDesign.typography.bodyBase.copy(
-                                        lineHeight = 22.sp,
-                                        color = AfternoteDesign.colors.gray9,
-                                        textAlign = TextAlign.Center,
-                                    ),
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        },
-                        onClick = {},
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Preview(
-    showBackground = true,
-    name = "펼쳐진 드롭다운 메뉴 (다이얼로그 스타일)",
-)
-@Composable
-private fun ExpandedDropdownMenuInDialogPreview() {
-    AfternoteTheme {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-        ) {
-            DropdownMenu(
-                expanded = true,
-                onDismissRequest = {},
-                offset = DpOffset(x = 0.dp, y = 5.2.dp),
-                containerColor = AfternoteDesign.colors.gray1,
-                shadowElevation = 0.dp,
-                tonalElevation = 0.dp,
-                modifier = Modifier.width(200.dp),
-            ) {
-                listOf("친구", "가족", "연인", "동료").forEach { option ->
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = option,
-                                style =
-                                    AfternoteDesign.typography.bodyBase.copy(
-                                        lineHeight = 22.sp,
-                                        color = AfternoteDesign.colors.gray9,
-                                        textAlign = TextAlign.Center,
-                                    ),
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        },
-                        onClick = {},
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Preview(
-    showBackground = true,
-    name = "펼쳐진 드롭다운 메뉴 (긴 리스트)",
-)
-@Composable
-private fun ExpandedDropdownMenuLongListPreview() {
-    AfternoteTheme {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-        ) {
-            DropdownMenu(
-                expanded = true,
-                onDismissRequest = {},
-                offset = DpOffset(x = 0.dp, y = 4.dp),
-                containerColor = AfternoteDesign.colors.white,
-                shadowElevation = 0.dp,
-                tonalElevation = 0.dp,
-                modifier = Modifier.width(200.dp),
-            ) {
-                listOf(
-                    "카카오톡",
-                    "인스타그램",
-                    "페이스북",
-                    "트위터",
-                    "링크드인",
-                    "텔레그램",
-                    "디스코드",
-                    "슬랙",
-                ).forEach { option ->
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = option,
-                                style =
-                                    AfternoteDesign.typography.bodyBase.copy(
-                                        lineHeight = 22.sp,
-                                        color = AfternoteDesign.colors.gray9,
-                                        textAlign = TextAlign.Center,
-                                    ),
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        },
-                        onClick = {},
-                    )
-                }
-            }
+            SelectionDropdownMenuItems(
+                options =
+                    listOf(
+                        "인스타그램",
+                        "페이스북",
+                        "직접 추가하기",
+                    ),
+                onSelect = {},
+            )
         }
     }
 }

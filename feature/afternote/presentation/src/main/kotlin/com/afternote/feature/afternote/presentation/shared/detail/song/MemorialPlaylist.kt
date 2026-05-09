@@ -36,6 +36,7 @@ import coil3.compose.AsyncImagePainter
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.ImageRequest
+import com.afternote.core.model.AlbumCover
 import com.afternote.core.ui.icon.ArrowIcon
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.modifierextention.FadingEdgeDirection
@@ -43,18 +44,8 @@ import com.afternote.core.ui.modifierextention.horizontalFadingEdge
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.model.dummy.AlbumDummies
 
 private const val TAG = "MemorialPlaylist"
-
-/**
- * 앨범 커버 데이터 (edit·view 공통).
- */
-data class AlbumCover(
-    val id: String,
-    val imageUrl: String? = null,
-    val title: String? = null,
-)
 
 @Composable
 private fun MemorialPlaylistSongCountRow(
@@ -300,6 +291,14 @@ private fun MemorialPlaylistAlbumCoverBox(album: AlbumCover) {
     }
 }
 
+private fun memorialPlaylistPreviewAlbumCovers(): List<AlbumCover> =
+    listOf(
+        AlbumCover(id = "1"),
+        AlbumCover(id = "2"),
+        AlbumCover(id = "3"),
+        AlbumCover(id = "4"),
+    )
+
 @Preview(showBackground = true, name = "Edit mode")
 @Composable
 private fun MemorialPlaylistEditPreview() {
@@ -310,7 +309,7 @@ private fun MemorialPlaylistEditPreview() {
         ) {
             MemorialPlaylist(
                 songCount = 4,
-                albumCovers = AlbumDummies.list,
+                albumCovers = memorialPlaylistPreviewAlbumCovers(),
                 onAddSongClick = {},
             )
         }
@@ -327,7 +326,7 @@ private fun MemorialPlaylistViewPreview() {
         ) {
             MemorialPlaylist(
                 songCount = 16,
-                albumCovers = AlbumDummies.list,
+                albumCovers = memorialPlaylistPreviewAlbumCovers(),
                 onAddSongClick = null,
             )
         }

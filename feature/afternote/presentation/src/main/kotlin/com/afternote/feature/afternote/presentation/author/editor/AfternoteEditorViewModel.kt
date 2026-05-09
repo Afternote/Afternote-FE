@@ -1,35 +1,32 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
 import android.util.Log
-import androidx.compose.foundation.text.input.TextFieldState
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.model.AlbumCover
+import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationException
+import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationKind
 import com.afternote.feature.afternote.domain.model.author.AuthorReceiverEntry
-import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
 import com.afternote.feature.afternote.domain.repository.AuthorReceiverRepository
 import com.afternote.feature.afternote.domain.repository.MemorialThumbnailUploadRepository
-import com.afternote.feature.afternote.presentation.author.editor.mapper.AfternoteEditorMapper
+import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.mapper.toAfternoteEditorReceivers
+import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
+import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.InformationProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
-import com.afternote.feature.afternote.presentation.author.editor.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
-import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
-import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorUiState
+import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteSaveState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationException
 import com.afternote.feature.afternote.presentation.author.editor.state.DEFAULT_EDITOR_MESSAGE_BLOCKS
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
-import com.afternote.feature.afternote.presentation.author.editor.state.MemorialPlaylistStateHolder
-import com.afternote.feature.afternote.presentation.author.editor.usecase.SaveAfternoteUseCase
-import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -42,12 +39,17 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import retrofit2.HttpException
 import javax.inject.Inject
 
 private const val TAG = "AfternoteEditorVM"
 
 private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v1"
+
+/** 수정 진입 시 서버 원본 카테고리(API `categoryForApi`). 폼 스냅샷과 별도로 두어 프로세스 데스 후에도 유지한다. */
+private const val EDITOR_ORIGINAL_CATEGORY_FOR_API_KEY = "editor_original_category_for_api_v1"
+
+/** 타입 안전 [com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute.EditorRoute] 직렬화 인자명 (상세 [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel]과 동일). */
+private const val NAV_ARG_ITEM_ID = "itemId"
 
 @Serializable
 private data class ReceiverSnap(
@@ -75,6 +77,10 @@ private data class MessageBlockSnap(
     val body: String = "",
 )
 
+/**
+ * [SavedStateHandle]에 JSON으로 넣는 폼 스냅샷. 번들 전체 크기는 대략 500KB~1MB를 넘기지 않도록 설계해야 하며,
+ * 그렇지 않으면 [android.os.TransactionTooLargeException]이 날 수 있다. 큰 Base64/data URL은 폼에 넣지 말고 URL·URI 문자열만 저장한다.
+ */
 @Serializable
 private data class EditorFormSnapshot(
     val loadedItemId: String? = null,
@@ -91,6 +97,7 @@ private data class EditorFormSnapshot(
     val funeralThumbnailUrl: String? = null,
     val memorialPhotoUrl: String? = null,
     val playlistSongCount: Int = 16,
+    val memorialPlaylistSongs: List<Song> = emptyList(),
     val albumCovers: List<AlbumSnap> = emptyList(),
     val editorMessages: List<MessageBlockSnap> = emptyList(),
 ) {
@@ -133,6 +140,7 @@ private data class EditorFormSnapshot(
             funeralThumbnailUrl = funeralThumbnailUrl,
             memorialPhotoUrl = memorialPhotoUrl,
             playlistSongCount = playlistSongCount,
+            memorialPlaylistSongs = memorialPlaylistSongs,
             playlistAlbumCovers =
                 albumCovers.map { AlbumCover(id = it.id, imageUrl = it.imageUrl, title = it.title) },
             messageBlocks = blocks,
@@ -160,6 +168,7 @@ private data class EditorFormSnapshot(
                 funeralThumbnailUrl = form.funeralThumbnailUrl,
                 memorialPhotoUrl = form.memorialPhotoUrl,
                 playlistSongCount = form.playlistSongCount,
+                memorialPlaylistSongs = form.memorialPlaylistSongs,
                 albumCovers =
                     form.playlistAlbumCovers.map {
                         AlbumSnap(id = it.id, imageUrl = it.imageUrl, title = it.title)
@@ -171,10 +180,19 @@ private data class EditorFormSnapshot(
 }
 
 /**
- * 애프터노트 생성/수정 ViewModel. 저장·미디어 해석은 [SaveAfternoteUseCase]에 위임합니다.
+ * 애프터노트 생성/수정 ViewModel. 저장·미디어 해석은 [SaveAfternoteOrchestrator]에 위임합니다.
  *
  * **SSOT:** 비즈니스 폼 필드는 [EditorFormState] + [editorFormStateFlow]이며, 프로세스 종료 시 [SavedStateHandle] JSON 스냅샷으로 복원합니다.
- * 순수 UI는 [editorUi] ([AfternoteEditorUiState])가 담당합니다.
+ * 추모 플레이리스트 곡 목록은 폼의 [EditorFormState.memorialPlaylistSongs]와 그래프 스코프 [MemorialPlaylistStateHolder]가 동기화된 뒤 스냅샷에 포함됩니다.
+ *
+ * **UI Layer 분리:** ViewModel은 Compose UI 객체(`TextFieldState`, `SnapshotStateList`, 파사드)를 들지 않습니다.
+ * UI 레이어는 `rememberAfternoteEditorState(formStateSource = editorFormStateFlow, updateForm = ::updateForm)`로
+ * 자체 파사드를 만들고, prefill 등 UI 상태 변경은 [AfternoteEditorEvent.PrefillLoaded] 이벤트로 위임받습니다.
+ *
+ * 수정 모드(`itemId` 있음)의 상세 로드는 [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel]과 같이 `init`에서만 트리거한다 (`LaunchedEffect`로 네비게이션에 위임하지 않음).
+ * 서버 원본 카테고리(저장 API용)는 전용 [SavedStateHandle] 키에 보관해 폼 JSON과 함께 프로세스 데스 후 복원된다.
+ * 저장 API의 HTTP·에러 바디 해석은 [com.afternote.feature.afternote.domain.repository.AfternoteRepository] 구현에서 도메인 예외로 변환되며, 여기서는 Retrofit 타입을 알지 않는다.
+ * UI 액션은 개별 public 메서드로 노출한다 (작성자 홈 화면 ViewModel과 동일).
  */
 @HiltViewModel
 class AfternoteEditorViewModel
@@ -184,7 +202,7 @@ class AfternoteEditorViewModel
         private val authorReceiverRepository: AuthorReceiverRepository,
         private val afternoteRepository: AfternoteRepository,
         private val memorialThumbnailUploadRepository: MemorialThumbnailUploadRepository,
-        private val saveAfternoteUseCase: SaveAfternoteUseCase,
+        private val saveAfternoteOrchestrator: SaveAfternoteOrchestrator,
     ) : ViewModel() {
         private val formSnapshotJson =
             Json {
@@ -192,36 +210,20 @@ class AfternoteEditorViewModel
                 encodeDefaults = true
             }
 
-        val editorUi: AfternoteEditorUiState =
-            AfternoteEditorUiState(
-                idState = TextFieldState(),
-                passwordState = TextFieldState(),
-                afternoteEditReceiverNameState = TextFieldState(),
-                phoneNumberState = TextFieldState(),
-                customServiceNameState = TextFieldState(),
-                customLastWishState = TextFieldState(),
-            )
-
         private val editorForm =
             MutableStateFlow(readFormSnapshotOrDefault())
 
-        /** 비즈니스 폼 상태 (UDF 소스). */
+        /** 비즈니스 폼 상태 (UDF 소스). UI 레이어 파사드는 [updateForm]을 통해 갱신한다. */
         val editorFormStateFlow: StateFlow<EditorFormState> = editorForm.asStateFlow()
 
-        val editorFormState: AfternoteEditorState =
-            AfternoteEditorState(
-                ui = editorUi,
-                updateForm = { block ->
-                    editorForm.update(block)
-                    persistFormSnapshot(editorForm.value)
-                },
-                formStateSource = editorForm.asStateFlow(),
-            )
-
-        private val apiErrorBodyJson =
-            Json {
-                ignoreUnknownKeys = true
-            }
+        /**
+         * UI 레이어(파사드)에서 폼 상태를 단방향으로 갱신할 때 호출하는 인텐트.
+         * SavedState 스냅샷 직렬화도 함께 수행한다.
+         */
+        fun updateForm(block: (EditorFormState) -> EditorFormState) {
+            editorForm.update(block)
+            persistFormSnapshot(editorForm.value)
+        }
 
         private val _saveState = MutableStateFlow(AfternoteSaveState())
         val saveState: StateFlow<AfternoteSaveState> = _saveState.asStateFlow()
@@ -240,9 +242,16 @@ class AfternoteEditorViewModel
                     .map { it.toAfternoteEditorReceivers() }
                     .collect { mapped -> _authorReceiversUi.value = mapped }
             }
+            val editItemId = savedStateHandle.get<String>(NAV_ARG_ITEM_ID)?.toLongOrNull()
+            if (editItemId == null) {
+                savedStateHandle.remove<String>(EDITOR_ORIGINAL_CATEGORY_FOR_API_KEY)
+            }
+            if (editItemId != null) {
+                viewModelScope.launch {
+                    loadExistingAfternoteForEdit(editItemId)
+                }
+            }
         }
-
-        private var loadedCategoryForEdit: EditorCategory? = null
 
         private fun readFormSnapshotOrDefault(): EditorFormState {
             val raw = savedStateHandle.get<String>(EDITOR_FORM_SNAPSHOT_KEY) ?: return EditorFormState()
@@ -256,6 +265,7 @@ class AfternoteEditorViewModel
             }
         }
 
+        /** [EditorFormSnapshot] 직렬화. 실패 시 로그만 남긴다(용량 초과 등은 [EditorFormSnapshot] KDoc 참고). */
         private fun persistFormSnapshot(form: EditorFormState) {
             runCatching {
                 savedStateHandle[EDITOR_FORM_SNAPSHOT_KEY] =
@@ -265,43 +275,13 @@ class AfternoteEditorViewModel
             }
         }
 
-        fun onEvent(event: AfternoteEditorUiEvent) {
-            when (event) {
-                is AfternoteEditorUiEvent.LoadReceivers -> {
-                    loadReceivers()
-                }
-
-                is AfternoteEditorUiEvent.UploadThumbnail -> {
-                    uploadMemorialThumbnail(event.jpegBytes)
-                }
-
-                is AfternoteEditorUiEvent.Save -> {
-                    saveAfternote(
-                        editingId = event.editingId,
-                        category = event.editorCategory,
-                        payload = event.payload,
-                        selectedReceiverIds = event.selectedReceiverIds,
-                        playlistStateHolder = event.playlistStateHolder,
-                        memorialMedia = event.memorialMedia,
-                    )
-                }
-
-                is AfternoteEditorUiEvent.LoadForEdit -> {
-                    loadForEdit(
-                        afternoteId = event.afternoteId,
-                        playlistStateHolder = event.playlistStateHolder,
-                    )
-                }
-            }
-        }
-
-        private fun loadReceivers() {
+        fun refreshAuthorReceivers() {
             viewModelScope.launch {
                 authorReceiverRepository.refreshReceivers()
             }
         }
 
-        private fun uploadMemorialThumbnail(jpegBytes: ByteArray) {
+        fun uploadMemorialThumbnail(jpegBytes: ByteArray) {
             viewModelScope.launch {
                 memorialThumbnailUploadRepository
                     .uploadThumbnail(jpegBytes)
@@ -314,7 +294,7 @@ class AfternoteEditorViewModel
             }
         }
 
-        private fun saveAfternote(
+        fun saveAfternote(
             editingId: Long?,
             category: EditorCategory,
             payload: RegisterAfternotePayload,
@@ -340,8 +320,9 @@ class AfternoteEditorViewModel
                 return
             }
 
+            val originalCategoryForApi = readOriginalCategoryForApiFromSavedState()
             val categoryForApi =
-                if (editingId != null) (loadedCategoryForEdit ?: category) else category
+                if (editingId != null) (originalCategoryForApi ?: category) else category
 
             Log.d(
                 TAG,
@@ -353,7 +334,7 @@ class AfternoteEditorViewModel
                 _saveState.update {
                     it.copy(isSaving = true, error = null, validationError = null)
                 }
-                saveAfternoteUseCase(
+                saveAfternoteOrchestrator(
                     editingId = editingId,
                     categoryForApi = categoryForApi,
                     payload = payload,
@@ -373,39 +354,17 @@ class AfternoteEditorViewModel
             }
         }
 
-        private fun loadForEdit(
-            afternoteId: Long,
-            playlistStateHolder: MemorialPlaylistStateHolder? = null,
-        ) {
+        private fun loadExistingAfternoteForEdit(afternoteId: Long) {
             viewModelScope.launch {
                 afternoteRepository
                     .getDetail(id = afternoteId)
                     .onSuccess { detail ->
-                        populatePlaylistFromDetail(detail, playlistStateHolder)
-                        val prefill = AfternoteEditorMapper.buildEditorFormPrefill(detail)
-                        loadedCategoryForEdit = prefill.category
-                        editorFormState.applyFormPrefill(prefill)
+                        val prefill = AfternoteEditorFormMapper.buildEditorFormPrefill(detail)
+                        savedStateHandle[EDITOR_ORIGINAL_CATEGORY_FOR_API_KEY] = prefill.category.name
+                        // UI 레이어 파사드가 TextFieldState·SnapshotStateList 등 UI 상태를 갱신하도록 위임.
+                        _events.send(AfternoteEditorEvent.PrefillLoaded(prefill))
                     }
             }
-        }
-
-        private fun populatePlaylistFromDetail(
-            detail: Detail,
-            playlistStateHolder: MemorialPlaylistStateHolder?,
-        ) {
-            val detailCategory = EditorCategory.fromServerValue(detail.category)
-            if (detailCategory != EditorCategory.MEMORIAL || playlistStateHolder == null) return
-            val playlist = detail.playlist ?: return
-            playlistStateHolder.clearAllSongs()
-            playlist.songs
-                .mapIndexed { index, s ->
-                    Song(
-                        id = (s.id ?: index.toLong()).toString(),
-                        title = s.title,
-                        artist = s.artist,
-                        albumCoverUrl = s.coverUrl,
-                    )
-                }.forEach { playlistStateHolder.addSong(it) }
         }
 
         private fun handleSaveFailure(
@@ -415,36 +374,43 @@ class AfternoteEditorViewModel
             Log.e(TAG, "saveAfternote: FAILURE, category=${category.serverValue}", e)
             val validationError =
                 when (e) {
-                    is AfternoteValidationException -> e.validationError
-                    is HttpException if e.code() == 400 -> parseReceiversRequiredFromBody(e)
-                    else -> null
+                    is AfternoteAuthoringValidationException -> {
+                        when (e.kind) {
+                            AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED -> {
+                                AfternoteValidationError.RECEIVERS_REQUIRED
+                            }
+                        }
+                    }
+
+                    is AfternoteValidationException -> {
+                        e.validationError
+                    }
+
+                    else -> {
+                        null
+                    }
                 }
-            val errorMessage =
-                when {
-                    validationError != null -> null
-                    else -> e.message ?: "저장에 실패했습니다."
+            val errorMessage = if (validationError == null) e.message else null
+            val errorRes =
+                if (validationError == null && errorMessage == null) {
+                    R.string.afternote_editor_save_failed_generic
+                } else {
+                    null
                 }
             _saveState.update {
                 it.copy(
                     isSaving = false,
                     validationError = validationError,
                     error = errorMessage,
+                    errorRes = errorRes,
                 )
             }
         }
 
         fun getReceiverById(id: Long): AuthorReceiverEntry? = authorReceiverRepository.currentReceivers().find { it.receiverId == id }
 
-        private fun parseReceiversRequiredFromBody(e: HttpException): AfternoteValidationError? {
-            val body = e.response()?.errorBody()?.string() ?: return null
-            return runCatching {
-                val parsed = apiErrorBodyJson.decodeFromString<ApiErrorBody>(body)
-                if (parsed.code == 475) AfternoteValidationError.RECEIVERS_REQUIRED else null
-            }.getOrNull()
-        }
+        private fun readOriginalCategoryForApiFromSavedState(): EditorCategory? =
+            savedStateHandle
+                .get<String>(EDITOR_ORIGINAL_CATEGORY_FOR_API_KEY)
+                ?.let { name -> runCatching { EditorCategory.valueOf(name) }.getOrNull() }
     }
-
-@Serializable
-private data class ApiErrorBody(
-    val code: Int? = null,
-)

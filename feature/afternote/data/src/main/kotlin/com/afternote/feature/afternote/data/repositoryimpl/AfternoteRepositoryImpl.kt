@@ -52,7 +52,7 @@ class AfternoteRepositoryImpl
             }.logFailure()
 
         override suspend fun createSocial(payload: CreateSocialPayload): Result<Long> =
-            runCatching {
+            runAuthoring {
                 val request = payload.toRequest()
                 val response = api.createAfternoteSocial(request)
                 val data = response.requireData()
@@ -61,7 +61,7 @@ class AfternoteRepositoryImpl
                 .also { if (it.isSuccess) bumpAuthorListRevision() }
 
         override suspend fun createGallery(payload: CreateGalleryPayload): Result<Long> =
-            runCatching {
+            runAuthoring {
                 val request = payload.toRequest()
                 val response = api.createAfternoteGallery(request)
                 val data = response.requireData()
@@ -83,7 +83,7 @@ class AfternoteRepositoryImpl
          * POST /afternotes (PLAYLIST category).
          */
         override suspend fun createPlaylist(payload: CreatePlaylistPayload): Result<Long> =
-            runCatching {
+            runAuthoring {
                 val request = payload.toRequest()
                 val response = api.createAfternotePlaylist(request)
                 val data = response.requireData()
@@ -99,7 +99,7 @@ class AfternoteRepositoryImpl
             payload: AfternoteUpdatePayload,
         ): Result<Long> {
             val request = payload.toRequest()
-            return runCatching {
+            return runAuthoring {
                 val response = api.updateAfternote(afternoteId = id, request = request)
                 val data = response.requireData()
                 getAfternoteId(data)
@@ -120,6 +120,13 @@ class AfternoteRepositoryImpl
         private fun bumpAuthorListRevision() {
             _authorAfternoteListRevision.update { it + 1L }
         }
+    }
+
+private suspend inline fun <T> runAuthoring(crossinline block: suspend () -> T): Result<T> =
+    try {
+        Result.success(block())
+    } catch (e: Throwable) {
+        Result.failure(mapAuthoringFailure(e))
     }
 
 private fun getAfternoteId(data: AfternoteIdResponse) = data.afternoteId

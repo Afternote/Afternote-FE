@@ -4,21 +4,19 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntRect
-import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
@@ -57,33 +55,56 @@ fun EditDropdownMenu(
         onDismissRequest = onDismissRequest,
         properties = PopupProperties(focusable = true),
     ) {
-        Column(
-            modifier =
-                modifier
-                    .shadow(
-                        elevation = 8.dp,
-                        shape = RoundedCornerShape(8.dp),
-                        clip = true,
-                        spotColor = AfternoteDesign.colors.black.copy(alpha = 0.15f),
-                    ).background(AfternoteDesign.colors.white),
-        ) {
-            if (showEditItem) {
-                CustomDropdownItem(
-                    text = stringResource(R.string.feature_afternote_menu_edit),
-                    onClick = {
-                        onDismissRequest()
-                        onEditClick()
-                    },
-                )
-            }
+        EditDropdownMenuItems(
+            showEditItem = showEditItem,
+            onEditClick = {
+                onDismissRequest()
+                onEditClick()
+            },
+            onDeleteClick = {
+                onDismissRequest()
+                onDeleteClick()
+            },
+            modifier = modifier,
+        )
+    }
+}
+
+/**
+ * 펼친 항목 리스트(그림자·둥글기·배경 포함) — Popup 컨텍스트 밖에서도 그려져 Preview 단독 확인 가능.
+ *
+ * 자식 클릭 영역을 가장 긴 항목 너비로 통일하기 위해 `IntrinsicSize.Max` + `fillMaxWidth`를 사용한다.
+ */
+@Composable
+private fun EditDropdownMenuItems(
+    showEditItem: Boolean,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier =
+            modifier
+                .shadow(
+                    elevation = 8.dp,
+                    shape = RoundedCornerShape(8.dp),
+                    clip = true,
+                    spotColor = AfternoteDesign.colors.black.copy(alpha = 0.15f),
+                ).background(AfternoteDesign.colors.white)
+                .width(IntrinsicSize.Max),
+    ) {
+        if (showEditItem) {
             CustomDropdownItem(
-                text = stringResource(R.string.feature_afternote_menu_delete_record),
-                onClick = {
-                    onDismissRequest()
-                    onDeleteClick()
-                },
+                text = stringResource(R.string.feature_afternote_menu_edit),
+                onClick = onEditClick,
+                modifier = Modifier.fillMaxWidth(),
             )
         }
+        CustomDropdownItem(
+            text = stringResource(R.string.feature_afternote_menu_delete_record),
+            onClick = onDeleteClick,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
@@ -96,9 +117,9 @@ private fun CustomDropdownItem(
     Box(
         modifier =
             modifier
-                .semantics { role = Role.Button }
-                .clickable(onClick = onClick)
-                .padding(horizontal = 26.dp, vertical = 16.dp),
+                .clickable(role = Role.Button, onClick = onClick)
+                .padding(horizontal = 30.5.dp, vertical = 16.dp),
+        contentAlignment = Alignment.CenterStart,
     ) {
         Text(
             text = text,
@@ -108,25 +129,16 @@ private fun CustomDropdownItem(
     }
 }
 
-@Preview(showBackground = true, widthDp = 300, heightDp = 300)
+@Preview(showBackground = true)
 @Composable
-private fun EditDropdownMenuPreview() {
+private fun EditDropdownMenuItemsPreview() {
     AfternoteTheme {
-        EditDropdownMenu(
-            expanded = true,
-            onDismissRequest = {},
-            onDeleteClick = {},
-            onEditClick = {},
-            showEditItem = true,
-            popupPositionProvider =
-                object : PopupPositionProvider {
-                    override fun calculatePosition(
-                        anchorBounds: IntRect,
-                        windowSize: IntSize,
-                        layoutDirection: LayoutDirection,
-                        popupContentSize: IntSize,
-                    ): IntOffset = IntOffset(x = 50, y = 50)
-                },
-        )
+        Box(modifier = Modifier.padding(24.dp)) {
+            EditDropdownMenuItems(
+                showEditItem = true,
+                onEditClick = {},
+                onDeleteClick = {},
+            )
+        }
     }
 }

@@ -139,16 +139,11 @@ private fun LastWishEditModeContent(
                 )
             } else {
                 SelectableRadioCard(
+                    title = option.text,
                     modifier = Modifier.fillMaxWidth(),
                     selected = selected,
                     onClick = { onOptionSelect(option.value) },
-                ) {
-                    Text(
-                        text = option.text,
-                        style = optionLabelStyle(selected = selected),
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
+                )
             }
         }
     }

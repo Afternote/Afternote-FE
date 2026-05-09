@@ -1,10 +1,10 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
-import com.afternote.feature.afternote.presentation.author.editor.model.AccountProcessMethod
+import com.afternote.feature.afternote.presentation.author.editor.account.AccountProcessMethod
+import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
-import com.afternote.feature.afternote.presentation.author.editor.state.MemorialPlaylistStateHolder
 
 /**
  * 애프터노트 저장 전 필수 필드 검증.

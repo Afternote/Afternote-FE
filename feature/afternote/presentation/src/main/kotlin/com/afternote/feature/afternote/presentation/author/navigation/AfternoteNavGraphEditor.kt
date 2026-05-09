@@ -10,20 +10,21 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.toRoute
+import com.afternote.core.ui.ObserveAsEvents
 import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorEvent
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorSaveError
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorScreen
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorScreenCallbacks
-import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorUiEvent
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
-import com.afternote.feature.afternote.presentation.author.editor.RegisterAfternotePayloadBuilder
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
+import com.afternote.feature.afternote.presentation.author.editor.SaveAfternotePayloadBuilder
+import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteSaveState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
-import com.afternote.feature.afternote.presentation.author.editor.state.MemorialPlaylistStateHolder
+import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.author.navigation.model.SELECTED_RECEIVER_ID_KEY
 
@@ -33,35 +34,43 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.SELE
  * **데이터 SSOT:** 편집 본문은 [com.afternote.feature.afternote.domain.repository.AfternoteRepository]가 담당한다.
  * 홈의 `visibleItems` 스냅샷은 에디터에 전달하지 않는다. 식별은 라우트의 `itemId`·`initialCategory` 정도로 최소화한다.
  *
- * **LoadForEdit 트리거가 Compose에 있는 이유:** [MemorialPlaylistStateHolder]는
- * [com.afternote.feature.afternote.presentation.AfternoteHostViewModel]에 묶인 세션 초안이라,
- * VM 생성자 주입만으로는 함께 쥐기 어렵다. 실제 원본 로드는 여전히 ViewModel → Repository 경로다.
+ * **수정 진입 데이터 로드:** 상세 화면과 같이 [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel]의 `init`에서
+ * [androidx.lifecycle.SavedStateHandle]의 `itemId`만 보고 Repository `getDetail`을 호출한다 (Compose `LaunchedEffect` 위임 없음).
+ * [MemorialPlaylistStateHolder]는 그래프 스코프 런타임 버퍼이며, 곡 목록 복원 SSOT는 폼·스냅샷의 `memorialPlaylistSongs`이다.
+ * 서브화면에서 복귀 시 [com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState.syncMemorialPlaylistFromGraphHolderIfAttached]로 홀더→폼을 맞춘다.
+ *
+ * ViewModel 단발 이벤트는 [com.afternote.core.ui.ObserveAsEvents]로만 수집한다 (백그라운드에서 네비게이션 부수 효과 방지).
  */
-internal sealed class EditSaveErrorResult {
+internal sealed class EditorSaveErrorResult {
     data class Validation(
         val messageResId: Int,
-    ) : EditSaveErrorResult()
+    ) : EditorSaveErrorResult()
 
     data class Raw(
         val message: String,
-    ) : EditSaveErrorResult()
+    ) : EditorSaveErrorResult()
+
+    data class Generic(
+        val messageResId: Int,
+    ) : EditorSaveErrorResult()
 }
 
-internal fun editSaveErrorFromState(
+internal fun editorSaveErrorFromState(
     saveState: AfternoteSaveState,
     playlistSongCount: Int,
-): EditSaveErrorResult? {
+): EditorSaveErrorResult? {
     if (saveState.validationError == AfternoteValidationError.PLAYLIST_SONGS_REQUIRED &&
         playlistSongCount > 0
     ) {
         return null
     }
-    saveState.validationError?.let { return EditSaveErrorResult.Validation(it.messageResId) }
-    saveState.error?.let { return EditSaveErrorResult.Raw(it) }
+    saveState.validationError?.let { return EditorSaveErrorResult.Validation(it.messageResId) }
+    saveState.error?.let { return EditorSaveErrorResult.Raw(it) }
+    saveState.errorRes?.let { return EditorSaveErrorResult.Generic(it) }
     return null
 }
 
-internal data class EditScreenCallbacksParams(
+internal data class EditorScreenCallbacksParams(
     val onPopBackStack: () -> Unit,
     val onNavigateToMemorialPlaylist: () -> Unit,
     val editViewModel: AfternoteEditorViewModel,
@@ -108,7 +117,7 @@ internal fun tryApplyReceiverSelectionFromSavedState(
     state.addReceiverFromSelection(receiver.receiverId, receiver.name, receiver.relation)
 }
 
-internal fun buildEditScreenCallbacks(params: EditScreenCallbacksParams): AfternoteEditorScreenCallbacks =
+internal fun buildEditorScreenCallbacks(params: EditorScreenCallbacksParams): AfternoteEditorScreenCallbacks =
     AfternoteEditorScreenCallbacks(
         onBackClick = {
             params.onEditStateClear()
@@ -123,22 +132,20 @@ internal fun buildEditScreenCallbacks(params: EditScreenCallbacksParams): Aftern
                     )
                 },
             )
-            val payload = RegisterAfternotePayloadBuilder.fromEditorState(params.state)
-            params.editViewModel.onEvent(
-                AfternoteEditorUiEvent.Save(
-                    editingId = params.route.itemId?.toLongOrNull(),
-                    editorCategory = params.state.selectedCategory,
-                    payload = payload,
-                    selectedReceiverIds = params.state.afternoteEditReceivers.mapNotNull { it.id.toLongOrNull() },
-                    playlistStateHolder = params.playlistStateHolder,
-                    memorialMedia =
-                        SaveAfternoteMemorialMedia(
-                            funeralVideoUrl = params.state.funeralVideoUrl,
-                            funeralThumbnailUrl = params.state.funeralThumbnailUrl,
-                            memorialPhotoUrl = params.state.memorialPhotoUrl,
-                            pickedMemorialPhotoUri = params.state.pickedMemorialPhotoUri,
-                        ),
-                ),
+            val payload = SaveAfternotePayloadBuilder.fromEditorState(params.state)
+            params.editViewModel.saveAfternote(
+                editingId = params.route.itemId?.toLongOrNull(),
+                category = params.state.selectedCategory,
+                payload = payload,
+                selectedReceiverIds = params.state.afternoteEditReceivers.mapNotNull { it.id.toLongOrNull() },
+                playlistStateHolder = params.playlistStateHolder,
+                memorialMedia =
+                    SaveAfternoteMemorialMedia(
+                        funeralVideoUrl = params.state.funeralVideoUrl,
+                        funeralThumbnailUrl = params.state.funeralThumbnailUrl,
+                        memorialPhotoUrl = params.state.memorialPhotoUrl,
+                        pickedMemorialPhotoUri = params.state.pickedMemorialPhotoUri,
+                    ),
             )
         },
         onNavigateToAddSong = params.onNavigateToMemorialPlaylist,
@@ -146,11 +153,7 @@ internal fun buildEditScreenCallbacks(params: EditScreenCallbacksParams): Aftern
         onBottomNavTabSelected = params.onBottomNavTabSelected,
         onThumbnailBytesReady = { bytes ->
             if (bytes != null) {
-                params.editViewModel.onEvent(
-                    AfternoteEditorUiEvent.UploadThumbnail(
-                        bytes,
-                    ),
-                )
+                params.editViewModel.uploadMemorialThumbnail(bytes)
             }
         },
     )
@@ -161,14 +164,19 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
     val route = params.backStackEntry.toRoute<AfternoteRoute.EditorRoute>()
     val saveState by editViewModel.saveState.collectAsStateWithLifecycle()
     val authorReceivers by editViewModel.authorReceiversUi.collectAsStateWithLifecycle()
-    val form by editViewModel.editorFormStateFlow.collectAsStateWithLifecycle()
-    val state = params.editState ?: editViewModel.editorFormState
+    val fallbackState =
+        rememberAfternoteEditorState(
+            formStateSource = editViewModel.editorFormStateFlow,
+            updateForm = editViewModel::updateForm,
+        )
+    val state = params.editState ?: fallbackState
 
     // 새 글 작성 시 기존 상태 초기화 (목적지 화면이 스스로 책임)
     LaunchedEffect(Unit) {
         if (route.itemId == null) {
             params.onEditStateClear()
             params.playlistStateHolder.clearAllSongs()
+            state.resetMemorialPlaylistFormSnapshot()
         }
     }
     LaunchedEffect(Unit) {
@@ -176,7 +184,7 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
             params.onEditStateChanged(state)
         }
     }
-    LaunchedEffect(Unit) { editViewModel.onEvent(AfternoteEditorUiEvent.LoadReceivers) }
+    LaunchedEffect(Unit) { editViewModel.refreshAuthorReceivers() }
 
     LaunchedEffect(authorReceivers, route.itemId) {
         if (route.itemId == null) {
@@ -184,14 +192,14 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
         }
     }
 
-    val isEditCurrentDestination = params.isEditorRouteCurrent
-    LaunchedEffect(isEditCurrentDestination) {
-        if (isEditCurrentDestination) {
+    LaunchedEffect(params.isEditorRouteCurrent) {
+        if (params.isEditorRouteCurrent) {
             tryApplyReceiverSelectionFromSavedState(
                 params.backStackEntry,
                 editViewModel,
                 state,
             )
+            state.syncMemorialPlaylistFromGraphHolderIfAttached()
         }
     }
 
@@ -201,39 +209,35 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
         }
     }
 
-    // 수정 진입: 라우트 ID만 사용 → VM이 Repository(getDetail)로 SSOT 로드. holder는 그래프 스코프 초안 전달용.
-    LaunchedEffect(route.itemId, form.loadedItemId) {
-        val id = route.itemId?.toLongOrNull() ?: return@LaunchedEffect
-        if (form.loadedItemId != route.itemId) {
-            editViewModel.onEvent(
-                AfternoteEditorUiEvent.LoadForEdit(
-                    afternoteId = id,
-                    playlistStateHolder = params.playlistStateHolder,
-                ),
-            )
-        }
-    }
+    ObserveAsEvents(flow = editViewModel.events) { event ->
+        when (event) {
+            is AfternoteEditorEvent.SaveSuccess -> {
+                navigateToAfternoteHomeOnSaveSuccess(
+                    params.onEditStateClear,
+                    params.onSaveSuccessNavigateHome,
+                )
+            }
 
-    LaunchedEffect(Unit) {
-        editViewModel.events.collect { event ->
-            when (event) {
-                is AfternoteEditorEvent.SaveSuccess -> {
-                    navigateToAfternoteHomeOnSaveSuccess(
-                        params.onEditStateClear,
-                        params.onSaveSuccessNavigateHome,
-                    )
-                }
+            is AfternoteEditorEvent.ThumbnailUploaded -> {
+                runCatching { state.onFuneralThumbnailDataUrlReady(event.url) }
+                    .onFailure { e ->
+                        Log.e(
+                            TAG_AFTERNOTE_EDIT,
+                            "apply thumbnailUrl failed",
+                            e,
+                        )
+                    }
+            }
 
-                is AfternoteEditorEvent.ThumbnailUploaded -> {
-                    runCatching { state.onFuneralThumbnailDataUrlReady(event.url) }
-                        .onFailure { e ->
-                            Log.e(
-                                TAG_AFTERNOTE_EDIT,
-                                "apply thumbnailUrl failed",
-                                e,
-                            )
-                        }
-                }
+            is AfternoteEditorEvent.PrefillLoaded -> {
+                runCatching { state.applyFormPrefill(event.prefill) }
+                    .onFailure { e ->
+                        Log.e(
+                            TAG_AFTERNOTE_EDIT,
+                            "apply prefill failed",
+                            e,
+                        )
+                    }
             }
         }
     }
@@ -242,19 +246,33 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
         remember(
             saveState.validationError,
             saveState.error,
+            saveState.errorRes,
             params.playlistStateHolder.songs.size,
-        ) { editSaveErrorFromState(saveState, params.playlistStateHolder.songs.size) }
+        ) { editorSaveErrorFromState(saveState, params.playlistStateHolder.songs.size) }
     val saveError =
         when (errorResult) {
-            is EditSaveErrorResult.Validation -> AfternoteEditorSaveError(stringResource(errorResult.messageResId))
-            is EditSaveErrorResult.Raw -> AfternoteEditorSaveError(errorResult.message)
+            is EditorSaveErrorResult.Validation -> AfternoteEditorSaveError(stringResource(errorResult.messageResId))
+            is EditorSaveErrorResult.Raw -> AfternoteEditorSaveError(errorResult.message)
+            is EditorSaveErrorResult.Generic -> AfternoteEditorSaveError(stringResource(errorResult.messageResId))
             null -> null
         }
 
-    AfternoteEditorScreen(
-        callbacks =
-            buildEditScreenCallbacks(
-                EditScreenCallbacksParams(
+    val callbacks =
+        remember(
+            params.onPopBackStack,
+            params.onNavigateToMemorialPlaylist,
+            params.onNavigateToSelectReceiver,
+            params.onBottomNavTabSelected,
+            params.onEditStateClear,
+            params.onEditStateChanged,
+            params.editState,
+            editViewModel,
+            state,
+            route,
+            params.playlistStateHolder,
+        ) {
+            buildEditorScreenCallbacks(
+                EditorScreenCallbacksParams(
                     onPopBackStack = params.onPopBackStack,
                     onNavigateToMemorialPlaylist = params.onNavigateToMemorialPlaylist,
                     editViewModel = editViewModel,
@@ -267,9 +285,12 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
                     onNavigateToSelectReceiver = params.onNavigateToSelectReceiver,
                     onBottomNavTabSelected = params.onBottomNavTabSelected,
                 ),
-            ),
+            )
+        }
+
+    AfternoteEditorScreen(
+        callbacks = callbacks,
         playlistStateHolder = params.playlistStateHolder,
-        initialListItem = null,
         state = state,
         saveError = saveError,
     )

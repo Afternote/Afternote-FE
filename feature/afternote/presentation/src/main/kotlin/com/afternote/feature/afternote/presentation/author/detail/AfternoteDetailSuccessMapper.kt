@@ -1,9 +1,9 @@
 package com.afternote.feature.afternote.presentation.author.detail
 
+import com.afternote.core.model.AlbumCover
 import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.presentation.author.detail.socialnetwork.SocialNetworkDetailContent
-import com.afternote.feature.afternote.presentation.shared.detail.song.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 
 /** 상세 화면에 쓰는 "최종 작성일": 갱신일이 있으면 그것, 공백이면 생성일. */

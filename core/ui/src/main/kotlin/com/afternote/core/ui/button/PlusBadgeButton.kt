@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -29,12 +30,13 @@ import com.afternote.core.ui.theme.AfternoteTheme
 fun PlusBadgeButton(
     contentDescription: String,
     onClick: () -> Unit,
-    paddingValues: PaddingValues,
-    plusSize: Dp,
     modifier: Modifier = Modifier,
+    paddingValues: PaddingValues = PaddingValues(8.dp),
+    size: Dp = 30.dp,
 ) {
     Box(
         modifier
+            .size(size)
             .clip(CircleShape)
             .background(AfternoteDesign.colors.black)
             .clickable(onClick = onClick)
@@ -44,7 +46,7 @@ fun PlusBadgeButton(
             painter = painterResource(R.drawable.core_ui_circle_button_plus),
             contentDescription = contentDescription,
             tint = AfternoteDesign.colors.white,
-            modifier = Modifier.size(plusSize),
+            modifier = Modifier.fillMaxSize(),
         )
     }
 }
@@ -54,10 +56,9 @@ fun PlusBadgeButton(
 private fun PlusBadgeButtonPreview() {
     AfternoteTheme {
         PlusBadgeButton(
-            contentDescription = "Add",
+            contentDescription = "Plus Button",
             onClick = {},
-            paddingValues = PaddingValues(12.dp),
-            plusSize = 24.dp,
+            paddingValues = PaddingValues(8.dp),
         )
     }
 }

@@ -1,27 +1,32 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.author.editor.account.AccountSection
 import com.afternote.feature.afternote.presentation.author.editor.gallery.GalleryAndFileEditorContent
 import com.afternote.feature.afternote.presentation.author.editor.gallery.GalleryAndFileEditorContentParams
-import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialGuidelineEditorContent
-import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialGuidelineEditorContentParams
-import com.afternote.feature.afternote.presentation.author.editor.model.AccountSection
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverCallbacks
-import com.afternote.feature.afternote.presentation.author.editor.model.AfternoteEditorReceiverSection
+import com.afternote.feature.afternote.presentation.author.editor.memorial.guideline.MemorialGuidelineEditorContent
+import com.afternote.feature.afternote.presentation.author.editor.memorial.guideline.MemorialGuidelineEditorContentParams
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.InfoMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
+import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverCallbacks
+import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverSection
 import com.afternote.feature.afternote.presentation.author.editor.selection.DropdownMenuStyle
 import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdown
 import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdownLabelParams
@@ -29,79 +34,77 @@ import com.afternote.feature.afternote.presentation.author.editor.social.SocialN
 import com.afternote.feature.afternote.presentation.author.editor.social.SocialNetworkEditorContentParams
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
+import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
 
 @Composable
-internal fun EditContent(
+internal fun EditorContent(
     state: AfternoteEditorState,
     form: EditorFormState,
+    modifier: Modifier = Modifier,
     onNavigateToAddSong: () -> Unit,
     onNavigateToSelectReceiver: () -> Unit,
     onPhotoAddClick: () -> Unit,
     onVideoAddClick: () -> Unit,
     onThumbnailBytesReady: (ByteArray?) -> Unit,
-    bottomPadding: PaddingValues,
 ) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier =
+            modifier
+                .fillMaxSize()
+                .imePadding()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp),
     ) {
-        Column(
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp),
-        ) {
-            Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+
+        SelectionDropdown(
+            labelParams =
+                SelectionDropdownLabelParams(
+                    label = stringResource(R.string.afternote_editor_label_category),
+                ),
+            selectedValue = form.selectedCategory.toDropdownLabel(),
+            options = editorCategoryDropdownLabels(),
+            onValueSelected = state::onCategorySelected,
+            expanded = state.categoryDropdownExpanded,
+            onExpandedChange = state::onCategoryDropdownExpandedChange,
+            menuStyle =
+                DropdownMenuStyle(
+                    shadowElevation = 10.dp,
+                    tonalElevation = 10.dp,
+                ),
+        )
+
+        if (form.selectedCategory != EditorCategory.MEMORIAL) {
+            Spacer(modifier = Modifier.height(20.dp))
 
             SelectionDropdown(
                 labelParams =
                     SelectionDropdownLabelParams(
-                        label = "종류",
+                        label = stringResource(R.string.afternote_editor_label_service_name),
                     ),
-                selectedValue = form.selectedCategory.displayLabel,
-                options = state.categories,
-                onValueSelected = state::onCategorySelected,
+                selectedValue = form.selectedService,
+                options = form.currentServiceOptions,
+                onValueSelected = state::onServiceSelected,
+                expanded = state.serviceDropdownExpanded,
+                onExpandedChange = state::onServiceDropdownExpandedChange,
                 menuStyle =
                     DropdownMenuStyle(
                         shadowElevation = 10.dp,
                         tonalElevation = 10.dp,
                     ),
-                state = state.categoryDropdownState,
-            )
-
-            if (form.selectedCategory != EditorCategory.MEMORIAL) {
-                Spacer(modifier = Modifier.height(16.dp))
-
-                SelectionDropdown(
-                    labelParams =
-                        SelectionDropdownLabelParams(
-                            label = "서비스명",
-                        ),
-                    selectedValue = form.selectedService,
-                    options = form.currentServiceOptions,
-                    onValueSelected = state::onServiceSelected,
-                    menuStyle =
-                        DropdownMenuStyle(
-                            shadowElevation = 10.dp,
-                            tonalElevation = 10.dp,
-                        ),
-                    state = state.serviceDropdownState,
-                )
-            }
-            Spacer(modifier = Modifier.height(24.dp))
-
-            CategoryContent(
-                state = state,
-                form = form,
-                onNavigateToAddSong = onNavigateToAddSong,
-                onNavigateToSelectReceiver = onNavigateToSelectReceiver,
-                onPhotoAddClick = onPhotoAddClick,
-                onVideoAddClick = onVideoAddClick,
-                onThumbnailBytesReady = onThumbnailBytesReady,
-                bottomPadding = bottomPadding,
             )
         }
+        Spacer(modifier = Modifier.height(32.dp))
+
+        CategoryContent(
+            state = state,
+            form = form,
+            onNavigateToAddSong = onNavigateToAddSong,
+            onNavigateToSelectReceiver = onNavigateToSelectReceiver,
+            onPhotoAddClick = onPhotoAddClick,
+            onVideoAddClick = onVideoAddClick,
+            onThumbnailBytesReady = onThumbnailBytesReady,
+        )
     }
 }
 
@@ -114,19 +117,17 @@ internal fun CategoryContent(
     onPhotoAddClick: () -> Unit,
     onVideoAddClick: () -> Unit,
     onThumbnailBytesReady: (ByteArray?) -> Unit,
-    bottomPadding: PaddingValues,
 ) {
     when (form.selectedCategory) {
         EditorCategory.MEMORIAL -> {
             MemorialGuidelineEditorContent(
-                bottomPadding = bottomPadding,
                 params =
                     MemorialGuidelineEditorContentParams(
                         displayMemorialPhotoUri = form.displayMemorialPhotoUri(),
                         playlistSongCount = form.livePlaylistSongCount(state.playlistStateHolder),
                         playlistAlbumCovers = form.displayAlbumCovers(state.playlistStateHolder),
                         selectedLastWish = form.selectedLastWish,
-                        lastWishOptions = state.lastWishOptions,
+                        lastWishOptions = editorLastWishOptions(),
                         funeralVideoUrl = form.funeralVideoUrl,
                         funeralThumbnailUrl = form.funeralThumbnailUrl,
                         customLastWishState = state.customLastWishState,
@@ -151,7 +152,6 @@ internal fun CategoryContent(
 
         EditorCategory.GALLERY -> {
             GalleryAndFileEditorContent(
-                bottomPadding = bottomPadding,
                 params =
                     GalleryAndFileEditorContentParams(
                         editorMessages = state.editorMessages,
@@ -184,7 +184,6 @@ internal fun CategoryContent(
 
         else -> {
             SocialNetworkEditorContent(
-                bottomPadding = bottomPadding,
                 params =
                     SocialNetworkEditorContentParams(
                         editorMessages = state.editorMessages,
@@ -216,5 +215,59 @@ internal fun CategoryContent(
                     ),
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun EditorContentSocialPreview() {
+    AfternoteTheme {
+        val state = rememberAfternoteEditorState()
+        val form by state.formState.collectAsStateWithLifecycle()
+        EditorContent(
+            state = state,
+            form = form.copy(selectedCategory = EditorCategory.SOCIAL),
+            onNavigateToAddSong = {},
+            onNavigateToSelectReceiver = {},
+            onPhotoAddClick = {},
+            onVideoAddClick = {},
+            onThumbnailBytesReady = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun EditorContentGalleryPreview() {
+    AfternoteTheme {
+        val state = rememberAfternoteEditorState()
+        val form by state.formState.collectAsStateWithLifecycle()
+        EditorContent(
+            state = state,
+            form = form.copy(selectedCategory = EditorCategory.GALLERY),
+            onNavigateToAddSong = {},
+            onNavigateToSelectReceiver = {},
+            onPhotoAddClick = {},
+            onVideoAddClick = {},
+            onThumbnailBytesReady = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun EditorContentMemorialPreview() {
+    AfternoteTheme {
+        val state = rememberAfternoteEditorState()
+        val form by state.formState.collectAsStateWithLifecycle()
+        EditorContent(
+            state = state,
+            form = form.copy(selectedCategory = EditorCategory.MEMORIAL),
+            onNavigateToAddSong = {},
+            onNavigateToSelectReceiver = {},
+            onPhotoAddClick = {},
+            onVideoAddClick = {},
+            onThumbnailBytesReady = {},
+        )
     }
 }
