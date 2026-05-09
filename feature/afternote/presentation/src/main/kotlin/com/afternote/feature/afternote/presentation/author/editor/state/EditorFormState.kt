@@ -78,17 +78,21 @@ data class EditorFormState(
      */
     fun displayAlbumCovers(graphSongs: List<Song>): List<AlbumCover> =
         when {
-            graphSongs.isNotEmpty() ->
+            graphSongs.isNotEmpty() -> {
                 graphSongs.map { s ->
                     AlbumCover(id = s.id, imageUrl = s.albumCoverUrl, title = s.title)
                 }
+            }
 
-            memorialPlaylistSongs.isNotEmpty() ->
+            memorialPlaylistSongs.isNotEmpty() -> {
                 memorialPlaylistSongs.map { s ->
                     AlbumCover(id = s.id, imageUrl = s.albumCoverUrl, title = s.title)
                 }
+            }
 
-            else -> playlistAlbumCovers
+            else -> {
+                playlistAlbumCovers
+            }
         }
 
     fun livePlaylistSongCount(graphSongs: List<Song>): Int =

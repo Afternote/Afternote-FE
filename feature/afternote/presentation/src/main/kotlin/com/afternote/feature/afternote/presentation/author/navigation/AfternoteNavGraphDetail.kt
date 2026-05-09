@@ -71,9 +71,13 @@ internal fun ObserveDetailEvents(
 ) {
     ObserveAsEvents(flow = events) { event ->
         when (event) {
-            is AfternoteDetailEvent.DeleteSucceeded -> onDeleteSucceeded()
-            is AfternoteDetailEvent.DeleteFailed ->
+            is AfternoteDetailEvent.DeleteSucceeded -> {
+                onDeleteSucceeded()
+            }
+
+            is AfternoteDetailEvent.DeleteFailed -> {
                 onDeleteFailed(event.rawMessage, event.messageRes)
+            }
         }
     }
 }

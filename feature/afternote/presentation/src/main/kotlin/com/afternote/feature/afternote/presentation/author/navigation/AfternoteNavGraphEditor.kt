@@ -194,11 +194,13 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
 
     ObserveAsEvents(flow = editViewModel.events) { event ->
         when (event) {
-            is AfternoteEditorEvent.SaveSuccess ->
+            is AfternoteEditorEvent.SaveSuccess -> {
                 params.onSaveSuccessNavigateHome()
+            }
 
-            is AfternoteEditorEvent.ThumbnailUploaded ->
+            is AfternoteEditorEvent.ThumbnailUploaded -> {
                 state.onFuneralThumbnailDataUrlReady(event.url)
+            }
 
             is AfternoteEditorEvent.PrefillLoaded -> {
                 params.onReplaceSongs(event.prefill.memorialPlaylistSongs)
