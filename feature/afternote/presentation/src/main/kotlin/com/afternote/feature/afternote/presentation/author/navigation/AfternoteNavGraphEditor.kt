@@ -39,9 +39,6 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.SELE
  * **단일 UI 상태:** ViewModel 의 단일 [AfternoteEditorUiState] 만 collect 하고, 폼/저장진행/오류/수신자 목록은
  * 그 안의 필드로 분기한다 (CLAUDE.md *"loading/error/data 독립 스트림 분리 금지"* 규칙).
  *
- * 추모 곡 목록은 [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs] StateFlow가 SSOT이며,
- * 본 화면은 [graphSongs] 스냅샷을 받아 표시하고, 변경은 [onReplaceSongs]·[onClearSongs] 인텐트로만 수행한다.
- *
  * 에디터 파사드([AfternoteEditorState])는 컴포지션 스코프에서 [rememberAfternoteEditorState]로 매번 생성되며,
  * 그래프 스코프 ViewModel에 캐싱하지 않는다. 입력값은 [androidx.compose.foundation.text.input.rememberTextFieldState]의
  * [androidx.compose.runtime.saveable.rememberSaveable] 메커니즘과 폼 SSOT(messageBlocks)로 재진입 시 복원된다.
@@ -125,7 +122,17 @@ internal fun buildEditorScreenCallbacks(params: EditorScreenCallbacksParams): Af
                     )
                 },
             )
-            val payload = SaveAfternotePayloadBuilder.fromEditorState(params.state)
+            val payload =
+                SaveAfternotePayloadBuilder.build(
+                    form = params.state.currentForm(),
+                    accountId =
+                        params.state.idState.text
+                            .toString(),
+                    password =
+                        params.state.passwordState.text
+                            .toString(),
+                    atmosphere = params.state.getAtmosphereForSave(),
+                )
             params.editViewModel.saveAfternote(
                 editingId = params.route.itemId?.toLongOrNull(),
                 category = params.state.selectedCategory,

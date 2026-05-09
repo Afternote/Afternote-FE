@@ -6,9 +6,10 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
+import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
@@ -19,10 +20,6 @@ import com.afternote.feature.afternote.presentation.author.editor.processing.mod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 
 private const val TAG = "AfternoteEditorState"
 
@@ -30,16 +27,21 @@ private fun normalizeEditorMessageBlocks(blocks: List<EditorMessageTextBlock>): 
     blocks.ifEmpty { DEFAULT_EDITOR_MESSAGE_BLOCKS }
 
 /**
- * 에디터 화면용 **안정적인 파사드**: [formState]는 ViewModel(또는 프리뷰용 [MutableStateFlow])의 SSOT를 노출하고,
- * [ui]는 순수 UI 상태를 둔다. 네비게이션·호스트는 이 인스턴스 참조를 그대로 유지할 수 있다.
+ * 에디터 화면용 **안정적인 파사드**: ViewModel의 단일 [AfternoteEditorUiHolder] SSOT 안의
+ * 폼 스냅샷([getCurrentForm])과 폼 갱신 인텐트([updateForm])를 받아 UI 측 [TextFieldState]·이펙트와 결합한다.
+ * 컴포지션 스코프 내에서만 생성되며, 그래프 스코프 ViewModel에 캐싱하지 않는다.
  *
- * 읽기: Composable에서 `val form by state.formState.collectAsStateWithLifecycle()` 후 `form`과 `state.ui`를 조합한다.
+ * 화면은 ViewModel의 단일 `uiState` 만 collect 하고 그 안의 `form` 을 렌더링에 쓰며,
+ * 본 파사드의 콜백 메서드들은 [getCurrentForm] 으로 최신 폼 스냅샷을 읽는다 (콜백은 stale closure 회피).
+ *
+ * 추모 곡 목록은 [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs] 가 SSOT 이므로
+ * 본 파사드는 곡 목록을 직접 보유·참조하지 않으며, 곡 변경은 host VM 인텐트로 처리한다.
  */
 @Stable
 class AfternoteEditorState(
-    val ui: AfternoteEditorUiState,
+    val ui: AfternoteEditorUiHolder,
+    private val getCurrentForm: () -> EditorFormState,
     private val updateForm: ((EditorFormState) -> EditorFormState) -> Unit,
-    val formState: StateFlow<EditorFormState>,
 ) {
     val editorMessages: SnapshotStateList<EditorMessage> get() = ui.editorMessages
 
@@ -54,15 +56,16 @@ class AfternoteEditorState(
     val relationshipSelectedValue get() = ui.relationshipSelectedValue
     val categoryDropdownExpanded get() = ui.categoryDropdownExpanded
     val serviceDropdownExpanded get() = ui.serviceDropdownExpanded
-    val playlistStateHolder get() = ui.playlistStateHolder
 
-    /** 콜백·일회성 읽기용. Compose 표시는 [formState]를 collect한 스냅샷을 쓰는 것이 안전하다. */
-    val selectedCategory get() = formState.value.selectedCategory
-    val funeralVideoUrl get() = formState.value.funeralVideoUrl
-    val funeralThumbnailUrl get() = formState.value.funeralThumbnailUrl
-    val memorialPhotoUrl get() = formState.value.memorialPhotoUrl
-    val pickedMemorialPhotoUri get() = formState.value.pickedMemorialPhotoUri
-    val afternoteEditReceivers get() = formState.value.afternoteEditReceivers
+    /** 콜백·payload 조립 등 일회성 read 용 (Compose 표시는 화면이 collect 한 `uiState.form` 사용). */
+    fun currentForm(): EditorFormState = getCurrentForm()
+
+    val selectedCategory get() = getCurrentForm().selectedCategory
+    val funeralVideoUrl get() = getCurrentForm().funeralVideoUrl
+    val funeralThumbnailUrl get() = getCurrentForm().funeralThumbnailUrl
+    val memorialPhotoUrl get() = getCurrentForm().memorialPhotoUrl
+    val pickedMemorialPhotoUri get() = getCurrentForm().pickedMemorialPhotoUri
+    val afternoteEditReceivers get() = getCurrentForm().afternoteEditReceivers
 
     val galleryProcessingCallbacks: ProcessingMethodCallbacks =
         ProcessingMethodCallbacks(
@@ -84,42 +87,17 @@ class AfternoteEditorState(
 
     fun onServiceDropdownExpandedChange(expanded: Boolean) = ui.onServiceDropdownExpandedChange(expanded)
 
-    /**
-     * `stateHolder.onSongCountChanged` 콜백은 의도적으로 등록하지 않는다 — 그래프 스코프 홀더가
-     * 화면보다 오래 살아 facade 참조를 잡아두는 누수 위험을 피하기 위함. 폼 동기화는 화면 복귀 시
-     * [syncMemorialPlaylistFromGraphHolderIfAttached] 가 처리한다.
-     */
-    fun setPlaylistStateHolder(stateHolder: MemorialPlaylistStateHolder) {
-        if (formState.value.selectedCategory == EditorCategory.MEMORIAL &&
-            stateHolder.songs.isEmpty() &&
-            formState.value.memorialPlaylistSongs.isNotEmpty()
-        ) {
-            stateHolder.initializeSongs(formState.value.memorialPlaylistSongs)
-        }
-        ui.setPlaylistStateHolder(stateHolder)
-        syncMemorialPlaylistSongsFromHolder()
-    }
-
-    private fun syncMemorialPlaylistSongsFromHolder() {
-        val holder = ui.playlistStateHolder ?: return
+    /** 호스트 SSOT의 곡 목록을 폼 스냅샷으로 동기화한다 (SavedStateHandle JSON에 포함하기 위함). */
+    fun syncMemorialPlaylistSongs(songs: List<Song>) {
         updateForm {
             it.copy(
-                memorialPlaylistSongs = holder.songs.toList(),
-                playlistSongCount = holder.songs.size,
+                memorialPlaylistSongs = songs,
+                playlistSongCount = if (songs.isNotEmpty()) songs.size else it.playlistSongCount,
             )
         }
     }
 
-    fun updatePlaylistSongCount() = syncMemorialPlaylistSongsFromHolder()
-
-    /**
-     * 에디터가 그래프에서 다시 포그라운드가 될 때(플레이리스트·곡 추가 등 서브화면에서 복귀) 호출한다.
-     * [MemorialPlaylistStateHolder]만 갱신되고 Compose 이펙트가 한 번 건너뛴 경우에도
-     * [EditorFormState.memorialPlaylistSongs]와 SavedState 스냅샷이 홀더와 맞도록 한다.
-     */
-    fun syncMemorialPlaylistFromGraphHolderIfAttached() = syncMemorialPlaylistSongsFromHolder()
-
-    /** 신규 작성 진입 시 폼에 남은 추모 플레이리스트 스냅샷을 비운다 (홀더 clear는 호출부에서). */
+    /** 신규 작성 진입 시 폼에 남은 추모 플레이리스트 스냅샷을 비운다 (호스트 SSOT clear는 호출부에서). */
     fun resetMemorialPlaylistFormSnapshot() {
         updateForm {
             it.copy(memorialPlaylistSongs = emptyList(), playlistSongCount = 16)
@@ -151,7 +129,7 @@ class AfternoteEditorState(
     }
 
     fun onServiceSelected(service: String) {
-        if (formState.value.isCustomAddOption(service)) {
+        if (getCurrentForm().isCustomAddOption(service)) {
             ui.showCustomServiceDialog()
         } else {
             updateForm { it.copy(selectedService = service) }
@@ -170,7 +148,7 @@ class AfternoteEditorState(
         updateForm { it.copy(selectedLastWish = wish) }
     }
 
-    fun getAtmosphereForSave(): String = formState.value.atmosphereForSave(ui.customLastWishState.text.toString())
+    fun getAtmosphereForSave(): String = getCurrentForm().atmosphereForSave(ui.customLastWishState.text.toString())
 
     fun onMemorialPhotoSelected(uri: Uri?) {
         updateForm { it.copy(pickedMemorialPhotoUri = uri?.toString()) }
@@ -308,7 +286,7 @@ class AfternoteEditorState(
         }
     }
 
-    /** SavedState·프리필 등 폼 SSOT → TextField 목록 반영. */
+    /** SavedState·프리필·재진입 등 폼 SSOT → TextField 목록 반영. */
     fun syncEditorMessagesFromForm(blocks: List<EditorMessageTextBlock>) {
         applyMessageBlocks(blocks)
     }
@@ -320,6 +298,7 @@ class AfternoteEditorState(
 
     /**
      * ViewModel이 [EditorFormPrefill]을 적용할 때 호출. 비즈니스 필드는 [EditorFormState]로, 메시지·계정 텍스트는 UI에 반영.
+     * 추모 곡 목록은 host VM이 SSOT이므로 본 메서드는 곡 목록을 폼 스냅샷에만 채우고, 호스트 동기화는 호출자가 수행한다.
      */
     fun applyFormPrefill(prefill: EditorFormPrefill) {
         Log.d(
@@ -358,9 +337,6 @@ class AfternoteEditorState(
                     },
                 messageBlocks = prefillBlocks,
             )
-        }
-        if (prefill.category == EditorCategory.MEMORIAL) {
-            ui.playlistStateHolder?.replaceSongs(prefill.memorialPlaylistSongs)
         }
         ui.idState.edit { replace(0, length, prefill.accountId) }
         ui.passwordState.edit { replace(0, length, prefill.password) }
@@ -436,13 +412,13 @@ class AfternoteEditorState(
 /**
  * 프로덕션용 팩토리.
  *
- * ViewModel의 [EditorFormState] [StateFlow]와 `updateForm` 인텐트 함수를 받아
- * UI 레이어가 소유한 [TextFieldState]와 [AfternoteEditorUiState]를 결합한 파사드를 만든다. ViewModel은
+ * ViewModel의 폼 SSOT 스냅샷을 [getCurrentForm] 클로저로, `updateForm` 인텐트를 [updateForm] 으로 받아
+ * UI 레이어가 소유한 [TextFieldState]와 [AfternoteEditorUiHolder]를 결합한 파사드를 만든다. ViewModel은
  * Compose UI 상태를 들지 않으므로, 이 팩토리는 반드시 Composable 스코프에서 호출되어야 한다.
  */
 @Composable
 fun rememberAfternoteEditorState(
-    formStateSource: StateFlow<EditorFormState>,
+    getCurrentForm: () -> EditorFormState,
     updateForm: ((EditorFormState) -> EditorFormState) -> Unit,
 ): AfternoteEditorState {
     val idState = rememberTextFieldState()
@@ -453,7 +429,7 @@ fun rememberAfternoteEditorState(
     val customLastWishState = rememberTextFieldState()
 
     val ui =
-        rememberAfternoteEditorUiState(
+        rememberAfternoteEditorUiHolder(
             idState = idState,
             passwordState = passwordState,
             afternoteEditReceiverNameState = afternoteEditReceiverNameState,
@@ -462,24 +438,23 @@ fun rememberAfternoteEditorState(
             customLastWishState = customLastWishState,
         )
 
-    return remember(ui, formStateSource) {
+    return remember(ui) {
         AfternoteEditorState(
             ui = ui,
+            getCurrentForm = getCurrentForm,
             updateForm = updateForm,
-            formState = formStateSource,
         )
     }
 }
 
 /**
- * Compose Preview·로컬 UI 테스트 전용. 내부 [MutableStateFlow]로 자체 SSOT를 만든다.
+ * Compose Preview·로컬 UI 테스트 전용. 내부 [androidx.compose.runtime.MutableState]로 자체 폼 SSOT를 만든다.
  */
 @Composable
 fun rememberAfternoteEditorState(): AfternoteEditorState {
-    val flow = remember { MutableStateFlow(EditorFormState()) }
-    val formStateSource = remember(flow) { flow.asStateFlow() }
+    val previewForm = remember { mutableStateOf(EditorFormState()) }
     return rememberAfternoteEditorState(
-        formStateSource = formStateSource,
-        updateForm = { block -> flow.update(block) },
+        getCurrentForm = { previewForm.value },
+        updateForm = { block -> previewForm.value = block(previewForm.value) },
     )
 }
