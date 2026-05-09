@@ -1,6 +1,5 @@
 package com.afternote.feature.afternote.data.dto
 
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -33,7 +32,6 @@ data class AfternoteSong(
     @SerialName("coverUrl") val coverUrl: String? = null,
 )
 
-@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class AfternoteDetailReceiver(
     @SerialName("receiverId") val receiverId: Long? = null,

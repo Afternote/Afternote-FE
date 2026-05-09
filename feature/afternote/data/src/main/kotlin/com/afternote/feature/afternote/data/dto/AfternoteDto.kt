@@ -1,12 +1,15 @@
 package com.afternote.feature.afternote.data.dto
 
+import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
+// processMethod: 계정 처리 방법(enum). OpenAPI 스키마 누락 상태 — 백엔드는 실제로 받음. 스키마 갱신 시 주석만 제거.
 data class AfternoteCreateGalleryRequest(
-    @SerialName("category") val category: String = "GALLERY",
+    @EncodeDefault @SerialName("category") val category: String = "GALLERY",
     @SerialName("title") val title: String,
     @SerialName("processMethod") val processMethod: String,
     @SerialName("actions") val actions: List<String>,
@@ -14,17 +17,19 @@ data class AfternoteCreateGalleryRequest(
     @SerialName("receivers") val receivers: List<AfternoteReceiverRef>,
 )
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class AfternoteCreatePlaylistRequest(
-    @SerialName("category") val category: String = "PLAYLIST",
+    @EncodeDefault @SerialName("category") val category: String = "PLAYLIST",
     @SerialName("title") val title: String,
     @SerialName("playlist") val playlist: AfternotePlaylist,
     @SerialName("receivers") val receivers: List<AfternoteReceiverRef> = emptyList(),
 )
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class AfternoteCreateSocialRequest(
-    @SerialName("category") val category: String = "SOCIAL",
+    @EncodeDefault @SerialName("category") val category: String = "SOCIAL",
     @SerialName("title") val title: String,
     @SerialName("processMethod") val processMethod: String,
     @SerialName("actions") val actions: List<String>,
@@ -45,7 +50,6 @@ data class AfternoteUpdateRequest(
     @SerialName("playlist") val playlist: AfternotePlaylist? = null,
 )
 
-@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class AfternoteDetailResponse(
     @SerialName("afternoteId") val afternoteId: Long,
@@ -61,7 +65,6 @@ data class AfternoteDetailResponse(
     @SerialName("playlist") val playlist: AfternotePlaylist? = null,
 )
 
-@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class AfternoteIdResponse(
     @SerialName("afternoteId") val afternoteId: Long,
@@ -70,7 +73,7 @@ data class AfternoteIdResponse(
 @Serializable
 data class AfternoteListResponse(
     @SerialName("content") val content: List<AfternoteListItem> = emptyList(),
-    @SerialName("pageNumber") val page: Int = 0,
+    @SerialName("page") val page: Int = 0,
     @SerialName("size") val size: Int = 10,
     @SerialName("hasNext") val hasNext: Boolean = false,
 )
