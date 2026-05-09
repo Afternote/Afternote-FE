@@ -19,6 +19,7 @@ import com.afternote.core.ui.button.FAB.PenFloatingActionButton
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.core.ui.topbar.HomeTopBar
+import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.body.EmptyListBody
@@ -36,7 +37,7 @@ fun AfternoteHomeScreen(
     isInitialLoading: Boolean,
     isRefreshing: Boolean,
     onCategorySelected: (AfternoteCategory) -> Unit,
-    onListItemClick: (String) -> Unit,
+    onListItemClick: (id: String, type: AfternoteServiceType) -> Unit,
     onRefresh: () -> Unit,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
@@ -100,12 +101,14 @@ private fun AfternoteHomeScreenPreview() {
                             serviceName = "인스타그램",
                             date = "2023.11.24",
                             iconResId = R.drawable.feature_afternote_img_insta_pattern,
+                            type = AfternoteServiceType.SOCIAL_NETWORK,
                         ),
                         ListItemUiModel(
                             id = "2",
                             serviceName = "페이스북",
                             date = "2023.11.25",
                             iconResId = R.drawable.feature_afternote_img_insta_pattern,
+                            type = AfternoteServiceType.SOCIAL_NETWORK,
                         ),
                     ),
                 ),
@@ -116,7 +119,7 @@ private fun AfternoteHomeScreenPreview() {
             isInitialLoading = false,
             isRefreshing = false,
             onCategorySelected = {},
-            onListItemClick = {},
+            onListItemClick = { _, _ -> },
             onRefresh = {},
         )
     }
@@ -134,7 +137,7 @@ private fun AfternoteHomeScreenEmptyPreview() {
             isInitialLoading = false,
             isRefreshing = false,
             onCategorySelected = {},
-            onListItemClick = {},
+            onListItemClick = { _, _ -> },
             onRefresh = {},
         )
     }

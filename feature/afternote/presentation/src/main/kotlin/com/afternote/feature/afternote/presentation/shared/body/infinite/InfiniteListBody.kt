@@ -12,6 +12,7 @@ import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.home.HomeHeaderSection
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
@@ -24,7 +25,7 @@ fun InfiniteListBody(
     items: LazyPagingItems<ListItemUiModel>,
     selectedCategory: AfternoteCategory,
     onCategorySelected: (AfternoteCategory) -> Unit,
-    onListItemClick: (String) -> Unit,
+    onListItemClick: (id: String, type: AfternoteServiceType) -> Unit,
     modifier: Modifier = Modifier,
     nextStepText: String = "",
     onNextStepClick: () -> Unit = {},
@@ -60,18 +61,21 @@ private fun InfiniteListBodyPreview() {
                             serviceName = "인스타그램",
                             date = "2023.11.24",
                             iconResId = R.drawable.feature_afternote_img_insta_pattern,
+                            type = AfternoteServiceType.SOCIAL_NETWORK,
                         ),
                         ListItemUiModel(
                             id = "2",
                             serviceName = "페이스북",
                             date = "2023.11.25",
                             iconResId = R.drawable.feature_afternote_img_insta_pattern,
+                            type = AfternoteServiceType.SOCIAL_NETWORK,
                         ),
                         ListItemUiModel(
                             id = "3",
                             serviceName = "갤러리",
                             date = "2023.11.26",
                             iconResId = R.drawable.feature_afternote_img_insta_pattern,
+                            type = AfternoteServiceType.GALLERY_AND_FILES,
                         ),
                     ),
                 ),
@@ -83,7 +87,7 @@ private fun InfiniteListBodyPreview() {
             items = items,
             selectedCategory = AfternoteCategory.ALL,
             onCategorySelected = {},
-            onListItemClick = {},
+            onListItemClick = { _, _ -> },
         )
     }
 }

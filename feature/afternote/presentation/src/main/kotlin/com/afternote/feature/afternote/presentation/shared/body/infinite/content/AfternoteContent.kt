@@ -11,6 +11,7 @@ import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.home.AfternoteCategoryRow
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
@@ -23,7 +24,7 @@ fun AfternoteListContent(
     items: LazyPagingItems<ListItemUiModel>,
     selectedCategory: AfternoteCategory,
     onCategorySelected: (AfternoteCategory) -> Unit,
-    onListItemClick: (String) -> Unit,
+    onListItemClick: (id: String, type: AfternoteServiceType) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -53,12 +54,14 @@ private fun AfternoteListContentPreview() {
                             serviceName = "추모 가이드라인",
                             date = "2025.12.01",
                             iconResId = R.drawable.feature_afternote_img_logo,
+                            type = AfternoteServiceType.MEMORIAL,
                         ),
                         ListItemUiModel(
                             id = "2",
                             serviceName = "인스타그램",
                             date = "2025.11.26",
                             iconResId = R.drawable.feature_afternote_img_logo,
+                            type = AfternoteServiceType.SOCIAL_NETWORK,
                         ),
                     ),
                 ),
@@ -67,7 +70,7 @@ private fun AfternoteListContentPreview() {
             items = items,
             selectedCategory = AfternoteCategory.SOCIAL_NETWORK,
             onCategorySelected = {},
-            onListItemClick = {},
+            onListItemClick = { _, _ -> },
         )
     }
 }

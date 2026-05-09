@@ -20,6 +20,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.AfternoteListItem
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
@@ -29,7 +30,7 @@ import kotlinx.coroutines.flow.flowOf
 @Composable
 fun AfternoteList(
     items: LazyPagingItems<ListItemUiModel>,
-    onItemClick: (String) -> Unit,
+    onItemClick: (id: String, type: AfternoteServiceType) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -49,7 +50,7 @@ fun AfternoteList(
             contentType = items.itemContentType { CONTENT_TYPE_LIST_ITEM },
         ) { index ->
             val item = items[index] ?: return@items
-            AfternoteListItem(uiModel = item) { onItemClick(item.id) }
+            AfternoteListItem(uiModel = item) { onItemClick(item.id, item.type) }
         }
         if (items.loadState.append is LoadState.Loading) {
             item(key = "append_loading") {
@@ -79,25 +80,28 @@ private fun AfternoteListPreview() {
                             serviceName = "인스타그램",
                             date = "2023.11.24",
                             iconResId = R.drawable.feature_afternote_img_insta_pattern,
+                            type = AfternoteServiceType.SOCIAL_NETWORK,
                         ),
                         ListItemUiModel(
                             id = "2",
                             serviceName = "페이스북",
                             date = "2023.11.25",
                             iconResId = R.drawable.feature_afternote_img_insta_pattern,
+                            type = AfternoteServiceType.SOCIAL_NETWORK,
                         ),
                         ListItemUiModel(
                             id = "3",
                             serviceName = "트위터",
                             date = "2023.11.26",
                             iconResId = R.drawable.feature_afternote_img_insta_pattern,
+                            type = AfternoteServiceType.SOCIAL_NETWORK,
                         ),
                     ),
                 ),
             ).collectAsLazyPagingItems()
         AfternoteList(
             items = items,
-            onItemClick = {},
+            onItemClick = { _, _ -> },
         )
     }
 }
