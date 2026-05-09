@@ -1,6 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.navigation
 
-import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,10 +37,6 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.SELE
  *
  * **단일 UI 상태:** ViewModel 의 단일 [AfternoteEditorUiState] 만 collect 하고, 폼/저장진행/오류/수신자 목록은
  * 그 안의 필드로 분기한다 (CLAUDE.md *"loading/error/data 독립 스트림 분리 금지"* 규칙).
- *
- * 에디터 파사드([AfternoteEditorState])는 컴포지션 스코프에서 [rememberAfternoteEditorState]로 매번 생성되며,
- * 그래프 스코프 ViewModel에 캐싱하지 않는다. 입력값은 [androidx.compose.foundation.text.input.rememberTextFieldState]의
- * [androidx.compose.runtime.saveable.rememberSaveable] 메커니즘과 폼 SSOT(messageBlocks)로 재진입 시 복원된다.
  *
  * ViewModel 단발 이벤트는 [com.afternote.core.ui.ObserveAsEvents]로만 수집한다 (백그라운드에서 네비게이션 부수 효과 방지).
  */
@@ -199,32 +194,15 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
 
     ObserveAsEvents(flow = editViewModel.events) { event ->
         when (event) {
-            is AfternoteEditorEvent.SaveSuccess -> {
+            is AfternoteEditorEvent.SaveSuccess ->
                 params.onSaveSuccessNavigateHome()
-            }
 
-            is AfternoteEditorEvent.ThumbnailUploaded -> {
-                runCatching { state.onFuneralThumbnailDataUrlReady(event.url) }
-                    .onFailure { e ->
-                        Log.e(
-                            TAG_AFTERNOTE_EDIT,
-                            "apply thumbnailUrl failed",
-                            e,
-                        )
-                    }
-            }
+            is AfternoteEditorEvent.ThumbnailUploaded ->
+                state.onFuneralThumbnailDataUrlReady(event.url)
 
             is AfternoteEditorEvent.PrefillLoaded -> {
-                runCatching {
-                    params.onReplaceSongs(event.prefill.memorialPlaylistSongs)
-                    state.applyFormPrefill(event.prefill)
-                }.onFailure { e ->
-                    Log.e(
-                        TAG_AFTERNOTE_EDIT,
-                        "apply prefill failed",
-                        e,
-                    )
-                }
+                params.onReplaceSongs(event.prefill.memorialPlaylistSongs)
+                state.applyFormPrefill(event.prefill)
             }
         }
     }
@@ -238,10 +216,25 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
         ) { editorSaveErrorFromUiState(uiState, params.graphSongs.size) }
     val saveError =
         when (errorResult) {
-            is EditorSaveErrorResult.Validation -> AfternoteEditorSaveError(stringResource(errorResult.messageResId))
-            is EditorSaveErrorResult.Raw -> AfternoteEditorSaveError(errorResult.message)
-            is EditorSaveErrorResult.Generic -> AfternoteEditorSaveError(stringResource(errorResult.messageResId))
-            null -> null
+            is EditorSaveErrorResult.Validation -> {
+                AfternoteEditorSaveError(
+                    stringResource(
+                        errorResult.messageResId,
+                    ),
+                )
+            }
+
+            is EditorSaveErrorResult.Raw -> {
+                AfternoteEditorSaveError(errorResult.message)
+            }
+
+            is EditorSaveErrorResult.Generic -> {
+                AfternoteEditorSaveError(stringResource(errorResult.messageResId))
+            }
+
+            null -> {
+                null
+            }
         }
 
     val callbacks =
