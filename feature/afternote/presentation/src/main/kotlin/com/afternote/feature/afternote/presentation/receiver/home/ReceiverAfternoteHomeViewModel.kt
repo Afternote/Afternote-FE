@@ -108,10 +108,12 @@ class ReceiverAfternoteHomeViewModel
 private fun AfterNoteListItemDto.toUiModel(): ListItemUiModel {
     val typeKey = sourceType.orEmpty()
     val displayRes = getAfternoteDisplayRes(typeKey)
+    val serviceName = getServiceNameForTypeKey(typeKey)
     return ListItemUiModel(
         id = id.toString(),
-        serviceName = getServiceNameForTypeKey(typeKey),
+        serviceName = serviceName,
         date = lastUpdatedAt.orEmpty(),
         iconResId = displayRes.drawableResId,
+        type = AfternoteServiceCatalog.serviceTypeFor(serviceName),
     )
 }

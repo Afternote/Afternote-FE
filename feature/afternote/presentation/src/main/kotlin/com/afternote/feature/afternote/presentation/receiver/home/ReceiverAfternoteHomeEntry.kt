@@ -36,7 +36,7 @@ fun ReceiverAfternoteHomeEntry(
         isInitialLoading = uiState.isLoading && items.itemCount == 0,
         isRefreshing = false,
         onCategorySelected = { viewModel.onEvent(ReceiverAfternoteHomeEvent.SelectTab(it)) },
-        onListItemClick = actions.navigateToDetail,
+        onListItemClick = { id, _ -> actions.navigateToDetail(id) },
         onRefresh = {},
         modifier = modifier,
     )
