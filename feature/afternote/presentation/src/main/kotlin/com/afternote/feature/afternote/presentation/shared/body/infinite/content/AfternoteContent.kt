@@ -7,35 +7,36 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.paging.PagingData
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.home.AfternoteCategoryRow
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
-import com.afternote.feature.afternote.presentation.shared.body.infinite.AfternoteBodyUiState
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.AfternoteList
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
+import kotlinx.coroutines.flow.flowOf
 
 @Composable
 fun AfternoteListContent(
-    uiState: AfternoteBodyUiState,
+    items: LazyPagingItems<ListItemUiModel>,
+    selectedCategory: AfternoteCategory,
     onCategorySelected: (AfternoteCategory) -> Unit,
-    onListItemClick: (String) -> Unit,
-    onLoadMore: () -> Unit,
+    onListItemClick: (id: String, type: AfternoteServiceType) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier =
-            modifier
-                .fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
     ) {
         AfternoteCategoryRow(
             onTabSelected = onCategorySelected,
-            selectedTab = uiState.selectedCategory,
+            selectedTab = selectedCategory,
         )
         AfternoteList(
-            bodyUiState = uiState,
+            items = items,
             onItemClick = onListItemClick,
-            onLoadMore = onLoadMore,
         )
     }
 }
@@ -44,29 +45,32 @@ fun AfternoteListContent(
 @Composable
 private fun AfternoteListContentPreview() {
     AfternoteTheme {
-        AfternoteListContent(
-            uiState =
-                AfternoteBodyUiState(
-                    visibleItems =
-                        listOf(
-                            ListItemUiModel(
-                                id = "1",
-                                serviceName = "추모 가이드라인",
-                                date = "2025.12.01",
-                                iconResId = R.drawable.feature_afternote_img_logo,
-                            ),
-                            ListItemUiModel(
-                                id = "2",
-                                serviceName = "인스타그램",
-                                date = "2025.11.26",
-                                iconResId = R.drawable.feature_afternote_img_logo,
-                            ),
+        val items =
+            flowOf(
+                PagingData.from(
+                    listOf(
+                        ListItemUiModel(
+                            id = "1",
+                            serviceName = "추모 가이드라인",
+                            date = "2025.12.01",
+                            iconResId = R.drawable.feature_afternote_img_logo,
+                            type = AfternoteServiceType.MEMORIAL,
                         ),
-                    selectedCategory = AfternoteCategory.SOCIAL_NETWORK,
+                        ListItemUiModel(
+                            id = "2",
+                            serviceName = "인스타그램",
+                            date = "2025.11.26",
+                            iconResId = R.drawable.feature_afternote_img_logo,
+                            type = AfternoteServiceType.SOCIAL_NETWORK,
+                        ),
+                    ),
                 ),
+            ).collectAsLazyPagingItems()
+        AfternoteListContent(
+            items = items,
+            selectedCategory = AfternoteCategory.SOCIAL_NETWORK,
             onCategorySelected = {},
-            onListItemClick = {},
-            onLoadMore = {},
+            onListItemClick = { _, _ -> },
         )
     }
 }

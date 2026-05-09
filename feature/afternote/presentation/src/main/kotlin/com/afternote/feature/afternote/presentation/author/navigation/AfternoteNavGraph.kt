@@ -14,6 +14,7 @@ import com.afternote.feature.afternote.presentation.AfternoteHostViewModel
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.AddSongViewModel
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.MemorialPlaylistEntry
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.MemorialPlaylistEntryActions
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 
 /**
@@ -47,14 +48,18 @@ fun NavGraphBuilder.afternoteNavGraph(
             AfternoteDetailNavigation(
                 backStackEntry = it,
                 onBack = actions::onPopBackStack,
-                onNavigateToEditor = actions::onNavigateToEditorForEdit,
+                onNavigateToEditor = { itemId ->
+                    actions.onNavigateToEditorForEdit(itemId, EditorCategory.SOCIAL)
+                },
             )
         }
 
         afternoteComposable<AfternoteRoute.GalleryDetailRoute> { _ ->
             AfternoteGalleryDetailNavigation(
                 onBack = actions::onPopBackStack,
-                onNavigateToEditor = actions::onNavigateToEditorForEdit,
+                onNavigateToEditor = { itemId ->
+                    actions.onNavigateToEditorForEdit(itemId, EditorCategory.GALLERY)
+                },
             )
         }
 
@@ -85,7 +90,9 @@ fun NavGraphBuilder.afternoteNavGraph(
         afternoteComposable<AfternoteRoute.MemorialGuidelineDetailRoute> { _ ->
             AfternoteMemorialGuidelineDetailNavigation(
                 onBack = actions::onPopBackStack,
-                onNavigateToEditor = actions::onNavigateToEditorForEdit,
+                onNavigateToEditor = { itemId ->
+                    actions.onNavigateToEditorForEdit(itemId, EditorCategory.MEMORIAL)
+                },
             )
         }
 

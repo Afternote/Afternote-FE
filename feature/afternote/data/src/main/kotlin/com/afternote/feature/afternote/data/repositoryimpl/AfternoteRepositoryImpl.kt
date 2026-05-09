@@ -1,114 +1,100 @@
 package com.afternote.feature.afternote.data.repositoryimpl
 
 import android.util.Log
-import com.afternote.core.common.di.IoDispatcher
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
 import com.afternote.feature.afternote.data.mapper.response.toDetailDomain
-import com.afternote.feature.afternote.data.mapper.response.toListPage
 import com.afternote.feature.afternote.data.mapper.toRequest
+import com.afternote.feature.afternote.data.paging.AfternotePagingSource
 import com.afternote.feature.afternote.data.service.AfternoteApiService
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreatePlaylistPayload
 import com.afternote.feature.afternote.domain.model.author.CreateSocialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
-import com.afternote.feature.afternote.domain.model.author.ListPage
+import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.flatMapLatest
 import javax.inject.Inject
 
-/**
- * Data layer: calls Afternote API, maps DTO → domain at boundary.
- *
- * API spec: GET/POST /afternotes, GET/PATCH/DELETE /afternotes/{id}.
- */
+private const val PAGE_SIZE = 10
+
+/** CUD 성공 시 활성 PagingSource를 재시작해 목록 SSOT를 유지한다. */
 class AfternoteRepositoryImpl
     @Inject
     constructor(
         private val api: AfternoteApiService,
-        @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : AfternoteRepository {
-        private val _authorAfternoteListRevision = MutableStateFlow(0L)
-        override val authorAfternoteListRevision: StateFlow<Long> =
-            _authorAfternoteListRevision.asStateFlow()
+        private val invalidationTrigger = MutableStateFlow(0L)
 
-        override suspend fun getListPage(
-            category: String?,
-            pageNumber: Int,
-            size: Int,
-        ): Result<ListPage> =
-            safeCall(ioDispatcher) {
-                api
-                    .getAfternotes(
-                        category = category,
-                        pageNumber = pageNumber,
-                        size = size,
-                    ).requireData()
-                    .toListPage()
+        @OptIn(ExperimentalCoroutinesApi::class)
+        override fun getPagedAfternotes(category: String?): Flow<PagingData<ListItem>> =
+            invalidationTrigger.flatMapLatest {
+                Pager(
+                    config = PagingConfig(pageSize = PAGE_SIZE),
+                    pagingSourceFactory = { AfternotePagingSource(api, category) },
+                ).flow
             }
 
-        override suspend fun createSocial(payload: CreateSocialPayload): Result<Long> =
-            safeCall(ioDispatcher, errorMapper = ::mapAuthoringFailure) {
-                api.createAfternoteSocial(payload.toRequest()).requireData().afternoteId
-            }.onSuccess { bumpAuthorListRevision() }
-
-        override suspend fun createGallery(payload: CreateGalleryPayload): Result<Long> =
-            safeCall(ioDispatcher, errorMapper = ::mapAuthoringFailure) {
-                api.createAfternoteGallery(payload.toRequest()).requireData().afternoteId
-            }.onSuccess { bumpAuthorListRevision() }
-
         override suspend fun getDetail(id: Long): Result<Detail> =
-            safeCall(ioDispatcher) {
+            safeCall {
                 api.getAfternoteDetail(afternoteId = id).requireData().toDetailDomain()
             }
 
+        override suspend fun createSocial(payload: CreateSocialPayload): Result<Long> =
+            safeCall(errorMapper = ::mapAuthoringFailure) {
+                api.createAfternoteSocial(payload.toRequest()).requireData().afternoteId
+            }.onSuccess { invalidatePagedAfternotes() }
+
+        override suspend fun createGallery(payload: CreateGalleryPayload): Result<Long> =
+            safeCall(errorMapper = ::mapAuthoringFailure) {
+                api.createAfternoteGallery(payload.toRequest()).requireData().afternoteId
+            }.onSuccess { invalidatePagedAfternotes() }
+
         override suspend fun createPlaylist(payload: CreatePlaylistPayload): Result<Long> =
-            safeCall(ioDispatcher, errorMapper = ::mapAuthoringFailure) {
+            safeCall(errorMapper = ::mapAuthoringFailure) {
                 api.createAfternotePlaylist(payload.toRequest()).requireData().afternoteId
-            }.onSuccess { bumpAuthorListRevision() }
+            }.onSuccess { invalidatePagedAfternotes() }
 
         override suspend fun update(
             id: Long,
             payload: AfternoteUpdatePayload,
         ): Result<Long> =
-            safeCall(ioDispatcher, errorMapper = ::mapAuthoringFailure) {
+            safeCall(errorMapper = ::mapAuthoringFailure) {
                 api
                     .updateAfternote(afternoteId = id, request = payload.toRequest())
                     .requireData()
                     .afternoteId
-            }.onSuccess { bumpAuthorListRevision() }
+            }.onSuccess { invalidatePagedAfternotes() }
 
         override suspend fun delete(id: Long): Result<Unit> =
-            safeCall(ioDispatcher) {
+            safeCall {
                 api.deleteAfternote(afternoteId = id).requireStatus()
-            }.onSuccess { bumpAuthorListRevision() }
+            }.onSuccess { invalidatePagedAfternotes() }
 
-        private fun bumpAuthorListRevision() {
-            _authorAfternoteListRevision.update { it + 1L }
+        private fun invalidatePagedAfternotes() {
+            invalidationTrigger.value++
         }
     }
 
 private suspend inline fun <T> safeCall(
-    dispatcher: CoroutineDispatcher,
     crossinline errorMapper: (Throwable) -> Throwable = { it },
     crossinline block: suspend () -> T,
 ): Result<T> =
-    withContext(dispatcher) {
-        try {
-            Result.success(block())
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            e.logRepositoryFailure()
-            Result.failure(errorMapper(e))
-        }
+    try {
+        Result.success(block())
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        e.logRepositoryFailure()
+        Result.failure(errorMapper(e))
     }
 
 private fun Exception.logRepositoryFailure() {

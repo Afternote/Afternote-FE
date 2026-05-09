@@ -55,11 +55,11 @@ class AfternoteDebugMockNetworkInterceptor
                         AfternoteMockFixtures.MOCK_HOME_SUMMARY_JSON
                     }
 
-                    path == "/api/afternotes" && method == "GET" -> {
+                    path == "/api/v1/afternotes" && method == "GET" -> {
                         AfternoteMockFixtures.MOCK_LIST_JSON
                     }
 
-                    path == "/api/afternotes" && method == "POST" -> {
+                    path == "/api/v1/afternotes" && method == "POST" -> {
                         AfternoteMockFixtures.MOCK_CREATE_JSON
                     }
 
@@ -111,6 +111,6 @@ class AfternoteDebugMockNetworkInterceptor
             const val HTTP_OK = 200
             const val NETWORK_DELAY_MS = 500L
             val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
-            val AFTERNOTE_ID_PATH_REGEX = Regex("^/api/afternotes/\\d+$")
+            val AFTERNOTE_ID_PATH_REGEX = Regex("^/api/v1/afternotes/\\d+$")
         }
     }
