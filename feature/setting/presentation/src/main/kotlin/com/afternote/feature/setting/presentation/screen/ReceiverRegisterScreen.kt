@@ -56,10 +56,11 @@ fun ReceiverRegisterScreen(
                 onBackClick = onBackClick,
             )
         },
+        modifier = modifier,
     ) { innerPadding ->
         LazyColumn(
             modifier =
-                modifier
+                Modifier
                     .padding(innerPadding)
                     .padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,

@@ -35,9 +35,9 @@ fun PushNotificationScreen(
         onNewsletterToggle = viewModel::onNewsletterToggle,
         onMindRecordToggle = viewModel::onMindRecordToggle,
         onAfternoteToggle = viewModel::onAfternoteToggle,
-        onSmsChecked = viewModel::onSmsChecked,
-        onEmailChecked = viewModel::onEmailChecked,
-        onPushChecked = viewModel::onPushChecked,
+        onSmsCheck = viewModel::onSmsChecked,
+        onEmailCheck = viewModel::onEmailChecked,
+        onPushCheck = viewModel::onPushChecked,
     )
 }
 
@@ -48,9 +48,9 @@ private fun PushNotificationContent(
     onNewsletterToggle: (Boolean) -> Unit,
     onMindRecordToggle: (Boolean) -> Unit,
     onAfternoteToggle: (Boolean) -> Unit,
-    onSmsChecked: (Boolean) -> Unit,
-    onEmailChecked: (Boolean) -> Unit,
-    onPushChecked: (Boolean) -> Unit,
+    onSmsCheck: (Boolean) -> Unit,
+    onEmailCheck: (Boolean) -> Unit,
+    onPushCheck: (Boolean) -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -77,9 +77,9 @@ private fun PushNotificationContent(
             } else {
                 DeviceAlarmOffSection(
                     uiState = uiState,
-                    onSmsChecked = onSmsChecked,
-                    onEmailChecked = onEmailChecked,
-                    onPushChecked = onPushChecked,
+                    onSmsCheck = onSmsCheck,
+                    onEmailCheck = onEmailCheck,
+                    onPushCheck = onPushCheck,
                 )
             }
 
@@ -100,9 +100,9 @@ private fun PreviewAlarmOn() {
         onNewsletterToggle = {},
         onMindRecordToggle = {},
         onAfternoteToggle = {},
-        onSmsChecked = {},
-        onEmailChecked = {},
-        onPushChecked = {},
+        onSmsCheck = {},
+        onEmailCheck = {},
+        onPushCheck = {},
     )
 }
 
@@ -115,8 +115,8 @@ private fun PreviewAlarmOff() {
         onNewsletterToggle = {},
         onMindRecordToggle = {},
         onAfternoteToggle = {},
-        onSmsChecked = {},
-        onEmailChecked = {},
-        onPushChecked = {},
+        onSmsCheck = {},
+        onEmailCheck = {},
+        onPushCheck = {},
     )
 }

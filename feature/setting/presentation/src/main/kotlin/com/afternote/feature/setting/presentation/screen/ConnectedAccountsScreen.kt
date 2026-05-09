@@ -24,6 +24,7 @@ import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsVie
 @Composable
 fun ConnectedAccountsScreen(
     onBack: () -> Unit,
+    modifier: Modifier = Modifier,
     viewModel: ConnectedAccountsViewModel = hiltViewModel(),
 ) {
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
@@ -35,6 +36,7 @@ fun ConnectedAccountsScreen(
                 onBackClick = onBack,
             )
         },
+        modifier = modifier,
     ) { paddingValues ->
         Column(
             modifier =

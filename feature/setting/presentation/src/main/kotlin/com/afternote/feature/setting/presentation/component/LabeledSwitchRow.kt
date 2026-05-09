@@ -18,10 +18,11 @@ fun LabeledSwitchRow(
     label: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Row(
         modifier =
-            Modifier
+            modifier
                 .fillMaxWidth()
                 .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
