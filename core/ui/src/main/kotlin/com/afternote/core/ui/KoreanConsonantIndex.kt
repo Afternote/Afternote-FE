@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -28,10 +28,10 @@ private val CONSONANTS = listOf('ㄱ', 'ㄴ', 'ㄷ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅅ',
 @Composable
 fun KoreanConsonantIndex(
     selectedConsonant: Char?,
-    onConsonantSelected: (Char) -> Unit,
+    onConsonantSelect: (Char) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var totalHeightPx by remember { mutableStateOf(0f) }
+    var totalHeightPx by remember { mutableFloatStateOf(0f) }
 
     fun indexFromY(y: Float): Int =
         (y / totalHeightPx * CONSONANTS.size)
@@ -46,11 +46,11 @@ fun KoreanConsonantIndex(
                 .onSizeChanged { totalHeightPx = it.height.toFloat() }
                 .pointerInput(Unit) {
                     detectTapGestures { offset ->
-                        onConsonantSelected(CONSONANTS[indexFromY(offset.y)])
+                        onConsonantSelect(CONSONANTS[indexFromY(offset.y)])
                     }
                 }.pointerInput(Unit) {
                     detectDragGestures { change, _ ->
-                        onConsonantSelected(CONSONANTS[indexFromY(change.position.y)])
+                        onConsonantSelect(CONSONANTS[indexFromY(change.position.y)])
                     }
                 },
         verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -83,7 +83,7 @@ private fun KoreanConsonantIndexPreview() {
     AfternoteTheme {
         KoreanConsonantIndex(
             selectedConsonant = 'ㄱ',
-            onConsonantSelected = {},
+            onConsonantSelect = {},
         )
     }
 }

@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -56,9 +57,10 @@ private fun DeliveryConditionContent(
     onFarewellMessageChange: (String) -> Unit,
 ) {
     val farewellMessageState = rememberTextFieldState(initialText = uiState.farewellMessage)
+    val currentOnFarewellMessageChange by rememberUpdatedState(onFarewellMessageChange)
     LaunchedEffect(farewellMessageState) {
         snapshotFlow { farewellMessageState.text.toString() }
-            .collect { onFarewellMessageChange(it) }
+            .collect { currentOnFarewellMessageChange(it) }
     }
 
     val deliveryMethodItems =

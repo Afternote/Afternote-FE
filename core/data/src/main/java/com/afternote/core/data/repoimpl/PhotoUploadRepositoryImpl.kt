@@ -3,6 +3,7 @@ package com.afternote.core.data.repoimpl
 import android.content.Context
 import android.webkit.MimeTypeMap
 import androidx.core.net.toUri
+import com.afternote.core.common.di.IoDispatcher
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.network.dto.PresignedUrlRequestDto
 import com.afternote.core.network.model.requireData
@@ -14,7 +15,6 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 import javax.inject.Inject
-import javax.inject.Named
 import kotlin.coroutines.cancellation.CancellationException
 
 private const val DEFAULT_EXTENSION = "jpg"
@@ -25,7 +25,7 @@ class PhotoUploadRepositoryImpl
     constructor(
         @param:ApplicationContext private val context: Context,
         private val imageApi: ImageApiService,
-        @param:Named("IoDispatcher") private val ioDispatcher: CoroutineDispatcher,
+        @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : PhotoUploadRepository {
         override suspend fun upload(
             uriString: String,

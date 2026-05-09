@@ -13,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
@@ -24,11 +24,13 @@ import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsVie
 @Composable
 fun ConnectedAccountsScreen(
     onBack: () -> Unit,
+    modifier: Modifier = Modifier,
     viewModel: ConnectedAccountsViewModel = hiltViewModel(),
 ) {
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
 
     Scaffold(
+        modifier = modifier,
         topBar = {
             DetailTopBar(
                 title = "연결된 계정",

@@ -50,6 +50,7 @@ fun ReceiverRegisterScreen(
     var relationExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
+        modifier = modifier,
         topBar = {
             DetailTopBar(
                 "수신자 등록",
@@ -59,7 +60,7 @@ fun ReceiverRegisterScreen(
     ) { innerPadding ->
         LazyColumn(
             modifier =
-                modifier
+                Modifier
                     .padding(innerPadding)
                     .padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,

@@ -25,10 +25,11 @@ import com.afternote.feature.setting.presentation.R
 
 @Composable
 fun PassKeyMakingScreen(
-    modifier: Modifier = Modifier,
     onBackClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Scaffold(
+        modifier = modifier,
         topBar = {
             DetailTopBar(
                 title = stringResource(id = R.string.passkey_management_title),

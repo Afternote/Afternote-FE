@@ -148,7 +148,7 @@ fun ReceiverListScreen(
                 ) {
                     KoreanConsonantIndex(
                         selectedConsonant = selectedConsonant,
-                        onConsonantSelected = { consonant ->
+                        onConsonantSelect = { consonant ->
                             selectedConsonant = consonant
                             consonantIndexMap[consonant]?.let { index ->
                                 coroutineScope.launch { listState.scrollToItem(index) }
