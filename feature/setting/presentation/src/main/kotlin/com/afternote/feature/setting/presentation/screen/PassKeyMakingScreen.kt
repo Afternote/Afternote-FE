@@ -36,7 +36,6 @@ fun PassKeyMakingScreen(
                 onBackClick = onBackClick,
             )
         },
-        modifier = modifier,
     ) { innerPadding ->
         Box(
             modifier =

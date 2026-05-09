@@ -57,7 +57,6 @@ fun ReceiverRegisterScreen(
                 onBackClick = onBackClick,
             )
         },
-        modifier = modifier,
     ) { innerPadding ->
         LazyColumn(
             modifier =

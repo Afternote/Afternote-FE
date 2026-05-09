@@ -37,7 +37,6 @@ fun ConnectedAccountsScreen(
                 onBackClick = onBack,
             )
         },
-        modifier = modifier,
     ) { paddingValues ->
         Column(
             modifier =
