@@ -16,9 +16,9 @@ import com.afternote.feature.timeletter.presentation.viewmodel.DraftLetterUiStat
 
 @Composable
 fun DraftLetterScreen(
-    uiState: DraftLetterUiState = DraftLetterUiState(),
-    onBackClick: () -> Unit = {},
-    onEditCompleteClick: () -> Unit = {},
+    uiState: DraftLetterUiState,
+    onBackClick: () -> Unit,
+    onEditCompleteClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -82,6 +82,8 @@ private fun DraftLetterScreenNormalPreview() {
                     ),
                 isEditMode = false,
             ),
+        onBackClick = {},
+        onEditCompleteClick = {},
     )
 }
 
@@ -110,5 +112,7 @@ private fun DraftLetterScreenEditModePreview() {
                 isEditMode = true,
                 selectedIds = setOf(1L),
             ),
+        onBackClick = {},
+        onEditCompleteClick = {},
     )
 }

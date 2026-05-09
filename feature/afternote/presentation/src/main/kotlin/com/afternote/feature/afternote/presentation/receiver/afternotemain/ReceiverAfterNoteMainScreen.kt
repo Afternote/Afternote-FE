@@ -2,7 +2,6 @@ package com.afternote.feature.afternote.presentation.receiver.afternotemain
 
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -41,6 +40,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import coil3.compose.AsyncImage
 import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
@@ -183,7 +183,7 @@ private fun ReceiverVideoSection(
                     Modifier
                         .fillMaxWidth()
                         .clickable {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(videoUrl))
+                            val intent = Intent(Intent.ACTION_VIEW, videoUrl.toUri())
                             if (context.packageManager.resolveActivity(
                                     intent,
                                     PackageManager.MATCH_DEFAULT_ONLY,

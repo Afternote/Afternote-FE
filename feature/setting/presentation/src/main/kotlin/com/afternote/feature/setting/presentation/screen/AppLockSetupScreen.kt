@@ -24,8 +24,9 @@ import com.afternote.feature.setting.presentation.viewmodel.AppLockSetupViewMode
 @Composable
 fun AppLockSetupScreen(
     step: PinSetupStep,
-    onBack: () -> Unit,
     onPinComplete: (pin: String) -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
     viewModel: AppLockSetupViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -43,8 +44,9 @@ fun AppLockSetupScreen(
         passwordLength = uiState.pin.length,
         onDigitClick = viewModel::onDigitInput,
         onDeleteClick = viewModel::onDelete,
-        onConfirmClick = { onPinComplete(uiState.pin) },
+        onConfirmClick = { currentOnPinComplete(uiState.pin) },
         onBack = onBack,
+        modifier = modifier,
     )
 }
 
@@ -56,6 +58,7 @@ private fun AppLockSetupContent(
     onDeleteClick: () -> Unit,
     onConfirmClick: () -> Unit,
     onBack: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val titleText =
         when (step) {
@@ -71,6 +74,7 @@ private fun AppLockSetupContent(
                 onBackClick = onBack,
             )
         },
+        modifier = modifier,
     ) { innerPadding ->
         Column(
             modifier =

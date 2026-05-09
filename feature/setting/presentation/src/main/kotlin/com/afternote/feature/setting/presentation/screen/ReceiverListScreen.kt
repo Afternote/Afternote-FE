@@ -21,6 +21,7 @@ import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
@@ -70,12 +71,15 @@ fun ReceiverListScreen(
             }
         }
 
-    LaunchedEffect(listState.firstVisibleItemIndex) {
-        selectedConsonant =
-            consonantIndexMap.entries
-                .filter { it.value <= listState.firstVisibleItemIndex }
-                .maxByOrNull { it.value }
-                ?.key
+    LaunchedEffect(listState, consonantIndexMap) {
+        snapshotFlow { listState.firstVisibleItemIndex }
+            .collect { firstVisibleItemIndex ->
+                selectedConsonant =
+                    consonantIndexMap.entries
+                        .filter { it.value <= firstVisibleItemIndex }
+                        .maxByOrNull { it.value }
+                        ?.key
+            }
     }
 
     Scaffold(
