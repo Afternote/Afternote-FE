@@ -1,9 +1,7 @@
 package com.afternote.feature.afternote.presentation.receiver.list
 
 sealed interface ReceiverAfternotesListEvent {
-    data class Load(
-        val authCode: String,
-    ) : ReceiverAfternotesListEvent
+    data object Load : ReceiverAfternotesListEvent
 
     data object Retry : ReceiverAfternotesListEvent
 

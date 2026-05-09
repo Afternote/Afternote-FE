@@ -9,41 +9,28 @@ import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItemDt
 import kotlinx.coroutines.CancellationException
 
 /**
- * 서버는 page/size/hasNext 기반 0-indexed 페이징을 사용한다 (GET /receiver-auth/afternotes).
+ * 서버는 페이지네이션을 지원하지 않으므로 응답 전체를 한 페이지로 감싸서 반환한다.
+ * Paging 3 API(LoadState/refresh/cachedIn) 통일을 위한 단일 페이지 구현이며,
+ * 서버가 page/size를 도입하면 nextKey/getRefreshKey만 채워 넣으면 된다.
+ *
+ * `X-Auth-Code` 헤더는 [com.afternote.feature.afternote.data.network.ReceiverAuthInterceptor]가 부착한다.
  */
 internal class ReceiverAfternotePagingSource(
     private val api: ReceiverAfternoteApiService,
-    private val category: String?,
 ) : PagingSource<Int, AfterNoteListItemDto>() {
-    override fun getRefreshKey(state: PagingState<Int, AfterNoteListItemDto>): Int? =
-        state.anchorPosition?.let { anchorPosition ->
-            val anchorPage = state.closestPageToPosition(anchorPosition)
-            anchorPage?.prevKey?.plus(1) ?: anchorPage?.nextKey?.minus(1)
-        }
+    override fun getRefreshKey(state: PagingState<Int, AfterNoteListItemDto>): Int? = null
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, AfterNoteListItemDto> =
         try {
-            val pageNumber = params.key ?: STARTING_PAGE_INDEX
-            val response =
-                api
-                    .getReceiverAfternotes(
-                        category = category,
-                        pageNumber = pageNumber,
-                        size = params.loadSize,
-                    ).requireData()
-
+            val response = api.getReceiverAfternotes().requireData()
             LoadResult.Page(
-                data = response.content.toReceiverDomainList(),
-                prevKey = if (pageNumber == STARTING_PAGE_INDEX) null else pageNumber - 1,
-                nextKey = if (response.hasNext) pageNumber + 1 else null,
+                data = response.afternotes.toReceiverDomainList(),
+                prevKey = null,
+                nextKey = null,
             )
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             LoadResult.Error(e)
         }
-
-    private companion object {
-        const val STARTING_PAGE_INDEX = 0
-    }
 }

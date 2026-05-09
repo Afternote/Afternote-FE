@@ -10,6 +10,9 @@ import kotlinx.coroutines.flow.Flow
 
 /**
  * 수신자(auth code) 플로우의 데이터 접근. ViewModel은 이 인터페이스만 의존합니다.
+ *
+ * `X-Auth-Code` 헤더는 네트워크 계층의 ReceiverAuthInterceptor가 자동 부착하므로
+ * 호출자는 인증 코드를 메서드 인자로 들고 다닐 필요가 없습니다.
  */
 interface ReceiverRepository {
     /** 저장된 인증 코드 스트림(없거나 공백만 있으면 null 방출). */
@@ -25,24 +28,22 @@ interface ReceiverRepository {
     suspend fun clearAuthCode()
 
     /**
-     * 서버 페이지네이션 기반 수신 애프터노트 스트림. 인증 코드는 네트워크 계층에서 주입된다.
+     * 수신 애프터노트 스트림. 서버는 페이지네이션 미지원이므로 단일 페이지로 받지만,
+     * Paging 3 API(LoadState/refresh/cachedIn) 통일과 추후 페이지네이션 도입을 위해 PagingData로 노출한다.
      */
-    fun getPagedReceivedAfternotes(category: String?): Flow<PagingData<AfterNoteListItemDto>>
+    fun getPagedReceivedAfternotes(): Flow<PagingData<AfterNoteListItemDto>>
 
-    suspend fun getAfterNotesByAuthCode(authCode: String): Result<AfterNotesListResult>
+    suspend fun getReceivedAfterNotes(): Result<AfterNotesListResult>
 
-    suspend fun getAfternoteDetailByAuthCode(
-        authCode: String,
-        afternoteId: Long,
-    ): Result<ReceivedAfternoteDetail>
+    suspend fun getReceivedAfternoteDetail(afternoteId: Long): Result<ReceivedAfternoteDetail>
 
-    suspend fun downloadAllReceived(authCode: String): Result<ReceivedExportBundle>
+    suspend fun downloadAllReceived(): Result<ReceivedExportBundle>
 
     suspend fun saveReceivedExportToFile(bundle: ReceivedExportBundle): Result<Unit>
 
-    suspend fun loadMindRecordsCount(authCode: String): Result<LoadCountResult>
+    suspend fun loadMindRecordsCount(): Result<LoadCountResult>
 
-    suspend fun loadTimeLettersCount(authCode: String): Result<LoadCountResult>
+    suspend fun loadTimeLettersCount(): Result<LoadCountResult>
 
-    suspend fun loadSenderMessage(authCode: String): Result<String?>
+    suspend fun loadSenderMessage(): Result<String?>
 }

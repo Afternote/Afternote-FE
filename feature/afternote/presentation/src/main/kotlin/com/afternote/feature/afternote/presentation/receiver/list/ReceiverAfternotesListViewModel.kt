@@ -14,7 +14,8 @@ import javax.inject.Inject
 /**
  * 수신인별 애프터노트 목록 화면 ViewModel.
  *
- * GET /api/receiver-auth/after-notes (X-Auth-Code) API로 전달된 애프터노트 목록을 조회합니다.
+ * GET /api/v1/receiver-auth/after-notes API로 전달된 애프터노트 목록을 조회합니다.
+ * `X-Auth-Code` 헤더는 ReceiverAuthInterceptor가 자동 부착합니다.
  */
 @HiltViewModel
 class ReceiverAfternotesListViewModel
@@ -26,30 +27,22 @@ class ReceiverAfternotesListViewModel
         val uiState: StateFlow<ReceiverAfternotesListUiState> = _uiState.asStateFlow()
 
         init {
-            viewModelScope.launch {
-                receiverRepository.currentAuthCode()?.let { authCode -> loadAfterNotes(authCode) }
-            }
+            loadAfterNotes()
         }
-
-        // region Event
 
         fun onEvent(event: ReceiverAfternotesListEvent) {
             when (event) {
-                is ReceiverAfternotesListEvent.Load -> loadAfterNotes(event.authCode)
+                ReceiverAfternotesListEvent.Load -> loadAfterNotes()
                 ReceiverAfternotesListEvent.Retry -> retry()
                 ReceiverAfternotesListEvent.ErrorConsumed -> clearError()
             }
         }
 
-        // endregion
-
-        // region Data Loading
-
-        private fun loadAfterNotes(authCode: String) {
+        private fun loadAfterNotes() {
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoading = true, errorMessage = null) }
                 receiverRepository
-                    .getAfterNotesByAuthCode(authCode)
+                    .getReceivedAfterNotes()
                     .onSuccess { data ->
                         _uiState.update {
                             it.copy(
@@ -77,20 +70,12 @@ class ReceiverAfternotesListViewModel
             }
         }
 
-        // endregion
-
-        // region Utility
-
         private fun clearError() {
             _uiState.update { it.copy(errorMessage = null) }
         }
 
         private fun retry() {
             clearError()
-            viewModelScope.launch {
-                receiverRepository.currentAuthCode()?.let { loadAfterNotes(it) }
-            }
+            loadAfterNotes()
         }
-
-        // endregion
     }

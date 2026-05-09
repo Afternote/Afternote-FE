@@ -76,7 +76,7 @@ fun ReceiverAfterNoteEntry(
         onNavigateToRecord = onNavigateToRecord,
         onNavigateToTimeLetter = onNavigateToTimeLetter,
         onNavigateToAfternote = onNavigateToAfternote,
-        onDownloadConfirm = { viewModel.onEvent(ReceiverDownloadAllEvent.ConfirmDownload(summary.authCode)) },
+        onDownloadConfirm = { viewModel.onEvent(ReceiverDownloadAllEvent.ConfirmDownload) },
     )
 }
 

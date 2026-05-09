@@ -4,12 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import androidx.paging.filter
 import androidx.paging.map
+import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItemDto
 import com.afternote.feature.afternote.domain.repository.ReceiverRepository
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
-import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 import com.afternote.feature.afternote.presentation.shared.util.getAfternoteDisplayRes
 import com.afternote.feature.afternote.presentation.shared.util.getServiceNameForTypeKey
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,9 +26,9 @@ import javax.inject.Inject
 /**
  * 수신자 애프터노트 목록(Home) 화면 ViewModel.
  *
- * 페이지네이션·새로고침은 Paging 3가 담당하며, ViewModel은 카테고리 필터만 보유한다.
- * 카테고리 변경 시 [ReceiverRepository.getPagedReceivedAfternotes]가 새 PagingSource를
- * 발급해 자동으로 재로딩된다.
+ * 서버는 페이지네이션을 지원하지 않아 Repository는 단일 페이지 PagingData를 흘리지만,
+ * Paging 3 API(LoadState/refresh/cachedIn) 통일을 위해 그대로 사용한다. 카테고리 필터는
+ * 서버 파라미터가 없어 클라이언트 사이드 [PagingData.filter]로 적용한다.
  */
 @HiltViewModel
 class ReceiverAfternoteHomeViewModel
@@ -43,8 +44,12 @@ class ReceiverAfternoteHomeViewModel
             _selectedTab
                 .flatMapLatest { tab ->
                     receiverRepository
-                        .getPagedReceivedAfternotes(tab.navKey)
-                        .map { pagingData -> pagingData.map { it.toUiModel() } }
+                        .getPagedReceivedAfternotes()
+                        .map { pagingData ->
+                            pagingData
+                                .map { it.toUiModel() }
+                                .filter { tab == AfternoteCategory.ALL || it.type.name == tab.name }
+                        }
                 }.cachedIn(viewModelScope)
 
         fun selectTab(tab: AfternoteCategory) {
@@ -57,11 +62,14 @@ private fun AfterNoteListItemDto.toUiModel(): ListItemUiModel {
     val typeKey = sourceType.orEmpty()
     val displayRes = getAfternoteDisplayRes(typeKey)
     val serviceName = getServiceNameForTypeKey(typeKey)
+    val type =
+        runCatching { AfternoteServiceType.valueOf(typeKey) }
+            .getOrDefault(AfternoteServiceType.SOCIAL_NETWORK)
     return ListItemUiModel(
         id = id.toString(),
         serviceName = serviceName,
         date = lastUpdatedAt.orEmpty(),
         iconResId = displayRes.drawableResId,
-        type = AfternoteServiceCatalog.serviceTypeFor(serviceName),
+        type = type,
     )
 }

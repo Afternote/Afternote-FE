@@ -25,19 +25,19 @@ class ReceiverDownloadAllViewModel
 
         fun onEvent(event: ReceiverDownloadAllEvent) {
             when (event) {
-                is ReceiverDownloadAllEvent.ConfirmDownload -> handleConfirmDownload(event.authCode)
-                is ReceiverDownloadAllEvent.DownloadSuccessConsumed -> handleClearDownloadSuccess()
-                is ReceiverDownloadAllEvent.ErrorConsumed -> handleClearError()
+                ReceiverDownloadAllEvent.ConfirmDownload -> handleConfirmDownload()
+                ReceiverDownloadAllEvent.DownloadSuccessConsumed -> handleClearDownloadSuccess()
+                ReceiverDownloadAllEvent.ErrorConsumed -> handleClearError()
             }
         }
 
-        private fun handleConfirmDownload(authCode: String) {
+        private fun handleConfirmDownload() {
             viewModelScope.launch {
                 _uiState.update {
                     it.copy(isLoading = true, errorMessage = null, downloadSuccess = false)
                 }
                 receiverRepository
-                    .downloadAllReceived(authCode)
+                    .downloadAllReceived()
                     .onSuccess { result ->
                         receiverRepository
                             .saveReceivedExportToFile(result)

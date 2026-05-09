@@ -1,5 +1,6 @@
 package com.afternote.core.network.di
 
+import com.afternote.core.network.interceptor.FeatureNetworkInterceptor
 import com.afternote.core.network.interceptor.OptionalDebugNetworkInterceptor
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -13,4 +14,8 @@ interface NetworkOptionalInterceptorModule {
     @Multibinds
     @OptionalDebugNetworkInterceptor
     fun optionalDebugInterceptors(): Set<Interceptor>
+
+    @Multibinds
+    @FeatureNetworkInterceptor
+    fun featureInterceptors(): Set<Interceptor>
 }
