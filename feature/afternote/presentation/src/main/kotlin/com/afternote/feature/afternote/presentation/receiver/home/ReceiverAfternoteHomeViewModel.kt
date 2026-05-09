@@ -2,15 +2,18 @@ package com.afternote.feature.afternote.presentation.receiver.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItemDto
 import com.afternote.feature.afternote.domain.repository.ReceiverRepository
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
-import com.afternote.feature.afternote.presentation.shared.body.infinite.AfternoteBodyUiState
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
 import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 import com.afternote.feature.afternote.presentation.shared.util.getAfternoteDisplayRes
 import com.afternote.feature.afternote.presentation.shared.util.getServiceNameForTypeKey
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +25,10 @@ import javax.inject.Inject
 
 /**
  * 수신자 애프터노트 목록(Home) 화면 ViewModel.
+ *
+ * 수신자 측은 authCode 단발 호출로 전체 목록을 받아 클라이언트에서 필터만 적용한다.
+ * 작성자 측 화면과 동일한 LazyPagingItems API를 공유하기 위해 [PagingData.from]으로
+ * 정적 리스트를 단일 페이지 PagingData로 감싼다.
  */
 @HiltViewModel
 class ReceiverAfternoteHomeViewModel
@@ -33,7 +40,7 @@ class ReceiverAfternoteHomeViewModel
         private val selectedTab = MutableStateFlow(AfternoteCategory.ALL)
         private val isListLoading = MutableStateFlow(true)
 
-        private val uiState: StateFlow<ReceiverAfternoteHomeUiState> =
+        val uiState: StateFlow<ReceiverAfternoteHomeUiState> =
             combine(allItems, selectedTab, isListLoading) { items, tab, loading ->
                 val filtered =
                     if (tab == AfternoteCategory.ALL) {
@@ -50,23 +57,15 @@ class ReceiverAfternoteHomeViewModel
                 )
             }.stateIn(
                 scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000L),
+                started = SharingStarted.WhileSubscribed(SUBSCRIBE_TIMEOUT_MS),
                 initialValue = ReceiverAfternoteHomeUiState(),
             )
 
-        val bodyUiState: StateFlow<AfternoteBodyUiState> =
+        @OptIn(ExperimentalCoroutinesApi::class)
+        val pagedAfternotes: Flow<PagingData<ListItemUiModel>> =
             uiState
-                .map { state ->
-                    AfternoteBodyUiState(
-                        isLoading = state.isLoading,
-                        visibleItems = state.visibleItems,
-                        selectedCategory = state.selectedTab,
-                    )
-                }.stateIn(
-                    scope = viewModelScope,
-                    started = SharingStarted.WhileSubscribed(5_000L),
-                    initialValue = AfternoteBodyUiState(visibleItems = emptyList()),
-                )
+                .map { state -> PagingData.from(state.visibleItems) }
+                .cachedIn(viewModelScope)
 
         init {
             loadAfternotes()
@@ -99,6 +98,10 @@ class ReceiverAfternoteHomeViewModel
                     }
                 isListLoading.value = false
             }
+        }
+
+        private companion object {
+            const val SUBSCRIBE_TIMEOUT_MS = 5_000L
         }
     }
 

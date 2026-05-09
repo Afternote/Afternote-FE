@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeScreen
 
@@ -16,7 +17,9 @@ data class ReceiverAfternoteHomeEntryActions(
 /**
  * 수신자 애프터노트 목록 Entry.
  *
- * ViewModel에서 데이터를 로드·가공하고, 공용 [AfternoteHomeScreen]에 전달합니다.
+ * 단일 호출 결과를 [androidx.paging.PagingData.from]으로 감싸 작성자 화면과 동일한
+ * [AfternoteHomeScreen]을 재사용한다. 정적 PagingData는 LoadState로 로딩을 표현하지
+ * 못하므로 초기 로딩 여부는 ViewModel uiState에서 직접 계산해 전달한다.
  */
 @Composable
 fun ReceiverAfternoteHomeEntry(
@@ -24,12 +27,17 @@ fun ReceiverAfternoteHomeEntry(
     viewModel: ReceiverAfternoteHomeViewModel = hiltViewModel(),
     actions: ReceiverAfternoteHomeEntryActions = ReceiverAfternoteHomeEntryActions(),
 ) {
-    val bodyUiState by viewModel.bodyUiState.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val items = viewModel.pagedAfternotes.collectAsLazyPagingItems()
 
     AfternoteHomeScreen(
-        listState = bodyUiState,
+        items = items,
+        selectedCategory = uiState.selectedTab,
+        isInitialLoading = uiState.isLoading && items.itemCount == 0,
+        isRefreshing = false,
         onCategorySelected = { viewModel.onEvent(ReceiverAfternoteHomeEvent.SelectTab(it)) },
         onListItemClick = actions.navigateToDetail,
+        onRefresh = {},
         modifier = modifier,
     )
 }

@@ -2,11 +2,6 @@ package com.afternote.feature.afternote.domain.model.author
 
 import com.afternote.feature.afternote.domain.AfternoteServiceType
 
-data class ListPage(
-    val listItems: List<ListItem>,
-    val hasNext: Boolean,
-)
-
 /**
  * 애프터노트 아이템 도메인 모델
  *
