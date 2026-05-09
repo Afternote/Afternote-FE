@@ -2,18 +2,20 @@ package com.afternote.feature.afternote.presentation.author.editor
 
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
-import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
+import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import javax.inject.Inject
 
 /**
- * 검증 이후 미디어 업로드·생성/수정 API 호출까지 담당 (매퍼·리포지토리 조합).
+ * 검증된 페이로드를 받아 미디어 해석 → 매퍼 → 생성/수정 Repository 호출까지 조합하는 UseCase
+ * (CLAUDE.md UseCase 도입 조건 1번: *"여러 Repository를 조합하는 비즈니스 로직"*).
  *
- * 에디터 화면 전용 타입([com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory], [MemorialPlaylistStateHolder] 등)을 다루므로
- * 도메인 모듈로 옮길 수 있는 재사용 유즈케이스가 아니라, 프레젠테이션 레이어의 저장 흐름 지휘자입니다.
+ * 에디터 화면 전용 타입([com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory] 등)을 다루므로
+ * 도메인 모듈로 격상하지 않고 presentation 레이어에 둔다. UseCase 네이밍 규칙(`동사 + 명사 + UseCase`)을 따른다.
+ *
  */
-class SaveAfternoteOrchestrator
+class SaveAfternoteUseCase
     @Inject
     constructor(
         private val afternoteRepository: AfternoteRepository,
@@ -24,7 +26,7 @@ class SaveAfternoteOrchestrator
             categoryForApi: EditorCategory,
             payload: RegisterAfternotePayload,
             selectedReceiverIds: List<Long>,
-            playlistStateHolder: MemorialPlaylistStateHolder?,
+            playlistSongs: List<Song>,
             memorialMedia: SaveAfternoteMemorialMedia,
         ): Result<Long> {
             val resolved =
@@ -42,7 +44,7 @@ class SaveAfternoteOrchestrator
                         category = categoryForApi,
                         payload = payload,
                         selectedReceiverIds = selectedReceiverIds,
-                        playlistStateHolder = playlistStateHolder,
+                        playlistSongs = playlistSongs,
                         memorialMedia =
                             MemorialMediaUrls(
                                 funeralVideoUrl = resolved.videoUrlForUpdate,
@@ -56,7 +58,7 @@ class SaveAfternoteOrchestrator
                     category = categoryForApi,
                     payload = payload,
                     selectedReceiverIds = selectedReceiverIds,
-                    playlistStateHolder = playlistStateHolder,
+                    playlistSongs = playlistSongs,
                     funeralVideoUrl = resolved.resolvedVideoUrl,
                     funeralThumbnailUrl = memorialMedia.funeralThumbnailUrl,
                     memorialPhotoUrl = resolved.resolvedMemorialPhotoUrl,
@@ -68,7 +70,7 @@ class SaveAfternoteOrchestrator
             category: EditorCategory,
             payload: RegisterAfternotePayload,
             selectedReceiverIds: List<Long>,
-            playlistStateHolder: MemorialPlaylistStateHolder?,
+            playlistSongs: List<Song>,
             funeralVideoUrl: String?,
             funeralThumbnailUrl: String?,
             memorialPhotoUrl: String?,
@@ -78,7 +80,7 @@ class SaveAfternoteOrchestrator
                     category = category,
                     payload = payload,
                     selectedReceiverIds = selectedReceiverIds,
-                    playlistStateHolder = playlistStateHolder,
+                    playlistSongs = playlistSongs,
                     funeralVideoUrl = funeralVideoUrl,
                     funeralThumbnailUrl = funeralThumbnailUrl,
                     memorialPhotoUrl = memorialPhotoUrl,

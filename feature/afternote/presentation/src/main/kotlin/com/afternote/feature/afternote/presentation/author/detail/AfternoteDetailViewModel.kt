@@ -6,11 +6,15 @@ import androidx.lifecycle.viewModelScope
 import com.afternote.core.domain.repository.HomeRepository
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
+import com.afternote.feature.afternote.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -25,10 +29,14 @@ import javax.inject.Inject
  * - 상세 ID: [SavedStateHandle]의 `itemId` (타입 안전 상세 라우트의 직렬화 인자명과 동일).
  *   초기 로드는 [init]에서 한 번만 수행한다 (Compose `LaunchedEffect`로의 위임은 하지 않는다).
  *
- * 내부 [InternalState] (flat) 로 조회·작성자·삭제 단계를 각각 관리하고, public [uiState] 는
+ * 내부 [InternalState] (flat) 로 조회·작성자·삭제 진행 단계를 관리하고, public [uiState] 는
  * [AfternoteDetailUiState] 로 매핑해 Loading/Success/Error 3분기로 노출한다.
+ * 삭제 결과(성공/실패)는 영속 상태가 아니라 [events] [Channel] 로 노출한다 — UI는 [com.afternote.core.ui.ObserveAsEvents] 로만 수집.
+ *
+ * 사용자 가시 메시지는 VM에 하드코딩하지 않고 [androidx.annotation.StringRes] id 로 노출한다 (서버 raw 메시지가 있으면 그쪽을 우선).
+ * [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel] 의 `error: String?` + `errorRes: Int?` 페어 패턴과 동일.
+ *
  * [SharingStarted.WhileSubscribed] 로 UI 구독이 없을 때 업스트림 [map] 을 중지해 백그라운드 리소스를 절약한다.
- * UI 액션은 [deleteAfternote]·[consumeDeleteResult] 등 명시 메서드로만 노출한다.
  */
 @HiltViewModel
 class AfternoteDetailViewModel
@@ -51,6 +59,9 @@ class AfternoteDetailViewModel
                     initialValue = AfternoteDetailUiState.Loading,
                 )
 
+        private val _events = Channel<AfternoteDetailEvent>(Channel.BUFFERED)
+        val events: Flow<AfternoteDetailEvent> = _events.receiveAsFlow()
+
         init {
             viewModelScope.launch {
                 homeRepository
@@ -65,10 +76,7 @@ class AfternoteDetailViewModel
             } else {
                 internalState.update {
                     it.copy(
-                        loadPhase =
-                            LoadPhase.Failed(
-                                message = "애프터노트 식별자가 올바르지 않습니다.",
-                            ),
+                        loadPhase = LoadPhase.Failed(messageRes = R.string.afternote_detail_invalid_id),
                     )
                 }
             }
@@ -90,7 +98,11 @@ class AfternoteDetailViewModel
                     }.onFailure { e ->
                         internalState.update {
                             it.copy(
-                                loadPhase = LoadPhase.Failed(e.message ?: "상세 정보를 불러오지 못했습니다."),
+                                loadPhase =
+                                    LoadPhase.Failed(
+                                        rawMessage = e.message,
+                                        messageRes = R.string.afternote_detail_load_error,
+                                    ),
                             )
                         }
                     }
@@ -98,28 +110,24 @@ class AfternoteDetailViewModel
         }
 
         fun deleteAfternote(afternoteId: Long) {
+            if (internalState.value.isDeleting) return
             viewModelScope.launch {
-                internalState.update { it.copy(deleteState = AfternoteDeleteState.InProgress) }
+                internalState.update { it.copy(isDeleting = true) }
                 afternoteRepository
                     .delete(id = afternoteId)
                     .onSuccess {
-                        internalState.update { it.copy(deleteState = AfternoteDeleteState.Succeeded) }
+                        internalState.update { it.copy(isDeleting = false) }
+                        _events.send(AfternoteDetailEvent.DeleteSucceeded(afternoteId))
                     }.onFailure { e ->
-                        internalState.update {
-                            it.copy(
-                                deleteState = AfternoteDeleteState.Failed(e.message ?: "삭제에 실패했습니다."),
-                            )
-                        }
+                        internalState.update { it.copy(isDeleting = false) }
+                        _events.send(
+                            AfternoteDetailEvent.DeleteFailed(
+                                rawMessage = e.message,
+                                messageRes = R.string.afternote_detail_delete_failed,
+                            ),
+                        )
                     }
             }
-        }
-
-        // endregion
-
-        // region Utility
-
-        fun consumeDeleteResult() {
-            internalState.update { it.copy(deleteState = AfternoteDeleteState.Idle) }
         }
 
         // endregion
@@ -133,7 +141,7 @@ class AfternoteDetailViewModel
         private data class InternalState(
             val loadPhase: LoadPhase = LoadPhase.Loading,
             val authorDisplayName: String = "",
-            val deleteState: AfternoteDeleteState = AfternoteDeleteState.Idle,
+            val isDeleting: Boolean = false,
         )
 
         private sealed interface LoadPhase {
@@ -144,7 +152,8 @@ class AfternoteDetailViewModel
             ) : LoadPhase
 
             data class Failed(
-                val message: String,
+                val rawMessage: String? = null,
+                val messageRes: Int? = null,
             ) : LoadPhase
         }
 
@@ -159,13 +168,16 @@ class AfternoteDetailViewModel
                     AfternoteDetailUiState.Success(
                         detailId = detail.id,
                         authorDisplayName = authorDisplayName,
-                        deleteState = deleteState,
+                        isDeleting = isDeleting,
                         contentUiModel = detail.toDetailContentUiModel(authorDisplayName),
                     )
                 }
 
                 is LoadPhase.Failed -> {
-                    AfternoteDetailUiState.Error(phase.message)
+                    AfternoteDetailUiState.Error(
+                        rawMessage = phase.rawMessage,
+                        messageRes = phase.messageRes,
+                    )
                 }
             }
 

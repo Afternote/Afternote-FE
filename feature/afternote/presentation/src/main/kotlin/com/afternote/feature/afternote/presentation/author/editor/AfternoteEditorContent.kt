@@ -9,12 +9,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.account.AccountSection
@@ -22,6 +20,7 @@ import com.afternote.feature.afternote.presentation.author.editor.gallery.Galler
 import com.afternote.feature.afternote.presentation.author.editor.gallery.GalleryAndFileEditorContentParams
 import com.afternote.feature.afternote.presentation.author.editor.memorial.guideline.MemorialGuidelineEditorContent
 import com.afternote.feature.afternote.presentation.author.editor.memorial.guideline.MemorialGuidelineEditorContentParams
+import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.InfoMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
@@ -40,6 +39,7 @@ import com.afternote.feature.afternote.presentation.author.editor.state.remember
 internal fun EditorContent(
     state: AfternoteEditorState,
     form: EditorFormState,
+    graphSongs: List<Song>,
     modifier: Modifier = Modifier,
     onNavigateToAddSong: () -> Unit,
     onNavigateToSelectReceiver: () -> Unit,
@@ -99,6 +99,7 @@ internal fun EditorContent(
         CategoryContent(
             state = state,
             form = form,
+            graphSongs = graphSongs,
             onNavigateToAddSong = onNavigateToAddSong,
             onNavigateToSelectReceiver = onNavigateToSelectReceiver,
             onPhotoAddClick = onPhotoAddClick,
@@ -112,6 +113,7 @@ internal fun EditorContent(
 internal fun CategoryContent(
     state: AfternoteEditorState,
     form: EditorFormState,
+    graphSongs: List<Song>,
     onNavigateToAddSong: () -> Unit,
     onNavigateToSelectReceiver: () -> Unit,
     onPhotoAddClick: () -> Unit,
@@ -124,8 +126,8 @@ internal fun CategoryContent(
                 params =
                     MemorialGuidelineEditorContentParams(
                         displayMemorialPhotoUri = form.displayMemorialPhotoUri(),
-                        playlistSongCount = form.livePlaylistSongCount(state.playlistStateHolder),
-                        playlistAlbumCovers = form.displayAlbumCovers(state.playlistStateHolder),
+                        playlistSongCount = form.livePlaylistSongCount(graphSongs),
+                        playlistAlbumCovers = form.displayAlbumCovers(graphSongs),
                         selectedLastWish = form.selectedLastWish,
                         lastWishOptions = editorLastWishOptions(),
                         funeralVideoUrl = form.funeralVideoUrl,
@@ -223,10 +225,10 @@ internal fun CategoryContent(
 private fun EditorContentSocialPreview() {
     AfternoteTheme {
         val state = rememberAfternoteEditorState()
-        val form by state.formState.collectAsStateWithLifecycle()
         EditorContent(
             state = state,
-            form = form.copy(selectedCategory = EditorCategory.SOCIAL),
+            form = state.currentForm().copy(selectedCategory = EditorCategory.SOCIAL),
+            graphSongs = emptyList(),
             onNavigateToAddSong = {},
             onNavigateToSelectReceiver = {},
             onPhotoAddClick = {},
@@ -241,10 +243,10 @@ private fun EditorContentSocialPreview() {
 private fun EditorContentGalleryPreview() {
     AfternoteTheme {
         val state = rememberAfternoteEditorState()
-        val form by state.formState.collectAsStateWithLifecycle()
         EditorContent(
             state = state,
-            form = form.copy(selectedCategory = EditorCategory.GALLERY),
+            form = state.currentForm().copy(selectedCategory = EditorCategory.GALLERY),
+            graphSongs = emptyList(),
             onNavigateToAddSong = {},
             onNavigateToSelectReceiver = {},
             onPhotoAddClick = {},
@@ -259,10 +261,10 @@ private fun EditorContentGalleryPreview() {
 private fun EditorContentMemorialPreview() {
     AfternoteTheme {
         val state = rememberAfternoteEditorState()
-        val form by state.formState.collectAsStateWithLifecycle()
         EditorContent(
             state = state,
-            form = form.copy(selectedCategory = EditorCategory.MEMORIAL),
+            form = state.currentForm().copy(selectedCategory = EditorCategory.MEMORIAL),
+            graphSongs = emptyList(),
             onNavigateToAddSong = {},
             onNavigateToSelectReceiver = {},
             onPhotoAddClick = {},

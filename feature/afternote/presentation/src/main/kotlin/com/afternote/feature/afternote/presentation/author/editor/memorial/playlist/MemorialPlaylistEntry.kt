@@ -28,7 +28,6 @@ import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.core.ui.icon.ArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
 import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScreen
 import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScreenManagementContent
@@ -37,26 +36,29 @@ import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDis
 data class MemorialPlaylistEntryActions(
     val onBackClick: () -> Unit = {},
     val onNavigateToAddSongScreen: () -> Unit = {},
+    val onClearAllSongs: () -> Unit = {},
+    val onRemoveSongs: (Set<String>) -> Unit = {},
 )
 
 /**
  * 추모 플레이리스트 Entry.
  *
- * graph-scoped [MemorialPlaylistStateHolder]의 곡 목록을 공용 [SongPlaylistScreen]의 입력 형태로 매핑합니다.
+ * graph-scoped [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs] SSOT의 곡 목록을
+ * 공용 [SongPlaylistScreen]의 입력 형태로 매핑한다. 변경은 [actions] 인텐트로 위임한다.
  *
- * @param playlistStateHolder graph-scoped HostViewModel에서 전달받은 플레이리스트 상태
- * @param actions 네비게이션 콜백 모음
+ * @param songs graph-scoped HostViewModel에서 collect한 현재 곡 목록 스냅샷
+ * @param actions 네비게이션 + 삭제 인텐트 콜백 모음
  * @param initialSelectedSongIds Preview용. 넣으면 해당 ID가 선택된 상태로 시작 (기본 null)
  */
 @Composable
 fun MemorialPlaylistEntry(
-    playlistStateHolder: MemorialPlaylistStateHolder,
+    songs: List<Song>,
     modifier: Modifier = Modifier,
     actions: MemorialPlaylistEntryActions = MemorialPlaylistEntryActions(),
     initialSelectedSongIds: Set<String>? = null,
 ) {
-    val songs =
-        playlistStateHolder.songs.map { s ->
+    val displaySongs =
+        songs.map { s ->
             PlaylistSongDisplay(
                 id = s.id,
                 title = s.title,
@@ -68,12 +70,12 @@ fun MemorialPlaylistEntry(
         modifier = modifier,
         title = stringResource(R.string.afternote_editor_playlist_screen_title),
         onBackClick = actions.onBackClick,
-        songs = songs,
+        songs = displaySongs,
         managementContent =
             SongPlaylistScreenManagementContent(
                 leadingContent = { selectedIds ->
                     MemorialPlaylistListHeader(
-                        songCount = songs.size,
+                        songCount = displaySongs.size,
                         isSelectionMode = selectedIds.isNotEmpty(),
                         onAddSongClick = actions.onNavigateToAddSongScreen,
                     )
@@ -81,11 +83,11 @@ fun MemorialPlaylistEntry(
                 selectionBottomBar = { selectedIds, onClearSelection ->
                     MemorialPlaylistActionBar(
                         onDeleteAllClick = {
-                            playlistStateHolder.clearAllSongs()
+                            actions.onClearAllSongs()
                             onClearSelection()
                         },
                         onDeleteSelectedClick = {
-                            playlistStateHolder.removeSongs(selectedIds)
+                            actions.onRemoveSongs(selectedIds)
                             onClearSelection()
                         },
                     )
@@ -267,12 +269,8 @@ private fun memorialPlaylistPreviewSongs(): List<Song> =
 @Composable
 private fun MemorialPlaylistEntryPreview() {
     AfternoteLightTheme {
-        val holder =
-            MemorialPlaylistStateHolder().apply {
-                initializeSongs(memorialPlaylistPreviewSongs().take(3))
-            }
         MemorialPlaylistEntry(
-            playlistStateHolder = holder,
+            songs = memorialPlaylistPreviewSongs().take(3),
             actions = MemorialPlaylistEntryActions(),
         )
     }
@@ -282,12 +280,8 @@ private fun MemorialPlaylistEntryPreview() {
 @Composable
 private fun MemorialPlaylistEntrySelectionModePreview() {
     AfternoteLightTheme {
-        val holder =
-            MemorialPlaylistStateHolder().apply {
-                initializeSongs(memorialPlaylistPreviewSongs().take(4))
-            }
         MemorialPlaylistEntry(
-            playlistStateHolder = holder,
+            songs = memorialPlaylistPreviewSongs().take(4),
             actions = MemorialPlaylistEntryActions(),
             initialSelectedSongIds = setOf("1", "3"),
         )
