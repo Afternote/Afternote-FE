@@ -203,7 +203,7 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
     }
 
     LaunchedEffect(route.initialCategory, route.itemId) {
-        if (route.itemId == null && route.initialCategory != null) {
+        if (route.initialCategory != null) {
             state.selectCategoryByNavKey(route.initialCategory)
         }
     }
