@@ -7,36 +7,32 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.paging.LoadState
+import androidx.paging.PagingData
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemContentType
+import androidx.paging.compose.itemKey
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.body.infinite.AfternoteBodyUiState
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.AfternoteListItem
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
-import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOf
 
-private const val LOAD_MORE_THRESHOLD = 3
-
+/** append 단계 로딩만 푸터 스피너로 표시한다. 초기 로딩·새로고침·에러는 호출자에서 처리. */
 @Composable
 fun AfternoteList(
-    bodyUiState: AfternoteBodyUiState,
+    items: LazyPagingItems<ListItemUiModel>,
     onItemClick: (String) -> Unit,
-    onLoadMore: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // layoutInfo, 스크롤 위치, 상호작용 상태를 담고 있음
-    val listState = rememberLazyListState()
     LazyColumn(
-        state = listState,
         modifier =
             modifier
                 .fillMaxSize()
@@ -47,17 +43,18 @@ fun AfternoteList(
                 ),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items(items = bodyUiState.visibleItems, key = { it.id }) { itemUiModel ->
-            AfternoteListItem(
-                uiModel = itemUiModel,
-            ) { onItemClick(itemUiModel.id) }
+        items(
+            count = items.itemCount,
+            key = items.itemKey { it.id },
+            contentType = items.itemContentType { CONTENT_TYPE_LIST_ITEM },
+        ) { index ->
+            val item = items[index] ?: return@items
+            AfternoteListItem(uiModel = item) { onItemClick(item.id) }
         }
-        if (bodyUiState.hasNext && bodyUiState.isLoadingMore) {
-            item(key = "loading_indicator") {
+        if (items.loadState.append is LoadState.Loading) {
+            item(key = "append_loading") {
                 Box(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center,
                 ) {
                     CircularProgressIndicator(Modifier.size(32.dp))
@@ -65,63 +62,42 @@ fun AfternoteList(
             }
         }
     }
-    if (bodyUiState.hasNext && !bodyUiState.isLoadingMore && bodyUiState.visibleItems.isNotEmpty()) {
-        // LazyColumn의 상태와 애프터노트 개수가 변할 때마다 실행
-        LaunchedEffect(listState, bodyUiState.visibleItems.size) {
-            // 상태 변화마다 리컴포지션 대신 snapshotFlow를 통한 블록 재실행으로 성능 향상
-            snapshotFlow {
-                // layoutInfo는 리스트의 물리적인 배치 정보를 담고 있고, 내부적으로 MutableState에 담겨 있음
-                // 스크롤마다 layoutInfo 참조가 바뀌므로 상태 변화 알림
-                listState.layoutInfo.visibleItemsInfo // visibleItemsInfo는 현재 화면에 보이고 있는 아이템들의 리스트
-                    .lastOrNull()
-                    ?.index ?: 0 // visibleItemsInfo의 마지막 인덱스
-                // 첫 블록 실행 시 블록 실행 결과 값 타입의 Flow 객체(스트림) 생성
-                // 블록 실행마다 스트림에 결과 값 담음
-            }.distinctUntilChanged() // 스트림 결과 값이 스트림의 직전 결과 값과 다를 때만 collect 실행하므로써 또 성능 향상
-                // collect는 스트림에서 결과 값 emit시켜 그 값을 수신
-                .collect { index ->
-                    if (index >= bodyUiState.visibleItems.size - LOAD_MORE_THRESHOLD) {
-                        onLoadMore()
-                    }
-                }
-            // 대기
-        }
-    }
 }
+
+private const val CONTENT_TYPE_LIST_ITEM = "afternote_list_item"
 
 @Preview(showBackground = true)
 @Composable
 private fun AfternoteListPreview() {
     AfternoteTheme {
-        AfternoteList(
-            bodyUiState =
-                AfternoteBodyUiState(
-                    visibleItems =
-                        listOf(
-                            ListItemUiModel(
-                                id = "1",
-                                serviceName = "인스타그램",
-                                date = "2023.11.24",
-                                iconResId = R.drawable.feature_afternote_img_insta_pattern,
-                            ),
-                            ListItemUiModel(
-                                id = "2",
-                                serviceName = "페이스북",
-                                date = "2023.11.25",
-                                iconResId = R.drawable.feature_afternote_img_insta_pattern,
-                            ),
-                            ListItemUiModel(
-                                id = "3",
-                                serviceName = "트위터",
-                                date = "2023.11.26",
-                                iconResId = R.drawable.feature_afternote_img_insta_pattern,
-                            ),
+        val items =
+            flowOf(
+                PagingData.from(
+                    listOf(
+                        ListItemUiModel(
+                            id = "1",
+                            serviceName = "인스타그램",
+                            date = "2023.11.24",
+                            iconResId = R.drawable.feature_afternote_img_insta_pattern,
                         ),
-                    hasNext = true,
-                    isLoadingMore = false,
+                        ListItemUiModel(
+                            id = "2",
+                            serviceName = "페이스북",
+                            date = "2023.11.25",
+                            iconResId = R.drawable.feature_afternote_img_insta_pattern,
+                        ),
+                        ListItemUiModel(
+                            id = "3",
+                            serviceName = "트위터",
+                            date = "2023.11.26",
+                            iconResId = R.drawable.feature_afternote_img_insta_pattern,
+                        ),
+                    ),
                 ),
+            ).collectAsLazyPagingItems()
+        AfternoteList(
+            items = items,
             onItemClick = {},
-            onLoadMore = {},
         )
     }
 }
