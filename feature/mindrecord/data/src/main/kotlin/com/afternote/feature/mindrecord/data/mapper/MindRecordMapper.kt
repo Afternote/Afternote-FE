@@ -3,15 +3,15 @@ package com.afternote.feature.mindrecord.data.mapper
 import com.afternote.feature.mindrecord.data.dto.MindRecordDetailResponse
 import com.afternote.feature.mindrecord.data.dto.MindRecordListItem
 import com.afternote.feature.mindrecord.data.dto.MindRecordListResponse
-import com.afternote.feature.mindrecord.data.dto.MindRecordMedia as MindRecordMediaDto
-import com.afternote.feature.mindrecord.data.dto.MindRecordMediaType as MindRecordMediaTypeDto
-import com.afternote.feature.mindrecord.data.dto.MindRecordType as MindRecordTypeDto
 import com.afternote.feature.mindrecord.domain.model.MindRecordDetail
 import com.afternote.feature.mindrecord.domain.model.MindRecordList
 import com.afternote.feature.mindrecord.domain.model.MindRecordMedia
 import com.afternote.feature.mindrecord.domain.model.MindRecordMediaType
 import com.afternote.feature.mindrecord.domain.model.MindRecordSummary
 import com.afternote.feature.mindrecord.domain.model.MindRecordType
+import com.afternote.feature.mindrecord.data.dto.MindRecordMedia as MindRecordMediaDto
+import com.afternote.feature.mindrecord.data.dto.MindRecordMediaType as MindRecordMediaTypeDto
+import com.afternote.feature.mindrecord.data.dto.MindRecordType as MindRecordTypeDto
 
 fun MindRecordListResponse.toDomain(): MindRecordList =
     MindRecordList(

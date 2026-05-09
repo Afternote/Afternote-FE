@@ -51,8 +51,8 @@ data class MemorialPlaylistEntryActions(
 @Composable
 fun MemorialPlaylistEntry(
     playlistStateHolder: MemorialPlaylistStateHolder,
-    actions: MemorialPlaylistEntryActions = MemorialPlaylistEntryActions(),
     modifier: Modifier = Modifier,
+    actions: MemorialPlaylistEntryActions = MemorialPlaylistEntryActions(),
     initialSelectedSongIds: Set<String>? = null,
 ) {
     val songs =

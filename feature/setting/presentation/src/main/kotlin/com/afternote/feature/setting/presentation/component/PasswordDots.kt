@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun PasswordDots(
     passwordLength: Int,
+    modifier: Modifier = Modifier,
     totalDots: Int = 4,
     dotSize: Dp = 15.dp,
     dotSpacing: Dp = 18.dp,
@@ -23,6 +24,7 @@ fun PasswordDots(
     emptyColor: Color = Color(0xFF555555),
 ) {
     Row(
+        modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(dotSpacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {

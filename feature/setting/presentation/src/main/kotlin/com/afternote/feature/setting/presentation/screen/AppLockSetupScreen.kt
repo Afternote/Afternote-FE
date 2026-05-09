@@ -9,6 +9,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -25,13 +26,15 @@ fun AppLockSetupScreen(
     step: PinSetupStep,
     onPinComplete: (pin: String) -> Unit,
     onBack: () -> Unit,
+    modifier: Modifier = Modifier,
     viewModel: AppLockSetupViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val currentOnPinComplete by rememberUpdatedState(onPinComplete)
 
     LaunchedEffect(uiState.isComplete) {
         if (uiState.isComplete) {
-            onPinComplete(uiState.pin)
+            currentOnPinComplete(uiState.pin)
             viewModel.resetPin()
         }
     }
@@ -41,8 +44,9 @@ fun AppLockSetupScreen(
         passwordLength = uiState.pin.length,
         onDigitClick = viewModel::onDigitInput,
         onDeleteClick = viewModel::onDelete,
-        onConfirmClick = { onPinComplete(uiState.pin) },
+        onConfirmClick = { currentOnPinComplete(uiState.pin) },
         onBack = onBack,
+        modifier = modifier,
     )
 }
 
@@ -54,6 +58,7 @@ private fun AppLockSetupContent(
     onDeleteClick: () -> Unit,
     onConfirmClick: () -> Unit,
     onBack: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val titleText =
         when (step) {
@@ -69,6 +74,7 @@ private fun AppLockSetupContent(
                 onBackClick = onBack,
             )
         },
+        modifier = modifier,
     ) { innerPadding ->
         Column(
             modifier =

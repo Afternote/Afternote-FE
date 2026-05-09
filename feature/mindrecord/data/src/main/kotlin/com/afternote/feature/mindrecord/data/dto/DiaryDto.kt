@@ -5,11 +5,14 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 enum class TodayMood {
-    @SerialName("HAPPY") HAPPY,
+    @SerialName("HAPPY")
+    HAPPY,
 
-    @SerialName("SOSO") SOSO,
+    @SerialName("SOSO")
+    SOSO,
 
-    @SerialName("SAD") SAD,
+    @SerialName("SAD")
+    SAD,
 }
 
 @Serializable

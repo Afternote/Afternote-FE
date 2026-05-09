@@ -21,12 +21,13 @@ fun LabeledCheckboxRow(
     label: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val color = AfternoteDesign.colors.black
 
     Row(
         modifier =
-            Modifier
+            modifier
                 .fillMaxWidth()
                 .clickable { onCheckedChange(!checked) }
                 .padding(vertical = 8.dp),

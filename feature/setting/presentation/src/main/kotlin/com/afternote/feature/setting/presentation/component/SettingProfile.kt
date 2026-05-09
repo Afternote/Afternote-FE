@@ -29,8 +29,7 @@ fun SettingProfile(
             Modifier
                 .fillMaxWidth()
                 .height(180.dp),
-    )
-    {
+    ) {
         Row(
             modifier =
                 Modifier

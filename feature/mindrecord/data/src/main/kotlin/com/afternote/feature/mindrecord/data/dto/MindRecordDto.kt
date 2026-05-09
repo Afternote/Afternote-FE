@@ -5,18 +5,23 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 enum class MindRecordType {
-    @SerialName("DAILY_QUESTION") DAILY_QUESTION,
+    @SerialName("DAILY_QUESTION")
+    DAILY_QUESTION,
 
-    @SerialName("DIARY") DIARY,
+    @SerialName("DIARY")
+    DIARY,
 
-    @SerialName("DEEP_THOUGHT") DEEP_THOUGHT,
+    @SerialName("DEEP_THOUGHT")
+    DEEP_THOUGHT,
 }
 
 @Serializable
 enum class MindRecordMediaType {
-    @SerialName("IMAGE") IMAGE,
+    @SerialName("IMAGE")
+    IMAGE,
 
-    @SerialName("VIDEO") VIDEO,
+    @SerialName("VIDEO")
+    VIDEO,
 }
 
 @Serializable

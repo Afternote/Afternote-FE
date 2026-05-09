@@ -25,8 +25,8 @@ import com.afternote.feature.setting.presentation.R
 
 @Composable
 fun PassKeyMakingScreen(
-    modifier: Modifier = Modifier,
     onBackClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Scaffold(
         topBar = {
@@ -35,6 +35,7 @@ fun PassKeyMakingScreen(
                 onBackClick = onBackClick,
             )
         },
+        modifier = modifier,
     ) { innerPadding ->
         Box(
             modifier =

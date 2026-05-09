@@ -2,6 +2,7 @@ package com.afternote.feature.afternote.data.network
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -26,7 +27,7 @@ class MockModePreferences
         var isEnabled: Boolean
             get() = prefs.getBoolean(KEY_MOCK_ENABLED, true)
             set(value) {
-                prefs.edit().putBoolean(KEY_MOCK_ENABLED, value).apply()
+                prefs.edit { putBoolean(KEY_MOCK_ENABLED, value) }
             }
 
         // UI Layer(ViewModel)용: 단방향 데이터 흐름을 위한 스트림

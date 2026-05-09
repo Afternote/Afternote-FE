@@ -3,7 +3,6 @@ package com.afternote.feature.setting.presentation.component
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -22,11 +21,12 @@ import com.afternote.feature.setting.presentation.viewmodel.PushNotificationUiSt
 @Composable
 fun DeviceAlarmOffSection(
     uiState: PushNotificationUiState,
-    onSmsChecked: (Boolean) -> Unit,
-    onEmailChecked: (Boolean) -> Unit,
-    onPushChecked: (Boolean) -> Unit,
+    onSmsCheck: (Boolean) -> Unit,
+    onEmailCheck: (Boolean) -> Unit,
+    onPushCheck: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Column {
+    Column(modifier = modifier) {
         // 기기 알림 설정 헤더
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -59,17 +59,17 @@ fun DeviceAlarmOffSection(
         LabeledCheckboxRow(
             label = stringResource(R.string.sms),
             checked = uiState.isSmsChecked,
-            onCheckedChange = onSmsChecked,
+            onCheckedChange = onSmsCheck,
         )
         LabeledCheckboxRow(
             label = stringResource(R.string.email),
             checked = uiState.isEmailChecked,
-            onCheckedChange = onEmailChecked,
+            onCheckedChange = onEmailCheck,
         )
         LabeledCheckboxRow(
             label = stringResource(R.string.push_alarm),
             checked = uiState.isPushChecked,
-            onCheckedChange = onPushChecked,
+            onCheckedChange = onPushCheck,
         )
 
         Spacer(Modifier.height(32.dp))
@@ -98,8 +98,8 @@ fun DeviceAlarmOffSection(
 private fun DeviceAlarmOffSectionPrev() {
     DeviceAlarmOffSection(
         uiState = PushNotificationUiState(),
-        onSmsChecked = {},
-        onEmailChecked = {},
-        onPushChecked = {},
+        onSmsCheck = {},
+        onEmailCheck = {},
+        onPushCheck = {},
     )
 }
