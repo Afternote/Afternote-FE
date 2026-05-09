@@ -29,8 +29,18 @@ import com.afternote.feature.mindrecord.presentation.model.TextStyleState
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun WriteTextField(modifier: Modifier = Modifier) {
-    var textFieldValue by remember { mutableStateOf(TextFieldValue()) }
+fun WriteTextField(
+    modifier: Modifier = Modifier,
+    value: String? = null,
+    onValueChange: ((String) -> Unit)? = null,
+) {
+    var internalValue by remember { mutableStateOf(TextFieldValue()) }
+    val textFieldValue =
+        if (value != null) {
+            TextFieldValue(text = value, selection = internalValue.selection)
+        } else {
+            internalValue
+        }
     var styleState by remember { mutableStateOf(TextStyleState()) }
     var showTextStyleToolbar by remember { mutableStateOf(false) }
     val imeVisible = WindowInsets.isImeVisible
@@ -44,7 +54,10 @@ fun WriteTextField(modifier: Modifier = Modifier) {
         // 텍스트 입력 영역
         BasicTextField(
             value = textFieldValue,
-            onValueChange = { textFieldValue = it },
+            onValueChange = { newValue ->
+                internalValue = newValue
+                onValueChange?.invoke(newValue.text)
+            },
             modifier =
                 Modifier
                     .weight(1f)
