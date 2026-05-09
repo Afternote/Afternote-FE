@@ -37,10 +37,6 @@ fun AfternoteHomeEntry(
     val items = viewModel.pagedAfternotes.collectAsLazyPagingItems()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val refreshState = items.loadState.refresh
-    val isInitialLoading = refreshState is LoadState.Loading && items.itemCount == 0
-    val isRefreshing = refreshState is LoadState.Loading && items.itemCount > 0
-
     val appendState = items.loadState.append
     val appendErrorMessage = stringResource(R.string.afternote_home_append_error)
     LaunchedEffect(appendState) {
@@ -52,8 +48,6 @@ fun AfternoteHomeEntry(
     AfternoteHomeScreen(
         items = items,
         selectedCategory = selectedCategory,
-        isInitialLoading = isInitialLoading,
-        isRefreshing = isRefreshing,
         snackbarHostState = snackbarHostState,
         onCategorySelected = viewModel::selectTab,
         onListItemClick = { id, type ->
@@ -63,7 +57,6 @@ fun AfternoteHomeEntry(
                 AfternoteServiceType.SOCIAL_NETWORK -> actions.navigateToDetail(id)
             }
         },
-        onRefresh = items::refresh,
         onFabClick = { actions.navigateToAdd(selectedCategory) },
     )
 }

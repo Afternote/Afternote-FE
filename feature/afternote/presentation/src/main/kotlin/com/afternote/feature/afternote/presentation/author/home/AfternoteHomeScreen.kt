@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
@@ -29,20 +30,20 @@ import com.afternote.feature.afternote.presentation.shared.body.infinite.content
 import kotlinx.coroutines.flow.flowOf
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Suppress("LongParameterList", "kotlin:S107")
 @Composable
 fun AfternoteHomeScreen(
     items: LazyPagingItems<ListItemUiModel>,
     selectedCategory: AfternoteCategory,
-    isInitialLoading: Boolean,
-    isRefreshing: Boolean,
     onCategorySelected: (AfternoteCategory) -> Unit,
     onListItemClick: (id: String, type: AfternoteServiceType) -> Unit,
-    onRefresh: () -> Unit,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     onFabClick: () -> Unit = {},
 ) {
+    val refreshState = items.loadState.refresh
+    val isInitialLoading = refreshState is LoadState.Loading && items.itemCount == 0
+    val isRefreshing = refreshState is LoadState.Loading && items.itemCount > 0
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = Color.Transparent,
@@ -58,7 +59,7 @@ fun AfternoteHomeScreen(
     ) { paddingValues ->
         PullToRefreshBox(
             isRefreshing = isRefreshing,
-            onRefresh = onRefresh,
+            onRefresh = items::refresh,
             modifier =
                 Modifier
                     .fillMaxSize()
@@ -116,11 +117,8 @@ private fun AfternoteHomeScreenPreview() {
         AfternoteHomeScreen(
             items = items,
             selectedCategory = AfternoteCategory.ALL,
-            isInitialLoading = false,
-            isRefreshing = false,
             onCategorySelected = {},
             onListItemClick = { _, _ -> },
-            onRefresh = {},
         )
     }
 }
@@ -134,11 +132,8 @@ private fun AfternoteHomeScreenEmptyPreview() {
         AfternoteHomeScreen(
             items = items,
             selectedCategory = AfternoteCategory.ALL,
-            isInitialLoading = false,
-            isRefreshing = false,
             onCategorySelected = {},
             onListItemClick = { _, _ -> },
-            onRefresh = {},
         )
     }
 }
