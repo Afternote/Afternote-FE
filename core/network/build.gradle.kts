@@ -9,7 +9,7 @@ android {
     buildFeatures {
         buildConfig = true
     }
-    defaultConfig { buildConfigField("String", "BASE_URL", "\"https://afternote.kro.kr/\"") }
+    defaultConfig { buildConfigField("String", "BASE_URL", "\"https://afternote.kro.kr/api/v1/\"") }
 }
 
 dependencies {
