@@ -1,9 +1,9 @@
 package com.afternote.feature.afternote.data.repositoryimpl
 
 import android.util.Log
+import com.afternote.core.common.di.IoDispatcher
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
-import com.afternote.feature.afternote.data.dto.AfternoteIdResponse
 import com.afternote.feature.afternote.data.mapper.response.toDetailDomain
 import com.afternote.feature.afternote.data.mapper.response.toListPage
 import com.afternote.feature.afternote.data.mapper.toRequest
@@ -15,10 +15,13 @@ import com.afternote.feature.afternote.domain.model.author.CreateSocialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.ListPage
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /**
@@ -30,6 +33,7 @@ class AfternoteRepositoryImpl
     @Inject
     constructor(
         private val api: AfternoteApiService,
+        @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : AfternoteRepository {
         private val _authorAfternoteListRevision = MutableStateFlow(0L)
         override val authorAfternoteListRevision: StateFlow<Long> =
@@ -40,100 +44,73 @@ class AfternoteRepositoryImpl
             pageNumber: Int,
             size: Int,
         ): Result<ListPage> =
-            runCatching {
-                val response =
-                    api.getAfternotes(
+            safeCall(ioDispatcher) {
+                api
+                    .getAfternotes(
                         category = category,
                         pageNumber = pageNumber,
                         size = size,
-                    )
-                val data = response.requireData()
-                data.toListPage()
-            }.logFailure()
+                    ).requireData()
+                    .toListPage()
+            }
 
         override suspend fun createSocial(payload: CreateSocialPayload): Result<Long> =
-            runAuthoring {
-                val request = payload.toRequest()
-                val response = api.createAfternoteSocial(request)
-                val data = response.requireData()
-                getAfternoteId(data)
-            }.logFailure()
-                .also { if (it.isSuccess) bumpAuthorListRevision() }
+            safeCall(ioDispatcher, errorMapper = ::mapAuthoringFailure) {
+                api.createAfternoteSocial(payload.toRequest()).requireData().afternoteId
+            }.onSuccess { bumpAuthorListRevision() }
 
         override suspend fun createGallery(payload: CreateGalleryPayload): Result<Long> =
-            runAuthoring {
-                val request = payload.toRequest()
-                val response = api.createAfternoteGallery(request)
-                val data = response.requireData()
-                getAfternoteId(data)
-            }.logFailure()
-                .also { if (it.isSuccess) bumpAuthorListRevision() }
+            safeCall(ioDispatcher, errorMapper = ::mapAuthoringFailure) {
+                api.createAfternoteGallery(payload.toRequest()).requireData().afternoteId
+            }.onSuccess { bumpAuthorListRevision() }
 
-        /**
-         * GET /afternotes/{afternoteId} — 상세 조회. DTO → domain 매핑 포함.
-         */
         override suspend fun getDetail(id: Long): Result<Detail> =
-            runCatching {
-                val response = api.getAfternoteDetail(afternoteId = id)
-                val data = response.requireData()
-                data.toDetailDomain()
-            }.logFailure()
+            safeCall(ioDispatcher) {
+                api.getAfternoteDetail(afternoteId = id).requireData().toDetailDomain()
+            }
 
-        /**
-         * POST /afternotes (PLAYLIST category).
-         */
         override suspend fun createPlaylist(payload: CreatePlaylistPayload): Result<Long> =
-            runAuthoring {
-                val request = payload.toRequest()
-                val response = api.createAfternotePlaylist(request)
-                val data = response.requireData()
-                getAfternoteId(data)
-            }.logFailure()
-                .also { if (it.isSuccess) bumpAuthorListRevision() }
+            safeCall(ioDispatcher, errorMapper = ::mapAuthoringFailure) {
+                api.createAfternotePlaylist(payload.toRequest()).requireData().afternoteId
+            }.onSuccess { bumpAuthorListRevision() }
 
-        /**
-         * PATCH /afternotes/{afternoteId} — 부분 수정 (수정할 필드만 전송).
-         */
         override suspend fun update(
             id: Long,
             payload: AfternoteUpdatePayload,
-        ): Result<Long> {
-            val request = payload.toRequest()
-            return runAuthoring {
-                val response = api.updateAfternote(afternoteId = id, request = request)
-                val data = response.requireData()
-                getAfternoteId(data)
-            }.logFailure()
-                .also { if (it.isSuccess) bumpAuthorListRevision() }
-        }
+        ): Result<Long> =
+            safeCall(ioDispatcher, errorMapper = ::mapAuthoringFailure) {
+                api
+                    .updateAfternote(afternoteId = id, request = payload.toRequest())
+                    .requireData()
+                    .afternoteId
+            }.onSuccess { bumpAuthorListRevision() }
 
-        /**
-         * DELETE /afternotes/{afternoteId}.
-         */
         override suspend fun delete(id: Long): Result<Unit> =
-            runCatching {
-                val response = api.deleteAfternote(afternoteId = id)
-                response.requireStatus()
-            }.logFailure()
-                .also { if (it.isSuccess) bumpAuthorListRevision() }
+            safeCall(ioDispatcher) {
+                api.deleteAfternote(afternoteId = id).requireStatus()
+            }.onSuccess { bumpAuthorListRevision() }
 
         private fun bumpAuthorListRevision() {
             _authorAfternoteListRevision.update { it + 1L }
         }
     }
 
-private suspend inline fun <T> runAuthoring(crossinline block: suspend () -> T): Result<T> =
-    try {
-        Result.success(block())
-    } catch (e: Throwable) {
-        Result.failure(mapAuthoringFailure(e))
+private suspend inline fun <T> safeCall(
+    dispatcher: CoroutineDispatcher,
+    crossinline errorMapper: (Throwable) -> Throwable = { it },
+    crossinline block: suspend () -> T,
+): Result<T> =
+    withContext(dispatcher) {
+        try {
+            Result.success(block())
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            e.logRepositoryFailure()
+            Result.failure(errorMapper(e))
+        }
     }
 
-private fun getAfternoteId(data: AfternoteIdResponse) = data.afternoteId
-
-private fun <T> Result<T>.logFailure() =
-    onFailure { error ->
-        val message = error.message
-        val msg = message.toString()
-        Log.e("AfternoteRepository", msg)
-    }
+private fun Exception.logRepositoryFailure() {
+    Log.e("AfternoteRepository", message ?: "Unknown Error", this)
+}

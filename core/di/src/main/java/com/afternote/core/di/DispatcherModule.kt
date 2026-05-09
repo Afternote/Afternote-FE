@@ -1,17 +1,17 @@
 package com.afternote.core.di
 
+import com.afternote.core.common.di.IoDispatcher
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import javax.inject.Named
 
 @Module
 @InstallIn(SingletonComponent::class)
 object DispatcherModule {
     @Provides
-    @Named("IoDispatcher")
+    @IoDispatcher
     fun provideIoDispatcher(): CoroutineDispatcher = Dispatchers.IO
 }
