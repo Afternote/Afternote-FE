@@ -1,6 +1,5 @@
 plugins {
-    id("afternote.android.library")
-    id("afternote.android.hilt")
+    id("afternote.android.domain")
 }
 
 android {
@@ -8,4 +7,5 @@ android {
 }
 
 dependencies {
+    implementation(libs.coroutines.core)
 }
