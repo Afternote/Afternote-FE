@@ -1,7 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.editor.state
 
 import com.afternote.core.model.AlbumCover
-import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
@@ -24,13 +23,13 @@ private const val LAST_WISH_DEFAULT_BRIGHT = "슬퍼 하지 말고 밝고 따뜻
  * 프로세스 종료 대비 스냅샷은 [androidx.lifecycle.SavedStateHandle]에 JSON으로 저장한다.
  *
  * 순수 UI(다이얼로그·탭·드롭다운·[androidx.compose.foundation.text.input.TextFieldState])는
- * [AfternoteEditorUiState]가 담당한다.
+ * [AfternoteEditorUiHolder]가 담당한다.
  *
  * **남기실 말씀:** [messageBlocks]는 SavedState 스냅샷·Process Death 복원용 SSOT이며,
  * 화면의 [androidx.compose.foundation.text.input.TextFieldState]와 디바운스 동기화된다.
  *
- * **추모 플레이리스트:** [memorialPlaylistSongs]는 [com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder]와 동기화되어
- * [androidx.lifecycle.SavedStateHandle] JSON에 포함된다 (프로세스 종료·설정 변경 복원).
+ * **추모 플레이리스트:** [memorialPlaylistSongs]는 [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs] 와
+ * 동기화되어 [androidx.lifecycle.SavedStateHandle] JSON에 포함된다 (프로세스 종료·설정 변경 복원).
  *
  * **Bundle 용량:** 스냅샷이 들어가는 SavedState/번들은 대략 500KB~1MB를 넘기면 [android.os.TransactionTooLargeException] 위험이 있다.
  * 사진·썸네일은 Base64/data URL 같은 거대 문자열이 아니라 짧은 HTTPS URL 또는 content [android.net.Uri] 문자열만 두는 것이 안전하다.
@@ -73,28 +72,28 @@ data class EditorFormState(
 
     fun displayMemorialPhotoUri(): String? = pickedMemorialPhotoUri ?: memorialPhotoUrl
 
-    fun displayAlbumCovers(playlistStateHolder: MemorialPlaylistStateHolder?): List<AlbumCover> =
+    /**
+     * 그래프 스코프 SSOT([com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs])의 곡 목록을
+     * 우선 표시하고, 비어있으면 폼 스냅샷의 [memorialPlaylistSongs], 그래도 비어있으면 [playlistAlbumCovers] 순으로 폴백한다.
+     */
+    fun displayAlbumCovers(graphSongs: List<Song>): List<AlbumCover> =
         when {
-            playlistStateHolder?.songs?.isNotEmpty() == true -> {
-                playlistStateHolder.songs.map { s ->
+            graphSongs.isNotEmpty() ->
+                graphSongs.map { s ->
                     AlbumCover(id = s.id, imageUrl = s.albumCoverUrl, title = s.title)
                 }
-            }
 
-            memorialPlaylistSongs.isNotEmpty() -> {
+            memorialPlaylistSongs.isNotEmpty() ->
                 memorialPlaylistSongs.map { s ->
                     AlbumCover(id = s.id, imageUrl = s.albumCoverUrl, title = s.title)
                 }
-            }
 
-            else -> {
-                playlistAlbumCovers
-            }
+            else -> playlistAlbumCovers
         }
 
-    fun livePlaylistSongCount(playlistStateHolder: MemorialPlaylistStateHolder?): Int =
+    fun livePlaylistSongCount(graphSongs: List<Song>): Int =
         when {
-            playlistStateHolder?.songs?.isNotEmpty() == true -> playlistStateHolder.songs.size
+            graphSongs.isNotEmpty() -> graphSongs.size
             memorialPlaylistSongs.isNotEmpty() -> memorialPlaylistSongs.size
             else -> playlistSongCount
         }

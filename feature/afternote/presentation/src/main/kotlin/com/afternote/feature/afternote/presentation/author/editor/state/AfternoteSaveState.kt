@@ -2,6 +2,7 @@ package com.afternote.feature.afternote.presentation.author.editor.state
 
 import androidx.annotation.StringRes
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 
 /**
  * 비동기 검증 실패 시 발생하는 예외 (예: API를 통한 GALLERY 수신자 확인 등).
@@ -15,7 +16,7 @@ class AfternoteValidationException(
 
 /** 저장 전 필수 필드 검증에 대한 실패 유형. */
 enum class AfternoteValidationError(
-    @StringRes val messageResId: Int,
+    @param:StringRes val messageResId: Int,
 ) {
     TITLE_REQUIRED(R.string.afternote_validation_title_required),
     SOCIAL_CREDENTIALS_REQUIRED(R.string.afternote_validation_social_credentials_required),
@@ -30,21 +31,25 @@ enum class AfternoteValidationError(
 }
 
 /**
- * 애프터노트 저장(생성/수정)의 UI 진행 상태와 오류.
+ * 에디터 화면의 단일 UI 상태.
  *
- * 저장 **성공**은 일회성 이벤트인 [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorEvent.SaveSuccess]
- * (Channel)로 전달합니다. 이 상태는 진행 중·실패·검증 오류만 담습니다.
+ * CLAUDE.md UI Layer 규칙(*"한 화면당 단일 UI State 객체. loading/error/data 독립 스트림 분리 금지"*)에 따라
+ * 폼 SSOT([form]), 작성자 수신자 목록([authorReceivers]), 저장 진행/오류 필드를 한 객체로 묶는다.
  *
- * [savedId]는 성공 직후 스냅샷용으로 남겨 둔 값입니다. 화면에 ID를 계속 표시할 필요가 없고
- * 네비게이션 등도 이벤트만 쓴다면, 중복 소스를 피하기 위해 이벤트 쪽만 두는 편이 MVI/UDF에 가깝습니다.
+ * 저장 **성공**은 일회성 이벤트인
+ * [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorEvent.SaveSuccess]
+ * (Channel)로 전달한다. 본 영속 상태는 진행 중·실패·검증 오류만 담는다.
  *
- * [error]는 네트워크 등 원시 메시지용입니다. ViewModel은 `Context`에 의존하지 않고
- * 리소스 기반 일반 실패 메시지는 [errorRes]에 [StringRes] ID로 담아 UI에서 [Composable.stringResource]로 해석합니다.
+ * [error] 는 네트워크 등 서버 raw 메시지용. ViewModel은 `Context`에 의존하지 않고
+ * 리소스 기반 일반 실패 메시지는 [errorRes] 에 [StringRes] ID로 담아 UI에서
+ * [androidx.compose.ui.res.stringResource] 로 해석한다 (상세 화면 [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailUiState.Error] 와 동일 페어).
  */
-data class AfternoteSaveState(
+data class AfternoteEditorUiState(
+    val form: EditorFormState = EditorFormState(),
+    val authorReceivers: List<AfternoteEditorReceiver> = emptyList(),
     val isSaving: Boolean = false,
     val savedId: Long? = null,
-    val error: String? = null,
-    @StringRes val errorRes: Int? = null,
     val validationError: AfternoteValidationError? = null,
+    val error: String? = null,
+    @param:StringRes val errorRes: Int? = null,
 )
