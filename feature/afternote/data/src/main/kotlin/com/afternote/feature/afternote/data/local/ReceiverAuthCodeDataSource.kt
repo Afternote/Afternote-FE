@@ -25,7 +25,7 @@ private object ReceiverAuthCodeKeys {
 class ReceiverAuthCodeDataSource
     @Inject
     constructor(
-        @ReceiverAuthCodeDataStore private val dataStore: DataStore<Preferences>,
+        @param:ReceiverAuthCodeDataStore private val dataStore: DataStore<Preferences>,
     ) {
         val savedCodeFlow: Flow<String?> =
             dataStore.data

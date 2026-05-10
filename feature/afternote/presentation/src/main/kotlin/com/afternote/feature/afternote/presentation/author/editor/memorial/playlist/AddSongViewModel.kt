@@ -22,7 +22,7 @@ private const val SEARCH_DEBOUNCE_MS = 300L
 class AddSongViewModel
     @Inject
     constructor(
-        @ApplicationContext private val appContext: Context,
+        @param:ApplicationContext private val appContext: Context,
         private val musicSearchRepository: MusicSearchRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(AddSongUiState())
