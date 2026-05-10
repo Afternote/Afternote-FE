@@ -62,7 +62,7 @@ fun ReceiverHomeScreen(
         topBar = { HomeTopBar(onSettingClick = actions.onSettingClick) },
     ) { innerPadding ->
         when (uiState) {
-            ReceiverHomeUiState.Loading -> Unit
+            ReceiverHomeUiState.Loading -> { }
 
             is ReceiverHomeUiState.Error -> {
                 ErrorState(
@@ -164,10 +164,12 @@ private fun DownloadDialogHost(
                 Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
                 currentOnEvent(ReceiverHomeEvent.ConsumeDownloadResult)
             }
+
             ReceiverDownloadState.Done -> {
                 currentOnEvent(ReceiverHomeEvent.ConsumeDownloadResult)
             }
-            else -> Unit
+
+            else -> { }
         }
     }
 }
