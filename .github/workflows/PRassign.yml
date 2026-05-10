@@ -16,3 +16,52 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           assignees: ${{ github.actor }}
           reviewers: 1hyok, koongmai, Sadturtleman
+
+      # GitHub Copilot Code Review 봇은 collaborator 가 아니라
+      # REST `POST /pulls/{n}/requested_reviewers` 가 422 로 막힌다.
+      # GraphQL `suggestedActors` 로 봇 ID 를 동적 조회한 뒤
+      # `requestReviews` mutation 으로 요청한다.
+      # organization 에서 Copilot Code Review 가 활성화돼야 봇 ID 가 노출된다.
+      - name: Request Copilot Code Review
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          PR_NODE_ID: ${{ github.event.pull_request.node_id }}
+        run: |
+          set -euo pipefail
+
+          BOT_ID=$(gh api graphql \
+            -F owner="$OWNER" \
+            -F name="$REPO_NAME" \
+            -f query='
+              query($owner: String!, $name: String!) {
+                repository(owner: $owner, name: $name) {
+                  suggestedActors(capabilities: [CAN_BE_ASSIGNED], first: 100) {
+                    nodes {
+                      __typename
+                      ... on Bot { id login }
+                      ... on User { id login }
+                    }
+                  }
+                }
+              }' \
+            --jq '.data.repository.suggestedActors.nodes[]
+                  | select(.__typename == "Bot" and (.login | ascii_downcase | contains("copilot")))
+                  | .id' | head -n1)
+
+          if [ -z "$BOT_ID" ]; then
+            echo "::warning::Copilot reviewer not exposed in suggestedActors. organization 설정에서 Copilot Code Review 활성화 여부 확인 필요."
+            exit 0
+          fi
+
+          echo "Requesting Copilot review (bot id: $BOT_ID)"
+          gh api graphql \
+            -F prId="$PR_NODE_ID" \
+            -F botId="$BOT_ID" \
+            -f query='
+              mutation($prId: ID!, $botId: ID!) {
+                requestReviews(input: { pullRequestId: $prId, userIds: [$botId] }) {
+                  pullRequest { id }
+                }
+              }'
