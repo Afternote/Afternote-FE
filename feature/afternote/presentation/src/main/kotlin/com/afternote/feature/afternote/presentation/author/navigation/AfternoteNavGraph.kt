@@ -14,6 +14,7 @@ import com.afternote.feature.afternote.presentation.AfternoteHostViewModel
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.AddSongViewModel
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.MemorialPlaylistEntry
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.MemorialPlaylistEntryActions
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 
 /**
@@ -21,7 +22,6 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.Afte
  *
  * 앱 모듈의 NavHost에 직접 연결되며, [Route.Afternote]를 graph route로 사용합니다.
  * [AfternoteHostViewModel]은 **세션 스코프 UI 초안**(플레이리스트·에디트 상태 참조)만 공유하며,
- * 작성자 목록 SSOT는 [com.afternote.feature.afternote.domain.repository.AfternoteRepository]이다.
  *
  * 네비게이션 호출은 [AfternoteNavActions]로만 전달합니다. 에디터가 포그라운드인지는
  * [NavBackStackEntry.lifecycle]이 최소 [Lifecycle.State.RESUMED]인지로 판별합니다.
@@ -48,14 +48,18 @@ fun NavGraphBuilder.afternoteNavGraph(
             AfternoteDetailNavigation(
                 backStackEntry = it,
                 onBack = actions::onPopBackStack,
-                onNavigateToEditor = actions::onNavigateToEditorForEdit,
+                onNavigateToEditor = { itemId ->
+                    actions.onNavigateToEditorForEdit(itemId, EditorCategory.SOCIAL)
+                },
             )
         }
 
         afternoteComposable<AfternoteRoute.GalleryDetailRoute> { _ ->
             AfternoteGalleryDetailNavigation(
                 onBack = actions::onPopBackStack,
-                onNavigateToEditor = actions::onNavigateToEditorForEdit,
+                onNavigateToEditor = { itemId ->
+                    actions.onNavigateToEditorForEdit(itemId, EditorCategory.GALLERY)
+                },
             )
         }
 
@@ -86,7 +90,9 @@ fun NavGraphBuilder.afternoteNavGraph(
         afternoteComposable<AfternoteRoute.MemorialGuidelineDetailRoute> { _ ->
             AfternoteMemorialGuidelineDetailNavigation(
                 onBack = actions::onPopBackStack,
-                onNavigateToEditor = actions::onNavigateToEditorForEdit,
+                onNavigateToEditor = { itemId ->
+                    actions.onNavigateToEditorForEdit(itemId, EditorCategory.MEMORIAL)
+                },
             )
         }
 

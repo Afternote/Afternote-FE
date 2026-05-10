@@ -30,13 +30,13 @@ fun PassKeyScreen(
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
+        modifier = modifier,
         topBar = {
             DetailTopBar(
                 title = stringResource(id = R.string.passkey_management_title),
                 onBackClick = onBackClick,
             )
         },
-        modifier = modifier,
     ) { innerPadding ->
         Box(
             modifier =

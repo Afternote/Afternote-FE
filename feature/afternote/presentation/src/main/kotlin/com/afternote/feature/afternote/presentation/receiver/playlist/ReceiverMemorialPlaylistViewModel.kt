@@ -16,8 +16,9 @@ import javax.inject.Inject
 /**
  * 수신자 추모 플레이리스트 화면 ViewModel.
  *
- * GET /api/receiver-auth/after-notes (X-Auth-Code)로 목록 조회 후 첫 항목으로 상세를 조회하거나,
+ * GET /api/v1/receiver-auth/after-notes로 목록 조회 후 첫 항목으로 상세를 조회하거나,
  * afternoteId가 있으면 해당 ID로 상세를 조회하여 playlist.songs를 [PlaylistSongDisplay]로 표시합니다.
+ * `X-Auth-Code` 헤더는 ReceiverAuthInterceptor가 자동 부착합니다.
  */
 @HiltViewModel
 class ReceiverMemorialPlaylistViewModel
@@ -26,38 +27,18 @@ class ReceiverMemorialPlaylistViewModel
         savedStateHandle: SavedStateHandle,
         private val receiverRepository: ReceiverRepository,
     ) : ViewModel() {
-        // region State
         private val _uiState = MutableStateFlow(ReceiverMemorialPlaylistUiState())
         val uiState: StateFlow<ReceiverMemorialPlaylistUiState> = _uiState.asStateFlow()
-        // endregion
 
         init {
             val afternoteId = (savedStateHandle["afternoteId"] as? String)?.toLongOrNull()
-            viewModelScope.launch {
-                val authCode = receiverRepository.currentAuthCode()
-
-                when {
-                    authCode == null || authCode.isBlank() -> {
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                errorMessage = "인증 정보가 없습니다.",
-                            )
-                        }
-                    }
-
-                    afternoteId != null -> {
-                        loadPlaylist(authCode = authCode, afternoteId = afternoteId)
-                    }
-
-                    else -> {
-                        resolveFirstAfternoteAndLoad(authCode = authCode)
-                    }
-                }
+            if (afternoteId != null) {
+                loadPlaylist(afternoteId)
+            } else {
+                resolveFirstAfternoteAndLoad()
             }
         }
 
-        // region Event
         fun onEvent(event: ReceiverMemorialPlaylistEvent) {
             when (event) {
                 ReceiverMemorialPlaylistEvent.ErrorConsumed -> clearError()
@@ -67,14 +48,12 @@ class ReceiverMemorialPlaylistViewModel
         private fun clearError() {
             _uiState.update { it.copy(errorMessage = null) }
         }
-        // endregion
 
-        // region Data Loading
-        private fun resolveFirstAfternoteAndLoad(authCode: String) {
+        private fun resolveFirstAfternoteAndLoad() {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             viewModelScope.launch {
                 receiverRepository
-                    .getAfterNotesByAuthCode(authCode)
+                    .getReceivedAfterNotes()
                     .onSuccess { result ->
                         val firstId = result.items.firstOrNull()?.id
                         if (firstId == null) {
@@ -85,7 +64,7 @@ class ReceiverMemorialPlaylistViewModel
                                 )
                             }
                         } else {
-                            loadPlaylist(authCode = authCode, afternoteId = firstId)
+                            loadPlaylist(firstId)
                         }
                     }.onFailure { e ->
                         _uiState.update {
@@ -98,17 +77,12 @@ class ReceiverMemorialPlaylistViewModel
             }
         }
 
-        private fun loadPlaylist(
-            authCode: String,
-            afternoteId: Long,
-        ) {
+        private fun loadPlaylist(afternoteId: Long) {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             viewModelScope.launch {
                 receiverRepository
-                    .getAfternoteDetailByAuthCode(
-                        authCode = authCode,
-                        afternoteId = afternoteId,
-                    ).onSuccess { detail ->
+                    .getReceivedAfternoteDetail(afternoteId = afternoteId)
+                    .onSuccess { detail ->
                         val playlist = detail.playlist
                         val songs =
                             playlist
@@ -140,5 +114,4 @@ class ReceiverMemorialPlaylistViewModel
                     }
             }
         }
-        // endregion
     }

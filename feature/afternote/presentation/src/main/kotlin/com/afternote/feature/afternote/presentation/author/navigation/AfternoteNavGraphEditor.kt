@@ -31,7 +31,6 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.SELE
 /**
  * 작성자 에디터 플로우: type-safe [AfternoteRoute.EditorRoute] + 단방향 이벤트.
  *
- * **데이터 SSOT:** 편집 본문은 [com.afternote.feature.afternote.domain.repository.AfternoteRepository]가 담당한다.
  * 홈의 `visibleItems` 스냅샷은 에디터에 전달하지 않는다. 식별은 라우트의 `itemId`·`initialCategory` 정도로 최소화한다.
  *
  * **수정 진입 데이터 로드:** 상세 화면과 같이 [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel]의 `init`에서
@@ -204,7 +203,7 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
     }
 
     LaunchedEffect(route.initialCategory, route.itemId) {
-        if (route.itemId == null && route.initialCategory != null) {
+        if (route.initialCategory != null) {
             state.selectCategoryByNavKey(route.initialCategory)
         }
     }

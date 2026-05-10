@@ -50,13 +50,13 @@ fun ReceiverRegisterScreen(
     var relationExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
+        modifier = modifier,
         topBar = {
             DetailTopBar(
                 "수신자 등록",
                 onBackClick = onBackClick,
             )
         },
-        modifier = modifier,
     ) { innerPadding ->
         LazyColumn(
             modifier =

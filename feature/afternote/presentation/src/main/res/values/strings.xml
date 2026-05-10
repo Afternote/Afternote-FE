@@ -77,6 +77,7 @@
     <string name="receiver_mindrecord_no_record_yet">이 기록은 아직 확인할 수 없어요</string>
     <string name="receiver_mindrecord_today_empty">오늘의 기록이 없어요</string>
     <string name="receiver_mindrecord_card_logo">오늘의 기록 카드 로고</string>
+    <string name="afternote_home_append_error">애프터노트 추가 목록을 불러오지 못했습니다.</string>
     <string name="afternote_category_all">전체</string>
     <string name="afternote_category_social_network">소셜네트워크</string>
     <string name="afternote_category_gallery_and_files">갤러리 및 파일</string>
