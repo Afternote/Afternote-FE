@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import com.afternote.afternote_fe.R
 import com.afternote.afternote_fe.screen.receiver.component.AfternoteSection
 import com.afternote.afternote_fe.screen.receiver.component.MindRecordSection
-import com.afternote.afternote_fe.screen.receiver.component.ReceiverHomeTopBar
 import com.afternote.afternote_fe.screen.receiver.component.SenderMessageHeroCard
 import com.afternote.afternote_fe.screen.receiver.component.TimeLetterSection
 import com.afternote.afternote_fe.screen.receiver.model.AfternoteSourceIcon
@@ -42,6 +41,7 @@ import com.afternote.core.ui.popup.Popup
 import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.afternote.presentation.R as AfternoteFeatureR
 
 /**
@@ -59,7 +59,7 @@ fun ReceiverHomeScreen(
     Scaffold(
         modifier = modifier,
         containerColor = Color.Transparent,
-        topBar = { ReceiverHomeTopBar(onSettingClick = actions.onSettingClick) },
+        topBar = { HomeTopBar(onSettingClick = actions.onSettingClick) },
     ) { innerPadding ->
         when (uiState) {
             ReceiverHomeUiState.Loading -> Unit
