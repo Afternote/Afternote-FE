@@ -6,6 +6,12 @@
 - 핵심 도메인: 사용자가 지정한 수신자에게 사후/예약 시점에 전달될 디지털 유산(애프터노트·타임레터)과 평소 자기 기록(마인드레코드)을 작성·관리하는 앱.
 - 빌드: AGP + Kotlin + KSP, Version Catalog(`gradle/libs.versions.toml`) 강제
 
+## 작업 시작/마무리 규약 (위반 금지)
+- **이슈 우선**: 새 브랜치를 만들기 전, `.github/ISSUE_TEMPLATE/custom.md` 양식에 맞춰 GitHub 이슈를 먼저 작성하고 부여된 번호로 `feat/<이슈번호>` 형식의 브랜치 생성. 사용자가 "브랜치 파"라고만 해도 임의로 건너뛰지 말 것.
+- **자율 커밋 금지**: 변경사항을 임의로 `git commit` 하지 말 것. 빌드/lint/test 검증 결과만 보고하고 멈춤. 사용자가 Android Studio 커밋 탭에서 직접 검토·커밋한다.
+- **git state 변경은 명시 지시 시에만**: `git push`, `git reset --hard`, `git rebase`, force-push 등 모든 상태 변경 동작은 사용자의 명시 지시가 있을 때만 수행.
+- 위 규약은 hook으로 강제(`.claude/settings.json`). 우회·예외 처리 시도 금지.
+
 ## 작업 원칙
 - 기억으로 답하지 말 것. 라이브러리 좌표·버전·API 시그니처는 매번 검증.
 - 검증 우선순위:
