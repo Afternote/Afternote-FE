@@ -7,10 +7,15 @@
 - 빌드: AGP + Kotlin + KSP, Version Catalog(`gradle/libs.versions.toml`) 강제
 
 ## 작업 시작/마무리 규약 (위반 금지)
-- **이슈 우선**: 새 브랜치를 만들기 전, `.github/ISSUE_TEMPLATE/custom.md` 양식에 맞춰 GitHub 이슈를 먼저 작성하고 부여된 번호로 `feat/<이슈번호>` 형식의 브랜치 생성. 사용자가 "브랜치 파"라고만 해도 임의로 건너뛰지 말 것.
+- **이슈 우선 + 메타데이터 + 브랜치 링크**: 새 브랜치를 만들기 전 다음을 모두 처리한다.
+    1. `.github/ISSUE_TEMPLATE/custom.md` 양식에 맞춰 GitHub 이슈 작성 (`gh issue create`)
+    2. 이슈에 **Assignee / Label / Type 세팅** — feat 류는 assignee=현재 사용자, label=`feature`, type=`Feature` (`gh issue edit --add-assignee --add-label` + GraphQL `updateIssueIssueType`)
+    3. 부여된 번호로 `feat/<이슈번호>` 브랜치 생성
+    4. 브랜치를 이슈에 연결 — GraphQL `createLinkedBranch` mutation (issueId, name, oid 필요). 로컬 SHA 가 origin 에 이미 존재하면 그대로 링크되며, 없으면 사용자에게 푸시 요청 후 진행
+  - 사용자가 "브랜치 파"라고만 해도 위 4단계를 임의로 건너뛰지 말 것
 - **자율 커밋 금지**: 변경사항을 임의로 `git commit` 하지 말 것. 빌드/lint/test 검증 결과만 보고하고 멈춤. 사용자가 Android Studio 커밋 탭에서 직접 검토·커밋한다.
-- **git state 변경은 명시 지시 시에만**: `git push`, `git reset --hard`, `git rebase`, force-push 등 모든 상태 변경 동작은 사용자의 명시 지시가 있을 때만 수행.
-- 위 규약은 hook으로 강제(`.claude/settings.json`). 우회·예외 처리 시도 금지.
+- **git state 변경은 명시 지시 시에만**: `git push`, `git reset --hard`, `git rebase`, force-push, 원격 브랜치 삭제(`git push --delete`) 등 모든 상태 변경 동작은 사용자의 명시 지시가 있을 때만 수행.
+- 위 규약은 hook으로 강제(`.claude/settings.local.json` + `.claude/hooks/`). 우회·예외 처리 시도 금지.
 
 ## 작업 원칙
 - 기억으로 답하지 말 것. 라이브러리 좌표·버전·API 시그니처는 매번 검증.
