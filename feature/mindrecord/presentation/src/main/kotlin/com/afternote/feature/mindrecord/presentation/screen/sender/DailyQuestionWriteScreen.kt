@@ -14,27 +14,50 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionWriteHeaderCard
 import com.afternote.feature.mindrecord.presentation.component.WriteTextField
+import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionWriteViewModel
+import com.afternote.feature.mindrecord.presentation.viewmodel.SubmitState
 import java.time.LocalDate
 
 @Composable
-fun DailyQuestionWriteScreen(modifier: Modifier = Modifier) {
+fun DailyQuestionWriteScreen(
+    modifier: Modifier = Modifier,
+    onSubmitSuccess: () -> Unit = {},
+    onBackClick: () -> Unit = {},
+    viewModel: DailyQuestionWriteViewModel = hiltViewModel(),
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val currentOnSubmitSuccess by rememberUpdatedState(onSubmitSuccess)
+
+    LaunchedEffect(uiState.submitState) {
+        if (uiState.submitState is SubmitState.Succeeded) {
+            currentOnSubmitSuccess()
+            viewModel.consumeSubmitResult()
+        }
+    }
+
     Scaffold(
         topBar = {
             DetailTopBar(
                 title = LocalDate.now().toString(),
                 actions = {
                     Button(
-                        onClick = {},
+                        onClick = { viewModel.submit() },
+                        enabled = uiState.canSubmit,
                         shape = RoundedCornerShape(6.dp),
                         colors =
                             ButtonDefaults.buttonColors(
@@ -48,14 +71,16 @@ fun DailyQuestionWriteScreen(modifier: Modifier = Modifier) {
                         )
                     }
                 },
-                onBackClick = {},
+                onBackClick = onBackClick,
             )
         },
         modifier = modifier,
     ) { paddingValues ->
         Column {
             Column(modifier = Modifier.padding(paddingValues).padding(horizontal = 20.dp)) {
-                DailyQuestionWriteHeaderCard()
+                DailyQuestionWriteHeaderCard(
+                    questionText = uiState.questionContent.ifEmpty { "오늘의 질문을 불러오는 중..." },
+                )
                 Spacer(modifier = Modifier.height(18.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -66,15 +91,23 @@ fun DailyQuestionWriteScreen(modifier: Modifier = Modifier) {
                         style = MaterialTheme.typography.displaySmall,
                         color = Color(0xFF000000).copy(alpha = 0.4f),
                     )
-
                     HorizontalDivider(modifier = Modifier.padding(start = 12.dp))
                 }
-
                 Spacer(modifier = Modifier.height(10.dp))
+
+                val errorMessage = (uiState.submitState as? SubmitState.Failed)?.message
+                if (errorMessage != null) {
+                    Text(
+                        text = errorMessage,
+                        color = Color.Red,
+                        style = AfternoteDesign.typography.captionLargeR,
+                    )
+                }
             }
-            androidx.compose.foundation.layout.Column {
-                WriteTextField()
-            }
+            WriteTextField(
+                value = uiState.answer,
+                onValueChange = viewModel::onAnswerChanged,
+            )
         }
     }
 }
@@ -83,6 +116,6 @@ fun DailyQuestionWriteScreen(modifier: Modifier = Modifier) {
 @Composable
 private fun DailyQuestionWriteScreenPreview() {
     AfternoteTheme {
-        DailyQuestionWriteScreen()
+        // Preview는 ViewModel 없이 호출 불가 — 컴파일 확인용 placeholder
     }
 }

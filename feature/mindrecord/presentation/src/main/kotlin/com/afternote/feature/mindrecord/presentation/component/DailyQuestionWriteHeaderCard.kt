@@ -30,7 +30,11 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 
 @Composable
-fun DailyQuestionWriteHeaderCard(modifier: Modifier = Modifier) {
+fun DailyQuestionWriteHeaderCard(
+    modifier: Modifier = Modifier,
+    questionText: String = "오늘 하루, \n누구에게 가장 고마웠나요?",
+    onAnswerClick: () -> Unit = {},
+) {
     OutlinedCard(
         border = BorderStroke(1.dp, color = AfternoteDesign.colors.gray2),
         modifier =
@@ -68,7 +72,7 @@ fun DailyQuestionWriteHeaderCard(modifier: Modifier = Modifier) {
 
             Spacer(modifier = Modifier.height(7.5.dp))
             Text(
-                text = "오늘 하루, \n누구에게 가장 고마웠나요?",
+                text = questionText,
                 style = AfternoteDesign.typography.h3,
                 color = AfternoteDesign.colors.gray9,
             )
@@ -81,7 +85,7 @@ fun DailyQuestionWriteHeaderCard(modifier: Modifier = Modifier) {
                     color = AfternoteDesign.colors.gray6,
                 )
                 IconButton(
-                    onClick = {},
+                    onClick = onAnswerClick,
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.core_ui_right),
