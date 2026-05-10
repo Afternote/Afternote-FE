@@ -15,14 +15,11 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.ObserveAsEvents
 import com.afternote.core.ui.findActivity
+import com.afternote.feature.onboarding.presentation.BuildConfig
 import com.afternote.feature.onboarding.presentation.login.social.UserCancelledAuthException
 import com.afternote.feature.onboarding.presentation.login.social.requestGoogleIdToken
 import com.afternote.feature.onboarding.presentation.login.social.requestKakaoAccessToken
 import kotlinx.coroutines.launch
-
-// TODO: Google Cloud Console Web Client ID. `local.properties` + BuildConfig(`core/startup`의 카카오 키 패턴 참고)
-//  또는 DI로 주입하도록 대체 필요. 저장소에 실제 키를 커밋하지 말 것. + 검토
-private const val GOOGLE_WEB_CLIENT_ID = "YOUR_WEB_CLIENT_ID"
 
 /**
  * 로그인 Entry.
@@ -97,7 +94,7 @@ fun LoginEntry(
                     requestGoogleIdToken(
                         context = context,
                         credentialManager = credentialManager,
-                        serverClientId = GOOGLE_WEB_CLIENT_ID,
+                        serverClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID,
                     ).onSuccess { idToken ->
                         viewModel.loginWithGoogle(idToken)
                     }.onFailure { exception ->
