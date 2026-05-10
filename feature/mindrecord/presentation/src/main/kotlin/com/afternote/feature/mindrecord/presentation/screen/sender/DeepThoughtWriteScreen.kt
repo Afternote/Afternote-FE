@@ -14,10 +14,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,6 +29,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -33,19 +39,36 @@ import com.afternote.feature.mindrecord.presentation.component.CategorySettingBo
 import com.afternote.feature.mindrecord.presentation.component.DailyDeepThoughtCard
 import com.afternote.feature.mindrecord.presentation.component.WriteTextField
 import com.afternote.feature.mindrecord.presentation.model.CategoryUiModel
+import com.afternote.feature.mindrecord.presentation.viewmodel.DeepThoughtWriteViewModel
+import com.afternote.feature.mindrecord.presentation.viewmodel.SubmitState
 
 @Composable
-fun DeepThoughtWriteScreen(modifier: Modifier = Modifier) {
+fun DeepThoughtWriteScreen(
+    modifier: Modifier = Modifier,
+    onSubmitSuccess: () -> Unit = {},
+    onBackClick: () -> Unit = {},
+    viewModel: DeepThoughtWriteViewModel = hiltViewModel(),
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showCategorySheet by remember { mutableStateOf(false) }
+    val currentOnSubmitSuccess by rememberUpdatedState(onSubmitSuccess)
+
+    LaunchedEffect(uiState.submitState) {
+        if (uiState.submitState is SubmitState.Succeeded) {
+            currentOnSubmitSuccess()
+            viewModel.consumeSubmitResult()
+        }
+    }
 
     Scaffold(
         topBar = {
             DetailTopBar(
                 title = "깊은 생각 기록하기",
-                onBackClick = {},
+                onBackClick = onBackClick,
                 actions = {
                     Button(
-                        onClick = {},
+                        onClick = { viewModel.submit() },
+                        enabled = uiState.canSubmit,
                         shape = RoundedCornerShape(6.dp),
                         colors =
                             ButtonDefaults.buttonColors(
@@ -71,8 +94,30 @@ fun DeepThoughtWriteScreen(modifier: Modifier = Modifier) {
         ) {
             DailyDeepThoughtCard(modifier = Modifier.height(150.dp))
 
+            TextField(
+                value = uiState.title,
+                onValueChange = viewModel::onTitleChanged,
+                colors =
+                    TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                    ),
+                placeholder = {
+                    Text(
+                        text = "제목",
+                        style = AfternoteDesign.typography.h3,
+                        color = Color(0xFF000000).copy(0.2f),
+                    )
+                },
+            )
+
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
@@ -80,29 +125,41 @@ fun DeepThoughtWriteScreen(modifier: Modifier = Modifier) {
                     style = AfternoteDesign.typography.bodySmallB,
                     color = AfternoteDesign.colors.gray7,
                 )
-                Column {
+                Column(modifier = Modifier.padding(start = 12.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = "나의 가치관",
+                            text = uiState.category,
                             style = AfternoteDesign.typography.captionLargeR,
                             color = AfternoteDesign.colors.gray9,
                         )
-
                         Icon(
                             painter = painterResource(R.drawable.core_ui_arrowdown),
                             contentDescription = null,
+                            modifier =
+                                Modifier.padding(start = 8.dp),
                         )
                     }
-
                     HorizontalDivider()
                 }
             }
 
-            WriteTextField()
+            val errorMessage = (uiState.submitState as? SubmitState.Failed)?.message
+            if (errorMessage != null) {
+                Text(
+                    text = errorMessage,
+                    color = Color.Red,
+                    style = AfternoteDesign.typography.captionLargeR,
+                )
+            }
+
+            WriteTextField(
+                value = uiState.content,
+                onValueChange = viewModel::onContentChanged,
+            )
         }
 
         if (showCategorySheet) {
@@ -115,8 +172,8 @@ fun DeepThoughtWriteScreen(modifier: Modifier = Modifier) {
                     ),
                 onDismiss = { showCategorySheet = false },
                 onBackClick = { showCategorySheet = false },
-                onAddCategory = { /* 새 카테고리 생성 화면으로 */ },
-                onMenuClick = { /* 수정/삭제 메뉴 */ },
+                onAddCategory = { },
+                onMenuClick = { },
             )
         }
     }
@@ -126,6 +183,6 @@ fun DeepThoughtWriteScreen(modifier: Modifier = Modifier) {
 @Composable
 private fun DeepThoughtWriteScreenPreview() {
     AfternoteTheme {
-        DeepThoughtWriteScreen()
+        // ViewModel 의존이 있어 Preview는 비워둠
     }
 }
