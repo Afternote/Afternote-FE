@@ -41,6 +41,7 @@ startupRuntime = "1.2.0"
 navigationCommonKtx = "2.9.7"
 runtime = "1.10.6"
 composeRichEditor = "1.0.0-rc13"
+paging = "3.5.0"
 
 [libraries]
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
@@ -99,6 +100,9 @@ androidx-startup-runtime = { group = "androidx.startup", name = "startup-runtime
 androidx-navigation-common-ktx = { group = "androidx.navigation", name = "navigation-common-ktx", version.ref = "navigationCommonKtx" }
 androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime", version.ref = "runtime" }
 compose-rich-editor = { group = "com.mohamedrejeb.richeditor", name = "richeditor-compose", version.ref = "composeRichEditor" }
+androidx-paging-common = { group = "androidx.paging", name = "paging-common", version.ref = "paging" }
+androidx-paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging" }
+androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
