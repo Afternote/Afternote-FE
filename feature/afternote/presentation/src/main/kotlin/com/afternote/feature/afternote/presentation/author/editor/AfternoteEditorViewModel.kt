@@ -8,9 +8,9 @@ import com.afternote.core.model.AlbumCover
 import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationException
 import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationKind
 import com.afternote.feature.afternote.domain.model.author.AuthorReceiverEntry
-import com.afternote.feature.afternote.domain.repository.AfternoteRepository
-import com.afternote.feature.afternote.domain.repository.AuthorReceiverRepository
-import com.afternote.feature.afternote.domain.repository.MemorialThumbnailUploadRepository
+import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
+import com.afternote.feature.afternote.domain.repository.author.AuthorReceiverRepository
+import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.mapper.toAfternoteEditorReceivers
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
@@ -199,7 +199,7 @@ private data class EditorFormSnapshot(
  * 수정 모드(`itemId` 있음)의 상세 로드는 [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel]
  * 과 같이 `init`에서만 트리거한다 (`LaunchedEffect`로 네비게이션에 위임하지 않음).
  * 서버 원본 카테고리(저장 API용)는 전용 [SavedStateHandle] 키에 보관해 폼 JSON과 함께 프로세스 데스 후 복원된다.
- * 저장 API의 HTTP·에러 바디 해석은 [com.afternote.feature.afternote.domain.repository.AfternoteRepository] 구현에서
+ * 저장 API의 HTTP·에러 바디 해석은 [com.afternote.feature.afternote.domain.repository.author.AfternoteRepository] 구현에서
  * 도메인 예외로 변환되며, 여기서는 Retrofit 타입을 알지 않는다.
  * UI 액션은 개별 public 메서드로 노출한다 (작성자 홈 화면 ViewModel과 동일).
  */

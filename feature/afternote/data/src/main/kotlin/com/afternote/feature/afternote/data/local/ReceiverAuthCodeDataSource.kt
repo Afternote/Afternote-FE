@@ -19,7 +19,7 @@ private object ReceiverAuthCodeKeys {
 
 /**
  * 수신 인증 코드 로컬 저장 (DataStore Preferences).
- * 도메인 [com.afternote.feature.afternote.domain.repository.ReceiverRepository]는 구현체에서만 이 클래스를 사용합니다.
+ * 도메인 [com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository]는 구현체에서만 이 클래스를 사용합니다.
  */
 @Singleton
 class ReceiverAuthCodeDataSource

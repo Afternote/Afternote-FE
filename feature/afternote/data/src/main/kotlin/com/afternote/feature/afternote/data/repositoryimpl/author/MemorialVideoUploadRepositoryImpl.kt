@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.data.repositoryimpl
+package com.afternote.feature.afternote.data.repositoryimpl.author
 
 import android.content.Context
 import android.net.Uri
@@ -7,7 +7,7 @@ import com.afternote.core.common.di.IoDispatcher
 import com.afternote.core.network.dto.PresignedUrlRequestDto
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.service.ImageApiService
-import com.afternote.feature.afternote.domain.repository.MemorialVideoUploadRepository
+import com.afternote.feature.afternote.domain.repository.author.MemorialVideoUploadRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext

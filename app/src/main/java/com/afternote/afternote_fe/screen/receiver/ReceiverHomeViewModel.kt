@@ -8,7 +8,7 @@ import com.afternote.afternote_fe.screen.receiver.model.ReceiverDownloadState
 import com.afternote.afternote_fe.screen.receiver.model.ReceiverHomeUiState
 import com.afternote.afternote_fe.screen.receiver.model.SenderMessage
 import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItemDto
-import com.afternote.feature.afternote.domain.repository.ReceiverRepository
+import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
 import com.afternote.feature.afternote.presentation.shared.util.getAfternoteDisplayRes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async

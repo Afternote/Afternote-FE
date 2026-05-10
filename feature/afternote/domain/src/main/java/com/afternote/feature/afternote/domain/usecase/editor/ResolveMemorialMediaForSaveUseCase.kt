@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.domain.usecase.editor
 
-import com.afternote.feature.afternote.domain.repository.MemorialPhotoUploadRepository
-import com.afternote.feature.afternote.domain.repository.MemorialVideoUploadRepository
+import com.afternote.feature.afternote.domain.repository.author.MemorialPhotoUploadRepository
+import com.afternote.feature.afternote.domain.repository.author.MemorialVideoUploadRepository
 import javax.inject.Inject
 
 class MemorialVideoSaveException(

@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
-import com.afternote.feature.afternote.domain.repository.AfternoteRepository
+import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
