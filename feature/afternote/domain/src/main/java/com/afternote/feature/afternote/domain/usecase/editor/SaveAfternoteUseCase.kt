@@ -12,13 +12,16 @@ class SaveAfternoteUseCase
     ) {
         suspend operator fun invoke(command: SaveAfternoteCommand): Result<Long> =
             when (command) {
-                is SaveAfternoteCommand.Create ->
+                is SaveAfternoteCommand.Create -> {
                     when (val input = command.input) {
                         is CreateAfternoteInput.Social -> afternoteRepository.createSocial(input.payload)
                         is CreateAfternoteInput.Gallery -> afternoteRepository.createGallery(input.payload)
                         is CreateAfternoteInput.Playlist -> afternoteRepository.createPlaylist(input.payload)
                     }
+                }
 
-                is SaveAfternoteCommand.Update -> afternoteRepository.update(command.id, command.payload)
+                is SaveAfternoteCommand.Update -> {
+                    afternoteRepository.update(command.id, command.payload)
+                }
             }
     }

@@ -23,14 +23,21 @@ private fun mapProcessMethodLabel(serverValue: String): String =
 
 internal fun ReceivedAfternoteDetail.toReceivedDetailContentUiModel(): ReceivedDetailContentUiModel =
     when (type) {
-        AfternoteServiceType.SOCIAL_NETWORK ->
+        AfternoteServiceType.SOCIAL_NETWORK -> {
             ReceivedDetailContentUiModel.SocialNetwork(toReceivedSocialNetworkDetailContent())
+        }
 
-        AfternoteServiceType.GALLERY_AND_FILES ->
+        AfternoteServiceType.GALLERY_AND_FILES -> {
             ReceivedDetailContentUiModel.Gallery(toReceivedGalleryDetailContent())
+        }
 
-        AfternoteServiceType.MEMORIAL -> ReceivedDetailContentUiModel.MemorialPending
-        null -> ReceivedDetailContentUiModel.Unknown
+        AfternoteServiceType.MEMORIAL -> {
+            ReceivedDetailContentUiModel.MemorialPending
+        }
+
+        null -> {
+            ReceivedDetailContentUiModel.Unknown
+        }
     }
 
 private fun ReceivedAfternoteDetail.toReceivedSocialNetworkDetailContent(): ReceivedSocialNetworkDetailContent =

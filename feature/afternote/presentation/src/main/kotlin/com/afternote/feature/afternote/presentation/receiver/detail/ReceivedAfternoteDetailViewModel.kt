@@ -106,18 +106,22 @@ class ReceivedAfternoteDetailViewModel
 
         private fun InternalState.toUiState(): ReceivedAfternoteDetailUiState =
             when (val phase = loadPhase) {
-                LoadPhase.Loading -> ReceivedAfternoteDetailUiState.Loading
+                LoadPhase.Loading -> {
+                    ReceivedAfternoteDetailUiState.Loading
+                }
 
-                is LoadPhase.Loaded ->
+                is LoadPhase.Loaded -> {
                     ReceivedAfternoteDetailUiState.Success(
                         detailId = detailId,
                         contentUiModel = phase.contentUiModel,
                     )
+                }
 
-                is LoadPhase.Failed ->
+                is LoadPhase.Failed -> {
                     ReceivedAfternoteDetailUiState.Error(
                         rawMessage = phase.rawMessage,
                         messageRes = phase.messageRes,
                     )
+                }
             }
     }
