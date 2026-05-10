@@ -20,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -135,17 +136,21 @@ private fun ReceivedAccountSection(
                         stringResource(R.string.feature_afternote_detail_password_mask)
                     },
                 trailingContent = {
+                    val toggleLabel =
+                        if (passwordVisible) {
+                            stringResource(R.string.feature_afternote_detail_password_hide)
+                        } else {
+                            stringResource(R.string.feature_afternote_detail_password_show)
+                        }
                     Text(
-                        text =
-                            if (passwordVisible) {
-                                stringResource(R.string.feature_afternote_detail_password_hide)
-                            } else {
-                                stringResource(R.string.feature_afternote_detail_password_show)
-                            },
+                        text = toggleLabel,
                         style = AfternoteDesign.typography.captionLargeR,
                         color = AfternoteDesign.colors.b1,
                         modifier =
-                            Modifier.clickable {
+                            Modifier.clickable(
+                                role = Role.Button,
+                                onClickLabel = toggleLabel,
+                            ) {
                                 passwordVisible = !passwordVisible
                             },
                     )

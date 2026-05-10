@@ -18,7 +18,8 @@ import javax.inject.Inject
 /**
  * 수신 애프터노트 상세 ViewModel.
  *
- * - 상세 조회: GET /api/v1/receiver-auth/after-notes/{id} ([ReceiverRepository.getReceivedAfternoteDetail])
+ * - 상세 조회: [ReceiverRepository.getReceivedAfternoteDetail] (Retrofit baseUrl 기준
+ *   `receiver-auth/after-notes/{afternoteId}` 경로 — 실제 경로는 [com.afternote.feature.afternote.data.service.ReceiverAfternoteApiService]).
  * - 상세 ID: [SavedStateHandle] 의 `afternoteId` (수신자 라우트 인자명).
  *
  * 발신자 [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel] 과
