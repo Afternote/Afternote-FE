@@ -10,9 +10,10 @@ class AndroidLintConventionPlugin : Plugin<Project> {
             pluginManager.apply("org.jlleitschuh.gradle.ktlint")
 
             // VersionCatalog 명시적 접근
-            val libs = extensions
-                .getByType<VersionCatalogsExtension>()
-                .named("libs")
+            val libs =
+                extensions
+                    .getByType<VersionCatalogsExtension>()
+                    .named("libs")
 
             extensions.configure(KtlintExtension::class.java) {
                 // ktlint-gradle 의 default 버전 대신 libs.versions.toml 의 ktlint 버전을
