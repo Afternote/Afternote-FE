@@ -46,14 +46,21 @@ fun DiaryScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     when (val state = uiState) {
-        DiaryListUiState.Loading -> LoadingBox(modifier)
-        is DiaryListUiState.Error -> ErrorBox(message = state.message, modifier = modifier)
-        is DiaryListUiState.Success ->
+        DiaryListUiState.Loading -> {
+            LoadingBox(modifier)
+        }
+
+        is DiaryListUiState.Error -> {
+            ErrorBox(message = state.message, modifier = modifier)
+        }
+
+        is DiaryListUiState.Success -> {
             DiaryListContent(
                 modifier = modifier,
                 isListView = isListView,
                 diaries = state.diaries,
             )
+        }
     }
 }
 

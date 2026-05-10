@@ -79,8 +79,11 @@ class DailyQuestionListViewModel
 
         private fun InternalState.toUiState(): DailyQuestionListUiState =
             when (val phase = loadPhase) {
-                LoadPhase.Loading -> DailyQuestionListUiState.Loading
-                is LoadPhase.Loaded ->
+                LoadPhase.Loading -> {
+                    DailyQuestionListUiState.Loading
+                }
+
+                is LoadPhase.Loaded -> {
                     DailyQuestionListUiState.Success(
                         todayQuestion =
                             phase.today?.let {
@@ -92,6 +95,10 @@ class DailyQuestionListViewModel
                             },
                         answers = phase.answers.map { it.toUi() },
                     )
-                is LoadPhase.Failed -> DailyQuestionListUiState.Error(phase.message)
+                }
+
+                is LoadPhase.Failed -> {
+                    DailyQuestionListUiState.Error(phase.message)
+                }
             }
     }

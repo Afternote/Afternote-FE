@@ -41,14 +41,21 @@ fun DailyQuestionAnswerListScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     when (val state = uiState) {
-        DailyQuestionListUiState.Loading -> LoadingBox(modifier)
-        is DailyQuestionListUiState.Error -> ErrorBox(message = state.message, modifier = modifier)
-        is DailyQuestionListUiState.Success ->
+        DailyQuestionListUiState.Loading -> {
+            LoadingBox(modifier)
+        }
+
+        is DailyQuestionListUiState.Error -> {
+            ErrorBox(message = state.message, modifier = modifier)
+        }
+
+        is DailyQuestionListUiState.Success -> {
             DailyQuestionListContent(
                 modifier = modifier,
                 isListView = isListView,
                 answers = state.answers,
             )
+        }
     }
 }
 

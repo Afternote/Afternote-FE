@@ -52,9 +52,15 @@ fun DeepThoughtScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     when (val state = uiState) {
-        DeepThoughtListUiState.Loading -> LoadingBox(modifier)
-        is DeepThoughtListUiState.Error -> ErrorBox(message = state.message, modifier = modifier)
-        is DeepThoughtListUiState.Success ->
+        DeepThoughtListUiState.Loading -> {
+            LoadingBox(modifier)
+        }
+
+        is DeepThoughtListUiState.Error -> {
+            ErrorBox(message = state.message, modifier = modifier)
+        }
+
+        is DeepThoughtListUiState.Success -> {
             DeepThoughtContent(
                 modifier = modifier,
                 isListView = isListView,
@@ -63,6 +69,7 @@ fun DeepThoughtScreen(
                 items = state.items,
                 onTagClick = viewModel::onTagSelected,
             )
+        }
     }
 }
 
