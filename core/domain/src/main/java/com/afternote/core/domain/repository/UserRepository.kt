@@ -13,6 +13,15 @@ import com.afternote.core.model.user.UserProfileModel
 interface UserRepository {
     suspend fun getMyProfile(): Result<UserProfileModel>
 
+    /**
+     * 마지막으로 성공한 [getMyProfile]/[updateMyProfile]에서 캐싱한 사용자 이름을 즉시 반환한다.
+     * 홈 콜드스타트 placeholder 용도이며, 캐시 미존재 또는 읽기 실패 시 null.
+     */
+    suspend fun getCachedUserName(): String?
+
+    /** 로그아웃·회원 탈퇴 시 호출해 사용자 프로필 캐시를 비운다. */
+    suspend fun clearCachedProfile()
+
     suspend fun updateMyProfile(
         name: String?,
         phone: String?,
