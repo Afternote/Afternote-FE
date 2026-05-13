@@ -15,11 +15,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.AfternoteCircularCheckbox
 import com.afternote.core.ui.button.CheckboxState
-import com.afternote.feature.timeletter.domain.DraftLetter
+import com.afternote.feature.timeletter.domain.model.TimeLetter
+import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 
 @Composable
 fun DraftLetterItem(
-    draft: DraftLetter,
+    draft: TimeLetter,
     modifier: Modifier = Modifier,
     isEditMode: Boolean = false,
     isSelected: Boolean = false,
@@ -42,11 +43,11 @@ fun DraftLetterItem(
             )
         }
         Column {
-            Text("수신인 : ${draft.recipientName ?: "미지정"}")
+            Text("수신인 : ${if (draft.receiverIds.isEmpty()) "미지정" else "${draft.receiverIds.size}명"}")
             Text(draft.title ?: "제목 없음")
         }
         Spacer(modifier = Modifier.weight(1f))
-        Text("발송예정일: ${draft.opendate}")
+        Text("발송예정일: ${draft.sendAt ?: "-"}")
     }
 }
 
@@ -55,11 +56,16 @@ fun DraftLetterItem(
 private fun DraftLetterItemPrev() {
     DraftLetterItem(
         draft =
-            DraftLetter(
+            TimeLetter(
                 id = 1L,
                 title = "미래의 나에게",
-                recipientName = "박경민",
-                opendate = "2026.12.31.",
+                content = null,
+                sendAt = "2026-12-31",
+                status = TimeLetterStatus.DRAFT,
+                mediaList = emptyList(),
+                receiverIds = listOf(1L),
+                createdAt = null,
+                updatedAt = null,
             ),
     )
 }

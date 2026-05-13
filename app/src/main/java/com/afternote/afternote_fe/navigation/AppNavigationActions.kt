@@ -16,6 +16,8 @@ import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavAct
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingRoute
 import com.afternote.feature.setting.presentation.navigation.SettingNavActions
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
+import com.afternote.feature.timeletter.presentation.navigation.TimeLetterNavActions
+import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
 
 @Composable
 fun rememberOnboardingNavActions(navController: NavController): OnboardingNavActions =
@@ -88,6 +90,36 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
     remember(navController) {
         object : MindRecordNavActions {
             override fun onMemorySpaceBack() {
+                navController.popBackStack()
+            }
+        }
+    }
+
+@Composable
+fun rememberTimeLetterNavActions(navController: NavController): TimeLetterNavActions =
+    remember(navController) {
+        object : TimeLetterNavActions {
+            override fun onNavigateToWrite() {
+                navController.navigate(TimeLetterRoute.TimeLetterWriteRoute)
+            }
+
+            override fun onWriteBack() {
+                navController.popBackStack()
+            }
+
+            override fun onNavigateToDraft() {
+                navController.navigate(TimeLetterRoute.TimeLetterDraftRoute)
+            }
+
+            override fun onDraftBack() {
+                navController.popBackStack()
+            }
+
+            override fun onNavigateToRecipient() {
+                navController.navigate(TimeLetterRoute.TimeLetterRecipientRoute)
+            }
+
+            override fun onRecipientBack() {
                 navController.popBackStack()
             }
         }

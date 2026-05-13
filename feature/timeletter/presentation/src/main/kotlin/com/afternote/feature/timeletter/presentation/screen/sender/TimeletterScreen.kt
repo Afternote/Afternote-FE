@@ -7,58 +7,86 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.afternote.feature.timeletter.domain.LetterIdentity
-import com.afternote.feature.timeletter.domain.LetterSchedule
-import com.afternote.feature.timeletter.domain.OpenDate
-import com.afternote.feature.timeletter.domain.Recipient
-import com.afternote.feature.timeletter.domain.TimeLetter
-import com.afternote.feature.timeletter.domain.TimeLetters
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.feature.timeletter.domain.model.TimeLetter
+import com.afternote.feature.timeletter.domain.model.TimeLetterList
+import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.presentation.component.TimeLetterContent
+import com.afternote.feature.timeletter.presentation.viewmodel.TimeletterUiState
+import com.afternote.feature.timeletter.presentation.viewmodel.TimeletterViewModel
 import com.afternote.feature.timeletter.presentation.viewmodel.ViewMode
 
 @Composable
-fun TimeletterScreen(modifier: Modifier = Modifier) {
+fun TimeletterScreen(
+    onWriteClick: () -> Unit = {},
+    modifier: Modifier = Modifier,
+    viewModel: TimeletterViewModel = hiltViewModel(),
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var viewMode by remember { mutableStateOf(ViewMode.List) }
 
-    TimeLetterContent(
-        letters = TimeLetters(emptyList()),
-        viewMode = viewMode,
-        onViewModeChange = { viewMode = it },
-        modifier = modifier,
-    )
+    when (val state = uiState) {
+        is TimeletterUiState.Loading -> {
+            Unit
+        }
+
+        is TimeletterUiState.Error -> {
+            Unit
+        }
+
+        is TimeletterUiState.Success -> {
+            TimeLetterContent(
+                letters = state.letters,
+                receiverNameMap = state.receiverNameMap,
+                viewMode = viewMode,
+                onViewModeChange = { viewMode = it },
+                onWriteClick = onWriteClick,
+                modifier = modifier,
+            )
+        }
+    }
 }
 
 private val previewLetters =
-    TimeLetters(
-        listOf(
-            TimeLetter(
-                identity =
-                    LetterIdentity(
-                        id = 1L,
-                        title = "미래의 나에게",
-                        body = "지금 이 순간을 잊지 마. 열심히 살고 있는 너를 응원해.",
-                    ),
-                schedule =
-                    LetterSchedule(
-                        recipient = Recipient(id = 1L, name = "박경민", relationship = "친구"),
-                        openDate = OpenDate("2026-12-31"),
-                    ),
+    TimeLetterList(
+        timeLetters =
+            listOf(
+                TimeLetter(
+                    id = 1L,
+                    title = "미래의 나에게",
+                    content = "지금 이 순간을 잊지 마. 열심히 살고 있는 너를 응원해.",
+                    sendAt = "2026-12-31",
+                    status = TimeLetterStatus.SCHEDULED,
+                    mediaList = emptyList(),
+                    receiverIds = listOf(1L),
+                    createdAt = null,
+                    updatedAt = null,
+                ),
+                TimeLetter(
+                    id = 2L,
+                    title = "10년 후의 나에게",
+                    content = "지금보다 더 행복하길 바라.",
+                    sendAt = "2035-01-01",
+                    status = TimeLetterStatus.SCHEDULED,
+                    mediaList = emptyList(),
+                    receiverIds = listOf(2L),
+                    createdAt = null,
+                    updatedAt = null,
+                ),
             ),
-            TimeLetter(
-                identity = LetterIdentity(id = 2L, title = "10년 후의 나에게", body = "지금보다 더 행복하길 바라."),
-                schedule =
-                    LetterSchedule(
-                        recipient = Recipient(id = 2L, name = "미래의 나", relationship = "나"),
-                        openDate = OpenDate("2035-01-01"),
-                    ),
-            ),
-        ),
+        totalCount = 2,
     )
 
 @Preview(showBackground = true)
 @Composable
 private fun TimeletterScreenEmptyPreview() {
-    TimeletterScreen()
+    TimeLetterContent(
+        letters = TimeLetterList(timeLetters = emptyList(), totalCount = 0),
+        receiverNameMap = emptyMap(),
+        viewMode = ViewMode.List,
+        onViewModeChange = {},
+    )
 }
 
 @Preview(showBackground = true)
@@ -67,6 +95,7 @@ private fun TimeletterScreenListPreview() {
     var viewMode by remember { mutableStateOf(ViewMode.List) }
     TimeLetterContent(
         letters = previewLetters,
+        receiverNameMap = mapOf(1L to "박경민", 2L to "미래의 나"),
         viewMode = viewMode,
         onViewModeChange = { viewMode = it },
     )
@@ -77,6 +106,7 @@ private fun TimeletterScreenListPreview() {
 private fun TimeletterScreenBlockPreview() {
     TimeLetterContent(
         letters = previewLetters,
+        receiverNameMap = mapOf(1L to "박경민", 2L to "미래의 나"),
         viewMode = ViewMode.Block,
         onViewModeChange = {},
     )

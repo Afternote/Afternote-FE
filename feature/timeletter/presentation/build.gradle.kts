@@ -12,5 +12,9 @@ dependencies {
     implementation(projects.feature.timeletter.res)
     implementation(projects.core.common)
     implementation(projects.core.ui)
+    implementation(projects.core.domain)
+    implementation(projects.core.model)
+    implementation(projects.core.data)
     implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.android.navigation.compose)
 }

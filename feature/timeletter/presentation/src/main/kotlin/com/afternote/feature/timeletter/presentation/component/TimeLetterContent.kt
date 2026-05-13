@@ -21,22 +21,21 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.feature.timeletter.domain.LetterIdentity
-import com.afternote.feature.timeletter.domain.LetterSchedule
-import com.afternote.feature.timeletter.domain.OpenDate
-import com.afternote.feature.timeletter.domain.Recipient
-import com.afternote.feature.timeletter.domain.TimeLetter
-import com.afternote.feature.timeletter.domain.TimeLetters
+import com.afternote.feature.timeletter.domain.model.TimeLetter
+import com.afternote.feature.timeletter.domain.model.TimeLetterList
+import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.presentation.viewmodel.ViewMode
 
 @Composable
 fun TimeLetterContent(
-    letters: TimeLetters,
+    letters: TimeLetterList,
+    receiverNameMap: Map<Long, String>,
     viewMode: ViewMode,
     onViewModeChange: (ViewMode) -> Unit,
+    onWriteClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    if (letters.isEmpty()) {
+    if (letters.timeLetters.isEmpty()) {
         EmptyTimeLetterContent(modifier = modifier)
         return
     }
@@ -88,10 +87,10 @@ fun TimeLetterContent(
         LazyColumn(
             modifier = Modifier.padding(top = 10.dp),
         ) {
-            items(letters.toList()) { letter ->
+            items(letters.timeLetters) { letter ->
                 when (viewMode) {
-                    ViewMode.List -> TimeLetterListItem(letter = letter)
-                    ViewMode.Block -> TimeLetterBlockItem(letter = letter)
+                    ViewMode.List -> TimeLetterListItem(letter = letter, receiverNameMap = receiverNameMap)
+                    ViewMode.Block -> TimeLetterBlockItem(letter = letter, receiverNameMap = receiverNameMap)
                 }
             }
         }
@@ -99,30 +98,33 @@ fun TimeLetterContent(
 }
 
 private val previewLetters =
-    TimeLetters(
-        listOf(
-            TimeLetter(
-                identity =
-                    LetterIdentity(
-                        id = 1L,
-                        title = "미래의 나에게",
-                        body = "지금 이 순간을 잊지 마. 열심히 살고 있는 너를 응원해.",
-                    ),
-                schedule =
-                    LetterSchedule(
-                        recipient = Recipient(id = 1L, name = "박경민", relationship = "친구"),
-                        openDate = OpenDate("2026-12-31"),
-                    ),
+    TimeLetterList(
+        timeLetters =
+            listOf(
+                TimeLetter(
+                    id = 1L,
+                    title = "미래의 나에게",
+                    content = "지금 이 순간을 잊지 마. 열심히 살고 있는 너를 응원해.",
+                    sendAt = "2026-12-31",
+                    status = TimeLetterStatus.SCHEDULED,
+                    mediaList = emptyList(),
+                    receiverIds = listOf(1L),
+                    createdAt = null,
+                    updatedAt = null,
+                ),
+                TimeLetter(
+                    id = 2L,
+                    title = "10년 후의 나에게",
+                    content = "지금보다 더 행복하길 바라.",
+                    sendAt = "2035-01-01",
+                    status = TimeLetterStatus.SCHEDULED,
+                    mediaList = emptyList(),
+                    receiverIds = listOf(2L),
+                    createdAt = null,
+                    updatedAt = null,
+                ),
             ),
-            TimeLetter(
-                identity = LetterIdentity(id = 2L, title = "10년 후의 나에게", body = "지금보다 더 행복하길 바라."),
-                schedule =
-                    LetterSchedule(
-                        recipient = Recipient(id = 2L, name = "미래의 나", relationship = "나"),
-                        openDate = OpenDate("2035-01-01"),
-                    ),
-            ),
-        ),
+        totalCount = 2,
     )
 
 @Preview(showBackground = true)
@@ -130,6 +132,7 @@ private val previewLetters =
 private fun TimeLetterContentView() {
     TimeLetterContent(
         letters = previewLetters,
+        receiverNameMap = mapOf(1L to "박경민", 2L to "미래의 나"),
         viewMode = ViewMode.List,
         onViewModeChange = {},
     )

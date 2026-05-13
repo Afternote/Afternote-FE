@@ -20,19 +20,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.feature.timeletter.domain.LetterIdentity
-import com.afternote.feature.timeletter.domain.LetterSchedule
-import com.afternote.feature.timeletter.domain.OpenDate
-import com.afternote.feature.timeletter.domain.Recipient
-import com.afternote.feature.timeletter.domain.TimeLetter
+import com.afternote.feature.timeletter.domain.model.TimeLetter
+import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 
 @Composable
 fun TimeLetterBlockItem(
     letter: TimeLetter,
+    receiverNameMap: Map<Long, String> = emptyMap(),
     modifier: Modifier = Modifier,
 ) {
-    val identity = letter.identity
-    val schedule = letter.schedule
     Column(
         modifier =
             Modifier
@@ -58,13 +54,13 @@ fun TimeLetterBlockItem(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "수신인  ${schedule.recipient.name}",
+                    text = "수신인  ${letter.receiverIds.mapNotNull { receiverNameMap[it] }.joinToString(", ").ifEmpty { "${letter.receiverIds.size}명" }}",
                     style = AfternoteDesign.typography.bodySmallR,
                     color = AfternoteDesign.colors.gray6,
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
-                    text = "발송 예정일  ${schedule.openDate.value.replace("-", ".")}",
+                    text = "발송 예정일  ${letter.sendAt?.replace("-", ".") ?: ""}",
                     style = AfternoteDesign.typography.bodySmallR,
                     color = AfternoteDesign.colors.gray6,
                 )
@@ -77,13 +73,13 @@ fun TimeLetterBlockItem(
             Spacer(modifier = Modifier.padding(top = 7.dp))
 
             Text(
-                text = identity.title,
+                text = letter.title ?: "제목 없음",
                 style = AfternoteDesign.typography.bodyLargeB,
                 fontWeight = FontWeight.W600,
             )
             Spacer(modifier = Modifier.padding(top = 5.dp))
             Text(
-                text = identity.body,
+                text = letter.content ?: "",
                 style = AfternoteDesign.typography.bodyLargeR,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -99,17 +95,15 @@ private fun TimeLetterBlockItemPrev() {
     TimeLetterBlockItem(
         letter =
             TimeLetter(
-                identity =
-                    LetterIdentity(
-                        id = 1L,
-                        title = "미래의 나에게",
-                        body = "지금 이 순간을 잊지 마. 열심히 살고 있는 너를 응원해.",
-                    ),
-                schedule =
-                    LetterSchedule(
-                        recipient = Recipient(id = 1L, name = "박경민", relationship = "친구"),
-                        openDate = OpenDate("2026-12-31"),
-                    ),
+                id = 1L,
+                title = "미래의 나에게",
+                content = "지금 이 순간을 잊지 마. 열심히 살고 있는 너를 응원해.",
+                sendAt = "2026-12-31",
+                status = TimeLetterStatus.SCHEDULED,
+                mediaList = emptyList(),
+                receiverIds = listOf(1L),
+                createdAt = null,
+                updatedAt = null,
             ),
     )
 }

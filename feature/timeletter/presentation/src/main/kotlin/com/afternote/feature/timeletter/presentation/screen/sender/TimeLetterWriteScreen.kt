@@ -113,7 +113,6 @@ fun TimeLetterWriteScreen(
             )
         },
         containerColor = AfternoteDesign.colors.white,
-        modifier = modifier,
     ) { innerPadding ->
         Column(
             modifier =
