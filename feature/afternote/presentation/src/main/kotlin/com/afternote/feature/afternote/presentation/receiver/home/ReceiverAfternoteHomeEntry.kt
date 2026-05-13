@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeScreen
 
@@ -16,7 +17,7 @@ data class ReceiverAfternoteHomeEntryActions(
 /**
  * 수신자 애프터노트 목록 Entry.
  *
- * ViewModel에서 데이터를 로드·가공하고, 공용 [AfternoteHomeScreen]에 전달합니다.
+ * 작성자 측과 동일한 Paging 3 스트림 + [AfternoteHomeScreen]을 그대로 재사용한다.
  */
 @Composable
 fun ReceiverAfternoteHomeEntry(
@@ -24,12 +25,14 @@ fun ReceiverAfternoteHomeEntry(
     viewModel: ReceiverAfternoteHomeViewModel = hiltViewModel(),
     actions: ReceiverAfternoteHomeEntryActions = ReceiverAfternoteHomeEntryActions(),
 ) {
-    val bodyUiState by viewModel.bodyUiState.collectAsStateWithLifecycle()
+    val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
+    val items = viewModel.pagedAfternotes.collectAsLazyPagingItems()
 
     AfternoteHomeScreen(
-        listState = bodyUiState,
-        onCategorySelected = { viewModel.onEvent(ReceiverAfternoteHomeEvent.SelectTab(it)) },
-        onListItemClick = actions.navigateToDetail,
+        items = items,
+        selectedCategory = selectedTab,
+        onCategorySelected = viewModel::selectTab,
+        onListItemClick = { id, _ -> actions.navigateToDetail(id) },
         modifier = modifier,
     )
 }

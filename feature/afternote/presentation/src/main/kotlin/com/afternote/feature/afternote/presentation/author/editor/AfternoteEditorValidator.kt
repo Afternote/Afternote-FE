@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
 import com.afternote.feature.afternote.presentation.author.editor.account.AccountProcessMethod
-import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
+import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
@@ -16,7 +16,7 @@ internal object AfternoteEditorValidator {
         category: EditorCategory,
         payload: RegisterAfternotePayload,
         selectedReceiverIds: List<Long>,
-        playlistStateHolder: MemorialPlaylistStateHolder?,
+        playlistSongs: List<Song>,
     ): AfternoteValidationError? {
         if (selectedReceiverIds.isEmpty()) {
             return AfternoteValidationError.RECEIVERS_REQUIRED
@@ -27,7 +27,7 @@ internal object AfternoteEditorValidator {
         return when (category) {
             EditorCategory.SOCIAL -> validateSocial(payload)
             EditorCategory.GALLERY -> validateGallery(payload)
-            EditorCategory.MEMORIAL -> validateMemorial(playlistStateHolder)
+            EditorCategory.MEMORIAL -> validateMemorial(playlistSongs)
         }
     }
 
@@ -51,8 +51,8 @@ internal object AfternoteEditorValidator {
         return null
     }
 
-    private fun validateMemorial(playlistStateHolder: MemorialPlaylistStateHolder?): AfternoteValidationError? {
-        if (playlistStateHolder == null || playlistStateHolder.songs.isEmpty()) {
+    private fun validateMemorial(playlistSongs: List<Song>): AfternoteValidationError? {
+        if (playlistSongs.isEmpty()) {
             return AfternoteValidationError.PLAYLIST_SONGS_REQUIRED
         }
         return null

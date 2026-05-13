@@ -14,6 +14,7 @@ import javax.inject.Inject
 
 /**
  * 수신자 HOME에서 콘텐츠 개수(마음의 기록, 타임레터, 애프터노트) 및 leaveMessage를 로드하는 ViewModel.
+ * `X-Auth-Code` 헤더는 ReceiverAuthInterceptor가 자동 부착합니다.
  */
 @HiltViewModel
 class ReceiverAfternoteTriggerViewModel
@@ -35,17 +36,17 @@ class ReceiverAfternoteTriggerViewModel
 
         fun onEvent(event: ReceiverAfternoteTriggerEvent) {
             when (event) {
-                is ReceiverAfternoteTriggerEvent.LoadHomeSummary -> loadHomeSummary(event.authCode)
-                is ReceiverAfternoteTriggerEvent.LoadAfterNotes -> loadAfterNotes(event.authCode)
+                ReceiverAfternoteTriggerEvent.LoadHomeSummary -> loadHomeSummary()
+                ReceiverAfternoteTriggerEvent.LoadAfterNotes -> loadAfterNotes()
             }
         }
 
-        private fun loadHomeSummary(authCode: String) {
+        private fun loadHomeSummary() {
             viewModelScope.launch {
-                val afternotesDeferred = async { receiverRepository.getAfterNotesByAuthCode(authCode) }
-                val mindRecordsDeferred = async { receiverRepository.loadMindRecordsCount(authCode) }
-                val timeLettersDeferred = async { receiverRepository.loadTimeLettersCount(authCode) }
-                val messageDeferred = async { receiverRepository.loadSenderMessage(authCode) }
+                val afternotesDeferred = async { receiverRepository.getReceivedAfterNotes() }
+                val mindRecordsDeferred = async { receiverRepository.loadMindRecordsCount() }
+                val timeLettersDeferred = async { receiverRepository.loadTimeLettersCount() }
+                val messageDeferred = async { receiverRepository.loadSenderMessage() }
                 awaitAll(
                     afternotesDeferred,
                     mindRecordsDeferred,
@@ -68,10 +69,10 @@ class ReceiverAfternoteTriggerViewModel
             }
         }
 
-        private fun loadAfterNotes(authCode: String) {
+        private fun loadAfterNotes() {
             viewModelScope.launch {
                 receiverRepository
-                    .getAfterNotesByAuthCode(authCode)
+                    .getReceivedAfterNotes()
                     .onSuccess { result ->
                         _afternoteTotalCount.value = result.totalCount
                     }

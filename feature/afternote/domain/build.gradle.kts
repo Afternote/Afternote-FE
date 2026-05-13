@@ -8,4 +8,5 @@ android {
 dependencies {
     implementation(projects.core.domain)
     implementation(libs.coroutines.core)
+    implementation(libs.androidx.paging.common)
 }

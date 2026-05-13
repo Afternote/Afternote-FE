@@ -1,38 +1,25 @@
 package com.afternote.feature.afternote.domain.repository
 
+import androidx.paging.PagingData
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreatePlaylistPayload
 import com.afternote.feature.afternote.domain.model.author.CreateSocialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
-import com.afternote.feature.afternote.domain.model.author.ListPage
-import kotlinx.coroutines.flow.StateFlow
+import com.afternote.feature.afternote.domain.model.author.ListItem
+import kotlinx.coroutines.flow.Flow
 
 /**
- * Afternote 도메인 Repository 인터페이스.
- *
- * API spec 기준:
- * - GET /afternotes (목록)
- * - GET /afternotes/{afternoteId} (상세)
- * - POST /afternotes (SOCIAL / GALLERY / PLAYLIST 생성)
- * - PATCH /afternotes/{afternoteId} (수정)
- * - DELETE /afternotes/{afternoteId} (삭제)
- *
- * POST/PATCH 실패 시 구현체는 서버 검증 응답을
- * [com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationException]으로 올릴 수 있다.
+ * 작성/수정 호출의 서버 검증 실패는
+ * [com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationException]으로
+ * Result.failure에 담겨 전달된다.
  */
 interface AfternoteRepository {
     /**
-     * 작성자 애프터노트 목록을 다시 가져와야 할 때마다 증가합니다 (생성·수정·삭제 성공 시).
-     * UI는 이 값을 구독해 목록 화면을 새로고침할 수 있습니다.
+     * ALL 카테고리는 null로 전달. CUD 성공 시 구현체가 PagingSource를 invalidate하므로
+     * 호출자는 수동 새로고침 트리거를 관리하지 않는다.
      */
-    val authorAfternoteListRevision: StateFlow<Long>
-
-    suspend fun getListPage(
-        category: String?,
-        pageNumber: Int,
-        size: Int,
-    ): Result<ListPage>
+    fun getPagedAfternotes(category: String?): Flow<PagingData<ListItem>>
 
     suspend fun getDetail(id: Long): Result<Detail>
 

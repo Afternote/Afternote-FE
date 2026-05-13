@@ -13,23 +13,22 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.modifierextention.addFocusCleaner
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
+import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
+import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
@@ -48,19 +47,28 @@ private const val EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE_MS = 1_000L
  * - 계정 처리 방법 선택 (라디오 버튼)
  * - 처리 방법 리스트 (체크박스)
  * - 남기실 말씀 (멀티라인 텍스트 필드; Process Death 대비 [snapshotFlow] + debounce로 폼 동기화)
+ *
+ * 추모 곡 목록은 [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs] SSOT의 스냅샷을
+ * [graphSongs]로 전달받아 표시한다 (Compose 상태 홀더에 직접 의존하지 않는다).
  */
 @OptIn(FlowPreview::class)
 @Composable
 fun AfternoteEditorScreen(
+    form: EditorFormState,
     modifier: Modifier = Modifier,
     callbacks: AfternoteEditorScreenCallbacks = AfternoteEditorScreenCallbacks(),
     state: AfternoteEditorState = rememberAfternoteEditorState(),
-    playlistStateHolder: MemorialPlaylistStateHolder? = null,
+    graphSongs: List<Song> = emptyList(),
     saveError: AfternoteEditorSaveError? = null,
 ) {
-    val form by state.formState.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // 화면 재진입 시 폼 SSOT의 messageBlocks를 휘발성 SnapshotStateList<EditorMessage>에 한 번 동기화한다.
+    // (TextFieldState는 rememberSaveable로 복원되지만 EditorMessage SnapshotStateList는 비저장 상태라 폼에서 재구성한다.)
+    LaunchedEffect(state) {
+        state.syncEditorMessagesFromForm(form.messageBlocks)
+    }
 
     LaunchedEffect(form.messageBlocksRestoreGeneration) {
         if (form.messageBlocksRestoreGeneration != 0L) {
@@ -83,6 +91,20 @@ fun AfternoteEditorScreen(
             }
     }
 
+    // 화면 이탈 시 디바운스 윈도우(1s) 안의 미반영 타이핑이 폼 SSOT에 도달하지 못하는 손실을 방지한다.
+    DisposableEffect(state) {
+        onDispose {
+            val blocks =
+                state.editorMessages.map { msg ->
+                    EditorMessageTextBlock(
+                        title = msg.titleState.text.toString(),
+                        body = msg.contentState.text.toString(),
+                    )
+                }
+            state.persistEditorMessagesFromTyping(blocks)
+        }
+    }
+
     LaunchedEffect(saveError) {
         saveError?.let { err ->
             snackbarHostState.showSnackbar(
@@ -92,20 +114,8 @@ fun AfternoteEditorScreen(
         }
     }
 
-    LaunchedEffect(playlistStateHolder) {
-        playlistStateHolder?.let { state.setPlaylistStateHolder(it) }
-    }
-
-    val songCount by remember {
-        playlistStateHolder?.songs?.let {
-            derivedStateOf { it.size }
-        } ?: derivedStateOf { form.playlistSongCount }
-    }
-
-    LaunchedEffect(songCount) {
-        if (playlistStateHolder != null) {
-            state.updatePlaylistSongCount()
-        }
+    LaunchedEffect(graphSongs) {
+        state.syncMemorialPlaylistSongs(graphSongs)
     }
 
     val memorialPhotoPickerLauncher =
@@ -152,6 +162,7 @@ fun AfternoteEditorScreen(
             EditorContent(
                 state = state,
                 form = form,
+                graphSongs = graphSongs,
                 onNavigateToAddSong = callbacks.onNavigateToAddSong,
                 onNavigateToSelectReceiver = callbacks.onNavigateToSelectReceiver,
                 onPhotoAddClick = {

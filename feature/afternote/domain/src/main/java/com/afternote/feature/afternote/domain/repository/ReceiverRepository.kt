@@ -1,5 +1,7 @@
 package com.afternote.feature.afternote.domain.repository
 
+import androidx.paging.PagingData
+import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItemDto
 import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResult
 import com.afternote.feature.afternote.domain.model.receiver.LoadCountResult
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
@@ -8,6 +10,9 @@ import kotlinx.coroutines.flow.Flow
 
 /**
  * 수신자(auth code) 플로우의 데이터 접근. ViewModel은 이 인터페이스만 의존합니다.
+ *
+ * `X-Auth-Code` 헤더는 네트워크 계층의 ReceiverAuthInterceptor가 자동 부착하므로
+ * 호출자는 인증 코드를 메서드 인자로 들고 다닐 필요가 없습니다.
  */
 interface ReceiverRepository {
     /** 저장된 인증 코드 스트림(없거나 공백만 있으면 null 방출). */
@@ -22,20 +27,23 @@ interface ReceiverRepository {
     /** 로그아웃·계정 전환·초기화 시 저장 코드를 제거합니다. */
     suspend fun clearAuthCode()
 
-    suspend fun getAfterNotesByAuthCode(authCode: String): Result<AfterNotesListResult>
+    /**
+     * 수신 애프터노트 스트림. 서버는 페이지네이션 미지원이므로 단일 페이지로 받지만,
+     * Paging 3 API(LoadState/refresh/cachedIn) 통일과 추후 페이지네이션 도입을 위해 PagingData로 노출한다.
+     */
+    fun getPagedReceivedAfternotes(): Flow<PagingData<AfterNoteListItemDto>>
 
-    suspend fun getAfternoteDetailByAuthCode(
-        authCode: String,
-        afternoteId: Long,
-    ): Result<ReceivedAfternoteDetail>
+    suspend fun getReceivedAfterNotes(): Result<AfterNotesListResult>
 
-    suspend fun downloadAllReceived(authCode: String): Result<ReceivedExportBundle>
+    suspend fun getReceivedAfternoteDetail(afternoteId: Long): Result<ReceivedAfternoteDetail>
+
+    suspend fun downloadAllReceived(): Result<ReceivedExportBundle>
 
     suspend fun saveReceivedExportToFile(bundle: ReceivedExportBundle): Result<Unit>
 
-    suspend fun loadMindRecordsCount(authCode: String): Result<LoadCountResult>
+    suspend fun loadMindRecordsCount(): Result<LoadCountResult>
 
-    suspend fun loadTimeLettersCount(authCode: String): Result<LoadCountResult>
+    suspend fun loadTimeLettersCount(): Result<LoadCountResult>
 
-    suspend fun loadSenderMessage(authCode: String): Result<String?>
+    suspend fun loadSenderMessage(): Result<String?>
 }

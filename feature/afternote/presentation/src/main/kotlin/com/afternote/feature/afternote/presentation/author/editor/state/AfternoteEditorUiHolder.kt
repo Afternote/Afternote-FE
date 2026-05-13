@@ -9,7 +9,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 
 /**
@@ -23,9 +22,12 @@ enum class DialogType {
 /**
  * 에디터 **순수 UI** 상태: 탭·다이얼로그·드롭다운·텍스트 필드·멀티 메시지 입력 UI.
  * 프로세스가 죽어도 복원되지 않아도 되는 휘발성 상태를 둔다.
+ *
+ * 추모 플레이리스트 곡 목록은 [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs] SSOT가 보유하며,
+ * 본 UI 상태는 곡 목록을 직접 들고 있지 않는다.
  */
 @Stable
-class AfternoteEditorUiState(
+class AfternoteEditorUiHolder(
     val idState: TextFieldState,
     val passwordState: TextFieldState,
     val afternoteEditReceiverNameState: TextFieldState,
@@ -42,17 +44,10 @@ class AfternoteEditorUiState(
     var activeDialog by mutableStateOf<DialogType?>(null)
         private set
 
-    var playlistStateHolder: MemorialPlaylistStateHolder? = null
-        private set
-
     var categoryDropdownExpanded by mutableStateOf(false)
         private set
 
     var serviceDropdownExpanded by mutableStateOf(false)
-        private set
-
-    @Suppress("UNUSED")
-    var relationshipDropdownExpanded by mutableStateOf(false)
         private set
 
     fun addEditorMessage() {
@@ -65,10 +60,6 @@ class AfternoteEditorUiState(
         }
     }
 
-    fun setPlaylistStateHolder(stateHolder: MemorialPlaylistStateHolder) {
-        playlistStateHolder = stateHolder
-    }
-
     fun showAddAfternoteEditorReceiverDialog() {
         activeDialog = DialogType.ADD_AFTERNOTE_EDIT_RECEIVER
     }
@@ -77,9 +68,11 @@ class AfternoteEditorUiState(
         activeDialog = DialogType.CUSTOM_SERVICE
     }
 
-    fun dismissDialogInternal(clearReceiverFields: () -> Unit) {
+    fun dismissDialog() {
         activeDialog = null
-        clearReceiverFields()
+        afternoteEditReceiverNameState.edit { replace(0, length, "") }
+        phoneNumberState.edit { replace(0, length, "") }
+        customServiceNameState.edit { replace(0, length, "") }
         relationshipSelectedValue = "친구"
     }
 
@@ -97,14 +90,14 @@ class AfternoteEditorUiState(
 }
 
 @Composable
-fun rememberAfternoteEditorUiState(
+fun rememberAfternoteEditorUiHolder(
     idState: TextFieldState,
     passwordState: TextFieldState,
     afternoteEditReceiverNameState: TextFieldState,
     phoneNumberState: TextFieldState,
     customServiceNameState: TextFieldState,
     customLastWishState: TextFieldState,
-): AfternoteEditorUiState =
+): AfternoteEditorUiHolder =
     remember(
         idState,
         passwordState,
@@ -113,7 +106,7 @@ fun rememberAfternoteEditorUiState(
         customServiceNameState,
         customLastWishState,
     ) {
-        AfternoteEditorUiState(
+        AfternoteEditorUiHolder(
             idState = idState,
             passwordState = passwordState,
             afternoteEditReceiverNameState = afternoteEditReceiverNameState,

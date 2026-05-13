@@ -40,7 +40,7 @@ import com.afternote.feature.afternote.presentation.author.detail.DetailContentU
 import com.afternote.feature.afternote.presentation.author.detail.rememberAfternoteDetailState
 import com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent
 import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadingContent
-import com.afternote.feature.afternote.presentation.author.navigation.HandleDeleteResult
+import com.afternote.feature.afternote.presentation.author.navigation.ObserveDetailEvents
 import com.afternote.feature.afternote.presentation.shared.detail.AfternoteDetailServiceHeader
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.DetailInfoRow
@@ -69,6 +69,11 @@ internal fun SocialNetworkDetailRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    ObserveDetailEvents(
+        events = viewModel.events,
+        onDeleteSucceeded = onBack,
+    )
+
     when (val state = uiState) {
         AfternoteDetailUiState.Loading -> {
             DetailLoadingContent()
@@ -79,12 +84,6 @@ internal fun SocialNetworkDetailRoute(
         }
 
         is AfternoteDetailUiState.Success -> {
-            HandleDeleteResult(
-                deleteState = state.deleteState,
-                onBack = onBack,
-                onConsumed = viewModel::consumeDeleteResult,
-            )
-
             when (val model = state.contentUiModel) {
                 is DetailContentUiModel.SocialNetwork -> {
                     SocialNetworkDetailScreen(

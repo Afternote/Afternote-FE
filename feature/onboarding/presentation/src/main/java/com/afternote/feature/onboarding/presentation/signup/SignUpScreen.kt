@@ -26,7 +26,7 @@ import com.afternote.feature.onboarding.presentation.signup.scaffold.ProgressBar
 @Composable
 fun SignUpScreen(
     emailState: TextFieldState,
-    passwordState: TextFieldState,
+    verificationCodeState: TextFieldState,
     isVerificationSent: Boolean,
     onRequestVerification: () -> Unit,
     onNextClick: () -> Unit,
@@ -56,11 +56,11 @@ fun SignUpScreen(
                     imeAction = ImeAction.Next,
                 )
 
-                // 비밀번호 입력
+                // 인증번호 입력
                 AfternoteTextField(
-                    state = passwordState,
-                    placeholder = stringResource(R.string.signup_password_placeholder),
-                    keyboardType = KeyboardType.Password,
+                    state = verificationCodeState,
+                    placeholder = stringResource(R.string.signup_verification_code_placeholder),
+                    keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Done,
                     onImeAction = {
                         onNextClick()
@@ -86,7 +86,7 @@ private fun SignUpScreenPreview() {
     AfternoteTheme {
         SignUpScreen(
             emailState = rememberTextFieldState(),
-            passwordState = rememberTextFieldState(),
+            verificationCodeState = rememberTextFieldState(),
             isVerificationSent = true,
             onRequestVerification = {},
             onNextClick = {},

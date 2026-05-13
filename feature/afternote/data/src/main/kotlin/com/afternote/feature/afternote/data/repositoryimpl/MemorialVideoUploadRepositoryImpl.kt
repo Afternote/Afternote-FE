@@ -3,6 +3,7 @@ package com.afternote.feature.afternote.data.repositoryimpl
 import android.content.Context
 import android.net.Uri
 import androidx.core.net.toUri
+import com.afternote.core.common.di.IoDispatcher
 import com.afternote.core.network.dto.PresignedUrlRequestDto
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.service.ImageApiService
@@ -32,7 +33,7 @@ class MemorialVideoUploadRepositoryImpl
         @param:ApplicationContext private val context: Context,
         private val imageApi: ImageApiService,
         @param:Named("S3Upload") private val okHttpClient: OkHttpClient,
-        @param:Named("IoDispatcher") private val ioDispatcher: CoroutineDispatcher,
+        @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : MemorialVideoUploadRepository {
         override suspend fun uploadVideo(contentUriString: String): Result<String> =
             runCatching {

@@ -48,13 +48,13 @@ fun NavGraphBuilder.onboardingNavGraph(
             )
         }
 
-        // ── SignUp Step 1: 이메일 & 비밀번호 ──
+        // ── SignUp Step 1: 이메일 & 인증번호 ──
         composable<OnboardingRoute.SignUpRoute> {
             val signUpViewModel = graphScopedSignUpViewModel(graphScopedParentEntry)
 
             SignUpScreen(
                 emailState = signUpViewModel.emailState,
-                passwordState = signUpViewModel.passwordState,
+                verificationCodeState = signUpViewModel.verificationCodeState,
                 isVerificationSent = signUpViewModel.isVerificationSent,
                 onRequestVerification = signUpViewModel::requestVerification,
                 onNextClick = actions::onSignUpEmailNext,

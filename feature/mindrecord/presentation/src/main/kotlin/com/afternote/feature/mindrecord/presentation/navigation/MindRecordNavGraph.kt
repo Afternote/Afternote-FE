@@ -3,7 +3,11 @@ package com.afternote.feature.mindrecord.presentation.navigation
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import com.afternote.core.ui.Route
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.screen.memoryspace.MemorySpaceScreen
+import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestionWriteScreen
+import com.afternote.feature.mindrecord.presentation.screen.sender.DeepThoughtWriteScreen
+import com.afternote.feature.mindrecord.presentation.screen.sender.DiaryWriteScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.HomeScreen
 
 /**
@@ -14,9 +18,36 @@ import com.afternote.feature.mindrecord.presentation.screen.sender.HomeScreen
  */
 fun NavGraphBuilder.mindRecordNavGraph(actions: MindRecordNavActions) {
     composable<Route.MindRecord> {
-        HomeScreen()
+        HomeScreen(
+            onWriteClick = { category ->
+                when (category) {
+                    MindRecordCategoryUi.DailyQuestion -> actions.onWriteDailyQuestion()
+                    MindRecordCategoryUi.Diary -> actions.onWriteDiary()
+                    MindRecordCategoryUi.DeepThought -> actions.onWriteDeepThought()
+                    MindRecordCategoryUi.WeeklyReport -> Unit
+                }
+            },
+        )
     }
     composable<Route.MemorySpace> {
         MemorySpaceScreen(onBackClick = actions::onMemorySpaceBack)
+    }
+    composable<MindRecordRoute.DailyQuestionWriteRoute> {
+        DailyQuestionWriteScreen(
+            onSubmitSuccess = actions::onWriteSubmitSuccess,
+            onBackClick = actions::onWriteBack,
+        )
+    }
+    composable<MindRecordRoute.DiaryWriteRoute> {
+        DiaryWriteScreen(
+            onSubmitSuccess = actions::onWriteSubmitSuccess,
+            onBackClick = actions::onWriteBack,
+        )
+    }
+    composable<MindRecordRoute.DeepThoughtWriteRoute> {
+        DeepThoughtWriteScreen(
+            onSubmitSuccess = actions::onWriteSubmitSuccess,
+            onBackClick = actions::onWriteBack,
+        )
     }
 }

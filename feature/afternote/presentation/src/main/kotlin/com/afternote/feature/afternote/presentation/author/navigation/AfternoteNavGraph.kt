@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
@@ -14,18 +13,18 @@ import com.afternote.feature.afternote.presentation.AfternoteHostViewModel
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.AddSongViewModel
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.MemorialPlaylistEntry
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.MemorialPlaylistEntryActions
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 
 /**
  * Afternote 피처의 네비게이션 그래프.
  *
  * 앱 모듈의 NavHost에 직접 연결되며, [Route.Afternote]를 graph route로 사용합니다.
- * [AfternoteHostViewModel]은 **세션 스코프 UI 초안**(플레이리스트·에디트 상태 참조)만 공유하며,
- * 작성자 목록 SSOT는 [com.afternote.feature.afternote.domain.repository.AfternoteRepository]이다.
+ * [AfternoteHostViewModel]은 그래프 스코프에서 추모 플레이리스트 곡 목록 SSOT만 보유하며,
+ * Compose UI 객체(TextFieldState·SnapshotStateList·UI 파사드)는 보유하지 않습니다.
  *
- * 네비게이션 호출은 [AfternoteNavActions]로만 전달합니다. 에디터가 포그라운드인지는
- * [NavBackStackEntry.lifecycle]이 최소 [Lifecycle.State.RESUMED]인지로 판별합니다.
- * 작성자 표시명 등 UI 데이터는 그래프 인자가 아니라 각 화면 ViewModel이 Repository로 조회한다.
+ * 네비게이션 호출은 [AfternoteNavActions]로만 전달합니다. 작성자 표시명 등 UI 데이터는
+ * 그래프 인자가 아니라 각 화면 ViewModel이 Repository로 조회한다.
  */
 @Suppress("LongMethod")
 fun NavGraphBuilder.afternoteNavGraph(
@@ -48,34 +47,32 @@ fun NavGraphBuilder.afternoteNavGraph(
             AfternoteDetailNavigation(
                 backStackEntry = it,
                 onBack = actions::onPopBackStack,
-                onNavigateToEditor = actions::onNavigateToEditorForEdit,
+                onNavigateToEditor = { itemId ->
+                    actions.onNavigateToEditorForEdit(itemId, EditorCategory.SOCIAL)
+                },
             )
         }
 
         afternoteComposable<AfternoteRoute.GalleryDetailRoute> { _ ->
             AfternoteGalleryDetailNavigation(
                 onBack = actions::onPopBackStack,
-                onNavigateToEditor = actions::onNavigateToEditorForEdit,
+                onNavigateToEditor = { itemId ->
+                    actions.onNavigateToEditorForEdit(itemId, EditorCategory.GALLERY)
+                },
             )
         }
 
         afternoteComposable<AfternoteRoute.EditorRoute> { backStackEntry ->
-            // lifecycle-runtime 2.8+의 currentStateFlow를 Compose 상태로 직접 수집하여
-            // LifecycleEventObserver 등록/해제 보일러플레이트를 제거한다.
-            val lifecycleState by backStackEntry.lifecycle.currentStateFlow.collectAsStateWithLifecycle()
-            val isEditorRouteCurrent = lifecycleState.isAtLeast(Lifecycle.State.RESUMED)
-
             val hostViewModel = graphScopedHostViewModel(graphScopedParentEntry)
+            val graphSongs by hostViewModel.playlistSongs.collectAsStateWithLifecycle()
             AfternoteEditorNavigation(
                 AfternoteEditorNavigationParams(
                     backStackEntry = backStackEntry,
-                    playlistStateHolder = hostViewModel.playlistHolder,
-                    editState = hostViewModel.editState,
-                    onEditStateChanged = hostViewModel::updateEditState,
-                    onEditStateClear = hostViewModel::clearEditState,
+                    graphSongs = graphSongs,
+                    onReplaceSongs = hostViewModel::replaceSongs,
+                    onClearSongs = hostViewModel::clearAllSongs,
                     onNavigateToSelectReceiver = {}, // TODO: 수신인 선택 화면 라우팅 연결
                     onBottomNavTabSelected = actions::onBottomNavTabSelected,
-                    isEditorRouteCurrent = isEditorRouteCurrent,
                     onPopBackStack = actions::onPopBackStack,
                     onNavigateToMemorialPlaylist = actions::onNavigateToMemorialPlaylist,
                     onSaveSuccessNavigateHome = actions::onEditorSaveSuccessNavigateHome,
@@ -86,18 +83,23 @@ fun NavGraphBuilder.afternoteNavGraph(
         afternoteComposable<AfternoteRoute.MemorialGuidelineDetailRoute> { _ ->
             AfternoteMemorialGuidelineDetailNavigation(
                 onBack = actions::onPopBackStack,
-                onNavigateToEditor = actions::onNavigateToEditorForEdit,
+                onNavigateToEditor = { itemId ->
+                    actions.onNavigateToEditorForEdit(itemId, EditorCategory.MEMORIAL)
+                },
             )
         }
 
         afternoteComposable<AfternoteRoute.MemorialPlaylistRoute> {
             val hostViewModel = graphScopedHostViewModel(graphScopedParentEntry)
+            val graphSongs by hostViewModel.playlistSongs.collectAsStateWithLifecycle()
             MemorialPlaylistEntry(
-                playlistStateHolder = hostViewModel.playlistHolder,
+                songs = graphSongs,
                 actions =
                     MemorialPlaylistEntryActions(
                         onBackClick = actions::onPopBackStack,
                         onNavigateToAddSongScreen = actions::onNavigateToAddSong,
+                        onClearAllSongs = hostViewModel::clearAllSongs,
+                        onRemoveSongs = hostViewModel::removeSongs,
                     ),
             )
         }
@@ -114,7 +116,7 @@ fun NavGraphBuilder.afternoteNavGraph(
             val addSongViewModel: AddSongViewModel = hiltViewModel()
             AfternoteAddSongNavigation(
                 onPopBackStack = actions::onPopBackStack,
-                playlistStateHolder = hostViewModel.playlistHolder,
+                onSongsAdded = hostViewModel::addSongs,
                 viewModel = addSongViewModel,
             )
         }

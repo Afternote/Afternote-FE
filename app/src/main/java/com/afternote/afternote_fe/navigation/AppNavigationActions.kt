@@ -9,9 +9,11 @@ import com.afternote.afternote_fe.screen.HomeTabActions
 import com.afternote.core.model.MindRecordCategory
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomNavTab
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavActions
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
+import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavActions
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingRoute
 import com.afternote.feature.setting.presentation.navigation.SettingNavActions
@@ -90,6 +92,26 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
     remember(navController) {
         object : MindRecordNavActions {
             override fun onMemorySpaceBack() {
+                navController.popBackStack()
+            }
+
+            override fun onWriteDailyQuestion() {
+                navController.navigate(MindRecordRoute.DailyQuestionWriteRoute)
+            }
+
+            override fun onWriteDiary() {
+                navController.navigate(MindRecordRoute.DiaryWriteRoute)
+            }
+
+            override fun onWriteDeepThought() {
+                navController.navigate(MindRecordRoute.DeepThoughtWriteRoute)
+            }
+
+            override fun onWriteBack() {
+                navController.popBackStack()
+            }
+
+            override fun onWriteSubmitSuccess() {
                 navController.popBackStack()
             }
         }
@@ -206,7 +228,6 @@ fun rememberHomeTabActions(
 
 /**
  * Afternote 서브그래프에 넘길 루트 레벨 네비게이션 [AfternoteNavActions] 구현체.
- * [NavGraphBuilder] DSL 밖에서 `remember`로 안정화한다.
  */
 @Composable
 fun rememberAfternoteNavActions(
@@ -242,8 +263,16 @@ fun rememberAfternoteNavActions(
                 appState.navController.navigate(AfternoteRoute.EditorRoute(initialCategory = initialCategory))
             }
 
-            override fun onNavigateToEditorForEdit(itemId: String) {
-                appState.navController.navigate(AfternoteRoute.EditorRoute(itemId = itemId))
+            override fun onNavigateToEditorForEdit(
+                itemId: String,
+                initialCategory: EditorCategory,
+            ) {
+                appState.navController.navigate(
+                    AfternoteRoute.EditorRoute(
+                        itemId = itemId,
+                        initialCategory = initialCategory.name,
+                    ),
+                )
             }
 
             override fun onNavigateToMemorialPlaylist() {

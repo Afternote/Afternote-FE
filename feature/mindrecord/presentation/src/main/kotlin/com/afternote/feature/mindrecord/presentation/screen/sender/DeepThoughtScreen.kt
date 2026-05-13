@@ -1,15 +1,18 @@
 package com.afternote.feature.mindrecord.presentation.screen.sender
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.PrimaryScrollableTabRow
@@ -19,7 +22,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -28,6 +30,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
@@ -36,63 +40,53 @@ import com.afternote.feature.mindrecord.presentation.component.FlowTags
 import com.afternote.feature.mindrecord.presentation.model.DeepThoughtModel
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.model.Tag
-import java.time.LocalDate
+import com.afternote.feature.mindrecord.presentation.viewmodel.DeepThoughtListUiState
+import com.afternote.feature.mindrecord.presentation.viewmodel.DeepThoughtListViewModel
 
 @Composable
 fun DeepThoughtScreen(
     modifier: Modifier = Modifier,
     isListView: Boolean = true,
+    viewModel: DeepThoughtListViewModel = hiltViewModel(),
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    when (val state = uiState) {
+        DeepThoughtListUiState.Loading -> {
+            LoadingBox(modifier)
+        }
+
+        is DeepThoughtListUiState.Error -> {
+            ErrorBox(message = state.message, modifier = modifier)
+        }
+
+        is DeepThoughtListUiState.Success -> {
+            DeepThoughtContent(
+                modifier = modifier,
+                isListView = isListView,
+                tags = state.tags,
+                selectedTag = state.selectedTag,
+                items = state.items,
+                onTagClick = viewModel::onTagSelected,
+            )
+        }
+    }
+}
+
+@Composable
+private fun DeepThoughtContent(
+    isListView: Boolean,
+    tags: List<Tag>,
+    selectedTag: Tag?,
+    onTagClick: (Tag?) -> Unit,
+    items: List<DeepThoughtModel>,
+    modifier: Modifier = Modifier,
 ) {
     var selectedIndex by remember { mutableIntStateOf(0) }
-    val tabs = listOf<String>("전체 카테고리", "카테고리", "카테고리", "카테고리")
-    var selectedTag by remember { mutableStateOf<Tag?>(null) }
-    val tags =
-        listOf<Tag>(
-            Tag("성장", 1),
-            Tag("배움", 2),
-            Tag("도전", 3),
-            Tag("성장", 4),
-            Tag("성장", 5),
-        )
-
-    val deepThoughtList =
-        listOf<DeepThoughtModel>(
-            DeepThoughtModel(
-                title = "진정한 행복의 의미",
-                date = LocalDate.now(),
-                tag = listOf(Tag("행복", 1), Tag("희망", 2)),
-                content = "큰 성취보다 ~~~",
-            ),
-            DeepThoughtModel(
-                title = "진정한 행복의 의미",
-                date = LocalDate.now(),
-                tag = listOf(Tag("행복", 1), Tag("희망", 2)),
-                content = "큰 성취보다 ~~~",
-            ),
-            DeepThoughtModel(
-                title = "진정한 행복의 의미",
-                date = LocalDate.now(),
-                tag = listOf(Tag("행복", 1), Tag("희망", 2)),
-                content = "큰 성취보다 ~~~",
-            ),
-            DeepThoughtModel(
-                title = "진정한 행복의 의미",
-                date = LocalDate.now(),
-                tag = listOf(Tag("행복", 1), Tag("희망", 2)),
-                content = "큰 성취보다 ~~~",
-            ),
-            DeepThoughtModel(
-                title = "진정한 행복의 의미",
-                date = LocalDate.now(),
-                tag = listOf(Tag("행복", 1), Tag("희망", 2)),
-                content = "큰 성취보다 ~~~",
-            ),
-        )
+    val tabs = listOf("전체 카테고리", "카테고리", "카테고리", "카테고리")
 
     if (isListView) {
-        Column(
-            modifier = modifier,
-        ) {
+        Column(modifier = modifier) {
             PrimaryScrollableTabRow(
                 selectedTabIndex = selectedIndex,
                 edgePadding = 0.dp,
@@ -146,20 +140,16 @@ fun DeepThoughtScreen(
             FlowTags(
                 tags = tags,
                 selectedTag = selectedTag,
-                onclick = { selectedTag = null },
-                onTagClick = { selectedTag = it },
+                onclick = { onTagClick(null) },
+                onTagClick = { onTagClick(it) },
             )
 
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(deepThoughtList) {
-                    DeepThoughtCard(it)
-                }
+                items(items, key = { it.id }) { DeepThoughtCard(it) }
             }
         }
     } else {
-        LazyColumn(
-            modifier = modifier,
-        ) {
+        LazyColumn(modifier = modifier) {
             item {
                 DailyCalendar(
                     year = 2026,
@@ -168,7 +158,6 @@ fun DeepThoughtScreen(
                     onNextMonth = {},
                     onPrevMonth = {},
                 )
-
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
@@ -182,14 +171,12 @@ fun DeepThoughtScreen(
                         style = AfternoteDesign.typography.mono,
                         color = Color(0xFF000000).copy(alpha = 0.4f),
                     )
-
                     HorizontalDivider(modifier = Modifier.padding(start = 12.dp))
                 }
-
                 Spacer(modifier = Modifier.height(10.dp))
             }
 
-            items(deepThoughtList) {
+            items(items, key = { it.id }) {
                 DeepThoughtCard(it)
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -197,11 +184,35 @@ fun DeepThoughtScreen(
     }
 }
 
+@Composable
+private fun LoadingBox(modifier: Modifier = Modifier) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+private fun ErrorBox(
+    message: String,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier.fillMaxSize().padding(20.dp), contentAlignment = Alignment.Center) {
+        Text(text = message, color = AfternoteDesign.colors.gray9)
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 private fun DeepThoughtScreenPreviewTrue() {
     AfternoteTheme {
-        DeepThoughtScreen()
+        DeepThoughtContent(
+            modifier = Modifier,
+            isListView = true,
+            tags = emptyList(),
+            selectedTag = null,
+            items = emptyList(),
+            onTagClick = {},
+        )
     }
 }
 
@@ -209,6 +220,13 @@ private fun DeepThoughtScreenPreviewTrue() {
 @Composable
 private fun DeepThoughtScreenPreviewFalse() {
     AfternoteTheme {
-        DeepThoughtScreen(isListView = false)
+        DeepThoughtContent(
+            modifier = Modifier,
+            isListView = false,
+            tags = emptyList(),
+            selectedTag = null,
+            items = emptyList(),
+            onTagClick = {},
+        )
     }
 }

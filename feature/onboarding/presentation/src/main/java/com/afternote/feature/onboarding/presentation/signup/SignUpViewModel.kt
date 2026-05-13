@@ -39,15 +39,15 @@ class SignUpViewModel
             /** 뒷자리 UI에서 수집하는 첫 번째 마스킹 전 숫자 1자리 */
             const val RESIDENT_REGISTRATION_BACK_FIRST_DIGIT_COUNT = 1
 
-            private const val MIN_ACCOUNT_PASSWORD_LENGTH = 8
+            private const val MIN_VERIFICATION_CODE_LENGTH = 6
         }
 
         private val eventChannel = Channel<SignUpEvent>(Channel.BUFFERED)
         val eventFlow: Flow<SignUpEvent> = eventChannel.receiveAsFlow()
 
-        // Step 1: 이메일 & 비밀번호
+        // Step 1: 이메일 & 인증번호
         val emailState = TextFieldState()
-        val passwordState = TextFieldState()
+        val verificationCodeState = TextFieldState()
         var isVerificationSent by mutableStateOf(false)
             private set
 
@@ -77,10 +77,10 @@ class SignUpViewModel
         var isLoading by mutableStateOf(false)
             private set
 
-        /** Step 1 — 이메일·계정 비밀번호 입력 후 다음 단계 진행 가능 여부 */
+        /** Step 1 — 이메일·인증번호 입력 후 다음 단계 진행 가능 여부 */
         val isStep1NextEnabled by derivedStateOf {
             emailState.text.isNotBlank() &&
-                passwordState.text.length >= MIN_ACCOUNT_PASSWORD_LENGTH
+                verificationCodeState.text.length >= MIN_VERIFICATION_CODE_LENGTH
         }
 
         /** Step 2 — 주민등록번호 앞 6자리 + 뒷 첫 1자리 */
@@ -150,7 +150,7 @@ class SignUpViewModel
                 accountRepository
                     .signUp(
                         email = emailState.text.toString(),
-                        password = passwordState.text.toString(),
+                        password = signUpPasswordState.text.toString(),
                         name = nameState.text.toString(),
                         profileUrl = _profileImageUri.value?.toString(),
                     ).onSuccess {

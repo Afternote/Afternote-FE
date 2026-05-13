@@ -5,6 +5,7 @@ import coil3.ImageLoader
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import com.afternote.core.network.BuildConfig
 import com.afternote.core.network.interceptor.AuthInterceptor
+import com.afternote.core.network.interceptor.FeatureNetworkInterceptor
 import com.afternote.core.network.interceptor.OptionalDebugNetworkInterceptor
 import com.afternote.core.network.interceptor.TokenAuthenticator
 import dagger.Module
@@ -64,6 +65,7 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
     @Named("MainClient")
     fun provideMainOkHttpClient(
         @OptionalDebugNetworkInterceptor debugInterceptors: Set<@JvmSuppressWildcards Interceptor>,
+        @FeatureNetworkInterceptor featureInterceptors: Set<@JvmSuppressWildcards Interceptor>,
         loggingInterceptor: HttpLoggingInterceptor,
         authInterceptor: AuthInterceptor,
         tokenAuthenticator: TokenAuthenticator,
@@ -71,6 +73,8 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
         val builder = OkHttpClient.Builder()
         // 디버그 전용(피처 모듈) 인터셉터: 네트워크로 나가기 전에 가짜 응답을 반환할 수 있음
         debugInterceptors.forEach { builder.addInterceptor(it) }
+        // 피처 모듈이 제공하는 프로덕션 인터셉터(예: 수신자 X-Auth-Code 자동 부착)
+        featureInterceptors.forEach { builder.addInterceptor(it) }
         return builder
             // 요청은 인터셉터를 추가한 순서대로 인터셉터를 거쳐 서버로 가고 응답은 그 반대 순서로
             .addInterceptor(authInterceptor) // 액세스 토큰을 리퀘스트 헤더에 달아 주는 인터셉터

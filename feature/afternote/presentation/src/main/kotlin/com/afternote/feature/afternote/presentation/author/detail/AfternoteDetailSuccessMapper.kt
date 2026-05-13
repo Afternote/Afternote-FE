@@ -4,11 +4,27 @@ import com.afternote.core.model.AlbumCover
 import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.presentation.author.detail.socialnetwork.SocialNetworkDetailContent
+import com.afternote.feature.afternote.presentation.author.editor.model.InformationProcessingMethod
+import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 
 /** 상세 화면에 쓰는 "최종 작성일": 갱신일이 있으면 그것, 공백이면 생성일. */
 private val Detail.finalWriteDate: String
     get() = timestamps.updatedAt.ifBlank { timestamps.createdAt }
+
+/**
+ * 서버가 내려주는 `processMethod` enum 문자열을 사용자 표시 라벨로 변환한다.
+ * 매핑되지 않은 값은 raw 문자열을 그대로 반환해 호환성을 유지한다.
+ */
+private fun mapProcessMethodLabel(serverValue: String): String =
+    when (serverValue) {
+        "MEMORIAL" -> AccountProcessingMethod.MEMORIAL_ACCOUNT.title
+        "TRANSFER" -> AccountProcessingMethod.TRANSFER_TO_RECEIVER.title
+        "PERMANENT_DELETE" -> AccountProcessingMethod.PERMANENT_DELETE.title
+        "TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER" -> InformationProcessingMethod.TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER.title
+        "TRANSFER_TO_ADDITIONAL_AFTERNOTE_EDIT_RECEIVER" -> InformationProcessingMethod.TRANSFER_TO_ADDITIONAL_AFTERNOTE_EDIT_RECEIVER.title
+        else -> serverValue
+    }
 
 internal fun Detail.toReceiverUiModels(): List<ReceiverUiModel> =
     receivers.mapIndexed { index, r ->
@@ -25,7 +41,7 @@ internal fun Detail.toGalleryDetailContent(authorDisplayName: String): GalleryDe
         userName = authorDisplayName,
         finalWriteDate = finalWriteDate,
         afternoteEditReceivers = toReceiverUiModels(),
-        processingMethodTitle = processing?.method ?: "",
+        processingMethodTitle = processing?.method?.let(::mapProcessMethodLabel) ?: "",
         processingMethods = processing?.actions ?: emptyList(),
         message = processing?.leaveMessage ?: "",
     )
@@ -36,7 +52,7 @@ internal fun Detail.toSocialNetworkDetailContent(authorDisplayName: String): Soc
         userName = authorDisplayName,
         accountId = credentials?.id ?: "",
         password = credentials?.password ?: "",
-        accountProcessingMethod = processing?.method ?: "",
+        accountProcessingMethod = processing?.method?.let(::mapProcessMethodLabel) ?: "",
         processingMethods = processing?.actions ?: emptyList(),
         message = processing?.leaveMessage ?: "",
         finalWriteDate = finalWriteDate,

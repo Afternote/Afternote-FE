@@ -12,7 +12,6 @@ import com.afternote.feature.afternote.domain.model.author.PlaylistWritePayload
 import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
 import com.afternote.feature.afternote.presentation.author.editor.account.AccountProcessMethod
 import com.afternote.feature.afternote.presentation.author.editor.account.InfoProcessMethod
-import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPlaylistStateHolder
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessagesCodec
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
@@ -34,6 +33,9 @@ private const val LAST_WISH_DEFAULT_BRIGHT = "슬퍼 하지 말고 밝고 따뜻
  *
  * 상세 화면의 [AfternoteDetailSuccessMapper]와 달리, 여기서는 조회 성공 직후 UI가 아니라 [EditorFormPrefill]·생성/수정 입력 조립이 중심이다.
  * `author/editor` 패키지 루트에 둔다.
+ *
+ * 추모 플레이리스트 곡 목록은 [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs] SSOT의 스냅샷을
+ * `playlistSongs: List<Song>`으로 받는다 (Compose 상태 홀더에 직접 의존하지 않는다).
  */
 internal object AfternoteEditorFormMapper {
     fun buildEditorFormPrefill(detail: Detail): EditorFormPrefill = editorFormPrefillFromLoadParams(buildLoadFromExistingParams(detail))
@@ -161,23 +163,21 @@ internal object AfternoteEditorFormMapper {
     }
 
     fun buildPlaylistWritePayload(
-        playlistStateHolder: MemorialPlaylistStateHolder?,
+        playlistSongs: List<Song>,
         atmosphere: String = "",
         memorialPhotoUrl: String? = null,
         funeralVideoUrl: String? = null,
         funeralThumbnailUrl: String? = null,
     ): PlaylistWritePayload {
         val songs =
-            playlistStateHolder
-                ?.songs
-                ?.map { song ->
-                    PlaylistSongPayload(
-                        id = song.id.toLongOrNull(),
-                        title = song.title,
-                        artist = song.artist,
-                        coverUrl = song.albumCoverUrl,
-                    )
-                }.orEmpty()
+            playlistSongs.map { song ->
+                PlaylistSongPayload(
+                    id = song.id.toLongOrNull(),
+                    title = song.title,
+                    artist = song.artist,
+                    coverUrl = song.albumCoverUrl,
+                )
+            }
         val memorialVideo =
             funeralVideoUrl?.ifBlank { null }?.let { url ->
                 MemorialVideoPayload(
@@ -208,7 +208,7 @@ internal object AfternoteEditorFormMapper {
         category: EditorCategory,
         payload: RegisterAfternotePayload,
         selectedReceiverIds: List<Long>,
-        playlistStateHolder: MemorialPlaylistStateHolder?,
+        playlistSongs: List<Song>,
         funeralVideoUrl: String?,
         funeralThumbnailUrl: String?,
         memorialPhotoUrl: String?,
@@ -241,7 +241,7 @@ internal object AfternoteEditorFormMapper {
             EditorCategory.MEMORIAL -> {
                 val playlistPayload =
                     buildPlaylistWritePayload(
-                        playlistStateHolder = playlistStateHolder,
+                        playlistSongs = playlistSongs,
                         atmosphere = payload.atmosphere,
                         memorialPhotoUrl = memorialPhotoUrl,
                         funeralVideoUrl = funeralVideoUrl,
@@ -279,7 +279,7 @@ internal object AfternoteEditorFormMapper {
         category: EditorCategory,
         payload: RegisterAfternotePayload,
         selectedReceiverIds: List<Long>,
-        playlistStateHolder: MemorialPlaylistStateHolder?,
+        playlistSongs: List<Song>,
         memorialMedia: MemorialMediaUrls,
     ): AfternoteUpdatePayload =
         when (category) {
@@ -289,7 +289,7 @@ internal object AfternoteEditorFormMapper {
                     title = payload.serviceName,
                     playlist =
                         buildPlaylistWritePayload(
-                            playlistStateHolder = playlistStateHolder,
+                            playlistSongs = playlistSongs,
                             atmosphere = payload.atmosphere,
                             memorialPhotoUrl = memorialMedia.memorialPhotoUrl,
                             funeralVideoUrl = memorialMedia.funeralVideoUrl,

@@ -9,4 +9,14 @@ package com.afternote.feature.mindrecord.presentation.navigation
  */
 interface MindRecordNavActions {
     fun onMemorySpaceBack()
+
+    fun onWriteDailyQuestion()
+
+    fun onWriteDiary()
+
+    fun onWriteDeepThought()
+
+    fun onWriteBack()
+
+    fun onWriteSubmitSuccess()
 }
