@@ -1,6 +1,7 @@
 plugins {
     id("afternote.android.library.compose")
     id("afternote.android.hilt")
+    id("afternote.android.navigation")
 }
 
 android {
@@ -16,5 +17,4 @@ dependencies {
     implementation(projects.core.model)
     implementation(projects.core.data)
     implementation(libs.androidx.compose.material.icons.extended)
-    implementation(libs.android.navigation.compose)
 }

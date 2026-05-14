@@ -47,11 +47,12 @@ fun SendScheduleRow(
                 style = AfternoteDesign.typography.bodySmallR,
                 color = AfternoteDesign.colors.gray9,
             )
+            Spacer(modifier = Modifier.width(17.dp))
             Icon(
                 painter = painterResource(R.drawable.down_vector),
                 contentDescription = "날짜 변경",
                 tint = AfternoteDesign.colors.gray6,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(12.dp),
             )
         }
 
@@ -72,11 +73,12 @@ fun SendScheduleRow(
                 style = AfternoteDesign.typography.bodySmallR,
                 color = AfternoteDesign.colors.gray9,
             )
+            Spacer(modifier = Modifier.width(51.dp))
             Icon(
                 painter = painterResource(R.drawable.down_vector),
                 contentDescription = "시간 변경",
                 tint = AfternoteDesign.colors.gray6,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(12.dp),
             )
         }
     }

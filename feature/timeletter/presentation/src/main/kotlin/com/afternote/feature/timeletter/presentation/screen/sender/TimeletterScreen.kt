@@ -1,5 +1,7 @@
 package com.afternote.feature.timeletter.presentation.screen.sender
 
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -9,6 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.button.FAB.PenFloatingActionButton
+import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterList
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
@@ -26,24 +30,29 @@ fun TimeletterScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var viewMode by remember { mutableStateOf(ViewMode.List) }
 
-    when (val state = uiState) {
-        is TimeletterUiState.Loading -> {
-            Unit
-        }
+    Scaffold(
+        modifier = modifier,
+        topBar = { HomeTopBar() },
+        floatingActionButton = { PenFloatingActionButton(onClick = onWriteClick) },
+    ) { paddingValues ->
+        when (val state = uiState) {
+            is TimeletterUiState.Loading -> {
+                Unit
+            }
 
-        is TimeletterUiState.Error -> {
-            Unit
-        }
+            is TimeletterUiState.Error -> {
+                Unit
+            }
 
-        is TimeletterUiState.Success -> {
-            TimeLetterContent(
-                letters = state.letters,
-                receiverNameMap = state.receiverNameMap,
-                viewMode = viewMode,
-                onViewModeChange = { viewMode = it },
-                onWriteClick = onWriteClick,
-                modifier = modifier,
-            )
+            is TimeletterUiState.Success -> {
+                TimeLetterContent(
+                    letters = state.letters,
+                    receiverNameMap = state.receiverNameMap,
+                    viewMode = viewMode,
+                    onViewModeChange = { viewMode = it },
+                    modifier = Modifier.padding(paddingValues),
+                )
+            }
         }
     }
 }

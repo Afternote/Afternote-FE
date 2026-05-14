@@ -1,5 +1,6 @@
 package com.afternote.afternote_fe.debug
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -21,6 +23,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.afternote_fe.EXTRA_DEBUG_START_TIMELETTER
+import com.afternote.afternote_fe.MainActivity
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
@@ -82,6 +86,20 @@ class DebugMockSettingsActivity : ComponentActivity() {
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            startActivity(
+                                Intent(this@DebugMockSettingsActivity, MainActivity::class.java).apply {
+                                    putExtra(EXTRA_DEBUG_START_TIMELETTER, true)
+                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                },
+                            )
+                        },
+                    ) {
+                        Text("타임레터로 이동 (로그인 스킵)")
+                    }
                 }
             }
         }
