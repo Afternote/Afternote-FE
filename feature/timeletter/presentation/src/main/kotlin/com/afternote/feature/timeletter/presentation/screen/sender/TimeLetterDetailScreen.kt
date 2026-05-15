@@ -38,7 +38,7 @@ fun TimeLetterDetailScreen(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .height(200.dp),
+                            .height(160.dp),
                 ) {
                     // 배경 이미지
                     Image(
@@ -77,6 +77,11 @@ fun TimeLetterDetailScreen(
                             )
                         }
                     }
+                }
+            }
+            item {
+                Column {
+                    // Todo: 블록형으로 넣어야겟다.
                 }
             }
         }
