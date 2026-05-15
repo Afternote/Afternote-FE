@@ -50,7 +50,6 @@ fun TimeLetterWriteScreen(
     onMediaVoiceClick: () -> Unit = {},
     onMediaFileClick: () -> Unit = {},
     onMediaLinkClick: () -> Unit = {},
-    onLinkClick: () -> Unit = {},
     onTextStyleClick: () -> Unit = {},
     onAlignCenterClick: () -> Unit = {},
     onAlignLeftClick: () -> Unit = {},
@@ -104,8 +103,8 @@ fun TimeLetterWriteScreen(
         bottomBar = {
             TimeLetterBottomBar(
                 draftCount = uiState.draftCount,
+                textAlign = uiState.textAlign,
                 onMediaAddClick = { showMediaSheet = true },
-                onLinkClick = onLinkClick,
                 onTextStyleClick = onTextStyleClick,
                 onAlignCenterClick = onAlignCenterClick,
                 onAlignLeftClick = onAlignLeftClick,

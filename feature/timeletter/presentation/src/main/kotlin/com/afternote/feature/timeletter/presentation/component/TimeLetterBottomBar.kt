@@ -30,7 +30,7 @@ import com.afternote.feature.timeletter.presentation.R
 fun TimeLetterBottomBar(
     draftCount: Int,
     textAlign: TextAlign,
-    onLinkClick: () -> Unit,
+    onMediaAddClick: () -> Unit,
     onTextStyleClick: () -> Unit,
     onAlignCenterClick: () -> Unit,
     onAlignLeftClick: () -> Unit,
@@ -51,7 +51,7 @@ fun TimeLetterBottomBar(
             modifier =
                 Modifier
                     .size(24.dp)
-                    .clickable(onClick = onLinkClick),
+                    .clickable(onClick = onMediaAddClick),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -132,7 +132,8 @@ fun TimeLetterBottomBar(
 private fun TimeLetterBottomBarPreview() {
     TimeLetterBottomBar(
         draftCount = 3,
-        onLinkClick = {},
+        textAlign= TextAlign.Center,
+        onMediaAddClick = {},
         onTextStyleClick = {},
         onAlignCenterClick = {},
         onAlignLeftClick = {},
