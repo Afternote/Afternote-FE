@@ -1,6 +1,8 @@
 package com.afternote.feature.timeletter.presentation.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -26,7 +29,7 @@ import com.afternote.feature.timeletter.presentation.R
 @Composable
 fun TimeLetterBottomBar(
     draftCount: Int,
-    onMediaAddClick: () -> Unit,
+    textAlign: TextAlign,
     onLinkClick: () -> Unit,
     onTextStyleClick: () -> Unit,
     onAlignCenterClick: () -> Unit,
@@ -44,30 +47,35 @@ fun TimeLetterBottomBar(
                 .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(onClick = onMediaAddClick) {
-            Icon(
-                painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_add),
-                contentDescription = "미디어 추가",
-                tint = AfternoteDesign.colors.gray7,
-                modifier = Modifier.size(22.dp),
-            )
-        }
-
-        IconButton(onClick = onLinkClick) {
+        Box(
+            modifier =
+                Modifier
+                    .size(24.dp)
+                    .clickable(onClick = onLinkClick),
+            contentAlignment = Alignment.Center,
+        ) {
             Icon(
                 painter = painterResource(R.drawable.ic_link),
                 contentDescription = "링크 삽입",
                 tint = AfternoteDesign.colors.gray7,
-                modifier = Modifier.size(22.dp),
+                modifier = Modifier.size(24.dp),
             )
         }
 
-        IconButton(onClick = onTextStyleClick) {
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Box(
+            modifier =
+                Modifier
+                    .size(24.dp)
+                    .clickable(onClick = onTextStyleClick),
+            contentAlignment = Alignment.Center,
+        ) {
             Icon(
                 painter = painterResource(R.drawable.ic_text),
                 contentDescription = "텍스트",
                 tint = AfternoteDesign.colors.gray7,
-                modifier = Modifier.size(22.dp),
+                modifier = Modifier.size(24.dp),
             )
         }
 
@@ -84,17 +92,17 @@ fun TimeLetterBottomBar(
         ) {
             AlignButton(
                 painter = painterResource(R.drawable.ic_align_center),
-                selected = true,
+                selected = textAlign == TextAlign.Center, // 상태 반영
                 onClick = onAlignCenterClick,
             )
             AlignButton(
                 painter = painterResource(R.drawable.ic_align_left),
-                selected = false,
+                selected = textAlign == TextAlign.Start,
                 onClick = onAlignLeftClick,
             )
             AlignButton(
                 painter = painterResource(R.drawable.ic_align_right),
-                selected = false,
+                selected = textAlign == TextAlign.End,
                 onClick = onAlignRightClick,
             )
         }
@@ -124,7 +132,6 @@ fun TimeLetterBottomBar(
 private fun TimeLetterBottomBarPreview() {
     TimeLetterBottomBar(
         draftCount = 3,
-        onMediaAddClick = {},
         onLinkClick = {},
         onTextStyleClick = {},
         onAlignCenterClick = {},

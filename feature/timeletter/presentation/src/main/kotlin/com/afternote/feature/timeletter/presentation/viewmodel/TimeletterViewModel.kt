@@ -1,5 +1,6 @@
 package com.afternote.feature.timeletter.presentation.viewmodel
 
+import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.data.cache.ReceiverCacheStore
@@ -9,6 +10,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -35,10 +37,11 @@ class TimeletterViewModel
 
                 lettersResult
                     .onSuccess { letters ->
-                        _uiState.value = TimeletterUiState.Success(
-                            letters = letters,
-                            receiverNameMap = receiverCacheStore.receiverNameMap.value,
-                        )
+                        _uiState.value =
+                            TimeletterUiState.Success(
+                                letters = letters,
+                                receiverNameMap = receiverCacheStore.receiverNameMap.value,
+                            )
                     }.onFailure {
                         _uiState.value = TimeletterUiState.Error("타임레터를 불러올 수 없습니다.")
                     }

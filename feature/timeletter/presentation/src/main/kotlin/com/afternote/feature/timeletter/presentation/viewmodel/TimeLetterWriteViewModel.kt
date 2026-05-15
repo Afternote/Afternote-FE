@@ -1,5 +1,6 @@
 package com.afternote.feature.timeletter.presentation.viewmodel
 
+import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -40,7 +41,8 @@ class TimeLetterWriteViewModel
         }
 
         private fun observeRecipientResult() {
-            savedStateHandle.getStateFlow<LongArray?>("recipient_ids", null)
+            savedStateHandle
+                .getStateFlow<LongArray?>("recipient_ids", null)
                 .filterNotNull()
                 .onEach { ids -> setRecipients(ids.toList()) }
                 .launchIn(viewModelScope)
@@ -117,5 +119,9 @@ class TimeLetterWriteViewModel
                         _uiState.update { it.copy(draftCount = result.totalCount) }
                     }
             }
+        }
+
+        fun setTextAlign(align: TextAlign) {
+            _uiState.update { it.copy(textAlign = align) }
         }
     }
