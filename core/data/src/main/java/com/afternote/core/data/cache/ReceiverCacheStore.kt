@@ -1,7 +1,6 @@
 package com.afternote.core.data.cache
 
 import com.afternote.core.domain.repository.UserRepository
-import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.model.setting.ReceiverListItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,7 +13,6 @@ class ReceiverCacheStore
     @Inject
     constructor(
         private val userRepository: UserRepository,
-        private val authRepository: AuthRepository,
     ) {
         private val _receiverNameMap = MutableStateFlow<Map<Long, String>>(emptyMap())
         val receiverNameMap: StateFlow<Map<Long, String>> = _receiverNameMap.asStateFlow()
@@ -26,9 +24,8 @@ class ReceiverCacheStore
 
         suspend fun ensureLoaded() {
             if (isLoaded) return
-            val userId = authRepository.getUserId().getOrNull() ?: return
             userRepository
-                .getReceivers(userId)
+                .getReceivers()
                 .onSuccess { list ->
                     _receiverNameMap.value = list.associate { it.receiverId to it.name }
                     _receiverList.value = list

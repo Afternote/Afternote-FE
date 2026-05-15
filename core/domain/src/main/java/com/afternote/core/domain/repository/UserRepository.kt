@@ -1,91 +1,87 @@
 package com.afternote.core.domain.repository
 
-import com.afternote.core.model.ReceiverDailyQuestionsResult
-import com.afternote.core.model.ReceiverMindRecordsResult
-import com.afternote.core.model.setting.DeliveryCondition
-import com.afternote.core.model.setting.DeliveryConditionType
-import com.afternote.core.model.setting.PushSettings
-import com.afternote.core.model.setting.ReceiverDetail
-import com.afternote.core.model.setting.ReceiverListItem
-import com.afternote.core.model.user.UserProfileModel
+import com.afternote.core.model.user.DeliveryCondition
+import com.afternote.core.model.user.DeliveryConditionType
+import com.afternote.core.model.user.Receiver
+import com.afternote.core.model.user.ReceiverCreated
+import com.afternote.core.model.user.ReceiverDetail
+import com.afternote.core.model.user.User
+import com.afternote.core.model.user.UserConnectedAccount
+import com.afternote.core.model.user.UserPushSetting
 
-// TODO:검토
 interface UserRepository {
-    suspend fun getMyProfile(): Result<UserProfileModel>
+    // 수신자 목록 조회
+    suspend fun getReceivers(): List<Receiver>
 
+    // 수신자 등록
+    suspend fun createReceiver(
+        name: String,
+        relation: String,
+        phone: String?,
+        email: String?,
+        message: String?,
+    ): ReceiverCreated
+
+    // 수신자 상세 조회
+    suspend fun getReceiverDetail(receiverId: Long): ReceiverDetail
+
+    // 수신자 정보 수정
+    suspend fun updateReceiver(
+        receiverId: Long,
+        name: String,
+        phone: String,
+        relation: String,
+        email: String,
+    ): Receiver
+
+    // 수신자 메시지 수정
+    suspend fun updateReceiverMessage(
+        receiverId: Long,
+        message: String,
+    )
+
+    // 내 프로필 조회
+    suspend fun getMyProfile(): User
+
+    // 프로필 수정
     suspend fun updateMyProfile(
         name: String?,
         phone: String?,
         profileImageUrl: String?,
-    ): Result<UserProfileModel>
+    ): User
 
-    /**
-     * DELETE /users/me — 회원 탈퇴. 로그인한 사용자의 계정을 삭제합니다. 모든 데이터가 영구 삭제되며 복구할 수 없습니다.
-     */
-    suspend fun withdrawAccount(): Result<Unit>
+    // 회원 탈퇴
+    suspend fun deleteAccount()
 
-    /** GET /users/push-settings — 푸시 알림 설정 조회. */
-    suspend fun getMyPushSettings(): Result<PushSettings>
+    // 푸시 알림 설정 조회
+    suspend fun getMyPushSettings(): UserPushSetting
 
+    // 푸시 알림 설정 수정
     suspend fun updateMyPushSettings(
         timeLetter: Boolean?,
         mindRecord: Boolean?,
         afterNote: Boolean?,
-    ): Result<PushSettings>
+    ): UserPushSetting
 
-    /** GET /users/receivers — 수신인 목록 조회. 로그인한 사용자가 등록한 수신인 목록을 조회합니다. */
-    suspend fun getReceivers(): Result<List<ReceiverListItem>>
+    // 연결된 계정 조회
+    suspend fun getConnectedAccounts(): UserConnectedAccount
 
-    suspend fun registerReceiver(
-        name: String,
-        relation: String,
-        phone: String?,
-        email: String?,
-    ): Result<Long>
+    // 소셜 계정 연결
+    suspend fun linkConnectedAccount(
+        provider: String,
+        accessToken: String,
+    ): UserConnectedAccount
 
-    suspend fun getReceiverDetail(receiverId: Long): Result<ReceiverDetail>
+    // 소셜 계정 연결 해제
+    suspend fun unlinkConnectedAccount(provider: String): UserConnectedAccount
 
-    suspend fun updateReceiver(
-        receiverId: Long,
-        name: String,
-        relation: String,
-        phone: String?,
-        email: String?,
-    ): Result<Unit>
+    // 전달 조건 조회
+    suspend fun getDeliveryCondition(): DeliveryCondition
 
-    suspend fun getReceiverDailyQuestions(
-        receiverId: Long,
-        page: Int,
-        size: Int,
-    ): Result<ReceiverDailyQuestionsResult>
-
-    /**
-     * 수신인별 마음의 기록 전체 조회 (일기, 깊은 생각, 데일리 질문 답변).
-     * GET /users/receivers/{receiverId}/mind-records
-     */
-    suspend fun getReceiverMindRecords(
-        receiverId: Long,
-        page: Int,
-        size: Int,
-    ): Result<ReceiverMindRecordsResult>
-
-    /**
-     * GET /users/delivery-condition — 로그인한 사용자의 전달 조건 설정 조회.
-     */
-    suspend fun getDeliveryCondition(): Result<DeliveryCondition>
-
-    /**
-     * PATCH /users/delivery-condition — 로그인한 사용자의 전달 조건 설정/변경.
-     *
-     * @param conditionType 전달 조건 타입
-     * @param inactivityPeriodDays 비활동 기간(일), INACTIVITY일 때 사용
-     * @param specificDate 특정 날짜(yyyy-MM-dd), SPECIFIC_DATE일 때 사용
-     * @param leaveMessage 마지막 인사말 (수신자에게 전달되는 메시지)
-     */
+    // 전달 조건 수정
     suspend fun updateDeliveryCondition(
         conditionType: DeliveryConditionType,
         inactivityPeriodDays: Int?,
         specificDate: String?,
-        leaveMessage: String? = null,
-    ): Result<DeliveryCondition>
+    ): DeliveryCondition
 }

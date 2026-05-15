@@ -1,144 +1,107 @@
 package com.afternote.core.network.service
 
-import com.afternote.core.network.dto.DeliveryConditionRequestDto
+import com.afternote.core.network.model.BaseResponse
+import com.afternote.core.network.dto.DeliveryConditionRequest
 import com.afternote.core.network.dto.DeliveryConditionResponseDto
-import com.afternote.core.network.dto.ReceiverDailyQuestionsResponseDto
 import com.afternote.core.network.dto.ReceiverDetailResponseDto
-import com.afternote.core.network.dto.ReceiverItemDto
-import com.afternote.core.network.dto.ReceiverMindRecordsResponseDto
-import com.afternote.core.network.dto.RegisterReceiverRequestDto
-import com.afternote.core.network.dto.RegisterReceiverResponseDto
-import com.afternote.core.network.dto.UserPushSettingResponse
-import com.afternote.core.network.dto.UserResponse
+import com.afternote.core.network.dto.ReceiverListResponseDto
+import com.afternote.core.network.dto.SocialAccountLinkRequest
+import com.afternote.core.network.dto.UserConnectedAccountResponseDto
+import com.afternote.core.network.dto.UserCreateReceiverRequest
+import com.afternote.core.network.dto.UserCreateReceiverResponseDto
+import com.afternote.core.network.dto.UserPatchReceiverRequest
+import com.afternote.core.network.dto.UserPatchReceiverResponseDto
+import com.afternote.core.network.dto.UserPushSettingResponseDto
+import com.afternote.core.network.dto.UserResponseDto
 import com.afternote.core.network.dto.UserUpdateProfileRequest
 import com.afternote.core.network.dto.UserUpdatePushSettingRequest
-import com.afternote.core.network.model.BaseResponse
+import com.afternote.core.network.dto.UserUpdateReceiverMessageRequest
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Path
-import retrofit2.http.Query
 
-// TODO: 리팩토링
 interface UserApiService {
-    @GET("users/me")
-    suspend fun getMyProfile(): BaseResponse<UserResponse>
+    // 수신자 목록 조회
+    @GET("api/v1/users/receivers")
+    suspend fun getReceivers(): BaseResponse<List<ReceiverListResponseDto>>
 
-    @PATCH("users/me")
-    suspend fun updateMyProfile(
-        @Body body: UserUpdateProfileRequest,
-    ): BaseResponse<UserResponse>
+    // 수신자 등록
+    @POST("api/v1/users/receivers")
+    suspend fun createReceiver(
+        @Body request: UserCreateReceiverRequest,
+    ): BaseResponse<UserCreateReceiverResponseDto>
 
-    /**
-     * DELETE /users/me — 회원 탈퇴. 로그인한 사용자의 계정을 삭제합니다. 모든 데이터가 영구 삭제되며 복구할 수 없습니다.
-     *
-     * @return 200 OK, data: {}
-     */
-    @DELETE("users/me")
-    suspend fun withdrawAccount(): BaseResponse<Unit>
-
-    /**
-     * 푸시 알림 설정 조회.
-     * GET /users/push-settings — 로그인한 사용자의 푸시 알림 수신 설정을 불러옵니다.
-     *
-     * @return data: timeLetter, mindRecord, afterNote
-     */
-    @GET("users/push-settings")
-    suspend fun getMyPushSettings(): BaseResponse<UserPushSettingResponse>
-
-    @PATCH("users/push-settings")
-    suspend fun updateMyPushSettings(
-        @Body body: UserUpdatePushSettingRequest,
-    ): BaseResponse<UserPushSettingResponse>
-
-    /**
-     * 수신인 목록 조회.
-     * GET /users/receivers — 로그인한 사용자가 등록한 수신인 목록을 조회합니다.
-     *
-     * @return data: array of { receiverId, name, relation }
-     */
-    @GET("users/receivers")
-    suspend fun getReceivers(): BaseResponse<List<ReceiverItemDto>>
-
-    @POST("users/receivers")
-    suspend fun registerReceiver(
-        @Body body: RegisterReceiverRequestDto,
-    ): BaseResponse<RegisterReceiverResponseDto>
-
-    /**
-     * 수신인 상세 조회.
-     * GET /users/receivers/{receiverId} — 특정 수신인의 상세 정보를 조회합니다.
-     *
-     * @param receiverId 수신인 식별자 (path, required)
-     * @return data: receiverId, name, relation, phone, email, dailyQuestionCount, timeLetterCount, afterNoteCount
-     */
-    @GET("users/receivers/{receiverId}")
+    // 수신자 상세 조회
+    @GET("api/v1/users/receivers/{receiverId}")
     suspend fun getReceiverDetail(
         @Path("receiverId") receiverId: Long,
     ): BaseResponse<ReceiverDetailResponseDto>
 
-    /**
-     * 수신인 수정.
-     * PATCH /users/receivers/{receiverId} — 특정 수신인 정보를 수정합니다.
-     */
-    @PATCH("users/receivers/{receiverId}")
+    // 수신자 정보 수정
+    @PATCH("api/v1/users/receivers/{receiverId}")
     suspend fun updateReceiver(
         @Path("receiverId") receiverId: Long,
-        @Body body: RegisterReceiverRequestDto,
+        @Body request: UserPatchReceiverRequest,
+    ): BaseResponse<UserPatchReceiverResponseDto>
+
+    // 수신자 메시지 수정
+    @PATCH("api/v1/users/receivers/{receiverId}/message")
+    suspend fun updateReceiverMessage(
+        @Path("receiverId") receiverId: Long,
+        @Body request: UserUpdateReceiverMessageRequest,
     ): BaseResponse<Unit>
 
-    /**
-     * 수신인별 마음의 기록 전체 조회 (일기, 깊은 생각, 데일리 질문 답변).
-     * GET /users/receivers/{receiverId}/mind-records
-     *
-     * @param receiverId 수신인 식별자 (path, required)
-     * @param page 페이지 번호 (0부터 시작)
-     * @param size 페이지 당 조회 개수
-     * @return data: items, hasNext
-     */
-    @GET("users/receivers/{receiverId}/mind-records")
-    suspend fun getReceiverMindRecords(
-        @Path("receiverId") receiverId: Long,
-        @Query("page") page: Int,
-        @Query("size") size: Int,
-    ): BaseResponse<ReceiverMindRecordsResponseDto>
+    // 내 프로필 조회
+    @GET("api/v1/users/me")
+    suspend fun getMyProfile(): BaseResponse<UserResponseDto>
 
-    /**
-     * 수신인별 데일리 질문 답변 목록 조회 (페이지네이션).
-     * GET /users/receivers/{receiverId}/daily-questions
-     *
-     * @param receiverId 수신인 식별자 (path, required)
-     * @param page 페이지 번호 (0부터 시작)
-     * @param size 페이지 당 조회 개수
-     * @return data: items, hasNext
-     */
-    @GET("users/receivers/{receiverId}/daily-questions")
-    suspend fun getReceiverDailyQuestions(
-        @Path("receiverId") receiverId: Long,
-        @Query("page") page: Int,
-        @Query("size") size: Int,
-    ): BaseResponse<ReceiverDailyQuestionsResponseDto>
+    // 프로필 수정
+    @PATCH("api/v1/users/me")
+    suspend fun updateMyProfile(
+        @Body request: UserUpdateProfileRequest,
+    ): BaseResponse<UserResponseDto>
 
-    /**
-     * 전달 조건 조회.
-     * GET /users/delivery-condition — 로그인한 사용자의 전달 조건 설정을 조회합니다.
-     *
-     * @return data: conditionType, inactivityPeriodDays, specificDate, conditionFulfilled, conditionMet
-     */
-    @GET("users/delivery-condition")
+    // 회원 탈퇴
+    @DELETE("api/v1/users/me")
+    suspend fun deleteAccount(): BaseResponse<Unit>
+
+    // 푸시 알림 설정 조회
+    @GET("api/v1/users/push-settings")
+    suspend fun getMyPushSettings(): BaseResponse<UserPushSettingResponseDto>
+
+    // 푸시 알림 설정 수정
+    @PATCH("api/v1/users/push-settings")
+    suspend fun updateMyPushSettings(
+        @Body request: UserUpdatePushSettingRequest,
+    ): BaseResponse<UserPushSettingResponseDto>
+
+    // 연결된 계정 조회
+    @GET("api/v1/users/connected-accounts")
+    suspend fun getConnectedAccounts(): BaseResponse<UserConnectedAccountResponseDto>
+
+    // 소셜 계정 연결
+    @POST("api/v1/users/connected-accounts/{provider}")
+    suspend fun linkConnectedAccount(
+        @Path("provider") provider: String,
+        @Body request: SocialAccountLinkRequest,
+    ): BaseResponse<UserConnectedAccountResponseDto>
+
+    // 소셜 계정 연결 해제
+    @DELETE("api/v1/users/connected-accounts/{provider}")
+    suspend fun unlinkConnectedAccount(
+        @Path("provider") provider: String,
+    ): BaseResponse<UserConnectedAccountResponseDto>
+
+    // 전달 조건 조회
+    @GET("api/v1/users/delivery-condition")
     suspend fun getDeliveryCondition(): BaseResponse<DeliveryConditionResponseDto>
 
-    /**
-     * 전달 조건 수정.
-     * PATCH /users/delivery-condition — 로그인한 사용자의 전달 조건을 설정하거나 변경합니다.
-     *
-     * @param body conditionType, inactivityPeriodDays, specificDate
-     * @return data: 동일한 DeliveryConditionResponseDto
-     */
-    @PATCH("users/delivery-condition")
+    // 전달 조건 수정
+    @PATCH("api/v1/users/delivery-condition")
     suspend fun updateDeliveryCondition(
-        @Body body: DeliveryConditionRequestDto,
+        @Body request: DeliveryConditionRequest,
     ): BaseResponse<DeliveryConditionResponseDto>
 }

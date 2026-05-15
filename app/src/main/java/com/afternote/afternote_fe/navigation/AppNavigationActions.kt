@@ -151,6 +151,10 @@ fun rememberTimeLetterNavActions(navController: NavController): TimeLetterNavAct
 fun rememberSettingNavActions(appState: AppState): SettingNavActions =
     remember(appState) {
         object : SettingNavActions {
+            override fun onSettingBack() {
+                appState.navController.popBackStack()
+            }
+
             override fun onLogoutSuccess() {
                 appState.navController.navigate(Route.Onboarding) {
                     popUpTo(0) { inclusive = true }
@@ -177,6 +181,78 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
                 appState.navController.navigate(Route.Onboarding) {
                     popUpTo(0) { inclusive = true }
                 }
+            }
+
+            override fun onNavigateToProfileEdit() {
+                appState.navController.navigate(SettingRoute.ProfileEditRoute)
+            }
+
+            override fun onProfileEditBack() {
+                appState.navController.popBackStack()
+            }
+
+            override fun onNavigateToLinkedAccount() {
+                appState.navController.navigate(SettingRoute.LinkedAccountRoute)
+            }
+
+            override fun onLinkedAccountBack() {
+                appState.navController.popBackStack()
+            }
+
+            override fun onNavigateToNotification() {
+                appState.navController.navigate(SettingRoute.NotificationRoute)
+            }
+
+            override fun onNotificationBack() {
+                appState.navController.popBackStack()
+            }
+
+            override fun onNavigateToRecipientList() {
+                appState.navController.navigate(SettingRoute.RecipientListRoute)
+            }
+
+            override fun onRecipientListBack() {
+                appState.navController.popBackStack()
+            }
+
+            override fun onNavigateToRecipientRegister() {
+                appState.navController.navigate(SettingRoute.RecipientRegisterRoute)
+            }
+
+            override fun onRecipientRegisterBack() {
+                appState.navController.popBackStack()
+            }
+
+            override fun onNavigateToAfterDelivery() {
+                appState.navController.navigate(SettingRoute.AfterDeliveryRoute)
+            }
+
+            override fun onAfterDeliveryBack() {
+                appState.navController.popBackStack()
+            }
+
+            override fun onNavigateToPasskey() {
+                appState.navController.navigate(SettingRoute.PasskeyRoute)
+            }
+
+            override fun onPasskeyBack() {
+                appState.navController.popBackStack()
+            }
+
+            override fun onNavigateToAppLock() {
+                appState.navController.navigate(SettingRoute.AppLockSetupRoute)
+            }
+
+            override fun onAppLockBack() {
+                appState.navController.popBackStack()
+            }
+
+            override fun onNavigateToNotice() {
+                appState.navController.navigate(SettingRoute.NoticeRoute)
+            }
+
+            override fun onNoticeBack() {
+                appState.navController.popBackStack()
             }
         }
     }
