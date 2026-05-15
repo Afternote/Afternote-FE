@@ -1,11 +1,33 @@
+import java.util.Properties
+
 plugins {
     id("afternote.android.library.compose")
     id("afternote.android.hilt")
     kotlin("plugin.serialization")
 }
 
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
+}
+
 android {
     namespace = "com.afternote.feature.onboarding.presentation"
+
+    buildFeatures {
+        buildConfig = true
+    }
+
+    defaultConfig {
+        // Google Cloud Console에서 발급받은 Web Client ID. 저장소에 키를 박지 말 것.
+        // 루트 local.properties(gitignore) 또는 CI 환경변수 GOOGLE_WEB_CLIENT_ID만 사용.
+        val googleWebClientId =
+            localProperties.getProperty("GOOGLE_WEB_CLIENT_ID")
+                ?: System.getenv("GOOGLE_WEB_CLIENT_ID")
+                ?: ""
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
+    }
 }
 
 dependencies {

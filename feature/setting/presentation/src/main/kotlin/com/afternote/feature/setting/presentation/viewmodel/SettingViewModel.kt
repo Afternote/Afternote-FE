@@ -48,13 +48,8 @@ class SettingViewModel
 
         private fun loadProfile() {
             viewModelScope.launch {
-                val userId =
-                    authRepository.getUserId().getOrNull() ?: run {
-                        _uiState.value = SettingUiState.Error("사용자 정보를 불러올 수 없습니다.")
-                        return@launch
-                    }
                 userRepository
-                    .getMyProfile(userId)
+                    .getMyProfile()
                     .onSuccess { profile ->
                         _uiState.value =
                             SettingUiState.Success(

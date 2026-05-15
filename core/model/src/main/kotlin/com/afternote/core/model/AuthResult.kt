@@ -21,18 +21,15 @@ data class AccountRegistration(
 sealed class Session {
     abstract val accessToken: String
     abstract val refreshToken: String
-    abstract val userId: Long
 
     data class DefaultSession(
         override val accessToken: String,
         override val refreshToken: String,
-        override val userId: Long,
     ) : Session()
 
     data class SocialSession(
         override val accessToken: String,
         override val refreshToken: String,
-        override val userId: Long,
         val isNewUser: Boolean?,
     ) : Session()
 }

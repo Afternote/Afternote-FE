@@ -10,7 +10,6 @@ interface AuthRepository {
     suspend fun saveSession(
         accessToken: String,
         refreshToken: String,
-        userId: Long,
     ): Result<Unit>
 
     suspend fun updateTokens(
@@ -23,8 +22,6 @@ interface AuthRepository {
     suspend fun getAccessToken(): Result<String?>
 
     suspend fun getRefreshToken(): Result<String?>
-
-    suspend fun getUserId(): Result<Long?>
 
     suspend fun defaultLogin(
         email: String,

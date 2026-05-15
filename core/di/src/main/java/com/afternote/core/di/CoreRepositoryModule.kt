@@ -1,11 +1,9 @@
 package com.afternote.core.di
 
-import com.afternote.core.data.repoimpl.HomeRepositoryImpl
 import com.afternote.core.data.repoimpl.PhotoUploadRepositoryImpl
 import com.afternote.core.data.repoimpl.UserRepositoryImpl
 import com.afternote.core.data.repoimpl.account.AccountRepositoryImpl
 import com.afternote.core.data.repoimpl.auth.AuthRepositoryImpl
-import com.afternote.core.domain.repository.HomeRepository
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.account.AccountRepository
@@ -19,10 +17,6 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 @Module
 interface CoreRepositoryModule {
-    @Binds
-    @Singleton
-    fun bindHomeRepository(impl: HomeRepositoryImpl): HomeRepository
-
     @Binds
     @Singleton
     fun bindAccountRepository(impl: AccountRepositoryImpl): AccountRepository

@@ -26,10 +26,10 @@ class UserRepositoryImpl
     constructor(
         private val api: UserApiService,
     ) : UserRepository {
-        override suspend fun getMyProfile(userId: Long): Result<UserProfileModel> =
+        override suspend fun getMyProfile(): Result<UserProfileModel> =
             runCatching {
-                Log.d(TAG, "getMyProfile: userId=$userId")
-                val response = api.getMyProfile(userId = userId)
+                Log.d(TAG, "getMyProfile: request")
+                val response = api.getMyProfile()
                 val data = response.requireData()
                 Log.d(
                     TAG,
@@ -44,16 +44,14 @@ class UserRepositoryImpl
             }
 
         override suspend fun updateMyProfile(
-            userId: Long,
             name: String?,
             phone: String?,
             profileImageUrl: String?,
         ): Result<UserProfileModel> =
             runCatching {
-                Log.d(TAG, "updateMyProfile: userId=$userId, name=$name, phone=$phone")
+                Log.d(TAG, "updateMyProfile: name=$name, phone=$phone")
                 val response =
                     api.updateMyProfile(
-                        userId = userId,
                         body =
                             UserUpdateProfileRequest(
                                 name = name,
@@ -71,19 +69,17 @@ class UserRepositoryImpl
                 val response = api.withdrawAccount()
                 response.requireStatus()
                 Log.d(TAG, "withdrawAccount: success")
-                Unit
             }
 
-        override suspend fun getMyPushSettings(userId: Long): Result<PushSettings> =
+        override suspend fun getMyPushSettings(): Result<PushSettings> =
             runCatching {
-                Log.d(TAG, "getMyPushSettings: userId=$userId")
-                val response = api.getMyPushSettings(userId = userId)
+                Log.d(TAG, "getMyPushSettings: request")
+                val response = api.getMyPushSettings()
                 Log.d(TAG, "getMyPushSettings: response=$response")
                 UserMapper.toPushSettings(response.requireData())
             }
 
         override suspend fun updateMyPushSettings(
-            userId: Long,
             timeLetter: Boolean?,
             mindRecord: Boolean?,
             afterNote: Boolean?,
@@ -91,11 +87,10 @@ class UserRepositoryImpl
             runCatching {
                 Log.d(
                     TAG,
-                    "updateMyPushSettings: userId=$userId, timeLetter=$timeLetter, mindRecord=$mindRecord, afterNote=$afterNote",
+                    "updateMyPushSettings: timeLetter=$timeLetter, mindRecord=$mindRecord, afterNote=$afterNote",
                 )
                 val response =
                     api.updateMyPushSettings(
-                        userId = userId,
                         body =
                             UserUpdatePushSettingRequest(
                                 timeLetter = timeLetter,
@@ -107,10 +102,10 @@ class UserRepositoryImpl
                 UserMapper.toPushSettings(response.requireData())
             }
 
-        override suspend fun getReceivers(userId: Long): Result<List<ReceiverListItem>> =
+        override suspend fun getReceivers(): Result<List<ReceiverListItem>> =
             runCatching {
-                Log.d(TAG, "getReceivers: userId=$userId")
-                val response = api.getReceivers(userId = userId)
+                Log.d(TAG, "getReceivers: request")
+                val response = api.getReceivers()
                 Log.d(TAG, "getReceivers: response=$response")
                 val list = response.requireData()
                 list.map(UserMapper::toReceiverListItem)
@@ -181,7 +176,6 @@ class UserRepositoryImpl
                         message = response.message ?: "Status 200 이상 299 이하가 아님",
                     )
                 }
-                Unit
             }
 
         override suspend fun getReceiverDailyQuestions(
