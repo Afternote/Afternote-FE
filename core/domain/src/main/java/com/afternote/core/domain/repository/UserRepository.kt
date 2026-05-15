@@ -11,10 +11,9 @@ import com.afternote.core.model.user.UserProfileModel
 
 // TODO:검토
 interface UserRepository {
-    suspend fun getMyProfile(userId: Long): Result<UserProfileModel>
+    suspend fun getMyProfile(): Result<UserProfileModel>
 
     suspend fun updateMyProfile(
-        userId: Long,
         name: String?,
         phone: String?,
         profileImageUrl: String?,
@@ -26,17 +25,16 @@ interface UserRepository {
     suspend fun withdrawAccount(): Result<Unit>
 
     /** GET /users/push-settings — 푸시 알림 설정 조회. */
-    suspend fun getMyPushSettings(userId: Long): Result<PushSettings>
+    suspend fun getMyPushSettings(): Result<PushSettings>
 
     suspend fun updateMyPushSettings(
-        userId: Long,
         timeLetter: Boolean?,
         mindRecord: Boolean?,
         afterNote: Boolean?,
     ): Result<PushSettings>
 
     /** GET /users/receivers — 수신인 목록 조회. 로그인한 사용자가 등록한 수신인 목록을 조회합니다. */
-    suspend fun getReceivers(userId: Long): Result<List<ReceiverListItem>>
+    suspend fun getReceivers(): Result<List<ReceiverListItem>>
 
     suspend fun registerReceiver(
         name: String,

@@ -17,40 +17,40 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface AfternoteApiService {
-    @GET("api/v1/afternotes")
+    @GET("afternotes")
     suspend fun getAfternotes(
         @Query("category") category: String?,
         @Query("page") pageNumber: Int?,
         @Query("size") size: Int?,
     ): BaseResponse<AfternoteListResponse>
 
-    @GET("api/v1/afternotes/{afternoteId}")
+    @GET("afternotes/{afternoteId}")
     suspend fun getAfternoteDetail(
         @Path("afternoteId") afternoteId: Long,
     ): BaseResponse<AfternoteDetailResponse>
 
-    @POST("api/v1/afternotes")
+    @POST("afternotes")
     suspend fun createAfternoteSocial(
         @Body request: AfternoteCreateSocialRequest,
     ): BaseResponse<AfternoteIdResponse>
 
-    @POST("api/v1/afternotes")
+    @POST("afternotes")
     suspend fun createAfternoteGallery(
         @Body request: AfternoteCreateGalleryRequest,
     ): BaseResponse<AfternoteIdResponse>
 
-    @POST("api/v1/afternotes")
+    @POST("afternotes")
     suspend fun createAfternotePlaylist(
         @Body request: AfternoteCreatePlaylistRequest,
     ): BaseResponse<AfternoteIdResponse>
 
-    @PATCH("api/v1/afternotes/{afternoteId}")
+    @PATCH("afternotes/{afternoteId}")
     suspend fun updateAfternote(
         @Path("afternoteId") afternoteId: Long,
         @Body request: AfternoteUpdateRequest,
     ): BaseResponse<AfternoteIdResponse>
 
-    @DELETE("api/v1/afternotes/{afternoteId}")
+    @DELETE("afternotes/{afternoteId}")
     suspend fun deleteAfternote(
         @Path("afternoteId") afternoteId: Long,
     ): BaseResponse<Unit>

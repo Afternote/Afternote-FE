@@ -2,7 +2,7 @@ package com.afternote.afternote_fe.screen
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.domain.repository.HomeRepository
+import com.afternote.afternote_fe.usecase.GetHomeSummaryUseCase
 import com.afternote.core.model.HomeSummary
 import com.afternote.core.model.MindRecordCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,7 +17,7 @@ import javax.inject.Inject
 class HomeTabViewModel
     @Inject
     constructor(
-        private val homeRepository: HomeRepository,
+        private val getHomeSummary: GetHomeSummaryUseCase,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<HomeTabUiState>(HomeTabUiState.Loading)
         val uiState: StateFlow<HomeTabUiState> = _uiState.asStateFlow()
@@ -50,8 +50,7 @@ class HomeTabViewModel
                         _uiState.value = HomeTabUiState.Loading
                     }
 
-                    homeRepository
-                        .getHomeSummary()
+                    getHomeSummary()
                         .onSuccess { summary ->
                             _uiState.value = summary.toHomeTabSuccess()
                         }.onFailure { error ->

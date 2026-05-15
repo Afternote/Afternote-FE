@@ -3,7 +3,7 @@ package com.afternote.feature.afternote.presentation.author.detail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.domain.repository.HomeRepository
+import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.repository.AfternoteRepository
 import com.afternote.feature.afternote.presentation.R
@@ -25,9 +25,8 @@ import javax.inject.Inject
  *
  * - 상세 조회: GET /api/afternotes/{id}
  * - 삭제: DELETE /api/afternotes/{id}
- * - 작성자 표시명: [HomeRepository.getHomeSummary] (네비게이션 인자로 전달하지 않음)
+ * - 작성자 표시명: [UserRepository.getMyProfile] (네비게이션 인자로 전달하지 않음)
  * - 상세 ID: [SavedStateHandle]의 `itemId` (타입 안전 상세 라우트의 직렬화 인자명과 동일).
- *   초기 로드는 [init]에서 한 번만 수행한다 (Compose `LaunchedEffect`로의 위임은 하지 않는다).
  *
  * 내부 [InternalState] (flat) 로 조회·작성자·삭제 진행 단계를 관리하고, public [uiState] 는
  * [AfternoteDetailUiState] 로 매핑해 Loading/Success/Error 3분기로 노출한다.
@@ -44,7 +43,7 @@ class AfternoteDetailViewModel
     constructor(
         savedStateHandle: SavedStateHandle,
         private val afternoteRepository: AfternoteRepository,
-        private val homeRepository: HomeRepository,
+        private val userRepository: UserRepository,
     ) : ViewModel() {
         private val afternoteIdFromNav: Long? =
             savedStateHandle.get<String>(NAV_ARG_ITEM_ID)?.toLongOrNull()
@@ -64,10 +63,10 @@ class AfternoteDetailViewModel
 
         init {
             viewModelScope.launch {
-                homeRepository
-                    .getHomeSummary()
-                    .onSuccess { summary ->
-                        internalState.update { it.copy(authorDisplayName = summary.userName) }
+                userRepository
+                    .getMyProfile()
+                    .onSuccess { profile ->
+                        internalState.update { it.copy(authorDisplayName = profile.name) }
                     }
             }
             val id = afternoteIdFromNav

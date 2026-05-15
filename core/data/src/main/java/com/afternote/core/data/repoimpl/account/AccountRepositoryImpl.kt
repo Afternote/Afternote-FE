@@ -66,12 +66,12 @@ class AccountRepositoryImpl
             newPassword: String,
         ): Result<Unit> =
             runCatching {
-                val response =
-                    accountApiService.passwordChange(
+                accountApiService
+                    .passwordChange(
                         PasswordChangeRequest(
                             currentPassword,
                             newPassword,
                         ),
-                    )
+                    ).requireStatus()
             }
     }

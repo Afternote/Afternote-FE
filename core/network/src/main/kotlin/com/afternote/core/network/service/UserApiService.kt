@@ -24,13 +24,10 @@ import retrofit2.http.Query
 // TODO: 리팩토링
 interface UserApiService {
     @GET("users/me")
-    suspend fun getMyProfile(
-        @Query("userId") userId: Long,
-    ): BaseResponse<UserResponse>
+    suspend fun getMyProfile(): BaseResponse<UserResponse>
 
     @PATCH("users/me")
     suspend fun updateMyProfile(
-        @Query("userId") userId: Long,
         @Body body: UserUpdateProfileRequest,
     ): BaseResponse<UserResponse>
 
@@ -46,17 +43,13 @@ interface UserApiService {
      * 푸시 알림 설정 조회.
      * GET /users/push-settings — 로그인한 사용자의 푸시 알림 수신 설정을 불러옵니다.
      *
-     * @param userId 사용자 ID (query, required)
      * @return data: timeLetter, mindRecord, afterNote
      */
     @GET("users/push-settings")
-    suspend fun getMyPushSettings(
-        @Query("userId") userId: Long,
-    ): BaseResponse<UserPushSettingResponse>
+    suspend fun getMyPushSettings(): BaseResponse<UserPushSettingResponse>
 
     @PATCH("users/push-settings")
     suspend fun updateMyPushSettings(
-        @Query("userId") userId: Long,
         @Body body: UserUpdatePushSettingRequest,
     ): BaseResponse<UserPushSettingResponse>
 
@@ -64,13 +57,10 @@ interface UserApiService {
      * 수신인 목록 조회.
      * GET /users/receivers — 로그인한 사용자가 등록한 수신인 목록을 조회합니다.
      *
-     * @param userId 사용자 ID (query, required)
      * @return data: array of { receiverId, name, relation }
      */
     @GET("users/receivers")
-    suspend fun getReceivers(
-        @Query("userId") userId: Long,
-    ): BaseResponse<List<ReceiverItemDto>>
+    suspend fun getReceivers(): BaseResponse<List<ReceiverItemDto>>
 
     @POST("users/receivers")
     suspend fun registerReceiver(
@@ -81,7 +71,6 @@ interface UserApiService {
      * 수신인 상세 조회.
      * GET /users/receivers/{receiverId} — 특정 수신인의 상세 정보를 조회합니다.
      *
-     * @param userId 사용자 ID (query, required)
      * @param receiverId 수신인 식별자 (path, required)
      * @return data: receiverId, name, relation, phone, email, dailyQuestionCount, timeLetterCount, afterNoteCount
      */

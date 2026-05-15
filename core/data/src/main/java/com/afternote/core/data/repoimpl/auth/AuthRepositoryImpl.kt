@@ -28,17 +28,13 @@ class AuthRepositoryImpl
 
         override suspend fun getRefreshToken() = runCatching { tokenDataSource.getRefreshToken() }
 
-        override suspend fun getUserId() = runCatching { tokenDataSource.getUserId() }
-
         override suspend fun saveSession(
             accessToken: String,
             refreshToken: String,
-            userId: Long,
         ) = runCatching {
             tokenDataSource.saveTokens(
                 accessToken = accessToken,
                 refreshToken = refreshToken,
-                userId = userId,
             )
         }
 
