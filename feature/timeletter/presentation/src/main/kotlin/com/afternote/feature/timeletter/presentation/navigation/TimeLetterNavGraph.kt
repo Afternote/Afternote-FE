@@ -3,6 +3,7 @@ package com.afternote.feature.timeletter.presentation.navigation
 import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
@@ -15,7 +16,10 @@ import com.afternote.feature.timeletter.presentation.screen.sender.TimeletterScr
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteEvent
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteViewModel
 
-fun NavGraphBuilder.timeLetterNavGraph(actions: TimeLetterNavActions) {
+fun NavGraphBuilder.timeLetterNavGraph(
+    navController: NavController,
+    actions: TimeLetterNavActions,
+) {
     navigation<Route.TimeLetter>(startDestination = TimeLetterRoute.TimeLetterHomeRoute) {
         composable<TimeLetterRoute.TimeLetterHomeRoute> {
             TimeletterScreen(
@@ -51,7 +55,12 @@ fun NavGraphBuilder.timeLetterNavGraph(actions: TimeLetterNavActions) {
         composable<TimeLetterRoute.TimeLetterRecipientRoute> {
             RecipientListScreen(
                 onBackClick = actions::onRecipientBack,
-                onConfirmClick = { actions.onRecipientBack() },
+                onConfirmClick = { recipients ->
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("recipient_ids", recipients.map { it.receiverId }.toLongArray())
+                    actions.onRecipientBack()
+                },
             )
         }
     }

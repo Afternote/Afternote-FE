@@ -104,7 +104,10 @@ fun AppNavigation(
                 actions = settingNavActions,
             )
             mindRecordNavGraph(actions = mindRecordNavActions)
-            timeLetterNavGraph(actions = timeLetterNavActions)
+            timeLetterNavGraph(
+                navController = appState.navController,
+                actions = timeLetterNavActions,
+            )
             afternoteNavGraph(
                 graphScopedParentEntry = {
                     appState.navController.getBackStackEntry<Route.Afternote>()

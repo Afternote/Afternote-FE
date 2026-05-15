@@ -1,5 +1,6 @@
 package com.afternote.feature.timeletter.presentation.viewmodel
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.data.cache.ReceiverCacheStore
@@ -10,6 +11,9 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -21,6 +25,7 @@ class TimeLetterWriteViewModel
     constructor(
         private val timeLetterRepository: TimeLetterRepository,
         private val receiverCacheStore: ReceiverCacheStore,
+        private val savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(TimeLetterWriteUiState())
         val uiState: StateFlow<TimeLetterWriteUiState> = _uiState.asStateFlow()
@@ -31,6 +36,14 @@ class TimeLetterWriteViewModel
         init {
             viewModelScope.launch { receiverCacheStore.ensureLoaded() }
             loadDraftCount()
+            observeRecipientResult()
+        }
+
+        private fun observeRecipientResult() {
+            savedStateHandle.getStateFlow<LongArray?>("recipient_ids", null)
+                .filterNotNull()
+                .onEach { ids -> setRecipients(ids.toList()) }
+                .launchIn(viewModelScope)
         }
 
         fun setRecipients(ids: List<Long>) {
