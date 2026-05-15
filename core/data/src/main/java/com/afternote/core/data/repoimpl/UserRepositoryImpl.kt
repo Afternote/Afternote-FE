@@ -2,6 +2,7 @@ package com.afternote.core.data.repoimpl
 
 import android.util.Log
 import com.afternote.core.data.mapper.user.UserMapper
+import com.afternote.core.datastore.UserProfileDataSource
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.ReceiverDailyQuestionsResult
 import com.afternote.core.model.ReceiverMindRecordsResult
@@ -25,6 +26,7 @@ class UserRepositoryImpl
     @Inject
     constructor(
         private val api: UserApiService,
+        private val profileCache: UserProfileDataSource,
     ) : UserRepository {
         override suspend fun getMyProfile(): Result<UserProfileModel> =
             runCatching {
@@ -40,8 +42,15 @@ class UserRepositoryImpl
                     TAG,
                     "getMyProfile: mapped profile name='${profile.name}' email='${profile.email}'",
                 )
+                profileCache.saveUserName(profile.name)
                 profile
             }
+
+        override suspend fun getCachedUserName(): String? = profileCache.getCachedUserName()
+
+        override suspend fun clearCachedProfile() {
+            profileCache.clear()
+        }
 
         override suspend fun updateMyProfile(
             name: String?,
@@ -60,7 +69,9 @@ class UserRepositoryImpl
                             ),
                     )
                 Log.d(TAG, "updateMyProfile: response=$response")
-                UserMapper.toUserProfile(response.requireData())
+                val profile = UserMapper.toUserProfile(response.requireData())
+                profileCache.saveUserName(profile.name)
+                profile
             }
 
         override suspend fun withdrawAccount(): Result<Unit> =
@@ -68,6 +79,7 @@ class UserRepositoryImpl
                 Log.d(TAG, "withdrawAccount: request")
                 val response = api.withdrawAccount()
                 response.requireStatus()
+                profileCache.clear()
                 Log.d(TAG, "withdrawAccount: success")
             }
 
