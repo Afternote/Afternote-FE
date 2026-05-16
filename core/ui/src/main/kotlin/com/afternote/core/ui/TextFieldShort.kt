@@ -154,6 +154,7 @@ sealed interface TextFieldType {
     data class Variant7(
         val text: String = "인증번호 받기",
         val onClick: () -> Unit,
+        val enabled: Boolean = true,
     ) : TextFieldType
 
     // Variant8: 하이픈 + 뒷자리 첫 숫자(실제 [BasicTextField]) + 마스킹 점.
@@ -233,9 +234,19 @@ private fun SearchIcon() {
 private fun Variant7Suffix(type: TextFieldType.Variant7) {
     Text(
         text = type.text,
-        modifier = Modifier.clickable(onClick = type.onClick),
+        modifier =
+            if (type.enabled) {
+                Modifier.clickable(onClick = type.onClick)
+            } else {
+                Modifier
+            },
         style = AfternoteDesign.typography.captionLargeR,
-        color = AfternoteDesign.colors.gray7,
+        color =
+            if (type.enabled) {
+                AfternoteDesign.colors.gray7
+            } else {
+                AfternoteDesign.colors.gray4
+            },
     )
 }
 
