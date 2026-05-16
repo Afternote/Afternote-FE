@@ -6,6 +6,7 @@ import com.afternote.core.datastore.UserProfileDataSource
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.ReceiverDailyQuestionsResult
 import com.afternote.core.model.ReceiverMindRecordsResult
+import com.afternote.core.model.SocialProvider
 import com.afternote.core.model.setting.ConnectedAccounts
 import com.afternote.core.model.setting.DeliveryCondition
 import com.afternote.core.model.setting.DeliveryConditionType
@@ -265,21 +266,21 @@ class UserRepositoryImpl
             }
 
         override suspend fun connectAccount(
-            provider: String,
+            provider: SocialProvider,
             accessToken: String,
         ): Result<ConnectedAccounts> =
             runCatching {
                 val response =
                     api.connectAccount(
-                        provider = provider,
+                        provider = provider.toPath(),
                         body = ConnectAccountRequestDto(accessToken = accessToken),
                     )
                 UserMapper.toConnectedAccounts(response.requireData())
             }
 
-        override suspend fun disconnectAccount(provider: String): Result<ConnectedAccounts> =
+        override suspend fun disconnectAccount(provider: SocialProvider): Result<ConnectedAccounts> =
             runCatching {
-                val response = api.disconnectAccount(provider = provider)
+                val response = api.disconnectAccount(provider = provider.toPath())
                 UserMapper.toConnectedAccounts(response.requireData())
             }
 
