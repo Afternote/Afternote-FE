@@ -10,6 +10,8 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.domain.repository.account.AccountRepository
+import com.afternote.core.domain.usecase.auth.LoginType
+import com.afternote.core.domain.usecase.auth.LoginUseCase
 import com.afternote.feature.onboarding.presentation.terms.TermsState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -32,6 +34,7 @@ class SignUpViewModel
     @Inject
     constructor(
         private val accountRepository: AccountRepository,
+        private val loginUseCase: LoginUseCase,
     ) : ViewModel() {
         companion object {
             /** 주민등록번호 앞자리(생년월일) 자릿수 */
@@ -216,14 +219,26 @@ class SignUpViewModel
                 }
 
                 isLoading = true
+                val email = emailState.text.toString()
+                val password = signUpPasswordState.text.toString()
                 accountRepository
                     .signUp(
-                        email = emailState.text.toString(),
-                        password = signUpPasswordState.text.toString(),
+                        email = email,
+                        password = password,
                         name = name,
                         profileUrl = _profileImageUri.value?.toString(),
                     ).onSuccess {
-                        eventChannel.send(SignUpEvent.SignUpSuccess)
+                        // 회원가입 API 는 토큰을 내려주지 않으므로 같은 자격증명으로 자동 로그인.
+                        loginUseCase(LoginType.Email(email = email, password = password))
+                            .onSuccess {
+                                eventChannel.send(SignUpEvent.SignUpSuccess)
+                            }.onFailure { error ->
+                                eventChannel.send(
+                                    SignUpEvent.ShowError(
+                                        error.message ?: "자동 로그인에 실패했어요. 로그인 화면에서 다시 시도해주세요.",
+                                    ),
+                                )
+                            }
                     }.onFailure { error ->
                         eventChannel.send(
                             SignUpEvent.ShowError(error.message ?: "회원가입 실패"),
