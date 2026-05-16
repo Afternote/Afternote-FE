@@ -34,6 +34,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.theme.AfternoteDesign
+import androidx.compose.ui.graphics.Color
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.core.ui.R as CoreR
@@ -51,6 +52,7 @@ fun ReceiverRegisterScreen(
 
     Scaffold(
         modifier = modifier,
+        containerColor = Color.Transparent,
         topBar = {
             DetailTopBar(
                 "수신자 등록",

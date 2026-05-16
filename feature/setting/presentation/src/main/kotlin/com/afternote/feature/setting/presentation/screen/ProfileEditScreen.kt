@@ -33,6 +33,7 @@ import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteDesign
+import androidx.compose.ui.graphics.Color
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditEvent
@@ -65,6 +66,7 @@ fun ProfileEditScreen(
             )
         },
         modifier = modifier,
+        containerColor = Color.Transparent,
     ) { innerPadding ->
         when (val state = uiState) {
             is ProfileEditUiState.Loading -> {
@@ -170,7 +172,7 @@ private fun ProfileEditForm(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             ) {
-                Text(text = "연락처")
+                Text(text = "연락처", style = AfternoteDesign.typography.bodySmallR)
                 Spacer(modifier = Modifier.padding(top = 8.dp))
                 AfternoteTextField(
                     state = phoneState,
@@ -185,7 +187,7 @@ private fun ProfileEditForm(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             ) {
-                Text(text = "이메일")
+                Text(text = "이메일", style = AfternoteDesign.typography.bodySmallR)
                 Spacer(modifier = Modifier.padding(top = 8.dp))
                 AfternoteTextField(
                     state = emailState,

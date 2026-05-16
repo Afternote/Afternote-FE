@@ -25,6 +25,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import androidx.compose.ui.graphics.Color
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.RadioGroup
@@ -98,6 +99,7 @@ private fun DeliveryConditionContent(
                 onBackClick = onBack,
             )
         },
+        containerColor = Color.Transparent,
     ) { innerPadding ->
         Column(
             modifier =

@@ -32,6 +32,7 @@ import com.afternote.core.ui.popup.Popup
 import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.Red
+import androidx.compose.ui.graphics.Color
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -78,6 +79,7 @@ fun WithdrawConfirmScreen(
             )
         },
         modifier = modifier,
+        containerColor = Color.Transparent,
     ) { innerPadding ->
         Column(
             modifier =

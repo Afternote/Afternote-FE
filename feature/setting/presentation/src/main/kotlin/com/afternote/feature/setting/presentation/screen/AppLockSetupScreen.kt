@@ -16,6 +16,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.graphics.Color
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.component.InsertPasswordContent
 import com.afternote.feature.setting.presentation.component.PinSetupStep
@@ -75,6 +76,7 @@ private fun AppLockSetupContent(
             )
         },
         modifier = modifier,
+        containerColor = Color.Transparent,
     ) { innerPadding ->
         Column(
             modifier =

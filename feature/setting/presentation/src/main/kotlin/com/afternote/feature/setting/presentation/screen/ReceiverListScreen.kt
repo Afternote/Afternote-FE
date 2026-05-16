@@ -35,6 +35,7 @@ import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteDesign
+import androidx.compose.ui.graphics.Color
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.component.ReceiverListItem
 import kotlinx.coroutines.launch
@@ -84,6 +85,7 @@ fun ReceiverListScreen(
 
     Scaffold(
         modifier = modifier,
+        containerColor = Color.Transparent,
         topBar = {
             DetailTopBar(
                 title = "수신자 목록",
