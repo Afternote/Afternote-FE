@@ -34,6 +34,9 @@ sealed interface SettingRoute {
     data object PasskeyRoute : SettingRoute
 
     @Serializable
+    data object PasskeyMakingRoute : SettingRoute
+
+    @Serializable
     data object AppLockSetupRoute : SettingRoute
 
     @Serializable

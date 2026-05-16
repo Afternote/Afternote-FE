@@ -15,6 +15,7 @@ import com.afternote.feature.setting.presentation.screen.AppLockSetupScreen
 import com.afternote.feature.setting.presentation.screen.ConnectedAccountsScreen
 import com.afternote.feature.setting.presentation.screen.DeliveryConditionScreen
 import com.afternote.feature.setting.presentation.screen.NoticeListScreen
+import com.afternote.feature.setting.presentation.screen.PassKeyMakingScreen
 import com.afternote.feature.setting.presentation.screen.PassKeyScreen
 import com.afternote.feature.setting.presentation.screen.ProfileEditScreen
 import com.afternote.feature.setting.presentation.screen.PushNotificationScreen
@@ -121,6 +122,13 @@ fun NavGraphBuilder.settingNavGraph(
         composable<SettingRoute.PasskeyRoute> {
             PassKeyScreen(
                 onBackClick = actions::onPasskeyBack,
+                onRegisterClick = actions::onNavigateToPasskeyMaking,
+            )
+        }
+
+        composable<SettingRoute.PasskeyMakingRoute> {
+            PassKeyMakingScreen(
+                onBackClick = actions::onPasskeyMakingBack,
             )
         }
 

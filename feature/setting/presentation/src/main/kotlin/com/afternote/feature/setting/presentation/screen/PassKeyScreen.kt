@@ -22,12 +22,14 @@ import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteDesign
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 
 @Composable
 fun PassKeyScreen(
     onBackClick: () -> Unit,
+    onRegisterClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -52,6 +54,8 @@ fun PassKeyScreen(
                     text = stringResource(id = R.string.passkey_management_title),
                     style = AfternoteDesign.typography.bodyLargeB,
                 )
+
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = stringResource(id = R.string.passkey_management_description),
                     style = AfternoteDesign.typography.bodySmallR,
@@ -68,10 +72,10 @@ fun PassKeyScreen(
                     Image(
                         painter = painterResource(R.drawable.ic_passkey_main),
                         contentDescription = "패스키 메인 로고",
-                        modifier =
-                            Modifier
-                                .width(600.dp)
-                                .height(450.dp),
+                        contentScale = ContentScale.FillWidth,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(260.dp),
                     )
                 }
             }
@@ -81,15 +85,15 @@ fun PassKeyScreen(
                         .align(Alignment.BottomCenter)
                         .padding(bottom = 63.dp),
                 text = stringResource(id = R.string.passkey_register),
-                onClick = {},
+                onClick = onRegisterClick,
                 type = AfternoteButtonType.Default,
             )
         }
     }
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 private fun PassKeyScreenPrev() {
-    PassKeyScreen(onBackClick = {})
+    PassKeyScreen(onBackClick = {}, onRegisterClick = {})
 }

@@ -38,6 +38,7 @@ dependencies {
     implementation(libs.androidx.compose.runtime)
     implementation(libs.kakao.sdk.auth)
     implementation(libs.kakao.sdk.user)
+    implementation(libs.androidx.biometric)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)

@@ -98,7 +98,7 @@ private fun AppLockSetupContent(
     }
 }
 
-@Preview(name = "비밀번호 입력")
+@Preview(name = "비밀번호 입력", showBackground = true)
 @Composable
 private fun PreviewEnterNew() {
     AppLockSetupContent(
@@ -111,7 +111,7 @@ private fun PreviewEnterNew() {
     )
 }
 
-@Preview(name = "비밀번호 재입력")
+@Preview(name = "비밀번호 재입력", showBackground = true)
 @Composable
 private fun PreviewConfirmNew() {
     AppLockSetupContent(
@@ -124,7 +124,7 @@ private fun PreviewConfirmNew() {
     )
 }
 
-@Preview(name = "변경할 비밀번호 입력")
+@Preview(name = "변경할 비밀번호 입력", showBackground = true)
 @Composable
 private fun PreviewEnterCurrent() {
     AppLockSetupContent(
