@@ -14,6 +14,7 @@ import androidx.lifecycle.viewModelScope
 import com.afternote.core.domain.repository.account.AccountRepository
 import com.afternote.core.domain.usecase.auth.LoginType
 import com.afternote.core.domain.usecase.auth.LoginUseCase
+import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel.Companion.RESEND_COOLDOWN_SECONDS
 import com.afternote.feature.onboarding.presentation.terms.TermsState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -167,7 +168,7 @@ class SignUpViewModel
             }
         }
 
-        /** 인증번호 발송 성공 직후 호출. 60초 카운트다운을 시작해 재전송 연타를 막는다. */
+        /** 인증번호 발송 성공 직후 호출. [RESEND_COOLDOWN_SECONDS] 동안 카운트다운하며 재전송 연타를 막는다. */
         private fun startResendCooldown() {
             cooldownJob?.cancel()
             cooldownJob =
