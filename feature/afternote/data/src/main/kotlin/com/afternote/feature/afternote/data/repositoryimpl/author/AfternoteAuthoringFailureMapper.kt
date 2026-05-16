@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.data.repositoryimpl
+package com.afternote.feature.afternote.data.repositoryimpl.author
 
 import com.afternote.core.network.model.ApiException
 import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationException

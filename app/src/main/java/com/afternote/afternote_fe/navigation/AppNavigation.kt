@@ -20,10 +20,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.afternote.afternote_fe.screen.HomeTabScreen
 import com.afternote.afternote_fe.screen.HomeTabViewModel
+import com.afternote.afternote_fe.screen.receiver.ReceiverHomeEntry
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.author.navigation.afternoteNavGraph
+import com.afternote.feature.afternote.presentation.receiver.navigation.receiverNavGraph
 import com.afternote.feature.mindrecord.presentation.navigation.mindRecordNavGraph
 import com.afternote.feature.onboarding.presentation.navigation.onboardingNavGraph
 import com.afternote.feature.setting.presentation.navigation.settingNavGraph
@@ -55,6 +57,8 @@ fun AppNavigation(
                 snackbarHostState.showSnackbar(message)
             }
         }
+    val receiverNavActions = rememberReceiverNavActions(appState)
+    val receiverHomeActions = rememberReceiverHomeActions(appState)
 
     Scaffold(
         modifier = modifier,
@@ -113,6 +117,10 @@ fun AppNavigation(
                     appState.navController.getBackStackEntry<Route.Afternote>()
                 },
                 actions = afternoteNavActions,
+            )
+            receiverNavGraph(
+                homeContent = { ReceiverHomeEntry(actions = receiverHomeActions) },
+                actions = receiverNavActions,
             )
         }
     }

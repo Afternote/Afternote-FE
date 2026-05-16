@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.domain.repository
+package com.afternote.feature.afternote.domain.repository.receiver
 
 import androidx.paging.PagingData
 import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItemDto

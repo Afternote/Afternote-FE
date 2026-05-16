@@ -38,7 +38,7 @@ fun AfternoteHomeScreen(
     onListItemClick: (id: String, type: AfternoteServiceType) -> Unit,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
-    onFabClick: () -> Unit = {},
+    onFabClick: (() -> Unit)? = null,
 ) {
     val refreshState = items.loadState.refresh
     val isInitialLoading = refreshState is LoadState.Loading && items.itemCount == 0
@@ -55,7 +55,11 @@ fun AfternoteHomeScreen(
                 DetailTopBar(title = "애프터노트")
             }
         },
-        floatingActionButton = { PenFloatingActionButton(onClick = onFabClick) },
+        floatingActionButton = {
+            if (onFabClick != null) {
+                PenFloatingActionButton(onClick = onFabClick)
+            }
+        },
     ) { paddingValues ->
         PullToRefreshBox(
             isRefreshing = isRefreshing,

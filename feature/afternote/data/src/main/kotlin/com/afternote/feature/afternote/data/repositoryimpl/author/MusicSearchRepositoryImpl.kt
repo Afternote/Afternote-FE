@@ -1,9 +1,9 @@
-package com.afternote.feature.afternote.data.repositoryimpl
+package com.afternote.feature.afternote.data.repositoryimpl.author
 
 import com.afternote.feature.afternote.data.dto.MusicTrack
 import com.afternote.feature.afternote.data.service.MusicApiService
 import com.afternote.feature.afternote.domain.model.author.playlist.SearchedSong
-import com.afternote.feature.afternote.domain.repository.MusicSearchRepository
+import com.afternote.feature.afternote.domain.repository.author.MusicSearchRepository
 import javax.inject.Inject
 
 /**

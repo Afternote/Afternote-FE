@@ -8,6 +8,8 @@ local.properties
 
 # Claude Code (local only)
 .claude/
+claude.md
+CLAUDE.md
 
 # Log/OS Files
 *.log
