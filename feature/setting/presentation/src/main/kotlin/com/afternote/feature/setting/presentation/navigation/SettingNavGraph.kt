@@ -114,6 +114,7 @@ fun NavGraphBuilder.settingNavGraph(
         composable<SettingRoute.AfterDeliveryRoute> {
             DeliveryConditionScreen(
                 onBack = actions::onAfterDeliveryBack,
+                onSaveSuccess = actions::onAfterDeliveryBack,
             )
         }
 
