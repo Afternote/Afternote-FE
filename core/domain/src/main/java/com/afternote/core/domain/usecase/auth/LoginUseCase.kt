@@ -51,7 +51,6 @@ class LoginUseCase
             return authRepository.saveSession(
                 accessToken = session.accessToken,
                 refreshToken = session.refreshToken,
-                userId = session.userId,
             )
         }
     }

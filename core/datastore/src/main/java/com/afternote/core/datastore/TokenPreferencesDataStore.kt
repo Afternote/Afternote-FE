@@ -6,7 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 
 /**
- * 액세스·리프레시 토큰 및 userId 저장용 Preferences DataStore.
+ * 액세스·리프레시 토큰 저장용 Preferences DataStore.
  * [TokenDataSource]와 [com.afternote.core.datastore.di.TokenDataStoreModule]에서 동일 인스턴스를 참조합니다.
  */
 internal val Context.tokenPreferencesDataStore: DataStore<Preferences> by preferencesDataStore(

@@ -22,7 +22,6 @@ object AuthMapper {
         Session.DefaultSession(
             accessToken = dto.accessToken,
             refreshToken = dto.refreshToken,
-            userId = dto.userId,
         )
 
     fun toSocialLoginResult(dto: LoginData.SocialLoginData): Session.SocialSession =
@@ -30,7 +29,6 @@ object AuthMapper {
             accessToken = dto.accessToken,
             refreshToken = dto.refreshToken,
             isNewUser = dto.isNewUser,
-            userId = dto.userId,
         )
 
     fun toRotateTokenResult(dto: ReissueData): TokenBundle = TokenBundle(accessToken = dto.accessToken, refreshToken = dto.refreshToken)
