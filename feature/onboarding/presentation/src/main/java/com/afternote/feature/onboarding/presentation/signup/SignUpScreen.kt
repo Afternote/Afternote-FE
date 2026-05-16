@@ -8,8 +8,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -30,6 +32,7 @@ fun SignUpScreen(
     isVerificationSent: Boolean,
     isSendingCode: Boolean,
     isNextEnabled: Boolean,
+    snackbarHostState: SnackbarHostState,
     onRequestVerification: () -> Unit,
     onNextClick: () -> Unit,
     onBackClick: () -> Unit,
@@ -50,6 +53,7 @@ fun SignUpScreen(
         onNextClick = onNextClick,
         modifier = modifier,
         isNextEnabled = isNextEnabled,
+        snackbarHostState = snackbarHostState,
         content = {
             Column(
                 modifier =
@@ -107,6 +111,7 @@ private fun SignUpScreenPreview() {
             isVerificationSent = true,
             isSendingCode = false,
             isNextEnabled = false,
+            snackbarHostState = remember { SnackbarHostState() },
             onRequestVerification = {},
             onNextClick = {},
             onBackClick = {},
