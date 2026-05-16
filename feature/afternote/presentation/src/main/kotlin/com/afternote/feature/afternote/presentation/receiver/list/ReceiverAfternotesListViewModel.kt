@@ -2,7 +2,7 @@ package com.afternote.feature.afternote.presentation.receiver.list
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.feature.afternote.domain.repository.ReceiverRepository
+import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

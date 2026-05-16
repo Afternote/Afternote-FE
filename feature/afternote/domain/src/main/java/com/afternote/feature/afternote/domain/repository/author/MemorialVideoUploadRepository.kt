@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.domain.repository
+package com.afternote.feature.afternote.domain.repository.author
 
 /**
  * Memorial (playlist) video upload via POST /files/presigned-url and S3 PUT.

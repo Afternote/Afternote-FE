@@ -1,7 +1,7 @@
-package com.afternote.feature.afternote.data.repositoryimpl.receiver
+package com.afternote.feature.afternote.data.repositoryimpl.author
 
 import com.afternote.feature.afternote.domain.model.author.AuthorReceiverEntry
-import com.afternote.feature.afternote.domain.repository.AuthorReceiverRepository
+import com.afternote.feature.afternote.domain.repository.author.AuthorReceiverRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

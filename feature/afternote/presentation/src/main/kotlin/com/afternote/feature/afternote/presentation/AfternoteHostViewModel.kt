@@ -21,7 +21,7 @@ import javax.inject.Inject
  * 에디터가 [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorEvent.PrefillLoaded]를 받으면
  * 네비게이션 레이어가 [replaceSongs]로 host SSOT를 동기화한다.
  *
- * 작성자 목록 SSOT는 [com.afternote.feature.afternote.domain.repository.AfternoteRepository]이며,
+ * 작성자 목록 SSOT는 [com.afternote.feature.afternote.domain.repository.author.AfternoteRepository]이며,
  * 편집 본문의 진실은 에디터 [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel]
  * 의 폼 + SavedState가 담당한다 (UI 파사드를 host VM에 캐싱하지 않는다).
  */
