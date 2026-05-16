@@ -2,6 +2,7 @@ package com.afternote.feature.onboarding.presentation.signup
 
 import android.net.Uri
 import android.util.Log
+import android.util.Patterns
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -101,10 +102,16 @@ class SignUpViewModel
         var isLoading by mutableStateOf(false)
             private set
 
+        /** 이메일 형식 유효성. "인증번호 받기" / "다음" 활성화 조건의 사전 가드. */
+        val isEmailFormatValid by derivedStateOf {
+            val email = emailState.text.toString()
+            email.isNotBlank() && Patterns.EMAIL_ADDRESS.matcher(email).matches()
+        }
+
         /** Step 1 — 이메일·인증번호 입력 후 다음 단계 진행 가능 여부 */
         val isStep1NextEnabled by derivedStateOf {
             !isVerifyingEmail &&
-                emailState.text.isNotBlank() &&
+                isEmailFormatValid &&
                 verificationCodeState.text.length >= MIN_VERIFICATION_CODE_LENGTH
         }
 
