@@ -31,7 +31,6 @@ class ApiErrorInterceptor
 
             val rawBody = response.peekBody(Long.MAX_VALUE).string()
             val parsed = runCatching { json.parseToJsonElement(rawBody).jsonObject }.getOrNull()
-            val status = parsed?.get("status")?.jsonPrimitive?.intOrNull ?: response.code
             val code = parsed?.get("code")?.jsonPrimitive?.intOrNull ?: response.code
             val message =
                 parsed
@@ -42,10 +41,6 @@ class ApiErrorInterceptor
                     ?: response.message.takeUnless { it.isBlank() }
                     ?: "요청에 실패했습니다."
 
-            throw ApiException(
-                status = status,
-                code = code,
-                message = message,
-            )
+            throw ApiException(code = code, message = message)
         }
     }

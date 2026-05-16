@@ -18,17 +18,9 @@ data class BaseResponse<T>(
 
 fun <T : Any> BaseResponse<T>.requireData(): T {
     if (status != 200) {
-        throw ApiException(
-            status = status,
-            code = code,
-            message = message ?: "알 수 없는 서버 에러가 발생했습니다.",
-        )
+        throw ApiException(code = code, message = message ?: "알 수 없는 서버 에러가 발생했습니다.")
     }
-    return data ?: throw ApiException(
-        status = status,
-        code = code,
-        message = "성공했으나 데이터가 비어있습니다.",
-    )
+    return data ?: throw ApiException(code = code, message = "성공했으나 데이터가 비어있습니다.")
 }
 
 /**
@@ -39,17 +31,12 @@ fun <T : Any> BaseResponse<T>.requireData(): T {
  * `Exception` 으로 두면 OkHttp 가 `IOException` 으로 래핑해 백엔드 message 가 손실된다.
  */
 class ApiException(
-    val status: Int,
     val code: Int,
     override val message: String,
 ) : IOException(message)
 
 fun BaseResponse<*>.requireStatus() {
     if (status != 200) {
-        throw ApiException(
-            status = status,
-            code = code,
-            message = message ?: "요청에 실패했습니다.",
-        )
+        throw ApiException(code = code, message = message ?: "요청에 실패했습니다.")
     }
 }
