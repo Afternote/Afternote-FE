@@ -2,6 +2,7 @@ package com.afternote.core.network.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import java.io.IOException
 
 @Serializable
 data class BaseResponse<T>(
@@ -30,11 +31,18 @@ fun <T : Any> BaseResponse<T>.requireData(): T {
     )
 }
 
+/**
+ * 백엔드 응답이 status != 200 일 때 throw 되는 예외.
+ *
+ * [IOException] 의 서브클래스로 둔 이유 — OkHttp Interceptor (예: `ApiErrorInterceptor`)
+ * 가 4xx/5xx 응답을 가로채 throw 할 때 OkHttp 가 그대로 전파할 수 있어야 하기 때문.
+ * `Exception` 으로 두면 OkHttp 가 `IOException` 으로 래핑해 백엔드 message 가 손실된다.
+ */
 class ApiException(
     val status: Int,
     val code: Int,
     override val message: String,
-) : Exception(message)
+) : IOException(message)
 
 fun BaseResponse<*>.requireStatus() {
     if (status != 200) {
