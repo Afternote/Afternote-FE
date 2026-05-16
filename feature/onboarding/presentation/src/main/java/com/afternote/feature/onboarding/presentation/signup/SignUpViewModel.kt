@@ -6,6 +6,7 @@ import android.util.Patterns
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -15,7 +16,9 @@ import com.afternote.core.domain.usecase.auth.LoginType
 import com.afternote.core.domain.usecase.auth.LoginUseCase
 import com.afternote.feature.onboarding.presentation.terms.TermsState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -46,6 +49,9 @@ class SignUpViewModel
 
             private const val MIN_VERIFICATION_CODE_LENGTH = 6
 
+            /** "재전송" 클릭 후 다음 요청까지 강제 대기 초. 서버 비용·SMS 발송량 보호. */
+            private const val RESEND_COOLDOWN_SECONDS = 30
+
             /** 8~16자, 영문 대소문자 + 숫자 + 특수문자 각 1개 이상. */
             private val PASSWORD_REGEX =
                 Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,16}$")
@@ -67,6 +73,12 @@ class SignUpViewModel
         /** 이메일/인증번호 검증 요청 진행 중. Step 1 "다음" 중복 클릭 방지. */
         var isVerifyingEmail by mutableStateOf(false)
             private set
+
+        /** 재전송 쿨다운 남은 초. 0 이면 즉시 재요청 가능. */
+        var resendCooldownSeconds by mutableIntStateOf(0)
+            private set
+
+        private var cooldownJob: Job? = null
 
         // Step 2: 주민등록번호
         val frontNumberState = TextFieldState()
@@ -138,19 +150,34 @@ class SignUpViewModel
         }
 
         fun requestVerification() {
-            if (isSendingCode) return
+            if (isSendingCode || resendCooldownSeconds > 0) return
             viewModelScope.launch {
                 isSendingCode = true
                 accountRepository
                     .sendEmailCode(emailState.text.toString())
-                    .onSuccess { isVerificationSent = true }
-                    .onFailure { error ->
+                    .onSuccess {
+                        isVerificationSent = true
+                        startResendCooldown()
+                    }.onFailure { error ->
                         eventChannel.send(
                             SignUpEvent.ShowError(error.message ?: "인증번호 요청 실패"),
                         )
                     }
                 isSendingCode = false
             }
+        }
+
+        /** 인증번호 발송 성공 직후 호출. 60초 카운트다운을 시작해 재전송 연타를 막는다. */
+        private fun startResendCooldown() {
+            cooldownJob?.cancel()
+            cooldownJob =
+                viewModelScope.launch {
+                    resendCooldownSeconds = RESEND_COOLDOWN_SECONDS
+                    while (resendCooldownSeconds > 0) {
+                        delay(1000)
+                        resendCooldownSeconds -= 1
+                    }
+                }
         }
 
         /**
