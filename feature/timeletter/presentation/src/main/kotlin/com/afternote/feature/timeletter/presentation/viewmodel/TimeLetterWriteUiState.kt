@@ -6,6 +6,7 @@ data class TimeLetterWriteUiState(
     val recipientIds: List<Long> = emptyList(),
     val recipientNames: List<String> = emptyList(),
     val sendAt: String? = null,
+    val sendTime: String? = null,
     val draftCount: Int = 0,
     val isSaving: Boolean = false,
     val textAlign: TextAlign = TextAlign.Start,

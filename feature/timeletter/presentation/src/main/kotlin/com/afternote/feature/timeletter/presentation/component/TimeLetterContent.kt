@@ -78,12 +78,13 @@ fun TimeLetterContent(
                             .height(4.dp),
                 )
             }
+            Spacer(modifier= Modifier.weight(1f))
             ViewToggleButton(
                 viewMode = viewMode,
                 onViewModeChange = onViewModeChange,
             )
         }
-        Spacer(modifier = Modifier.padding(21.dp))
+        Spacer(modifier = Modifier.height(20.dp))
         LazyColumn(
             modifier = Modifier.padding(top = 10.dp),
         ) {

@@ -45,6 +45,8 @@ fun NavGraphBuilder.timeLetterNavGraph(
                 onRegisterClick = { title, body -> viewModel.register(title, body) },
                 onDraftClick = { title, body -> viewModel.saveDraft(title, body) },
                 onRecipientClick = actions::onNavigateToRecipient,
+                onDateSelected = { viewModel.setSendAt(it) },
+                onTimeSelected = { h, m -> viewModel.setSendTime(h, m) },
             )
         }
 

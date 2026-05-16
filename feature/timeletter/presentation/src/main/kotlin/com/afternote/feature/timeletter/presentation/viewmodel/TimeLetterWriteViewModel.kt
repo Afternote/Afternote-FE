@@ -62,6 +62,21 @@ class TimeLetterWriteViewModel
             _uiState.update { it.copy(sendAt = sendAt) }
         }
 
+        fun setSendTime(
+            hour: Int,
+            minute: Int,
+        ) {
+            val amPm = if (hour < 12) "오전" else "오후"
+            val displayHour =
+                when {
+                    hour == 0 -> 12
+                    hour > 12 -> hour - 12
+                    else -> hour
+                }
+            val display = "$amPm $displayHour:${minute.toString().padStart(2, '0')}"
+            _uiState.update { it.copy(sendTime = display) }
+        }
+
         fun saveDraft(
             title: String,
             content: String,
