@@ -228,7 +228,7 @@ private fun AccountSection(
                 thickness = 1.dp,
             )
             DetailInfoRow(
-                iconResId = com.afternote.core.ui.R.drawable.core_ui_ic_deep_thought_moon,
+                iconResId = R.drawable.feature_afternote_ic_lock,
                 label = stringResource(R.string.feature_afternote_detail_label_password),
                 value =
                     if (passwordVisible) {

@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.domain.repository
+package com.afternote.feature.afternote.domain.repository.author
 
 import androidx.paging.PagingData
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload

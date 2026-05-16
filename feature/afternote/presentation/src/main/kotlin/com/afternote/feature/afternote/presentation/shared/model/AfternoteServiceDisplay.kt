@@ -14,7 +14,7 @@ import com.afternote.feature.afternote.presentation.shared.util.getIconResForSer
  */
 data class AfternoteServiceDisplay(
     val serviceName: String,
-    @DrawableRes val iconResId: Int,
+    @param:DrawableRes val iconResId: Int,
 ) {
     companion object {
         /** API 서비스 이름으로부터 아이콘을 해석해 묶음을 만든다. */

@@ -12,8 +12,8 @@ import com.afternote.feature.afternote.presentation.R
 enum class AfternoteService(
     val typeKey: String?,
     val displayKey: String,
-    @StringRes val stringResId: Int,
-    @DrawableRes val iconResId: Int,
+    @param:StringRes val stringResId: Int,
+    @param:DrawableRes val iconResId: Int,
 ) {
     SOCIAL_NETWORK_CATEGORY(
         typeKey = "SOCIAL_NETWORK",

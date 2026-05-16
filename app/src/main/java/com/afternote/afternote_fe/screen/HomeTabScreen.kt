@@ -38,7 +38,13 @@ import com.afternote.feature.mindrecord.presentation.hometab.homeTabMindRecordMe
 import com.afternote.feature.mindrecord.presentation.hometab.homeTabMindRecordQuestionAndCategories
 
 sealed interface HomeTabUiState {
-    data object Loading : HomeTabUiState
+    /**
+     * @property cachedUserName 마지막 성공 응답에서 디스크 캐시된 이름. 콜드스타트 시 GET /users/me
+     * 응답이 도착하기 전 placeholder로 즉시 노출하기 위해 사용한다. 신규 로그인 등 캐시가 없으면 null.
+     */
+    data class Loading(
+        val cachedUserName: String? = null,
+    ) : HomeTabUiState
 
     @Immutable
     data class Success(
@@ -102,7 +108,7 @@ private object HomeTabActionsNoop : HomeTabActions {
 @Composable
 fun HomeTabScreen(
     modifier: Modifier = Modifier,
-    uiState: HomeTabUiState = HomeTabUiState.Loading,
+    uiState: HomeTabUiState = HomeTabUiState.Loading(),
     actions: HomeTabActions = HomeTabActionsNoop,
 ) {
     Scaffold(
@@ -114,7 +120,7 @@ fun HomeTabScreen(
             is HomeTabUiState.Loading -> {
                 HomeTabScrollContent(
                     paddingValues = paddingValues,
-                    userName = "\u2026",
+                    userName = uiState.cachedUserName ?: "\u2026",
                     isRecipientDesignated = false,
                     categoryCounts = MindRecordCategory.entries.associateWith { 0 },
                     categoryCountsLoading = true,
