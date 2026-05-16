@@ -100,11 +100,16 @@ class AuthRepositoryImpl
                 tokenBundleResult
             }
 
+        /**
+         * 서버 로그아웃은 best-effort (네트워크 실패해도 사용자는 로그아웃 상태로 가야 함).
+         * 로컬 토큰은 서버 호출 결과와 무관하게 항상 정리한다.
+         */
         override suspend fun logout(): Result<Unit> =
             runCatching {
-                val refreshToken =
-                    getRefreshToken().getOrNull()
-                        ?: error("리프레시 토큰이 존재하지 않습니다.")
-                authApiService.logout(LogoutRequest(refreshToken))
+                val refreshToken = getRefreshToken().getOrNull()
+                if (refreshToken != null) {
+                    runCatching { authApiService.logout(LogoutRequest(refreshToken)) }
+                }
+                tokenDataSource.clearTokens()
             }
     }
