@@ -16,6 +16,7 @@ import com.afternote.feature.setting.presentation.screen.ConnectedAccountsScreen
 import com.afternote.feature.setting.presentation.screen.DeliveryConditionScreen
 import com.afternote.feature.setting.presentation.screen.NoticeListScreen
 import com.afternote.feature.setting.presentation.screen.PassKeyMakingScreen
+import com.afternote.feature.setting.presentation.screen.PassKeyPasswordScreen
 import com.afternote.feature.setting.presentation.screen.PassKeyScreen
 import com.afternote.feature.setting.presentation.screen.ProfileEditScreen
 import com.afternote.feature.setting.presentation.screen.PushNotificationScreen
@@ -129,6 +130,14 @@ fun NavGraphBuilder.settingNavGraph(
         composable<SettingRoute.PasskeyMakingRoute> {
             PassKeyMakingScreen(
                 onBackClick = actions::onPasskeyMakingBack,
+                onPasswordAuthClick = actions::onNavigateToPasskeyPassword,
+            )
+        }
+
+        composable<SettingRoute.PasskeyPasswordRoute> {
+            PassKeyPasswordScreen(
+                onPinComplete = { actions.onPasskeyPasswordBack() },
+                onBack = actions::onPasskeyPasswordBack,
             )
         }
 

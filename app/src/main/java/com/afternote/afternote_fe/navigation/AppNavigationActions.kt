@@ -247,6 +247,14 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
                 appState.navController.popBackStack()
             }
 
+            override fun onNavigateToPasskeyPassword() {
+                appState.navController.navigate(SettingRoute.PasskeyPasswordRoute)
+            }
+
+            override fun onPasskeyPasswordBack() {
+                appState.navController.popBackStack()
+            }
+
             override fun onNavigateToAppLock() {
                 appState.navController.navigate(SettingRoute.AppLockSetupRoute)
             }

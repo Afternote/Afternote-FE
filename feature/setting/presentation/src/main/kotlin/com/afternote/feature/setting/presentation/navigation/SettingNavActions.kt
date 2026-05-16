@@ -47,6 +47,10 @@ interface SettingNavActions {
 
     fun onPasskeyMakingBack()
 
+    fun onNavigateToPasskeyPassword()
+
+    fun onPasskeyPasswordBack()
+
     fun onNavigateToAppLock()
 
     fun onAppLockBack()

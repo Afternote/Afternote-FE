@@ -35,6 +35,7 @@ import com.afternote.feature.setting.presentation.R
 @Composable
 fun PassKeyMakingScreen(
     onBackClick: () -> Unit,
+    onPasswordAuthClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -104,7 +105,7 @@ fun PassKeyMakingScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 AfternoteButton(
                     text = "비밀번호로 인증하기",
-                    onClick = { showCompletionDialog = true },
+                    onClick = onPasswordAuthClick,
                     type = AfternoteButtonType.Active,
                 )
             }
@@ -115,5 +116,5 @@ fun PassKeyMakingScreen(
 @Preview(showBackground = true)
 @Composable
 private fun PassKeyMakingScreenPrev() {
-    PassKeyMakingScreen(onBackClick = {})
+    PassKeyMakingScreen(onBackClick = {}, onPasswordAuthClick = {})
 }
