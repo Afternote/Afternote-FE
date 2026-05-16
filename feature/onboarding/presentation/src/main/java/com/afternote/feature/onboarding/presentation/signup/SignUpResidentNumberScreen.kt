@@ -83,7 +83,7 @@ fun SignUpResidentNumberScreen(
                         ),
                     placeholder = stringResource(R.string.signup_resident_number_placeholder),
                     keyboardType = KeyboardType.Number,
-                    onImeAction = onNextClick,
+                    onImeAction = { if (isNextEnabled) onNextClick() },
                 )
             }
         },

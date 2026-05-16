@@ -81,7 +81,7 @@ fun SignUpPasswordScreen(
                     imeAction = ImeAction.Done,
                     onImeAction = {
                         focusManager.clearFocus()
-                        onNextClick()
+                        if (isNextEnabled) onNextClick()
                     },
                 )
 

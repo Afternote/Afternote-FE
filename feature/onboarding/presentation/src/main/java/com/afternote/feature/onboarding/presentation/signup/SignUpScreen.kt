@@ -80,7 +80,7 @@ fun SignUpScreen(
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Done,
                     onImeAction = {
-                        onNextClick()
+                        if (isNextEnabled) onNextClick()
                     },
                 )
 
