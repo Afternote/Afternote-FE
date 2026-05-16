@@ -48,8 +48,7 @@ class SettingViewModel
 
         private fun loadProfile() {
             viewModelScope.launch {
-                userRepository
-                    .getMyProfile()
+                runCatching { userRepository.getMyProfile() }
                     .onSuccess { profile ->
                         _uiState.value =
                             SettingUiState.Success(
@@ -67,6 +66,16 @@ class SettingViewModel
                 runCatching { authRepository.logout() }
                 authRepository.clearSession()
                 _logoutCompleted.value = true
+            }
+        }
+
+        private val _withdrawCompleted = MutableStateFlow(false)
+        val withdrawCompleted = _withdrawCompleted.asStateFlow()
+
+        fun deleteAccount() {
+            viewModelScope.launch {
+                runCatching { userRepository.deleteAccount() }
+                    .onSuccess { _withdrawCompleted.value = true }
             }
         }
     }

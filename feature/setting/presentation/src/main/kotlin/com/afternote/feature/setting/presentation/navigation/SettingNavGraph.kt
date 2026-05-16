@@ -73,12 +73,14 @@ fun NavGraphBuilder.settingNavGraph(
                 uiState = uiState,
                 onBackClick = actions::onWithdrawConfirmBack,
                 onWithdrawSuccess = actions::onWithdrawSuccess,
+                viewModel = viewModel,
             )
         }
 
         composable<SettingRoute.ProfileEditRoute> {
             ProfileEditScreen(
                 onBackClick = actions::onProfileEditBack,
+                onWithdrawGuideClick = actions::onNavigateToWithdrawGuide,
             )
         }
 

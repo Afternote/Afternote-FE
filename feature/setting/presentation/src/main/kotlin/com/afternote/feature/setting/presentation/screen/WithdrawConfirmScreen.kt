@@ -14,9 +14,11 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,7 +34,9 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.Red
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.feature.setting.presentation.viewmodel.SettingUiState
+import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
 
 private const val WITHDRAW_CONFIRM_TEXT = "탈퇴하겠습니다"
 
@@ -42,19 +46,26 @@ fun WithdrawConfirmScreen(
     onBackClick: () -> Unit,
     onWithdrawSuccess: () -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: SettingViewModel,
 ) {
     val userName = (uiState as? SettingUiState.Success)?.name.orEmpty()
     val userEmail = (uiState as? SettingUiState.Success)?.email.orEmpty()
     val textState = rememberTextFieldState()
     var showError by remember { mutableStateOf(false) }
     var showCompletionDialog by remember { mutableStateOf(false) }
+    val withdrawCompleted by viewModel.withdrawCompleted.collectAsStateWithLifecycle()
+    val currentOnWithdrawSuccess by rememberUpdatedState(onWithdrawSuccess)
+
+    LaunchedEffect(withdrawCompleted) {
+        if (withdrawCompleted) currentOnWithdrawSuccess()
+    }
 
     if (showCompletionDialog) {
         Popup(
             type = PopupType.Default,
             message = stringResource(R.string.withdraw_complete_message),
             confirmText = stringResource(R.string.withdraw_complete_button),
-            onConfirm = onWithdrawSuccess,
+            onConfirm = viewModel::deleteAccount,
             onDismiss = {},
         )
     }
@@ -174,12 +185,3 @@ private fun WithdrawConfirmBottomButtons(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-private fun WithdrawConfirmScreenPreview() {
-    WithdrawConfirmScreen(
-        uiState = SettingUiState.Success(name = "박서연", email = "example@mail.com"),
-        onBackClick = {},
-        onWithdrawSuccess = {},
-    )
-}
