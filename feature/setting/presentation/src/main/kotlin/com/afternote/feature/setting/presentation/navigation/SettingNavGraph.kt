@@ -100,13 +100,14 @@ fun NavGraphBuilder.settingNavGraph(
             ReceiverListScreen(
                 receivers = emptyList<ReceiverListItem>(),
                 onBackClick = actions::onRecipientListBack,
-                onConfirmClick = { actions.onRecipientListBack() },
+                onConfirmClick = { actions.onNavigateToRecipientRegister() },
             )
         }
 
         composable<SettingRoute.RecipientRegisterRoute> {
             ReceiverRegisterScreen(
                 onBackClick = actions::onRecipientRegisterBack,
+                onRegisterSuccess = actions::onRecipientRegisterBack,
             )
         }
 

@@ -23,7 +23,6 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.viewmodel.SocialAccountState
 
-// 설정 - 연결된 계정
 @Composable
 fun SocialAccountRow(
     account: SocialAccountState,
@@ -65,7 +64,7 @@ fun SocialAccountRow(
 
         Switch(
             checked = account.isConnected,
-            onCheckedChange = onToggle,
+            onCheckedChange = if (account.isLinkable) onToggle else null,
             thumbContent = {},
             colors =
                 SwitchDefaults.colors(
@@ -75,6 +74,10 @@ fun SocialAccountRow(
                     uncheckedThumbColor = AfternoteDesign.colors.white,
                     checkedBorderColor = AfternoteDesign.colors.black,
                     uncheckedBorderColor = AfternoteDesign.colors.gray2,
+                    disabledCheckedTrackColor = AfternoteDesign.colors.gray3,
+                    disabledUncheckedTrackColor = AfternoteDesign.colors.gray2,
+                    disabledCheckedThumbColor = AfternoteDesign.colors.white,
+                    disabledUncheckedThumbColor = AfternoteDesign.colors.white,
                 ),
         )
     }
@@ -86,6 +89,7 @@ private fun RowPrev() {
     SocialAccountRow(
         account =
             SocialAccountState(
+                provider = "google",
                 iconRes = R.drawable.ic_google_logo,
                 labelRes = R.string.login_with_google,
                 isConnected = true,
