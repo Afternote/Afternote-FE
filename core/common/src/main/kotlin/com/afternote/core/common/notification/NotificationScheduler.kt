@@ -46,10 +46,12 @@ object NotificationScheduler {
                 .setConstraints(Constraints.Builder().setRequiresBatteryNotLow(true).build())
                 .build()
 
-        // 시간 변경 등으로 기존 예약을 덮어써야 하므로 UPDATE 정책 사용 (KEEP 아님).
+        // 앱 콜드스타트마다 호출되므로 KEEP 으로 두지 않으면 매번 next trigger 가 새 initialDelay 로 갱신돼
+        // 사용자가 알림 시각 전에 앱을 켜면 알림이 영원히 미뤄질 수 있다.
+        // 시간 변경 등 명시적 재예약이 필요할 때는 별도 API(예: reschedule) 로 CANCEL_AND_REENQUEUE 적용.
         workManager.enqueueUniquePeriodicWork(
             DailyNotificationWorker.UNIQUE_WORK_NAME,
-            ExistingPeriodicWorkPolicy.UPDATE,
+            ExistingPeriodicWorkPolicy.KEEP,
             dailyWorkRequest,
         )
     }
