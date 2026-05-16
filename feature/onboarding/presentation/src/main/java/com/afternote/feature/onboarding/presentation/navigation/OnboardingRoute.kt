@@ -22,5 +22,8 @@ sealed interface OnboardingRoute {
     data object TermsRoute : OnboardingRoute
 
     @Serializable
+    data object TermsDetailRoute : OnboardingRoute
+
+    @Serializable
     data object ProfileRoute : OnboardingRoute
 }

@@ -79,6 +79,14 @@ fun rememberOnboardingNavActions(navController: NavController): OnboardingNavAct
                 navController.popBackStack()
             }
 
+            override fun onViewTerms() {
+                navController.navigate(OnboardingRoute.TermsDetailRoute)
+            }
+
+            override fun onTermsDetailBack() {
+                navController.popBackStack()
+            }
+
             override fun onProfileBack() {
                 navController.popBackStack()
             }
