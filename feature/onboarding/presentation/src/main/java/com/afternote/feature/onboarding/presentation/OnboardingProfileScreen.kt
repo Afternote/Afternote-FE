@@ -19,8 +19,11 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -44,6 +47,7 @@ import com.afternote.core.ui.topbar.DetailTopBar
 fun OnboardingProfileScreen(
     nameState: TextFieldState,
     displayImageUri: Uri?,
+    snackbarHostState: SnackbarHostState,
     onProfileImagePick: (Uri?) -> Unit,
     onBackClick: () -> Unit,
     onCompleteClick: () -> Unit,
@@ -68,6 +72,7 @@ fun OnboardingProfileScreen(
                 },
             )
         },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         containerColor = Color.Transparent,
     ) { innerPadding ->
         Column(
@@ -113,13 +118,18 @@ fun OnboardingProfileScreen(
                     },
                 )
 
+                val isNameProvided =
+                    nameState.text
+                        .toString()
+                        .trim()
+                        .isNotEmpty()
                 AfternoteButton(
                     text = stringResource(R.string.profile_complete),
                     onClick = {
                         focusManager.clearFocus()
                         onCompleteClick()
                     },
-                    type = AfternoteButtonType.Default,
+                    type = if (isNameProvided) AfternoteButtonType.Default else AfternoteButtonType.Un,
                 )
             }
         }
@@ -133,6 +143,7 @@ private fun OnboardingProfileScreenPreview() {
         OnboardingProfileScreen(
             nameState = rememberTextFieldState("Afternote"),
             displayImageUri = null,
+            snackbarHostState = remember { SnackbarHostState() },
             onProfileImagePick = {},
             onBackClick = {},
             onCompleteClick = {},

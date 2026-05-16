@@ -27,6 +27,7 @@ fun OnboardingScaffold(
     onBackClick: () -> Unit,
     onActionButtonClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isActionEnabled: Boolean = true,
     content: @Composable () -> Unit, // 내부 콘텐츠 슬롯
 ) {
     val focusManager = LocalFocusManager.current
@@ -56,7 +57,7 @@ fun OnboardingScaffold(
                     focusManager.clearFocus()
                     onActionButtonClick()
                 },
-                type = AfternoteButtonType.Default,
+                type = if (isActionEnabled) AfternoteButtonType.Default else AfternoteButtonType.Un,
                 modifier =
                     Modifier
                         .padding(horizontal = horizontalPadding)

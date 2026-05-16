@@ -1,6 +1,7 @@
 package com.afternote.feature.onboarding.presentation.signup
 
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -40,6 +41,10 @@ class SignUpViewModel
             const val RESIDENT_REGISTRATION_BACK_FIRST_DIGIT_COUNT = 1
 
             private const val MIN_VERIFICATION_CODE_LENGTH = 6
+
+            /** 8~16자, 영문 대소문자 + 숫자 + 특수문자 각 1개 이상. */
+            private val PASSWORD_REGEX =
+                Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,16}$")
         }
 
         private val eventChannel = Channel<SignUpEvent>(Channel.BUFFERED)
@@ -49,6 +54,10 @@ class SignUpViewModel
         val emailState = TextFieldState()
         val verificationCodeState = TextFieldState()
         var isVerificationSent by mutableStateOf(false)
+            private set
+
+        /** 인증번호 전송 요청 진행 중. 버튼 중복 클릭 방지 + 로딩 텍스트 토글에 사용. */
+        var isSendingCode by mutableStateOf(false)
             private set
 
         // Step 2: 주민등록번호
@@ -65,6 +74,14 @@ class SignUpViewModel
 
         // Profile
         val nameState = TextFieldState()
+
+        init {
+            // TODO(fix/141): 이름 빈값 전송 재현 후 제거.
+            Log.d(
+                "SignUp/debug",
+                "VM created: vm=${System.identityHashCode(this)}, nameState=${System.identityHashCode(nameState)}",
+            )
+        }
 
         private val _profileImageUri = MutableStateFlow<Uri?>(null)
         val profileImageUri: StateFlow<Uri?> = _profileImageUri.asStateFlow()
@@ -89,9 +106,14 @@ class SignUpViewModel
                 backNumberState.text.length == RESIDENT_REGISTRATION_BACK_FIRST_DIGIT_COUNT
         }
 
-        /** Step 3 — 서비스 비밀번호 설정(확인 일치) */
+        /** 비밀번호 정규식 충족 여부. 안내 문구 색상 토글에도 사용. */
+        val isPasswordRuleSatisfied by derivedStateOf {
+            PASSWORD_REGEX.matches(signUpPasswordState.text.toString())
+        }
+
+        /** Step 3 — 비밀번호 규칙 충족 + 확인 일치 */
         val isStep3NextEnabled by derivedStateOf {
-            signUpPasswordState.text.isNotEmpty() &&
+            isPasswordRuleSatisfied &&
                 signUpPasswordState.text.toString() == signUpPasswordConfirmState.text.toString()
         }
 
@@ -101,7 +123,9 @@ class SignUpViewModel
         }
 
         fun requestVerification() {
+            if (isSendingCode) return
             viewModelScope.launch {
+                isSendingCode = true
                 accountRepository
                     .sendEmailCode(emailState.text.toString())
                     .onSuccess { isVerificationSent = true }
@@ -110,11 +134,8 @@ class SignUpViewModel
                             SignUpEvent.ShowError(error.message ?: "인증번호 요청 실패"),
                         )
                     }
+                isSendingCode = false
             }
-        }
-
-        fun updateTermsState(newState: TermsState) {
-            termsState = newState
         }
 
         fun toggleTermsAgreed(agreed: Boolean) {
@@ -146,12 +167,27 @@ class SignUpViewModel
             viewModelScope.launch {
                 if (isLoading) return@launch
 
+                val rawName = nameState.text.toString()
+                // TODO(fix/141): 이름 빈값 전송 재현 후 제거.
+                Log.d(
+                    "SignUp/debug",
+                    "submitSignUp: vm=${System.identityHashCode(this@SignUpViewModel)}, " +
+                        "nameState=${System.identityHashCode(nameState)}, " +
+                        "text='$rawName', length=${rawName.length}",
+                )
+
+                val name = rawName.trim()
+                if (name.isEmpty()) {
+                    eventChannel.send(SignUpEvent.ShowError("이름을 입력해주세요"))
+                    return@launch
+                }
+
                 isLoading = true
                 accountRepository
                     .signUp(
                         email = emailState.text.toString(),
                         password = signUpPasswordState.text.toString(),
-                        name = nameState.text.toString(),
+                        name = name,
                         profileUrl = _profileImageUri.value?.toString(),
                     ).onSuccess {
                         eventChannel.send(SignUpEvent.SignUpSuccess)

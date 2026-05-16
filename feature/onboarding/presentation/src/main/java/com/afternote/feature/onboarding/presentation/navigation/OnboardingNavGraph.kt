@@ -56,6 +56,8 @@ fun NavGraphBuilder.onboardingNavGraph(
                 emailState = signUpViewModel.emailState,
                 verificationCodeState = signUpViewModel.verificationCodeState,
                 isVerificationSent = signUpViewModel.isVerificationSent,
+                isSendingCode = signUpViewModel.isSendingCode,
+                isNextEnabled = signUpViewModel.isStep1NextEnabled,
                 onRequestVerification = signUpViewModel::requestVerification,
                 onNextClick = actions::onSignUpEmailNext,
                 onBackClick = actions::onSignUpEmailBack,
@@ -69,6 +71,7 @@ fun NavGraphBuilder.onboardingNavGraph(
             SignUpResidentNumberScreen(
                 frontNumberState = signUpViewModel.frontNumberState,
                 backNumberState = signUpViewModel.backNumberState,
+                isNextEnabled = signUpViewModel.isStep2NextEnabled,
                 onNextClick = actions::onSignUpResidentNext,
                 onBackClick = actions::onSignUpResidentBack,
             )
@@ -81,6 +84,8 @@ fun NavGraphBuilder.onboardingNavGraph(
             SignUpPasswordScreen(
                 passwordState = signUpViewModel.signUpPasswordState,
                 passwordConfirmState = signUpViewModel.signUpPasswordConfirmState,
+                isPasswordRuleSatisfied = signUpViewModel.isPasswordRuleSatisfied,
+                isNextEnabled = signUpViewModel.isStep3NextEnabled,
                 onNextClick = actions::onSignUpPasswordNext,
                 onBackClick = actions::onSignUpPasswordBack,
             )
@@ -92,6 +97,7 @@ fun NavGraphBuilder.onboardingNavGraph(
 
             OnboardingTermsScreen(
                 termsState = signUpViewModel.termsState,
+                isNextEnabled = signUpViewModel.isStep4NextEnabled,
                 onTermsToggle = signUpViewModel::toggleTermsAgreed,
                 onPrivacyToggle = signUpViewModel::togglePrivacyAgreed,
                 onMarketingToggle = signUpViewModel::toggleMarketingAgreed,

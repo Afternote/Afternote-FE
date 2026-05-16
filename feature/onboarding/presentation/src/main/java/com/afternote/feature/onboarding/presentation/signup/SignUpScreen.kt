@@ -28,16 +28,28 @@ fun SignUpScreen(
     emailState: TextFieldState,
     verificationCodeState: TextFieldState,
     isVerificationSent: Boolean,
+    isSendingCode: Boolean,
+    isNextEnabled: Boolean,
     onRequestVerification: () -> Unit,
     onNextClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isEmailNotBlank = emailState.text.isNotBlank()
+    val verificationButtonText =
+        when {
+            isSendingCode -> stringResource(R.string.signup_verification_requesting)
+            isVerificationSent -> stringResource(R.string.signup_verification_resend)
+            else -> stringResource(R.string.signup_verification_request)
+        }
+    val isVerificationButtonEnabled = !isSendingCode && isEmailNotBlank
+
     ProgressBarScaffold(
         currentStep = 1,
         onBackClick = onBackClick,
         onNextClick = onNextClick,
         modifier = modifier,
+        isNextEnabled = isNextEnabled,
         content = {
             Column(
                 modifier =
@@ -49,7 +61,12 @@ fun SignUpScreen(
             ) {
                 // 이메일 입력 + 인증번호 받기
                 AfternoteTextField(
-                    type = TextFieldType.Variant7(onClick = onRequestVerification),
+                    type =
+                        TextFieldType.Variant7(
+                            text = verificationButtonText,
+                            onClick = onRequestVerification,
+                            enabled = isVerificationButtonEnabled,
+                        ),
                     state = emailState,
                     placeholder = stringResource(R.string.signup_email_placeholder),
                     keyboardType = KeyboardType.Email,
@@ -88,6 +105,8 @@ private fun SignUpScreenPreview() {
             emailState = rememberTextFieldState(),
             verificationCodeState = rememberTextFieldState(),
             isVerificationSent = true,
+            isSendingCode = false,
+            isNextEnabled = false,
             onRequestVerification = {},
             onNextClick = {},
             onBackClick = {},

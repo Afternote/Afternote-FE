@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.filter
 fun SignUpResidentNumberScreen(
     frontNumberState: TextFieldState,
     backNumberState: TextFieldState,
+    isNextEnabled: Boolean,
     onNextClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -55,6 +56,7 @@ fun SignUpResidentNumberScreen(
         onBackClick = onBackClick,
         onNextClick = onNextClick,
         modifier = modifier,
+        isNextEnabled = isNextEnabled,
         content = {
             Column(
                 modifier =
@@ -95,6 +97,7 @@ private fun SignUpResidentNumberScreenPreview() {
         SignUpResidentNumberScreen(
             frontNumberState = rememberTextFieldState(),
             backNumberState = rememberTextFieldState(),
+            isNextEnabled = false,
             onNextClick = {},
             onBackClick = {},
         )

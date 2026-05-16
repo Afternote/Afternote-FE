@@ -34,6 +34,8 @@ import com.afternote.feature.onboarding.presentation.signup.scaffold.ProgressBar
 fun SignUpPasswordScreen(
     passwordState: TextFieldState,
     passwordConfirmState: TextFieldState,
+    isPasswordRuleSatisfied: Boolean,
+    isNextEnabled: Boolean,
     onNextClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -45,6 +47,7 @@ fun SignUpPasswordScreen(
         onBackClick = onBackClick,
         onNextClick = onNextClick,
         modifier = modifier,
+        isNextEnabled = isNextEnabled,
         content = {
             Column(
                 modifier =
@@ -87,6 +90,7 @@ fun SignUpPasswordScreen(
                 // 안내 문구
                 PasswordRuleItem(
                     text = stringResource(R.string.signup_password_rule_combination),
+                    isSatisfied = isPasswordRuleSatisfied,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 PasswordRuleItem(
@@ -101,7 +105,14 @@ fun SignUpPasswordScreen(
 private fun PasswordRuleItem(
     text: String,
     modifier: Modifier = Modifier,
+    isSatisfied: Boolean? = null,
 ) {
+    val color =
+        if (isSatisfied == false) {
+            AfternoteDesign.colors.gray5
+        } else {
+            AfternoteDesign.colors.b1
+        }
     Row(
         modifier =
             modifier
@@ -113,15 +124,13 @@ private fun PasswordRuleItem(
         Text(
             text = "\u2022",
             modifier = Modifier.clearAndSetSemantics {},
-            style =
-                AfternoteDesign.typography.captionLargeB,
-            color = AfternoteDesign.colors.b1,
+            style = AfternoteDesign.typography.captionLargeB,
+            color = color,
         )
         Text(
             text = text,
-            style =
-                AfternoteDesign.typography.captionLargeB,
-            color = AfternoteDesign.colors.b1,
+            style = AfternoteDesign.typography.captionLargeB,
+            color = color,
         )
     }
 }
@@ -133,6 +142,8 @@ private fun SignUpPasswordScreenPreview() {
         SignUpPasswordScreen(
             passwordState = rememberTextFieldState(),
             passwordConfirmState = rememberTextFieldState(),
+            isPasswordRuleSatisfied = false,
+            isNextEnabled = false,
             onNextClick = {},
             onBackClick = {},
         )

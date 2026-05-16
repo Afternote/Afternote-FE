@@ -53,6 +53,7 @@ data class TermsState(
 @Composable
 fun OnboardingTermsScreen(
     termsState: TermsState,
+    isNextEnabled: Boolean,
     onTermsToggle: (Boolean) -> Unit,
     onPrivacyToggle: (Boolean) -> Unit,
     onMarketingToggle: (Boolean) -> Unit,
@@ -67,7 +68,8 @@ fun OnboardingTermsScreen(
         onBackClick = onBackClick,
         onNextClick = onNextClick,
         modifier = modifier,
-        {
+        isNextEnabled = isNextEnabled,
+        content = {
             Spacer(modifier = Modifier.height(32.dp))
 
             // 로고
@@ -224,6 +226,7 @@ private fun OnboardingTermsScreenPreview() {
     AfternoteTheme {
         OnboardingTermsScreen(
             termsState = state,
+            isNextEnabled = state.isTermsAgreed && state.isPrivacyAgreed,
             onTermsToggle = { state = state.copy(isTermsAgreed = it) },
             onPrivacyToggle = { state = state.copy(isPrivacyAgreed = it) },
             onMarketingToggle = { state = state.copy(isMarketingAgreed = it) },

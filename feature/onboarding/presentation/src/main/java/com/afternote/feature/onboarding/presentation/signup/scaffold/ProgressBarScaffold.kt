@@ -19,6 +19,7 @@ internal fun ProgressBarScaffold(
     onBackClick: () -> Unit,
     onNextClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isNextEnabled: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     OnboardingScaffold(
@@ -26,6 +27,7 @@ internal fun ProgressBarScaffold(
         onBackClick = onBackClick,
         onActionButtonClick = onNextClick,
         modifier = modifier,
+        isActionEnabled = isNextEnabled,
     ) {
         Column(
             modifier =
