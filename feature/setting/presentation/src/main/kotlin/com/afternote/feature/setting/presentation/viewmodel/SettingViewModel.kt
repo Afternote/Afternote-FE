@@ -66,6 +66,7 @@ class SettingViewModel
             viewModelScope.launch {
                 runCatching { authRepository.logout() }
                 authRepository.clearSession()
+                userRepository.clearCachedProfile()
                 _logoutCompleted.value = true
             }
         }

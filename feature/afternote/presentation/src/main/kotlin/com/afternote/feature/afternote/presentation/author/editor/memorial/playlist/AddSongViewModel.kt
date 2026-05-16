@@ -3,7 +3,7 @@ package com.afternote.feature.afternote.presentation.author.editor.memorial.play
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.feature.afternote.domain.repository.MusicSearchRepository
+import com.afternote.feature.afternote.domain.repository.author.MusicSearchRepository
 import com.afternote.feature.afternote.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -22,7 +22,7 @@ private const val SEARCH_DEBOUNCE_MS = 300L
 class AddSongViewModel
     @Inject
     constructor(
-        @ApplicationContext private val appContext: Context,
+        @param:ApplicationContext private val appContext: Context,
         private val musicSearchRepository: MusicSearchRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(AddSongUiState())

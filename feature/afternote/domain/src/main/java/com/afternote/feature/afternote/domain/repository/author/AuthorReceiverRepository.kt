@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.domain.repository
+package com.afternote.feature.afternote.domain.repository.author
 
 import com.afternote.feature.afternote.domain.model.author.AuthorReceiverEntry
 import kotlinx.coroutines.flow.Flow

@@ -6,12 +6,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.navigation.NavController
 import com.afternote.afternote_fe.screen.HomeTabActions
+import com.afternote.afternote_fe.screen.receiver.ReceiverHomeActions
 import com.afternote.core.model.MindRecordCategory
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavActions
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
+import com.afternote.feature.afternote.presentation.receiver.navigation.ReceiverNavActions
+import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceiverRoute
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavActions
@@ -271,3 +274,46 @@ fun rememberAfternoteNavActions(
         }
     }
 }
+
+/**
+ * 수신자 서브그래프에 넘길 그래프 내부 [ReceiverNavActions] 구현체.
+ */
+@Composable
+fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions =
+    remember(appState) {
+        object : ReceiverNavActions {
+            override fun onPopBackStack() {
+                appState.navController.popBackStack()
+            }
+
+            override fun onNavigateToAfternoteList() {
+                appState.navController.navigate(ReceiverRoute.AfternoteListRoute)
+            }
+
+            override fun onNavigateToReceivedAfternoteDetail(afternoteId: String) {
+                appState.navController.navigate(
+                    ReceiverRoute.AfternoteDetailRoute(afternoteId = afternoteId),
+                )
+            }
+        }
+    }
+
+/**
+ * 수신자 홈에서 발생하는 다른 top-level Route(설정/마음의 기록/타임레터)와
+ * 수신자 그래프 내부(애프터노트 목록) 이동을 묶은 [ReceiverHomeActions].
+ *
+ * MindRecord/TimeLetter 화면은 현재 작성자용으로만 구현돼 있어 수신자 진입 시
+ * 동일 화면이 노출된다. 수신자 전용 표시는 후속 PR에서 각 피처가 분기한다.
+ */
+@Composable
+fun rememberReceiverHomeActions(appState: AppState): ReceiverHomeActions =
+    remember(appState) {
+        ReceiverHomeActions(
+            onSettingClick = { appState.navController.navigate(Route.Setting) },
+            onNavigateToMindRecord = { appState.navController.navigate(Route.MindRecord) },
+            onNavigateToTimeLetter = { appState.navController.navigate(Route.TimeLetter) },
+            onNavigateToAfternote = {
+                appState.navController.navigate(ReceiverRoute.AfternoteListRoute)
+            },
+        )
+    }

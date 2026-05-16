@@ -25,11 +25,19 @@ data class ReceivedAfternoteDetailResponse(
     @SerialName("id") val id: Long,
     @SerialName("category") val category: String? = null,
     @SerialName("title") val title: String? = null,
+    @SerialName("processMethod") val processMethod: String? = null,
     @SerialName("actions") val actions: List<String> = emptyList(),
     @SerialName("leaveMessage") val leaveMessage: String? = null,
     @SerialName("senderName") val senderName: String? = null,
     @SerialName("createdAt") val createdAt: String? = null,
+    @SerialName("credentials") val credentials: ReceivedCredentialsInfo? = null,
     @SerialName("playlist") val playlist: ReceivedPlaylistInfo? = null,
+)
+
+@Serializable
+data class ReceivedCredentialsInfo(
+    @SerialName("id") val id: String? = null,
+    @SerialName("password") val password: String? = null,
 )
 
 @Serializable

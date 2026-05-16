@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.data.repositoryimpl
+package com.afternote.feature.afternote.data.repositoryimpl.author
 
 import android.util.Log
 import androidx.paging.Pager
@@ -16,7 +16,7 @@ import com.afternote.feature.afternote.domain.model.author.CreatePlaylistPayload
 import com.afternote.feature.afternote.domain.model.author.CreateSocialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.ListItem
-import com.afternote.feature.afternote.domain.repository.AfternoteRepository
+import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow

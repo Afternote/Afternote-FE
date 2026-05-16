@@ -1,10 +1,10 @@
-package com.afternote.feature.afternote.data.repositoryimpl
+package com.afternote.feature.afternote.data.repositoryimpl.author
 
 import com.afternote.core.common.di.IoDispatcher
 import com.afternote.core.network.dto.PresignedUrlRequestDto
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.service.ImageApiService
-import com.afternote.feature.afternote.domain.repository.MemorialThumbnailUploadRepository
+import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
