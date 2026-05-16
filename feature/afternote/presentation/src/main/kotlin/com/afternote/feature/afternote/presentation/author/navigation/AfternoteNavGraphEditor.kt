@@ -205,6 +205,7 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
             is AfternoteEditorEvent.PrefillLoaded -> {
                 params.onReplaceSongs(event.prefill.memorialPlaylistSongs)
                 state.applyFormPrefill(event.prefill)
+                editViewModel.markPrefillApplied()
             }
         }
     }
@@ -270,5 +271,6 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
         graphSongs = params.graphSongs,
         state = state,
         saveError = saveError,
+        isPrefillLoading = uiState.isPrefillLoading,
     )
 }
