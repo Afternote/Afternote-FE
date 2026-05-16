@@ -49,9 +49,10 @@ fun OnboardingProfileEntry(
     }
 
     OnboardingProfileScreen(
-        nameState = viewModel.nameState,
+        initialName = viewModel.name,
         displayImageUri = profileImageUri,
         snackbarHostState = snackbarHostState,
+        onNameChange = viewModel::updateName,
         onProfileImagePick = viewModel::onProfileImagePicked,
         onCompleteClick = viewModel::submitSignUp,
         onBackClick = onBackClick,

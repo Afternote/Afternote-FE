@@ -66,8 +66,10 @@ fun LoginEntry(
     }
 
     LoginScreen(
-        emailState = viewModel.emailState,
-        passwordState = viewModel.passwordState,
+        initialEmail = viewModel.email,
+        initialPassword = viewModel.password,
+        onEmailChange = viewModel::updateEmail,
+        onPasswordChange = viewModel::updatePassword,
         onLoginClick = { withClearFocus { viewModel.loginWithEmail() } },
         onSignUpClick = { withClearFocus { onSignUpClick() } },
         onKakaoLoginClick = {

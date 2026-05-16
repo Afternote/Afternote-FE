@@ -65,14 +65,16 @@ fun NavGraphBuilder.onboardingNavGraph(
                 )
 
             SignUpScreen(
-                emailState = signUpViewModel.emailState,
-                verificationCodeState = signUpViewModel.verificationCodeState,
+                initialEmail = signUpViewModel.email,
+                initialVerificationCode = signUpViewModel.verificationCode,
                 isVerificationSent = signUpViewModel.isVerificationSent,
                 isSendingCode = signUpViewModel.isSendingCode,
                 isEmailFormatValid = signUpViewModel.isEmailFormatValid,
                 resendCooldownSeconds = signUpViewModel.resendCooldownSeconds,
                 isNextEnabled = signUpViewModel.isStep1NextEnabled,
                 snackbarHostState = snackbarHostState,
+                onEmailChange = signUpViewModel::updateEmail,
+                onVerificationCodeChange = signUpViewModel::updateVerificationCode,
                 onRequestVerification = signUpViewModel::requestVerification,
                 onNextClick = signUpViewModel::verifyEmailAndProceed,
                 onBackClick = actions::onSignUpEmailBack,
@@ -85,10 +87,12 @@ fun NavGraphBuilder.onboardingNavGraph(
             val snackbarHostState = rememberSignUpEventHost(signUpViewModel)
 
             SignUpResidentNumberScreen(
-                frontNumberState = signUpViewModel.frontNumberState,
-                backNumberState = signUpViewModel.backNumberState,
+                initialFrontNumber = signUpViewModel.residentFrontNumber,
+                initialBackNumber = signUpViewModel.residentBackNumber,
                 isNextEnabled = signUpViewModel.isStep2NextEnabled,
                 snackbarHostState = snackbarHostState,
+                onFrontNumberChange = signUpViewModel::updateResidentFrontNumber,
+                onBackNumberChange = signUpViewModel::updateResidentBackNumber,
                 onNextClick = actions::onSignUpResidentNext,
                 onBackClick = actions::onSignUpResidentBack,
             )
@@ -100,11 +104,13 @@ fun NavGraphBuilder.onboardingNavGraph(
             val snackbarHostState = rememberSignUpEventHost(signUpViewModel)
 
             SignUpPasswordScreen(
-                passwordState = signUpViewModel.signUpPasswordState,
-                passwordConfirmState = signUpViewModel.signUpPasswordConfirmState,
+                initialPassword = signUpViewModel.signUpPassword,
+                initialPasswordConfirm = signUpViewModel.signUpPasswordConfirm,
                 isPasswordRuleSatisfied = signUpViewModel.isPasswordRuleSatisfied,
                 isNextEnabled = signUpViewModel.isStep3NextEnabled,
                 snackbarHostState = snackbarHostState,
+                onPasswordChange = signUpViewModel::updateSignUpPassword,
+                onPasswordConfirmChange = signUpViewModel::updateSignUpPasswordConfirm,
                 onNextClick = actions::onSignUpPasswordNext,
                 onBackClick = actions::onSignUpPasswordBack,
             )

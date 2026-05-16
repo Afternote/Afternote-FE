@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -29,10 +28,12 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentType
@@ -62,8 +63,10 @@ import com.afternote.feature.onboarding.presentation.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
-    emailState: TextFieldState,
-    passwordState: TextFieldState,
+    initialEmail: String,
+    initialPassword: String,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
     onLoginClick: () -> Unit,
     onSignUpClick: () -> Unit,
     onKakaoLoginClick: () -> Unit,
@@ -74,6 +77,15 @@ fun LoginScreen(
     isLoading: Boolean = false,
 ) {
     val focusManager = LocalFocusManager.current
+    val emailState = rememberTextFieldState(initialEmail)
+    val passwordState = rememberTextFieldState(initialPassword)
+
+    LaunchedEffect(emailState) {
+        snapshotFlow { emailState.text.toString() }.collect(onEmailChange)
+    }
+    LaunchedEffect(passwordState) {
+        snapshotFlow { passwordState.text.toString() }.collect(onPasswordChange)
+    }
     Scaffold(
         modifier = modifier,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -298,8 +310,10 @@ private fun SocialLoginGroup(
 private fun LoginScreenPreview() {
     AfternoteTheme {
         LoginScreen(
-            emailState = rememberTextFieldState(),
-            passwordState = rememberTextFieldState(),
+            initialEmail = "",
+            initialPassword = "",
+            onEmailChange = {},
+            onPasswordChange = {},
             onLoginClick = {},
             onSignUpClick = {},
             onKakaoLoginClick = {},

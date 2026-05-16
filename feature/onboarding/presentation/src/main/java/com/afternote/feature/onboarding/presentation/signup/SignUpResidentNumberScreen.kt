@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.SnackbarHostState
@@ -30,16 +29,27 @@ import kotlinx.coroutines.flow.filter
 
 @Composable
 fun SignUpResidentNumberScreen(
-    frontNumberState: TextFieldState,
-    backNumberState: TextFieldState,
+    initialFrontNumber: String,
+    initialBackNumber: String,
     isNextEnabled: Boolean,
     snackbarHostState: SnackbarHostState,
+    onFrontNumberChange: (String) -> Unit,
+    onBackNumberChange: (String) -> Unit,
     onNextClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val frontNumberState = rememberTextFieldState(initialFrontNumber)
+    val backNumberState = rememberTextFieldState(initialBackNumber)
     val frontFocusRequester = remember { FocusRequester() }
     val backFocusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(frontNumberState) {
+        snapshotFlow { frontNumberState.text.toString() }.collect(onFrontNumberChange)
+    }
+    LaunchedEffect(backNumberState) {
+        snapshotFlow { backNumberState.text.toString() }.collect(onBackNumberChange)
+    }
 
     // 앞자리 6자리 입력 완료 시 뒷자리로 포커스 자동 이동
     LaunchedEffect(frontNumberState) {
@@ -98,10 +108,12 @@ fun SignUpResidentNumberScreen(
 private fun SignUpResidentNumberScreenPreview() {
     AfternoteTheme {
         SignUpResidentNumberScreen(
-            frontNumberState = rememberTextFieldState(),
-            backNumberState = rememberTextFieldState(),
+            initialFrontNumber = "",
+            initialBackNumber = "",
             isNextEnabled = false,
             snackbarHostState = remember { SnackbarHostState() },
+            onFrontNumberChange = {},
+            onBackNumberChange = {},
             onNextClick = {},
             onBackClick = {},
         )
