@@ -10,12 +10,15 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.credentials.CredentialManager
+import androidx.credentials.exceptions.NoCredentialException
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.ObserveAsEvents
 import com.afternote.core.ui.findActivity
 import com.afternote.feature.onboarding.presentation.BuildConfig
+import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.login.social.UserCancelledAuthException
 import com.afternote.feature.onboarding.presentation.login.social.requestGoogleIdToken
 import com.afternote.feature.onboarding.presentation.login.social.requestKakaoAccessToken
@@ -44,6 +47,12 @@ fun LoginEntry(
     val context = LocalContext.current
     val credentialManager = remember(context) { CredentialManager.create(context) }
 
+    val loginFailedMessage = stringResource(R.string.login_failed)
+    val kakaoFailedMessage = stringResource(R.string.login_kakao_failed)
+    val googleFailedMessage = stringResource(R.string.login_google_failed)
+    val googleNoCredentialsMessage = stringResource(R.string.login_google_no_credentials)
+    val screenUnavailableMessage = stringResource(R.string.login_screen_unavailable)
+
     val showErrorSnackbar: (String) -> Unit = { message ->
         coroutineScope.launch {
             snackbarHostState.showSnackbar(
@@ -61,7 +70,7 @@ fun LoginEntry(
     ObserveAsEvents(viewModel.eventFlow) { event ->
         when (event) {
             is LoginEvent.LoginSuccess -> onLoginSuccess()
-            is LoginEvent.ShowError -> showErrorSnackbar(event.message)
+            is LoginEvent.ShowError -> showErrorSnackbar(event.message ?: loginFailedMessage)
         }
     }
 
@@ -80,11 +89,11 @@ fun LoginEntry(
                                 viewModel.loginWithKakao(oauthToken)
                             }.onFailure { exception ->
                                 if (exception is UserCancelledAuthException) return@onFailure
-                                showErrorSnackbar(exception.message ?: "카카오 로그인에 실패했습니다.")
+                                showErrorSnackbar(exception.message ?: kakaoFailedMessage)
                             }
                     }
                 } else {
-                    showErrorSnackbar("로그인 화면을 띄울 수 없습니다.")
+                    showErrorSnackbar(screenUnavailableMessage)
                 }
             }
         },
@@ -98,8 +107,13 @@ fun LoginEntry(
                     ).onSuccess { idToken ->
                         viewModel.loginWithGoogle(idToken)
                     }.onFailure { exception ->
-                        if (exception is UserCancelledAuthException) return@onFailure
-                        showErrorSnackbar(exception.message ?: "구글 로그인에 실패했습니다.")
+                        val message =
+                            when (exception) {
+                                is UserCancelledAuthException -> return@onFailure
+                                is NoCredentialException -> googleNoCredentialsMessage
+                                else -> exception.message ?: googleFailedMessage
+                            }
+                        showErrorSnackbar(message)
                     }
                 }
             }

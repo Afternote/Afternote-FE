@@ -8,8 +8,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -28,16 +30,44 @@ fun SignUpScreen(
     emailState: TextFieldState,
     verificationCodeState: TextFieldState,
     isVerificationSent: Boolean,
+    isSendingCode: Boolean,
+    isEmailFormatValid: Boolean,
+    resendCooldownSeconds: Int,
+    isNextEnabled: Boolean,
+    snackbarHostState: SnackbarHostState,
     onRequestVerification: () -> Unit,
     onNextClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val verificationButtonText =
+        when {
+            isSendingCode -> {
+                stringResource(R.string.signup_verification_requesting)
+            }
+
+            resendCooldownSeconds > 0 -> {
+                stringResource(R.string.signup_verification_resend_cooldown, resendCooldownSeconds)
+            }
+
+            isVerificationSent -> {
+                stringResource(R.string.signup_verification_resend)
+            }
+
+            else -> {
+                stringResource(R.string.signup_verification_request)
+            }
+        }
+    val isVerificationButtonEnabled =
+        !isSendingCode && resendCooldownSeconds == 0 && isEmailFormatValid
+
     ProgressBarScaffold(
         currentStep = 1,
         onBackClick = onBackClick,
         onNextClick = onNextClick,
         modifier = modifier,
+        isNextEnabled = isNextEnabled,
+        snackbarHostState = snackbarHostState,
         content = {
             Column(
                 modifier =
@@ -49,7 +79,12 @@ fun SignUpScreen(
             ) {
                 // 이메일 입력 + 인증번호 받기
                 AfternoteTextField(
-                    type = TextFieldType.Variant7(onClick = onRequestVerification),
+                    type =
+                        TextFieldType.Variant7(
+                            text = verificationButtonText,
+                            onClick = onRequestVerification,
+                            enabled = isVerificationButtonEnabled,
+                        ),
                     state = emailState,
                     placeholder = stringResource(R.string.signup_email_placeholder),
                     keyboardType = KeyboardType.Email,
@@ -63,7 +98,7 @@ fun SignUpScreen(
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Done,
                     onImeAction = {
-                        onNextClick()
+                        if (isNextEnabled) onNextClick()
                     },
                 )
 
@@ -88,6 +123,11 @@ private fun SignUpScreenPreview() {
             emailState = rememberTextFieldState(),
             verificationCodeState = rememberTextFieldState(),
             isVerificationSent = true,
+            isSendingCode = false,
+            isEmailFormatValid = false,
+            resendCooldownSeconds = 0,
+            isNextEnabled = false,
+            snackbarHostState = remember { SnackbarHostState() },
             onRequestVerification = {},
             onNextClick = {},
             onBackClick = {},

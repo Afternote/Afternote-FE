@@ -9,6 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -31,6 +32,8 @@ import kotlinx.coroutines.flow.filter
 fun SignUpResidentNumberScreen(
     frontNumberState: TextFieldState,
     backNumberState: TextFieldState,
+    isNextEnabled: Boolean,
+    snackbarHostState: SnackbarHostState,
     onNextClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -55,6 +58,8 @@ fun SignUpResidentNumberScreen(
         onBackClick = onBackClick,
         onNextClick = onNextClick,
         modifier = modifier,
+        isNextEnabled = isNextEnabled,
+        snackbarHostState = snackbarHostState,
         content = {
             Column(
                 modifier =
@@ -81,7 +86,7 @@ fun SignUpResidentNumberScreen(
                         ),
                     placeholder = stringResource(R.string.signup_resident_number_placeholder),
                     keyboardType = KeyboardType.Number,
-                    onImeAction = onNextClick,
+                    onImeAction = { if (isNextEnabled) onNextClick() },
                 )
             }
         },
@@ -95,6 +100,8 @@ private fun SignUpResidentNumberScreenPreview() {
         SignUpResidentNumberScreen(
             frontNumberState = rememberTextFieldState(),
             backNumberState = rememberTextFieldState(),
+            isNextEnabled = false,
+            snackbarHostState = remember { SnackbarHostState() },
             onNextClick = {},
             onBackClick = {},
         )

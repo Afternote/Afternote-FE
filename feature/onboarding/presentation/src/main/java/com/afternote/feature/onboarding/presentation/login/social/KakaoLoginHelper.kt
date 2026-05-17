@@ -18,7 +18,6 @@ import kotlin.coroutines.resume
  * 디바이스에 카카오톡이 설치된 경우 앱 로그인을, 그 외에는 웹 계정 로그인을 수행하며,
  * 앱 로그인이 비정상 종료된 경우에는 웹 계정 로그인으로 폴백한다.
  * 콜백 기반 SDK API를 [suspendCancellableCoroutine]으로 감싸 코루틴 흐름으로 변환한다.
- * +TODO:검토
  */
 
 suspend fun requestKakaoAccessToken(activity: Activity): Result<String> =

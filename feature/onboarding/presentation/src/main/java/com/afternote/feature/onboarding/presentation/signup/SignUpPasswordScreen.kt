@@ -12,8 +12,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
@@ -34,6 +36,9 @@ import com.afternote.feature.onboarding.presentation.signup.scaffold.ProgressBar
 fun SignUpPasswordScreen(
     passwordState: TextFieldState,
     passwordConfirmState: TextFieldState,
+    isPasswordRuleSatisfied: Boolean,
+    isNextEnabled: Boolean,
+    snackbarHostState: SnackbarHostState,
     onNextClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -45,6 +50,8 @@ fun SignUpPasswordScreen(
         onBackClick = onBackClick,
         onNextClick = onNextClick,
         modifier = modifier,
+        isNextEnabled = isNextEnabled,
+        snackbarHostState = snackbarHostState,
         content = {
             Column(
                 modifier =
@@ -78,7 +85,7 @@ fun SignUpPasswordScreen(
                     imeAction = ImeAction.Done,
                     onImeAction = {
                         focusManager.clearFocus()
-                        onNextClick()
+                        if (isNextEnabled) onNextClick()
                     },
                 )
 
@@ -87,6 +94,7 @@ fun SignUpPasswordScreen(
                 // 안내 문구
                 PasswordRuleItem(
                     text = stringResource(R.string.signup_password_rule_combination),
+                    isSatisfied = isPasswordRuleSatisfied,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 PasswordRuleItem(
@@ -101,7 +109,14 @@ fun SignUpPasswordScreen(
 private fun PasswordRuleItem(
     text: String,
     modifier: Modifier = Modifier,
+    isSatisfied: Boolean? = null,
 ) {
+    val color =
+        if (isSatisfied == false) {
+            AfternoteDesign.colors.gray5
+        } else {
+            AfternoteDesign.colors.b1
+        }
     Row(
         modifier =
             modifier
@@ -113,15 +128,13 @@ private fun PasswordRuleItem(
         Text(
             text = "\u2022",
             modifier = Modifier.clearAndSetSemantics {},
-            style =
-                AfternoteDesign.typography.captionLargeB,
-            color = AfternoteDesign.colors.b1,
+            style = AfternoteDesign.typography.captionLargeB,
+            color = color,
         )
         Text(
             text = text,
-            style =
-                AfternoteDesign.typography.captionLargeB,
-            color = AfternoteDesign.colors.b1,
+            style = AfternoteDesign.typography.captionLargeB,
+            color = color,
         )
     }
 }
@@ -133,6 +146,9 @@ private fun SignUpPasswordScreenPreview() {
         SignUpPasswordScreen(
             passwordState = rememberTextFieldState(),
             passwordConfirmState = rememberTextFieldState(),
+            isPasswordRuleSatisfied = false,
+            isNextEnabled = false,
+            snackbarHostState = remember { SnackbarHostState() },
             onNextClick = {},
             onBackClick = {},
         )
