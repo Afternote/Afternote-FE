@@ -26,8 +26,8 @@ sealed interface SettingUiState {
 /**
  * 설정 화면용 ViewModel.
  *
- * 서버 logout 호출은 best-effort, 로컬 토큰 [AuthRepository.clearSession]은 실패 여부와 무관하게 실행한다.
- * 서버 logout이 실패(토큰 없음, 네트워크 에러 등)하더라도 로컬 세션은 반드시 삭제한다.
+ * 로그아웃 시 [AuthRepository.logout] 한 번 호출로 끝낸다. 내부적으로 서버 호출은 best-effort,
+ * 로컬 토큰은 결과 무관하게 정리하도록 위임돼 있다. 호출처는 토큰 정리 여부를 신경 쓸 필요 없음.
  */
 @HiltViewModel
 class SettingViewModel
@@ -64,8 +64,8 @@ class SettingViewModel
 
         fun logout() {
             viewModelScope.launch {
-                runCatching { authRepository.logout() }
-                authRepository.clearSession()
+                // logout() 내부에서 서버 호출(best-effort) + 로컬 토큰 정리까지 처리한다.
+                authRepository.logout()
                 userRepository.clearCachedProfile()
                 _logoutCompleted.value = true
             }
