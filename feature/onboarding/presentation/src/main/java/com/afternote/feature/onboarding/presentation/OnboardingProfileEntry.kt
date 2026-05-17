@@ -43,6 +43,8 @@ fun OnboardingProfileEntry(
                     )
                 }
             }
+
+            SignUpEvent.NavigateToResidentNumber -> Unit // SignUp Step 1 화면에서 처리
         }
     }
 

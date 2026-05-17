@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -54,6 +55,7 @@ data class TermsState(
 fun OnboardingTermsScreen(
     termsState: TermsState,
     isNextEnabled: Boolean,
+    snackbarHostState: SnackbarHostState,
     onTermsToggle: (Boolean) -> Unit,
     onPrivacyToggle: (Boolean) -> Unit,
     onMarketingToggle: (Boolean) -> Unit,
@@ -69,6 +71,7 @@ fun OnboardingTermsScreen(
         onNextClick = onNextClick,
         modifier = modifier,
         isNextEnabled = isNextEnabled,
+        snackbarHostState = snackbarHostState,
         content = {
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -227,6 +230,7 @@ private fun OnboardingTermsScreenPreview() {
         OnboardingTermsScreen(
             termsState = state,
             isNextEnabled = state.isTermsAgreed && state.isPrivacyAgreed,
+            snackbarHostState = remember { SnackbarHostState() },
             onTermsToggle = { state = state.copy(isTermsAgreed = it) },
             onPrivacyToggle = { state = state.copy(isPrivacyAgreed = it) },
             onMarketingToggle = { state = state.copy(isMarketingAgreed = it) },

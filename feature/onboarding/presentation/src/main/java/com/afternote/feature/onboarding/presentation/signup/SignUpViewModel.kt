@@ -10,6 +10,8 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.domain.repository.account.AccountRepository
+import com.afternote.core.domain.usecase.auth.LoginType
+import com.afternote.core.domain.usecase.auth.LoginUseCase
 import com.afternote.feature.onboarding.presentation.terms.TermsState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -32,6 +34,7 @@ class SignUpViewModel
     @Inject
     constructor(
         private val accountRepository: AccountRepository,
+        private val loginUseCase: LoginUseCase,
     ) : ViewModel() {
         companion object {
             /** 주민등록번호 앞자리(생년월일) 자릿수 */
@@ -58,6 +61,10 @@ class SignUpViewModel
 
         /** 인증번호 전송 요청 진행 중. 버튼 중복 클릭 방지 + 로딩 텍스트 토글에 사용. */
         var isSendingCode by mutableStateOf(false)
+            private set
+
+        /** 이메일/인증번호 검증 요청 진행 중. Step 1 "다음" 중복 클릭 방지. */
+        var isVerifyingEmail by mutableStateOf(false)
             private set
 
         // Step 2: 주민등록번호
@@ -96,7 +103,8 @@ class SignUpViewModel
 
         /** Step 1 — 이메일·인증번호 입력 후 다음 단계 진행 가능 여부 */
         val isStep1NextEnabled by derivedStateOf {
-            emailState.text.isNotBlank() &&
+            !isVerifyingEmail &&
+                emailState.text.isNotBlank() &&
                 verificationCodeState.text.length >= MIN_VERIFICATION_CODE_LENGTH
         }
 
@@ -135,6 +143,34 @@ class SignUpViewModel
                         )
                     }
                 isSendingCode = false
+            }
+        }
+
+        /**
+         * Step 1 "다음" 클릭 시점에 호출.
+         * 이메일/인증번호를 서버에 검증해 성공 시 [SignUpEvent.NavigateToResidentNumber] 를,
+         * 실패/거부 시 [SignUpEvent.ShowError] 를 emit.
+         */
+        fun verifyEmailAndProceed() {
+            if (isVerifyingEmail) return
+            viewModelScope.launch {
+                isVerifyingEmail = true
+                accountRepository
+                    .verifyEmail(
+                        email = emailState.text.toString(),
+                        certificateCode = verificationCodeState.text.toString(),
+                    ).onSuccess { result ->
+                        if (result.isVerified) {
+                            eventChannel.send(SignUpEvent.NavigateToResidentNumber)
+                        } else {
+                            eventChannel.send(SignUpEvent.ShowError("인증번호가 일치하지 않습니다"))
+                        }
+                    }.onFailure { error ->
+                        eventChannel.send(
+                            SignUpEvent.ShowError(error.message ?: "이메일 인증 실패"),
+                        )
+                    }
+                isVerifyingEmail = false
             }
         }
 
@@ -183,14 +219,26 @@ class SignUpViewModel
                 }
 
                 isLoading = true
+                val email = emailState.text.toString()
+                val password = signUpPasswordState.text.toString()
                 accountRepository
                     .signUp(
-                        email = emailState.text.toString(),
-                        password = signUpPasswordState.text.toString(),
+                        email = email,
+                        password = password,
                         name = name,
                         profileUrl = _profileImageUri.value?.toString(),
                     ).onSuccess {
-                        eventChannel.send(SignUpEvent.SignUpSuccess)
+                        // 회원가입 API 는 토큰을 내려주지 않으므로 같은 자격증명으로 자동 로그인.
+                        loginUseCase(LoginType.Email(email = email, password = password))
+                            .onSuccess {
+                                eventChannel.send(SignUpEvent.SignUpSuccess)
+                            }.onFailure { error ->
+                                eventChannel.send(
+                                    SignUpEvent.ShowError(
+                                        error.message ?: "자동 로그인에 실패했어요. 로그인 화면에서 다시 시도해주세요.",
+                                    ),
+                                )
+                            }
                     }.onFailure { error ->
                         eventChannel.send(
                             SignUpEvent.ShowError(error.message ?: "회원가입 실패"),
