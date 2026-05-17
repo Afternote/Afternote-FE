@@ -38,13 +38,11 @@
     <string name="signup_resident_number_label">주민등록번호</string>
     <string name="signup_resident_number_placeholder">주민등록번호</string>
     <string name="signup_resident_number_back_placeholder">0</string>
-    <string name="signup_resident_number_mask">\u0020●●●●●●</string>
     <string name="signup_password_input_label">비밀번호 입력</string>
     <string name="signup_password_confirm_placeholder">비밀번호 확인</string>
     <string name="signup_password_rule_combination">8 ~ 16자의 영문 대소문자, 숫자, 특수문자를 조합하여 설정해 주세요.</string>
     <string name="signup_password_rule_reuse">이전에 사용한 적 없는 비밀번호가 안전합니다.</string>
 
-    <string name="terms_top_bar_title">타임레터</string>
     <string name="terms_welcome">환영합니다!</string>
     <string name="terms_description">애프터노트와 함께\n당신의 마지막을 준비하세요.</string>
     <string name="terms_agree_all">약관에 전체동의</string>
