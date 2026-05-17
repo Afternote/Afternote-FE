@@ -273,7 +273,7 @@ private fun SocialLoginGroup(
             ) {
                 Image(
                     painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_img_google_logo),
-                    contentDescription = "구글 로그인",
+                    contentDescription = stringResource(R.string.content_description_google_login),
                     modifier = Modifier.size(20.dp),
                 )
             }

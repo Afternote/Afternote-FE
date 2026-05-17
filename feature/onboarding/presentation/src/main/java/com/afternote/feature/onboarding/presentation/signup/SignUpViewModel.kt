@@ -194,7 +194,7 @@ class SignUpViewModel
                         startResendCooldown()
                     }.onFailure { error ->
                         eventChannel.send(
-                            SignUpEvent.ShowError(error.message ?: "인증번호 요청 실패"),
+                            SignUpEvent.ShowError(error.message),
                         )
                     }
                 isSendingCode = false
@@ -273,7 +273,7 @@ class SignUpViewModel
 
                 val trimmedName = name.trim()
                 if (trimmedName.isEmpty()) {
-                    eventChannel.send(SignUpEvent.ShowError("이름을 입력해주세요"))
+                    eventChannel.send(SignUpEvent.NameRequired)
                     return@launch
                 }
 
@@ -298,7 +298,7 @@ class SignUpViewModel
                             }
                     }.onFailure { error ->
                         eventChannel.send(
-                            SignUpEvent.ShowError(error.message ?: "회원가입 실패"),
+                            SignUpEvent.ShowError(error.message),
                         )
                     }
                 isLoading = false

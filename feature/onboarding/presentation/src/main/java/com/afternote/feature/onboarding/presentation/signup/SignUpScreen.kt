@@ -55,11 +55,21 @@ fun SignUpScreen(
 
     val verificationButtonText =
         when {
-            isSendingCode -> stringResource(R.string.signup_verification_requesting)
-            resendCooldownSeconds > 0 ->
+            isSendingCode -> {
+                stringResource(R.string.signup_verification_requesting)
+            }
+
+            resendCooldownSeconds > 0 -> {
                 stringResource(R.string.signup_verification_resend_cooldown, resendCooldownSeconds)
-            isVerificationSent -> stringResource(R.string.signup_verification_resend)
-            else -> stringResource(R.string.signup_verification_request)
+            }
+
+            isVerificationSent -> {
+                stringResource(R.string.signup_verification_resend)
+            }
+
+            else -> {
+                stringResource(R.string.signup_verification_request)
+            }
         }
     val isVerificationButtonEnabled =
         !isSendingCode && resendCooldownSeconds == 0 && isEmailFormatValid

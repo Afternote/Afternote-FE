@@ -1,5 +1,7 @@
 package com.afternote.core.network.service
 
+import com.afternote.core.network.dto.ConnectAccountRequestDto
+import com.afternote.core.network.dto.ConnectedAccountsResponseDto
 import com.afternote.core.network.dto.DeliveryConditionRequestDto
 import com.afternote.core.network.dto.DeliveryConditionResponseDto
 import com.afternote.core.network.dto.ReceiverDailyQuestionsResponseDto
@@ -141,4 +143,21 @@ interface UserApiService {
     suspend fun updateDeliveryCondition(
         @Body body: DeliveryConditionRequestDto,
     ): BaseResponse<DeliveryConditionResponseDto>
+
+    /** GET /users/connected-accounts — 연동된 계정 (로컬·소셜) 조회. */
+    @GET("users/connected-accounts")
+    suspend fun getConnectedAccounts(): BaseResponse<ConnectedAccountsResponseDto>
+
+    /** POST /users/connected-accounts/{provider} — 신규 소셜 계정 연동. provider: google/naver/kakao/apple. */
+    @POST("users/connected-accounts/{provider}")
+    suspend fun connectAccount(
+        @Path("provider") provider: String,
+        @Body body: ConnectAccountRequestDto,
+    ): BaseResponse<ConnectedAccountsResponseDto>
+
+    /** DELETE /users/connected-accounts/{provider} — 소셜 계정 연동 해제. Non-2xx 400 (마지막 인증 수단 등). */
+    @DELETE("users/connected-accounts/{provider}")
+    suspend fun disconnectAccount(
+        @Path("provider") provider: String,
+    ): BaseResponse<ConnectedAccountsResponseDto>
 }

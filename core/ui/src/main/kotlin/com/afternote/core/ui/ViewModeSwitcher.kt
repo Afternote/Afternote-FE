@@ -25,7 +25,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -78,7 +77,7 @@ fun ViewModeSwitcher(
                     ).dropShadow(
                         shape = CircleShape,
                         shadow = toggleShadow_2,
-                    ).background(Color.White, CircleShape),
+                    ).background(AfternoteDesign.colors.white, CircleShape),
         )
 
         Row(modifier = Modifier.fillMaxSize()) {

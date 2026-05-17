@@ -71,7 +71,7 @@ class LoginViewModel
                         eventChannel.send(LoginEvent.LoginSuccess)
                     }.onFailure { exception ->
                         eventChannel.send(
-                            LoginEvent.ShowError(exception.message ?: "로그인 실패"),
+                            LoginEvent.ShowError(exception.message),
                         )
                     }
             }

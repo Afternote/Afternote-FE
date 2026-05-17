@@ -60,6 +60,7 @@ fun AfternoteEditorScreen(
     state: AfternoteEditorState = rememberAfternoteEditorState(),
     graphSongs: List<Song> = emptyList(),
     saveError: AfternoteEditorSaveError? = null,
+    isPrefillLoading: Boolean = false,
 ) {
     val focusManager = LocalFocusManager.current
     val snackbarHostState = remember { SnackbarHostState() }
@@ -163,6 +164,7 @@ fun AfternoteEditorScreen(
                 state = state,
                 form = form,
                 graphSongs = graphSongs,
+                isPrefillLoading = isPrefillLoading,
                 onNavigateToAddSong = callbacks.onNavigateToAddSong,
                 onNavigateToSelectReceiver = callbacks.onNavigateToSelectReceiver,
                 onPhotoAddClick = {

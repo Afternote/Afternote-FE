@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.presentation.receiver.summary
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,12 +12,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -40,68 +40,66 @@ fun ContentSection(
             color = AfternoteDesign.colors.gray9,
         )
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = AfternoteDesign.colors.white),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), // Flat style as per image
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(AfternoteDesign.colors.white),
         ) {
-            Box(modifier = Modifier.fillMaxWidth()) {
-                // Background decoration (Simulating the 3D icons in the image)
-                Box(
+            Box(
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomEnd),
+            ) {
+                Image(
+                    painter = imageResource,
+                    contentDescription = null,
                     modifier =
                         Modifier
-                            .align(Alignment.BottomEnd),
-                ) {
-                    Image(
-                        painter = imageResource,
-                        contentDescription = null,
-                        modifier =
-                            Modifier
-                                .size(170.dp),
-                    )
-                }
+                            .size(170.dp),
+                )
+            }
 
-                Column(modifier = Modifier.padding(20.dp)) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text(
+                    text = desc,
+                    style =
+                        AfternoteDesign.typography.textField.copy(
+                            fontWeight = FontWeight.Medium,
+                            color = AfternoteDesign.colors.gray9,
+                        ),
+                )
+                Text(
+                    text = subDesc,
+                    style = AfternoteDesign.typography.captionLargeR,
+                    color = AfternoteDesign.colors.gray9,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
+                )
+
+                Button(
+                    onClick = onButtonClick,
+                    colors = ButtonDefaults.buttonColors(containerColor = AfternoteDesign.colors.gray9),
+                    shape = RoundedCornerShape(50),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    modifier = Modifier.defaultMinSize(minHeight = 36.dp),
+                ) {
                     Text(
-                        text = desc,
+                        text = btnText,
                         style =
-                            AfternoteDesign.typography.textField.copy(
+                            AfternoteDesign.typography.captionLargeR.copy(
                                 fontWeight = FontWeight.Medium,
                                 color = AfternoteDesign.colors.gray9,
                             ),
                     )
-                    Text(
-                        text = subDesc,
-                        style = AfternoteDesign.typography.captionLargeR,
-                        color = AfternoteDesign.colors.gray9,
-                        modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
+
+                    RightArrowIcon(
+                        modifier =
+                            Modifier
+                                .padding(start = 4.dp)
+                                .size(12.dp),
+                        tint = AfternoteDesign.colors.gray9,
                     )
-
-                    Button(
-                        onClick = onButtonClick,
-                        colors = ButtonDefaults.buttonColors(containerColor = AfternoteDesign.colors.gray9),
-                        shape = RoundedCornerShape(50),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                        modifier = Modifier.defaultMinSize(minHeight = 36.dp),
-                    ) {
-                        Text(
-                            text = btnText,
-                            style =
-                                AfternoteDesign.typography.captionLargeR.copy(
-                                    fontWeight = FontWeight.Medium,
-                                    color = AfternoteDesign.colors.gray9,
-                                ),
-                        )
-
-                        RightArrowIcon(
-                            modifier =
-                                Modifier
-                                    .padding(start = 4.dp)
-                                    .size(12.dp),
-                            tint = AfternoteDesign.colors.gray9,
-                        )
-                    }
                 }
             }
         }

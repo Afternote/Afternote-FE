@@ -114,21 +114,22 @@ fun OnboardingProfileScreen(
                     displayImageUri = displayImageUri?.toString(),
                 )
 
+                val isNameProvided =
+                    nameState.text
+                        .toString()
+                        .trim()
+                        .isNotEmpty()
+
                 AfternoteTextField(
                     state = nameState,
                     placeholder = stringResource(R.string.profile_name_placeholder),
                     imeAction = ImeAction.Done,
                     onImeAction = {
                         focusManager.clearFocus()
-                        onCompleteClick()
+                        if (isNameProvided) onCompleteClick()
                     },
                 )
 
-                val isNameProvided =
-                    nameState.text
-                        .toString()
-                        .trim()
-                        .isNotEmpty()
                 AfternoteButton(
                     text = stringResource(R.string.profile_complete),
                     onClick = {

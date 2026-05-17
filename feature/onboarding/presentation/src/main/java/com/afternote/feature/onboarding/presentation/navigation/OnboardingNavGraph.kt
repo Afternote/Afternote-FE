@@ -5,6 +5,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
@@ -13,6 +14,7 @@ import androidx.navigation.navigation
 import com.afternote.core.ui.ObserveAsEvents
 import com.afternote.core.ui.Route
 import com.afternote.feature.onboarding.presentation.OnboardingProfileEntry
+import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.WelcomeScreen
 import com.afternote.feature.onboarding.presentation.login.LoginEntry
 import com.afternote.feature.onboarding.presentation.signup.SignUpEvent
@@ -180,17 +182,36 @@ private fun rememberSignUpEventHost(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
+    val signupFailedMessage = stringResource(R.string.signup_failed)
+    val nameRequiredMessage = stringResource(R.string.signup_name_required)
+
     ObserveAsEvents(viewModel.eventFlow) { event ->
         when (event) {
-            SignUpEvent.NavigateToResidentNumber -> onNavigateToResidentNumber?.invoke()
-            is SignUpEvent.ShowError ->
+            SignUpEvent.NavigateToResidentNumber -> {
+                onNavigateToResidentNumber?.invoke()
+            }
+
+            SignUpEvent.NameRequired -> {
                 coroutineScope.launch {
                     snackbarHostState.showSnackbar(
-                        message = event.message,
+                        message = nameRequiredMessage,
                         duration = SnackbarDuration.Short,
                     )
                 }
-            SignUpEvent.SignUpSuccess -> Unit // Profile 화면(OnboardingProfileEntry)에서 처리
+            }
+
+            is SignUpEvent.ShowError -> {
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = event.message ?: signupFailedMessage,
+                        duration = SnackbarDuration.Short,
+                    )
+                }
+            }
+
+            SignUpEvent.SignUpSuccess -> {
+                Unit
+            } // Profile 화면(OnboardingProfileEntry)에서 처리
         }
     }
 

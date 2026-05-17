@@ -2,6 +2,8 @@ package com.afternote.core.domain.repository
 
 import com.afternote.core.model.ReceiverDailyQuestionsResult
 import com.afternote.core.model.ReceiverMindRecordsResult
+import com.afternote.core.model.SocialProvider
+import com.afternote.core.model.setting.ConnectedAccounts
 import com.afternote.core.model.setting.DeliveryCondition
 import com.afternote.core.model.setting.DeliveryConditionType
 import com.afternote.core.model.setting.PushSettings
@@ -97,4 +99,21 @@ interface UserRepository {
         specificDate: String?,
         leaveMessage: String? = null,
     ): Result<DeliveryCondition>
+
+    /** GET /users/connected-accounts — 연동된 계정 (로컬·소셜) 조회. */
+    suspend fun getConnectedAccounts(): Result<ConnectedAccounts>
+
+    /**
+     * POST /users/connected-accounts/{provider} — 신규 소셜 계정 연동.
+     *
+     * @param provider 소셜 OAuth 제공자
+     * @param accessToken 소셜 SDK 로 받은 access token
+     */
+    suspend fun connectAccount(
+        provider: SocialProvider,
+        accessToken: String,
+    ): Result<ConnectedAccounts>
+
+    /** DELETE /users/connected-accounts/{provider} — 소셜 계정 연동 해제. */
+    suspend fun disconnectAccount(provider: SocialProvider): Result<ConnectedAccounts>
 }

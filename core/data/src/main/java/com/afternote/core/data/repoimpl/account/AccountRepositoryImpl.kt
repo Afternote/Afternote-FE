@@ -18,7 +18,7 @@ import javax.inject.Inject
 class AccountRepositoryImpl
     @Inject
     constructor(
-        val accountApiService: AccountApiService,
+        private val accountApiService: AccountApiService,
     ) : AccountRepository {
         override suspend fun sendEmailCode(email: String): Result<Unit> =
             runCatching {
