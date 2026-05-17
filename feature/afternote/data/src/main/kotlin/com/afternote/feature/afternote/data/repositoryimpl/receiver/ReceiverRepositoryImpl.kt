@@ -4,15 +4,18 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import com.afternote.core.network.model.requireData
+import com.afternote.feature.afternote.data.dto.toDomain
 import com.afternote.feature.afternote.data.local.ReceiverAuthCodeDataSource
 import com.afternote.feature.afternote.data.mapper.response.toDomain
 import com.afternote.feature.afternote.data.paging.ReceiverAfternotePagingSource
 import com.afternote.feature.afternote.data.service.ReceiverAfternoteApiService
+import com.afternote.feature.afternote.data.service.ReceiverAuthApiService
 import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItemDto
 import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResult
 import com.afternote.feature.afternote.domain.model.receiver.LoadCountResult
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedExportBundle
+import com.afternote.feature.afternote.domain.model.receiver.SenderMessageInfo
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -31,6 +34,7 @@ class ReceiverRepositoryImpl
     constructor(
         private val authCodeDataSource: ReceiverAuthCodeDataSource,
         private val api: ReceiverAfternoteApiService,
+        private val authApi: ReceiverAuthApiService,
     ) : ReceiverRepository {
         override val authCodeFlow: Flow<String?> = authCodeDataSource.savedCodeFlow
 
@@ -74,5 +78,8 @@ class ReceiverRepositoryImpl
 
         override suspend fun loadTimeLettersCount(): Result<LoadCountResult> = Result.success(LoadCountResult(0))
 
-        override suspend fun loadSenderMessage(): Result<String?> = Result.success(null)
+        override suspend fun loadSenderMessage(): Result<SenderMessageInfo?> =
+            runCatching {
+                authApi.getSenderMessage().requireData().toDomain()
+            }
     }

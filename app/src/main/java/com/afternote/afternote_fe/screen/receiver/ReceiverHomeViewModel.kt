@@ -78,11 +78,13 @@ class ReceiverHomeViewModel
                     afternotesRes.getOrNull() ?: AfterNotesListResult(items = emptyList(), totalCount = 0)
                 val mindRecordsCount = mindRecordsRes.getOrNull()?.totalCount ?: 0
                 val timeLettersCount = timeLettersRes.getOrNull()?.totalCount ?: 0
-                val senderMessageBody = messageRes.getOrNull()?.takeIf { it.isNotBlank() }
+                val senderMessageInfo = messageRes.getOrNull()
+                val senderMessageBody = senderMessageInfo?.message?.takeIf { it.isNotBlank() }
 
                 _uiState.value =
                     ReceiverHomeUiState.Success(
-                        senderName = "",
+                        senderName = senderMessageInfo?.senderName.orEmpty(),
+                        // TODO: 백엔드 응답에 date 필드 추가되면 채울 것. 현재 receiver-auth/message 응답은 senderName/message 만.
                         senderMessage = senderMessageBody?.let { SenderMessage(date = "", body = it) },
                         mindRecord =
                             MindRecordSummary(
