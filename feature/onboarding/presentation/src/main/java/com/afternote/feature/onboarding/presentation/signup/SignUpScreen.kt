@@ -5,13 +5,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -27,19 +28,31 @@ import com.afternote.feature.onboarding.presentation.signup.scaffold.ProgressBar
 
 @Composable
 fun SignUpScreen(
-    emailState: TextFieldState,
-    verificationCodeState: TextFieldState,
+    initialEmail: String,
+    initialVerificationCode: String,
     isVerificationSent: Boolean,
     isSendingCode: Boolean,
     isEmailFormatValid: Boolean,
     resendCooldownSeconds: Int,
     isNextEnabled: Boolean,
     snackbarHostState: SnackbarHostState,
+    onEmailChange: (String) -> Unit,
+    onVerificationCodeChange: (String) -> Unit,
     onRequestVerification: () -> Unit,
     onNextClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val emailState = rememberTextFieldState(initialEmail)
+    val verificationCodeState = rememberTextFieldState(initialVerificationCode)
+
+    LaunchedEffect(emailState) {
+        snapshotFlow { emailState.text.toString() }.collect(onEmailChange)
+    }
+    LaunchedEffect(verificationCodeState) {
+        snapshotFlow { verificationCodeState.text.toString() }.collect(onVerificationCodeChange)
+    }
+
     val verificationButtonText =
         when {
             isSendingCode -> {
@@ -120,14 +133,16 @@ fun SignUpScreen(
 private fun SignUpScreenPreview() {
     AfternoteTheme {
         SignUpScreen(
-            emailState = rememberTextFieldState(),
-            verificationCodeState = rememberTextFieldState(),
+            initialEmail = "",
+            initialVerificationCode = "",
             isVerificationSent = true,
             isSendingCode = false,
             isEmailFormatValid = false,
             resendCooldownSeconds = 0,
             isNextEnabled = false,
             snackbarHostState = remember { SnackbarHostState() },
+            onEmailChange = {},
+            onVerificationCodeChange = {},
             onRequestVerification = {},
             onNextClick = {},
             onBackClick = {},

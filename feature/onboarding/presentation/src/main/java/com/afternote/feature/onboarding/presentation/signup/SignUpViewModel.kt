@@ -1,9 +1,7 @@
 package com.afternote.feature.onboarding.presentation.signup
 
 import android.net.Uri
-import android.util.Log
 import android.util.Patterns
-import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -33,6 +31,10 @@ import javax.inject.Inject
  *
  * `Route.Onboarding` 그래프 스코프에 묶여 SignUp Step 1~4와 Profile 화면이
  * 동일한 인스턴스를 공유합니다.
+ *
+ * **UI 상태 보관 정책**: TextFieldState 는 각 Screen 이 [rememberTextFieldState] 로
+ * 소유하고, ViewModel 은 평범한 [String] 으로 보관합니다. Screen 이 LaunchedEffect +
+ * snapshotFlow 로 변경 사항을 VM 에 push, 다른 Screen 은 VM 의 String 으로 read.
  */
 @HiltViewModel
 class SignUpViewModel
@@ -61,9 +63,58 @@ class SignUpViewModel
         private val eventChannel = Channel<SignUpEvent>(Channel.BUFFERED)
         val eventFlow: Flow<SignUpEvent> = eventChannel.receiveAsFlow()
 
-        // Step 1: 이메일 & 인증번호
-        val emailState = TextFieldState()
-        val verificationCodeState = TextFieldState()
+        // ─── 입력 값 (각 Screen 의 rememberTextFieldState 로부터 push) ───
+        // Step 1
+        var email: String by mutableStateOf("")
+            private set
+        var verificationCode: String by mutableStateOf("")
+            private set
+
+        // Step 2
+        var residentFrontNumber: String by mutableStateOf("")
+            private set
+        var residentBackNumber: String by mutableStateOf("")
+            private set
+
+        // Step 3
+        var signUpPassword: String by mutableStateOf("")
+            private set
+        var signUpPasswordConfirm: String by mutableStateOf("")
+            private set
+
+        // Profile
+        var name: String by mutableStateOf("")
+            private set
+
+        fun updateEmail(value: String) {
+            email = value
+        }
+
+        fun updateVerificationCode(value: String) {
+            verificationCode = value
+        }
+
+        fun updateResidentFrontNumber(value: String) {
+            residentFrontNumber = value
+        }
+
+        fun updateResidentBackNumber(value: String) {
+            residentBackNumber = value
+        }
+
+        fun updateSignUpPassword(value: String) {
+            signUpPassword = value
+        }
+
+        fun updateSignUpPasswordConfirm(value: String) {
+            signUpPasswordConfirm = value
+        }
+
+        fun updateName(value: String) {
+            name = value
+        }
+
+        // ─── 플래그 ───
         var isVerificationSent by mutableStateOf(false)
             private set
 
@@ -81,28 +132,9 @@ class SignUpViewModel
 
         private var cooldownJob: Job? = null
 
-        // Step 2: 주민등록번호
-        val frontNumberState = TextFieldState()
-        val backNumberState = TextFieldState()
-
-        // Step 3: 비밀번호 설정
-        val signUpPasswordState = TextFieldState()
-        val signUpPasswordConfirmState = TextFieldState()
-
         // Step 4: 약관 동의
         var termsState by mutableStateOf(TermsState())
             private set
-
-        // Profile
-        val nameState = TextFieldState()
-
-        init {
-            // TODO(fix/141): 이름 빈값 전송 재현 후 제거.
-            Log.d(
-                "SignUp/debug",
-                "VM created: vm=${System.identityHashCode(this)}, nameState=${System.identityHashCode(nameState)}",
-            )
-        }
 
         private val _profileImageUri = MutableStateFlow<Uri?>(null)
         val profileImageUri: StateFlow<Uri?> = _profileImageUri.asStateFlow()
@@ -115,9 +147,10 @@ class SignUpViewModel
         var isLoading by mutableStateOf(false)
             private set
 
+        // ─── derivedStateOf ───
+
         /** 이메일 형식 유효성. "인증번호 받기" / "다음" 활성화 조건의 사전 가드. */
         val isEmailFormatValid by derivedStateOf {
-            val email = emailState.text.toString()
             email.isNotBlank() && Patterns.EMAIL_ADDRESS.matcher(email).matches()
         }
 
@@ -125,24 +158,23 @@ class SignUpViewModel
         val isStep1NextEnabled by derivedStateOf {
             !isVerifyingEmail &&
                 isEmailFormatValid &&
-                verificationCodeState.text.length >= MIN_VERIFICATION_CODE_LENGTH
+                verificationCode.length >= MIN_VERIFICATION_CODE_LENGTH
         }
 
         /** Step 2 — 주민등록번호 앞 6자리 + 뒷 첫 1자리 */
         val isStep2NextEnabled by derivedStateOf {
-            frontNumberState.text.length == RESIDENT_REGISTRATION_FRONT_DIGIT_COUNT &&
-                backNumberState.text.length == RESIDENT_REGISTRATION_BACK_FIRST_DIGIT_COUNT
+            residentFrontNumber.length == RESIDENT_REGISTRATION_FRONT_DIGIT_COUNT &&
+                residentBackNumber.length == RESIDENT_REGISTRATION_BACK_FIRST_DIGIT_COUNT
         }
 
         /** 비밀번호 정규식 충족 여부. 안내 문구 색상 토글에도 사용. */
         val isPasswordRuleSatisfied by derivedStateOf {
-            PASSWORD_REGEX.matches(signUpPasswordState.text.toString())
+            PASSWORD_REGEX.matches(signUpPassword)
         }
 
         /** Step 3 — 비밀번호 규칙 충족 + 확인 일치 */
         val isStep3NextEnabled by derivedStateOf {
-            isPasswordRuleSatisfied &&
-                signUpPasswordState.text.toString() == signUpPasswordConfirmState.text.toString()
+            isPasswordRuleSatisfied && signUpPassword == signUpPasswordConfirm
         }
 
         /** Step 4 — 필수 약관(이용·개인정보) 동의 */
@@ -150,12 +182,13 @@ class SignUpViewModel
             termsState.isTermsAgreed && termsState.isPrivacyAgreed
         }
 
+        // ─── 액션 ───
         fun requestVerification() {
             if (isSendingCode || resendCooldownSeconds > 0) return
             viewModelScope.launch {
                 isSendingCode = true
                 accountRepository
-                    .sendEmailCode(emailState.text.toString())
+                    .sendEmailCode(email)
                     .onSuccess {
                         isVerificationSent = true
                         startResendCooldown()
@@ -192,8 +225,8 @@ class SignUpViewModel
                 isVerifyingEmail = true
                 accountRepository
                     .verifyEmail(
-                        email = emailState.text.toString(),
-                        certificateCode = verificationCodeState.text.toString(),
+                        email = email,
+                        certificateCode = verificationCode,
                     ).onSuccess { result ->
                         if (result.isVerified) {
                             eventChannel.send(SignUpEvent.NavigateToResidentNumber)
@@ -238,33 +271,22 @@ class SignUpViewModel
             viewModelScope.launch {
                 if (isLoading) return@launch
 
-                val rawName = nameState.text.toString()
-                // TODO(fix/141): 이름 빈값 전송 재현 후 제거.
-                Log.d(
-                    "SignUp/debug",
-                    "submitSignUp: vm=${System.identityHashCode(this@SignUpViewModel)}, " +
-                        "nameState=${System.identityHashCode(nameState)}, " +
-                        "text='$rawName', length=${rawName.length}",
-                )
-
-                val name = rawName.trim()
-                if (name.isEmpty()) {
+                val trimmedName = name.trim()
+                if (trimmedName.isEmpty()) {
                     eventChannel.send(SignUpEvent.NameRequired)
                     return@launch
                 }
 
                 isLoading = true
-                val email = emailState.text.toString()
-                val password = signUpPasswordState.text.toString()
                 accountRepository
                     .signUp(
                         email = email,
-                        password = password,
-                        name = name,
+                        password = signUpPassword,
+                        name = trimmedName,
                         profileUrl = _profileImageUri.value?.toString(),
                     ).onSuccess {
                         // 회원가입 API 는 토큰을 내려주지 않으므로 같은 자격증명으로 자동 로그인.
-                        loginUseCase(LoginType.Email(email = email, password = password))
+                        loginUseCase(LoginType.Email(email = email, password = signUpPassword))
                             .onSuccess {
                                 eventChannel.send(SignUpEvent.SignUpSuccess)
                             }.onFailure { error ->

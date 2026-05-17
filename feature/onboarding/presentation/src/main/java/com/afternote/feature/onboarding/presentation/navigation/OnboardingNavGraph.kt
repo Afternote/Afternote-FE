@@ -5,6 +5,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
@@ -13,6 +14,7 @@ import androidx.navigation.navigation
 import com.afternote.core.ui.ObserveAsEvents
 import com.afternote.core.ui.Route
 import com.afternote.feature.onboarding.presentation.OnboardingProfileEntry
+import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.WelcomeScreen
 import com.afternote.feature.onboarding.presentation.login.LoginEntry
 import com.afternote.feature.onboarding.presentation.signup.SignUpEvent
@@ -65,14 +67,16 @@ fun NavGraphBuilder.onboardingNavGraph(
                 )
 
             SignUpScreen(
-                emailState = signUpViewModel.emailState,
-                verificationCodeState = signUpViewModel.verificationCodeState,
+                initialEmail = signUpViewModel.email,
+                initialVerificationCode = signUpViewModel.verificationCode,
                 isVerificationSent = signUpViewModel.isVerificationSent,
                 isSendingCode = signUpViewModel.isSendingCode,
                 isEmailFormatValid = signUpViewModel.isEmailFormatValid,
                 resendCooldownSeconds = signUpViewModel.resendCooldownSeconds,
                 isNextEnabled = signUpViewModel.isStep1NextEnabled,
                 snackbarHostState = snackbarHostState,
+                onEmailChange = signUpViewModel::updateEmail,
+                onVerificationCodeChange = signUpViewModel::updateVerificationCode,
                 onRequestVerification = signUpViewModel::requestVerification,
                 onNextClick = signUpViewModel::verifyEmailAndProceed,
                 onBackClick = actions::onSignUpEmailBack,
@@ -85,10 +89,12 @@ fun NavGraphBuilder.onboardingNavGraph(
             val snackbarHostState = rememberSignUpEventHost(signUpViewModel)
 
             SignUpResidentNumberScreen(
-                frontNumberState = signUpViewModel.frontNumberState,
-                backNumberState = signUpViewModel.backNumberState,
+                initialFrontNumber = signUpViewModel.residentFrontNumber,
+                initialBackNumber = signUpViewModel.residentBackNumber,
                 isNextEnabled = signUpViewModel.isStep2NextEnabled,
                 snackbarHostState = snackbarHostState,
+                onFrontNumberChange = signUpViewModel::updateResidentFrontNumber,
+                onBackNumberChange = signUpViewModel::updateResidentBackNumber,
                 onNextClick = actions::onSignUpResidentNext,
                 onBackClick = actions::onSignUpResidentBack,
             )
@@ -100,11 +106,13 @@ fun NavGraphBuilder.onboardingNavGraph(
             val snackbarHostState = rememberSignUpEventHost(signUpViewModel)
 
             SignUpPasswordScreen(
-                passwordState = signUpViewModel.signUpPasswordState,
-                passwordConfirmState = signUpViewModel.signUpPasswordConfirmState,
+                initialPassword = signUpViewModel.signUpPassword,
+                initialPasswordConfirm = signUpViewModel.signUpPasswordConfirm,
                 isPasswordRuleSatisfied = signUpViewModel.isPasswordRuleSatisfied,
                 isNextEnabled = signUpViewModel.isStep3NextEnabled,
                 snackbarHostState = snackbarHostState,
+                onPasswordChange = signUpViewModel::updateSignUpPassword,
+                onPasswordConfirmChange = signUpViewModel::updateSignUpPasswordConfirm,
                 onNextClick = actions::onSignUpPasswordNext,
                 onBackClick = actions::onSignUpPasswordBack,
             )
@@ -174,16 +182,28 @@ private fun rememberSignUpEventHost(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
+    val signupFailedMessage = stringResource(R.string.signup_failed)
+    val nameRequiredMessage = stringResource(R.string.signup_name_required)
+
     ObserveAsEvents(viewModel.eventFlow) { event ->
         when (event) {
             SignUpEvent.NavigateToResidentNumber -> {
                 onNavigateToResidentNumber?.invoke()
             }
 
+            SignUpEvent.NameRequired -> {
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = nameRequiredMessage,
+                        duration = SnackbarDuration.Short,
+                    )
+                }
+            }
+
             is SignUpEvent.ShowError -> {
                 coroutineScope.launch {
                     snackbarHostState.showSnackbar(
-                        message = event.message,
+                        message = event.message ?: signupFailedMessage,
                         duration = SnackbarDuration.Short,
                     )
                 }

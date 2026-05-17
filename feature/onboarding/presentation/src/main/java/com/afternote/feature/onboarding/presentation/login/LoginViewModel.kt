@@ -1,6 +1,8 @@
 package com.afternote.feature.onboarding.presentation.login
 
-import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.domain.usecase.auth.LoginType
@@ -27,14 +29,24 @@ class LoginViewModel
         private val eventChannel = Channel<LoginEvent>(Channel.BUFFERED)
         val eventFlow: Flow<LoginEvent> = eventChannel.receiveAsFlow()
 
-        val emailState = TextFieldState()
-        val passwordState = TextFieldState()
+        var email: String by mutableStateOf("")
+            private set
+        var password: String by mutableStateOf("")
+            private set
+
+        fun updateEmail(value: String) {
+            email = value
+        }
+
+        fun updatePassword(value: String) {
+            password = value
+        }
 
         fun loginWithEmail() {
             login(
                 LoginType.Email(
-                    email = emailState.text.toString(),
-                    password = passwordState.text.toString(),
+                    email = email,
+                    password = password,
                 ),
             )
         }
