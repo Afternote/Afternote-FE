@@ -30,7 +30,7 @@ fun TermsDetailScreen(
         onBackClick = onBackClick,
         onActionButtonClick = onNextClick,
         modifier = modifier,
-        {
+        content = {
             val scrollState = rememberScrollState()
 
             Column(

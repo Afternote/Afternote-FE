@@ -1,12 +1,17 @@
 package com.afternote.feature.onboarding.presentation
 
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.ObserveAsEvents
 import com.afternote.feature.onboarding.presentation.signup.SignUpEvent
 import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel
+import kotlinx.coroutines.launch
 
 /**
  * 프로필 설정 Entry.
@@ -21,6 +26,8 @@ fun OnboardingProfileEntry(
     modifier: Modifier = Modifier,
 ) {
     val profileImageUri by viewModel.profileImageUri.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     ObserveAsEvents(viewModel.eventFlow) { event ->
         when (event) {
@@ -29,7 +36,12 @@ fun OnboardingProfileEntry(
             }
 
             is SignUpEvent.ShowError -> {
-                // TODO: 스낵바 또는 토스트로 에러 표시
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = event.message,
+                        duration = SnackbarDuration.Short,
+                    )
+                }
             }
         }
     }
@@ -37,6 +49,7 @@ fun OnboardingProfileEntry(
     OnboardingProfileScreen(
         nameState = viewModel.nameState,
         displayImageUri = profileImageUri,
+        snackbarHostState = snackbarHostState,
         onProfileImagePick = viewModel::onProfileImagePicked,
         onCompleteClick = viewModel::submitSignUp,
         onBackClick = onBackClick,
