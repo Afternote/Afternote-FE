@@ -228,10 +228,10 @@ private fun ReceiverHomeScreenPreview() {
                     afternoteTotalCount = 10,
                     afternoteIcons =
                         listOf(
-                            AfternoteSourceIcon("INSTAGRAM", AfternoteFeatureR.drawable.feature_afternote_img_insta_pattern),
-                            AfternoteSourceIcon("GALLERY", AfternoteFeatureR.drawable.feature_afternote_img_googlephoto_pattern),
-                            AfternoteSourceIcon("NAVER_MAIL", AfternoteFeatureR.drawable.feature_afternote_img_naver_mail_pattern),
-                            AfternoteSourceIcon("KAKAOTALK", AfternoteFeatureR.drawable.feature_afternote_img_kakaotalk_pattern),
+                            AfternoteSourceIcon(AfternoteFeatureR.drawable.feature_afternote_img_insta_pattern),
+                            AfternoteSourceIcon(AfternoteFeatureR.drawable.feature_afternote_img_googlephoto_pattern),
+                            AfternoteSourceIcon(AfternoteFeatureR.drawable.feature_afternote_img_naver_mail_pattern),
+                            AfternoteSourceIcon(AfternoteFeatureR.drawable.feature_afternote_img_kakaotalk_pattern),
                         ),
                 ),
             onEvent = {},

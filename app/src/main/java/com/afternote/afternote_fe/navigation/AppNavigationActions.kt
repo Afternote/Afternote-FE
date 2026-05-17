@@ -184,11 +184,18 @@ fun rememberHomeTabActions(
                 appState.navController.navigate(Route.MindRecord)
             }
 
-            override fun onWeeklyImageClick() {}
+            // TODO: 카드별 destination 디자인 확정 후 분기. 우선 마음의 기록 탭으로 임시 연결.
+            override fun onWeeklyImageClick() {
+                appState.navigateToBottomBarRoute(Route.MindRecord)
+            }
 
-            override fun onWeeklyCountClick() {}
+            override fun onWeeklyCountClick() {
+                appState.navigateToBottomBarRoute(Route.MindRecord)
+            }
 
-            override fun onWeeklyRecentRecordClick() {}
+            override fun onWeeklyRecentRecordClick() {
+                appState.navigateToBottomBarRoute(Route.MindRecord)
+            }
 
             override fun onMemoriesSectionClick() {
                 appState.navController.navigate(Route.MemorySpace)
