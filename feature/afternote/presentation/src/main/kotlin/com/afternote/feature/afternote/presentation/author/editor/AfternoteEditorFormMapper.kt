@@ -81,6 +81,10 @@ internal object AfternoteEditorFormMapper {
             } ?: emptyList()
         val editorCategory = EditorCategory.fromServerValue(detail.category)
         val isGallery = editorCategory == EditorCategory.GALLERY
+        // ESTATE(재산 처리) 의 form 구조는 디자인 미확정. 이슈 #195 임시 폴백으로 GalleryAndFileEditorContent 를 재사용하므로
+        // actions 도 galleryMethods 자리에 채워 둔다. 디자인 확정 후 ESTATE 전용 자리/페이로드로 분리.
+        val isEstateUsingGalleryFormFallback = editorCategory == EditorCategory.ESTATE
+        val actionsGoToGalleryField = isGallery || isEstateUsingGalleryFormFallback
         val memorialSongs: List<Song> =
             if (editorCategory == EditorCategory.MEMORIAL) {
                 detail.playlist?.songs?.mapIndexed { index, s ->
@@ -106,8 +110,8 @@ internal object AfternoteEditorFormMapper {
             processing =
                 LoadFromExistingProcessingParams(
                     message = detail.processing?.leaveMessage.orEmpty(),
-                    methods = if (!isGallery) actionItems else emptyList(),
-                    galleryMethods = if (isGallery) actionItems else emptyList(),
+                    methods = if (actionsGoToGalleryField) emptyList() else actionItems,
+                    galleryMethods = if (actionsGoToGalleryField) actionItems else emptyList(),
                 ),
             atmosphere = detail.playlist?.atmosphere,
             memorialVideoUrl = detail.playlist?.playlistDetailMemorialMedia?.videoUrl,
@@ -163,7 +167,8 @@ internal object AfternoteEditorFormMapper {
         val leaveMessage = payload.message.ifBlank { null }
 
         return when (category) {
-            EditorCategory.GALLERY -> {
+            // GALLERY · ESTATE 모두 수신자 + actions 흐름. 서버는 현재 BUSINESS/ESTATE 페이로드 미지원이라 ESTATE 도 GALLERY 페이로드로 폴백.
+            EditorCategory.GALLERY, EditorCategory.ESTATE -> {
                 val galleryActions = actions.ifEmpty { listOf("정보 전달") }
                 CreateAfternoteInput.Gallery(
                     CreateGalleryPayload(
@@ -193,7 +198,8 @@ internal object AfternoteEditorFormMapper {
                 )
             }
 
-            EditorCategory.SOCIAL -> {
+            // SOCIAL · BUSINESS 모두 계정 ID/PW + actions 흐름. 서버 BUSINESS 페이로드 미지원이라 BUSINESS 도 SOCIAL 페이로드로 폴백.
+            EditorCategory.SOCIAL, EditorCategory.BUSINESS -> {
                 CreateAfternoteInput.Social(
                     CreateSocialPayload(
                         title = payload.serviceName,
@@ -234,7 +240,7 @@ internal object AfternoteEditorFormMapper {
                 )
             }
 
-            EditorCategory.GALLERY, EditorCategory.SOCIAL -> {
+            EditorCategory.GALLERY, EditorCategory.SOCIAL, EditorCategory.BUSINESS, EditorCategory.ESTATE -> {
                 buildNonMemorialUpdatePayload(category, payload, selectedReceiverIds)
             }
         }
@@ -247,9 +253,9 @@ internal object AfternoteEditorFormMapper {
         val actions =
             payload.processingMethods.map { it.text } +
                 payload.galleryProcessingMethods.map { it.text }
-        val isSocial = category == EditorCategory.SOCIAL
+        val hasCredentials = category == EditorCategory.SOCIAL || category == EditorCategory.BUSINESS
         val credentials =
-            if (isSocial) {
+            if (hasCredentials) {
                 val id = payload.accountId.ifBlank { null }
                 val pw = payload.password.ifBlank { null }
                 if (id != null || pw != null) AfternoteAccountCredentials(id = id, password = pw) else null
