@@ -4,10 +4,8 @@ import com.afternote.core.network.dto.ConnectAccountRequestDto
 import com.afternote.core.network.dto.ConnectedAccountsResponseDto
 import com.afternote.core.network.dto.DeliveryConditionRequestDto
 import com.afternote.core.network.dto.DeliveryConditionResponseDto
-import com.afternote.core.network.dto.ReceiverDailyQuestionsResponseDto
 import com.afternote.core.network.dto.ReceiverDetailResponseDto
 import com.afternote.core.network.dto.ReceiverItemDto
-import com.afternote.core.network.dto.ReceiverMindRecordsResponseDto
 import com.afternote.core.network.dto.RegisterReceiverRequestDto
 import com.afternote.core.network.dto.RegisterReceiverResponseDto
 import com.afternote.core.network.dto.UserPushSettingResponse
@@ -21,7 +19,6 @@ import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Path
-import retrofit2.http.Query
 
 // TODO: 리팩토링
 interface UserApiService {
@@ -90,38 +87,6 @@ interface UserApiService {
         @Path("receiverId") receiverId: Long,
         @Body body: RegisterReceiverRequestDto,
     ): BaseResponse<Unit>
-
-    /**
-     * 수신인별 마음의 기록 전체 조회 (일기, 깊은 생각, 데일리 질문 답변).
-     * GET /users/receivers/{receiverId}/mind-records
-     *
-     * @param receiverId 수신인 식별자 (path, required)
-     * @param page 페이지 번호 (0부터 시작)
-     * @param size 페이지 당 조회 개수
-     * @return data: items, hasNext
-     */
-    @GET("users/receivers/{receiverId}/mind-records")
-    suspend fun getReceiverMindRecords(
-        @Path("receiverId") receiverId: Long,
-        @Query("page") page: Int,
-        @Query("size") size: Int,
-    ): BaseResponse<ReceiverMindRecordsResponseDto>
-
-    /**
-     * 수신인별 데일리 질문 답변 목록 조회 (페이지네이션).
-     * GET /users/receivers/{receiverId}/daily-questions
-     *
-     * @param receiverId 수신인 식별자 (path, required)
-     * @param page 페이지 번호 (0부터 시작)
-     * @param size 페이지 당 조회 개수
-     * @return data: items, hasNext
-     */
-    @GET("users/receivers/{receiverId}/daily-questions")
-    suspend fun getReceiverDailyQuestions(
-        @Path("receiverId") receiverId: Long,
-        @Query("page") page: Int,
-        @Query("size") size: Int,
-    ): BaseResponse<ReceiverDailyQuestionsResponseDto>
 
     /**
      * 전달 조건 조회.

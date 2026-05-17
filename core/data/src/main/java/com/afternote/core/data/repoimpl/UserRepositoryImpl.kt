@@ -3,8 +3,6 @@ package com.afternote.core.data.repoimpl
 import com.afternote.core.data.mapper.user.UserMapper
 import com.afternote.core.datastore.UserProfileDataSource
 import com.afternote.core.domain.repository.UserRepository
-import com.afternote.core.model.ReceiverDailyQuestionsResult
-import com.afternote.core.model.ReceiverMindRecordsResult
 import com.afternote.core.model.SocialProvider
 import com.afternote.core.model.setting.ConnectedAccounts
 import com.afternote.core.model.setting.DeliveryCondition
@@ -156,40 +154,6 @@ class UserRepositoryImpl
                         message = response.message ?: "Status 200 이상 299 이하가 아님",
                     )
                 }
-            }
-
-        override suspend fun getReceiverDailyQuestions(
-            receiverId: Long,
-            page: Int,
-            size: Int,
-        ): Result<ReceiverDailyQuestionsResult> =
-            runCatching {
-                val response =
-                    api.getReceiverDailyQuestions(
-                        receiverId = receiverId,
-                        page = page,
-                        size = size,
-                    )
-                val body = response.requireData()
-                val items = body.items.map(UserMapper::toDailyQuestionAnswerItem)
-                UserMapper.toReceiverDailyQuestionsResult(items = items, hasNext = body.hasNext)
-            }
-
-        override suspend fun getReceiverMindRecords(
-            receiverId: Long,
-            page: Int,
-            size: Int,
-        ): Result<ReceiverMindRecordsResult> =
-            runCatching {
-                val response =
-                    api.getReceiverMindRecords(
-                        receiverId = receiverId,
-                        page = page,
-                        size = size,
-                    )
-                val body = response.requireData()
-                val items = body.items.map(UserMapper::toReceiverMindRecordItem)
-                UserMapper.toReceiverMindRecordsResult(items = items, hasNext = body.hasNext)
             }
 
         override suspend fun getDeliveryCondition(): Result<DeliveryCondition> =
