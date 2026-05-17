@@ -21,6 +21,7 @@ import com.afternote.feature.onboarding.presentation.signup.SignUpResidentNumber
 import com.afternote.feature.onboarding.presentation.signup.SignUpScreen
 import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel
 import com.afternote.feature.onboarding.presentation.terms.OnboardingTermsScreen
+import com.afternote.feature.onboarding.presentation.terms.TermsDetailScreen
 import kotlinx.coroutines.launch
 
 /**
@@ -121,11 +122,18 @@ fun NavGraphBuilder.onboardingNavGraph(
                 onPrivacyToggle = signUpViewModel::togglePrivacyAgreed,
                 onMarketingToggle = signUpViewModel::toggleMarketingAgreed,
                 onToggleAll = signUpViewModel::toggleAllTerms,
-                onViewTermsClick = {
-                    // TODO: 약관 상세 보기 웹뷰 또는 화면 연결
-                },
+                onViewTermsClick = { _ -> actions.onViewTerms() },
                 onNextClick = actions::onTermsNext,
                 onBackClick = actions::onTermsBack,
+            )
+        }
+
+        // ── 약관 상세 ──
+        composable<OnboardingRoute.TermsDetailRoute> {
+            TermsDetailScreen(
+                title = "",
+                onBackClick = actions::onTermsDetailBack,
+                onNextClick = actions::onTermsDetailBack,
             )
         }
 
