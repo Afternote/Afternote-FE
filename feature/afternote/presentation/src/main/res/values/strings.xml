@@ -94,7 +94,6 @@
     <string name="afternote_editor_actions_gallery_delete_folder">\'흑역사\' 폴더 삭제</string>
 
     <string name="afternote_editor_label_account_info">계정 정보</string>
-    <string name="afternote_editor_label_account_process_method">계정 처리 방법</string>
     <string name="afternote_editor_label_process_method_list">처리 방법 리스트</string>
     <string name="afternote_editor_processing_method_add_placeholder">처리 방법을 입력해 주세요</string>
     <string name="afternote_editor_label_receiver_add">수신자 추가</string>
@@ -170,7 +169,6 @@
     <string name="afternote_validation_title_required">등록할 서비스(플랫폼)명을 입력해 주세요.</string>
     <string name="afternote_edit_service_label">등록할 서비스</string>
     <string name="afternote_validation_social_credentials_required">계정 ID와 비밀번호를 입력해 주세요.</string>
-    <string name="afternote_validation_social_process_method_required">계정 처리 방법을 선택해 주세요.</string>
     <string name="afternote_validation_social_actions_required">처리 방법을 한 가지 이상 추가해 주세요.</string>
     <string name="afternote_validation_gallery_actions_required">처리 방법을 한 가지 이상 추가해 주세요.</string>
     <string name="afternote_validation_gallery_receivers_required">수신자를 한 명 이상 등록해 주세요. 설정에서 수신자를 등록해 주세요.</string>

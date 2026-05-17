@@ -29,7 +29,6 @@ data class ReceivedSocialNetworkDetailContent(
     val serviceName: String = "",
     val accountId: String = "",
     val password: String = "",
-    val accountProcessingMethod: String = "",
     val processingMethods: List<String> = emptyList(),
     val message: String = "",
     val finalWriteDate: String = "",
@@ -39,7 +38,6 @@ data class ReceivedSocialNetworkDetailContent(
 data class ReceivedGalleryDetailContent(
     val serviceName: String = "",
     val finalWriteDate: String = "",
-    val processingMethodTitle: String = "",
     val processingMethods: List<String> = emptyList(),
     val message: String = "",
 )

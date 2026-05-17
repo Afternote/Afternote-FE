@@ -82,7 +82,7 @@ private fun SocialNetworkReceivedDetailScrollContent(
         AfternoteDetailServiceHeader(
             service = AfternoteServiceDisplay.fromServiceName(content.serviceName),
             finalWriteDate = content.finalWriteDate,
-            processingMethodChipLabel = content.accountProcessingMethod.trim(),
+            processingMethodChipLabel = content.processingMethods.firstOrNull().orEmpty(),
         )
 
         Spacer(modifier = Modifier.height(31.dp))
@@ -171,7 +171,6 @@ private fun SocialNetworkReceivedDetailScreenPreview() {
                     serviceName = "인스타그램",
                     accountId = "qwerty123",
                     password = "qwerty123!",
-                    accountProcessingMethod = "사망 후 추모 계정으로 전환",
                     processingMethods = listOf("게시물 내리기", "추모 게시물 올리기", "추모 계정으로 전환하기"),
                     message = "이 계정에는 우리 가족 여행 사진이 많아.\n계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
                     finalWriteDate = "2025.11.26",
