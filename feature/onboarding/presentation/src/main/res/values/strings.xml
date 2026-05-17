@@ -18,6 +18,11 @@
     <string name="login_google">Google 계정으로 로그인</string>
     <string name="login_find_account">아이디/비밀번호 찾기</string>
     <string name="login_find_account_message">아이디/비밀번호 찾기의 경우,\n고객센터로 문의 바랍니다.</string>
+    <string name="login_failed">로그인 실패</string>
+    <string name="login_kakao_failed">카카오 로그인에 실패했습니다.</string>
+    <string name="login_google_failed">구글 로그인에 실패했습니다.</string>
+    <string name="login_screen_unavailable">로그인 화면을 띄울 수 없습니다.</string>
+    <string name="content_description_google_login">구글 로그인</string>
 
     <string name="onboarding_step_description">회원가입 진행도 4단계 중 %1$d단계</string>
 
