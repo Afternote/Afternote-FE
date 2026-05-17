@@ -7,11 +7,9 @@ import kotlinx.serialization.Serializable
 
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
-// processMethod: 계정 처리 방법(enum). OpenAPI 스키마 누락 상태 — 백엔드는 실제로 받음. 스키마 갱신 시 주석만 제거.
 data class AfternoteCreateGalleryRequest(
     @EncodeDefault @SerialName("category") val category: String = "GALLERY",
     @SerialName("title") val title: String,
-    @SerialName("processMethod") val processMethod: String,
     @SerialName("actions") val actions: List<String>,
     @SerialName("leaveMessage") val leaveMessage: String? = null,
     @SerialName("receivers") val receivers: List<AfternoteReceiverRef>,
@@ -31,7 +29,6 @@ data class AfternoteCreatePlaylistRequest(
 data class AfternoteCreateSocialRequest(
     @EncodeDefault @SerialName("category") val category: String = "SOCIAL",
     @SerialName("title") val title: String,
-    @SerialName("processMethod") val processMethod: String,
     @SerialName("actions") val actions: List<String>,
     @SerialName("leaveMessage") val leaveMessage: String? = null,
     @SerialName("credentials") val credentials: AfternoteCredentials? = null,
@@ -42,7 +39,6 @@ data class AfternoteCreateSocialRequest(
 data class AfternoteUpdateRequest(
     @SerialName("category") val category: String,
     @SerialName("title") val title: String,
-    @SerialName("processMethod") val processMethod: String? = null,
     @SerialName("actions") val actions: List<String>? = null,
     @SerialName("leaveMessage") val leaveMessage: String? = null,
     @SerialName("credentials") val credentials: AfternoteCredentials? = null,
@@ -59,7 +55,6 @@ data class AfternoteDetailResponse(
     @SerialName("updatedAt") val updatedAt: String = "",
     @SerialName("credentials") val credentials: AfternoteCredentials? = null,
     @SerialName("receivers") val receivers: List<AfternoteDetailReceiver>? = null,
-    @SerialName("processMethod") val processMethod: String? = null,
     @SerialName("actions") val actions: List<String>? = null,
     @SerialName("leaveMessage") val leaveMessage: String? = null,
     @SerialName("playlist") val playlist: AfternotePlaylist? = null,
