@@ -61,7 +61,7 @@ internal object AfternoteEditorFormMapper {
             accountId = params.account.id,
             password = params.account.password,
             messageBlocks = messageBlocks,
-            socialProcessingMethods = params.processing.methods,
+            socialProcessingMethods = params.processing.socialMethods,
             galleryProcessingMethods = params.processing.galleryMethods,
             lastWishUpdate = lastWish,
             funeralVideoUrl = params.memorialVideoUrl,
@@ -110,7 +110,7 @@ internal object AfternoteEditorFormMapper {
             processing =
                 LoadFromExistingProcessingParams(
                     message = detail.processing?.leaveMessage.orEmpty(),
-                    methods = if (actionsGoToGalleryField) emptyList() else actionItems,
+                    socialMethods = if (actionsGoToGalleryField) emptyList() else actionItems,
                     galleryMethods = if (actionsGoToGalleryField) actionItems else emptyList(),
                 ),
             atmosphere = detail.playlist?.atmosphere,

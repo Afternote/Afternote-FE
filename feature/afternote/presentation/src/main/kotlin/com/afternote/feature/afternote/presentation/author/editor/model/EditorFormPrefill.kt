@@ -56,6 +56,6 @@ data class LoadFromExistingAccountParams(
 
 data class LoadFromExistingProcessingParams(
     val message: String = "",
-    val methods: List<ProcessingMethodItem> = emptyList(),
+    val socialMethods: List<ProcessingMethodItem> = emptyList(),
     val galleryMethods: List<ProcessingMethodItem> = emptyList(),
 )
