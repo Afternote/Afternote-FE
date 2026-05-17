@@ -19,9 +19,7 @@ import com.afternote.feature.afternote.presentation.author.editor.mapper.toAfter
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
-import com.afternote.feature.afternote.presentation.author.editor.model.InformationProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
-import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorUiState
@@ -90,8 +88,6 @@ private data class EditorFormSnapshot(
     val loadedItemId: String? = null,
     val categoryName: String = "SOCIAL",
     val selectedService: String = "",
-    val processingAccount: String = "MEMORIAL_ACCOUNT",
-    val processingInfo: String = "TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER",
     val receivers: List<ReceiverSnap> = emptyList(),
     val social: List<PmSnap> = emptyList(),
     val gallery: List<PmSnap> = emptyList(),
@@ -116,12 +112,6 @@ private data class EditorFormSnapshot(
                     AfternoteServiceCatalog.defaultSocialService
                 }
             }
-        val accountMethod =
-            runCatching { AccountProcessingMethod.valueOf(processingAccount) }
-                .getOrElse { AccountProcessingMethod.MEMORIAL_ACCOUNT }
-        val infoMethod =
-            runCatching { InformationProcessingMethod.valueOf(processingInfo) }
-                .getOrElse { InformationProcessingMethod.TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER }
         val blocks: List<EditorMessageTextBlock> =
             if (editorMessages.isEmpty()) {
                 DEFAULT_EDITOR_MESSAGE_BLOCKS
@@ -132,8 +122,6 @@ private data class EditorFormSnapshot(
             loadedItemId = loadedItemId,
             selectedCategory = category,
             selectedService = service,
-            selectedProcessingMethod = accountMethod,
-            selectedInformationProcessingMethod = infoMethod,
             afternoteEditReceivers =
                 receivers.map { AfternoteEditorReceiver(id = it.id, name = it.name, label = it.label) },
             socialProcessingMethods = social.map { ProcessingMethodItem(it.id, it.text) },
@@ -158,8 +146,6 @@ private data class EditorFormSnapshot(
                 loadedItemId = form.loadedItemId,
                 categoryName = form.selectedCategory.name,
                 selectedService = form.selectedService,
-                processingAccount = form.selectedProcessingMethod.name,
-                processingInfo = form.selectedInformationProcessingMethod.name,
                 receivers =
                     form.afternoteEditReceivers.map {
                         ReceiverSnap(id = it.id, name = it.name, label = it.label)

@@ -28,7 +28,6 @@ import com.afternote.feature.afternote.presentation.author.editor.memorial.guide
 import com.afternote.feature.afternote.presentation.author.editor.memorial.guideline.MemorialGuidelineEditorContentParams
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
-import com.afternote.feature.afternote.presentation.author.editor.model.InfoMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverSection
@@ -156,9 +155,6 @@ private fun SocialPrefillSkeleton() {
     Spacer(modifier = Modifier.height(12.dp))
     SkeletonBar(height = 56.dp)
     Spacer(modifier = Modifier.height(28.dp))
-    // 계정 처리 방법 라디오.
-    SkeletonBar(height = 72.dp)
-    Spacer(modifier = Modifier.height(28.dp))
     // 처리 방법 리스트.
     SkeletonProcessingMethodList()
     Spacer(modifier = Modifier.height(28.dp))
@@ -168,7 +164,7 @@ private fun SocialPrefillSkeleton() {
 
 @Composable
 private fun GalleryPrefillSkeleton() {
-    // 정보 처리 방법 라디오.
+    // 수신자 지정.
     SkeletonBar(height = 72.dp)
     Spacer(modifier = Modifier.height(28.dp))
     // 처리 방법 리스트.
@@ -267,11 +263,6 @@ internal fun CategoryContent(
                         onMessageRegisterClick = {},
                         onMessageDeleteClick = state::removeEditorMessage,
                         onMessageAddClick = state::addEditorMessage,
-                        infoMethodSection =
-                            InfoMethodSection(
-                                selectedMethod = form.selectedInformationProcessingMethod,
-                                onMethodSelected = state::onInformationProcessingMethodSelected,
-                            ),
                         recipientSection =
                             AfternoteEditorReceiverSection(
                                 afternoteEditReceivers = form.afternoteEditReceivers,
@@ -303,8 +294,6 @@ internal fun CategoryContent(
                             AccountSection(
                                 idState = state.idState,
                                 passwordState = state.passwordState,
-                                selectedMethod = form.selectedProcessingMethod,
-                                onMethodSelected = state::onProcessingMethodSelected,
                             ),
                         recipientSection =
                             AfternoteEditorReceiverSection(

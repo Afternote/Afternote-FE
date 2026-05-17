@@ -4,8 +4,6 @@ import com.afternote.core.model.AlbumCover
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
-import com.afternote.feature.afternote.presentation.author.editor.model.InformationProcessingMethod
-import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
@@ -38,9 +36,6 @@ data class EditorFormState(
     val loadedItemId: String? = null,
     val selectedCategory: EditorCategory = EditorCategory.SOCIAL,
     val selectedService: String = AfternoteServiceCatalog.defaultSocialService,
-    val selectedProcessingMethod: AccountProcessingMethod = AccountProcessingMethod.MEMORIAL_ACCOUNT,
-    val selectedInformationProcessingMethod: InformationProcessingMethod =
-        InformationProcessingMethod.TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER,
     val afternoteEditReceivers: List<AfternoteEditorReceiver> = emptyList(),
     val socialProcessingMethods: List<ProcessingMethodItem> = emptyList(),
     val galleryProcessingMethods: List<ProcessingMethodItem> = emptyList(),

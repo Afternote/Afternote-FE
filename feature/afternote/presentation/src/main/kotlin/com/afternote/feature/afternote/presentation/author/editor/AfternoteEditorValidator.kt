@@ -1,6 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
-import com.afternote.feature.afternote.presentation.author.editor.account.AccountProcessMethod
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
@@ -34,9 +33,6 @@ internal object AfternoteEditorValidator {
     private fun validateSocial(payload: RegisterAfternotePayload): AfternoteValidationError? {
         if (payload.accountId.isBlank() || payload.password.isBlank()) {
             return AfternoteValidationError.SOCIAL_CREDENTIALS_REQUIRED
-        }
-        if (payload.accountProcessingMethod !in AccountProcessMethod.validClientNames) {
-            return AfternoteValidationError.SOCIAL_PROCESS_METHOD_REQUIRED
         }
         if (payload.processingMethods.isEmpty()) {
             return AfternoteValidationError.SOCIAL_ACTIONS_REQUIRED
