@@ -63,12 +63,7 @@ class TokenDataSource
         suspend fun updateTokens(
             accessToken: String,
             refreshToken: String,
-        ) {
-            dataStore.edit { prefs ->
-                prefs[Keys.ACCESS_TOKEN] = accessToken
-                prefs[Keys.REFRESH_TOKEN] = refreshToken
-            }
-        }
+        ) = saveTokens(accessToken, refreshToken)
 
         suspend fun getAccessToken(): String? = preferencesFlow.first()[Keys.ACCESS_TOKEN]
 

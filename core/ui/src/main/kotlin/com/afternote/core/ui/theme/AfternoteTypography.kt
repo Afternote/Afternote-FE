@@ -24,11 +24,6 @@ private val inter =
         Font(R.font.inter_variable, FontWeight.Medium),
     )
 
-// private val fedraMonoLight =
-//    FontFamily(
-//        Font(R.font.fedra_mono_light, FontWeight.Light),
-//    )
-
 data class AfternoteTypography(
     val h1: TextStyle =
         TextStyle(
@@ -149,12 +144,4 @@ data class AfternoteTypography(
             lineHeight = 21.sp,
             letterSpacing = (-0.006).em,
         ),
-//    val fedraMono: TextStyle =
-//        TextStyle(
-//            fontFamily = fedraMonoLight,
-//            fontWeight = FontWeight.Light,
-//            fontSize = 11.sp,
-//            lineHeight = 16.5.sp,
-//            letterSpacing = 0.61.sp,
-//        ),
 )

@@ -8,23 +8,6 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 
-// 기존 버전
-
-// private val AfternoteLightColors =
-//    lightColorScheme(
-//        background = AfternoteDesign.colors.gray2,
-//    )
-//
-// fun ProvideAfternoteTheme(content: @Composable () -> Unit) {
-//    MaterialTheme(
-//        colorScheme = AfternoteLightColors,
-//        typography = afternoteTypography,
-//        content = content,
-//    )
-// }
-
-// 수정된 버전
-
 // (static)compositionLocalOf는 부모에서 자식 컴포저블로 데이터를 전달할 때 파라미터로 일일이 넘기지(Prop Drilling) 않고 데이터를 사용할 수 있게 함
 // LocalColors.current의 형태로 현재 전달된 데이터를 꺼내 쓸 수 있음
 // staticCompositionLocalOf는 데이터 값이 변경되면 데이터 제공자와 그 모든 자식 컴포저블을 리컴포지션
@@ -54,8 +37,6 @@ fun AfternoteTheme(
     isDarkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
-    // remember는 이미 저장된 값이 있으면 블록을 실행하지 않기 때문에 darkTheme이 적용되지 않는다
-//    val currentColor = remember { if (isDarkTheme) darkColors else colors }
     val currentColor = if (isDarkTheme) darkColors else colors
     // currentColors가 참조하는 원본의 변경에 따른 리컴포지션을 트리거하지 않고, 원본 내부를 update하지 않기 위해서 copy
     // copy를 리컴포지션마다 하지 않기 위해 remember
