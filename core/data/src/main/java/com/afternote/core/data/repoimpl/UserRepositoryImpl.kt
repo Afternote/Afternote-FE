@@ -5,12 +5,15 @@ import com.afternote.core.datastore.UserProfileDataSource
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.ReceiverDailyQuestionsResult
 import com.afternote.core.model.ReceiverMindRecordsResult
+import com.afternote.core.model.SocialProvider
+import com.afternote.core.model.setting.ConnectedAccounts
 import com.afternote.core.model.setting.DeliveryCondition
 import com.afternote.core.model.setting.DeliveryConditionType
 import com.afternote.core.model.setting.PushSettings
 import com.afternote.core.model.setting.ReceiverDetail
 import com.afternote.core.model.setting.ReceiverListItem
 import com.afternote.core.model.user.UserProfileModel
+import com.afternote.core.network.dto.ConnectAccountRequestDto
 import com.afternote.core.network.dto.RegisterReceiverRequestDto
 import com.afternote.core.network.dto.UserUpdateProfileRequest
 import com.afternote.core.network.dto.UserUpdatePushSettingRequest
@@ -185,7 +188,7 @@ class UserRepositoryImpl
                         size = size,
                     )
                 val body = response.requireData()
-                val items = (body.items).map(UserMapper::toReceiverMindRecordItem)
+                val items = body.items.map(UserMapper::toReceiverMindRecordItem)
                 UserMapper.toReceiverMindRecordsResult(items = items, hasNext = body.hasNext)
             }
 
@@ -211,5 +214,30 @@ class UserRepositoryImpl
                     )
                 val response = api.updateDeliveryCondition(body)
                 UserMapper.toDeliveryCondition(response.requireData())
+            }
+
+        override suspend fun getConnectedAccounts(): Result<ConnectedAccounts> =
+            runCatching {
+                val response = api.getConnectedAccounts()
+                UserMapper.toConnectedAccounts(response.requireData())
+            }
+
+        override suspend fun connectAccount(
+            provider: SocialProvider,
+            accessToken: String,
+        ): Result<ConnectedAccounts> =
+            runCatching {
+                val response =
+                    api.connectAccount(
+                        provider = provider.toPath(),
+                        body = ConnectAccountRequestDto(accessToken = accessToken),
+                    )
+                UserMapper.toConnectedAccounts(response.requireData())
+            }
+
+        override suspend fun disconnectAccount(provider: SocialProvider): Result<ConnectedAccounts> =
+            runCatching {
+                val response = api.disconnectAccount(provider = provider.toPath())
+                UserMapper.toConnectedAccounts(response.requireData())
             }
     }
