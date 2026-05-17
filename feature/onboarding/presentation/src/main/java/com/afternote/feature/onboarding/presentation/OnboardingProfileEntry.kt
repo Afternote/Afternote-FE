@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.ObserveAsEvents
 import com.afternote.feature.onboarding.presentation.signup.SignUpEvent
@@ -29,20 +30,23 @@ fun OnboardingProfileEntry(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
+    val signupFailedMessage = stringResource(R.string.signup_failed)
+    val nameRequiredMessage = stringResource(R.string.signup_name_required)
+
+    val showSnackbar: (String) -> Unit = { message ->
+        coroutineScope.launch {
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short,
+            )
+        }
+    }
+
     ObserveAsEvents(viewModel.eventFlow) { event ->
         when (event) {
-            is SignUpEvent.SignUpSuccess -> {
-                onOnboardingComplete()
-            }
-
-            is SignUpEvent.ShowError -> {
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar(
-                        message = event.message,
-                        duration = SnackbarDuration.Short,
-                    )
-                }
-            }
+            is SignUpEvent.SignUpSuccess -> onOnboardingComplete()
+            is SignUpEvent.NameRequired -> showSnackbar(nameRequiredMessage)
+            is SignUpEvent.ShowError -> showSnackbar(event.message ?: signupFailedMessage)
         }
     }
 
