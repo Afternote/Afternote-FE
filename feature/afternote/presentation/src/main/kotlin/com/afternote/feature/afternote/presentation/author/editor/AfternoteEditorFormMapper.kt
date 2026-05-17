@@ -2,6 +2,7 @@ package com.afternote.feature.afternote.presentation.author.editor
 
 import com.afternote.feature.afternote.domain.model.author.AfternoteAccountCredentials
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
+import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreatePlaylistPayload
 import com.afternote.feature.afternote.domain.model.author.CreateSocialPayload
@@ -212,7 +213,7 @@ internal object AfternoteEditorFormMapper {
         funeralVideoUrl: String?,
         funeralThumbnailUrl: String?,
         memorialPhotoUrl: String?,
-    ): CreateInput {
+    ): CreateAfternoteInput {
         val actions =
             payload.processingMethods.map { it.text } +
                 payload.galleryProcessingMethods.map { it.text }
@@ -227,7 +228,7 @@ internal object AfternoteEditorFormMapper {
         return when (category) {
             EditorCategory.GALLERY -> {
                 val galleryActions = actions.ifEmpty { listOf("정보 전달") }
-                CreateInput.Gallery(
+                CreateAfternoteInput.Gallery(
                     CreateGalleryPayload(
                         title = payload.serviceName,
                         processMethod = processMethod,
@@ -247,7 +248,7 @@ internal object AfternoteEditorFormMapper {
                         funeralVideoUrl = funeralVideoUrl,
                         funeralThumbnailUrl = funeralThumbnailUrl,
                     )
-                CreateInput.Playlist(
+                CreateAfternoteInput.Playlist(
                     CreatePlaylistPayload(
                         title = payload.serviceName,
                         playlist = playlistPayload,
@@ -257,7 +258,7 @@ internal object AfternoteEditorFormMapper {
             }
 
             EditorCategory.SOCIAL -> {
-                CreateInput.Social(
+                CreateAfternoteInput.Social(
                     CreateSocialPayload(
                         title = payload.serviceName,
                         processMethod = processMethod,
@@ -336,20 +337,6 @@ internal object AfternoteEditorFormMapper {
             playlist = null,
         )
     }
-}
-
-internal sealed interface CreateInput {
-    data class Social(
-        val payload: CreateSocialPayload,
-    ) : CreateInput
-
-    data class Gallery(
-        val payload: CreateGalleryPayload,
-    ) : CreateInput
-
-    data class Playlist(
-        val payload: CreatePlaylistPayload,
-    ) : CreateInput
 }
 
 /**

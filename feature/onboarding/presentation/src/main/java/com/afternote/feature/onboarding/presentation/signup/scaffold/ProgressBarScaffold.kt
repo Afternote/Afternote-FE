@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -20,6 +21,7 @@ internal fun ProgressBarScaffold(
     onNextClick: () -> Unit,
     modifier: Modifier = Modifier,
     isNextEnabled: Boolean = true,
+    snackbarHostState: SnackbarHostState? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     OnboardingScaffold(
@@ -28,6 +30,7 @@ internal fun ProgressBarScaffold(
         onActionButtonClick = onNextClick,
         modifier = modifier,
         isActionEnabled = isNextEnabled,
+        snackbarHostState = snackbarHostState,
     ) {
         Column(
             modifier =

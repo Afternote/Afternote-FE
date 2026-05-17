@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -28,6 +30,7 @@ fun OnboardingScaffold(
     onActionButtonClick: () -> Unit,
     modifier: Modifier = Modifier,
     isActionEnabled: Boolean = true,
+    snackbarHostState: SnackbarHostState? = null,
     content: @Composable () -> Unit, // 내부 콘텐츠 슬롯
 ) {
     val focusManager = LocalFocusManager.current
@@ -44,6 +47,9 @@ fun OnboardingScaffold(
                     onBackClick()
                 },
             )
+        },
+        snackbarHost = {
+            if (snackbarHostState != null) SnackbarHost(hostState = snackbarHostState)
         },
         bottomBar = {
             // 제스차 바를 쓰는 경우 화면 하단으로부터 49.dp, 구형 네비게이션 바를 쓰는 경우 바로부터 49.dp

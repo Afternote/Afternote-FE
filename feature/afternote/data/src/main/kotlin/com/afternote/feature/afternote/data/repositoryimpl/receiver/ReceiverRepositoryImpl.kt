@@ -13,7 +13,7 @@ import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResul
 import com.afternote.feature.afternote.domain.model.receiver.LoadCountResult
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedExportBundle
-import com.afternote.feature.afternote.domain.repository.ReceiverRepository
+import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject

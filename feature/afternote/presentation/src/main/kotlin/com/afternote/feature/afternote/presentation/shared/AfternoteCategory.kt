@@ -10,7 +10,7 @@ import com.afternote.feature.afternote.presentation.R
  * [navKey]는 네비게이션 인자로 전달하는 안정적인 영문 키로, EditorCategory.name과 매핑된다.
  */
 enum class AfternoteCategory(
-    @StringRes val labelResId: Int,
+    @param:StringRes val labelResId: Int,
     val navKey: String? = null,
 ) {
     ALL(R.string.afternote_category_all),

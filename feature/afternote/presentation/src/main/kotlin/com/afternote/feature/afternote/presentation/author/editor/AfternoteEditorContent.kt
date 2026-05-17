@@ -1,18 +1,24 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.modifierextention.shimmerLoadingPlaceholder
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.account.AccountSection
@@ -41,6 +47,7 @@ internal fun EditorContent(
     form: EditorFormState,
     graphSongs: List<Song>,
     modifier: Modifier = Modifier,
+    isPrefillLoading: Boolean = false,
     onNavigateToAddSong: () -> Unit,
     onNavigateToSelectReceiver: () -> Unit,
     onPhotoAddClick: () -> Unit,
@@ -73,6 +80,11 @@ internal fun EditorContent(
                     tonalElevation = 10.dp,
                 ),
         )
+
+        if (isPrefillLoading) {
+            EditorPrefillSkeleton(category = form.selectedCategory)
+            return@Column
+        }
 
         if (form.selectedCategory != EditorCategory.MEMORIAL) {
             Spacer(modifier = Modifier.height(20.dp))
@@ -107,6 +119,101 @@ internal fun EditorContent(
             onThumbnailBytesReady = onThumbnailBytesReady,
         )
     }
+}
+
+/**
+ * 수정 모드 진입 시 `getDetail()` 응답이 도착하기 전까지 prefill 대상 섹션을 가리는 skeleton.
+ * 카테고리 드롭다운은 navArg 로 즉시 채워지므로 본 컴포저블 위쪽에서 그대로 노출하고,
+ * 본 컴포저블은 그 아래(서비스명·계정·처리 방법·메시지 등)를 카테고리별 대략적인 layout 으로 placeholder 처리한다.
+ * [shimmerLoadingPlaceholder] 로 가벼운 shimmer 애니메이션을 적용.
+ */
+@Composable
+private fun EditorPrefillSkeleton(
+    category: EditorCategory,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Spacer(modifier = Modifier.height(20.dp))
+
+        if (category != EditorCategory.MEMORIAL) {
+            // 서비스명 드롭다운 자리.
+            SkeletonBar(height = 56.dp)
+            Spacer(modifier = Modifier.height(32.dp))
+        }
+
+        when (category) {
+            EditorCategory.MEMORIAL -> MemorialPrefillSkeleton()
+            EditorCategory.GALLERY -> GalleryPrefillSkeleton()
+            EditorCategory.SOCIAL -> SocialPrefillSkeleton()
+        }
+    }
+}
+
+@Composable
+private fun SocialPrefillSkeleton() {
+    // 계정 ID/PW.
+    SkeletonBar(height = 56.dp)
+    Spacer(modifier = Modifier.height(12.dp))
+    SkeletonBar(height = 56.dp)
+    Spacer(modifier = Modifier.height(28.dp))
+    // 계정 처리 방법 라디오.
+    SkeletonBar(height = 72.dp)
+    Spacer(modifier = Modifier.height(28.dp))
+    // 처리 방법 리스트.
+    SkeletonProcessingMethodList()
+    Spacer(modifier = Modifier.height(28.dp))
+    // 메시지.
+    SkeletonBar(height = 140.dp)
+}
+
+@Composable
+private fun GalleryPrefillSkeleton() {
+    // 정보 처리 방법 라디오.
+    SkeletonBar(height = 72.dp)
+    Spacer(modifier = Modifier.height(28.dp))
+    // 처리 방법 리스트.
+    SkeletonProcessingMethodList()
+    Spacer(modifier = Modifier.height(28.dp))
+    // 메시지.
+    SkeletonBar(height = 140.dp)
+}
+
+@Composable
+private fun MemorialPrefillSkeleton() {
+    // 추모 사진.
+    SkeletonBar(height = 180.dp)
+    Spacer(modifier = Modifier.height(20.dp))
+    // 추모 영상.
+    SkeletonBar(height = 120.dp)
+    Spacer(modifier = Modifier.height(20.dp))
+    // 추모 플레이리스트.
+    SkeletonBar(height = 96.dp)
+    Spacer(modifier = Modifier.height(20.dp))
+    // 마지막 인사 (라디오 + custom text).
+    SkeletonBar(height = 140.dp)
+}
+
+@Composable
+private fun SkeletonProcessingMethodList() {
+    repeat(3) { index ->
+        SkeletonBar(height = 48.dp)
+        if (index != 2) Spacer(modifier = Modifier.height(8.dp))
+    }
+}
+
+@Composable
+private fun SkeletonBar(
+    height: Dp,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(height)
+                .clip(RoundedCornerShape(8.dp))
+                .shimmerLoadingPlaceholder(),
+    )
 }
 
 @Composable

@@ -9,6 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -32,6 +33,7 @@ fun SignUpResidentNumberScreen(
     frontNumberState: TextFieldState,
     backNumberState: TextFieldState,
     isNextEnabled: Boolean,
+    snackbarHostState: SnackbarHostState,
     onNextClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -57,6 +59,7 @@ fun SignUpResidentNumberScreen(
         onNextClick = onNextClick,
         modifier = modifier,
         isNextEnabled = isNextEnabled,
+        snackbarHostState = snackbarHostState,
         content = {
             Column(
                 modifier =
@@ -98,6 +101,7 @@ private fun SignUpResidentNumberScreenPreview() {
             frontNumberState = rememberTextFieldState(),
             backNumberState = rememberTextFieldState(),
             isNextEnabled = false,
+            snackbarHostState = remember { SnackbarHostState() },
             onNextClick = {},
             onBackClick = {},
         )

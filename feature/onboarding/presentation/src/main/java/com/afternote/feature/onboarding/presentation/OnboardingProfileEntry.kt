@@ -45,7 +45,12 @@ fun OnboardingProfileEntry(
     ObserveAsEvents(viewModel.eventFlow) { event ->
         when (event) {
             is SignUpEvent.SignUpSuccess -> onOnboardingComplete()
+
+            is SignUpEvent.NavigateToResidentNumber -> Unit
+
+            // SignUp Step 1 화면에서 처리
             is SignUpEvent.NameRequired -> showSnackbar(nameRequiredMessage)
+
             is SignUpEvent.ShowError -> showSnackbar(event.message ?: signupFailedMessage)
         }
     }

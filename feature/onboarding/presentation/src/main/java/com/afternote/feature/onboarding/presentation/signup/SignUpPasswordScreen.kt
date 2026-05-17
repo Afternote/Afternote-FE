@@ -12,8 +12,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
@@ -36,6 +38,7 @@ fun SignUpPasswordScreen(
     passwordConfirmState: TextFieldState,
     isPasswordRuleSatisfied: Boolean,
     isNextEnabled: Boolean,
+    snackbarHostState: SnackbarHostState,
     onNextClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -48,6 +51,7 @@ fun SignUpPasswordScreen(
         onNextClick = onNextClick,
         modifier = modifier,
         isNextEnabled = isNextEnabled,
+        snackbarHostState = snackbarHostState,
         content = {
             Column(
                 modifier =
@@ -144,6 +148,7 @@ private fun SignUpPasswordScreenPreview() {
             passwordConfirmState = rememberTextFieldState(),
             isPasswordRuleSatisfied = false,
             isNextEnabled = false,
+            snackbarHostState = remember { SnackbarHostState() },
             onNextClick = {},
             onBackClick = {},
         )
