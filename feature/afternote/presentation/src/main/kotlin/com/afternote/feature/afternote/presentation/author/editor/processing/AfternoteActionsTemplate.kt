@@ -25,11 +25,25 @@ object AfternoteActionsTemplate {
                 )
             }
 
+            // BUSINESS(메일) 카테고리 — 디자인 액션 템플릿 미확정. 일단 SOCIAL 과 동일 prefill.
+            EditorCategory.BUSINESS -> {
+                listOf(
+                    R.string.afternote_editor_actions_social_remove_post,
+                    R.string.afternote_editor_actions_social_post_memorial,
+                    R.string.afternote_editor_actions_social_switch_memorial_account,
+                )
+            }
+
             EditorCategory.GALLERY -> {
                 listOf(
                     R.string.afternote_editor_actions_gallery_send_folder,
                     R.string.afternote_editor_actions_gallery_delete_folder,
                 )
+            }
+
+            // ESTATE(재산 처리) — 이슈 #195 "제목만 구현" 정의에 따라 비어 있음. 디자인 확정 후 prefill 추가.
+            EditorCategory.ESTATE -> {
+                emptyList()
             }
 
             EditorCategory.MEMORIAL -> {

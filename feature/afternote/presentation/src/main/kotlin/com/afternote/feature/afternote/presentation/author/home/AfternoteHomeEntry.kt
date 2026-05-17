@@ -52,9 +52,13 @@ fun AfternoteHomeEntry(
         onCategorySelected = viewModel::selectTab,
         onListItemClick = { id, type ->
             when (type) {
-                AfternoteServiceType.GALLERY_AND_FILES -> actions.navigateToGalleryDetail(id)
+                // ESTATE 도 Gallery 상세 화면 재사용 (디자인 확정 후 분리).
+                AfternoteServiceType.GALLERY_AND_FILES, AfternoteServiceType.ESTATE -> actions.navigateToGalleryDetail(id)
+
                 AfternoteServiceType.MEMORIAL -> actions.navigateToMemorialGuidelineDetail(id)
-                AfternoteServiceType.SOCIAL_NETWORK -> actions.navigateToDetail(id)
+
+                // BUSINESS 도 Social 상세 화면 재사용 (디자인 확정 후 분리).
+                AfternoteServiceType.SOCIAL_NETWORK, AfternoteServiceType.BUSINESS -> actions.navigateToDetail(id)
             }
         },
         onFabClick = { actions.navigateToAdd(selectedCategory) },

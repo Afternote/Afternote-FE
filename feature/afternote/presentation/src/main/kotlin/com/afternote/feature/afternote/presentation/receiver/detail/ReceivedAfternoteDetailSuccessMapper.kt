@@ -5,11 +5,13 @@ import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDe
 
 internal fun ReceivedAfternoteDetail.toReceivedDetailContentUiModel(): ReceivedDetailContentUiModel =
     when (type) {
-        AfternoteServiceType.SOCIAL_NETWORK -> {
+        // BUSINESS 도 Social 상세 UI 재사용 (디자인 확정 후 분리).
+        AfternoteServiceType.SOCIAL_NETWORK, AfternoteServiceType.BUSINESS -> {
             ReceivedDetailContentUiModel.SocialNetwork(toReceivedSocialNetworkDetailContent())
         }
 
-        AfternoteServiceType.GALLERY_AND_FILES -> {
+        // ESTATE 도 Gallery 상세 UI 재사용 (디자인 확정 후 분리).
+        AfternoteServiceType.GALLERY_AND_FILES, AfternoteServiceType.ESTATE -> {
             ReceivedDetailContentUiModel.Gallery(toReceivedGalleryDetailContent())
         }
 

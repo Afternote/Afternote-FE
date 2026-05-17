@@ -82,11 +82,13 @@ sealed interface DetailContentUiModel {
 
 internal fun Detail.toDetailContentUiModel(authorDisplayName: String): DetailContentUiModel =
     when (type) {
-        AfternoteServiceType.GALLERY_AND_FILES -> {
+        // GALLERY · ESTATE 모두 동일한 Gallery 상세 UI 사용 (ESTATE 전용 화면은 디자인 확정 후 분리).
+        AfternoteServiceType.GALLERY_AND_FILES, AfternoteServiceType.ESTATE -> {
             DetailContentUiModel.Gallery(toGalleryDetailContent(authorDisplayName))
         }
 
-        AfternoteServiceType.SOCIAL_NETWORK -> {
+        // SOCIAL · BUSINESS 모두 동일한 SocialNetwork 상세 UI 사용 (BUSINESS 전용 화면은 디자인 확정 후 분리).
+        AfternoteServiceType.SOCIAL_NETWORK, AfternoteServiceType.BUSINESS -> {
             DetailContentUiModel.SocialNetwork(toSocialNetworkDetailContent(authorDisplayName))
         }
 

@@ -24,8 +24,8 @@ internal object AfternoteEditorValidator {
             return AfternoteValidationError.TITLE_REQUIRED
         }
         return when (category) {
-            EditorCategory.SOCIAL -> validateSocial(payload)
-            EditorCategory.GALLERY -> validateGallery(payload)
+            EditorCategory.SOCIAL, EditorCategory.BUSINESS -> validateSocial(payload)
+            EditorCategory.GALLERY, EditorCategory.ESTATE -> validateGallery(payload)
             EditorCategory.MEMORIAL -> validateMemorial(playlistSongs)
         }
     }

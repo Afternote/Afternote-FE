@@ -142,8 +142,8 @@ private fun EditorPrefillSkeleton(
 
         when (category) {
             EditorCategory.MEMORIAL -> MemorialPrefillSkeleton()
-            EditorCategory.GALLERY -> GalleryPrefillSkeleton()
-            EditorCategory.SOCIAL -> SocialPrefillSkeleton()
+            EditorCategory.GALLERY, EditorCategory.ESTATE -> GalleryPrefillSkeleton()
+            EditorCategory.SOCIAL, EditorCategory.BUSINESS -> SocialPrefillSkeleton()
         }
     }
 }
@@ -255,7 +255,8 @@ internal fun CategoryContent(
             )
         }
 
-        EditorCategory.GALLERY -> {
+        // GALLERY 와 ESTATE(재산 처리) 는 form 구조가 동일 (수신자 + actions). ESTATE 전용 form 은 디자인 확정 후 분리.
+        EditorCategory.GALLERY, EditorCategory.ESTATE -> {
             GalleryAndFileEditorContent(
                 params =
                     GalleryAndFileEditorContentParams(
@@ -282,6 +283,7 @@ internal fun CategoryContent(
             )
         }
 
+        // SOCIAL · BUSINESS(메일) — form 구조 동일 (계정 ID/PW + actions). BUSINESS 전용 form 은 디자인 확정 후 분리.
         else -> {
             SocialNetworkEditorContent(
                 params =
