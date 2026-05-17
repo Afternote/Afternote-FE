@@ -44,6 +44,8 @@
     <string name="signup_password_confirm_placeholder">비밀번호 확인</string>
     <string name="signup_password_rule_combination">8 ~ 16자의 영문 대소문자, 숫자, 특수문자를 조합하여 설정해 주세요.</string>
     <string name="signup_password_rule_reuse">이전에 사용한 적 없는 비밀번호가 안전합니다.</string>
+    <string name="signup_failed">회원가입 실패</string>
+    <string name="signup_name_required">이름을 입력해주세요</string>
 
     <string name="terms_welcome">환영합니다!</string>
     <string name="terms_description">애프터노트와 함께\n당신의 마지막을 준비하세요.</string>

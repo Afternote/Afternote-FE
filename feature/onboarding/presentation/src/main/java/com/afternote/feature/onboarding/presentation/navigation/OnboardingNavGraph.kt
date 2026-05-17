@@ -176,15 +176,22 @@ private fun rememberSignUpEventHost(
 
     ObserveAsEvents(viewModel.eventFlow) { event ->
         when (event) {
-            SignUpEvent.NavigateToResidentNumber -> onNavigateToResidentNumber?.invoke()
-            is SignUpEvent.ShowError ->
+            SignUpEvent.NavigateToResidentNumber -> {
+                onNavigateToResidentNumber?.invoke()
+            }
+
+            is SignUpEvent.ShowError -> {
                 coroutineScope.launch {
                     snackbarHostState.showSnackbar(
                         message = event.message,
                         duration = SnackbarDuration.Short,
                     )
                 }
-            SignUpEvent.SignUpSuccess -> Unit // Profile 화면(OnboardingProfileEntry)에서 처리
+            }
+
+            SignUpEvent.SignUpSuccess -> {
+                Unit
+            } // Profile 화면(OnboardingProfileEntry)에서 처리
         }
     }
 
