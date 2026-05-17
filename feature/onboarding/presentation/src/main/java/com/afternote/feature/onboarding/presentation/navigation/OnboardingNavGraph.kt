@@ -68,6 +68,7 @@ fun NavGraphBuilder.onboardingNavGraph(
                 verificationCodeState = signUpViewModel.verificationCodeState,
                 isVerificationSent = signUpViewModel.isVerificationSent,
                 isSendingCode = signUpViewModel.isSendingCode,
+                isEmailFormatValid = signUpViewModel.isEmailFormatValid,
                 isNextEnabled = signUpViewModel.isStep1NextEnabled,
                 snackbarHostState = snackbarHostState,
                 onRequestVerification = signUpViewModel::requestVerification,

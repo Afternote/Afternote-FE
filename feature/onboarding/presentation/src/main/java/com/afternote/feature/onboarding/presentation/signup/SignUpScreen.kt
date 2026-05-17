@@ -31,6 +31,7 @@ fun SignUpScreen(
     verificationCodeState: TextFieldState,
     isVerificationSent: Boolean,
     isSendingCode: Boolean,
+    isEmailFormatValid: Boolean,
     isNextEnabled: Boolean,
     snackbarHostState: SnackbarHostState,
     onRequestVerification: () -> Unit,
@@ -38,14 +39,13 @@ fun SignUpScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isEmailNotBlank = emailState.text.isNotBlank()
     val verificationButtonText =
         when {
             isSendingCode -> stringResource(R.string.signup_verification_requesting)
             isVerificationSent -> stringResource(R.string.signup_verification_resend)
             else -> stringResource(R.string.signup_verification_request)
         }
-    val isVerificationButtonEnabled = !isSendingCode && isEmailNotBlank
+    val isVerificationButtonEnabled = !isSendingCode && isEmailFormatValid
 
     ProgressBarScaffold(
         currentStep = 1,
@@ -110,6 +110,7 @@ private fun SignUpScreenPreview() {
             verificationCodeState = rememberTextFieldState(),
             isVerificationSent = true,
             isSendingCode = false,
+            isEmailFormatValid = false,
             isNextEnabled = false,
             snackbarHostState = remember { SnackbarHostState() },
             onRequestVerification = {},
