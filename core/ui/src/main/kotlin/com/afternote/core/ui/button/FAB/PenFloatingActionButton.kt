@@ -6,7 +6,6 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -25,7 +24,7 @@ fun PenFloatingActionButton(
         modifier = modifier,
         shape = CircleShape,
         containerColor = AfternoteDesign.colors.gray9,
-        contentColor = Color.White,
+        contentColor = AfternoteDesign.colors.white,
     ) {
         Icon(
             painter = painterResource(id = R.drawable.core_ui_ic_plus_button_fab_pen),
