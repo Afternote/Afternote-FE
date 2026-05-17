@@ -52,13 +52,14 @@ fun AfternoteHomeEntry(
         onCategorySelected = viewModel::selectTab,
         onListItemClick = { id, type ->
             when (type) {
-                // ESTATE 도 Gallery 상세 화면 재사용 (디자인 확정 후 분리).
-                AfternoteServiceType.GALLERY_AND_FILES, AfternoteServiceType.ESTATE -> actions.navigateToGalleryDetail(id)
+                AfternoteServiceType.GALLERY_AND_FILES -> actions.navigateToGalleryDetail(id)
 
                 AfternoteServiceType.MEMORIAL -> actions.navigateToMemorialGuidelineDetail(id)
 
-                // BUSINESS 도 Social 상세 화면 재사용 (디자인 확정 후 분리).
-                AfternoteServiceType.SOCIAL_NETWORK, AfternoteServiceType.BUSINESS -> actions.navigateToDetail(id)
+                AfternoteServiceType.SOCIAL_NETWORK -> actions.navigateToDetail(id)
+
+                // BUSINESS · ESTATE 는 placeholder 카테고리. 서버 미지원이라 리스트에 노출되지 않으므로 도달 시 무시.
+                AfternoteServiceType.BUSINESS, AfternoteServiceType.ESTATE -> Unit
             }
         },
         onFabClick = { actions.navigateToAdd(selectedCategory) },

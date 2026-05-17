@@ -142,8 +142,13 @@ private fun EditorPrefillSkeleton(
 
         when (category) {
             EditorCategory.MEMORIAL -> MemorialPrefillSkeleton()
-            EditorCategory.GALLERY, EditorCategory.ESTATE -> GalleryPrefillSkeleton()
-            EditorCategory.SOCIAL, EditorCategory.BUSINESS -> SocialPrefillSkeleton()
+
+            EditorCategory.GALLERY -> GalleryPrefillSkeleton()
+
+            EditorCategory.SOCIAL -> SocialPrefillSkeleton()
+
+            // placeholder 카테고리는 prefill 자리가 없으므로 skeleton 도 그리지 않는다.
+            EditorCategory.BUSINESS, EditorCategory.ESTATE -> Unit
         }
     }
 }
@@ -255,8 +260,7 @@ internal fun CategoryContent(
             )
         }
 
-        // GALLERY 와 ESTATE(재산 처리) 는 form 구조가 동일 (수신자 + actions). ESTATE 전용 form 은 디자인 확정 후 분리.
-        EditorCategory.GALLERY, EditorCategory.ESTATE -> {
+        EditorCategory.GALLERY -> {
             GalleryAndFileEditorContent(
                 params =
                     GalleryAndFileEditorContentParams(
@@ -283,8 +287,12 @@ internal fun CategoryContent(
             )
         }
 
-        // SOCIAL · BUSINESS(메일) — form 구조 동일 (계정 ID/PW + actions). BUSINESS 전용 form 은 디자인 확정 후 분리.
-        else -> {
+        // BUSINESS · ESTATE 는 디자인 미확정. 입력 자리를 비워 두고 placeholder 만 노출한다 (이슈 #195).
+        EditorCategory.BUSINESS, EditorCategory.ESTATE -> {
+            UnimplementedCategoryContent()
+        }
+
+        EditorCategory.SOCIAL -> {
             SocialNetworkEditorContent(
                 params =
                     SocialNetworkEditorContentParams(

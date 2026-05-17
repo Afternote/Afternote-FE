@@ -90,6 +90,10 @@
     <string name="afternote_editor_category_gallery">갤러리 및 파일</string>
     <string name="afternote_editor_category_estate">재산 처리</string>
     <string name="afternote_editor_category_memorial">추모 가이드라인</string>
+    <!-- BUSINESS·ESTATE 카테고리 placeholder (디자인 확정 전 임시 화면) -->
+    <string name="afternote_editor_category_unimplemented_title">준비 중인 카테고리예요</string>
+    <string name="afternote_editor_category_unimplemented_description">디자인 확정 후 입력 화면이 제공됩니다.\n다른 카테고리를 먼저 이용해 주세요.</string>
+    <string name="afternote_validation_unimplemented_category">아직 지원하지 않는 카테고리입니다. 다른 카테고리를 선택해 주세요.</string>
     <!-- Afternote editor (author) — actions prefill 템플릿 (디자인 의도: 사용자가 카테고리 선택 시 예시 노출 후 자유 수정) -->
     <string name="afternote_editor_actions_social_remove_post">게시물 내리기</string>
     <string name="afternote_editor_actions_social_post_memorial">추모 게시물 올리기</string>

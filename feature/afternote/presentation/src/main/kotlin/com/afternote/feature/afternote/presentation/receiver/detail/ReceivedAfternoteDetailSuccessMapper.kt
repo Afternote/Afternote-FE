@@ -5,18 +5,21 @@ import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDe
 
 internal fun ReceivedAfternoteDetail.toReceivedDetailContentUiModel(): ReceivedDetailContentUiModel =
     when (type) {
-        // BUSINESS 도 Social 상세 UI 재사용 (디자인 확정 후 분리).
-        AfternoteServiceType.SOCIAL_NETWORK, AfternoteServiceType.BUSINESS -> {
+        AfternoteServiceType.SOCIAL_NETWORK -> {
             ReceivedDetailContentUiModel.SocialNetwork(toReceivedSocialNetworkDetailContent())
         }
 
-        // ESTATE 도 Gallery 상세 UI 재사용 (디자인 확정 후 분리).
-        AfternoteServiceType.GALLERY_AND_FILES, AfternoteServiceType.ESTATE -> {
+        AfternoteServiceType.GALLERY_AND_FILES -> {
             ReceivedDetailContentUiModel.Gallery(toReceivedGalleryDetailContent())
         }
 
         AfternoteServiceType.MEMORIAL -> {
             ReceivedDetailContentUiModel.MemorialPending
+        }
+
+        // BUSINESS · ESTATE 는 디자인 확정 전 placeholder. 서버도 미지원이라 일반적으로 도달하지 않음.
+        AfternoteServiceType.BUSINESS, AfternoteServiceType.ESTATE -> {
+            ReceivedDetailContentUiModel.Unimplemented
         }
 
         null -> {

@@ -20,6 +20,9 @@ sealed interface ReceivedDetailContentUiModel {
     /** 추모 카테고리 수신 상세 디자인 미정. 일단 폴백 화면으로 표시. */
     data object MemorialPending : ReceivedDetailContentUiModel
 
+    /** BUSINESS·ESTATE 등 디자인 확정 전 placeholder. */
+    data object Unimplemented : ReceivedDetailContentUiModel
+
     /** 서버가 알 수 없는 category 를 내려준 경우. */
     data object Unknown : ReceivedDetailContentUiModel
 }
