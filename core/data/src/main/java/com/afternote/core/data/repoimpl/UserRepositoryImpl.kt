@@ -142,11 +142,7 @@ class UserRepositoryImpl
                     )
                 Log.d(TAG, "registerReceiver: response=$response")
                 if (response.status != 201) {
-                    throw ApiException(
-                        status = response.status,
-                        code = response.code,
-                        message = response.message ?: "Status 201 아님",
-                    )
+                    throw ApiException(code = response.code, message = response.message ?: "Status 201 아님")
                 }
                 val data = response.requireData()
                 data.receiverId
@@ -183,7 +179,6 @@ class UserRepositoryImpl
                 Log.d(TAG, "updateReceiver: response=$response")
                 if (response.status !in 200..299) {
                     throw ApiException(
-                        status = response.status,
                         code = response.code,
                         message = response.message ?: "Status 200 이상 299 이하가 아님",
                     )
