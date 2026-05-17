@@ -40,6 +40,10 @@ fun rememberOnboardingNavActions(navController: NavController): OnboardingNavAct
                 navController.navigate(OnboardingRoute.LoginRoute)
             }
 
+            override fun onNavigateWelcomeToReceivedRecords() {
+                navController.navigate(Route.Receiver)
+            }
+
             override fun onReplaceLoginWithSignUp() {
                 navController.navigate(OnboardingRoute.SignUpRoute) {
                     popUpTo<OnboardingRoute.LoginRoute> { inclusive = true }
@@ -302,6 +306,10 @@ fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions =
                 appState.navController.navigate(
                     ReceiverRoute.AfternoteDetailRoute(afternoteId = afternoteId),
                 )
+            }
+
+            override fun onNavigateToSenderRegistration() {
+                appState.navController.navigate(ReceiverRoute.SenderRegistrationRoute)
             }
         }
     }

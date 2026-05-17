@@ -13,4 +13,10 @@ interface ReceiverNavActions {
     fun onNavigateToAfternoteList()
 
     fun onNavigateToReceivedAfternoteDetail(afternoteId: String)
+
+    /**
+     * 받은 기록함의 FAB → 발신자 등록 화면(이슈 #215, 디자인 15·16) 진입.
+     * 현재(1단계) placeholder. 후속 단계에서 발신자 등록 화면 추가 시 wire-up.
+     */
+    fun onNavigateToSenderRegistration()
 }

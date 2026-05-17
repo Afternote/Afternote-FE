@@ -13,6 +13,23 @@ sealed interface ReceiverRoute {
     @Serializable
     data object HomeRoute : ReceiverRoute
 
+    /**
+     * 받은 기록함 — 수신자가 등록·신청한 발신자 카드 리스트.
+     *
+     * Welcome 의 "전달 받은 기록 확인하기" 진입점. 본인 확인 캐시 상태와 무관하게 진입 가능
+     * (본인 확인은 발신자별 열람 신청 시작 시점에 1회 진행).
+     */
+    @Serializable
+    data object ReceivedRecordsRoute : ReceiverRoute
+
+    /**
+     * 발신자 등록(15·16) — 받은 기록함의 FAB 에서 진입. 사용자가 발신자에게 부여하는 별칭(라벨) 입력.
+     *
+     * 백엔드 *발신자 라벨 등록 API* 가 미확정이라 1단계는 클라 로컬 stub registry 에만 보관한다.
+     */
+    @Serializable
+    data object SenderRegistrationRoute : ReceiverRoute
+
     /** 수신한 애프터노트 페이지드 목록. */
     @Serializable
     data object AfternoteListRoute : ReceiverRoute

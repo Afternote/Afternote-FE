@@ -41,9 +41,7 @@ fun NavGraphBuilder.onboardingNavGraph(
         composable<OnboardingRoute.WelcomeRoute> {
             WelcomeScreen(
                 onStartClick = actions::onNavigateWelcomeToSignUp,
-                onCheckRecordsClick = {
-                    // TODO: 수신자 플로우 연결
-                },
+                onCheckRecordsClick = actions::onNavigateWelcomeToReceivedRecords,
                 onLoginClick = actions::onNavigateWelcomeToLogin,
             )
         }
