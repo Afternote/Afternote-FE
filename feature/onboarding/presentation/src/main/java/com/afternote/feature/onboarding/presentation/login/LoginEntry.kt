@@ -12,6 +12,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.credentials.CredentialManager
+import androidx.credentials.exceptions.NoCredentialException
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.ObserveAsEvents
@@ -49,6 +50,7 @@ fun LoginEntry(
     val loginFailedMessage = stringResource(R.string.login_failed)
     val kakaoFailedMessage = stringResource(R.string.login_kakao_failed)
     val googleFailedMessage = stringResource(R.string.login_google_failed)
+    val googleNoCredentialsMessage = stringResource(R.string.login_google_no_credentials)
     val screenUnavailableMessage = stringResource(R.string.login_screen_unavailable)
 
     val showErrorSnackbar: (String) -> Unit = { message ->
@@ -105,8 +107,13 @@ fun LoginEntry(
                     ).onSuccess { idToken ->
                         viewModel.loginWithGoogle(idToken)
                     }.onFailure { exception ->
-                        if (exception is UserCancelledAuthException) return@onFailure
-                        showErrorSnackbar(exception.message ?: googleFailedMessage)
+                        val message =
+                            when (exception) {
+                                is UserCancelledAuthException -> return@onFailure
+                                is NoCredentialException -> googleNoCredentialsMessage
+                                else -> exception.message ?: googleFailedMessage
+                            }
+                        showErrorSnackbar(message)
                     }
                 }
             }

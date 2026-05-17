@@ -21,6 +21,7 @@
     <string name="login_failed">로그인 실패</string>
     <string name="login_kakao_failed">카카오 로그인에 실패했습니다.</string>
     <string name="login_google_failed">구글 로그인에 실패했습니다.</string>
+    <string name="login_google_no_credentials">기기에 Google 계정이 없어요.\n설정 &gt; 계정에서 Google 계정을 추가해 주세요.</string>
     <string name="login_screen_unavailable">로그인 화면을 띄울 수 없습니다.</string>
     <string name="content_description_google_login">구글 로그인</string>
 
