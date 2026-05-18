@@ -80,7 +80,7 @@ class SenderDetailViewModel
         }
 
         private suspend fun resolveState(sender: SenderEntry): SenderDetailUiState {
-            val displayName = sender.displayName()
+            val displayName = sender.name
             val authCode = sender.authCode
 
             if (authCode.isNullOrBlank()) {
@@ -105,8 +105,6 @@ class SenderDetailViewModel
             )
         }
     }
-
-private fun SenderEntry.displayName(): String = realSenderName?.takeIf { it.isNotBlank() } ?: name
 
 private fun DeliveryVerification.toSuccessState(displayName: String): SenderDetailUiState.Success =
     SenderDetailUiState.Success(
