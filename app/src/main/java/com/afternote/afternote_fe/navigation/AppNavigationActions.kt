@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import com.afternote.afternote_fe.screen.HomeTabActions
 import com.afternote.afternote_fe.screen.receiver.ReceiverHomeActions
@@ -13,6 +14,7 @@ import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavActions
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
+import com.afternote.feature.afternote.presentation.receiver.navigation.ReceiverFlowEntryPoint
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceiverNavActions
 import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceiverRoute
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
@@ -21,6 +23,7 @@ import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavAct
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingRoute
 import com.afternote.feature.setting.presentation.navigation.SettingNavActions
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
+import dagger.hilt.android.EntryPointAccessors
 
 @Composable
 fun rememberOnboardingNavActions(navController: NavController): OnboardingNavActions =
@@ -289,10 +292,21 @@ fun rememberAfternoteNavActions(
 
 /**
  * 수신자 서브그래프에 넘길 그래프 내부 [ReceiverNavActions] 구현체.
+ *
+ * 본인 확인 캐시 분기(11→2/5) 를 위해 [ReceiverFlowEntryPoint] 로 [IdentityVerificationGate] 를 받아 사용한다.
+ * authCode 같은 Repository 사이드이펙트는 각 화면 ViewModel 에서 처리.
  */
 @Composable
-fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions =
-    remember(appState) {
+fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions {
+    val context = LocalContext.current
+    val entryPoint =
+        remember(context) {
+            EntryPointAccessors
+                .fromApplication(context.applicationContext, ReceiverFlowEntryPoint::class.java)
+        }
+    val identityGate = remember(entryPoint) { entryPoint.identityVerificationGate() }
+
+    return remember(appState, identityGate) {
         object : ReceiverNavActions {
             override fun onPopBackStack() {
                 appState.navController.popBackStack()
@@ -311,8 +325,71 @@ fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions =
             override fun onNavigateToSenderRegistration() {
                 appState.navController.navigate(ReceiverRoute.SenderRegistrationRoute)
             }
+
+            override fun onNavigateToSenderDetail(senderId: String) {
+                appState.navController.navigate(
+                    ReceiverRoute.SenderDetailRoute(senderId = senderId),
+                )
+            }
+
+            override fun onRequestVerificationFlow(senderId: String) {
+                // 본인 확인 캐시가 있으면 마스터 키 직진, 없으면 안내 화면(2) 부터.
+                if (identityGate.isVerified.value) {
+                    appState.navController.navigate(
+                        ReceiverRoute.MasterKeyRoute(senderId = senderId),
+                    )
+                } else {
+                    appState.navController.navigate(
+                        ReceiverRoute.IdentityVerificationIntroRoute(senderId = senderId),
+                    )
+                }
+            }
+
+            override fun onNavigateIdentityIntroToEmail(senderId: String) {
+                appState.navController.navigate(
+                    ReceiverRoute.IdentityVerificationEmailRoute(senderId = senderId),
+                )
+            }
+
+            override fun onNavigateIdentityEmailToMasterKey(senderId: String) {
+                // 이메일 인증 성공 직후 진입. 본인 확인 화면 2 장은 pop 해서 뒤로가기로 되돌아오지 않게.
+                appState.navController.navigate(
+                    ReceiverRoute.MasterKeyRoute(senderId = senderId),
+                ) {
+                    popUpTo<ReceiverRoute.IdentityVerificationIntroRoute> { inclusive = true }
+                }
+            }
+
+            override fun onNavigateMasterKeyToDocumentUpload(senderId: String) {
+                appState.navController.navigate(
+                    ReceiverRoute.DocumentUploadRoute(senderId = senderId),
+                ) {
+                    popUpTo<ReceiverRoute.MasterKeyRoute> { inclusive = true }
+                }
+            }
+
+            override fun onNavigateDocumentUploadToComplete(senderId: String) {
+                appState.navController.navigate(
+                    ReceiverRoute.DeliveryVerificationCompleteRoute(senderId = senderId),
+                ) {
+                    popUpTo<ReceiverRoute.DocumentUploadRoute> { inclusive = true }
+                }
+            }
+
+            override fun onNavigateCompleteToReceivedRecords() {
+                // 받은 기록함을 남기고 신청 흐름 화면들(완료/서류/마스터 키)을 모두 pop.
+                appState.navController.navigate(ReceiverRoute.ReceivedRecordsRoute) {
+                    popUpTo<ReceiverRoute.ReceivedRecordsRoute> { inclusive = false }
+                    launchSingleTop = true
+                }
+            }
+
+            override fun onNavigateToReceiverHome() {
+                appState.navController.navigate(ReceiverRoute.HomeRoute)
+            }
         }
     }
+}
 
 /**
  * 수신자 홈에서 발생하는 다른 top-level Route(설정/마음의 기록/타임레터)와
