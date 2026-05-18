@@ -96,8 +96,8 @@ private fun DailyQuestionListContent(
                 ) {
                     Text(
                         text = "DAILY ANSWER",
-                            style = AfternoteDesign.typography.mono,
-                        color = Color(0xFF000000).copy(alpha = 0.4f),
+                        style = AfternoteDesign.typography.mono,
+                        color = AfternoteDesign.colors.black.copy(alpha = 0.4f),
                     )
                     HorizontalDivider(modifier = Modifier.padding(start = 12.dp))
                 }

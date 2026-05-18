@@ -124,7 +124,7 @@ fun HomeScreen(
                         text = {
                             Text(
                                 text = category.title,
-                                color = if (selectedIndex == index) Color(0xFF1F1F1F) else AfternoteDesign.colors.gray4,
+                                color = if (selectedIndex == index) AfternoteDesign.colors.gray9 else AfternoteDesign.colors.gray4,
                             )
                         },
                     )

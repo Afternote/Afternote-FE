@@ -15,7 +15,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -90,7 +89,7 @@ fun WeeklyReportReviewCard(modifier: Modifier = Modifier) {
                 Text(
                     text = "WEEKLY SUMMARY",
                     style = AfternoteDesign.typography.mono,
-                    color = Color(0xFF000000).copy(0.3f),
+                    color = AfternoteDesign.colors.black.copy(alpha = 0.3f),
                 )
                 Icon(
                     painter = painterResource(R.drawable.mindrecord_up),
@@ -110,7 +109,7 @@ fun WeeklyReportReviewCard(modifier: Modifier = Modifier) {
                     Text(
                         text = selectedReport,
                         style = AfternoteDesign.typography.h2,
-                        color = Color(0xFF000000).copy(0.9f),
+                        color = AfternoteDesign.colors.black.copy(alpha = 0.9f),
                     )
                     Icon(
                         painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_arrowdown),
@@ -132,9 +131,9 @@ fun WeeklyReportReviewCard(modifier: Modifier = Modifier) {
                                     style = AfternoteDesign.typography.h3,
                                     color =
                                         if (option == selectedReport) {
-                                            Color(0xFF000000).copy(0.9f)
+                                            AfternoteDesign.colors.black.copy(alpha = 0.9f)
                                         } else {
-                                            Color(0xFF000000).copy(0.3f)
+                                            AfternoteDesign.colors.black.copy(alpha = 0.3f)
                                         },
                                 )
                             },
@@ -165,12 +164,12 @@ fun WeeklyReportReviewCard(modifier: Modifier = Modifier) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = count.toString(),
-                            color = Color(0xFF000000).copy(0.9f),
+                            color = AfternoteDesign.colors.black.copy(alpha = 0.9f),
                         )
                         Text(
                             text = category.title,
-                            color = Color(0xFF000000).copy(0.4f),
-                            style = MaterialTheme.typography.labelSmall,
+                            color = AfternoteDesign.colors.black.copy(alpha = 0.4f),
+                            style = AfternoteDesign.typography.captionLargeR,
                         )
                     }
                 }

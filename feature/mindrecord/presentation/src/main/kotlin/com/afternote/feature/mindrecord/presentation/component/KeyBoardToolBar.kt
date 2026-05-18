@@ -17,7 +17,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -57,7 +56,11 @@ fun BottomToolbar(
         Spacer(modifier = Modifier.width(8.dp))
 
         IconButton(onClick = onTextStyleClick) {
-            Text("T", style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = "T",
+                style = AfternoteDesign.typography.bodyLargeB,
+                color = AfternoteDesign.colors.gray9,
+            )
         }
         Spacer(modifier = Modifier.width(8.dp))
 
@@ -73,7 +76,11 @@ fun BottomToolbar(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        Text("임시저장 1", style = MaterialTheme.typography.labelSmall, color = AfternoteDesign.colors.gray6)
+        Text(
+            text = "임시저장 1",
+            style = AfternoteDesign.typography.captionLargeR,
+            color = AfternoteDesign.colors.gray6,
+        )
     }
 }
 

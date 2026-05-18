@@ -116,7 +116,7 @@ private fun DeepThoughtContent(
                         text = {
                             Text(
                                 text = title,
-                                color = if (selectedIndex == index) Color(0xFF1F1F1F) else AfternoteDesign.colors.gray4,
+                                color = if (selectedIndex == index) AfternoteDesign.colors.gray9 else AfternoteDesign.colors.gray4,
                             )
                         },
                     )
@@ -135,7 +135,7 @@ private fun DeepThoughtContent(
                 Text(
                     text = "TAGS",
                     style = AfternoteDesign.typography.mono,
-                    color = Color(0xFF000000).copy(alpha = 0.4f),
+                    color = AfternoteDesign.colors.black.copy(alpha = 0.4f),
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(start = 12.dp))
@@ -175,7 +175,7 @@ private fun DeepThoughtContent(
                     Text(
                         text = "DAILY ANSWER",
                         style = AfternoteDesign.typography.mono,
-                        color = Color(0xFF000000).copy(alpha = 0.4f),
+                        color = AfternoteDesign.colors.black.copy(alpha = 0.4f),
                     )
                     HorizontalDivider(modifier = Modifier.padding(start = 12.dp))
                 }

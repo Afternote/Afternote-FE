@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -94,8 +93,8 @@ private fun DayCell(
         // 요일 텍스트
         Text(
             text = dayItem.label,
-            color = Color(0xFF9E9E9E),
-            style = MaterialTheme.typography.labelSmall,
+            color = AfternoteDesign.colors.gray5,
+            style = AfternoteDesign.typography.captionLargeR,
         )
 
         // 날짜/이모지 셀
