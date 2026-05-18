@@ -18,10 +18,12 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.afternote.core.ui.R
 import com.afternote.core.ui.ViewModeSwitcher
 import com.afternote.core.ui.button.FAB.AfternoteFloatingActionButton
@@ -29,6 +31,10 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.TitleTopBar
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
+import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListViewModel
+import com.afternote.feature.mindrecord.presentation.viewmodel.DeepThoughtListViewModel
+import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListViewModel
+import kotlinx.coroutines.flow.drop
 
 @Composable
 fun HomeScreen(
@@ -47,6 +53,23 @@ fun HomeScreen(
     }
     LaunchedEffect(pagerState.currentPage) {
         selectedIndex = pagerState.currentPage
+    }
+
+    val dailyQuestionViewModel: DailyQuestionListViewModel = hiltViewModel()
+    val diaryViewModel: DiaryListViewModel = hiltViewModel()
+    val deepThoughtViewModel: DeepThoughtListViewModel = hiltViewModel()
+
+    LaunchedEffect(Unit) {
+        snapshotFlow { selectedIndex }
+            .drop(1)
+            .collect { index ->
+                when (categories[index]) {
+                    MindRecordCategoryUi.DailyQuestion -> dailyQuestionViewModel.refresh()
+                    MindRecordCategoryUi.Diary -> diaryViewModel.refresh()
+                    MindRecordCategoryUi.DeepThought -> deepThoughtViewModel.refresh()
+                    MindRecordCategoryUi.WeeklyReport -> Unit
+                }
+            }
     }
 
     Scaffold(

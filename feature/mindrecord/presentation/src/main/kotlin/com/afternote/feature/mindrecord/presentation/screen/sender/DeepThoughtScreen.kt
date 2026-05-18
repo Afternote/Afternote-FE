@@ -37,6 +37,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
 import com.afternote.feature.mindrecord.presentation.component.DeepThoughtCard
 import com.afternote.feature.mindrecord.presentation.component.FlowTags
+import com.afternote.feature.mindrecord.presentation.component.MindRecordEmptyState
 import com.afternote.feature.mindrecord.presentation.model.DeepThoughtModel
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.model.Tag
@@ -84,6 +85,11 @@ private fun DeepThoughtContent(
 ) {
     var selectedIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("전체 카테고리", "카테고리", "카테고리", "카테고리")
+
+    if (isListView && items.isEmpty()) {
+        MindRecordEmptyState(modifier = modifier)
+        return
+    }
 
     if (isListView) {
         Column(modifier = modifier) {

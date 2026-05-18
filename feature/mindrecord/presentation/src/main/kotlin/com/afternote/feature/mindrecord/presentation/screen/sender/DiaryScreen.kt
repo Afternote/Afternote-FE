@@ -31,6 +31,7 @@ import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
 import com.afternote.feature.mindrecord.presentation.component.DiaryCard
 import com.afternote.feature.mindrecord.presentation.component.DiaryComponent
 import com.afternote.feature.mindrecord.presentation.component.DiaryReportCard
+import com.afternote.feature.mindrecord.presentation.component.MindRecordEmptyState
 import com.afternote.feature.mindrecord.presentation.model.DailyDiary
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListUiState
@@ -70,6 +71,11 @@ private fun DiaryListContent(
     diaries: List<DailyDiary>,
     modifier: Modifier = Modifier,
 ) {
+    if (isListView && diaries.isEmpty()) {
+        MindRecordEmptyState(modifier = modifier)
+        return
+    }
+
     if (isListView) {
         LazyColumn(modifier = modifier) {
             item {

@@ -27,6 +27,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionListCard
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionWriteHeaderCard
+import com.afternote.feature.mindrecord.presentation.component.MindRecordEmptyState
 import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListUiState
@@ -65,6 +66,11 @@ private fun DailyQuestionListContent(
     answers: List<DailyQuestion>,
     modifier: Modifier = Modifier,
 ) {
+    if (isListView && answers.isEmpty()) {
+        MindRecordEmptyState(modifier = modifier)
+        return
+    }
+
     LazyColumn(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -90,7 +96,7 @@ private fun DailyQuestionListContent(
                 ) {
                     Text(
                         text = "DAILY ANSWER",
-                        style = AfternoteDesign.typography.mono,
+                            style = AfternoteDesign.typography.mono,
                         color = Color(0xFF000000).copy(alpha = 0.4f),
                     )
                     HorizontalDivider(modifier = Modifier.padding(start = 12.dp))
