@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
@@ -43,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.ObserveAsEvents
+import com.afternote.core.ui.modifierextention.dropShadow
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
@@ -285,12 +287,20 @@ private fun DocumentUploadWithSheetOpenPreview() {
                     Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                        .dropShadow(
+                            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+                            color = Color.Black.copy(alpha = 0.08f),
+                            blur = 16.dp,
+                            offsetY = (-4).dp,
+                            offsetX = 0.dp,
+                            spread = 0.dp,
+                        ).clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
                         .background(AfternoteDesign.colors.gray1),
             ) {
                 DocumentSourceBottomSheet(
                     onPickImage = {},
                     onPickFile = {},
+                    sheetHeight = 360.dp,
                 )
             }
         }
