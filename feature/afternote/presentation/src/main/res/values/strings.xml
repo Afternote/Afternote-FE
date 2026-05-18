@@ -127,7 +127,6 @@
     <string name="receiver_sender_registration_name_label">이름</string>
     <string name="receiver_sender_registration_name_placeholder">이름을 지정해주세요</string>
     <string name="receiver_sender_registration_submit">발신자 등록하기</string>
-    <string name="receiver_sender_registration_profile_image_description">발신자 프로필 이미지</string>
 
     <string name="receiver_verify_title">수신자 인증</string>
     <string name="receiver_verify_self_title">수신자 본인 확인</string>

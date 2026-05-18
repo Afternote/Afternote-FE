@@ -43,7 +43,7 @@ fun NavGraphBuilder.receiverNavGraph(
             SenderRegistrationScreen(
                 onBackClick = actions::onPopBackStack,
                 // 등록 완료 시 받은 기록함으로 pop. 카드는 자동으로 반영된다 (SenderRegistry StateFlow).
-                onRegistered = { actions.onPopBackStack() },
+                onRegistered = actions::onPopBackStack,
             )
         }
 
