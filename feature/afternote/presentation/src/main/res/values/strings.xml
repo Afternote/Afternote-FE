@@ -128,6 +128,33 @@
     <string name="receiver_sender_registration_name_placeholder">이름을 지정해주세요</string>
     <string name="receiver_sender_registration_submit">발신자 등록하기</string>
 
+    <!-- 발신자 상세(11·12) — 정보 박스 4행 + 액션 버튼 -->
+    <string name="receiver_sender_detail_top_bar_title">받은 기록함</string>
+    <string name="receiver_sender_detail_row_records">기록</string>
+    <string name="receiver_sender_detail_row_status">상태</string>
+    <string name="receiver_sender_detail_row_requested_at">신청일</string>
+    <string name="receiver_sender_detail_row_approved_at">승인일</string>
+    <string name="receiver_sender_detail_records_kept">보관 중</string>
+    <string name="receiver_sender_detail_status_unavailable">열람 불가</string>
+    <string name="receiver_sender_detail_status_pending">승인 대기</string>
+    <string name="receiver_sender_detail_status_available">열람 가능</string>
+    <string name="receiver_sender_detail_status_rejected">검토 거절</string>
+    <string name="receiver_sender_detail_no_request_record">신청 기록이 없습니다</string>
+    <string name="receiver_sender_detail_no_approval_record">승인 기록이 없습니다</string>
+    <string name="receiver_sender_detail_request_verification">열람 신청하기</string>
+    <string name="receiver_sender_detail_open_records">기록 열람하기</string>
+    <string name="receiver_sender_detail_status_load_failed">열람 신청 상태를 불러오지 못했습니다.</string>
+    <string name="receiver_sender_detail_not_found">발신자를 찾을 수 없습니다.</string>
+
+    <!-- 본인 확인 이메일 인증 (3·4) — 백엔드 receiver-auth/email/* 미구현 stub -->
+    <string name="receiver_verify_email_placeholder">이메일 주소</string>
+    <string name="receiver_verify_code_placeholder">인증번호</string>
+    <string name="receiver_verify_request_code">인증번호 받기</string>
+    <string name="receiver_verify_code_sent_line1">인증번호가 전송되었습니다.</string>
+    <string name="receiver_verify_code_sent_line2">수신 된 인증번호를 입력해 주세요.</string>
+    <string name="receiver_verify_email_format_invalid">이메일 형식이 올바르지 않습니다.</string>
+    <string name="receiver_verify_code_mismatch">인증번호가 일치하지 않습니다.</string>
+
     <string name="receiver_verify_title">수신자 인증</string>
     <string name="receiver_verify_self_title">수신자 본인 확인</string>
     <string name="receiver_verify_intro">고객의 소중한 정보를 보호하기 위해\n가족관계 및 사망 사실 확인이 필요합니다.</string>
@@ -138,6 +165,9 @@
     <string name="receiver_verify_email_label">이메일 주소</string>
     <string name="receiver_verify_code_description">입력하신 이메일로 인증번호를 보냈습니다.\n수신된 메일에서 인증번호를 확인하고 입력해주세요.</string>
     <string name="receiver_verify_master_key_required">마스터 키를 입력해주세요.</string>
+    <string name="receiver_verify_master_key_title">마스터 키 입력</string>
+    <string name="receiver_verify_master_key_description">전달 받은 마스터 키를 입력해 주세요.</string>
+    <string name="receiver_verify_master_key_placeholder">마스터 키 입력</string>
     <string name="receiver_verify_error_network">네트워크 연결을 확인해주세요.</string>
     <string name="receiver_verify_error_unknown">마스터 키 검증에 실패했습니다.</string>
     <string name="receiver_verify_complete_confirm">확인</string>
@@ -151,9 +181,15 @@
     <string name="receiver_verify_death_cert_title">사망진단서 업로드</string>
     <string name="receiver_verify_family_cert_title">가족관계증명서 업로드</string>
     <string name="receiver_verify_document_input_label">서류 촬영 또는 파일 첨부</string>
-    <string name="receiver_verify_add_image">이미지 추가</string>
-    <string name="receiver_verify_add_file">파일 추가</string>
+    <string name="receiver_verify_document_input_placeholder">촬영 또는 파일 첨부</string>
+    <string name="receiver_verify_bottom_sheet_header">미디어 추가하기</string>
+    <string name="receiver_verify_add_image">이미지 추가하기</string>
+    <string name="receiver_verify_add_file">파일 추가하기</string>
     <string name="receiver_verify_wait_for_approval">인증이 완료된 후에 이용 가능합니다.</string>
+    <string name="receiver_verify_document_uploading">업로드 중…</string>
+    <string name="receiver_verify_complete_description_line1">제출하신 서류를 확인 중입니다.</string>
+    <string name="receiver_verify_complete_description_line2">빠르게 검토하여 열람하실 수 있도록 안내드리겠습니다.</string>
+    <string name="receiver_verify_complete_back_to_records">받은 기록함으로 돌아가기</string>
 
     <string name="login_kakao_button">카카오로 로그인</string>
     <string name="login_kakao_backend_not_ready">카카오 토큰을 발급받았습니다. 서버 연동(/auth/kakao) 대기 중입니다.</string>
