@@ -157,7 +157,7 @@
 
     <string name="receiver_verify_title">수신자 인증</string>
     <string name="receiver_verify_self_title">수신자 본인 확인</string>
-    <string name="receiver_verify_intro">고객의 소중한 정보를 보호하기 위해\n가족관계 및 사망 사실 확인이 필요합니다.</string>
+    <string name="receiver_verify_intro">고인의 소중한 정보를 보호하기 위해\n가족관계 및 사망 사실 확인이 필요합니다.</string>
     <string name="receiver_verify_start_button">인증 시작하기</string>
     <string name="receiver_verify_next_button">다음</string>
     <string name="receiver_verify_confirm_button">인증하기</string>
@@ -174,12 +174,12 @@
     <string name="receiver_verify_documents_required">사망진단서와 가족관계증명서를 모두 업로드해주세요.</string>
     <string name="receiver_verify_document_upload_failed">서류 업로드에 실패했습니다.</string>
     <string name="receiver_verify_submit_failed">열람 신청에 실패했습니다.</string>
-    <string name="receiver_verify_complete_title">열람 요청 완료</string>
+    <string name="receiver_verify_complete_title">열람 신청 완료</string>
     <string name="receiver_verify_status_pending">현재 서류 확인중입니다.\n빠르게 처리하여 열람하실 수 있도록 하겠습니다.</string>
     <string name="receiver_verify_status_approved">승인되었습니다. 열람이 가능합니다.</string>
     <string name="receiver_verify_status_rejected">제출하신 서류 검토 결과 거절되었습니다. 다시 제출해 주세요.</string>
     <string name="receiver_verify_document_upload_title">증빙 서류 업로드</string>
-    <string name="receiver_verify_document_upload_description">사망진단서와 가족관계증명서를 업로드 해주세요.\n담당자의 확인 후 승인됩니다.</string>
+    <string name="receiver_verify_document_upload_description">사망 사실 확인을 위한 서류를 업로드해 주세요.\n담당자의 확인 후 열람 승인됩니다.</string>
     <string name="receiver_verify_death_cert_title">사망진단서 업로드</string>
     <string name="receiver_verify_family_cert_title">가족관계증명서 업로드</string>
     <string name="receiver_verify_document_input_label">서류 촬영 또는 파일 첨부</string>
@@ -189,8 +189,7 @@
     <string name="receiver_verify_add_file">파일 추가하기</string>
     <string name="receiver_verify_wait_for_approval">인증이 완료된 후에 이용 가능합니다.</string>
     <string name="receiver_verify_document_uploading">업로드 중…</string>
-    <string name="receiver_verify_complete_description_line1">제출하신 서류를 확인 중입니다.</string>
-    <string name="receiver_verify_complete_description_line2">빠르게 검토하여 열람하실 수 있도록 안내드리겠습니다.</string>
+    <string name="receiver_verify_complete_description">제출하신 서류를 확인 중입니다.\n빠르게 검토하여 열람하실 수 있도록 안내드리겠습니다.</string>
     <string name="receiver_verify_complete_back_to_records">받은 기록함으로 돌아가기</string>
 
     <string name="login_kakao_button">카카오로 로그인</string>
