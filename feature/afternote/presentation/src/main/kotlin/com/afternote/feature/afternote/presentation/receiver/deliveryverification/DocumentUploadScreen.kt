@@ -110,6 +110,7 @@ fun DocumentUploadScreen(
             onDismissRequest = { sheetSlot = null },
             sheetState = sheetState,
             containerColor = AfternoteDesign.colors.gray1,
+            dragHandle = null,
         ) {
             DocumentSourceBottomSheet(
                 onPickImage = {
