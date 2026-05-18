@@ -9,6 +9,6 @@ sealed interface LoginEvent {
     data object LoginSuccess : LoginEvent
 
     data class ShowError(
-        val message: String,
+        val message: String?,
     ) : LoginEvent
 }

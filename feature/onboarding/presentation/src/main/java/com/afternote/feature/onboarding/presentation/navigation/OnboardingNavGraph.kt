@@ -1,21 +1,30 @@
 package com.afternote.feature.onboarding.presentation.navigation
 
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
+import com.afternote.core.ui.ObserveAsEvents
 import com.afternote.core.ui.Route
 import com.afternote.feature.onboarding.presentation.OnboardingProfileEntry
+import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.WelcomeScreen
 import com.afternote.feature.onboarding.presentation.login.LoginEntry
+import com.afternote.feature.onboarding.presentation.signup.SignUpEvent
 import com.afternote.feature.onboarding.presentation.signup.SignUpPasswordScreen
 import com.afternote.feature.onboarding.presentation.signup.SignUpResidentNumberScreen
 import com.afternote.feature.onboarding.presentation.signup.SignUpScreen
 import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel
 import com.afternote.feature.onboarding.presentation.terms.OnboardingTermsScreen
+import com.afternote.feature.onboarding.presentation.terms.TermsDetailScreen
+import kotlinx.coroutines.launch
 
 /**
  * 온보딩 피처의 네비게이션 그래프.
@@ -51,13 +60,25 @@ fun NavGraphBuilder.onboardingNavGraph(
         // ── SignUp Step 1: 이메일 & 인증번호 ──
         composable<OnboardingRoute.SignUpRoute> {
             val signUpViewModel = graphScopedSignUpViewModel(graphScopedParentEntry)
+            val snackbarHostState =
+                rememberSignUpEventHost(
+                    viewModel = signUpViewModel,
+                    onNavigateToResidentNumber = actions::onSignUpEmailNext,
+                )
 
             SignUpScreen(
-                emailState = signUpViewModel.emailState,
-                verificationCodeState = signUpViewModel.verificationCodeState,
+                initialEmail = signUpViewModel.email,
+                initialVerificationCode = signUpViewModel.verificationCode,
                 isVerificationSent = signUpViewModel.isVerificationSent,
+                isSendingCode = signUpViewModel.isSendingCode,
+                isEmailFormatValid = signUpViewModel.isEmailFormatValid,
+                resendCooldownSeconds = signUpViewModel.resendCooldownSeconds,
+                isNextEnabled = signUpViewModel.isStep1NextEnabled,
+                snackbarHostState = snackbarHostState,
+                onEmailChange = signUpViewModel::updateEmail,
+                onVerificationCodeChange = signUpViewModel::updateVerificationCode,
                 onRequestVerification = signUpViewModel::requestVerification,
-                onNextClick = actions::onSignUpEmailNext,
+                onNextClick = signUpViewModel::verifyEmailAndProceed,
                 onBackClick = actions::onSignUpEmailBack,
             )
         }
@@ -65,10 +86,15 @@ fun NavGraphBuilder.onboardingNavGraph(
         // ── SignUp Step 2: 주민등록번호 ──
         composable<OnboardingRoute.SignUpResidentNumberRoute> {
             val signUpViewModel = graphScopedSignUpViewModel(graphScopedParentEntry)
+            val snackbarHostState = rememberSignUpEventHost(signUpViewModel)
 
             SignUpResidentNumberScreen(
-                frontNumberState = signUpViewModel.frontNumberState,
-                backNumberState = signUpViewModel.backNumberState,
+                initialFrontNumber = signUpViewModel.residentFrontNumber,
+                initialBackNumber = signUpViewModel.residentBackNumber,
+                isNextEnabled = signUpViewModel.isStep2NextEnabled,
+                snackbarHostState = snackbarHostState,
+                onFrontNumberChange = signUpViewModel::updateResidentFrontNumber,
+                onBackNumberChange = signUpViewModel::updateResidentBackNumber,
                 onNextClick = actions::onSignUpResidentNext,
                 onBackClick = actions::onSignUpResidentBack,
             )
@@ -77,10 +103,16 @@ fun NavGraphBuilder.onboardingNavGraph(
         // ── SignUp Step 3: 비밀번호 설정 ──
         composable<OnboardingRoute.SignUpPasswordRoute> {
             val signUpViewModel = graphScopedSignUpViewModel(graphScopedParentEntry)
+            val snackbarHostState = rememberSignUpEventHost(signUpViewModel)
 
             SignUpPasswordScreen(
-                passwordState = signUpViewModel.signUpPasswordState,
-                passwordConfirmState = signUpViewModel.signUpPasswordConfirmState,
+                initialPassword = signUpViewModel.signUpPassword,
+                initialPasswordConfirm = signUpViewModel.signUpPasswordConfirm,
+                isPasswordRuleSatisfied = signUpViewModel.isPasswordRuleSatisfied,
+                isNextEnabled = signUpViewModel.isStep3NextEnabled,
+                snackbarHostState = snackbarHostState,
+                onPasswordChange = signUpViewModel::updateSignUpPassword,
+                onPasswordConfirmChange = signUpViewModel::updateSignUpPasswordConfirm,
                 onNextClick = actions::onSignUpPasswordNext,
                 onBackClick = actions::onSignUpPasswordBack,
             )
@@ -89,18 +121,28 @@ fun NavGraphBuilder.onboardingNavGraph(
         // ── SignUp Step 4: 약관 동의 ──
         composable<OnboardingRoute.TermsRoute> {
             val signUpViewModel = graphScopedSignUpViewModel(graphScopedParentEntry)
+            val snackbarHostState = rememberSignUpEventHost(signUpViewModel)
 
             OnboardingTermsScreen(
                 termsState = signUpViewModel.termsState,
+                isNextEnabled = signUpViewModel.isStep4NextEnabled,
+                snackbarHostState = snackbarHostState,
                 onTermsToggle = signUpViewModel::toggleTermsAgreed,
                 onPrivacyToggle = signUpViewModel::togglePrivacyAgreed,
                 onMarketingToggle = signUpViewModel::toggleMarketingAgreed,
                 onToggleAll = signUpViewModel::toggleAllTerms,
-                onViewTermsClick = {
-                    // TODO: 약관 상세 보기 웹뷰 또는 화면 연결
-                },
+                onViewTermsClick = { _ -> actions.onViewTerms() },
                 onNextClick = actions::onTermsNext,
                 onBackClick = actions::onTermsBack,
+            )
+        }
+
+        // ── 약관 상세 ──
+        composable<OnboardingRoute.TermsDetailRoute> {
+            TermsDetailScreen(
+                title = "",
+                onBackClick = actions::onTermsDetailBack,
+                onNextClick = actions::onTermsDetailBack,
             )
         }
 
@@ -125,4 +167,53 @@ fun NavGraphBuilder.onboardingNavGraph(
 private fun graphScopedSignUpViewModel(graphScopedParentEntry: () -> NavBackStackEntry): SignUpViewModel {
     val parentEntry = remember { graphScopedParentEntry() }
     return hiltViewModel(parentEntry)
+}
+
+/**
+ * SignUp Step 화면 공통의 Snackbar 호스트 + 이벤트 수집기.
+ * 각 Step composable 에서 호출해 [SignUpEvent.ShowError] 를 일관되게 노출하고,
+ * Step 1 의 경우 [onNavigateToResidentNumber] 로 검증 통과 시 네비게이트한다.
+ */
+@Composable
+private fun rememberSignUpEventHost(
+    viewModel: SignUpViewModel,
+    onNavigateToResidentNumber: (() -> Unit)? = null,
+): SnackbarHostState {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+
+    val signupFailedMessage = stringResource(R.string.signup_failed)
+    val nameRequiredMessage = stringResource(R.string.signup_name_required)
+
+    ObserveAsEvents(viewModel.eventFlow) { event ->
+        when (event) {
+            SignUpEvent.NavigateToResidentNumber -> {
+                onNavigateToResidentNumber?.invoke()
+            }
+
+            SignUpEvent.NameRequired -> {
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = nameRequiredMessage,
+                        duration = SnackbarDuration.Short,
+                    )
+                }
+            }
+
+            is SignUpEvent.ShowError -> {
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = event.message ?: signupFailedMessage,
+                        duration = SnackbarDuration.Short,
+                    )
+                }
+            }
+
+            SignUpEvent.SignUpSuccess -> {
+                Unit
+            } // Profile 화면(OnboardingProfileEntry)에서 처리
+        }
+    }
+
+    return snackbarHostState
 }

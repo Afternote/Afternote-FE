@@ -146,3 +146,28 @@ data class DeliveryConditionRequestDto(
     val specificDate: String? = null,
     val leaveMessage: String? = null,
 )
+
+// --- GET/POST/DELETE /users/connected-accounts (소셜 계정 연동) ---
+
+/**
+ * GET 응답은 provider 별 boolean + email, POST/DELETE 응답은 boolean 만 — email 은 null 로 내려올 수 있어 모두 optional.
+ */
+@Serializable
+data class ConnectedAccountsResponseDto(
+    val local: Boolean,
+    val google: Boolean,
+    val naver: Boolean,
+    val kakao: Boolean,
+    val apple: Boolean,
+    val localEmail: String? = null,
+    val googleEmail: String? = null,
+    val naverEmail: String? = null,
+    val kakaoEmail: String? = null,
+    val appleEmail: String? = null,
+)
+
+/** POST /users/connected-accounts/{provider} 요청 body. 소셜 SDK 로 받은 access token 을 전달. */
+@Serializable
+data class ConnectAccountRequestDto(
+    val accessToken: String,
+)

@@ -6,9 +6,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -29,14 +29,27 @@ import kotlinx.coroutines.flow.filter
 
 @Composable
 fun SignUpResidentNumberScreen(
-    frontNumberState: TextFieldState,
-    backNumberState: TextFieldState,
+    initialFrontNumber: String,
+    initialBackNumber: String,
+    isNextEnabled: Boolean,
+    snackbarHostState: SnackbarHostState,
+    onFrontNumberChange: (String) -> Unit,
+    onBackNumberChange: (String) -> Unit,
     onNextClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val frontNumberState = rememberTextFieldState(initialFrontNumber)
+    val backNumberState = rememberTextFieldState(initialBackNumber)
     val frontFocusRequester = remember { FocusRequester() }
     val backFocusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(frontNumberState) {
+        snapshotFlow { frontNumberState.text.toString() }.collect(onFrontNumberChange)
+    }
+    LaunchedEffect(backNumberState) {
+        snapshotFlow { backNumberState.text.toString() }.collect(onBackNumberChange)
+    }
 
     // 앞자리 6자리 입력 완료 시 뒷자리로 포커스 자동 이동
     LaunchedEffect(frontNumberState) {
@@ -55,6 +68,8 @@ fun SignUpResidentNumberScreen(
         onBackClick = onBackClick,
         onNextClick = onNextClick,
         modifier = modifier,
+        isNextEnabled = isNextEnabled,
+        snackbarHostState = snackbarHostState,
         content = {
             Column(
                 modifier =
@@ -81,7 +96,7 @@ fun SignUpResidentNumberScreen(
                         ),
                     placeholder = stringResource(R.string.signup_resident_number_placeholder),
                     keyboardType = KeyboardType.Number,
-                    onImeAction = onNextClick,
+                    onImeAction = { if (isNextEnabled) onNextClick() },
                 )
             }
         },
@@ -93,8 +108,12 @@ fun SignUpResidentNumberScreen(
 private fun SignUpResidentNumberScreenPreview() {
     AfternoteTheme {
         SignUpResidentNumberScreen(
-            frontNumberState = rememberTextFieldState(),
-            backNumberState = rememberTextFieldState(),
+            initialFrontNumber = "",
+            initialBackNumber = "",
+            isNextEnabled = false,
+            snackbarHostState = remember { SnackbarHostState() },
+            onFrontNumberChange = {},
+            onBackNumberChange = {},
             onNextClick = {},
             onBackClick = {},
         )

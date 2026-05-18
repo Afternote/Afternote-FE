@@ -4,12 +4,14 @@ import com.afternote.core.model.DailyQuestionAnswerItem
 import com.afternote.core.model.ReceiverDailyQuestionsResult
 import com.afternote.core.model.ReceiverMindRecordItem
 import com.afternote.core.model.ReceiverMindRecordsResult
+import com.afternote.core.model.setting.ConnectedAccounts
 import com.afternote.core.model.setting.DeliveryCondition
 import com.afternote.core.model.setting.DeliveryConditionType
 import com.afternote.core.model.setting.PushSettings
 import com.afternote.core.model.setting.ReceiverDetail
 import com.afternote.core.model.setting.ReceiverListItem
 import com.afternote.core.model.user.UserProfileModel
+import com.afternote.core.network.dto.ConnectedAccountsResponseDto
 import com.afternote.core.network.dto.DailyQuestionAnswerItemDto
 import com.afternote.core.network.dto.DeliveryConditionRequestDto
 import com.afternote.core.network.dto.DeliveryConditionResponseDto
@@ -147,4 +149,18 @@ object UserMapper {
             DeliveryConditionType.INACTIVITY -> DeliveryConditionTypeDto.INACTIVITY
             DeliveryConditionType.SPECIFIC_DATE -> DeliveryConditionTypeDto.SPECIFIC_DATE
         }
+
+    fun toConnectedAccounts(dto: ConnectedAccountsResponseDto): ConnectedAccounts =
+        ConnectedAccounts(
+            local = dto.local,
+            google = dto.google,
+            naver = dto.naver,
+            kakao = dto.kakao,
+            apple = dto.apple,
+            localEmail = dto.localEmail,
+            googleEmail = dto.googleEmail,
+            naverEmail = dto.naverEmail,
+            kakaoEmail = dto.kakaoEmail,
+            appleEmail = dto.appleEmail,
+        )
 }

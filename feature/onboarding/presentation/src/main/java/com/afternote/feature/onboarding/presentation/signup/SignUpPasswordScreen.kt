@@ -9,11 +9,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
@@ -32,19 +35,35 @@ import com.afternote.feature.onboarding.presentation.signup.scaffold.ProgressBar
 
 @Composable
 fun SignUpPasswordScreen(
-    passwordState: TextFieldState,
-    passwordConfirmState: TextFieldState,
+    initialPassword: String,
+    initialPasswordConfirm: String,
+    isPasswordRuleSatisfied: Boolean,
+    isNextEnabled: Boolean,
+    snackbarHostState: SnackbarHostState,
+    onPasswordChange: (String) -> Unit,
+    onPasswordConfirmChange: (String) -> Unit,
     onNextClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val focusManager = LocalFocusManager.current
+    val passwordState = rememberTextFieldState(initialPassword)
+    val passwordConfirmState = rememberTextFieldState(initialPasswordConfirm)
+
+    LaunchedEffect(passwordState) {
+        snapshotFlow { passwordState.text.toString() }.collect(onPasswordChange)
+    }
+    LaunchedEffect(passwordConfirmState) {
+        snapshotFlow { passwordConfirmState.text.toString() }.collect(onPasswordConfirmChange)
+    }
 
     ProgressBarScaffold(
         currentStep = 3,
         onBackClick = onBackClick,
         onNextClick = onNextClick,
         modifier = modifier,
+        isNextEnabled = isNextEnabled,
+        snackbarHostState = snackbarHostState,
         content = {
             Column(
                 modifier =
@@ -78,7 +97,7 @@ fun SignUpPasswordScreen(
                     imeAction = ImeAction.Done,
                     onImeAction = {
                         focusManager.clearFocus()
-                        onNextClick()
+                        if (isNextEnabled) onNextClick()
                     },
                 )
 
@@ -87,6 +106,7 @@ fun SignUpPasswordScreen(
                 // 안내 문구
                 PasswordRuleItem(
                     text = stringResource(R.string.signup_password_rule_combination),
+                    isSatisfied = isPasswordRuleSatisfied,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 PasswordRuleItem(
@@ -101,7 +121,14 @@ fun SignUpPasswordScreen(
 private fun PasswordRuleItem(
     text: String,
     modifier: Modifier = Modifier,
+    isSatisfied: Boolean? = null,
 ) {
+    val color =
+        if (isSatisfied == false) {
+            AfternoteDesign.colors.gray5
+        } else {
+            AfternoteDesign.colors.b1
+        }
     Row(
         modifier =
             modifier
@@ -111,17 +138,15 @@ private fun PasswordRuleItem(
         verticalAlignment = Alignment.Top,
     ) {
         Text(
-            text = "\u2022",
+            text = "•",
             modifier = Modifier.clearAndSetSemantics {},
-            style =
-                AfternoteDesign.typography.captionLargeB,
-            color = AfternoteDesign.colors.b1,
+            style = AfternoteDesign.typography.captionLargeB,
+            color = color,
         )
         Text(
             text = text,
-            style =
-                AfternoteDesign.typography.captionLargeB,
-            color = AfternoteDesign.colors.b1,
+            style = AfternoteDesign.typography.captionLargeB,
+            color = color,
         )
     }
 }
@@ -131,8 +156,13 @@ private fun PasswordRuleItem(
 private fun SignUpPasswordScreenPreview() {
     AfternoteTheme {
         SignUpPasswordScreen(
-            passwordState = rememberTextFieldState(),
-            passwordConfirmState = rememberTextFieldState(),
+            initialPassword = "",
+            initialPasswordConfirm = "",
+            isPasswordRuleSatisfied = false,
+            isNextEnabled = false,
+            snackbarHostState = remember { SnackbarHostState() },
+            onPasswordChange = {},
+            onPasswordConfirmChange = {},
             onNextClick = {},
             onBackClick = {},
         )
