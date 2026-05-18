@@ -31,7 +31,7 @@ private val Gray8 = Color(0xFF424242)
 private val Gray9 = Color(0xFF212121)
 
 /** 브랜드 강조 블루 (디자인 토큰 B1). */
-private val B1 = Color(0xFF6B8FF8)
+private val B1 = Color(0xFF328BFF)
 
 /** 데일리 질문 액션 버튼 배경 컬러 팔레트. */
 private val Accent1 = Color(0xFF4E5F4D)
