@@ -57,9 +57,8 @@ interface ReceiverNavActions {
     fun onNavigateCompleteToReceivedRecords()
 
     /**
-     * 발신자 상세(12)의 "기록 열람하기" → 수신자 홈 진입. 발신자 컨텍스트(authCode)는 호출 전
-     * 액션 구현체가 [com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository.saveAuthCode]
-     * 로 글로벌 헤더에 복원한 뒤 이동한다.
+     * 발신자 상세(12)의 "기록 열람하기" → 수신자 홈 진입. 발신자 컨텍스트(authCode) 복원은
+     * `SenderDetailViewModel.openReceiverHome` 이 담당하므로 본 액션은 순수 네비게이션만 수행한다.
      */
-    fun onNavigateToReceiverHome(senderId: String)
+    fun onNavigateToReceiverHome()
 }

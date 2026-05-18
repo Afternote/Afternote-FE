@@ -3,13 +3,20 @@ package com.afternote.feature.afternote.presentation.receiver.navigation
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.navigation
+import androidx.navigation.toRoute
 import com.afternote.core.ui.Route
+import com.afternote.feature.afternote.presentation.receiver.deliveryverification.DeliveryVerificationCompleteScreen
+import com.afternote.feature.afternote.presentation.receiver.deliveryverification.DocumentUploadScreen
+import com.afternote.feature.afternote.presentation.receiver.deliveryverification.IdentityVerificationEmailScreen
+import com.afternote.feature.afternote.presentation.receiver.deliveryverification.IdentityVerificationIntroScreen
+import com.afternote.feature.afternote.presentation.receiver.deliveryverification.MasterKeyScreen
 import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailRoute
 import com.afternote.feature.afternote.presentation.receiver.home.ReceiverAfternoteHomeEntry
 import com.afternote.feature.afternote.presentation.receiver.home.ReceiverAfternoteHomeEntryActions
 import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceiverRoute
 import com.afternote.feature.afternote.presentation.receiver.recordsbox.ReceivedRecordsScreen
 import com.afternote.feature.afternote.presentation.receiver.recordsbox.SenderRegistrationScreen
+import com.afternote.feature.afternote.presentation.receiver.senderdetail.SenderDetailScreen
 
 /**
  * 수신자 흐름 네비게이션 그래프. 앱 모듈의 NavHost에 직접 연결되며 [Route.Receiver]를
@@ -23,7 +30,7 @@ import com.afternote.feature.afternote.presentation.receiver.recordsbox.SenderRe
  *
  * @param homeContent 앱 모듈이 주입하는 수신자 홈 Composable 슬롯.
  *   `ReceiverHomeEntry`를 자체 액션과 함께 호출해 전달한다.
- * @param actions 그래프 내부 이동(받은 기록함/목록/상세/발신자 등록) 명령.
+ * @param actions 그래프 내부 이동(받은 기록함/목록/상세/발신자 등록·상세/열람 신청) 명령.
  */
 fun NavGraphBuilder.receiverNavGraph(
     homeContent: @Composable () -> Unit,
@@ -34,8 +41,7 @@ fun NavGraphBuilder.receiverNavGraph(
             ReceivedRecordsScreen(
                 onBackClick = actions::onPopBackStack,
                 onAddSenderClick = actions::onNavigateToSenderRegistration,
-                // TODO(#215): 발신자 카드 클릭 → 발신자 상세(11/12) 진입. 현재 단계 placeholder.
-                onSenderClick = { /* no-op */ },
+                onSenderClick = { sender -> actions.onNavigateToSenderDetail(sender.id) },
             )
         }
 
@@ -44,6 +50,53 @@ fun NavGraphBuilder.receiverNavGraph(
                 onBackClick = actions::onPopBackStack,
                 // 등록 완료 시 받은 기록함으로 pop. 카드는 자동으로 반영된다 (SenderRegistry StateFlow).
                 onRegistered = actions::onPopBackStack,
+            )
+        }
+
+        receiverComposable<ReceiverRoute.SenderDetailRoute> { backStackEntry ->
+            val senderId = backStackEntry.toRoute<ReceiverRoute.SenderDetailRoute>().senderId
+            SenderDetailScreen(
+                onBackClick = actions::onPopBackStack,
+                onRequestVerification = { actions.onRequestVerificationFlow(senderId) },
+                onOpenReceiverHome = actions::onNavigateToReceiverHome,
+            )
+        }
+
+        receiverComposable<ReceiverRoute.IdentityVerificationIntroRoute> { backStackEntry ->
+            val senderId = backStackEntry.toRoute<ReceiverRoute.IdentityVerificationIntroRoute>().senderId
+            IdentityVerificationIntroScreen(
+                onBackClick = actions::onPopBackStack,
+                onStartClick = { actions.onNavigateIdentityIntroToEmail(senderId) },
+            )
+        }
+
+        receiverComposable<ReceiverRoute.IdentityVerificationEmailRoute> { backStackEntry ->
+            val senderId = backStackEntry.toRoute<ReceiverRoute.IdentityVerificationEmailRoute>().senderId
+            IdentityVerificationEmailScreen(
+                onBackClick = actions::onPopBackStack,
+                onVerified = { actions.onNavigateIdentityEmailToMasterKey(senderId) },
+            )
+        }
+
+        receiverComposable<ReceiverRoute.MasterKeyRoute> { backStackEntry ->
+            val senderId = backStackEntry.toRoute<ReceiverRoute.MasterKeyRoute>().senderId
+            MasterKeyScreen(
+                onBackClick = actions::onPopBackStack,
+                onVerified = { actions.onNavigateMasterKeyToDocumentUpload(senderId) },
+            )
+        }
+
+        receiverComposable<ReceiverRoute.DocumentUploadRoute> { backStackEntry ->
+            val senderId = backStackEntry.toRoute<ReceiverRoute.DocumentUploadRoute>().senderId
+            DocumentUploadScreen(
+                onBackClick = actions::onPopBackStack,
+                onSubmitted = { actions.onNavigateDocumentUploadToComplete(senderId) },
+            )
+        }
+
+        receiverComposable<ReceiverRoute.DeliveryVerificationCompleteRoute> {
+            DeliveryVerificationCompleteScreen(
+                onBackToRecords = actions::onNavigateCompleteToReceivedRecords,
             )
         }
 
