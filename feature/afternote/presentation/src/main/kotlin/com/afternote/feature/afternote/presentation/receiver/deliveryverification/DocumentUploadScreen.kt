@@ -5,12 +5,16 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
@@ -20,13 +24,21 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -61,7 +73,23 @@ fun DocumentUploadScreen(
 
     // 현재 BottomSheet 가 열려있는 슬롯. non-null = 시트 표시 + 어느 슬롯이 트리거했는지 식별, null = 시트 닫힘.
     var sheetSlot by remember { mutableStateOf<DocumentSlot?>(null) }
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    // 디자인: 시트 상단 모서리 = 가족관계증명서 텍스트필드 하단 + 57dp.
+    // 절대 좌표 anchor 가 작은 값이라 디바이스 사이즈 변동에 안정적. 측정해서 시트 높이 동적 계산.
+    var familyFieldBottomPx by remember { mutableIntStateOf(0) }
+    val density = LocalDensity.current
+    val windowInfo = LocalWindowInfo.current
+    val sheetHeight: Dp? =
+        if (familyFieldBottomPx > 0) {
+            with(density) {
+                val containerHeightDp = windowInfo.containerSize.height.toDp()
+                val familyFieldBottomDp = familyFieldBottomPx.toDp()
+                (containerHeightDp - familyFieldBottomDp - 57.dp).coerceAtLeast(120.dp)
+            }
+        } else {
+            null
+        }
 
     // BottomSheet 닫히면 sheetSlot 은 null 로 비워지지만 picker 콜백은 그 뒤에 비동기로 옴.
     // 어느 슬롯의 결과인지 콜백 시점에 알아야 해서 sheetSlot 과 별도로 들고 있는 슬롯 식별자.
@@ -100,6 +128,7 @@ fun DocumentUploadScreen(
         snackbarHostState = snackbarHostState,
         onBackClick = onBackClick,
         onSlotClick = { slot -> sheetSlot = slot },
+        onFamilyFieldBottomChanged = { familyFieldBottomPx = it },
         onSubmitClick = viewModel::submit,
         modifier = modifier,
     )
@@ -125,6 +154,7 @@ fun DocumentUploadScreen(
                     pendingSlot.value = slot
                     filePickerLauncher.launch("*/*")
                 },
+                sheetHeight = sheetHeight,
             )
         }
     }
@@ -151,6 +181,7 @@ private fun DocumentUploadScreenContent(
     snackbarHostState: SnackbarHostState,
     onBackClick: () -> Unit,
     onSlotClick: (DocumentSlot) -> Unit,
+    onFamilyFieldBottomChanged: (Int) -> Unit,
     onSubmitClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -191,6 +222,10 @@ private fun DocumentUploadScreenContent(
                 title = stringResource(R.string.receiver_verify_family_cert_title),
                 slot = uiState.familyRelationCertificate,
                 onPickClick = { onSlotClick(DocumentSlot.FamilyRelationCertificate) },
+                modifier =
+                    Modifier.onGloballyPositioned { coords ->
+                        onFamilyFieldBottomChanged(coords.boundsInWindow().bottom.toInt())
+                    },
             )
         }
     }
@@ -205,6 +240,7 @@ private fun DocumentUploadEmptyPreview() {
             snackbarHostState = remember { SnackbarHostState() },
             onBackClick = {},
             onSlotClick = {},
+            onFamilyFieldBottomChanged = {},
             onSubmitClick = {},
         )
     }
@@ -225,7 +261,38 @@ private fun DocumentUploadFilledPreview() {
             snackbarHostState = remember { SnackbarHostState() },
             onBackClick = {},
             onSlotClick = {},
+            onFamilyFieldBottomChanged = {},
             onSubmitClick = {},
         )
+    }
+}
+
+@Preview(showBackground = true, heightDp = 780)
+@Composable
+private fun DocumentUploadWithSheetOpenPreview() {
+    AfternoteTheme {
+        Box(modifier = Modifier.fillMaxSize()) {
+            DocumentUploadScreenContent(
+                uiState = DocumentUploadUiState(),
+                snackbarHostState = remember { SnackbarHostState() },
+                onBackClick = {},
+                onSlotClick = {},
+                onFamilyFieldBottomChanged = {},
+                onSubmitClick = {},
+            )
+            Box(
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                        .background(AfternoteDesign.colors.gray1),
+            ) {
+                DocumentSourceBottomSheet(
+                    onPickImage = {},
+                    onPickFile = {},
+                )
+            }
+        }
     }
 }
