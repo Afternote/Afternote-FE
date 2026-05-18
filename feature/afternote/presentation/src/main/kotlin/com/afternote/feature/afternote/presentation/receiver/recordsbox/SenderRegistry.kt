@@ -1,5 +1,7 @@
 package com.afternote.feature.afternote.presentation.receiver.recordsbox
 
+import com.afternote.feature.afternote.domain.model.receiver.DeliveryVerificationStatus
+import com.afternote.feature.afternote.domain.model.receiver.ReceiverIdentity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -40,4 +42,44 @@ class SenderRegistry
         }
 
         fun findById(id: String): SenderEntry? = _senders.value.firstOrNull { it.id == id }
+
+        /**
+         * 마스터 키 검증 성공 직후 호출. authCode + verify 응답 정보를 카드에 결합한다. 이후
+         * "기록 열람하기"(12) 진입 시 이 authCode 를 ReceiverRepository 에 복원해 헤더 컨텍스트를 잡는다.
+         */
+        fun attachIdentity(
+            id: String,
+            authCode: String,
+            identity: ReceiverIdentity,
+        ): SenderEntry? =
+            updateById(id) { entry ->
+                entry.copy(
+                    authCode = authCode,
+                    realSenderName = identity.senderName,
+                    relation = identity.relation,
+                )
+            }
+
+        /** 발신자 상세에서 최근 조회한 열람 신청 상태를 캐시. */
+        fun updateVerificationStatus(
+            id: String,
+            status: DeliveryVerificationStatus,
+        ): SenderEntry? = updateById(id) { entry -> entry.copy(verificationStatus = status) }
+
+        private inline fun updateById(
+            id: String,
+            transform: (SenderEntry) -> SenderEntry,
+        ): SenderEntry? {
+            var updated: SenderEntry? = null
+            _senders.update { list ->
+                list.map { entry ->
+                    if (entry.id == id) {
+                        transform(entry).also { updated = it }
+                    } else {
+                        entry
+                    }
+                }
+            }
+            return updated
+        }
     }
