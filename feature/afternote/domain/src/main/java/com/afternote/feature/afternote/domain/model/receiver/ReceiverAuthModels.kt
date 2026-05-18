@@ -20,7 +20,7 @@ data class DeliveryVerification(
     val deathCertificateUrl: String?,
     val familyRelationCertificateUrl: String?,
     val adminNote: String?,
-    val createdAt: String,
+    val createdAt: String?,
 )
 
 enum class DeliveryVerificationStatus {
