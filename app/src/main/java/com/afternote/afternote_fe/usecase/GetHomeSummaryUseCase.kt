@@ -37,8 +37,8 @@ class GetHomeSummaryUseCase
                     val diaryDeferred = async { diaryRepository.getList(date = today) }
                     val deepThoughtDeferred = async { deepThoughtRepository.getList() }
 
-                    val profile = profileDeferred.await().getOrThrow()
-                    val receivers = receiversDeferred.await().getOrThrow()
+                    val profile = profileDeferred.await()
+                    val receivers = receiversDeferred.await()
                     val diaryCount = diaryDeferred.await().getOrNull()?.size ?: 0
                     val deepThoughtCount = deepThoughtDeferred.await().getOrNull()?.size ?: 0
 

@@ -50,7 +50,7 @@ class HomeTabViewModel
                     } else {
                         // 초기 진입 또는 에러 재시도: 캐시된 이름이 있으면 placeholder로 즉시 노출한다.
                         _uiState.value =
-                            HomeTabUiState.Loading(cachedUserName = userRepository.getCachedUserName())
+                            HomeTabUiState.Loading()
                     }
 
                     getHomeSummary()
