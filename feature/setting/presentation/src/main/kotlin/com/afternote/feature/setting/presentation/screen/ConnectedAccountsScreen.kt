@@ -60,6 +60,7 @@ fun ConnectedAccountsScreen(
                                     }
                             }
                         }
+
                         "google" -> {
                             requestGoogleIdToken(
                                 context = context,
