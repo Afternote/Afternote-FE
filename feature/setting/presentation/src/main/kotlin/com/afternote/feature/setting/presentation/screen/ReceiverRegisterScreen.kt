@@ -90,10 +90,11 @@ fun ReceiverRegisterScreen(
                             )
                         },
                         enabled = isFormValid && !uiState.isLoading,
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = AfternoteDesign.colors.gray9,
-                            disabledContentColor = AfternoteDesign.colors.gray2,
-                        ),
+                        colors =
+                            ButtonDefaults.textButtonColors(
+                                contentColor = AfternoteDesign.colors.gray9,
+                                disabledContentColor = AfternoteDesign.colors.gray2,
+                            ),
                     ) {
                         Text(
                             text = "등록",

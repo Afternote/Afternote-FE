@@ -18,11 +18,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteDesign
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 
@@ -73,9 +73,10 @@ fun PassKeyScreen(
                         painter = painterResource(R.drawable.ic_passkey_main),
                         contentDescription = "패스키 메인 로고",
                         contentScale = ContentScale.FillWidth,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(260.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(260.dp),
                     )
                 }
             }

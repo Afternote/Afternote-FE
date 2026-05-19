@@ -30,21 +30,23 @@ class ProfileEditViewModel
 
         private fun loadProfile() {
             viewModelScope.launch {
-                runCatching { userRepository.getMyProfile() }
-                    .onSuccess { user ->
-                        _uiState.value = ProfileEditUiState.Success(
+                runCatching { userRepository.getMyProfile() }.onSuccess { user ->
+                    _uiState.value =
+                        ProfileEditUiState.Success(
                             name = user.name,
                             phone = user.phone.orEmpty(),
                             email = user.email,
                         )
-                    }
-                    .onFailure {
-                        _uiState.value = ProfileEditUiState.Error
-                    }
+                }.onFailure {
+                    _uiState.value = ProfileEditUiState.Error
+                }
             }
         }
 
-        fun updateProfile(name: String, phone: String) {
+        fun updateProfile(
+            name: String,
+            phone: String,
+        ) {
             val current = _uiState.value as? ProfileEditUiState.Success ?: return
             _uiState.update { current.copy(isUpdating = true) }
             viewModelScope.launch {
@@ -54,12 +56,12 @@ class ProfileEditViewModel
                         phone = phone.takeIf { it.isNotBlank() },
                         profileImageUrl = null,
                     )
+                }.onSuccess {
+                    _events.send(ProfileEditEvent.UpdateSuccess)
+                }.onFailure {
+                    _uiState.update { current.copy(isUpdating = false) }
+                    _events.send(ProfileEditEvent.UpdateFailure)
                 }
-                    .onSuccess { _events.send(ProfileEditEvent.UpdateSuccess) }
-                    .onFailure {
-                        _uiState.update { current.copy(isUpdating = false) }
-                        _events.send(ProfileEditEvent.UpdateFailure)
-                    }
             }
         }
     }

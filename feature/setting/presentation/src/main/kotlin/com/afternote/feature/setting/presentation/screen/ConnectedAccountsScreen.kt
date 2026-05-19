@@ -67,11 +67,11 @@ fun ConnectedAccountsScreen(
                                 credentialManager = credentialManager,
                                 serverClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID,
                             ).onSuccess { token -> viewModel.link("google", token) }
-                             .onFailure { e ->
-                                 if (e !is UserCancelledAuthException) {
-                                     viewModel.link("google", "") // TODO: 에러 이벤트로 교체
-                                 }
-                             }
+                                .onFailure { e ->
+                                    if (e !is UserCancelledAuthException) {
+                                        viewModel.link("google", "") // TODO: 에러 이벤트로 교체
+                                    }
+                                }
                         }
                     }
                 }

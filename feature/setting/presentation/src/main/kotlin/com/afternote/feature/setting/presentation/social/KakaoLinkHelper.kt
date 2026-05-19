@@ -23,9 +23,13 @@ suspend fun requestKakaoAccessToken(activity: Activity): Result<String> =
                         continuation.resume(Result.failure(failure))
                     }
 
-                    token != null -> continuation.resume(Result.success(token.accessToken))
+                    token != null -> {
+                        continuation.resume(Result.success(token.accessToken))
+                    }
 
-                    else -> continuation.resume(Result.failure(IllegalStateException("카카오 로그인 실패: 결과값 없음")))
+                    else -> {
+                        continuation.resume(Result.failure(IllegalStateException("카카오 로그인 실패: 결과값 없음")))
+                    }
                 }
             }
         }

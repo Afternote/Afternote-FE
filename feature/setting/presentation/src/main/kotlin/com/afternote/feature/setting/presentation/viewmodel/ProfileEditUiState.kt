@@ -15,5 +15,6 @@ sealed interface ProfileEditUiState {
 
 sealed interface ProfileEditEvent {
     data object UpdateSuccess : ProfileEditEvent
+
     data object UpdateFailure : ProfileEditEvent
 }

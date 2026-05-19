@@ -40,9 +40,11 @@ class ReceiverRegisterViewModel
                         email = email?.takeIf { it.isNotBlank() },
                         message = null,
                     )
+                }.onSuccess {
+                    _events.send(ReceiverRegisterEvent.RegisterSuccess)
+                }.onFailure {
+                    _uiState.update { it.copy(isLoading = false, errorMessage = "수신자 등록에 실패했습니다.") }
                 }
-                    .onSuccess { _events.send(ReceiverRegisterEvent.RegisterSuccess) }
-                    .onFailure { _uiState.update { it.copy(isLoading = false, errorMessage = "수신자 등록에 실패했습니다.") } }
             }
         }
     }

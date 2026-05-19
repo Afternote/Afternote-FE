@@ -7,5 +7,7 @@ data class ConnectedAccountsUiState(
 )
 
 sealed interface ConnectedAccountsEvent {
-    data class RequestLink(val provider: String) : ConnectedAccountsEvent
+    data class RequestLink(
+        val provider: String,
+    ) : ConnectedAccountsEvent
 }

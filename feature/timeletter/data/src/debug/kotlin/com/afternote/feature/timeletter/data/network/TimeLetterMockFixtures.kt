@@ -1,7 +1,6 @@
 package com.afternote.feature.timeletter.data.network
 
 internal object TimeLetterMockFixtures {
-
     val MOCK_LIST_JSON =
         """
         {"status":200,"code":0,"message":null,"data":{

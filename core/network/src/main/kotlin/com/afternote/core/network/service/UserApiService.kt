@@ -1,6 +1,5 @@
 package com.afternote.core.network.service
 
-import com.afternote.core.network.model.BaseResponse
 import com.afternote.core.network.dto.DeliveryConditionRequest
 import com.afternote.core.network.dto.DeliveryConditionResponseDto
 import com.afternote.core.network.dto.ReceiverDetailResponseDto
@@ -16,6 +15,7 @@ import com.afternote.core.network.dto.UserResponseDto
 import com.afternote.core.network.dto.UserUpdateProfileRequest
 import com.afternote.core.network.dto.UserUpdatePushSettingRequest
 import com.afternote.core.network.dto.UserUpdateReceiverMessageRequest
+import com.afternote.core.network.model.BaseResponse
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET

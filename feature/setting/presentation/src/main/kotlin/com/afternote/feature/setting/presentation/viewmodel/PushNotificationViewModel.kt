@@ -34,18 +34,18 @@ class PushNotificationViewModel
         private fun loadPushSettings() {
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoading = true) }
-                runCatching { userRepository.getMyPushSettings() }
-                    .onSuccess { setting ->
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                isNewsletterOn = setting.timeLetter,
-                                isMindRecordOn = setting.mindRecord,
-                                isAfternoteOn = setting.afterNote,
-                            )
-                        }
+                runCatching { userRepository.getMyPushSettings() }.onSuccess { setting ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            isNewsletterOn = setting.timeLetter,
+                            isMindRecordOn = setting.mindRecord,
+                            isAfternoteOn = setting.afterNote,
+                        )
                     }
-                    .onFailure { _uiState.update { it.copy(isLoading = false) } }
+                }.onFailure {
+                    _uiState.update { it.copy(isLoading = false) }
+                }
             }
         }
 

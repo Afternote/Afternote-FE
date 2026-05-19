@@ -34,25 +34,23 @@ class DeliveryConditionViewModel
         private fun loadDeliveryCondition() {
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoading = true) }
-                runCatching { userRepository.getDeliveryCondition() }
-                    .onSuccess { condition ->
-                        val option =
-                            when (condition.conditionType) {
-                                DeliveryConditionType.INACTIVITY -> ProcessingConditionOption.INACTIVITY
-                                DeliveryConditionType.SPECIFIC_DATE -> ProcessingConditionOption.SPECIFIC_DATE
-                                DeliveryConditionType.NONE -> ProcessingConditionOption.INACTIVITY
-                            }
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                processingOption = option,
-                                specificDate = condition.specificDate?.let { date -> LocalDate.parse(date) },
-                            )
+                runCatching { userRepository.getDeliveryCondition() }.onSuccess { condition ->
+                    val option =
+                        when (condition.conditionType) {
+                            DeliveryConditionType.INACTIVITY -> ProcessingConditionOption.INACTIVITY
+                            DeliveryConditionType.SPECIFIC_DATE -> ProcessingConditionOption.SPECIFIC_DATE
+                            DeliveryConditionType.NONE -> ProcessingConditionOption.INACTIVITY
                         }
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            processingOption = option,
+                            specificDate = condition.specificDate?.let { date -> LocalDate.parse(date) },
+                        )
                     }
-                    .onFailure {
-                        _uiState.update { it.copy(isLoading = false) }
-                    }
+                }.onFailure {
+                    _uiState.update { it.copy(isLoading = false) }
+                }
             }
         }
 
@@ -99,14 +97,12 @@ class DeliveryConditionViewModel
                                 null
                             },
                     )
+                }.onSuccess {
+                    _uiState.update { it.copy(isSaving = false) }
+                    _saveSuccess.send(Unit)
+                }.onFailure { e ->
+                    _uiState.update { it.copy(isSaving = false, errorMessage = e.message) }
                 }
-                    .onSuccess {
-                        _uiState.update { it.copy(isSaving = false) }
-                        _saveSuccess.send(Unit)
-                    }
-                    .onFailure { e ->
-                        _uiState.update { it.copy(isSaving = false, errorMessage = e.message) }
-                    }
             }
         }
     }

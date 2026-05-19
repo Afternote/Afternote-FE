@@ -5,17 +5,29 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 enum class TimeLetterStatusDto {
-    @SerialName("DRAFT") DRAFT,
-    @SerialName("SCHEDULED") SCHEDULED,
-    @SerialName("SENT") SENT,
+    @SerialName("DRAFT")
+    DRAFT,
+
+    @SerialName("SCHEDULED")
+    SCHEDULED,
+
+    @SerialName("SENT")
+    SENT,
 }
 
 @Serializable
 enum class TimeLetterMediaTypeDto {
-    @SerialName("IMAGE") IMAGE,
-    @SerialName("VIDEO") VIDEO,
-    @SerialName("AUDIO") AUDIO,
-    @SerialName("DOCUMENT") DOCUMENT,
+    @SerialName("IMAGE")
+    IMAGE,
+
+    @SerialName("VIDEO")
+    VIDEO,
+
+    @SerialName("AUDIO")
+    AUDIO,
+
+    @SerialName("DOCUMENT")
+    DOCUMENT,
 }
 
 @Serializable

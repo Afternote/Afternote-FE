@@ -29,11 +29,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.graphics.Color
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteDesign
-import androidx.compose.ui.graphics.Color
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditEvent
@@ -71,9 +71,10 @@ fun ProfileEditScreen(
         when (val state = uiState) {
             is ProfileEditUiState.Loading -> {
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding),
                     contentAlignment = Alignment.Center,
                 ) {
                     CircularProgressIndicator()
@@ -91,9 +92,10 @@ fun ProfileEditScreen(
 
             is ProfileEditUiState.Error -> {
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(text = "프로필을 불러올 수 없습니다.")
@@ -119,9 +121,10 @@ private fun ProfileEditForm(
     ) {
         item {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 50.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 50.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Box(modifier = Modifier.size(134.dp)) {
@@ -131,9 +134,10 @@ private fun ProfileEditForm(
                         modifier = Modifier.fillMaxSize(),
                     )
                     Box(
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .size(48.dp),
+                        modifier =
+                            Modifier
+                                .align(Alignment.BottomEnd)
+                                .size(48.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         Image(
@@ -150,9 +154,10 @@ private fun ProfileEditForm(
         }
         item {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
             ) {
                 Text(
                     text = "이름",
@@ -168,9 +173,10 @@ private fun ProfileEditForm(
         }
         item {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
             ) {
                 Text(text = "연락처", style = AfternoteDesign.typography.bodySmallR)
                 Spacer(modifier = Modifier.padding(top = 8.dp))
@@ -183,9 +189,10 @@ private fun ProfileEditForm(
         }
         item {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
             ) {
                 Text(text = "이메일", style = AfternoteDesign.typography.bodySmallR)
                 Spacer(modifier = Modifier.padding(top = 8.dp))
@@ -203,9 +210,10 @@ private fun ProfileEditForm(
                 text = "수정하기",
                 onClick = { onUpdateClick(nameState.text.toString(), phoneState.text.toString()) },
                 type = if (state.isUpdating) AfternoteButtonType.Un else AfternoteButtonType.Default,
-                modifier = Modifier
-                    .padding(horizontal = 20.dp)
-                    .fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .padding(horizontal = 20.dp)
+                        .fillMaxWidth(),
             )
         }
         item {
@@ -237,11 +245,12 @@ private fun ProfileEditScreenPrev() {
         topBar = { DetailTopBar(title = "프로필 설정") },
     ) { innerPadding ->
         ProfileEditForm(
-            state = ProfileEditUiState.Success(
-                name = "박서연",
-                phone = "01012345678",
-                email = "afternote@email.com",
-            ),
+            state =
+                ProfileEditUiState.Success(
+                    name = "박서연",
+                    phone = "01012345678",
+                    email = "afternote@email.com",
+                ),
             onUpdateClick = { _, _ -> },
             onWithdrawGuideClick = {},
             modifier = Modifier.padding(innerPadding),
