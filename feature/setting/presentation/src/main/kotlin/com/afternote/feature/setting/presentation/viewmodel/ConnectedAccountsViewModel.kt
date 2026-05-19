@@ -32,11 +32,13 @@ class ConnectedAccountsViewModel
 
         private fun loadConnectedAccounts() {
             viewModelScope.launch {
-                runCatching { userRepository.getConnectedAccounts() }.onSuccess { accounts ->
-                    _uiState.update { it.copy(isLoading = false, accounts = accounts.toStateList()) }
-                }.onFailure {
-                    _uiState.update { it.copy(isLoading = false, errorMessage = "계정 정보를 불러올 수 없습니다.") }
-                }
+                runCatching { userRepository.getConnectedAccounts() }
+                    .onSuccess { accounts ->
+                        _uiState.update { it.copy(isLoading = false, accounts = accounts.toStateList()) }
+                    }
+                    .onFailure {
+                        _uiState.update { it.copy(isLoading = false, errorMessage = "계정 정보를 불러올 수 없습니다.") }
+                    }
             }
         }
 

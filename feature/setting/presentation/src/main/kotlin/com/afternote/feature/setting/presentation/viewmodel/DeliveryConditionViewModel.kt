@@ -34,23 +34,25 @@ class DeliveryConditionViewModel
         private fun loadDeliveryCondition() {
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoading = true) }
-                runCatching { userRepository.getDeliveryCondition() }.onSuccess { condition ->
-                    val option =
-                        when (condition.conditionType) {
-                            DeliveryConditionType.INACTIVITY -> ProcessingConditionOption.INACTIVITY
-                            DeliveryConditionType.SPECIFIC_DATE -> ProcessingConditionOption.SPECIFIC_DATE
-                            DeliveryConditionType.NONE -> ProcessingConditionOption.INACTIVITY
+                runCatching { userRepository.getDeliveryCondition() }
+                    .onSuccess { condition ->
+                        val option =
+                            when (condition.conditionType) {
+                                DeliveryConditionType.INACTIVITY -> ProcessingConditionOption.INACTIVITY
+                                DeliveryConditionType.SPECIFIC_DATE -> ProcessingConditionOption.SPECIFIC_DATE
+                                DeliveryConditionType.NONE -> ProcessingConditionOption.INACTIVITY
+                            }
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                processingOption = option,
+                                specificDate = condition.specificDate?.let { date -> LocalDate.parse(date) },
+                            )
                         }
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            processingOption = option,
-                            specificDate = condition.specificDate?.let { date -> LocalDate.parse(date) },
-                        )
                     }
-                }.onFailure {
-                    _uiState.update { it.copy(isLoading = false) }
-                }
+                    .onFailure {
+                        _uiState.update { it.copy(isLoading = false) }
+                    }
             }
         }
 

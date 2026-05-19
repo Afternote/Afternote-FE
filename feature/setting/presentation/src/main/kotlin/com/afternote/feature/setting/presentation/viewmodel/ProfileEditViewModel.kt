@@ -30,16 +30,18 @@ class ProfileEditViewModel
 
         private fun loadProfile() {
             viewModelScope.launch {
-                runCatching { userRepository.getMyProfile() }.onSuccess { user ->
-                    _uiState.value =
-                        ProfileEditUiState.Success(
-                            name = user.name,
-                            phone = user.phone.orEmpty(),
-                            email = user.email,
-                        )
-                }.onFailure {
-                    _uiState.value = ProfileEditUiState.Error
-                }
+                runCatching { userRepository.getMyProfile() }
+                    .onSuccess { user ->
+                        _uiState.value =
+                            ProfileEditUiState.Success(
+                                name = user.name,
+                                phone = user.phone.orEmpty(),
+                                email = user.email,
+                            )
+                    }
+                    .onFailure {
+                        _uiState.value = ProfileEditUiState.Error
+                    }
             }
         }
 
