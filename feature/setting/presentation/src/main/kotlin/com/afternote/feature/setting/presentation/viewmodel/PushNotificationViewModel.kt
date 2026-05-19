@@ -44,8 +44,7 @@ class PushNotificationViewModel
                                 isAfternoteOn = setting.afterNote,
                             )
                         }
-                    }
-                    .onFailure {
+                    }.onFailure {
                         _uiState.update { it.copy(isLoading = false) }
                     }
             }

@@ -38,8 +38,7 @@ class ProfileEditViewModel
                                 phone = user.phone.orEmpty(),
                                 email = user.email,
                             )
-                    }
-                    .onFailure {
+                    }.onFailure {
                         _uiState.value = ProfileEditUiState.Error
                     }
             }

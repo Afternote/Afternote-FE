@@ -49,8 +49,7 @@ class DeliveryConditionViewModel
                                 specificDate = condition.specificDate?.let { date -> LocalDate.parse(date) },
                             )
                         }
-                    }
-                    .onFailure {
+                    }.onFailure {
                         _uiState.update { it.copy(isLoading = false) }
                     }
             }

@@ -35,8 +35,7 @@ class ConnectedAccountsViewModel
                 runCatching { userRepository.getConnectedAccounts() }
                     .onSuccess { accounts ->
                         _uiState.update { it.copy(isLoading = false, accounts = accounts.toStateList()) }
-                    }
-                    .onFailure {
+                    }.onFailure {
                         _uiState.update { it.copy(isLoading = false, errorMessage = "계정 정보를 불러올 수 없습니다.") }
                     }
             }
