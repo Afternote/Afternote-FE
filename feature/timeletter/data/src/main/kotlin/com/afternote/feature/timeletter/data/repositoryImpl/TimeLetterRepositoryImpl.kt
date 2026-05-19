@@ -3,15 +3,15 @@ package com.afternote.feature.timeletter.data.repositoryImpl
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
 import com.afternote.feature.timeletter.data.api.TimeLetterApiService
+import com.afternote.feature.timeletter.data.dto.TimeLetterBlockRequest
+import com.afternote.feature.timeletter.data.dto.TimeLetterBlockTypeDto
 import com.afternote.feature.timeletter.data.dto.TimeLetterCreateRequest
 import com.afternote.feature.timeletter.data.dto.TimeLetterDeleteRequest
-import com.afternote.feature.timeletter.data.dto.TimeLetterMediaRequest
 import com.afternote.feature.timeletter.data.dto.TimeLetterUpdateRequest
 import com.afternote.feature.timeletter.data.mapper.toDomain
 import com.afternote.feature.timeletter.data.mapper.toDto
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterList
-import com.afternote.feature.timeletter.domain.model.TimeLetterMediaType
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
 import javax.inject.Inject
@@ -44,26 +44,16 @@ class TimeLetterRepositoryImpl
             content: String?,
             sendAt: String?,
             status: TimeLetterStatus,
-            mediaList: List<Pair<TimeLetterMediaType, String>>?,
             receiverIds: List<Long>?,
-            deliveredAt: String?,
         ): TimeLetter =
             timeLetterApiService
                 .createTimeLetter(
                     TimeLetterCreateRequest(
                         title = title,
-                        content = content,
                         sendAt = sendAt,
                         status = status.toDto(),
-                        mediaList =
-                            mediaList?.map { (type, url) ->
-                                TimeLetterMediaRequest(
-                                    mediaType = type.toDto(),
-                                    mediaUrl = url,
-                                )
-                            } ?: emptyList(),
+                        blocks = buildBlocks(content),
                         receiverIds = receiverIds ?: emptyList(),
-                        deliveredAt = deliveredAt,
                     ),
                 ).requireData()
                 .toDomain()
@@ -74,7 +64,6 @@ class TimeLetterRepositoryImpl
             content: String?,
             sendAt: String?,
             status: TimeLetterStatus?,
-            mediaList: List<Pair<TimeLetterMediaType, String>>?,
         ): TimeLetter =
             timeLetterApiService
                 .updateTimeLetter(
@@ -82,16 +71,9 @@ class TimeLetterRepositoryImpl
                     request =
                         TimeLetterUpdateRequest(
                             title = title,
-                            content = content,
                             sendAt = sendAt,
                             status = status?.toDto(),
-                            mediaList =
-                                mediaList?.map { (type, url) ->
-                                    TimeLetterMediaRequest(
-                                        mediaType = type.toDto(),
-                                        mediaUrl = url,
-                                    )
-                                } ?: emptyList(),
+                            blocks = buildBlocks(content),
                         ),
                 ).requireData()
                 .toDomain()
@@ -107,4 +89,15 @@ class TimeLetterRepositoryImpl
                 .deleteAllTemporary()
                 .requireStatus()
         }
+
+        private fun buildBlocks(content: String?): List<TimeLetterBlockRequest> =
+            listOfNotNull(
+                content?.takeIf { it.isNotBlank() }?.let {
+                    TimeLetterBlockRequest(
+                        blockType = TimeLetterBlockTypeDto.TEXT,
+                        blockOrder = 1,
+                        textContent = it,
+                    )
+                },
+            )
     }

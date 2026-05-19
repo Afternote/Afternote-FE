@@ -102,13 +102,11 @@ private fun TimeLetterBlockItemPrev() {
             TimeLetter(
                 id = 1L,
                 title = "미래의 나에게",
-                content = "지금 이 순간을 잊지 마. 열심히 살고 있는 너를 응원해.",
-                sendAt = "2026-12-31",
+                sendAt = "2026-12-31T00:00:00",
+                deliveredAt = null,
                 status = TimeLetterStatus.SCHEDULED,
-                mediaList = emptyList(),
+                blocks = emptyList(),
                 receiverIds = listOf(1L),
-                createdAt = null,
-                updatedAt = null,
             ),
     )
 }

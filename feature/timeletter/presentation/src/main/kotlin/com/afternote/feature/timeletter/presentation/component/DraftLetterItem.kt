@@ -59,13 +59,11 @@ private fun DraftLetterItemPrev() {
             TimeLetter(
                 id = 1L,
                 title = "미래의 나에게",
-                content = null,
-                sendAt = "2026-12-31",
+                sendAt = "2026-12-31T00:00:00",
+                deliveredAt = null,
                 status = TimeLetterStatus.DRAFT,
-                mediaList = emptyList(),
+                blocks = emptyList(),
                 receiverIds = listOf(1L),
-                createdAt = null,
-                updatedAt = null,
             ),
     )
 }

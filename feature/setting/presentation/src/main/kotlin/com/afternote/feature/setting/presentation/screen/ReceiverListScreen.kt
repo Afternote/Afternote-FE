@@ -16,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -43,11 +42,11 @@ import kotlinx.coroutines.launch
 fun ReceiverListScreen(
     receivers: List<ReceiverListItem>,
     onBackClick: () -> Unit,
-    onConfirmClick: (List<ReceiverListItem>) -> Unit,
+    onConfirmClick: (ReceiverListItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val searchState = rememberTextFieldState()
-    val selectedIds = remember { mutableStateSetOf<Long>() }
+    var selectedId by remember { mutableStateOf<Long?>(null) }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     var selectedConsonant by remember { mutableStateOf<Char?>(null) }
@@ -93,11 +92,11 @@ fun ReceiverListScreen(
         },
         bottomBar = {
             AfternoteButton(
-                text = "수신자 등록하기",
+                text = "수신자 선택 완료하기",
                 onClick = {
-                    onConfirmClick(receivers.filter { it.receiverId in selectedIds })
+                    receivers.find { it.receiverId == selectedId }?.let(onConfirmClick)
                 },
-                type = AfternoteButtonType.Default,
+                type = if (selectedId != null) AfternoteButtonType.Default else AfternoteButtonType.Un,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
             )
         },
@@ -128,13 +127,9 @@ fun ReceiverListScreen(
                         items(items, key = { it.receiverId }) { receiver ->
                             ReceiverListItem(
                                 receiver = receiver,
-                                selected = receiver.receiverId in selectedIds,
-                                onSelectedChange = { checked ->
-                                    if (checked) {
-                                        selectedIds.add(receiver.receiverId)
-                                    } else {
-                                        selectedIds.remove(receiver.receiverId)
-                                    }
+                                selected = receiver.receiverId == selectedId,
+                                onSelectedChange = {
+                                    selectedId = if (selectedId == receiver.receiverId) null else receiver.receiverId
                                 },
                             )
                         }
@@ -174,6 +169,6 @@ private fun ReceiverListScreenPrev() {
                 ReceiverListItem(receiverId = 3L, name = "이영희", relation = "연인"),
             ),
         onBackClick = {},
-        onConfirmClick = {},
+        onConfirmClick = { _ -> },
     )
 }

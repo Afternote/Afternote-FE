@@ -8,7 +8,6 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
-import com.afternote.core.model.setting.ReceiverListItem
 import com.afternote.core.ui.Route
 import com.afternote.feature.setting.presentation.component.PinSetupStep
 import com.afternote.feature.setting.presentation.screen.AppLockSetupScreen
@@ -23,6 +22,7 @@ import com.afternote.feature.setting.presentation.screen.PushNotificationScreen
 import com.afternote.feature.setting.presentation.screen.ReceiverListScreen
 import com.afternote.feature.setting.presentation.screen.ReceiverRegisterScreen
 import com.afternote.feature.setting.presentation.screen.SettingScreen
+import com.afternote.feature.setting.presentation.viewmodel.ReceiverListViewModel
 import com.afternote.feature.setting.presentation.screen.WithdrawConfirmScreen
 import com.afternote.feature.setting.presentation.screen.WithdrawGuideScreen
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
@@ -99,10 +99,12 @@ fun NavGraphBuilder.settingNavGraph(
         }
 
         composable<SettingRoute.RecipientListRoute> {
+            val viewModel: ReceiverListViewModel = hiltViewModel()
+            val receivers by viewModel.receivers.collectAsStateWithLifecycle()
             ReceiverListScreen(
-                receivers = emptyList<ReceiverListItem>(),
+                receivers = receivers,
                 onBackClick = actions::onRecipientListBack,
-                onConfirmClick = { actions.onNavigateToRecipientRegister() },
+                onConfirmClick = { _ -> actions.onRecipientListBack() },
             )
         }
 

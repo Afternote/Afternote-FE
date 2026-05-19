@@ -1,6 +1,7 @@
 package com.afternote.feature.timeletter.presentation.navigation
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -44,6 +45,7 @@ fun NavGraphBuilder.timeLetterNavGraph(
                 onBackClick = actions::onWriteBack,
                 onRegisterClick = { title, body -> viewModel.register(title, body) },
                 onDraftClick = { title, body -> viewModel.saveDraft(title, body) },
+                onErrorShown = { viewModel.clearError() },
                 onRecipientClick = actions::onNavigateToRecipient,
                 onDateSelected = { viewModel.setSendAt(it) },
                 onTimeSelected = { h, m -> viewModel.setSendTime(h, m) },
@@ -55,12 +57,14 @@ fun NavGraphBuilder.timeLetterNavGraph(
         }
 
         composable<TimeLetterRoute.TimeLetterRecipientRoute> {
+            val writeEntry = remember(it) {
+                navController.getBackStackEntry(TimeLetterRoute.TimeLetterWriteRoute)
+            }
+            val writeViewModel: TimeLetterWriteViewModel = hiltViewModel(writeEntry)
             RecipientListScreen(
                 onBackClick = actions::onRecipientBack,
                 onConfirmClick = { recipients ->
-                    navController.previousBackStackEntry
-                        ?.savedStateHandle
-                        ?.set("recipient_ids", recipients.map { it.receiverId }.toLongArray())
+                    writeViewModel.setRecipients(recipients.map { it.receiverId })
                     actions.onRecipientBack()
                 },
             )

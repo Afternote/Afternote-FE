@@ -7,9 +7,12 @@ data class TimeLetterWriteUiState(
     val recipientNames: List<String> = emptyList(),
     val sendAt: String? = null,
     val sendTime: String? = null,
+    val sendHour: Int = 0,
+    val sendMinute: Int = 0,
     val draftCount: Int = 0,
     val isSaving: Boolean = false,
     val textAlign: TextAlign = TextAlign.Start,
+    val errorMessage: String? = null,
 )
 
 sealed interface TimeLetterWriteEvent {

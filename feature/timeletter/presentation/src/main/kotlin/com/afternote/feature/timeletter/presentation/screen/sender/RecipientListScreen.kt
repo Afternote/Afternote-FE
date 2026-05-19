@@ -116,7 +116,7 @@ private fun RecipientListContent(
                 onClick = {
                     onConfirmClick(recipients.filter { it.receiverId in selectedIds })
                 },
-                type = AfternoteButtonType.Default,
+                type = if (selectedIds.isNotEmpty()) AfternoteButtonType.Default else AfternoteButtonType.Un,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
             )
         },

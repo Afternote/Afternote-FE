@@ -15,9 +15,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -59,6 +62,7 @@ fun TimeLetterWriteScreen(
     onDateSelected: (String) -> Unit = {},
     onTimeSelected: (hour: Int, minute: Int) -> Unit = { _, _ -> },
     onDraftClick: (title: String, body: String) -> Unit = { _, _ -> },
+    onErrorShown: () -> Unit = {},
     onMediaImageClick: () -> Unit = {},
     onMediaVoiceClick: () -> Unit = {},
     onMediaFileClick: () -> Unit = {},
@@ -68,8 +72,15 @@ fun TimeLetterWriteScreen(
     onAlignLeftClick: () -> Unit = {},
     onAlignRightClick: () -> Unit = {},
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
     val sheetState = rememberModalBottomSheetState()
     var showMediaSheet by remember { mutableStateOf(false) }
+
+    LaunchedEffect(uiState.errorMessage) {
+        val msg = uiState.errorMessage ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(msg)
+        onErrorShown()
+    }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var pendingHour by remember { mutableIntStateOf(LocalTime.now().hour) }
@@ -155,6 +166,7 @@ fun TimeLetterWriteScreen(
 
     Scaffold(
         modifier = modifier,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             DetailTopBar(
                 title = "타임레터",
@@ -163,7 +175,7 @@ fun TimeLetterWriteScreen(
                     TimeLetterTextButton(
                         text = "등록",
                         onClick = { onRegisterClick(titleState.text.toString(), bodyState.text.toString()) },
-                        isActive = !uiState.isSaving,
+                        isActive = !uiState.isSaving && uiState.sendAt != null,
                     )
                 },
             )

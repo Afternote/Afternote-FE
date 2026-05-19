@@ -3,19 +3,23 @@ package com.afternote.feature.timeletter.domain.model
 data class TimeLetter(
     val id: Long,
     val title: String?,
-    val content: String?,
     val sendAt: String?,
+    val deliveredAt: String?,
     val status: TimeLetterStatus,
-    val mediaList: List<TimeLetterMedia>,
+    val blocks: List<TimeLetterBlock>,
     val receiverIds: List<Long>,
-    val createdAt: String?,
-    val updatedAt: String?,
-)
+) {
+    val content: String?
+        get() = blocks.firstOrNull { it.blockType == TimeLetterBlockType.TEXT }?.textContent
+}
 
-data class TimeLetterMedia(
+data class TimeLetterBlock(
     val id: Long,
-    val mediaType: TimeLetterMediaType,
-    val mediaUrl: String,
+    val blockType: TimeLetterBlockType,
+    val blockOrder: Int,
+    val textContent: String?,
+    val url: String?,
+    val mimeType: String?,
 )
 
 data class TimeLetterList(
@@ -23,16 +27,16 @@ data class TimeLetterList(
     val totalCount: Int,
 )
 
-enum class
-TimeLetterStatus {
+enum class TimeLetterStatus {
     DRAFT,
     SCHEDULED,
     SENT,
 }
 
-enum class TimeLetterMediaType {
+enum class TimeLetterBlockType {
+    TEXT,
     IMAGE,
-    VIDEO,
     AUDIO,
-    DOCUMENT,
+    FILE,
+    LINK,
 }

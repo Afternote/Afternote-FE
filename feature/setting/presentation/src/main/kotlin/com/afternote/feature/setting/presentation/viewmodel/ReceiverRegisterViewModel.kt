@@ -2,6 +2,7 @@ package com.afternote.feature.setting.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.data.cache.ReceiverCacheStore
 import com.afternote.core.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -17,6 +18,7 @@ class ReceiverRegisterViewModel
     @Inject
     constructor(
         private val userRepository: UserRepository,
+        private val receiverCacheStore: ReceiverCacheStore,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(ReceiverRegisterUiState())
         val uiState = _uiState.asStateFlow()
@@ -41,6 +43,7 @@ class ReceiverRegisterViewModel
                         message = null,
                     )
                 }.onSuccess {
+                    receiverCacheStore.reload()
                     _events.send(ReceiverRegisterEvent.RegisterSuccess)
                 }.onFailure {
                     _uiState.update { it.copy(isLoading = false, errorMessage = "수신자 등록에 실패했습니다.") }
