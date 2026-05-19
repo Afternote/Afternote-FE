@@ -124,6 +124,8 @@ class AfternoteEditorState(
                     } else {
                         AfternoteServiceCatalog.defaultSocialService
                     },
+                socialProcessingMethods = emptyList(),
+                galleryProcessingMethods = emptyList(),
             )
         }
     }
