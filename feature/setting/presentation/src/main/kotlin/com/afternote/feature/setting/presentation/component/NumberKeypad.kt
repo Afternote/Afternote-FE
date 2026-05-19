@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
 
@@ -68,14 +69,15 @@ fun NumberKeypad(
                             "확인" -> {
                                 Text(
                                     text = "확인",
-                                    style = AfternoteDesign.typography.h2,
+                                    style = AfternoteDesign.typography.textField,
+                                    color = AfternoteDesign.colors.gray5,
                                 )
                             }
 
                             else -> {
                                 Text(
                                     text = key,
-                                    style = AfternoteDesign.typography.h2,
+                                    style = AfternoteDesign.typography.h2.copy(fontSize = 30.sp),
                                 )
                             }
                         }

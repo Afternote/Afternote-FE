@@ -2,6 +2,7 @@ package com.afternote.core.data.cache
 
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.setting.ReceiverListItem
+import com.afternote.core.model.user.Receiver
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,14 +25,15 @@ class ReceiverCacheStore
 
         suspend fun ensureLoaded() {
             if (isLoaded) return
-            userRepository
-                .getReceivers()
+            runCatching { userRepository.getReceivers() }
                 .onSuccess { list ->
                     _receiverNameMap.value = list.associate { it.receiverId to it.name }
-                    _receiverList.value = list
+                    _receiverList.value = list.map { it.toReceiverListItem() }
                     isLoaded = true
                 }
         }
+
+        private fun Receiver.toReceiverListItem() = ReceiverListItem(receiverId = receiverId, name = name, relation = relation)
 
         fun getReceiverName(id: Long): String = _receiverNameMap.value[id] ?: ""
     }

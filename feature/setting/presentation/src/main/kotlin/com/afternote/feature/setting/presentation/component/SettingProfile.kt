@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.setting.presentation.R
 
 @Composable
@@ -45,8 +46,16 @@ fun SettingProfile(
             )
             Spacer(modifier = Modifier.padding(12.dp))
             Column {
-                Text(name)
-                Text(email)
+                Text(
+                    name,
+                    style = AfternoteDesign.typography.bodyLargeB,
+                    color = AfternoteDesign.colors.gray9,
+                )
+                Text(
+                    email,
+                    style = AfternoteDesign.typography.bodySmallR,
+                    color = AfternoteDesign.colors.gray5,
+                )
             }
 
             Spacer(modifier = Modifier.weight(1f))
@@ -74,7 +83,11 @@ fun SettingProfile(
                         contentDescription = label,
                         modifier = Modifier.size(40.dp),
                     )
-                    Text(label)
+                    Text(
+                        label,
+                        style = AfternoteDesign.typography.captionLargeR,
+                        color = AfternoteDesign.colors.gray7,
+                    )
                 }
             }
         }

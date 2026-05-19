@@ -30,30 +30,38 @@ class TimeLetterDebugMockNetworkInterceptor
 
             val json =
                 when {
-                    path == "/api/v1/time-letters" && method == "GET" ->
+                    path == "/api/v1/time-letters" && method == "GET" -> {
                         TimeLetterMockFixtures.MOCK_LIST_JSON
+                    }
 
-                    path == "/api/v1/time-letters/temporary" && method == "GET" ->
+                    path == "/api/v1/time-letters/temporary" && method == "GET" -> {
                         TimeLetterMockFixtures.MOCK_TEMPORARY_LIST_JSON
+                    }
 
-                    path == "/api/v1/time-letters" && method == "POST" ->
+                    path == "/api/v1/time-letters" && method == "POST" -> {
                         TimeLetterMockFixtures.MOCK_CREATE_JSON
+                    }
 
-                    path == "/api/v1/time-letters/delete" && method == "POST" ->
+                    path == "/api/v1/time-letters/delete" && method == "POST" -> {
                         TimeLetterMockFixtures.MOCK_DELETE_JSON
+                    }
 
-                    path == "/api/v1/time-letters/temporary" && method == "DELETE" ->
+                    path == "/api/v1/time-letters/temporary" && method == "DELETE" -> {
                         TimeLetterMockFixtures.MOCK_DELETE_JSON
+                    }
 
                     path.matches(TIME_LETTER_ID_PATH_REGEX) && method == "GET" -> {
                         val id = path.substringAfterLast('/').toLongOrNull() ?: 1L
                         TimeLetterMockFixtures.detailJson(id)
                     }
 
-                    path.matches(TIME_LETTER_ID_PATH_REGEX) && method == "PATCH" ->
+                    path.matches(TIME_LETTER_ID_PATH_REGEX) && method == "PATCH" -> {
                         TimeLetterMockFixtures.MOCK_UPDATE_JSON
+                    }
 
-                    else -> return chain.proceed(request)
+                    else -> {
+                        return chain.proceed(request)
+                    }
                 }
 
             Log.w(TAG, "⚠️ MOCK 응답 반환: $method $path")

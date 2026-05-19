@@ -48,8 +48,7 @@ class SettingViewModel
 
         private fun loadProfile() {
             viewModelScope.launch {
-                userRepository
-                    .getMyProfile()
+                runCatching { userRepository.getMyProfile() }
                     .onSuccess { profile ->
                         _uiState.value =
                             SettingUiState.Success(
@@ -66,8 +65,17 @@ class SettingViewModel
             viewModelScope.launch {
                 // logout() 내부에서 서버 호출(best-effort) + 로컬 토큰 정리까지 처리한다.
                 authRepository.logout()
-                userRepository.clearCachedProfile()
                 _logoutCompleted.value = true
+            }
+        }
+
+        private val _withdrawCompleted = MutableStateFlow(false)
+        val withdrawCompleted = _withdrawCompleted.asStateFlow()
+
+        fun deleteAccount() {
+            viewModelScope.launch {
+                runCatching { userRepository.deleteAccount() }
+                    .onSuccess { _withdrawCompleted.value = true }
             }
         }
     }

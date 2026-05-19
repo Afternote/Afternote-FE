@@ -53,8 +53,13 @@ fun TimeLetterBlockItem(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                val receiverText =
+                    letter.receiverIds
+                        .mapNotNull { receiverNameMap[it] }
+                        .joinToString(", ")
+                        .ifEmpty { "${letter.receiverIds.size}명" }
                 Text(
-                    text = "수신인  ${letter.receiverIds.mapNotNull { receiverNameMap[it] }.joinToString(", ").ifEmpty { "${letter.receiverIds.size}명" }}",
+                    text = "수신인  $receiverText",
                     style = AfternoteDesign.typography.bodySmallR,
                     color = AfternoteDesign.colors.gray6,
                 )

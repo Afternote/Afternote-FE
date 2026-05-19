@@ -53,11 +53,12 @@ class DraftLetterViewModel
                 runCatching {
                     timeLetterRepository.deleteTimeLetters(current.selectedIds.toList())
                 }.onSuccess {
-                    _uiState.value = current.copy(
-                        drafts = current.drafts.filter { it.id !in current.selectedIds },
-                        selectedIds = emptySet(),
-                        isEditMode = false,
-                    )
+                    _uiState.value =
+                        current.copy(
+                            drafts = current.drafts.filter { it.id !in current.selectedIds },
+                            selectedIds = emptySet(),
+                            isEditMode = false,
+                        )
                 }
             }
         }

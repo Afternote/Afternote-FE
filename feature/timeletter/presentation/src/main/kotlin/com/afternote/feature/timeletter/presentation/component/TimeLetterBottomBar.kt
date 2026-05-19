@@ -132,7 +132,7 @@ fun TimeLetterBottomBar(
 private fun TimeLetterBottomBarPreview() {
     TimeLetterBottomBar(
         draftCount = 3,
-        textAlign= TextAlign.Center,
+        textAlign = TextAlign.Center,
         onMediaAddClick = {},
         onTextStyleClick = {},
         onAlignCenterClick = {},

@@ -10,11 +10,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.DeviceAlarmOffSection
@@ -59,6 +61,7 @@ private fun PushNotificationContent(
                 onBackClick = onBack,
             )
         },
+        containerColor = Color.Transparent,
     ) { padding ->
         Column(
             modifier =
@@ -86,12 +89,14 @@ private fun PushNotificationContent(
             Spacer(Modifier.height(24.dp))
             Text(
                 text = stringResource(R.string.push_notification_device_guide),
+                style = AfternoteDesign.typography.captionLargeR,
+                color = AfternoteDesign.colors.gray5,
             )
         }
     }
 }
 
-@Preview(name = "기기 알림 켜짐")
+@Preview(name = "기기 알림 켜짐", showBackground = true)
 @Composable
 private fun PreviewAlarmOn() {
     PushNotificationContent(
@@ -106,7 +111,7 @@ private fun PreviewAlarmOn() {
     )
 }
 
-@Preview(name = "기기 알림 꺼짐")
+@Preview(name = "기기 알림 꺼짐", showBackground = true)
 @Composable
 private fun PreviewAlarmOff() {
     PushNotificationContent(

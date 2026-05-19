@@ -12,7 +12,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,6 +34,7 @@ import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteDesign
+import androidx.compose.ui.graphics.Color
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.component.ReceiverListItem
 import kotlinx.coroutines.launch
@@ -84,6 +84,7 @@ fun ReceiverListScreen(
 
     Scaffold(
         modifier = modifier,
+        containerColor = Color.Transparent,
         topBar = {
             DetailTopBar(
                 title = "수신자 목록",
@@ -123,10 +124,7 @@ fun ReceiverListScreen(
                             .weight(1f)
                             .padding(start = 20.dp),
                 ) {
-                    groupedReceivers.forEach { (consonant, items) ->
-                        stickyHeader(key = "header_$consonant") {
-                            ConsonantSectionHeader(consonant = consonant)
-                        }
+                    groupedReceivers.forEach { (_, items) ->
                         items(items, key = { it.receiverId }) { receiver ->
                             ReceiverListItem(
                                 receiver = receiver,
@@ -163,16 +161,6 @@ fun ReceiverListScreen(
             }
         }
     }
-}
-
-@Composable
-private fun ConsonantSectionHeader(consonant: Char) {
-    Text(
-        text = consonant.toString(),
-        style = AfternoteDesign.typography.captionLargeB,
-        color = AfternoteDesign.colors.gray5,
-        modifier = Modifier.padding(vertical = 8.dp),
-    )
 }
 
 @Preview(showBackground = true)

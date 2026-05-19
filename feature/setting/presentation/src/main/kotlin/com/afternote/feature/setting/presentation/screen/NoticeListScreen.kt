@@ -8,6 +8,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.graphics.Color
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.domain.Notice
 import com.afternote.feature.setting.presentation.component.NoticeListItem
@@ -27,6 +28,7 @@ fun NoticeListScreen(
                 onBackClick = onBackClick,
             )
         },
+        containerColor = Color.Transparent,
     ) { innerPadding ->
         LazyColumn(
             modifier =

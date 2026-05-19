@@ -63,8 +63,7 @@ class AfternoteDetailViewModel
 
         init {
             viewModelScope.launch {
-                userRepository
-                    .getMyProfile()
+                runCatching { userRepository.getMyProfile() }
                     .onSuccess { profile ->
                         internalState.update { it.copy(authorDisplayName = profile.name) }
                     }
