@@ -23,7 +23,8 @@ data class TimeLetterList(
     val totalCount: Int,
 )
 
-enum class TimeLetterStatus {
+enum class
+TimeLetterStatus {
     DRAFT,
     SCHEDULED,
     SENT,
@@ -35,4 +36,3 @@ enum class TimeLetterMediaType {
     AUDIO,
     DOCUMENT,
 }
-
