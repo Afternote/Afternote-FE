@@ -65,7 +65,6 @@ class SettingViewModel
             viewModelScope.launch {
                 // logout() 내부에서 서버 호출(best-effort) + 로컬 토큰 정리까지 처리한다.
                 authRepository.logout()
-                userRepository.clearCachedProfile()
                 _logoutCompleted.value = true
             }
         }
