@@ -4,6 +4,7 @@ import android.content.Context
 import coil3.ImageLoader
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import com.afternote.core.network.BuildConfig
+import com.afternote.core.network.interceptor.ApiErrorInterceptor
 import com.afternote.core.network.interceptor.AuthInterceptor
 import com.afternote.core.network.interceptor.FeatureNetworkInterceptor
 import com.afternote.core.network.interceptor.OptionalDebugNetworkInterceptor
@@ -69,8 +70,11 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
         loggingInterceptor: HttpLoggingInterceptor,
         authInterceptor: AuthInterceptor,
         tokenAuthenticator: TokenAuthenticator,
+        apiErrorInterceptor: ApiErrorInterceptor,
     ): OkHttpClient {
         val builder = OkHttpClient.Builder()
+        // 가장 외곽(응답 마지막) — 4xx/5xx 본문의 message 를 파싱해 ApiException 으로 변환
+        builder.addInterceptor(apiErrorInterceptor)
         // 디버그 전용(피처 모듈) 인터셉터: 네트워크로 나가기 전에 가짜 응답을 반환할 수 있음
         debugInterceptors.forEach { builder.addInterceptor(it) }
         // 피처 모듈이 제공하는 프로덕션 인터셉터(예: 수신자 X-Auth-Code 자동 부착)

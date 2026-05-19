@@ -1,4 +1,4 @@
-package com.afternote.core.ui.scaffold.topbar
+package com.afternote.core.ui.topbar
 
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
@@ -47,7 +47,6 @@ fun TitleTopBar(
         colors =
             TopAppBarDefaults.topAppBarColors(
                 containerColor = AfternoteDesign.colors.gray1,
-//                containerColor = Color.Red,
             ),
     )
 }

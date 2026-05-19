@@ -5,11 +5,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -25,19 +28,59 @@ import com.afternote.feature.onboarding.presentation.signup.scaffold.ProgressBar
 
 @Composable
 fun SignUpScreen(
-    emailState: TextFieldState,
-    verificationCodeState: TextFieldState,
+    initialEmail: String,
+    initialVerificationCode: String,
     isVerificationSent: Boolean,
+    isSendingCode: Boolean,
+    isEmailFormatValid: Boolean,
+    resendCooldownSeconds: Int,
+    isNextEnabled: Boolean,
+    snackbarHostState: SnackbarHostState,
+    onEmailChange: (String) -> Unit,
+    onVerificationCodeChange: (String) -> Unit,
     onRequestVerification: () -> Unit,
     onNextClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val emailState = rememberTextFieldState(initialEmail)
+    val verificationCodeState = rememberTextFieldState(initialVerificationCode)
+
+    LaunchedEffect(emailState) {
+        snapshotFlow { emailState.text.toString() }.collect(onEmailChange)
+    }
+    LaunchedEffect(verificationCodeState) {
+        snapshotFlow { verificationCodeState.text.toString() }.collect(onVerificationCodeChange)
+    }
+
+    val verificationButtonText =
+        when {
+            isSendingCode -> {
+                stringResource(R.string.signup_verification_requesting)
+            }
+
+            resendCooldownSeconds > 0 -> {
+                stringResource(R.string.signup_verification_resend_cooldown, resendCooldownSeconds)
+            }
+
+            isVerificationSent -> {
+                stringResource(R.string.signup_verification_resend)
+            }
+
+            else -> {
+                stringResource(R.string.signup_verification_request)
+            }
+        }
+    val isVerificationButtonEnabled =
+        !isSendingCode && resendCooldownSeconds == 0 && isEmailFormatValid
+
     ProgressBarScaffold(
         currentStep = 1,
         onBackClick = onBackClick,
         onNextClick = onNextClick,
         modifier = modifier,
+        isNextEnabled = isNextEnabled,
+        snackbarHostState = snackbarHostState,
         content = {
             Column(
                 modifier =
@@ -49,7 +92,12 @@ fun SignUpScreen(
             ) {
                 // 이메일 입력 + 인증번호 받기
                 AfternoteTextField(
-                    type = TextFieldType.Variant7(onClick = onRequestVerification),
+                    type =
+                        TextFieldType.Variant7(
+                            text = verificationButtonText,
+                            onClick = onRequestVerification,
+                            enabled = isVerificationButtonEnabled,
+                        ),
                     state = emailState,
                     placeholder = stringResource(R.string.signup_email_placeholder),
                     keyboardType = KeyboardType.Email,
@@ -63,7 +111,7 @@ fun SignUpScreen(
                     keyboardType = KeyboardType.Number,
                     imeAction = ImeAction.Done,
                     onImeAction = {
-                        onNextClick()
+                        if (isNextEnabled) onNextClick()
                     },
                 )
 
@@ -85,9 +133,16 @@ fun SignUpScreen(
 private fun SignUpScreenPreview() {
     AfternoteTheme {
         SignUpScreen(
-            emailState = rememberTextFieldState(),
-            verificationCodeState = rememberTextFieldState(),
+            initialEmail = "",
+            initialVerificationCode = "",
             isVerificationSent = true,
+            isSendingCode = false,
+            isEmailFormatValid = false,
+            resendCooldownSeconds = 0,
+            isNextEnabled = false,
+            snackbarHostState = remember { SnackbarHostState() },
+            onEmailChange = {},
+            onVerificationCodeChange = {},
             onRequestVerification = {},
             onNextClick = {},
             onBackClick = {},

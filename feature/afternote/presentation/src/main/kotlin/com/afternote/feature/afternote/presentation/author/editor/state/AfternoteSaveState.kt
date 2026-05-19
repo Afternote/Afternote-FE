@@ -48,6 +48,12 @@ data class AfternoteEditorUiState(
     val form: EditorFormState = EditorFormState(),
     val authorReceivers: List<AfternoteEditorReceiver> = emptyList(),
     val isSaving: Boolean = false,
+    /**
+     * 수정 모드 진입 직후 `getDetail()` 응답 → [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorEvent.PrefillLoaded]
+     * 이벤트 도착 전까지 true. UI는 이 구간 동안 prefill 대상 섹션(서비스명·계정·처리 방법·메시지·추모 미디어 등)을
+     * skeleton placeholder 로 표시한다. 신규 작성 모드(`itemId == null`)는 항상 false.
+     */
+    val isPrefillLoading: Boolean = false,
     val savedId: Long? = null,
     val validationError: AfternoteValidationError? = null,
     val error: String? = null,

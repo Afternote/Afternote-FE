@@ -32,5 +32,9 @@ interface OnboardingNavActions {
 
     fun onTermsBack()
 
+    fun onViewTerms()
+
+    fun onTermsDetailBack()
+
     fun onProfileBack()
 }

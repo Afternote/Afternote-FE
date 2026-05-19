@@ -8,11 +8,11 @@ import com.afternote.afternote_fe.screen.receiver.model.ReceiverDownloadState
 import com.afternote.afternote_fe.screen.receiver.model.ReceiverHomeUiState
 import com.afternote.afternote_fe.screen.receiver.model.SenderMessage
 import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItemDto
+import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResult
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
 import com.afternote.feature.afternote.presentation.shared.util.getAfternoteDisplayRes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -56,16 +56,29 @@ class ReceiverHomeViewModel
                 val mindRecords = async { receiverRepository.loadMindRecordsCount() }
                 val timeLetters = async { receiverRepository.loadTimeLettersCount() }
                 val message = async { receiverRepository.loadSenderMessage() }
-                awaitAll(afternotes, mindRecords, timeLetters, message)
+                val afternotesRes = afternotes.await()
+                val mindRecordsRes = mindRecords.await()
+                val timeLettersRes = timeLetters.await()
+                val messageRes = message.await()
+
+                // 모든 호출이 실패한 경우만 Error. 일부 실패는 fallback 으로 진행.
+                if (afternotesRes.isFailure &&
+                    mindRecordsRes.isFailure &&
+                    timeLettersRes.isFailure &&
+                    messageRes.isFailure
+                ) {
+                    _uiState.value =
+                        ReceiverHomeUiState.Error(
+                            afternotesRes.exceptionOrNull() ?: RuntimeException("All home requests failed"),
+                        )
+                    return@launch
+                }
 
                 val afternotesResult =
-                    afternotes.await().getOrElse {
-                        _uiState.value = ReceiverHomeUiState.Error(it)
-                        return@launch
-                    }
-                val mindRecordsCount = mindRecords.await().getOrNull()?.totalCount ?: 0
-                val timeLettersCount = timeLetters.await().getOrNull()?.totalCount ?: 0
-                val senderMessageBody = message.await().getOrNull()?.takeIf { it.isNotBlank() }
+                    afternotesRes.getOrNull() ?: AfterNotesListResult(items = emptyList(), totalCount = 0)
+                val mindRecordsCount = mindRecordsRes.getOrNull()?.totalCount ?: 0
+                val timeLettersCount = timeLettersRes.getOrNull()?.totalCount ?: 0
+                val senderMessageBody = messageRes.getOrNull()?.takeIf { it.isNotBlank() }
 
                 _uiState.value =
                     ReceiverHomeUiState.Success(

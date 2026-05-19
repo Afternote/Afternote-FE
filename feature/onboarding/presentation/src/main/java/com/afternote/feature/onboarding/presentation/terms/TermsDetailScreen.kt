@@ -30,7 +30,7 @@ fun TermsDetailScreen(
         onBackClick = onBackClick,
         onActionButtonClick = onNextClick,
         modifier = modifier,
-        {
+        content = {
             val scrollState = rememberScrollState()
 
             Column(
@@ -42,11 +42,6 @@ fun TermsDetailScreen(
             ) {
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Text(
-                    text = stringResource(R.string.terms_detail_intro),
-                    style = AfternoteDesign.typography.bodySmallR,
-                    color = AfternoteDesign.colors.gray9,
-                )
                 // 인트로 텍스트
                 Text(
                     text = stringResource(R.string.terms_detail_intro),

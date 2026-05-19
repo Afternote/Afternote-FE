@@ -25,9 +25,9 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.ViewModeSwitcher
 import com.afternote.core.ui.button.FAB.AfternoteFloatingActionButton
-import com.afternote.core.ui.scaffold.topbar.TitleTopBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.core.ui.topbar.TitleTopBar
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 
 @Composable

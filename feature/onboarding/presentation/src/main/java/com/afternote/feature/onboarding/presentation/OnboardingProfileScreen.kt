@@ -14,13 +14,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,14 +46,21 @@ import com.afternote.core.ui.topbar.DetailTopBar
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnboardingProfileScreen(
-    nameState: TextFieldState,
+    initialName: String,
     displayImageUri: Uri?,
+    snackbarHostState: SnackbarHostState,
+    onNameChange: (String) -> Unit,
     onProfileImagePick: (Uri?) -> Unit,
     onBackClick: () -> Unit,
     onCompleteClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val focusManager = LocalFocusManager.current
+    val nameState = rememberTextFieldState(initialName)
+
+    LaunchedEffect(nameState) {
+        snapshotFlow { nameState.text.toString() }.collect(onNameChange)
+    }
 
     val photoPickerLauncher =
         rememberLauncherForActivityResult(
@@ -68,6 +79,7 @@ fun OnboardingProfileScreen(
                 },
             )
         },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         containerColor = Color.Transparent,
     ) { innerPadding ->
         Column(
@@ -89,8 +101,7 @@ fun OnboardingProfileScreen(
                 Text(
                     text = stringResource(R.string.profile_headline),
                     modifier = Modifier.fillMaxWidth(),
-                    style =
-                        AfternoteDesign.typography.h1,
+                    style = AfternoteDesign.typography.h1,
                     color = AfternoteDesign.colors.black,
                     textAlign = TextAlign.Start,
                 )
@@ -103,13 +114,19 @@ fun OnboardingProfileScreen(
                     displayImageUri = displayImageUri?.toString(),
                 )
 
+                val isNameProvided =
+                    nameState.text
+                        .toString()
+                        .trim()
+                        .isNotEmpty()
+
                 AfternoteTextField(
                     state = nameState,
                     placeholder = stringResource(R.string.profile_name_placeholder),
                     imeAction = ImeAction.Done,
                     onImeAction = {
                         focusManager.clearFocus()
-                        onCompleteClick()
+                        if (isNameProvided) onCompleteClick()
                     },
                 )
 
@@ -119,7 +136,7 @@ fun OnboardingProfileScreen(
                         focusManager.clearFocus()
                         onCompleteClick()
                     },
-                    type = AfternoteButtonType.Default,
+                    type = if (isNameProvided) AfternoteButtonType.Default else AfternoteButtonType.Un,
                 )
             }
         }
@@ -131,8 +148,10 @@ fun OnboardingProfileScreen(
 private fun OnboardingProfileScreenPreview() {
     AfternoteTheme {
         OnboardingProfileScreen(
-            nameState = rememberTextFieldState("Afternote"),
+            initialName = "Afternote",
             displayImageUri = null,
+            snackbarHostState = remember { SnackbarHostState() },
+            onNameChange = {},
             onProfileImagePick = {},
             onBackClick = {},
             onCompleteClick = {},
