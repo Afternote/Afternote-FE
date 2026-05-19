@@ -133,6 +133,14 @@ private fun IdentityVerificationEmailScreenContent(
                     imeAction = ImeAction.Next,
                 )
 
+                if (uiState.email.isNotBlank() && !uiState.isEmailFormatValid) {
+                    Text(
+                        text = stringResource(R.string.receiver_verify_email_format_invalid),
+                        style = AfternoteDesign.typography.captionLargeB,
+                        color = AfternoteDesign.colors.b1,
+                    )
+                }
+
                 AfternoteTextField(
                     state = codeState,
                     placeholder = stringResource(R.string.receiver_verify_code_placeholder),
