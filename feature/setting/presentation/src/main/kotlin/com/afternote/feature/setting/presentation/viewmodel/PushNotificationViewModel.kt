@@ -1,6 +1,7 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
 import android.content.Context
+import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -25,17 +26,19 @@ class PushNotificationViewModel
         val uiState: StateFlow<PushNotificationUiState> = _uiState.asStateFlow()
 
         init {
-            _uiState.update {
-                it.copy(isDeviceAlarmOn = NotificationManagerCompat.from(context).areNotificationsEnabled())
-            }
+            val deviceAlarmOn = NotificationManagerCompat.from(context).areNotificationsEnabled()
+            Log.d(TAG, "init: deviceAlarmOn=$deviceAlarmOn")
+            _uiState.update { it.copy(isDeviceAlarmOn = deviceAlarmOn) }
             loadPushSettings()
         }
 
         private fun loadPushSettings() {
             viewModelScope.launch {
+                Log.d(TAG, "loadPushSettings: start")
                 _uiState.update { it.copy(isLoading = true) }
                 runCatching { userRepository.getMyPushSettings() }
                     .onSuccess { setting ->
+                        Log.d(TAG, "loadPushSettings: success=$setting")
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
@@ -44,7 +47,8 @@ class PushNotificationViewModel
                                 isAfternoteOn = setting.afterNote,
                             )
                         }
-                    }.onFailure {
+                    }.onFailure { e ->
+                        Log.e(TAG, "loadPushSettings: failed", e)
                         _uiState.update { it.copy(isLoading = false) }
                     }
             }
@@ -60,7 +64,11 @@ class PushNotificationViewModel
             _uiState.update { it.copy(isNewsletterOn = on) }
             viewModelScope.launch {
                 runCatching { userRepository.updateMyPushSettings(timeLetter = on, mindRecord = null, afterNote = null) }
-                    .onFailure { _uiState.update { it.copy(isNewsletterOn = !on) } }
+                    .onSuccess { Log.d(TAG, "onNewsletterToggle: success, on=$on") }
+                    .onFailure { e ->
+                        Log.e(TAG, "onNewsletterToggle: failed, on=$on", e)
+                        _uiState.update { it.copy(isNewsletterOn = !on) }
+                    }
             }
         }
 
@@ -68,7 +76,11 @@ class PushNotificationViewModel
             _uiState.update { it.copy(isMindRecordOn = on) }
             viewModelScope.launch {
                 runCatching { userRepository.updateMyPushSettings(timeLetter = null, mindRecord = on, afterNote = null) }
-                    .onFailure { _uiState.update { it.copy(isMindRecordOn = !on) } }
+                    .onSuccess { Log.d(TAG, "onMindRecordToggle: success, on=$on") }
+                    .onFailure { e ->
+                        Log.e(TAG, "onMindRecordToggle: failed, on=$on", e)
+                        _uiState.update { it.copy(isMindRecordOn = !on) }
+                    }
             }
         }
 
@@ -76,7 +88,15 @@ class PushNotificationViewModel
             _uiState.update { it.copy(isAfternoteOn = on) }
             viewModelScope.launch {
                 runCatching { userRepository.updateMyPushSettings(timeLetter = null, mindRecord = null, afterNote = on) }
-                    .onFailure { _uiState.update { it.copy(isAfternoteOn = !on) } }
+                    .onSuccess { Log.d(TAG, "onAfternoteToggle: success, on=$on") }
+                    .onFailure { e ->
+                        Log.e(TAG, "onAfternoteToggle: failed, on=$on", e)
+                        _uiState.update { it.copy(isAfternoteOn = !on) }
+                    }
             }
+        }
+
+        companion object {
+            private const val TAG = "PushNotificationVM"
         }
     }

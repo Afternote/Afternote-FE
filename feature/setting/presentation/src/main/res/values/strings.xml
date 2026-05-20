@@ -94,6 +94,7 @@
     <string name="push_notification_title">푸시 알림 설정</string>
     <string name="device_alarm_setting">기기 알림 설정</string>
     <string name="device_alarm_off">꺼짐</string>
+    <string name="device_alarm_on">켜짐</string>
     <string name="device_alarm_guide">전체 알림 수신 설정은 기기 알림 설정에서 가능합니다.</string>
     <string name="marketing_alarm_setting">마케팅 및 광고 알림 설정</string>
     <string name="sms">문자 메시지</string>
