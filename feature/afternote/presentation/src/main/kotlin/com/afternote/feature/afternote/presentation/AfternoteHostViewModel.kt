@@ -1,11 +1,15 @@
 package com.afternote.feature.afternote.presentation
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.afternote.core.datastore.UserProfileDataSource
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
@@ -28,7 +32,14 @@ import javax.inject.Inject
 @HiltViewModel
 class AfternoteHostViewModel
     @Inject
-    constructor() : ViewModel() {
+    constructor(
+        dataSource: UserProfileDataSource,
+    ) : ViewModel() {
+        val isPasskeyRegistered: StateFlow<Boolean?> =
+            dataSource
+                .isPasskeyRegisteredFlow()
+                .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
         private val _playlistSongs = MutableStateFlow<List<Song>>(emptyList())
         val playlistSongs: StateFlow<List<Song>> = _playlistSongs.asStateFlow()
 

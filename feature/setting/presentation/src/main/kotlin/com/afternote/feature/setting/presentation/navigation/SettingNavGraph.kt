@@ -14,6 +14,7 @@ import com.afternote.feature.setting.presentation.screen.AppLockSetupScreen
 import com.afternote.feature.setting.presentation.screen.ConnectedAccountsScreen
 import com.afternote.feature.setting.presentation.screen.DeliveryConditionScreen
 import com.afternote.feature.setting.presentation.screen.NoticeListScreen
+import com.afternote.feature.setting.presentation.screen.PassKeyListScreen
 import com.afternote.feature.setting.presentation.screen.PassKeyMakingScreen
 import com.afternote.feature.setting.presentation.screen.PassKeyPasswordScreen
 import com.afternote.feature.setting.presentation.screen.PassKeyScreen
@@ -25,6 +26,7 @@ import com.afternote.feature.setting.presentation.screen.SettingScreen
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverListViewModel
 import com.afternote.feature.setting.presentation.screen.WithdrawConfirmScreen
 import com.afternote.feature.setting.presentation.screen.WithdrawGuideScreen
+import com.afternote.feature.setting.presentation.viewmodel.PassKeyViewModel
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
 
 fun NavGraphBuilder.settingNavGraph(
@@ -123,10 +125,16 @@ fun NavGraphBuilder.settingNavGraph(
         }
 
         composable<SettingRoute.PasskeyRoute> {
-            PassKeyScreen(
-                onBackClick = actions::onPasskeyBack,
-                onRegisterClick = actions::onNavigateToPasskeyMaking,
-            )
+            val viewModel: PassKeyViewModel = hiltViewModel()
+            val isPasskeyRegistered by viewModel.isPasskeyRegistered.collectAsStateWithLifecycle()
+            if (isPasskeyRegistered == true) {
+                PassKeyListScreen(onBackClick = actions::onPasskeyBack)
+            } else if (isPasskeyRegistered == false) {
+                PassKeyScreen(
+                    onBackClick = actions::onPasskeyBack,
+                    onRegisterClick = actions::onNavigateToPasskeyMaking,
+                )
+            }
         }
 
         composable<SettingRoute.PasskeyMakingRoute> {

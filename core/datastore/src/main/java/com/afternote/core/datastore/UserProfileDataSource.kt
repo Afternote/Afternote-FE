@@ -4,11 +4,13 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.afternote.core.datastore.di.UserProfileDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -27,6 +29,7 @@ class UserProfileDataSource
     ) {
         private object Keys {
             val USER_NAME = stringPreferencesKey("user_name")
+            val IS_PASSKEY_REGISTERED = booleanPreferencesKey("is_passkey_registered")
         }
 
         private val preferencesFlow: Flow<Preferences> =
@@ -44,6 +47,15 @@ class UserProfileDataSource
         suspend fun saveUserName(name: String) {
             dataStore.edit { prefs ->
                 prefs[Keys.USER_NAME] = name
+            }
+        }
+
+        fun isPasskeyRegisteredFlow(): Flow<Boolean> =
+            preferencesFlow.map { prefs -> prefs[Keys.IS_PASSKEY_REGISTERED] ?: false }
+
+        suspend fun savePasskeyRegistered(registered: Boolean) {
+            dataStore.edit { prefs ->
+                prefs[Keys.IS_PASSKEY_REGISTERED] = registered
             }
         }
 

@@ -22,6 +22,7 @@ import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.InsertPasswordContent
 import com.afternote.feature.setting.presentation.viewmodel.AppLockSetupViewModel
+import com.afternote.feature.setting.presentation.viewmodel.PassKeyViewModel
 
 @Composable
 fun PassKeyPasswordScreen(
@@ -29,12 +30,14 @@ fun PassKeyPasswordScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AppLockSetupViewModel = hiltViewModel(),
+    passKeyViewModel: PassKeyViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentOnPinComplete by rememberUpdatedState(onPinComplete)
 
     LaunchedEffect(uiState.isComplete) {
         if (uiState.isComplete) {
+            passKeyViewModel.savePasskeyRegistered()
             currentOnPinComplete(uiState.pin)
             viewModel.resetPin()
         }
