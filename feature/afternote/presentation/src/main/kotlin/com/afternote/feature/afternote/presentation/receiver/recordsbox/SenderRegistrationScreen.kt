@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.afternote.core.ui.CaptionLabeledTextField
 import com.afternote.core.ui.ObserveAsEvents
-import com.afternote.core.ui.ProfileImage
+import com.afternote.core.ui.ProfileImagePicker
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -90,11 +90,10 @@ private fun SenderRegistrationScreenContent(
         ) {
             Spacer(modifier = Modifier.height(39.dp))
 
-            // 발신자 온보딩(OnboardingProfileScreen) 과 동일한 ProfileImage 재사용.
-            // TODO(#215): 이미지 선택 picker 연결은 본 PR 범위 밖 — 디자인 확정 시 onClick wire-up.
-            ProfileImage(
-                onClick = { /* TODO(#215): photo picker */ },
-                isEditable = true,
+            // 발신자 온보딩(OnboardingProfileScreen) 과 동일한 ProfileImagePicker 재사용.
+            // TODO(#215): 이미지 선택 picker 연결은 본 PR 범위 밖 — 디자인 확정 시 onPickClick wire-up.
+            ProfileImagePicker(
+                onPickClick = { /* TODO(#215): photo picker */ },
             )
 
             Spacer(modifier = Modifier.height(56.dp))

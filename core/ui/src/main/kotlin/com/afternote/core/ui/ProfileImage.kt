@@ -13,20 +13,25 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.afternote.core.ui.button.PlusBadgeButton
 import com.afternote.core.ui.theme.AfternoteTheme
 
+/**
+ * 단순 표시 전용 프로필 이미지. URI 없으면 placeholder 로 fallback.
+ *
+ * 편집 picker 가 필요하면 [ProfileImagePicker] 사용.
+ */
 @Composable
 fun ProfileImage(
-    onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    isEditable: Boolean = true,
     displayImageUri: String? = null,
+    size: Dp = 134.dp,
 ) {
     Box(
-        modifier = modifier.size(134.dp),
+        modifier = modifier.size(size),
         contentAlignment = Alignment.Center,
     ) {
         ProfileImageContent(
@@ -36,15 +41,38 @@ fun ProfileImage(
                     .fillMaxSize()
                     .clip(CircleShape),
         )
-        if (isEditable) {
-            PlusBadgeButton(
-                contentDescription = stringResource(R.string.core_ui_content_description_profile_edit),
-                onClick = onClick,
-                paddingValues = PaddingValues(17.dp),
-                modifier = Modifier.align(Alignment.BottomEnd),
-                size = 48.dp,
-            )
-        }
+    }
+}
+
+/**
+ * 편집 picker 형 프로필 이미지. 우하단의 [PlusBadgeButton] 클릭 시 [onPickClick] 호출.
+ * picker 실행(예: photoPickerLauncher.launch) 책임은 호출자가 보유.
+ */
+@Composable
+fun ProfileImagePicker(
+    onPickClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    displayImageUri: String? = null,
+    size: Dp = 134.dp,
+) {
+    Box(
+        modifier = modifier.size(size),
+        contentAlignment = Alignment.Center,
+    ) {
+        ProfileImageContent(
+            displayImageUri = displayImageUri,
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .clip(CircleShape),
+        )
+        PlusBadgeButton(
+            contentDescription = stringResource(R.string.core_ui_content_description_profile_edit),
+            onClick = onPickClick,
+            paddingValues = PaddingValues(17.dp),
+            modifier = Modifier.align(Alignment.BottomEnd),
+            size = 48.dp,
+        )
     }
 }
 
@@ -75,22 +103,18 @@ private fun ProfileImageContent(
 
 @Preview(showBackground = true)
 @Composable
-private fun ProfileImageEditablePreview() {
+private fun ProfileImagePickerPreview() {
     AfternoteTheme {
-        ProfileImage(
-            onClick = {},
-            isEditable = true,
+        ProfileImagePicker(
+            onPickClick = {},
         )
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun ProfileImageNotEditablePreview() {
+private fun ProfileImagePreview() {
     AfternoteTheme {
-        ProfileImage(
-            onClick = {},
-            isEditable = false,
-        )
+        ProfileImage()
     }
 }

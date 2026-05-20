@@ -35,7 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
-import com.afternote.core.ui.ProfileImage
+import com.afternote.core.ui.ProfileImagePicker
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.modifierextention.addFocusCleaner
@@ -105,8 +105,8 @@ fun OnboardingProfileScreen(
                     color = AfternoteDesign.colors.black,
                     textAlign = TextAlign.Start,
                 )
-                ProfileImage(
-                    onClick = {
+                ProfileImagePicker(
+                    onPickClick = {
                         photoPickerLauncher.launch(
                             PickVisualMediaRequest(PickVisualMedia.ImageOnly),
                         )
