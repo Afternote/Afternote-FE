@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,10 +44,12 @@ fun ConnectedAccountsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val credentialManager = remember(context) { CredentialManager.create(context) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
+                is ConnectedAccountsEvent.ShowError -> snackbarHostState.showSnackbar(event.message)
                 is ConnectedAccountsEvent.RequestLink -> {
                     when (event.provider) {
                         "kakao" -> {
@@ -69,7 +73,7 @@ fun ConnectedAccountsScreen(
                             ).onSuccess { token -> viewModel.link("google", token) }
                                 .onFailure { e ->
                                     if (e !is UserCancelledAuthException) {
-                                        viewModel.link("google", "") // TODO: 에러 이벤트로 교체
+                                        viewModel.notifyLinkError("Google 계정 연결에 실패했습니다.")
                                     }
                                 }
                         }
@@ -82,6 +86,7 @@ fun ConnectedAccountsScreen(
     Scaffold(
         modifier = modifier,
         containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             DetailTopBar(
                 title = "연결된 계정",
