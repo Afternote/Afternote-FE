@@ -18,12 +18,12 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.AfternoteCircularCheckbox
 import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.feature.timeletter.domain.Recipient
+import com.afternote.core.model.setting.ReceiverListItem
 import com.afternote.feature.timeletter.presentation.R
 
 @Composable
 fun RecipientListItem(
-    recipient: Recipient,
+    recipient: ReceiverListItem,
     selected: Boolean,
     onSelectedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
@@ -48,7 +48,7 @@ fun RecipientListItem(
             )
             Spacer(modifier = Modifier.padding(top = 5.dp))
             Text(
-                text = recipient.relationship,
+                text = recipient.relation,
                 style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray6,
             )
@@ -65,7 +65,7 @@ fun RecipientListItem(
 @Composable
 private fun RecipientListItemPrev() {
     RecipientListItem(
-        recipient = Recipient(id = 1L, name = "박경민", relationship = "친구"),
+        recipient = ReceiverListItem(receiverId = 1L, name = "박경민", relation = "친구"),
         selected = false,
         onSelectedChange = {},
     )

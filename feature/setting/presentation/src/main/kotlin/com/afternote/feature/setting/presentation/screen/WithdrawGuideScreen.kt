@@ -30,6 +30,7 @@ import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.button.AfternoteCircularCheckbox
 import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.theme.AfternoteDesign
+import androidx.compose.ui.graphics.Color
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.viewmodel.SettingUiState
@@ -54,6 +55,7 @@ fun WithdrawGuideScreen(
             )
         },
         modifier = modifier,
+        containerColor = Color.Transparent,
     ) { innerPadding ->
         LazyColumn(
             modifier =

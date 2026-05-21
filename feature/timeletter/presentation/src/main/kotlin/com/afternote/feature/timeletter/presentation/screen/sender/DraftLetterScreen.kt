@@ -6,21 +6,54 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.topbar.DetailTopBar
-import com.afternote.feature.timeletter.domain.DraftLetter
+import com.afternote.feature.timeletter.domain.model.TimeLetter
+import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.presentation.component.DraftLetterItem
 import com.afternote.feature.timeletter.presentation.component.TimeLetterTextButton
 import com.afternote.feature.timeletter.presentation.viewmodel.DraftLetterUiState
+import com.afternote.feature.timeletter.presentation.viewmodel.DraftLetterViewModel
 
 @Composable
 fun DraftLetterScreen(
+    onBackClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: DraftLetterViewModel = hiltViewModel(),
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    DraftLetterContent(
+        uiState = uiState,
+        onBackClick = onBackClick,
+        onEditCompleteClick = {
+            val current = uiState as? DraftLetterUiState.Success ?: return@DraftLetterContent
+            if (current.isEditMode && current.selectedIds.isNotEmpty()) {
+                viewModel.deleteSelected()
+            } else {
+                viewModel.toggleEditMode()
+            }
+        },
+        onToggleSelection = viewModel::toggleSelection,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun DraftLetterContent(
     uiState: DraftLetterUiState,
     onBackClick: () -> Unit,
     onEditCompleteClick: () -> Unit,
+    onToggleSelection: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isEditMode = (uiState as? DraftLetterUiState.Success)?.isEditMode ?: false
+    val selectedIds = (uiState as? DraftLetterUiState.Success)?.selectedIds ?: emptySet()
+
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -29,84 +62,125 @@ fun DraftLetterScreen(
                 onBackClick = onBackClick,
                 actions = {
                     TimeLetterTextButton(
-                        text = if (uiState.isEditMode) "완료" else "수정",
-                        isActive = uiState.isEditMode,
+                        text = if (isEditMode) "삭제" else "수정",
+                        isActive = isEditMode,
                         onClick = onEditCompleteClick,
                     )
                 },
             )
         },
     ) { innerPadding ->
-        LazyColumn(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-        ) {
-            items(
-                items = uiState.drafts,
-                key = { it.id },
-            ) { draft ->
-                DraftLetterItem(
-                    draft = draft,
-                    isEditMode = uiState.isEditMode,
-                    isSelected = draft.id in uiState.selectedIds,
-                )
+        when (uiState) {
+            is DraftLetterUiState.Loading -> {
+                Unit
+            }
+
+            is DraftLetterUiState.Error -> {
+                Unit
+            }
+
+            is DraftLetterUiState.Success -> {
+                LazyColumn(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding),
+                ) {
+                    items(
+                        items = uiState.drafts,
+                        key = { it.id },
+                    ) { draft ->
+                        DraftLetterItem(
+                            draft = draft,
+                            isEditMode = isEditMode,
+                            isSelected = draft.id in selectedIds,
+                            onToggle = { onToggleSelection(draft.id) },
+                        )
+                    }
+                }
             }
         }
     }
 }
 
-// 2. 일반 보기 상태 (목록 있음)
 @Preview(showBackground = true, name = "일반 - 목록 있음")
 @Composable
 private fun DraftLetterScreenNormalPreview() {
-    DraftLetterScreen(
+    DraftLetterContent(
         uiState =
-            DraftLetterUiState(
+            DraftLetterUiState.Success(
                 drafts =
                     listOf(
-                        DraftLetter(
+                        TimeLetter(
                             id = 1L,
                             title = "첫 번째 레터",
-                            recipientName = "김철수",
-                            opendate = "2026-12-25",
+                            content = null,
+                            sendAt = "2026-12-25",
+                            status = TimeLetterStatus.DRAFT,
+                            mediaList = emptyList(),
+                            receiverIds = listOf(1L),
+                            createdAt = null,
+                            updatedAt = null,
                         ),
-                        DraftLetter(
+                        TimeLetter(
                             id = 2L,
                             title = "두 번째 레터",
-                            recipientName = "이영희",
-                            opendate = "2026-06-01",
+                            content = null,
+                            sendAt = "2026-06-01",
+                            status = TimeLetterStatus.DRAFT,
+                            mediaList = emptyList(),
+                            receiverIds = listOf(2L),
+                            createdAt = null,
+                            updatedAt = null,
                         ),
-                        DraftLetter(id = 3L, title = null, recipientName = null, opendate = null),
+                        TimeLetter(
+                            id = 3L,
+                            title = null,
+                            content = null,
+                            sendAt = null,
+                            status = TimeLetterStatus.DRAFT,
+                            mediaList = emptyList(),
+                            receiverIds = emptyList(),
+                            createdAt = null,
+                            updatedAt = null,
+                        ),
                     ),
-                isEditMode = false,
             ),
         onBackClick = {},
         onEditCompleteClick = {},
+        onToggleSelection = {},
     )
 }
 
-// 3. 수정 모드 (선택된 항목 있음)
 @Preview(showBackground = true, name = "수정 모드 - 항목 선택됨")
 @Composable
 private fun DraftLetterScreenEditModePreview() {
-    DraftLetterScreen(
+    DraftLetterContent(
         uiState =
-            DraftLetterUiState(
+            DraftLetterUiState.Success(
                 drafts =
                     listOf(
-                        DraftLetter(
+                        TimeLetter(
                             id = 1L,
                             title = "첫 번째 레터",
-                            recipientName = "김철수",
-                            opendate = "2026-12-25",
+                            content = null,
+                            sendAt = "2026-12-25",
+                            status = TimeLetterStatus.DRAFT,
+                            mediaList = emptyList(),
+                            receiverIds = listOf(1L),
+                            createdAt = null,
+                            updatedAt = null,
                         ),
-                        DraftLetter(
+                        TimeLetter(
                             id = 2L,
                             title = "두 번째 레터",
-                            recipientName = "이영희",
-                            opendate = "2026-06-01",
+                            content = null,
+                            sendAt = "2026-06-01",
+                            status = TimeLetterStatus.DRAFT,
+                            mediaList = emptyList(),
+                            receiverIds = listOf(2L),
+                            createdAt = null,
+                            updatedAt = null,
                         ),
                     ),
                 isEditMode = true,
@@ -114,5 +188,6 @@ private fun DraftLetterScreenEditModePreview() {
             ),
         onBackClick = {},
         onEditCompleteClick = {},
+        onToggleSelection = {},
     )
 }

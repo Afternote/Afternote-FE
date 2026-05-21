@@ -16,6 +16,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.graphics.Color
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.component.InsertPasswordContent
 import com.afternote.feature.setting.presentation.component.PinSetupStep
@@ -75,6 +76,7 @@ private fun AppLockSetupContent(
             )
         },
         modifier = modifier,
+        containerColor = Color.Transparent,
     ) { innerPadding ->
         Column(
             modifier =
@@ -96,7 +98,7 @@ private fun AppLockSetupContent(
     }
 }
 
-@Preview(name = "비밀번호 입력")
+@Preview(name = "비밀번호 입력", showBackground = true)
 @Composable
 private fun PreviewEnterNew() {
     AppLockSetupContent(
@@ -109,7 +111,7 @@ private fun PreviewEnterNew() {
     )
 }
 
-@Preview(name = "비밀번호 재입력")
+@Preview(name = "비밀번호 재입력", showBackground = true)
 @Composable
 private fun PreviewConfirmNew() {
     AppLockSetupContent(
@@ -122,7 +124,7 @@ private fun PreviewConfirmNew() {
     )
 }
 
-@Preview(name = "변경할 비밀번호 입력")
+@Preview(name = "변경할 비밀번호 입력", showBackground = true)
 @Composable
 private fun PreviewEnterCurrent() {
     AppLockSetupContent(

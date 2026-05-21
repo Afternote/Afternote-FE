@@ -33,7 +33,7 @@ fun SettingMenuItem(
                 .padding(horizontal = 20.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, style = AfternoteDesign.typography.bodyBase)
+        Text(label, style = AfternoteDesign.typography.bodyBase, color = AfternoteDesign.colors.gray9)
         Spacer(modifier = Modifier.weight(1f))
         Image(
             painterResource(R.drawable.ic_right_arrow),

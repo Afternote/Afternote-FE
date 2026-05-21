@@ -36,21 +36,20 @@ import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteUi
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimeLetterWriteScreen(
-    modifier: Modifier = Modifier,
     uiState: TimeLetterWriteUiState = TimeLetterWriteUiState(),
+    modifier: Modifier = Modifier,
     titleState: TextFieldState = rememberTextFieldState(),
     bodyState: TextFieldState = rememberTextFieldState(),
     onBackClick: () -> Unit = {},
-    onRegisterClick: () -> Unit = {},
+    onRegisterClick: (title: String, body: String) -> Unit = { _, _ -> },
     onRecipientClick: () -> Unit = {},
     onDateClick: () -> Unit = {},
     onTimeClick: () -> Unit = {},
-    onDraftClick: () -> Unit = {},
+    onDraftClick: (title: String, body: String) -> Unit = { _, _ -> },
     onMediaImageClick: () -> Unit = {},
     onMediaVoiceClick: () -> Unit = {},
     onMediaFileClick: () -> Unit = {},
     onMediaLinkClick: () -> Unit = {},
-    onLinkClick: () -> Unit = {},
     onTextStyleClick: () -> Unit = {},
     onAlignCenterClick: () -> Unit = {},
     onAlignLeftClick: () -> Unit = {},
@@ -95,7 +94,8 @@ fun TimeLetterWriteScreen(
                 actions = {
                     TimeLetterTextButton(
                         text = "등록",
-                        onClick = onRegisterClick,
+                        onClick = { onRegisterClick(titleState.text.toString(), bodyState.text.toString()) },
+                        isActive = !uiState.isSaving,
                     )
                 },
             )
@@ -103,13 +103,13 @@ fun TimeLetterWriteScreen(
         bottomBar = {
             TimeLetterBottomBar(
                 draftCount = uiState.draftCount,
+                textAlign = uiState.textAlign,
                 onMediaAddClick = { showMediaSheet = true },
-                onLinkClick = onLinkClick,
                 onTextStyleClick = onTextStyleClick,
                 onAlignCenterClick = onAlignCenterClick,
                 onAlignLeftClick = onAlignLeftClick,
                 onAlignRightClick = onAlignRightClick,
-                onDraftClick = onDraftClick,
+                onDraftClick = { onDraftClick(titleState.text.toString(), bodyState.text.toString()) },
             )
         },
         containerColor = AfternoteDesign.colors.white,
@@ -122,15 +122,15 @@ fun TimeLetterWriteScreen(
                     .verticalScroll(rememberScrollState()),
         ) {
             RecipientCard(
-                recipientName = uiState.recipientName,
+                recipientName = uiState.recipientNames.joinToString(", "),
                 onClick = onRecipientClick,
             )
 
             HorizontalDivider(color = AfternoteDesign.colors.gray2, thickness = 1.dp)
 
             SendScheduleRow(
-                date = uiState.sendDate,
-                time = uiState.sendTime,
+                date = uiState.sendAt ?: "",
+                time = "",
                 onDateClick = onDateClick,
                 onTimeClick = onTimeClick,
             )

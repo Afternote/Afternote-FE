@@ -11,6 +11,7 @@ import androidx.navigation.compose.rememberNavController
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
+import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
 
 // 컴포즈 엔진은 커스텀 클래스에 대해 변경 여부를 확신할 수 없어 리컴포지션 스킵 불가
 // 이 클래스는 상태 변경 시 컴포즈에 알려 줄 것을 보장 매번 다시 그릴 필요 없음
@@ -45,6 +46,7 @@ class AppState(
             Route.Home::class,
             Route.MindRecord::class,
             Route.TimeLetter::class,
+            TimeLetterRoute.TimeLetterHomeRoute::class,
             Route.Afternote::class,
             AfternoteRoute.AfternoteHomeRoute::class,
             AfternoteRoute.FingerprintLoginRoute::class,

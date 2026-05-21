@@ -16,12 +16,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,13 +32,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
+import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterEvent
+import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterViewModel
 import com.afternote.core.ui.R as CoreR
 
 private val relationOptions = listOf("어머니", "아버지", "아들", "딸", "직접 추가하기")
@@ -43,18 +50,57 @@ private val relationOptions = listOf("어머니", "아버지", "아들", "딸", 
 @Composable
 fun ReceiverRegisterScreen(
     onBackClick: () -> Unit,
+    onRegisterSuccess: () -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: ReceiverRegisterViewModel = hiltViewModel(),
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val nameState = rememberTextFieldState()
+    val phoneState = rememberTextFieldState()
+    val emailState = rememberTextFieldState()
     var selectedRelation by remember { mutableStateOf<String?>(null) }
     var relationExpanded by remember { mutableStateOf(false) }
 
+    val isFormValid = nameState.text.isNotBlank() && selectedRelation != null
+
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                ReceiverRegisterEvent.RegisterSuccess -> onRegisterSuccess()
+            }
+        }
+    }
+
     Scaffold(
         modifier = modifier,
+        containerColor = Color.Transparent,
         topBar = {
             DetailTopBar(
-                "수신자 등록",
+                title = "수신자 등록",
                 onBackClick = onBackClick,
+                actions = {
+                    TextButton(
+                        onClick = {
+                            viewModel.register(
+                                name = nameState.text.toString(),
+                                relation = selectedRelation!!,
+                                phone = phoneState.text.toString(),
+                                email = emailState.text.toString(),
+                            )
+                        },
+                        enabled = isFormValid && !uiState.isLoading,
+                        colors =
+                            ButtonDefaults.textButtonColors(
+                                contentColor = AfternoteDesign.colors.gray9,
+                                disabledContentColor = AfternoteDesign.colors.gray2,
+                            ),
+                    ) {
+                        Text(
+                            text = "등록",
+                            style = AfternoteDesign.typography.bodyLargeB,
+                        )
+                    }
+                },
             )
         },
     ) { innerPadding ->
@@ -66,9 +112,7 @@ fun ReceiverRegisterScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             item {
-                Box(
-                    modifier = Modifier.size(134.dp),
-                ) {
+                Box(modifier = Modifier.size(134.dp)) {
                     Image(
                         painter = painterResource(R.drawable.ic_default_profile),
                         contentDescription = "기본",
@@ -84,7 +128,7 @@ fun ReceiverRegisterScreen(
                         Image(
                             painter = painterResource(R.drawable.ic_plus),
                             contentDescription = "추가",
-                            modifier = Modifier.requiredSize(72.dp), // 숫자 조절해서 원하는 크기로
+                            modifier = Modifier.requiredSize(72.dp),
                         )
                     }
                 }
@@ -101,7 +145,7 @@ fun ReceiverRegisterScreen(
                 Spacer(modifier = Modifier.height(24.dp))
                 Text("연락처", modifier = Modifier.fillMaxWidth())
                 AfternoteTextField(
-                    state = nameState,
+                    state = phoneState,
                     placeholder = "연락처를 지정해주세요",
                 )
             }
@@ -166,18 +210,10 @@ fun ReceiverRegisterScreen(
                 Spacer(modifier = Modifier.height(24.dp))
                 Text("이메일", modifier = Modifier.fillMaxWidth())
                 AfternoteTextField(
-                    state = nameState,
+                    state = emailState,
                     placeholder = "afternote@email.com",
                 )
             }
         }
     }
-}
-
-@Preview
-@Composable
-private fun ReceiverRegisterScreenPrev() {
-    ReceiverRegisterScreen(
-        onBackClick = {},
-    )
 }

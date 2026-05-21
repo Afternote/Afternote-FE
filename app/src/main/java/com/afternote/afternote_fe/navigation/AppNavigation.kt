@@ -29,7 +29,7 @@ import com.afternote.feature.afternote.presentation.receiver.navigation.receiver
 import com.afternote.feature.mindrecord.presentation.navigation.mindRecordNavGraph
 import com.afternote.feature.onboarding.presentation.navigation.onboardingNavGraph
 import com.afternote.feature.setting.presentation.navigation.settingNavGraph
-import com.afternote.feature.timeletter.presentation.screen.sender.TimeletterScreen
+import com.afternote.feature.timeletter.presentation.navigation.timeLetterNavGraph
 import kotlinx.coroutines.launch
 
 @Composable
@@ -48,6 +48,7 @@ fun AppNavigation(
     val onboardingNavActions = rememberOnboardingNavActions(appState.navController)
     val mindRecordNavActions = rememberMindRecordNavActions(appState.navController)
     val settingNavActions = rememberSettingNavActions(appState)
+    val timeLetterNavActions = rememberTimeLetterNavActions(appState.navController)
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val afternoteNavActions =
@@ -107,7 +108,10 @@ fun AppNavigation(
                 actions = settingNavActions,
             )
             mindRecordNavGraph(actions = mindRecordNavActions)
-            composable<Route.TimeLetter> { TimeletterScreen() }
+            timeLetterNavGraph(
+                navController = appState.navController,
+                actions = timeLetterNavActions,
+            )
             afternoteNavGraph(
                 graphScopedParentEntry = {
                     appState.navController.getBackStackEntry<Route.Afternote>()

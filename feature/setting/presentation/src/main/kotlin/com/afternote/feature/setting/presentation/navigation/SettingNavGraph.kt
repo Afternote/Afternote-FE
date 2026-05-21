@@ -8,7 +8,20 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
+import com.afternote.core.model.setting.ReceiverListItem
 import com.afternote.core.ui.Route
+import com.afternote.feature.setting.presentation.component.PinSetupStep
+import com.afternote.feature.setting.presentation.screen.AppLockSetupScreen
+import com.afternote.feature.setting.presentation.screen.ConnectedAccountsScreen
+import com.afternote.feature.setting.presentation.screen.DeliveryConditionScreen
+import com.afternote.feature.setting.presentation.screen.NoticeListScreen
+import com.afternote.feature.setting.presentation.screen.PassKeyMakingScreen
+import com.afternote.feature.setting.presentation.screen.PassKeyPasswordScreen
+import com.afternote.feature.setting.presentation.screen.PassKeyScreen
+import com.afternote.feature.setting.presentation.screen.ProfileEditScreen
+import com.afternote.feature.setting.presentation.screen.PushNotificationScreen
+import com.afternote.feature.setting.presentation.screen.ReceiverListScreen
+import com.afternote.feature.setting.presentation.screen.ReceiverRegisterScreen
 import com.afternote.feature.setting.presentation.screen.SettingScreen
 import com.afternote.feature.setting.presentation.screen.WithdrawConfirmScreen
 import com.afternote.feature.setting.presentation.screen.WithdrawGuideScreen
@@ -21,20 +34,20 @@ fun NavGraphBuilder.settingNavGraph(
     navigation<Route.Setting>(startDestination = SettingRoute.SettingHomeRoute) {
         composable<SettingRoute.SettingHomeRoute> {
             SettingScreen(
-                onBackClick = {},
+                onBackClick = actions::onSettingBack,
                 onLogoutSuccess = actions::onLogoutSuccess,
-                onProfileEditClick = {},
+                onProfileEditClick = actions::onNavigateToProfileEdit,
                 onPasswordChangeClick = {},
-                onLinkedAccountClick = {},
-                onNotificationClick = {},
-                onRecipientListClick = {},
-                onRecipientRegisterClick = {},
-                onAfterDeliveryClick = {},
-                onPasskeyClick = {},
-                onAppLockClick = {},
+                onLinkedAccountClick = actions::onNavigateToLinkedAccount,
+                onNotificationClick = actions::onNavigateToNotification,
+                onRecipientListClick = actions::onNavigateToRecipientList,
+                onRecipientRegisterClick = actions::onNavigateToRecipientRegister,
+                onAfterDeliveryClick = actions::onNavigateToAfterDelivery,
+                onPasskeyClick = actions::onNavigateToPasskey,
+                onAppLockClick = actions::onNavigateToAppLock,
                 onFaqClick = {},
                 onInquiryClick = {},
-                onNoticeClick = {},
+                onNoticeClick = actions::onNavigateToNotice,
                 onTermsClick = {},
                 onPrivacyClick = {},
                 onServiceInfoClick = {},
@@ -62,6 +75,84 @@ fun NavGraphBuilder.settingNavGraph(
                 uiState = uiState,
                 onBackClick = actions::onWithdrawConfirmBack,
                 onWithdrawSuccess = actions::onWithdrawSuccess,
+                viewModel = viewModel,
+            )
+        }
+
+        composable<SettingRoute.ProfileEditRoute> {
+            ProfileEditScreen(
+                onBackClick = actions::onProfileEditBack,
+                onWithdrawGuideClick = actions::onNavigateToWithdrawGuide,
+            )
+        }
+
+        composable<SettingRoute.LinkedAccountRoute> {
+            ConnectedAccountsScreen(
+                onBack = actions::onLinkedAccountBack,
+            )
+        }
+
+        composable<SettingRoute.NotificationRoute> {
+            PushNotificationScreen(
+                onBack = actions::onNotificationBack,
+            )
+        }
+
+        composable<SettingRoute.RecipientListRoute> {
+            ReceiverListScreen(
+                receivers = emptyList<ReceiverListItem>(),
+                onBackClick = actions::onRecipientListBack,
+                onConfirmClick = { actions.onNavigateToRecipientRegister() },
+            )
+        }
+
+        composable<SettingRoute.RecipientRegisterRoute> {
+            ReceiverRegisterScreen(
+                onBackClick = actions::onRecipientRegisterBack,
+                onRegisterSuccess = actions::onRecipientRegisterBack,
+            )
+        }
+
+        composable<SettingRoute.AfterDeliveryRoute> {
+            DeliveryConditionScreen(
+                onBack = actions::onAfterDeliveryBack,
+                onSaveSuccess = actions::onAfterDeliveryBack,
+            )
+        }
+
+        composable<SettingRoute.PasskeyRoute> {
+            PassKeyScreen(
+                onBackClick = actions::onPasskeyBack,
+                onRegisterClick = actions::onNavigateToPasskeyMaking,
+            )
+        }
+
+        composable<SettingRoute.PasskeyMakingRoute> {
+            PassKeyMakingScreen(
+                onBackClick = actions::onPasskeyMakingBack,
+                onPasswordAuthClick = actions::onNavigateToPasskeyPassword,
+            )
+        }
+
+        composable<SettingRoute.PasskeyPasswordRoute> {
+            PassKeyPasswordScreen(
+                onPinComplete = { actions.onPasskeyPasswordBack() },
+                onBack = actions::onPasskeyPasswordBack,
+            )
+        }
+
+        composable<SettingRoute.AppLockSetupRoute> {
+            AppLockSetupScreen(
+                step = PinSetupStep.ENTER_NEW,
+                onPinComplete = { actions.onAppLockBack() },
+                onBack = actions::onAppLockBack,
+            )
+        }
+
+        composable<SettingRoute.NoticeRoute> {
+            NoticeListScreen(
+                notices = emptyList(),
+                onBackClick = actions::onNoticeBack,
             )
         }
     }

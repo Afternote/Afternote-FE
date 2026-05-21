@@ -1,108 +1,149 @@
 package com.afternote.core.network.dto
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-// TODO: 리팩토링
 @Serializable
-data class UserResponse(
-    val name: String,
-    val email: String,
-    val phone: String? = null,
-    val profileImageUrl: String? = null,
+enum class DeliveryConditionTypeDto {
+    @SerialName("NONE")
+    NONE,
+
+    @SerialName("INACTIVITY")
+    INACTIVITY,
+
+    @SerialName("SPECIFIC_DATE")
+    SPECIFIC_DATE,
+}
+
+// ========================================
+// Request
+// ========================================
+
+@Serializable
+data class UserCreateReceiverRequest(
+    @SerialName("name") val name: String,
+    @SerialName("relation") val relation: String,
+    @SerialName("phone") val phone: String? = null,
+    @SerialName("email") val email: String? = null,
+    @SerialName("message") val message: String? = null,
+)
+
+@Serializable
+data class UserPatchReceiverRequest(
+    @SerialName("name") val name: String,
+    @SerialName("phone") val phone: String,
+    @SerialName("relation") val relation: String,
+    @SerialName("email") val email: String,
+)
+
+@Serializable
+data class UserUpdateReceiverMessageRequest(
+    @SerialName("message") val message: String,
 )
 
 @Serializable
 data class UserUpdateProfileRequest(
-    val name: String? = null,
-    val phone: String? = null,
-    val profileImageUrl: String? = null,
-)
-
-/** GET /users/push-settings 응답 data. 푸시 알림 수신 설정 (timeLetter, mindRecord, afterNote). */
-@Serializable
-data class UserPushSettingResponse(
-    val timeLetter: Boolean,
-    val mindRecord: Boolean,
-    val afterNote: Boolean,
+    @SerialName("name") val name: String? = null,
+    @SerialName("phone") val phone: String? = null,
+    @SerialName("profileImageUrl") val profileImageUrl: String? = null,
 )
 
 @Serializable
 data class UserUpdatePushSettingRequest(
-    val timeLetter: Boolean? = null,
-    val mindRecord: Boolean? = null,
-    val afterNote: Boolean? = null,
-)
-
-// --- Receivers (GET /users/receivers, POST /users/receivers, GET /users/receivers/{receiverId}) ---
-
-@Serializable
-data class ReceiverItemDto(
-    val receiverId: Long,
-    val name: String,
-    val relation: String,
-    val mindRecordDeliveryEnabled: Boolean = true,
+    @SerialName("timeLetter") val timeLetter: Boolean? = null,
+    @SerialName("mindRecord") val mindRecord: Boolean? = null,
+    @SerialName("afterNote") val afterNote: Boolean? = null,
 )
 
 @Serializable
-data class RegisterReceiverRequestDto(
-    val name: String,
-    val phone: String? = null,
-    val relation: String,
-    val email: String? = null,
+data class SocialAccountLinkRequest(
+    @SerialName("accessToken") val accessToken: String,
 )
 
 @Serializable
-data class RegisterReceiverResponseDto(
-    val receiverId: Long,
+data class DeliveryConditionRequest(
+    @SerialName("conditionType") val conditionType: DeliveryConditionTypeDto,
+    @SerialName("inactivityPeriodDays") val inactivityPeriodDays: Int? = null,
+    @SerialName("specificDate") val specificDate: String? = null,
+)
+
+// ========================================
+// Response
+// ========================================
+
+@Serializable
+data class UserResponseDto(
+    @SerialName("name") val name: String,
+    @SerialName("email") val email: String,
+    @SerialName("phone") val phone: String? = null,
+    @SerialName("profileImageUrl") val profileImageUrl: String? = null,
+)
+
+@Serializable
+data class ReceiverListResponseDto(
+    @SerialName("receiverId") val receiverId: Long,
+    @SerialName("name") val name: String,
+    @SerialName("relation") val relation: String,
+    @SerialName("authCode") val authCode: String,
 )
 
 @Serializable
 data class ReceiverDetailResponseDto(
-    val receiverId: Long,
-    val name: String,
-    val relation: String,
-    val phone: String? = null,
-    val email: String? = null,
-    val dailyQuestionCount: Int = 0,
-    val timeLetterCount: Int = 0,
-    val afterNoteCount: Int = 0,
+    @SerialName("receiverId") val receiverId: Long,
+    @SerialName("name") val name: String,
+    @SerialName("relation") val relation: String,
+    @SerialName("phone") val phone: String? = null,
+    @SerialName("email") val email: String? = null,
+    @SerialName("dailyQuestionCount") val dailyQuestionCount: Int,
+    @SerialName("timeLetterCount") val timeLetterCount: Int,
+    @SerialName("afterNoteCount") val afterNoteCount: Int,
+    @SerialName("message") val message: String? = null,
+    @SerialName("authCode") val authCode: String,
 )
 
-// --- GET /users/delivery-condition, PATCH /users/delivery-condition (전달 조건) ---
-
-/**
- * 전달 조건 타입 - 콘텐츠가 수신자에게 전달되는 조건.
- */
 @Serializable
-enum class DeliveryConditionTypeDto {
-    NONE,
-    DEATH_CERTIFICATE,
-    INACTIVITY,
-    SPECIFIC_DATE,
-}
+data class UserCreateReceiverResponseDto(
+    @SerialName("receiverId") val receiverId: Long,
+    @SerialName("authCode") val authCode: String,
+)
 
-/**
- * GET /users/delivery-condition 응답 data. 전달 조건 설정 응답.
- */
+@Serializable
+data class UserPatchReceiverResponseDto(
+    @SerialName("receiverId") val receiverId: Long,
+    @SerialName("name") val name: String,
+    @SerialName("phone") val phone: String,
+    @SerialName("relation") val relation: String,
+    @SerialName("email") val email: String,
+)
+
+@Serializable
+data class UserPushSettingResponseDto(
+    @SerialName("timeLetter") val timeLetter: Boolean,
+    @SerialName("mindRecord") val mindRecord: Boolean,
+    @SerialName("afterNote") val afterNote: Boolean,
+)
+
+@Serializable
+data class UserConnectedAccountResponseDto(
+    @SerialName("local") val local: Boolean,
+    @SerialName("google") val google: Boolean,
+    @SerialName("naver") val naver: Boolean,
+    @SerialName("kakao") val kakao: Boolean,
+    @SerialName("apple") val apple: Boolean,
+    @SerialName("localEmail") val localEmail: String? = null,
+    @SerialName("googleEmail") val googleEmail: String? = null,
+    @SerialName("naverEmail") val naverEmail: String? = null,
+    @SerialName("kakaoEmail") val kakaoEmail: String? = null,
+    @SerialName("appleEmail") val appleEmail: String? = null,
+)
+
 @Serializable
 data class DeliveryConditionResponseDto(
-    val conditionType: DeliveryConditionTypeDto,
-    val inactivityPeriodDays: Int? = null,
-    val specificDate: String? = null,
-    val leaveMessage: String? = null,
-    val conditionFulfilled: Boolean,
-    val conditionMet: Boolean,
-)
-
-/**
- * PATCH /users/delivery-condition 요청 body.
- */
-@Serializable
-data class DeliveryConditionRequestDto(
-    val conditionType: DeliveryConditionTypeDto,
-    val inactivityPeriodDays: Int? = null,
-    val specificDate: String? = null,
-    val leaveMessage: String? = null,
+    @SerialName("conditionType") val conditionType: DeliveryConditionTypeDto,
+    @SerialName("inactivityPeriodDays") val inactivityPeriodDays: Int? = null,
+    @SerialName("specificDate") val specificDate: String? = null,
+    @SerialName("conditionFulfilled") val conditionFulfilled: Boolean,
+    @SerialName("conditionMet") val conditionMet: Boolean,
 )
 
 // --- GET/POST/DELETE /users/connected-accounts (소셜 계정 연동) ---
