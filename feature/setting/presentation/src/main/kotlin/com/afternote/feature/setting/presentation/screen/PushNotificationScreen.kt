@@ -44,9 +44,10 @@ fun PushNotificationScreen(
         uiState = uiState,
         onBack = onBack,
         onDeviceAlarmClick = {
-            val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-            }
+            val intent =
+                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                    putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                }
             context.startActivity(intent)
         },
         onNewsletterToggle = viewModel::onNewsletterToggle,
@@ -88,10 +89,11 @@ private fun PushNotificationContent(
         ) {
             // 기기 알림 설정 행 — 항상 표시, 탭하면 Android 시스템 알림 설정으로 이동
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onDeviceAlarmClick() }
-                    .padding(vertical = 12.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { onDeviceAlarmClick() }
+                        .padding(vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
@@ -100,11 +102,12 @@ private fun PushNotificationContent(
                 )
                 Spacer(Modifier.width(12.dp))
                 Text(
-                    text = if (uiState.isDeviceAlarmOn) {
-                        stringResource(R.string.device_alarm_on)
-                    } else {
-                        stringResource(R.string.device_alarm_off)
-                    },
+                    text =
+                        if (uiState.isDeviceAlarmOn) {
+                            stringResource(R.string.device_alarm_on)
+                        } else {
+                            stringResource(R.string.device_alarm_off)
+                        },
                     style = AfternoteDesign.typography.captionLargeR,
                 )
             }

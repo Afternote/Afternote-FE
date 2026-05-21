@@ -78,7 +78,7 @@ fun TimeLetterContent(
                             .height(4.dp),
                 )
             }
-            Spacer(modifier= Modifier.weight(1f))
+            Spacer(modifier = Modifier.weight(1f))
             ViewToggleButton(
                 viewMode = viewMode,
                 onViewModeChange = onViewModeChange,

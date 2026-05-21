@@ -44,8 +44,12 @@ import kotlin.coroutines.resume
 
 private sealed interface BiometricResult {
     data object Success : BiometricResult
+
     data object Canceled : BiometricResult
-    data class Error(val message: String) : BiometricResult
+
+    data class Error(
+        val message: String,
+    ) : BiometricResult
 }
 
 @Composable
@@ -140,8 +144,14 @@ fun PassKeyMakingScreen(
                                         viewModel.savePasskeyRegistered()
                                         showCompletionDialog = true
                                     }
-                                    BiometricResult.Canceled -> Unit
-                                    is BiometricResult.Error -> errorMessage = result.message
+
+                                    BiometricResult.Canceled -> {
+                                        Unit
+                                    }
+
+                                    is BiometricResult.Error -> {
+                                        errorMessage = result.message
+                                    }
                                 }
                             } finally {
                                 isAuthenticating = false

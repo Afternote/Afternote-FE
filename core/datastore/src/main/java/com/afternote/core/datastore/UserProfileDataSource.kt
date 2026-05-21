@@ -50,8 +50,7 @@ class UserProfileDataSource
             }
         }
 
-        fun isPasskeyRegisteredFlow(): Flow<Boolean> =
-            preferencesFlow.map { prefs -> prefs[Keys.IS_PASSKEY_REGISTERED] ?: false }
+        fun isPasskeyRegisteredFlow(): Flow<Boolean> = preferencesFlow.map { prefs -> prefs[Keys.IS_PASSKEY_REGISTERED] ?: false }
 
         suspend fun savePasskeyRegistered(registered: Boolean) {
             dataStore.edit { prefs ->

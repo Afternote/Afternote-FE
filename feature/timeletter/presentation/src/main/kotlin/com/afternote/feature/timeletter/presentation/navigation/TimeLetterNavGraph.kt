@@ -57,9 +57,10 @@ fun NavGraphBuilder.timeLetterNavGraph(
         }
 
         composable<TimeLetterRoute.TimeLetterRecipientRoute> {
-            val writeEntry = remember(it) {
-                navController.getBackStackEntry(TimeLetterRoute.TimeLetterWriteRoute)
-            }
+            val writeEntry =
+                remember(it) {
+                    navController.getBackStackEntry(TimeLetterRoute.TimeLetterWriteRoute)
+                }
             val writeViewModel: TimeLetterWriteViewModel = hiltViewModel(writeEntry)
             RecipientListScreen(
                 onBackClick = actions::onRecipientBack,

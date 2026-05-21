@@ -113,9 +113,10 @@ class TimeLetterWriteViewModel
                     timeLetterRepository.createTimeLetter(
                         title = title.ifBlank { null },
                         content = content.ifBlank { null },
-                        sendAt = state.sendAt?.let { date ->
-                            "${date}T${state.sendHour.toString().padStart(2, '0')}:${state.sendMinute.toString().padStart(2, '0')}:00"
-                        },
+                        sendAt =
+                            state.sendAt?.let { date ->
+                                "${date}T${state.sendHour.toString().padStart(2, '0')}:${state.sendMinute.toString().padStart(2, '0')}:00"
+                            },
                         status = status,
                         receiverIds = state.recipientIds.ifEmpty { null },
                     )

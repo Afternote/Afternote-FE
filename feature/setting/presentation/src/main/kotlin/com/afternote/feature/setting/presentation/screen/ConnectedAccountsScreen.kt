@@ -49,7 +49,10 @@ fun ConnectedAccountsScreen(
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
-                is ConnectedAccountsEvent.ShowError -> snackbarHostState.showSnackbar(event.message)
+                is ConnectedAccountsEvent.ShowError -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
+
                 is ConnectedAccountsEvent.RequestLink -> {
                     when (event.provider) {
                         "kakao" -> {
