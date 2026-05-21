@@ -1,7 +1,5 @@
 package com.afternote.core.domain.repository
 
-import com.afternote.core.model.ReceiverDailyQuestionsResult
-import com.afternote.core.model.ReceiverMindRecordsResult
 import com.afternote.core.model.SocialProvider
 import com.afternote.core.model.setting.ConnectedAccounts
 import com.afternote.core.model.setting.DeliveryCondition
@@ -63,22 +61,6 @@ interface UserRepository {
         phone: String?,
         email: String?,
     ): Result<Unit>
-
-    suspend fun getReceiverDailyQuestions(
-        receiverId: Long,
-        page: Int,
-        size: Int,
-    ): Result<ReceiverDailyQuestionsResult>
-
-    /**
-     * 수신인별 마음의 기록 전체 조회 (일기, 깊은 생각, 데일리 질문 답변).
-     * GET /users/receivers/{receiverId}/mind-records
-     */
-    suspend fun getReceiverMindRecords(
-        receiverId: Long,
-        page: Int,
-        size: Int,
-    ): Result<ReceiverMindRecordsResult>
 
     /**
      * GET /users/delivery-condition — 로그인한 사용자의 전달 조건 설정 조회.
