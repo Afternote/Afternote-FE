@@ -80,12 +80,20 @@
     <string name="afternote_home_append_error">애프터노트 추가 목록을 불러오지 못했습니다.</string>
     <string name="afternote_category_all">전체</string>
     <string name="afternote_category_social_network">소셜네트워크</string>
+    <string name="afternote_category_business">비즈니스</string>
     <string name="afternote_category_gallery_and_files">갤러리 및 파일</string>
+    <string name="afternote_category_estate">재산 처리</string>
     <string name="afternote_category_memorial">추모 가이드라인</string>
     <!-- Edit-screen category dropdown; must stay in sync with [EditorCategory.displayLabel] for [EditorCategory.fromDisplayLabel]. -->
     <string name="afternote_editor_category_social">소셜네트워크</string>
+    <string name="afternote_editor_category_business">비즈니스</string>
     <string name="afternote_editor_category_gallery">갤러리 및 파일</string>
+    <string name="afternote_editor_category_estate">재산 처리</string>
     <string name="afternote_editor_category_memorial">추모 가이드라인</string>
+    <!-- BUSINESS·ESTATE 카테고리 placeholder (디자인 확정 전 임시 화면) -->
+    <string name="afternote_editor_category_unimplemented_title">준비 중인 카테고리예요</string>
+    <string name="afternote_editor_category_unimplemented_description">디자인 확정 후 입력 화면이 제공됩니다.\n다른 카테고리를 먼저 이용해 주세요.</string>
+    <string name="afternote_validation_unimplemented_category">아직 지원하지 않는 카테고리입니다. 다른 카테고리를 선택해 주세요.</string>
     <!-- Afternote editor (author) — actions prefill 템플릿 (디자인 의도: 사용자가 카테고리 선택 시 예시 노출 후 자유 수정) -->
     <string name="afternote_editor_actions_social_remove_post">게시물 내리기</string>
     <string name="afternote_editor_actions_social_post_memorial">추모 게시물 올리기</string>
@@ -94,7 +102,6 @@
     <string name="afternote_editor_actions_gallery_delete_folder">\'흑역사\' 폴더 삭제</string>
 
     <string name="afternote_editor_label_account_info">계정 정보</string>
-    <string name="afternote_editor_label_account_process_method">계정 처리 방법</string>
     <string name="afternote_editor_label_process_method_list">처리 방법 리스트</string>
     <string name="afternote_editor_processing_method_add_placeholder">처리 방법을 입력해 주세요</string>
     <string name="afternote_editor_label_receiver_add">수신자 추가</string>
@@ -110,9 +117,46 @@
     <string name="afternote_editor_message_add_content_description">남기실 말씀 추가</string>
     <string name="afternote_editor_message_text_field_placeholder">Text Field</string>
 
+    <!-- 받은 기록함 (수신자 흐름) — 발신자 카드 리스트 -->
+    <string name="receiver_records_box_title">받은 기록함</string>
+    <!-- 디자인 14 의 빈 상태 메시지. 디자인 시안의 "수신자" 표기는 의도일 가능성이라 그대로 유지 (이슈 #215). -->
+    <string name="receiver_records_box_empty">아직 등록된 수신자가 없습니다.\n수신자를 등록하여 기록을 확인해 보세요.</string>
+    <string name="receiver_records_box_card_last_confirmed">마지막 확인: %1$s</string>
+    <!-- 발신자 등록(15·16) -->
+    <string name="receiver_sender_registration_title">발신자 등록하기</string>
+    <string name="receiver_sender_registration_name_label">이름</string>
+    <string name="receiver_sender_registration_name_placeholder">이름을 지정해주세요</string>
+    <string name="receiver_sender_registration_submit">발신자 등록하기</string>
+
+    <!-- 발신자 상세(11·12) — 정보 박스 4행 + 액션 버튼 -->
+    <string name="receiver_sender_detail_top_bar_title">받은 기록함</string>
+    <string name="receiver_sender_detail_row_records">기록</string>
+    <string name="receiver_sender_detail_row_status">상태</string>
+    <string name="receiver_sender_detail_row_requested_at">신청일</string>
+    <string name="receiver_sender_detail_row_approved_at">승인일</string>
+    <string name="receiver_sender_detail_records_kept">보관 중</string>
+    <string name="receiver_sender_detail_status_unavailable">열람 불가</string>
+    <string name="receiver_sender_detail_status_pending">승인 대기</string>
+    <string name="receiver_sender_detail_status_available">열람 가능</string>
+    <string name="receiver_sender_detail_status_rejected">검토 거절</string>
+    <string name="receiver_sender_detail_no_request_record">신청 기록이 없습니다</string>
+    <string name="receiver_sender_detail_no_approval_record">승인 기록이 없습니다</string>
+    <string name="receiver_sender_detail_request_verification">열람 신청하기</string>
+    <string name="receiver_sender_detail_open_records">기록 열람하기</string>
+    <string name="receiver_sender_detail_status_load_failed">열람 신청 상태를 불러오지 못했습니다.</string>
+    <string name="receiver_sender_detail_not_found">발신자를 찾을 수 없습니다.</string>
+
+    <!-- 본인 확인 이메일 인증 (3·4) — 백엔드 receiver-auth/email/* 미구현 stub -->
+    <string name="receiver_verify_email_placeholder">이메일 주소</string>
+    <string name="receiver_verify_code_placeholder">인증번호</string>
+    <string name="receiver_verify_request_code">인증번호 받기</string>
+    <string name="receiver_verify_code_sent">인증번호가 전송되었습니다.\n수신 된 인증번호를 입력해 주세요.</string>
+    <string name="receiver_verify_email_format_invalid">이메일 형식이 올바르지 않습니다.</string>
+    <string name="receiver_verify_code_mismatch">인증번호가 일치하지 않습니다.</string>
+
     <string name="receiver_verify_title">수신자 인증</string>
     <string name="receiver_verify_self_title">수신자 본인 확인</string>
-    <string name="receiver_verify_intro">고객의 소중한 정보를 보호하기 위해\n가족관계 및 사망 사실 확인이 필요합니다.</string>
+    <string name="receiver_verify_intro">고인의 소중한 정보를 보호하기 위해\n가족관계 및 사망 사실 확인이 필요합니다.</string>
     <string name="receiver_verify_start_button">인증 시작하기</string>
     <string name="receiver_verify_next_button">다음</string>
     <string name="receiver_verify_confirm_button">인증하기</string>
@@ -120,22 +164,32 @@
     <string name="receiver_verify_email_label">이메일 주소</string>
     <string name="receiver_verify_code_description">입력하신 이메일로 인증번호를 보냈습니다.\n수신된 메일에서 인증번호를 확인하고 입력해주세요.</string>
     <string name="receiver_verify_master_key_required">마스터 키를 입력해주세요.</string>
+    <string name="receiver_verify_master_key_title">마스터 키 입력</string>
+    <string name="receiver_verify_master_key_description">전달 받은 마스터 키를 입력해 주세요.</string>
+    <string name="receiver_verify_master_key_placeholder">마스터 키 입력</string>
     <string name="receiver_verify_error_network">네트워크 연결을 확인해주세요.</string>
     <string name="receiver_verify_error_unknown">마스터 키 검증에 실패했습니다.</string>
     <string name="receiver_verify_complete_confirm">확인</string>
     <string name="receiver_verify_documents_required">사망진단서와 가족관계증명서를 모두 업로드해주세요.</string>
-    <string name="receiver_verify_complete_title">열람 요청 완료</string>
+    <string name="receiver_verify_document_upload_failed">서류 업로드에 실패했습니다.</string>
+    <string name="receiver_verify_submit_failed">열람 신청에 실패했습니다.</string>
+    <string name="receiver_verify_complete_title">열람 신청 완료</string>
     <string name="receiver_verify_status_pending">현재 서류 확인중입니다.\n빠르게 처리하여 열람하실 수 있도록 하겠습니다.</string>
     <string name="receiver_verify_status_approved">승인되었습니다. 열람이 가능합니다.</string>
     <string name="receiver_verify_status_rejected">제출하신 서류 검토 결과 거절되었습니다. 다시 제출해 주세요.</string>
     <string name="receiver_verify_document_upload_title">증빙 서류 업로드</string>
-    <string name="receiver_verify_document_upload_description">사망진단서와 가족관계증명서를 업로드 해주세요.\n담당자의 확인 후 승인됩니다.</string>
+    <string name="receiver_verify_document_upload_description">사망 사실 확인을 위한 서류를 업로드해 주세요.\n담당자의 확인 후 열람 승인됩니다.</string>
     <string name="receiver_verify_death_cert_title">사망진단서 업로드</string>
     <string name="receiver_verify_family_cert_title">가족관계증명서 업로드</string>
     <string name="receiver_verify_document_input_label">서류 촬영 또는 파일 첨부</string>
-    <string name="receiver_verify_add_image">이미지 추가</string>
-    <string name="receiver_verify_add_file">파일 추가</string>
+    <string name="receiver_verify_document_input_placeholder">촬영 또는 파일 첨부</string>
+    <string name="receiver_verify_bottom_sheet_header">미디어 추가하기</string>
+    <string name="receiver_verify_add_image">이미지 추가하기</string>
+    <string name="receiver_verify_add_file">파일 추가하기</string>
     <string name="receiver_verify_wait_for_approval">인증이 완료된 후에 이용 가능합니다.</string>
+    <string name="receiver_verify_document_uploading">업로드 중…</string>
+    <string name="receiver_verify_complete_description">제출하신 서류를 확인 중입니다.\n빠르게 검토하여 열람하실 수 있도록 안내드리겠습니다.</string>
+    <string name="receiver_verify_complete_back_to_records">받은 기록함으로 돌아가기</string>
 
     <string name="login_kakao_button">카카오로 로그인</string>
     <string name="login_kakao_backend_not_ready">카카오 토큰을 발급받았습니다. 서버 연동(/auth/kakao) 대기 중입니다.</string>
@@ -170,7 +224,6 @@
     <string name="afternote_validation_title_required">등록할 서비스(플랫폼)명을 입력해 주세요.</string>
     <string name="afternote_edit_service_label">등록할 서비스</string>
     <string name="afternote_validation_social_credentials_required">계정 ID와 비밀번호를 입력해 주세요.</string>
-    <string name="afternote_validation_social_process_method_required">계정 처리 방법을 선택해 주세요.</string>
     <string name="afternote_validation_social_actions_required">처리 방법을 한 가지 이상 추가해 주세요.</string>
     <string name="afternote_validation_gallery_actions_required">처리 방법을 한 가지 이상 추가해 주세요.</string>
     <string name="afternote_validation_gallery_receivers_required">수신자를 한 명 이상 등록해 주세요. 설정에서 수신자를 등록해 주세요.</string>

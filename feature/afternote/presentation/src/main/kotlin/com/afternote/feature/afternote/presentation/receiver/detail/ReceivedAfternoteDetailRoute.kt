@@ -49,6 +49,7 @@ fun ReceivedAfternoteDetailRoute(
                 }
 
                 ReceivedDetailContentUiModel.MemorialPending,
+                ReceivedDetailContentUiModel.Unimplemented,
                 ReceivedDetailContentUiModel.Unknown,
                 -> {
                     DesignPendingDetailContent(onBackClick = onBack)

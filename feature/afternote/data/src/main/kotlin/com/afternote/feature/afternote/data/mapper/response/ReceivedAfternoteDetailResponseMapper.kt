@@ -18,7 +18,6 @@ fun ReceivedAfternoteDetailResponse.toDomain(): ReceivedAfternoteDetail =
         createdAt = createdAt?.let(::formatDateFromServer),
         category = category,
         type = category?.let(::categoryToServiceType),
-        processMethod = processMethod,
         actions = actions,
         leaveMessage = leaveMessage,
         playlist = playlist?.toDomain(),

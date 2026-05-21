@@ -15,6 +15,8 @@ enum class AfternoteCategory(
 ) {
     ALL(R.string.afternote_category_all),
     SOCIAL_NETWORK(R.string.afternote_category_social_network, "SOCIAL"),
+    BUSINESS(R.string.afternote_category_business, "BUSINESS"),
     GALLERY_AND_FILES(R.string.afternote_category_gallery_and_files, "GALLERY"),
+    ESTATE(R.string.afternote_category_estate, "ESTATE"),
     MEMORIAL(R.string.afternote_category_memorial, "MEMORIAL"),
 }

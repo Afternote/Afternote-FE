@@ -42,7 +42,6 @@ data class MindRecordSummary(
 
 @Immutable
 data class AfternoteSourceIcon(
-    val key: String,
     val drawableResId: Int,
 )
 

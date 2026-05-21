@@ -15,6 +15,8 @@ val AfternoteServiceType.editScreenLabelRes: Int
     get() =
         when (this) {
             AfternoteServiceType.SOCIAL_NETWORK -> R.string.afternote_editor_category_social
+            AfternoteServiceType.BUSINESS -> R.string.afternote_editor_category_business
             AfternoteServiceType.GALLERY_AND_FILES -> R.string.afternote_editor_category_gallery
+            AfternoteServiceType.ESTATE -> R.string.afternote_editor_category_estate
             AfternoteServiceType.MEMORIAL -> R.string.afternote_editor_category_memorial
         }

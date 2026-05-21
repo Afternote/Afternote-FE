@@ -20,8 +20,6 @@ import com.afternote.feature.afternote.presentation.author.editor.account.Accoun
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListSection
-import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodRadioSection
-import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 
 /**
  * 소셜네트워크 등 일반적인 종류 선택 시 표시되는 콘텐츠
@@ -57,14 +55,6 @@ fun SocialNetworkEditorContent(
                 keyboardType = KeyboardType.Password,
             )
         }
-
-        // 계정 처리 방법 섹션
-        ProcessingMethodRadioSection(
-            label = stringResource(R.string.afternote_editor_label_account_process_method),
-            options = AccountProcessingMethod.entries,
-            selected = params.accountSection.selectedMethod,
-            onSelect = params.accountSection.onMethodSelected,
-        )
 
         // 처리 방법 리스트 섹션
         ProcessingMethodListSection(section = params.processingMethodSection)
@@ -104,8 +94,6 @@ private fun SocialNetworkEditorContentPreview() {
                             AccountSection(
                                 idState = rememberTextFieldState(),
                                 passwordState = rememberTextFieldState(),
-                                selectedMethod = AccountProcessingMethod.MEMORIAL_ACCOUNT,
-                                onMethodSelected = {},
                             ),
                     ),
             )

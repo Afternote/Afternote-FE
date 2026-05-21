@@ -5,7 +5,6 @@ import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.presentation.author.detail.socialnetwork.SocialNetworkDetailContent
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
-import com.afternote.feature.afternote.presentation.shared.model.mapProcessMethodLabel
 
 /** 상세 화면에 쓰는 "최종 작성일": 갱신일이 있으면 그것, 공백이면 생성일. */
 private val Detail.finalWriteDate: String
@@ -26,7 +25,6 @@ internal fun Detail.toGalleryDetailContent(authorDisplayName: String): GalleryDe
         userName = authorDisplayName,
         finalWriteDate = finalWriteDate,
         afternoteEditReceivers = toReceiverUiModels(),
-        processingMethodTitle = processing?.method?.let(::mapProcessMethodLabel) ?: "",
         processingMethods = processing?.actions ?: emptyList(),
         message = processing?.leaveMessage ?: "",
     )
@@ -37,7 +35,6 @@ internal fun Detail.toSocialNetworkDetailContent(authorDisplayName: String): Soc
         userName = authorDisplayName,
         accountId = credentials?.id ?: "",
         password = credentials?.password ?: "",
-        accountProcessingMethod = processing?.method?.let(::mapProcessMethodLabel) ?: "",
         processingMethods = processing?.actions ?: emptyList(),
         message = processing?.leaveMessage ?: "",
         finalWriteDate = finalWriteDate,
@@ -81,6 +78,9 @@ sealed interface DetailContentUiModel {
     data class Memorial(
         val content: MemorialGuidelineDetailContent,
     ) : DetailContentUiModel
+
+    /** BUSINESS·ESTATE 등 디자인 확정 전 placeholder. */
+    data object Unimplemented : DetailContentUiModel
 }
 
 internal fun Detail.toDetailContentUiModel(authorDisplayName: String): DetailContentUiModel =
@@ -95,5 +95,10 @@ internal fun Detail.toDetailContentUiModel(authorDisplayName: String): DetailCon
 
         AfternoteServiceType.MEMORIAL -> {
             DetailContentUiModel.Memorial(toMemorialGuidelineDetailContent(authorDisplayName))
+        }
+
+        // BUSINESS · ESTATE 는 디자인 확정 전 placeholder. 백엔드도 미지원이라 일반적으로 도달하지 않음.
+        AfternoteServiceType.BUSINESS, AfternoteServiceType.ESTATE -> {
+            DetailContentUiModel.Unimplemented
         }
     }

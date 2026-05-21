@@ -1,6 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
-import com.afternote.feature.afternote.presentation.author.editor.account.AccountProcessMethod
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
@@ -26,17 +25,20 @@ internal object AfternoteEditorValidator {
         }
         return when (category) {
             EditorCategory.SOCIAL -> validateSocial(payload)
+
             EditorCategory.GALLERY -> validateGallery(payload)
+
             EditorCategory.MEMORIAL -> validateMemorial(playlistSongs)
+
+            // BUSINESS·ESTATE 는 디자인 확정 전 placeholder 만 노출. UI 자체에서 입력이 막혀 있지만
+            // 안전망으로 Validator 에서도 저장을 차단한다.
+            EditorCategory.BUSINESS, EditorCategory.ESTATE -> AfternoteValidationError.UNIMPLEMENTED_CATEGORY
         }
     }
 
     private fun validateSocial(payload: RegisterAfternotePayload): AfternoteValidationError? {
         if (payload.accountId.isBlank() || payload.password.isBlank()) {
             return AfternoteValidationError.SOCIAL_CREDENTIALS_REQUIRED
-        }
-        if (payload.accountProcessingMethod !in AccountProcessMethod.validClientNames) {
-            return AfternoteValidationError.SOCIAL_PROCESS_METHOD_REQUIRED
         }
         if (payload.processingMethods.isEmpty()) {
             return AfternoteValidationError.SOCIAL_ACTIONS_REQUIRED

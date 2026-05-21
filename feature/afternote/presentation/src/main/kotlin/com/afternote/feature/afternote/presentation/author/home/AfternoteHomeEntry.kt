@@ -53,8 +53,13 @@ fun AfternoteHomeEntry(
         onListItemClick = { id, type ->
             when (type) {
                 AfternoteServiceType.GALLERY_AND_FILES -> actions.navigateToGalleryDetail(id)
+
                 AfternoteServiceType.MEMORIAL -> actions.navigateToMemorialGuidelineDetail(id)
+
                 AfternoteServiceType.SOCIAL_NETWORK -> actions.navigateToDetail(id)
+
+                // BUSINESS · ESTATE 는 placeholder 카테고리. 서버 미지원이라 리스트에 노출되지 않으므로 도달 시 무시.
+                AfternoteServiceType.BUSINESS, AfternoteServiceType.ESTATE -> Unit
             }
         },
         onFabClick = { actions.navigateToAdd(selectedCategory) },

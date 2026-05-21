@@ -14,7 +14,9 @@ internal fun formatDateFromServer(serverDateTime: String): String =
 internal fun categoryToServiceType(category: String): AfternoteServiceType =
     when (category.uppercase()) {
         "SOCIAL" -> AfternoteServiceType.SOCIAL_NETWORK
+        "BUSINESS" -> AfternoteServiceType.BUSINESS
         "GALLERY" -> AfternoteServiceType.GALLERY_AND_FILES
+        "ESTATE" -> AfternoteServiceType.ESTATE
         "MUSIC", "PLAYLIST" -> AfternoteServiceType.MEMORIAL
         else -> AfternoteServiceType.SOCIAL_NETWORK
     }

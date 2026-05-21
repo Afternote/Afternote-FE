@@ -74,8 +74,7 @@ fun ReceiverAfterNoteMainScreen(
     showBottomBar: Boolean = true,
 ) {
     var selectedBottomNavItem by remember { mutableStateOf(BottomNavTab.TIMELETTER) }
-    val profileResId =
-        profileImageResId ?: R.drawable.feature_afternote_img_default_profile_deceased
+    profileImageResId ?: R.drawable.feature_afternote_img_default_profile_deceased
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -122,10 +121,7 @@ fun ReceiverAfterNoteMainScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
-                            ProfileImage(
-                                onClick = {},
-                                isEditable = false,
-                            )
+                            ProfileImage()
                         }
                     },
                     playlistContent = {
@@ -177,13 +173,12 @@ private fun ReceiverVideoSection(
         ReceiverSectionHeader()
         Spacer(modifier = Modifier.height(12.dp))
         if (!memorialVideoUrl.isNullOrBlank()) {
-            val videoUrl = memorialVideoUrl
             InfoCard(
                 modifier =
                     Modifier
                         .fillMaxWidth()
                         .clickable {
-                            val intent = Intent(Intent.ACTION_VIEW, videoUrl.toUri())
+                            val intent = Intent(Intent.ACTION_VIEW, memorialVideoUrl.toUri())
                             if (context.packageManager.resolveActivity(
                                     intent,
                                     PackageManager.MATCH_DEFAULT_ONLY,

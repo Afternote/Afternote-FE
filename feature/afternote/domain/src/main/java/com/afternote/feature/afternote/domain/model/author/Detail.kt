@@ -8,8 +8,8 @@ import com.afternote.feature.afternote.domain.model.author.playlist.PlaylistDeta
  *
  * 서버 GET /api/afternotes/{id} 응답을 도메인 계층으로 매핑한 형태.
  * 카테고리별로 관련 필드만 non-null:
- * - SOCIAL: credentials, processMethod, actions
- * - GALLERY: receivers, processMethod, actions
+ * - SOCIAL: credentials, actions
+ * - GALLERY: receivers, actions
  * - PLAYLIST: playlist
  */
 data class Detail(
@@ -35,7 +35,6 @@ data class DetailCredentials(
 )
 
 data class DetailProcessing(
-    val method: String?,
     val actions: List<String>,
     val leaveMessage: String?,
 )

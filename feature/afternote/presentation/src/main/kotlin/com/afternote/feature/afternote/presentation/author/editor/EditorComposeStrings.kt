@@ -13,7 +13,9 @@ internal fun editorCategoryDropdownLabels(): List<String> = EditorCategory.entri
 internal fun EditorCategory.toDropdownLabel(): String =
     when (this) {
         EditorCategory.SOCIAL -> stringResource(R.string.afternote_editor_category_social)
+        EditorCategory.BUSINESS -> stringResource(R.string.afternote_editor_category_business)
         EditorCategory.GALLERY -> stringResource(R.string.afternote_editor_category_gallery)
+        EditorCategory.ESTATE -> stringResource(R.string.afternote_editor_category_estate)
         EditorCategory.MEMORIAL -> stringResource(R.string.afternote_editor_category_memorial)
     }
 

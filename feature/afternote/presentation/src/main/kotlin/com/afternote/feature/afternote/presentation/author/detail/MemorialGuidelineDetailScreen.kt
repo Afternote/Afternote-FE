@@ -168,7 +168,7 @@ fun MemorialGuidelineDetailScreen(
                         Box {
                             IconButton(onClick = state::toggleDropdownMenu) {
                                 Icon(
-                                    painter = painterResource(R.drawable.afternote_ui_detail_edit),
+                                    painter = painterResource(R.drawable.feature_afternote_ic_detail_edit),
                                     contentDescription = stringResource(R.string.feature_afternote_detail_edit),
                                     modifier = Modifier.size(16.dp),
                                 )
@@ -275,8 +275,6 @@ private fun PhotoCard(
                         ),
                 )
                 ProfileImage(
-                    onClick = {}, // TODO:
-                    isEditable = false,
                     displayImageUri = profileImageUri,
                 )
             }

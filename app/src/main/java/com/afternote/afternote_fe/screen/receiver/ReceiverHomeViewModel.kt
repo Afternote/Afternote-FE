@@ -136,7 +136,6 @@ private fun List<AfterNoteListItemDto>.toAfternoteIcons(): List<AfternoteSourceI
         .take(MAX_AFTERNOTE_ICONS)
         .map { typeKey ->
             AfternoteSourceIcon(
-                key = typeKey,
                 drawableResId = getAfternoteDisplayRes(typeKey).drawableResId,
             )
         }.toList()
