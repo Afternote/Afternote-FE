@@ -46,7 +46,7 @@ internal object AfternoteMockFixtures {
 
     private fun mockDetailGenericJson(id: Long): String =
         """
-        {"status":200,"code":0,"message":null,"data":{"afternoteId":$id,"category":"SOCIAL","title":"[목업] 애프터노트 상세","createdAt":"2024-01-01T00:00:00","updatedAt":"2024-01-02T00:00:00","credentials":null,"receivers":[],"processMethod":null,"actions":[],"leaveMessage":null,"playlist":null}}
+        {"status":200,"code":0,"message":null,"data":{"afternoteId":$id,"category":"SOCIAL","title":"[목업] 애프터노트 상세","createdAt":"2024-01-01T00:00:00","updatedAt":"2024-01-02T00:00:00","credentials":null,"receivers":[],"actions":[],"leaveMessage":null,"playlist":null}}
         """.trimIndent()
 
     /** 소셜 네트워크 상세 시나리오 — 인스타그램 (구 PREVIEW_CONTENT). */
@@ -60,7 +60,6 @@ internal object AfternoteMockFixtures {
           "updatedAt":"2025-11-26T12:00:00",
           "credentials":{"id":"qwerty123","password":"qwerty123"},
           "receivers":[{"receiverId":1,"name":"황규운","relation":"친구","phone":""}],
-          "processMethod":"MEMORIAL",
           "actions":["게시물 내리기","추모 게시물 올리기","추모 계정으로 전환하기"],
           "leaveMessage":"이 계정에는 우리 가족 여행 사진이 많아.\n계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
           "playlist":null
@@ -81,7 +80,6 @@ internal object AfternoteMockFixtures {
             {"receiverId":1,"name":"김지은","relation":"친구","phone":""},
             {"receiverId":2,"name":"김혜성","relation":"친구","phone":""}
           ],
-          "processMethod":"TRANSFER_TO_ADDITIONAL_AFTERNOTE_EDIT_RECEIVER",
           "actions":["'엽사' 폴더 박선호에게 전송","'흑역사' 폴더 삭제"],
           "leaveMessage":"",
           "playlist":null
@@ -99,7 +97,6 @@ internal object AfternoteMockFixtures {
           "updatedAt":"2025-11-26T12:00:00",
           "credentials":{"id":"qwerty123","password":"qwerty123"},
           "receivers":[{"receiverId":1,"name":"황규운","relation":"친구","phone":""}],
-          "processMethod":"TRANSFER",
           "actions":["자동 응답 설정 (부재 알림)","메일함 데이터 백업","중요 메일 전달"],
           "leaveMessage":"",
           "playlist":null

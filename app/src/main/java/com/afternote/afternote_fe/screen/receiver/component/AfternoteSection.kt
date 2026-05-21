@@ -126,10 +126,10 @@ private fun AfternoteSectionPreview() {
             totalCount = 10,
             icons =
                 listOf(
-                    AfternoteSourceIcon("INSTAGRAM", AfternoteFeatureR.drawable.feature_afternote_img_insta_pattern),
-                    AfternoteSourceIcon("GALLERY", AfternoteFeatureR.drawable.feature_afternote_img_googlephoto_pattern),
-                    AfternoteSourceIcon("NAVER_MAIL", AfternoteFeatureR.drawable.feature_afternote_img_naver_mail_pattern),
-                    AfternoteSourceIcon("KAKAOTALK", AfternoteFeatureR.drawable.feature_afternote_img_kakaotalk_pattern),
+                    AfternoteSourceIcon(AfternoteFeatureR.drawable.feature_afternote_img_insta_pattern),
+                    AfternoteSourceIcon(AfternoteFeatureR.drawable.feature_afternote_img_googlephoto_pattern),
+                    AfternoteSourceIcon(AfternoteFeatureR.drawable.feature_afternote_img_naver_mail_pattern),
+                    AfternoteSourceIcon(AfternoteFeatureR.drawable.feature_afternote_img_kakaotalk_pattern),
                 ),
             onGoClick = {},
             modifier = Modifier.padding(20.dp),

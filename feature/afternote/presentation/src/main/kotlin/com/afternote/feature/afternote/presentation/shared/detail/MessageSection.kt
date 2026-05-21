@@ -30,7 +30,7 @@ fun MessageSection(
     val isMessageEmpty = message.isBlank()
 
     DetailSection(
-        iconResId = R.drawable.afternote_ui_ic_leave_message_header,
+        iconResId = R.drawable.feature_afternote_ic_leave_message_header,
         label = stringResource(R.string.feature_afternote_detail_section_message),
         modifier = modifier,
     ) {
@@ -38,7 +38,7 @@ fun MessageSection(
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Icon(
-                painter = painterResource(R.drawable.afternote_ui_ic_leave_message_card),
+                painter = painterResource(R.drawable.feature_afternote_ic_leave_message_card),
                 contentDescription = null,
                 tint = AfternoteDesign.colors.gray4,
                 modifier = Modifier.size(15.dp),

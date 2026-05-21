@@ -12,6 +12,12 @@ interface OnboardingNavActions {
 
     fun onNavigateWelcomeToLogin()
 
+    /**
+     * Welcome 의 "전달 받은 기록 확인하기" 누름 → 수신자 흐름 진입 (받은 기록함, 이슈 #215).
+     * 본인 확인 캐시 상태와 무관하게 받은 기록함으로 직행하며, 본인 확인은 발신자별 열람 신청 시점에 1회 수행.
+     */
+    fun onNavigateWelcomeToReceivedRecords()
+
     fun onReplaceLoginWithSignUp()
 
     fun onLoginBack()

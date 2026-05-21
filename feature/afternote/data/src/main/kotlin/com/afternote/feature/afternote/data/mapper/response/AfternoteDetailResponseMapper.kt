@@ -42,7 +42,6 @@ private fun AfternoteDetailResponse.toTimestamps(): DetailTimestamps =
 
 private fun AfternoteDetailResponse.toProcessing() =
     DetailProcessing(
-        method = processMethod,
         actions = actions ?: emptyList(),
         leaveMessage = leaveMessage,
     )

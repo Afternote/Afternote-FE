@@ -35,5 +35,10 @@ object AfternoteActionsTemplate {
             EditorCategory.MEMORIAL -> {
                 emptyList()
             }
+
+            // BUSINESS·ESTATE 는 디자인 확정 전 placeholder 만 노출되므로 prefill 대상 아님.
+            EditorCategory.BUSINESS, EditorCategory.ESTATE -> {
+                emptyList()
+            }
         }
 }

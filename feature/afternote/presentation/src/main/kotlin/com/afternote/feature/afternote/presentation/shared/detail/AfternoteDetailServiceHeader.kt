@@ -31,8 +31,8 @@ import com.afternote.feature.afternote.presentation.shared.model.AfternoteServic
 /**
  * 애프터노트 작성자 상세 공통 상단: 서비스 아이콘·이름·최종 작성일 + 처리 방법 칩.
  *
- * 하단 칩은 [CircularCheckboxOutlineChip]으로만 그리며, [processingMethodChipLabel]은 호출부(갤러리/소셜)에서
- * 작성·검증 단계에서 이미 선택된 `processing.method` 제목을 넘긴다. 수신인 지정([RecipientDesignationBadge])과 무관하다.
+ * 하단 칩은 [CircularCheckboxOutlineChip]으로만 그리며, [processingMethodChipLabel]은 호출부에서
+ * `processing.actions` 리스트의 첫 번째 항목을 넘긴다. 수신인 지정([RecipientDesignationBadge])과 무관하다.
  */
 @Composable
 fun AfternoteDetailServiceHeader(

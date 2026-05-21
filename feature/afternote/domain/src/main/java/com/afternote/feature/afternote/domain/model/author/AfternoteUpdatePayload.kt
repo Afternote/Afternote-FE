@@ -3,7 +3,6 @@ package com.afternote.feature.afternote.domain.model.author
 data class AfternoteUpdatePayload(
     val category: String,
     val title: String,
-    val processMethod: String? = null,
     val actions: List<String>? = null,
     val leaveMessage: String? = null,
     val credentials: AfternoteAccountCredentials? = null,

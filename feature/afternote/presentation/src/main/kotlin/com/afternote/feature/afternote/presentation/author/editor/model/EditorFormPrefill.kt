@@ -2,7 +2,6 @@ package com.afternote.feature.afternote.presentation.author.editor.model
 
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
-import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 
 /**
@@ -17,10 +16,6 @@ data class EditorFormPrefill(
     val accountId: String,
     val password: String,
     val messageBlocks: List<EditorMessageTextBlock>,
-    /** null이면 계정 처리 방법 필드는 기존 값 유지 */
-    val accountProcessingMethod: AccountProcessingMethod?,
-    /** null이면 정보 처리 방법 필드는 기존 값 유지 */
-    val informationProcessingMethod: InformationProcessingMethod?,
     val socialProcessingMethods: List<ProcessingMethodItem>,
     val galleryProcessingMethods: List<ProcessingMethodItem>,
     /** null이면 당부/직접입력 필드는 기존 값 유지 */
@@ -61,8 +56,6 @@ data class LoadFromExistingAccountParams(
 
 data class LoadFromExistingProcessingParams(
     val message: String = "",
-    val accountMethodName: String = "",
-    val informationMethodName: String = "",
-    val methods: List<ProcessingMethodItem> = emptyList(),
+    val socialMethods: List<ProcessingMethodItem> = emptyList(),
     val galleryMethods: List<ProcessingMethodItem> = emptyList(),
 )

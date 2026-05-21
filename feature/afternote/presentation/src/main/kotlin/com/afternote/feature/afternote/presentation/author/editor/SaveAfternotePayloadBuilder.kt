@@ -54,8 +54,6 @@ object SaveAfternotePayloadBuilder {
             accountId = accountId,
             password = password,
             message = fullMessage,
-            accountProcessingMethod = form.selectedProcessingMethod.name,
-            informationProcessingMethod = form.selectedInformationProcessingMethod.name,
             processingMethods = socialMethods,
             galleryProcessingMethods = galleryMethods,
             atmosphere = atmosphere,

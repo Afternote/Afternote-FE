@@ -34,7 +34,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -217,13 +216,4 @@ fun ReceiverRegisterScreen(
             }
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ReceiverRegisterScreenPrev() {
-    ReceiverRegisterScreen(
-        onBackClick = {},
-        onRegisterSuccess = {},
-    )
 }

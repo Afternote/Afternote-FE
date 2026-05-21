@@ -14,7 +14,6 @@ data class SocialNetworkDetailContent(
     val userName: String = "",
     val accountId: String = "",
     val password: String = "",
-    val accountProcessingMethod: String = "",
     val processingMethods: List<String> = emptyList(),
     val message: String = "",
     val finalWriteDate: String = "",

@@ -6,6 +6,8 @@ package com.afternote.feature.afternote.domain
  */
 enum class AfternoteServiceType {
     SOCIAL_NETWORK,
+    BUSINESS,
     GALLERY_AND_FILES,
+    ESTATE,
     MEMORIAL,
 }

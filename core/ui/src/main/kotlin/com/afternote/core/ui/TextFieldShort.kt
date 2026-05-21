@@ -241,12 +241,7 @@ private fun Variant7Suffix(type: TextFieldType.Variant7) {
                 Modifier
             },
         style = AfternoteDesign.typography.captionLargeR,
-        color =
-            if (type.enabled) {
-                AfternoteDesign.colors.gray7
-            } else {
-                AfternoteDesign.colors.gray4
-            },
+        color = AfternoteDesign.colors.gray7,
     )
 }
 

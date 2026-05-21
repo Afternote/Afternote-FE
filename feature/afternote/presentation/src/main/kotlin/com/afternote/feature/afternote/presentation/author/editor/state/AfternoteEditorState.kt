@@ -14,8 +14,6 @@ import com.afternote.feature.afternote.presentation.author.editor.message.Editor
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
-import com.afternote.feature.afternote.presentation.author.editor.model.InformationProcessingMethod
-import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
@@ -124,6 +122,8 @@ class AfternoteEditorState(
                     } else {
                         AfternoteServiceCatalog.defaultSocialService
                     },
+                socialProcessingMethods = emptyList(),
+                galleryProcessingMethods = emptyList(),
             )
         }
     }
@@ -134,14 +134,6 @@ class AfternoteEditorState(
         } else {
             updateForm { it.copy(selectedService = service) }
         }
-    }
-
-    fun onProcessingMethodSelected(method: AccountProcessingMethod) {
-        updateForm { it.copy(selectedProcessingMethod = method) }
-    }
-
-    fun onInformationProcessingMethodSelected(method: InformationProcessingMethod) {
-        updateForm { it.copy(selectedInformationProcessingMethod = method) }
     }
 
     fun onLastWishSelected(wish: String?) {
@@ -311,12 +303,6 @@ class AfternoteEditorState(
                 loadedItemId = prefill.loadedItemId,
                 selectedCategory = prefill.category,
                 selectedService = prefill.serviceName,
-                selectedProcessingMethod =
-                    prefill.accountProcessingMethod
-                        ?: withLastWish.selectedProcessingMethod,
-                selectedInformationProcessingMethod =
-                    prefill.informationProcessingMethod
-                        ?: withLastWish.selectedInformationProcessingMethod,
                 socialProcessingMethods = prefill.socialProcessingMethods,
                 galleryProcessingMethods = prefill.galleryProcessingMethods,
                 funeralVideoUrl = prefill.funeralVideoUrl,

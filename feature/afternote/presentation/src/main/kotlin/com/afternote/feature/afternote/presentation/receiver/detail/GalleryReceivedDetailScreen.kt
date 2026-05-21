@@ -71,7 +71,7 @@ private fun GalleryReceivedDetailScrollContent(
         AfternoteDetailServiceHeader(
             service = AfternoteServiceDisplay.fromServiceName(content.serviceName),
             finalWriteDate = content.finalWriteDate,
-            processingMethodChipLabel = content.processingMethodTitle.trim(),
+            processingMethodChipLabel = content.processingMethods.firstOrNull().orEmpty(),
         )
 
         Spacer(modifier = Modifier.height(31.dp))
@@ -92,7 +92,6 @@ private fun GalleryReceivedDetailScreenPreview() {
                 ReceivedGalleryDetailContent(
                     serviceName = "갤러리",
                     finalWriteDate = "2025.11.26",
-                    processingMethodTitle = "수신자에게 정보 전달",
                     processingMethods = listOf("'엽사' 폴더 박선호에게 전송", "'흑역사' 폴더 삭제"),
                     message = "이 계정에는 우리 가족 여행 사진이 많아.\n계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
                 ),

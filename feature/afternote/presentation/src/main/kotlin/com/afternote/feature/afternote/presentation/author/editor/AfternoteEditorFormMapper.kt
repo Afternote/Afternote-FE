@@ -11,19 +11,15 @@ import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
 import com.afternote.feature.afternote.domain.model.author.PlaylistSongPayload
 import com.afternote.feature.afternote.domain.model.author.PlaylistWritePayload
 import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
-import com.afternote.feature.afternote.presentation.author.editor.account.AccountProcessMethod
-import com.afternote.feature.afternote.presentation.author.editor.account.InfoProcessMethod
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessagesCodec
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
-import com.afternote.feature.afternote.presentation.author.editor.model.InformationProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.model.LastWishPrefill
 import com.afternote.feature.afternote.presentation.author.editor.model.LoadFromExistingAccountParams
 import com.afternote.feature.afternote.presentation.author.editor.model.LoadFromExistingParams
 import com.afternote.feature.afternote.presentation.author.editor.model.LoadFromExistingProcessingParams
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
-import com.afternote.feature.afternote.presentation.author.editor.processing.model.AccountProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 
 private const val LAST_WISH_DEFAULT_CALM = "차분하고 조용하게 보내주세요."
@@ -48,30 +44,6 @@ internal object AfternoteEditorFormMapper {
     fun editorFormPrefillFromLoadParams(params: LoadFromExistingParams): EditorFormPrefill {
         val category = EditorCategory.fromDisplayLabel(params.categoryDisplayString)
         val messageBlocks = EditorMessagesCodec.parsePersistedToBlocks(params.processing.message)
-        val accountPm =
-            if (params.processing.accountMethodName.isNotEmpty()) {
-                runCatching {
-                    AccountProcessingMethod.valueOf(params.processing.accountMethodName)
-                }.getOrDefault(AccountProcessingMethod.MEMORIAL_ACCOUNT)
-            } else {
-                null
-            }
-        val informationPm =
-            if (params.processing.informationMethodName.isNotEmpty()) {
-                val infoMethodName =
-                    when (params.processing.informationMethodName) {
-                        "TRANSFER_TO_ADDITIONAL_AFTERNOTE_EDIT_RECEIVER",
-                        "ADDITIONAL",
-                        -> "TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER"
-
-                        else -> params.processing.informationMethodName
-                    }
-                runCatching {
-                    InformationProcessingMethod.valueOf(infoMethodName)
-                }.getOrDefault(InformationProcessingMethod.TRANSFER_TO_AFTERNOTE_EDIT_RECEIVER)
-            } else {
-                null
-            }
         val lastWish =
             params.atmosphere?.let { atmosphereValue ->
                 val trimmed = atmosphereValue.trim()
@@ -89,9 +61,7 @@ internal object AfternoteEditorFormMapper {
             accountId = params.account.id,
             password = params.account.password,
             messageBlocks = messageBlocks,
-            accountProcessingMethod = accountPm,
-            informationProcessingMethod = informationPm,
-            socialProcessingMethods = params.processing.methods,
+            socialProcessingMethods = params.processing.socialMethods,
             galleryProcessingMethods = params.processing.galleryMethods,
             lastWishUpdate = lastWish,
             funeralVideoUrl = params.memorialVideoUrl,
@@ -109,22 +79,8 @@ internal object AfternoteEditorFormMapper {
                     text = text,
                 )
             } ?: emptyList()
-        val processMethod = detail.processing?.method.orEmpty()
         val editorCategory = EditorCategory.fromServerValue(detail.category)
         val isGallery = editorCategory == EditorCategory.GALLERY
-        val isSocial = editorCategory == EditorCategory.SOCIAL
-        val accountProcessingMethodName =
-            if (isSocial) {
-                AccountProcessMethod.fromServerValue(processMethod)?.clientName ?: processMethod
-            } else {
-                ""
-            }
-        val informationProcessingMethodName =
-            if (isGallery) {
-                InfoProcessMethod.fromServerValue(processMethod)?.clientName ?: processMethod
-            } else {
-                ""
-            }
         val memorialSongs: List<Song> =
             if (editorCategory == EditorCategory.MEMORIAL) {
                 detail.playlist?.songs?.mapIndexed { index, s ->
@@ -150,9 +106,7 @@ internal object AfternoteEditorFormMapper {
             processing =
                 LoadFromExistingProcessingParams(
                     message = detail.processing?.leaveMessage.orEmpty(),
-                    accountMethodName = accountProcessingMethodName,
-                    informationMethodName = informationProcessingMethodName,
-                    methods = if (!isGallery) actionItems else emptyList(),
+                    socialMethods = if (isGallery) emptyList() else actionItems,
                     galleryMethods = if (isGallery) actionItems else emptyList(),
                 ),
             atmosphere = detail.playlist?.atmosphere,
@@ -194,17 +148,6 @@ internal object AfternoteEditorFormMapper {
         )
     }
 
-    fun toServerProcessMethod(
-        accountProcessingMethod: String,
-        informationProcessingMethod: String,
-    ): String =
-        AccountProcessMethod.fromClientName(accountProcessingMethod)?.serverValue
-            ?: InfoProcessMethod.entries
-                .find {
-                    it.clientName == accountProcessingMethod.ifBlank { informationProcessingMethod }
-                }?.serverValue
-            ?: accountProcessingMethod.ifBlank { informationProcessingMethod }
-
     fun buildCreateInput(
         category: EditorCategory,
         payload: RegisterAfternotePayload,
@@ -217,12 +160,6 @@ internal object AfternoteEditorFormMapper {
         val actions =
             payload.processingMethods.map { it.text } +
                 payload.galleryProcessingMethods.map { it.text }
-        val isSocial = category == EditorCategory.SOCIAL
-        val processMethod =
-            toServerProcessMethod(
-                accountProcessingMethod = if (isSocial) payload.accountProcessingMethod else "",
-                informationProcessingMethod = if (!isSocial) payload.informationProcessingMethod else "",
-            )
         val leaveMessage = payload.message.ifBlank { null }
 
         return when (category) {
@@ -231,7 +168,6 @@ internal object AfternoteEditorFormMapper {
                 CreateAfternoteInput.Gallery(
                     CreateGalleryPayload(
                         title = payload.serviceName,
-                        processMethod = processMethod,
                         actions = galleryActions,
                         leaveMessage = leaveMessage,
                         receiverIds = selectedReceiverIds,
@@ -261,7 +197,6 @@ internal object AfternoteEditorFormMapper {
                 CreateAfternoteInput.Social(
                     CreateSocialPayload(
                         title = payload.serviceName,
-                        processMethod = processMethod,
                         actions = actions,
                         leaveMessage = leaveMessage,
                         credentials =
@@ -272,6 +207,11 @@ internal object AfternoteEditorFormMapper {
                         receiverIds = selectedReceiverIds,
                     ),
                 )
+            }
+
+            // placeholder 카테고리는 Validator 에서 이미 차단되므로 여기 도달 시 호출자 버그.
+            EditorCategory.BUSINESS, EditorCategory.ESTATE -> {
+                error("Unimplemented category cannot be saved: $category")
             }
         }
     }
@@ -302,6 +242,11 @@ internal object AfternoteEditorFormMapper {
             EditorCategory.GALLERY, EditorCategory.SOCIAL -> {
                 buildNonMemorialUpdatePayload(category, payload, selectedReceiverIds)
             }
+
+            // placeholder 카테고리는 Validator 에서 차단됨. 도달 시 호출자 버그.
+            EditorCategory.BUSINESS, EditorCategory.ESTATE -> {
+                error("Unimplemented category cannot be saved: $category")
+            }
         }
 
     private fun buildNonMemorialUpdatePayload(
@@ -312,14 +257,9 @@ internal object AfternoteEditorFormMapper {
         val actions =
             payload.processingMethods.map { it.text } +
                 payload.galleryProcessingMethods.map { it.text }
-        val isSocial = category == EditorCategory.SOCIAL
-        val processMethod =
-            toServerProcessMethod(
-                accountProcessingMethod = if (isSocial) payload.accountProcessingMethod else "",
-                informationProcessingMethod = if (!isSocial) payload.informationProcessingMethod else "",
-            )
+        val hasCredentials = category == EditorCategory.SOCIAL
         val credentials =
-            if (isSocial) {
+            if (hasCredentials) {
                 val id = payload.accountId.ifBlank { null }
                 val pw = payload.password.ifBlank { null }
                 if (id != null || pw != null) AfternoteAccountCredentials(id = id, password = pw) else null
@@ -329,7 +269,6 @@ internal object AfternoteEditorFormMapper {
         return AfternoteUpdatePayload(
             category = category.serverValue,
             title = payload.serviceName,
-            processMethod = processMethod.ifBlank { null },
             actions = actions.ifEmpty { null },
             leaveMessage = payload.message.ifBlank { null },
             credentials = credentials,
