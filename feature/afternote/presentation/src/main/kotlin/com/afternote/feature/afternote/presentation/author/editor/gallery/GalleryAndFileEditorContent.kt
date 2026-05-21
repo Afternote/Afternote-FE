@@ -6,17 +6,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
-import com.afternote.feature.afternote.presentation.author.editor.model.InfoMethodSection
-import com.afternote.feature.afternote.presentation.author.editor.model.InformationProcessingMethod
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListSection
-import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodRadioSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.receiver.RecipientDesignationSection
@@ -35,19 +30,7 @@ fun GalleryAndFileEditorContent(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(32.dp),
     ) {
-        // 계정 처리 방법 섹션
-        ProcessingMethodRadioSection(
-            label = stringResource(R.string.afternote_editor_label_account_process_method),
-            options = InformationProcessingMethod.entries,
-            selected = params.infoMethodSection.selectedMethod,
-            onSelect = params.infoMethodSection.onMethodSelected,
-        )
-
-        if (params.infoMethodSection.selectedMethod ==
-            InformationProcessingMethod.TRANSFER_TO_ADDITIONAL_AFTERNOTE_EDIT_RECEIVER
-        ) {
-            RecipientDesignationSection(section = params.recipientSection)
-        }
+        RecipientDesignationSection(section = params.recipientSection)
 
         // 처리 방법 리스트 섹션
         ProcessingMethodListSection(section = params.processingMethodSection)
@@ -76,10 +59,6 @@ private fun GalleryAndFileEditorContentPreview() {
                                 contentState = rememberTextFieldState("항상 고마워요."),
                             ),
                         ),
-                    infoMethodSection =
-                        InfoMethodSection(
-                            selectedMethod = InformationProcessingMethod.TRANSFER_TO_ADDITIONAL_AFTERNOTE_EDIT_RECEIVER,
-                        ) {},
                     recipientSection =
                         AfternoteEditorReceiverSection(
                             afternoteEditReceivers =

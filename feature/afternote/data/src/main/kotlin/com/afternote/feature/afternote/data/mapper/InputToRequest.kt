@@ -14,7 +14,6 @@ fun AfternoteUpdatePayload.toRequest() =
     AfternoteUpdateRequest(
         category = category,
         title = title,
-        processMethod = processMethod,
         actions = actions,
         leaveMessage = leaveMessage,
         credentials = credentials?.toDto(),
@@ -26,7 +25,6 @@ fun CreateSocialPayload.toRequest() =
     AfternoteCreateSocialRequest(
         category = "SOCIAL",
         title = title,
-        processMethod = processMethod,
         actions = actions,
         leaveMessage = leaveMessage,
         credentials = credentials?.toDto(),
@@ -37,7 +35,6 @@ fun CreateGalleryPayload.toRequest() =
     AfternoteCreateGalleryRequest(
         category = "GALLERY",
         title = title,
-        processMethod = processMethod,
         actions = actions,
         leaveMessage = leaveMessage,
         receivers = receiverIds.map { AfternoteReceiverRef(receiverId = it) },

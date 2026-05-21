@@ -95,7 +95,6 @@ data class GalleryDetailContent(
     val userName: String = "",
     val finalWriteDate: String = "",
     val afternoteEditReceivers: List<ReceiverUiModel> = emptyList(),
-    val processingMethodTitle: String = "",
     val processingMethods: List<String> = emptyList(),
     val message: String = "",
 )
@@ -183,7 +182,7 @@ private fun GalleryDetailScrollContent(
         AfternoteDetailServiceHeader(
             service = AfternoteServiceDisplay.fromServiceName(content.serviceName),
             finalWriteDate = content.finalWriteDate,
-            processingMethodChipLabel = content.processingMethodTitle.trim(),
+            processingMethodChipLabel = content.processingMethods.firstOrNull().orEmpty(),
         )
 
         Spacer(modifier = Modifier.height(31.dp))
@@ -202,7 +201,6 @@ internal val GALLERY_PREVIEW_CONTENT =
         serviceName = "갤러리",
         userName = "서영",
         finalWriteDate = "2025.11.26",
-        processingMethodTitle = "가족 공유 앨범으로 이전",
         processingMethods = listOf("'엽사' 폴더 박선호에게 전송", "'흑역사' 폴더 삭제"),
         afternoteEditReceivers =
             listOf(

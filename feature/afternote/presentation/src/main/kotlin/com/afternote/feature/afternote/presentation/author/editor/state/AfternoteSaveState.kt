@@ -20,7 +20,6 @@ enum class AfternoteValidationError(
 ) {
     TITLE_REQUIRED(R.string.afternote_validation_title_required),
     SOCIAL_CREDENTIALS_REQUIRED(R.string.afternote_validation_social_credentials_required),
-    SOCIAL_PROCESS_METHOD_REQUIRED(R.string.afternote_validation_social_process_method_required),
     SOCIAL_ACTIONS_REQUIRED(R.string.afternote_validation_social_actions_required),
     GALLERY_ACTIONS_REQUIRED(R.string.afternote_validation_gallery_actions_required),
 

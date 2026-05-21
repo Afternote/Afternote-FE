@@ -1,14 +1,10 @@
 package com.afternote.feature.afternote.presentation.shared.model
 
 /**
- * 서버 `processMethod` enum 문자열 → 사용자 표시 라벨.
+ * 서버가 과거 `processMethod` enum 으로 내려주던 코드 문자열을 사용자 표시 라벨로 변환한다.
  *
- * 발신자/수신자 Detail 매퍼 공용. 메모리 룰 [Detail screen UI models] 적용 —
- * Detail 은 Editor 측 enum (`InformationProcessingMethod`, `AccountProcessingMethod`) 을
- * 직접 import 하지 않고 본 공용 매퍼만 호출한다.
- *
- * 라벨 문자열은 Editor enum 의 `.title` 과 동일하게 유지되어야 한다 (단일 source of truth 정리는
- * `#190` processMethod 통합 작업에서 진행 예정).
+ * 백엔드가 `processMethod` 를 제거하고 `actions` 리스트로 통합한 이후 본 매퍼의 호출 지점은 모두 사라졌다.
+ * 다만 디버그·테스트 시 과거 응답 형태를 재구성해야 할 때를 대비해 매핑 테이블만 유지한다.
  *
  * 매핑되지 않은 값은 raw 문자열을 그대로 반환해 호환성을 유지한다.
  */

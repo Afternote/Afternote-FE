@@ -13,8 +13,6 @@ data class RegisterAfternotePayload(
     val accountId: String = "",
     val password: String = "",
     val message: String = "",
-    val accountProcessingMethod: String = "",
-    val informationProcessingMethod: String = "",
     val processingMethods: List<ProcessingMethod> = emptyList(),
     val galleryProcessingMethods: List<ProcessingMethod> = emptyList(),
     val atmosphere: String = "",
