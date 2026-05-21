@@ -11,7 +11,9 @@ enum class EditorCategory(
     val serverValue: String,
 ) {
     SOCIAL("소셜네트워크", "SOCIAL"),
+    BUSINESS("비즈니스", "BUSINESS"),
     GALLERY("갤러리 및 파일", "GALLERY"),
+    ESTATE("재산 처리", "ESTATE"),
     MEMORIAL("추모 가이드라인", "PLAYLIST"),
     ;
 
@@ -26,7 +28,9 @@ enum class EditorCategory(
         fun fromServerValue(value: String): EditorCategory =
             when (value.uppercase()) {
                 "SOCIAL" -> SOCIAL
+                "BUSINESS" -> BUSINESS
                 "GALLERY" -> GALLERY
+                "ESTATE" -> ESTATE
                 "PLAYLIST", "MUSIC" -> MEMORIAL
                 else -> SOCIAL
             }

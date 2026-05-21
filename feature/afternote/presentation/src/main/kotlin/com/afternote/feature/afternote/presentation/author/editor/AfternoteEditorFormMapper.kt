@@ -61,7 +61,7 @@ internal object AfternoteEditorFormMapper {
             accountId = params.account.id,
             password = params.account.password,
             messageBlocks = messageBlocks,
-            socialProcessingMethods = params.processing.methods,
+            socialProcessingMethods = params.processing.socialMethods,
             galleryProcessingMethods = params.processing.galleryMethods,
             lastWishUpdate = lastWish,
             funeralVideoUrl = params.memorialVideoUrl,
@@ -106,7 +106,7 @@ internal object AfternoteEditorFormMapper {
             processing =
                 LoadFromExistingProcessingParams(
                     message = detail.processing?.leaveMessage.orEmpty(),
-                    methods = if (!isGallery) actionItems else emptyList(),
+                    socialMethods = if (isGallery) emptyList() else actionItems,
                     galleryMethods = if (isGallery) actionItems else emptyList(),
                 ),
             atmosphere = detail.playlist?.atmosphere,
@@ -208,6 +208,11 @@ internal object AfternoteEditorFormMapper {
                     ),
                 )
             }
+
+            // placeholder 카테고리는 Validator 에서 이미 차단되므로 여기 도달 시 호출자 버그.
+            EditorCategory.BUSINESS, EditorCategory.ESTATE -> {
+                error("Unimplemented category cannot be saved: $category")
+            }
         }
     }
 
@@ -237,6 +242,11 @@ internal object AfternoteEditorFormMapper {
             EditorCategory.GALLERY, EditorCategory.SOCIAL -> {
                 buildNonMemorialUpdatePayload(category, payload, selectedReceiverIds)
             }
+
+            // placeholder 카테고리는 Validator 에서 차단됨. 도달 시 호출자 버그.
+            EditorCategory.BUSINESS, EditorCategory.ESTATE -> {
+                error("Unimplemented category cannot be saved: $category")
+            }
         }
 
     private fun buildNonMemorialUpdatePayload(
@@ -247,9 +257,9 @@ internal object AfternoteEditorFormMapper {
         val actions =
             payload.processingMethods.map { it.text } +
                 payload.galleryProcessingMethods.map { it.text }
-        val isSocial = category == EditorCategory.SOCIAL
+        val hasCredentials = category == EditorCategory.SOCIAL
         val credentials =
-            if (isSocial) {
+            if (hasCredentials) {
                 val id = payload.accountId.ifBlank { null }
                 val pw = payload.password.ifBlank { null }
                 if (id != null || pw != null) AfternoteAccountCredentials(id = id, password = pw) else null

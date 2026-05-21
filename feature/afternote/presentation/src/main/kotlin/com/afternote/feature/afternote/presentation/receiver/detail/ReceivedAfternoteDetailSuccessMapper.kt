@@ -17,6 +17,11 @@ internal fun ReceivedAfternoteDetail.toReceivedDetailContentUiModel(): ReceivedD
             ReceivedDetailContentUiModel.MemorialPending
         }
 
+        // BUSINESS · ESTATE 는 디자인 확정 전 placeholder. 서버도 미지원이라 일반적으로 도달하지 않음.
+        AfternoteServiceType.BUSINESS, AfternoteServiceType.ESTATE -> {
+            ReceivedDetailContentUiModel.Unimplemented
+        }
+
         null -> {
             ReceivedDetailContentUiModel.Unknown
         }

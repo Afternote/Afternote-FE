@@ -78,6 +78,9 @@ sealed interface DetailContentUiModel {
     data class Memorial(
         val content: MemorialGuidelineDetailContent,
     ) : DetailContentUiModel
+
+    /** BUSINESS·ESTATE 등 디자인 확정 전 placeholder. */
+    data object Unimplemented : DetailContentUiModel
 }
 
 internal fun Detail.toDetailContentUiModel(authorDisplayName: String): DetailContentUiModel =
@@ -92,5 +95,10 @@ internal fun Detail.toDetailContentUiModel(authorDisplayName: String): DetailCon
 
         AfternoteServiceType.MEMORIAL -> {
             DetailContentUiModel.Memorial(toMemorialGuidelineDetailContent(authorDisplayName))
+        }
+
+        // BUSINESS · ESTATE 는 디자인 확정 전 placeholder. 백엔드도 미지원이라 일반적으로 도달하지 않음.
+        AfternoteServiceType.BUSINESS, AfternoteServiceType.ESTATE -> {
+            DetailContentUiModel.Unimplemented
         }
     }

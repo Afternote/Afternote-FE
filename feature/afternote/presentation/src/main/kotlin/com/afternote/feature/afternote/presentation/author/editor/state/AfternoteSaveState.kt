@@ -23,6 +23,9 @@ enum class AfternoteValidationError(
     SOCIAL_ACTIONS_REQUIRED(R.string.afternote_validation_social_actions_required),
     GALLERY_ACTIONS_REQUIRED(R.string.afternote_validation_gallery_actions_required),
 
+    /** BUSINESS·ESTATE 등 디자인 미확정으로 placeholder 만 노출되는 카테고리에서 저장 시도 시. */
+    UNIMPLEMENTED_CATEGORY(R.string.afternote_validation_unimplemented_category),
+
     /** 수신자 최소 1명 필요 (모든 카테고리). API 400/475와 동일 메시지. */
     RECEIVERS_REQUIRED(R.string.afternote_validation_receivers_required),
     GALLERY_RECEIVERS_REQUIRED(R.string.afternote_validation_gallery_receivers_required),
