@@ -47,7 +47,7 @@ data class DeliveryVerificationResponse(
     @SerialName("deathCertificateUrl") val deathCertificateUrl: String? = null,
     @SerialName("familyRelationCertificateUrl") val familyRelationCertificateUrl: String? = null,
     @SerialName("adminNote") val adminNote: String? = null,
-    @SerialName("createdAt") val createdAt: String,
+    @SerialName("createdAt") val createdAt: String? = null,
 )
 
 @Serializable
