@@ -46,6 +46,8 @@ class SettingViewModel
             loadProfile()
         }
 
+        fun refresh() = loadProfile()
+
         private fun loadProfile() {
             viewModelScope.launch {
                 runCatching { userRepository.getMyProfile() }

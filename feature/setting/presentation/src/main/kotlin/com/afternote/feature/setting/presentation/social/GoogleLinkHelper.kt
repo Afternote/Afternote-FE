@@ -6,7 +6,9 @@ import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.exceptions.NoCredentialException
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 
 suspend fun requestGoogleIdToken(
@@ -14,19 +16,47 @@ suspend fun requestGoogleIdToken(
     credentialManager: CredentialManager,
     serverClientId: String,
 ): Result<String> =
+    requestWithOption(
+        context = context,
+        credentialManager = credentialManager,
+        serverClientId = serverClientId,
+        useSignInPicker = false,
+    ).recoverCatching { e ->
+        if (e is NoCredentialException) {
+            requestWithOption(
+                context = context,
+                credentialManager = credentialManager,
+                serverClientId = serverClientId,
+                useSignInPicker = true,
+            ).getOrThrow()
+        } else {
+            throw e
+        }
+    }
+
+private suspend fun requestWithOption(
+    context: Context,
+    credentialManager: CredentialManager,
+    serverClientId: String,
+    useSignInPicker: Boolean,
+): Result<String> =
     try {
-        val googleIdOption =
-            GetGoogleIdOption
-                .Builder()
-                .setFilterByAuthorizedAccounts(false)
-                .setServerClientId(serverClientId)
-                .setAutoSelectEnabled(true)
-                .build()
+        val credentialOption =
+            if (useSignInPicker) {
+                GetSignInWithGoogleOption.Builder(serverClientId).build()
+            } else {
+                GetGoogleIdOption
+                    .Builder()
+                    .setFilterByAuthorizedAccounts(false)
+                    .setServerClientId(serverClientId)
+                    .setAutoSelectEnabled(true)
+                    .build()
+            }
 
         val request =
             GetCredentialRequest
                 .Builder()
-                .addCredentialOption(googleIdOption)
+                .addCredentialOption(credentialOption)
                 .build()
 
         val response = credentialManager.getCredential(context, request)

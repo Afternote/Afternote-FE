@@ -33,7 +33,7 @@ class TimeletterViewModel
                 _uiState.value = TimeletterUiState.Loading
                 val receiversDeferred = async { receiverCacheStore.ensureLoaded() }
                 val lettersResult = runCatching { timeLetterRepository.getTimeLetters() }
-                receiversDeferred.await()
+                runCatching { receiversDeferred.await() }
 
                 lettersResult
                     .onSuccess { letters ->

@@ -16,38 +16,57 @@ enum class TimeLetterStatusDto {
 }
 
 @Serializable
-enum class TimeLetterMediaTypeDto {
+enum class TimeLetterBlockTypeDto {
+    @SerialName("TEXT")
+    TEXT,
+
     @SerialName("IMAGE")
     IMAGE,
-
-    @SerialName("VIDEO")
-    VIDEO,
 
     @SerialName("AUDIO")
     AUDIO,
 
-    @SerialName("DOCUMENT")
-    DOCUMENT,
+    @SerialName("FILE")
+    FILE,
+
+    @SerialName("LINK")
+    LINK,
 }
+
+@Serializable
+data class TimeLetterBlockRequest(
+    @SerialName("blockType") val blockType: TimeLetterBlockTypeDto,
+    @SerialName("blockOrder") val blockOrder: Int,
+    @SerialName("textContent") val textContent: String? = null,
+    @SerialName("url") val url: String? = null,
+    @SerialName("mimeType") val mimeType: String? = null,
+)
+
+@Serializable
+data class TimeLetterBlockResponseDto(
+    @SerialName("id") val id: Long,
+    @SerialName("blockType") val blockType: TimeLetterBlockTypeDto,
+    @SerialName("blockOrder") val blockOrder: Int,
+    @SerialName("textContent") val textContent: String? = null,
+    @SerialName("url") val url: String? = null,
+    @SerialName("mimeType") val mimeType: String? = null,
+)
 
 @Serializable
 data class TimeLetterCreateRequest(
     @SerialName("title") val title: String? = null,
-    @SerialName("content") val content: String? = null,
     @SerialName("sendAt") val sendAt: String? = null,
     @SerialName("status") val status: TimeLetterStatusDto,
-    @SerialName("mediaList") val mediaList: List<TimeLetterMediaRequest> = emptyList(),
+    @SerialName("blocks") val blocks: List<TimeLetterBlockRequest> = emptyList(),
     @SerialName("receiverIds") val receiverIds: List<Long> = emptyList(),
-    @SerialName("deliveredAt") val deliveredAt: String? = null,
 )
 
 @Serializable
 data class TimeLetterUpdateRequest(
     @SerialName("title") val title: String? = null,
-    @SerialName("content") val content: String? = null,
     @SerialName("sendAt") val sendAt: String? = null,
     @SerialName("status") val status: TimeLetterStatusDto? = null,
-    @SerialName("mediaList") val mediaList: List<TimeLetterMediaRequest> = emptyList(),
+    @SerialName("blocks") val blocks: List<TimeLetterBlockRequest> = emptyList(),
 )
 
 @Serializable
@@ -56,29 +75,14 @@ data class TimeLetterDeleteRequest(
 )
 
 @Serializable
-data class TimeLetterMediaRequest(
-    @SerialName("mediaType") val mediaType: TimeLetterMediaTypeDto,
-    @SerialName("mediaUrl") val mediaUrl: String,
-)
-
-@Serializable
 data class TimeLetterResponseDto(
     @SerialName("id") val id: Long,
     @SerialName("title") val title: String? = null,
-    @SerialName("content") val content: String? = null,
     @SerialName("sendAt") val sendAt: String? = null,
+    @SerialName("deliveredAt") val deliveredAt: String? = null,
     @SerialName("status") val status: TimeLetterStatusDto,
-    @SerialName("mediaList") val mediaList: List<TimeLetterMediaResponseDto> = emptyList(),
+    @SerialName("blocks") val blocks: List<TimeLetterBlockResponseDto> = emptyList(),
     @SerialName("receiverIds") val receiverIds: List<Long> = emptyList(),
-    @SerialName("createdAt") val createdAt: String? = null,
-    @SerialName("updatedAt") val updatedAt: String? = null,
-)
-
-@Serializable
-data class TimeLetterMediaResponseDto(
-    @SerialName("id") val id: Long,
-    @SerialName("mediaType") val mediaType: TimeLetterMediaTypeDto,
-    @SerialName("mediaUrl") val mediaUrl: String,
 )
 
 @Serializable

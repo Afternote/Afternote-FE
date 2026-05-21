@@ -1,12 +1,16 @@
 package com.afternote.feature.timeletter.presentation.screen.sender
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -16,6 +20,7 @@ import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterList
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
+import com.afternote.feature.timeletter.presentation.component.EmptyTimeLetterContent
 import com.afternote.feature.timeletter.presentation.component.TimeLetterContent
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeletterUiState
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeletterViewModel
@@ -37,11 +42,16 @@ fun TimeletterScreen(
     ) { paddingValues ->
         when (val state = uiState) {
             is TimeletterUiState.Loading -> {
-                Unit
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(paddingValues),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator()
+                }
             }
 
             is TimeletterUiState.Error -> {
-                Unit
+                EmptyTimeLetterContent(modifier = Modifier.padding(paddingValues))
             }
 
             is TimeletterUiState.Success -> {
@@ -64,24 +74,20 @@ private val previewLetters =
                 TimeLetter(
                     id = 1L,
                     title = "미래의 나에게",
-                    content = "지금 이 순간을 잊지 마. 열심히 살고 있는 너를 응원해.",
-                    sendAt = "2026-12-31",
+                    sendAt = "2026-12-31T00:00:00",
+                    deliveredAt = null,
                     status = TimeLetterStatus.SCHEDULED,
-                    mediaList = emptyList(),
+                    blocks = emptyList(),
                     receiverIds = listOf(1L),
-                    createdAt = null,
-                    updatedAt = null,
                 ),
                 TimeLetter(
                     id = 2L,
                     title = "10년 후의 나에게",
-                    content = "지금보다 더 행복하길 바라.",
-                    sendAt = "2035-01-01",
+                    sendAt = "2035-01-01T00:00:00",
+                    deliveredAt = null,
                     status = TimeLetterStatus.SCHEDULED,
-                    mediaList = emptyList(),
+                    blocks = emptyList(),
                     receiverIds = listOf(2L),
-                    createdAt = null,
-                    updatedAt = null,
                 ),
             ),
         totalCount = 2,

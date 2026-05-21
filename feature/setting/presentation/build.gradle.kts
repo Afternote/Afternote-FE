@@ -30,7 +30,9 @@ android {
 
 dependencies {
     implementation(projects.feature.setting.domain)
+    implementation(projects.core.datastore)
     implementation(projects.core.common)
+    implementation(projects.core.data)
     implementation(projects.core.domain)
     implementation(projects.core.model)
     implementation(projects.core.ui)

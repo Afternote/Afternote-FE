@@ -33,6 +33,11 @@ class ReceiverCacheStore
                 }
         }
 
+        suspend fun reload() {
+            isLoaded = false
+            ensureLoaded()
+        }
+
         private fun Receiver.toReceiverListItem() = ReceiverListItem(receiverId = receiverId, name = name, relation = relation)
 
         fun getReceiverName(id: Long): String = _receiverNameMap.value[id] ?: ""

@@ -10,4 +10,8 @@ sealed interface ConnectedAccountsEvent {
     data class RequestLink(
         val provider: String,
     ) : ConnectedAccountsEvent
+
+    data class ShowError(
+        val message: String,
+    ) : ConnectedAccountsEvent
 }

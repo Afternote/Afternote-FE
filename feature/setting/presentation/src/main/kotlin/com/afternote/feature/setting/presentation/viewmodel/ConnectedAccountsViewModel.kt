@@ -52,6 +52,10 @@ class ConnectedAccountsViewModel
             }
         }
 
+        fun notifyLinkError(message: String) {
+            viewModelScope.launch { _events.send(ConnectedAccountsEvent.ShowError(message)) }
+        }
+
         fun link(
             provider: String,
             accessToken: String,

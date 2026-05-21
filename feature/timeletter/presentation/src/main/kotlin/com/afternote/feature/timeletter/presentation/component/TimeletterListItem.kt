@@ -22,7 +22,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.timeletter.domain.model.TimeLetter
-import com.afternote.feature.timeletter.domain.model.TimeLetterMediaType
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 
 @Composable
@@ -31,68 +30,66 @@ fun TimeLetterListItem(
     receiverNameMap: Map<Long, String> = emptyMap(),
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier =
-            modifier
-                .border(
-                    width = 1.dp,
-                    color = AfternoteDesign.colors.gray4,
-                    shape = RoundedCornerShape(size = 6.dp),
-                ).fillMaxWidth()
-                .padding(vertical = 19.dp, horizontal = 15.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
+    Row {
+        Column(
+            modifier =
+                modifier
+                    .border(
+                        width = 1.dp,
+                        color = AfternoteDesign.colors.gray4,
+                        shape = RoundedCornerShape(size = 6.dp),
+                    ).fillMaxWidth()
+                    .padding(vertical = 19.dp, horizontal = 15.dp),
         ) {
-            val receiverText =
-                letter.receiverIds
-                    .mapNotNull { receiverNameMap[it] }
-                    .joinToString(", ")
-                    .ifEmpty { "${letter.receiverIds.size}명" }
-            Text(
-                text = "수신인  $receiverText",
-                style = AfternoteDesign.typography.bodySmallR,
-                color = AfternoteDesign.colors.gray6,
-            )
-            Spacer(modifier = Modifier.weight(1f))
-            Text(
-                text = "발송 예정일  ${letter.sendAt?.replace("-", ".") ?: ""}",
-                style = AfternoteDesign.typography.bodySmallR,
-                color = AfternoteDesign.colors.gray6,
-            )
-            Spacer(modifier = Modifier.width(43.dp))
-            Image(
-                painterResource(com.afternote.feature.timeletter.presentation.R.drawable.setting),
-                contentDescription = "더보기 설정",
-            )
-        }
-        Spacer(modifier = Modifier.padding(top = 11.dp))
-        Row {
-            Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Text(
-                    text = letter.title ?: "제목 없음",
-                    style = AfternoteDesign.typography.bodyLargeB,
-                    fontWeight = FontWeight.W600,
-                )
-                Spacer(modifier = Modifier.padding(top = 5.dp))
-                Text(
-                    text = letter.content ?: "",
-                    style = AfternoteDesign.typography.bodyLargeR,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
+                    text = "수신인  ${
+                        letter.receiverIds.mapNotNull { receiverNameMap[it] }.joinToString(", ")
+                            .ifEmpty { "${letter.receiverIds.size}명" }
+                    }",
+                    style = AfternoteDesign.typography.footnoteCaption,
                     color = AfternoteDesign.colors.gray6,
                 )
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = "발송 예정일  ${letter.sendAt?.replace("-", ".") ?: ""}",
+                    style = AfternoteDesign.typography.footnoteCaption,
+                    color = AfternoteDesign.colors.gray6,
+                )
+                Spacer(modifier = Modifier.width(43.dp))
+                Image(
+                    painterResource(com.afternote.feature.timeletter.presentation.R.drawable.setting),
+                    contentDescription = "더보기 설정",
+                )
             }
-            Spacer(modifier = Modifier.weight(1f))
-            Image(
-                painterResource(com.afternote.feature.timeletter.presentation.R.drawable.ex_box_img),
-                contentDescription = "박스예시이미지",
-                modifier = Modifier.size(60.dp),
-            )
+            Spacer(modifier = Modifier.padding(top = 11.dp))
+            Row {
+                Column {
+                    Text(
+                        text = letter.title ?: "제목 없음",
+                        style = AfternoteDesign.typography.bodySmallB,
+                        fontWeight = FontWeight.W600,
+                    )
+                    Spacer(modifier = Modifier.padding(top = 5.dp))
+                    Text(
+                        text = letter.content ?: "",
+                        style = AfternoteDesign.typography.captionLargeR,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        color = AfternoteDesign.colors.gray6,
+                    )
+                }
+            }
         }
+        Image(
+            painterResource(com.afternote.feature.timeletter.presentation.R.drawable.ex_box_img),
+            contentDescription = "박스예시이미지",
+            modifier = Modifier.size(60.dp),
+        )
     }
-    HorizontalDivider()
 }
 
 @Preview(showBackground = true)
@@ -103,13 +100,11 @@ private fun TimeLetterItemPreview() {
             TimeLetter(
                 id = 1L,
                 title = "미래의 나에게",
-                content = "지금 이 순간을 잊지 마. 열심히 살고 있는 너를 응원해.",
-                sendAt = "2026-12-31",
+                sendAt = "2026-12-31T00:00:00",
+                deliveredAt = null,
                 status = TimeLetterStatus.SCHEDULED,
-                mediaList = emptyList(),
+                blocks = emptyList(),
                 receiverIds = listOf(1L),
-                createdAt = null,
-                updatedAt = null,
             ),
     )
 }

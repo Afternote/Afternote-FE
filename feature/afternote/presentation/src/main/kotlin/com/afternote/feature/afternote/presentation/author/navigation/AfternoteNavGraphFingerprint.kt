@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -19,9 +20,17 @@ import kotlinx.coroutines.launch
 
 @Composable
 internal fun AfternoteFingerprintLoginNavigation(
+    isPasskeyRegistered: Boolean?,
     onAuthenticationSuccess: () -> Unit,
     onShowError: (String) -> Unit,
 ) {
+    // 패스키 미등록 시 지문 화면 스킵
+    LaunchedEffect(isPasskeyRegistered) {
+        if (isPasskeyRegistered == false) onAuthenticationSuccess()
+    }
+
+    if (isPasskeyRegistered != true) return
+
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity<FragmentActivity>() }
     val coroutineScope = rememberCoroutineScope()

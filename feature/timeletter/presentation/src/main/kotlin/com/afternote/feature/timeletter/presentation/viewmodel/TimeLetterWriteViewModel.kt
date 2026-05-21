@@ -62,6 +62,21 @@ class TimeLetterWriteViewModel
             _uiState.update { it.copy(sendAt = sendAt) }
         }
 
+        fun setSendTime(
+            hour: Int,
+            minute: Int,
+        ) {
+            val amPm = if (hour < 12) "오전" else "오후"
+            val displayHour =
+                when {
+                    hour == 0 -> 12
+                    hour > 12 -> hour - 12
+                    else -> hour
+                }
+            val display = "$amPm $displayHour:${minute.toString().padStart(2, '0')}"
+            _uiState.update { it.copy(sendTime = display, sendHour = hour, sendMinute = minute) }
+        }
+
         fun saveDraft(
             title: String,
             content: String,
@@ -73,7 +88,15 @@ class TimeLetterWriteViewModel
             title: String,
             content: String,
         ) {
+            if (_uiState.value.sendAt == null) {
+                _uiState.update { it.copy(errorMessage = "발송 날짜를 선택해주세요.") }
+                return
+            }
             save(title = title, content = content, status = TimeLetterStatus.SCHEDULED)
+        }
+
+        fun clearError() {
+            _uiState.update { it.copy(errorMessage = null) }
         }
 
         private fun save(
@@ -90,11 +113,12 @@ class TimeLetterWriteViewModel
                     timeLetterRepository.createTimeLetter(
                         title = title.ifBlank { null },
                         content = content.ifBlank { null },
-                        sendAt = state.sendAt,
+                        sendAt =
+                            state.sendAt?.let { date ->
+                                "${date}T${state.sendHour.toString().padStart(2, '0')}:${state.sendMinute.toString().padStart(2, '0')}:00"
+                            },
                         status = status,
-                        mediaList = null,
                         receiverIds = state.recipientIds.ifEmpty { null },
-                        deliveredAt = null,
                     )
                 }.onSuccess {
                     val event =
@@ -106,7 +130,7 @@ class TimeLetterWriteViewModel
                     _events.send(event)
                     if (status == TimeLetterStatus.DRAFT) loadDraftCount()
                 }.onFailure {
-                    _events.send(TimeLetterWriteEvent.Error("저장에 실패했어요. 다시 시도해주세요."))
+                    _uiState.update { it.copy(errorMessage = "저장에 실패했어요. 다시 시도해주세요.") }
                 }
                 _uiState.update { it.copy(isSaving = false) }
             }

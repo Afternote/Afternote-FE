@@ -105,7 +105,10 @@ fun NavGraphBuilder.afternoteNavGraph(
         }
 
         afternoteComposable<AfternoteRoute.FingerprintLoginRoute> {
+            val hostViewModel = graphScopedHostViewModel(graphScopedParentEntry)
+            val isPasskeyRegistered by hostViewModel.isPasskeyRegistered.collectAsStateWithLifecycle()
             AfternoteFingerprintLoginNavigation(
+                isPasskeyRegistered = isPasskeyRegistered,
                 onAuthenticationSuccess = actions::onFingerprintAuthSuccess,
                 onShowError = actions::onFingerprintAuthError,
             )
