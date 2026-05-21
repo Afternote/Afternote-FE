@@ -275,8 +275,6 @@ private fun PhotoCard(
                         ),
                 )
                 ProfileImage(
-                    onClick = {}, // TODO:
-                    isEditable = false,
                     displayImageUri = profileImageUri,
                 )
             }
