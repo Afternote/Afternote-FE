@@ -14,7 +14,13 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion as DailyQuestionDomain
 
-private val IsoDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_DATE
+// 서버는 보통 `"yyyy.MM.dd 요일"` (예: "2026.05.22 금") 형식으로 내려주고,
+// 일부 경로는 ISO (`yyyy-MM-dd`) 도 가능하므로 두 포맷 모두 허용.
+private val DateFormatters: List<DateTimeFormatter> =
+    listOf(
+        DateTimeFormatter.ofPattern("yyyy.MM.dd"),
+        DateTimeFormatter.ISO_DATE,
+    )
 
 fun DailyQuestionDomain.toUi(): DailyQuestion =
     DailyQuestion(
@@ -68,6 +74,11 @@ fun DeepThoughtCategory.toUi(): CategoryUiModel =
         color = CategoryColorPalette[(categoryId.toInt().mod(CategoryColorPalette.size))],
     )
 
-private fun parseLocalDate(raw: String): LocalDate =
-    runCatching { LocalDate.parse(raw, IsoDateFormatter) }
-        .getOrElse { LocalDate.now() }
+private fun parseLocalDate(raw: String): LocalDate {
+    // "2026.05.22 금" 처럼 뒤에 요일이 붙어오는 케이스 대응 — 첫 공백 앞부분만 파싱.
+    val datePart = raw.substringBefore(' ').trim()
+    for (formatter in DateFormatters) {
+        runCatching { return LocalDate.parse(datePart, formatter) }
+    }
+    return LocalDate.now()
+}

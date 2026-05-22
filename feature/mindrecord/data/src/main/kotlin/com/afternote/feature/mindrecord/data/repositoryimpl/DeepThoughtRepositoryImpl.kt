@@ -29,6 +29,7 @@ class DeepThoughtRepositoryImpl
                 api
                     .getDeepThoughts(date = date, tag = tag, category = category)
                     .requireData()
+                    .deepThoughts
                     .map { it.toDomain() }
             }
 

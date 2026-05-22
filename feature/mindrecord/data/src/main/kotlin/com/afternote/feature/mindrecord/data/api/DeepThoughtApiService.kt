@@ -6,7 +6,7 @@ import com.afternote.feature.mindrecord.data.dto.DeepThoughtCategoryMutationResp
 import com.afternote.feature.mindrecord.data.dto.DeepThoughtCategoryCreateRequest
 import com.afternote.feature.mindrecord.data.dto.DeepThoughtCategoryUpdateRequest
 import com.afternote.feature.mindrecord.data.dto.DeepThoughtCreateRequest
-import com.afternote.feature.mindrecord.data.dto.DeepThoughtListItem
+import com.afternote.feature.mindrecord.data.dto.DeepThoughtListResponse
 import com.afternote.feature.mindrecord.data.dto.DeepThoughtUpdateRequest
 import com.afternote.feature.mindrecord.data.dto.RandomDeepThoughtResponse
 import retrofit2.http.Body
@@ -23,7 +23,7 @@ interface DeepThoughtApiService {
         @Query("date") date: String? = null,
         @Query("tag") tag: String? = null,
         @Query("category") category: String? = null,
-    ): BaseResponse<List<DeepThoughtListItem>>
+    ): BaseResponse<DeepThoughtListResponse>
 
     @GET("deep-thought/random")
     suspend fun getRandomDeepThought(): BaseResponse<RandomDeepThoughtResponse>

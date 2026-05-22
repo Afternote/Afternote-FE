@@ -77,8 +77,15 @@ fun DailyQuestionWriteScreen(
     ) { paddingValues ->
         Column {
             Column(modifier = Modifier.padding(paddingValues).padding(horizontal = 20.dp)) {
+                val headerText =
+                    when {
+                        uiState.isQuestionLoading -> "오늘의 질문을 불러오는 중..."
+                        uiState.questionLoadError != null -> uiState.questionLoadError!!
+                        uiState.questionContent.isNotEmpty() -> uiState.questionContent
+                        else -> "오늘의 질문이 없습니다."
+                    }
                 DailyQuestionWriteHeaderCard(
-                    questionText = uiState.questionContent.ifEmpty { "오늘의 질문을 불러오는 중..." },
+                    questionText = headerText,
                 )
                 Spacer(modifier = Modifier.height(18.dp))
                 Row(

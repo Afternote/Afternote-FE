@@ -32,6 +32,7 @@ import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListViewModel
+import com.afternote.feature.mindrecord.presentation.viewmodel.TodayQuestionUi
 
 @Composable
 fun DailyQuestionAnswerListScreen(
@@ -54,6 +55,7 @@ fun DailyQuestionAnswerListScreen(
             DailyQuestionListContent(
                 modifier = modifier,
                 isListView = isListView,
+                todayQuestion = state.todayQuestion,
                 answers = state.answers,
             )
         }
@@ -63,20 +65,23 @@ fun DailyQuestionAnswerListScreen(
 @Composable
 private fun DailyQuestionListContent(
     isListView: Boolean,
+    todayQuestion: TodayQuestionUi?,
     answers: List<DailyQuestion>,
     modifier: Modifier = Modifier,
 ) {
-    if (isListView && answers.isEmpty()) {
+    if (isListView && todayQuestion == null && answers.isEmpty()) {
         MindRecordEmptyState(modifier = modifier)
         return
     }
+
+    val headerText = todayQuestion?.content ?: "오늘의 질문이 없습니다."
 
     LazyColumn(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         if (isListView) {
-            item { DailyQuestionWriteHeaderCard() }
+            item { DailyQuestionWriteHeaderCard(questionText = headerText) }
             items(answers, key = { it.id }) { DailyQuestionListCard(answer = it) }
         } else {
             item {
@@ -103,7 +108,7 @@ private fun DailyQuestionListContent(
                 }
                 Spacer(modifier = Modifier.height(10.dp))
             }
-            item { DailyQuestionWriteHeaderCard() }
+            item { DailyQuestionWriteHeaderCard(questionText = headerText) }
             items(answers, key = { it.id }) { DailyQuestionListCard(answer = it) }
         }
     }
@@ -133,6 +138,7 @@ private fun DailyQuestionAnswerListScreenPreviewFalse() {
         DailyQuestionListContent(
             modifier = Modifier,
             isListView = false,
+            todayQuestion = null,
             answers = emptyList(),
         )
     }
@@ -145,6 +151,7 @@ private fun DailyQuestionAnswerListScreenPreviewTrue() {
         DailyQuestionListContent(
             modifier = Modifier,
             isListView = true,
+            todayQuestion = null,
             answers = emptyList(),
         )
     }
