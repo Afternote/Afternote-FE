@@ -32,3 +32,17 @@ data class DeepThoughtUpdatePayload(
     val tags: List<String>? = null,
     val imageUrl: String? = null,
 )
+
+data class DeepThoughtCategory(
+    val categoryId: Long,
+    val title: String,
+)
+
+data class DeepThoughtCategoryCreatePayload(
+    val category: String,
+    val deepThoughtId: Long? = null,
+)
+
+data class DeepThoughtCategoryUpdatePayload(
+    val category: String,
+)

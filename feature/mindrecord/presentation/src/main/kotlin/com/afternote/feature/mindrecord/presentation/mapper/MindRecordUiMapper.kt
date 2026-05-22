@@ -1,8 +1,11 @@
 package com.afternote.feature.mindrecord.presentation.mapper
 
+import androidx.compose.ui.graphics.Color
 import com.afternote.feature.mindrecord.domain.model.DeepThought
+import com.afternote.feature.mindrecord.domain.model.DeepThoughtCategory
 import com.afternote.feature.mindrecord.domain.model.Diary
 import com.afternote.feature.mindrecord.domain.model.TodayMood
+import com.afternote.feature.mindrecord.presentation.model.CategoryUiModel
 import com.afternote.feature.mindrecord.presentation.model.DailyDiary
 import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
 import com.afternote.feature.mindrecord.presentation.model.DeepThoughtModel
@@ -47,6 +50,23 @@ fun TodayMood.toEmoji(): String =
         TodayMood.SOSO -> "😐"
         TodayMood.SAD -> "😢"
     }
+
+private val CategoryColorPalette: List<Color> =
+    listOf(
+        Color(0xFF1A1A1A),
+        Color(0xFFFFB3A7),
+        Color(0xFFA8C8E8),
+        Color(0xFFB7E1B7),
+        Color(0xFFFFE7A3),
+        Color(0xFFD7BDE2),
+    )
+
+fun DeepThoughtCategory.toUi(): CategoryUiModel =
+    CategoryUiModel(
+        id = categoryId.toString(),
+        name = title,
+        color = CategoryColorPalette[(categoryId.toInt().mod(CategoryColorPalette.size))],
+    )
 
 private fun parseLocalDate(raw: String): LocalDate =
     runCatching { LocalDate.parse(raw, IsoDateFormatter) }

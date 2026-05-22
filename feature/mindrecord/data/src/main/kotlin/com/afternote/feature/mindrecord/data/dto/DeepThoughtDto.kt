@@ -39,3 +39,26 @@ data class RandomDeepThoughtResponse(
     @SerialName("title") val title: String,
     @SerialName("createdAt") val createdAt: String,
 )
+
+@Serializable
+data class DeepThoughtCategoryItem(
+    @SerialName("categoryId") val categoryId: Long,
+    @SerialName("title") val title: String,
+)
+
+@Serializable
+data class DeepThoughtCategoryCreateRequest(
+    @SerialName("deepThoughtId") val deepThoughtId: Long? = null,
+    @SerialName("category") val category: String,
+)
+
+@Serializable
+data class DeepThoughtCategoryUpdateRequest(
+    @SerialName("category") val category: String,
+)
+
+@Serializable
+data class DeepThoughtCategoryMutationResponse(
+    @SerialName("categoryId") val categoryId: Long,
+    @SerialName("title") val title: String,
+)
