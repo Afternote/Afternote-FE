@@ -92,7 +92,7 @@ fun DeepThoughtScreen(
                 selectedCategory = state.selectedCategory,
                 items = state.items,
                 onTagClick = viewModel::onTagSelected,
-                onCategorySelected = viewModel::onCategorySelected,
+                onCategorySelect = viewModel::onCategorySelected,
                 onCategorySettingClick = { showCategorySheet = true },
             )
         }
@@ -160,18 +160,20 @@ private fun DeepThoughtContent(
     categories: List<CategoryUiModel>,
     selectedCategory: String?,
     onTagClick: (Tag?) -> Unit,
-    onCategorySelected: (String?) -> Unit,
+    onCategorySelect: (String?) -> Unit,
     onCategorySettingClick: () -> Unit,
     items: List<DeepThoughtModel>,
     modifier: Modifier = Modifier,
 ) {
-    val tabs = buildList {
-        add(null to "전체 카테고리")
-        categories.forEach { add(it.name to it.name) }
-    }
-    val selectedIndex = tabs
-        .indexOfFirst { it.first == selectedCategory }
-        .coerceAtLeast(0)
+    val tabs =
+        buildList {
+            add(null to "전체 카테고리")
+            categories.forEach { add(it.name to it.name) }
+        }
+    val selectedIndex =
+        tabs
+            .indexOfFirst { it.first == selectedCategory }
+            .coerceAtLeast(0)
 
     if (isListView && items.isEmpty() && categories.isEmpty()) {
         MindRecordEmptyState(modifier = modifier)
@@ -204,7 +206,7 @@ private fun DeepThoughtContent(
                     tabs.forEachIndexed { index, (key, title) ->
                         Tab(
                             selected = selectedIndex == index,
-                            onClick = { onCategorySelected(key) },
+                            onClick = { onCategorySelect(key) },
                             text = {
                                 Text(
                                     text = title,
@@ -328,7 +330,7 @@ private fun DeepThoughtScreenPreviewTrue() {
             selectedCategory = null,
             items = emptyList(),
             onTagClick = {},
-            onCategorySelected = {},
+            onCategorySelect = {},
             onCategorySettingClick = {},
         )
     }
@@ -347,7 +349,7 @@ private fun DeepThoughtScreenPreviewFalse() {
             selectedCategory = null,
             items = emptyList(),
             onTagClick = {},
-            onCategorySelected = {},
+            onCategorySelect = {},
             onCategorySettingClick = {},
         )
     }

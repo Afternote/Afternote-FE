@@ -1,16 +1,16 @@
 package com.afternote.feature.timeletter.presentation.screen.sender
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalBottomSheet
@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,8 +37,6 @@ import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.calendar.BottomSheetCalendar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import java.time.LocalDate
-import java.time.LocalTime
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.timeletter.presentation.component.MediaBottomSheetContent
 import com.afternote.feature.timeletter.presentation.component.RecipientCard
@@ -48,21 +47,23 @@ import com.afternote.feature.timeletter.presentation.component.TimeLetterTextBut
 import com.afternote.feature.timeletter.presentation.component.TimeLetterTitleTextField
 import com.afternote.feature.timeletter.presentation.component.TimeWheelPicker
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteUiState
+import java.time.LocalDate
+import java.time.LocalTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimeLetterWriteScreen(
-    uiState: TimeLetterWriteUiState = TimeLetterWriteUiState(),
     modifier: Modifier = Modifier,
+    uiState: TimeLetterWriteUiState = TimeLetterWriteUiState(),
     titleState: TextFieldState = rememberTextFieldState(),
     bodyState: TextFieldState = rememberTextFieldState(),
     onBackClick: () -> Unit = {},
     onRegisterClick: (title: String, body: String) -> Unit = { _, _ -> },
     onRecipientClick: () -> Unit = {},
-    onDateSelected: (String) -> Unit = {},
-    onTimeSelected: (hour: Int, minute: Int) -> Unit = { _, _ -> },
+    onDateSelect: (String) -> Unit = {},
+    onTimeSelect: (hour: Int, minute: Int) -> Unit = { _, _ -> },
     onDraftClick: (title: String, body: String) -> Unit = { _, _ -> },
-    onErrorShown: () -> Unit = {},
+    onErrorShow: () -> Unit = {},
     onMediaImageClick: () -> Unit = {},
     onMediaVoiceClick: () -> Unit = {},
     onMediaFileClick: () -> Unit = {},
@@ -75,11 +76,12 @@ fun TimeLetterWriteScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val sheetState = rememberModalBottomSheetState()
     var showMediaSheet by remember { mutableStateOf(false) }
+    val currentOnErrorShow by rememberUpdatedState(onErrorShow)
 
     LaunchedEffect(uiState.errorMessage) {
         val msg = uiState.errorMessage ?: return@LaunchedEffect
         snackbarHostState.showSnackbar(msg)
-        onErrorShown()
+        currentOnErrorShow()
     }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
@@ -96,7 +98,7 @@ fun TimeLetterWriteScreen(
             initialDate = initialDate,
             onDismiss = { showDatePicker = false },
             onDateSelect = { date ->
-                onDateSelected(date.toString())
+                onDateSelect(date.toString())
                 showDatePicker = false
             },
         )
@@ -116,19 +118,19 @@ fun TimeLetterWriteScreen(
             )
             Spacer(modifier = Modifier.height(24.dp))
             TimeWheelPicker(
-                initialHour = pendingHour,
-                initialMinute = pendingMinute,
-                onTimeChanged = { h, m ->
+                onTimeChange = { h, m ->
                     pendingHour = h
                     pendingMinute = m
                 },
                 modifier = Modifier.wrapContentWidth(Alignment.CenterHorizontally).fillMaxWidth(),
+                initialHour = pendingHour,
+                initialMinute = pendingMinute,
             )
             Spacer(modifier = Modifier.height(16.dp))
             AfternoteButton(
                 text = "확인",
                 onClick = {
-                    onTimeSelected(pendingHour, pendingMinute)
+                    onTimeSelect(pendingHour, pendingMinute)
                     showTimePicker = false
                 },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),

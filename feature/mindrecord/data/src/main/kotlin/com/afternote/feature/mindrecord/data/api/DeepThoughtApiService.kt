@@ -1,9 +1,9 @@
 package com.afternote.feature.mindrecord.data.api
 
 import com.afternote.core.network.model.BaseResponse
+import com.afternote.feature.mindrecord.data.dto.DeepThoughtCategoryCreateRequest
 import com.afternote.feature.mindrecord.data.dto.DeepThoughtCategoryItem
 import com.afternote.feature.mindrecord.data.dto.DeepThoughtCategoryMutationResponse
-import com.afternote.feature.mindrecord.data.dto.DeepThoughtCategoryCreateRequest
 import com.afternote.feature.mindrecord.data.dto.DeepThoughtCategoryUpdateRequest
 import com.afternote.feature.mindrecord.data.dto.DeepThoughtCreateRequest
 import com.afternote.feature.mindrecord.data.dto.DeepThoughtListResponse

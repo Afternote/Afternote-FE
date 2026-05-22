@@ -39,6 +39,9 @@ import kotlinx.coroutines.flow.drop
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
+    dailyQuestionViewModel: DailyQuestionListViewModel = hiltViewModel(),
+    diaryViewModel: DiaryListViewModel = hiltViewModel(),
+    deepThoughtViewModel: DeepThoughtListViewModel = hiltViewModel(),
     onWriteClick: (MindRecordCategoryUi) -> Unit = {},
 ) {
     val categories = remember { MindRecordCategoryUi.entries() }
@@ -54,10 +57,6 @@ fun HomeScreen(
     LaunchedEffect(pagerState.currentPage) {
         selectedIndex = pagerState.currentPage
     }
-
-    val dailyQuestionViewModel: DailyQuestionListViewModel = hiltViewModel()
-    val diaryViewModel: DiaryListViewModel = hiltViewModel()
-    val deepThoughtViewModel: DeepThoughtListViewModel = hiltViewModel()
 
     LaunchedEffect(Unit) {
         snapshotFlow { selectedIndex }

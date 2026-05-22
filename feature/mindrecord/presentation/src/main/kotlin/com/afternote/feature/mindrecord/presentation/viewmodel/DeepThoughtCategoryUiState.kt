@@ -10,11 +10,19 @@ data class DeepThoughtCategoryUiState(
 )
 
 sealed interface DeepThoughtCategoryEvent {
-    data class Error(val message: String) : DeepThoughtCategoryEvent
+    data class Error(
+        val message: String,
+    ) : DeepThoughtCategoryEvent
 
-    data class Created(val category: CategoryUiModel) : DeepThoughtCategoryEvent
+    data class Created(
+        val category: CategoryUiModel,
+    ) : DeepThoughtCategoryEvent
 
-    data class Updated(val category: CategoryUiModel) : DeepThoughtCategoryEvent
+    data class Updated(
+        val category: CategoryUiModel,
+    ) : DeepThoughtCategoryEvent
 
-    data class Deleted(val categoryId: Long) : DeepThoughtCategoryEvent
+    data class Deleted(
+        val categoryId: Long,
+    ) : DeepThoughtCategoryEvent
 }
