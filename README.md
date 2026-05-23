@@ -2,7 +2,7 @@
 
 # 🚀 신규 팀원 빌드 셋업
 
-`local.properties` 는 `.gitignore` 에 등록되어 있어 **git 으로 받지지 않는다**. clone 직후 다음 두 키를 루트 `local.properties` 에 직접 채워야 카카오·구글 로그인이 정상 동작한다.
+`local.properties` 는 `.gitignore` 에 등록되어 있어 **git 으로 받아지지 않는다**. clone 직후 다음 두 키를 루트 `local.properties` 에 직접 채워야 카카오·구글 로그인이 정상 동작한다.
 
 ## 필요 키
 
