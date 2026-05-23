@@ -17,7 +17,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -39,7 +38,9 @@ import com.afternote.feature.mindrecord.presentation.model.TextStyleType
 @Composable
 fun BottomToolbar(
     onTextStyleClick: () -> Unit,
+    onAlignChange: (TextAlign) -> Unit,
     modifier: Modifier = Modifier,
+    onLinkClick: () -> Unit = {},
 ) {
     Row(
         modifier =
@@ -49,23 +50,37 @@ fun BottomToolbar(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(painter = painterResource(R.drawable.mindrecord_link), contentDescription = null)
-        Spacer(modifier = Modifier.width(16.dp))
+        IconButton(onClick = onLinkClick) {
+            Icon(painter = painterResource(R.drawable.mindrecord_link), contentDescription = "링크")
+        }
+        Spacer(modifier = Modifier.width(8.dp))
 
         IconButton(onClick = onTextStyleClick) {
-            Text("T", style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = "T",
+                style = AfternoteDesign.typography.bodyLargeB,
+                color = AfternoteDesign.colors.gray9,
+            )
         }
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(8.dp))
 
-        Icon(painter = painterResource(R.drawable.mindrecord_align_left), contentDescription = null)
-        Spacer(modifier = Modifier.width(8.dp))
-        Icon(painter = painterResource(R.drawable.mindrecord_align_center), contentDescription = null)
-        Spacer(modifier = Modifier.width(8.dp))
-        Icon(painter = painterResource(R.drawable.mindrecord_align_right), contentDescription = null)
+        IconButton(onClick = { onAlignChange(TextAlign.Start) }) {
+            Icon(painter = painterResource(R.drawable.mindrecord_align_left), contentDescription = "왼쪽 정렬")
+        }
+        IconButton(onClick = { onAlignChange(TextAlign.Center) }) {
+            Icon(painter = painterResource(R.drawable.mindrecord_align_center), contentDescription = "가운데 정렬")
+        }
+        IconButton(onClick = { onAlignChange(TextAlign.End) }) {
+            Icon(painter = painterResource(R.drawable.mindrecord_align_right), contentDescription = "오른쪽 정렬")
+        }
 
         Spacer(modifier = Modifier.weight(1f))
 
-        Text("임시저장 1", style = MaterialTheme.typography.labelSmall, color = AfternoteDesign.colors.gray6)
+        Text(
+            text = "임시저장 1",
+            style = AfternoteDesign.typography.captionLargeR,
+            color = AfternoteDesign.colors.gray6,
+        )
     }
 }
 

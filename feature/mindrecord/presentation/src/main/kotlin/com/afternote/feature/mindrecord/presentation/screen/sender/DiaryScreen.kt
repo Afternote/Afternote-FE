@@ -31,6 +31,7 @@ import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
 import com.afternote.feature.mindrecord.presentation.component.DiaryCard
 import com.afternote.feature.mindrecord.presentation.component.DiaryComponent
 import com.afternote.feature.mindrecord.presentation.component.DiaryReportCard
+import com.afternote.feature.mindrecord.presentation.component.MindRecordEmptyState
 import com.afternote.feature.mindrecord.presentation.model.DailyDiary
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListUiState
@@ -70,6 +71,11 @@ private fun DiaryListContent(
     diaries: List<DailyDiary>,
     modifier: Modifier = Modifier,
 ) {
+    if (isListView && diaries.isEmpty()) {
+        MindRecordEmptyState(modifier = modifier)
+        return
+    }
+
     if (isListView) {
         LazyColumn(modifier = modifier) {
             item {
@@ -91,7 +97,7 @@ private fun DiaryListContent(
                     Text(
                         text = "DAILY ANSWER",
                         style = AfternoteDesign.typography.mono,
-                        color = Color(0xFF000000).copy(alpha = 0.4f),
+                        color = AfternoteDesign.colors.black.copy(alpha = 0.4f),
                     )
                     HorizontalDivider(modifier = Modifier.padding(start = 12.dp))
                 }
