@@ -12,19 +12,46 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 import javax.inject.Inject
+import javax.inject.Named
 import kotlin.coroutines.cancellation.CancellationException
 
 private const val DEFAULT_EXTENSION = "jpg"
 private const val DEFAULT_CONTENT_TYPE = "image/jpeg"
+
+private val ALLOWED_EXTENSIONS = setOf(
+    "jpg", "jpeg", "png", "gif", "webp", "heic",
+    "mp4", "mov", "mp3", "m4a", "wav", "pdf",
+)
+
+private val MIME_TO_EXTENSION = mapOf(
+    "image/heif" to "heic",
+    "image/heic" to "heic",
+    "image/jpg" to "jpg",
+    "image/jfif" to "jpeg",
+    "video/quicktime" to "mov",
+    "audio/mpeg" to "mp3",
+    "audio/x-m4a" to "m4a",
+)
+
+private fun resolveExtension(mime: String?): String {
+    if (mime == null) return DEFAULT_EXTENSION
+    val fromMime = MimeTypeMap.getSingleton().getExtensionFromMimeType(mime)
+    val resolved = if (fromMime != null && fromMime in ALLOWED_EXTENSIONS) fromMime
+                   else MIME_TO_EXTENSION[mime] ?: fromMime
+    return resolved?.takeIf { it in ALLOWED_EXTENSIONS } ?: DEFAULT_EXTENSION
+}
 
 class PhotoUploadRepositoryImpl
     @Inject
     constructor(
         @param:ApplicationContext private val context: Context,
         private val imageApi: ImageApiService,
+        @param:Named("S3Upload") private val s3Client: OkHttpClient,
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : PhotoUploadRepository {
         override suspend fun upload(
@@ -34,9 +61,8 @@ class PhotoUploadRepositoryImpl
             try {
                 val uri = uriString.toUri()
                 val mime = context.contentResolver.getType(uri)
-                val extension =
-                    mime?.let { MimeTypeMap.getSingleton().getExtensionFromMimeType(it) }
-                        ?: DEFAULT_EXTENSION
+                val extension = resolveExtension(mime)
+                android.util.Log.d("PhotoUpload", "mime=$mime → extension=$extension")
 
                 val presigned =
                     imageApi
@@ -61,15 +87,21 @@ class PhotoUploadRepositoryImpl
                     val requestBody = tempFile.asRequestBody(contentType.toMediaType())
 
                     val response =
-                        imageApi.uploadToS3(
-                            url = presigned.presignedUrl,
-                            file = requestBody,
-                            contentType = contentType,
-                        )
+                        withContext(ioDispatcher) {
+                            s3Client
+                                .newCall(
+                                    Request.Builder()
+                                        .url(presigned.presignedUrl)
+                                        .put(requestBody)
+                                        .header("Content-Type", contentType)
+                                        .build(),
+                                ).execute()
+                        }
                     check(response.isSuccessful) {
-                        "S3 upload failed: ${response.code()} ${response.message()}"
+                        "S3 upload failed: ${response.code} ${response.message}"
                     }
 
+                    android.util.Log.d("PhotoUpload", "S3 upload success → ${presigned.fileUrl}")
                     Result.success(presigned.fileUrl)
                 } finally {
                     tempFile.delete()
@@ -77,6 +109,7 @@ class PhotoUploadRepositoryImpl
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                android.util.Log.e("PhotoUpload", "upload failed", e)
                 Result.failure(e)
             }
     }

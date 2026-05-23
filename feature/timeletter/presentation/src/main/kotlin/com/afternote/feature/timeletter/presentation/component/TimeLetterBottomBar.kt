@@ -56,7 +56,7 @@ fun TimeLetterBottomBar(
         ) {
             Icon(
                 painter = painterResource(R.drawable.ic_link),
-                contentDescription = "링크 삽입",
+                contentDescription = "추가",
                 tint = AfternoteDesign.colors.gray7,
                 modifier = Modifier.size(24.dp),
             )

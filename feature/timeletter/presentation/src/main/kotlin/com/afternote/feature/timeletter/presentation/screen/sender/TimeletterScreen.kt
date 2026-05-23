@@ -29,6 +29,7 @@ import com.afternote.feature.timeletter.presentation.viewmodel.ViewMode
 @Composable
 fun TimeletterScreen(
     onWriteClick: () -> Unit = {},
+    onLetterClick: (Long) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: TimeletterViewModel = hiltViewModel(),
 ) {
@@ -60,6 +61,7 @@ fun TimeletterScreen(
                     receiverNameMap = state.receiverNameMap,
                     viewMode = viewMode,
                     onViewModeChange = { viewMode = it },
+                    onLetterClick = onLetterClick,
                     modifier = Modifier.padding(paddingValues),
                 )
             }

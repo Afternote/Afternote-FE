@@ -2,6 +2,7 @@ package com.afternote.feature.timeletter.presentation.navigation
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -12,6 +13,7 @@ import com.afternote.core.ui.ObserveAsEvents
 import com.afternote.core.ui.Route
 import com.afternote.feature.timeletter.presentation.screen.sender.DraftLetterScreen
 import com.afternote.feature.timeletter.presentation.screen.sender.RecipientListScreen
+import com.afternote.feature.timeletter.presentation.screen.sender.TimeLetterDetailScreen
 import com.afternote.feature.timeletter.presentation.screen.sender.TimeLetterWriteScreen
 import com.afternote.feature.timeletter.presentation.screen.sender.TimeletterScreen
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteEvent
@@ -25,6 +27,7 @@ fun NavGraphBuilder.timeLetterNavGraph(
         composable<TimeLetterRoute.TimeLetterHomeRoute> {
             TimeletterScreen(
                 onWriteClick = actions::onNavigateToWrite,
+                onLetterClick = actions::onNavigateToDetail,
             )
         }
 
@@ -49,11 +52,25 @@ fun NavGraphBuilder.timeLetterNavGraph(
                 onRecipientClick = actions::onNavigateToRecipient,
                 onDateSelected = { viewModel.setSendAt(it) },
                 onTimeSelected = { h, m -> viewModel.setSendTime(h, m) },
+                onImageSelected = { uri -> viewModel.addImageAttachment(uri) },
+                onAudioSelected = { uri -> viewModel.addAudioAttachment(uri) },
+                onFileSelected = { uri -> viewModel.addFileAttachment(uri) },
+                onLinkAdded = { url -> viewModel.addLinkAttachment(url) },
+                onAttachmentRemoved = { index -> viewModel.removeAttachment(index) },
+                onAlignCenterClick = { viewModel.setTextAlign(TextAlign.Center) },
+                onAlignLeftClick = { viewModel.setTextAlign(TextAlign.Start) },
+                onAlignRightClick = { viewModel.setTextAlign(TextAlign.End) },
             )
         }
 
         composable<TimeLetterRoute.TimeLetterDraftRoute> {
             DraftLetterScreen(onBackClick = actions::onDraftBack)
+        }
+
+        composable<TimeLetterRoute.TimeLetterDetailRoute> {
+            TimeLetterDetailScreen(
+                onBackClick = actions::onDetailBack,
+            )
         }
 
         composable<TimeLetterRoute.TimeLetterRecipientRoute> {

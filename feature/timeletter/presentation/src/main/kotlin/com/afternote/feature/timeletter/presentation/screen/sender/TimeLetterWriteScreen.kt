@@ -1,16 +1,20 @@
 package com.afternote.feature.timeletter.presentation.screen.sender
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalBottomSheet
@@ -18,6 +22,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,9 +43,8 @@ import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.calendar.BottomSheetCalendar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import java.time.LocalDate
-import java.time.LocalTime
 import com.afternote.core.ui.topbar.DetailTopBar
+import com.afternote.feature.timeletter.presentation.component.AttachmentListSection
 import com.afternote.feature.timeletter.presentation.component.MediaBottomSheetContent
 import com.afternote.feature.timeletter.presentation.component.RecipientCard
 import com.afternote.feature.timeletter.presentation.component.SendScheduleRow
@@ -48,6 +54,8 @@ import com.afternote.feature.timeletter.presentation.component.TimeLetterTextBut
 import com.afternote.feature.timeletter.presentation.component.TimeLetterTitleTextField
 import com.afternote.feature.timeletter.presentation.component.TimeWheelPicker
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteUiState
+import java.time.LocalDate
+import java.time.LocalTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,10 +71,11 @@ fun TimeLetterWriteScreen(
     onTimeSelected: (hour: Int, minute: Int) -> Unit = { _, _ -> },
     onDraftClick: (title: String, body: String) -> Unit = { _, _ -> },
     onErrorShown: () -> Unit = {},
-    onMediaImageClick: () -> Unit = {},
-    onMediaVoiceClick: () -> Unit = {},
-    onMediaFileClick: () -> Unit = {},
-    onMediaLinkClick: () -> Unit = {},
+    onImageSelected: (Uri) -> Unit = {},
+    onAudioSelected: (Uri) -> Unit = {},
+    onFileSelected: (Uri) -> Unit = {},
+    onLinkAdded: (String) -> Unit = {},
+    onAttachmentRemoved: (Int) -> Unit = {},
     onTextStyleClick: () -> Unit = {},
     onAlignCenterClick: () -> Unit = {},
     onAlignLeftClick: () -> Unit = {},
@@ -75,12 +84,36 @@ fun TimeLetterWriteScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val sheetState = rememberModalBottomSheetState()
     var showMediaSheet by remember { mutableStateOf(false) }
+    var showLinkDialog by remember { mutableStateOf(false) }
+    var linkUrlInput by remember { mutableStateOf("") }
+
+    val imageLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent(),
+        ) { uri: Uri? ->
+            uri?.let { onImageSelected(it) }
+        }
+
+    val audioLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent(),
+        ) { uri: Uri? ->
+            uri?.let { onAudioSelected(it) }
+        }
+
+    val fileLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent(),
+        ) { uri: Uri? ->
+            uri?.let { onFileSelected(it) }
+        }
 
     LaunchedEffect(uiState.errorMessage) {
         val msg = uiState.errorMessage ?: return@LaunchedEffect
         snackbarHostState.showSnackbar(msg)
         onErrorShown()
     }
+
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var pendingHour by remember { mutableIntStateOf(LocalTime.now().hour) }
@@ -146,22 +179,76 @@ fun TimeLetterWriteScreen(
             MediaBottomSheetContent(
                 onImageClick = {
                     showMediaSheet = false
-                    onMediaImageClick()
+                    imageLauncher.launch("image/*")
                 },
                 onVoiceClick = {
                     showMediaSheet = false
-                    onMediaVoiceClick()
+                    audioLauncher.launch("audio/*")
                 },
                 onFileClick = {
                     showMediaSheet = false
-                    onMediaFileClick()
+                    fileLauncher.launch("*/*")
                 },
                 onLinkClick = {
                     showMediaSheet = false
-                    onMediaLinkClick()
+                    linkUrlInput = ""
+                    showLinkDialog = true
                 },
             )
         }
+    }
+
+    if (showLinkDialog) {
+        AlertDialog(
+            onDismissRequest = { showLinkDialog = false },
+            title = {
+                Text(
+                    text = "링크 추가하기",
+                    style = AfternoteDesign.typography.h3,
+                    color = AfternoteDesign.colors.gray9,
+                )
+            },
+            text = {
+                TextField(
+                    value = linkUrlInput,
+                    onValueChange = { linkUrlInput = it },
+                    placeholder = {
+                        Text(
+                            text = "URL을 입력하세요",
+                            style = AfternoteDesign.typography.bodySmallR,
+                            color = AfternoteDesign.colors.gray4,
+                        )
+                    },
+                    singleLine = true,
+                    colors =
+                        TextFieldDefaults.colors(
+                            focusedContainerColor = AfternoteDesign.colors.gray2,
+                            unfocusedContainerColor = AfternoteDesign.colors.gray2,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                        ),
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val url = linkUrlInput.trim()
+                        if (url.isNotBlank()) {
+                            onLinkAdded(url)
+                            showLinkDialog = false
+                        }
+                    },
+                ) {
+                    Text("추가", color = AfternoteDesign.colors.gray9)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLinkDialog = false }) {
+                    Text("취소", color = AfternoteDesign.colors.gray7)
+                }
+            },
+            containerColor = AfternoteDesign.colors.white,
+        )
     }
 
     Scaffold(
@@ -221,8 +308,16 @@ fun TimeLetterWriteScreen(
 
             TimeLetterBodyTextField(
                 state = bodyState,
+                textAlign = uiState.textAlign,
                 modifier = Modifier.weight(1f, fill = false),
             )
+
+            if (uiState.attachments.isNotEmpty()) {
+                AttachmentListSection(
+                    attachments = uiState.attachments,
+                    onRemove = onAttachmentRemoved,
+                )
+            }
         }
     }
 }
