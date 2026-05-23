@@ -45,12 +45,14 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.ObserveAsEvents
 import com.afternote.core.ui.modifierextention.dropShadow
+import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.receiver.deliveryverification.component.DocumentSlotCard
 import com.afternote.feature.afternote.presentation.receiver.deliveryverification.component.DocumentSourceBottomSheet
-import com.afternote.feature.afternote.presentation.receiver.deliveryverification.component.ReceiverVerifyScaffold
+import com.afternote.feature.afternote.presentation.receiver.deliveryverification.component.RECEIVER_VERIFY_HEADER_SPACING
+import com.afternote.feature.afternote.presentation.receiver.deliveryverification.component.RECEIVER_VERIFY_TOTAL_STEPS
 import com.afternote.feature.afternote.presentation.receiver.deliveryverification.component.ReceiverVerifyStep
 
 /**
@@ -187,15 +189,18 @@ private fun DocumentUploadScreenContent(
     onSubmitClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    ReceiverVerifyScaffold(
+    FlowStepScaffold(
+        topBarTitle = stringResource(R.string.receiver_verify_title),
         actionButtonText = stringResource(R.string.receiver_verify_next_button),
         onBackClick = onBackClick,
         onActionClick = onSubmitClick,
         isActionEnabled = uiState.canSubmit,
         currentStep = ReceiverVerifyStep.DOCUMENTS,
+        totalSteps = RECEIVER_VERIFY_TOTAL_STEPS,
         snackbarHostState = snackbarHostState,
         modifier = modifier,
     ) {
+        Spacer(modifier = Modifier.height(RECEIVER_VERIFY_HEADER_SPACING))
         Text(
             text = stringResource(R.string.receiver_verify_document_upload_title),
             style = AfternoteDesign.typography.h1,
