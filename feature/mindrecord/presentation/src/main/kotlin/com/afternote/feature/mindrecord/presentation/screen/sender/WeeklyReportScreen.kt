@@ -7,10 +7,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
@@ -37,12 +39,12 @@ fun WeeklyReportScreen(modifier: Modifier = Modifier) {
                 text =
                     buildAnnotatedString {
                         withStyle(
-                            style = AfternoteDesign.typography.bodyLargeB.toSpanStyle(),
+                            style = MaterialTheme.typography.titleMedium.toSpanStyle(),
                         ) {
                             append("이번 주, ")
                             withStyle(
                                 style =
-                                    AfternoteDesign.typography.bodyLargeB
+                                    MaterialTheme.typography.titleMedium
                                         .copy(color = AfternoteDesign.colors.b1)
                                         .toSpanStyle(),
                             ) {
@@ -51,7 +53,7 @@ fun WeeklyReportScreen(modifier: Modifier = Modifier) {
                             append("님은 ")
                             withStyle(
                                 style =
-                                    AfternoteDesign.typography.bodyLargeB
+                                    MaterialTheme.typography.titleMedium
                                         .copy(color = AfternoteDesign.colors.b1)
                                         .toSpanStyle(),
                             ) {
@@ -75,7 +77,7 @@ fun WeeklyReportScreen(modifier: Modifier = Modifier) {
                 Text(
                     text = "TOP KEYWORDS",
                     style = AfternoteDesign.typography.mono,
-                    color = AfternoteDesign.colors.black.copy(alpha = 0.4f),
+                    color = Color(0xFF000000).copy(alpha = 0.4f),
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(start = 12.dp))
@@ -100,7 +102,7 @@ fun WeeklyReportScreen(modifier: Modifier = Modifier) {
                 Text(
                     text = "HISTORY",
                     style = AfternoteDesign.typography.mono,
-                    color = AfternoteDesign.colors.black.copy(alpha = 0.4f),
+                    color = Color(0xFF000000).copy(alpha = 0.4f),
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(start = 12.dp))

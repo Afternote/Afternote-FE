@@ -23,10 +23,10 @@ import com.afternote.feature.setting.presentation.screen.PushNotificationScreen
 import com.afternote.feature.setting.presentation.screen.ReceiverListScreen
 import com.afternote.feature.setting.presentation.screen.ReceiverRegisterScreen
 import com.afternote.feature.setting.presentation.screen.SettingScreen
+import com.afternote.feature.setting.presentation.viewmodel.ReceiverListViewModel
 import com.afternote.feature.setting.presentation.screen.WithdrawConfirmScreen
 import com.afternote.feature.setting.presentation.screen.WithdrawGuideScreen
 import com.afternote.feature.setting.presentation.viewmodel.PassKeyViewModel
-import com.afternote.feature.setting.presentation.viewmodel.ReceiverListViewModel
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
 
 fun NavGraphBuilder.settingNavGraph(

@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import com.afternote.afternote_fe.screen.HomeTabActions
 import com.afternote.afternote_fe.screen.receiver.ReceiverHomeActions
@@ -14,7 +13,6 @@ import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavActions
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
-import com.afternote.feature.afternote.presentation.receiver.navigation.ReceiverFlowEntryPoint
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceiverNavActions
 import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceiverRoute
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
@@ -23,9 +21,11 @@ import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavAct
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingRoute
 import com.afternote.feature.setting.presentation.navigation.SettingNavActions
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
+import androidx.compose.ui.platform.LocalContext
+import dagger.hilt.android.EntryPointAccessors
+import com.afternote.feature.afternote.presentation.receiver.navigation.ReceiverFlowEntryPoint
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterNavActions
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
-import dagger.hilt.android.EntryPointAccessors
 
 @Composable
 fun rememberOnboardingNavActions(navController: NavController): OnboardingNavActions =

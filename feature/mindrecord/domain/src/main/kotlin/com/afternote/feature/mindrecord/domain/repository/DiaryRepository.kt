@@ -5,10 +5,7 @@ import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 
 interface DiaryRepository {
-    suspend fun getList(
-        yearMonth: String,
-        draftOnly: Boolean? = null,
-    ): Result<List<Diary>>
+    suspend fun getList(date: String? = null): Result<List<Diary>>
 
     suspend fun create(payload: DiaryCreatePayload): Result<Unit>
 

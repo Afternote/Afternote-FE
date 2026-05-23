@@ -1,6 +1,5 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
-import com.afternote.feature.mindrecord.presentation.model.CategoryUiModel
 import com.afternote.feature.mindrecord.presentation.model.DeepThoughtModel
 import com.afternote.feature.mindrecord.presentation.model.Tag
 
@@ -12,7 +11,6 @@ sealed interface DeepThoughtListUiState {
         val randomThoughtCreatedAt: String?,
         val tags: List<Tag>,
         val selectedTag: Tag?,
-        val categories: List<CategoryUiModel>,
         val selectedCategory: String?,
         val items: List<DeepThoughtModel>,
     ) : DeepThoughtListUiState

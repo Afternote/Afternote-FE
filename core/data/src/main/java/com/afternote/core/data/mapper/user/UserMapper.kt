@@ -1,13 +1,5 @@
 package com.afternote.core.data.mapper.user
 
-import com.afternote.core.model.user.DeliveryCondition
-import com.afternote.core.model.user.DeliveryConditionType
-import com.afternote.core.model.user.Receiver
-import com.afternote.core.model.user.ReceiverCreated
-import com.afternote.core.model.user.ReceiverDetail
-import com.afternote.core.model.user.User
-import com.afternote.core.model.user.UserConnectedAccount
-import com.afternote.core.model.user.UserPushSetting
 import com.afternote.core.network.dto.DeliveryConditionResponseDto
 import com.afternote.core.network.dto.DeliveryConditionTypeDto
 import com.afternote.core.network.dto.ReceiverDetailResponseDto
@@ -17,6 +9,14 @@ import com.afternote.core.network.dto.UserCreateReceiverResponseDto
 import com.afternote.core.network.dto.UserPatchReceiverResponseDto
 import com.afternote.core.network.dto.UserPushSettingResponseDto
 import com.afternote.core.network.dto.UserResponseDto
+import com.afternote.core.model.user.DeliveryCondition
+import com.afternote.core.model.user.DeliveryConditionType
+import com.afternote.core.model.user.Receiver
+import com.afternote.core.model.user.ReceiverCreated
+import com.afternote.core.model.user.ReceiverDetail
+import com.afternote.core.model.user.User
+import com.afternote.core.model.user.UserConnectedAccount
+import com.afternote.core.model.user.UserPushSetting
 
 // ========================================
 // Enum Mapper

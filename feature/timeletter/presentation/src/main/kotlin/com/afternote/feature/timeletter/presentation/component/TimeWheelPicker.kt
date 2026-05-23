@@ -16,7 +16,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,10 +29,10 @@ import java.time.LocalTime
 
 @Composable
 fun TimeWheelPicker(
-    onTimeChange: (hour: Int, minute: Int) -> Unit,
-    modifier: Modifier = Modifier,
     initialHour: Int = LocalTime.now().hour,
     initialMinute: Int = LocalTime.now().minute,
+    onTimeChanged: (hour: Int, minute: Int) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val amPmList = listOf("오전", "오후")
     val hours = (1..12).toList()
@@ -54,19 +53,18 @@ fun TimeWheelPicker(
     val amPmState = rememberFWheelPickerState(initialIndex = initialAmPm)
     val hourState = rememberFWheelPickerState(initialIndex = initialHour12 - 1)
     val minuteState = rememberFWheelPickerState(initialIndex = initialMinute)
-    val currentOnTimeChange by rememberUpdatedState(onTimeChange)
 
     LaunchedEffect(amPmState.currentIndex) {
         selectedAmPm = amPmList.getOrElse(amPmState.currentIndex) { "오전" }
-        currentOnTimeChange(convertTo24Hour(selectedAmPm, selectedHour), selectedMinute)
+        onTimeChanged(convertTo24Hour(selectedAmPm, selectedHour), selectedMinute)
     }
     LaunchedEffect(hourState.currentIndex) {
         selectedHour = hours.getOrElse(hourState.currentIndex) { 1 }
-        currentOnTimeChange(convertTo24Hour(selectedAmPm, selectedHour), selectedMinute)
+        onTimeChanged(convertTo24Hour(selectedAmPm, selectedHour), selectedMinute)
     }
     LaunchedEffect(minuteState.currentIndex) {
         selectedMinute = minutes.getOrElse(minuteState.currentIndex) { 0 }
-        currentOnTimeChange(convertTo24Hour(selectedAmPm, selectedHour), selectedMinute)
+        onTimeChanged(convertTo24Hour(selectedAmPm, selectedHour), selectedMinute)
     }
 
     Box(
@@ -180,8 +178,8 @@ private fun TimeDivider() {
 @Composable
 private fun TimeWheelPickerPreview() {
     TimeWheelPicker(
-        onTimeChange = { _, _ -> },
         initialHour = 15,
         initialMinute = 22,
+        onTimeChanged = { _, _ -> },
     )
 }

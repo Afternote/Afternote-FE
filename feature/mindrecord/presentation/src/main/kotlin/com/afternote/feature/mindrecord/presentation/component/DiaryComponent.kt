@@ -84,7 +84,7 @@ fun DiaryComponent(
                 Text(
                     text = diary.title,
                     style = AfternoteDesign.typography.bodySmallB,
-                    color = AfternoteDesign.colors.black.copy(alpha = 0.8f),
+                    color = Color(0xFF000000).copy(alpha = 0.8f),
                 )
 
                 Spacer(modifier = Modifier.height(5.dp))

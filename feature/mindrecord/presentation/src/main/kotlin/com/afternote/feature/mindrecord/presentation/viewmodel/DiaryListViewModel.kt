@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.YearMonth
 import javax.inject.Inject
 
 @HiltViewModel
@@ -37,15 +36,15 @@ class DiaryListViewModel
             load()
         }
 
-        fun refresh(yearMonth: YearMonth = YearMonth.now()) {
-            load(yearMonth)
+        fun refresh(date: String? = null) {
+            load(date)
         }
 
-        private fun load(yearMonth: YearMonth = YearMonth.now()) {
+        private fun load(date: String? = null) {
             viewModelScope.launch {
                 internalState.update { it.copy(loadPhase = LoadPhase.Loading) }
                 repository
-                    .getList(yearMonth = yearMonth.toString(), draftOnly = true)
+                    .getList(date = date)
                     .onSuccess { list ->
                         internalState.update { it.copy(loadPhase = LoadPhase.Loaded(list)) }
                     }.onFailure { e ->
