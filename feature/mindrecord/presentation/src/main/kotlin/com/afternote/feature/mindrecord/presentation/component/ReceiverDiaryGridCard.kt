@@ -64,9 +64,11 @@ fun ReceiverDiaryGridCard(
             }
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(
-                    text = record.recordDate,
+                    text = "${record.recordDate} · ${record.senderName}",
                     style = AfternoteDesign.typography.footnoteCaption,
                     color = AfternoteDesign.colors.gray6,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(

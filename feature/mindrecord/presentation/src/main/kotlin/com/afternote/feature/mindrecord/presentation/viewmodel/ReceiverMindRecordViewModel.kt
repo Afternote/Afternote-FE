@@ -16,10 +16,18 @@ import javax.inject.Inject
 /**
  * 수신자 마음의 기록 화면 ViewModel.
  *
- * `GET /receiver-auth/mind-records` 단일 응답을 받아 `MindRecordType` 으로 그룹핑하고,
- * 깊은생각 카테고리 칩과 클라이언트측 정렬/기간 필터를 적용해 [ReceiverMindRecordUiState.Success]
- * 로 노출한다. 발신자측이 카테고리별로 3 API 를 병렬 호출하는 것과 대조적으로, 수신자 API 는
- * 단일 list 엔드포인트만 제공되어 클라 분리 책임.
+ * `GET /api/v1/receiver-auth/mind-records` 단일 응답을 받아 [MindRecordType] 로 그룹핑하고,
+ * 클라이언트측 정렬/기간 필터를 적용해 [ReceiverMindRecordUiState.Success] 로 노출한다.
+ * 발신자측이 카테고리별로 3 API 를 병렬 호출하는 것과 대조적으로, 수신자 API 는 단일 list
+ * 엔드포인트만 제공되어 클라 분리 책임.
+ *
+ * 응답에 `senderName` 이 record 단위로 포함되어 수신자가 여러 발신자 기록을 *통합 조회* 하는
+ * 형태이며, 카드에 발신자 이름을 표시해 출처를 명확히 한다.
+ *
+ * **깊은생각 카테고리 칩**: 수신자측 list 응답에는 `category` 가 없고, 별도 receiver-auth 카테고리
+ * 마스터 엔드포인트도 없다 (`/api/v1/deep-thought/categories` 는 sender 전용). 따라서 본 ViewModel
+ * 은 카테고리 데이터를 노출하지 않고, 백엔드가 receiver list 응답에 카테고리를 포함하거나 별도
+ * 카테고리 마스터 엔드포인트를 receiver-auth 에 추가할 때까지 칩 UI 는 hidden 상태로 둔다.
  */
 @HiltViewModel
 class ReceiverMindRecordViewModel
@@ -36,16 +44,6 @@ class ReceiverMindRecordViewModel
         }
 
         fun refresh() = load()
-
-        fun selectDeepThoughtCategory(category: String?) {
-            _uiState.update { current ->
-                if (current is ReceiverMindRecordUiState.Success) {
-                    current.copy(selectedDeepThoughtCategory = category)
-                } else {
-                    current
-                }
-            }
-        }
 
         fun applyFilter(filter: ReceiverMindRecordFilter) {
             _uiState.update { current ->
@@ -65,15 +63,17 @@ class ReceiverMindRecordViewModel
                 repository
                     .getList()
                     .onSuccess { list ->
-                        rawRecords.value = list.mindRecords
+                        // 수신자 view 는 임시저장 record 를 보지 않는다. 백엔드가 제외하기를 기대하나
+                        // 방어적으로 한 번 더 거른다.
+                        val visible = list.mindRecords.filterNot { it.isDraft }
+                        rawRecords.value = visible
                         val initial =
                             ReceiverMindRecordUiState.Success(
                                 dailyQuestions = emptyList(),
                                 diaries = emptyList(),
                                 deepThoughts = emptyList(),
-                                deepThoughtCategories = list.mindRecords.distinctDeepThoughtCategories(),
                             )
-                        _uiState.value = initial.withDerived(list.mindRecords)
+                        _uiState.value = initial.withDerived(visible)
                     }.onFailure { e ->
                         _uiState.value =
                             ReceiverMindRecordUiState.Error(
@@ -84,29 +84,18 @@ class ReceiverMindRecordViewModel
         }
 
         /**
-         * `filter`/`selectedDeepThoughtCategory` 변경 시 파생 list 3종을 재계산해 반환한다.
+         * `filter` 변경 시 파생 list 3종을 재계산해 반환한다.
          */
         private fun ReceiverMindRecordUiState.Success.withDerived(all: List<MindRecordSummary>): ReceiverMindRecordUiState.Success {
             val byDate = all.filterByDate(filter.fromDate, filter.toDate).sortBy(filter.sortOrder)
-            val deep = byDate.filter { it.type == MindRecordType.DEEP_THOUGHT }
             return copy(
                 dailyQuestions = byDate.filter { it.type == MindRecordType.DAILY_QUESTION },
                 diaries = byDate.filter { it.type == MindRecordType.DIARY },
-                deepThoughts =
-                    selectedDeepThoughtCategory?.let { selected ->
-                        // category 가 도메인 model 에 없으므로 stub: title prefix 매칭으로 대체.
-                        // 실제 백엔드 카테고리 마스터 확정 시 [MindRecordSummary] 에 category 필드 추가 후 교체.
-                        deep.filter { it.title.startsWith(selected) }
-                    } ?: deep,
+                deepThoughts = byDate.filter { it.type == MindRecordType.DEEP_THOUGHT },
             )
         }
 
         companion object {
-            private fun List<MindRecordSummary>.distinctDeepThoughtCategories(): List<String> =
-                filter { it.type == MindRecordType.DEEP_THOUGHT }
-                    .mapNotNull { it.title.substringBefore('|', missingDelimiterValue = "").ifBlank { null } }
-                    .distinct()
-
             private fun List<MindRecordSummary>.filterByDate(
                 from: String?,
                 to: String?,

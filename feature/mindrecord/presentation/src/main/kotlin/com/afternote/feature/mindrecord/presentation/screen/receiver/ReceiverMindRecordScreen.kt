@@ -38,7 +38,6 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.domain.model.MindRecordSummary
 import com.afternote.feature.mindrecord.domain.model.MindRecordType
-import com.afternote.feature.mindrecord.presentation.component.ReceiverCategoryChips
 import com.afternote.feature.mindrecord.presentation.component.ReceiverDiaryGridCard
 import com.afternote.feature.mindrecord.presentation.component.ReceiverMindRecordTopBar
 import com.afternote.feature.mindrecord.presentation.component.ReceiverRecordCard
@@ -77,7 +76,6 @@ fun ReceiverMindRecordScreen(
                     SuccessContent(
                         state = state,
                         onFilterClick = { filterSheetVisible = true },
-                        onCategorySelect = viewModel::selectDeepThoughtCategory,
                         onRecordClick = onRecordClick,
                     )
                 }
@@ -105,7 +103,6 @@ fun ReceiverMindRecordScreen(
 private fun SuccessContent(
     state: ReceiverMindRecordUiState.Success,
     onFilterClick: () -> Unit,
-    onCategorySelect: (String?) -> Unit,
     onRecordClick: (Long) -> Unit,
 ) {
     val tabs = remember { listOf(ReceiverMindRecordTab.DailyQuestion, ReceiverMindRecordTab.Diary, ReceiverMindRecordTab.DeepThought) }
@@ -153,13 +150,7 @@ private fun SuccessContent(
                 }
 
                 ReceiverMindRecordTab.DeepThought -> {
-                    DeepThoughtTab(
-                        categories = state.deepThoughtCategories,
-                        selected = state.selectedDeepThoughtCategory,
-                        onSelect = onCategorySelect,
-                        records = state.deepThoughts,
-                        onClick = onRecordClick,
-                    )
+                    RecordList(records = state.deepThoughts, onClick = onRecordClick)
                 }
             }
         }
@@ -202,34 +193,6 @@ private fun DiaryGrid(
     ) {
         gridItems(records, key = { it.id }) { record ->
             ReceiverDiaryGridCard(record = record, onClick = { onClick(record.id) })
-        }
-    }
-}
-
-@Composable
-private fun DeepThoughtTab(
-    categories: List<String>,
-    selected: String?,
-    onSelect: (String?) -> Unit,
-    records: List<MindRecordSummary>,
-    onClick: (Long) -> Unit,
-) {
-    Column(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-        ReceiverCategoryChips(
-            categories = categories,
-            selected = selected,
-            onSelect = onSelect,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(modifier = Modifier.height(20.dp))
-        if (records.isEmpty()) {
-            EmptyBox()
-        } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(records, key = { it.id }) { record ->
-                    ReceiverRecordCard(record = record, onClick = { onClick(record.id) })
-                }
-            }
         }
     }
 }
@@ -280,10 +243,8 @@ private fun ReceiverMindRecordScreenPreview() {
                     dailyQuestions = emptyList(),
                     diaries = emptyList(),
                     deepThoughts = emptyList(),
-                    deepThoughtCategories = listOf("일상", "감사", "회상"),
                 ),
             onFilterClick = {},
-            onCategorySelect = {},
             onRecordClick = {},
         )
     }

@@ -14,8 +14,6 @@ sealed interface ReceiverMindRecordUiState {
         val dailyQuestions: List<MindRecordSummary>,
         val diaries: List<MindRecordSummary>,
         val deepThoughts: List<MindRecordSummary>,
-        val deepThoughtCategories: List<String>,
-        val selectedDeepThoughtCategory: String? = null,
         val filter: ReceiverMindRecordFilter = ReceiverMindRecordFilter(),
     ) : ReceiverMindRecordUiState
 

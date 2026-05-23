@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.OutlinedCard
@@ -25,8 +26,9 @@ import com.afternote.feature.mindrecord.domain.model.MindRecordSummary
 /**
  * 수신자 마음의 기록 리스트의 1행 카드.
  *
- * 도메인 [MindRecordSummary] 만으로 렌더링 가능한 *요약형 카드* — 본문 내용은 별도 detail API
- * 호출이 필요하므로 본 카드는 날짜 + 제목만 표시한다. 데일리질문/깊은생각 탭의 102dp 행에서 사용.
+ * list 응답이 여러 발신자의 record 를 통합 노출하므로 카드에 `senderName` 을 함께 표시해
+ * 출처를 명확히 한다. 본문/이미지 등 상세 데이터는 detail API 호출 필요해 본 카드는 날짜·
+ * 발신자·제목만 노출한다.
  */
 @Composable
 fun ReceiverRecordCard(
@@ -55,11 +57,21 @@ fun ReceiverRecordCard(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = record.recordDate,
-                    style = AfternoteDesign.typography.captionLargeR,
-                    color = AfternoteDesign.colors.gray6,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = record.recordDate,
+                        style = AfternoteDesign.typography.captionLargeR,
+                        color = AfternoteDesign.colors.gray6,
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = record.senderName,
+                        style = AfternoteDesign.typography.captionLargeR,
+                        color = AfternoteDesign.colors.gray6,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = record.title,
