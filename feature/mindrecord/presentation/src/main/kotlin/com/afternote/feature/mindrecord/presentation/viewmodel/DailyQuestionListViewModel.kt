@@ -46,16 +46,17 @@ class DailyQuestionListViewModel
                 internalState.update { it.copy(loadPhase = LoadPhase.Loading) }
 
                 val today = repository.getToday().getOrNull()
-                val listResult = repository.getList(date = date)
-                val list = listResult.getOrNull().orEmpty()
-
-                if (today == null && listResult.isFailure) {
-                    val message =
-                        listResult.exceptionOrNull()?.message ?: "데일리 질문을 불러오지 못했습니다."
-                    internalState.update { it.copy(loadPhase = LoadPhase.Failed(message)) }
-                } else {
-                    internalState.update { it.copy(loadPhase = LoadPhase.Loaded(today, list)) }
-                }
+                repository
+                    .getList(date = date)
+                    .onSuccess { list ->
+                        internalState.update {
+                            it.copy(loadPhase = LoadPhase.Loaded(today, list))
+                        }
+                    }.onFailure { e ->
+                        internalState.update {
+                            it.copy(loadPhase = LoadPhase.Failed(e.message ?: "데일리 질문을 불러오지 못했습니다."))
+                        }
+                    }
             }
         }
 

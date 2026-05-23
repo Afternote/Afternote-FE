@@ -34,39 +34,8 @@ data class DeepThoughtListItem(
     @SerialName("imageUrl") val imageUrl: String? = null,
 )
 
-// `/deep-thought` 응답의 `data` 는 배열이 아니라 객체 — `deepThoughts` 외에도
-// `tagCounts` 가 함께 내려오지만 현재는 목록만 사용.
-// (Json 글로벌 설정에 `ignoreUnknownKeys = true` 적용됨)
-@Serializable
-data class DeepThoughtListResponse(
-    @SerialName("deepThoughts") val deepThoughts: List<DeepThoughtListItem> = emptyList(),
-)
-
 @Serializable
 data class RandomDeepThoughtResponse(
     @SerialName("title") val title: String,
     @SerialName("createdAt") val createdAt: String,
-)
-
-@Serializable
-data class DeepThoughtCategoryItem(
-    @SerialName("categoryId") val categoryId: Long,
-    @SerialName("title") val title: String,
-)
-
-@Serializable
-data class DeepThoughtCategoryCreateRequest(
-    @SerialName("deepThoughtId") val deepThoughtId: Long? = null,
-    @SerialName("category") val category: String,
-)
-
-@Serializable
-data class DeepThoughtCategoryUpdateRequest(
-    @SerialName("category") val category: String,
-)
-
-@Serializable
-data class DeepThoughtCategoryMutationResponse(
-    @SerialName("categoryId") val categoryId: Long,
-    @SerialName("title") val title: String,
 )

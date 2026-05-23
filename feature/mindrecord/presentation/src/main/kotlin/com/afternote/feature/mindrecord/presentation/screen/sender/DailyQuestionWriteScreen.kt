@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,13 +19,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Red
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionWriteHeaderCard
 import com.afternote.feature.mindrecord.presentation.component.WriteTextField
@@ -65,7 +66,7 @@ fun DailyQuestionWriteScreen(
                     ) {
                         Text(
                             text = "등록",
-                            style = AfternoteDesign.typography.bodySmallB,
+                            style = MaterialTheme.typography.titleSmall,
                             color = AfternoteDesign.colors.gray6,
                         )
                     }
@@ -77,15 +78,8 @@ fun DailyQuestionWriteScreen(
     ) { paddingValues ->
         Column {
             Column(modifier = Modifier.padding(paddingValues).padding(horizontal = 20.dp)) {
-                val headerText =
-                    when {
-                        uiState.isQuestionLoading -> "오늘의 질문을 불러오는 중..."
-                        uiState.questionLoadError != null -> uiState.questionLoadError!!
-                        uiState.questionContent.isNotEmpty() -> uiState.questionContent
-                        else -> "오늘의 질문이 없습니다."
-                    }
                 DailyQuestionWriteHeaderCard(
-                    questionText = headerText,
+                    questionText = uiState.questionContent.ifEmpty { "오늘의 질문을 불러오는 중..." },
                 )
                 Spacer(modifier = Modifier.height(18.dp))
                 Row(
@@ -94,8 +88,8 @@ fun DailyQuestionWriteScreen(
                 ) {
                     Text(
                         text = "YOUR ANSWER",
-                        style = AfternoteDesign.typography.mono,
-                        color = AfternoteDesign.colors.black.copy(alpha = 0.4f),
+                        style = MaterialTheme.typography.displaySmall,
+                        color = Color(0xFF000000).copy(alpha = 0.4f),
                     )
                     HorizontalDivider(modifier = Modifier.padding(start = 12.dp))
                 }
@@ -105,7 +99,7 @@ fun DailyQuestionWriteScreen(
                 if (errorMessage != null) {
                     Text(
                         text = errorMessage,
-                        color = Red,
+                        color = Color.Red,
                         style = AfternoteDesign.typography.captionLargeR,
                     )
                 }

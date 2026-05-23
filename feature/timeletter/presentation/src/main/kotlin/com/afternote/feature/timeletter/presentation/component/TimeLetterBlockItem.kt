@@ -26,12 +26,12 @@ import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 @Composable
 fun TimeLetterBlockItem(
     letter: TimeLetter,
-    modifier: Modifier = Modifier,
     receiverNameMap: Map<Long, String> = emptyMap(),
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier =
-            modifier
+            Modifier
                 .border(
                     width = 1.dp,
                     color = AfternoteDesign.colors.gray4,

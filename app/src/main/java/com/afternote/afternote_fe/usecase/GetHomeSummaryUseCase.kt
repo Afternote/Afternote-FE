@@ -6,7 +6,7 @@ import com.afternote.feature.mindrecord.domain.repository.DeepThoughtRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import java.time.YearMonth
+import java.time.LocalDate
 import javax.inject.Inject
 
 /**
@@ -29,12 +29,12 @@ class GetHomeSummaryUseCase
         suspend operator fun invoke(): Result<HomeSummary> =
             runCatching {
                 coroutineScope {
-                    val thisMonth = YearMonth.now().toString() // yyyy-MM
+                    val today = LocalDate.now().toString() // yyyy-MM-dd
                     val profileDeferred = async { userRepository.getMyProfile() }
                     val receiversDeferred = async { userRepository.getReceivers() }
-                    // 백엔드가 `yearMonth` 를 필수 쿼리로 요구하므로 이번 달로 호출.
-                    // 결과적으로 카운트는 "이번 달 작성된 일기 수" 의미가 됨.
-                    val diaryDeferred = async { diaryRepository.getList(yearMonth = thisMonth) }
+                    // 백엔드가 `date` 를 필수 쿼리로 요구하므로 오늘 날짜로 호출.
+                    // 결과적으로 카운트는 "오늘 작성된 일기 수" 의미가 됨.
+                    val diaryDeferred = async { diaryRepository.getList(date = today) }
                     val deepThoughtDeferred = async { deepThoughtRepository.getList() }
 
                     val profile = profileDeferred.await()

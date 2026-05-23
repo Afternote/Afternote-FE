@@ -42,7 +42,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Red
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.presentation.component.BottomSheetCalendar
@@ -134,7 +133,7 @@ fun DiaryWriteScreen(
                     Text(
                         text = "제목을 입력하세요.",
                         style = AfternoteDesign.typography.h2,
-                        color = AfternoteDesign.colors.black.copy(alpha = 0.2f),
+                        color = Color(0xFF000000).copy(0.2f),
                     )
                 },
             )
@@ -152,7 +151,7 @@ fun DiaryWriteScreen(
                 Text(
                     text = "오늘의 기분",
                     style = AfternoteDesign.typography.captionLargeR,
-                    color = AfternoteDesign.colors.black.copy(alpha = 0.4f),
+                    color = Color(0xFF000000).copy(0.4f),
                 )
                 Spacer(modifier = Modifier.width(12.dp))
 
@@ -184,7 +183,7 @@ fun DiaryWriteScreen(
                     Text(
                         text = "위치 추가",
                         style = AfternoteDesign.typography.captionLargeR,
-                        color = AfternoteDesign.colors.black.copy(alpha = 0.6f),
+                        color = Color(0xFF000000).copy(0.6f),
                     )
                 }
 
@@ -205,7 +204,7 @@ fun DiaryWriteScreen(
                     Text(
                         text = "사진 추가",
                         style = AfternoteDesign.typography.captionLargeR,
-                        color = AfternoteDesign.colors.black.copy(alpha = 0.6f),
+                        color = Color(0xFF000000).copy(0.6f),
                     )
                 }
             }
@@ -214,7 +213,7 @@ fun DiaryWriteScreen(
             if (errorMessage != null) {
                 Text(
                     text = errorMessage,
-                    color = Red,
+                    color = Color.Red,
                     style = AfternoteDesign.typography.captionLargeR,
                 )
             }

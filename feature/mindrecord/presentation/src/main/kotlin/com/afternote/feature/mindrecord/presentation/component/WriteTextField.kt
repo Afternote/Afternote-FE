@@ -19,8 +19,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontStyle
@@ -73,15 +71,9 @@ fun WriteTextField(
 
     var showTextStyleToolbar by remember { mutableStateOf(false) }
     val imeVisible = WindowInsets.isImeVisible
-    val editorFocusRequester = remember { FocusRequester() }
 
     LaunchedEffect(imeVisible) {
         if (!imeVisible) showTextStyleToolbar = false
-    }
-
-    fun keepEditorFocus(action: () -> Unit) {
-        action()
-        runCatching { editorFocusRequester.requestFocus() }
     }
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -98,7 +90,6 @@ fun WriteTextField(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .focusRequester(editorFocusRequester)
                         .padding(16.dp),
             )
             if (state.annotatedString.text.isEmpty()) {
@@ -122,23 +113,15 @@ fun WriteTextField(
             TextStyleToolbar(
                 styleState = styleState,
                 onClose = { showTextStyleToolbar = false },
-                onBoldClick = {
-                    keepEditorFocus { state.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold)) }
-                },
-                onItalicClick = {
-                    keepEditorFocus { state.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic)) }
-                },
-                onUnderlineClick = {
-                    keepEditorFocus { state.toggleSpanStyle(SpanStyle(textDecoration = TextDecoration.Underline)) }
-                },
-                onStrikethroughClick = {
-                    keepEditorFocus { state.toggleSpanStyle(SpanStyle(textDecoration = TextDecoration.LineThrough)) }
-                },
+                onBoldClick = { state.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold)) },
+                onItalicClick = { state.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic)) },
+                onUnderlineClick = { state.toggleSpanStyle(SpanStyle(textDecoration = TextDecoration.Underline)) },
+                onStrikethroughClick = { state.toggleSpanStyle(SpanStyle(textDecoration = TextDecoration.LineThrough)) },
                 onAlignChange = { align ->
-                    keepEditorFocus { state.addParagraphStyle(ParagraphStyle(textAlign = align)) }
+                    state.addParagraphStyle(ParagraphStyle(textAlign = align))
                 },
                 onTextStyleChange = { type ->
-                    keepEditorFocus { state.addSpanStyle(type.toSpanStyle()) }
+                    state.toggleSpanStyle(type.toSpanStyle())
                 },
             )
         }
@@ -146,9 +129,6 @@ fun WriteTextField(
         BottomToolbar(
             modifier = Modifier.imePadding(),
             onTextStyleClick = { showTextStyleToolbar = !showTextStyleToolbar },
-            onAlignChange = { align ->
-                keepEditorFocus { state.addParagraphStyle(ParagraphStyle(textAlign = align)) }
-            },
         )
     }
 }

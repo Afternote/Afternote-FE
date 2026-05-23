@@ -2,7 +2,7 @@ package com.afternote.feature.mindrecord.data.api
 
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.feature.mindrecord.data.dto.DiaryCreateRequest
-import com.afternote.feature.mindrecord.data.dto.DiaryListResponse
+import com.afternote.feature.mindrecord.data.dto.DiaryListItem
 import com.afternote.feature.mindrecord.data.dto.DiaryUpdateRequest
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -15,9 +15,8 @@ import retrofit2.http.Query
 interface DiaryApiService {
     @GET("diary")
     suspend fun getDiaries(
-        @Query("yearMonth") yearMonth: String,
-        @Query("draftOnly") draftOnly: Boolean? = null,
-    ): BaseResponse<DiaryListResponse>
+        @Query("date") date: String? = null,
+    ): BaseResponse<List<DiaryListItem>>
 
     @POST("diary")
     suspend fun createDiary(

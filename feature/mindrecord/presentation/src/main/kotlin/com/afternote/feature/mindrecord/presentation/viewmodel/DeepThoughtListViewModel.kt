@@ -3,7 +3,6 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.feature.mindrecord.domain.model.DeepThought
-import com.afternote.feature.mindrecord.domain.model.DeepThoughtCategory
 import com.afternote.feature.mindrecord.domain.model.RandomDeepThought
 import com.afternote.feature.mindrecord.domain.repository.DeepThoughtRepository
 import com.afternote.feature.mindrecord.presentation.mapper.toUi
@@ -57,7 +56,6 @@ class DeepThoughtListViewModel
                 internalState.update { it.copy(loadPhase = LoadPhase.Loading) }
 
                 val random = repository.getRandom().getOrNull()
-                val categories = repository.getCategories().getOrNull().orEmpty()
                 repository
                     .getList(
                         date = null,
@@ -65,7 +63,7 @@ class DeepThoughtListViewModel
                         category = state.selectedCategory,
                     ).onSuccess { list ->
                         internalState.update {
-                            it.copy(loadPhase = LoadPhase.Loaded(random, list, categories))
+                            it.copy(loadPhase = LoadPhase.Loaded(random, list))
                         }
                     }.onFailure { e ->
                         internalState.update {
@@ -87,7 +85,6 @@ class DeepThoughtListViewModel
             data class Loaded(
                 val random: RandomDeepThought?,
                 val items: List<DeepThought>,
-                val categories: List<DeepThoughtCategory>,
             ) : LoadPhase
 
             data class Failed(
@@ -114,7 +111,6 @@ class DeepThoughtListViewModel
                         randomThoughtCreatedAt = phase.random?.createdAt,
                         tags = tags,
                         selectedTag = selectedTag,
-                        categories = phase.categories.map { it.toUi() },
                         selectedCategory = selectedCategory,
                         items = items,
                     )
