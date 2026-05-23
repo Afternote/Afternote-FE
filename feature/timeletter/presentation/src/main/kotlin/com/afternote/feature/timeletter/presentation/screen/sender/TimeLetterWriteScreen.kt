@@ -70,6 +70,7 @@ fun TimeLetterWriteScreen(
     onDateSelected: (String) -> Unit = {},
     onTimeSelected: (hour: Int, minute: Int) -> Unit = { _, _ -> },
     onDraftClick: (title: String, body: String) -> Unit = { _, _ -> },
+    onNavigateToDraft: () -> Unit = {},
     onErrorShown: () -> Unit = {},
     onImageSelected: (Uri) -> Unit = {},
     onAudioSelected: (Uri) -> Unit = {},
@@ -277,6 +278,7 @@ fun TimeLetterWriteScreen(
                 onAlignLeftClick = onAlignLeftClick,
                 onAlignRightClick = onAlignRightClick,
                 onDraftClick = { onDraftClick(titleState.text.toString(), bodyState.text.toString()) },
+                onDraftCountClick = onNavigateToDraft,
             )
         },
         containerColor = AfternoteDesign.colors.white,

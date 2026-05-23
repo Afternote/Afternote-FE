@@ -36,6 +36,7 @@ fun TimeLetterBottomBar(
     onAlignLeftClick: () -> Unit,
     onAlignRightClick: () -> Unit,
     onDraftClick: () -> Unit,
+    onDraftCountClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -115,14 +116,14 @@ fun TimeLetterBottomBar(
                 style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray7,
             )
-            if (draftCount > 0) {
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "$draftCount",
-                    style = AfternoteDesign.typography.captionLargeR,
-                    color = AfternoteDesign.colors.gray7,
-                )
-            }
+        }
+        if (draftCount > 0) {
+            Text(
+                text = "$draftCount",
+                style = AfternoteDesign.typography.captionLargeR,
+                color = AfternoteDesign.colors.gray7,
+                modifier = Modifier.clickable(onClick = onDraftCountClick),
+            )
         }
     }
 }
@@ -139,5 +140,6 @@ private fun TimeLetterBottomBarPreview() {
         onAlignLeftClick = {},
         onAlignRightClick = {},
         onDraftClick = {},
+        onDraftCountClick = {},
     )
 }
