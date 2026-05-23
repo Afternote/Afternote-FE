@@ -6,6 +6,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDailyQuestion
@@ -21,6 +22,8 @@ import com.afternote.feature.mindrecord.presentation.model.DayItem
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -39,6 +42,7 @@ class WeeklyReportViewModel
     constructor(
         @ApplicationContext private val context: Context,
         private val repository: WeeklyReportRepository,
+        private val userRepository: UserRepository,
     ) : ViewModel() {
         // 월~일 순서. 캘린더 셀 라벨 매핑용.
         private val weekdayLabels: List<String> =
@@ -82,10 +86,24 @@ class WeeklyReportViewModel
         private fun load(monday: LocalDate) {
             viewModelScope.launch {
                 internalState.update { it.copy(loadPhase = LoadPhase.Loading) }
-                repository
-                    .getWeeklyReport(date = monday.format(API_DATE_FORMATTER))
-                    .onSuccess { report ->
-                        internalState.update { it.copy(loadPhase = LoadPhase.Loaded(monday, report)) }
+                val result =
+                    runCatching {
+                        coroutineScope {
+                            val reportDeferred =
+                                async {
+                                    repository
+                                        .getWeeklyReport(date = monday.format(API_DATE_FORMATTER))
+                                        .getOrThrow()
+                                }
+                            val profileDeferred = async { userRepository.getMyProfile() }
+                            reportDeferred.await() to profileDeferred.await()
+                        }
+                    }
+                result
+                    .onSuccess { (report, profile) ->
+                        internalState.update {
+                            it.copy(loadPhase = LoadPhase.Loaded(monday, report, profile.name))
+                        }
                     }.onFailure { e ->
                         internalState.update {
                             it.copy(
@@ -157,6 +175,7 @@ class WeeklyReportViewModel
             data class Loaded(
                 val monday: LocalDate,
                 val report: WeeklyReport,
+                val userName: String,
             ) : LoadPhase
 
             data class Failed(
@@ -177,6 +196,7 @@ class WeeklyReportViewModel
                 selectedMonday = monday,
                 weekOptions = weekOptions,
                 dateRange = "${monday.format(RANGE_FORMATTER)} - ${sunday.format(RANGE_FORMATTER)}",
+                userName = userName,
                 recordedDays = report.week.count { it.isDiary },
                 counts =
                     listOf(

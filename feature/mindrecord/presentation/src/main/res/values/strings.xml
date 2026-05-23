@@ -84,7 +84,6 @@
     <string name="mindrecord_weekly_report_avg_mood_good">😊 좋음</string>
     <string name="mindrecord_weekly_report_label_format">%1$d월 %2$d주차 리포트</string>
     <string name="mindrecord_weekly_report_label_fallback">11월 2주차 리포트</string>
-    <string name="mindrecord_weekly_report_user_default_name">박서연</string>
     <string name="mindrecord_weekly_report_recorded_prefix">이번 주, </string>
     <string name="mindrecord_weekly_report_recorded_middle">님은 </string>
     <string name="mindrecord_weekly_report_recorded_suffix">의 마음을 기록하셨네요.</string>

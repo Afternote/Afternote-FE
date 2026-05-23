@@ -71,7 +71,7 @@ private fun WeeklyReportContent(
         }
 
         item {
-            Text(text = recordedSummary(recordedDays = state.recordedDays))
+            Text(text = recordedSummary(userName = state.userName, recordedDays = state.recordedDays))
         }
 
         item {
@@ -107,9 +107,11 @@ private fun WeeklyReportContent(
 }
 
 @Composable
-private fun recordedSummary(recordedDays: Int): androidx.compose.ui.text.AnnotatedString {
+private fun recordedSummary(
+    userName: String,
+    recordedDays: Int,
+): androidx.compose.ui.text.AnnotatedString {
     val prefix = stringResource(R.string.mindrecord_weekly_report_recorded_prefix)
-    val userName = stringResource(R.string.mindrecord_weekly_report_user_default_name)
     val middle = stringResource(R.string.mindrecord_weekly_report_recorded_middle)
     val daysText = stringResource(R.string.mindrecord_weekly_report_days_format, recordedDays)
     val suffix = stringResource(R.string.mindrecord_weekly_report_recorded_suffix)
@@ -180,6 +182,7 @@ private fun WeeklyReportScreenPreview() {
                     selectedMonday = java.time.LocalDate.of(2025, 11, 10),
                     weekOptions = emptyList(),
                     dateRange = "2025.11.10. - 2025.11.16.",
+                    userName = "박서연",
                     recordedDays = 3,
                     counts = emptyList(),
                     weekDays = emptyList(),

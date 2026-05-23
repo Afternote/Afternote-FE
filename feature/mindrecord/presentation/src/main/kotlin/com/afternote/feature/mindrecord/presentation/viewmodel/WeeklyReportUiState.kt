@@ -18,6 +18,7 @@ sealed interface WeeklyReportUiState {
         val selectedMonday: LocalDate,
         val weekOptions: List<WeekOption>,
         val dateRange: String,
+        val userName: String,
         val recordedDays: Int,
         val counts: List<Pair<Int, MindRecordCategoryUi>>,
         val weekDays: List<DayItem>,
