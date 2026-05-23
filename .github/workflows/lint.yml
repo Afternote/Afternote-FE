@@ -44,6 +44,7 @@ jobs:
         run: ./gradlew lintDebug --continue --parallel
         env:
           KAKAO_NATIVE_APP_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
+          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
 
       - name: Report Android Lint (Reviewdog)
         if: always()
