@@ -88,20 +88,20 @@ class TimeLetterWriteViewModel
 
         fun saveDraft(
             title: String,
-            content: String,
+            textContents: Map<Long, String>,
         ) {
-            save(title = title, content = content, status = TimeLetterStatus.DRAFT)
+            save(title = title, textContents = textContents, status = TimeLetterStatus.DRAFT)
         }
 
         fun register(
             title: String,
-            content: String,
+            textContents: Map<Long, String>,
         ) {
             if (_uiState.value.sendAt == null) {
                 _uiState.update { it.copy(errorMessage = "발송 날짜를 선택해주세요.") }
                 return
             }
-            save(title = title, content = content, status = TimeLetterStatus.SCHEDULED)
+            save(title = title, textContents = textContents, status = TimeLetterStatus.SCHEDULED)
         }
 
         fun clearError() {
@@ -112,33 +112,60 @@ class TimeLetterWriteViewModel
             _uiState.update { it.copy(textAlign = align) }
         }
 
-        fun addImageAttachment(uri: Uri) {
-            _uiState.update {
-                it.copy(attachments = it.attachments + LetterAttachment.ImageAttachment(uri, getFileName(uri)))
+        fun setFocusedBlock(id: Long?) {
+            _uiState.update { it.copy(focusedBlockId = id) }
+        }
+
+        fun addImageBlock(uri: Uri) {
+            addMediaBlockInternal { id -> EditorBlock.Image(id, uri, getFileName(uri)) }
+        }
+
+        fun addAudioBlock(uri: Uri) {
+            addMediaBlockInternal { id -> EditorBlock.Audio(id, uri, getFileName(uri)) }
+        }
+
+        fun addFileBlock(uri: Uri) {
+            addMediaBlockInternal { id -> EditorBlock.File(id, uri, getFileName(uri)) }
+        }
+
+        fun addLinkBlock(url: String) {
+            addMediaBlockInternal { id -> EditorBlock.Link(id, url) }
+        }
+
+        private fun addMediaBlockInternal(createBlock: (Long) -> EditorBlock) {
+            _uiState.update { state ->
+                val blocks = state.editorBlocks.toMutableList()
+                val insertAfterIndex = state.focusedBlockId
+                    ?.let { focusedId -> blocks.indexOfFirst { it.id == focusedId }.takeIf { it >= 0 } }
+                    ?: blocks.lastIndex
+
+                var nextId = state.nextBlockId
+                val mediaBlock = createBlock(nextId++)
+                blocks.add(insertAfterIndex + 1, mediaBlock)
+
+                val newTextBlock = EditorBlock.Text(nextId++)
+                blocks.add(insertAfterIndex + 2, newTextBlock)
+
+                state.copy(
+                    editorBlocks = blocks,
+                    focusedBlockId = newTextBlock.id,
+                    nextBlockId = nextId,
+                )
             }
         }
 
-        fun addAudioAttachment(uri: Uri) {
-            _uiState.update {
-                it.copy(attachments = it.attachments + LetterAttachment.AudioAttachment(uri, getFileName(uri)))
-            }
-        }
-
-        fun addFileAttachment(uri: Uri) {
-            _uiState.update {
-                it.copy(attachments = it.attachments + LetterAttachment.FileAttachment(uri, getFileName(uri)))
-            }
-        }
-
-        fun addLinkAttachment(url: String) {
-            _uiState.update {
-                it.copy(attachments = it.attachments + LetterAttachment.LinkAttachment(url))
-            }
-        }
-
-        fun removeAttachment(index: Int) {
-            _uiState.update {
-                it.copy(attachments = it.attachments.toMutableList().apply { removeAt(index) })
+        fun removeBlock(id: Long) {
+            _uiState.update { state ->
+                val filtered = state.editorBlocks.filter { it.id != id }
+                if (filtered.isEmpty()) {
+                    val newTextId = state.nextBlockId
+                    state.copy(
+                        editorBlocks = listOf(EditorBlock.Text(newTextId)),
+                        nextBlockId = newTextId + 1,
+                    )
+                } else {
+                    state.copy(editorBlocks = filtered)
+                }
             }
         }
 
@@ -151,7 +178,7 @@ class TimeLetterWriteViewModel
 
         private fun save(
             title: String,
-            content: String,
+            textContents: Map<Long, String>,
             status: TimeLetterStatus,
         ) {
             val state = _uiState.value
@@ -160,8 +187,7 @@ class TimeLetterWriteViewModel
             viewModelScope.launch {
                 _uiState.update { it.copy(isSaving = true) }
                 runCatching {
-                    android.util.Log.d("TimeLetterVM", "save: status=$status, sendAt=${state.sendAt}, sendHour=${state.sendHour}, sendMinute=${state.sendMinute}, attachments=${state.attachments.size}, receiverIds=${state.recipientIds}")
-                    val blocks = buildBlocks(content, state.attachments)
+                    val blocks = buildBlocks(state.editorBlocks, textContents)
                     timeLetterRepository.createTimeLetter(
                         title = title.ifBlank { null },
                         blocks = blocks,
@@ -173,7 +199,6 @@ class TimeLetterWriteViewModel
                         receiverIds = state.recipientIds.ifEmpty { null },
                     )
                 }.onSuccess {
-                    android.util.Log.d("TimeLetterVM", "save success: status=$status")
                     val event =
                         if (status == TimeLetterStatus.DRAFT) {
                             TimeLetterWriteEvent.SavedAsDraft
@@ -191,72 +216,74 @@ class TimeLetterWriteViewModel
         }
 
         private suspend fun buildBlocks(
-            content: String,
-            attachments: List<LetterAttachment>,
+            editorBlocks: List<EditorBlock>,
+            textContents: Map<Long, String>,
         ): List<NewTimeLetterBlock> {
             val blocks = mutableListOf<NewTimeLetterBlock>()
             var order = 1
 
-            if (content.isNotBlank()) {
-                blocks.add(
-                    NewTimeLetterBlock(
-                        blockType = TimeLetterBlockType.TEXT,
-                        blockOrder = order++,
-                        textContent = content,
-                    ),
-                )
-            }
-
-            for (attachment in attachments) {
-                when (attachment) {
-                    is LetterAttachment.ImageAttachment -> {
+            for (block in editorBlocks) {
+                when (block) {
+                    is EditorBlock.Text -> {
+                        val content = textContents[block.id] ?: ""
+                        if (content.isNotBlank()) {
+                            blocks.add(
+                                NewTimeLetterBlock(
+                                    blockType = TimeLetterBlockType.TEXT,
+                                    blockOrder = order++,
+                                    textContent = content,
+                                ),
+                            )
+                        }
+                    }
+                    is EditorBlock.Image -> {
                         val url =
                             photoUploadRepository
-                                .upload(attachment.uri.toString(), "timeletters")
+                                .upload(block.uri.toString(), "timeletters")
                                 .getOrElse { throw it }
                         blocks.add(
                             NewTimeLetterBlock(
                                 blockType = TimeLetterBlockType.IMAGE,
                                 blockOrder = order++,
                                 url = url,
-                                mimeType = context.contentResolver.getType(attachment.uri),
+                                mimeType = context.contentResolver.getType(block.uri),
                             ),
                         )
                     }
-                    is LetterAttachment.AudioAttachment -> {
+                    is EditorBlock.Audio -> {
                         val url =
                             photoUploadRepository
-                                .upload(attachment.uri.toString(), "timeletters")
+                                .upload(block.uri.toString(), "timeletters")
                                 .getOrElse { throw it }
                         blocks.add(
                             NewTimeLetterBlock(
                                 blockType = TimeLetterBlockType.AUDIO,
                                 blockOrder = order++,
                                 url = url,
-                                mimeType = context.contentResolver.getType(attachment.uri),
+                                mimeType = context.contentResolver.getType(block.uri),
                             ),
                         )
                     }
-                    is LetterAttachment.FileAttachment -> {
+                    is EditorBlock.File -> {
                         val url =
                             photoUploadRepository
-                                .upload(attachment.uri.toString(), "timeletters")
+                                .upload(block.uri.toString(), "timeletters")
                                 .getOrElse { throw it }
                         blocks.add(
                             NewTimeLetterBlock(
                                 blockType = TimeLetterBlockType.FILE,
                                 blockOrder = order++,
                                 url = url,
-                                mimeType = context.contentResolver.getType(attachment.uri),
+                                mimeType = context.contentResolver.getType(block.uri),
                             ),
                         )
                     }
-                    is LetterAttachment.LinkAttachment -> {
+                    is EditorBlock.Link -> {
                         blocks.add(
                             NewTimeLetterBlock(
                                 blockType = TimeLetterBlockType.LINK,
                                 blockOrder = order++,
-                                url = attachment.url,
+                                url = block.url,
                             ),
                         )
                     }

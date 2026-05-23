@@ -18,6 +18,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -101,6 +102,10 @@ private fun TimeLetterDetailContent(
         .ifEmpty { "${letter.receiverIds.size}명" }
     val sendAtText = letter.sendAt?.take(10)?.replace("-", ".") ?: ""
 
+    val heroImageUrl = remember(letter.blocks) {
+        letter.blocks.firstOrNull { it.blockType == TimeLetterBlockType.IMAGE }?.url
+    }
+
     LazyColumn(contentPadding = contentPadding) {
         item {
             Box(
@@ -108,12 +113,21 @@ private fun TimeLetterDetailContent(
                     .fillMaxWidth()
                     .height(160.dp),
             ) {
-                Image(
-                    painter = painterResource(R.drawable.ex_box_img),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.matchParentSize(),
-                )
+                if (heroImageUrl != null) {
+                    AsyncImage(
+                        model = heroImageUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.matchParentSize(),
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(R.drawable.ex_box_img),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.matchParentSize(),
+                    )
+                }
                 Column(
                     modifier = Modifier
                         .align(Alignment.BottomStart)

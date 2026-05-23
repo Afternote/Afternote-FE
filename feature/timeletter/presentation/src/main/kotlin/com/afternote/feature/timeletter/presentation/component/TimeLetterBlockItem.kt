@@ -14,13 +14,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.timeletter.domain.model.TimeLetter
+import com.afternote.feature.timeletter.domain.model.TimeLetterBlockType
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 
 @Composable
@@ -29,23 +32,31 @@ fun TimeLetterBlockItem(
     receiverNameMap: Map<Long, String> = emptyMap(),
     modifier: Modifier = Modifier,
 ) {
+    val thumbUrl = letter.blocks.firstOrNull { it.blockType == TimeLetterBlockType.IMAGE }?.url
+
     Column(
         modifier =
-            Modifier
+            modifier
                 .border(
                     width = 1.dp,
                     color = AfternoteDesign.colors.gray4,
                     shape = RoundedCornerShape(size = 6.dp),
                 ).fillMaxWidth(),
     ) {
-        Image(
-            painterResource(com.afternote.feature.timeletter.presentation.R.drawable.container),
-            contentDescription = "예시 블록",
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(100.dp),
-        )
+        if (thumbUrl != null) {
+            AsyncImage(
+                model = thumbUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxWidth().height(100.dp),
+            )
+        } else {
+            Image(
+                painterResource(com.afternote.feature.timeletter.presentation.R.drawable.container),
+                contentDescription = null,
+                modifier = Modifier.fillMaxWidth().height(100.dp),
+            )
+        }
         Column(
             modifier = Modifier.padding(vertical = 16.dp, horizontal = 15.dp),
         ) {

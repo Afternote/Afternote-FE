@@ -3,20 +3,31 @@ package com.afternote.feature.timeletter.presentation.screen.sender
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -27,32 +38,40 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.calendar.BottomSheetCalendar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
-import com.afternote.feature.timeletter.presentation.component.AttachmentListSection
+import com.afternote.feature.timeletter.presentation.R
 import com.afternote.feature.timeletter.presentation.component.MediaBottomSheetContent
 import com.afternote.feature.timeletter.presentation.component.RecipientCard
 import com.afternote.feature.timeletter.presentation.component.SendScheduleRow
-import com.afternote.feature.timeletter.presentation.component.TimeLetterBodyTextField
 import com.afternote.feature.timeletter.presentation.component.TimeLetterBottomBar
 import com.afternote.feature.timeletter.presentation.component.TimeLetterTextButton
 import com.afternote.feature.timeletter.presentation.component.TimeLetterTitleTextField
 import com.afternote.feature.timeletter.presentation.component.TimeWheelPicker
+import com.afternote.feature.timeletter.presentation.viewmodel.EditorBlock
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteUiState
 import java.time.LocalDate
 import java.time.LocalTime
@@ -63,20 +82,20 @@ fun TimeLetterWriteScreen(
     uiState: TimeLetterWriteUiState = TimeLetterWriteUiState(),
     modifier: Modifier = Modifier,
     titleState: TextFieldState = rememberTextFieldState(),
-    bodyState: TextFieldState = rememberTextFieldState(),
     onBackClick: () -> Unit = {},
-    onRegisterClick: (title: String, body: String) -> Unit = { _, _ -> },
+    onRegisterClick: (title: String, textContents: Map<Long, String>) -> Unit = { _, _ -> },
     onRecipientClick: () -> Unit = {},
     onDateSelected: (String) -> Unit = {},
     onTimeSelected: (hour: Int, minute: Int) -> Unit = { _, _ -> },
-    onDraftClick: (title: String, body: String) -> Unit = { _, _ -> },
+    onDraftClick: (title: String, textContents: Map<Long, String>) -> Unit = { _, _ -> },
     onNavigateToDraft: () -> Unit = {},
     onErrorShown: () -> Unit = {},
-    onImageSelected: (Uri) -> Unit = {},
-    onAudioSelected: (Uri) -> Unit = {},
-    onFileSelected: (Uri) -> Unit = {},
-    onLinkAdded: (String) -> Unit = {},
-    onAttachmentRemoved: (Int) -> Unit = {},
+    onAddImageBlock: (Uri) -> Unit = {},
+    onAddAudioBlock: (Uri) -> Unit = {},
+    onAddFileBlock: (Uri) -> Unit = {},
+    onAddLinkBlock: (String) -> Unit = {},
+    onRemoveBlock: (Long) -> Unit = {},
+    onSetFocusedBlock: (Long?) -> Unit = {},
     onTextStyleClick: () -> Unit = {},
     onAlignCenterClick: () -> Unit = {},
     onAlignLeftClick: () -> Unit = {},
@@ -88,25 +107,24 @@ fun TimeLetterWriteScreen(
     var showLinkDialog by remember { mutableStateOf(false) }
     var linkUrlInput by remember { mutableStateOf("") }
 
+    val textBlockStates = remember { androidx.compose.runtime.mutableStateMapOf<Long, TextFieldState>() }
+
+    fun collectTextContents(): Map<Long, String> =
+        uiState.editorBlocks
+            .filterIsInstance<EditorBlock.Text>()
+            .associate { it.id to (textBlockStates[it.id]?.text?.toString() ?: "") }
+
     val imageLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.GetContent(),
-        ) { uri: Uri? ->
-            uri?.let { onImageSelected(it) }
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            uri?.let { onAddImageBlock(it) }
         }
-
     val audioLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.GetContent(),
-        ) { uri: Uri? ->
-            uri?.let { onAudioSelected(it) }
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            uri?.let { onAddAudioBlock(it) }
         }
-
     val fileLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.GetContent(),
-        ) { uri: Uri? ->
-            uri?.let { onFileSelected(it) }
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            uri?.let { onAddFileBlock(it) }
         }
 
     LaunchedEffect(uiState.errorMessage) {
@@ -235,7 +253,7 @@ fun TimeLetterWriteScreen(
                     onClick = {
                         val url = linkUrlInput.trim()
                         if (url.isNotBlank()) {
-                            onLinkAdded(url)
+                            onAddLinkBlock(url)
                             showLinkDialog = false
                         }
                     },
@@ -262,7 +280,7 @@ fun TimeLetterWriteScreen(
                 actions = {
                     TimeLetterTextButton(
                         text = "등록",
-                        onClick = { onRegisterClick(titleState.text.toString(), bodyState.text.toString()) },
+                        onClick = { onRegisterClick(titleState.text.toString(), collectTextContents()) },
                         isActive = !uiState.isSaving && uiState.sendAt != null,
                     )
                 },
@@ -277,49 +295,188 @@ fun TimeLetterWriteScreen(
                 onAlignCenterClick = onAlignCenterClick,
                 onAlignLeftClick = onAlignLeftClick,
                 onAlignRightClick = onAlignRightClick,
-                onDraftClick = { onDraftClick(titleState.text.toString(), bodyState.text.toString()) },
+                onDraftClick = { onDraftClick(titleState.text.toString(), collectTextContents()) },
                 onDraftCountClick = onNavigateToDraft,
             )
         },
         containerColor = AfternoteDesign.colors.white,
     ) { innerPadding ->
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .verticalScroll(rememberScrollState()),
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = innerPadding,
         ) {
-            RecipientCard(
-                recipientName = uiState.recipientNames.joinToString(", "),
-                onClick = onRecipientClick,
-            )
-
-            HorizontalDivider(color = AfternoteDesign.colors.gray2, thickness = 1.dp)
-
-            SendScheduleRow(
-                date = uiState.sendAt ?: "",
-                time = uiState.sendTime ?: "",
-                onDateClick = { showDatePicker = true },
-                onTimeClick = { showTimePicker = true },
-            )
-
-            HorizontalDivider(color = AfternoteDesign.colors.gray2, thickness = 1.dp)
-
-            TimeLetterTitleTextField(state = titleState)
-
-            TimeLetterBodyTextField(
-                state = bodyState,
-                textAlign = uiState.textAlign,
-                modifier = Modifier.weight(1f, fill = false),
-            )
-
-            if (uiState.attachments.isNotEmpty()) {
-                AttachmentListSection(
-                    attachments = uiState.attachments,
-                    onRemove = onAttachmentRemoved,
+            item(key = "recipient") {
+                RecipientCard(
+                    recipientName = uiState.recipientNames.joinToString(", "),
+                    onClick = onRecipientClick,
                 )
             }
+            item(key = "divider_1") {
+                HorizontalDivider(color = AfternoteDesign.colors.gray2, thickness = 1.dp)
+            }
+            item(key = "schedule") {
+                SendScheduleRow(
+                    date = uiState.sendAt ?: "",
+                    time = uiState.sendTime ?: "",
+                    onDateClick = { showDatePicker = true },
+                    onTimeClick = { showTimePicker = true },
+                )
+            }
+            item(key = "divider_2") {
+                HorizontalDivider(color = AfternoteDesign.colors.gray2, thickness = 1.dp)
+            }
+            item(key = "title") {
+                TimeLetterTitleTextField(state = titleState)
+            }
+            items(uiState.editorBlocks, key = { it.id }) { block ->
+                when (block) {
+                    is EditorBlock.Text -> TextBlockItem(
+                        blockId = block.id,
+                        textBlockStates = textBlockStates,
+                        textAlign = uiState.textAlign,
+                        onFocused = { onSetFocusedBlock(block.id) },
+                    )
+                    is EditorBlock.Image -> ImageBlockItem(
+                        uri = block.uri,
+                        onRemove = { onRemoveBlock(block.id) },
+                    )
+                    is EditorBlock.Audio -> MediaBlockChip(
+                        iconRes = R.drawable.ic_mic,
+                        label = block.name,
+                        onRemove = { onRemoveBlock(block.id) },
+                    )
+                    is EditorBlock.File -> MediaBlockChip(
+                        iconRes = R.drawable.ic_file,
+                        label = block.name,
+                        onRemove = { onRemoveBlock(block.id) },
+                    )
+                    is EditorBlock.Link -> MediaBlockChip(
+                        iconRes = R.drawable.ic_link,
+                        label = block.url,
+                        onRemove = { onRemoveBlock(block.id) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TextBlockItem(
+    blockId: Long,
+    textBlockStates: SnapshotStateMap<Long, TextFieldState>,
+    textAlign: TextAlign,
+    onFocused: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val state = remember(blockId) {
+        textBlockStates.getOrPut(blockId) { TextFieldState() }
+    }
+    DisposableEffect(blockId) {
+        onDispose { textBlockStates.remove(blockId) }
+    }
+    BasicTextField(
+        state = state,
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = 56.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .onFocusChanged { if (it.isFocused) onFocused() },
+        textStyle =
+            AfternoteDesign.typography.bodySmallR.copy(
+                color = AfternoteDesign.colors.gray9,
+                textAlign = textAlign,
+            ),
+        cursorBrush = SolidColor(AfternoteDesign.colors.black),
+        decorator = { innerTextField ->
+            Box {
+                if (state.text.isEmpty()) {
+                    Text(
+                        text = "내용을 입력하세요",
+                        style = AfternoteDesign.typography.bodySmallR,
+                        color = AfternoteDesign.colors.gray4,
+                    )
+                }
+                innerTextField()
+            }
+        },
+    )
+}
+
+@Composable
+private fun ImageBlockItem(
+    uri: Uri,
+    onRemove: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+    ) {
+        AsyncImage(
+            model = uri,
+            contentDescription = null,
+            contentScale = ContentScale.FillWidth,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        IconButton(
+            onClick = onRemove,
+            modifier = Modifier.align(Alignment.TopEnd),
+        ) {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = "삭제",
+                tint = Color.White,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun MediaBlockChip(
+    iconRes: Int,
+    label: String,
+    onRemove: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp)
+                .background(AfternoteDesign.colors.gray2, RoundedCornerShape(8.dp))
+                .padding(start = 12.dp, top = 10.dp, bottom = 10.dp, end = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            painter = painterResource(iconRes),
+            contentDescription = null,
+            tint = AfternoteDesign.colors.gray7,
+            modifier = Modifier.size(20.dp),
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = label,
+            style = AfternoteDesign.typography.bodySmallR,
+            color = AfternoteDesign.colors.gray7,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        IconButton(
+            onClick = onRemove,
+            modifier = Modifier.size(36.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = "삭제",
+                tint = AfternoteDesign.colors.gray5,
+                modifier = Modifier.size(16.dp),
+            )
         }
     }
 }

@@ -24,10 +24,6 @@ class TimeletterViewModel
         private val _uiState = MutableStateFlow<TimeletterUiState>(TimeletterUiState.Loading)
         val uiState: StateFlow<TimeletterUiState> = _uiState.asStateFlow()
 
-        init {
-            load()
-        }
-
         fun load() {
             viewModelScope.launch {
                 _uiState.value = TimeletterUiState.Loading

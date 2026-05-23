@@ -90,7 +90,7 @@ fun TimeLetterContent(
         Spacer(modifier = Modifier.height(20.dp))
         LazyColumn(
             modifier = Modifier.padding(top = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(if (viewMode == ViewMode.List) 11.dp else 12.dp),
         ) {
             items(letters.timeLetters) { letter ->
                 when (viewMode) {
