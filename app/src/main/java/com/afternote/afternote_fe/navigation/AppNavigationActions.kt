@@ -170,6 +170,14 @@ fun rememberTimeLetterNavActions(navController: NavController): TimeLetterNavAct
             override fun onDetailBack() {
                 navController.popBackStack()
             }
+
+            override fun onNavigateToRecipientFilter() {
+                navController.navigate(TimeLetterRoute.TimeLetterRecipientFilterRoute)
+            }
+
+            override fun onRecipientFilterBack() {
+                navController.popBackStack()
+            }
         }
     }
 

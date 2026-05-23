@@ -8,6 +8,7 @@ sealed interface TimeletterUiState {
     data class Success(
         val letters: TimeLetterList,
         val receiverNameMap: Map<Long, String>,
+        val selectedFilterReceiverIds: Set<Long> = emptySet(),
     ) : TimeletterUiState
 
     data class Error(

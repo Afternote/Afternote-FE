@@ -18,6 +18,7 @@ import com.afternote.feature.timeletter.presentation.screen.sender.TimeLetterWri
 import com.afternote.feature.timeletter.presentation.screen.sender.TimeletterScreen
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteEvent
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteViewModel
+import com.afternote.feature.timeletter.presentation.viewmodel.TimeletterViewModel
 
 fun NavGraphBuilder.timeLetterNavGraph(
     navController: NavController,
@@ -28,6 +29,7 @@ fun NavGraphBuilder.timeLetterNavGraph(
             TimeletterScreen(
                 onWriteClick = actions::onNavigateToWrite,
                 onLetterClick = actions::onNavigateToDetail,
+                onFilterRecipientClick = actions::onNavigateToRecipientFilter,
             )
         }
 
@@ -87,6 +89,22 @@ fun NavGraphBuilder.timeLetterNavGraph(
                     writeViewModel.setRecipients(recipients.map { it.receiverId })
                     actions.onRecipientBack()
                 },
+            )
+        }
+
+        composable<TimeLetterRoute.TimeLetterRecipientFilterRoute> {
+            val homeEntry =
+                remember(it) {
+                    navController.getBackStackEntry(TimeLetterRoute.TimeLetterHomeRoute)
+                }
+            val timeletterViewModel: TimeletterViewModel = hiltViewModel(homeEntry)
+            RecipientListScreen(
+                onBackClick = actions::onRecipientFilterBack,
+                onConfirmClick = { recipients ->
+                    timeletterViewModel.setReceiverFilter(recipients.map { it.receiverId })
+                    actions.onRecipientFilterBack()
+                },
+                allowEmptyConfirm = true,
             )
         }
     }

@@ -35,6 +35,7 @@ fun TimeletterScreen(
     onLetterClick: (Long) -> Unit = {},
     modifier: Modifier = Modifier,
     onWriteClick: () -> Unit = {},
+    onFilterRecipientClick: () -> Unit = {},
     viewModel: TimeletterViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -72,6 +73,8 @@ fun TimeletterScreen(
                     receiverNameMap = state.receiverNameMap,
                     viewMode = viewMode,
                     onViewModeChange = { viewMode = it },
+                    selectedFilterReceiverIds = state.selectedFilterReceiverIds,
+                    onFilterClick = onFilterRecipientClick,
                     onLetterClick = onLetterClick,
                     modifier = Modifier.padding(paddingValues),
                 )

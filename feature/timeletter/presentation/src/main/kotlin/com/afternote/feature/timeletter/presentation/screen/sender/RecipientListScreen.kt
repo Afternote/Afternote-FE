@@ -48,6 +48,7 @@ fun RecipientListScreen(
     onBackClick: () -> Unit,
     onConfirmClick: (List<ReceiverListItem>) -> Unit,
     modifier: Modifier = Modifier,
+    allowEmptyConfirm: Boolean = false,
     viewModel: RecipientListViewModel = hiltViewModel(),
 ) {
     val recipients by viewModel.recipients.collectAsStateWithLifecycle()
@@ -55,6 +56,7 @@ fun RecipientListScreen(
         recipients = recipients,
         onBackClick = onBackClick,
         onConfirmClick = onConfirmClick,
+        allowEmptyConfirm = allowEmptyConfirm,
         modifier = modifier,
     )
 }
@@ -65,6 +67,7 @@ private fun RecipientListContent(
     onBackClick: () -> Unit,
     onConfirmClick: (List<ReceiverListItem>) -> Unit,
     modifier: Modifier = Modifier,
+    allowEmptyConfirm: Boolean = false,
 ) {
     val searchState = rememberTextFieldState()
     val selectedIds = remember { mutableStateSetOf<Long>() }
@@ -116,7 +119,7 @@ private fun RecipientListContent(
                 onClick = {
                     onConfirmClick(recipients.filter { it.receiverId in selectedIds })
                 },
-                type = if (selectedIds.isNotEmpty()) AfternoteButtonType.Default else AfternoteButtonType.Un,
+                type = if (selectedIds.isNotEmpty() || allowEmptyConfirm) AfternoteButtonType.Default else AfternoteButtonType.Un,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
             )
         },

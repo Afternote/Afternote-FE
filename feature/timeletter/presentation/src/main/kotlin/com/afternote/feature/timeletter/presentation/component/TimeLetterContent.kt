@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -34,6 +35,8 @@ fun TimeLetterContent(
     receiverNameMap: Map<Long, String>,
     viewMode: ViewMode,
     onViewModeChange: (ViewMode) -> Unit,
+    selectedFilterReceiverIds: Set<Long> = emptySet(),
+    onFilterClick: () -> Unit = {},
     onLetterClick: (Long) -> Unit = {},
     onWriteClick: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -54,6 +57,14 @@ fun TimeLetterContent(
 
         Spacer(modifier = Modifier.padding(20.dp))
 
+        val filterLabel =
+            when {
+                selectedFilterReceiverIds.isEmpty() -> "전체레터"
+                selectedFilterReceiverIds.size == 1 ->
+                    receiverNameMap[selectedFilterReceiverIds.first()] ?: "수신자"
+                else -> "${selectedFilterReceiverIds.size}명"
+            }
+
         Row(
             modifier = Modifier.fillMaxWidth(),
         ) {
@@ -64,14 +75,18 @@ fun TimeLetterContent(
                     .background(
                         color = Color(0xFFEEEEEE),
                         shape = RoundedCornerShape(size = 16777200.dp),
-                    ).padding(horizontal = 16.dp),
+                    ).clickable { onFilterClick() }
+                    .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    "전체레터",
+                    filterLabel,
                     style = AfternoteDesign.typography.captionLargeR,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
                 )
-                Spacer(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.width(4.dp))
                 Image(
                     painterResource(com.afternote.feature.timeletter.presentation.R.drawable.down_vector),
                     contentDescription = "아래열기",
