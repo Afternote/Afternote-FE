@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import com.afternote.afternote_fe.screen.HomeTabActions
 import com.afternote.afternote_fe.screen.receiver.ReceiverHomeActions
@@ -14,7 +13,6 @@ import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavActions
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
-import com.afternote.feature.afternote.presentation.receiver.navigation.ReceiverFlowEntryPoint
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceiverNavActions
 import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceiverRoute
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
@@ -25,7 +23,6 @@ import com.afternote.feature.setting.presentation.navigation.SettingNavActions
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterNavActions
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
-import dagger.hilt.android.EntryPointAccessors
 
 @Composable
 fun rememberOnboardingNavActions(navController: NavController): OnboardingNavActions =
@@ -424,20 +421,13 @@ fun rememberAfternoteNavActions(
 /**
  * 수신자 서브그래프에 넘길 그래프 내부 [ReceiverNavActions] 구현체.
  *
- * 본인 확인 캐시 분기(11→2/5) 를 위해 [ReceiverFlowEntryPoint] 로 [IdentityVerificationGate] 를 받아 사용한다.
- * authCode 같은 Repository 사이드이펙트는 각 화면 ViewModel 에서 처리.
+ * 본인 확인 캐시 분기(Intro→MasterKey)는 nested 그래프 진입 후 `DeliveryVerificationFlowViewModel` 에서
+ * 자동 처리되므로(#220) 본 actions 는 순수 네비게이션만 수행한다. authCode 같은 Repository 사이드이펙트는
+ * 각 화면 ViewModel 에서 처리.
  */
 @Composable
-fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions {
-    val context = LocalContext.current
-    val entryPoint =
-        remember(context) {
-            EntryPointAccessors
-                .fromApplication(context.applicationContext, ReceiverFlowEntryPoint::class.java)
-        }
-    val identityGate = remember(entryPoint) { entryPoint.identityVerificationGate() }
-
-    return remember(appState, identityGate) {
+fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions =
+    remember(appState) {
         object : ReceiverNavActions {
             override fun onPopBackStack() {
                 appState.navController.popBackStack()
@@ -464,45 +454,38 @@ fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions {
             }
 
             override fun onRequestVerificationFlow(senderId: String) {
-                // 본인 확인 캐시가 있으면 마스터 키 직진, 없으면 안내 화면(2) 부터.
-                if (identityGate.isVerified.value) {
-                    appState.navController.navigate(
-                        ReceiverRoute.MasterKeyRoute(senderId = senderId),
-                    )
-                } else {
-                    appState.navController.navigate(
-                        ReceiverRoute.IdentityVerificationIntroRoute(senderId = senderId),
-                    )
-                }
-            }
-
-            override fun onNavigateIdentityIntroToEmail(senderId: String) {
+                // nested 열람 신청 흐름 그래프 진입. 본인 확인 캐시 분기는 IntroRoute 의 LaunchedEffect 가 처리.
                 appState.navController.navigate(
-                    ReceiverRoute.IdentityVerificationEmailRoute(senderId = senderId),
+                    ReceiverRoute.DeliveryVerificationFlowRoute(senderId = senderId),
                 )
             }
 
-            override fun onNavigateIdentityEmailToMasterKey(senderId: String) {
-                // 이메일 인증 성공 직후 진입. 본인 확인 화면 2 장은 pop 해서 뒤로가기로 되돌아오지 않게.
-                appState.navController.navigate(
-                    ReceiverRoute.MasterKeyRoute(senderId = senderId),
-                ) {
+            override fun onNavigateIdentityIntroToEmail() {
+                appState.navController.navigate(ReceiverRoute.IdentityVerificationEmailRoute)
+            }
+
+            override fun onNavigateIdentityIntroToMasterKey() {
+                // 캐시 존재로 안내 화면 스킵. Intro 는 pop.
+                appState.navController.navigate(ReceiverRoute.MasterKeyRoute) {
                     popUpTo<ReceiverRoute.IdentityVerificationIntroRoute> { inclusive = true }
                 }
             }
 
-            override fun onNavigateMasterKeyToDocumentUpload(senderId: String) {
-                appState.navController.navigate(
-                    ReceiverRoute.DocumentUploadRoute(senderId = senderId),
-                ) {
+            override fun onNavigateIdentityEmailToMasterKey() {
+                // 이메일 인증 성공 직후 진입. 본인 확인 화면 2 장은 pop 해서 뒤로가기로 되돌아오지 않게.
+                appState.navController.navigate(ReceiverRoute.MasterKeyRoute) {
+                    popUpTo<ReceiverRoute.IdentityVerificationIntroRoute> { inclusive = true }
+                }
+            }
+
+            override fun onNavigateMasterKeyToDocumentUpload() {
+                appState.navController.navigate(ReceiverRoute.DocumentUploadRoute) {
                     popUpTo<ReceiverRoute.MasterKeyRoute> { inclusive = true }
                 }
             }
 
-            override fun onNavigateDocumentUploadToComplete(senderId: String) {
-                appState.navController.navigate(
-                    ReceiverRoute.DeliveryVerificationCompleteRoute(senderId = senderId),
-                ) {
+            override fun onNavigateDocumentUploadToComplete() {
+                appState.navController.navigate(ReceiverRoute.DeliveryVerificationCompleteRoute) {
                     popUpTo<ReceiverRoute.DocumentUploadRoute> { inclusive = true }
                 }
             }
@@ -520,7 +503,6 @@ fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions {
             }
         }
     }
-}
 
 /**
  * 수신자 홈에서 발생하는 다른 top-level Route(설정/마음의 기록/타임레터)와
