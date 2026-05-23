@@ -104,17 +104,20 @@ private fun SuccessContent(
                 .padding(horizontal = 20.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        Text(
-            text = stringResource(R.string.receiver_home_sender_record_title, state.senderName),
-            style = AfternoteDesign.typography.h2,
-            color = AfternoteDesign.colors.gray9,
-        )
-        state.senderMessage?.let { message ->
-            SenderMessageHeroCard(
-                senderName = state.senderName,
-                date = message.date,
-                message = message.body,
+        // senderName 가 blank 면 헤더·Hero 카드 모두 안 그림 — "故 님이 남기신 기록" 같은 깨진 문구 회피.
+        if (state.senderName.isNotBlank()) {
+            Text(
+                text = stringResource(R.string.receiver_home_sender_record_title, state.senderName),
+                style = AfternoteDesign.typography.h2,
+                color = AfternoteDesign.colors.gray9,
             )
+            state.senderMessage?.let { message ->
+                SenderMessageHeroCard(
+                    senderName = state.senderName,
+                    date = message.date,
+                    message = message.body,
+                )
+            }
         }
         MindRecordSection(
             summary = state.mindRecord,

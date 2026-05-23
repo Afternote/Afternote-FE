@@ -79,11 +79,14 @@ class ReceiverHomeViewModel
                 val mindRecordsCount = mindRecordsRes.getOrNull()?.totalCount ?: 0
                 val timeLettersCount = timeLettersRes.getOrNull()?.totalCount ?: 0
                 val senderMessageInfo = messageRes.getOrNull()
+                // senderName / senderMessage 둘 다 blank 가드 — sender 가 이름·메시지 미입력 케이스 대응.
+                // ".orEmpty()" 만으로는 공백("  ") 통과해 "故 님이 남기신 기록" / "님의 한 마디" UI 깨짐.
+                val senderName = senderMessageInfo?.senderName?.takeIf { it.isNotBlank() }.orEmpty()
                 val senderMessageBody = senderMessageInfo?.message?.takeIf { it.isNotBlank() }
 
                 _uiState.value =
                     ReceiverHomeUiState.Success(
-                        senderName = senderMessageInfo?.senderName.orEmpty(),
+                        senderName = senderName,
                         // TODO: 백엔드 응답에 date 필드 추가되면 채울 것. 현재 receiver-auth/message 응답은 senderName/message 만.
                         senderMessage = senderMessageBody?.let { SenderMessage(date = "", body = it) },
                         mindRecord =
