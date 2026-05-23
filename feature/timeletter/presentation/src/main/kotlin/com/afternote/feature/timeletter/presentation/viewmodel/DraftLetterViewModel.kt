@@ -2,7 +2,9 @@ package com.afternote.feature.timeletter.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
+import com.afternote.feature.timeletter.domain.usecase.DeleteAllTemporaryUseCase
+import com.afternote.feature.timeletter.domain.usecase.DeleteTimeLettersUseCase
+import com.afternote.feature.timeletter.domain.usecase.GetTemporaryTimeLettersUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,7 +16,9 @@ import javax.inject.Inject
 class DraftLetterViewModel
     @Inject
     constructor(
-        private val timeLetterRepository: TimeLetterRepository,
+        private val getTemporaryTimeLettersUseCase: GetTemporaryTimeLettersUseCase,
+        private val deleteTimeLettersUseCase: DeleteTimeLettersUseCase,
+        private val deleteAllTemporaryUseCase: DeleteAllTemporaryUseCase,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<DraftLetterUiState>(DraftLetterUiState.Loading)
         val uiState: StateFlow<DraftLetterUiState> = _uiState.asStateFlow()
@@ -26,7 +30,7 @@ class DraftLetterViewModel
         fun loadDrafts() {
             viewModelScope.launch {
                 _uiState.value = DraftLetterUiState.Loading
-                runCatching { timeLetterRepository.getTemporaryTimeLetters() }
+                runCatching { getTemporaryTimeLettersUseCase() }
                     .onSuccess { result ->
                         _uiState.value = DraftLetterUiState.Success(drafts = result.timeLetters)
                     }.onFailure {
@@ -51,7 +55,7 @@ class DraftLetterViewModel
             if (current.selectedIds.isEmpty()) return
             viewModelScope.launch {
                 runCatching {
-                    timeLetterRepository.deleteTimeLetters(current.selectedIds.toList())
+                    deleteTimeLettersUseCase(current.selectedIds.toList())
                 }.onSuccess {
                     _uiState.value =
                         current.copy(
@@ -66,7 +70,7 @@ class DraftLetterViewModel
         fun deleteAll() {
             viewModelScope.launch {
                 runCatching {
-                    timeLetterRepository.deleteAllTemporary()
+                    deleteAllTemporaryUseCase()
                 }.onSuccess {
                     _uiState.value = DraftLetterUiState.Success(drafts = emptyList())
                 }

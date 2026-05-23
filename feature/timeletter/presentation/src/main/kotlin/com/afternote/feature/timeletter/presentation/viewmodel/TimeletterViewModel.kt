@@ -1,16 +1,14 @@
 package com.afternote.feature.timeletter.presentation.viewmodel
 
-import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.data.cache.ReceiverCacheStore
-import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
+import com.afternote.feature.timeletter.domain.usecase.GetTimeLettersUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -18,7 +16,7 @@ import javax.inject.Inject
 class TimeletterViewModel
     @Inject
     constructor(
-        private val timeLetterRepository: TimeLetterRepository,
+        private val getTimeLettersUseCase: GetTimeLettersUseCase,
         private val receiverCacheStore: ReceiverCacheStore,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<TimeletterUiState>(TimeletterUiState.Loading)
@@ -28,7 +26,7 @@ class TimeletterViewModel
             viewModelScope.launch {
                 _uiState.value = TimeletterUiState.Loading
                 val receiversDeferred = async { receiverCacheStore.ensureLoaded() }
-                val lettersResult = runCatching { timeLetterRepository.getTimeLetters() }
+                val lettersResult = runCatching { getTimeLettersUseCase() }
                 runCatching { receiversDeferred.await() }
 
                 lettersResult

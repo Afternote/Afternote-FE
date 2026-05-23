@@ -8,11 +8,11 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.data.cache.ReceiverCacheStore
-import com.afternote.core.domain.repository.PhotoUploadRepository
-import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
+import com.afternote.feature.timeletter.domain.model.BlockInput
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlockType
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
-import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
+import com.afternote.feature.timeletter.domain.usecase.CreateTimeLetterUseCase
+import com.afternote.feature.timeletter.domain.usecase.GetTemporaryTimeLettersUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
@@ -31,9 +31,9 @@ import javax.inject.Inject
 class TimeLetterWriteViewModel
     @Inject
     constructor(
-        private val timeLetterRepository: TimeLetterRepository,
+        private val createTimeLetterUseCase: CreateTimeLetterUseCase,
+        private val getTemporaryTimeLettersUseCase: GetTemporaryTimeLettersUseCase,
         private val receiverCacheStore: ReceiverCacheStore,
-        private val photoUploadRepository: PhotoUploadRepository,
         @param:ApplicationContext private val context: Context,
         private val savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
@@ -186,116 +186,62 @@ class TimeLetterWriteViewModel
 
             viewModelScope.launch {
                 _uiState.update { it.copy(isSaving = true) }
-                runCatching {
-                    val blocks = buildBlocks(state.editorBlocks, textContents)
-                    timeLetterRepository.createTimeLetter(
-                        title = title.ifBlank { null },
-                        blocks = blocks,
-                        sendAt =
-                            state.sendAt?.let { date ->
-                                "${date}T${state.sendHour.toString().padStart(2, '0')}:${state.sendMinute.toString().padStart(2, '0')}:00"
-                            },
-                        status = status,
-                        receiverIds = state.recipientIds.ifEmpty { null },
-                    )
-                }.onSuccess {
-                    val event =
-                        if (status == TimeLetterStatus.DRAFT) {
-                            TimeLetterWriteEvent.SavedAsDraft
-                        } else {
-                            TimeLetterWriteEvent.Registered
-                        }
+                val blocks = mapToBlockInputs(state.editorBlocks, textContents)
+                val sendAt = state.sendAt?.let { date ->
+                    "${date}T${state.sendHour.toString().padStart(2, '0')}:${state.sendMinute.toString().padStart(2, '0')}:00"
+                }
+                createTimeLetterUseCase(
+                    title = title.ifBlank { null },
+                    blocks = blocks,
+                    sendAt = sendAt,
+                    status = status,
+                    receiverIds = state.recipientIds.ifEmpty { null },
+                ).onSuccess {
+                    val event = if (status == TimeLetterStatus.DRAFT) {
+                        TimeLetterWriteEvent.SavedAsDraft
+                    } else {
+                        TimeLetterWriteEvent.Registered
+                    }
                     _events.send(event)
                     if (status == TimeLetterStatus.DRAFT) loadDraftCount()
-                }.onFailure { e ->
-                    android.util.Log.e("TimeLetterVM", "save failed", e)
+                }.onFailure {
                     _uiState.update { it.copy(errorMessage = "저장에 실패했어요. 다시 시도해주세요.") }
                 }
                 _uiState.update { it.copy(isSaving = false) }
             }
         }
 
-        private suspend fun buildBlocks(
+        private fun mapToBlockInputs(
             editorBlocks: List<EditorBlock>,
             textContents: Map<Long, String>,
-        ): List<NewTimeLetterBlock> {
-            val blocks = mutableListOf<NewTimeLetterBlock>()
-            var order = 1
-
-            for (block in editorBlocks) {
-                when (block) {
-                    is EditorBlock.Text -> {
-                        val content = textContents[block.id] ?: ""
-                        if (content.isNotBlank()) {
-                            blocks.add(
-                                NewTimeLetterBlock(
-                                    blockType = TimeLetterBlockType.TEXT,
-                                    blockOrder = order++,
-                                    textContent = content,
-                                ),
-                            )
-                        }
-                    }
-                    is EditorBlock.Image -> {
-                        val url =
-                            photoUploadRepository
-                                .upload(block.uri.toString(), "timeletters")
-                                .getOrElse { throw it }
-                        blocks.add(
-                            NewTimeLetterBlock(
-                                blockType = TimeLetterBlockType.IMAGE,
-                                blockOrder = order++,
-                                url = url,
-                                mimeType = context.contentResolver.getType(block.uri),
-                            ),
-                        )
-                    }
-                    is EditorBlock.Audio -> {
-                        val url =
-                            photoUploadRepository
-                                .upload(block.uri.toString(), "timeletters")
-                                .getOrElse { throw it }
-                        blocks.add(
-                            NewTimeLetterBlock(
-                                blockType = TimeLetterBlockType.AUDIO,
-                                blockOrder = order++,
-                                url = url,
-                                mimeType = context.contentResolver.getType(block.uri),
-                            ),
-                        )
-                    }
-                    is EditorBlock.File -> {
-                        val url =
-                            photoUploadRepository
-                                .upload(block.uri.toString(), "timeletters")
-                                .getOrElse { throw it }
-                        blocks.add(
-                            NewTimeLetterBlock(
-                                blockType = TimeLetterBlockType.FILE,
-                                blockOrder = order++,
-                                url = url,
-                                mimeType = context.contentResolver.getType(block.uri),
-                            ),
-                        )
-                    }
-                    is EditorBlock.Link -> {
-                        blocks.add(
-                            NewTimeLetterBlock(
-                                blockType = TimeLetterBlockType.LINK,
-                                blockOrder = order++,
-                                url = block.url,
-                            ),
-                        )
-                    }
+        ): List<BlockInput> = editorBlocks.mapNotNull { block ->
+            when (block) {
+                is EditorBlock.Text -> {
+                    val content = textContents[block.id] ?: ""
+                    if (content.isNotBlank()) BlockInput.Text(content) else null
                 }
+                is EditorBlock.Image -> BlockInput.Media(
+                    uriString = block.uri.toString(),
+                    mimeType = context.contentResolver.getType(block.uri),
+                    blockType = TimeLetterBlockType.IMAGE,
+                )
+                is EditorBlock.Audio -> BlockInput.Media(
+                    uriString = block.uri.toString(),
+                    mimeType = context.contentResolver.getType(block.uri),
+                    blockType = TimeLetterBlockType.AUDIO,
+                )
+                is EditorBlock.File -> BlockInput.Media(
+                    uriString = block.uri.toString(),
+                    mimeType = context.contentResolver.getType(block.uri),
+                    blockType = TimeLetterBlockType.FILE,
+                )
+                is EditorBlock.Link -> BlockInput.Link(block.url)
             }
-
-            return blocks
         }
 
         private fun loadDraftCount() {
             viewModelScope.launch {
-                runCatching { timeLetterRepository.getTemporaryTimeLetters() }
+                runCatching { getTemporaryTimeLettersUseCase() }
                     .onSuccess { result ->
                         _uiState.update { it.copy(draftCount = result.totalCount) }
                     }

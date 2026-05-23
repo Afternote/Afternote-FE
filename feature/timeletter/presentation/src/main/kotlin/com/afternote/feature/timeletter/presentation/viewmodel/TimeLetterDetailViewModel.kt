@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.afternote.core.data.cache.ReceiverCacheStore
 import com.afternote.feature.timeletter.domain.model.TimeLetter
-import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
+import com.afternote.feature.timeletter.domain.usecase.GetTimeLetterUseCase
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
@@ -29,7 +29,7 @@ sealed interface TimeLetterDetailUiState {
 class TimeLetterDetailViewModel
     @Inject
     constructor(
-        private val timeLetterRepository: TimeLetterRepository,
+        private val getTimeLetterUseCase: GetTimeLetterUseCase,
         private val receiverCacheStore: ReceiverCacheStore,
         savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
@@ -47,7 +47,7 @@ class TimeLetterDetailViewModel
             viewModelScope.launch {
                 _uiState.value = TimeLetterDetailUiState.Loading
                 val receiversDeferred = async { receiverCacheStore.ensureLoaded() }
-                val letterResult = runCatching { timeLetterRepository.getTimeLetter(timeLetterId) }
+                val letterResult = runCatching { getTimeLetterUseCase(timeLetterId) }
                 runCatching { receiversDeferred.await() }
 
                 letterResult
