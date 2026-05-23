@@ -117,7 +117,7 @@ fun DocumentUploadScreen(
         }
     }
 
-    val errorMessage = uiState.errorMessageRes?.let { stringResource(it) }
+    val errorMessage = uiState.errorMessage ?: uiState.errorMessageRes?.let { stringResource(it) }
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
             snackbarHostState.showSnackbar(errorMessage)
