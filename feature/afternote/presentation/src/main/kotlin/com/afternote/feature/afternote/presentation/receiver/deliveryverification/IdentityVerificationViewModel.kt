@@ -2,7 +2,7 @@ package com.afternote.feature.afternote.presentation.receiver.deliveryverificati
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.feature.afternote.domain.repository.receiver.IdentityVerificationGate
+import com.afternote.feature.afternote.domain.repository.receiver.IdentityVerificationRepository
 import com.afternote.feature.afternote.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -19,7 +19,7 @@ import javax.inject.Inject
  * 수신자 본인 확인 이메일 인증(designs 3·4) ViewModel — 인증번호 발송 + 코드 검증 (이슈 #215).
  *
  * 백엔드 미구현 단계라 [IdentityEmailVerificationStub] 으로 시뮬레이션한다. 검증 성공 시
- * [IdentityVerificationGate.markVerified] 로 캐시를 켜고 [IdentityVerificationEvent.Verified] 발행 →
+ * [IdentityVerificationRepository.markVerified] 로 캐시를 켜고 [IdentityVerificationEvent.Verified] 발행 →
  * UI 가 마스터 키(5) 단계로 이동.
  *
  * 메모리 정책상 ViewModel 은 [androidx.compose.foundation.text.input.TextFieldState] 를 보유하지 않는다.
@@ -30,7 +30,7 @@ class IdentityVerificationViewModel
     @Inject
     constructor(
         private val stub: IdentityEmailVerificationStub,
-        private val gate: IdentityVerificationGate,
+        private val identityVerificationRepository: IdentityVerificationRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(IdentityVerificationUiState())
         val uiState: StateFlow<IdentityVerificationUiState> = _uiState.asStateFlow()
@@ -85,7 +85,7 @@ class IdentityVerificationViewModel
                 stub
                     .verifyCode(state.email, state.code)
                     .onSuccess {
-                        gate.markVerified()
+                        identityVerificationRepository.markVerified()
                         _uiState.update { it.copy(isVerifying = false) }
                         _events.send(IdentityVerificationEvent.Verified)
                     }.onFailure {

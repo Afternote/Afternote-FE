@@ -1,6 +1,8 @@
 package com.afternote.feature.afternote.data.di
 
+import com.afternote.feature.afternote.data.repositoryimpl.receiver.IdentityVerificationRepositoryImpl
 import com.afternote.feature.afternote.data.repositoryimpl.receiver.ReceiverRepositoryImpl
+import com.afternote.feature.afternote.domain.repository.receiver.IdentityVerificationRepository
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
 import dagger.Binds
 import dagger.Module
@@ -14,4 +16,8 @@ abstract class AfternoteReceiverRepositoryModule {
     @Binds
     @Singleton
     abstract fun bindReceiverRepository(impl: ReceiverRepositoryImpl): ReceiverRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindIdentityVerificationRepository(impl: IdentityVerificationRepositoryImpl): IdentityVerificationRepository
 }
