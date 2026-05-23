@@ -22,9 +22,9 @@ class MemorialPhotoSaveException(
  * 도메인 본문이 `"content://"`, `"X-Amz-"` 같은 인프라 형식 디테일 문자열을 직접 비교하지 않는다.
  *
  * **PATCH 페이로드 규칙**:
- * - [VideoUploadOutcome.Existing] / [PhotoUploadOutcome.Existing] → 페이로드에서 *제거* (`null`).
- *   서버가 이미 알고 있는 자원이라 *변경 없음* 으로 처리. presigned URL 을 그대로 보내면 만료 후
- *   깨지고 서버가 *새 자원* 으로 오해.
+ * - [VideoUploadOutcome.Existing] → 페이로드에서 *제거* (`null`).
+ *   영상 URL 은 presigned 일 가능성이 있어 그대로 보내면 만료 후 깨지거나 서버가 *새 자원* 으로 오해.
+ *   사진은 백엔드 `fileUrl` 이 영구 URL 이라 Existing 도 동일 URL 재전송 — POST 와 같은 값.
  * - [VideoUploadOutcome.FreshlyUploaded] / [PhotoUploadOutcome.FreshlyUploaded] → URL 그대로 전송.
  *   서버가 *새 자원* 으로 등록.
  * - [VideoUploadOutcome.Empty] / [PhotoUploadOutcome.Empty] → null.
