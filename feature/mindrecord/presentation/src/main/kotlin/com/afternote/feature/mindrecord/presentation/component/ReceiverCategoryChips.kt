@@ -1,4 +1,4 @@
-package com.afternote.feature.mindrecord.presentation.screen.receiver.component
+package com.afternote.feature.mindrecord.presentation.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,7 +23,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun CategoryChips(
+fun ReceiverCategoryChips(
     categories: List<String>,
     selected: String?,
     onSelect: (String?) -> Unit,

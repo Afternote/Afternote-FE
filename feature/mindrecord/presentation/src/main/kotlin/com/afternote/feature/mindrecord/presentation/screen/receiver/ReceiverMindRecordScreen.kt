@@ -38,10 +38,12 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.domain.model.MindRecordSummary
 import com.afternote.feature.mindrecord.domain.model.MindRecordType
-import com.afternote.feature.mindrecord.presentation.screen.receiver.component.CategoryChips
-import com.afternote.feature.mindrecord.presentation.screen.receiver.component.ReceiverDiaryGridCard
-import com.afternote.feature.mindrecord.presentation.screen.receiver.component.ReceiverMindRecordTopBar
-import com.afternote.feature.mindrecord.presentation.screen.receiver.component.ReceiverRecordCard
+import com.afternote.feature.mindrecord.presentation.component.ReceiverCategoryChips
+import com.afternote.feature.mindrecord.presentation.component.ReceiverDiaryGridCard
+import com.afternote.feature.mindrecord.presentation.component.ReceiverMindRecordTopBar
+import com.afternote.feature.mindrecord.presentation.component.ReceiverRecordCard
+import com.afternote.feature.mindrecord.presentation.viewmodel.ReceiverMindRecordUiState
+import com.afternote.feature.mindrecord.presentation.viewmodel.ReceiverMindRecordViewModel
 import androidx.compose.foundation.lazy.grid.items as gridItems
 
 /**
@@ -213,7 +215,7 @@ private fun DeepThoughtTab(
     onClick: (Long) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-        CategoryChips(
+        ReceiverCategoryChips(
             categories = categories,
             selected = selected,
             onSelect = onSelect,

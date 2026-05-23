@@ -1,4 +1,4 @@
-package com.afternote.feature.mindrecord.presentation.screen.receiver.component
+package com.afternote.feature.mindrecord.presentation.component
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background

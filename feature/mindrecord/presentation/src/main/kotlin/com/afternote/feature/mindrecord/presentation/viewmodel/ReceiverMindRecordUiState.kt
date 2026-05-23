@@ -1,4 +1,4 @@
-package com.afternote.feature.mindrecord.presentation.screen.receiver
+package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import com.afternote.feature.mindrecord.domain.model.MindRecordSummary
 

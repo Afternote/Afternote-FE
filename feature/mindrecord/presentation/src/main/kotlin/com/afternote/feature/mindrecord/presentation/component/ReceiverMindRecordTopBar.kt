@@ -1,4 +1,4 @@
-package com.afternote.feature.mindrecord.presentation.screen.receiver.component
+package com.afternote.feature.mindrecord.presentation.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.feature.mindrecord.presentation.screen.receiver.ReceiverMindRecordFilter
+import com.afternote.feature.mindrecord.presentation.viewmodel.ReceiverMindRecordFilter
 
 /**
  * 수신자 마음의 기록 상단 헤더.

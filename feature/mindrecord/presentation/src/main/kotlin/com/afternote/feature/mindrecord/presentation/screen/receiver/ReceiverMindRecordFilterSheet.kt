@@ -32,6 +32,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.feature.mindrecord.presentation.viewmodel.ReceiverMindRecordFilter
+import com.afternote.feature.mindrecord.presentation.viewmodel.SortOrder
 
 /**
  * 수신자 마음의 기록 필터 바텀시트 (디자인 노드 1727-25357 / 25054 / 23247 / 23886).
