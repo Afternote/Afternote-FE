@@ -30,6 +30,7 @@ fun rememberOnboardingNavActions(navController: NavController): OnboardingNavAct
         object : OnboardingNavActions {
             override fun onOnboardingComplete() {
                 navController.navigate(Route.Home) {
+                    // 온보딩 흐름 전체를 stack 에서 비우고 Home 진입 — 뒤로가기로 온보딩으로 못 돌아가게(앱 종료).
                     popUpTo(0) { inclusive = true }
                 }
             }
@@ -48,6 +49,7 @@ fun rememberOnboardingNavActions(navController: NavController): OnboardingNavAct
 
             override fun onReplaceLoginWithSignUp() {
                 navController.navigate(OnboardingRoute.SignUpRoute) {
+                    // Login 화면을 SignUp 으로 교체 — 뒤로가기 시 Login 으로 돌아가지 않고 그 이전(Welcome) 으로.
                     popUpTo<OnboardingRoute.LoginRoute> { inclusive = true }
                 }
             }
@@ -172,6 +174,7 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
 
             override fun onLogoutSuccess() {
                 appState.navController.navigate(Route.Onboarding) {
+                    // 로그아웃 — 인증 이후 모든 stack 비우고 Onboarding 진입. 뒤로가기로 로그인 상태 화면에 못 돌아가게.
                     popUpTo(0) { inclusive = true }
                 }
             }
@@ -194,6 +197,7 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
 
             override fun onWithdrawSuccess() {
                 appState.navController.navigate(Route.Onboarding) {
+                    // 탈퇴 — 계정 사라진 상태라 stack 전체 비우고 Onboarding 진입. 뒤로가기로 인증된 화면에 못 돌아가게.
                     popUpTo(0) { inclusive = true }
                 }
             }
@@ -399,6 +403,7 @@ fun rememberAfternoteNavActions(
 
             override fun onFingerprintAuthSuccess() {
                 appState.navController.navigate(AfternoteRoute.AfternoteHomeRoute) {
+                    // 지문 로그인 화면 pop — 인증 성공 후 뒤로가기로 다시 입력 요구하는 화면에 못 돌아가게.
                     popUpTo<AfternoteRoute.FingerprintLoginRoute> { inclusive = true }
                     launchSingleTop = true
                 }
@@ -410,6 +415,8 @@ fun rememberAfternoteNavActions(
 
             override fun onEditorSaveSuccessNavigateHome() {
                 appState.navController.navigate(AfternoteRoute.AfternoteHomeRoute) {
+                    // 저장 성공 — Home 위의 화면들(에디터·미디어 선택 등) 만 pop, Home 자체는 유지(inclusive=false).
+                    // launchSingleTop 으로 새 Home 인스턴스 생성 대신 기존 Home 위로 복귀.
                     popUpTo<AfternoteRoute.AfternoteHomeRoute> { inclusive = false }
                     launchSingleTop = true
                 }
@@ -480,12 +487,14 @@ fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions =
 
             override fun onNavigateMasterKeyToDocumentUpload() {
                 appState.navController.navigate(ReceiverRoute.DocumentUploadRoute) {
+                    // 마스터 키 검증 성공 직후 — MasterKey 화면 pop. 뒤로가기로 이미 검증된 마스터 키 재입력 화면에 못 돌아가게.
                     popUpTo<ReceiverRoute.MasterKeyRoute> { inclusive = true }
                 }
             }
 
             override fun onNavigateDocumentUploadToComplete() {
                 appState.navController.navigate(ReceiverRoute.DeliveryVerificationCompleteRoute) {
+                    // 서류 제출 성공 직후 — DocumentUpload pop. 뒤로가기로 제출 끝난 업로드 화면에 못 돌아가게.
                     popUpTo<ReceiverRoute.DocumentUploadRoute> { inclusive = true }
                 }
             }

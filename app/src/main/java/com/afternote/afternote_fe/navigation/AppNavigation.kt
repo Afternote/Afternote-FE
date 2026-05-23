@@ -122,7 +122,9 @@ fun AppNavigation(
             receiverNavGraph(
                 homeContent = { ReceiverHomeEntry(actions = receiverHomeActions) },
                 actions = receiverNavActions,
-                deliveryFlowEntry = {
+                // 열람 신청 nested graph 의 parent route. 이 route 의 backStackEntry 가 자체 ViewModelStore 를
+                // 보유 → 자식 5 화면이 그 안의 DeliveryVerificationFlowViewModel 을 공유 (flow-scoped VM).
+                deliveryFlowParentEntry = {
                     appState.navController.getBackStackEntry<ReceiverRoute.DeliveryVerificationFlowRoute>()
                 },
             )
