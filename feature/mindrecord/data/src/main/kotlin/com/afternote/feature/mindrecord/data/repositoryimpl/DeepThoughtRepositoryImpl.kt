@@ -5,11 +5,11 @@ import com.afternote.core.network.model.requireStatus
 import com.afternote.feature.mindrecord.data.api.DeepThoughtApiService
 import com.afternote.feature.mindrecord.data.mapper.toDomain
 import com.afternote.feature.mindrecord.data.mapper.toRequest
-import com.afternote.feature.mindrecord.domain.model.DeepThought
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtCategory
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtCategoryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtCategoryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtCreatePayload
+import com.afternote.feature.mindrecord.domain.model.DeepThoughtList
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.RandomDeepThought
 import com.afternote.feature.mindrecord.domain.repository.DeepThoughtRepository
@@ -24,13 +24,12 @@ class DeepThoughtRepositoryImpl
             date: String?,
             tag: String?,
             category: String?,
-        ): Result<List<DeepThought>> =
+        ): Result<DeepThoughtList> =
             runCatching {
                 api
                     .getDeepThoughts(date = date, tag = tag, category = category)
                     .requireData()
-                    .deepThoughts
-                    .map { it.toDomain() }
+                    .toDomain()
             }
 
         override suspend fun getRandom(): Result<RandomDeepThought> =

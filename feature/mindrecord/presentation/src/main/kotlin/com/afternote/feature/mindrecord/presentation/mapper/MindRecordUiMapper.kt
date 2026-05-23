@@ -44,7 +44,7 @@ fun DeepThought.toUi(): DeepThoughtModel =
         id = deepThoughtId,
         title = title,
         content = content,
-        date = LocalDate.now(),
+        date = parseLocalDate(createdAt),
         tag = tags.map { Tag(name = it, count = 0) },
         category = category,
         isDraft = isDraft,

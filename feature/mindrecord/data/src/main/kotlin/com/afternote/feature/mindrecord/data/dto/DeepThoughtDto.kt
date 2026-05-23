@@ -29,17 +29,23 @@ data class DeepThoughtListItem(
     @SerialName("title") val title: String,
     @SerialName("content") val content: String,
     @SerialName("category") val category: String,
-    @SerialName("is_draft") val isDraft: Boolean,
-    @SerialName("tag") val tag: List<String> = emptyList(),
+    @SerialName("isDraft") val isDraft: Boolean,
+    @SerialName("tags") val tags: List<String> = emptyList(),
     @SerialName("imageUrl") val imageUrl: String? = null,
+    @SerialName("createdAt") val createdAt: String = "",
+    @SerialName("updatedAt") val updatedAt: String? = null,
 )
 
-// `/deep-thought` 응답의 `data` 는 배열이 아니라 객체 — `deepThoughts` 외에도
-// `tagCounts` 가 함께 내려오지만 현재는 목록만 사용.
-// (Json 글로벌 설정에 `ignoreUnknownKeys = true` 적용됨)
+@Serializable
+data class DeepThoughtTagCountDto(
+    @SerialName("tag") val tag: String,
+    @SerialName("count") val count: Int,
+)
+
 @Serializable
 data class DeepThoughtListResponse(
     @SerialName("deepThoughts") val deepThoughts: List<DeepThoughtListItem> = emptyList(),
+    @SerialName("tagCounts") val tagCounts: List<DeepThoughtTagCountDto> = emptyList(),
 )
 
 @Serializable

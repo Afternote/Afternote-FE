@@ -1,11 +1,14 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.feature.mindrecord.domain.model.Diary
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
+import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.mapper.toUi
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +23,7 @@ import javax.inject.Inject
 class DiaryListViewModel
     @Inject
     constructor(
+        @ApplicationContext private val context: Context,
         private val repository: DiaryRepository,
     ) : ViewModel() {
         private val internalState = MutableStateFlow(InternalState())
@@ -45,12 +49,17 @@ class DiaryListViewModel
             viewModelScope.launch {
                 internalState.update { it.copy(loadPhase = LoadPhase.Loading) }
                 repository
-                    .getList(yearMonth = yearMonth.toString(), draftOnly = true)
+                    .getList(yearMonth = yearMonth.toString(), draftOnly = null)
                     .onSuccess { list ->
                         internalState.update { it.copy(loadPhase = LoadPhase.Loaded(list)) }
                     }.onFailure { e ->
                         internalState.update {
-                            it.copy(loadPhase = LoadPhase.Failed(e.message ?: "일기를 불러오지 못했습니다."))
+                            it.copy(
+                                loadPhase =
+                                    LoadPhase.Failed(
+                                        e.message ?: context.getString(R.string.mindrecord_error_diary_list_failed),
+                                    ),
+                            )
                         }
                     }
             }

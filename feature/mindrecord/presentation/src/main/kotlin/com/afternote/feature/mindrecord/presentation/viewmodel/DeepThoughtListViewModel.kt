@@ -1,14 +1,17 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.feature.mindrecord.domain.model.DeepThought
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtCategory
+import com.afternote.feature.mindrecord.domain.model.DeepThoughtList
 import com.afternote.feature.mindrecord.domain.model.RandomDeepThought
 import com.afternote.feature.mindrecord.domain.repository.DeepThoughtRepository
+import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.mapper.toUi
 import com.afternote.feature.mindrecord.presentation.model.Tag
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +25,7 @@ import javax.inject.Inject
 class DeepThoughtListViewModel
     @Inject
     constructor(
+        @ApplicationContext private val context: Context,
         private val repository: DeepThoughtRepository,
     ) : ViewModel() {
         private val internalState = MutableStateFlow(InternalState())
@@ -69,7 +73,12 @@ class DeepThoughtListViewModel
                         }
                     }.onFailure { e ->
                         internalState.update {
-                            it.copy(loadPhase = LoadPhase.Failed(e.message ?: "깊은 생각을 불러오지 못했습니다."))
+                            it.copy(
+                                loadPhase =
+                                    LoadPhase.Failed(
+                                        e.message ?: context.getString(R.string.mindrecord_error_deep_thought_list_failed),
+                                    ),
+                            )
                         }
                     }
             }
@@ -86,7 +95,7 @@ class DeepThoughtListViewModel
 
             data class Loaded(
                 val random: RandomDeepThought?,
-                val items: List<DeepThought>,
+                val list: DeepThoughtList,
                 val categories: List<DeepThoughtCategory>,
             ) : LoadPhase
 
@@ -97,18 +106,11 @@ class DeepThoughtListViewModel
 
         private fun InternalState.toUiState(): DeepThoughtListUiState =
             when (val phase = loadPhase) {
-                LoadPhase.Loading -> {
-                    DeepThoughtListUiState.Loading
-                }
+                LoadPhase.Loading -> DeepThoughtListUiState.Loading
 
                 is LoadPhase.Loaded -> {
-                    val items = phase.items.map { it.toUi() }
-                    val tags =
-                        items
-                            .flatMap { it.tag }
-                            .groupingBy { it.name }
-                            .eachCount()
-                            .map { (name, count) -> Tag(name = name, count = count) }
+                    val items = phase.list.items.map { it.toUi() }
+                    val tags = phase.list.tagCounts.map { Tag(name = it.tag, count = it.count) }
                     DeepThoughtListUiState.Success(
                         randomThoughtTitle = phase.random?.title,
                         randomThoughtCreatedAt = phase.random?.createdAt,
@@ -120,8 +122,6 @@ class DeepThoughtListViewModel
                     )
                 }
 
-                is LoadPhase.Failed -> {
-                    DeepThoughtListUiState.Error(phase.message)
-                }
+                is LoadPhase.Failed -> DeepThoughtListUiState.Error(phase.message)
             }
     }
