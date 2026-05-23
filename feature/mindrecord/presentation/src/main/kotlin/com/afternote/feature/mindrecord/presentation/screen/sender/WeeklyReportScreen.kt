@@ -24,8 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionListCard
 import com.afternote.feature.mindrecord.presentation.component.EmotionKeywordCard
 import com.afternote.feature.mindrecord.presentation.component.InsightCard
@@ -42,21 +42,28 @@ fun WeeklyReportScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     when (val state = uiState) {
-        WeeklyReportUiState.Loading -> LoadingBox(modifier)
-        is WeeklyReportUiState.Error -> ErrorBox(message = state.message, modifier = modifier)
-        is WeeklyReportUiState.Success ->
+        WeeklyReportUiState.Loading -> {
+            LoadingBox(modifier)
+        }
+
+        is WeeklyReportUiState.Error -> {
+            ErrorBox(message = state.message, modifier = modifier)
+        }
+
+        is WeeklyReportUiState.Success -> {
             WeeklyReportContent(
                 state = state,
-                onWeekSelected = viewModel::selectWeek,
+                onWeekSelect = viewModel::selectWeek,
                 modifier = modifier,
             )
+        }
     }
 }
 
 @Composable
 private fun WeeklyReportContent(
     state: WeeklyReportUiState.Success,
-    onWeekSelected: (java.time.LocalDate) -> Unit,
+    onWeekSelect: (java.time.LocalDate) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(modifier = modifier) {
@@ -64,7 +71,7 @@ private fun WeeklyReportContent(
             WeeklyReportReviewCard(
                 selectedMonday = state.selectedMonday,
                 weekOptions = state.weekOptions,
-                onWeekSelected = onWeekSelected,
+                onWeekSelect = onWeekSelect,
                 dateRange = state.dateRange,
                 counts = state.counts,
             )
@@ -190,7 +197,7 @@ private fun WeeklyReportScreenPreview() {
                     summaryText = "이번 주는 차분히 마음을 정리한 한 주였어요.",
                     dailyQuestions = emptyList(),
                 ),
-            onWeekSelected = {},
+            onWeekSelect = {},
         )
     }
 }

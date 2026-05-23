@@ -45,7 +45,7 @@ fun WeeklyReportReviewCard(
     modifier: Modifier = Modifier,
     selectedMonday: LocalDate? = null,
     weekOptions: List<WeekOption> = emptyList(),
-    onWeekSelected: (LocalDate) -> Unit = {},
+    onWeekSelect: (LocalDate) -> Unit = {},
     dateRange: String = "2025.11.10. - 2025.11.16.",
     counts: List<Pair<Int, MindRecordCategoryUi>> =
         listOf(
@@ -143,7 +143,7 @@ fun WeeklyReportReviewCard(
                             onClick = {
                                 expanded = false
                                 if (option.monday != selectedMonday) {
-                                    onWeekSelected(option.monday)
+                                    onWeekSelect(option.monday)
                                 }
                             },
                         )

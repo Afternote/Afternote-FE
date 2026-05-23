@@ -32,7 +32,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.R
-import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Red
@@ -43,6 +42,7 @@ import com.afternote.feature.mindrecord.presentation.component.WriteTextField
 import com.afternote.feature.mindrecord.presentation.model.CategoryUiModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DeepThoughtWriteViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.SubmitState
+import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 
 @Composable
 fun DeepThoughtWriteScreen(
@@ -168,9 +168,21 @@ fun DeepThoughtWriteScreen(
             CategorySettingBottomSheet(
                 categories =
                     listOf(
-                        CategoryUiModel("1", stringResource(MindRecordR.string.mindrecord_deep_thought_write_default_category), Color(0xFF1A1A1A)),
-                        CategoryUiModel("2", stringResource(MindRecordR.string.mindrecord_deep_thought_sample_category_today), Color(0xFFFFB3A7)),
-                        CategoryUiModel("3", stringResource(MindRecordR.string.mindrecord_deep_thought_sample_category_retrospective), Color(0xFFA8C8E8)),
+                        CategoryUiModel(
+                            "1",
+                            stringResource(MindRecordR.string.mindrecord_deep_thought_write_default_category),
+                            Color(0xFF1A1A1A),
+                        ),
+                        CategoryUiModel(
+                            "2",
+                            stringResource(MindRecordR.string.mindrecord_deep_thought_sample_category_today),
+                            Color(0xFFFFB3A7),
+                        ),
+                        CategoryUiModel(
+                            "3",
+                            stringResource(MindRecordR.string.mindrecord_deep_thought_sample_category_retrospective),
+                            Color(0xFFA8C8E8),
+                        ),
                     ),
                 onDismiss = { showCategorySheet = false },
                 onBackClick = { showCategorySheet = false },

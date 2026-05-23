@@ -106,7 +106,9 @@ class DeepThoughtListViewModel
 
         private fun InternalState.toUiState(): DeepThoughtListUiState =
             when (val phase = loadPhase) {
-                LoadPhase.Loading -> DeepThoughtListUiState.Loading
+                LoadPhase.Loading -> {
+                    DeepThoughtListUiState.Loading
+                }
 
                 is LoadPhase.Loaded -> {
                     val items = phase.list.items.map { it.toUi() }
@@ -122,6 +124,8 @@ class DeepThoughtListViewModel
                     )
                 }
 
-                is LoadPhase.Failed -> DeepThoughtListUiState.Error(phase.message)
+                is LoadPhase.Failed -> {
+                    DeepThoughtListUiState.Error(phase.message)
+                }
             }
     }

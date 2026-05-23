@@ -352,9 +352,21 @@ private fun HeaderTypeRow(
     val items =
         listOf(
             HeaderTypeItem(TextStyleType.TITLE, stringResource(R.string.mindrecord_toolbar_style_title), AfternoteDesign.typography.h3),
-            HeaderTypeItem(TextStyleType.HEADER, stringResource(R.string.mindrecord_toolbar_style_header), AfternoteDesign.typography.bodyLargeB),
-            HeaderTypeItem(TextStyleType.SUBHEADER, stringResource(R.string.mindrecord_toolbar_style_subheader), AfternoteDesign.typography.bodySmallB),
-            HeaderTypeItem(TextStyleType.BODY, stringResource(R.string.mindrecord_toolbar_style_body), AfternoteDesign.typography.captionLargeR),
+            HeaderTypeItem(
+                TextStyleType.HEADER,
+                stringResource(R.string.mindrecord_toolbar_style_header),
+                AfternoteDesign.typography.bodyLargeB,
+            ),
+            HeaderTypeItem(
+                TextStyleType.SUBHEADER,
+                stringResource(R.string.mindrecord_toolbar_style_subheader),
+                AfternoteDesign.typography.bodySmallB,
+            ),
+            HeaderTypeItem(
+                TextStyleType.BODY,
+                stringResource(R.string.mindrecord_toolbar_style_body),
+                AfternoteDesign.typography.captionLargeR,
+            ),
         )
     Row(
         modifier =

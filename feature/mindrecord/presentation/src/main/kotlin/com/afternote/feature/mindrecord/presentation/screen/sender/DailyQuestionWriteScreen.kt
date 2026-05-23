@@ -24,10 +24,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.theme.AfternoteDesign
-import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Red
 import com.afternote.core.ui.topbar.DetailTopBar
+import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionWriteHeaderCard
 import com.afternote.feature.mindrecord.presentation.component.WriteTextField
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionWriteViewModel

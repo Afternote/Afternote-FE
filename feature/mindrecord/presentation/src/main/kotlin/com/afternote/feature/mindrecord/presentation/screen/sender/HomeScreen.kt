@@ -32,11 +32,11 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.TitleTopBar
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
-import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DeepThoughtListViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListViewModel
 import kotlinx.coroutines.flow.drop
+import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 
 @Composable
 fun HomeScreen(

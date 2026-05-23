@@ -27,8 +27,8 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.model.DayState
 import com.afternote.feature.mindrecord.presentation.model.DayUiModel
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
-import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 import java.util.Calendar
+import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 
 @Composable
 fun DailyCalendar(
