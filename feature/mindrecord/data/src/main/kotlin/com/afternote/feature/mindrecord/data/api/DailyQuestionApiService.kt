@@ -14,26 +14,26 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface DailyQuestionApiService {
-    @GET("daily-question")
+    @GET("daily-questions")
     suspend fun getDailyQuestions(
         @Query("date") date: String? = null,
     ): BaseResponse<List<DailyQuestionListItem>>
 
-    @GET("daily-question/today")
+    @GET("daily-questions/today")
     suspend fun getTodayDailyQuestion(): BaseResponse<TodayDailyQuestionResponse>
 
-    @POST("daily-question")
+    @POST("daily-questions")
     suspend fun createDailyQuestion(
         @Body request: DailyQuestionCreateRequest,
     ): BaseResponse<Unit>
 
-    @PATCH("daily-question/{userDailyQuestionId}")
+    @PATCH("daily-questions/{userDailyQuestionId}")
     suspend fun updateDailyQuestion(
         @Path("userDailyQuestionId") userDailyQuestionId: Long,
         @Body request: DailyQuestionUpdateRequest,
     ): BaseResponse<Unit>
 
-    @DELETE("daily-question/{userDailyQuestionId}")
+    @DELETE("daily-questions/{userDailyQuestionId}")
     suspend fun deleteDailyQuestion(
         @Path("userDailyQuestionId") userDailyQuestionId: Long,
     ): BaseResponse<Unit>

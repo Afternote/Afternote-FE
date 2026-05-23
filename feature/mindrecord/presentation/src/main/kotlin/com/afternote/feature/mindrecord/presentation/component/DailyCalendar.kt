@@ -64,7 +64,7 @@ fun DailyCalendar(
         Text(
             text = "18개의 답변 완료",
             style = AfternoteDesign.typography.captionLargeR,
-            color = Color(0xFF000000).copy(alpha = 0.35f),
+            color = AfternoteDesign.colors.black.copy(alpha = 0.35f),
         )
         Spacer(modifier = Modifier.height(18.dp))
         OutlinedCard(
@@ -84,7 +84,7 @@ fun DailyCalendar(
                         Text(
                             text = dayLabel,
                             modifier = Modifier.weight(1f),
-                            color = Color(0xFF000000).copy(alpha = 0.3f),
+                            color = AfternoteDesign.colors.black.copy(alpha = 0.3f),
                             style = AfternoteDesign.typography.footnoteCaption,
                             textAlign = TextAlign.Center,
                         )

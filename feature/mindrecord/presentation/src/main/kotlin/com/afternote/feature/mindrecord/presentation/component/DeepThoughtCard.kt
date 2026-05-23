@@ -63,7 +63,7 @@ fun DeepThoughtCard(
                     Text(
                         text = deepThought.date.toString(),
                         style = AfternoteDesign.typography.captionLargeR,
-                        color = Color(0xFF000000).copy(0.4f),
+                        color = AfternoteDesign.colors.black.copy(alpha = 0.4f),
                     )
                 }
 
@@ -89,7 +89,7 @@ fun DeepThoughtCard(
             Text(
                 text = deepThought.content,
                 style = AfternoteDesign.typography.bodySmallR,
-                color = Color(0xFF000000).copy(0.5f),
+                color = AfternoteDesign.colors.black.copy(alpha = 0.5f),
             )
 
             Spacer(modifier = Modifier.height(13.dp))

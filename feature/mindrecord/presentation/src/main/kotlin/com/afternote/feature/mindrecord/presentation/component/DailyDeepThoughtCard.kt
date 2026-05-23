@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -71,7 +70,7 @@ fun DailyDeepThoughtCard(modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.height(18.dp))
             Text(
                 text = "생각은 깊이를 더할수록 진실에 가까워진다.",
-                style = MaterialTheme.typography.titleMedium,
+                style = AfternoteDesign.typography.bodyLargeB,
                 color = AfternoteDesign.colors.gray8,
             )
 
@@ -85,8 +84,8 @@ fun DailyDeepThoughtCard(modifier: Modifier = Modifier) {
                 )
                 Text(
                     text = LocalDate.now().toString(),
-                    style = MaterialTheme.typography.displayMedium,
-                    color = Color(0xFF000000).copy(0.4f),
+                    style = AfternoteDesign.typography.captionLargeR,
+                    color = AfternoteDesign.colors.black.copy(alpha = 0.4f),
                 )
             }
         }

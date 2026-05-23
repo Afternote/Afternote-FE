@@ -16,9 +16,16 @@ class DiaryRepositoryImpl
     constructor(
         private val api: DiaryApiService,
     ) : DiaryRepository {
-        override suspend fun getList(date: String?): Result<List<Diary>> =
+        override suspend fun getList(
+            yearMonth: String,
+            draftOnly: Boolean?,
+        ): Result<List<Diary>> =
             runCatching {
-                api.getDiaries(date = date).requireData().map { it.toDomain() }
+                api
+                    .getDiaries(yearMonth = yearMonth, draftOnly = draftOnly)
+                    .requireData()
+                    .diaries
+                    .map { it.toDomain() }
             }
 
         override suspend fun create(payload: DiaryCreatePayload): Result<Unit> =

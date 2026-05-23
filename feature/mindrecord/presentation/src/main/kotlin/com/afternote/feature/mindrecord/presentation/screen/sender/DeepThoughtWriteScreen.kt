@@ -11,7 +11,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -34,6 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.core.ui.theme.Red
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.mindrecord.presentation.component.CategorySettingBottomSheet
 import com.afternote.feature.mindrecord.presentation.component.DailyDeepThoughtCard
@@ -77,7 +77,7 @@ fun DeepThoughtWriteScreen(
                     ) {
                         Text(
                             text = "등록",
-                            style = MaterialTheme.typography.titleSmall,
+                            style = AfternoteDesign.typography.bodySmallB,
                             color = AfternoteDesign.colors.gray6,
                         )
                     }
@@ -108,7 +108,7 @@ fun DeepThoughtWriteScreen(
                     Text(
                         text = "제목",
                         style = AfternoteDesign.typography.h3,
-                        color = Color(0xFF000000).copy(0.2f),
+                        color = AfternoteDesign.colors.black.copy(alpha = 0.2f),
                     )
                 },
             )
@@ -151,7 +151,7 @@ fun DeepThoughtWriteScreen(
             if (errorMessage != null) {
                 Text(
                     text = errorMessage,
-                    color = Color.Red,
+                    color = Red,
                     style = AfternoteDesign.typography.captionLargeR,
                 )
             }
