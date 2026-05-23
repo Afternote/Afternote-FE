@@ -1,17 +1,8 @@
 package com.afternote.core.data.repoimpl
 
-import com.afternote.core.network.model.requireData
-import com.afternote.core.network.model.requireStatus
-import com.afternote.core.network.service.UserApiService
-import com.afternote.core.network.dto.DeliveryConditionRequest
-import com.afternote.core.network.dto.SocialAccountLinkRequest
-import com.afternote.core.network.dto.UserCreateReceiverRequest
-import com.afternote.core.network.dto.UserPatchReceiverRequest
-import com.afternote.core.network.dto.UserUpdateProfileRequest
-import com.afternote.core.network.dto.UserUpdatePushSettingRequest
-import com.afternote.core.network.dto.UserUpdateReceiverMessageRequest
 import com.afternote.core.data.mapper.user.toDomain
 import com.afternote.core.data.mapper.user.toDto
+import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.user.DeliveryCondition
 import com.afternote.core.model.user.DeliveryConditionType
 import com.afternote.core.model.user.Receiver
@@ -20,7 +11,16 @@ import com.afternote.core.model.user.ReceiverDetail
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.model.user.UserPushSetting
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.network.dto.DeliveryConditionRequest
+import com.afternote.core.network.dto.SocialAccountLinkRequest
+import com.afternote.core.network.dto.UserCreateReceiverRequest
+import com.afternote.core.network.dto.UserPatchReceiverRequest
+import com.afternote.core.network.dto.UserUpdateProfileRequest
+import com.afternote.core.network.dto.UserUpdatePushSettingRequest
+import com.afternote.core.network.dto.UserUpdateReceiverMessageRequest
+import com.afternote.core.network.model.requireData
+import com.afternote.core.network.model.requireStatus
+import com.afternote.core.network.service.UserApiService
 import javax.inject.Inject
 
 class UserRepositoryImpl
