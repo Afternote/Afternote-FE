@@ -25,31 +25,38 @@ interface ReceiverNavActions {
     fun onNavigateToSenderDetail(senderId: String)
 
     /**
-     * 발신자 상세의 "열람 신청하기" 진입 — 본인 확인 캐시 분기 후 적절한 화면으로 이동.
-     *
-     * 캐시 없음 → 본인 확인 안내(2) 부터, 있음 → 마스터 키(5) 직진. 구현체가 게이트 상태를 확인한다.
+     * 발신자 상세의 "열람 신청하기" 진입 — nested 열람 신청 흐름 그래프
+     * ([com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceiverRoute.DeliveryVerificationFlowRoute])
+     * 진입점. 본인 확인 캐시 분기는 흐름 내부(IntroRoute 의 LaunchedEffect) 에서 자동 처리되므로 호출자는
+     * senderId 만 전달.
      */
     fun onRequestVerificationFlow(senderId: String)
 
     /**
      * 본인 확인 안내(2) 의 "인증 시작하기" → 이메일 인증 화면(3·4) 진입.
      */
-    fun onNavigateIdentityIntroToEmail(senderId: String)
+    fun onNavigateIdentityIntroToEmail()
+
+    /**
+     * 본인 확인 안내(2) 진입 시점에 캐시가 이미 있어 안내를 생략하고 마스터 키(5) 로 직진하는 경로.
+     * Intro 화면은 pop (사용자가 뒤로가기로 안내를 다시 보지 않도록).
+     */
+    fun onNavigateIdentityIntroToMasterKey()
 
     /**
      * 본인 확인 이메일 인증 성공 → 마스터 키 입력(5) 진입. 이전 본인 확인 화면 2 장은 pop.
      */
-    fun onNavigateIdentityEmailToMasterKey(senderId: String)
+    fun onNavigateIdentityEmailToMasterKey()
 
     /**
      * 마스터 키 검증 성공 → 증빙 서류 업로드(6·7·8) 진입. 마스터 키 화면은 pop 한다.
      */
-    fun onNavigateMasterKeyToDocumentUpload(senderId: String)
+    fun onNavigateMasterKeyToDocumentUpload()
 
     /**
      * 서류 업로드 + `submitDeliveryVerification` 성공 → 완료(9) 진입. 서류 화면은 pop 한다.
      */
-    fun onNavigateDocumentUploadToComplete(senderId: String)
+    fun onNavigateDocumentUploadToComplete()
 
     /**
      * 완료(9)의 "받은 기록함으로 돌아가기" → 받은 기록함까지 pop.
