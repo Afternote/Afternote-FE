@@ -53,7 +53,7 @@ fun BottomToolbar(
     ) {
         IconButton(onClick = onLinkClick) {
             Icon(
-                painter = painterResource(R.drawable.mindrecord_link),
+                painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_ic_link),
                 contentDescription = stringResource(R.string.mindrecord_toolbar_link_cd),
             )
         }
@@ -156,7 +156,7 @@ fun TextStyleToolbar(
             ) {
                 IconActionButton(onClick = onLinkClick) {
                     Icon(
-                        painter = painterResource(R.drawable.mindrecord_link),
+                        painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_ic_link),
                         contentDescription = stringResource(R.string.mindrecord_toolbar_link_cd),
                         tint = AfternoteDesign.colors.gray9,
                     )
