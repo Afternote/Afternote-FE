@@ -8,6 +8,7 @@ import com.afternote.core.network.dto.PresignedUrlRequestDto
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.service.ImageApiService
 import com.afternote.feature.afternote.domain.repository.author.MemorialVideoUploadRepository
+import com.afternote.feature.afternote.domain.repository.author.VideoUploadOutcome
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -19,13 +20,24 @@ import java.io.File
 import javax.inject.Inject
 import javax.inject.Named
 
+/** 서버 S3 의 애프터노트 미디어 폴더명. presigned URL 경로에 박혀 `bucket/afternotes/<file>` 형태가 됨. 서버와 약속된 문자열. */
 private const val DIRECTORY_AFTERNOTES = "afternotes"
+
+/** MIME 타입에서 확장자를 못 뽑았을 때 폴백. 대부분의 안드로이드 영상이 mp4 라 합리적 디폴트. */
 private const val DEFAULT_VIDEO_EXTENSION = "mp4"
 
+/** Android 의 *로컬 파일 URI* 스킴. 갤러리/카메라 picker 결과는 `content://...` 로 시작 → "아직 서버에 없음, 업로드 필요" 의 신호. `https://...` 같은 원격 URL 과 구분하는 용도. */
+private const val LOCAL_CONTENT_SCHEME = "content://"
+
 /**
- * Uploads memorial video via POST /files/presigned-url (directory "afternotes") then S3 PUT.
- * Reads from content URI (e.g. Photo Picker) and returns the HTTPS fileUrl so the backend
- * stores a usable URL, not a local content:// URI.
+ * 추모 영상 *상태 해석* + 필요 시 업로드.
+ *
+ * 입력 String 의 형식을 판별해 sealed 분기로 반환:
+ * - 로컬 `content://` URI → presigned PUT 으로 S3 업로드 후 [VideoUploadOutcome.FreshlyUploaded]
+ * - 원격 HTTPS URL → 입력 그대로 [VideoUploadOutcome.Existing]
+ * - null/blank → [VideoUploadOutcome.Empty]
+ *
+ * `content://` prefix 비교는 *data 레이어 안* 에 격리 — 도메인은 인프라 형식 디테일을 모름.
  */
 class MemorialVideoUploadRepositoryImpl
     @Inject
@@ -35,7 +47,15 @@ class MemorialVideoUploadRepositoryImpl
         @param:Named("S3Upload") private val okHttpClient: OkHttpClient,
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : MemorialVideoUploadRepository {
-        override suspend fun uploadVideo(contentUriString: String): Result<String> =
+        override suspend fun resolveVideo(input: String?): Result<VideoUploadOutcome> {
+            if (input.isNullOrBlank()) return Result.success(VideoUploadOutcome.Empty)
+            if (!input.startsWith(LOCAL_CONTENT_SCHEME)) {
+                return Result.success(VideoUploadOutcome.Existing(input))
+            }
+            return uploadLocalVideo(input).map { VideoUploadOutcome.FreshlyUploaded(it) }
+        }
+
+        private suspend fun uploadLocalVideo(contentUriString: String): Result<String> =
             runCatching {
                 val uri = contentUriString.toUri()
                 val extension = videoExtensionFromUri(uri)
