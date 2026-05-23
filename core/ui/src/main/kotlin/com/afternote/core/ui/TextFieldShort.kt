@@ -1,7 +1,6 @@
 package com.afternote.core.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -17,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.InputTransformation
@@ -70,7 +68,6 @@ private fun TextFieldShort(
     interactionSource: MutableInteractionSource? = null,
     focusRequester: FocusRequester? = null,
 ) {
-    val textFieldShape = RoundedCornerShape(8.dp)
     BasicTextField(
         state = state,
         modifier =
@@ -81,9 +78,7 @@ private fun TextFieldShort(
                     } else {
                         Modifier
                     },
-                ).fillMaxWidth()
-                .background(AfternoteDesign.colors.white, textFieldShape)
-                .border(1.dp, AfternoteDesign.colors.gray2, textFieldShape),
+                ).fillMaxWidth(),
         lineLimits = TextFieldLineLimits.SingleLine,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
         onKeyboardAction = onImeAction?.let { action -> { action() } },
@@ -101,13 +96,7 @@ private fun TextFieldShort(
         textStyle = AfternoteDesign.typography.textField.copy(color = AfternoteDesign.colors.gray9), // 👈 무조건 textField 스타일 고정!
         cursorBrush = SolidColor(AfternoteDesign.colors.black),
         decorator = { innerTextField ->
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 13.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            AfternoteFieldContainer {
                 Row(
                     modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically,
