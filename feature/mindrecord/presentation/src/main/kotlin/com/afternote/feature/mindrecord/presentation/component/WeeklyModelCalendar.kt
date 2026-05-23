@@ -33,19 +33,10 @@ import com.afternote.feature.mindrecord.presentation.model.DayItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WeeklyMoodCalendar(modifier: Modifier = Modifier) {
-    // 이미지 기준 샘플 데이터
-    val days =
-        listOf(
-            DayItem("월", DayContent.NumberOnly(10)),
-            DayItem("화", DayContent.NumberWithDot(2)),
-            DayItem("수", DayContent.NumberOnly(12)),
-            DayItem("목", DayContent.EmojiWithDot("😊"), DayBackground.Green),
-            DayItem("금", DayContent.EmojiOnly("😊"), DayBackground.Green),
-            DayItem("토", DayContent.NumberWithDot(2)),
-            DayItem("일", DayContent.EmojiOnly("🥹"), DayBackground.Pink),
-        )
-
+fun WeeklyMoodCalendar(
+    modifier: Modifier = Modifier,
+    days: List<DayItem> = defaultPreviewDays(),
+) {
     Column(
         modifier =
             modifier
@@ -166,6 +157,17 @@ private fun DayCell(
         }
     }
 }
+
+private fun defaultPreviewDays(): List<DayItem> =
+    listOf(
+        DayItem("월", DayContent.NumberOnly(10)),
+        DayItem("화", DayContent.NumberWithDot(2)),
+        DayItem("수", DayContent.NumberOnly(12)),
+        DayItem("목", DayContent.EmojiWithDot("😊"), DayBackground.Green),
+        DayItem("금", DayContent.EmojiOnly("😊"), DayBackground.Green),
+        DayItem("토", DayContent.NumberWithDot(2)),
+        DayItem("일", DayContent.EmojiOnly("🥹"), DayBackground.Pink),
+    )
 
 @Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
