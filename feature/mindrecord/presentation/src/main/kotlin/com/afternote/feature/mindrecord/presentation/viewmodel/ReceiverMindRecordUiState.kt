@@ -14,6 +14,12 @@ sealed interface ReceiverMindRecordUiState {
         val dailyQuestions: List<MindRecordSummary>,
         val diaries: List<MindRecordSummary>,
         val deepThoughts: List<MindRecordSummary>,
+        /**
+         * 깊은생각 카테고리 칩 라벨 목록. API 미연동이라 임시 mock 데이터 (ViewModel 의
+         * `MOCK_DEEP_THOUGHT_CATEGORIES`).
+         */
+        val deepThoughtCategories: List<String>,
+        val selectedDeepThoughtCategory: String? = null,
         val filter: ReceiverMindRecordFilter = ReceiverMindRecordFilter(),
     ) : ReceiverMindRecordUiState
 

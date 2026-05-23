@@ -24,10 +24,12 @@ import javax.inject.Inject
  * 응답에 `senderName` 이 record 단위로 포함되어 수신자가 여러 발신자 기록을 *통합 조회* 하는
  * 형태이며, 카드에 발신자 이름을 표시해 출처를 명확히 한다.
  *
- * **깊은생각 카테고리 칩**: 수신자측 list 응답에는 `category` 가 없고, 별도 receiver-auth 카테고리
- * 마스터 엔드포인트도 없다 (`/api/v1/deep-thought/categories` 는 sender 전용). 따라서 본 ViewModel
- * 은 카테고리 데이터를 노출하지 않고, 백엔드가 receiver list 응답에 카테고리를 포함하거나 별도
- * 카테고리 마스터 엔드포인트를 receiver-auth 에 추가할 때까지 칩 UI 는 hidden 상태로 둔다.
+ * **깊은생각 카테고리 칩 (임시 mock)**: 수신자측 list 응답에는 `category` 가 없고, 별도
+ * receiver-auth 카테고리 마스터 엔드포인트도 없다 (`/api/v1/deep-thought/categories` 는
+ * sender 전용). 디자인 정합을 위해 [MOCK_DEEP_THOUGHT_CATEGORIES] 하드코딩 라벨로 칩 UI 만
+ * 노출하고, 선택 시 record 필터링은 데이터 부재로 동작하지 않는다 (전체 list 그대로 노출).
+ * 백엔드가 list 응답에 `category` 를 추가하거나 receiver-auth 카테고리 마스터 엔드포인트를
+ * 신설하면 실데이터로 교체. Notion `Mind-Record 조회` 페이지에 누락 사항 기록.
  */
 @HiltViewModel
 class ReceiverMindRecordViewModel
@@ -44,6 +46,17 @@ class ReceiverMindRecordViewModel
         }
 
         fun refresh() = load()
+
+        fun selectDeepThoughtCategory(category: String?) {
+            _uiState.update { current ->
+                if (current is ReceiverMindRecordUiState.Success) {
+                    // 백엔드가 category 를 내려주기 전까지 selection 은 UI 상태로만 보관.
+                    current.copy(selectedDeepThoughtCategory = category)
+                } else {
+                    current
+                }
+            }
+        }
 
         fun applyFilter(filter: ReceiverMindRecordFilter) {
             _uiState.update { current ->
@@ -72,6 +85,7 @@ class ReceiverMindRecordViewModel
                                 dailyQuestions = emptyList(),
                                 diaries = emptyList(),
                                 deepThoughts = emptyList(),
+                                deepThoughtCategories = MOCK_DEEP_THOUGHT_CATEGORIES,
                             )
                         _uiState.value = initial.withDerived(visible)
                     }.onFailure { e ->
@@ -96,6 +110,26 @@ class ReceiverMindRecordViewModel
         }
 
         companion object {
+            /**
+             * 깊은생각 카테고리 칩 임시 mock 라벨. 백엔드 카테고리 마스터 API 가
+             * receiver-auth 에 추가되면 실 데이터로 교체.
+             *
+             * 라벨은 sender 측 `/api/v1/deep-thought/categories` 응답 예시(`나의 가치관`,
+             * `오늘 떠올린 생각`, `커리어`)와 디자인 노드 1727-19627 의 9개 칩 폭을 참조해
+             * 9개 항목으로 구성.
+             */
+            private val MOCK_DEEP_THOUGHT_CATEGORIES: List<String> =
+                listOf(
+                    "나의 가치관",
+                    "오늘 떠올린 생각",
+                    "커리어",
+                    "관계",
+                    "가족",
+                    "취미",
+                    "여행",
+                    "꿈",
+                )
+
             private fun List<MindRecordSummary>.filterByDate(
                 from: String?,
                 to: String?,
