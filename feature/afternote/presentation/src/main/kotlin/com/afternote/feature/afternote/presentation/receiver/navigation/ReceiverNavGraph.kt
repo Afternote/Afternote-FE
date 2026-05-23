@@ -87,29 +87,28 @@ fun NavGraphBuilder.receiverNavGraph(
             receiverComposable<ReceiverRoute.IdentityVerificationIntroRoute> { backStackEntry ->
                 val flowVm = backStackEntry.deliveryFlowViewModel(deliveryFlowParentEntry)
                 val isVerified by flowVm.isIdentityVerified.collectAsStateWithLifecycle()
-                // 본인 확인 캐시가 있으면 안내 화면을 보여주지 않고 즉시 마스터 키로 점프 (popUpTo Intro inclusive).
-                // `if (isVerified) LaunchedEffect(Unit)` 형태 — isVerified=false 면 LaunchedEffect 자체가
-                // composition 에 안 들어가 coroutine launch 도 일어나지 않음. (반대로 key=isVerified 로 두고
-                // block 안에서 if 분기하면 false 값에도 launch 가 한 번 일어나 no-op 으로 끝남.)
+                // 본인 확인 캐시가 있으면 안내 화면 paint 자체를 skip 하고 즉시 마스터 키로 점프.
+                // (이전엔 IntroScreen 을 분기 밖에 그려서 첫 프레임 ~16ms 동안 안내가 비치는
+                //  깜박임이 있었음. `if (!isVerified)` 로 분기해 paint 가드.)
                 //
                 // Intro 는 jump 직후 백스택에서 사라지고, 이후 단계(MasterKey→DocumentUpload→Complete) 의
-                // popUpTo 들도 모두 inclusive 라 흐름 중 Intro 가 다시 등장하지 않음 — 사용자 시각엔 안내
-                // 화면이 건너뛰어진 것으로 보인다. composition 첫 프레임에 한 번 비치는 정도(~16ms)는 가능.
+                // popUpTo 들도 모두 inclusive 라 흐름 중 Intro 가 다시 등장하지 않는다.
                 if (isVerified) {
                     LaunchedEffect(Unit) {
-                        actions.onNavigateIdentityIntroToMasterKey()
+                        actions.onIdentityFlowToMasterKey()
                     }
+                } else {
+                    IdentityVerificationIntroScreen(
+                        onBackClick = actions::onPopBackStack,
+                        onStartClick = actions::onNavigateIdentityIntroToEmail,
+                    )
                 }
-                IdentityVerificationIntroScreen(
-                    onBackClick = actions::onPopBackStack,
-                    onStartClick = actions::onNavigateIdentityIntroToEmail,
-                )
             }
 
             receiverComposable<ReceiverRoute.IdentityVerificationEmailRoute> {
                 IdentityVerificationEmailScreen(
                     onBackClick = actions::onPopBackStack,
-                    onVerified = actions::onNavigateIdentityEmailToMasterKey,
+                    onVerified = actions::onIdentityFlowToMasterKey,
                 )
             }
 

@@ -38,15 +38,10 @@ interface ReceiverNavActions {
     fun onNavigateIdentityIntroToEmail()
 
     /**
-     * 본인 확인 안내(2) 진입 시점에 캐시가 이미 있어 안내를 생략하고 마스터 키(5) 로 직진하는 경로.
-     * Intro 화면은 pop (사용자가 뒤로가기로 안내를 다시 보지 않도록).
+     * 본인 확인 흐름 (Intro 의 캐시 hit jump 또는 Email 인증 성공) → 마스터 키(5) 진입.
+     * Intro 까지의 본인 확인 화면들은 pop (사용자가 뒤로가기로 안내·인증을 다시 보지 않도록).
      */
-    fun onNavigateIdentityIntroToMasterKey()
-
-    /**
-     * 본인 확인 이메일 인증 성공 → 마스터 키 입력(5) 진입. 이전 본인 확인 화면 2 장은 pop.
-     */
-    fun onNavigateIdentityEmailToMasterKey()
+    fun onIdentityFlowToMasterKey()
 
     /**
      * 마스터 키 검증 성공 → 증빙 서류 업로드(6·7·8) 진입. 마스터 키 화면은 pop 한다.

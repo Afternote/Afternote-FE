@@ -471,15 +471,9 @@ fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions =
                 appState.navController.navigate(ReceiverRoute.IdentityVerificationEmailRoute)
             }
 
-            override fun onNavigateIdentityIntroToMasterKey() {
-                // 캐시 존재로 안내 화면 스킵. Intro 는 pop.
-                appState.navController.navigate(ReceiverRoute.MasterKeyRoute) {
-                    popUpTo<ReceiverRoute.IdentityVerificationIntroRoute> { inclusive = true }
-                }
-            }
-
-            override fun onNavigateIdentityEmailToMasterKey() {
-                // 이메일 인증 성공 직후 진입. 본인 확인 화면 2 장은 pop 해서 뒤로가기로 되돌아오지 않게.
+            override fun onIdentityFlowToMasterKey() {
+                // 두 진입 경로 (Intro 의 캐시 hit jump / Email 인증 성공) 공통 — Intro 까지 pop 해서
+                // 뒤로가기로 본인 확인 화면들에 돌아오지 않게.
                 appState.navController.navigate(ReceiverRoute.MasterKeyRoute) {
                     popUpTo<ReceiverRoute.IdentityVerificationIntroRoute> { inclusive = true }
                 }

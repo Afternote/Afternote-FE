@@ -66,8 +66,8 @@ sealed interface ReceiverRoute {
     /**
      * 본인 확인 이메일 인증 화면(designs 3·4). 인증 시작하기 → 진입.
      *
-     * 인증 성공 시 [com.afternote.feature.afternote.presentation.receiver.deliveryverification.IdentityVerificationGate]
-     * 캐시가 켜져 이후 동일 세션에서는 마스터 키로 직진.
+     * 인증 성공 시 [com.afternote.feature.afternote.domain.repository.receiver.IdentityVerificationGate]
+     * 캐시가 켜져 이후 동일 사용자(폰)에서는 마스터 키로 직진. DataStore 영구 저장이라 앱 재시작 후에도 유지.
      */
     @Serializable
     data object IdentityVerificationEmailRoute : ReceiverRoute
