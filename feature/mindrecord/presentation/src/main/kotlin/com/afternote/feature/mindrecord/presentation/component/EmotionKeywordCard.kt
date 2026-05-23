@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -66,7 +65,7 @@ fun EmotionKeywordCard(
             // ── 타이틀 ──
             Text(
                 text = title,
-                style = MaterialTheme.typography.bodyLarge,
+                style = AfternoteDesign.typography.bodyLargeR,
                 color = AfternoteDesign.colors.gray9,
             )
 
@@ -98,7 +97,7 @@ fun EmotionKeywordCard(
             // ── 하단 설명 텍스트 ──
             Text(
                 text = descriptionText,
-                style = MaterialTheme.typography.titleSmall,
+                style = AfternoteDesign.typography.bodySmallB,
                 color = AfternoteDesign.colors.gray9,
             )
         }
@@ -129,13 +128,13 @@ private fun BubbleItem(
             Text(
                 text = bubble.keyword,
                 color = bubble.textColor,
-                style = MaterialTheme.typography.titleSmall,
+                style = AfternoteDesign.typography.bodySmallB,
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = bubble.count.toString(),
                 color = bubble.textColor.copy(alpha = 0.7f),
-                style = MaterialTheme.typography.labelSmall,
+                style = AfternoteDesign.typography.captionLargeR,
             )
         }
     }
