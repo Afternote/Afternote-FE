@@ -20,6 +20,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.timeletter.presentation.R
+import com.afternote.core.ui.R as CoreUiR
 
 @Composable
 fun MediaBottomSheetContent(
@@ -58,7 +59,7 @@ fun MediaBottomSheetContent(
         )
         HorizontalDivider()
         MediaItem(
-            painter = painterResource(id = R.drawable.ic_link),
+            painter = painterResource(id = CoreUiR.drawable.core_ui_ic_link),
             text = "링크 추가하기",
             onClick = onLinkClick,
         )

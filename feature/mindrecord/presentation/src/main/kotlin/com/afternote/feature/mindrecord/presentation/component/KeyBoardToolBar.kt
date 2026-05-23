@@ -34,6 +34,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.TextStyleState
 import com.afternote.feature.mindrecord.presentation.model.TextStyleType
+import com.afternote.core.ui.R as CoreUiR
 
 @Composable
 fun BottomToolbar(
@@ -51,7 +52,7 @@ fun BottomToolbar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onLinkClick) {
-            Icon(painter = painterResource(R.drawable.mindrecord_link), contentDescription = "링크")
+            Icon(painter = painterResource(CoreUiR.drawable.core_ui_ic_link), contentDescription = "링크")
         }
         Spacer(modifier = Modifier.width(8.dp))
 
@@ -143,7 +144,7 @@ fun TextStyleToolbar(
             ) {
                 IconActionButton(onClick = onLinkClick) {
                     Icon(
-                        painter = painterResource(R.drawable.mindrecord_link),
+                        painter = painterResource(CoreUiR.drawable.core_ui_ic_link),
                         contentDescription = "링크",
                         tint = AfternoteDesign.colors.gray9,
                     )
