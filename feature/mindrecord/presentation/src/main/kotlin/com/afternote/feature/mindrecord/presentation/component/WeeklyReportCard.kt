@@ -15,7 +15,6 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -68,7 +67,7 @@ fun WeeklyReportCard(modifier: Modifier = Modifier) {
                                 fontSize = 11.sp,
                                 lineHeight = 16.sp,
                             ),
-                        color = Color(0xFF000000).copy(alpha = 0.35f),
+                        color = AfternoteDesign.colors.black.copy(alpha = 0.35f),
                     )
                 }
                 Spacer(modifier = Modifier.width(24.dp))
@@ -90,7 +89,7 @@ fun WeeklyReportCard(modifier: Modifier = Modifier) {
                                 fontSize = 11.sp,
                                 lineHeight = 16.sp,
                             ),
-                        color = Color(0xFF000000).copy(alpha = 0.35f),
+                        color = AfternoteDesign.colors.black.copy(alpha = 0.35f),
                     )
                 }
             }

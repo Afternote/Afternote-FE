@@ -22,9 +22,11 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
@@ -32,10 +34,8 @@ import com.afternote.core.ui.popup.Popup
 import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.Red
-import androidx.compose.ui.graphics.Color
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.feature.setting.presentation.viewmodel.SettingUiState
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
 
@@ -46,8 +46,8 @@ fun WithdrawConfirmScreen(
     uiState: SettingUiState,
     onBackClick: () -> Unit,
     onWithdrawSuccess: () -> Unit,
-    modifier: Modifier = Modifier,
     viewModel: SettingViewModel,
+    modifier: Modifier = Modifier,
 ) {
     val userName = (uiState as? SettingUiState.Success)?.name.orEmpty()
     val userEmail = (uiState as? SettingUiState.Success)?.email.orEmpty()
@@ -186,4 +186,3 @@ private fun WithdrawConfirmBottomButtons(
         )
     }
 }
-

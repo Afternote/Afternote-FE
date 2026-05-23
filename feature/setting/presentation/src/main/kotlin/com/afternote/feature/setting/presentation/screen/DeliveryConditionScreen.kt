@@ -47,6 +47,7 @@ fun DeliveryConditionScreen(
     viewModel: DeliveryConditionViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val currentOnSaveSuccess by rememberUpdatedState(onSaveSuccess)
     val isFormValid =
         when (uiState.processingOption) {
             ProcessingConditionOption.INACTIVITY -> true
@@ -55,7 +56,7 @@ fun DeliveryConditionScreen(
         }
 
     LaunchedEffect(Unit) {
-        viewModel.saveSuccess.collect { onSaveSuccess() }
+        viewModel.saveSuccess.collect { currentOnSaveSuccess() }
     }
 
     DeliveryConditionContent(
@@ -63,8 +64,8 @@ fun DeliveryConditionScreen(
         isFormValid = isFormValid,
         onBack = onBack,
         onSelectDeliveryMethodIndex = viewModel::onSelectDeliveryMethodIndex,
-        onConditionTypeSelected = viewModel::onConditionTypeSelected,
-        onDateSelected = viewModel::onDateSelected,
+        onConditionTypeSelect = viewModel::onConditionTypeSelected,
+        onDateSelect = viewModel::onDateSelected,
         onDatePickerToggle = viewModel::onDatePickerToggle,
         onFarewellMessageChange = viewModel::onFarewellMessageChange,
         onSave = viewModel::onSave,
@@ -77,8 +78,8 @@ private fun DeliveryConditionContent(
     isFormValid: Boolean,
     onBack: () -> Unit,
     onSelectDeliveryMethodIndex: (Int) -> Unit,
-    onConditionTypeSelected: (ProcessingConditionOption) -> Unit,
-    onDateSelected: (java.time.LocalDate) -> Unit,
+    onConditionTypeSelect: (ProcessingConditionOption) -> Unit,
+    onDateSelect: (java.time.LocalDate) -> Unit,
     onDatePickerToggle: (Boolean) -> Unit,
     onFarewellMessageChange: (String) -> Unit,
     onSave: () -> Unit,
@@ -200,7 +201,7 @@ private fun DeliveryConditionContent(
                             2 -> ProcessingConditionOption.RECIPIENT_REQUEST
                             else -> ProcessingConditionOption.INACTIVITY
                         }
-                    onConditionTypeSelected(option)
+                    onConditionTypeSelect(option)
                 },
             )
 
@@ -229,7 +230,7 @@ private fun DeliveryConditionContent(
     if (uiState.isDatePickerVisible) {
         DatePickerBottomSheet(
             onDismiss = { onDatePickerToggle(false) },
-            onDateSelected = onDateSelected,
+            onDateSelect = onDateSelect,
             initialDate = uiState.specificDate,
         )
     }
@@ -257,8 +258,8 @@ private fun DeliveryConditionContentPreview() {
             isFormValid = true,
             onBack = {},
             onSelectDeliveryMethodIndex = {},
-            onConditionTypeSelected = {},
-            onDateSelected = {},
+            onConditionTypeSelect = {},
+            onDateSelect = {},
             onDatePickerToggle = {},
             onFarewellMessageChange = {},
             onSave = {},

@@ -34,8 +34,8 @@ fun DayCell(
 
     val (bgColor, textColor) =
         when (model.state) {
-            DayState.TODAY -> Color(0xFF1A1A1A) to Color.White
-            DayState.ANSWERED -> Color(0xFFEEEEEE) to Color(0xFF1A1A1A)
+            DayState.TODAY -> Color(0xFF1A1A1A) to AfternoteDesign.colors.white
+            DayState.ANSWERED -> AfternoteDesign.colors.gray2 to AfternoteDesign.colors.gray9
             DayState.UNANSWERED, DayState.NONE -> Color.Transparent to AfternoteDesign.colors.gray5
         }
 

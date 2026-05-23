@@ -44,6 +44,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
@@ -79,8 +80,8 @@ import java.time.LocalTime
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimeLetterWriteScreen(
-    uiState: TimeLetterWriteUiState = TimeLetterWriteUiState(),
     modifier: Modifier = Modifier,
+    uiState: TimeLetterWriteUiState = TimeLetterWriteUiState(),
     titleState: TextFieldState = rememberTextFieldState(),
     onBackClick: () -> Unit = {},
     onRegisterClick: (title: String, textContents: Map<Long, String>) -> Unit = { _, _ -> },
@@ -168,13 +169,13 @@ fun TimeLetterWriteScreen(
             )
             Spacer(modifier = Modifier.height(24.dp))
             TimeWheelPicker(
-                initialHour = pendingHour,
-                initialMinute = pendingMinute,
-                onTimeChanged = { h, m ->
+                onTimeChange = { h, m ->
                     pendingHour = h
                     pendingMinute = m
                 },
                 modifier = Modifier.wrapContentWidth(Alignment.CenterHorizontally).fillMaxWidth(),
+                initialHour = pendingHour,
+                initialMinute = pendingMinute,
             )
             Spacer(modifier = Modifier.height(16.dp))
             AfternoteButton(
@@ -351,7 +352,7 @@ fun TimeLetterWriteScreen(
                         onRemove = { onRemoveBlock(block.id) },
                     )
                     is EditorBlock.Link -> MediaBlockChip(
-                        iconRes = R.drawable.ic_link,
+                        iconRes = com.afternote.core.ui.R.drawable.core_ui_ic_link,
                         label = block.url,
                         onRemove = { onRemoveBlock(block.id) },
                     )

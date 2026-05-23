@@ -7,12 +7,12 @@ import java.time.LocalDate
 @Composable
 fun DatePickerBottomSheet(
     onDismiss: () -> Unit,
-    onDateSelected: (LocalDate) -> Unit,
+    onDateSelect: (LocalDate) -> Unit,
     initialDate: LocalDate? = null,
 ) {
     BottomSheetCalendar(
         onDismiss = onDismiss,
-        onDateSelect = onDateSelected,
+        onDateSelect = onDateSelect,
         title = "전달 날짜",
         initialDate = initialDate ?: LocalDate.now(),
     )

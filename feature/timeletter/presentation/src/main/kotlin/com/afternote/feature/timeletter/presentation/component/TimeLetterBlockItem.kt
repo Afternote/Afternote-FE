@@ -29,8 +29,8 @@ import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 @Composable
 fun TimeLetterBlockItem(
     letter: TimeLetter,
-    receiverNameMap: Map<Long, String> = emptyMap(),
     modifier: Modifier = Modifier,
+    receiverNameMap: Map<Long, String> = emptyMap(),
 ) {
     val thumbUrl = letter.blocks.firstOrNull { it.blockType == TimeLetterBlockType.IMAGE }?.url
 

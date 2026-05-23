@@ -32,9 +32,9 @@ import com.afternote.feature.timeletter.presentation.viewmodel.ViewMode
 
 @Composable
 fun TimeletterScreen(
-    onWriteClick: () -> Unit = {},
     onLetterClick: (Long) -> Unit = {},
     modifier: Modifier = Modifier,
+    onWriteClick: () -> Unit = {},
     viewModel: TimeletterViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
