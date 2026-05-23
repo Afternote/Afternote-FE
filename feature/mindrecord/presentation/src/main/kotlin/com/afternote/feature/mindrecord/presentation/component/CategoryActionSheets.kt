@@ -19,8 +19,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.feature.mindrecord.presentation.R
 
 @Composable
 fun CategoryNameDialog(
@@ -51,7 +53,7 @@ fun CategoryNameDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("취소") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.mindrecord_action_cancel)) }
         },
     )
 }
@@ -78,7 +80,7 @@ fun CategoryActionSheet(
                 modifier = Modifier.padding(vertical = 8.dp),
             )
             Text(
-                text = "이름 수정",
+                text = stringResource(R.string.mindrecord_action_rename),
                 style = AfternoteDesign.typography.bodyBase,
                 color = AfternoteDesign.colors.gray9,
                 modifier =
@@ -88,7 +90,7 @@ fun CategoryActionSheet(
                         .padding(vertical = 14.dp),
             )
             Text(
-                text = "삭제",
+                text = stringResource(R.string.mindrecord_action_delete),
                 style = AfternoteDesign.typography.bodyBase,
                 color = Color(0xFFE5484D),
                 modifier =

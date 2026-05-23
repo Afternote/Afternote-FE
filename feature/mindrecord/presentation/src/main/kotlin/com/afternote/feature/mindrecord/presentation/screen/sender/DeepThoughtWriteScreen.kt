@@ -26,11 +26,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.R
+import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Red
@@ -63,7 +65,7 @@ fun DeepThoughtWriteScreen(
     Scaffold(
         topBar = {
             DetailTopBar(
-                title = "깊은 생각 기록하기",
+                title = stringResource(MindRecordR.string.mindrecord_deep_thought_write_title),
                 onBackClick = onBackClick,
                 actions = {
                     Button(
@@ -76,7 +78,7 @@ fun DeepThoughtWriteScreen(
                             ),
                     ) {
                         Text(
-                            text = "등록",
+                            text = stringResource(MindRecordR.string.mindrecord_action_register),
                             style = AfternoteDesign.typography.bodySmallB,
                             color = AfternoteDesign.colors.gray6,
                         )
@@ -106,7 +108,7 @@ fun DeepThoughtWriteScreen(
                     ),
                 placeholder = {
                     Text(
-                        text = "제목",
+                        text = stringResource(MindRecordR.string.mindrecord_deep_thought_write_title_label),
                         style = AfternoteDesign.typography.h3,
                         color = AfternoteDesign.colors.black.copy(alpha = 0.2f),
                     )
@@ -121,7 +123,7 @@ fun DeepThoughtWriteScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "카테고리",
+                    text = stringResource(MindRecordR.string.mindrecord_deep_thought_write_category_label),
                     style = AfternoteDesign.typography.bodySmallB,
                     color = AfternoteDesign.colors.gray7,
                 )
@@ -166,9 +168,9 @@ fun DeepThoughtWriteScreen(
             CategorySettingBottomSheet(
                 categories =
                     listOf(
-                        CategoryUiModel("1", "나의 가치관", Color(0xFF1A1A1A)),
-                        CategoryUiModel("2", "오늘 떠올린 생각", Color(0xFFFFB3A7)),
-                        CategoryUiModel("3", "인생을 되돌아 보며", Color(0xFFA8C8E8)),
+                        CategoryUiModel("1", stringResource(MindRecordR.string.mindrecord_deep_thought_write_default_category), Color(0xFF1A1A1A)),
+                        CategoryUiModel("2", stringResource(MindRecordR.string.mindrecord_deep_thought_sample_category_today), Color(0xFFFFB3A7)),
+                        CategoryUiModel("3", stringResource(MindRecordR.string.mindrecord_deep_thought_sample_category_retrospective), Color(0xFFA8C8E8)),
                     ),
                 onDismiss = { showCategorySheet = false },
                 onBackClick = { showCategorySheet = false },

@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontStyle
@@ -32,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.TextStyleState
 import com.afternote.feature.mindrecord.presentation.model.TextStyleType
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
@@ -103,13 +105,13 @@ fun WriteTextField(
             )
             if (state.annotatedString.text.isEmpty()) {
                 Text(
-                    text = "당신의 오늘을 기록해보세요",
+                    text = stringResource(R.string.mindrecord_write_field_placeholder),
                     color = AfternoteDesign.colors.gray4,
                     modifier = Modifier.padding(16.dp),
                 )
             }
             Text(
-                text = "${state.annotatedString.text.length} 글자",
+                text = stringResource(R.string.mindrecord_write_field_character_count, state.annotatedString.text.length),
                 color = AfternoteDesign.colors.gray4,
                 modifier =
                     Modifier

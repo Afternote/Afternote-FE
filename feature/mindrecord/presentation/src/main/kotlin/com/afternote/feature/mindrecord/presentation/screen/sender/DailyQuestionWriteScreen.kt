@@ -18,11 +18,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Red
 import com.afternote.core.ui.topbar.DetailTopBar
@@ -64,7 +66,7 @@ fun DailyQuestionWriteScreen(
                             ),
                     ) {
                         Text(
-                            text = "등록",
+                            text = stringResource(R.string.mindrecord_action_register),
                             style = AfternoteDesign.typography.bodySmallB,
                             color = AfternoteDesign.colors.gray6,
                         )
@@ -79,10 +81,10 @@ fun DailyQuestionWriteScreen(
             Column(modifier = Modifier.padding(paddingValues).padding(horizontal = 20.dp)) {
                 val headerText =
                     when {
-                        uiState.isQuestionLoading -> "오늘의 질문을 불러오는 중..."
+                        uiState.isQuestionLoading -> stringResource(R.string.mindrecord_daily_question_write_loading)
                         uiState.questionLoadError != null -> uiState.questionLoadError!!
                         uiState.questionContent.isNotEmpty() -> uiState.questionContent
-                        else -> "오늘의 질문이 없습니다."
+                        else -> stringResource(R.string.mindrecord_daily_question_write_none)
                     }
                 DailyQuestionWriteHeaderCard(
                     questionText = headerText,

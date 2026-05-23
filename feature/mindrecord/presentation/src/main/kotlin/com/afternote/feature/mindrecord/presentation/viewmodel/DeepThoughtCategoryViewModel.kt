@@ -1,13 +1,17 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtCategoryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtCategoryName
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtCategoryUpdatePayload
+import com.afternote.feature.mindrecord.domain.model.MindRecordError
 import com.afternote.feature.mindrecord.domain.repository.DeepThoughtRepository
+import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.mapper.toUi
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,6 +23,7 @@ import javax.inject.Inject
 class DeepThoughtCategoryViewModel
     @Inject
     constructor(
+        @ApplicationContext private val context: Context,
         private val repository: DeepThoughtRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(DeepThoughtCategoryUiState())
@@ -52,9 +57,13 @@ class DeepThoughtCategoryViewModel
                                         categories = it.categories + created.toUi(),
                                     )
                                 }
-                            }.onFailure { e -> emitError(e.message ?: "카테고리 추가에 실패했습니다.") }
+                            }.onFailure { e ->
+                                emitError(resolveMessage(e, R.string.mindrecord_error_category_add_failed))
+                            }
                     }
-                }.onFailure { e -> emitError(e.message ?: "카테고리 이름이 올바르지 않습니다.") }
+                }.onFailure { e ->
+                    emitError(resolveMessage(e, R.string.mindrecord_error_category_name_invalid))
+                }
         }
 
         fun renameCategory(
@@ -78,9 +87,13 @@ class DeepThoughtCategoryViewModel
                                         categories = state.categories.map { if (it.id == ui.id) ui else it },
                                     )
                                 }
-                            }.onFailure { e -> emitError(e.message ?: "카테고리 수정에 실패했습니다.") }
+                            }.onFailure { e ->
+                                emitError(resolveMessage(e, R.string.mindrecord_error_category_update_failed))
+                            }
                     }
-                }.onFailure { e -> emitError(e.message ?: "카테고리 이름이 올바르지 않습니다.") }
+                }.onFailure { e ->
+                    emitError(resolveMessage(e, R.string.mindrecord_error_category_name_invalid))
+                }
         }
 
         fun deleteCategory(categoryId: Long) {
@@ -95,7 +108,9 @@ class DeepThoughtCategoryViewModel
                                 categories = state.categories.filterNot { it.id == categoryId.toString() },
                             )
                         }
-                    }.onFailure { e -> emitError(e.message ?: "카테고리 삭제에 실패했습니다.") }
+                    }.onFailure { e ->
+                        emitError(resolveMessage(e, R.string.mindrecord_error_category_delete_failed))
+                    }
             }
         }
 
@@ -106,6 +121,15 @@ class DeepThoughtCategoryViewModel
         private fun emitError(message: String) {
             _uiState.update { it.copy(isMutating = false, errorMessage = message) }
         }
+
+        private fun resolveMessage(
+            error: Throwable,
+            fallback: Int,
+        ): String =
+            when (error) {
+                MindRecordError.EmptyCategoryName -> context.getString(R.string.mindrecord_error_category_name_empty)
+                else -> error.message ?: context.getString(fallback)
+            }
 
         private fun load() {
             viewModelScope.launch {
@@ -123,7 +147,7 @@ class DeepThoughtCategoryViewModel
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                errorMessage = e.message ?: "카테고리 목록을 불러오지 못했습니다.",
+                                errorMessage = resolveMessage(e, R.string.mindrecord_error_category_list_failed),
                             )
                         }
                     }
