@@ -35,6 +35,7 @@ import com.afternote.feature.afternote.presentation.receiver.deliveryverificatio
  */
 @Composable
 fun MasterKeyScreen(
+    senderId: String,
     onBackClick: () -> Unit,
     onVerified: () -> Unit,
     modifier: Modifier = Modifier,
@@ -63,7 +64,7 @@ fun MasterKeyScreen(
         isSubmitting = uiState.isSubmitting,
         snackbarHostState = snackbarHostState,
         onBackClick = onBackClick,
-        onSubmitClick = { viewModel.submit(authCodeState.text.toString()) },
+        onSubmitClick = { viewModel.submit(senderId, authCodeState.text.toString()) },
         modifier = modifier,
     )
 }

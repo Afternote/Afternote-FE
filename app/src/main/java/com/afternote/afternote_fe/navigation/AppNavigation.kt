@@ -25,6 +25,7 @@ import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomBar
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.author.navigation.afternoteNavGraph
+import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceiverRoute
 import com.afternote.feature.afternote.presentation.receiver.navigation.receiverNavGraph
 import com.afternote.feature.mindrecord.presentation.navigation.mindRecordNavGraph
 import com.afternote.feature.onboarding.presentation.navigation.onboardingNavGraph
@@ -121,6 +122,9 @@ fun AppNavigation(
             receiverNavGraph(
                 homeContent = { ReceiverHomeEntry(actions = receiverHomeActions) },
                 actions = receiverNavActions,
+                deliveryFlowEntry = {
+                    appState.navController.getBackStackEntry<ReceiverRoute.DeliveryVerificationFlowRoute>()
+                },
             )
         }
     }

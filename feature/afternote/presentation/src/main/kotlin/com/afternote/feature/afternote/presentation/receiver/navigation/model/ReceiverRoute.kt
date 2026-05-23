@@ -43,12 +43,25 @@ sealed interface ReceiverRoute {
     ) : ReceiverRoute
 
     /**
-     * 본인 확인 안내 화면(design 2). 발신자 상세에서 "열람 신청하기" 진입 시 본인 확인 캐시가 없으면 본 라우트로.
+     * 열람 신청 흐름 — 본인 확인(2·3·4) + 마스터 키(5) + 서류 업로드(6·7·8) + 완료(9) 의 *nested graph 진입점*.
+     *
+     * 흐름 전체 동안 유지되는 `senderId` 는 본 라우트에만 보유 — 자식 라우트들은 parent backStackEntry 의
+     * [com.afternote.feature.afternote.presentation.receiver.deliveryverification.DeliveryVerificationFlowViewModel]
+     * 에서 receive. 자식 라우트에서 senderId 를 nav arg 로 중복 박지 않는다.
+     *
+     * 발신자 상세 "열람 신청하기" 진입점.
      */
     @Serializable
-    data class IdentityVerificationIntroRoute(
+    data class DeliveryVerificationFlowRoute(
         val senderId: String,
     ) : ReceiverRoute
+
+    /**
+     * 본인 확인 안내 화면(design 2). 흐름 진입 시 본인 확인 캐시가 없으면 본 라우트로.
+     * senderId 는 부모 [DeliveryVerificationFlowRoute] 에서 받는다.
+     */
+    @Serializable
+    data object IdentityVerificationIntroRoute : ReceiverRoute
 
     /**
      * 본인 확인 이메일 인증 화면(designs 3·4). 인증 시작하기 → 진입.
@@ -57,36 +70,28 @@ sealed interface ReceiverRoute {
      * 캐시가 켜져 이후 동일 세션에서는 마스터 키로 직진.
      */
     @Serializable
-    data class IdentityVerificationEmailRoute(
-        val senderId: String,
-    ) : ReceiverRoute
+    data object IdentityVerificationEmailRoute : ReceiverRoute
 
     /**
-     * 열람 신청 1단계: 마스터 키 입력(5). 발신자 상세에서 "열람 신청하기" 진입.
+     * 열람 신청 1단계: 마스터 키 입력(5).
      *
-     * `verify(authCode)` 응답 성공 시 ReceiverIdentity 를 senderId 카드에 결합하고 다음 단계로 진행.
+     * `verify(authCode)` 응답 성공 시 ReceiverIdentity 를 (부모 라우트의) senderId 카드에 결합하고 다음 단계로.
      */
     @Serializable
-    data class MasterKeyRoute(
-        val senderId: String,
-    ) : ReceiverRoute
+    data object MasterKeyRoute : ReceiverRoute
 
     /**
      * 열람 신청 2단계: 증빙 서류 업로드(6·7·8). 사망진단서 + 가족관계증명서 각 1건 첨부.
      */
     @Serializable
-    data class DocumentUploadRoute(
-        val senderId: String,
-    ) : ReceiverRoute
+    data object DocumentUploadRoute : ReceiverRoute
 
     /**
      * 열람 신청 3단계: 완료(9). `submitDeliveryVerification` 결과 표시.
      * "받은 기록함으로 돌아가기" 버튼이 발신자 상세까지 pop 한다.
      */
     @Serializable
-    data class DeliveryVerificationCompleteRoute(
-        val senderId: String,
-    ) : ReceiverRoute
+    data object DeliveryVerificationCompleteRoute : ReceiverRoute
 
     /** 수신한 애프터노트 페이지드 목록. */
     @Serializable
