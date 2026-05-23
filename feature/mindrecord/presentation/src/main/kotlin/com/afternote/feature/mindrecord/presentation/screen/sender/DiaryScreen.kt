@@ -36,6 +36,7 @@ import com.afternote.feature.mindrecord.presentation.model.DailyDiary
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListViewModel
+import java.time.LocalDate
 import androidx.compose.foundation.lazy.grid.items as gridItems
 
 @Composable
@@ -76,15 +77,25 @@ private fun DiaryListContent(
         return
     }
 
+    val today = LocalDate.now()
+    val currentMonthDiaries = diaries.filter { it.date.year == today.year && it.date.monthValue == today.monthValue }
+    val answeredDays = currentMonthDiaries.map { it.date.dayOfMonth }.toSet()
+    val emotionByDay =
+        currentMonthDiaries
+            .mapNotNull { diary -> diary.emotion?.let { diary.date.dayOfMonth to it } }
+            .toMap()
+
     if (isListView) {
         LazyColumn(modifier = modifier) {
             item {
                 DailyCalendar(
-                    year = 2026,
-                    month = 3,
+                    year = today.year,
+                    month = today.monthValue,
                     type = MindRecordCategoryUi.Diary,
                     onNextMonth = {},
                     onPrevMonth = {},
+                    answeredDays = answeredDays,
+                    emotionByDay = emotionByDay,
                 )
                 Spacer(modifier = Modifier.height(10.dp))
             }
