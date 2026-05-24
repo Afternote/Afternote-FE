@@ -53,5 +53,9 @@ gradlePlugin {
             id = "afternote.android.lint"
             implementationClass = "AndroidLintConventionPlugin"
         }
+        register("androidDatastore") {
+            id = "afternote.android.datastore"
+            implementationClass = "AndroidDatastoreConventionPlugin"
+        }
     }
 }

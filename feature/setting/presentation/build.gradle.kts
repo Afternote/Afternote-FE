@@ -1,40 +1,47 @@
+import java.util.Properties
+
 plugins {
-    alias(libs.plugins.android.library)
+    id("afternote.android.library.compose")
+    id("afternote.android.hilt")
+    id("afternote.android.navigation")
+}
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
 }
 
 android {
-    namespace = "com.afternote.presentation"
-    compileSdk {
-        version = release(36)
+    namespace = "com.afternote.feature.setting.presentation"
+
+    buildFeatures {
+        buildConfig = true
     }
 
     defaultConfig {
-        minSdk = 24
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
-    }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        val googleWebClientId =
+            localProperties.getProperty("GOOGLE_WEB_CLIENT_ID")
+                ?: System.getenv("GOOGLE_WEB_CLIENT_ID")
+                ?: ""
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
     }
 }
 
 dependencies {
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.material)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
+    implementation(projects.feature.setting.domain)
+    implementation(projects.core.datastore)
+    implementation(projects.core.common)
+    implementation(projects.core.data)
+    implementation(projects.core.domain)
+    implementation(projects.core.model)
+    implementation(projects.core.ui)
+    implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.compose.runtime)
+    implementation(libs.kakao.sdk.auth)
+    implementation(libs.kakao.sdk.user)
+    implementation(libs.androidx.biometric)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
 }

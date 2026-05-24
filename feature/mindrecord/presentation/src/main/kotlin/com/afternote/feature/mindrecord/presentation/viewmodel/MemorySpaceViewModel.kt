@@ -1,0 +1,63 @@
+package com.afternote.feature.mindrecord.presentation.viewmodel
+
+import androidx.lifecycle.ViewModel
+import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryItem
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import javax.inject.Inject
+
+/** 마인드레코드 MemorySpace 화면용. 더미 목록은 추후 Repository 연동으로 교체 가능. */
+@HiltViewModel
+class MemorySpaceViewModel
+    @Inject
+    constructor() : ViewModel() {
+        private val _memories = MutableStateFlow<List<MemoryItem>>(emptyList())
+        val memories: StateFlow<List<MemoryItem>> = _memories.asStateFlow()
+
+        init {
+            loadDummyMemories()
+        }
+
+        // TODO: [MOCK_CLEANUP] 백엔드 API 스펙 확정 시 Repository 연동으로 교체 및 삭제.
+        private fun loadDummyMemories() {
+            _memories.value =
+                listOf(
+                    MemoryItem(
+                        id = 1,
+                        imageUrl = "https://mock.image/1",
+                        title = "기억 1",
+                        date = "2024.11.11",
+                        content =
+                            "이 순간은 나에게 특별한 의미가 있었습니다. 햇살이 창문을 통해 들어오는 고요한 오후, 나만의 생각에 잠길 수 있었던 시간.\n\n" +
+                                "일상 속에서 찾은 작은 평화의 순간들이 모여 나의 삶을 더 풍요롭게 만들어갑니다.",
+                        tags = listOf("평온", "일상", "감사"),
+                    ),
+                    MemoryItem(
+                        id = 2,
+                        imageUrl = "https://mock.image/2",
+                        title = "기억 2",
+                        date = "2024.11.12",
+                        content = "두 번째 기억 내용.",
+                        tags = listOf("추억"),
+                    ),
+                    MemoryItem(
+                        id = 3,
+                        imageUrl = "https://mock.image/3",
+                        title = "기억 3",
+                        date = "2024.11.13",
+                        content = "세 번째 기억 내용.",
+                        tags = listOf("여행", "힐링"),
+                    ),
+                    MemoryItem(
+                        id = 4,
+                        imageUrl = "https://mock.image/4",
+                        title = "기억 4",
+                        date = "2024.11.14",
+                        content = "네 번째 기억 내용.",
+                        tags = listOf("가족"),
+                    ),
+                )
+        }
+    }

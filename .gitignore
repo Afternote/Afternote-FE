@@ -1,9 +1,15 @@
 # Gradle files
 .gradle/
 build/
+**/bin/
 
 # Local configuration file (sdk path, etc)
 local.properties
+
+# Claude Code (local only)
+.claude/
+claude.md
+CLAUDE.md
 
 # Log/OS Files
 *.log
@@ -32,3 +38,7 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# macOS 전용
+.DS_Store
+**/.DS_Store

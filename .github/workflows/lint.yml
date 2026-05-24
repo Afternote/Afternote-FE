@@ -24,6 +24,7 @@ jobs:
           android: true # Android 스타일 가이드 준수
           fail_on_error: true # 에러 발견 시 빌드 실패
           level: warning # Warning 이상은 댓글로 표시
+          ktlint_version: "1.8.0" # 로컬(libs.versions.toml)과 버전 통일
 
   android-lint:
     name: Check Project Issues (Android Lint)
@@ -36,11 +37,29 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
           cache: 'gradle'
+
+      # fail-fast — secret 누락 시 Gradle 까지 가지 않고 즉시 실패
+      # secret 값은 echo 하지 않음 (env 로만 받아서 길이 검사). 누락 키 이름은 안전.
+      - name: Verify required secrets are set
+        env:
+          KAKAO_NATIVE_APP_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
+          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+        run: |
+          missing=""
+          [ -z "$KAKAO_NATIVE_APP_KEY" ] && missing="$missing KAKAO_NATIVE_APP_KEY"
+          [ -z "$GOOGLE_WEB_CLIENT_ID" ] && missing="$missing GOOGLE_WEB_CLIENT_ID"
+          if [ -n "$missing" ]; then
+            echo "::error::필수 secret 누락:$missing — Settings → Secrets and variables → Actions 에 등록"
+            exit 1
+          fi
 
       - name: Run Android Lint
         run: ./gradlew lintDebug --continue --parallel
+        env:
+          KAKAO_NATIVE_APP_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
+          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
 
       - name: Report Android Lint (Reviewdog)
         if: always()

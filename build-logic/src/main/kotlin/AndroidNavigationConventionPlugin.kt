@@ -7,7 +7,7 @@ class AndroidNavigationConventionPlugin : Plugin<Project> {
             pluginManager.apply("org.jetbrains.kotlin.plugin.serialization")
 
             afterNoteDependencies {
-                implementation("androidx-navigation-compose")
+                implementation("android-navigation-compose")
                 implementation("kotlinx-serialization-json")
             }
         }

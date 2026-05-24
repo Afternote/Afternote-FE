@@ -1,0 +1,84 @@
+package com.afternote.feature.afternote.data.mapper.response
+
+import com.afternote.feature.afternote.data.dto.AfternoteCredentials
+import com.afternote.feature.afternote.data.dto.AfternoteDetailReceiver
+import com.afternote.feature.afternote.data.dto.AfternoteDetailResponse
+import com.afternote.feature.afternote.data.dto.AfternotePlaylist
+import com.afternote.feature.afternote.data.dto.AfternoteSong
+import com.afternote.feature.afternote.data.mapper.categoryToServiceType
+import com.afternote.feature.afternote.data.mapper.formatDateFromServer
+import com.afternote.feature.afternote.domain.model.author.Detail
+import com.afternote.feature.afternote.domain.model.author.DetailCredentials
+import com.afternote.feature.afternote.domain.model.author.DetailProcessing
+import com.afternote.feature.afternote.domain.model.author.DetailReceiver
+import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
+import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
+import com.afternote.feature.afternote.domain.model.author.playlist.PlaylistDetail
+import com.afternote.feature.afternote.domain.model.author.playlist.PlaylistDetailMemorialMedia
+
+fun AfternoteDetailResponse.toDetailDomain(): Detail =
+    Detail(
+        id = afternoteId,
+        category = category,
+        title = title,
+        timestamps = toTimestamps(),
+        type = categoryToServiceType(category),
+        credentials = credentials?.toDomain(),
+        receivers = receivers.toDomain(),
+        processing = toProcessing(),
+        playlist = playlist?.toDomain(),
+    )
+
+private fun List<AfternoteDetailReceiver>?.toDomain() =
+    this?.map { a ->
+        a.toDomain()
+    } ?: emptyList()
+
+private fun AfternoteDetailResponse.toTimestamps(): DetailTimestamps =
+    DetailTimestamps(
+        createdAt = formatDateFromServer(createdAt),
+        updatedAt = formatDateFromServer(updatedAt),
+    )
+
+private fun AfternoteDetailResponse.toProcessing() =
+    DetailProcessing(
+        actions = actions ?: emptyList(),
+        leaveMessage = leaveMessage,
+    )
+
+private fun AfternoteCredentials.toDomain() =
+    DetailCredentials(
+        id = id,
+        password = password,
+    )
+
+private fun AfternotePlaylist.toDomain() =
+    PlaylistDetail(
+        profilePhoto = profilePhoto,
+        atmosphere = atmosphere,
+        songs = songs.map { it.toDomain() },
+        playlistDetailMemorialMedia = toMemorialMedia(),
+    )
+
+private fun AfternotePlaylist.toMemorialMedia() =
+    PlaylistDetailMemorialMedia(
+        photoUrl = memorialPhotoUrl ?: profilePhoto,
+        videoUrl = memorialVideo?.videoUrl,
+        thumbnailUrl = memorialVideo?.thumbnailUrl,
+    )
+
+private fun AfternoteDetailReceiver.toDomain() =
+    DetailReceiver(
+        receiverId = receiverId,
+        name = name ?: "",
+        relation = relation ?: "",
+        phone = phone ?: "",
+    )
+
+private fun AfternoteSong.toDomain() =
+    DetailSong(
+        id = id,
+        title = title,
+        artist = artist,
+        coverUrl = coverUrl,
+    )

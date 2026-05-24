@@ -69,6 +69,7 @@ internal fun Project.configureCompose(
         androidTestImplementation(platform(bom))
         implementation("androidx-compose-ui")
         implementation("androidx-compose-material3")
+        implementation("androidx-activity-compose")
         implementation("androidx-compose-ui-tooling-preview")
         debugImplementation("androidx-compose-ui-tooling")
     }

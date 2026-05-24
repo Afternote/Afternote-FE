@@ -11,6 +11,7 @@ class AndroidHiltConventionPlugin : Plugin<Project> {
 
             afterNoteDependencies {
                 implementation("hilt-android")
+                implementation("hilt-navigation")
                 ksp("hilt-compiler")
             }
         }

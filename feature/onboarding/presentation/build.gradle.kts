@@ -1,40 +1,46 @@
+import java.util.Properties
+
 plugins {
-    alias(libs.plugins.android.library)
+    id("afternote.android.library.compose")
+    id("afternote.android.hilt")
+    kotlin("plugin.serialization")
+}
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
 }
 
 android {
-    namespace = "com.afternote.presentation"
-    compileSdk {
-        version = release(36)
+    namespace = "com.afternote.feature.onboarding.presentation"
+
+    buildFeatures {
+        buildConfig = true
     }
 
     defaultConfig {
-        minSdk = 24
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
-    }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        // Google Cloud Console에서 발급받은 Web Client ID. 저장소에 키를 박지 말 것.
+        // 루트 local.properties(gitignore) 또는 CI 환경변수 GOOGLE_WEB_CLIENT_ID만 사용.
+        val googleWebClientId =
+            localProperties.getProperty("GOOGLE_WEB_CLIENT_ID")
+                ?: System.getenv("GOOGLE_WEB_CLIENT_ID")
+                ?: ""
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
     }
 }
 
 dependencies {
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.material)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
+    implementation(projects.feature.onboarding.domain)
+    implementation(projects.core.common)
+    implementation(projects.core.domain)
+    implementation(projects.core.model)
+    implementation(projects.core.ui)
+    implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kakao.sdk.auth)
+    implementation(libs.kakao.sdk.user)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
 }

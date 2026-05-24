@@ -1,5 +1,37 @@
 # Afternote-FE
 
+# 🚀 신규 팀원 빌드 셋업
+
+`local.properties` 는 `.gitignore` 에 등록되어 있어 **git 으로 받아지지 않는다**. clone 직후 다음 두 키를 루트 `local.properties` 에 직접 채워야 카카오·구글 로그인이 정상 동작한다.
+
+## 필요 키
+
+| 키 | 용도 | 발급 위치 |
+|---|---|---|
+| `KAKAO_NATIVE_APP_KEY` | 카카오 SDK 초기화 (`KakaoSdk.init`) + 카카오 로그인 콜백 intent-filter 의 `kakao{NATIVE_APP_KEY}` scheme | [Kakao Developers](https://developers.kakao.com) → 내 애플리케이션 → 앱 키 → **네이티브 앱 키** |
+| `GOOGLE_WEB_CLIENT_ID` | Google 로그인 시 `CredentialManager.requestGoogleIdToken(serverClientId = ...)` 의 server client id (백엔드가 ID Token 의 `aud` 를 검증할 수 있도록 *Web* client ID 사용) | [Google Cloud Console](https://console.cloud.google.com) → APIs & Services → Credentials → OAuth 2.0 Client IDs → **Web application** 타입 |
+
+## `local.properties` 양식
+
+프로젝트 루트의 `local.properties` 끝에 다음 라인 추가:
+
+```properties
+KAKAO_NATIVE_APP_KEY=<카카오 네이티브 앱 키>
+GOOGLE_WEB_CLIENT_ID=<구글 OAuth web client id>.apps.googleusercontent.com
+```
+
+## 키 수령 채널
+
+신규 팀원은 위 두 키를 **Slack DM 으로 1hyok 에게 요청**. (직접 발급 권한이 있는 경우 위 콘솔에서 직접 조회 가능.)
+
+## 누락 시 증상
+
+두 키가 비어 있으면 빌드는 통과하지만 다음이 깨진다:
+
+- `KakaoSdk.init("")` → SDK 초기화 실패 (앱 내 안내: `KAKAO_NATIVE_APP_KEY를 확인해주세요.`)
+- `AndroidManifest.xml` 의 `android:scheme="kakao${KAKAO_NATIVE_APP_KEY}"` 가 빈 scheme 으로 등록 → 카카오 로그인 콜백 intent-filter 매칭 안 됨
+- `requestGoogleIdToken(serverClientId = "")` → Credential Manager 가 invalid request 로 실패
+
 # 💻 코딩 컨벤션
 
 > **네이밍 컨벤션**

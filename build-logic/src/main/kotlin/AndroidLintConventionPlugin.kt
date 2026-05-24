@@ -9,7 +9,16 @@ class AndroidLintConventionPlugin : Plugin<Project> {
         with(target) {
             pluginManager.apply("org.jlleitschuh.gradle.ktlint")
 
+            // VersionCatalog 명시적 접근
+            val libs =
+                extensions
+                    .getByType<VersionCatalogsExtension>()
+                    .named("libs")
+
             extensions.configure(KtlintExtension::class.java) {
+                // ktlint binary 버전을 CI(ScaCap/action-ktlint) 와 동일하게 핀.
+                // 추가 룰셋(compose-rules 등)은 CI 가 적재하지 않으므로 로컬도 적재하지 않는다.
+                version.set(libs.findVersion("ktlint").get().requiredVersion)
                 debug.set(false)
                 verbose.set(true)
                 android.set(true)
@@ -19,16 +28,6 @@ class AndroidLintConventionPlugin : Plugin<Project> {
                     exclude { it.file.path.contains("build/") }
                 }
             }
-
-            // VersionCatalog 명시적 접근
-            val libs = extensions
-                .getByType<VersionCatalogsExtension>()
-                .named("libs")
-
-            dependencies.add(
-                "ktlintRuleset",
-                libs.findLibrary("compose-rules").get()
-            )
         }
     }
 }
