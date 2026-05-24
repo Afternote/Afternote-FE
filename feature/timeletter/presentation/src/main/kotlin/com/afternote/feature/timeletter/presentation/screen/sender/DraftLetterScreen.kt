@@ -62,11 +62,12 @@ private fun DraftLetterContent(
                 onBackClick = onBackClick,
                 actions = {
                     TimeLetterTextButton(
-                        text = when {
-                            !isEditMode -> "수정"
-                            selectedIds.isEmpty() -> "취소"
-                            else -> "삭제"
-                        },
+                        text =
+                            when {
+                                !isEditMode -> "수정"
+                                selectedIds.isEmpty() -> "취소"
+                                else -> "삭제"
+                            },
                         isActive = isEditMode && selectedIds.isNotEmpty(),
                         onClick = onEditCompleteClick,
                     )

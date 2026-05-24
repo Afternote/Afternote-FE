@@ -59,10 +59,17 @@ fun TimeLetterContent(
 
         val filterLabel =
             when {
-                selectedFilterReceiverIds.isEmpty() -> "전체레터"
-                selectedFilterReceiverIds.size == 1 ->
+                selectedFilterReceiverIds.isEmpty() -> {
+                    "전체레터"
+                }
+
+                selectedFilterReceiverIds.size == 1 -> {
                     receiverNameMap[selectedFilterReceiverIds.first()] ?: "수신자"
-                else -> "${selectedFilterReceiverIds.size}명"
+                }
+
+                else -> {
+                    "${selectedFilterReceiverIds.size}명"
+                }
             }
 
         Row(
@@ -109,16 +116,19 @@ fun TimeLetterContent(
         ) {
             items(letters.timeLetters) { letter ->
                 when (viewMode) {
-                    ViewMode.List -> TimeLetterListItem(
-                        letter = letter,
-                        receiverNameMap = receiverNameMap,
-                        modifier = Modifier.clickable { onLetterClick(letter.id) },
-                    )
-                    ViewMode.Block -> TimeLetterBlockItem(
-                        letter = letter,
-                        receiverNameMap = receiverNameMap,
-                        modifier = Modifier.clickable { onLetterClick(letter.id) },
-                    )
+                    ViewMode.List ->
+                        TimeLetterListItem(
+                            letter = letter,
+                            receiverNameMap = receiverNameMap,
+                            modifier = Modifier.clickable { onLetterClick(letter.id) },
+                        )
+
+                    ViewMode.Block ->
+                        TimeLetterBlockItem(
+                            letter = letter,
+                            receiverNameMap = receiverNameMap,
+                            modifier = Modifier.clickable { onLetterClick(letter.id) },
+                        )
                 }
             }
         }

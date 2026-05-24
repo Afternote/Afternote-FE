@@ -18,10 +18,12 @@ import javax.inject.Inject
 
 sealed interface TimeLetterDetailUiState {
     data object Loading : TimeLetterDetailUiState
+
     data class Success(
         val letter: TimeLetter,
         val receiverNameMap: Map<Long, String>,
     ) : TimeLetterDetailUiState
+
     data object Error : TimeLetterDetailUiState
 }
 
@@ -52,10 +54,11 @@ class TimeLetterDetailViewModel
 
                 letterResult
                     .onSuccess { letter ->
-                        _uiState.value = TimeLetterDetailUiState.Success(
-                            letter = letter,
-                            receiverNameMap = receiverCacheStore.receiverNameMap.value,
-                        )
+                        _uiState.value =
+                            TimeLetterDetailUiState.Success(
+                                letter = letter,
+                                receiverNameMap = receiverCacheStore.receiverNameMap.value,
+                            )
                     }.onFailure {
                         _uiState.value = TimeLetterDetailUiState.Error
                     }

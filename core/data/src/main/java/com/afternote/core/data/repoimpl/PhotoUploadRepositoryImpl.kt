@@ -23,26 +23,42 @@ import kotlin.coroutines.cancellation.CancellationException
 private const val DEFAULT_EXTENSION = "jpg"
 private const val DEFAULT_CONTENT_TYPE = "image/jpeg"
 
-private val ALLOWED_EXTENSIONS = setOf(
-    "jpg", "jpeg", "png", "gif", "webp", "heic",
-    "mp4", "mov", "mp3", "m4a", "wav", "pdf",
-)
+private val ALLOWED_EXTENSIONS =
+    setOf(
+        "jpg",
+        "jpeg",
+        "png",
+        "gif",
+        "webp",
+        "heic",
+        "mp4",
+        "mov",
+        "mp3",
+        "m4a",
+        "wav",
+        "pdf",
+    )
 
-private val MIME_TO_EXTENSION = mapOf(
-    "image/heif" to "heic",
-    "image/heic" to "heic",
-    "image/jpg" to "jpg",
-    "image/jfif" to "jpeg",
-    "video/quicktime" to "mov",
-    "audio/mpeg" to "mp3",
-    "audio/x-m4a" to "m4a",
-)
+private val MIME_TO_EXTENSION =
+    mapOf(
+        "image/heif" to "heic",
+        "image/heic" to "heic",
+        "image/jpg" to "jpg",
+        "image/jfif" to "jpeg",
+        "video/quicktime" to "mov",
+        "audio/mpeg" to "mp3",
+        "audio/x-m4a" to "m4a",
+    )
 
 private fun resolveExtension(mime: String?): String {
     if (mime == null) return DEFAULT_EXTENSION
     val fromMime = MimeTypeMap.getSingleton().getExtensionFromMimeType(mime)
-    val resolved = if (fromMime != null && fromMime in ALLOWED_EXTENSIONS) fromMime
-                   else MIME_TO_EXTENSION[mime] ?: fromMime
+    val resolved =
+        if (fromMime != null && fromMime in ALLOWED_EXTENSIONS) {
+            fromMime
+        } else {
+            MIME_TO_EXTENSION[mime] ?: fromMime
+        }
     return resolved?.takeIf { it in ALLOWED_EXTENSIONS } ?: DEFAULT_EXTENSION
 }
 
@@ -90,12 +106,14 @@ class PhotoUploadRepositoryImpl
                         withContext(ioDispatcher) {
                             s3Client
                                 .newCall(
-                                    Request.Builder()
+                                    Request
+                                        .Builder()
                                         .url(presigned.presignedUrl)
                                         .put(requestBody)
                                         .header("Content-Type", contentType)
                                         .build(),
-                                ).execute()
+                                )
+                                .execute()
                         }
                     check(response.isSuccessful) {
                         "S3 upload failed: ${response.code} ${response.message}"

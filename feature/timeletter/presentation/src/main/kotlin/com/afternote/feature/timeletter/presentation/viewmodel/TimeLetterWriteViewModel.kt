@@ -135,9 +135,10 @@ class TimeLetterWriteViewModel
         private fun addMediaBlockInternal(createBlock: (Long) -> EditorBlock) {
             _uiState.update { state ->
                 val blocks = state.editorBlocks.toMutableList()
-                val insertAfterIndex = state.focusedBlockId
-                    ?.let { focusedId -> blocks.indexOfFirst { it.id == focusedId }.takeIf { it >= 0 } }
-                    ?: blocks.lastIndex
+                val insertAfterIndex =
+                    state.focusedBlockId
+                        ?.let { focusedId -> blocks.indexOfFirst { it.id == focusedId }.takeIf { it >= 0 } }
+                        ?: blocks.lastIndex
 
                 var nextId = state.nextBlockId
                 val mediaBlock = createBlock(nextId++)
@@ -187,9 +188,10 @@ class TimeLetterWriteViewModel
             viewModelScope.launch {
                 _uiState.update { it.copy(isSaving = true) }
                 val blocks = mapToBlockInputs(state.editorBlocks, textContents)
-                val sendAt = state.sendAt?.let { date ->
-                    "${date}T${state.sendHour.toString().padStart(2, '0')}:${state.sendMinute.toString().padStart(2, '0')}:00"
-                }
+                val sendAt =
+                    state.sendAt?.let { date ->
+                        "${date}T${state.sendHour.toString().padStart(2, '0')}:${state.sendMinute.toString().padStart(2, '0')}:00"
+                    }
                 createTimeLetterUseCase(
                     title = title.ifBlank { null },
                     blocks = blocks,
@@ -197,11 +199,12 @@ class TimeLetterWriteViewModel
                     status = status,
                     receiverIds = state.recipientIds.ifEmpty { null },
                 ).onSuccess {
-                    val event = if (status == TimeLetterStatus.DRAFT) {
-                        TimeLetterWriteEvent.SavedAsDraft
-                    } else {
-                        TimeLetterWriteEvent.Registered
-                    }
+                    val event =
+                        if (status == TimeLetterStatus.DRAFT) {
+                            TimeLetterWriteEvent.SavedAsDraft
+                        } else {
+                            TimeLetterWriteEvent.Registered
+                        }
                     _events.send(event)
                     if (status == TimeLetterStatus.DRAFT) loadDraftCount()
                 }.onFailure {
@@ -214,30 +217,43 @@ class TimeLetterWriteViewModel
         private fun mapToBlockInputs(
             editorBlocks: List<EditorBlock>,
             textContents: Map<Long, String>,
-        ): List<BlockInput> = editorBlocks.mapNotNull { block ->
-            when (block) {
-                is EditorBlock.Text -> {
-                    val content = textContents[block.id] ?: ""
-                    if (content.isNotBlank()) BlockInput.Text(content) else null
+        ): List<BlockInput> =
+            editorBlocks.mapNotNull { block ->
+                when (block) {
+                    is EditorBlock.Text -> {
+                        val content = textContents[block.id] ?: ""
+                        if (content.isNotBlank()) BlockInput.Text(content) else null
+                    }
+
+                    is EditorBlock.Image -> {
+                        BlockInput.Media(
+                            uriString = block.uri.toString(),
+                            mimeType = context.contentResolver.getType(block.uri),
+                            blockType = TimeLetterBlockType.IMAGE,
+                        )
+                    }
+
+                    is EditorBlock.Audio -> {
+                        BlockInput.Media(
+                            uriString = block.uri.toString(),
+                            mimeType = context.contentResolver.getType(block.uri),
+                            blockType = TimeLetterBlockType.AUDIO,
+                        )
+                    }
+
+                    is EditorBlock.File -> {
+                        BlockInput.Media(
+                            uriString = block.uri.toString(),
+                            mimeType = context.contentResolver.getType(block.uri),
+                            blockType = TimeLetterBlockType.FILE,
+                        )
+                    }
+
+                    is EditorBlock.Link -> {
+                        BlockInput.Link(block.url)
+                    }
                 }
-                is EditorBlock.Image -> BlockInput.Media(
-                    uriString = block.uri.toString(),
-                    mimeType = context.contentResolver.getType(block.uri),
-                    blockType = TimeLetterBlockType.IMAGE,
-                )
-                is EditorBlock.Audio -> BlockInput.Media(
-                    uriString = block.uri.toString(),
-                    mimeType = context.contentResolver.getType(block.uri),
-                    blockType = TimeLetterBlockType.AUDIO,
-                )
-                is EditorBlock.File -> BlockInput.Media(
-                    uriString = block.uri.toString(),
-                    mimeType = context.contentResolver.getType(block.uri),
-                    blockType = TimeLetterBlockType.FILE,
-                )
-                is EditorBlock.Link -> BlockInput.Link(block.url)
             }
-        }
 
         private fun loadDraftCount() {
             viewModelScope.launch {

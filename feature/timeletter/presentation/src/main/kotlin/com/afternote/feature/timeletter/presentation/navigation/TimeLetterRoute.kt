@@ -16,7 +16,9 @@ sealed interface TimeLetterRoute {
     data object TimeLetterRecipientRoute : TimeLetterRoute
 
     @Serializable
-    data class TimeLetterDetailRoute(val timeLetterId: Long) : TimeLetterRoute
+    data class TimeLetterDetailRoute(
+        val timeLetterId: Long,
+    ) : TimeLetterRoute
 
     @Serializable
     data object TimeLetterRecipientFilterRoute : TimeLetterRoute

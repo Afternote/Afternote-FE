@@ -4,8 +4,10 @@ import com.afternote.feature.timeletter.domain.model.TimeLetterList
 import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
 import javax.inject.Inject
 
-class GetTemporaryTimeLettersUseCase @Inject constructor(
-    private val timeLetterRepository: TimeLetterRepository,
-) {
+class GetTemporaryTimeLettersUseCase
+    @Inject
+    constructor(
+        private val timeLetterRepository: TimeLetterRepository,
+    ) {
     suspend operator fun invoke(): TimeLetterList = timeLetterRepository.getTemporaryTimeLetters()
 }

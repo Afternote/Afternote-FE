@@ -38,9 +38,10 @@ class TimeletterViewModel
                 if (filterIds.isEmpty()) {
                     letters
                 } else {
-                    val filtered = letters.timeLetters.filter { letter ->
-                        letter.receiverIds.any { it in filterIds }
-                    }
+                    val filtered =
+                        letters.timeLetters.filter { letter ->
+                            letter.receiverIds.any { it in filterIds }
+                        }
                     letters.copy(timeLetters = filtered, totalCount = filtered.size)
                 }
             _uiState.value =

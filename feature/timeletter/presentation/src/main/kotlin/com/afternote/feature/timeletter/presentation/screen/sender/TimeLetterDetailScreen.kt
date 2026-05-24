@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -94,24 +95,27 @@ fun TimeLetterDetailScreen(
 private fun TimeLetterDetailContent(
     letter: TimeLetter,
     receiverNameMap: Map<Long, String>,
-    contentPadding: androidx.compose.foundation.layout.PaddingValues,
+    contentPadding: PaddingValues,
 ) {
-    val receiverText = letter.receiverIds
-        .mapNotNull { receiverNameMap[it] }
-        .joinToString(", ")
-        .ifEmpty { "${letter.receiverIds.size}명" }
+    val receiverText =
+        letter.receiverIds
+            .mapNotNull { receiverNameMap[it] }
+            .joinToString(", ")
+            .ifEmpty { "${letter.receiverIds.size}명" }
     val sendAtText = letter.sendAt?.take(10)?.replace("-", ".") ?: ""
 
-    val heroImageUrl = remember(letter.blocks) {
-        letter.blocks.firstOrNull { it.blockType == TimeLetterBlockType.IMAGE }?.url
-    }
+    val heroImageUrl =
+        remember(letter.blocks) {
+            letter.blocks.firstOrNull { it.blockType == TimeLetterBlockType.IMAGE }?.url
+        }
 
     LazyColumn(contentPadding = contentPadding) {
         item {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(160.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(160.dp),
             ) {
                 if (heroImageUrl != null) {
                     AsyncImage(
@@ -129,9 +133,10 @@ private fun TimeLetterDetailContent(
                     )
                 }
                 Column(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(16.dp),
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(16.dp),
                 ) {
                     Text(
                         text = letter.title ?: "제목 없음",
@@ -174,16 +179,19 @@ private fun TimeLetterBlockView(block: TimeLetterBlock) {
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
             )
         }
+
         TimeLetterBlockType.IMAGE -> {
             AsyncImage(
                 model = block.url,
                 contentDescription = null,
                 contentScale = ContentScale.FillWidth,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 8.dp),
             )
         }
+
         TimeLetterBlockType.AUDIO -> {
             // TODO: 재생 UI 구현 예정
             Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
@@ -199,6 +207,7 @@ private fun TimeLetterBlockView(block: TimeLetterBlock) {
                 )
             }
         }
+
         TimeLetterBlockType.FILE -> {
             Text(
                 text = "📎 ${block.url?.substringAfterLast('/') ?: "파일"}",
@@ -207,6 +216,7 @@ private fun TimeLetterBlockView(block: TimeLetterBlock) {
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
             )
         }
+
         TimeLetterBlockType.LINK -> {
             Text(
                 text = "🔗 ${block.url ?: ""}",
@@ -222,25 +232,27 @@ private fun TimeLetterBlockView(block: TimeLetterBlock) {
 @Composable
 private fun TimeLetterDetailScreenPrev() {
     TimeLetterDetailContent(
-        letter = TimeLetter(
-            id = 1L,
-            title = "미래의 나에게",
-            sendAt = "2026-12-31T00:00:00",
-            deliveredAt = null,
-            status = TimeLetterStatus.SCHEDULED,
-            blocks = listOf(
-                TimeLetterBlock(
-                    id = 1L,
-                    blockType = TimeLetterBlockType.TEXT,
-                    blockOrder = 1,
-                    textContent = "10년 뒤에도 잘 지내고 있길 바라.",
-                    url = null,
-                    mimeType = null,
-                ),
+        letter =
+            TimeLetter(
+                id = 1L,
+                title = "미래의 나에게",
+                sendAt = "2026-12-31T00:00:00",
+                deliveredAt = null,
+                status = TimeLetterStatus.SCHEDULED,
+                blocks =
+                    listOf(
+                        TimeLetterBlock(
+                            id = 1L,
+                            blockType = TimeLetterBlockType.TEXT,
+                            blockOrder = 1,
+                            textContent = "10년 뒤에도 잘 지내고 있길 바라.",
+                            url = null,
+                            mimeType = null,
+                        ),
+                    ),
+                receiverIds = listOf(1L),
             ),
-            receiverIds = listOf(1L),
-        ),
         receiverNameMap = mapOf(1L to "박경민"),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+        contentPadding = PaddingValues(0.dp),
     )
 }

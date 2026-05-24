@@ -22,7 +22,9 @@ data class TimeLetterWriteUiState(
 sealed class EditorBlock {
     abstract val id: Long
 
-    data class Text(override val id: Long) : EditorBlock()
+    data class Text(
+        override val id: Long,
+    ) : EditorBlock()
 
     data class Image(
         override val id: Long,

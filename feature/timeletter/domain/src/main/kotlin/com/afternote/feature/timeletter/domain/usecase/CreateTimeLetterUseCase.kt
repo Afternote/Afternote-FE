@@ -9,26 +9,29 @@ import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
 import javax.inject.Inject
 
-class CreateTimeLetterUseCase @Inject constructor(
-    private val timeLetterRepository: TimeLetterRepository,
-    private val photoUploadRepository: PhotoUploadRepository,
-) {
+class CreateTimeLetterUseCase
+    @Inject
+    constructor(
+        private val timeLetterRepository: TimeLetterRepository,
+        private val photoUploadRepository: PhotoUploadRepository,
+    ) {
     suspend operator fun invoke(
         title: String?,
         blocks: List<BlockInput>,
         sendAt: String?,
         status: TimeLetterStatus,
         receiverIds: List<Long>?,
-    ): Result<TimeLetter> = runCatching {
-        val newBlocks = buildBlocks(blocks)
-        timeLetterRepository.createTimeLetter(
-            title = title,
-            blocks = newBlocks,
-            sendAt = sendAt,
-            status = status,
-            receiverIds = receiverIds,
-        )
-    }
+    ): Result<TimeLetter> =
+        runCatching {
+            val newBlocks = buildBlocks(blocks)
+            timeLetterRepository.createTimeLetter(
+                title = title,
+                blocks = newBlocks,
+                sendAt = sendAt,
+                status = status,
+                receiverIds = receiverIds,
+            )
+        }
 
     private suspend fun buildBlocks(inputs: List<BlockInput>): List<NewTimeLetterBlock> {
         val result = mutableListOf<NewTimeLetterBlock>()
@@ -46,9 +49,12 @@ class CreateTimeLetterUseCase @Inject constructor(
                         )
                     }
                 }
+
                 is BlockInput.Media -> {
-                    val url = photoUploadRepository.upload(input.uriString, "timeletters")
-                        .getOrElse { throw it }
+                    val url =
+                        photoUploadRepository
+                            .upload(input.uriString, "timeletters")
+                            .getOrElse { throw it }
                     result.add(
                         NewTimeLetterBlock(
                             blockType = input.blockType,
@@ -58,6 +64,7 @@ class CreateTimeLetterUseCase @Inject constructor(
                         ),
                     )
                 }
+
                 is BlockInput.Link -> {
                     result.add(
                         NewTimeLetterBlock(
