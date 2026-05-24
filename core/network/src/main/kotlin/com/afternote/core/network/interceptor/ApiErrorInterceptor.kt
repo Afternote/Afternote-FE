@@ -40,9 +40,10 @@ class ApiErrorInterceptor
                     ?.content
                     ?.takeUnless { it.isBlank() }
             // 디버깅용 message — serverMessage 우선, 없으면 HTTP reason, 그래도 없으면 generic fallback.
-            val message = serverMessage
-                ?: response.message.takeUnless { it.isBlank() }
-                ?: "요청에 실패했습니다."
+            val message =
+                serverMessage
+                    ?: response.message.takeUnless { it.isBlank() }
+                    ?: "요청에 실패했습니다."
 
             throw ApiException(code = code, serverMessage = serverMessage, message = message)
         }

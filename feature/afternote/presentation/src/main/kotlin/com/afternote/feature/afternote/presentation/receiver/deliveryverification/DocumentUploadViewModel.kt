@@ -96,11 +96,12 @@ class DocumentUploadViewModel
                         _uiState.update {
                             it.copy(
                                 isSubmitting = false,
-                                error = if (serverMessage != null) {
-                                    ErrorPayload.Text(serverMessage)
-                                } else {
-                                    ErrorPayload.Res(R.string.receiver_verify_submit_failed)
-                                },
+                                error =
+                                    if (serverMessage != null) {
+                                        ErrorPayload.Text(serverMessage)
+                                    } else {
+                                        ErrorPayload.Res(R.string.receiver_verify_submit_failed)
+                                    },
                             )
                         }
                     }
