@@ -16,15 +16,16 @@ jobs:
       - name: Clone repo
         uses: actions/checkout@v4
 
+      # ScaCap 의 reviewdog wrapper 는 사용하지 않는다 — bot 가 PR 인라인 코멘트·Reviewers 사이드바·알림을
+      # 만들어 시끄럽고, 본 repo 는 pre-commit 훅의 ktlint(staged 파일만) + CI 의 fail/pass 결과만 가지고
+      # 머지 게이트를 운영한다. ktlint 1.8.0 standalone binary 만 호출 — 위반 시 step 자체가 fail.
       - name: Run Ktlint
-        uses: ScaCap/action-ktlint@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-pr-review # PR 리뷰 댓글로 표시
-          android: true # Android 스타일 가이드 준수
-          fail_on_error: true # 에러 발견 시 빌드 실패
-          level: warning # Warning 이상은 댓글로 표시
-          ktlint_version: "1.8.0" # 로컬(libs.versions.toml)과 버전 통일
+        run: |
+          set -e
+          KTLINT_VERSION="1.8.0"
+          curl -fsSLo /tmp/ktlint "https://github.com/pinterest/ktlint/releases/download/${KTLINT_VERSION}/ktlint"
+          chmod +x /tmp/ktlint
+          /tmp/ktlint --relative
 
   android-lint:
     name: Check Project Issues (Android Lint)
@@ -61,11 +62,6 @@ jobs:
           KAKAO_NATIVE_APP_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
           GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
 
-      - name: Report Android Lint (Reviewdog)
-        if: always()
-        uses: dvdandroid/action-android-lint@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-pr-review
-          level: warning
-          lint_xml_file: app/build/reports/lint-results-debug.xml
+      # Android Lint 결과 reporter 도 폐기 — bot 코멘트/Annotations/Reviewers 사이드바 전부 X.
+      # `./gradlew lintDebug` 자체가 위반 시 non-zero exit → 위 step 이 fail 하면 CI 빨간 X 만 남음.
+      # 사용자는 Actions step 로그(또는 로컬 lintDebug) 로 위치 확인.
