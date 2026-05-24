@@ -2,9 +2,11 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
+import com.afternote.feature.mindrecord.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -58,7 +60,15 @@ class DiaryWriteViewModel
                         _uiState.update { it.copy(submitState = SubmitState.Succeeded) }
                     }.onFailure { e ->
                         _uiState.update {
-                            it.copy(submitState = SubmitState.Failed(e.message ?: "일기 등록에 실패했습니다."))
+                            it.copy(
+                                submitState =
+                                    SubmitState.Failed(
+                                        UiText.DynamicOrResource(
+                                            value = e.message,
+                                            fallbackResId = R.string.mindrecord_error_diary_submit_failed,
+                                        ),
+                                    ),
+                            )
                         }
                     }
             }

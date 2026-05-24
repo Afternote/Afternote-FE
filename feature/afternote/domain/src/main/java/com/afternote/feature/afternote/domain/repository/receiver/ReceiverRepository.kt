@@ -6,6 +6,7 @@ import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResul
 import com.afternote.feature.afternote.domain.model.receiver.LoadCountResult
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedExportBundle
+import com.afternote.feature.afternote.domain.model.receiver.SenderMessageInfo
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -45,5 +46,5 @@ interface ReceiverRepository {
 
     suspend fun loadTimeLettersCount(): Result<LoadCountResult>
 
-    suspend fun loadSenderMessage(): Result<String?>
+    suspend fun loadSenderMessage(): Result<SenderMessageInfo?>
 }

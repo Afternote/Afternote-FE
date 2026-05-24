@@ -21,9 +21,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.TextFieldType
+import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
-import com.afternote.feature.onboarding.presentation.signup.scaffold.ProgressBarScaffold
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
 
@@ -63,12 +63,16 @@ fun SignUpResidentNumberScreen(
         frontFocusRequester.requestFocus()
     }
 
-    ProgressBarScaffold(
-        currentStep = 2,
+    FlowStepScaffold(
+        topBarTitle = stringResource(R.string.signup_title),
+        actionButtonText = stringResource(R.string.signup_next),
         onBackClick = onBackClick,
-        onNextClick = onNextClick,
+        onActionClick = onNextClick,
         modifier = modifier,
-        isNextEnabled = isNextEnabled,
+        isActionEnabled = isNextEnabled,
+        currentStep = SignUpStep.RESIDENT_NUMBER,
+        totalSteps = SIGN_UP_TOTAL_STEPS,
+        progressContentDescription = stringResource(R.string.onboarding_step_description, SignUpStep.RESIDENT_NUMBER),
         snackbarHostState = snackbarHostState,
         content = {
             Column(

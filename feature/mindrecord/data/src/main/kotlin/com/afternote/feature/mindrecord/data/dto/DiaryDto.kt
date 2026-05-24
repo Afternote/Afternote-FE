@@ -43,3 +43,11 @@ data class DiaryListItem(
     @SerialName("imageUrl") val imageUrl: String? = null,
     @SerialName("todayMood") val todayMood: TodayMood,
 )
+
+// `/diary` 응답의 `data` 는 배열이 아니라 객체 — `diaries` 외에도
+// `yearMonth`, `monthDiaryCount`, `weeklyDominantMood` 가 함께 내려오지만
+// 현재는 목록만 사용. (Json 글로벌 설정에 `ignoreUnknownKeys = true` 적용됨)
+@Serializable
+data class DiaryListResponse(
+    @SerialName("diaries") val diaries: List<DiaryListItem> = emptyList(),
+)

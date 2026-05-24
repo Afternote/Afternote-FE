@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -25,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.timeletter.presentation.R
+import com.afternote.core.ui.R as CoreUiR
 
 @Composable
 fun TimeLetterBottomBar(
@@ -55,7 +55,7 @@ fun TimeLetterBottomBar(
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                painter = painterResource(R.drawable.ic_link),
+                painter = painterResource(CoreUiR.drawable.core_ui_ic_link),
                 contentDescription = "링크 삽입",
                 tint = AfternoteDesign.colors.gray7,
                 modifier = Modifier.size(24.dp),

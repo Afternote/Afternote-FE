@@ -5,8 +5,11 @@ import com.afternote.core.network.model.requireStatus
 import com.afternote.feature.mindrecord.data.api.DeepThoughtApiService
 import com.afternote.feature.mindrecord.data.mapper.toDomain
 import com.afternote.feature.mindrecord.data.mapper.toRequest
-import com.afternote.feature.mindrecord.domain.model.DeepThought
+import com.afternote.feature.mindrecord.domain.model.DeepThoughtCategory
+import com.afternote.feature.mindrecord.domain.model.DeepThoughtCategoryCreatePayload
+import com.afternote.feature.mindrecord.domain.model.DeepThoughtCategoryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtCreatePayload
+import com.afternote.feature.mindrecord.domain.model.DeepThoughtList
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.RandomDeepThought
 import com.afternote.feature.mindrecord.domain.repository.DeepThoughtRepository
@@ -21,12 +24,12 @@ class DeepThoughtRepositoryImpl
             date: String?,
             tag: String?,
             category: String?,
-        ): Result<List<DeepThought>> =
+        ): Result<DeepThoughtList> =
             runCatching {
                 api
                     .getDeepThoughts(date = date, tag = tag, category = category)
                     .requireData()
-                    .map { it.toDomain() }
+                    .toDomain()
             }
 
         override suspend fun getRandom(): Result<RandomDeepThought> =
@@ -50,5 +53,31 @@ class DeepThoughtRepositoryImpl
         override suspend fun delete(id: Long): Result<Unit> =
             runCatching {
                 api.deleteDeepThought(deepThoughtId = id).requireStatus()
+            }
+
+        override suspend fun getCategories(): Result<List<DeepThoughtCategory>> =
+            runCatching {
+                api.getDeepThoughtCategories().requireData().map { it.toDomain() }
+            }
+
+        override suspend fun createCategory(payload: DeepThoughtCategoryCreatePayload): Result<DeepThoughtCategory> =
+            runCatching {
+                api.createDeepThoughtCategory(request = payload.toRequest()).requireData().toDomain()
+            }
+
+        override suspend fun updateCategory(
+            categoryId: Long,
+            payload: DeepThoughtCategoryUpdatePayload,
+        ): Result<DeepThoughtCategory> =
+            runCatching {
+                api
+                    .updateDeepThoughtCategory(categoryId = categoryId, request = payload.toRequest())
+                    .requireData()
+                    .toDomain()
+            }
+
+        override suspend fun deleteCategory(categoryId: Long): Result<Unit> =
+            runCatching {
+                api.deleteDeepThoughtCategory(categoryId = categoryId).requireStatus()
             }
     }

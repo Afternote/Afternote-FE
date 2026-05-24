@@ -32,15 +32,19 @@ class ApiErrorInterceptor
             val rawBody = response.peekBody(Long.MAX_VALUE).string()
             val parsed = runCatching { json.parseToJsonElement(rawBody).jsonObject }.getOrNull()
             val code = parsed?.get("code")?.jsonPrimitive?.intOrNull ?: response.code
-            val message =
+            // 서버가 실제로 내려준 message — null/blank 면 null 보존 (클라 fallback 과 구분).
+            val serverMessage =
                 parsed
                     ?.get("message")
                     ?.jsonPrimitive
                     ?.content
                     ?.takeUnless { it.isBlank() }
+            // 디버깅용 message — serverMessage 우선, 없으면 HTTP reason, 그래도 없으면 generic fallback.
+            val message =
+                serverMessage
                     ?: response.message.takeUnless { it.isBlank() }
                     ?: "요청에 실패했습니다."
 
-            throw ApiException(code = code, message = message)
+            throw ApiException(code = code, serverMessage = serverMessage, message = message)
         }
     }

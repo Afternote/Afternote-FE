@@ -3,7 +3,7 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 data class DeepThoughtWriteUiState(
     val title: String = "",
     val content: String = "",
-    val category: String = "나의 가치관",
+    val category: String = "",
     val tags: List<String> = emptyList(),
     val imageUrl: String? = null,
     val submitState: SubmitState = SubmitState.Idle,

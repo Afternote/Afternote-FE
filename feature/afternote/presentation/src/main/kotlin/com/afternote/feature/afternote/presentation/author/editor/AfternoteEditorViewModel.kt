@@ -8,12 +8,12 @@ import com.afternote.core.model.AlbumCover
 import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationException
 import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationKind
 import com.afternote.feature.afternote.domain.model.author.AuthorReceiverEntry
+import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.SaveAfternoteCommand
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.domain.repository.author.AuthorReceiverRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
-import com.afternote.feature.afternote.domain.usecase.editor.SaveAfternoteUseCase
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.mapper.toAfternoteEditorReceivers
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
@@ -170,7 +170,7 @@ private data class EditorFormSnapshot(
 }
 
 /**
- * 애프터노트 생성/수정 ViewModel. 저장·미디어 해석은 [SaveAfternoteUseCase]에 위임합니다.
+ * 애프터노트 생성/수정 ViewModel. 저장은 [AfternoteRepository] 직접 호출, 미디어 해석은 [ResolveMemorialMediaForSaveUseCase] 가 담당.
  *
  * **단일 UI 상태:** 폼·작성자 수신자·저장 진행/오류는 단일 [AfternoteEditorUiState] 로 묶어 [uiState] 로만 노출한다
  * (CLAUDE.md UI Layer 규칙: *"한 화면당 단일 UI State 객체. loading/error/data 독립 스트림 분리 금지"*).
@@ -200,7 +200,6 @@ class AfternoteEditorViewModel
         private val authorReceiverRepository: AuthorReceiverRepository,
         private val afternoteRepository: AfternoteRepository,
         private val memorialThumbnailUploadRepository: MemorialThumbnailUploadRepository,
-        private val saveAfternoteUseCase: SaveAfternoteUseCase,
         private val resolveMemorialMediaForSave: ResolveMemorialMediaForSaveUseCase,
     ) : ViewModel() {
         private val formSnapshotJson =
@@ -350,7 +349,7 @@ class AfternoteEditorViewModel
                     memorialMedia = memorialMedia,
                 ).fold(
                     onSuccess = { command ->
-                        saveAfternoteUseCase(command).fold(
+                        executeSaveCommand(command).fold(
                             onSuccess = { id ->
                                 Log.d(TAG, "saveAfternote: SUCCESS, savedId=$id")
                                 internalState.update {
@@ -365,6 +364,27 @@ class AfternoteEditorViewModel
                 )
             }
         }
+
+        /**
+         * [SaveAfternoteCommand] 분기에 따라 [AfternoteRepository] 의 적합한 메서드를 직접 호출한다.
+         *
+         * 과거에는 별도 `SaveAfternoteUseCase` 로 분리돼 있었으나, 단일 Repository 내 메서드 라우팅
+         * 외에 비즈니스 로직이 없어 *약한 UseCase* (`#246`) 로 판단해 ViewModel 로 흡수.
+         */
+        private suspend fun executeSaveCommand(command: SaveAfternoteCommand): Result<Long> =
+            when (command) {
+                is SaveAfternoteCommand.Create -> {
+                    when (val input = command.input) {
+                        is CreateAfternoteInput.Social -> afternoteRepository.createSocial(input.payload)
+                        is CreateAfternoteInput.Gallery -> afternoteRepository.createGallery(input.payload)
+                        is CreateAfternoteInput.Playlist -> afternoteRepository.createPlaylist(input.payload)
+                    }
+                }
+
+                is SaveAfternoteCommand.Update -> {
+                    afternoteRepository.update(command.id, command.payload)
+                }
+            }
 
         private suspend fun buildSaveCommand(
             editingId: Long?,

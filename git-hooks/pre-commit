@@ -1,28 +1,50 @@
 #!/bin/sh
-# Afternote-FE: run ktlint before each commit.
+# Afternote-FE: pre-commit hook.
 # Install once: ./gradlew installGitHooks
 #
-# Only re-stages Kotlin/KTS paths that were already staged before the hook runs,
-# so git add -u does not pull in other modified tracked files you did not intend to commit.
+# Staged 파일만 ktlint 로 검사·포맷한다. CI 의 ScaCap/action-ktlint 가 사용하는
+# ktlint 1.8.0 standalone binary 를 동일하게 호출하므로 검사 범위·결과가 CI 와
+# 일치 (PR diff 라인 ≒ staged 라인).
+#
+# Gradle 의 ktlintFormat / ktlintCheck task 는 의도적으로 호출하지 않는다 —
+# 프로젝트 전체를 대상으로 돌면서 CI 가 안 잡던 옛 위반들까지 working tree 로
+# 끌어내는 부작용이 있어 폐기.
 
 set -e
 
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT" || exit 1
 
-# Paths already staged for this commit (Added/Copied/Modified only; not pure deletes)
 STAGED_KT=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(kt|kts)$' || true)
+[ -z "$STAGED_KT" ] && exit 0
 
-if [ -n "$STAGED_KT" ]; then
-    echo "Running ktlintFormat..."
-    ./gradlew ktlintFormat
+# CI(ScaCap/action-ktlint)에 핀된 버전과 일치. libs.versions.toml 의 `ktlint = "1.8.0"`.
+KTLINT_VERSION="1.8.0"
+KTLINT="$ROOT/.git/hooks/.ktlint-${KTLINT_VERSION}"
 
-    printf '%s\n' "$STAGED_KT" | while IFS= read -r f; do
-        [ -n "$f" ] || continue
-        [ -f "$f" ] || continue
-        git add -- "$f"
-    done
+if [ ! -x "$KTLINT" ]; then
+    echo "Downloading ktlint ${KTLINT_VERSION}..."
+    curl -fsSLo "$KTLINT" "https://github.com/pinterest/ktlint/releases/download/${KTLINT_VERSION}/ktlint"
+    chmod +x "$KTLINT"
 fi
 
-echo "Running ktlintCheck..."
-./gradlew ktlintCheck
+echo "Running ktlint --format on staged files..."
+# `tr '\n' '\0'` + `xargs -0` — 파일 경로에 공백이 들어있어도 안전 (default xargs 의 whitespace split
+# 회피). git checkout 경로가 `~/Documents/My Projects/...` 같은 케이스 + git 파일명 자체 공백 모두 대응.
+echo "$STAGED_KT" | tr '\n' '\0' | xargs -0 "$KTLINT" --format --relative
+
+# 자동 포맷된 staged 파일만 re-stage (다른 modified 파일은 끌어들이지 않음)
+echo "$STAGED_KT" | while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    [ -f "$f" ] || continue
+    git add -- "$f"
+done
+
+echo "Running ktlint check on staged files..."
+if ! echo "$STAGED_KT" | tr '\n' '\0' | xargs -0 "$KTLINT" --relative; then
+    echo ""
+    echo "✗ ktlint 위반이 남았습니다 (자동 fix 못한 케이스 — 예: trailing-comma, multiline-expression)."
+    echo "  → 위 출력의 파일·라인을 수동 수정 후 'git add' + 재커밋."
+    echo "  → 방금 자동 fix 로 stage 된 변경분은 working tree 에 그대로 남아있습니다."
+    exit 1
+fi
