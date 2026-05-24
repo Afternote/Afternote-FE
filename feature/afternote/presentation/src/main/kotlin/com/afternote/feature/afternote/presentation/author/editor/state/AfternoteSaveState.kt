@@ -2,6 +2,7 @@ package com.afternote.feature.afternote.presentation.author.editor.state
 
 import androidx.annotation.StringRes
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 
 /**
@@ -38,9 +39,12 @@ enum class AfternoteValidationError(
  * CLAUDE.md UI Layer 규칙(*"한 화면당 단일 UI State 객체. loading/error/data 독립 스트림 분리 금지"*)에 따라
  * 폼 SSOT([form]), 작성자 수신자 목록([authorReceivers]), 저장 진행/오류 필드를 한 객체로 묶는다.
  *
- * 저장 **성공**은 일회성 이벤트인
- * [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorEvent.SaveSuccess]
- * (Channel)로 전달한다. 본 영속 상태는 진행 중·실패·검증 오류만 담는다.
+일회성 신호 (`pending*` 필드 — 저장 성공·썸네일 업로드 완료·수정 모드 prefill 도착) 는 nullable 로 흡수.
+ * non-null = 처리 대기, null = 소비 완료. UI 패턴:
+ * `LaunchedEffect(pending*) { if (pending* != null) { 처리; viewModel.on*Consumed() } }`.
+ * Channel + ObserveAsEvents 대비 장점 — configuration change · process death · 분할 화면에서
+ * StateFlow 영속성 덕에 재구독 시 마지막 신호 재배달 (Channel 은 한 번만 소비 → 손실 가능).
+ * Google 공식 가이드: ViewModel events → UI state update.
  *
  * [error] 는 네트워크 등 서버 raw 메시지용. ViewModel은 `Context`에 의존하지 않고
  * 리소스 기반 일반 실패 메시지는 [errorRes] 에 [StringRes] ID로 담아 UI에서
@@ -51,13 +55,19 @@ data class AfternoteEditorUiState(
     val authorReceivers: List<AfternoteEditorReceiver> = emptyList(),
     val isSaving: Boolean = false,
     /**
-     * 수정 모드 진입 직후 `getDetail()` 응답 → [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorEvent.PrefillLoaded]
-     * 이벤트 도착 전까지 true. UI는 이 구간 동안 prefill 대상 섹션(서비스명·계정·처리 방법·메시지·추모 미디어 등)을
-     * skeleton placeholder 로 표시한다. 신규 작성 모드(`itemId == null`)는 항상 false.
+     * 수정 모드 진입 직후 `getDetail()` 응답 → [pendingPrefill] 신호 도착 전까지 true. UI는 이 구간 동안
+     * prefill 대상 섹션(서비스명·계정·처리 방법·메시지·추모 미디어 등)을 skeleton placeholder 로 표시한다.
+     * 신규 작성 모드(`itemId == null`)는 항상 false.
      */
     val isPrefillLoading: Boolean = false,
     val savedId: Long? = null,
     val validationError: AfternoteValidationError? = null,
     val error: String? = null,
     @param:StringRes val errorRes: Int? = null,
+    /** 저장 성공 신호 — UI 가 nav 후 `onSaveSuccessConsumed` 로 reset. */
+    val pendingSaveSuccessId: Long? = null,
+    /** 추모 영상 썸네일 업로드 완료 신호 — UI 파사드가 form 에 url 적용 후 `onThumbnailUploadedConsumed` 로 reset. */
+    val pendingThumbnailUrl: String? = null,
+    /** 수정 모드 prefill 데이터 — UI 파사드가 form 에 적용 후 `onPrefillConsumed` 로 reset. */
+    val pendingPrefill: EditorFormPrefill? = null,
 )

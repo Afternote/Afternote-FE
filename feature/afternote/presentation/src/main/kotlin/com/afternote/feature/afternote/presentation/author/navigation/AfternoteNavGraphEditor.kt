@@ -9,10 +9,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.toRoute
-import com.afternote.core.ui.ObserveAsEvents
 import com.afternote.core.ui.bottombar.BottomNavTab
-import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorEvent
-import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorSaveError
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorScreen
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorScreenCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
@@ -38,7 +35,7 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.SELE
  * **단일 UI 상태:** ViewModel 의 단일 [AfternoteEditorUiState] 만 collect 하고, 폼/저장진행/오류/수신자 목록은
  * 그 안의 필드로 분기한다 (CLAUDE.md *"loading/error/data 독립 스트림 분리 금지"* 규칙).
  *
- * ViewModel 단발 이벤트는 [com.afternote.core.ui.ObserveAsEvents]로만 수집한다 (백그라운드에서 네비게이션 부수 효과 방지).
+ * ViewModel 단발 신호는 [AfternoteEditorUiState] 의 pending* 필드 + [androidx.compose.runtime.LaunchedEffect] 로 흡수한다.
  */
 internal sealed class EditorSaveErrorResult {
     data class Validation(
@@ -192,21 +189,26 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
         }
     }
 
-    ObserveAsEvents(flow = editViewModel.events) { event ->
-        when (event) {
-            is AfternoteEditorEvent.SaveSuccess -> {
-                params.onSaveSuccessNavigateHome()
-            }
-
-            is AfternoteEditorEvent.ThumbnailUploaded -> {
-                state.onFuneralThumbnailDataUrlReady(event.url)
-            }
-
-            is AfternoteEditorEvent.PrefillLoaded -> {
-                params.onReplaceSongs(event.prefill.memorialPlaylistSongs)
-                state.applyFormPrefill(event.prefill)
-                editViewModel.markPrefillApplied()
-            }
+    LaunchedEffect(uiState.pendingSaveSuccessId) {
+        if (uiState.pendingSaveSuccessId != null) {
+            params.onSaveSuccessNavigateHome()
+            editViewModel.onSaveSuccessConsumed()
+        }
+    }
+    val pendingThumbnailUrl = uiState.pendingThumbnailUrl
+    LaunchedEffect(pendingThumbnailUrl) {
+        if (pendingThumbnailUrl != null) {
+            state.onFuneralThumbnailDataUrlReady(pendingThumbnailUrl)
+            editViewModel.onThumbnailUploadedConsumed()
+        }
+    }
+    val pendingPrefill = uiState.pendingPrefill
+    LaunchedEffect(pendingPrefill) {
+        if (pendingPrefill != null) {
+            params.onReplaceSongs(pendingPrefill.memorialPlaylistSongs)
+            state.applyFormPrefill(pendingPrefill)
+            editViewModel.markPrefillApplied()
+            editViewModel.onPrefillConsumed()
         }
     }
 
@@ -217,27 +219,12 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
             uiState.errorRes,
             params.graphSongs.size,
         ) { editorSaveErrorFromUiState(uiState, params.graphSongs.size) }
-    val saveError =
+    val saveError: String? =
         when (errorResult) {
-            is EditorSaveErrorResult.Validation -> {
-                AfternoteEditorSaveError(
-                    stringResource(
-                        errorResult.messageResId,
-                    ),
-                )
-            }
-
-            is EditorSaveErrorResult.Raw -> {
-                AfternoteEditorSaveError(errorResult.message)
-            }
-
-            is EditorSaveErrorResult.Generic -> {
-                AfternoteEditorSaveError(stringResource(errorResult.messageResId))
-            }
-
-            null -> {
-                null
-            }
+            is EditorSaveErrorResult.Validation -> stringResource(errorResult.messageResId)
+            is EditorSaveErrorResult.Raw -> errorResult.message
+            is EditorSaveErrorResult.Generic -> stringResource(errorResult.messageResId)
+            null -> null
         }
 
     val callbacks =
