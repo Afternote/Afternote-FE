@@ -80,12 +80,22 @@ class VideoUploadRepositoryImpl
         private fun videoExtensionFromUri(uri: Uri): String {
             val mime = context.contentResolver.getType(uri) ?: return DEFAULT_VIDEO_EXTENSION
             return when {
-                mime == "video/mp4" -> "mp4"
-                mime == "video/quicktime" -> "mov"
-                mime.startsWith("video/") ->
+                mime == "video/mp4" -> {
+                    "mp4"
+                }
+
+                mime == "video/quicktime" -> {
+                    "mov"
+                }
+
+                mime.startsWith("video/") -> {
                     mime.removePrefix("video/").takeIf { it.isNotBlank() }
                         ?: DEFAULT_VIDEO_EXTENSION
-                else -> DEFAULT_VIDEO_EXTENSION
+                }
+
+                else -> {
+                    DEFAULT_VIDEO_EXTENSION
+                }
             }
         }
     }
