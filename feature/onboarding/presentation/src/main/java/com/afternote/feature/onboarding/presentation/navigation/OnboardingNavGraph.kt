@@ -71,6 +71,7 @@ fun NavGraphBuilder.onboardingNavGraph(
                 isSendingCode = signUpViewModel.isSendingCode,
                 isEmailFormatValid = signUpViewModel.isEmailFormatValid,
                 resendCooldownSeconds = signUpViewModel.resendCooldownSeconds,
+                verificationRemainingSeconds = signUpViewModel.verificationRemainingSeconds,
                 isNextEnabled = signUpViewModel.isStep1NextEnabled,
                 snackbarHostState = snackbarHostState,
                 onEmailChange = signUpViewModel::updateEmail,
