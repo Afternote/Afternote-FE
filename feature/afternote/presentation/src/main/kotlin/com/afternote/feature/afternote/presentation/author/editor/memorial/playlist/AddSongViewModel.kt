@@ -1,12 +1,11 @@
 package com.afternote.feature.afternote.presentation.author.editor.memorial.playlist
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.ui.UiText
 import com.afternote.feature.afternote.domain.repository.author.MusicSearchRepository
 import com.afternote.feature.afternote.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +21,6 @@ private const val SEARCH_DEBOUNCE_MS = 300L
 class AddSongViewModel
     @Inject
     constructor(
-        @param:ApplicationContext private val appContext: Context,
         private val musicSearchRepository: MusicSearchRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(AddSongUiState())
@@ -66,8 +64,10 @@ class AddSongViewModel
                                     songs = emptyList(),
                                     isLoading = false,
                                     errorMessage =
-                                        e.message
-                                            ?: appContext.getString(R.string.afternote_editor_search_failed_generic),
+                                        UiText.DynamicOrResource(
+                                            value = e.message,
+                                            fallbackResId = R.string.afternote_editor_search_failed_generic,
+                                        ),
                                 )
                             }
                         }
