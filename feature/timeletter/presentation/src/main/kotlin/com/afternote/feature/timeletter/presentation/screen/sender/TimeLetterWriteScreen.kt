@@ -108,7 +108,8 @@ fun TimeLetterWriteScreen(
     var showLinkDialog by remember { mutableStateOf(false) }
     var linkUrlInput by remember { mutableStateOf("") }
 
-    val textBlockStates = remember { androidx.compose.runtime.mutableStateMapOf<Long, TextFieldState>() }
+    val textBlockStates =
+        remember { androidx.compose.runtime.mutableStateMapOf<Long, TextFieldState>() }
 
     fun collectTextContents(): Map<Long, String> =
         uiState.editorBlocks
@@ -173,7 +174,9 @@ fun TimeLetterWriteScreen(
                     pendingHour = h
                     pendingMinute = m
                 },
-                modifier = Modifier.wrapContentWidth(Alignment.CenterHorizontally).fillMaxWidth(),
+                modifier = Modifier
+                    .wrapContentWidth(Alignment.CenterHorizontally)
+                    .fillMaxWidth(),
                 initialHour = pendingHour,
                 initialMinute = pendingMinute,
             )
@@ -184,7 +187,9 @@ fun TimeLetterWriteScreen(
                     onTimeSelected(pendingHour, pendingMinute)
                     showTimePicker = false
                 },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
             )
             Spacer(modifier = Modifier.height(32.dp))
         }
@@ -281,7 +286,12 @@ fun TimeLetterWriteScreen(
                 actions = {
                     TimeLetterTextButton(
                         text = "등록",
-                        onClick = { onRegisterClick(titleState.text.toString(), collectTextContents()) },
+                        onClick = {
+                            onRegisterClick(
+                                titleState.text.toString(),
+                                collectTextContents(),
+                            )
+                        },
                         isActive = !uiState.isSaving && uiState.sendAt != null,
                     )
                 },
