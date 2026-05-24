@@ -1,15 +1,14 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.mapper.toUi
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -23,7 +22,6 @@ import javax.inject.Inject
 class DailyQuestionListViewModel
     @Inject
     constructor(
-        @ApplicationContext private val context: Context,
         private val repository: DailyQuestionRepository,
     ) : ViewModel() {
         private val internalState = MutableStateFlow(InternalState())
@@ -55,8 +53,10 @@ class DailyQuestionListViewModel
 
                 if (today == null && listResult.isFailure) {
                     val message =
-                        listResult.exceptionOrNull()?.message
-                            ?: context.getString(R.string.mindrecord_error_daily_question_list_failed)
+                        UiText.DynamicOrResource(
+                            value = listResult.exceptionOrNull()?.message,
+                            fallbackResId = R.string.mindrecord_error_daily_question_list_failed,
+                        )
                     internalState.update { it.copy(loadPhase = LoadPhase.Failed(message)) }
                 } else {
                     internalState.update { it.copy(loadPhase = LoadPhase.Loaded(today, list)) }
@@ -77,7 +77,7 @@ class DailyQuestionListViewModel
             ) : LoadPhase
 
             data class Failed(
-                val message: String,
+                val message: UiText,
             ) : LoadPhase
         }
 

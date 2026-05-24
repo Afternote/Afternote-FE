@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.R
+import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Red
@@ -54,6 +55,14 @@ fun DeepThoughtWriteScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showCategorySheet by remember { mutableStateOf(false) }
     val currentOnSubmitSuccess by rememberUpdatedState(onSubmitSuccess)
+
+    // VM 은 Context 를 들고 있지 않으므로, 초기 진입 시 화면에서 기본 카테고리 문자열을 시드한다.
+    val defaultCategory = stringResource(MindRecordR.string.mindrecord_deep_thought_write_default_category)
+    LaunchedEffect(Unit) {
+        if (uiState.category.isBlank()) {
+            viewModel.onCategoryChanged(defaultCategory)
+        }
+    }
 
     LaunchedEffect(uiState.submitState) {
         if (uiState.submitState is SubmitState.Succeeded) {
@@ -149,7 +158,7 @@ fun DeepThoughtWriteScreen(
                 }
             }
 
-            val errorMessage = (uiState.submitState as? SubmitState.Failed)?.message
+            val errorMessage = (uiState.submitState as? SubmitState.Failed)?.message?.asString()
             if (errorMessage != null) {
                 Text(
                     text = errorMessage,

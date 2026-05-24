@@ -6,5 +6,5 @@ data class DeepThoughtCategoryUiState(
     val isLoading: Boolean = false,
     val isMutating: Boolean = false,
     val categories: List<CategoryUiModel> = emptyList(),
-    val errorMessage: String? = null,
+    val error: CategoryError? = null,
 )

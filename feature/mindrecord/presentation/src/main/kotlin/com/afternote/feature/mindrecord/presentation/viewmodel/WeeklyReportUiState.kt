@@ -1,14 +1,17 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
+import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.presentation.component.EmotionBubble
 import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
 import com.afternote.feature.mindrecord.presentation.model.DayItem
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import java.time.LocalDate
 
+/**
+ * 드롭다운 표시용. 라벨 문자열은 [monday] 로부터 UI 측에서 포맷팅한다 (월/주차).
+ */
 data class WeekOption(
     val monday: LocalDate,
-    val label: String,
 )
 
 sealed interface WeeklyReportUiState {
@@ -28,6 +31,6 @@ sealed interface WeeklyReportUiState {
     ) : WeeklyReportUiState
 
     data class Error(
-        val message: String,
+        val message: UiText,
     ) : WeeklyReportUiState
 }

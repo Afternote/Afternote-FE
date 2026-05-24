@@ -1,14 +1,13 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,7 +20,6 @@ import javax.inject.Inject
 class DiaryWriteViewModel
     @Inject
     constructor(
-        @ApplicationContext private val context: Context,
         private val repository: DiaryRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(DiaryWriteUiState())
@@ -65,7 +63,10 @@ class DiaryWriteViewModel
                             it.copy(
                                 submitState =
                                     SubmitState.Failed(
-                                        e.message ?: context.getString(R.string.mindrecord_error_diary_submit_failed),
+                                        UiText.DynamicOrResource(
+                                            value = e.message,
+                                            fallbackResId = R.string.mindrecord_error_diary_submit_failed,
+                                        ),
                                     ),
                             )
                         }

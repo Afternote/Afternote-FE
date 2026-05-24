@@ -1,13 +1,12 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtCreatePayload
 import com.afternote.feature.mindrecord.domain.repository.DeepThoughtRepository
 import com.afternote.feature.mindrecord.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,15 +18,9 @@ import javax.inject.Inject
 class DeepThoughtWriteViewModel
     @Inject
     constructor(
-        @ApplicationContext private val context: Context,
         private val repository: DeepThoughtRepository,
     ) : ViewModel() {
-        private val _uiState =
-            MutableStateFlow(
-                DeepThoughtWriteUiState(
-                    category = context.getString(R.string.mindrecord_deep_thought_write_default_category),
-                ),
-            )
+        private val _uiState = MutableStateFlow(DeepThoughtWriteUiState())
         val uiState: StateFlow<DeepThoughtWriteUiState> = _uiState.asStateFlow()
 
         fun onTitleChanged(value: String) {
@@ -69,7 +62,10 @@ class DeepThoughtWriteViewModel
                             it.copy(
                                 submitState =
                                     SubmitState.Failed(
-                                        e.message ?: context.getString(R.string.mindrecord_error_deep_thought_submit_failed),
+                                        UiText.DynamicOrResource(
+                                            value = e.message,
+                                            fallbackResId = R.string.mindrecord_error_deep_thought_submit_failed,
+                                        ),
                                     ),
                             )
                         }

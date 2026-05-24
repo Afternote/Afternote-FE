@@ -23,6 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R
@@ -47,7 +48,7 @@ fun WeeklyReportScreen(
         }
 
         is WeeklyReportUiState.Error -> {
-            ErrorBox(message = state.message, modifier = modifier)
+            ErrorBox(message = state.message.asString(), modifier = modifier)
         }
 
         is WeeklyReportUiState.Success -> {

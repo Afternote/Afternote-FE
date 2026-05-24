@@ -1,5 +1,7 @@
 package com.afternote.feature.mindrecord.presentation.model
 
+import java.time.DayOfWeek
+
 sealed class DayContent {
     data class NumberOnly(
         val day: Int,
@@ -26,7 +28,7 @@ enum class DayBackground {
 }
 
 data class DayItem(
-    val label: String, // 요일 레이블
+    val dayOfWeek: DayOfWeek, // 요일 (라벨 문자열은 UI 측에서 stringResource 로 매핑)
     val content: DayContent,
     val background: DayBackground = DayBackground.None,
 )

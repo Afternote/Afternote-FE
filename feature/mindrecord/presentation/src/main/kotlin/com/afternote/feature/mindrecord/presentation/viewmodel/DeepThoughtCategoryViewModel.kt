@@ -1,6 +1,5 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtCategoryCreatePayload
@@ -8,10 +7,8 @@ import com.afternote.feature.mindrecord.domain.model.DeepThoughtCategoryName
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtCategoryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.MindRecordError
 import com.afternote.feature.mindrecord.domain.repository.DeepThoughtRepository
-import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.mapper.toUi
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,7 +20,6 @@ import javax.inject.Inject
 class DeepThoughtCategoryViewModel
     @Inject
     constructor(
-        @ApplicationContext private val context: Context,
         private val repository: DeepThoughtRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(DeepThoughtCategoryUiState())
@@ -43,7 +39,7 @@ class DeepThoughtCategoryViewModel
                 .from(name)
                 .onSuccess { categoryName ->
                     viewModelScope.launch {
-                        _uiState.update { it.copy(isMutating = true, errorMessage = null) }
+                        _uiState.update { it.copy(isMutating = true, error = null) }
                         repository
                             .createCategory(
                                 DeepThoughtCategoryCreatePayload(
@@ -58,11 +54,11 @@ class DeepThoughtCategoryViewModel
                                     )
                                 }
                             }.onFailure { e ->
-                                emitError(resolveMessage(e, R.string.mindrecord_error_category_add_failed))
+                                emitError(CategoryError.AddFailed(e.message))
                             }
                     }
                 }.onFailure { e ->
-                    emitError(resolveMessage(e, R.string.mindrecord_error_category_name_invalid))
+                    emitError(toValidationError(e))
                 }
         }
 
@@ -74,7 +70,7 @@ class DeepThoughtCategoryViewModel
                 .from(newName)
                 .onSuccess { categoryName ->
                     viewModelScope.launch {
-                        _uiState.update { it.copy(isMutating = true, errorMessage = null) }
+                        _uiState.update { it.copy(isMutating = true, error = null) }
                         repository
                             .updateCategory(
                                 categoryId = categoryId,
@@ -88,17 +84,17 @@ class DeepThoughtCategoryViewModel
                                     )
                                 }
                             }.onFailure { e ->
-                                emitError(resolveMessage(e, R.string.mindrecord_error_category_update_failed))
+                                emitError(CategoryError.UpdateFailed(e.message))
                             }
                     }
                 }.onFailure { e ->
-                    emitError(resolveMessage(e, R.string.mindrecord_error_category_name_invalid))
+                    emitError(toValidationError(e))
                 }
         }
 
         fun deleteCategory(categoryId: Long) {
             viewModelScope.launch {
-                _uiState.update { it.copy(isMutating = true, errorMessage = null) }
+                _uiState.update { it.copy(isMutating = true, error = null) }
                 repository
                     .deleteCategory(categoryId)
                     .onSuccess {
@@ -109,31 +105,28 @@ class DeepThoughtCategoryViewModel
                             )
                         }
                     }.onFailure { e ->
-                        emitError(resolveMessage(e, R.string.mindrecord_error_category_delete_failed))
+                        emitError(CategoryError.DeleteFailed(e.message))
                     }
             }
         }
 
         fun consumeError() {
-            _uiState.update { it.copy(errorMessage = null) }
+            _uiState.update { it.copy(error = null) }
         }
 
-        private fun emitError(message: String) {
-            _uiState.update { it.copy(isMutating = false, errorMessage = message) }
+        private fun emitError(error: CategoryError) {
+            _uiState.update { it.copy(isMutating = false, error = error) }
         }
 
-        private fun resolveMessage(
-            error: Throwable,
-            fallback: Int,
-        ): String =
+        private fun toValidationError(error: Throwable): CategoryError =
             when (error) {
-                MindRecordError.EmptyCategoryName -> context.getString(R.string.mindrecord_error_category_name_empty)
-                else -> error.message ?: context.getString(fallback)
+                MindRecordError.EmptyCategoryName -> CategoryError.EmptyName
+                else -> CategoryError.NameInvalid
             }
 
         private fun load() {
             viewModelScope.launch {
-                _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+                _uiState.update { it.copy(isLoading = true, error = null) }
                 repository
                     .getCategories()
                     .onSuccess { list ->
@@ -147,7 +140,7 @@ class DeepThoughtCategoryViewModel
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                errorMessage = resolveMessage(e, R.string.mindrecord_error_category_list_failed),
+                                error = CategoryError.ListFailed(e.message),
                             )
                         }
                     }

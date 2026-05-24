@@ -1,12 +1,12 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
-import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDailyQuestion
@@ -21,7 +21,6 @@ import com.afternote.feature.mindrecord.presentation.model.DayContent
 import com.afternote.feature.mindrecord.presentation.model.DayItem
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,22 +39,9 @@ import javax.inject.Inject
 class WeeklyReportViewModel
     @Inject
     constructor(
-        @ApplicationContext private val context: Context,
         private val repository: WeeklyReportRepository,
         private val userRepository: UserRepository,
     ) : ViewModel() {
-        // 월~일 순서. 캘린더 셀 라벨 매핑용.
-        private val weekdayLabels: List<String> =
-            listOf(
-                context.getString(R.string.mindrecord_calendar_day_label_mon),
-                context.getString(R.string.mindrecord_calendar_day_label_tue),
-                context.getString(R.string.mindrecord_calendar_day_label_wed),
-                context.getString(R.string.mindrecord_calendar_day_label_thu),
-                context.getString(R.string.mindrecord_calendar_day_label_fri),
-                context.getString(R.string.mindrecord_calendar_day_label_sat),
-                context.getString(R.string.mindrecord_calendar_day_label_sun),
-            )
-
         private val weekOptions: List<WeekOption> =
             buildWeekOptions(today = LocalDate.now(), count = WEEK_OPTION_COUNT)
 
@@ -109,8 +95,10 @@ class WeeklyReportViewModel
                             it.copy(
                                 loadPhase =
                                     LoadPhase.Failed(
-                                        e.message
-                                            ?: context.getString(R.string.mindrecord_error_weekly_report_failed),
+                                        UiText.DynamicOrResource(
+                                            value = e.message,
+                                            fallbackResId = R.string.mindrecord_error_weekly_report_failed,
+                                        ),
                                     ),
                             )
                         }
@@ -124,16 +112,7 @@ class WeeklyReportViewModel
         ): List<WeekOption> {
             val thisMonday = today.with(DayOfWeek.MONDAY)
             return (0 until count).map { weeksAgo ->
-                val monday = thisMonday.minusWeeks(weeksAgo.toLong())
-                WeekOption(
-                    monday = monday,
-                    label =
-                        context.getString(
-                            R.string.mindrecord_weekly_report_label_format,
-                            monday.monthValue,
-                            weekOfMonth(monday),
-                        ),
-                )
+                WeekOption(monday = thisMonday.minusWeeks(weeksAgo.toLong()))
             }
         }
 
@@ -141,14 +120,14 @@ class WeeklyReportViewModel
             monday: LocalDate,
             week: List<WeeklyReportDay>,
         ): List<DayItem> =
-            List(weekdayLabels.size) { index ->
+            List(WEEK_LENGTH) { index ->
                 val date = monday.plusDays(index.toLong())
                 val apiDay = week.getOrNull(index)
                 val dayOfMonth = apiDay?.day ?: date.dayOfMonth
                 val isDiary = apiDay?.isDiary == true
                 val emoji = apiDay?.emotion?.toEmoji()
                 DayItem(
-                    label = weekdayLabels[index],
+                    dayOfWeek = date.dayOfWeek,
                     content =
                         when {
                             emoji != null && isDiary -> DayContent.EmojiWithDot(emoji)
@@ -179,7 +158,7 @@ class WeeklyReportViewModel
             ) : LoadPhase
 
             data class Failed(
-                val message: String,
+                val message: UiText,
             ) : LoadPhase
         }
 
@@ -213,11 +192,10 @@ class WeeklyReportViewModel
 
         companion object {
             private const val WEEK_OPTION_COUNT = 5
+            private const val WEEK_LENGTH = 7
 
             private val API_DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
             private val RANGE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd.")
-
-            private fun weekOfMonth(date: LocalDate): Int = (date.dayOfMonth - 1) / 7 + 1
 
             private fun TodayMood.toEmoji(): String =
                 when (this) {

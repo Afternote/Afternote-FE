@@ -55,8 +55,9 @@ fun WeeklyReportReviewCard(
         ),
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val selectedOption = weekOptions.firstOrNull { it.monday == selectedMonday }
     val selectedLabel =
-        weekOptions.firstOrNull { it.monday == selectedMonday }?.label
+        selectedOption?.let { weekLabel(it.monday) }
             ?: stringResource(R.string.mindrecord_weekly_report_label_fallback)
 
     OutlinedCard(
@@ -130,7 +131,7 @@ fun WeeklyReportReviewCard(
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    text = option.label,
+                                    text = weekLabel(option.monday),
                                     style = AfternoteDesign.typography.h3,
                                     color =
                                         if (option.monday == selectedMonday) {
@@ -182,6 +183,14 @@ fun WeeklyReportReviewCard(
         }
     }
 }
+
+@Composable
+private fun weekLabel(monday: LocalDate): String =
+    stringResource(
+        R.string.mindrecord_weekly_report_label_format,
+        monday.monthValue,
+        (monday.dayOfMonth - 1) / 7 + 1,
+    )
 
 @Preview(showBackground = true)
 @Composable

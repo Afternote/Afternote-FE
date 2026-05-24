@@ -23,6 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Red
@@ -79,10 +80,11 @@ fun DailyQuestionWriteScreen(
     ) { paddingValues ->
         Column {
             Column(modifier = Modifier.padding(paddingValues).padding(horizontal = 20.dp)) {
+                val questionLoadErrorText = uiState.questionLoadError?.asString()
                 val headerText =
                     when {
                         uiState.isQuestionLoading -> stringResource(R.string.mindrecord_daily_question_write_loading)
-                        uiState.questionLoadError != null -> uiState.questionLoadError!!
+                        questionLoadErrorText != null -> questionLoadErrorText
                         uiState.questionContent.isNotEmpty() -> uiState.questionContent
                         else -> stringResource(R.string.mindrecord_daily_question_write_none)
                     }
@@ -103,7 +105,7 @@ fun DailyQuestionWriteScreen(
                 }
                 Spacer(modifier = Modifier.height(10.dp))
 
-                val errorMessage = (uiState.submitState as? SubmitState.Failed)?.message
+                val errorMessage = (uiState.submitState as? SubmitState.Failed)?.message?.asString()
                 if (errorMessage != null) {
                     Text(
                         text = errorMessage,

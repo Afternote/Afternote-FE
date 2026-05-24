@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.R
+import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Red
@@ -212,7 +213,7 @@ fun DiaryWriteScreen(
                 }
             }
 
-            val errorMessage = (uiState.submitState as? SubmitState.Failed)?.message
+            val errorMessage = (uiState.submitState as? SubmitState.Failed)?.message?.asString()
             if (errorMessage != null) {
                 Text(
                     text = errorMessage,

@@ -1,13 +1,12 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,7 +18,6 @@ import javax.inject.Inject
 class DailyQuestionWriteViewModel
     @Inject
     constructor(
-        @ApplicationContext private val context: Context,
         private val repository: DailyQuestionRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(DailyQuestionWriteUiState())
@@ -47,7 +45,10 @@ class DailyQuestionWriteViewModel
                             it.copy(
                                 isQuestionLoading = false,
                                 questionLoadError =
-                                    e.message ?: context.getString(R.string.mindrecord_error_daily_question_today_failed),
+                                    UiText.DynamicOrResource(
+                                        value = e.message,
+                                        fallbackResId = R.string.mindrecord_error_daily_question_today_failed,
+                                    ),
                             )
                         }
                     }
@@ -80,7 +81,10 @@ class DailyQuestionWriteViewModel
                             it.copy(
                                 submitState =
                                     SubmitState.Failed(
-                                        e.message ?: context.getString(R.string.mindrecord_error_daily_question_submit_failed),
+                                        UiText.DynamicOrResource(
+                                            value = e.message,
+                                            fallbackResId = R.string.mindrecord_error_daily_question_submit_failed,
+                                        ),
                                     ),
                             )
                         }
