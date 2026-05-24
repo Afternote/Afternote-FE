@@ -11,7 +11,7 @@ plugins {
 
 tasks.register<Exec>("installGitHooks") {
     group = "verification"
-    description = "Installs git-hooks/pre-commit into .git/hooks (run once per clone)."
+    description = "Installs git-hooks/{pre-commit,pre-push} into .git/hooks (run once per clone)."
     workingDir(layout.projectDirectory)
     commandLine(
         "sh",
@@ -19,7 +19,9 @@ tasks.register<Exec>("installGitHooks") {
         "if test -d .git/hooks; then " +
             "cp git-hooks/pre-commit .git/hooks/pre-commit && " +
             "chmod +x .git/hooks/pre-commit && " +
-            "echo \"Installed .git/hooks/pre-commit\"; " +
+            "cp git-hooks/pre-push .git/hooks/pre-push && " +
+            "chmod +x .git/hooks/pre-push && " +
+            "echo \"Installed .git/hooks/pre-commit, pre-push\"; " +
             "else echo \"installGitHooks: .git/hooks not found, skipping\"; fi",
     )
 }
