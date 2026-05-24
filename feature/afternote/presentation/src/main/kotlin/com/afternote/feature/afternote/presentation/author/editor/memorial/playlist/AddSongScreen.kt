@@ -1,7 +1,12 @@
 package com.afternote.feature.afternote.presentation.author.editor.memorial.playlist
+import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.feature.afternote.presentation.R
@@ -22,15 +27,34 @@ data class AddSongCallbacks(
 /**
  * 노래 추가하기 화면 (API 검색 연동).
  *
- * ViewModel 의존성 없이 순수하게 UI만 그립니다.
+ * ViewModel 의존성 없이 순수하게 UI만 그립니다. [AddSongUiState.error] 는 sealed [AddSongError]
+ * 에서 UI 레이어가 [stringResource] 로 해석한 뒤 Toast 표출 → [onErrorConsumed] 로 VM 에 nullify
+ * 신호. VM 이 Android Framework (Context/Resources) 를 의존하지 않도록 string resolve 는 본
+ * 레이어에서만 수행 (#267).
  */
 @Composable
 fun AddSongScreen(
     uiState: AddSongUiState,
     onSearchQueryChange: (String) -> Unit,
+    onErrorConsumed: () -> Unit,
     callbacks: AddSongCallbacks,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
+    val genericErrorMessage = stringResource(R.string.afternote_editor_search_failed_generic)
+    val currentOnErrorConsumed by rememberUpdatedState(onErrorConsumed)
+
+    LaunchedEffect(uiState.error) {
+        val error = uiState.error ?: return@LaunchedEffect
+        val message =
+            when (error) {
+                AddSongError.SearchFailedGeneric -> genericErrorMessage
+                is AddSongError.SearchFailedWithMessage -> error.message
+            }
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        currentOnErrorConsumed()
+    }
+
     SongPlaylistScreen(
         modifier = modifier,
         title = stringResource(R.string.afternote_editor_playlist_add_screen_title),
@@ -146,6 +170,7 @@ private fun AddSongScreenWithSearchPreview() {
                     searchQuery = "아이유",
                 ),
             onSearchQueryChange = {},
+            onErrorConsumed = {},
             callbacks = AddSongCallbacks(onBackClick = {}, onSongsAdded = {}),
         )
     }

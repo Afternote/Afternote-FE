@@ -1,6 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
-import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -42,8 +41,6 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
-
-private const val TAG = "AfternoteEditorVM"
 
 private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v1"
 
@@ -265,19 +262,14 @@ class AfternoteEditorViewModel
                 formSnapshotJson
                     .decodeFromString(EditorFormSnapshot.serializer(), raw)
                     .toEditorFormState(restoreGeneration = System.nanoTime())
-            }.getOrElse {
-                Log.w(TAG, "readFormSnapshotOrDefault: decode failed, using defaults", it)
-                EditorFormState()
-            }
+            }.getOrElse { EditorFormState() }
         }
 
-        /** [EditorFormSnapshot] 직렬화. 실패 시 로그만 남긴다(용량 초과 등은 [EditorFormSnapshot] KDoc 참고). */
+        /** [EditorFormSnapshot] 직렬화. 실패 시 무시한다(용량 초과 등은 [EditorFormSnapshot] KDoc 참고). */
         private fun persistFormSnapshot(form: EditorFormState) {
             runCatching {
                 savedStateHandle[EDITOR_FORM_SNAPSHOT_KEY] =
                     formSnapshotJson.encodeToString(EditorFormSnapshot.serializer(), EditorFormSnapshot.from(form))
-            }.onFailure { e ->
-                Log.w(TAG, "persistFormSnapshot failed", e)
             }
         }
 
@@ -292,10 +284,7 @@ class AfternoteEditorViewModel
                 memorialThumbnailUploadRepository
                     .uploadThumbnail(jpegBytes)
                     .onSuccess { url ->
-                        Log.d(TAG, "uploadMemorialThumbnail: success, url=$url")
                         _events.send(AfternoteEditorEvent.ThumbnailUploaded(url))
-                    }.onFailure { e ->
-                        Log.e(TAG, "uploadMemorialThumbnail: failed", e)
                     }
             }
         }
@@ -308,10 +297,7 @@ class AfternoteEditorViewModel
             playlistSongs: List<Song>,
             memorialMedia: SaveAfternoteMemorialMedia,
         ) {
-            if (internalState.value.isSaving) {
-                Log.w(TAG, "saveAfternote: already saving, ignoring duplicate call")
-                return
-            }
+            if (internalState.value.isSaving) return
 
             val validationError =
                 AfternoteEditorValidator.validate(
@@ -321,7 +307,6 @@ class AfternoteEditorViewModel
                     playlistSongs = playlistSongs,
                 )
             if (validationError != null) {
-                Log.w(TAG, "saveAfternote: validation failed: $validationError")
                 internalState.update { it.copy(validationError = validationError) }
                 return
             }
@@ -329,12 +314,6 @@ class AfternoteEditorViewModel
             val originalCategoryForApi = readOriginalCategoryForApiFromSavedState()
             val categoryForApi =
                 if (editingId != null) (originalCategoryForApi ?: category) else category
-
-            Log.d(
-                TAG,
-                "saveAfternote: editingId=$editingId, category=${categoryForApi.serverValue}, " +
-                    "serviceName=${payload.serviceName}",
-            )
 
             viewModelScope.launch {
                 internalState.update {
@@ -351,7 +330,6 @@ class AfternoteEditorViewModel
                     onSuccess = { command ->
                         executeSaveCommand(command).fold(
                             onSuccess = { id ->
-                                Log.d(TAG, "saveAfternote: SUCCESS, savedId=$id")
                                 internalState.update {
                                     it.copy(isSaving = false, savedId = id)
                                 }
@@ -446,8 +424,7 @@ class AfternoteEditorViewModel
                         // skeleton 종료는 UI 가 prefill 적용을 마친 뒤 [markPrefillApplied] 로 통보한다
                         // (uiState 갱신과 이벤트 처리가 별 스트림이라 여기서 끄면 skeleton 사라짐 → 빈 폼 → prefill 깜빡임 발생).
                         _events.send(AfternoteEditorEvent.PrefillLoaded(prefill))
-                    }.onFailure { e ->
-                        Log.e(TAG, "loadExistingAfternoteForEdit: id=$afternoteId failed", e)
+                    }.onFailure {
                         // 실패 시 skeleton 에 갇히지 않도록 즉시 종료.
                         internalState.update { it.copy(isPrefillLoading = false) }
                     }
@@ -463,7 +440,6 @@ class AfternoteEditorViewModel
             e: Throwable,
             category: EditorCategory,
         ) {
-            Log.e(TAG, "saveAfternote: FAILURE, category=${category.serverValue}", e)
             val validationError =
                 when (e) {
                     is AfternoteAuthoringValidationException -> {

@@ -9,5 +9,5 @@ data class AddSongUiState(
     val songs: List<PlaylistSongDisplay> = emptyList(),
     val searchQuery: String = "",
     val isLoading: Boolean = false,
-    val errorMessage: String? = null,
+    val error: AddSongError? = null,
 )

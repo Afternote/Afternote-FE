@@ -1,12 +1,9 @@
 package com.afternote.feature.afternote.presentation.author.editor.memorial.playlist
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.feature.afternote.domain.repository.author.MusicSearchRepository
-import com.afternote.feature.afternote.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +19,6 @@ private const val SEARCH_DEBOUNCE_MS = 300L
 class AddSongViewModel
     @Inject
     constructor(
-        @param:ApplicationContext private val appContext: Context,
         private val musicSearchRepository: MusicSearchRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(AddSongUiState())
@@ -30,20 +26,8 @@ class AddSongViewModel
 
         private var searchJob: Job? = null
 
-        // region Event
-
-        fun onEvent(event: AddSongEvent) {
-            when (event) {
-                is AddSongEvent.SearchQueryChange -> handleSearchQueryChange(event.query)
-            }
-        }
-
-        // endregion
-
-        // region Data Loading
-
-        private fun handleSearchQueryChange(query: String) {
-            _uiState.update { it.copy(searchQuery = query, errorMessage = null) }
+        fun onSearchQueryChange(query: String) {
+            _uiState.update { it.copy(searchQuery = query, error = null) }
             searchJob?.cancel()
             searchJob =
                 viewModelScope.launch {
@@ -58,21 +42,25 @@ class AddSongViewModel
                         .search(trimmed)
                         .onSuccess { list ->
                             _uiState.update {
-                                it.copy(songs = list.map { item -> item.toDisplay() }, isLoading = false, errorMessage = null)
+                                it.copy(songs = list.map { item -> item.toDisplay() }, isLoading = false, error = null)
                             }
                         }.onFailure { e ->
                             _uiState.update {
                                 it.copy(
                                     songs = emptyList(),
                                     isLoading = false,
-                                    errorMessage =
+                                    error =
                                         e.message
-                                            ?: appContext.getString(R.string.afternote_editor_search_failed_generic),
+                                            ?.let { msg -> AddSongError.SearchFailedWithMessage(msg) }
+                                            ?: AddSongError.SearchFailedGeneric,
                                 )
                             }
                         }
                 }
         }
 
-        // endregion
+        /** UI 가 [AddSongUiState.error] 를 사용자에게 노출 직후 호출 → state nullify. */
+        fun onErrorConsumed() {
+            _uiState.update { it.copy(error = null) }
+        }
     }
