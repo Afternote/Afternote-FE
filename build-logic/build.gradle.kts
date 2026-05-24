@@ -57,5 +57,9 @@ gradlePlugin {
             id = "afternote.android.datastore"
             implementationClass = "AndroidDatastoreConventionPlugin"
         }
+        register("afternoteLayerRules") {
+            id = "afternote.layer.rules"
+            implementationClass = "AfternoteLayerRulesPlugin"
+        }
     }
 }

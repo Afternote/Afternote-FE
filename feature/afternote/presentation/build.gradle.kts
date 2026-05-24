@@ -1,6 +1,7 @@
 plugins {
     id("afternote.android.library.compose")
     id("afternote.android.hilt")
+    id("afternote.layer.rules")
     kotlin("plugin.serialization")
 }
 
@@ -13,7 +14,6 @@ android {
 
 dependencies {
     implementation(projects.feature.afternote.domain)
-    implementation(projects.core.datastore)
     implementation(projects.core.domain)
     implementation(projects.core.model)
     implementation(projects.core.common)

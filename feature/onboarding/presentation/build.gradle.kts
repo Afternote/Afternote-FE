@@ -3,6 +3,7 @@ import java.util.Properties
 plugins {
     id("afternote.android.library.compose")
     id("afternote.android.hilt")
+    id("afternote.layer.rules")
     kotlin("plugin.serialization")
 }
 

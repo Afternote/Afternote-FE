@@ -2,7 +2,7 @@ package com.afternote.feature.afternote.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.datastore.UserProfileDataSource
+import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,10 +33,10 @@ import javax.inject.Inject
 class AfternoteHostViewModel
     @Inject
     constructor(
-        dataSource: UserProfileDataSource,
+        userRepository: UserRepository,
     ) : ViewModel() {
         val isPasskeyRegistered: StateFlow<Boolean?> =
-            dataSource
+            userRepository
                 .isPasskeyRegisteredFlow()
                 .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 

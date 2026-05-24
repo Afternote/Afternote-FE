@@ -1,5 +1,6 @@
 plugins {
     id("afternote.android.domain")
+    id("afternote.layer.rules")
 }
 
 android {
