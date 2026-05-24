@@ -197,6 +197,7 @@ private fun DocumentUploadScreenContent(
         isActionEnabled = uiState.canSubmit,
         currentStep = ReceiverVerifyStep.DOCUMENTS,
         totalSteps = RECEIVER_VERIFY_TOTAL_STEPS,
+        progressContentDescription = stringResource(R.string.receiver_verify_step_description, ReceiverVerifyStep.DOCUMENTS),
         snackbarHostState = snackbarHostState,
         modifier = modifier,
     ) {

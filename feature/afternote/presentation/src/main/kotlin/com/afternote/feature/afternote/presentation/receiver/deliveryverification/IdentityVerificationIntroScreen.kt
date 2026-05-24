@@ -36,6 +36,7 @@ fun IdentityVerificationIntroScreen(
         onActionClick = onStartClick,
         currentStep = ReceiverVerifyStep.IDENTITY,
         totalSteps = RECEIVER_VERIFY_TOTAL_STEPS,
+        progressContentDescription = stringResource(R.string.receiver_verify_step_description, ReceiverVerifyStep.IDENTITY),
         modifier = modifier,
     ) {
         Spacer(modifier = Modifier.height(RECEIVER_VERIFY_HEADER_SPACING))

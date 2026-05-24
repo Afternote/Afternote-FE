@@ -105,6 +105,7 @@ private fun IdentityVerificationEmailScreenContent(
         isActionEnabled = uiState.canSubmit,
         currentStep = ReceiverVerifyStep.IDENTITY,
         totalSteps = RECEIVER_VERIFY_TOTAL_STEPS,
+        progressContentDescription = stringResource(R.string.receiver_verify_step_description, ReceiverVerifyStep.IDENTITY),
         snackbarHostState = snackbarHostState,
         modifier = modifier,
     ) {

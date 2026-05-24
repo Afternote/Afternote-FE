@@ -94,6 +94,7 @@ private fun MasterKeyScreenContent(
         isActionEnabled = canSubmit,
         currentStep = ReceiverVerifyStep.MASTER_KEY,
         totalSteps = RECEIVER_VERIFY_TOTAL_STEPS,
+        progressContentDescription = stringResource(R.string.receiver_verify_step_description, ReceiverVerifyStep.MASTER_KEY),
         snackbarHostState = snackbarHostState,
         modifier = modifier,
     ) {

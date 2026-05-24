@@ -61,7 +61,6 @@ fun FlowStepScaffold(
 ) {
     val focusManager = LocalFocusManager.current
     val horizontalPadding = 20.dp
-    val showProgress = currentStep != null && totalSteps != null
 
     Scaffold(
         modifier =
@@ -104,12 +103,13 @@ fun FlowStepScaffold(
             modifier =
                 Modifier
                     .padding(innerPadding)
-                    .padding(horizontal = horizontalPadding)
-                    .fillMaxSize(),
+                    .padding(horizontal = horizontalPadding),
         ) {
-            if (showProgress) {
+            // local val 박아서 smart-cast 안정 — 향후 람다 캡처 추가되어도 깨지지 않음.
+            val step = currentStep
+            if (step != null && totalSteps != null) {
                 FlowStepProgressBar(
-                    currentStep = currentStep,
+                    currentStep = step,
                     totalSteps = totalSteps,
                     contentDescription = progressContentDescription,
                 )
