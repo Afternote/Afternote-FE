@@ -1,10 +1,12 @@
 package com.afternote.feature.timeletter.data.mapper
 
+import com.afternote.feature.timeletter.data.dto.TimeLetterBlockRequest
 import com.afternote.feature.timeletter.data.dto.TimeLetterBlockResponseDto
 import com.afternote.feature.timeletter.data.dto.TimeLetterBlockTypeDto
 import com.afternote.feature.timeletter.data.dto.TimeLetterListResponseDto
 import com.afternote.feature.timeletter.data.dto.TimeLetterResponseDto
 import com.afternote.feature.timeletter.data.dto.TimeLetterStatusDto
+import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlockType
@@ -59,4 +61,20 @@ fun TimeLetterListResponseDto.toDomain(): TimeLetterList =
     TimeLetterList(
         timeLetters = timeLetters.map { it.toDomain() },
         totalCount = totalCount,
+    )
+
+fun NewTimeLetterBlock.toDto(): TimeLetterBlockRequest =
+    TimeLetterBlockRequest(
+        blockType =
+            when (blockType) {
+                TimeLetterBlockType.TEXT -> TimeLetterBlockTypeDto.TEXT
+                TimeLetterBlockType.IMAGE -> TimeLetterBlockTypeDto.IMAGE
+                TimeLetterBlockType.AUDIO -> TimeLetterBlockTypeDto.AUDIO
+                TimeLetterBlockType.FILE -> TimeLetterBlockTypeDto.FILE
+                TimeLetterBlockType.LINK -> TimeLetterBlockTypeDto.LINK
+            },
+        blockOrder = blockOrder,
+        textContent = textContent,
+        url = url,
+        mimeType = mimeType,
     )

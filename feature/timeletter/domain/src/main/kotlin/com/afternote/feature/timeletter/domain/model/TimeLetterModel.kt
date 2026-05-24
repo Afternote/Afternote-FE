@@ -22,6 +22,14 @@ data class TimeLetterBlock(
     val mimeType: String?,
 )
 
+data class NewTimeLetterBlock(
+    val blockType: TimeLetterBlockType,
+    val blockOrder: Int,
+    val textContent: String? = null,
+    val url: String? = null,
+    val mimeType: String? = null,
+)
+
 data class TimeLetterList(
     val timeLetters: List<TimeLetter>,
     val totalCount: Int,

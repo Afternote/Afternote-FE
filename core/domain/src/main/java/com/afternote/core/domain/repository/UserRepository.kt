@@ -17,6 +17,8 @@ interface UserRepository {
      */
     fun isPasskeyRegisteredFlow(): Flow<Boolean>
 
+    val receiverListFlow: Flow<List<Receiver>>
+
     // 수신자 목록 조회
     suspend fun getReceivers(): List<Receiver>
 
