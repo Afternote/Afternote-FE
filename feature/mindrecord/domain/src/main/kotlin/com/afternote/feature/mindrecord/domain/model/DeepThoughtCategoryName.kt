@@ -8,7 +8,7 @@ value class DeepThoughtCategoryName private constructor(
         fun from(raw: String): Result<DeepThoughtCategoryName> {
             val trimmed = raw.trim()
             return if (trimmed.isEmpty()) {
-                Result.failure(IllegalArgumentException("카테고리 이름이 비어 있습니다."))
+                Result.failure(MindRecordError.EmptyCategoryName)
             } else {
                 Result.success(DeepThoughtCategoryName(trimmed))
             }

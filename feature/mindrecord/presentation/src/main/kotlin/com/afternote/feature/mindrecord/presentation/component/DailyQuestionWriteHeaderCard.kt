@@ -23,16 +23,18 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 
 @Composable
 fun DailyQuestionWriteHeaderCard(
     modifier: Modifier = Modifier,
-    questionText: String = "오늘 하루, \n누구에게 가장 고마웠나요?",
+    questionText: String = stringResource(MindRecordR.string.mindrecord_daily_question_default_thanks),
     onAnswerClick: () -> Unit = {},
 ) {
     OutlinedCard(
@@ -80,7 +82,7 @@ fun DailyQuestionWriteHeaderCard(
             Spacer(modifier = Modifier.height(7.5.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "답변하러가기",
+                    text = stringResource(MindRecordR.string.mindrecord_daily_question_go_answer),
                     style = AfternoteDesign.typography.captionLargeR,
                     color = AfternoteDesign.colors.gray6,
                 )

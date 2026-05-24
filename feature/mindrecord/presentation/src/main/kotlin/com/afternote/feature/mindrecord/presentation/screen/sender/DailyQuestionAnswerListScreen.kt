@@ -18,12 +18,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionListCard
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionWriteHeaderCard
@@ -33,6 +36,7 @@ import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.TodayQuestionUi
+import java.time.LocalDate
 
 @Composable
 fun DailyQuestionAnswerListScreen(
@@ -48,7 +52,7 @@ fun DailyQuestionAnswerListScreen(
         }
 
         is DailyQuestionListUiState.Error -> {
-            ErrorBox(message = state.message, modifier = modifier)
+            ErrorBox(message = state.message.asString(), modifier = modifier)
         }
 
         is DailyQuestionListUiState.Success -> {
@@ -74,7 +78,7 @@ private fun DailyQuestionListContent(
         return
     }
 
-    val headerText = todayQuestion?.content ?: "오늘의 질문이 없습니다."
+    val headerText = todayQuestion?.content ?: stringResource(R.string.mindrecord_daily_question_write_none)
 
     LazyColumn(
         modifier = modifier,
@@ -84,13 +88,20 @@ private fun DailyQuestionListContent(
             item { DailyQuestionWriteHeaderCard(questionText = headerText) }
             items(answers, key = { it.id }) { DailyQuestionListCard(answer = it) }
         } else {
+            val today = LocalDate.now()
+            val answeredDays =
+                answers
+                    .filter { it.date.year == today.year && it.date.monthValue == today.monthValue }
+                    .map { it.date.dayOfMonth }
+                    .toSet()
             item {
                 DailyCalendar(
-                    year = 2026,
-                    month = 3,
+                    year = today.year,
+                    month = today.monthValue,
                     type = MindRecordCategoryUi.DailyQuestion,
                     onPrevMonth = {},
                     onNextMonth = {},
+                    answeredDays = answeredDays,
                 )
             }
 

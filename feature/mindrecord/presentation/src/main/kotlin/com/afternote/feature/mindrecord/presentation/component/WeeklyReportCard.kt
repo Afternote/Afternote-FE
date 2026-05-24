@@ -15,11 +15,13 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.presentation.R
 
 @Composable
 fun WeeklyReportCard(modifier: Modifier = Modifier) {
@@ -38,12 +40,12 @@ fun WeeklyReportCard(modifier: Modifier = Modifier) {
                     .padding(21.dp),
         ) {
             Text(
-                text = "주간 리포트",
+                text = stringResource(R.string.mindrecord_weekly_report_title),
                 style = AfternoteDesign.typography.bodyLargeB,
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "이번 주 나의 기록들을 확인해 보세요.",
+                text = stringResource(R.string.mindrecord_weekly_report_subtitle),
                 style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray5,
             )
@@ -61,7 +63,7 @@ fun WeeklyReportCard(modifier: Modifier = Modifier) {
                     )
 
                     Text(
-                        text = "총 기록",
+                        text = stringResource(R.string.mindrecord_weekly_report_total_record),
                         style =
                             AfternoteDesign.typography.captionLargeR.copy(
                                 fontSize = 11.sp,
@@ -83,7 +85,7 @@ fun WeeklyReportCard(modifier: Modifier = Modifier) {
                     )
 
                     Text(
-                        text = "이번 주",
+                        text = stringResource(R.string.mindrecord_weekly_report_this_week),
                         style =
                             AfternoteDesign.typography.captionLargeR.copy(
                                 fontSize = 11.sp,

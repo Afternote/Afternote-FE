@@ -15,10 +15,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.presentation.R
 
 @Composable
 fun DiaryReportCard(modifier: Modifier = Modifier) {
@@ -44,13 +46,13 @@ fun DiaryReportCard(modifier: Modifier = Modifier) {
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
-                    text = "이번 달",
+                    text = stringResource(R.string.mindrecord_weekly_report_this_month),
                     style = AfternoteDesign.typography.mono,
                     color = AfternoteDesign.colors.gray6,
                 )
 
                 Text(
-                    text = "주간 평균 기분",
+                    text = stringResource(R.string.mindrecord_weekly_report_avg_mood_weekly),
                     style = AfternoteDesign.typography.mono,
                     color = AfternoteDesign.colors.gray6,
                 )

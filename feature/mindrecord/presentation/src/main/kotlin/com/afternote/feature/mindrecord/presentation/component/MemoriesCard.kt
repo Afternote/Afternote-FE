@@ -75,13 +75,13 @@ fun MemoriesCard(modifier: Modifier = Modifier) {
                     .padding(16.dp),
         ) {
             Text(
-                text = "\"내 인생에서 가장 소중했던 순간은?\"",
+                text = stringResource(R.string.mindrecord_memories_card_question),
                 style = AfternoteDesign.typography.bodySmallR,
                 color = AfternoteDesign.colors.gray8,
             )
             Spacer(Modifier.height(1.dp))
             Text(
-                text = "- 아이가 태어났을 때...",
+                text = stringResource(R.string.mindrecord_memories_card_answer),
                 style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray6,
             )
