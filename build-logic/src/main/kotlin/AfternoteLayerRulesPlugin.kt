@@ -58,18 +58,23 @@ private fun forbiddenFor(path: String): List<String>? {
 
     return when {
         // feature presentation: data 모듈 (자기 영역 포함) + core 인프라 의존 금지
-        path.startsWith(":feature:") && path.endsWith(":presentation") ->
+        path.startsWith(":feature:") && path.endsWith(":presentation") -> {
             coreInfraModules + anyFeatureData
+        }
 
         // feature domain: data + presentation + core 인프라 모두 금지 (가장 엄격)
-        path.startsWith(":feature:") && path.endsWith(":domain") ->
+        path.startsWith(":feature:") && path.endsWith(":domain") -> {
             coreInfraModules + anyFeatureData + anyFeaturePresentation
+        }
 
         // feature data: presentation 의존 금지 (역방향 차단)
-        path.startsWith(":feature:") && path.endsWith(":data") ->
+        path.startsWith(":feature:") && path.endsWith(":data") -> {
             listOf(anyFeaturePresentation)
+        }
 
-        else -> null
+        else -> {
+            null
+        }
     }
 }
 

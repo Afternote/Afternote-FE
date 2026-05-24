@@ -5,9 +5,7 @@ import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
-internal fun Project.configureAndroidCommon(
-    extension: CommonExtension
-) {
+internal fun Project.configureAndroidCommon(extension: CommonExtension) {
     extension.compileSdk = 36
 
     when (extension) {
@@ -15,7 +13,8 @@ internal fun Project.configureAndroidCommon(
         is LibraryExtension -> extension.configureDefaultConfig()
     }
 
-    extensions.findByType(org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension::class.java)
+    extensions
+        .findByType(org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension::class.java)
         ?.compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
         }
@@ -25,7 +24,6 @@ internal fun Project.configureAndroidCommon(
         testImplementation("junit")
         androidTestImplementation("androidx-junit")
         androidTestImplementation("androidx-espresso-core")
-
     }
 }
 
@@ -41,6 +39,7 @@ private fun CommonExtension.configureDefaultConfig() {
                 targetCompatibility = JavaVersion.VERSION_17
             }
         }
+
         is LibraryExtension -> {
             defaultConfig {
                 minSdk = 26
@@ -55,9 +54,7 @@ private fun CommonExtension.configureDefaultConfig() {
     }
 }
 
-internal fun Project.configureCompose(
-    extension: CommonExtension
-) {
+internal fun Project.configureCompose(extension: CommonExtension) {
     when (extension) {
         is ApplicationExtension -> extension.buildFeatures { compose = true }
         is LibraryExtension -> extension.buildFeatures { compose = true }
