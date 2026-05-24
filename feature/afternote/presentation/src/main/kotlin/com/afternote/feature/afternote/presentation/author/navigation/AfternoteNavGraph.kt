@@ -36,28 +36,28 @@ fun NavGraphBuilder.afternoteNavGraph(
     navigation<Route.Afternote>(startDestination = AfternoteRoute.FingerprintLoginRoute) {
         afternoteComposable<AfternoteRoute.AfternoteHomeRoute> {
             AfternoteHomeNavigation(
-                onNavigateToDetail = actions::onNavigateToAfternoteDetail,
-                onNavigateToGalleryDetail = actions::onNavigateToGalleryDetail,
-                onNavigateToMemorialGuidelineDetail = actions::onNavigateToMemorialGuidelineDetail,
-                onNavigateToNewEditor = actions::onNavigateToNewEditor,
+                onNavigateToDetail = actions::navigateToAfternoteDetail,
+                onNavigateToGalleryDetail = actions::navigateToGalleryDetail,
+                onNavigateToMemorialGuidelineDetail = actions::navigateToMemorialGuidelineDetail,
+                onNavigateToNewEditor = actions::navigateToNewEditor,
             )
         }
 
         afternoteComposable<AfternoteRoute.DetailRoute> {
             AfternoteDetailNavigation(
                 backStackEntry = it,
-                onBack = actions::onPopBackStack,
+                onBack = actions::popBack,
                 onNavigateToEditor = { itemId ->
-                    actions.onNavigateToEditorForEdit(itemId, EditorCategory.SOCIAL)
+                    actions.navigateToEditorForEdit(itemId, EditorCategory.SOCIAL)
                 },
             )
         }
 
         afternoteComposable<AfternoteRoute.GalleryDetailRoute> { _ ->
             AfternoteGalleryDetailNavigation(
-                onBack = actions::onPopBackStack,
+                onBack = actions::popBack,
                 onNavigateToEditor = { itemId ->
-                    actions.onNavigateToEditorForEdit(itemId, EditorCategory.GALLERY)
+                    actions.navigateToEditorForEdit(itemId, EditorCategory.GALLERY)
                 },
             )
         }
@@ -72,19 +72,19 @@ fun NavGraphBuilder.afternoteNavGraph(
                     onReplaceSongs = hostViewModel::replaceSongs,
                     onClearSongs = hostViewModel::clearAllSongs,
                     onNavigateToSelectReceiver = {}, // TODO: 수신인 선택 화면 라우팅 연결
-                    onBottomNavTabSelected = actions::onBottomNavTabSelected,
-                    onPopBackStack = actions::onPopBackStack,
-                    onNavigateToMemorialPlaylist = actions::onNavigateToMemorialPlaylist,
-                    onSaveSuccessNavigateHome = actions::onEditorSaveSuccessNavigateHome,
+                    onBottomNavTabSelected = actions::navigateToBottomTab,
+                    onPopBackStack = actions::popBack,
+                    onNavigateToMemorialPlaylist = actions::navigateToMemorialPlaylist,
+                    onSaveSuccessNavigateHome = actions::popToAfternoteHome,
                 ),
             )
         }
 
         afternoteComposable<AfternoteRoute.MemorialGuidelineDetailRoute> { _ ->
             AfternoteMemorialGuidelineDetailNavigation(
-                onBack = actions::onPopBackStack,
+                onBack = actions::popBack,
                 onNavigateToEditor = { itemId ->
-                    actions.onNavigateToEditorForEdit(itemId, EditorCategory.MEMORIAL)
+                    actions.navigateToEditorForEdit(itemId, EditorCategory.MEMORIAL)
                 },
             )
         }
@@ -96,8 +96,8 @@ fun NavGraphBuilder.afternoteNavGraph(
                 songs = graphSongs,
                 actions =
                     MemorialPlaylistEntryActions(
-                        onBackClick = actions::onPopBackStack,
-                        onNavigateToAddSongScreen = actions::onNavigateToAddSong,
+                        onBackClick = actions::popBack,
+                        onNavigateToAddSongScreen = actions::navigateToAddSong,
                         onClearAllSongs = hostViewModel::clearAllSongs,
                         onRemoveSongs = hostViewModel::removeSongs,
                     ),
@@ -109,8 +109,8 @@ fun NavGraphBuilder.afternoteNavGraph(
             val isPasskeyRegistered by hostViewModel.isPasskeyRegistered.collectAsStateWithLifecycle()
             AfternoteFingerprintLoginNavigation(
                 isPasskeyRegistered = isPasskeyRegistered,
-                onAuthenticationSuccess = actions::onFingerprintAuthSuccess,
-                onShowError = actions::onFingerprintAuthError,
+                onAuthenticationSuccess = actions::replaceFingerprintLoginWithAfternoteHome,
+                onShowError = actions::onFingerprintAuthFailed,
             )
         }
 
@@ -118,7 +118,7 @@ fun NavGraphBuilder.afternoteNavGraph(
             val hostViewModel = graphScopedHostViewModel(graphScopedParentEntry)
             val addSongViewModel: AddSongViewModel = hiltViewModel()
             AfternoteAddSongNavigation(
-                onPopBackStack = actions::onPopBackStack,
+                onPopBackStack = actions::popBack,
                 onSongsAdded = hostViewModel::addSongs,
                 viewModel = addSongViewModel,
             )
