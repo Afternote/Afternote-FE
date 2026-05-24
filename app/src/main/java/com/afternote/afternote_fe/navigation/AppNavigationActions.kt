@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import com.afternote.afternote_fe.screen.HomeTabActions
 import com.afternote.afternote_fe.screen.receiver.ReceiverHomeActions
@@ -24,7 +23,6 @@ import com.afternote.feature.setting.presentation.navigation.SettingNavActions
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterNavActions
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
-import dagger.hilt.android.EntryPointAccessors
 
 @Composable
 fun rememberOnboardingNavActions(navController: NavController): OnboardingNavActions =
