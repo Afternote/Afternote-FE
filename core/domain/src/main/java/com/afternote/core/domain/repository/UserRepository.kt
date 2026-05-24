@@ -8,8 +8,15 @@ import com.afternote.core.model.user.ReceiverDetail
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.model.user.UserPushSetting
+import kotlinx.coroutines.flow.Flow
 
 interface UserRepository {
+    /**
+     * 로컬 캐시된 *passkey 등록 여부* Flow. UI 가 진입 즉시 placeholder 로 표시하기 위함.
+     * DataStore 같은 인프라 디테일은 본 Repository 가 흡수 — UI/도메인은 Flow 만 소비.
+     */
+    fun isPasskeyRegisteredFlow(): Flow<Boolean>
+
     // 수신자 목록 조회
     suspend fun getReceivers(): List<Receiver>
 
