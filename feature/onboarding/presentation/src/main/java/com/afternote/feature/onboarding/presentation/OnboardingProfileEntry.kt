@@ -3,14 +3,13 @@ package com.afternote.feature.onboarding.presentation
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.afternote.core.ui.ObserveAsEvents
-import com.afternote.feature.onboarding.presentation.signup.SignUpEvent
 import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel
 import kotlinx.coroutines.launch
 
@@ -42,16 +41,23 @@ fun OnboardingProfileEntry(
         }
     }
 
-    ObserveAsEvents(viewModel.eventFlow) { event ->
-        when (event) {
-            is SignUpEvent.SignUpSuccess -> onOnboardingComplete()
-
-            is SignUpEvent.NavigateToResidentNumber -> Unit
-
-            // SignUp Step 1 화면에서 처리
-            is SignUpEvent.NameRequired -> showSnackbar(nameRequiredMessage)
-
-            is SignUpEvent.ShowError -> showSnackbar(event.message ?: signupFailedMessage)
+    LaunchedEffect(viewModel.isSignedUp) {
+        if (viewModel.isSignedUp) {
+            onOnboardingComplete()
+            viewModel.onSignedUpConsumed()
+        }
+    }
+    LaunchedEffect(viewModel.isNameRequired) {
+        if (viewModel.isNameRequired) {
+            showSnackbar(nameRequiredMessage)
+            viewModel.onNameRequiredConsumed()
+        }
+    }
+    val errorMessage = viewModel.errorMessage
+    LaunchedEffect(errorMessage) {
+        if (errorMessage != null) {
+            showSnackbar(errorMessage.ifBlank { signupFailedMessage })
+            viewModel.onErrorConsumed()
         }
     }
 
