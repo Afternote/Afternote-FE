@@ -28,6 +28,8 @@ object TimeLetterModule {
 
     @Provides
     @Singleton
-    fun provideFileMetadataRepository(@ApplicationContext context: Context): FileMetadataRepository =
+    fun provideFileMetadataRepository(
+        @ApplicationContext context: Context,
+    ): FileMetadataRepository =
         FileMetadataRepositoryImpl(context)
 }

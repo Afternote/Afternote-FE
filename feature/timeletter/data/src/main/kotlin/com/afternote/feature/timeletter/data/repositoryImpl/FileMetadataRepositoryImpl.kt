@@ -21,6 +21,5 @@ class FileMetadataRepositoryImpl
             } ?: uri.lastPathSegment ?: "파일"
         }
 
-        override suspend fun getMimeType(uriString: String): String? =
-            context.contentResolver.getType(Uri.parse(uriString))
+        override suspend fun getMimeType(uriString: String): String? = context.contentResolver.getType(Uri.parse(uriString))
     }

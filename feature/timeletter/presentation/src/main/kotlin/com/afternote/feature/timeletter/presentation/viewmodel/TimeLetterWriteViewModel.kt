@@ -40,9 +40,10 @@ class TimeLetterWriteViewModel
 
         init {
             viewModelScope.launch {
-                receiverNameMap = runCatching { userRepository.getReceivers() }
-                    .getOrElse { emptyList() }
-                    .associate { it.receiverId to it.name }
+                receiverNameMap =
+                    runCatching { userRepository.getReceivers() }
+                        .getOrElse { emptyList() }
+                        .associate { it.receiverId to it.name }
             }
             loadDraftCount()
             observeRecipientResult()
@@ -223,35 +224,48 @@ class TimeLetterWriteViewModel
         private suspend fun mapToBlockInputs(
             editorBlocks: List<EditorBlock>,
             textContents: Map<Long, String>,
-        ): List<BlockInput> = buildList {
+        ): List<BlockInput> =
+            buildList {
             for (block in editorBlocks) {
                 when (block) {
                     is EditorBlock.Text -> {
                         val content = textContents[block.id] ?: ""
                         if (content.isNotBlank()) add(BlockInput.Text(content))
                     }
-                    is EditorBlock.Image -> add(
-                        BlockInput.Media(
-                            uriString = block.uri.toString(),
-                            mimeType = fileMetadataRepository.getMimeType(block.uri.toString()),
-                            blockType = TimeLetterBlockType.IMAGE,
-                        ),
-                    )
-                    is EditorBlock.Audio -> add(
-                        BlockInput.Media(
-                            uriString = block.uri.toString(),
-                            mimeType = fileMetadataRepository.getMimeType(block.uri.toString()),
-                            blockType = TimeLetterBlockType.AUDIO,
-                        ),
-                    )
-                    is EditorBlock.File -> add(
-                        BlockInput.Media(
-                            uriString = block.uri.toString(),
-                            mimeType = fileMetadataRepository.getMimeType(block.uri.toString()),
-                            blockType = TimeLetterBlockType.FILE,
-                        ),
-                    )
-                    is EditorBlock.Link -> add(BlockInput.Link(block.url))
+
+                    is EditorBlock.Image -> {
+                        add(
+                            BlockInput.Media(
+                                uriString = block.uri.toString(),
+                                mimeType = fileMetadataRepository.getMimeType(block.uri.toString()),
+                                blockType = TimeLetterBlockType.IMAGE,
+                            ),
+                        )
+                    }
+
+                    is EditorBlock.Audio -> {
+                        add(
+                            BlockInput.Media(
+                                uriString = block.uri.toString(),
+                                mimeType = fileMetadataRepository.getMimeType(block.uri.toString()),
+                                blockType = TimeLetterBlockType.AUDIO,
+                            ),
+                        )
+                    }
+
+                    is EditorBlock.File -> {
+                        add(
+                            BlockInput.Media(
+                                uriString = block.uri.toString(),
+                                mimeType = fileMetadataRepository.getMimeType(block.uri.toString()),
+                                blockType = TimeLetterBlockType.FILE,
+                            ),
+                        )
+                    }
+
+                    is EditorBlock.Link -> {
+                        add(BlockInput.Link(block.url))
+                    }
                 }
             }
         }

@@ -33,21 +33,22 @@ class UserRepositoryImpl
     constructor(
         private val userApiService: UserApiService,
     ) : UserRepository {
-        private val _receiverCache = MutableStateFlow<List<Receiver>?>(null)
+        private val receiverCache = MutableStateFlow<List<Receiver>?>(null)
 
-        override val receiverListFlow: Flow<List<Receiver>> = flow {
-            if (_receiverCache.value == null) {
-                _receiverCache.value = userApiService.getReceivers().requireData().map { it.toDomain() }
+        override val receiverListFlow: Flow<List<Receiver>> =
+            flow {
+            if (receiverCache.value == null) {
+                receiverCache.value = userApiService.getReceivers().requireData().map { it.toDomain() }
             }
-            emitAll(_receiverCache.filterNotNull())
+            emitAll(receiverCache.filterNotNull())
         }
 
         override suspend fun getReceivers(): List<Receiver> =
-            _receiverCache.value ?: userApiService
+            receiverCache.value ?: userApiService
                 .getReceivers()
                 .requireData()
                 .map { it.toDomain() }
-                .also { _receiverCache.value = it }
+                .also { receiverCache.value = it }
 
         override suspend fun createReceiver(
             name: String,
@@ -68,7 +69,7 @@ class UserRepositoryImpl
                         ),
                     ).requireData()
                     .toDomain()
-            _receiverCache.value = userApiService.getReceivers().requireData().map { it.toDomain() }
+            receiverCache.value = userApiService.getReceivers().requireData().map { it.toDomain() }
             return result
         }
 

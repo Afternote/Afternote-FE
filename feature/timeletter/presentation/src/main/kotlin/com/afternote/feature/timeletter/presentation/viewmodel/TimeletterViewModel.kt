@@ -59,9 +59,11 @@ class TimeletterViewModel
                 val receiversDeferred = async { runCatching { userRepository.getReceivers() } }
                 val lettersResult = runCatching { timeLetterRepository.getTimeLetters() }
 
-                receiverNameMap = receiversDeferred.await()
-                    .getOrElse { emptyList() }
-                    .associate { it.receiverId to it.name }
+                receiverNameMap =
+                    receiversDeferred
+                        .await()
+                        .getOrElse { emptyList() }
+                        .associate { it.receiverId to it.name }
 
                 lettersResult
                     .onSuccess { letters ->
