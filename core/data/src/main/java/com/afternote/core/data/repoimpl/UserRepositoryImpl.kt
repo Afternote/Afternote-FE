@@ -37,11 +37,12 @@ class UserRepositoryImpl
 
         override val receiverListFlow: Flow<List<Receiver>> =
             flow {
-            if (receiverCache.value == null) {
-                receiverCache.value = userApiService.getReceivers().requireData().map { it.toDomain() }
+                if (receiverCache.value == null) {
+                    receiverCache.value =
+                        userApiService.getReceivers().requireData().map { it.toDomain() }
+                }
+                emitAll(receiverCache.filterNotNull())
             }
-            emitAll(receiverCache.filterNotNull())
-        }
 
         override suspend fun getReceivers(): List<Receiver> =
             receiverCache.value ?: userApiService

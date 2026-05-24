@@ -174,9 +174,10 @@ fun TimeLetterWriteScreen(
                     pendingHour = h
                     pendingMinute = m
                 },
-                modifier = Modifier
-                    .wrapContentWidth(Alignment.CenterHorizontally)
-                    .fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .wrapContentWidth(Alignment.CenterHorizontally)
+                        .fillMaxWidth(),
                 initialHour = pendingHour,
                 initialMinute = pendingMinute,
             )
@@ -187,9 +188,10 @@ fun TimeLetterWriteScreen(
                     onTimeSelected(pendingHour, pendingMinute)
                     showTimePicker = false
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
             )
             Spacer(modifier = Modifier.height(32.dp))
         }
