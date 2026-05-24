@@ -1,5 +1,6 @@
 package com.afternote.feature.timeletter.presentation.navigation
 
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.text.style.TextAlign
@@ -9,14 +10,12 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
-import com.afternote.core.ui.ObserveAsEvents
 import com.afternote.core.ui.Route
 import com.afternote.feature.timeletter.presentation.screen.sender.DraftLetterScreen
 import com.afternote.feature.timeletter.presentation.screen.sender.RecipientListScreen
 import com.afternote.feature.timeletter.presentation.screen.sender.TimeLetterDetailScreen
 import com.afternote.feature.timeletter.presentation.screen.sender.TimeLetterWriteScreen
 import com.afternote.feature.timeletter.presentation.screen.sender.TimeletterScreen
-import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteEvent
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteViewModel
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeletterViewModel
 
@@ -37,11 +36,16 @@ fun NavGraphBuilder.timeLetterNavGraph(
             val viewModel: TimeLetterWriteViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-            ObserveAsEvents(viewModel.events) { event ->
-                when (event) {
-                    is TimeLetterWriteEvent.SavedAsDraft -> actions.onDraftBack()
-                    is TimeLetterWriteEvent.Registered -> actions.onWriteBack()
-                    is TimeLetterWriteEvent.Error -> Unit
+            LaunchedEffect(uiState.savedAsDraft) {
+                if (uiState.savedAsDraft) {
+                    viewModel.onSavedAsDraftShown()
+                    actions.onDraftBack()
+                }
+            }
+            LaunchedEffect(uiState.registered) {
+                if (uiState.registered) {
+                    viewModel.onRegisteredShown()
+                    actions.onWriteBack()
                 }
             }
 

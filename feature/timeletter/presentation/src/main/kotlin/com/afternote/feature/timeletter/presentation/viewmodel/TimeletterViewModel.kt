@@ -2,9 +2,9 @@ package com.afternote.feature.timeletter.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.data.cache.ReceiverCacheStore
+import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.timeletter.domain.model.TimeLetterList
-import com.afternote.feature.timeletter.domain.usecase.GetTimeLettersUseCase
+import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,14 +17,15 @@ import javax.inject.Inject
 class TimeletterViewModel
     @Inject
     constructor(
-        private val getTimeLettersUseCase: GetTimeLettersUseCase,
-        private val receiverCacheStore: ReceiverCacheStore,
+        private val timeLetterRepository: TimeLetterRepository,
+        private val userRepository: UserRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<TimeletterUiState>(TimeletterUiState.Loading)
         val uiState: StateFlow<TimeletterUiState> = _uiState.asStateFlow()
 
         private var allLetters: TimeLetterList? = null
         private var selectedFilterReceiverIds: Set<Long> = emptySet()
+        private var receiverNameMap: Map<Long, String> = emptyMap()
 
         fun setReceiverFilter(receiverIds: List<Long>) {
             selectedFilterReceiverIds = receiverIds.toSet()
@@ -47,7 +48,7 @@ class TimeletterViewModel
             _uiState.value =
                 TimeletterUiState.Success(
                     letters = filteredLetters,
-                    receiverNameMap = receiverCacheStore.receiverNameMap.value,
+                    receiverNameMap = receiverNameMap,
                     selectedFilterReceiverIds = filterIds,
                 )
         }
@@ -55,9 +56,12 @@ class TimeletterViewModel
         fun load() {
             viewModelScope.launch {
                 _uiState.value = TimeletterUiState.Loading
-                val receiversDeferred = async { receiverCacheStore.ensureLoaded() }
-                val lettersResult = runCatching { getTimeLettersUseCase() }
-                runCatching { receiversDeferred.await() }
+                val receiversDeferred = async { runCatching { userRepository.getReceivers() } }
+                val lettersResult = runCatching { timeLetterRepository.getTimeLetters() }
+
+                receiverNameMap = receiversDeferred.await()
+                    .getOrElse { emptyList() }
+                    .associate { it.receiverId to it.name }
 
                 lettersResult
                     .onSuccess { letters ->

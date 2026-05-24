@@ -21,6 +21,11 @@ import com.afternote.core.network.dto.UserUpdateReceiverMessageRequest
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
 import com.afternote.core.network.service.UserApiService
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class UserRepositoryImpl
@@ -28,11 +33,21 @@ class UserRepositoryImpl
     constructor(
         private val userApiService: UserApiService,
     ) : UserRepository {
+        private val _receiverCache = MutableStateFlow<List<Receiver>?>(null)
+
+        override val receiverListFlow: Flow<List<Receiver>> = flow {
+            if (_receiverCache.value == null) {
+                _receiverCache.value = userApiService.getReceivers().requireData().map { it.toDomain() }
+            }
+            emitAll(_receiverCache.filterNotNull())
+        }
+
         override suspend fun getReceivers(): List<Receiver> =
-            userApiService
+            _receiverCache.value ?: userApiService
                 .getReceivers()
                 .requireData()
                 .map { it.toDomain() }
+                .also { _receiverCache.value = it }
 
         override suspend fun createReceiver(
             name: String,
@@ -40,18 +55,22 @@ class UserRepositoryImpl
             phone: String?,
             email: String?,
             message: String?,
-        ): ReceiverCreated =
-            userApiService
-                .createReceiver(
-                    UserCreateReceiverRequest(
-                        name = name,
-                        relation = relation,
-                        phone = phone,
-                        email = email,
-                        message = message,
-                    ),
-                ).requireData()
-                .toDomain()
+        ): ReceiverCreated {
+            val result =
+                userApiService
+                    .createReceiver(
+                        UserCreateReceiverRequest(
+                            name = name,
+                            relation = relation,
+                            phone = phone,
+                            email = email,
+                            message = message,
+                        ),
+                    ).requireData()
+                    .toDomain()
+            _receiverCache.value = userApiService.getReceivers().requireData().map { it.toDomain() }
+            return result
+        }
 
         override suspend fun getReceiverDetail(receiverId: Long): ReceiverDetail =
             userApiService

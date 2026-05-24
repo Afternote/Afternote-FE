@@ -17,6 +17,8 @@ data class TimeLetterWriteUiState(
     val editorBlocks: List<EditorBlock> = listOf(EditorBlock.Text(id = 0L)),
     val focusedBlockId: Long? = 0L,
     val nextBlockId: Long = 1L,
+    val savedAsDraft: Boolean = false,
+    val registered: Boolean = false,
 )
 
 sealed class EditorBlock {
@@ -50,12 +52,3 @@ sealed class EditorBlock {
     ) : EditorBlock()
 }
 
-sealed interface TimeLetterWriteEvent {
-    data object SavedAsDraft : TimeLetterWriteEvent
-
-    data object Registered : TimeLetterWriteEvent
-
-    data class Error(
-        val message: String,
-    ) : TimeLetterWriteEvent
-}

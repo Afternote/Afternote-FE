@@ -4,9 +4,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import com.afternote.core.data.cache.ReceiverCacheStore
+import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.timeletter.domain.model.TimeLetter
-import com.afternote.feature.timeletter.domain.usecase.GetTimeLetterUseCase
+import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
@@ -31,8 +31,8 @@ sealed interface TimeLetterDetailUiState {
 class TimeLetterDetailViewModel
     @Inject
     constructor(
-        private val getTimeLetterUseCase: GetTimeLetterUseCase,
-        private val receiverCacheStore: ReceiverCacheStore,
+        private val timeLetterRepository: TimeLetterRepository,
+        private val userRepository: UserRepository,
         savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
         private val timeLetterId: Long =
@@ -48,16 +48,16 @@ class TimeLetterDetailViewModel
         fun load() {
             viewModelScope.launch {
                 _uiState.value = TimeLetterDetailUiState.Loading
-                val receiversDeferred = async { receiverCacheStore.ensureLoaded() }
-                val letterResult = runCatching { getTimeLetterUseCase(timeLetterId) }
-                runCatching { receiversDeferred.await() }
+                val receiversDeferred = async { runCatching { userRepository.getReceivers() } }
+                val letterResult = runCatching { timeLetterRepository.getTimeLetter(timeLetterId) }
+                val receivers = receiversDeferred.await().getOrElse { emptyList() }
 
                 letterResult
                     .onSuccess { letter ->
                         _uiState.value =
                             TimeLetterDetailUiState.Success(
                                 letter = letter,
-                                receiverNameMap = receiverCacheStore.receiverNameMap.value,
+                                receiverNameMap = receivers.associate { it.receiverId to it.name },
                             )
                     }.onFailure {
                         _uiState.value = TimeLetterDetailUiState.Error

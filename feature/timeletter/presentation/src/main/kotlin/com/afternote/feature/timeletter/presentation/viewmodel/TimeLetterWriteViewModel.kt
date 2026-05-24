@@ -1,28 +1,24 @@
 package com.afternote.feature.timeletter.presentation.viewmodel
 
-import android.content.Context
 import android.net.Uri
-import android.provider.OpenableColumns
 import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.data.cache.ReceiverCacheStore
+import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.timeletter.domain.model.BlockInput
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlockType
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
+import com.afternote.feature.timeletter.domain.repository.FileMetadataRepository
+import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
 import com.afternote.feature.timeletter.domain.usecase.CreateTimeLetterUseCase
-import com.afternote.feature.timeletter.domain.usecase.GetTemporaryTimeLettersUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -32,19 +28,22 @@ class TimeLetterWriteViewModel
     @Inject
     constructor(
         private val createTimeLetterUseCase: CreateTimeLetterUseCase,
-        private val getTemporaryTimeLettersUseCase: GetTemporaryTimeLettersUseCase,
-        private val receiverCacheStore: ReceiverCacheStore,
-        @param:ApplicationContext private val context: Context,
+        private val timeLetterRepository: TimeLetterRepository,
+        private val userRepository: UserRepository,
+        private val fileMetadataRepository: FileMetadataRepository,
         private val savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(TimeLetterWriteUiState())
         val uiState: StateFlow<TimeLetterWriteUiState> = _uiState.asStateFlow()
 
-        private val _events = Channel<TimeLetterWriteEvent>()
-        val events = _events.receiveAsFlow()
+        private var receiverNameMap: Map<Long, String> = emptyMap()
 
         init {
-            viewModelScope.launch { receiverCacheStore.ensureLoaded() }
+            viewModelScope.launch {
+                receiverNameMap = runCatching { userRepository.getReceivers() }
+                    .getOrElse { emptyList() }
+                    .associate { it.receiverId to it.name }
+            }
             loadDraftCount()
             observeRecipientResult()
         }
@@ -58,11 +57,10 @@ class TimeLetterWriteViewModel
         }
 
         fun setRecipients(ids: List<Long>) {
-            val nameMap = receiverCacheStore.receiverNameMap.value
             _uiState.update { state ->
                 state.copy(
                     recipientIds = ids,
-                    recipientNames = ids.mapNotNull { nameMap[it] },
+                    recipientNames = ids.mapNotNull { receiverNameMap[it] },
                 )
             }
         }
@@ -108,6 +106,14 @@ class TimeLetterWriteViewModel
             _uiState.update { it.copy(errorMessage = null) }
         }
 
+        fun onSavedAsDraftShown() {
+            _uiState.update { it.copy(savedAsDraft = false) }
+        }
+
+        fun onRegisteredShown() {
+            _uiState.update { it.copy(registered = false) }
+        }
+
         fun setTextAlign(align: TextAlign) {
             _uiState.update { it.copy(textAlign = align) }
         }
@@ -117,15 +123,24 @@ class TimeLetterWriteViewModel
         }
 
         fun addImageBlock(uri: Uri) {
-            addMediaBlockInternal { id -> EditorBlock.Image(id, uri, getFileName(uri)) }
+            viewModelScope.launch {
+                val name = fileMetadataRepository.getFileName(uri.toString())
+                addMediaBlockInternal { id -> EditorBlock.Image(id, uri, name) }
+            }
         }
 
         fun addAudioBlock(uri: Uri) {
-            addMediaBlockInternal { id -> EditorBlock.Audio(id, uri, getFileName(uri)) }
+            viewModelScope.launch {
+                val name = fileMetadataRepository.getFileName(uri.toString())
+                addMediaBlockInternal { id -> EditorBlock.Audio(id, uri, name) }
+            }
         }
 
         fun addFileBlock(uri: Uri) {
-            addMediaBlockInternal { id -> EditorBlock.File(id, uri, getFileName(uri)) }
+            viewModelScope.launch {
+                val name = fileMetadataRepository.getFileName(uri.toString())
+                addMediaBlockInternal { id -> EditorBlock.File(id, uri, name) }
+            }
         }
 
         fun addLinkBlock(url: String) {
@@ -170,13 +185,6 @@ class TimeLetterWriteViewModel
             }
         }
 
-        private fun getFileName(uri: Uri): String =
-            context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-                val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                cursor.moveToFirst()
-                if (nameIndex >= 0) cursor.getString(nameIndex) else null
-            } ?: uri.lastPathSegment ?: "파일"
-
         private fun save(
             title: String,
             textContents: Map<Long, String>,
@@ -199,14 +207,12 @@ class TimeLetterWriteViewModel
                     status = status,
                     receiverIds = state.recipientIds.ifEmpty { null },
                 ).onSuccess {
-                    val event =
-                        if (status == TimeLetterStatus.DRAFT) {
-                            TimeLetterWriteEvent.SavedAsDraft
-                        } else {
-                            TimeLetterWriteEvent.Registered
-                        }
-                    _events.send(event)
-                    if (status == TimeLetterStatus.DRAFT) loadDraftCount()
+                    if (status == TimeLetterStatus.DRAFT) {
+                        loadDraftCount()
+                        _uiState.update { it.copy(savedAsDraft = true) }
+                    } else {
+                        _uiState.update { it.copy(registered = true) }
+                    }
                 }.onFailure {
                     _uiState.update { it.copy(errorMessage = "저장에 실패했어요. 다시 시도해주세요.") }
                 }
@@ -214,50 +220,45 @@ class TimeLetterWriteViewModel
             }
         }
 
-        private fun mapToBlockInputs(
+        private suspend fun mapToBlockInputs(
             editorBlocks: List<EditorBlock>,
             textContents: Map<Long, String>,
-        ): List<BlockInput> =
-            editorBlocks.mapNotNull { block ->
+        ): List<BlockInput> = buildList {
+            for (block in editorBlocks) {
                 when (block) {
                     is EditorBlock.Text -> {
                         val content = textContents[block.id] ?: ""
-                        if (content.isNotBlank()) BlockInput.Text(content) else null
+                        if (content.isNotBlank()) add(BlockInput.Text(content))
                     }
-
-                    is EditorBlock.Image -> {
+                    is EditorBlock.Image -> add(
                         BlockInput.Media(
                             uriString = block.uri.toString(),
-                            mimeType = context.contentResolver.getType(block.uri),
+                            mimeType = fileMetadataRepository.getMimeType(block.uri.toString()),
                             blockType = TimeLetterBlockType.IMAGE,
-                        )
-                    }
-
-                    is EditorBlock.Audio -> {
+                        ),
+                    )
+                    is EditorBlock.Audio -> add(
                         BlockInput.Media(
                             uriString = block.uri.toString(),
-                            mimeType = context.contentResolver.getType(block.uri),
+                            mimeType = fileMetadataRepository.getMimeType(block.uri.toString()),
                             blockType = TimeLetterBlockType.AUDIO,
-                        )
-                    }
-
-                    is EditorBlock.File -> {
+                        ),
+                    )
+                    is EditorBlock.File -> add(
                         BlockInput.Media(
                             uriString = block.uri.toString(),
-                            mimeType = context.contentResolver.getType(block.uri),
+                            mimeType = fileMetadataRepository.getMimeType(block.uri.toString()),
                             blockType = TimeLetterBlockType.FILE,
-                        )
-                    }
-
-                    is EditorBlock.Link -> {
-                        BlockInput.Link(block.url)
-                    }
+                        ),
+                    )
+                    is EditorBlock.Link -> add(BlockInput.Link(block.url))
                 }
             }
+        }
 
         private fun loadDraftCount() {
             viewModelScope.launch {
-                runCatching { getTemporaryTimeLettersUseCase() }
+                runCatching { timeLetterRepository.getTemporaryTimeLetters() }
                     .onSuccess { result ->
                         _uiState.update { it.copy(draftCount = result.totalCount) }
                     }

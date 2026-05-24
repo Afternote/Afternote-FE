@@ -8,8 +8,11 @@ import com.afternote.core.model.user.ReceiverDetail
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.model.user.UserPushSetting
+import kotlinx.coroutines.flow.Flow
 
 interface UserRepository {
+    val receiverListFlow: Flow<List<Receiver>>
+
     // 수신자 목록 조회
     suspend fun getReceivers(): List<Receiver>
 
