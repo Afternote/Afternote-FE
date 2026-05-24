@@ -116,19 +116,21 @@ fun TimeLetterContent(
         ) {
             items(letters.timeLetters) { letter ->
                 when (viewMode) {
-                    ViewMode.List ->
+                    ViewMode.List -> {
                         TimeLetterListItem(
                             letter = letter,
                             receiverNameMap = receiverNameMap,
                             modifier = Modifier.clickable { onLetterClick(letter.id) },
                         )
+                    }
 
-                    ViewMode.Block ->
+                    ViewMode.Block -> {
                         TimeLetterBlockItem(
                             letter = letter,
                             receiverNameMap = receiverNameMap,
                             modifier = Modifier.clickable { onLetterClick(letter.id) },
                         )
+                    }
                 }
             }
         }

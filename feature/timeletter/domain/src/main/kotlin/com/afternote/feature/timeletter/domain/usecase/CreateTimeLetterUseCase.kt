@@ -9,12 +9,10 @@ import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
 import javax.inject.Inject
 
-class CreateTimeLetterUseCase
-    @Inject
-    constructor(
-        private val timeLetterRepository: TimeLetterRepository,
-        private val photoUploadRepository: PhotoUploadRepository,
-    ) {
+class CreateTimeLetterUseCase @Inject constructor(
+    private val timeLetterRepository: TimeLetterRepository,
+    private val photoUploadRepository: PhotoUploadRepository,
+) {
     suspend operator fun invoke(
         title: String?,
         blocks: List<BlockInput>,

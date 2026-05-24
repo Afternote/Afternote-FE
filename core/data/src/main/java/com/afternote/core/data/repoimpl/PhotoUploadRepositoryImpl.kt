@@ -112,8 +112,7 @@ class PhotoUploadRepositoryImpl
                                         .put(requestBody)
                                         .header("Content-Type", contentType)
                                         .build(),
-                                )
-                                .execute()
+                                ).execute()
                         }
                     check(response.isSuccessful) {
                         "S3 upload failed: ${response.code} ${response.message}"

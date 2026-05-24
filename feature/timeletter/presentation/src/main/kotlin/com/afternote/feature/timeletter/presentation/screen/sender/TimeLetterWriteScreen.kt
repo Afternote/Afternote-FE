@@ -331,40 +331,45 @@ fun TimeLetterWriteScreen(
             }
             items(uiState.editorBlocks, key = { it.id }) { block ->
                 when (block) {
-                    is EditorBlock.Text ->
+                    is EditorBlock.Text -> {
                         TextBlockItem(
                             blockId = block.id,
                             textBlockStates = textBlockStates,
                             textAlign = uiState.textAlign,
                             onFocused = { onSetFocusedBlock(block.id) },
                         )
+                    }
 
-                    is EditorBlock.Image ->
+                    is EditorBlock.Image -> {
                         ImageBlockItem(
                             uri = block.uri,
                             onRemove = { onRemoveBlock(block.id) },
                         )
+                    }
 
-                    is EditorBlock.Audio ->
+                    is EditorBlock.Audio -> {
                         MediaBlockChip(
                             iconRes = R.drawable.ic_mic,
                             label = block.name,
                             onRemove = { onRemoveBlock(block.id) },
                         )
+                    }
 
-                    is EditorBlock.File ->
+                    is EditorBlock.File -> {
                         MediaBlockChip(
                             iconRes = R.drawable.ic_file,
                             label = block.name,
                             onRemove = { onRemoveBlock(block.id) },
                         )
+                    }
 
-                    is EditorBlock.Link ->
+                    is EditorBlock.Link -> {
                         MediaBlockChip(
                             iconRes = com.afternote.core.ui.R.drawable.core_ui_ic_link,
                             label = block.url,
                             onRemove = { onRemoveBlock(block.id) },
                         )
+                    }
                 }
             }
         }
