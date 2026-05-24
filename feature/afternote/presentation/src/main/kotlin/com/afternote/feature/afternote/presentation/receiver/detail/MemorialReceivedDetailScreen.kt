@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.receiver.afternotemain
+package com.afternote.feature.afternote.presentation.receiver.detail
 
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -60,8 +60,19 @@ import com.afternote.feature.afternote.presentation.shared.MemorialGuidelineCont
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
 
+/**
+ * MEMORIAL 카테고리의 수신자 측 detail prototype.
+ *
+ * 현재 [ReceivedAfternoteDetailSuccessMapper] 의 MEMORIAL 분기는 디자이너 보류라
+ * [com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent] 로 폴백
+ * 한다. 디자인 확정 시 mapper 에 MEMORIAL UI 모델을 추가하고 [ReceivedAfternoteDetailRoute] 의
+ * when 분기에서 본 화면을 호출하도록 wire-up 한다.
+ *
+ * 페어 sub-screen: [com.afternote.feature.afternote.presentation.receiver.playlist.MemorialPlaylistScreen]
+ * (추모 플레이리스트 진입).
+ */
 @Composable
-fun ReceiverAfterNoteMainScreen(
+fun MemorialReceivedDetailScreen(
     senderName: String,
     onNavigateToFullList: () -> Unit = {},
     onNavigateToPlaylist: () -> Unit = {},
@@ -295,8 +306,8 @@ private fun ReceiverSectionHeader(title: String = LABEL_VIDEO_SECTION) {
 
 @Preview(showBackground = true)
 @Composable
-private fun PreviewReceiverAfterNoteMain() {
+private fun PreviewMemorialReceivedDetail() {
     AfternoteTheme {
-        ReceiverAfterNoteMainScreen(senderName = "박서연", albumCovers = emptyList())
+        MemorialReceivedDetailScreen(senderName = "박서연", albumCovers = emptyList())
     }
 }

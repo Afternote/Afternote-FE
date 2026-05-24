@@ -8,6 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.ObserveAsEvents
 import com.afternote.feature.onboarding.presentation.signup.SignUpEvent
@@ -55,12 +56,13 @@ fun OnboardingProfileEntry(
         }
     }
 
+    // VM 은 Android Framework 의존 제거를 위해 String 으로 보관. UI 레이어에서 Uri 와 변환.
     OnboardingProfileScreen(
         initialName = viewModel.name,
-        displayImageUri = profileImageUri,
+        displayImageUri = profileImageUri?.toUri(),
         snackbarHostState = snackbarHostState,
         onNameChange = viewModel::updateName,
-        onProfileImagePick = viewModel::onProfileImagePicked,
+        onProfileImagePick = { uri -> viewModel.onProfileImagePicked(uri?.toString()) },
         onCompleteClick = viewModel::submitSignUp,
         onBackClick = onBackClick,
         modifier = modifier,

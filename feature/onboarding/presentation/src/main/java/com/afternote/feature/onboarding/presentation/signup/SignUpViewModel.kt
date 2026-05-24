@@ -1,7 +1,5 @@
 package com.afternote.feature.onboarding.presentation.signup
 
-import android.net.Uri
-import android.util.Patterns
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -58,6 +56,16 @@ class SignUpViewModel
             /** 8~16자, 영문 대소문자 + 숫자 + 특수문자 각 1개 이상. */
             private val PASSWORD_REGEX =
                 Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,16}$")
+
+            // android.util.Patterns.EMAIL_ADDRESS 와 동일 — VM 의 framework 의존 제거 목적.
+            // 원본: AOSP frameworks/base/core/java/android/util/Patterns.java
+            private val EMAIL_ADDRESS_REGEX =
+                Regex(
+                    "[a-zA-Z0-9+._%\\-]{1,256}" +
+                        "@" +
+                        "[a-zA-Z0-9][a-zA-Z0-9\\-]{0,64}" +
+                        "(\\.[a-zA-Z0-9][a-zA-Z0-9\\-]{0,25})+",
+                )
         }
 
         private val eventChannel = Channel<SignUpEvent>(Channel.BUFFERED)
@@ -136,10 +144,11 @@ class SignUpViewModel
         var termsState by mutableStateOf(TermsState())
             private set
 
-        private val _profileImageUri = MutableStateFlow<Uri?>(null)
-        val profileImageUri: StateFlow<Uri?> = _profileImageUri.asStateFlow()
+        // photo picker 결과는 Entry 가 Uri.toString() 으로 변환해 push — VM 은 String 만 보관.
+        private val _profileImageUri = MutableStateFlow<String?>(null)
+        val profileImageUri: StateFlow<String?> = _profileImageUri.asStateFlow()
 
-        fun onProfileImagePicked(uri: Uri?) {
+        fun onProfileImagePicked(uri: String?) {
             _profileImageUri.value = uri
         }
 
@@ -151,7 +160,7 @@ class SignUpViewModel
 
         /** 이메일 형식 유효성. "인증번호 받기" / "다음" 활성화 조건의 사전 가드. */
         val isEmailFormatValid by derivedStateOf {
-            email.isNotBlank() && Patterns.EMAIL_ADDRESS.matcher(email).matches()
+            email.isNotBlank() && EMAIL_ADDRESS_REGEX.matches(email)
         }
 
         /** Step 1 — 이메일·인증번호 입력 후 다음 단계 진행 가능 여부 */
@@ -283,7 +292,7 @@ class SignUpViewModel
                         email = email,
                         password = signUpPassword,
                         name = trimmedName,
-                        profileUrl = _profileImageUri.value?.toString(),
+                        profileUrl = _profileImageUri.value,
                     ).onSuccess {
                         // 회원가입 API 는 토큰을 내려주지 않으므로 같은 자격증명으로 자동 로그인.
                         loginUseCase(LoginType.Email(email = email, password = signUpPassword))
