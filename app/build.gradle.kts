@@ -36,6 +36,18 @@ android {
     }
 
     signingConfigs {
+        // 공용 debug keystore — 신규 팀원 OAuth 동작 단순화 (#288).
+        // 머신별 ~/.android/debug.keystore 대신 팀 공용 keystore 로 통일.
+        // keystore 파일은 public repo 라 git commit 금지 — Slack DM 으로 신규 인계자에게 전달.
+        getByName("debug") {
+            val debugStoreFile = localProperties.getProperty("DEBUG_STORE_FILE")
+            if (debugStoreFile != null) {
+                storeFile = file(debugStoreFile)
+                storePassword = localProperties.getProperty("DEBUG_STORE_PASSWORD")
+                keyAlias = localProperties.getProperty("DEBUG_KEY_ALIAS")
+                keyPassword = localProperties.getProperty("DEBUG_KEY_PASSWORD")
+            }
+        }
         create("release") {
             val releaseStoreFile = localProperties.getProperty("RELEASE_STORE_FILE")
             if (releaseStoreFile != null) {

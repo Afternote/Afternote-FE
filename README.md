@@ -2,7 +2,7 @@
 
 # 🚀 신규 팀원 빌드 셋업
 
-`local.properties` 는 `.gitignore` 에 등록되어 있어 **git 으로 받아지지 않는다**. clone 직후 다음 두 키를 루트 `local.properties` 에 직접 채워야 카카오·구글 로그인이 정상 동작한다.
+`local.properties` 는 `.gitignore` 에 등록되어 있어 **git 으로 받아지지 않는다**. clone 직후 아래 키들을 루트 `local.properties` 에 직접 채우고 공용 debug keystore 파일을 받아야 카카오·구글 로그인이 정상 동작한다.
 
 ## 필요 키
 
@@ -10,6 +10,7 @@
 |---|---|---|
 | `KAKAO_NATIVE_APP_KEY` | 카카오 SDK 초기화 (`KakaoSdk.init`) + 카카오 로그인 콜백 intent-filter 의 `kakao{NATIVE_APP_KEY}` scheme | [Kakao Developers](https://developers.kakao.com) → 내 애플리케이션 → 앱 키 → **네이티브 앱 키** |
 | `GOOGLE_WEB_CLIENT_ID` | Google 로그인 시 `CredentialManager.requestGoogleIdToken(serverClientId = ...)` 의 server client id (백엔드가 ID Token 의 `aud` 를 검증할 수 있도록 *Web* client ID 사용) | [Google Cloud Console](https://console.cloud.google.com) → APIs & Services → Credentials → OAuth 2.0 Client IDs → **Web application** 타입 |
+| `DEBUG_STORE_FILE` 외 3개 | 공용 debug keystore 경로/비밀번호/alias. 머신별 `~/.android/debug.keystore` 대신 팀 공용 keystore 로 통일해서 카카오·구글 콘솔에 SHA-1 / 키 해시 1번만 등록하면 모든 팀원의 debug 빌드에서 OAuth 동작 | Slack DM 으로 1hyok 에게 수령 |
 
 ## `local.properties` 양식
 
@@ -18,19 +19,29 @@
 ```properties
 KAKAO_NATIVE_APP_KEY=<카카오 네이티브 앱 키>
 GOOGLE_WEB_CLIENT_ID=<구글 OAuth web client id>.apps.googleusercontent.com
+
+# 공용 debug keystore (Slack DM 으로 .jks 파일 + 비밀번호 수령 후 채움)
+DEBUG_STORE_FILE=/Users/<you>/afternote-debug-shared.jks
+DEBUG_STORE_PASSWORD=<수령한 비밀번호>
+DEBUG_KEY_ALIAS=afternote-debug-shared
+DEBUG_KEY_PASSWORD=<수령한 비밀번호>
 ```
 
-## 키 수령 채널
+## 키·keystore 수령 채널
 
-신규 팀원은 위 두 키를 **Slack DM 으로 1hyok 에게 요청**. (직접 발급 권한이 있는 경우 위 콘솔에서 직접 조회 가능.)
+신규 팀원은 다음 셋을 **Slack DM 으로 1hyok 에게 요청**:
+
+1. `KAKAO_NATIVE_APP_KEY` + `GOOGLE_WEB_CLIENT_ID` (텍스트)
+2. `DEBUG_*` 4개 키 값 (텍스트)
+3. **`afternote-debug-shared.jks` 파일** (바이너리 첨부) — 로컬 어디에든 두고 `DEBUG_STORE_FILE` 에 절대 경로 명시
+
+> public repo 라 keystore 자체는 git 에 commit 하지 않는다. `.gitignore` 의 `*.keystore`, `*.jks` 패턴이 이중으로 차단.
 
 ## 누락 시 증상
 
-두 키가 비어 있으면 빌드는 통과하지만 다음이 깨진다:
-
-- `KakaoSdk.init("")` → SDK 초기화 실패 (앱 내 안내: `KAKAO_NATIVE_APP_KEY를 확인해주세요.`)
-- `AndroidManifest.xml` 의 `android:scheme="kakao${KAKAO_NATIVE_APP_KEY}"` 가 빈 scheme 으로 등록 → 카카오 로그인 콜백 intent-filter 매칭 안 됨
-- `requestGoogleIdToken(serverClientId = "")` → Credential Manager 가 invalid request 로 실패
+- `KAKAO_NATIVE_APP_KEY` 빈 값 → `KakaoSdk.init("")` 초기화 실패 + 콜백 intent-filter 매칭 불가
+- `GOOGLE_WEB_CLIENT_ID` 빈 값 → Credential Manager 가 invalid request 로 실패
+- `DEBUG_STORE_FILE` 빈 값 → Android plugin 의 default `~/.android/debug.keystore` (머신별 자동 생성) 로 fallback → 카카오·구글 콘솔에 등록된 공용 SHA-1 / 키 해시와 불일치 → 빌드는 통과하지만 로그인 시점에 실패
 
 # 📦 비개발자 APK 배포 (Firebase App Distribution)
 
