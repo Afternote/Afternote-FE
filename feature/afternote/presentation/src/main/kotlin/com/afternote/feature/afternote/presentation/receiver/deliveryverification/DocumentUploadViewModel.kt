@@ -58,7 +58,7 @@ class DocumentUploadViewModel
                     }.onFailure {
                         updateSlot(slot) { DocumentSlotState() }
                         _uiState.update {
-                            it.copy(errorMessageRes = R.string.receiver_verify_document_upload_failed)
+                            it.copy(error = ErrorPayload.Res(R.string.receiver_verify_document_upload_failed))
                         }
                     }
             }
@@ -70,12 +70,12 @@ class DocumentUploadViewModel
             val famRelUrl = state.familyRelationCertificate.fileUrl
             if (deathUrl == null || famRelUrl == null || state.isSubmitting) {
                 _uiState.update {
-                    it.copy(errorMessageRes = R.string.receiver_verify_documents_required)
+                    it.copy(error = ErrorPayload.Res(R.string.receiver_verify_documents_required))
                 }
                 return
             }
             _uiState.update {
-                it.copy(isSubmitting = true, errorMessageRes = null, errorMessage = null)
+                it.copy(isSubmitting = true, error = null)
             }
             viewModelScope.launch {
                 receiverAuthRepository
@@ -87,19 +87,20 @@ class DocumentUploadViewModel
                         // 두 갈래로 분기한다:
                         //  (1) data 레이어가 ApiException 을 ReceiverDeliverySubmitException 으로 매핑해 내려준 경우
                         //      → 백엔드가 보낸 사용자 친화 message(예: 409 "이미 대기 중인 인증 요청이 존재합니다.")
-                        //        가 serverMessage 에 담겨 있으므로 그대로 노출.
-                        //  (2) 그 외 throwable (UnknownHostException, SerializationException 등 도메인 매핑 안 된 인프라 예외)
-                        //      → 기술적 메시지라 사용자 노출 부적합. generic 한국어 문구로 fallback.
-                        //
-                        // `as?` = safe cast: 타입 일치 시 캐스팅 값, 불일치 시 null. (1)이면 값, (2)이면 null.
-                        // 이어지는 `?.serverMessage?.takeIf { ... }` 는 null-safe 체인 + 빈 문자열도 null 로 폴백.
+                        //        가 serverMessage 에 담겨 있으면 그대로 노출. **null 이면 서버가 message 미제공** —
+                        //        클라 fallback 으로 폴백 (이전엔 클라 fallback 이 ApiException.message 에 섞여
+                        //        사용자에게 "서버 메시지" 인 척 노출되던 버그를 ApiException.serverMessage 분리로 해결).
+                        //  (2) 그 외 throwable (UnknownHostException 등 도메인 매핑 안 된 인프라 예외) → 같은 fallback.
                         val serverMessage =
                             (throwable as? ReceiverDeliverySubmitException)?.serverMessage?.takeIf { it.isNotBlank() }
                         _uiState.update {
                             it.copy(
                                 isSubmitting = false,
-                                errorMessage = serverMessage,
-                                errorMessageRes = R.string.receiver_verify_submit_failed.takeIf { serverMessage == null },
+                                error = if (serverMessage != null) {
+                                    ErrorPayload.Text(serverMessage)
+                                } else {
+                                    ErrorPayload.Res(R.string.receiver_verify_submit_failed)
+                                },
                             )
                         }
                     }
@@ -107,7 +108,7 @@ class DocumentUploadViewModel
         }
 
         fun consumeError() {
-            _uiState.update { it.copy(errorMessageRes = null, errorMessage = null) }
+            _uiState.update { it.copy(error = null) }
         }
 
         private inline fun updateSlot(

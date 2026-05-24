@@ -49,8 +49,14 @@ class ReceiverAuthRepositoryImpl
                 // ApiErrorInterceptor 가 4xx/5xx 응답을 ApiException 으로 변환 (백엔드 message 포함).
                 // presentation 이 core:network 의 ApiException 을 직접 알면 layer 위반이므로
                 // 도메인 예외 ReceiverDeliverySubmitException 으로 변환해 노출한다.
+                //
+                // ApiException.serverMessage = 서버가 실제 보낸 message (null 가능),
+                // ApiException.message = 클라 fallback 섞여 있어 사용자 노출 부적합 — serverMessage 만 전달.
                 throw if (throwable is ApiException) {
-                    ReceiverDeliverySubmitException(throwable.message)
+                    ReceiverDeliverySubmitException(
+                        serverMessage = throwable.serverMessage,
+                        httpCode = throwable.code,
+                    )
                 } else {
                     throwable
                 }

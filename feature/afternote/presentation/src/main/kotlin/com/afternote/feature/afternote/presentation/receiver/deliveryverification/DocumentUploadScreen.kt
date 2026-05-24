@@ -117,7 +117,13 @@ fun DocumentUploadScreen(
         }
     }
 
-    val errorMessage = uiState.errorMessage ?: uiState.errorMessageRes?.let { stringResource(it) }
+    // sealed ErrorPayload 분기 — 타입 자체가 "Res / Text 중 하나" 강제, 우선순위 로직 불필요.
+    val errorMessage = uiState.error?.let { err ->
+        when (err) {
+            is ErrorPayload.Res -> stringResource(err.id)
+            is ErrorPayload.Text -> err.message
+        }
+    }
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
             snackbarHostState.showSnackbar(errorMessage)
