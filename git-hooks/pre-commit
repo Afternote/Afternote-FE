@@ -29,7 +29,9 @@ if [ ! -x "$KTLINT" ]; then
 fi
 
 echo "Running ktlint --format on staged files..."
-echo "$STAGED_KT" | xargs "$KTLINT" --format --relative
+# `tr '\n' '\0'` + `xargs -0` — 파일 경로에 공백이 들어있어도 안전 (default xargs 의 whitespace split
+# 회피). git checkout 경로가 `~/Documents/My Projects/...` 같은 케이스 + git 파일명 자체 공백 모두 대응.
+echo "$STAGED_KT" | tr '\n' '\0' | xargs -0 "$KTLINT" --format --relative
 
 # 자동 포맷된 staged 파일만 re-stage (다른 modified 파일은 끌어들이지 않음)
 echo "$STAGED_KT" | while IFS= read -r f; do
@@ -38,5 +40,11 @@ echo "$STAGED_KT" | while IFS= read -r f; do
     git add -- "$f"
 done
 
-echo "Running ktlint --relative on staged files..."
-echo "$STAGED_KT" | xargs "$KTLINT" --relative
+echo "Running ktlint check on staged files..."
+if ! echo "$STAGED_KT" | tr '\n' '\0' | xargs -0 "$KTLINT" --relative; then
+    echo ""
+    echo "✗ ktlint 위반이 남았습니다 (자동 fix 못한 케이스 — 예: trailing-comma, multiline-expression)."
+    echo "  → 위 출력의 파일·라인을 수동 수정 후 'git add' + 재커밋."
+    echo "  → 방금 자동 fix 로 stage 된 변경분은 working tree 에 그대로 남아있습니다."
+    exit 1
+fi
