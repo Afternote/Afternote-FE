@@ -1,6 +1,7 @@
 package com.afternote.feature.mindrecord.presentation.model
 
 import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -16,14 +17,14 @@ import com.afternote.feature.mindrecord.presentation.R
 
 sealed class MindRecordCategoryUi(
     val category: MindRecordCategory,
-    val title: String,
-    val description: String,
+    @StringRes val titleRes: Int,
+    @StringRes val descriptionRes: Int,
     @DrawableRes val imageRes: Int,
 ) {
     data object DailyQuestion : MindRecordCategoryUi(
         category = MindRecordCategory.DAILY_QUESTION,
-        title = "데일리 질문",
-        description = "매일 다른 질문을 남겨 보세요.",
+        titleRes = R.string.mindrecord_category_daily_question_title,
+        descriptionRes = R.string.mindrecord_category_daily_question_description,
         imageRes = R.drawable.mindrecord_dailyquestion,
     ) {
         @Composable
@@ -37,8 +38,8 @@ sealed class MindRecordCategoryUi(
 
     data object Diary : MindRecordCategoryUi(
         category = MindRecordCategory.DIARY,
-        title = "일기",
-        description = "나의 매일을 기록하세요",
+        titleRes = R.string.mindrecord_category_diary_title,
+        descriptionRes = R.string.mindrecord_category_diary_description,
         imageRes = R.drawable.mindrecord_diary,
     ) {
         @Composable
@@ -54,8 +55,8 @@ sealed class MindRecordCategoryUi(
 
     data object DeepThought : MindRecordCategoryUi(
         category = MindRecordCategory.DEEP_THOUGHT,
-        title = "깊은 생각",
-        description = "오늘의 생각을 남기세요",
+        titleRes = R.string.mindrecord_category_deep_thought_title,
+        descriptionRes = R.string.mindrecord_category_deep_thought_description,
         imageRes = R.drawable.mindrecord_deepthought,
     ) {
         @Composable
@@ -69,8 +70,8 @@ sealed class MindRecordCategoryUi(
 
     data object WeeklyReport : MindRecordCategoryUi(
         category = MindRecordCategory.WEEKLY_REPORT,
-        title = "주간리포트",
-        description = "",
+        titleRes = R.string.mindrecord_category_weekly_report_title,
+        descriptionRes = 0,
         imageRes = 0,
     ) {
         @Composable

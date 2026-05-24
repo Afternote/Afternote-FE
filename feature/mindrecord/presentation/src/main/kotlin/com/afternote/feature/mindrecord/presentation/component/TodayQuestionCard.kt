@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.button.AfternoteActionButton
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_daily_question_default_today
 import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_today_question_answer_cta
 import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_today_question_header
 
@@ -35,7 +36,7 @@ private val TodayQuestionCardGradientEnd = Color(0xFFB7CDC0)
 fun TodayQuestionCard(
     modifier: Modifier = Modifier,
     dateText: String = "2026.04.10",
-    questionText: String = "오늘 하루,\n무엇이 가장 고마웠나요?",
+    questionText: String = stringResource(mindrecord_daily_question_default_today),
     onAnswerClick: () -> Unit = {},
 ) {
     val gradientBrush =

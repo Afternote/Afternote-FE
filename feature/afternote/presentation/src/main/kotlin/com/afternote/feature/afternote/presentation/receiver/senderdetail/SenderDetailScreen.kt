@@ -281,13 +281,21 @@ private fun VerificationActionButton(
 ) {
     when (state) {
         SenderVerificationState.NotRequested,
-        SenderVerificationState.Pending,
         SenderVerificationState.Rejected,
         -> {
             AfternoteButton(
                 text = stringResource(R.string.receiver_sender_detail_request_verification),
                 onClick = onRequestVerification,
                 type = AfternoteButtonType.Default,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
+        SenderVerificationState.Pending -> {
+            AfternoteButton(
+                text = stringResource(R.string.receiver_sender_detail_pending_button),
+                onClick = {},
+                type = AfternoteButtonType.Un,
                 modifier = Modifier.fillMaxWidth(),
             )
         }

@@ -16,8 +16,8 @@ class AndroidLintConventionPlugin : Plugin<Project> {
                     .named("libs")
 
             extensions.configure(KtlintExtension::class.java) {
-                // ktlint-gradle 의 default 버전 대신 libs.versions.toml 의 ktlint 버전을
-                // 명시적으로 사용해 CI(ScaCap/action-ktlint) 와 룰셋을 일치시킨다.
+                // ktlint binary 버전을 CI(ScaCap/action-ktlint) 와 동일하게 핀.
+                // 추가 룰셋(compose-rules 등)은 CI 가 적재하지 않으므로 로컬도 적재하지 않는다.
                 version.set(libs.findVersion("ktlint").get().requiredVersion)
                 debug.set(false)
                 verbose.set(true)
@@ -28,11 +28,6 @@ class AndroidLintConventionPlugin : Plugin<Project> {
                     exclude { it.file.path.contains("build/") }
                 }
             }
-
-            dependencies.add(
-                "ktlintRuleset",
-                libs.findLibrary("compose-rules").get()
-            )
         }
     }
 }

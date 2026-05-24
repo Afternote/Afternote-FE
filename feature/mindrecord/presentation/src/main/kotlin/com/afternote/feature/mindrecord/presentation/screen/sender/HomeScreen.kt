@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -35,6 +36,7 @@ import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionList
 import com.afternote.feature.mindrecord.presentation.viewmodel.DeepThoughtListViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListViewModel
 import kotlinx.coroutines.flow.drop
+import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 
 @Composable
 fun HomeScreen(
@@ -75,7 +77,7 @@ fun HomeScreen(
         modifier = modifier,
         topBar = {
             TitleTopBar(
-                title = "마음의 기록",
+                title = stringResource(MindRecordR.string.mindrecord_home_title),
                 actions = {
                     ViewModeSwitcher(
                         isListView = isListView,
@@ -122,7 +124,7 @@ fun HomeScreen(
                         onClick = { selectedIndex = index },
                         text = {
                             Text(
-                                text = category.title,
+                                text = stringResource(category.titleRes),
                                 color = if (selectedIndex == index) AfternoteDesign.colors.gray9 else AfternoteDesign.colors.gray4,
                             )
                         },

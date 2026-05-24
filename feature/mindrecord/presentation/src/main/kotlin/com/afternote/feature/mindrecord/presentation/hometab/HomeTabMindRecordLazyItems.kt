@@ -53,8 +53,8 @@ fun LazyListScope.homeTabMindRecordQuestionAndCategories(
                 modifier =
                     Modifier.weight(1f),
                 iconResId = CoreUiR.drawable.core_ui_ic_diary,
-                title = MindRecordCategoryUi.Diary.title,
-                subtitle = MindRecordCategoryUi.Diary.description,
+                title = stringResource(MindRecordCategoryUi.Diary.titleRes),
+                subtitle = stringResource(MindRecordCategoryUi.Diary.descriptionRes),
                 totalCount = categoryCounts[MindRecordCategory.DIARY] ?: 0,
                 onClick = { onRecordCategoryClick(MindRecordCategory.DIARY) },
                 useDiaryIconLayout = true,
@@ -64,8 +64,8 @@ fun LazyListScope.homeTabMindRecordQuestionAndCategories(
                 modifier =
                     Modifier.weight(1f),
                 iconResId = CoreUiR.drawable.core_ui_ic_deep_thought,
-                title = MindRecordCategoryUi.DeepThought.title,
-                subtitle = MindRecordCategoryUi.DeepThought.description,
+                title = stringResource(MindRecordCategoryUi.DeepThought.titleRes),
+                subtitle = stringResource(MindRecordCategoryUi.DeepThought.descriptionRes),
                 totalCount = categoryCounts[MindRecordCategory.DEEP_THOUGHT] ?: 0,
                 onClick = { onRecordCategoryClick(MindRecordCategory.DEEP_THOUGHT) },
                 isCountLoading = isCategoryCountLoading,

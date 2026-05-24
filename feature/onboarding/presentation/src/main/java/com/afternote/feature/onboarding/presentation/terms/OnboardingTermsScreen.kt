@@ -30,10 +30,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.AfternoteCircularCheckbox
 import com.afternote.core.ui.button.CheckboxState
+import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
-import com.afternote.feature.onboarding.presentation.signup.scaffold.ProgressBarScaffold
+import com.afternote.feature.onboarding.presentation.signup.SIGN_UP_TOTAL_STEPS
+import com.afternote.feature.onboarding.presentation.signup.SignUpStep
 import com.afternote.core.common.R as CommonR
 
 enum class TermsType {
@@ -65,12 +67,16 @@ fun OnboardingTermsScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    ProgressBarScaffold(
-        currentStep = 4,
+    FlowStepScaffold(
+        topBarTitle = stringResource(R.string.signup_title),
+        actionButtonText = stringResource(R.string.signup_next),
         onBackClick = onBackClick,
-        onNextClick = onNextClick,
+        onActionClick = onNextClick,
         modifier = modifier,
-        isNextEnabled = isNextEnabled,
+        isActionEnabled = isNextEnabled,
+        currentStep = SignUpStep.TERMS,
+        totalSteps = SIGN_UP_TOTAL_STEPS,
+        progressContentDescription = stringResource(R.string.onboarding_step_description, SignUpStep.TERMS),
         snackbarHostState = snackbarHostState,
         content = {
             Spacer(modifier = Modifier.height(32.dp))

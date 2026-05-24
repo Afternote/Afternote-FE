@@ -1,5 +1,6 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
+import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.presentation.model.DailyDiary
 
 sealed interface DiaryListUiState {
@@ -10,6 +11,6 @@ sealed interface DiaryListUiState {
     ) : DiaryListUiState
 
     data class Error(
-        val message: String,
+        val message: UiText,
     ) : DiaryListUiState
 }

@@ -12,17 +12,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.common.R
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 
 @Composable
 fun MindRecordEmptyState(
     modifier: Modifier = Modifier,
-    title: String = "아직 등록된 답변이 없어요.",
-    description: String = "답변을 등록해 자신을 알아 보아요.",
+    title: String = stringResource(MindRecordR.string.mindrecord_empty_state_title),
+    description: String = stringResource(MindRecordR.string.mindrecord_empty_state_description),
 ) {
     Column(
         modifier =

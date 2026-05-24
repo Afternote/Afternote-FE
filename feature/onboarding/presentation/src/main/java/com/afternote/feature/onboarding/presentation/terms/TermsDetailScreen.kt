@@ -13,10 +13,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
-import com.afternote.feature.onboarding.presentation.signup.scaffold.OnboardingScaffold
 
 @Composable
 fun TermsDetailScreen(
@@ -25,10 +25,11 @@ fun TermsDetailScreen(
     onNextClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    OnboardingScaffold(
-        buttonText = stringResource(id = R.string.terms_next),
+    FlowStepScaffold(
+        topBarTitle = stringResource(R.string.signup_title),
+        actionButtonText = stringResource(id = R.string.terms_next),
         onBackClick = onBackClick,
-        onActionButtonClick = onNextClick,
+        onActionClick = onNextClick,
         modifier = modifier,
         content = {
             val scrollState = rememberScrollState()

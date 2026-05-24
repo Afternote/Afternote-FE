@@ -1,10 +1,10 @@
 package com.afternote.feature.mindrecord.domain.repository
 
-import com.afternote.feature.mindrecord.domain.model.DeepThought
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtCategory
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtCategoryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtCategoryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtCreatePayload
+import com.afternote.feature.mindrecord.domain.model.DeepThoughtList
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.RandomDeepThought
 
@@ -13,7 +13,7 @@ interface DeepThoughtRepository {
         date: String? = null,
         tag: String? = null,
         category: String? = null,
-    ): Result<List<DeepThought>>
+    ): Result<DeepThoughtList>
 
     suspend fun getRandom(): Result<RandomDeepThought>
 

@@ -22,6 +22,7 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -69,7 +70,7 @@ fun DailyDeepThoughtCard(modifier: Modifier = Modifier) {
 
             Spacer(modifier = Modifier.height(18.dp))
             Text(
-                text = "생각은 깊이를 더할수록 진실에 가까워진다.",
+                text = stringResource(R.string.mindrecord_daily_deepthought_default_text),
                 style = AfternoteDesign.typography.bodyLargeB,
                 color = AfternoteDesign.colors.gray8,
             )

@@ -2,9 +2,11 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
+import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.mapper.toUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -51,7 +53,10 @@ class DailyQuestionListViewModel
 
                 if (today == null && listResult.isFailure) {
                     val message =
-                        listResult.exceptionOrNull()?.message ?: "데일리 질문을 불러오지 못했습니다."
+                        UiText.DynamicOrResource(
+                            value = listResult.exceptionOrNull()?.message,
+                            fallbackResId = R.string.mindrecord_error_daily_question_list_failed,
+                        )
                     internalState.update { it.copy(loadPhase = LoadPhase.Failed(message)) }
                 } else {
                     internalState.update { it.copy(loadPhase = LoadPhase.Loaded(today, list)) }
@@ -72,7 +77,7 @@ class DailyQuestionListViewModel
             ) : LoadPhase
 
             data class Failed(
-                val message: String,
+                val message: UiText,
             ) : LoadPhase
         }
 

@@ -1,12 +1,14 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
+import com.afternote.core.ui.UiText
+
 data class DailyQuestionWriteUiState(
     val questionId: Long? = null,
     val questionContent: String = "",
     val answer: String = "",
     val imageUrl: String? = null,
     val isQuestionLoading: Boolean = true,
-    val questionLoadError: String? = null,
+    val questionLoadError: UiText? = null,
     val submitState: SubmitState = SubmitState.Idle,
 ) {
     val canSubmit: Boolean
@@ -21,6 +23,6 @@ sealed interface SubmitState {
     data object Succeeded : SubmitState
 
     data class Failed(
-        val message: String,
+        val message: UiText,
     ) : SubmitState
 }

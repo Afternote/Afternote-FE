@@ -28,10 +28,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
+import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
-import com.afternote.feature.onboarding.presentation.signup.scaffold.ProgressBarScaffold
 
 @Composable
 fun SignUpPasswordScreen(
@@ -57,12 +57,16 @@ fun SignUpPasswordScreen(
         snapshotFlow { passwordConfirmState.text.toString() }.collect(onPasswordConfirmChange)
     }
 
-    ProgressBarScaffold(
-        currentStep = 3,
+    FlowStepScaffold(
+        topBarTitle = stringResource(R.string.signup_title),
+        actionButtonText = stringResource(R.string.signup_next),
         onBackClick = onBackClick,
-        onNextClick = onNextClick,
+        onActionClick = onNextClick,
         modifier = modifier,
-        isNextEnabled = isNextEnabled,
+        isActionEnabled = isNextEnabled,
+        currentStep = SignUpStep.PASSWORD,
+        totalSteps = SIGN_UP_TOTAL_STEPS,
+        progressContentDescription = stringResource(R.string.onboarding_step_description, SignUpStep.PASSWORD),
         snackbarHostState = snackbarHostState,
         content = {
             Column(
