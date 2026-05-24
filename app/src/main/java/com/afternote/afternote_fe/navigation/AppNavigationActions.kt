@@ -526,15 +526,15 @@ fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions {
  * 수신자 홈에서 발생하는 다른 top-level Route(설정/마음의 기록/타임레터)와
  * 수신자 그래프 내부(애프터노트 목록) 이동을 묶은 [ReceiverHomeActions].
  *
- * MindRecord/TimeLetter 화면은 현재 작성자용으로만 구현돼 있어 수신자 진입 시
- * 동일 화면이 노출된다. 수신자 전용 표시는 후속 PR에서 각 피처가 분기한다.
+ * 마음의 기록은 발신자/수신자 화면이 분리돼 수신자 진입은 [Route.ReceiverMindRecord] 로 라우팅한다.
+ * TimeLetter 는 현재 작성자용 화면만 있어 수신자 진입 시 동일 화면이 노출된다 — 분기 후속 작업.
  */
 @Composable
 fun rememberReceiverHomeActions(appState: AppState): ReceiverHomeActions =
     remember(appState) {
         ReceiverHomeActions(
             onSettingClick = { appState.navController.navigate(Route.Setting) },
-            onNavigateToMindRecord = { appState.navController.navigate(Route.MindRecord) },
+            onNavigateToMindRecord = { appState.navController.navigate(Route.ReceiverMindRecord) },
             onNavigateToTimeLetter = { appState.navController.navigate(Route.TimeLetter) },
             onNavigateToAfternote = {
                 appState.navController.navigate(ReceiverRoute.AfternoteListRoute)

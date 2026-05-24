@@ -17,6 +17,16 @@ sealed interface Route {
     @Serializable
     data object MindRecord : Route
 
+    /**
+     * 수신자(추모자)가 발신자에게서 전달받은 마음의 기록을 보는 진입점.
+     *
+     * 발신자 측 [MindRecord] 와 별개의 top-level 라우트. 동일한 `feature/mindrecord` 모듈 안에
+     * 발신자/수신자 화면을 모두 두되, 진입점만 분리해 IA·권한·API(`receiver-auth` prefix)를
+     * 명확히 구분한다.
+     */
+    @Serializable
+    data object ReceiverMindRecord : Route
+
     @Serializable
     data object TimeLetter : Route
 

@@ -34,7 +34,8 @@ class DeepThoughtCategoryViewModel
             name: String,
             deepThoughtId: Long? = null,
         ) {
-            DeepThoughtCategoryName.from(name)
+            DeepThoughtCategoryName
+                .from(name)
                 .onSuccess { categoryName ->
                     viewModelScope.launch {
                         _uiState.update { it.copy(isMutating = true, errorMessage = null) }
@@ -60,7 +61,8 @@ class DeepThoughtCategoryViewModel
             categoryId: Long,
             newName: String,
         ) {
-            DeepThoughtCategoryName.from(newName)
+            DeepThoughtCategoryName
+                .from(newName)
                 .onSuccess { categoryName ->
                     viewModelScope.launch {
                         _uiState.update { it.copy(isMutating = true, errorMessage = null) }
