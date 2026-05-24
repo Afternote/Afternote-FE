@@ -3,13 +3,12 @@ package com.afternote.feature.timeletter.data.repositoryImpl
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
 import com.afternote.feature.timeletter.data.api.TimeLetterApiService
-import com.afternote.feature.timeletter.data.dto.TimeLetterBlockRequest
-import com.afternote.feature.timeletter.data.dto.TimeLetterBlockTypeDto
 import com.afternote.feature.timeletter.data.dto.TimeLetterCreateRequest
 import com.afternote.feature.timeletter.data.dto.TimeLetterDeleteRequest
 import com.afternote.feature.timeletter.data.dto.TimeLetterUpdateRequest
 import com.afternote.feature.timeletter.data.mapper.toDomain
 import com.afternote.feature.timeletter.data.mapper.toDto
+import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterList
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
@@ -41,7 +40,7 @@ class TimeLetterRepositoryImpl
 
         override suspend fun createTimeLetter(
             title: String?,
-            content: String?,
+            blocks: List<NewTimeLetterBlock>,
             sendAt: String?,
             status: TimeLetterStatus,
             receiverIds: List<Long>?,
@@ -52,7 +51,7 @@ class TimeLetterRepositoryImpl
                         title = title,
                         sendAt = sendAt,
                         status = status.toDto(),
-                        blocks = buildBlocks(content),
+                        blocks = blocks.map { it.toDto() },
                         receiverIds = receiverIds ?: emptyList(),
                     ),
                 ).requireData()
@@ -61,7 +60,7 @@ class TimeLetterRepositoryImpl
         override suspend fun updateTimeLetter(
             timeLetterId: Long,
             title: String?,
-            content: String?,
+            blocks: List<NewTimeLetterBlock>,
             sendAt: String?,
             status: TimeLetterStatus?,
         ): TimeLetter =
@@ -73,7 +72,7 @@ class TimeLetterRepositoryImpl
                             title = title,
                             sendAt = sendAt,
                             status = status?.toDto(),
-                            blocks = buildBlocks(content),
+                            blocks = blocks.map { it.toDto() },
                         ),
                 ).requireData()
                 .toDomain()
@@ -89,15 +88,4 @@ class TimeLetterRepositoryImpl
                 .deleteAllTemporary()
                 .requireStatus()
         }
-
-        private fun buildBlocks(content: String?): List<TimeLetterBlockRequest> =
-            listOfNotNull(
-                content?.takeIf { it.isNotBlank() }?.let {
-                    TimeLetterBlockRequest(
-                        blockType = TimeLetterBlockTypeDto.TEXT,
-                        blockOrder = 1,
-                        textContent = it,
-                    )
-                },
-            )
     }

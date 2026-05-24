@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 
@@ -21,6 +22,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 fun TimeLetterBodyTextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
+    textAlign: TextAlign = TextAlign.Start,
 ) {
     val charCount = state.text.length
 
@@ -42,6 +44,7 @@ fun TimeLetterBodyTextField(
             textStyle =
                 AfternoteDesign.typography.bodySmallR.copy(
                     color = AfternoteDesign.colors.gray9,
+                    textAlign = textAlign,
                 ),
             cursorBrush = SolidColor(AfternoteDesign.colors.black),
             decorator = { innerTextField ->

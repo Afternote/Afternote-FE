@@ -14,7 +14,6 @@ import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavActions
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
-import com.afternote.feature.afternote.presentation.receiver.navigation.ReceiverFlowEntryPoint
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceiverNavActions
 import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceiverRoute
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
@@ -162,6 +161,22 @@ fun rememberTimeLetterNavActions(navController: NavController): TimeLetterNavAct
             }
 
             override fun onRecipientBack() {
+                navController.popBackStack()
+            }
+
+            override fun onNavigateToDetail(timeLetterId: Long) {
+                navController.navigate(TimeLetterRoute.TimeLetterDetailRoute(timeLetterId))
+            }
+
+            override fun onDetailBack() {
+                navController.popBackStack()
+            }
+
+            override fun onNavigateToRecipientFilter() {
+                navController.navigate(TimeLetterRoute.TimeLetterRecipientFilterRoute)
+            }
+
+            override fun onRecipientFilterBack() {
                 navController.popBackStack()
             }
         }
