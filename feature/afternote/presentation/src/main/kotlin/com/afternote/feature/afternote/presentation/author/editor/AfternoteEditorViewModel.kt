@@ -441,8 +441,9 @@ class AfternoteEditorViewModel
                         val prefill = AfternoteEditorFormMapper.buildEditorFormPrefill(detail)
                         savedStateHandle[EDITOR_ORIGINAL_CATEGORY_FOR_API_KEY] = prefill.category.name
                         // UI 레이어 파사드가 TextFieldState·SnapshotStateList 등 UI 상태를 갱신하도록 위임.
-                        // skeleton 종료는 UI 가 prefill 적용을 마친 뒤 [markPrefillApplied] 로 통보한다
-                        // (uiState 갱신과 이벤트 처리가 별 스트림이라 여기서 끄면 skeleton 사라짐 → 빈 폼 → prefill 깜빡임 발생).
+                        // skeleton 종료는 UI 가 prefill 적용을 마친 뒤 [onPrefillApplied] 로 통보한다
+                        // (uiState 갱신 시점에 prefill 도착했어도 UI 가 form·TextFieldState 에 반영하기 전이라
+                        //  여기서 끄면 skeleton 사라짐 → 빈 폼 → prefill 깜빡임 발생).
                         internalState.update { it.copy(pendingPrefill = prefill) }
                     }.onFailure { e ->
                         Log.e(TAG, "loadExistingAfternoteForEdit: id=$afternoteId failed", e)
@@ -452,9 +453,12 @@ class AfternoteEditorViewModel
             }
         }
 
-        /** UI 가 prefill 을 폼·텍스트 상태에 모두 반영한 직후 호출 → skeleton 종료. */
-        fun markPrefillApplied() {
-            internalState.update { it.copy(isPrefillLoading = false) }
+        /**
+         * UI 가 [AfternoteEditorUiState.pendingPrefill] 신호를 받아 폼·TextFieldState 에 모두 반영한 직후 호출.
+         * skeleton 종료([AfternoteEditorUiState.isPrefillLoading] = false) + 신호 reset (pendingPrefill = null) 동시 처리.
+         */
+        fun onPrefillApplied() {
+            internalState.update { it.copy(isPrefillLoading = false, pendingPrefill = null) }
         }
 
         private fun handleSaveFailure(
@@ -545,10 +549,6 @@ class AfternoteEditorViewModel
 
         fun onThumbnailUploadedConsumed() {
             internalState.update { it.copy(pendingThumbnailUrl = null) }
-        }
-
-        fun onPrefillConsumed() {
-            internalState.update { it.copy(pendingPrefill = null) }
         }
 
         // endregion

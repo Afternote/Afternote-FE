@@ -207,8 +207,7 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
         if (pendingPrefill != null) {
             params.onReplaceSongs(pendingPrefill.memorialPlaylistSongs)
             state.applyFormPrefill(pendingPrefill)
-            editViewModel.markPrefillApplied()
-            editViewModel.onPrefillConsumed()
+            editViewModel.onPrefillApplied()
         }
     }
 

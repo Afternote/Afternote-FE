@@ -68,6 +68,6 @@ data class AfternoteEditorUiState(
     val pendingSaveSuccessId: Long? = null,
     /** 추모 영상 썸네일 업로드 완료 신호 — UI 파사드가 form 에 url 적용 후 `onThumbnailUploadedConsumed` 로 reset. */
     val pendingThumbnailUrl: String? = null,
-    /** 수정 모드 prefill 데이터 — UI 파사드가 form 에 적용 후 `onPrefillConsumed` 로 reset. */
+    /** 수정 모드 prefill 데이터 — UI 파사드가 form 에 적용 후 `onPrefillApplied` 로 reset (skeleton 종료 동시). */
     val pendingPrefill: EditorFormPrefill? = null,
 )
