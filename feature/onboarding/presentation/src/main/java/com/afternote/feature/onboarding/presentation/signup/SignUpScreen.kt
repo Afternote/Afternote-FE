@@ -26,6 +26,8 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
 
+private const val SECONDS_PER_MINUTE = 60
+
 @Composable
 fun SignUpScreen(
     initialEmail: String,
@@ -34,6 +36,7 @@ fun SignUpScreen(
     isSendingCode: Boolean,
     isEmailFormatValid: Boolean,
     resendCooldownSeconds: Int,
+    verificationRemainingSeconds: Int,
     isNextEnabled: Boolean,
     snackbarHostState: SnackbarHostState,
     onEmailChange: (String) -> Unit,
@@ -119,10 +122,21 @@ fun SignUpScreen(
                     },
                 )
 
-                // 인증번호 전송 안내 메시지
+                // 인증번호 전송 안내 — 발송 직후 남은 시간 카운트다운, 만료 시 다시 받기 안내.
                 if (isVerificationSent) {
+                    val isExpired = verificationRemainingSeconds == 0
+                    val message =
+                        if (isExpired) {
+                            stringResource(R.string.signup_verification_expired)
+                        } else {
+                            stringResource(
+                                R.string.signup_verification_sent_with_timer,
+                                verificationRemainingSeconds / SECONDS_PER_MINUTE,
+                                verificationRemainingSeconds % SECONDS_PER_MINUTE,
+                            )
+                        }
                     Text(
-                        text = stringResource(R.string.signup_verification_sent),
+                        text = message,
                         style = AfternoteDesign.typography.captionLargeB,
                         color = AfternoteDesign.colors.b1,
                     )
@@ -143,6 +157,30 @@ private fun SignUpScreenPreview() {
             isSendingCode = false,
             isEmailFormatValid = false,
             resendCooldownSeconds = 0,
+            verificationRemainingSeconds = 172,
+            isNextEnabled = false,
+            snackbarHostState = remember { SnackbarHostState() },
+            onEmailChange = {},
+            onVerificationCodeChange = {},
+            onRequestVerification = {},
+            onNextClick = {},
+            onBackClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "인증번호 만료")
+@Composable
+private fun SignUpScreenExpiredPreview() {
+    AfternoteTheme {
+        SignUpScreen(
+            initialEmail = "user@example.com",
+            initialVerificationCode = "",
+            isVerificationSent = true,
+            isSendingCode = false,
+            isEmailFormatValid = true,
+            resendCooldownSeconds = 0,
+            verificationRemainingSeconds = 0,
             isNextEnabled = false,
             snackbarHostState = remember { SnackbarHostState() },
             onEmailChange = {},

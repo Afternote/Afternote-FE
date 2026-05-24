@@ -13,6 +13,7 @@ import com.afternote.core.domain.repository.account.AccountRepository
 import com.afternote.core.domain.usecase.auth.LoginType
 import com.afternote.core.domain.usecase.auth.LoginUseCase
 import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel.Companion.RESEND_COOLDOWN_SECONDS
+import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel.Companion.VERIFICATION_CODE_TTL_SECONDS
 import com.afternote.feature.onboarding.presentation.terms.TermsState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -54,6 +55,12 @@ class SignUpViewModel
 
             /** "재전송" 클릭 후 다음 요청까지 강제 대기 초. 서버 비용·SMS 발송량 보호. */
             private const val RESEND_COOLDOWN_SECONDS = 30
+
+            /**
+             * 인증번호 만료까지 남은 초. 백엔드 [EmailService.java](https://github.com/Afternote/Afternote-BE/blob/main/src/main/java/com/afternote/domain/auth/service/EmailService.java)
+             * 의 Redis TTL 과 일치 (`set(..., 3, TimeUnit.MINUTES)`). 메일 본문도 "3분 안에 입력해주세요" 안내.
+             */
+            private const val VERIFICATION_CODE_TTL_SECONDS = 180
 
             /** 8~16자, 영문 대소문자 + 숫자 + 특수문자 각 1개 이상. */
             private val PASSWORD_REGEX =
@@ -132,6 +139,15 @@ class SignUpViewModel
 
         private var cooldownJob: Job? = null
 
+        /**
+         * 발송된 인증번호의 만료까지 남은 초. 발송 직후 [VERIFICATION_CODE_TTL_SECONDS] 부터 1초 틱으로
+         * 감소. 0 이면 만료 — 백엔드 Redis TTL 만료로 verify 호출도 거절된다.
+         */
+        var verificationRemainingSeconds by mutableIntStateOf(0)
+            private set
+
+        private var expiryJob: Job? = null
+
         // Step 4: 약관 동의
         var termsState by mutableStateOf(TermsState())
             private set
@@ -192,6 +208,7 @@ class SignUpViewModel
                     .onSuccess {
                         isVerificationSent = true
                         startResendCooldown()
+                        startExpiryCountdown()
                     }.onFailure { error ->
                         eventChannel.send(
                             SignUpEvent.ShowError(error.message),
@@ -210,6 +227,22 @@ class SignUpViewModel
                     while (resendCooldownSeconds > 0) {
                         delay(1000)
                         resendCooldownSeconds -= 1
+                    }
+                }
+        }
+
+        /**
+         * 인증번호 발송 성공 직후 호출. [VERIFICATION_CODE_TTL_SECONDS] 부터 1초 틱으로 감소.
+         * 재전송 시 이전 카운트다운은 취소되고 새로 시작 — 마지막 발송 시점 기준 TTL.
+         */
+        private fun startExpiryCountdown() {
+            expiryJob?.cancel()
+            expiryJob =
+                viewModelScope.launch {
+                    verificationRemainingSeconds = VERIFICATION_CODE_TTL_SECONDS
+                    while (verificationRemainingSeconds > 0) {
+                        delay(1000)
+                        verificationRemainingSeconds -= 1
                     }
                 }
         }
