@@ -3,21 +3,20 @@ package com.afternote.feature.onboarding.presentation
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.afternote.core.ui.ObserveAsEvents
-import com.afternote.feature.onboarding.presentation.signup.SignUpEvent
 import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel
-import kotlinx.coroutines.launch
 
 /**
  * 프로필 설정 Entry.
  *
- * Graph-scoped [SignUpViewModel]을 받아 이벤트 수집과 상태 전달을 전담합니다.
+ * Graph-scoped [SignUpViewModel] 의 [SignUpUiState] 단발성 신호 (signUpSucceeded ·
+ * errorMessage · nameRequired) 를 LaunchedEffect 로 소비. 소비 후 VM 의 `onXxxConsumed()`
+ * 호출로 reset.
  */
 @Composable
 fun OnboardingProfileEntry(
@@ -26,37 +25,42 @@ fun OnboardingProfileEntry(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val profileImageUri by viewModel.profileImageUri.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
 
     val signupFailedMessage = stringResource(R.string.signup_failed)
     val nameRequiredMessage = stringResource(R.string.signup_name_required)
 
-    val showSnackbar: (String) -> Unit = { message ->
-        coroutineScope.launch {
-            snackbarHostState.showSnackbar(
-                message = message,
-                duration = SnackbarDuration.Short,
-            )
+    LaunchedEffect(uiState.signUpSucceeded) {
+        if (uiState.signUpSucceeded) {
+            onOnboardingComplete()
+            viewModel.onSignUpSucceededConsumed()
         }
     }
 
-    ObserveAsEvents(viewModel.eventFlow) { event ->
-        when (event) {
-            is SignUpEvent.SignUpSuccess -> onOnboardingComplete()
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let { message ->
+            snackbarHostState.showSnackbar(
+                message = message.ifBlank { signupFailedMessage },
+                duration = SnackbarDuration.Short,
+            )
+            viewModel.onErrorMessageConsumed()
+        }
+    }
 
-            is SignUpEvent.NavigateToResidentNumber -> Unit
-
-            // SignUp Step 1 화면에서 처리
-            is SignUpEvent.NameRequired -> showSnackbar(nameRequiredMessage)
-
-            is SignUpEvent.ShowError -> showSnackbar(event.message ?: signupFailedMessage)
+    LaunchedEffect(uiState.nameRequired) {
+        if (uiState.nameRequired) {
+            snackbarHostState.showSnackbar(
+                message = nameRequiredMessage,
+                duration = SnackbarDuration.Short,
+            )
+            viewModel.onNameRequiredConsumed()
         }
     }
 
     OnboardingProfileScreen(
-        initialName = viewModel.name,
+        initialName = uiState.name,
         displayImageUri = profileImageUri,
         snackbarHostState = snackbarHostState,
         onNameChange = viewModel::updateName,
