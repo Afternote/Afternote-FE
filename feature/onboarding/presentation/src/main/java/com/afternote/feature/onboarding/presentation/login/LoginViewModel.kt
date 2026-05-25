@@ -8,11 +8,8 @@ import androidx.lifecycle.viewModelScope
 import com.afternote.core.domain.usecase.auth.LoginType
 import com.afternote.core.domain.usecase.auth.LoginUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -25,9 +22,6 @@ class LoginViewModel
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(LoginUiState())
         val uiState = _uiState.asStateFlow()
-
-        private val eventChannel = Channel<LoginEvent>(Channel.BUFFERED)
-        val eventFlow: Flow<LoginEvent> = eventChannel.receiveAsFlow()
 
         var email: String by mutableStateOf("")
             private set
@@ -59,20 +53,27 @@ class LoginViewModel
             login(LoginType.Google(idToken))
         }
 
+        fun onLoggedInConsumed() {
+            _uiState.update { it.copy(isLoggedIn = false) }
+        }
+
+        fun onErrorConsumed() {
+            _uiState.update { it.copy(errorMessage = null) }
+        }
+
         private fun login(loginType: LoginType) {
             if (_uiState.value.isLoading) return
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoading = true) }
                 val result = loginUseCase(loginType = loginType)
-                _uiState.update { it.copy(isLoading = false) }
 
                 result
                     .onSuccess {
-                        eventChannel.send(LoginEvent.LoginSuccess)
+                        _uiState.update { it.copy(isLoading = false, isLoggedIn = true) }
                     }.onFailure { exception ->
-                        eventChannel.send(
-                            LoginEvent.ShowError(exception.message),
-                        )
+                        _uiState.update {
+                            it.copy(isLoading = false, errorMessage = exception.message)
+                        }
                     }
             }
         }

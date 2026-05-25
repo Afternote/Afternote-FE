@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,7 +31,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.afternote.core.ui.ObserveAsEvents
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -59,10 +59,12 @@ fun SenderDetailScreen(
     viewModel: SenderDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val shouldOpenReceiverHome = (uiState as? SenderDetailUiState.Success)?.shouldOpenReceiverHome == true
 
-    ObserveAsEvents(viewModel.events) { event ->
-        when (event) {
-            SenderDetailEvent.OpenReceiverHome -> onOpenReceiverHome()
+    LaunchedEffect(shouldOpenReceiverHome) {
+        if (shouldOpenReceiverHome) {
+            onOpenReceiverHome()
+            viewModel.onOpenReceiverHomeConsumed()
         }
     }
 

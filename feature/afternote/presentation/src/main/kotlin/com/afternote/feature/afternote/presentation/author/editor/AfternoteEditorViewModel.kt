@@ -19,6 +19,7 @@ import com.afternote.feature.afternote.presentation.author.editor.mapper.toAfter
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
@@ -29,13 +30,10 @@ import com.afternote.feature.afternote.presentation.author.editor.state.DEFAULT_
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -225,9 +223,6 @@ class AfternoteEditorViewModel
                     initialValue = AfternoteEditorUiState(form = internalState.value.form),
                 )
 
-        private val _events = Channel<AfternoteEditorEvent>(Channel.BUFFERED)
-        val events: Flow<AfternoteEditorEvent> = _events.receiveAsFlow()
-
         /** 파사드/페이로드 빌더 등이 콜백 시점에 최신 폼 스냅샷을 읽기 위한 접근자. */
         fun currentForm(): EditorFormState = internalState.value.form
 
@@ -293,7 +288,7 @@ class AfternoteEditorViewModel
                     .uploadThumbnail(jpegBytes)
                     .onSuccess { url ->
                         Log.d(TAG, "uploadMemorialThumbnail: success, url=$url")
-                        _events.send(AfternoteEditorEvent.ThumbnailUploaded(url))
+                        internalState.update { it.copy(pendingThumbnailUrl = url) }
                     }.onFailure { e ->
                         Log.e(TAG, "uploadMemorialThumbnail: failed", e)
                     }
@@ -353,9 +348,12 @@ class AfternoteEditorViewModel
                             onSuccess = { id ->
                                 Log.d(TAG, "saveAfternote: SUCCESS, savedId=$id")
                                 internalState.update {
-                                    it.copy(isSaving = false, savedId = id)
+                                    it.copy(
+                                        isSaving = false,
+                                        savedId = id,
+                                        pendingSaveSuccessId = id,
+                                    )
                                 }
-                                _events.send(AfternoteEditorEvent.SaveSuccess(id))
                             },
                             onFailure = { e -> handleSaveFailure(e, categoryForApi) },
                         )
@@ -443,9 +441,10 @@ class AfternoteEditorViewModel
                         val prefill = AfternoteEditorFormMapper.buildEditorFormPrefill(detail)
                         savedStateHandle[EDITOR_ORIGINAL_CATEGORY_FOR_API_KEY] = prefill.category.name
                         // UI 레이어 파사드가 TextFieldState·SnapshotStateList 등 UI 상태를 갱신하도록 위임.
-                        // skeleton 종료는 UI 가 prefill 적용을 마친 뒤 [markPrefillApplied] 로 통보한다
-                        // (uiState 갱신과 이벤트 처리가 별 스트림이라 여기서 끄면 skeleton 사라짐 → 빈 폼 → prefill 깜빡임 발생).
-                        _events.send(AfternoteEditorEvent.PrefillLoaded(prefill))
+                        // skeleton 종료는 UI 가 prefill 적용을 마친 뒤 [onPrefillApplied] 로 통보한다
+                        // (uiState 갱신 시점에 prefill 도착했어도 UI 가 form·TextFieldState 에 반영하기 전이라
+                        //  여기서 끄면 skeleton 사라짐 → 빈 폼 → prefill 깜빡임 발생).
+                        internalState.update { it.copy(pendingPrefill = prefill) }
                     }.onFailure { e ->
                         Log.e(TAG, "loadExistingAfternoteForEdit: id=$afternoteId failed", e)
                         // 실패 시 skeleton 에 갇히지 않도록 즉시 종료.
@@ -454,9 +453,12 @@ class AfternoteEditorViewModel
             }
         }
 
-        /** UI 가 prefill 을 폼·텍스트 상태에 모두 반영한 직후 호출 → skeleton 종료. */
-        fun markPrefillApplied() {
-            internalState.update { it.copy(isPrefillLoading = false) }
+        /**
+         * UI 가 [AfternoteEditorUiState.pendingPrefill] 신호를 받아 폼·TextFieldState 에 모두 반영한 직후 호출.
+         * skeleton 종료([AfternoteEditorUiState.isPrefillLoading] = false) + 신호 reset (pendingPrefill = null) 동시 처리.
+         */
+        fun onPrefillApplied() {
+            internalState.update { it.copy(isPrefillLoading = false, pendingPrefill = null) }
         }
 
         private fun handleSaveFailure(
@@ -521,6 +523,9 @@ class AfternoteEditorViewModel
             val validationError: AfternoteValidationError? = null,
             val error: String? = null,
             val errorRes: Int? = null,
+            val pendingSaveSuccessId: Long? = null,
+            val pendingThumbnailUrl: String? = null,
+            val pendingPrefill: EditorFormPrefill? = null,
         )
 
         private fun InternalState.toUiState(): AfternoteEditorUiState =
@@ -533,7 +538,18 @@ class AfternoteEditorViewModel
                 validationError = validationError,
                 error = error,
                 errorRes = errorRes,
+                pendingSaveSuccessId = pendingSaveSuccessId,
+                pendingThumbnailUrl = pendingThumbnailUrl,
+                pendingPrefill = pendingPrefill,
             )
+
+        fun onSaveSuccessConsumed() {
+            internalState.update { it.copy(pendingSaveSuccessId = null) }
+        }
+
+        fun onThumbnailUploadedConsumed() {
+            internalState.update { it.copy(pendingThumbnailUrl = null) }
+        }
 
         // endregion
     }

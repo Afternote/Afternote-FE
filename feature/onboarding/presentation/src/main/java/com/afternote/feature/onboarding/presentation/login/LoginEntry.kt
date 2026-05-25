@@ -4,6 +4,7 @@ import android.app.Activity
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -15,7 +16,6 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.exceptions.NoCredentialException
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.afternote.core.ui.ObserveAsEvents
 import com.afternote.core.ui.findActivity
 import com.afternote.feature.onboarding.presentation.BuildConfig
 import com.afternote.feature.onboarding.presentation.R
@@ -67,10 +67,17 @@ fun LoginEntry(
         action()
     }
 
-    ObserveAsEvents(viewModel.eventFlow) { event ->
-        when (event) {
-            is LoginEvent.LoginSuccess -> onLoginSuccess()
-            is LoginEvent.ShowError -> showErrorSnackbar(event.message ?: loginFailedMessage)
+    LaunchedEffect(uiState.isLoggedIn) {
+        if (uiState.isLoggedIn) {
+            onLoginSuccess()
+            viewModel.onLoggedInConsumed()
+        }
+    }
+    val pendingErrorMessage = uiState.errorMessage
+    LaunchedEffect(pendingErrorMessage) {
+        if (pendingErrorMessage != null) {
+            showErrorSnackbar(pendingErrorMessage.ifBlank { loginFailedMessage })
+            viewModel.onErrorConsumed()
         }
     }
 

@@ -17,13 +17,10 @@ import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel.Comp
 import com.afternote.feature.onboarding.presentation.terms.TermsState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -67,8 +64,39 @@ class SignUpViewModel
                 Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,16}$")
         }
 
-        private val eventChannel = Channel<SignUpEvent>(Channel.BUFFERED)
-        val eventFlow: Flow<SignUpEvent> = eventChannel.receiveAsFlow()
+        // ─── 일회성 신호 — UI 가 LaunchedEffect 로 소비 후 on*Consumed 로 reset (Google 공식 가이드: ViewModel events → UI state update) ───
+
+        /** 회원가입 + 자동 로그인 성공 → Home 진입 신호. */
+        var isSignedUp: Boolean by mutableStateOf(false)
+            private set
+
+        /** Step 1 (이메일/인증번호) 검증 성공 → Step 2 (주민등록번호) 진입 신호. */
+        var shouldNavigateToResidentNumber: Boolean by mutableStateOf(false)
+            private set
+
+        /** Profile 단계 — 이름 미입력 시 사용자에 안내해야 하는 신호. UI 가 i18n string resource 로 매핑. */
+        var isNameRequired: Boolean by mutableStateOf(false)
+            private set
+
+        /** 백엔드/UseCase 가 내려준 사용자 친화 message. UI 가 snackbar 표시 후 [onErrorConsumed] 로 reset. null 이면 UI fallback. */
+        var errorMessage: String? by mutableStateOf(null)
+            private set
+
+        fun onSignedUpConsumed() {
+            isSignedUp = false
+        }
+
+        fun onResidentNumberNavigatedConsumed() {
+            shouldNavigateToResidentNumber = false
+        }
+
+        fun onNameRequiredConsumed() {
+            isNameRequired = false
+        }
+
+        fun onErrorConsumed() {
+            errorMessage = null
+        }
 
         // ─── 입력 값 (각 Screen 의 rememberTextFieldState 로부터 push) ───
         // Step 1
@@ -210,9 +238,7 @@ class SignUpViewModel
                         startResendCooldown()
                         startExpiryCountdown()
                     }.onFailure { error ->
-                        eventChannel.send(
-                            SignUpEvent.ShowError(error.message),
-                        )
+                        errorMessage = error.message
                     }
                 isSendingCode = false
             }
@@ -262,14 +288,12 @@ class SignUpViewModel
                         certificateCode = verificationCode,
                     ).onSuccess { result ->
                         if (result.isVerified) {
-                            eventChannel.send(SignUpEvent.NavigateToResidentNumber)
+                            shouldNavigateToResidentNumber = true
                         } else {
-                            eventChannel.send(SignUpEvent.ShowError("인증번호가 일치하지 않습니다"))
+                            errorMessage = "인증번호가 일치하지 않습니다"
                         }
                     }.onFailure { error ->
-                        eventChannel.send(
-                            SignUpEvent.ShowError(error.message ?: "이메일 인증 실패"),
-                        )
+                        errorMessage = error.message ?: "이메일 인증 실패"
                     }
                 isVerifyingEmail = false
             }
@@ -306,7 +330,7 @@ class SignUpViewModel
 
                 val trimmedName = name.trim()
                 if (trimmedName.isEmpty()) {
-                    eventChannel.send(SignUpEvent.NameRequired)
+                    isNameRequired = true
                     return@launch
                 }
 
@@ -321,18 +345,13 @@ class SignUpViewModel
                         // 회원가입 API 는 토큰을 내려주지 않으므로 같은 자격증명으로 자동 로그인.
                         loginUseCase(LoginType.Email(email = email, password = signUpPassword))
                             .onSuccess {
-                                eventChannel.send(SignUpEvent.SignUpSuccess)
+                                isSignedUp = true
                             }.onFailure { error ->
-                                eventChannel.send(
-                                    SignUpEvent.ShowError(
-                                        error.message ?: "자동 로그인에 실패했어요. 로그인 화면에서 다시 시도해주세요.",
-                                    ),
-                                )
+                                errorMessage =
+                                    error.message ?: "자동 로그인에 실패했어요. 로그인 화면에서 다시 시도해주세요."
                             }
                     }.onFailure { error ->
-                        eventChannel.send(
-                            SignUpEvent.ShowError(error.message),
-                        )
+                        errorMessage = error.message
                     }
                 isLoading = false
             }

@@ -54,7 +54,8 @@ internal fun GalleryDetailRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     ObserveDetailEvents(
-        events = viewModel.events,
+        deleteResult = (uiState as? AfternoteDetailUiState.Success)?.deleteResult,
+        onConsumed = viewModel::onDeleteResultConsumed,
         onDeleteSucceeded = onBack,
     )
 

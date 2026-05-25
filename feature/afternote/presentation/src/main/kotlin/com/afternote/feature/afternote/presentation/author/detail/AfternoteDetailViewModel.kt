@@ -8,13 +8,10 @@ import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -57,9 +54,6 @@ class AfternoteDetailViewModel
                     started = SharingStarted.WhileSubscribed(5_000),
                     initialValue = AfternoteDetailUiState.Loading,
                 )
-
-        private val _events = Channel<AfternoteDetailEvent>(Channel.BUFFERED)
-        val events: Flow<AfternoteDetailEvent> = _events.receiveAsFlow()
 
         init {
             viewModelScope.launch {
@@ -114,18 +108,29 @@ class AfternoteDetailViewModel
                 afternoteRepository
                     .delete(id = afternoteId)
                     .onSuccess {
-                        internalState.update { it.copy(isDeleting = false) }
-                        _events.send(AfternoteDetailEvent.DeleteSucceeded(afternoteId))
+                        internalState.update {
+                            it.copy(
+                                isDeleting = false,
+                                deleteResult = AfternoteDetailDeleteResult.Succeeded(afternoteId),
+                            )
+                        }
                     }.onFailure { e ->
-                        internalState.update { it.copy(isDeleting = false) }
-                        _events.send(
-                            AfternoteDetailEvent.DeleteFailed(
-                                rawMessage = e.message,
-                                messageRes = R.string.afternote_detail_delete_failed,
-                            ),
-                        )
+                        internalState.update {
+                            it.copy(
+                                isDeleting = false,
+                                deleteResult =
+                                    AfternoteDetailDeleteResult.Failed(
+                                        rawMessage = e.message,
+                                        messageRes = R.string.afternote_detail_delete_failed,
+                                    ),
+                            )
+                        }
                     }
             }
+        }
+
+        fun onDeleteResultConsumed() {
+            internalState.update { it.copy(deleteResult = null) }
         }
 
         // endregion
@@ -140,6 +145,7 @@ class AfternoteDetailViewModel
             val loadPhase: LoadPhase = LoadPhase.Loading,
             val authorDisplayName: String = "",
             val isDeleting: Boolean = false,
+            val deleteResult: AfternoteDetailDeleteResult? = null,
         )
 
         private sealed interface LoadPhase {
@@ -168,6 +174,7 @@ class AfternoteDetailViewModel
                         authorDisplayName = authorDisplayName,
                         isDeleting = isDeleting,
                         contentUiModel = detail.toDetailContentUiModel(authorDisplayName),
+                        deleteResult = deleteResult,
                     )
                 }
 

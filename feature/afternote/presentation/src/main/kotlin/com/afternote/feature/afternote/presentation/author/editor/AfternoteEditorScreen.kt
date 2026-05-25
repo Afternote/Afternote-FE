@@ -59,7 +59,7 @@ fun AfternoteEditorScreen(
     callbacks: AfternoteEditorScreenCallbacks = AfternoteEditorScreenCallbacks(),
     state: AfternoteEditorState = rememberAfternoteEditorState(),
     graphSongs: List<Song> = emptyList(),
-    saveError: AfternoteEditorSaveError? = null,
+    saveError: String? = null,
     isPrefillLoading: Boolean = false,
 ) {
     val focusManager = LocalFocusManager.current
@@ -107,9 +107,9 @@ fun AfternoteEditorScreen(
     }
 
     LaunchedEffect(saveError) {
-        saveError?.let { err ->
+        saveError?.let { message ->
             snackbarHostState.showSnackbar(
-                message = err.message,
+                message = message,
                 withDismissAction = true,
             )
         }
