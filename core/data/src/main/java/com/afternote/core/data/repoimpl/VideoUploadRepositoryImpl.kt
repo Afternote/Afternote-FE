@@ -12,9 +12,12 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 import javax.inject.Inject
+import javax.inject.Named
 import kotlin.coroutines.cancellation.CancellationException
 
 /** MIME 타입에서 확장자를 못 뽑았을 때 폴백. 대부분의 안드로이드 영상이 mp4 라 합리적 디폴트. */
@@ -25,6 +28,7 @@ class VideoUploadRepositoryImpl
     constructor(
         @param:ApplicationContext private val context: Context,
         private val imageApi: ImageApiService,
+        @param:Named("S3Upload") private val s3Client: OkHttpClient,
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : VideoUploadRepository {
         override suspend fun upload(
@@ -58,13 +62,19 @@ class VideoUploadRepositoryImpl
                     val requestBody = tempFile.asRequestBody(contentType.toMediaType())
 
                     val response =
-                        imageApi.uploadToS3(
-                            url = presigned.presignedUrl,
-                            file = requestBody,
-                            contentType = contentType,
-                        )
+                        withContext(ioDispatcher) {
+                            s3Client
+                                .newCall(
+                                    Request
+                                        .Builder()
+                                        .url(presigned.presignedUrl)
+                                        .put(requestBody)
+                                        .header("Content-Type", contentType)
+                                        .build(),
+                                ).execute()
+                        }
                     check(response.isSuccessful) {
-                        "S3 video upload failed: ${response.code()} ${response.message()}"
+                        "S3 video upload failed: ${response.code} ${response.message}"
                     }
 
                     Result.success(presigned.fileUrl)
