@@ -21,10 +21,16 @@ class MemorialPhotoSaveException(
  * 결과를 주고, 본 UseCase 는 그 sealed 분기를 *생성(POST) vs 수정(PATCH)* 페이로드 규칙에 매핑한다.
  * 도메인 본문이 `"content://"`, `"X-Amz-"` 같은 인프라 형식 디테일 문자열을 직접 비교하지 않는다.
  *
+ * **백엔드 URL 형식 (`Afternote-BE` 코드 확인됨)**:
+ * 사진·영상 모두 *GET 응답 시점에* 백엔드가 S3 storage key 를 presigned GET URL 로 변환해 응답
+ * (`AfternoteService` 의 `s3Service.generateGetPresignedUrl(...)`). 영구 URL 아님.
+ * 단, 백엔드 `PlaylistRelationStrategy.normalizeKey(...)` 가 POST/PATCH 시점에 어떤 형태 URL 도
+ * S3 key 로 정규화하므로 클라이언트가 받은 presigned URL 을 그대로 다시 보내도 데이터 손상 없음.
+ *
  * **PATCH 페이로드 규칙**:
  * - [VideoUploadOutcome.Existing] → 페이로드에서 *제거* (`null`).
- *   영상 URL 은 presigned 일 가능성이 있어 그대로 보내면 만료 후 깨지거나 서버가 *새 자원* 으로 오해.
- *   사진은 백엔드 `fileUrl` 이 영구 URL 이라 Existing 도 동일 URL 재전송 — POST 와 같은 값.
+ *   영상은 URL + 썸네일 쌍이라 부분 갱신 비일관 위험 → 변경 없음 신호로 null 처리.
+ * - [PhotoUploadOutcome.Existing] → URL 그대로 재전송 (단일 URL 이라 비일관 위험 없음, POST 와 같은 값).
  * - [VideoUploadOutcome.FreshlyUploaded] / [PhotoUploadOutcome.FreshlyUploaded] → URL 그대로 전송.
  *   서버가 *새 자원* 으로 등록.
  * - [VideoUploadOutcome.Empty] / [PhotoUploadOutcome.Empty] → null.

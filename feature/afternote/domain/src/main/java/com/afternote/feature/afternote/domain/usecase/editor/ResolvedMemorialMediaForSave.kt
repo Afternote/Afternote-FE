@@ -10,7 +10,9 @@ data class ResolvedMemorialMediaForSave(
     /** 생성·수정 공통: 영정 사진 URL. */
     val resolvedMemorialPhotoUrl: String?,
     /**
-     * 수정(PATCH) 전용: 본문에 넣을 videoUrl. Presigned URL이면 null로 생략.
+     * 수정(PATCH) 전용: 본문에 넣을 videoUrl.
+     * `VideoUploadOutcome.Existing` (기존 영상 그대로 두기) → null (변경 없음 신호로 페이로드에서 제거).
+     * `VideoUploadOutcome.FreshlyUploaded` (새 영상 업로드 직후) → 업로드 결과 URL.
      * 생성 시에는 무시하고 [resolvedVideoUrl]을 쓴다.
      */
     val videoUrlForUpdate: String?,
