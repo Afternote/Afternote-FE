@@ -9,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.feature.onboarding.presentation.signup.SignUpUiState
 import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel
 
 /**
@@ -26,7 +27,6 @@ fun OnboardingProfileEntry(
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val profileImageUri by viewModel.profileImageUri.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     val signupFailedMessage = stringResource(R.string.signup_failed)
@@ -61,7 +61,7 @@ fun OnboardingProfileEntry(
 
     OnboardingProfileScreen(
         initialName = uiState.name,
-        displayImageUri = profileImageUri,
+        displayImageUri = uiState.profileImageUri,
         snackbarHostState = snackbarHostState,
         onNameChange = viewModel::updateName,
         onProfileImagePick = viewModel::onProfileImagePicked,

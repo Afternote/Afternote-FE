@@ -51,9 +51,6 @@ class SignUpViewModel
         private val _uiState = MutableStateFlow(SignUpUiState())
         val uiState: StateFlow<SignUpUiState> = _uiState.asStateFlow()
 
-        private val _profileImageUri = MutableStateFlow<Uri?>(null)
-        val profileImageUri: StateFlow<Uri?> = _profileImageUri.asStateFlow()
-
         private var cooldownJob: Job? = null
         private var expiryJob: Job? = null
 
@@ -72,9 +69,7 @@ class SignUpViewModel
 
         fun updateName(value: String) = _uiState.update { it.copy(name = value) }
 
-        fun onProfileImagePicked(uri: Uri?) {
-            _profileImageUri.value = uri
-        }
+        fun onProfileImagePicked(uri: Uri?) = _uiState.update { it.copy(profileImageUri = uri) }
 
         // ─── 단발성 신호 consume (UI 가 소비 후 호출) ───
         fun onSignUpSucceededConsumed() = _uiState.update { it.copy(signUpSucceeded = false) }
@@ -210,7 +205,7 @@ class SignUpViewModel
                         email = state.email,
                         password = state.signUpPassword,
                         name = trimmedName,
-                        profileUrl = _profileImageUri.value?.toString(),
+                        profileUrl = state.profileImageUri?.toString(),
                     ).onSuccess {
                         loginUseCase(LoginType.Email(email = state.email, password = state.signUpPassword))
                             .onSuccess {
