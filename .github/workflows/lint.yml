@@ -46,14 +46,24 @@ jobs:
         env:
           KAKAO_NATIVE_APP_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
           GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+          GOOGLE_SERVICES_JSON_B64: ${{ secrets.GOOGLE_SERVICES_JSON_B64 }}
         run: |
           missing=""
           [ -z "$KAKAO_NATIVE_APP_KEY" ] && missing="$missing KAKAO_NATIVE_APP_KEY"
           [ -z "$GOOGLE_WEB_CLIENT_ID" ] && missing="$missing GOOGLE_WEB_CLIENT_ID"
+          [ -z "$GOOGLE_SERVICES_JSON_B64" ] && missing="$missing GOOGLE_SERVICES_JSON_B64"
           if [ -n "$missing" ]; then
             echo "::error::필수 secret 누락:$missing — Settings → Secrets and variables → Actions 에 등록"
             exit 1
           fi
+
+      # google-services plugin 이 app/google-services.json 을 요구. 파일은 .gitignore 라
+      # CI 환경엔 없음. base64 인코딩된 secret 으로 받아서 decode.
+      - name: Decode google-services.json
+        env:
+          GOOGLE_SERVICES_JSON_B64: ${{ secrets.GOOGLE_SERVICES_JSON_B64 }}
+        run: |
+          echo "$GOOGLE_SERVICES_JSON_B64" | base64 -d > app/google-services.json
 
       - name: Run Android Lint
         run: ./gradlew lintDebug --continue --parallel
