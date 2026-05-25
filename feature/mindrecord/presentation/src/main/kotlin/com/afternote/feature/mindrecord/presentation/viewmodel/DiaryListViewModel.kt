@@ -2,8 +2,10 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.Diary
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
+import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.mapper.toUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,6 +15,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.YearMonth
 import javax.inject.Inject
 
 @HiltViewModel
@@ -36,20 +39,28 @@ class DiaryListViewModel
             load()
         }
 
-        fun refresh(date: String? = null) {
-            load(date)
+        fun refresh(yearMonth: YearMonth = YearMonth.now()) {
+            load(yearMonth)
         }
 
-        private fun load(date: String? = null) {
+        private fun load(yearMonth: YearMonth = YearMonth.now()) {
             viewModelScope.launch {
                 internalState.update { it.copy(loadPhase = LoadPhase.Loading) }
                 repository
-                    .getList(date = date)
+                    .getList(yearMonth = yearMonth.toString(), draftOnly = null)
                     .onSuccess { list ->
                         internalState.update { it.copy(loadPhase = LoadPhase.Loaded(list)) }
                     }.onFailure { e ->
                         internalState.update {
-                            it.copy(loadPhase = LoadPhase.Failed(e.message ?: "일기를 불러오지 못했습니다."))
+                            it.copy(
+                                loadPhase =
+                                    LoadPhase.Failed(
+                                        UiText.DynamicOrResource(
+                                            value = e.message,
+                                            fallbackResId = R.string.mindrecord_error_diary_list_failed,
+                                        ),
+                                    ),
+                            )
                         }
                     }
             }
@@ -67,7 +78,7 @@ class DiaryListViewModel
             ) : LoadPhase
 
             data class Failed(
-                val message: String,
+                val message: UiText,
             ) : LoadPhase
         }
 

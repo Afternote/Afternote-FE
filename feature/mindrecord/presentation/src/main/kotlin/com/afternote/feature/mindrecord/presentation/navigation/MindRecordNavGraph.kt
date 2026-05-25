@@ -5,6 +5,7 @@ import androidx.navigation.compose.composable
 import com.afternote.core.ui.Route
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.screen.memoryspace.MemorySpaceScreen
+import com.afternote.feature.mindrecord.presentation.screen.receiver.ReceiverMindRecordScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestionWriteScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DeepThoughtWriteScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DiaryWriteScreen
@@ -31,6 +32,9 @@ fun NavGraphBuilder.mindRecordNavGraph(actions: MindRecordNavActions) {
     }
     composable<Route.MemorySpace> {
         MemorySpaceScreen(onBackClick = actions::onMemorySpaceBack)
+    }
+    composable<Route.ReceiverMindRecord> {
+        ReceiverMindRecordScreen()
     }
     composable<MindRecordRoute.DailyQuestionWriteRoute> {
         DailyQuestionWriteScreen(

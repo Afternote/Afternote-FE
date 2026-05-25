@@ -11,10 +11,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.presentation.R
 
 @Composable
 fun WeeklyEmotionCard(modifier: Modifier = Modifier) {
@@ -35,13 +37,13 @@ fun WeeklyEmotionCard(modifier: Modifier = Modifier) {
                     .padding(horizontal = 17.dp, vertical = 9.dp),
         ) {
             Text(
-                text = "주간 평균 감정",
+                text = stringResource(R.string.mindrecord_weekly_report_avg_emotion_weekly),
                 style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray9,
             )
 
             Text(
-                text = "\uD83D\uDE0A 좋음",
+                text = stringResource(R.string.mindrecord_weekly_report_avg_mood_good),
                 style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray9,
             )

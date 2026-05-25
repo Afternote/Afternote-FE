@@ -8,8 +8,10 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.Tag
 
 @Composable
@@ -29,7 +31,7 @@ fun FlowTags(
             onClick = { onclick() },
             label = {
                 Text(
-                    "전체",
+                    stringResource(R.string.mindrecord_tag_all),
                     style = AfternoteDesign.typography.captionLargeB,
                     color = if (selectedTag == null) AfternoteDesign.colors.gray1 else AfternoteDesign.colors.gray6,
                 )

@@ -6,34 +6,44 @@ import com.afternote.feature.afternote.presentation.author.editor.model.EditorCa
 /**
  * NavHost 루트에서 Afternote 서브그래프로 넘기는 네비게이션 명령 모음.
  *
- * [com.afternote.feature.onboarding.presentation.navigation.OnboardingNavActions]와 같은
- * “actions 객체 단일 전달” 패턴으로, 콜백 추가 시 시그니처 확장 없이 인터페이스만 갱신한다.
+ * 작명 컨벤션 (#239): `navigateTo<Where>` / `popBack` / `popTo<Where>` /
+ * `replace<X>With<Y>` / `proceedTo<Next>` / `on<Result>Succeeded|Failed`.
+ *
+ * Screen 콜백 인자(예: `onSongClick`)는 *도메인 이벤트* 자리로 본 인터페이스와 분리.
+ * NavGraph 가 둘을 매핑한다.
  */
 interface AfternoteNavActions {
-    fun onBottomNavTabSelected(tab: BottomNavTab)
+    fun navigateToBottomTab(tab: BottomNavTab)
 
-    fun onPopBackStack()
+    fun popBack()
 
-    fun onNavigateToAfternoteDetail(itemId: String)
+    fun navigateToAfternoteDetail(itemId: String)
 
-    fun onNavigateToGalleryDetail(itemId: String)
+    fun navigateToGalleryDetail(itemId: String)
 
-    fun onNavigateToMemorialGuidelineDetail(itemId: String)
+    fun navigateToMemorialGuidelineDetail(itemId: String)
 
-    fun onNavigateToNewEditor(initialCategory: String?)
+    fun navigateToNewEditor(initialCategory: String?)
 
-    fun onNavigateToEditorForEdit(
+    fun navigateToEditorForEdit(
         itemId: String,
         initialCategory: EditorCategory,
     )
 
-    fun onNavigateToMemorialPlaylist()
+    fun navigateToMemorialPlaylist()
 
-    fun onNavigateToAddSong()
+    fun navigateToAddSong()
 
-    fun onFingerprintAuthSuccess()
+    /** 지문 인증 성공 → Afternote 홈으로 진입하며 지문 로그인 화면 자체를 stack 에서 제거 (replace). */
+    fun replaceFingerprintLoginWithAfternoteHome()
 
-    fun onFingerprintAuthError(message: String)
+    /**
+     * 지문 인증 실패 통지 — *navigate 아닌 결과 알림* 이라 NavActions 자리에 두는 게 어색하지만,
+     * 현재 호출 측이 NavActions 를 통해 Toast 표시를 위임받는 구조라 본 인터페이스에 남겨둠.
+     * 향후 별도 ScreenCallback 으로 분리 (별 작업).
+     */
+    fun onFingerprintAuthFailed(message: String)
 
-    fun onEditorSaveSuccessNavigateHome()
+    /** Editor 저장 성공 → Afternote 홈 위 화면(에디터·미디어 등)만 pop. Home 자체는 유지. */
+    fun popToAfternoteHome()
 }

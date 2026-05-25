@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -14,7 +15,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import com.afternote.core.ui.button.FAB.PenFloatingActionButton
 import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.timeletter.domain.model.TimeLetter
@@ -28,12 +32,21 @@ import com.afternote.feature.timeletter.presentation.viewmodel.ViewMode
 
 @Composable
 fun TimeletterScreen(
-    onWriteClick: () -> Unit = {},
+    onLetterClick: (Long) -> Unit = {},
     modifier: Modifier = Modifier,
+    onWriteClick: () -> Unit = {},
+    onFilterRecipientClick: () -> Unit = {},
     viewModel: TimeletterViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var viewMode by remember { mutableStateOf(ViewMode.List) }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewModel.load()
+        }
+    }
 
     Scaffold(
         modifier = modifier,
@@ -60,6 +73,9 @@ fun TimeletterScreen(
                     receiverNameMap = state.receiverNameMap,
                     viewMode = viewMode,
                     onViewModeChange = { viewMode = it },
+                    selectedFilterReceiverIds = state.selectedFilterReceiverIds,
+                    onFilterClick = onFilterRecipientClick,
+                    onLetterClick = onLetterClick,
                     modifier = Modifier.padding(paddingValues),
                 )
             }

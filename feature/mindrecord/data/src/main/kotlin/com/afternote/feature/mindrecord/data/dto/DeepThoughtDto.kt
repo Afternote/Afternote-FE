@@ -29,13 +29,50 @@ data class DeepThoughtListItem(
     @SerialName("title") val title: String,
     @SerialName("content") val content: String,
     @SerialName("category") val category: String,
-    @SerialName("is_draft") val isDraft: Boolean,
-    @SerialName("tag") val tag: List<String> = emptyList(),
+    @SerialName("isDraft") val isDraft: Boolean,
+    @SerialName("tags") val tags: List<String> = emptyList(),
     @SerialName("imageUrl") val imageUrl: String? = null,
+    @SerialName("createdAt") val createdAt: String = "",
+    @SerialName("updatedAt") val updatedAt: String? = null,
+)
+
+@Serializable
+data class DeepThoughtTagCountDto(
+    @SerialName("tag") val tag: String,
+    @SerialName("count") val count: Int,
+)
+
+@Serializable
+data class DeepThoughtListResponse(
+    @SerialName("deepThoughts") val deepThoughts: List<DeepThoughtListItem> = emptyList(),
+    @SerialName("tagCounts") val tagCounts: List<DeepThoughtTagCountDto> = emptyList(),
 )
 
 @Serializable
 data class RandomDeepThoughtResponse(
     @SerialName("title") val title: String,
     @SerialName("createdAt") val createdAt: String,
+)
+
+@Serializable
+data class DeepThoughtCategoryItem(
+    @SerialName("categoryId") val categoryId: Long,
+    @SerialName("title") val title: String,
+)
+
+@Serializable
+data class DeepThoughtCategoryCreateRequest(
+    @SerialName("deepThoughtId") val deepThoughtId: Long? = null,
+    @SerialName("category") val category: String,
+)
+
+@Serializable
+data class DeepThoughtCategoryUpdateRequest(
+    @SerialName("category") val category: String,
+)
+
+@Serializable
+data class DeepThoughtCategoryMutationResponse(
+    @SerialName("categoryId") val categoryId: Long,
+    @SerialName("title") val title: String,
 )

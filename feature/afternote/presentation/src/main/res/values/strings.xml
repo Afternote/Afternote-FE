@@ -142,6 +142,7 @@
     <string name="receiver_sender_detail_no_request_record">신청 기록이 없습니다</string>
     <string name="receiver_sender_detail_no_approval_record">승인 기록이 없습니다</string>
     <string name="receiver_sender_detail_request_verification">열람 신청하기</string>
+    <string name="receiver_sender_detail_pending_button">심사 진행 중</string>
     <string name="receiver_sender_detail_open_records">기록 열람하기</string>
     <string name="receiver_sender_detail_status_load_failed">열람 신청 상태를 불러오지 못했습니다.</string>
     <string name="receiver_sender_detail_not_found">발신자를 찾을 수 없습니다.</string>
@@ -190,6 +191,7 @@
     <string name="receiver_verify_document_uploading">업로드 중…</string>
     <string name="receiver_verify_complete_description">제출하신 서류를 확인 중입니다.\n빠르게 검토하여 열람하실 수 있도록 안내드리겠습니다.</string>
     <string name="receiver_verify_complete_back_to_records">받은 기록함으로 돌아가기</string>
+    <string name="receiver_verify_step_description">수신자 인증 진행도 3단계 중 %1$d단계</string>
 
     <string name="login_kakao_button">카카오로 로그인</string>
     <string name="login_kakao_backend_not_ready">카카오 토큰을 발급받았습니다. 서버 연동(/auth/kakao) 대기 중입니다.</string>

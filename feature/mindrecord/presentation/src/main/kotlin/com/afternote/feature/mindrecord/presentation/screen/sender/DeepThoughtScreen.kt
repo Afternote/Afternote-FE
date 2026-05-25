@@ -1,5 +1,6 @@
 package com.afternote.feature.mindrecord.presentation.screen.sender
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,36 +22,59 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.R
+import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.presentation.component.CategoryActionSheet
+import com.afternote.feature.mindrecord.presentation.component.CategoryNameDialog
+import com.afternote.feature.mindrecord.presentation.component.CategorySettingBottomSheet
 import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
 import com.afternote.feature.mindrecord.presentation.component.DeepThoughtCard
 import com.afternote.feature.mindrecord.presentation.component.FlowTags
+import com.afternote.feature.mindrecord.presentation.component.MindRecordEmptyState
+import com.afternote.feature.mindrecord.presentation.model.CategoryUiModel
 import com.afternote.feature.mindrecord.presentation.model.DeepThoughtModel
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.model.Tag
+import com.afternote.feature.mindrecord.presentation.viewmodel.DeepThoughtCategoryViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DeepThoughtListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DeepThoughtListViewModel
+import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 
 @Composable
 fun DeepThoughtScreen(
     modifier: Modifier = Modifier,
     isListView: Boolean = true,
     viewModel: DeepThoughtListViewModel = hiltViewModel(),
+    categoryViewModel: DeepThoughtCategoryViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val categoryState by categoryViewModel.uiState.collectAsStateWithLifecycle()
+
+    var showCategorySheet by remember { mutableStateOf(false) }
+    var addingCategory by remember { mutableStateOf(false) }
+    var menuTarget by remember { mutableStateOf<CategoryUiModel?>(null) }
+    var renameTarget by remember { mutableStateOf<CategoryUiModel?>(null) }
+
+    // 카테고리 변경 시 목록 새로고침
+    LaunchedEffect(categoryState.categories) {
+        viewModel.refresh()
+    }
 
     when (val state = uiState) {
         DeepThoughtListUiState.Loading -> {
@@ -57,7 +82,7 @@ fun DeepThoughtScreen(
         }
 
         is DeepThoughtListUiState.Error -> {
-            ErrorBox(message = state.message, modifier = modifier)
+            ErrorBox(message = state.message.asString(), modifier = modifier)
         }
 
         is DeepThoughtListUiState.Success -> {
@@ -66,10 +91,67 @@ fun DeepThoughtScreen(
                 isListView = isListView,
                 tags = state.tags,
                 selectedTag = state.selectedTag,
+                categories = categoryState.categories.ifEmpty { state.categories },
+                selectedCategory = state.selectedCategory,
                 items = state.items,
                 onTagClick = viewModel::onTagSelected,
+                onCategorySelect = viewModel::onCategorySelected,
+                onCategorySettingClick = { showCategorySheet = true },
             )
         }
+    }
+
+    if (showCategorySheet) {
+        CategorySettingBottomSheet(
+            categories = categoryState.categories,
+            onDismiss = { showCategorySheet = false },
+            onBackClick = { showCategorySheet = false },
+            onAddCategory = { addingCategory = true },
+            onMenuClick = { menuTarget = it },
+        )
+    }
+
+    menuTarget?.let { target ->
+        CategoryActionSheet(
+            targetName = target.name,
+            onDismiss = { menuTarget = null },
+            onRename = {
+                renameTarget = target
+                menuTarget = null
+            },
+            onDelete = {
+                target.id.toLongOrNull()?.let(categoryViewModel::deleteCategory)
+                menuTarget = null
+            },
+        )
+    }
+
+    if (addingCategory) {
+        CategoryNameDialog(
+            title = stringResource(MindRecordR.string.mindrecord_category_new_title),
+            initialName = "",
+            confirmLabel = stringResource(MindRecordR.string.mindrecord_action_add),
+            onDismiss = { addingCategory = false },
+            onConfirm = { name ->
+                categoryViewModel.addCategory(name = name)
+                addingCategory = false
+            },
+        )
+    }
+
+    renameTarget?.let { target ->
+        CategoryNameDialog(
+            title = stringResource(MindRecordR.string.mindrecord_category_rename_title),
+            initialName = target.name,
+            confirmLabel = stringResource(MindRecordR.string.mindrecord_action_save),
+            onDismiss = { renameTarget = null },
+            onConfirm = { name ->
+                target.id.toLongOrNull()?.let { id ->
+                    categoryViewModel.renameCategory(categoryId = id, newName = name)
+                }
+                renameTarget = null
+            },
+        )
     }
 }
 
@@ -78,43 +160,81 @@ private fun DeepThoughtContent(
     isListView: Boolean,
     tags: List<Tag>,
     selectedTag: Tag?,
+    categories: List<CategoryUiModel>,
+    selectedCategory: String?,
     onTagClick: (Tag?) -> Unit,
+    onCategorySelect: (String?) -> Unit,
+    onCategorySettingClick: () -> Unit,
     items: List<DeepThoughtModel>,
     modifier: Modifier = Modifier,
 ) {
-    var selectedIndex by remember { mutableIntStateOf(0) }
-    val tabs = listOf("전체 카테고리", "카테고리", "카테고리", "카테고리")
+    val allCategoryLabel = stringResource(MindRecordR.string.mindrecord_category_all)
+    val tabs =
+        buildList {
+            add(null to allCategoryLabel)
+            categories.forEach { add(it.name to it.name) }
+        }
+    val selectedIndex =
+        tabs
+            .indexOfFirst { it.first == selectedCategory }
+            .coerceAtLeast(0)
+
+    if (isListView && items.isEmpty() && categories.isEmpty()) {
+        MindRecordEmptyState(modifier = modifier)
+        return
+    }
 
     if (isListView) {
         Column(modifier = modifier) {
-            PrimaryScrollableTabRow(
-                selectedTabIndex = selectedIndex,
-                edgePadding = 0.dp,
-                divider = {},
-                indicator = {
-                    TabRowDefaults.PrimaryIndicator(
-                        modifier =
-                            Modifier.tabIndicatorOffset(
-                                selectedIndex,
-                                matchContentSize = false,
-                            ),
-                        width = 80.dp,
-                        color = Color(0xFF1F1F1F),
-                    )
-                },
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedIndex == index,
-                        onClick = { selectedIndex = index },
-                        text = {
-                            Text(
-                                text = title,
-                                color = if (selectedIndex == index) Color(0xFF1F1F1F) else AfternoteDesign.colors.gray4,
-                            )
-                        },
-                    )
+                PrimaryScrollableTabRow(
+                    modifier = Modifier.weight(1f),
+                    selectedTabIndex = selectedIndex,
+                    edgePadding = 0.dp,
+                    divider = {},
+                    indicator = {
+                        TabRowDefaults.PrimaryIndicator(
+                            modifier =
+                                Modifier.tabIndicatorOffset(
+                                    selectedIndex,
+                                    matchContentSize = false,
+                                ),
+                            width = 80.dp,
+                            color = Color(0xFF1F1F1F),
+                        )
+                    },
+                ) {
+                    tabs.forEachIndexed { index, (key, title) ->
+                        Tab(
+                            selected = selectedIndex == index,
+                            onClick = { onCategorySelect(key) },
+                            text = {
+                                Text(
+                                    text = title,
+                                    color =
+                                        if (selectedIndex == index) {
+                                            AfternoteDesign.colors.gray9
+                                        } else {
+                                            AfternoteDesign.colors.gray4
+                                        },
+                                )
+                            },
+                        )
+                    }
                 }
+                Icon(
+                    painter = painterResource(R.drawable.core_ui_settings),
+                    contentDescription = stringResource(MindRecordR.string.mindrecord_category_setting_cd),
+                    tint = AfternoteDesign.colors.gray9,
+                    modifier =
+                        Modifier
+                            .padding(end = 16.dp)
+                            .size(20.dp)
+                            .clickable(onClick = onCategorySettingClick),
+                )
             }
             Spacer(modifier = Modifier.height(24.dp))
             Row(
@@ -129,7 +249,7 @@ private fun DeepThoughtContent(
                 Text(
                     text = "TAGS",
                     style = AfternoteDesign.typography.mono,
-                    color = Color(0xFF000000).copy(alpha = 0.4f),
+                    color = AfternoteDesign.colors.black.copy(alpha = 0.4f),
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(start = 12.dp))
@@ -149,14 +269,21 @@ private fun DeepThoughtContent(
             }
         }
     } else {
+        val today = java.time.LocalDate.now()
+        val answeredDays =
+            items
+                .filter { it.date.year == today.year && it.date.monthValue == today.monthValue }
+                .map { it.date.dayOfMonth }
+                .toSet()
         LazyColumn(modifier = modifier) {
             item {
                 DailyCalendar(
-                    year = 2026,
-                    month = 3,
+                    year = today.year,
+                    month = today.monthValue,
                     type = MindRecordCategoryUi.DeepThought,
                     onNextMonth = {},
                     onPrevMonth = {},
+                    answeredDays = answeredDays,
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }
@@ -169,7 +296,7 @@ private fun DeepThoughtContent(
                     Text(
                         text = "DAILY ANSWER",
                         style = AfternoteDesign.typography.mono,
-                        color = Color(0xFF000000).copy(alpha = 0.4f),
+                        color = AfternoteDesign.colors.black.copy(alpha = 0.4f),
                     )
                     HorizontalDivider(modifier = Modifier.padding(start = 12.dp))
                 }
@@ -210,8 +337,12 @@ private fun DeepThoughtScreenPreviewTrue() {
             isListView = true,
             tags = emptyList(),
             selectedTag = null,
+            categories = emptyList(),
+            selectedCategory = null,
             items = emptyList(),
             onTagClick = {},
+            onCategorySelect = {},
+            onCategorySettingClick = {},
         )
     }
 }
@@ -225,8 +356,12 @@ private fun DeepThoughtScreenPreviewFalse() {
             isListView = false,
             tags = emptyList(),
             selectedTag = null,
+            categories = emptyList(),
+            selectedCategory = null,
             items = emptyList(),
             onTagClick = {},
+            onCategorySelect = {},
+            onCategorySettingClick = {},
         )
     }
 }

@@ -21,10 +21,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.TextFieldType
+import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
-import com.afternote.feature.onboarding.presentation.signup.scaffold.ProgressBarScaffold
+
+private const val SECONDS_PER_MINUTE = 60
 
 @Composable
 fun SignUpScreen(
@@ -34,6 +36,7 @@ fun SignUpScreen(
     isSendingCode: Boolean,
     isEmailFormatValid: Boolean,
     resendCooldownSeconds: Int,
+    verificationRemainingSeconds: Int,
     isNextEnabled: Boolean,
     snackbarHostState: SnackbarHostState,
     onEmailChange: (String) -> Unit,
@@ -74,12 +77,16 @@ fun SignUpScreen(
     val isVerificationButtonEnabled =
         !isSendingCode && resendCooldownSeconds == 0 && isEmailFormatValid
 
-    ProgressBarScaffold(
-        currentStep = 1,
+    FlowStepScaffold(
+        topBarTitle = stringResource(R.string.signup_title),
+        actionButtonText = stringResource(R.string.signup_next),
         onBackClick = onBackClick,
-        onNextClick = onNextClick,
+        onActionClick = onNextClick,
         modifier = modifier,
-        isNextEnabled = isNextEnabled,
+        isActionEnabled = isNextEnabled,
+        currentStep = SignUpStep.EMAIL,
+        totalSteps = SIGN_UP_TOTAL_STEPS,
+        progressContentDescription = stringResource(R.string.onboarding_step_description, SignUpStep.EMAIL),
         snackbarHostState = snackbarHostState,
         content = {
             Column(
@@ -115,10 +122,21 @@ fun SignUpScreen(
                     },
                 )
 
-                // 인증번호 전송 안내 메시지
+                // 인증번호 전송 안내 — 발송 직후 남은 시간 카운트다운, 만료 시 다시 받기 안내.
                 if (isVerificationSent) {
+                    val isExpired = verificationRemainingSeconds == 0
+                    val message =
+                        if (isExpired) {
+                            stringResource(R.string.signup_verification_expired)
+                        } else {
+                            stringResource(
+                                R.string.signup_verification_sent_with_timer,
+                                verificationRemainingSeconds / SECONDS_PER_MINUTE,
+                                verificationRemainingSeconds % SECONDS_PER_MINUTE,
+                            )
+                        }
                     Text(
-                        text = stringResource(R.string.signup_verification_sent),
+                        text = message,
                         style = AfternoteDesign.typography.captionLargeB,
                         color = AfternoteDesign.colors.b1,
                     )
@@ -139,6 +157,30 @@ private fun SignUpScreenPreview() {
             isSendingCode = false,
             isEmailFormatValid = false,
             resendCooldownSeconds = 0,
+            verificationRemainingSeconds = 172,
+            isNextEnabled = false,
+            snackbarHostState = remember { SnackbarHostState() },
+            onEmailChange = {},
+            onVerificationCodeChange = {},
+            onRequestVerification = {},
+            onNextClick = {},
+            onBackClick = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "인증번호 만료")
+@Composable
+private fun SignUpScreenExpiredPreview() {
+    AfternoteTheme {
+        SignUpScreen(
+            initialEmail = "user@example.com",
+            initialVerificationCode = "",
+            isVerificationSent = true,
+            isSendingCode = false,
+            isEmailFormatValid = true,
+            resendCooldownSeconds = 0,
+            verificationRemainingSeconds = 0,
             isNextEnabled = false,
             snackbarHostState = remember { SnackbarHostState() },
             onEmailChange = {},

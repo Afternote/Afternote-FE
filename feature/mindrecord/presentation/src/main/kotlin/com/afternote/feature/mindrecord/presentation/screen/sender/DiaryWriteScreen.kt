@@ -35,19 +35,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.R
+import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.core.ui.theme.Red
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.presentation.component.BottomSheetCalendar
 import com.afternote.feature.mindrecord.presentation.component.WriteTextField
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryWriteViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.SubmitState
+import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 
 @Composable
 fun DiaryWriteScreen(
@@ -70,7 +74,7 @@ fun DiaryWriteScreen(
     Scaffold(
         topBar = {
             DetailTopBar(
-                title = "일기 기록하기",
+                title = stringResource(MindRecordR.string.mindrecord_diary_write_title),
                 onBackClick = onBackClick,
                 actions = {
                     Button(
@@ -83,7 +87,7 @@ fun DiaryWriteScreen(
                             ),
                     ) {
                         Text(
-                            text = "등록",
+                            text = stringResource(MindRecordR.string.mindrecord_action_register),
                             style = AfternoteDesign.typography.bodySmallB,
                             color = AfternoteDesign.colors.gray6,
                         )
@@ -131,9 +135,9 @@ fun DiaryWriteScreen(
                     ),
                 placeholder = {
                     Text(
-                        text = "제목을 입력하세요.",
+                        text = stringResource(MindRecordR.string.mindrecord_diary_write_title_placeholder),
                         style = AfternoteDesign.typography.h2,
-                        color = Color(0xFF000000).copy(0.2f),
+                        color = AfternoteDesign.colors.black.copy(alpha = 0.2f),
                     )
                 },
             )
@@ -149,9 +153,9 @@ fun DiaryWriteScreen(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "오늘의 기분",
+                    text = stringResource(MindRecordR.string.mindrecord_diary_write_mood_label),
                     style = AfternoteDesign.typography.captionLargeR,
-                    color = Color(0xFF000000).copy(0.4f),
+                    color = AfternoteDesign.colors.black.copy(alpha = 0.4f),
                 )
                 Spacer(modifier = Modifier.width(12.dp))
 
@@ -181,9 +185,9 @@ fun DiaryWriteScreen(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "위치 추가",
+                        text = stringResource(MindRecordR.string.mindrecord_diary_write_add_location),
                         style = AfternoteDesign.typography.captionLargeR,
-                        color = Color(0xFF000000).copy(0.6f),
+                        color = AfternoteDesign.colors.black.copy(alpha = 0.6f),
                     )
                 }
 
@@ -202,18 +206,18 @@ fun DiaryWriteScreen(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "사진 추가",
+                        text = stringResource(MindRecordR.string.mindrecord_diary_write_add_photo),
                         style = AfternoteDesign.typography.captionLargeR,
-                        color = Color(0xFF000000).copy(0.6f),
+                        color = AfternoteDesign.colors.black.copy(alpha = 0.6f),
                     )
                 }
             }
 
-            val errorMessage = (uiState.submitState as? SubmitState.Failed)?.message
+            val errorMessage = (uiState.submitState as? SubmitState.Failed)?.message?.asString()
             if (errorMessage != null) {
                 Text(
                     text = errorMessage,
-                    color = Color.Red,
+                    color = Red,
                     style = AfternoteDesign.typography.captionLargeR,
                 )
             }

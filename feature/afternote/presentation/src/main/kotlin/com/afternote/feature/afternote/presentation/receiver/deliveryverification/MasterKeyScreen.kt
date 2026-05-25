@@ -19,11 +19,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.AfternoteTextField
-import com.afternote.core.ui.ObserveAsEvents
+import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.receiver.deliveryverification.component.ReceiverVerifyScaffold
+import com.afternote.feature.afternote.presentation.receiver.deliveryverification.component.RECEIVER_VERIFY_HEADER_SPACING
+import com.afternote.feature.afternote.presentation.receiver.deliveryverification.component.RECEIVER_VERIFY_TOTAL_STEPS
 import com.afternote.feature.afternote.presentation.receiver.deliveryverification.component.ReceiverVerifyStep
 
 /**
@@ -35,6 +36,7 @@ import com.afternote.feature.afternote.presentation.receiver.deliveryverificatio
  */
 @Composable
 fun MasterKeyScreen(
+    senderId: String,
     onBackClick: () -> Unit,
     onVerified: () -> Unit,
     modifier: Modifier = Modifier,
@@ -44,9 +46,10 @@ fun MasterKeyScreen(
     val authCodeState = rememberTextFieldState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    ObserveAsEvents(viewModel.events) { event ->
-        when (event) {
-            MasterKeyEvent.Verified -> onVerified()
+    LaunchedEffect(uiState.isVerified) {
+        if (uiState.isVerified) {
+            onVerified()
+            viewModel.onVerifiedConsumed()
         }
     }
 
@@ -63,7 +66,7 @@ fun MasterKeyScreen(
         isSubmitting = uiState.isSubmitting,
         snackbarHostState = snackbarHostState,
         onBackClick = onBackClick,
-        onSubmitClick = { viewModel.submit(authCodeState.text.toString()) },
+        onSubmitClick = { viewModel.submit(senderId, authCodeState.text.toString()) },
         modifier = modifier,
     )
 }
@@ -84,15 +87,19 @@ private fun MasterKeyScreenContent(
             .isNotEmpty()
     val canSubmit = isInputFilled && !isSubmitting
 
-    ReceiverVerifyScaffold(
+    FlowStepScaffold(
+        topBarTitle = stringResource(R.string.receiver_verify_title),
         actionButtonText = stringResource(R.string.receiver_verify_next_button),
         onBackClick = onBackClick,
         onActionClick = onSubmitClick,
         isActionEnabled = canSubmit,
         currentStep = ReceiverVerifyStep.MASTER_KEY,
+        totalSteps = RECEIVER_VERIFY_TOTAL_STEPS,
+        progressContentDescription = stringResource(R.string.receiver_verify_step_description, ReceiverVerifyStep.MASTER_KEY),
         snackbarHostState = snackbarHostState,
         modifier = modifier,
     ) {
+        Spacer(modifier = Modifier.height(RECEIVER_VERIFY_HEADER_SPACING))
         Text(
             text = stringResource(R.string.receiver_verify_master_key_title),
             style = AfternoteDesign.typography.h1,

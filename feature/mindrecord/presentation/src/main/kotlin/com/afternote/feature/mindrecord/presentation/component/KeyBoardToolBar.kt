@@ -17,7 +17,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -25,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -39,7 +39,9 @@ import com.afternote.feature.mindrecord.presentation.model.TextStyleType
 @Composable
 fun BottomToolbar(
     onTextStyleClick: () -> Unit,
+    onAlignChange: (TextAlign) -> Unit,
     modifier: Modifier = Modifier,
+    onLinkClick: () -> Unit = {},
 ) {
     Row(
         modifier =
@@ -49,23 +51,49 @@ fun BottomToolbar(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(painter = painterResource(R.drawable.mindrecord_link), contentDescription = null)
-        Spacer(modifier = Modifier.width(16.dp))
+        IconButton(onClick = onLinkClick) {
+            Icon(
+                painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_ic_link),
+                contentDescription = stringResource(R.string.mindrecord_toolbar_link_cd),
+            )
+        }
+        Spacer(modifier = Modifier.width(8.dp))
 
         IconButton(onClick = onTextStyleClick) {
-            Text("T", style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = "T",
+                style = AfternoteDesign.typography.bodyLargeB,
+                color = AfternoteDesign.colors.gray9,
+            )
         }
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(8.dp))
 
-        Icon(painter = painterResource(R.drawable.mindrecord_align_left), contentDescription = null)
-        Spacer(modifier = Modifier.width(8.dp))
-        Icon(painter = painterResource(R.drawable.mindrecord_align_center), contentDescription = null)
-        Spacer(modifier = Modifier.width(8.dp))
-        Icon(painter = painterResource(R.drawable.mindrecord_align_right), contentDescription = null)
+        IconButton(onClick = { onAlignChange(TextAlign.Start) }) {
+            Icon(
+                painter = painterResource(R.drawable.mindrecord_align_left),
+                contentDescription = stringResource(R.string.mindrecord_toolbar_align_left_cd),
+            )
+        }
+        IconButton(onClick = { onAlignChange(TextAlign.Center) }) {
+            Icon(
+                painter = painterResource(R.drawable.mindrecord_align_center),
+                contentDescription = stringResource(R.string.mindrecord_toolbar_align_center_cd),
+            )
+        }
+        IconButton(onClick = { onAlignChange(TextAlign.End) }) {
+            Icon(
+                painter = painterResource(R.drawable.mindrecord_align_right),
+                contentDescription = stringResource(R.string.mindrecord_toolbar_align_right_cd),
+            )
+        }
 
         Spacer(modifier = Modifier.weight(1f))
 
-        Text("임시저장 1", style = MaterialTheme.typography.labelSmall, color = AfternoteDesign.colors.gray6)
+        Text(
+            text = stringResource(R.string.mindrecord_toolbar_draft_count, 1),
+            style = AfternoteDesign.typography.captionLargeR,
+            color = AfternoteDesign.colors.gray6,
+        )
     }
 }
 
@@ -104,7 +132,7 @@ fun TextStyleToolbar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "텍스트 설정",
+                text = stringResource(R.string.mindrecord_toolbar_text_settings),
                 style = AfternoteDesign.typography.bodyBase,
                 color = AfternoteDesign.colors.gray6,
             )
@@ -128,8 +156,8 @@ fun TextStyleToolbar(
             ) {
                 IconActionButton(onClick = onLinkClick) {
                     Icon(
-                        painter = painterResource(R.drawable.mindrecord_link),
-                        contentDescription = "링크",
+                        painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_ic_link),
+                        contentDescription = stringResource(R.string.mindrecord_toolbar_link_cd),
                         tint = AfternoteDesign.colors.gray9,
                     )
                 }
@@ -177,7 +205,7 @@ private fun CloseButton(onClick: () -> Unit) {
     ) {
         Icon(
             painter = painterResource(R.drawable.mindrecord_close),
-            contentDescription = "닫기",
+            contentDescription = stringResource(R.string.mindrecord_toolbar_close_cd),
             tint = AfternoteDesign.colors.gray9,
             modifier = Modifier.size(10.dp),
         )
@@ -323,10 +351,22 @@ private fun HeaderTypeRow(
 ) {
     val items =
         listOf(
-            HeaderTypeItem(TextStyleType.TITLE, "제목", AfternoteDesign.typography.h3),
-            HeaderTypeItem(TextStyleType.HEADER, "머릿말", AfternoteDesign.typography.bodyLargeB),
-            HeaderTypeItem(TextStyleType.SUBHEADER, "부머릿말", AfternoteDesign.typography.bodySmallB),
-            HeaderTypeItem(TextStyleType.BODY, "본문", AfternoteDesign.typography.captionLargeR),
+            HeaderTypeItem(TextStyleType.TITLE, stringResource(R.string.mindrecord_toolbar_style_title), AfternoteDesign.typography.h3),
+            HeaderTypeItem(
+                TextStyleType.HEADER,
+                stringResource(R.string.mindrecord_toolbar_style_header),
+                AfternoteDesign.typography.bodyLargeB,
+            ),
+            HeaderTypeItem(
+                TextStyleType.SUBHEADER,
+                stringResource(R.string.mindrecord_toolbar_style_subheader),
+                AfternoteDesign.typography.bodySmallB,
+            ),
+            HeaderTypeItem(
+                TextStyleType.BODY,
+                stringResource(R.string.mindrecord_toolbar_style_body),
+                AfternoteDesign.typography.captionLargeR,
+            ),
         )
     Row(
         modifier =

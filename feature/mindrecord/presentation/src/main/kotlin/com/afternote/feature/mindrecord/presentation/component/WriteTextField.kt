@@ -19,6 +19,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontStyle
@@ -30,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.TextStyleState
 import com.afternote.feature.mindrecord.presentation.model.TextStyleType
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
@@ -71,9 +75,15 @@ fun WriteTextField(
 
     var showTextStyleToolbar by remember { mutableStateOf(false) }
     val imeVisible = WindowInsets.isImeVisible
+    val editorFocusRequester = remember { FocusRequester() }
 
     LaunchedEffect(imeVisible) {
         if (!imeVisible) showTextStyleToolbar = false
+    }
+
+    fun keepEditorFocus(action: () -> Unit) {
+        action()
+        runCatching { editorFocusRequester.requestFocus() }
     }
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -90,17 +100,18 @@ fun WriteTextField(
                 modifier =
                     Modifier
                         .fillMaxSize()
+                        .focusRequester(editorFocusRequester)
                         .padding(16.dp),
             )
             if (state.annotatedString.text.isEmpty()) {
                 Text(
-                    text = "당신의 오늘을 기록해보세요",
+                    text = stringResource(R.string.mindrecord_write_field_placeholder),
                     color = AfternoteDesign.colors.gray4,
                     modifier = Modifier.padding(16.dp),
                 )
             }
             Text(
-                text = "${state.annotatedString.text.length} 글자",
+                text = stringResource(R.string.mindrecord_write_field_character_count, state.annotatedString.text.length),
                 color = AfternoteDesign.colors.gray4,
                 modifier =
                     Modifier
@@ -113,15 +124,23 @@ fun WriteTextField(
             TextStyleToolbar(
                 styleState = styleState,
                 onClose = { showTextStyleToolbar = false },
-                onBoldClick = { state.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold)) },
-                onItalicClick = { state.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic)) },
-                onUnderlineClick = { state.toggleSpanStyle(SpanStyle(textDecoration = TextDecoration.Underline)) },
-                onStrikethroughClick = { state.toggleSpanStyle(SpanStyle(textDecoration = TextDecoration.LineThrough)) },
+                onBoldClick = {
+                    keepEditorFocus { state.toggleSpanStyle(SpanStyle(fontWeight = FontWeight.Bold)) }
+                },
+                onItalicClick = {
+                    keepEditorFocus { state.toggleSpanStyle(SpanStyle(fontStyle = FontStyle.Italic)) }
+                },
+                onUnderlineClick = {
+                    keepEditorFocus { state.toggleSpanStyle(SpanStyle(textDecoration = TextDecoration.Underline)) }
+                },
+                onStrikethroughClick = {
+                    keepEditorFocus { state.toggleSpanStyle(SpanStyle(textDecoration = TextDecoration.LineThrough)) }
+                },
                 onAlignChange = { align ->
-                    state.addParagraphStyle(ParagraphStyle(textAlign = align))
+                    keepEditorFocus { state.addParagraphStyle(ParagraphStyle(textAlign = align)) }
                 },
                 onTextStyleChange = { type ->
-                    state.toggleSpanStyle(type.toSpanStyle())
+                    keepEditorFocus { state.addSpanStyle(type.toSpanStyle()) }
                 },
             )
         }
@@ -129,6 +148,9 @@ fun WriteTextField(
         BottomToolbar(
             modifier = Modifier.imePadding(),
             onTextStyleClick = { showTextStyleToolbar = !showTextStyleToolbar },
+            onAlignChange = { align ->
+                keepEditorFocus { state.addParagraphStyle(ParagraphStyle(textAlign = align)) }
+            },
         )
     }
 }

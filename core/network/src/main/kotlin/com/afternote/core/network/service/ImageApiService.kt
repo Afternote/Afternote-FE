@@ -3,13 +3,8 @@ package com.afternote.core.network.service
 import com.afternote.core.network.dto.PresignedUrlRequestDto
 import com.afternote.core.network.dto.PresignedUrlResponseDto
 import com.afternote.core.network.model.BaseResponse
-import okhttp3.RequestBody
-import retrofit2.Response
 import retrofit2.http.Body
-import retrofit2.http.Header
 import retrofit2.http.POST
-import retrofit2.http.PUT
-import retrofit2.http.Url
 
 /**
  * File API (presigned URL for S3 upload).
@@ -21,11 +16,4 @@ interface ImageApiService {
     suspend fun getPresignedUrl(
         @Body body: PresignedUrlRequestDto,
     ): BaseResponse<PresignedUrlResponseDto>
-
-    @PUT
-    suspend fun uploadToS3(
-        @Url url: String,
-        @Body file: RequestBody,
-        @Header("Content-Type") contentType: String,
-    ): Response<Unit>
 }

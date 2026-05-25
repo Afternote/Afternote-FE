@@ -15,7 +15,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,31 +30,35 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
+import com.afternote.feature.mindrecord.presentation.viewmodel.WeekOption
+import java.time.LocalDate
 
 @Composable
-fun WeeklyReportReviewCard(modifier: Modifier = Modifier) {
-    var expanded by remember { mutableStateOf(false) }
-    var selectedReport by remember { mutableStateOf("11월 2주차 리포트") }
-    val reportOptions =
-        listOf(
-            "11월 2주차 리포트",
-            "11월 1주차 리포트",
-            "10월 4주차 리포트",
-            "10월 3주차 리포트",
-            "10월 2주차 리포트",
-        )
-    val report =
+fun WeeklyReportReviewCard(
+    modifier: Modifier = Modifier,
+    selectedMonday: LocalDate? = null,
+    weekOptions: List<WeekOption> = emptyList(),
+    onWeekSelect: (LocalDate) -> Unit = {},
+    dateRange: String = "2025.11.10. - 2025.11.16.",
+    counts: List<Pair<Int, MindRecordCategoryUi>> =
         listOf(
             5 to MindRecordCategoryUi.DailyQuestion,
             4 to MindRecordCategoryUi.Diary,
             3 to MindRecordCategoryUi.DeepThought,
-        )
+        ),
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selectedOption = weekOptions.firstOrNull { it.monday == selectedMonday }
+    val selectedLabel =
+        selectedOption?.let { weekLabel(it.monday) }
+            ?: stringResource(R.string.mindrecord_weekly_report_label_fallback)
 
     OutlinedCard(
         border = BorderStroke(1.dp, color = AfternoteDesign.colors.gray2),
@@ -90,7 +93,7 @@ fun WeeklyReportReviewCard(modifier: Modifier = Modifier) {
                 Text(
                     text = "WEEKLY SUMMARY",
                     style = AfternoteDesign.typography.mono,
-                    color = Color(0xFF000000).copy(0.3f),
+                    color = AfternoteDesign.colors.black.copy(alpha = 0.3f),
                 )
                 Icon(
                     painter = painterResource(R.drawable.mindrecord_up),
@@ -108,9 +111,9 @@ fun WeeklyReportReviewCard(modifier: Modifier = Modifier) {
                     modifier = Modifier.clickable { expanded = true },
                 ) {
                     Text(
-                        text = selectedReport,
+                        text = selectedLabel,
                         style = AfternoteDesign.typography.h2,
-                        color = Color(0xFF000000).copy(0.9f),
+                        color = AfternoteDesign.colors.black.copy(alpha = 0.9f),
                     )
                     Icon(
                         painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_arrowdown),
@@ -124,23 +127,25 @@ fun WeeklyReportReviewCard(modifier: Modifier = Modifier) {
                     onDismissRequest = { expanded = false },
                     containerColor = Color.White,
                 ) {
-                    reportOptions.forEach { option ->
+                    weekOptions.forEach { option ->
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    text = option,
+                                    text = weekLabel(option.monday),
                                     style = AfternoteDesign.typography.h3,
                                     color =
-                                        if (option == selectedReport) {
-                                            Color(0xFF000000).copy(0.9f)
+                                        if (option.monday == selectedMonday) {
+                                            AfternoteDesign.colors.black.copy(alpha = 0.9f)
                                         } else {
-                                            Color(0xFF000000).copy(0.3f)
+                                            AfternoteDesign.colors.black.copy(alpha = 0.3f)
                                         },
                                 )
                             },
                             onClick = {
-                                selectedReport = option
                                 expanded = false
+                                if (option.monday != selectedMonday) {
+                                    onWeekSelect(option.monday)
+                                }
                             },
                         )
                     }
@@ -150,7 +155,7 @@ fun WeeklyReportReviewCard(modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.height(10.dp))
 
             Text(
-                text = "2025.11.10. - 2025.11.16.",
+                text = dateRange,
                 style = AfternoteDesign.typography.bodySmallR,
                 color = AfternoteDesign.colors.gray6,
             )
@@ -161,16 +166,16 @@ fun WeeklyReportReviewCard(modifier: Modifier = Modifier) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                report.forEach { (count, category) ->
+                counts.forEach { (count, category) ->
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = count.toString(),
-                            color = Color(0xFF000000).copy(0.9f),
+                            color = AfternoteDesign.colors.black.copy(alpha = 0.9f),
                         )
                         Text(
-                            text = category.title,
-                            color = Color(0xFF000000).copy(0.4f),
-                            style = MaterialTheme.typography.labelSmall,
+                            text = stringResource(category.titleRes),
+                            color = AfternoteDesign.colors.black.copy(alpha = 0.4f),
+                            style = AfternoteDesign.typography.captionLargeR,
                         )
                     }
                 }
@@ -178,6 +183,14 @@ fun WeeklyReportReviewCard(modifier: Modifier = Modifier) {
         }
     }
 }
+
+@Composable
+private fun weekLabel(monday: LocalDate): String =
+    stringResource(
+        R.string.mindrecord_weekly_report_label_format,
+        monday.monthValue,
+        (monday.dayOfMonth - 1) / 7 + 1,
+    )
 
 @Preview(showBackground = true)
 @Composable

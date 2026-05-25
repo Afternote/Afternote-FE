@@ -1,46 +1,40 @@
 package com.afternote.feature.onboarding.presentation.navigation
 
 /**
- * 온보딩 그래프로 전달되는 네비게이션 이벤트 묶음.
+ * 온보딩 그래프로 전달되는 네비게이션 명령 모음.
  *
- * [onboardingNavGraph]의 파라미터 비대화를 줄이고, 앱 루트에서 `remember`로 안정적으로 묶기 위함이다.
+ * 작명 컨벤션 (#239):
+ * - `navigateTo<Where>` — 단순 navigate
+ * - `popBack` / `popTo<Where>` — pop 동작
+ * - `replace<X>With<Y>` — popUpTo + navigate (replace)
+ * - `proceedTo<Next>` — 회원가입 같은 흐름 내부 stepping
+ *
+ * Screen 콜백 인자는 `on<도메인 이벤트>` 자리라 본 인터페이스와 별 책임. NavGraph 가 둘을 매핑한다.
  */
 interface OnboardingNavActions {
-    fun onOnboardingComplete()
+    /** 회원가입/로그인 성공 → Onboarding 그래프 전체 비우고 Home 진입 (replace). */
+    fun replaceOnboardingWithHome()
 
-    fun onNavigateWelcomeToSignUp()
+    fun navigateToSignUp()
 
-    fun onNavigateWelcomeToLogin()
+    fun navigateToLogin()
 
-    /**
-     * Welcome 의 "전달 받은 기록 확인하기" 누름 → 수신자 흐름 진입 (받은 기록함, 이슈 #215).
-     * 본인 확인 캐시 상태와 무관하게 받은 기록함으로 직행하며, 본인 확인은 발신자별 열람 신청 시점에 1회 수행.
-     */
-    fun onNavigateWelcomeToReceivedRecords()
+    /** Welcome 의 "전달 받은 기록 확인하기" → 수신자 흐름 (받은 기록함) 진입. */
+    fun navigateToReceivedRecords()
 
-    fun onReplaceLoginWithSignUp()
+    /** Login → SignUp 으로 화면 교체 (뒤로가기 시 Login 으로 돌아가지 않도록). */
+    fun replaceLoginWithSignUp()
 
-    fun onLoginBack()
+    /** 화면 단위 동작이 동일한 단순 뒤로가기 — 호출 화면별로 분기할 필요 없을 때 공통 사용. */
+    fun popBack()
 
-    fun onSignUpEmailNext()
+    fun proceedToSignUpResidentNumber()
 
-    fun onSignUpEmailBack()
+    fun proceedToSignUpPassword()
 
-    fun onSignUpResidentNext()
+    fun proceedToTerms()
 
-    fun onSignUpResidentBack()
+    fun proceedToProfile()
 
-    fun onSignUpPasswordNext()
-
-    fun onSignUpPasswordBack()
-
-    fun onTermsNext()
-
-    fun onTermsBack()
-
-    fun onViewTerms()
-
-    fun onTermsDetailBack()
-
-    fun onProfileBack()
+    fun navigateToTermsDetail()
 }

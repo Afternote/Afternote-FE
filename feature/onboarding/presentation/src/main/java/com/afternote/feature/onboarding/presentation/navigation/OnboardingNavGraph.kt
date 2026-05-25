@@ -40,18 +40,18 @@ fun NavGraphBuilder.onboardingNavGraph(
         // ── Welcome ──
         composable<OnboardingRoute.WelcomeRoute> {
             WelcomeScreen(
-                onStartClick = actions::onNavigateWelcomeToSignUp,
-                onCheckRecordsClick = actions::onNavigateWelcomeToReceivedRecords,
-                onLoginClick = actions::onNavigateWelcomeToLogin,
+                onStartClick = actions::navigateToSignUp,
+                onCheckRecordsClick = actions::navigateToReceivedRecords,
+                onLoginClick = actions::navigateToLogin,
             )
         }
 
         // ── Login ──
         composable<OnboardingRoute.LoginRoute> {
             LoginEntry(
-                onLoginSuccess = actions::onOnboardingComplete,
-                onSignUpClick = actions::onReplaceLoginWithSignUp,
-                onBackClick = actions::onLoginBack,
+                onLoginSuccess = actions::replaceOnboardingWithHome,
+                onSignUpClick = actions::replaceLoginWithSignUp,
+                onBackClick = actions::popBack,
             )
         }
 
@@ -61,7 +61,7 @@ fun NavGraphBuilder.onboardingNavGraph(
             val snackbarHostState =
                 rememberSignUpEventHost(
                     viewModel = signUpViewModel,
-                    onNavigateToResidentNumber = actions::onSignUpEmailNext,
+                    onNavigateToResidentNumber = actions::proceedToSignUpResidentNumber,
                 )
 
             SignUpScreen(
@@ -71,13 +71,14 @@ fun NavGraphBuilder.onboardingNavGraph(
                 isSendingCode = signUpViewModel.isSendingCode,
                 isEmailFormatValid = signUpViewModel.isEmailFormatValid,
                 resendCooldownSeconds = signUpViewModel.resendCooldownSeconds,
+                verificationRemainingSeconds = signUpViewModel.verificationRemainingSeconds,
                 isNextEnabled = signUpViewModel.isStep1NextEnabled,
                 snackbarHostState = snackbarHostState,
                 onEmailChange = signUpViewModel::updateEmail,
                 onVerificationCodeChange = signUpViewModel::updateVerificationCode,
                 onRequestVerification = signUpViewModel::requestVerification,
                 onNextClick = signUpViewModel::verifyEmailAndProceed,
-                onBackClick = actions::onSignUpEmailBack,
+                onBackClick = actions::popBack,
             )
         }
 
@@ -93,8 +94,8 @@ fun NavGraphBuilder.onboardingNavGraph(
                 snackbarHostState = snackbarHostState,
                 onFrontNumberChange = signUpViewModel::updateResidentFrontNumber,
                 onBackNumberChange = signUpViewModel::updateResidentBackNumber,
-                onNextClick = actions::onSignUpResidentNext,
-                onBackClick = actions::onSignUpResidentBack,
+                onNextClick = actions::proceedToSignUpPassword,
+                onBackClick = actions::popBack,
             )
         }
 
@@ -111,8 +112,8 @@ fun NavGraphBuilder.onboardingNavGraph(
                 snackbarHostState = snackbarHostState,
                 onPasswordChange = signUpViewModel::updateSignUpPassword,
                 onPasswordConfirmChange = signUpViewModel::updateSignUpPasswordConfirm,
-                onNextClick = actions::onSignUpPasswordNext,
-                onBackClick = actions::onSignUpPasswordBack,
+                onNextClick = actions::proceedToTerms,
+                onBackClick = actions::popBack,
             )
         }
 
@@ -129,9 +130,9 @@ fun NavGraphBuilder.onboardingNavGraph(
                 onPrivacyToggle = signUpViewModel::togglePrivacyAgreed,
                 onMarketingToggle = signUpViewModel::toggleMarketingAgreed,
                 onToggleAll = signUpViewModel::toggleAllTerms,
-                onViewTermsClick = { _ -> actions.onViewTerms() },
-                onNextClick = actions::onTermsNext,
-                onBackClick = actions::onTermsBack,
+                onViewTermsClick = { _ -> actions.navigateToTermsDetail() },
+                onNextClick = actions::proceedToProfile,
+                onBackClick = actions::popBack,
             )
         }
 
@@ -139,8 +140,8 @@ fun NavGraphBuilder.onboardingNavGraph(
         composable<OnboardingRoute.TermsDetailRoute> {
             TermsDetailScreen(
                 title = "",
-                onBackClick = actions::onTermsDetailBack,
-                onNextClick = actions::onTermsDetailBack,
+                onBackClick = actions::popBack,
+                onNextClick = actions::popBack,
             )
         }
 
@@ -150,8 +151,8 @@ fun NavGraphBuilder.onboardingNavGraph(
 
             OnboardingProfileEntry(
                 viewModel = signUpViewModel,
-                onOnboardingComplete = actions::onOnboardingComplete,
-                onBackClick = actions::onProfileBack,
+                onOnboardingComplete = actions::replaceOnboardingWithHome,
+                onBackClick = actions::popBack,
             )
         }
     }

@@ -2,8 +2,10 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtCreatePayload
 import com.afternote.feature.mindrecord.domain.repository.DeepThoughtRepository
+import com.afternote.feature.mindrecord.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -57,7 +59,15 @@ class DeepThoughtWriteViewModel
                         _uiState.update { it.copy(submitState = SubmitState.Succeeded) }
                     }.onFailure { e ->
                         _uiState.update {
-                            it.copy(submitState = SubmitState.Failed(e.message ?: "깊은 생각 등록에 실패했습니다."))
+                            it.copy(
+                                submitState =
+                                    SubmitState.Failed(
+                                        UiText.DynamicOrResource(
+                                            value = e.message,
+                                            fallbackResId = R.string.mindrecord_error_deep_thought_submit_failed,
+                                        ),
+                                    ),
+                            )
                         }
                     }
             }
