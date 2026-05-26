@@ -51,4 +51,3 @@ sealed class EditorBlock {
         val url: String,
     ) : EditorBlock()
 }
-

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.afternote.feature.mindrecord.domain.model.MindRecordSummary
 import com.afternote.feature.mindrecord.domain.model.MindRecordType
 import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
+import com.afternote.feature.mindrecord.presentation.viewmodel.ReceiverMindRecordViewModel.Companion.MOCK_DEEP_THOUGHT_CATEGORIES
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
