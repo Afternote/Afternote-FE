@@ -29,7 +29,7 @@ import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent
 import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadingContent
-import com.afternote.feature.afternote.presentation.author.navigation.ObserveDetailEvents
+import com.afternote.feature.afternote.presentation.author.navigation.ObserveDeleteResult
 import com.afternote.feature.afternote.presentation.shared.detail.AfternoteDetailServiceHeader
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
@@ -53,7 +53,7 @@ internal fun GalleryDetailRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    ObserveDetailEvents(
+    ObserveDeleteResult(
         deleteResult = (uiState as? AfternoteDetailUiState.Success)?.deleteResult,
         onConsumed = viewModel::onDeleteResultConsumed,
         onDeleteSucceeded = onBack,
