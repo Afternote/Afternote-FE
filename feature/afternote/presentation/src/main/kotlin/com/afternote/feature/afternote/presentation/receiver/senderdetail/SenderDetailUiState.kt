@@ -25,6 +25,8 @@ sealed interface SenderDetailUiState {
         val verification: SenderVerificationState,
         val requestedAt: String?,
         val approvedAt: String?,
+        /** "기록 열람하기" 성공 후 글로벌 헤더 컨텍스트 저장 완료 신호 — UI 가 수신자 홈으로 이동 후 소비. */
+        val shouldOpenReceiverHome: Boolean = false,
     ) : SenderDetailUiState
 
     data object SenderNotFound : SenderDetailUiState
@@ -44,9 +46,4 @@ sealed interface SenderVerificationState {
     data object Approved : SenderVerificationState
 
     data object Rejected : SenderVerificationState
-}
-
-sealed interface SenderDetailEvent {
-    /** "기록 열람하기" 성공 후 글로벌 헤더 컨텍스트 저장 완료 → 수신자 홈 진입 알림. */
-    data object OpenReceiverHome : SenderDetailEvent
 }

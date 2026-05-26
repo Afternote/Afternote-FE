@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import com.afternote.afternote_fe.screen.HomeTabActions
 import com.afternote.afternote_fe.screen.receiver.ReceiverHomeActions
@@ -24,84 +23,59 @@ import com.afternote.feature.setting.presentation.navigation.SettingNavActions
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterNavActions
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
-import dagger.hilt.android.EntryPointAccessors
 
 @Composable
 fun rememberOnboardingNavActions(navController: NavController): OnboardingNavActions =
     remember(navController) {
         object : OnboardingNavActions {
-            override fun onOnboardingComplete() {
+            override fun replaceOnboardingWithHome() {
                 navController.navigate(Route.Home) {
                     // 온보딩 흐름 전체를 stack 에서 비우고 Home 진입 — 뒤로가기로 온보딩으로 못 돌아가게(앱 종료).
                     popUpTo(0) { inclusive = true }
                 }
             }
 
-            override fun onNavigateWelcomeToSignUp() {
+            override fun navigateToSignUp() {
                 navController.navigate(OnboardingRoute.SignUpRoute)
             }
 
-            override fun onNavigateWelcomeToLogin() {
+            override fun navigateToLogin() {
                 navController.navigate(OnboardingRoute.LoginRoute)
             }
 
-            override fun onNavigateWelcomeToReceivedRecords() {
+            override fun navigateToReceivedRecords() {
                 navController.navigate(Route.Receiver)
             }
 
-            override fun onReplaceLoginWithSignUp() {
+            override fun replaceLoginWithSignUp() {
                 navController.navigate(OnboardingRoute.SignUpRoute) {
                     // Login 화면을 SignUp 으로 교체 — 뒤로가기 시 Login 으로 돌아가지 않고 그 이전(Welcome) 으로.
                     popUpTo<OnboardingRoute.LoginRoute> { inclusive = true }
                 }
             }
 
-            override fun onLoginBack() {
+            override fun popBack() {
                 navController.popBackStack()
             }
 
-            override fun onSignUpEmailNext() {
+            override fun proceedToSignUpResidentNumber() {
                 navController.navigate(OnboardingRoute.SignUpResidentNumberRoute)
             }
 
-            override fun onSignUpEmailBack() {
-                navController.popBackStack()
-            }
-
-            override fun onSignUpResidentNext() {
+            override fun proceedToSignUpPassword() {
                 navController.navigate(OnboardingRoute.SignUpPasswordRoute)
             }
 
-            override fun onSignUpResidentBack() {
-                navController.popBackStack()
-            }
-
-            override fun onSignUpPasswordNext() {
+            override fun proceedToTerms() {
                 navController.navigate(OnboardingRoute.TermsRoute)
             }
 
-            override fun onSignUpPasswordBack() {
-                navController.popBackStack()
-            }
-
-            override fun onTermsNext() {
+            override fun proceedToProfile() {
                 navController.navigate(OnboardingRoute.ProfileRoute)
             }
 
-            override fun onTermsBack() {
-                navController.popBackStack()
-            }
-
-            override fun onViewTerms() {
+            override fun navigateToTermsDetail() {
                 navController.navigate(OnboardingRoute.TermsDetailRoute)
-            }
-
-            override fun onTermsDetailBack() {
-                navController.popBackStack()
-            }
-
-            override fun onProfileBack() {
-                navController.popBackStack()
             }
         }
     }
@@ -373,33 +347,33 @@ fun rememberAfternoteNavActions(
     val onFingerprintErrorState by rememberUpdatedState(onFingerprintAuthError)
     return remember(appState) {
         object : AfternoteNavActions {
-            override fun onBottomNavTabSelected(tab: BottomNavTab) {
+            override fun navigateToBottomTab(tab: BottomNavTab) {
                 appState.navigateToBottomBarRoute(tab.route)
             }
 
-            override fun onPopBackStack() {
+            override fun popBack() {
                 appState.navController.popBackStack()
             }
 
-            override fun onNavigateToAfternoteDetail(itemId: String) {
+            override fun navigateToAfternoteDetail(itemId: String) {
                 appState.navController.navigate(AfternoteRoute.DetailRoute(itemId = itemId))
             }
 
-            override fun onNavigateToGalleryDetail(itemId: String) {
+            override fun navigateToGalleryDetail(itemId: String) {
                 appState.navController.navigate(AfternoteRoute.GalleryDetailRoute(itemId = itemId))
             }
 
-            override fun onNavigateToMemorialGuidelineDetail(itemId: String) {
+            override fun navigateToMemorialGuidelineDetail(itemId: String) {
                 appState.navController.navigate(
                     AfternoteRoute.MemorialGuidelineDetailRoute(itemId = itemId),
                 )
             }
 
-            override fun onNavigateToNewEditor(initialCategory: String?) {
+            override fun navigateToNewEditor(initialCategory: String?) {
                 appState.navController.navigate(AfternoteRoute.EditorRoute(initialCategory = initialCategory))
             }
 
-            override fun onNavigateToEditorForEdit(
+            override fun navigateToEditorForEdit(
                 itemId: String,
                 initialCategory: EditorCategory,
             ) {
@@ -411,15 +385,15 @@ fun rememberAfternoteNavActions(
                 )
             }
 
-            override fun onNavigateToMemorialPlaylist() {
+            override fun navigateToMemorialPlaylist() {
                 appState.navController.navigate(AfternoteRoute.MemorialPlaylistRoute)
             }
 
-            override fun onNavigateToAddSong() {
+            override fun navigateToAddSong() {
                 appState.navController.navigate(AfternoteRoute.AddSongRoute)
             }
 
-            override fun onFingerprintAuthSuccess() {
+            override fun replaceFingerprintLoginWithAfternoteHome() {
                 appState.navController.navigate(AfternoteRoute.AfternoteHomeRoute) {
                     // 지문 로그인 화면 pop — 인증 성공 후 뒤로가기로 다시 입력 요구하는 화면에 못 돌아가게.
                     popUpTo<AfternoteRoute.FingerprintLoginRoute> { inclusive = true }
@@ -427,11 +401,11 @@ fun rememberAfternoteNavActions(
                 }
             }
 
-            override fun onFingerprintAuthError(message: String) {
+            override fun onFingerprintAuthFailed(message: String) {
                 onFingerprintErrorState(message)
             }
 
-            override fun onEditorSaveSuccessNavigateHome() {
+            override fun popToAfternoteHome() {
                 appState.navController.navigate(AfternoteRoute.AfternoteHomeRoute) {
                     // 저장 성공 — Home 위의 화면들(에디터·미디어 선택 등) 만 pop, Home 자체는 유지(inclusive=false).
                     // launchSingleTop 으로 새 Home 인스턴스 생성 대신 기존 Home 위로 복귀.
@@ -454,42 +428,42 @@ fun rememberAfternoteNavActions(
 fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions =
     remember(appState) {
         object : ReceiverNavActions {
-            override fun onPopBackStack() {
+            override fun popBack() {
                 appState.navController.popBackStack()
             }
 
-            override fun onNavigateToAfternoteList() {
+            override fun navigateToAfternoteList() {
                 appState.navController.navigate(ReceiverRoute.AfternoteListRoute)
             }
 
-            override fun onNavigateToReceivedAfternoteDetail(afternoteId: String) {
+            override fun navigateToReceivedAfternoteDetail(afternoteId: String) {
                 appState.navController.navigate(
                     ReceiverRoute.AfternoteDetailRoute(afternoteId = afternoteId),
                 )
             }
 
-            override fun onNavigateToSenderRegistration() {
+            override fun navigateToSenderRegistration() {
                 appState.navController.navigate(ReceiverRoute.SenderRegistrationRoute)
             }
 
-            override fun onNavigateToSenderDetail(senderId: String) {
+            override fun navigateToSenderDetail(senderId: String) {
                 appState.navController.navigate(
                     ReceiverRoute.SenderDetailRoute(senderId = senderId),
                 )
             }
 
-            override fun onRequestVerificationFlow(senderId: String) {
+            override fun navigateToDeliveryVerificationFlow(senderId: String) {
                 // nested 열람 신청 흐름 그래프 진입. 본인 확인 캐시 분기는 IntroRoute 의 LaunchedEffect 가 처리.
                 appState.navController.navigate(
                     ReceiverRoute.DeliveryVerificationFlowRoute(senderId = senderId),
                 )
             }
 
-            override fun onNavigateIdentityIntroToEmail() {
+            override fun navigateToIdentityVerificationEmail() {
                 appState.navController.navigate(ReceiverRoute.IdentityVerificationEmailRoute)
             }
 
-            override fun onIdentityFlowToMasterKey() {
+            override fun proceedToMasterKey() {
                 // 두 진입 경로 (Intro 의 캐시 hit jump / Email 인증 성공) 공통 — Intro 까지 pop 해서
                 // 뒤로가기로 본인 확인 화면들에 돌아오지 않게.
                 appState.navController.navigate(ReceiverRoute.MasterKeyRoute) {
@@ -497,21 +471,21 @@ fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions =
                 }
             }
 
-            override fun onNavigateMasterKeyToDocumentUpload() {
+            override fun proceedToDocumentUpload() {
                 appState.navController.navigate(ReceiverRoute.DocumentUploadRoute) {
                     // 마스터 키 검증 성공 직후 — MasterKey 화면 pop. 뒤로가기로 이미 검증된 마스터 키 재입력 화면에 못 돌아가게.
                     popUpTo<ReceiverRoute.MasterKeyRoute> { inclusive = true }
                 }
             }
 
-            override fun onNavigateDocumentUploadToComplete() {
+            override fun proceedToDeliveryVerificationComplete() {
                 appState.navController.navigate(ReceiverRoute.DeliveryVerificationCompleteRoute) {
                     // 서류 제출 성공 직후 — DocumentUpload pop. 뒤로가기로 제출 끝난 업로드 화면에 못 돌아가게.
                     popUpTo<ReceiverRoute.DocumentUploadRoute> { inclusive = true }
                 }
             }
 
-            override fun onNavigateCompleteToReceivedRecords() {
+            override fun popToReceivedRecords() {
                 // 받은 기록함을 남기고 신청 흐름 화면들(완료/서류/마스터 키)을 모두 pop.
                 appState.navController.navigate(ReceiverRoute.ReceivedRecordsRoute) {
                     popUpTo<ReceiverRoute.ReceivedRecordsRoute> { inclusive = false }
@@ -519,7 +493,7 @@ fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions =
                 }
             }
 
-            override fun onNavigateToReceiverHome() {
+            override fun navigateToReceiverHome() {
                 appState.navController.navigate(ReceiverRoute.HomeRoute)
             }
         }

@@ -1,8 +1,11 @@
+import com.google.firebase.appdistribution.gradle.firebaseAppDistribution
 import java.util.Properties
 
 plugins {
     id("afternote.android.application")
     id("afternote.android.navigation")
+    alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.app.distribution)
 }
 
 val localProperties = Properties()
@@ -32,6 +35,18 @@ android {
         manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] = kakaoKey
     }
 
+    signingConfigs {
+        create("release") {
+            val releaseStoreFile = localProperties.getProperty("RELEASE_STORE_FILE")
+            if (releaseStoreFile != null) {
+                storeFile = file(releaseStoreFile)
+                storePassword = localProperties.getProperty("RELEASE_STORE_PASSWORD")
+                keyAlias = localProperties.getProperty("RELEASE_KEY_ALIAS")
+                keyPassword = localProperties.getProperty("RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -40,6 +55,11 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            signingConfig = signingConfigs.getByName("release")
+            firebaseAppDistribution {
+                groups = "afternote"
+                releaseNotes = "Release build for internal distribution"
+            }
         }
     }
 }

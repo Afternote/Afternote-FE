@@ -5,12 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.afternote.feature.afternote.domain.repository.receiver.IdentityVerificationRepository
 import com.afternote.feature.afternote.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -34,9 +31,6 @@ class IdentityVerificationViewModel
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(IdentityVerificationUiState())
         val uiState: StateFlow<IdentityVerificationUiState> = _uiState.asStateFlow()
-
-        private val _events = Channel<IdentityVerificationEvent>(Channel.BUFFERED)
-        val events: Flow<IdentityVerificationEvent> = _events.receiveAsFlow()
 
         fun onEmailChange(value: String) {
             _uiState.update {
@@ -86,8 +80,7 @@ class IdentityVerificationViewModel
                     .verifyCode(state.email, state.code)
                     .onSuccess {
                         identityVerificationRepository.markVerified()
-                        _uiState.update { it.copy(isVerifying = false) }
-                        _events.send(IdentityVerificationEvent.Verified)
+                        _uiState.update { it.copy(isVerifying = false, isVerified = true) }
                     }.onFailure {
                         _uiState.update {
                             it.copy(
@@ -101,6 +94,10 @@ class IdentityVerificationViewModel
 
         fun consumeError() {
             _uiState.update { it.copy(errorMessageRes = null) }
+        }
+
+        fun onVerifiedConsumed() {
+            _uiState.update { it.copy(isVerified = false) }
         }
 
         private companion object {

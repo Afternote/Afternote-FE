@@ -57,26 +57,26 @@ fun NavGraphBuilder.receiverNavGraph(
     navigation<Route.Receiver>(startDestination = ReceiverRoute.ReceivedRecordsRoute) {
         receiverComposable<ReceiverRoute.ReceivedRecordsRoute> {
             ReceivedRecordsScreen(
-                onBackClick = actions::onPopBackStack,
-                onAddSenderClick = actions::onNavigateToSenderRegistration,
-                onSenderClick = { sender -> actions.onNavigateToSenderDetail(sender.id) },
+                onBackClick = actions::popBack,
+                onAddSenderClick = actions::navigateToSenderRegistration,
+                onSenderClick = { sender -> actions.navigateToSenderDetail(sender.id) },
             )
         }
 
         receiverComposable<ReceiverRoute.SenderRegistrationRoute> {
             SenderRegistrationScreen(
-                onBackClick = actions::onPopBackStack,
+                onBackClick = actions::popBack,
                 // 등록 완료 시 받은 기록함으로 pop. 카드는 자동으로 반영된다 (SenderRegistry StateFlow).
-                onRegistered = actions::onPopBackStack,
+                onRegistered = actions::popBack,
             )
         }
 
         receiverComposable<ReceiverRoute.SenderDetailRoute> { backStackEntry ->
             val senderId = backStackEntry.toRoute<ReceiverRoute.SenderDetailRoute>().senderId
             SenderDetailScreen(
-                onBackClick = actions::onPopBackStack,
-                onRequestVerification = { actions.onRequestVerificationFlow(senderId) },
-                onOpenReceiverHome = actions::onNavigateToReceiverHome,
+                onBackClick = actions::popBack,
+                onRequestVerification = { actions.navigateToDeliveryVerificationFlow(senderId) },
+                onOpenReceiverHome = actions::navigateToReceiverHome,
             )
         }
 
@@ -95,20 +95,20 @@ fun NavGraphBuilder.receiverNavGraph(
                 // popUpTo 들도 모두 inclusive 라 흐름 중 Intro 가 다시 등장하지 않는다.
                 if (isVerified) {
                     LaunchedEffect(Unit) {
-                        actions.onIdentityFlowToMasterKey()
+                        actions.proceedToMasterKey()
                     }
                 } else {
                     IdentityVerificationIntroScreen(
-                        onBackClick = actions::onPopBackStack,
-                        onStartClick = actions::onNavigateIdentityIntroToEmail,
+                        onBackClick = actions::popBack,
+                        onStartClick = actions::navigateToIdentityVerificationEmail,
                     )
                 }
             }
 
             receiverComposable<ReceiverRoute.IdentityVerificationEmailRoute> {
                 IdentityVerificationEmailScreen(
-                    onBackClick = actions::onPopBackStack,
-                    onVerified = actions::onIdentityFlowToMasterKey,
+                    onBackClick = actions::popBack,
+                    onVerified = actions::proceedToMasterKey,
                 )
             }
 
@@ -116,21 +116,21 @@ fun NavGraphBuilder.receiverNavGraph(
                 val flowVm = backStackEntry.deliveryFlowViewModel(deliveryFlowParentEntry)
                 MasterKeyScreen(
                     senderId = flowVm.senderId,
-                    onBackClick = actions::onPopBackStack,
-                    onVerified = actions::onNavigateMasterKeyToDocumentUpload,
+                    onBackClick = actions::popBack,
+                    onVerified = actions::proceedToDocumentUpload,
                 )
             }
 
             receiverComposable<ReceiverRoute.DocumentUploadRoute> {
                 DocumentUploadScreen(
-                    onBackClick = actions::onPopBackStack,
-                    onSubmitted = actions::onNavigateDocumentUploadToComplete,
+                    onBackClick = actions::popBack,
+                    onSubmitted = actions::proceedToDeliveryVerificationComplete,
                 )
             }
 
             receiverComposable<ReceiverRoute.DeliveryVerificationCompleteRoute> {
                 DeliveryVerificationCompleteScreen(
-                    onBackToRecords = actions::onNavigateCompleteToReceivedRecords,
+                    onBackToRecords = actions::popToReceivedRecords,
                 )
             }
         }
@@ -143,13 +143,13 @@ fun NavGraphBuilder.receiverNavGraph(
             ReceiverAfternoteHomeEntry(
                 actions =
                     ReceiverAfternoteHomeEntryActions(
-                        navigateToDetail = actions::onNavigateToReceivedAfternoteDetail,
+                        navigateToDetail = actions::navigateToReceivedAfternoteDetail,
                     ),
             )
         }
 
         receiverComposable<ReceiverRoute.AfternoteDetailRoute> {
-            ReceivedAfternoteDetailRoute(onBack = actions::onPopBackStack)
+            ReceivedAfternoteDetailRoute(onBack = actions::popBack)
         }
     }
 }
