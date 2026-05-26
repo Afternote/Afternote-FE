@@ -82,8 +82,8 @@ fun LoginEntry(
     }
 
     LoginScreen(
-        initialEmail = viewModel.email,
-        initialPassword = viewModel.password,
+        initialEmail = uiState.email,
+        initialPassword = uiState.password,
         onEmailChange = viewModel::updateEmail,
         onPasswordChange = viewModel::updatePassword,
         onLoginClick = { withClearFocus { viewModel.loginWithEmail() } },

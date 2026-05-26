@@ -1,8 +1,5 @@
 package com.afternote.feature.onboarding.presentation.login
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.domain.usecase.auth.LoginType
@@ -23,24 +20,20 @@ class LoginViewModel
         private val _uiState = MutableStateFlow(LoginUiState())
         val uiState = _uiState.asStateFlow()
 
-        var email: String by mutableStateOf("")
-            private set
-        var password: String by mutableStateOf("")
-            private set
-
         fun updateEmail(value: String) {
-            email = value
+            _uiState.update { it.copy(email = value) }
         }
 
         fun updatePassword(value: String) {
-            password = value
+            _uiState.update { it.copy(password = value) }
         }
 
         fun loginWithEmail() {
+            val state = _uiState.value
             login(
                 LoginType.Email(
-                    email = email,
-                    password = password,
+                    email = state.email,
+                    password = state.password,
                 ),
             )
         }
@@ -53,10 +46,12 @@ class LoginViewModel
             login(LoginType.Google(idToken))
         }
 
+        /** UI 가 [LoginUiState.isLoggedIn] 소비 후 reset. */
         fun onLoggedInConsumed() {
             _uiState.update { it.copy(isLoggedIn = false) }
         }
 
+        /** UI 가 [LoginUiState.errorMessage] 소비 (snackbar 표시) 후 reset. */
         fun onErrorConsumed() {
             _uiState.update { it.copy(errorMessage = null) }
         }
@@ -66,7 +61,6 @@ class LoginViewModel
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoading = true) }
                 val result = loginUseCase(loginType = loginType)
-
                 result
                     .onSuccess {
                         _uiState.update { it.copy(isLoading = false, isLoggedIn = true) }

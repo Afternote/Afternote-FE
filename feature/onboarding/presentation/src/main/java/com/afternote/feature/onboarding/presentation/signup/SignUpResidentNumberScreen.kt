@@ -54,7 +54,7 @@ fun SignUpResidentNumberScreen(
     // 앞자리 6자리 입력 완료 시 뒷자리로 포커스 자동 이동
     LaunchedEffect(frontNumberState) {
         snapshotFlow { frontNumberState.text }
-            .filter { it.length == SignUpViewModel.RESIDENT_REGISTRATION_FRONT_DIGIT_COUNT }
+            .filter { it.length == SignUpUiState.RESIDENT_REGISTRATION_FRONT_DIGIT_COUNT }
             .collectLatest { backFocusRequester.requestFocus() }
     }
 

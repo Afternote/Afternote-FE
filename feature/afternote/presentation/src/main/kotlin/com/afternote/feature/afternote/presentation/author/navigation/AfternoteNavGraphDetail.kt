@@ -56,14 +56,16 @@ internal fun DesignPendingDetailContent(onBackClick: () -> Unit) {
 /**
  * 상세 화면 삭제 결과 ([AfternoteDetailDeleteResult]) 공용 처리 헬퍼.
  *
- * - [AfternoteDetailDeleteResult.Succeeded] → [onDeleteSucceeded] (보통 명시적 [onBack] 호출)
+ * UiState 의 nullable 신호([com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailUiState.Success.deleteResult])를
+ * [LaunchedEffect] 로 감지해
+ * - [AfternoteDetailDeleteResult.Succeeded] → [onDeleteSucceeded] (보통 호출처가 pop 콜백을 전달)
  * - [AfternoteDetailDeleteResult.Failed] → [onDeleteFailed] (에러 UI는 화면별 Snackbar/Dialog 책임. 기본은 무시)
  *
  * 처리 후 [onConsumed] 콜백으로 ViewModel 의 [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel.onDeleteResultConsumed]
  * 호출 → state reset (재합성 시 중복 처리 방지).
  */
 @Composable
-internal fun ObserveDetailEvents(
+internal fun ObserveDeleteResult(
     deleteResult: AfternoteDetailDeleteResult?,
     onConsumed: () -> Unit,
     onDeleteSucceeded: () -> Unit,

@@ -10,13 +10,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.feature.onboarding.presentation.signup.SignUpUiState
 import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel
 import kotlinx.coroutines.launch
 
 /**
  * 프로필 설정 Entry.
  *
- * Graph-scoped [SignUpViewModel]을 받아 이벤트 수집과 상태 전달을 전담합니다.
+ * Graph-scoped [SignUpViewModel] 의 [SignUpUiState] 단발성 신호 (isSignedUp ·
+ * errorMessage · isNameRequired) 를 LaunchedEffect 로 소비. 소비 후 VM 의 `onXxxConsumed()`
+ * 호출로 reset.
  */
 @Composable
 fun OnboardingProfileEntry(
@@ -25,7 +28,7 @@ fun OnboardingProfileEntry(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val profileImageUri by viewModel.profileImageUri.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
@@ -41,29 +44,29 @@ fun OnboardingProfileEntry(
         }
     }
 
-    LaunchedEffect(viewModel.isSignedUp) {
-        if (viewModel.isSignedUp) {
+    LaunchedEffect(uiState.isSignedUp) {
+        if (uiState.isSignedUp) {
             onOnboardingComplete()
             viewModel.onSignedUpConsumed()
         }
     }
-    LaunchedEffect(viewModel.isNameRequired) {
-        if (viewModel.isNameRequired) {
+    LaunchedEffect(uiState.isNameRequired) {
+        if (uiState.isNameRequired) {
             showSnackbar(nameRequiredMessage)
             viewModel.onNameRequiredConsumed()
         }
     }
-    val errorMessage = viewModel.errorMessage
-    LaunchedEffect(errorMessage) {
-        if (errorMessage != null) {
-            showSnackbar(errorMessage.ifBlank { signupFailedMessage })
+    val pendingErrorMessage = uiState.errorMessage
+    LaunchedEffect(pendingErrorMessage) {
+        if (pendingErrorMessage != null) {
+            showSnackbar(pendingErrorMessage.ifBlank { signupFailedMessage })
             viewModel.onErrorConsumed()
         }
     }
 
     OnboardingProfileScreen(
-        initialName = viewModel.name,
-        displayImageUri = profileImageUri,
+        initialName = uiState.name,
+        displayImageUri = uiState.profileImageUri,
         snackbarHostState = snackbarHostState,
         onNameChange = viewModel::updateName,
         onProfileImagePick = viewModel::onProfileImagePicked,
