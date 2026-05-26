@@ -18,4 +18,5 @@ dependencies {
     implementation(projects.core.data)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.compose.wheel.picker)
+    implementation(libs.coil.compose)
 }

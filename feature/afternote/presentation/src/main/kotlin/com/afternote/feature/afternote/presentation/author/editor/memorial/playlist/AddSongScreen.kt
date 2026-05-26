@@ -16,7 +16,10 @@ import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlayl
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
 /**
- * 노래 추가 화면의 콜백
+ * AddSong 화면의 외부 결과 콜백 묶음.
+ *
+ * Entry → Screen 으로 콜백을 묶어 전달해 시그니처 폭주를 막는다.
+ * Screen 내부 입력 신호 ([onSearchQueryChange]·[onErrorConsumed]) 와는 분리 — 그쪽은 VM verb 메서드 직접 노출.
  */
 @Immutable
 data class AddSongCallbacks(
@@ -61,16 +64,7 @@ fun AddSongScreen(
         onBackClick = callbacks.onBackClick,
         songs = uiState.songs,
         onSongsSelected = { selected ->
-            callbacks.onSongsAdded(
-                selected.map {
-                    Song(
-                        id = it.id,
-                        title = it.title,
-                        artist = it.artist,
-                        albumCoverUrl = it.albumImageUrl,
-                    )
-                },
-            )
+            callbacks.onSongsAdded(selected.map(::toSong))
         },
         options =
             SongPlaylistScreenSelectableOptions(
@@ -90,30 +84,30 @@ fun AddSongScreen(
 @Composable
 fun AddSongScreen(
     songs: List<PlaylistSongDisplay>,
-    callbacks: AddSongCallbacks,
+    onBackClick: () -> Unit,
+    onSongsAdded: (List<Song>) -> Unit,
     modifier: Modifier = Modifier,
     initialSelectedSongIds: Set<String>? = null,
 ) {
     SongPlaylistScreen(
         modifier = modifier,
         title = stringResource(R.string.afternote_editor_playlist_add_screen_title),
-        onBackClick = callbacks.onBackClick,
+        onBackClick = onBackClick,
         songs = songs,
         onSongsSelected = { selected ->
-            callbacks.onSongsAdded(
-                selected.map {
-                    Song(
-                        id = it.id,
-                        title = it.title,
-                        artist = it.artist,
-                        albumCoverUrl = it.albumImageUrl,
-                    )
-                },
-            )
+            onSongsAdded(selected.map(::toSong))
         },
         options = SongPlaylistScreenSelectableOptions(initialSelectedSongIds = initialSelectedSongIds),
     )
 }
+
+private fun toSong(display: PlaylistSongDisplay): Song =
+    Song(
+        id = display.id,
+        title = display.title,
+        artist = display.artist,
+        albumCoverUrl = display.albumImageUrl,
+    )
 
 @Preview(showBackground = true)
 @Composable
@@ -124,11 +118,8 @@ private fun AddSongScreenPreview() {
                 (1..9).map { i ->
                     PlaylistSongDisplay(id = "s$i", title = "노래 제목 $i", artist = "가수 이름")
                 },
-            callbacks =
-                AddSongCallbacks(
-                    onBackClick = {},
-                    onSongsAdded = {},
-                ),
+            onBackClick = {},
+            onSongsAdded = {},
         )
     }
 }
@@ -142,11 +133,8 @@ private fun AddSongScreenAddButtonPreview() {
                 (1..9).map { i ->
                     PlaylistSongDisplay(id = "s$i", title = "노래 제목 $i", artist = "가수 이름")
                 },
-            callbacks =
-                AddSongCallbacks(
-                    onBackClick = {},
-                    onSongsAdded = {},
-                ),
+            onBackClick = {},
+            onSongsAdded = {},
             initialSelectedSongIds = setOf("s1", "s3"),
         )
     }

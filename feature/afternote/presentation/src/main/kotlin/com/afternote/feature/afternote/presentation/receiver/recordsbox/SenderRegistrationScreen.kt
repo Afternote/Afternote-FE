@@ -11,6 +11,8 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,8 +20,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.CaptionLabeledTextField
-import com.afternote.core.ui.ObserveAsEvents
 import com.afternote.core.ui.ProfileImagePicker
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
@@ -40,11 +42,13 @@ fun SenderRegistrationScreen(
     modifier: Modifier = Modifier,
     viewModel: SenderRegistrationViewModel = hiltViewModel(),
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val nameState = rememberTextFieldState()
 
-    ObserveAsEvents(viewModel.events) { event ->
-        when (event) {
-            SenderRegistrationEvent.Registered -> onRegistered()
+    LaunchedEffect(uiState.isRegistered) {
+        if (uiState.isRegistered) {
+            onRegistered()
+            viewModel.onRegisteredConsumed()
         }
     }
 

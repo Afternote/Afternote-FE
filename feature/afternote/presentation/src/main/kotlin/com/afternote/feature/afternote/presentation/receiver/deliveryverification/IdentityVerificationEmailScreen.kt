@@ -23,7 +23,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.AfternoteTextField
-import com.afternote.core.ui.ObserveAsEvents
 import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -60,9 +59,10 @@ fun IdentityVerificationEmailScreen(
         snapshotFlow { codeState.text.toString() }.collect(viewModel::onCodeChange)
     }
 
-    ObserveAsEvents(viewModel.events) { event ->
-        when (event) {
-            IdentityVerificationEvent.Verified -> onVerified()
+    LaunchedEffect(uiState.isVerified) {
+        if (uiState.isVerified) {
+            onVerified()
+            viewModel.onVerifiedConsumed()
         }
     }
 
