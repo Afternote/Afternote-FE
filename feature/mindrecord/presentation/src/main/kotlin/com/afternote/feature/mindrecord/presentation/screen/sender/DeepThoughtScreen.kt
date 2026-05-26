@@ -31,11 +31,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.R
+import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.component.CategoryActionSheet
@@ -52,6 +54,7 @@ import com.afternote.feature.mindrecord.presentation.model.Tag
 import com.afternote.feature.mindrecord.presentation.viewmodel.DeepThoughtCategoryViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DeepThoughtListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DeepThoughtListViewModel
+import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 
 @Composable
 fun DeepThoughtScreen(
@@ -79,7 +82,7 @@ fun DeepThoughtScreen(
         }
 
         is DeepThoughtListUiState.Error -> {
-            ErrorBox(message = state.message, modifier = modifier)
+            ErrorBox(message = state.message.asString(), modifier = modifier)
         }
 
         is DeepThoughtListUiState.Success -> {
@@ -125,9 +128,9 @@ fun DeepThoughtScreen(
 
     if (addingCategory) {
         CategoryNameDialog(
-            title = "새 카테고리 만들기",
+            title = stringResource(MindRecordR.string.mindrecord_category_new_title),
             initialName = "",
-            confirmLabel = "추가",
+            confirmLabel = stringResource(MindRecordR.string.mindrecord_action_add),
             onDismiss = { addingCategory = false },
             onConfirm = { name ->
                 categoryViewModel.addCategory(name = name)
@@ -138,9 +141,9 @@ fun DeepThoughtScreen(
 
     renameTarget?.let { target ->
         CategoryNameDialog(
-            title = "카테고리 이름 수정",
+            title = stringResource(MindRecordR.string.mindrecord_category_rename_title),
             initialName = target.name,
-            confirmLabel = "저장",
+            confirmLabel = stringResource(MindRecordR.string.mindrecord_action_save),
             onDismiss = { renameTarget = null },
             onConfirm = { name ->
                 target.id.toLongOrNull()?.let { id ->
@@ -165,9 +168,10 @@ private fun DeepThoughtContent(
     items: List<DeepThoughtModel>,
     modifier: Modifier = Modifier,
 ) {
+    val allCategoryLabel = stringResource(MindRecordR.string.mindrecord_category_all)
     val tabs =
         buildList {
-            add(null to "전체 카테고리")
+            add(null to allCategoryLabel)
             categories.forEach { add(it.name to it.name) }
         }
     val selectedIndex =
@@ -223,7 +227,7 @@ private fun DeepThoughtContent(
                 }
                 Icon(
                     painter = painterResource(R.drawable.core_ui_settings),
-                    contentDescription = "카테고리 설정",
+                    contentDescription = stringResource(MindRecordR.string.mindrecord_category_setting_cd),
                     tint = AfternoteDesign.colors.gray9,
                     modifier =
                         Modifier
@@ -265,14 +269,21 @@ private fun DeepThoughtContent(
             }
         }
     } else {
+        val today = java.time.LocalDate.now()
+        val answeredDays =
+            items
+                .filter { it.date.year == today.year && it.date.monthValue == today.monthValue }
+                .map { it.date.dayOfMonth }
+                .toSet()
         LazyColumn(modifier = modifier) {
             item {
                 DailyCalendar(
-                    year = 2026,
-                    month = 3,
+                    year = today.year,
+                    month = today.monthValue,
                     type = MindRecordCategoryUi.DeepThought,
                     onNextMonth = {},
                     onPrevMonth = {},
+                    answeredDays = answeredDays,
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }

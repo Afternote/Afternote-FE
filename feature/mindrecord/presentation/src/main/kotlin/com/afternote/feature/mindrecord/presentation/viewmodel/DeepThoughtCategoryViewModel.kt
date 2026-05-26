@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtCategoryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtCategoryName
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtCategoryUpdatePayload
+import com.afternote.feature.mindrecord.domain.model.MindRecordError
 import com.afternote.feature.mindrecord.domain.repository.DeepThoughtRepository
 import com.afternote.feature.mindrecord.presentation.mapper.toUi
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,10 +35,11 @@ class DeepThoughtCategoryViewModel
             name: String,
             deepThoughtId: Long? = null,
         ) {
-            DeepThoughtCategoryName.from(name)
+            DeepThoughtCategoryName
+                .from(name)
                 .onSuccess { categoryName ->
                     viewModelScope.launch {
-                        _uiState.update { it.copy(isMutating = true, errorMessage = null) }
+                        _uiState.update { it.copy(isMutating = true, error = null) }
                         repository
                             .createCategory(
                                 DeepThoughtCategoryCreatePayload(
@@ -51,19 +53,24 @@ class DeepThoughtCategoryViewModel
                                         categories = it.categories + created.toUi(),
                                     )
                                 }
-                            }.onFailure { e -> emitError(e.message ?: "카테고리 추가에 실패했습니다.") }
+                            }.onFailure { e ->
+                                emitError(CategoryError.AddFailed(e.message))
+                            }
                     }
-                }.onFailure { e -> emitError(e.message ?: "카테고리 이름이 올바르지 않습니다.") }
+                }.onFailure { e ->
+                    emitError(toValidationError(e))
+                }
         }
 
         fun renameCategory(
             categoryId: Long,
             newName: String,
         ) {
-            DeepThoughtCategoryName.from(newName)
+            DeepThoughtCategoryName
+                .from(newName)
                 .onSuccess { categoryName ->
                     viewModelScope.launch {
-                        _uiState.update { it.copy(isMutating = true, errorMessage = null) }
+                        _uiState.update { it.copy(isMutating = true, error = null) }
                         repository
                             .updateCategory(
                                 categoryId = categoryId,
@@ -76,14 +83,18 @@ class DeepThoughtCategoryViewModel
                                         categories = state.categories.map { if (it.id == ui.id) ui else it },
                                     )
                                 }
-                            }.onFailure { e -> emitError(e.message ?: "카테고리 수정에 실패했습니다.") }
+                            }.onFailure { e ->
+                                emitError(CategoryError.UpdateFailed(e.message))
+                            }
                     }
-                }.onFailure { e -> emitError(e.message ?: "카테고리 이름이 올바르지 않습니다.") }
+                }.onFailure { e ->
+                    emitError(toValidationError(e))
+                }
         }
 
         fun deleteCategory(categoryId: Long) {
             viewModelScope.launch {
-                _uiState.update { it.copy(isMutating = true, errorMessage = null) }
+                _uiState.update { it.copy(isMutating = true, error = null) }
                 repository
                     .deleteCategory(categoryId)
                     .onSuccess {
@@ -93,21 +104,29 @@ class DeepThoughtCategoryViewModel
                                 categories = state.categories.filterNot { it.id == categoryId.toString() },
                             )
                         }
-                    }.onFailure { e -> emitError(e.message ?: "카테고리 삭제에 실패했습니다.") }
+                    }.onFailure { e ->
+                        emitError(CategoryError.DeleteFailed(e.message))
+                    }
             }
         }
 
         fun consumeError() {
-            _uiState.update { it.copy(errorMessage = null) }
+            _uiState.update { it.copy(error = null) }
         }
 
-        private fun emitError(message: String) {
-            _uiState.update { it.copy(isMutating = false, errorMessage = message) }
+        private fun emitError(error: CategoryError) {
+            _uiState.update { it.copy(isMutating = false, error = error) }
         }
+
+        private fun toValidationError(error: Throwable): CategoryError =
+            when (error) {
+                MindRecordError.EmptyCategoryName -> CategoryError.EmptyName
+                else -> CategoryError.NameInvalid
+            }
 
         private fun load() {
             viewModelScope.launch {
-                _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+                _uiState.update { it.copy(isLoading = true, error = null) }
                 repository
                     .getCategories()
                     .onSuccess { list ->
@@ -121,7 +140,7 @@ class DeepThoughtCategoryViewModel
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                errorMessage = e.message ?: "카테고리 목록을 불러오지 못했습니다.",
+                                error = CategoryError.ListFailed(e.message),
                             )
                         }
                     }

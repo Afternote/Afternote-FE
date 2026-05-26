@@ -20,11 +20,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.presentation.R
 
 // ───────────────────────────────────────────────
 // 데이터 모델
@@ -47,9 +49,9 @@ data class EmotionBubble(
 @Composable
 fun EmotionKeywordCard(
     modifier: Modifier = Modifier,
-    title: String = "나의 감정 키워드",
+    title: String = stringResource(R.string.mindrecord_emotion_card_title),
     bubbles: List<EmotionBubble> = defaultBubbles(),
-    descriptionText: String = "이번 주 박서연 님의 기록에서는\n'가족'을 위한 '감사'의 마음이 엿보입니다.",
+    descriptionText: String = stringResource(R.string.mindrecord_emotion_card_default_description),
 ) {
     val canvasHeight = 180.dp // 버블 영역 고정 높이
 

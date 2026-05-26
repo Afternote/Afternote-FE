@@ -32,11 +32,24 @@ fun DayCell(
         return
     }
 
-    val (bgColor, textColor) =
+    // - TODAY: 검은 원 + 흰 글자
+    // - ANSWERED(작성한 날): 투명 배경 + 진한 글자 + 하단 인디케이터 (diary 는 이모지, 그 외는 점)
+    // - NONE/UNANSWERED: 투명 배경 + 회색 글자, 인디케이터 없음
+    val bgColor =
         when (model.state) {
-            DayState.TODAY -> Color(0xFF1A1A1A) to AfternoteDesign.colors.white
-            DayState.ANSWERED -> AfternoteDesign.colors.gray2 to AfternoteDesign.colors.gray9
-            DayState.UNANSWERED, DayState.NONE -> Color.Transparent to AfternoteDesign.colors.gray5
+            DayState.TODAY -> Color(0xFF1A1A1A)
+            else -> Color.Transparent
+        }
+    val textColor =
+        when (model.state) {
+            DayState.TODAY -> AfternoteDesign.colors.white
+            DayState.ANSWERED -> AfternoteDesign.colors.gray9
+            DayState.UNANSWERED, DayState.NONE -> AfternoteDesign.colors.gray5
+        }
+    val textStyle =
+        when (model.state) {
+            DayState.TODAY, DayState.ANSWERED -> AfternoteDesign.typography.captionLargeB
+            DayState.UNANSWERED, DayState.NONE -> AfternoteDesign.typography.captionLargeR
         }
 
     Box(
@@ -57,10 +70,10 @@ fun DayCell(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     text = model.day.toString(),
-                    style = AfternoteDesign.typography.captionLargeB,
+                    style = textStyle,
                     color = textColor,
                 )
-                if (model.state == DayState.ANSWERED || model.state == DayState.UNANSWERED) {
+                if (model.state == DayState.ANSWERED) {
                     Spacer(modifier = Modifier.height(2.dp))
                     type.DayIndicator(model = model, textColor = textColor)
                 }

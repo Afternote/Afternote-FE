@@ -1,6 +1,25 @@
 package com.afternote.feature.afternote.presentation.receiver.deliveryverification
 
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
+
+/**
+ * UI 에 노출할 에러 — sealed 로 "i18n string resource" vs "서버 동적 message" 상호 배타 보장.
+ *
+ * 두 경우를 각각 별도 nullable 필드로 두면 컨벤션 의존 (둘 다 set 되는 버그 가능). sealed 로 묶으면
+ * 타입 자체가 "하나만 가능" 강제.
+ */
+sealed interface ErrorPayload {
+    /** 클라이언트가 미리 정의한 generic 문구 (i18n 가능). 서버 message 미제공 시 fallback. */
+    data class Res(
+        @StringRes val id: Int,
+    ) : ErrorPayload
+
+    /** 백엔드가 런타임에 내려준 사용자 친화 message (예: 409 "이미 대기 중인 인증 요청이 존재합니다."). */
+    data class Text(
+        val message: String,
+    ) : ErrorPayload
+}
 
 /**
  * 증빙 서류 업로드(6·7·8) UI 상태.
@@ -13,7 +32,10 @@ data class DocumentUploadUiState(
     val deathCertificate: DocumentSlotState = DocumentSlotState(),
     val familyRelationCertificate: DocumentSlotState = DocumentSlotState(),
     val isSubmitting: Boolean = false,
-    val errorMessageRes: Int? = null,
+    /** 표시할 에러 — null 이면 에러 없음. [ErrorPayload.Res] 또는 [ErrorPayload.Text] 둘 중 하나. */
+    val error: ErrorPayload? = null,
+    /** 제출 성공 신호 — UI 가 LaunchedEffect 로 완료 화면 이동 후 [DocumentUploadViewModel.onSubmittedConsumed] 로 reset. */
+    val isSubmitted: Boolean = false,
 ) {
     val canSubmit: Boolean
         get() =
@@ -39,8 +61,4 @@ data class DocumentSlotState(
 enum class DocumentSlot {
     DeathCertificate,
     FamilyRelationCertificate,
-}
-
-sealed interface DocumentUploadEvent {
-    data object Submitted : DocumentUploadEvent
 }

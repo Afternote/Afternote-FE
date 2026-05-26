@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -30,6 +31,7 @@ import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.model.CategoryUiModel
+import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -92,7 +94,7 @@ fun CategorySettingContent(
             // 뒤로가기
             Icon(
                 painter = painterResource(R.drawable.core_ui_arrow_left),
-                contentDescription = "뒤로가기",
+                contentDescription = stringResource(MindRecordR.string.mindrecord_back_cd),
                 modifier =
                     Modifier
                         .align(Alignment.CenterStart)
@@ -101,7 +103,7 @@ fun CategorySettingContent(
                 tint = AfternoteDesign.colors.gray9,
             )
             Text(
-                text = "카테고리 설정하기",
+                text = stringResource(MindRecordR.string.mindrecord_category_setting_title),
                 style = AfternoteDesign.typography.h3,
                 color = AfternoteDesign.colors.gray9,
                 textAlign = TextAlign.Center,
@@ -127,7 +129,7 @@ fun CategorySettingContent(
             )
             Spacer(modifier = Modifier.width(12.dp))
             Text(
-                text = "새 카테고리 만들기",
+                text = stringResource(MindRecordR.string.mindrecord_category_new_title),
                 style = AfternoteDesign.typography.bodyBase,
                 color = AfternoteDesign.colors.gray9,
             )
@@ -179,7 +181,7 @@ fun CategoryItem(
         // 더보기 메뉴
         Icon(
             painter = painterResource(R.drawable.core_ui_vertical), // ⋮ 아이콘
-            contentDescription = "더보기",
+            contentDescription = stringResource(MindRecordR.string.mindrecord_more_cd),
             tint = AfternoteDesign.colors.gray5,
             modifier =
                 Modifier

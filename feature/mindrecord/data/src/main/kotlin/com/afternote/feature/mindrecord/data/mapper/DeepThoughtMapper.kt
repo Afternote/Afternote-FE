@@ -6,6 +6,8 @@ import com.afternote.feature.mindrecord.data.dto.DeepThoughtCategoryMutationResp
 import com.afternote.feature.mindrecord.data.dto.DeepThoughtCategoryUpdateRequest
 import com.afternote.feature.mindrecord.data.dto.DeepThoughtCreateRequest
 import com.afternote.feature.mindrecord.data.dto.DeepThoughtListItem
+import com.afternote.feature.mindrecord.data.dto.DeepThoughtListResponse
+import com.afternote.feature.mindrecord.data.dto.DeepThoughtTagCountDto
 import com.afternote.feature.mindrecord.data.dto.DeepThoughtUpdateRequest
 import com.afternote.feature.mindrecord.data.dto.RandomDeepThoughtResponse
 import com.afternote.feature.mindrecord.domain.model.DeepThought
@@ -13,6 +15,8 @@ import com.afternote.feature.mindrecord.domain.model.DeepThoughtCategory
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtCategoryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtCategoryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtCreatePayload
+import com.afternote.feature.mindrecord.domain.model.DeepThoughtList
+import com.afternote.feature.mindrecord.domain.model.DeepThoughtTagCount
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.RandomDeepThought
 
@@ -23,8 +27,22 @@ fun DeepThoughtListItem.toDomain(): DeepThought =
         content = content,
         category = category,
         isDraft = isDraft,
-        tags = tag,
+        tags = tags,
         imageUrl = imageUrl,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+    )
+
+fun DeepThoughtTagCountDto.toDomain(): DeepThoughtTagCount =
+    DeepThoughtTagCount(
+        tag = tag,
+        count = count,
+    )
+
+fun DeepThoughtListResponse.toDomain(): DeepThoughtList =
+    DeepThoughtList(
+        items = deepThoughts.map { it.toDomain() },
+        tagCounts = tagCounts.map { it.toDomain() },
     )
 
 fun RandomDeepThoughtResponse.toDomain(): RandomDeepThought =

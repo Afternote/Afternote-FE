@@ -20,11 +20,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
@@ -36,6 +36,7 @@ import com.afternote.feature.mindrecord.presentation.model.DailyDiary
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListViewModel
+import java.time.LocalDate
 import androidx.compose.foundation.lazy.grid.items as gridItems
 
 @Composable
@@ -52,7 +53,7 @@ fun DiaryScreen(
         }
 
         is DiaryListUiState.Error -> {
-            ErrorBox(message = state.message, modifier = modifier)
+            ErrorBox(message = state.message.asString(), modifier = modifier)
         }
 
         is DiaryListUiState.Success -> {
@@ -76,15 +77,25 @@ private fun DiaryListContent(
         return
     }
 
+    val today = LocalDate.now()
+    val currentMonthDiaries = diaries.filter { it.date.year == today.year && it.date.monthValue == today.monthValue }
+    val answeredDays = currentMonthDiaries.map { it.date.dayOfMonth }.toSet()
+    val emotionByDay =
+        currentMonthDiaries
+            .mapNotNull { diary -> diary.emotion?.let { diary.date.dayOfMonth to it } }
+            .toMap()
+
     if (isListView) {
         LazyColumn(modifier = modifier) {
             item {
                 DailyCalendar(
-                    year = 2026,
-                    month = 3,
+                    year = today.year,
+                    month = today.monthValue,
                     type = MindRecordCategoryUi.Diary,
                     onNextMonth = {},
                     onPrevMonth = {},
+                    answeredDays = answeredDays,
+                    emotionByDay = emotionByDay,
                 )
                 Spacer(modifier = Modifier.height(10.dp))
             }

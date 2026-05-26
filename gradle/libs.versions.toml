@@ -43,6 +43,8 @@ runtime = "1.10.6"
 composeRichEditor = "1.0.0-rc13"
 paging = "3.5.0"
 screenshot = "0.0.1-alpha15"
+googleServices = "4.4.4"
+firebaseAppDistribution = "5.2.1"
 
 [libraries]
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
@@ -116,3 +118,5 @@ hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ktlint-gradle = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintGradle" }
 compose-screenshot = { id = "com.android.compose.screenshot", version.ref = "screenshot" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
+firebase-app-distribution = { id = "com.google.firebase.appdistribution", version.ref = "firebaseAppDistribution" }

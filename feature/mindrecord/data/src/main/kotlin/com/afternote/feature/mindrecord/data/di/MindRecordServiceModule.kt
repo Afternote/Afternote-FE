@@ -4,6 +4,7 @@ import com.afternote.feature.mindrecord.data.api.DailyQuestionApiService
 import com.afternote.feature.mindrecord.data.api.DeepThoughtApiService
 import com.afternote.feature.mindrecord.data.api.DiaryApiService
 import com.afternote.feature.mindrecord.data.api.MindRecordReceiverApiService
+import com.afternote.feature.mindrecord.data.api.WeeklyReportApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -30,4 +31,8 @@ object MindRecordServiceModule {
     @Singleton
     fun provideMindRecordReceiverApiService(retrofit: Retrofit): MindRecordReceiverApiService =
         retrofit.create(MindRecordReceiverApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideWeeklyReportApiService(retrofit: Retrofit): WeeklyReportApiService = retrofit.create(WeeklyReportApiService::class.java)
 }

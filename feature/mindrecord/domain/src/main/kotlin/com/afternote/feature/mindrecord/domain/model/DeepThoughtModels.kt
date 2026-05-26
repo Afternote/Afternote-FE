@@ -6,8 +6,20 @@ data class DeepThought(
     val content: String,
     val category: String,
     val isDraft: Boolean,
+    val createdAt: String,
     val tags: List<String> = emptyList(),
     val imageUrl: String? = null,
+    val updatedAt: String? = null,
+)
+
+data class DeepThoughtTagCount(
+    val tag: String,
+    val count: Int,
+)
+
+data class DeepThoughtList(
+    val items: List<DeepThought>,
+    val tagCounts: List<DeepThoughtTagCount>,
 )
 
 data class RandomDeepThought(

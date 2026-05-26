@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,7 +31,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.afternote.core.ui.ObserveAsEvents
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -48,7 +48,8 @@ import com.afternote.feature.afternote.presentation.R
  * 4. 하단 CTA: "열람 신청하기" (NotRequested/Pending/Rejected) 또는 "기록 열람하기" (Approved).
  *
  * "기록 열람하기" 클릭 시 ViewModel 이 글로벌 헤더에 authCode 를 복원한 뒤
- * [SenderDetailEvent.OpenReceiverHome] 을 발행. 본 화면이 이벤트를 받아 [onOpenReceiverHome] (순수 네비게이션) 호출.
+ * [SenderDetailUiState.Success.shouldOpenReceiverHome] 를 true 로 갱신. 본 화면이 [LaunchedEffect] 로 받아
+ * [onOpenReceiverHome] (순수 네비게이션) 호출 후 [SenderDetailViewModel.onOpenReceiverHomeConsumed] 로 reset.
  */
 @Composable
 fun SenderDetailScreen(
@@ -59,10 +60,12 @@ fun SenderDetailScreen(
     viewModel: SenderDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val shouldOpenReceiverHome = (uiState as? SenderDetailUiState.Success)?.shouldOpenReceiverHome == true
 
-    ObserveAsEvents(viewModel.events) { event ->
-        when (event) {
-            SenderDetailEvent.OpenReceiverHome -> onOpenReceiverHome()
+    LaunchedEffect(shouldOpenReceiverHome) {
+        if (shouldOpenReceiverHome) {
+            onOpenReceiverHome()
+            viewModel.onOpenReceiverHomeConsumed()
         }
     }
 
@@ -281,13 +284,21 @@ private fun VerificationActionButton(
 ) {
     when (state) {
         SenderVerificationState.NotRequested,
-        SenderVerificationState.Pending,
         SenderVerificationState.Rejected,
         -> {
             AfternoteButton(
                 text = stringResource(R.string.receiver_sender_detail_request_verification),
                 onClick = onRequestVerification,
                 type = AfternoteButtonType.Default,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
+        SenderVerificationState.Pending -> {
+            AfternoteButton(
+                text = stringResource(R.string.receiver_sender_detail_pending_button),
+                onClick = {},
+                type = AfternoteButtonType.Un,
                 modifier = Modifier.fillMaxWidth(),
             )
         }

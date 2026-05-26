@@ -1,6 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor.memorial.playlist
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -11,15 +10,6 @@ import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlayl
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
 /**
- * 노래 추가 화면의 콜백
- */
-@Immutable
-data class AddSongCallbacks(
-    val onBackClick: () -> Unit,
-    val onSongsAdded: (List<Song>) -> Unit,
-)
-
-/**
  * 노래 추가하기 화면 (API 검색 연동).
  *
  * ViewModel 의존성 없이 순수하게 UI만 그립니다.
@@ -28,25 +18,17 @@ data class AddSongCallbacks(
 fun AddSongScreen(
     uiState: AddSongUiState,
     onSearchQueryChange: (String) -> Unit,
-    callbacks: AddSongCallbacks,
+    onBackClick: () -> Unit,
+    onSongsAdded: (List<Song>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     SongPlaylistScreen(
         modifier = modifier,
         title = stringResource(R.string.afternote_editor_playlist_add_screen_title),
-        onBackClick = callbacks.onBackClick,
+        onBackClick = onBackClick,
         songs = uiState.songs,
         onSongsSelected = { selected ->
-            callbacks.onSongsAdded(
-                selected.map {
-                    Song(
-                        id = it.id,
-                        title = it.title,
-                        artist = it.artist,
-                        albumCoverUrl = it.albumImageUrl,
-                    )
-                },
-            )
+            onSongsAdded(selected.map(::toSong))
         },
         options =
             SongPlaylistScreenSelectableOptions(
@@ -66,30 +48,30 @@ fun AddSongScreen(
 @Composable
 fun AddSongScreen(
     songs: List<PlaylistSongDisplay>,
-    callbacks: AddSongCallbacks,
+    onBackClick: () -> Unit,
+    onSongsAdded: (List<Song>) -> Unit,
     modifier: Modifier = Modifier,
     initialSelectedSongIds: Set<String>? = null,
 ) {
     SongPlaylistScreen(
         modifier = modifier,
         title = stringResource(R.string.afternote_editor_playlist_add_screen_title),
-        onBackClick = callbacks.onBackClick,
+        onBackClick = onBackClick,
         songs = songs,
         onSongsSelected = { selected ->
-            callbacks.onSongsAdded(
-                selected.map {
-                    Song(
-                        id = it.id,
-                        title = it.title,
-                        artist = it.artist,
-                        albumCoverUrl = it.albumImageUrl,
-                    )
-                },
-            )
+            onSongsAdded(selected.map(::toSong))
         },
         options = SongPlaylistScreenSelectableOptions(initialSelectedSongIds = initialSelectedSongIds),
     )
 }
+
+private fun toSong(display: PlaylistSongDisplay): Song =
+    Song(
+        id = display.id,
+        title = display.title,
+        artist = display.artist,
+        albumCoverUrl = display.albumImageUrl,
+    )
 
 @Preview(showBackground = true)
 @Composable
@@ -100,11 +82,8 @@ private fun AddSongScreenPreview() {
                 (1..9).map { i ->
                     PlaylistSongDisplay(id = "s$i", title = "노래 제목 $i", artist = "가수 이름")
                 },
-            callbacks =
-                AddSongCallbacks(
-                    onBackClick = {},
-                    onSongsAdded = {},
-                ),
+            onBackClick = {},
+            onSongsAdded = {},
         )
     }
 }
@@ -118,11 +97,8 @@ private fun AddSongScreenAddButtonPreview() {
                 (1..9).map { i ->
                     PlaylistSongDisplay(id = "s$i", title = "노래 제목 $i", artist = "가수 이름")
                 },
-            callbacks =
-                AddSongCallbacks(
-                    onBackClick = {},
-                    onSongsAdded = {},
-                ),
+            onBackClick = {},
+            onSongsAdded = {},
             initialSelectedSongIds = setOf("s1", "s3"),
         )
     }
@@ -146,7 +122,8 @@ private fun AddSongScreenWithSearchPreview() {
                     searchQuery = "아이유",
                 ),
             onSearchQueryChange = {},
-            callbacks = AddSongCallbacks(onBackClick = {}, onSongsAdded = {}),
+            onBackClick = {},
+            onSongsAdded = {},
         )
     }
 }

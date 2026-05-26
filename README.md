@@ -1,5 +1,91 @@
 # Afternote-FE
 
+# 🚀 신규 팀원 빌드 셋업
+
+`local.properties` 는 `.gitignore` 에 등록되어 있어 **git 으로 받아지지 않는다**. clone 직후 다음 두 키를 루트 `local.properties` 에 직접 채워야 카카오·구글 로그인이 정상 동작한다.
+
+## 필요 키
+
+| 키 | 용도 | 발급 위치 |
+|---|---|---|
+| `KAKAO_NATIVE_APP_KEY` | 카카오 SDK 초기화 (`KakaoSdk.init`) + 카카오 로그인 콜백 intent-filter 의 `kakao{NATIVE_APP_KEY}` scheme | [Kakao Developers](https://developers.kakao.com) → 내 애플리케이션 → 앱 키 → **네이티브 앱 키** |
+| `GOOGLE_WEB_CLIENT_ID` | Google 로그인 시 `CredentialManager.requestGoogleIdToken(serverClientId = ...)` 의 server client id (백엔드가 ID Token 의 `aud` 를 검증할 수 있도록 *Web* client ID 사용) | [Google Cloud Console](https://console.cloud.google.com) → APIs & Services → Credentials → OAuth 2.0 Client IDs → **Web application** 타입 |
+
+## `local.properties` 양식
+
+프로젝트 루트의 `local.properties` 끝에 다음 라인 추가:
+
+```properties
+KAKAO_NATIVE_APP_KEY=<카카오 네이티브 앱 키>
+GOOGLE_WEB_CLIENT_ID=<구글 OAuth web client id>.apps.googleusercontent.com
+```
+
+## 키 수령 채널
+
+신규 팀원은 위 두 키를 **Slack DM 으로 1hyok 에게 요청**. (직접 발급 권한이 있는 경우 위 콘솔에서 직접 조회 가능.)
+
+## 누락 시 증상
+
+두 키가 비어 있으면 빌드는 통과하지만 다음이 깨진다:
+
+- `KakaoSdk.init("")` → SDK 초기화 실패 (앱 내 안내: `KAKAO_NATIVE_APP_KEY를 확인해주세요.`)
+- `AndroidManifest.xml` 의 `android:scheme="kakao${KAKAO_NATIVE_APP_KEY}"` 가 빈 scheme 으로 등록 → 카카오 로그인 콜백 intent-filter 매칭 안 됨
+- `requestGoogleIdToken(serverClientId = "")` → Credential Manager 가 invalid request 로 실패
+
+# 📦 비개발자 APK 배포 (Firebase App Distribution)
+
+디자이너·PM·QA·외부 베타테스터에게 release APK 를 자동 배포하는 흐름. Firebase 프로젝트 `afternote-b4d3c` + 테스터 그룹 `afternote` 사용.
+
+## 셋업 (1hyok 만 1회 — 신규 인계자도 동일)
+
+1. **Release keystore 생성** (분실 시 앱 업데이트 영구 불가 → 1Password / iCloud 등 2곳 이상 백업 필수)
+
+    ```bash
+    keytool -genkeypair -v \
+      -keystore ~/afternote-release.jks \
+      -keyalg RSA -keysize 4096 -validity 10000 \
+      -alias afternote-release
+    ```
+
+2. **`local.properties` 끝에 4개 키 추가** (signing config 가 읽음)
+
+    ```properties
+    RELEASE_STORE_FILE=/Users/<you>/afternote-release.jks
+    RELEASE_STORE_PASSWORD=<keystore 비밀번호>
+    RELEASE_KEY_ALIAS=afternote-release
+    RELEASE_KEY_PASSWORD=<key 비밀번호>
+    ```
+
+3. **`google-services.json` 배치** — Firebase Console → 프로젝트 설정 → 일반 → Android 앱 `com.afternote.afternote_fe` 카드에서 다운로드 → `app/google-services.json`
+
+4. **Firebase CLI 설치 + 인증** (자동 업로드용)
+
+    ```bash
+    npm install -g firebase-tools
+    firebase login
+    ```
+
+5. **콘솔에 신규 keystore SHA 등록** (배포 받은 사람의 카카오/구글 로그인 동작 위해)
+   - Release SHA-1 추출: `keytool -list -v -keystore ~/afternote-release.jks -alias afternote-release | grep SHA1`
+   - 카카오 키 해시 추출: `keytool -exportcert -alias afternote-release -keystore ~/afternote-release.jks | openssl sha1 -binary | openssl base64`
+   - **Kakao Developers** → 앱 → 플랫폼 키 → Android → 키 해시 추가
+   - **Firebase Console** → 프로젝트 설정 → Android 앱 → SHA 인증서 지문 추가
+
+## 배포 (매 회)
+
+```bash
+./gradlew assembleRelease appDistributionUploadRelease
+```
+
+→ APK 빌드 + Firebase 업로드 + 테스터 그룹 `afternote` 전원에게 자동 이메일 발송.
+
+> 같은 `versionCode` 로 재업로드하면 기존 release 갱신. 새 release 만들려면 `app/build.gradle.kts` 의 `versionCode` 증가.
+
+## 테스터 관리
+
+- 추가/제거: Firebase Console → App Distribution → 테스터 및 그룹 → `afternote` 그룹 편집
+- 신규 테스터는 첫 초대 이메일에서 **App Tester** 앱 설치 안내를 받음 → 이후 빌드는 자동 알림
+
 # 💻 코딩 컨벤션
 
 > **네이밍 컨벤션**

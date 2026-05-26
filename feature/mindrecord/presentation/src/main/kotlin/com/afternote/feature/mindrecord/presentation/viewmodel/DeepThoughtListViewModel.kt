@@ -2,10 +2,12 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.feature.mindrecord.domain.model.DeepThought
+import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtCategory
+import com.afternote.feature.mindrecord.domain.model.DeepThoughtList
 import com.afternote.feature.mindrecord.domain.model.RandomDeepThought
 import com.afternote.feature.mindrecord.domain.repository.DeepThoughtRepository
+import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.mapper.toUi
 import com.afternote.feature.mindrecord.presentation.model.Tag
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -69,7 +71,15 @@ class DeepThoughtListViewModel
                         }
                     }.onFailure { e ->
                         internalState.update {
-                            it.copy(loadPhase = LoadPhase.Failed(e.message ?: "깊은 생각을 불러오지 못했습니다."))
+                            it.copy(
+                                loadPhase =
+                                    LoadPhase.Failed(
+                                        UiText.DynamicOrResource(
+                                            value = e.message,
+                                            fallbackResId = R.string.mindrecord_error_deep_thought_list_failed,
+                                        ),
+                                    ),
+                            )
                         }
                     }
             }
@@ -86,12 +96,12 @@ class DeepThoughtListViewModel
 
             data class Loaded(
                 val random: RandomDeepThought?,
-                val items: List<DeepThought>,
+                val list: DeepThoughtList,
                 val categories: List<DeepThoughtCategory>,
             ) : LoadPhase
 
             data class Failed(
-                val message: String,
+                val message: UiText,
             ) : LoadPhase
         }
 
@@ -102,13 +112,8 @@ class DeepThoughtListViewModel
                 }
 
                 is LoadPhase.Loaded -> {
-                    val items = phase.items.map { it.toUi() }
-                    val tags =
-                        items
-                            .flatMap { it.tag }
-                            .groupingBy { it.name }
-                            .eachCount()
-                            .map { (name, count) -> Tag(name = name, count = count) }
+                    val items = phase.list.items.map { it.toUi() }
+                    val tags = phase.list.tagCounts.map { Tag(name = it.tag, count = it.count) }
                     DeepThoughtListUiState.Success(
                         randomThoughtTitle = phase.random?.title,
                         randomThoughtCreatedAt = phase.random?.createdAt,

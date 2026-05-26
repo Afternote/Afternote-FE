@@ -9,10 +9,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.receiver.deliveryverification.component.ReceiverVerifyScaffold
+import com.afternote.feature.afternote.presentation.receiver.deliveryverification.component.RECEIVER_VERIFY_HEADER_SPACING
 
 /**
  * 열람 신청 완료 화면(design 9) — `submitDeliveryVerification` 성공 직후 노출 (이슈 #215).
@@ -26,13 +27,15 @@ fun DeliveryVerificationCompleteScreen(
     onBackToRecords: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    ReceiverVerifyScaffold(
+    FlowStepScaffold(
+        topBarTitle = stringResource(R.string.receiver_verify_title),
         actionButtonText = stringResource(R.string.receiver_verify_complete_back_to_records),
         onBackClick = onBackToRecords,
         onActionClick = onBackToRecords,
         currentStep = null,
         modifier = modifier,
     ) {
+        Spacer(modifier = Modifier.height(RECEIVER_VERIFY_HEADER_SPACING))
         Text(
             text = stringResource(R.string.receiver_verify_complete_title),
             style = AfternoteDesign.typography.h1,

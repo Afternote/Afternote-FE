@@ -13,6 +13,8 @@ import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResul
 import com.afternote.feature.afternote.domain.model.receiver.LoadCountResult
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedExportBundle
+import com.afternote.feature.afternote.domain.model.receiver.SenderMessageInfo
+import com.afternote.feature.afternote.domain.repository.receiver.ReceiverAuthRepository
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -31,6 +33,7 @@ class ReceiverRepositoryImpl
     constructor(
         private val authCodeDataSource: ReceiverAuthCodeDataSource,
         private val api: ReceiverAfternoteApiService,
+        private val receiverAuthRepository: ReceiverAuthRepository,
     ) : ReceiverRepository {
         override val authCodeFlow: Flow<String?> = authCodeDataSource.savedCodeFlow
 
@@ -74,5 +77,7 @@ class ReceiverRepositoryImpl
 
         override suspend fun loadTimeLettersCount(): Result<LoadCountResult> = Result.success(LoadCountResult(0))
 
-        override suspend fun loadSenderMessage(): Result<String?> = Result.success(null)
+        // sender 메시지 조회는 receiver-auth 영역 → ReceiverAuthRepository 가 책임.
+        // 본 Repository 는 위임만 — 같은 API 호출이 두 곳에 중복되지 않게 (Multiple levels of repositories).
+        override suspend fun loadSenderMessage(): Result<SenderMessageInfo?> = receiverAuthRepository.getSenderMessage().map { it }
     }

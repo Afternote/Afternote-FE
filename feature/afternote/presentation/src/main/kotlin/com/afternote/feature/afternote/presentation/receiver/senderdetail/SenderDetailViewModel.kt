@@ -12,12 +12,10 @@ import com.afternote.feature.afternote.presentation.receiver.navigation.model.Re
 import com.afternote.feature.afternote.presentation.receiver.recordsbox.SenderEntry
 import com.afternote.feature.afternote.presentation.receiver.recordsbox.SenderRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -45,16 +43,14 @@ class SenderDetailViewModel
         private val _uiState = MutableStateFlow<SenderDetailUiState>(SenderDetailUiState.Loading)
         val uiState: StateFlow<SenderDetailUiState> = _uiState.asStateFlow()
 
-        private val _events = Channel<SenderDetailEvent>(Channel.BUFFERED)
-        val events: Flow<SenderDetailEvent> = _events.receiveAsFlow()
-
         init {
             load()
         }
 
         /**
          * "기록 열람하기"(디자인 12) 트리거 — 글로벌 헤더에 해당 발신자 authCode 를 복원한 뒤
-         * [SenderDetailEvent.OpenReceiverHome] 이벤트 발행. UI 가 이벤트를 받아 수신자 홈으로 이동한다.
+         * [SenderDetailUiState.Success.shouldOpenReceiverHome] 플래그를 true 로 갱신.
+         * UI 가 LaunchedEffect 로 수신자 홈 이동 후 [onOpenReceiverHomeConsumed] 로 reset.
          *
          * authCode 가 없는 경우(미인증) 호출되어선 안 되지만 방어적으로 no-op.
          */
@@ -63,7 +59,23 @@ class SenderDetailViewModel
             if (authCode.isNullOrBlank()) return
             viewModelScope.launch {
                 receiverRepository.saveAuthCode(authCode)
-                _events.send(SenderDetailEvent.OpenReceiverHome)
+                _uiState.update { current ->
+                    if (current is SenderDetailUiState.Success) {
+                        current.copy(shouldOpenReceiverHome = true)
+                    } else {
+                        current
+                    }
+                }
+            }
+        }
+
+        fun onOpenReceiverHomeConsumed() {
+            _uiState.update { current ->
+                if (current is SenderDetailUiState.Success) {
+                    current.copy(shouldOpenReceiverHome = false)
+                } else {
+                    current
+                }
             }
         }
 

@@ -6,8 +6,5 @@ import androidx.compose.runtime.Immutable
 data class MasterKeyUiState(
     val isSubmitting: Boolean = false,
     val errorMessageRes: Int? = null,
+    val isVerified: Boolean = false,
 )
-
-sealed interface MasterKeyEvent {
-    data object Verified : MasterKeyEvent
-}
