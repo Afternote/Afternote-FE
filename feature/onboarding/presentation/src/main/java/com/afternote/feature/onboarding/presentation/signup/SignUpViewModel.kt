@@ -40,20 +40,6 @@ class SignUpViewModel
             /** "재전송" 클릭 후 다음 요청까지 강제 대기 초. 서버 비용 · SMS 발송량 보호. */
             private const val RESEND_COOLDOWN_SECONDS = 30
 
-            /** 8~16자, 영문 대소문자 + 숫자 + 특수문자 각 1개 이상. */
-            private val PASSWORD_REGEX =
-                Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,16}$")
-
-            // android.util.Patterns.EMAIL_ADDRESS 와 동일 — VM 의 framework 의존 제거 목적.
-            // 원본: AOSP frameworks/base/core/java/android/util/Patterns.java
-            private val EMAIL_ADDRESS_REGEX =
-                Regex(
-                    "[a-zA-Z0-9+._%\\-]{1,256}" +
-                        "@" +
-                        "[a-zA-Z0-9][a-zA-Z0-9\\-]{0,64}" +
-                        "(\\.[a-zA-Z0-9][a-zA-Z0-9\\-]{0,25})+",
-                )
-
             /**
              * 인증번호 만료까지 남은 초. 백엔드 [EmailService.java](https://github.com/Afternote/Afternote-BE/blob/main/src/main/java/com/afternote/domain/auth/service/EmailService.java)
              * 의 Redis TTL 과 일치 (`set(..., 3, TimeUnit.MINUTES)`). 메일 본문도 "3분 안에 입력해주세요" 안내.
@@ -70,13 +56,8 @@ class SignUpViewModel
         // ─── 입력 reducer ───
         fun updateEmail(value: String) = _uiState.update { it.copy(email = value) }
 
-        // photo picker 결과는 Entry 가 Uri.toString() 으로 변환해 push — VM 은 String 만 보관.
-        private val _profileImageUri = MutableStateFlow<String?>(null)
-        val profileImageUri: StateFlow<String?> = _profileImageUri.asStateFlow()
-
-        fun onProfileImagePicked(uri: String?) {
-            _profileImageUri.value = uri
-        }
+        // photo picker 결과는 Entry 가 Uri.toString() 으로 변환해 push — VM 은 String 만 보관 (Framework Uri 의존 회피).
+        fun onProfileImagePicked(uri: String?) = _uiState.update { it.copy(profileImageUri = uri) }
 
         fun updateVerificationCode(value: String) = _uiState.update { it.copy(verificationCode = value) }
 
@@ -85,16 +66,6 @@ class SignUpViewModel
         fun updateResidentBackNumber(value: String) = _uiState.update { it.copy(residentBackNumber = value) }
 
         fun updateSignUpPassword(value: String) = _uiState.update { it.copy(signUpPassword = value) }
-
-        /**
-         * 이메일 형식 유효성. "인증번호 받기" / "다음" 활성화 조건의 사전 가드.
-         *
-         * derivedStateOf 가 StateFlow.value 를 못 감지해 (Compose State 가 아님) observable 가 끊김.
-         * 현재는 호출 시점 evaluate 로 동작은 하지만, 의도된 observable behavior 는 UI 레이어에서
-         * `collectAsStateWithLifecycle` 후 `remember(uiState.email) { ... }` 으로 도출하는 게 정석.
-         */
-        val isEmailFormatValid: Boolean
-            get() = _uiState.value.email.let { it.isNotBlank() && EMAIL_ADDRESS_REGEX.matches(it) }
 
         fun updateSignUpPasswordConfirm(value: String) = _uiState.update { it.copy(signUpPasswordConfirm = value) }
 
@@ -234,7 +205,7 @@ class SignUpViewModel
                         email = state.email,
                         password = state.signUpPassword,
                         name = trimmedName,
-                        profileUrl = _profileImageUri.value,
+                        profileUrl = state.profileImageUri,
                     ).onSuccess {
                         loginUseCase(LoginType.Email(email = state.email, password = state.signUpPassword))
                             .onSuccess {
