@@ -13,7 +13,11 @@ class MemorialPhotoSaveException(
 ) : Exception("영정 사진 업로드에 실패했습니다.", cause)
 
 /**
- * 추모 영상·영정 사진 로컬 URI 업로드 및 PATCH 시 presigned URL 생략 규칙 적용.
+ * 추모 영상·영정 사진 로컬 URI 업로드 후 저장 페이로드에 들어갈 URL 묶음을 해석한다.
+ *
+ * POST/PATCH 동일 규칙 — 백엔드가 `S3Service.resolvePublicUrl(key)` 로 영구 public URL 을 발급하므로
+ * 클라이언트가 GET 응답에서 받은 URL 을 그대로 PATCH 페이로드에 다시 보낼 수 있다. 즉 PATCH 전용 분기
+ * (`isUpdate`, presigned 마커 검사) 없이 단일 해석 결과 사용.
  */
 class ResolveMemorialMediaForSaveUseCase
     @Inject
@@ -25,8 +29,6 @@ class ResolveMemorialMediaForSaveUseCase
             funeralVideoUrl: String?,
             memorialPhotoUrl: String?,
             pickedMemorialPhotoUri: String?,
-            funeralThumbnailUrl: String?,
-            isUpdate: Boolean,
         ): Result<ResolvedMemorialMediaForSave> {
             val resolvedVideoUrl = resolveVideoUrlForSave(funeralVideoUrl).getOrElse { return Result.failure(it) }
             val resolvedMemorialPhotoUrl =
@@ -34,15 +36,10 @@ class ResolveMemorialMediaForSaveUseCase
                     memorialPhotoUrl = memorialPhotoUrl,
                     pickedMemorialPhotoUri = pickedMemorialPhotoUri,
                 ).getOrElse { return Result.failure(it) }
-            val videoUrlForUpdate = videoUrlForUpdateRequest(isUpdate, resolvedVideoUrl)
-            val thumbnailForUpdate =
-                if (videoUrlForUpdate == null) null else funeralThumbnailUrl
             return Result.success(
                 ResolvedMemorialMediaForSave(
                     resolvedVideoUrl = resolvedVideoUrl,
                     resolvedMemorialPhotoUrl = resolvedMemorialPhotoUrl,
-                    videoUrlForUpdate = videoUrlForUpdate,
-                    funeralThumbnailUrlForUpdate = thumbnailForUpdate,
                 ),
             )
         }
@@ -71,17 +68,7 @@ class ResolveMemorialMediaForSaveUseCase
             return Result.success(memorialPhotoUrl?.takeIf { it.isNotBlank() })
         }
 
-        private fun videoUrlForUpdateRequest(
-            isUpdate: Boolean,
-            resolvedVideoUrl: String?,
-        ): String? {
-            if (!isUpdate || resolvedVideoUrl == null) return resolvedVideoUrl
-            if (resolvedVideoUrl.contains(PRESIGNED_URL_MARKER)) return null
-            return resolvedVideoUrl
-        }
-
         private companion object {
-            const val PRESIGNED_URL_MARKER = "X-Amz-"
             const val CONTENT_SCHEME = "content://"
         }
     }
