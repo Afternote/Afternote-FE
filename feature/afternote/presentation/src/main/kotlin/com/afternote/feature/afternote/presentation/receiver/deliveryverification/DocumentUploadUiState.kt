@@ -12,7 +12,7 @@ import androidx.compose.runtime.Immutable
 sealed interface ErrorPayload {
     /** 클라이언트가 미리 정의한 generic 문구 (i18n 가능). 서버 message 미제공 시 fallback. */
     data class Res(
-        @StringRes val id: Int,
+        @param:StringRes val id: Int,
     ) : ErrorPayload
 
     /** 백엔드가 런타임에 내려준 사용자 친화 message (예: 409 "이미 대기 중인 인증 요청이 존재합니다."). */
