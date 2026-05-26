@@ -175,9 +175,12 @@ private fun graphScopedSignUpViewModel(graphScopedParentEntry: () -> NavBackStac
 /**
  * SignUp Step 화면 공통의 Snackbar 호스트 + UI state 단발성 신호 처리.
  *
- * 각 Step composable 에서 호출해 [SignUpUiState.errorMessage] / [SignUpUiState.nameRequired]
+ * 각 Step composable 에서 호출해 [SignUpUiState.errorMessage] / [SignUpUiState.isNameRequired]
  * 를 일관되게 snackbar 로 노출하고, Step 1 의 경우 [onNavigateToResidentNumber] 콜백으로
- * [SignUpUiState.navigateToResidentNumber] = true 시점에 네비게이트한다.
+ * [SignUpUiState.shouldNavigateToResidentNumber] = true 시점에 네비게이트한다.
+ *
+ * sealed Event Channel 대신 UiState 의 nullable/boolean 신호 + [LaunchedEffect] + on*Consumed 패턴으로 통일
+ * (Google 공식 가이드 — ViewModel events should always result in a UI state update).
  */
 @Composable
 private fun rememberSignUpEventHost(
@@ -190,18 +193,15 @@ private fun rememberSignUpEventHost(
     val signupFailedMessage = stringResource(R.string.signup_failed)
     val nameRequiredMessage = stringResource(R.string.signup_name_required)
 
-    LaunchedEffect(uiState.errorMessage) {
-        uiState.errorMessage?.let { message ->
-            snackbarHostState.showSnackbar(
-                message = message.ifBlank { signupFailedMessage },
-                duration = SnackbarDuration.Short,
-            )
-            viewModel.onErrorMessageConsumed()
+    LaunchedEffect(uiState.shouldNavigateToResidentNumber) {
+        if (uiState.shouldNavigateToResidentNumber && onNavigateToResidentNumber != null) {
+            onNavigateToResidentNumber()
+            viewModel.onResidentNumberNavigatedConsumed()
         }
     }
 
-    LaunchedEffect(uiState.nameRequired) {
-        if (uiState.nameRequired) {
+    LaunchedEffect(uiState.isNameRequired) {
+        if (uiState.isNameRequired) {
             snackbarHostState.showSnackbar(
                 message = nameRequiredMessage,
                 duration = SnackbarDuration.Short,
@@ -210,10 +210,14 @@ private fun rememberSignUpEventHost(
         }
     }
 
-    LaunchedEffect(uiState.navigateToResidentNumber) {
-        if (uiState.navigateToResidentNumber && onNavigateToResidentNumber != null) {
-            onNavigateToResidentNumber()
-            viewModel.onNavigateToResidentNumberConsumed()
+    val pendingErrorMessage = uiState.errorMessage
+    LaunchedEffect(pendingErrorMessage) {
+        if (pendingErrorMessage != null) {
+            snackbarHostState.showSnackbar(
+                message = pendingErrorMessage.ifBlank { signupFailedMessage },
+                duration = SnackbarDuration.Short,
+            )
+            viewModel.onErrorConsumed()
         }
     }
 

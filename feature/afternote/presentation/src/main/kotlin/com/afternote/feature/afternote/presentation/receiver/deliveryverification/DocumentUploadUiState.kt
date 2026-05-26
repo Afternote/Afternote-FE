@@ -34,6 +34,8 @@ data class DocumentUploadUiState(
     val isSubmitting: Boolean = false,
     /** 표시할 에러 — null 이면 에러 없음. [ErrorPayload.Res] 또는 [ErrorPayload.Text] 둘 중 하나. */
     val error: ErrorPayload? = null,
+    /** 제출 성공 신호 — UI 가 LaunchedEffect 로 완료 화면 이동 후 [DocumentUploadViewModel.onSubmittedConsumed] 로 reset. */
+    val isSubmitted: Boolean = false,
 ) {
     val canSubmit: Boolean
         get() =
@@ -59,8 +61,4 @@ data class DocumentSlotState(
 enum class DocumentSlot {
     DeathCertificate,
     FamilyRelationCertificate,
-}
-
-sealed interface DocumentUploadEvent {
-    data object Submitted : DocumentUploadEvent
 }

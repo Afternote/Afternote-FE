@@ -43,7 +43,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.afternote.core.ui.ObserveAsEvents
 import com.afternote.core.ui.modifierextention.dropShadow
 import com.afternote.core.ui.scaffold.FlowStepScaffold
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -113,9 +112,10 @@ fun DocumentUploadScreen(
             if (uri != null) handlePickedUri(viewModel, contentResolver, slot, uri)
         }
 
-    ObserveAsEvents(viewModel.events) { event ->
-        when (event) {
-            DocumentUploadEvent.Submitted -> onSubmitted()
+    LaunchedEffect(uiState.isSubmitted) {
+        if (uiState.isSubmitted) {
+            onSubmitted()
+            viewModel.onSubmittedConsumed()
         }
     }
 

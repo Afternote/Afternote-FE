@@ -67,17 +67,17 @@ fun LoginEntry(
         action()
     }
 
-    LaunchedEffect(uiState.loginSucceeded) {
-        if (uiState.loginSucceeded) {
+    LaunchedEffect(uiState.isLoggedIn) {
+        if (uiState.isLoggedIn) {
             onLoginSuccess()
-            viewModel.onLoginSuccessConsumed()
+            viewModel.onLoggedInConsumed()
         }
     }
-
-    LaunchedEffect(uiState.errorMessage) {
-        uiState.errorMessage?.let { message ->
-            showErrorSnackbar(message.ifBlank { loginFailedMessage })
-            viewModel.onErrorMessageConsumed()
+    val pendingErrorMessage = uiState.errorMessage
+    LaunchedEffect(pendingErrorMessage) {
+        if (pendingErrorMessage != null) {
+            showErrorSnackbar(pendingErrorMessage.ifBlank { loginFailedMessage })
+            viewModel.onErrorConsumed()
         }
     }
 

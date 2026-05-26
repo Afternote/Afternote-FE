@@ -11,14 +11,11 @@ data class IdentityVerificationUiState(
     val isSendingCode: Boolean = false,
     val isVerifying: Boolean = false,
     val errorMessageRes: Int? = null,
+    val isVerified: Boolean = false,
 ) {
     val canSubmit: Boolean
         get() =
             isVerificationSent &&
                 code.trim().isNotEmpty() &&
                 !isVerifying
-}
-
-sealed interface IdentityVerificationEvent {
-    data object Verified : IdentityVerificationEvent
 }

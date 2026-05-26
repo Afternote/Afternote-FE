@@ -49,11 +49,11 @@ data class SignUpUiState(
     /** 회원가입 + 자동 로그인 진행 중. */
     val isLoading: Boolean = false,
     /** 회원가입 + 자동 로그인 성공. UI 가 홈으로 navigate 후 reset. */
-    val signUpSucceeded: Boolean = false,
+    val isSignedUp: Boolean = false,
     /** Step 1 검증 통과 — 주민등록번호 단계로 이동. */
-    val navigateToResidentNumber: Boolean = false,
+    val shouldNavigateToResidentNumber: Boolean = false,
     /** 이름 미입력 — UI 가 명시적 메시지 표시. */
-    val nameRequired: Boolean = false,
+    val isNameRequired: Boolean = false,
     /** snackbar 로 노출할 에러 메시지. */
     val errorMessage: String? = null,
 ) {

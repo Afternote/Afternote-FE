@@ -7,12 +7,9 @@ import com.afternote.feature.afternote.domain.repository.receiver.ReceiverAuthRe
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverDeliveryDocumentUploadRepository
 import com.afternote.feature.afternote.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -33,9 +30,6 @@ class DocumentUploadViewModel
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(DocumentUploadUiState())
         val uiState: StateFlow<DocumentUploadUiState> = _uiState.asStateFlow()
-
-        private val _events = Channel<DocumentUploadEvent>(Channel.BUFFERED)
-        val events: Flow<DocumentUploadEvent> = _events.receiveAsFlow()
 
         fun uploadDocument(
             slot: DocumentSlot,
@@ -81,8 +75,7 @@ class DocumentUploadViewModel
                 receiverAuthRepository
                     .submitDeliveryVerification(deathUrl, famRelUrl)
                     .onSuccess {
-                        _uiState.update { it.copy(isSubmitting = false) }
-                        _events.send(DocumentUploadEvent.Submitted)
+                        _uiState.update { it.copy(isSubmitting = false, isSubmitted = true) }
                     }.onFailure { throwable ->
                         // 두 갈래로 분기한다:
                         //  (1) data 레이어가 ApiException 을 ReceiverDeliverySubmitException 으로 매핑해 내려준 경우
@@ -110,6 +103,10 @@ class DocumentUploadViewModel
 
         fun consumeError() {
             _uiState.update { it.copy(error = null) }
+        }
+
+        fun onSubmittedConsumed() {
+            _uiState.update { it.copy(isSubmitted = false) }
         }
 
         private inline fun updateSlot(

@@ -6,17 +6,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.feature.onboarding.presentation.signup.SignUpUiState
 import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel
+import kotlinx.coroutines.launch
 
 /**
  * 프로필 설정 Entry.
  *
- * Graph-scoped [SignUpViewModel] 의 [SignUpUiState] 단발성 신호 (signUpSucceeded ·
- * errorMessage · nameRequired) 를 LaunchedEffect 로 소비. 소비 후 VM 의 `onXxxConsumed()`
+ * Graph-scoped [SignUpViewModel] 의 [SignUpUiState] 단발성 신호 (isSignedUp ·
+ * errorMessage · isNameRequired) 를 LaunchedEffect 로 소비. 소비 후 VM 의 `onXxxConsumed()`
  * 호출로 reset.
  */
 @Composable
@@ -28,34 +30,37 @@ fun OnboardingProfileEntry(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     val signupFailedMessage = stringResource(R.string.signup_failed)
     val nameRequiredMessage = stringResource(R.string.signup_name_required)
 
-    LaunchedEffect(uiState.signUpSucceeded) {
-        if (uiState.signUpSucceeded) {
+    val showSnackbar: (String) -> Unit = { message ->
+        coroutineScope.launch {
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short,
+            )
+        }
+    }
+
+    LaunchedEffect(uiState.isSignedUp) {
+        if (uiState.isSignedUp) {
             onOnboardingComplete()
-            viewModel.onSignUpSucceededConsumed()
+            viewModel.onSignedUpConsumed()
         }
     }
-
-    LaunchedEffect(uiState.errorMessage) {
-        uiState.errorMessage?.let { message ->
-            snackbarHostState.showSnackbar(
-                message = message.ifBlank { signupFailedMessage },
-                duration = SnackbarDuration.Short,
-            )
-            viewModel.onErrorMessageConsumed()
-        }
-    }
-
-    LaunchedEffect(uiState.nameRequired) {
-        if (uiState.nameRequired) {
-            snackbarHostState.showSnackbar(
-                message = nameRequiredMessage,
-                duration = SnackbarDuration.Short,
-            )
+    LaunchedEffect(uiState.isNameRequired) {
+        if (uiState.isNameRequired) {
+            showSnackbar(nameRequiredMessage)
             viewModel.onNameRequiredConsumed()
+        }
+    }
+    val pendingErrorMessage = uiState.errorMessage
+    LaunchedEffect(pendingErrorMessage) {
+        if (pendingErrorMessage != null) {
+            showSnackbar(pendingErrorMessage.ifBlank { signupFailedMessage })
+            viewModel.onErrorConsumed()
         }
     }
 

@@ -72,13 +72,13 @@ class SignUpViewModel
         fun onProfileImagePicked(uri: Uri?) = _uiState.update { it.copy(profileImageUri = uri) }
 
         // ─── 단발성 신호 consume (UI 가 소비 후 호출) ───
-        fun onSignUpSucceededConsumed() = _uiState.update { it.copy(signUpSucceeded = false) }
+        fun onSignedUpConsumed() = _uiState.update { it.copy(isSignedUp = false) }
 
-        fun onNavigateToResidentNumberConsumed() = _uiState.update { it.copy(navigateToResidentNumber = false) }
+        fun onResidentNumberNavigatedConsumed() = _uiState.update { it.copy(shouldNavigateToResidentNumber = false) }
 
-        fun onNameRequiredConsumed() = _uiState.update { it.copy(nameRequired = false) }
+        fun onNameRequiredConsumed() = _uiState.update { it.copy(isNameRequired = false) }
 
-        fun onErrorMessageConsumed() = _uiState.update { it.copy(errorMessage = null) }
+        fun onErrorConsumed() = _uiState.update { it.copy(errorMessage = null) }
 
         // ─── 약관 ───
         fun toggleTermsAgreed(agreed: Boolean) =
@@ -158,7 +158,7 @@ class SignUpViewModel
 
         /**
          * Step 1 "다음" 클릭 시점에 호출.
-         * 이메일/인증번호를 서버에 검증해 성공 시 [SignUpUiState.navigateToResidentNumber] = true 로 set,
+         * 이메일/인증번호를 서버에 검증해 성공 시 [SignUpUiState.shouldNavigateToResidentNumber] = true 로 set,
          * 실패/거부 시 [SignUpUiState.errorMessage] 로 set.
          */
         fun verifyEmailAndProceed() {
@@ -172,7 +172,7 @@ class SignUpViewModel
                         certificateCode = state.verificationCode,
                     ).onSuccess { result ->
                         if (result.isVerified) {
-                            _uiState.update { it.copy(navigateToResidentNumber = true) }
+                            _uiState.update { it.copy(shouldNavigateToResidentNumber = true) }
                         } else {
                             _uiState.update { it.copy(errorMessage = "인증번호가 일치하지 않습니다") }
                         }
@@ -195,7 +195,7 @@ class SignUpViewModel
 
                 val trimmedName = state.name.trim()
                 if (trimmedName.isEmpty()) {
-                    _uiState.update { it.copy(nameRequired = true) }
+                    _uiState.update { it.copy(isNameRequired = true) }
                     return@launch
                 }
 
@@ -209,7 +209,7 @@ class SignUpViewModel
                     ).onSuccess {
                         loginUseCase(LoginType.Email(email = state.email, password = state.signUpPassword))
                             .onSuccess {
-                                _uiState.update { it.copy(signUpSucceeded = true) }
+                                _uiState.update { it.copy(isSignedUp = true) }
                             }.onFailure { error ->
                                 _uiState.update {
                                     it.copy(

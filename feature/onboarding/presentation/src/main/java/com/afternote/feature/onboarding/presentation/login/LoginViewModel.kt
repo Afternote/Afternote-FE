@@ -46,13 +46,13 @@ class LoginViewModel
             login(LoginType.Google(idToken))
         }
 
-        /** UI 가 [LoginUiState.loginSucceeded] 소비 후 reset. */
-        fun onLoginSuccessConsumed() {
-            _uiState.update { it.copy(loginSucceeded = false) }
+        /** UI 가 [LoginUiState.isLoggedIn] 소비 후 reset. */
+        fun onLoggedInConsumed() {
+            _uiState.update { it.copy(isLoggedIn = false) }
         }
 
         /** UI 가 [LoginUiState.errorMessage] 소비 (snackbar 표시) 후 reset. */
-        fun onErrorMessageConsumed() {
+        fun onErrorConsumed() {
             _uiState.update { it.copy(errorMessage = null) }
         }
 
@@ -63,7 +63,7 @@ class LoginViewModel
                 val result = loginUseCase(loginType = loginType)
                 result
                     .onSuccess {
-                        _uiState.update { it.copy(isLoading = false, loginSucceeded = true) }
+                        _uiState.update { it.copy(isLoading = false, isLoggedIn = true) }
                     }.onFailure { exception ->
                         _uiState.update {
                             it.copy(isLoading = false, errorMessage = exception.message)
