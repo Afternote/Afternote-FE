@@ -288,6 +288,7 @@ class AfternoteEditorViewModel
                         internalState.update { it.copy(pendingThumbnailUrl = url) }
                     }.onFailure { e ->
                         Log.e(TAG, "uploadMemorialThumbnail: failed", e)
+                        internalState.update { it.copy(thumbnailUploadFailed = true) }
                     }
             }
         }
@@ -510,6 +511,7 @@ class AfternoteEditorViewModel
             val errorRes: Int? = null,
             val pendingSaveSuccessId: Long? = null,
             val pendingThumbnailUrl: String? = null,
+            val thumbnailUploadFailed: Boolean = false,
             val pendingPrefill: EditorFormPrefill? = null,
         )
 
@@ -525,6 +527,7 @@ class AfternoteEditorViewModel
                 errorRes = errorRes,
                 pendingSaveSuccessId = pendingSaveSuccessId,
                 pendingThumbnailUrl = pendingThumbnailUrl,
+                thumbnailUploadFailed = thumbnailUploadFailed,
                 pendingPrefill = pendingPrefill,
             )
 
@@ -534,6 +537,10 @@ class AfternoteEditorViewModel
 
         fun onThumbnailUploadedConsumed() {
             internalState.update { it.copy(pendingThumbnailUrl = null) }
+        }
+
+        fun onThumbnailUploadErrorConsumed() {
+            internalState.update { it.copy(thumbnailUploadFailed = false) }
         }
 
         // endregion

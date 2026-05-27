@@ -148,6 +148,7 @@ internal fun buildEditorScreenCallbacks(params: EditorScreenCallbacksParams): Af
                 params.editViewModel.uploadMemorialThumbnail(bytes)
             }
         },
+        onThumbnailUploadErrorConsumed = params.editViewModel::onThumbnailUploadErrorConsumed,
     )
 
 @Composable
@@ -257,6 +258,7 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
         graphSongs = params.graphSongs,
         state = state,
         saveError = saveError,
+        thumbnailUploadFailed = uiState.thumbnailUploadFailed,
         isPrefillLoading = uiState.isPrefillLoading,
     )
 }

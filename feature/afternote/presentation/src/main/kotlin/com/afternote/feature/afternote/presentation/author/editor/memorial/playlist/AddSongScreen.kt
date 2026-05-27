@@ -1,12 +1,16 @@
 package com.afternote.feature.afternote.presentation.author.editor.memorial.playlist
-import android.widget.Toast
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.feature.afternote.presentation.R
@@ -31,9 +35,10 @@ data class AddSongCallbacks(
  * 노래 추가하기 화면 (API 검색 연동).
  *
  * ViewModel 의존성 없이 순수하게 UI만 그립니다. [AddSongUiState.error] 는 sealed [AddSongError]
- * 에서 UI 레이어가 [stringResource] 로 해석한 뒤 Toast 표출 → [onErrorConsumed] 로 VM 에 nullify
+ * 에서 UI 레이어가 [stringResource] 로 해석한 뒤 Snackbar 표출 → [onErrorConsumed] 로 VM 에 nullify
  * 신호. VM 이 Android Framework (Context/Resources) 를 의존하지 않도록 string resolve 는 본
- * 레이어에서만 수행 (#267).
+ * 레이어에서만 수행 (#267). Snackbar 채택은 repo convention (Toast 2건 vs Snackbar 19건) + `showSnackbar`
+ * suspend 큐 의미로 같은 [AddSongError.SearchFailedGeneric] (data object) 가 연속 발화해도 표출 누락 회피.
  */
 @Composable
 fun AddSongScreen(
@@ -43,9 +48,9 @@ fun AddSongScreen(
     callbacks: AddSongCallbacks,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
     val genericErrorMessage = stringResource(R.string.afternote_editor_search_failed_generic)
     val currentOnErrorConsumed by rememberUpdatedState(onErrorConsumed)
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(uiState.error) {
         val error = uiState.error ?: return@LaunchedEffect
@@ -54,24 +59,29 @@ fun AddSongScreen(
                 AddSongError.SearchFailedGeneric -> genericErrorMessage
                 is AddSongError.SearchFailedWithMessage -> error.message
             }
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        snackbarHostState.showSnackbar(message = message, withDismissAction = true)
         currentOnErrorConsumed()
     }
 
-    SongPlaylistScreen(
-        modifier = modifier,
-        title = stringResource(R.string.afternote_editor_playlist_add_screen_title),
-        onBackClick = callbacks.onBackClick,
-        songs = uiState.songs,
-        onSongsSelected = { selected ->
-            callbacks.onSongsAdded(selected.map(::toSong))
-        },
-        options =
-            SongPlaylistScreenSelectableOptions(
-                searchQuery = uiState.searchQuery,
-                onSearchQueryChange = onSearchQueryChange,
-            ),
-    )
+    Box(modifier = modifier.fillMaxSize()) {
+        SongPlaylistScreen(
+            title = stringResource(R.string.afternote_editor_playlist_add_screen_title),
+            onBackClick = callbacks.onBackClick,
+            songs = uiState.songs,
+            onSongsSelected = { selected ->
+                callbacks.onSongsAdded(selected.map(::toSong))
+            },
+            options =
+                SongPlaylistScreenSelectableOptions(
+                    searchQuery = uiState.searchQuery,
+                    onSearchQueryChange = onSearchQueryChange,
+                ),
+        )
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
+    }
 }
 
 /**
