@@ -13,7 +13,7 @@ import androidx.compose.ui.res.stringResource
  */
 sealed interface UiText {
     data class Resource(
-        @StringRes val resId: Int,
+        @param:StringRes val resId: Int,
         val args: List<Any> = emptyList(),
     ) : UiText
 
@@ -24,7 +24,7 @@ sealed interface UiText {
     /** 서버/예외가 메시지를 주면 그대로, 없으면 리소스 fallback. `e.message ?: getString(R.string.x)` 대응. */
     data class DynamicOrResource(
         val value: String?,
-        @StringRes val fallbackResId: Int,
+        @param:StringRes val fallbackResId: Int,
     ) : UiText
 
     companion object {

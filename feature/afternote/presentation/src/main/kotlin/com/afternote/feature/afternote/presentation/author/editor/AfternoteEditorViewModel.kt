@@ -172,8 +172,8 @@ private data class EditorFormSnapshot(
  *
  * **단일 UI 상태:** 폼·작성자 수신자·저장 진행/오류·일회성 신호 모두 단일 [AfternoteEditorUiState] 로 묶어 [uiState] 로만 노출한다
  * (Google 공식 가이드 — *"ViewModel events should always result in a UI state update"*).
- * 일회성(저장 성공·썸네일 업로드·프리필 적용)은 UiState 의 nullable 신호로 표현하고 UI 가 [LaunchedEffect] 로 소비 후
- * `on*Consumed` / [onPrefillApplied] 콜백으로 reset.
+ * 일회성(저장 성공·썸네일 업로드·프리필 적용)은 UiState 의 nullable 신호로 표현하고 UI 가 `LaunchedEffect` 로 소비 후
+ * `on*Consumed` 콜백으로 reset.
  *
  * **SSOT:** 비즈니스 폼 필드는 [EditorFormState] 로 [internalState] 안에 보관하며, 프로세스 종료 시
  * [SavedStateHandle] JSON 스냅샷으로 복원한다. 추모 플레이리스트 곡 목록은 폼의 [EditorFormState.memorialPlaylistSongs] 와
@@ -183,7 +183,7 @@ private data class EditorFormSnapshot(
  * **UI Layer 분리:** ViewModel은 Compose UI 객체(`TextFieldState`, `SnapshotStateList`, 파사드)를 들지 않는다.
  * UI 레이어는 `rememberAfternoteEditorState(getCurrentForm = ::currentForm, updateForm = ::updateForm)` 으로
  * 자체 파사드를 만들고, prefill 등 UI 상태 변경은 [AfternoteEditorUiState.pendingPrefill] 신호로 위임받아 적용 후
- * [onPrefillApplied] 로 통보한다.
+ * [onPrefillConsumed] 로 통보한다.
  *
  * 수정 모드(`itemId` 있음)의 상세 로드는 [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel]
  * 과 같이 `init`에서만 트리거한다 (`LaunchedEffect`로 네비게이션에 위임하지 않음).
@@ -443,7 +443,7 @@ class AfternoteEditorViewModel
                         val prefill = AfternoteEditorFormMapper.buildEditorFormPrefill(detail)
                         savedStateHandle[EDITOR_ORIGINAL_CATEGORY_FOR_API_KEY] = prefill.category.name
                         // UI 레이어 파사드가 TextFieldState·SnapshotStateList 등 UI 상태를 갱신하도록 위임.
-                        // skeleton 종료는 UI 가 prefill 적용을 마친 뒤 [onPrefillApplied] 로 통보한다
+                        // skeleton 종료는 UI 가 prefill 적용을 마친 뒤 [onPrefillConsumed] 로 통보한다
                         // (uiState 갱신 시점에 prefill 도착했어도 UI 가 form·TextFieldState 에 반영하기 전이라
                         //  여기서 끄면 skeleton 사라짐 → 빈 폼 → prefill 깜빡임 발생).
                         internalState.update { it.copy(pendingPrefill = prefill) }
@@ -459,7 +459,7 @@ class AfternoteEditorViewModel
          * UI 가 [AfternoteEditorUiState.pendingPrefill] 신호를 받아 폼·TextFieldState 에 모두 반영한 직후 호출.
          * skeleton 종료([AfternoteEditorUiState.isPrefillLoading] = false) + 신호 reset (pendingPrefill = null) 동시 처리.
          */
-        fun onPrefillApplied() {
+        fun onPrefillConsumed() {
             internalState.update { it.copy(isPrefillLoading = false, pendingPrefill = null) }
         }
 
