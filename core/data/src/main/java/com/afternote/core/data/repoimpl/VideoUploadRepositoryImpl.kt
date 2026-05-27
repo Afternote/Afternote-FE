@@ -61,20 +61,21 @@ class VideoUploadRepositoryImpl
                     val contentType = presigned.contentType.ifBlank { "video/$extension" }
                     val requestBody = tempFile.asRequestBody(contentType.toMediaType())
 
-                    val response =
-                        withContext(ioDispatcher) {
-                            s3Client
-                                .newCall(
-                                    Request
-                                        .Builder()
-                                        .url(presigned.presignedUrl)
-                                        .put(requestBody)
-                                        .header("Content-Type", contentType)
-                                        .build(),
-                                ).execute()
-                        }
-                    check(response.isSuccessful) {
-                        "S3 video upload failed: ${response.code} ${response.message}"
+                    withContext(ioDispatcher) {
+                        s3Client
+                            .newCall(
+                                Request
+                                    .Builder()
+                                    .url(presigned.presignedUrl)
+                                    .put(requestBody)
+                                    .header("Content-Type", contentType)
+                                    .build(),
+                            ).execute()
+                            .use { response ->
+                                check(response.isSuccessful) {
+                                    "S3 video upload failed: ${response.code} ${response.message}"
+                                }
+                            }
                     }
 
                     Result.success(presigned.fileUrl)
