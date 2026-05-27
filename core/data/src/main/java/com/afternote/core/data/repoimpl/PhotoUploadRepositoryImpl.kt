@@ -102,23 +102,23 @@ class PhotoUploadRepositoryImpl
                     val contentType = presigned.contentType.ifBlank { DEFAULT_CONTENT_TYPE }
                     val requestBody = tempFile.asRequestBody(contentType.toMediaType())
 
-                    val response =
-                        withContext(ioDispatcher) {
-                            s3Client
-                                .newCall(
-                                    Request
-                                        .Builder()
-                                        .url(presigned.presignedUrl)
-                                        .put(requestBody)
-                                        .header("Content-Type", contentType)
-                                        .build(),
-                                ).execute()
-                        }
-                    check(response.isSuccessful) {
-                        "S3 upload failed: ${response.code} ${response.message}"
+                    withContext(ioDispatcher) {
+                        s3Client
+                            .newCall(
+                                Request
+                                    .Builder()
+                                    .url(presigned.presignedUrl)
+                                    .put(requestBody)
+                                    .header("Content-Type", contentType)
+                                    .build(),
+                            ).execute()
+                            .use { response ->
+                                check(response.isSuccessful) {
+                                    "S3 upload failed: ${response.code} ${response.message}"
+                                }
+                            }
                     }
 
-                    android.util.Log.d("PhotoUpload", "S3 upload success → ${presigned.fileUrl}")
                     Result.success(presigned.fileUrl)
                 } finally {
                     tempFile.delete()
@@ -126,7 +126,6 @@ class PhotoUploadRepositoryImpl
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                android.util.Log.e("PhotoUpload", "upload failed", e)
                 Result.failure(e)
             }
     }
