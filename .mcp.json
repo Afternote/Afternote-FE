@@ -3,7 +3,7 @@
     "mobile": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "claude-in-mobile@latest"]
+      "args": ["-y", "claude-in-mobile@3.8.1"]
     }
   }
 }
