@@ -23,6 +23,41 @@ jobs:
           java-version: '21'
           cache: 'gradle'
 
+      # :app 모듈은 google-services plugin 활성화 — processDebugGoogleServices 가 google-services.json 요구.
+      # CI 환경엔 실 키 없으므로 stub JSON 생성 (Firebase 호출 안 함, plugin 통과 목적).
+      # 실 분석/배포는 Firebase App Distribution 워크플로 (#298 영역) 에서 별도 secret 으로 처리.
+      - name: Create stub google-services.json (CI only)
+        run: |
+          cat > app/google-services.json <<'EOF'
+          {
+            "project_info": {
+              "project_number": "000000000000",
+              "project_id": "afternote-ci-stub",
+              "storage_bucket": "afternote-ci-stub.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+                  "android_client_info": {
+                    "package_name": "com.afternote.afternote_fe"
+                  }
+                },
+                "oauth_client": [],
+                "api_key": [
+                  { "current_key": "AIzaSyDfake_ci_only_no_real_value_xxxxxxxxxxx" }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": []
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          EOF
+
       - name: Run validateScreenshotTest
         run: ./gradlew :core:ui:validateScreenshotTest :app:validateScreenshotTest :feature:onboarding:presentation:validateScreenshotTest :feature:afternote:presentation:validateScreenshotTest --parallel
         env:
