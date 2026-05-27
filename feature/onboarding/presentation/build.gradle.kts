@@ -4,6 +4,7 @@ plugins {
     id("afternote.android.library.compose")
     id("afternote.android.hilt")
     kotlin("plugin.serialization")
+    alias(libs.plugins.compose.screenshot)
 }
 
 val localProperties = Properties()
@@ -14,6 +15,8 @@ if (localPropertiesFile.exists()) {
 
 android {
     namespace = "com.afternote.feature.onboarding.presentation"
+
+    experimentalProperties["android.experimental.enableScreenshotTest"] = true
 
     buildFeatures {
         buildConfig = true
@@ -43,4 +46,8 @@ dependencies {
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
+
+    // Compose Preview Screenshot Testing (#330)
+    screenshotTestImplementation(libs.screenshot.validation.api)
+    screenshotTestImplementation(libs.androidx.compose.ui.tooling)
 }

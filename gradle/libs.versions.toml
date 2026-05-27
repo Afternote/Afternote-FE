@@ -42,6 +42,7 @@ navigationCommonKtx = "2.9.7"
 runtime = "1.10.6"
 composeRichEditor = "1.0.0-rc13"
 paging = "3.5.0"
+screenshot = "0.0.1-alpha15"
 googleServices = "4.4.4"
 firebaseAppDistribution = "5.2.1"
 
@@ -105,6 +106,7 @@ compose-rich-editor = { group = "com.mohamedrejeb.richeditor", name = "richedito
 androidx-paging-common = { group = "androidx.paging", name = "paging-common", version.ref = "paging" }
 androidx-paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging" }
 androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }
+screenshot-validation-api = { group = "com.android.tools.screenshot", name = "screenshot-validation-api", version.ref = "screenshot" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -115,5 +117,6 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ktlint-gradle = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintGradle" }
+compose-screenshot = { id = "com.android.compose.screenshot", version.ref = "screenshot" }
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 firebase-app-distribution = { id = "com.google.firebase.appdistribution", version.ref = "firebaseAppDistribution" }

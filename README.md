@@ -73,11 +73,30 @@ GOOGLE_WEB_CLIENT_ID=<구글 OAuth web client id>.apps.googleusercontent.com
 
 ## 배포 (매 회)
 
+### 자동 — `main` push 시 (기본 경로)
+
+`develop` → `main` 머지가 push 되면 GitHub Actions 워크플로 [`release-distribution.yml`](.github/workflows/release-distribution.yml) 가 자동 실행 → APK 빌드 → Firebase App Distribution 업로드 → 테스터 그룹 `afternote` 전원에게 자동 이메일 발송. 운영 정책 *"main 머지된 상태만 배포"* 와 일치.
+
+CI 가 사용하는 GitHub Secrets (Settings → Secrets and variables → Actions):
+
+| 키 | 용도 |
+|---|---|
+| `RELEASE_STORE_FILE_B64` | release keystore 파일 (`~/afternote-release.jks`) 의 base64 인코딩 |
+| `RELEASE_STORE_PASSWORD` | keystore 비밀번호 |
+| `RELEASE_KEY_ALIAS` | key alias (`afternote-release`) |
+| `RELEASE_KEY_PASSWORD` | key 비밀번호 |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | App Distribution Admin 권한 부여된 service account JSON 원문 |
+| `KAKAO_NATIVE_APP_KEY` · `GOOGLE_WEB_CLIENT_ID` · `GOOGLE_SERVICES_JSON_B64` | `local.properties` 키 (`lint.yml` 과 공유) |
+
+> base64 인코딩: `base64 -i ~/afternote-release.jks | pbcopy` (macOS)
+
+### 수동 — 1hyok 머신 (fallback / 긴급 시)
+
 ```bash
 ./gradlew assembleRelease appDistributionUploadRelease
 ```
 
-→ APK 빌드 + Firebase 업로드 + 테스터 그룹 `afternote` 전원에게 자동 이메일 발송.
+→ 동일하게 APK 빌드 + Firebase 업로드. CI 장애 시 또는 main 머지 없이 임시 배포 필요할 때 사용.
 
 > 같은 `versionCode` 로 재업로드하면 기존 release 갱신. 새 release 만들려면 `app/build.gradle.kts` 의 `versionCode` 증가.
 
