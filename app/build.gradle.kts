@@ -6,6 +6,7 @@ plugins {
     id("afternote.android.navigation")
     alias(libs.plugins.google.services)
     alias(libs.plugins.firebase.app.distribution)
+    alias(libs.plugins.compose.screenshot)
 }
 
 val localProperties = Properties()
@@ -16,6 +17,8 @@ if (localPropertiesFile.exists()) {
 
 android {
     namespace = "com.afternote.afternote_fe"
+
+    experimentalProperties["android.experimental.enableScreenshotTest"] = true
 
     buildFeatures {
         buildConfig = true
@@ -98,4 +101,8 @@ dependencies {
     implementation(projects.feature.mindrecord.data)
     implementation(projects.feature.timeletter.data)
     implementation(projects.feature.onboarding.data)
+
+    // Compose Preview Screenshot Testing (#330) — 1hyok 영역 (홈) 적용
+    screenshotTestImplementation(libs.screenshot.validation.api)
+    screenshotTestImplementation(libs.androidx.compose.ui.tooling)
 }
