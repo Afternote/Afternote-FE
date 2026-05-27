@@ -60,11 +60,11 @@ jobs:
               '🔍 **확인 위치** (artifact zip 내부):',
               '- diff PNG: `preview/debug/diffs/...`',
               '- rendered PNG: `preview/debug/rendered/...` (CI 환경에서 새로 그린 결과)',
-              '- baseline PNG: repo `core/ui/src/screenshotTestDebug/reference/...`',
+              '- baseline PNG: repo `<module>/src/screenshotTestDebug/reference/...` (`:core:ui` · `:app` · `:feature:onboarding:presentation` · `:feature:afternote:presentation`)',
               '',
               '📝 **조치 가이드**:',
               '- diff 가 anti-aliasing/font 미세 차이 → rendered PNG 를 baseline 으로 교체 후 commit/push',
-              '- 의미 있는 시각 변경 → 의도 확인 후 `./gradlew :core:ui:updateScreenshotTest` 로 baseline 갱신 + commit/push',
+              '- 의미 있는 시각 변경 → 의도 확인 후 `./gradlew :<module>:updateScreenshotTest` 로 baseline 갱신 + commit/push',
               '',
               '근본 fix (docker 통일 baseline 환경) 는 별 epic.',
             ].join('\n');

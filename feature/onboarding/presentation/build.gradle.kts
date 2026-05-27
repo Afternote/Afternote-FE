@@ -47,7 +47,7 @@ dependencies {
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
 
-    // Compose Preview Screenshot Testing (#319) — feature 모듈 단위 적용 1차
+    // Compose Preview Screenshot Testing (#330)
     screenshotTestImplementation(libs.screenshot.validation.api)
     screenshotTestImplementation(libs.androidx.compose.ui.tooling)
 }
