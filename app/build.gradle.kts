@@ -92,6 +92,7 @@ dependencies {
     // Feature — domain (홈 요약 UseCase가 마인드레코드 도메인 Repository에, 수신자 홈이 애프터노트 도메인 Repository에 직접 의존)
     implementation(projects.feature.mindrecord.domain)
     implementation(projects.feature.afternote.domain)
+    implementation(projects.feature.receiver.domain)
 
     // Feature — data (Hilt @Module / 바인딩이 루트 그래프에 포함되도록 app이 classpath에 둔다)
     implementation(projects.feature.afternote.data)

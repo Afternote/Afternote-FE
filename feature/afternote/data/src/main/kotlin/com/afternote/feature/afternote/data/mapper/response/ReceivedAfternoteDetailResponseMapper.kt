@@ -6,10 +6,10 @@ import com.afternote.feature.afternote.data.dto.ReceivedPlaylistInfo
 import com.afternote.feature.afternote.data.dto.ReceivedSongInfo
 import com.afternote.feature.afternote.data.mapper.categoryToServiceType
 import com.afternote.feature.afternote.data.mapper.formatDateFromServer
+import com.afternote.feature.afternote.domain.model.receiver.ReceivedAccountCredentials
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
-import com.afternote.feature.receiver.domain.model.ReceivedAccountCredentials
-import com.afternote.feature.receiver.domain.model.ReceivedPlaylistDetail
-import com.afternote.feature.receiver.domain.model.ReceivedPlaylistSong
+import com.afternote.feature.afternote.domain.model.receiver.ReceivedPlaylistDetail
+import com.afternote.feature.afternote.domain.model.receiver.ReceivedPlaylistSong
 
 fun ReceivedAfternoteDetailResponse.toDomain(): ReceivedAfternoteDetail =
     ReceivedAfternoteDetail(
