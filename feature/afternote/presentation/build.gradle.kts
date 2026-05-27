@@ -13,6 +13,7 @@ android {
 
 dependencies {
     implementation(projects.feature.afternote.domain)
+    implementation(projects.feature.receiver.domain)
     implementation(projects.core.datastore)
     implementation(projects.core.domain)
     implementation(projects.core.model)
