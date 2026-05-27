@@ -35,7 +35,6 @@ import com.afternote.core.ui.R
 import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Red
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.mindrecord.presentation.component.CategorySettingBottomSheet
 import com.afternote.feature.mindrecord.presentation.component.DailyDeepThoughtCard
@@ -162,7 +161,7 @@ fun DeepThoughtWriteScreen(
             if (errorMessage != null) {
                 Text(
                     text = errorMessage,
-                    color = Red,
+                    color = AfternoteDesign.colors.errorStrong,
                     style = AfternoteDesign.typography.captionLargeR,
                 )
             }

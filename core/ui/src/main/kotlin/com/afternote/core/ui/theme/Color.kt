@@ -48,6 +48,14 @@ private val Accent10 = Color(0xFF3A4A8A)
 /** 시맨틱 에러/필수표시 색. 필수 입력 마커·검증 실패 등에 사용. */
 private val Error = Color(0xFFFF3647)
 
+/**
+ * 강한 에러 빨강. 본문 텍스트 강조 (예: 다이어리 작성 화면 글자 수 초과 경고) 에 사용.
+ *
+ * [Error] (`#FF3647`) 와 다른 색 — 디자인 시안에 두 토큰의 사용 컨텍스트 명확화 도착 시
+ * `error` / `errorStrong` 통합 또는 의미 재정의 가능.
+ */
+private val ErrorStrong = Color(0xFFFF0C0C)
+
 internal fun lightColors() =
     AfternoteColors(
         white = White,
@@ -74,6 +82,7 @@ internal fun lightColors() =
         accent9 = Accent9,
         accent10 = Accent10,
         error = Error,
+        errorStrong = ErrorStrong,
         isLightMode = true,
     )
 
@@ -103,6 +112,7 @@ internal fun darkColors() =
         accent9 = Accent9,
         accent10 = Accent10,
         error = Error,
+        errorStrong = ErrorStrong,
         isLightMode = false,
     )
 
@@ -136,6 +146,7 @@ class AfternoteColors(
     accent9: Color,
     accent10: Color,
     error: Color,
+    errorStrong: Color,
     isLightMode: Boolean,
 ) {
     var white by mutableStateOf(white)
@@ -186,6 +197,8 @@ class AfternoteColors(
         private set
     var error by mutableStateOf(error)
         private set
+    var errorStrong by mutableStateOf(errorStrong)
+        private set
     var isLightMode by mutableStateOf(isLightMode)
         private set
 
@@ -214,6 +227,7 @@ class AfternoteColors(
         accent9: Color = this.accent9,
         accent10: Color = this.accent10,
         error: Color = this.error,
+        errorStrong: Color = this.errorStrong,
         isLightMode: Boolean = this.isLightMode,
     ) = AfternoteColors(
         white = white,
@@ -240,6 +254,7 @@ class AfternoteColors(
         accent9 = accent9,
         accent10 = accent10,
         error = error,
+        errorStrong = errorStrong,
         isLightMode = isLightMode,
     )
 
@@ -268,8 +283,7 @@ class AfternoteColors(
         this.accent9 = other.accent9
         this.accent10 = other.accent10
         this.error = other.error
+        this.errorStrong = other.errorStrong
         this.isLightMode = other.isLightMode
     }
 }
-
-val Red = Color(0xFFFF0C0C) // 에러 메시지용 빨간색
