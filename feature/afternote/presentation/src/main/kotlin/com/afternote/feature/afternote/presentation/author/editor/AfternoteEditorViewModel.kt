@@ -399,8 +399,6 @@ class AfternoteEditorViewModel
                     funeralVideoUrl = memorialMedia.funeralVideoUrl,
                     memorialPhotoUrl = memorialMedia.memorialPhotoUrl,
                     pickedMemorialPhotoUri = memorialMedia.pickedMemorialPhotoUri,
-                    funeralThumbnailUrl = memorialMedia.funeralThumbnailUrl,
-                    isUpdate = editingId != null,
                 ).getOrElse { return Result.failure(it) }
 
             val command =
@@ -413,8 +411,8 @@ class AfternoteEditorViewModel
                             playlistSongs = playlistSongs,
                             memorialMedia =
                                 MemorialMediaUrls(
-                                    funeralVideoUrl = resolved.videoUrlForUpdate,
-                                    funeralThumbnailUrl = resolved.funeralThumbnailUrlForUpdate,
+                                    funeralVideoUrl = resolved.resolvedVideoUrl,
+                                    funeralThumbnailUrl = memorialMedia.funeralThumbnailUrl,
                                     memorialPhotoUrl = resolved.resolvedMemorialPhotoUrl,
                                 ),
                         )
