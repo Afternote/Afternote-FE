@@ -8,12 +8,15 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
  * 입력 필드 / 슬롯 카드 등 디자인 시스템의 시각 컨테이너 단위.
@@ -23,6 +26,10 @@ import com.afternote.core.ui.theme.AfternoteDesign
  * 을 별도로 박아두던 것을 한 곳으로 모은다.
  *
  * [onClick] 을 주면 ripple 이 둥근 코너 안쪽으로 잘리도록 `clip` 뒤에 `clickable` 이 걸린다.
+ *
+ * 폭 / 크기 정책은 호출부가 [modifier] 로 결정 (Compose API 가이드라인: element function 의 modifier
+ * default 는 빈 `Modifier`). 부모 폭 차지가 필요하면 `Modifier.fillMaxWidth()`, Row 안에서
+ * 가변 비율이면 `Modifier.weight(...)` 등을 명시적으로 넘긴다.
  */
 @Composable
 fun AfternoteFieldContainer(
@@ -35,7 +42,6 @@ fun AfternoteFieldContainer(
     Row(
         modifier =
             modifier
-                .fillMaxWidth()
                 .clip(RoundedCornerShape(8.dp))
                 .background(AfternoteDesign.colors.white)
                 .border(1.dp, AfternoteDesign.colors.gray2, RoundedCornerShape(8.dp))
@@ -49,4 +55,22 @@ fun AfternoteFieldContainer(
         verticalAlignment = verticalAlignment,
         content = content,
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AfternoteFieldContainerPreview() {
+    AfternoteTheme {
+        AfternoteFieldContainer(
+            modifier =
+                Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+        ) {
+            Text(
+                text = "Sample Field Container Content",
+                style = AfternoteDesign.typography.bodyLargeR,
+            )
+        }
+    }
 }
