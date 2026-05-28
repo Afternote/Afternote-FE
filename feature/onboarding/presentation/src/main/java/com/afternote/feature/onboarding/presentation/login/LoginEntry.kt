@@ -35,6 +35,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun LoginEntry(
     onLoginSuccess: () -> Unit,
+    onNewUserOnboarding: () -> Unit,
     onSignUpClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -71,6 +72,12 @@ fun LoginEntry(
         if (uiState.isLoggedIn) {
             onLoginSuccess()
             viewModel.onLoggedInConsumed()
+        }
+    }
+    LaunchedEffect(uiState.shouldStartOnboarding) {
+        if (uiState.shouldStartOnboarding) {
+            onNewUserOnboarding()
+            viewModel.onOnboardingStartConsumed()
         }
     }
     val pendingErrorMessage = uiState.errorMessage

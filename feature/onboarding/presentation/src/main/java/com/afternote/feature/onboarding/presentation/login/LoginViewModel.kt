@@ -51,6 +51,11 @@ class LoginViewModel
             _uiState.update { it.copy(isLoggedIn = false) }
         }
 
+        /** UI 가 [LoginUiState.shouldStartOnboarding] 소비 후 reset. */
+        fun onOnboardingStartConsumed() {
+            _uiState.update { it.copy(shouldStartOnboarding = false) }
+        }
+
         /** UI 가 [LoginUiState.errorMessage] 소비 (snackbar 표시) 후 reset. */
         fun onErrorConsumed() {
             _uiState.update { it.copy(errorMessage = null) }
@@ -62,8 +67,14 @@ class LoginViewModel
                 _uiState.update { it.copy(isLoading = true) }
                 val result = loginUseCase(loginType = loginType)
                 result
-                    .onSuccess {
-                        _uiState.update { it.copy(isLoading = false, isLoggedIn = true) }
+                    .onSuccess { isNewUser ->
+                        _uiState.update {
+                            if (isNewUser) {
+                                it.copy(isLoading = false, shouldStartOnboarding = true)
+                            } else {
+                                it.copy(isLoading = false, isLoggedIn = true)
+                            }
+                        }
                     }.onFailure { exception ->
                         _uiState.update {
                             it.copy(isLoading = false, errorMessage = exception.message)

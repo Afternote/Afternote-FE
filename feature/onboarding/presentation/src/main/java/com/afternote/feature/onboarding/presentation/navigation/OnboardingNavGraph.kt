@@ -50,6 +50,7 @@ fun NavGraphBuilder.onboardingNavGraph(
         composable<OnboardingRoute.LoginRoute> {
             LoginEntry(
                 onLoginSuccess = actions::replaceOnboardingWithHome,
+                onNewUserOnboarding = actions::replaceLoginWithWelcome,
                 onSignUpClick = actions::replaceLoginWithSignUp,
                 onBackClick = actions::popBack,
             )
