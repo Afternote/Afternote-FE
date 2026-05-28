@@ -8,7 +8,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 internal fun Project.configureAndroidCommon(extension: CommonExtension) {
     extension.compileSdk = 36
 
-    extension.configureDefaultConfig()
+    extension.configureDefaultConfig(this)
 
     extensions
         .findByType(org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension::class.java)
@@ -24,7 +24,7 @@ internal fun Project.configureAndroidCommon(extension: CommonExtension) {
     }
 }
 
-private fun CommonExtension.configureDefaultConfig() {
+private fun CommonExtension.configureDefaultConfig(project: Project) {
     when (this) {
         is ApplicationExtension -> {
             defaultConfig {
@@ -41,7 +41,10 @@ private fun CommonExtension.configureDefaultConfig() {
             defaultConfig {
                 minSdk = 26
                 testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-                consumerProguardFiles("consumer-rules.pro")
+                // consumer-rules.pro 가 있는 모듈만 등록 — 없는 모듈(domain·res 등)엔 빈 파일을 강요하지 않음
+                if (project.file("consumer-rules.pro").exists()) {
+                    consumerProguardFiles("consumer-rules.pro")
+                }
             }
             compileOptions {
                 sourceCompatibility = JavaVersion.VERSION_17
