@@ -16,21 +16,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
-import coil3.network.NetworkHeaders
-import coil3.network.httpHeaders
-import coil3.request.ImageRequest
 import com.afternote.core.ui.modifierextention.bottomBorder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
@@ -117,22 +112,8 @@ private fun AlbumCoverBox(albumImageUrl: String?) {
             .size(48.dp)
             .clip(RoundedCornerShape(4.dp))
     if (!albumImageUrl.isNullOrBlank()) {
-        val context = LocalContext.current
-        val imageRequest =
-            remember(albumImageUrl) {
-                ImageRequest
-                    .Builder(context)
-                    .data(albumImageUrl)
-                    .httpHeaders(
-                        NetworkHeaders
-                            .Builder()
-                            .apply {
-                                this["User-Agent"] = "Afternote Android App"
-                            }.build(),
-                    ).build()
-            }
         AsyncImage(
-            model = imageRequest,
+            model = albumImageUrl,
             contentDescription = stringResource(R.string.content_description_album_cover),
             modifier = modifier,
             contentScale = ContentScale.Crop,
