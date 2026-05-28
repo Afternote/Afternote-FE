@@ -15,11 +15,6 @@ data class VerifyEmailRequest(
 )
 
 @Serializable
-data class VerifyEmailData(
-    val isVerified: Boolean? = null,
-)
-
-@Serializable
 data class SignUpRequest(
     val email: String,
     val password: String,
