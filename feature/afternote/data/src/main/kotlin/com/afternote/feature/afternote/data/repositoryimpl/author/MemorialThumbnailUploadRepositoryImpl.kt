@@ -14,7 +14,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import javax.inject.Inject
 import javax.inject.Named
 
-private const val DIRECTORY_AFTERNOTES = "afternotes"
+// DIRECTORY_AFTERNOTES 는 같은 패키지 [MemorialPhotoUploadRepositoryImpl] 의 internal const 공유.
 private const val EXTENSION_JPG = "jpg"
 private const val CONTENT_TYPE_JPEG = "image/jpeg"
 

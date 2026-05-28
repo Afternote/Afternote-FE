@@ -5,11 +5,7 @@ import com.afternote.feature.afternote.domain.repository.author.MemorialVideoUpl
 import com.afternote.feature.afternote.domain.repository.author.VideoUploadOutcome
 import javax.inject.Inject
 
-/** 서버 S3 의 애프터노트 미디어 폴더명. presigned URL 경로에 박혀 `bucket/afternotes/<file>` 형태가 됨. 서버와 약속된 문자열. */
-private const val DIRECTORY_AFTERNOTES = "afternotes"
-
-/** Android 의 *로컬 파일 URI* 스킴. 갤러리/카메라 picker 결과는 `content://...` 로 시작 → "아직 서버에 없음, 업로드 필요" 의 신호. `https://...` 같은 원격 URL 과 구분하는 용도. */
-private const val LOCAL_CONTENT_SCHEME = "content://"
+// DIRECTORY_AFTERNOTES, LOCAL_CONTENT_SCHEME 는 같은 패키지 [MemorialPhotoUploadRepositoryImpl] 의 internal const 공유.
 
 /**
  * 추모 영상 *상태 해석* + 필요 시 업로드.
