@@ -96,6 +96,13 @@ jobs:
           KAKAO_NATIVE_APP_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
           GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
 
+      # 컨테이너가 root 로 gradle 을 실행해 workspace · ~/.gradle 산출물이 root 소유가 된다.
+      # job 종료 시 'Post Restore Gradle cache'(캐시 저장)의 hashFiles/tar 가 runner 권한이라
+      # root 소유 파일에서 실패하므로, 소유권을 runner 로 복구한다.
+      - name: Restore workspace ownership for post steps
+        if: always()
+        run: sudo chown -R "$(id -u):$(id -g)" "$GITHUB_WORKSPACE" "$HOME/.gradle"
+
       # 실패 시 diff/rendered 이미지를 artifact 로 업로드 — 본인이 다운로드해 시각 차이 확인 가능
       - name: Upload screenshot diff on failure
         if: failure()
