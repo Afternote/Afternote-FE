@@ -1,21 +1,14 @@
 package com.afternote.feature.afternote.domain.usecase.editor
 
 /**
- * 저장 직전까지 해석·업로드된 추모 미디어 URL 묶음.
- * 생성(Post)과 수정(Patch)에서 각각 다른 필드로 쓰인다.
+ * 저장 직전까지 해석·업로드된 추모 미디어 URL 묶음. POST/PATCH 동일 규칙 — 백엔드가
+ * `S3Service.resolvePublicUrl(key)` 로 영구 public URL 을 발급하므로 클라이언트가 받은 URL 을
+ * 그대로 다시 보낼 수 있다 (presigned 변환 없음). `videoUrlForUpdate` / `funeralThumbnailUrlForUpdate`
+ * 같은 PATCH 전용 필드는 불필요해 제거됨 (#258 BE 확정 결과).
  */
 data class ResolvedMemorialMediaForSave(
-    /** 생성·수정 공통: 업로드 반영 후 영상 URL (로컬 content면 업로드 결과). */
+    /** 업로드 반영 후 영상 URL (로컬 content 이면 업로드 결과). null 이면 영상 미첨부. */
     val resolvedVideoUrl: String?,
-    /** 생성·수정 공통: 영정 사진 URL. */
+    /** 영정 사진 URL (로컬 content 이면 업로드 결과). null 이면 사진 미첨부. */
     val resolvedMemorialPhotoUrl: String?,
-    /**
-     * 수정(PATCH) 전용: 본문에 넣을 videoUrl.
-     * `VideoUploadOutcome.Existing` (기존 영상 그대로 두기) → null (변경 없음 신호로 페이로드에서 제거).
-     * `VideoUploadOutcome.FreshlyUploaded` (새 영상 업로드 직후) → 업로드 결과 URL.
-     * 생성 시에는 무시하고 [resolvedVideoUrl]을 쓴다.
-     */
-    val videoUrlForUpdate: String?,
-    /** 수정(PATCH) 시 썸네일: [videoUrlForUpdate]가 null이면 null. */
-    val funeralThumbnailUrlForUpdate: String?,
 )
