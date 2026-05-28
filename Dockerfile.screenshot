@@ -35,7 +35,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 RUN apt-get update && apt-get install -y --no-install-recommends \
         openjdk-21-jdk-headless \
         wget unzip ca-certificates git \
-        fonts-noto-cjk fonts-noto-color-emoji \
+        fontconfig fonts-noto-cjk fonts-noto-color-emoji \
         locales \
     && locale-gen en_US.UTF-8 \
     && update-locale LANG=en_US.UTF-8 \
