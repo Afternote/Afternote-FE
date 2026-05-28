@@ -41,7 +41,6 @@ import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.timeletter.presentation.component.RecipientListItem
 import com.afternote.feature.timeletter.presentation.viewmodel.RecipientListViewModel
 import kotlinx.coroutines.launch
-import kotlin.collections.filter
 
 @Composable
 fun RecipientListScreen(

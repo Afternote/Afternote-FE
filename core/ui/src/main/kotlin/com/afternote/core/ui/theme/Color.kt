@@ -45,6 +45,9 @@ private val Accent8 = Color(0xFF6E5A7F)
 private val Accent9 = Color(0xFF24324A)
 private val Accent10 = Color(0xFF3A4A8A)
 
+/** 시맨틱 에러/필수표시 색. 필수 입력 마커·검증 실패 등에 사용. */
+private val Error = Color(0xFFFF3647)
+
 internal fun lightColors() =
     AfternoteColors(
         white = White,
@@ -70,6 +73,7 @@ internal fun lightColors() =
         accent8 = Accent8,
         accent9 = Accent9,
         accent10 = Accent10,
+        error = Error,
         isLightMode = true,
     )
 
@@ -98,6 +102,7 @@ internal fun darkColors() =
         accent8 = Accent8,
         accent9 = Accent9,
         accent10 = Accent10,
+        error = Error,
         isLightMode = false,
     )
 
@@ -130,6 +135,7 @@ class AfternoteColors(
     accent8: Color,
     accent9: Color,
     accent10: Color,
+    error: Color,
     isLightMode: Boolean,
 ) {
     var white by mutableStateOf(white)
@@ -178,6 +184,8 @@ class AfternoteColors(
         private set
     var accent10 by mutableStateOf(accent10)
         private set
+    var error by mutableStateOf(error)
+        private set
     var isLightMode by mutableStateOf(isLightMode)
         private set
 
@@ -205,6 +213,7 @@ class AfternoteColors(
         accent8: Color = this.accent8,
         accent9: Color = this.accent9,
         accent10: Color = this.accent10,
+        error: Color = this.error,
         isLightMode: Boolean = this.isLightMode,
     ) = AfternoteColors(
         white = white,
@@ -230,6 +239,7 @@ class AfternoteColors(
         accent8 = accent8,
         accent9 = accent9,
         accent10 = accent10,
+        error = error,
         isLightMode = isLightMode,
     )
 
@@ -257,6 +267,7 @@ class AfternoteColors(
         this.accent8 = other.accent8
         this.accent9 = other.accent9
         this.accent10 = other.accent10
+        this.error = other.error
         this.isLightMode = other.isLightMode
     }
 }

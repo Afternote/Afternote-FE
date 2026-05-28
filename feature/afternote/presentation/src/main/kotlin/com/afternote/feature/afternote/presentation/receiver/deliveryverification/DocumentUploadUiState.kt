@@ -12,7 +12,7 @@ import androidx.compose.runtime.Immutable
 sealed interface ErrorPayload {
     /** 클라이언트가 미리 정의한 generic 문구 (i18n 가능). 서버 message 미제공 시 fallback. */
     data class Res(
-        @StringRes val id: Int,
+        @param:StringRes val id: Int,
     ) : ErrorPayload
 
     /** 백엔드가 런타임에 내려준 사용자 친화 message (예: 409 "이미 대기 중인 인증 요청이 존재합니다."). */
@@ -34,6 +34,8 @@ data class DocumentUploadUiState(
     val isSubmitting: Boolean = false,
     /** 표시할 에러 — null 이면 에러 없음. [ErrorPayload.Res] 또는 [ErrorPayload.Text] 둘 중 하나. */
     val error: ErrorPayload? = null,
+    /** 제출 성공 신호 — UI 가 LaunchedEffect 로 완료 화면 이동 후 [DocumentUploadViewModel.onSubmittedConsumed] 로 reset. */
+    val isSubmitted: Boolean = false,
 ) {
     val canSubmit: Boolean
         get() =
@@ -59,8 +61,4 @@ data class DocumentSlotState(
 enum class DocumentSlot {
     DeathCertificate,
     FamilyRelationCertificate,
-}
-
-sealed interface DocumentUploadEvent {
-    data object Submitted : DocumentUploadEvent
 }

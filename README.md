@@ -32,6 +32,79 @@ GOOGLE_WEB_CLIENT_ID=<구글 OAuth web client id>.apps.googleusercontent.com
 - `AndroidManifest.xml` 의 `android:scheme="kakao${KAKAO_NATIVE_APP_KEY}"` 가 빈 scheme 으로 등록 → 카카오 로그인 콜백 intent-filter 매칭 안 됨
 - `requestGoogleIdToken(serverClientId = "")` → Credential Manager 가 invalid request 로 실패
 
+# 📦 비개발자 APK 배포 (Firebase App Distribution)
+
+디자이너·PM·QA·외부 베타테스터에게 release APK 를 자동 배포하는 흐름. Firebase 프로젝트 `afternote-b4d3c` + 테스터 그룹 `afternote` 사용.
+
+## 셋업 (1hyok 만 1회 — 신규 인계자도 동일)
+
+1. **Release keystore 생성** (분실 시 앱 업데이트 영구 불가 → 1Password / iCloud 등 2곳 이상 백업 필수)
+
+    ```bash
+    keytool -genkeypair -v \
+      -keystore ~/afternote-release.jks \
+      -keyalg RSA -keysize 4096 -validity 10000 \
+      -alias afternote-release
+    ```
+
+2. **`local.properties` 끝에 4개 키 추가** (signing config 가 읽음)
+
+    ```properties
+    RELEASE_STORE_FILE=/Users/<you>/afternote-release.jks
+    RELEASE_STORE_PASSWORD=<keystore 비밀번호>
+    RELEASE_KEY_ALIAS=afternote-release
+    RELEASE_KEY_PASSWORD=<key 비밀번호>
+    ```
+
+3. **`google-services.json` 배치** — Firebase Console → 프로젝트 설정 → 일반 → Android 앱 `com.afternote.afternote_fe` 카드에서 다운로드 → `app/google-services.json`
+
+4. **Firebase CLI 설치 + 인증** (자동 업로드용)
+
+    ```bash
+    npm install -g firebase-tools
+    firebase login
+    ```
+
+5. **콘솔에 신규 keystore SHA 등록** (배포 받은 사람의 카카오/구글 로그인 동작 위해)
+   - Release SHA-1 추출: `keytool -list -v -keystore ~/afternote-release.jks -alias afternote-release | grep SHA1`
+   - 카카오 키 해시 추출: `keytool -exportcert -alias afternote-release -keystore ~/afternote-release.jks | openssl sha1 -binary | openssl base64`
+   - **Kakao Developers** → 앱 → 플랫폼 키 → Android → 키 해시 추가
+   - **Firebase Console** → 프로젝트 설정 → Android 앱 → SHA 인증서 지문 추가
+
+## 배포 (매 회)
+
+### 자동 — `main` push 시 (기본 경로)
+
+`develop` → `main` 머지가 push 되면 GitHub Actions 워크플로 [`release-distribution.yml`](.github/workflows/release-distribution.yml) 가 자동 실행 → APK 빌드 → Firebase App Distribution 업로드 → 테스터 그룹 `afternote` 전원에게 자동 이메일 발송. 운영 정책 *"main 머지된 상태만 배포"* 와 일치.
+
+CI 가 사용하는 GitHub Secrets (Settings → Secrets and variables → Actions):
+
+| 키 | 용도 |
+|---|---|
+| `RELEASE_STORE_FILE_B64` | release keystore 파일 (`~/afternote-release.jks`) 의 base64 인코딩 |
+| `RELEASE_STORE_PASSWORD` | keystore 비밀번호 |
+| `RELEASE_KEY_ALIAS` | key alias (`afternote-release`) |
+| `RELEASE_KEY_PASSWORD` | key 비밀번호 |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | App Distribution Admin 권한 부여된 service account JSON 원문 |
+| `KAKAO_NATIVE_APP_KEY` · `GOOGLE_WEB_CLIENT_ID` · `GOOGLE_SERVICES_JSON_B64` | `local.properties` 키 (`lint.yml` 과 공유) |
+
+> base64 인코딩: `base64 -i ~/afternote-release.jks | pbcopy` (macOS)
+
+### 수동 — 1hyok 머신 (fallback / 긴급 시)
+
+```bash
+./gradlew assembleRelease appDistributionUploadRelease
+```
+
+→ 동일하게 APK 빌드 + Firebase 업로드. CI 장애 시 또는 main 머지 없이 임시 배포 필요할 때 사용.
+
+> 같은 `versionCode` 로 재업로드하면 기존 release 갱신. 새 release 만들려면 `app/build.gradle.kts` 의 `versionCode` 증가.
+
+## 테스터 관리
+
+- 추가/제거: Firebase Console → App Distribution → 테스터 및 그룹 → `afternote` 그룹 편집
+- 신규 테스터는 첫 초대 이메일에서 **App Tester** 앱 설치 안내를 받음 → 이후 빌드는 자동 알림
+
 # 💻 코딩 컨벤션
 
 > **네이밍 컨벤션**

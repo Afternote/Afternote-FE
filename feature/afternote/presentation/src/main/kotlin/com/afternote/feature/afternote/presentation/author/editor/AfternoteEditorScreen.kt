@@ -59,11 +59,13 @@ fun AfternoteEditorScreen(
     callbacks: AfternoteEditorScreenCallbacks = AfternoteEditorScreenCallbacks(),
     state: AfternoteEditorState = rememberAfternoteEditorState(),
     graphSongs: List<Song> = emptyList(),
-    saveError: AfternoteEditorSaveError? = null,
+    saveError: String? = null,
+    thumbnailUploadFailed: Boolean = false,
     isPrefillLoading: Boolean = false,
 ) {
     val focusManager = LocalFocusManager.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val thumbnailUploadFailedMessage = stringResource(R.string.afternote_editor_thumbnail_upload_failed)
 
     // 화면 재진입 시 폼 SSOT의 messageBlocks를 휘발성 SnapshotStateList<EditorMessage>에 한 번 동기화한다.
     // (TextFieldState는 rememberSaveable로 복원되지만 EditorMessage SnapshotStateList는 비저장 상태라 폼에서 재구성한다.)
@@ -107,11 +109,21 @@ fun AfternoteEditorScreen(
     }
 
     LaunchedEffect(saveError) {
-        saveError?.let { err ->
+        saveError?.let { message ->
             snackbarHostState.showSnackbar(
-                message = err.message,
+                message = message,
                 withDismissAction = true,
             )
+        }
+    }
+
+    LaunchedEffect(thumbnailUploadFailed) {
+        if (thumbnailUploadFailed) {
+            snackbarHostState.showSnackbar(
+                message = thumbnailUploadFailedMessage,
+                withDismissAction = true,
+            )
+            callbacks.onThumbnailUploadErrorConsumed()
         }
     }
 

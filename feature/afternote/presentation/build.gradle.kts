@@ -2,10 +2,12 @@ plugins {
     id("afternote.android.library.compose")
     id("afternote.android.hilt")
     kotlin("plugin.serialization")
+    alias(libs.plugins.compose.screenshot)
 }
 
 android {
     namespace = "com.afternote.feature.afternote.presentation"
+    experimentalProperties["android.experimental.enableScreenshotTest"] = true
     buildFeatures {
         buildConfig = true
     }
@@ -34,4 +36,8 @@ dependencies {
     implementation(libs.androidx.fragment.ktx)
     implementation(libs.androidx.paging.runtime)
     implementation(libs.androidx.paging.compose)
+
+    // Compose Preview Screenshot Testing (#330) — 1hyok 영역 마무리 묶음
+    screenshotTestImplementation(libs.screenshot.validation.api)
+    screenshotTestImplementation(libs.androidx.compose.ui.tooling)
 }

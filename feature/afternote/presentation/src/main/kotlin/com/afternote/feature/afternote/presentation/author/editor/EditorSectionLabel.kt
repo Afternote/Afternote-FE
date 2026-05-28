@@ -71,9 +71,8 @@ fun EditorSectionLabel(
                 modifier =
                     Modifier
                         .size(4.dp)
-                        // TODO: 디자인 시스템에 error/required 시맨틱 컬러 추가 후 교체
                         .background(
-                            color = Color(0xFFFF3647),
+                            color = AfternoteDesign.colors.error,
                             shape = CircleShape,
                         ).align(Alignment.Top),
             )
