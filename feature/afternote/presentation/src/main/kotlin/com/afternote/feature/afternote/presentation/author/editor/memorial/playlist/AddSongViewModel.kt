@@ -2,9 +2,7 @@ package com.afternote.feature.afternote.presentation.author.editor.memorial.play
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.ui.UiText
 import com.afternote.feature.afternote.domain.repository.author.MusicSearchRepository
-import com.afternote.feature.afternote.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -28,20 +26,8 @@ class AddSongViewModel
 
         private var searchJob: Job? = null
 
-        // region Event
-
-        fun onEvent(event: AddSongEvent) {
-            when (event) {
-                is AddSongEvent.SearchQueryChange -> handleSearchQueryChange(event.query)
-            }
-        }
-
-        // endregion
-
-        // region Data Loading
-
-        private fun handleSearchQueryChange(query: String) {
-            _uiState.update { it.copy(searchQuery = query, errorMessage = null) }
+        fun onSearchQueryChange(query: String) {
+            _uiState.update { it.copy(searchQuery = query, error = null) }
             searchJob?.cancel()
             searchJob =
                 viewModelScope.launch {
@@ -56,23 +42,25 @@ class AddSongViewModel
                         .search(trimmed)
                         .onSuccess { list ->
                             _uiState.update {
-                                it.copy(songs = list.map { item -> item.toDisplay() }, isLoading = false, errorMessage = null)
+                                it.copy(songs = list.map { item -> item.toDisplay() }, isLoading = false, error = null)
                             }
                         }.onFailure { e ->
                             _uiState.update {
                                 it.copy(
                                     songs = emptyList(),
                                     isLoading = false,
-                                    errorMessage =
-                                        UiText.DynamicOrResource(
-                                            value = e.message,
-                                            fallbackResId = R.string.afternote_editor_search_failed_generic,
-                                        ),
+                                    error =
+                                        e.message
+                                            ?.let { msg -> AddSongError.SearchFailedWithMessage(msg) }
+                                            ?: AddSongError.SearchFailedGeneric,
                                 )
                             }
                         }
                 }
         }
 
-        // endregion
+        /** UI 가 [AddSongUiState.error] 를 사용자에게 노출 직후 호출 → state nullify. */
+        fun onErrorConsumed() {
+            _uiState.update { it.copy(error = null) }
+        }
     }

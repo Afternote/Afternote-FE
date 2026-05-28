@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.receiver.afternotemain
+package com.afternote.feature.afternote.presentation.receiver.detail
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
@@ -9,9 +9,9 @@ import com.android.tools.screenshot.PreviewTest
 @PreviewTest
 @Preview(showBackground = true)
 @Composable
-internal fun receiverAfterNoteMainScreenScreenshot() {
+internal fun memorialReceivedDetailScreenScreenshot() {
     AfternoteTheme {
-        ReceiverAfterNoteMainScreen(
+        MemorialReceivedDetailScreen(
             senderName = "서연",
             albumCovers =
                 listOf(

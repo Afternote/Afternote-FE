@@ -1,6 +1,5 @@
 package com.afternote.feature.onboarding.presentation.signup
 
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.domain.repository.account.AccountRepository
@@ -57,6 +56,9 @@ class SignUpViewModel
         // ─── 입력 reducer ───
         fun updateEmail(value: String) = _uiState.update { it.copy(email = value) }
 
+        // photo picker 결과는 Entry 가 Uri.toString() 으로 변환해 push — VM 은 String 만 보관 (Framework Uri 의존 회피).
+        fun onProfileImagePicked(uri: String?) = _uiState.update { it.copy(profileImageUri = uri) }
+
         fun updateVerificationCode(value: String) = _uiState.update { it.copy(verificationCode = value) }
 
         fun updateResidentFrontNumber(value: String) = _uiState.update { it.copy(residentFrontNumber = value) }
@@ -68,8 +70,6 @@ class SignUpViewModel
         fun updateSignUpPasswordConfirm(value: String) = _uiState.update { it.copy(signUpPasswordConfirm = value) }
 
         fun updateName(value: String) = _uiState.update { it.copy(name = value) }
-
-        fun onProfileImagePicked(uri: Uri?) = _uiState.update { it.copy(profileImageUri = uri) }
 
         // ─── 단발성 신호 consume (UI 가 소비 후 호출) ───
         fun onSignedUpConsumed() = _uiState.update { it.copy(isSignedUp = false) }
@@ -205,7 +205,7 @@ class SignUpViewModel
                         email = state.email,
                         password = state.signUpPassword,
                         name = trimmedName,
-                        profileUrl = state.profileImageUri?.toString(),
+                        profileUrl = state.profileImageUri,
                     ).onSuccess {
                         loginUseCase(LoginType.Email(email = state.email, password = state.signUpPassword))
                             .onSuccess {

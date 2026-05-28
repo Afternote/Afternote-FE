@@ -1,6 +1,5 @@
 package com.afternote.feature.onboarding.presentation.signup
 
-import android.net.Uri
 import android.util.Patterns
 import com.afternote.feature.onboarding.presentation.terms.TermsState
 
@@ -44,8 +43,11 @@ data class SignUpUiState(
     val termsState: TermsState = TermsState(),
     /** Profile — 사용자 이름. */
     val name: String = "",
-    /** Profile — 프로필 이미지 Uri. 이미지 picker 가 선택된 Uri 를 push, 미선택 시 null. */
-    val profileImageUri: Uri? = null,
+    /**
+     * Profile — 프로필 이미지 Uri 의 String 표현. UI 가 picker `Uri.toString()` 으로 push,
+     * 표시 시 `toUri()` 로 다시 변환. VM 이 framework `android.net.Uri` 의존을 갖지 않도록 String 보관.
+     */
+    val profileImageUri: String? = null,
     /** 회원가입 + 자동 로그인 진행 중. */
     val isLoading: Boolean = false,
     /** 회원가입 + 자동 로그인 성공. UI 가 홈으로 navigate 후 reset. */

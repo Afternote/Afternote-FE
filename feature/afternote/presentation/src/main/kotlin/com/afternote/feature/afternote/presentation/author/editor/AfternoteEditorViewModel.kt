@@ -41,8 +41,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
-private const val TAG = "AfternoteEditorVM"
-
 private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v1"
 
 /** 수정 진입 시 서버 원본 카테고리(API `categoryForApi`). 폼 스냅샷과 별도로 두어 프로세스 데스 후에도 유지한다. */
@@ -50,6 +48,8 @@ private const val EDITOR_ORIGINAL_CATEGORY_FOR_API_KEY = "editor_original_catego
 
 /** 타입 안전 [com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute.EditorRoute] 직렬화 인자명 (상세 [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel]과 동일). */
 private const val NAV_ARG_ITEM_ID = "itemId"
+
+private const val TAG = "AfternoteEditorViewModel"
 
 @Serializable
 private data class ReceiverSnap(
@@ -262,19 +262,14 @@ class AfternoteEditorViewModel
                 formSnapshotJson
                     .decodeFromString(EditorFormSnapshot.serializer(), raw)
                     .toEditorFormState(restoreGeneration = System.nanoTime())
-            }.getOrElse {
-                Log.w(TAG, "readFormSnapshotOrDefault: decode failed, using defaults", it)
-                EditorFormState()
-            }
+            }.getOrElse { EditorFormState() }
         }
 
-        /** [EditorFormSnapshot] 직렬화. 실패 시 로그만 남긴다(용량 초과 등은 [EditorFormSnapshot] KDoc 참고). */
+        /** [EditorFormSnapshot] 직렬화. 실패 시 무시한다(용량 초과 등은 [EditorFormSnapshot] KDoc 참고). */
         private fun persistFormSnapshot(form: EditorFormState) {
             runCatching {
                 savedStateHandle[EDITOR_FORM_SNAPSHOT_KEY] =
                     formSnapshotJson.encodeToString(EditorFormSnapshot.serializer(), EditorFormSnapshot.from(form))
-            }.onFailure { e ->
-                Log.w(TAG, "persistFormSnapshot failed", e)
             }
         }
 
@@ -293,6 +288,7 @@ class AfternoteEditorViewModel
                         internalState.update { it.copy(pendingThumbnailUrl = url) }
                     }.onFailure { e ->
                         Log.e(TAG, "uploadMemorialThumbnail: failed", e)
+                        internalState.update { it.copy(thumbnailUploadFailed = true) }
                     }
             }
         }
@@ -305,10 +301,7 @@ class AfternoteEditorViewModel
             playlistSongs: List<Song>,
             memorialMedia: SaveAfternoteMemorialMedia,
         ) {
-            if (internalState.value.isSaving) {
-                Log.w(TAG, "saveAfternote: already saving, ignoring duplicate call")
-                return
-            }
+            if (internalState.value.isSaving) return
 
             val validationError =
                 AfternoteEditorValidator.validate(
@@ -318,7 +311,6 @@ class AfternoteEditorViewModel
                     playlistSongs = playlistSongs,
                 )
             if (validationError != null) {
-                Log.w(TAG, "saveAfternote: validation failed: $validationError")
                 internalState.update { it.copy(validationError = validationError) }
                 return
             }
@@ -326,12 +318,6 @@ class AfternoteEditorViewModel
             val originalCategoryForApi = readOriginalCategoryForApiFromSavedState()
             val categoryForApi =
                 if (editingId != null) (originalCategoryForApi ?: category) else category
-
-            Log.d(
-                TAG,
-                "saveAfternote: editingId=$editingId, category=${categoryForApi.serverValue}, " +
-                    "serviceName=${payload.serviceName}",
-            )
 
             viewModelScope.launch {
                 internalState.update {
@@ -348,7 +334,6 @@ class AfternoteEditorViewModel
                     onSuccess = { command ->
                         executeSaveCommand(command).fold(
                             onSuccess = { id ->
-                                Log.d(TAG, "saveAfternote: SUCCESS, savedId=$id")
                                 internalState.update {
                                     it.copy(
                                         isSaving = false,
@@ -465,7 +450,6 @@ class AfternoteEditorViewModel
             e: Throwable,
             category: EditorCategory,
         ) {
-            Log.e(TAG, "saveAfternote: FAILURE, category=${category.serverValue}", e)
             val validationError =
                 when (e) {
                     is AfternoteAuthoringValidationException -> {
@@ -525,6 +509,7 @@ class AfternoteEditorViewModel
             val errorRes: Int? = null,
             val pendingSaveSuccessId: Long? = null,
             val pendingThumbnailUrl: String? = null,
+            val thumbnailUploadFailed: Boolean = false,
             val pendingPrefill: EditorFormPrefill? = null,
         )
 
@@ -540,6 +525,7 @@ class AfternoteEditorViewModel
                 errorRes = errorRes,
                 pendingSaveSuccessId = pendingSaveSuccessId,
                 pendingThumbnailUrl = pendingThumbnailUrl,
+                thumbnailUploadFailed = thumbnailUploadFailed,
                 pendingPrefill = pendingPrefill,
             )
 
@@ -549,6 +535,10 @@ class AfternoteEditorViewModel
 
         fun onThumbnailUploadedConsumed() {
             internalState.update { it.copy(pendingThumbnailUrl = null) }
+        }
+
+        fun onThumbnailUploadErrorConsumed() {
+            internalState.update { it.copy(thumbnailUploadFailed = false) }
         }
 
         // endregion

@@ -13,6 +13,8 @@ data class AfternoteEditorScreenCallbacks(
     val onNavigateToSelectReceiver: () -> Unit = {},
     val onBottomNavTabSelected: (BottomNavTab) -> Unit = {},
     val onThumbnailBytesReady: (ByteArray?) -> Unit = {},
+    /** Snackbar 표출 직후 호출 → VM 의 `thumbnailUploadFailed` nullify. */
+    val onThumbnailUploadErrorConsumed: () -> Unit = {},
 )
 
 /** 저장 시 추모 미디어 필드 (로컬 URI / 기존 URL 혼재). */
