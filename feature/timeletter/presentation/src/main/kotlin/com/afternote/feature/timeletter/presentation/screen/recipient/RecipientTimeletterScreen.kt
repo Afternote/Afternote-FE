@@ -117,8 +117,36 @@ private fun RecipientTimeletterContent(
     modifier: Modifier = Modifier,
 ) {
     var viewMode by remember { mutableStateOf(ViewMode.List) }
+    val selectedDateLetters = letters.timeLetters.filter {
+        it.deliveredAt?.take(10) == selectedDate.toString()
+    }
 
     LazyColumn(modifier = modifier) {
+        item {
+            Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+                Text("타임레터", style = AfternoteDesign.typography.h1)
+                Spacer(modifier = Modifier.padding(8.dp))
+                Text(
+                    "서연님이 남긴 마음을 확인해보세요",
+                    style = AfternoteDesign.typography.captionLargeR,
+                    color = AfternoteDesign.colors.gray6,
+                )
+            }
+        }
+
+        if (selectedDateLetters.isNotEmpty()) {
+            items(selectedDateLetters) { letter ->
+                TimeLetterBlockItem(
+                    letter = letter.toTimeLetter(),
+                    receiverNameMap = mapOf(letter.id to (letter.senderName ?: "")),
+                    showMetaInfo = false,
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp, vertical = 6.dp)
+                        .clickable { onLetterClick(letter.timeLetterReceiverId) },
+                )
+            }
+        }
+
         item {
             CalendarGridContent(
                 currentYear = currentYear,
@@ -145,35 +173,37 @@ private fun RecipientTimeletterContent(
         items(letters.timeLetters) { letter ->
             val timeLetter = letter.toTimeLetter()
             val senderNameMap = mapOf(letter.id to (letter.senderName ?: ""))
-            when (viewMode) {
-                ViewMode.List -> TimeLetterListItem(
+            val itemModifier = Modifier
+                .padding(horizontal = 20.dp, vertical = 6.dp)
+                .clickable { onLetterClick(letter.timeLetterReceiverId) }
+            if (viewMode == ViewMode.Block) {
+                TimeLetterBlockItem(
                     letter = timeLetter,
                     receiverNameMap = senderNameMap,
-                    modifier = Modifier
-                        .padding(horizontal = 20.dp, vertical = 6.dp)
-                        .clickable { onLetterClick(letter.timeLetterReceiverId) },
+                    showMetaInfo = false,
+                    modifier = itemModifier,
                 )
-                ViewMode.Block -> TimeLetterBlockItem(
+            } else {
+                TimeLetterListItem(
                     letter = timeLetter,
                     receiverNameMap = senderNameMap,
-                    modifier = Modifier
-                        .padding(horizontal = 20.dp, vertical = 6.dp)
-                        .clickable { onLetterClick(letter.timeLetterReceiverId) },
+                    modifier = itemModifier,
                 )
             }
         }
     }
 }
 
-private fun ReceivedTimeLetter.toTimeLetter() = TimeLetter(
-    id = id,
-    title = title,
-    sendAt = deliveredAt,
-    deliveredAt = deliveredAt,
-    status = status,
-    blocks = blocks,
-    receiverIds = listOf(id),
-)
+private fun ReceivedTimeLetter.toTimeLetter() =
+    TimeLetter(
+        id = id,
+        title = title,
+        sendAt = deliveredAt,
+        deliveredAt = deliveredAt,
+        status = status,
+        blocks = blocks,
+        receiverIds = listOf(id),
+    )
 
 private val previewLetters =
     ReceivedTimeLetterList(
@@ -290,4 +320,3 @@ private fun RecipientTimeletterContentEmptyPreview() {
         onLetterClick = {},
     )
 }
-
