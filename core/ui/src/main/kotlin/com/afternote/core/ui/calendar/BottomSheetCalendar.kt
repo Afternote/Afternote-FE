@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -31,9 +32,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -128,7 +131,7 @@ fun DatePickerContent(
     ) {
         Text(
             text = title,
-            style = AfternoteDesign.typography.h3,
+            style = AfternoteDesign.typography.bodyBase,
             color = AfternoteDesign.colors.gray9,
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
@@ -147,7 +150,7 @@ fun DatePickerContent(
         ) {
             Text(
                 text = formattedDate,
-                style = AfternoteDesign.typography.h3,
+                style = AfternoteDesign.typography.textField,
                 color = AfternoteDesign.colors.gray9,
             )
         }
@@ -169,29 +172,43 @@ fun DatePickerContent(
                 ) {
                     Text(
                         text = "${currentYear}년 ${currentMonth}월",
-                        style = AfternoteDesign.typography.h3,
+                        style = AfternoteDesign.typography.bodySmallR,
                         color = AfternoteDesign.colors.gray9,
                         modifier = Modifier.weight(1f),
                     )
-                    Icon(
-                        painter = painterResource(R.drawable.core_ui_arrow_left),
-                        contentDescription = "이전 달",
+                    Box(
                         modifier =
                             Modifier
-                                .size(24.dp)
+                                .height(8.dp)
+                                .width(4.dp)
+                                .clipToBounds()
                                 .clickable { onPrevMonth() },
-                        tint = AfternoteDesign.colors.gray9,
-                    )
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.core_ui_arrow_left),
+                            contentDescription = "이전 달",
+                            modifier = Modifier.size(24.dp),
+                            tint = AfternoteDesign.colors.gray9,
+                        )
+                    }
                     Spacer(modifier = Modifier.width(4.dp))
-                    Icon(
-                        painter = painterResource(R.drawable.core_ui_right),
-                        contentDescription = "다음 달",
+                    Box(
                         modifier =
                             Modifier
-                                .size(24.dp)
+                                .height(8.dp)
+                                .width(4.dp)
+                                .clipToBounds()
                                 .clickable { onNextMonth() },
-                        tint = AfternoteDesign.colors.gray9,
-                    )
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.core_ui_right_arrow),
+                            contentDescription = "다음 달",
+                            modifier = Modifier.size(24.dp),
+                            tint = AfternoteDesign.colors.gray9,
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -286,6 +303,32 @@ fun PickerDayCell(
             color = textColor,
         )
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun DatePickerContentPreview() {
+    DatePickerContent(
+        title = "발송 예정일",
+        currentYear = 2026,
+        currentMonth = 5,
+        selectedDate = LocalDate.of(2026, 5, 30),
+        onPrevMonth = {},
+        onNextMonth = {},
+        onDateSelect = {},
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun CalendarGridContentPreview() {
+    CalendarGridContent(
+        currentYear = 2026,
+        currentMonth = 5,
+        selectedDate = LocalDate.of(2026, 5, 30),
+        onDateSelect = {},
+        modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+    )
 }
 
 fun buildPickerDays(
