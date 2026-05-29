@@ -73,13 +73,13 @@ fun TimeLetterBlockItem(
                             .ifEmpty { "${letter.receiverIds.size}명" }
                     Text(
                         text = "수신인  $receiverText",
-                        style = AfternoteDesign.typography.bodySmallR,
+                        style = AfternoteDesign.typography.footnoteCaption,
                         color = AfternoteDesign.colors.gray6,
                     )
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
-                        text = "발송 예정일  ${letter.sendAt?.replace("-", ".") ?: ""}",
-                        style = AfternoteDesign.typography.bodySmallR,
+                        text = "발송 예정일  ${letter.sendAt?.take(10)?.replace("-", ".") ?: ""}",
+                        style = AfternoteDesign.typography.footnoteCaption,
                         color = AfternoteDesign.colors.gray6,
                     )
                     Spacer(modifier = Modifier.width(43.dp))
@@ -93,8 +93,7 @@ fun TimeLetterBlockItem(
 
             Text(
                 text = letter.title ?: "제목 없음",
-                style = AfternoteDesign.typography.bodyLargeB,
-                fontWeight = FontWeight.W600,
+                style = AfternoteDesign.typography.bodySmallR,
             )
             Spacer(modifier = Modifier.padding(top = 5.dp))
             Text(
