@@ -1,6 +1,7 @@
 package com.afternote.feature.timeletter.presentation.screen.recipient
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,9 +34,14 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.timeletter.domain.model.ReceivedTimeLetter
 import com.afternote.feature.timeletter.domain.model.ReceivedTimeLetterList
+import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
+import com.afternote.feature.timeletter.presentation.component.TimeLetterBlockItem
+import com.afternote.feature.timeletter.presentation.component.TimeLetterListItem
+import com.afternote.feature.timeletter.presentation.component.ViewToggleButton
 import com.afternote.feature.timeletter.presentation.viewmodel.RecipientTimeletterUiState
 import com.afternote.feature.timeletter.presentation.viewmodel.RecipientTimeletterViewModel
+import com.afternote.feature.timeletter.presentation.viewmodel.ViewMode
 import java.time.LocalDate
 
 @Composable
@@ -110,6 +116,8 @@ private fun RecipientTimeletterContent(
     onLetterClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var viewMode by remember { mutableStateOf(ViewMode.List) }
+
     LazyColumn(modifier = modifier) {
         item {
             CalendarGridContent(
@@ -126,52 +134,46 @@ private fun RecipientTimeletterContent(
                 modifier = Modifier.padding(horizontal = 20.dp),
                 color = AfternoteDesign.colors.gray2,
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                ViewToggleButton(viewMode = viewMode, onViewModeChange = { viewMode = it })
+            }
         }
 
         items(letters.timeLetters) { letter ->
-            ReceivedTimeLetterItem(
-                letter = letter,
-                onClick = { onLetterClick(letter.timeLetterReceiverId) },
-            )
+            val timeLetter = letter.toTimeLetter()
+            val senderNameMap = mapOf(letter.id to (letter.senderName ?: ""))
+            when (viewMode) {
+                ViewMode.List -> TimeLetterListItem(
+                    letter = timeLetter,
+                    receiverNameMap = senderNameMap,
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp, vertical = 6.dp)
+                        .clickable { onLetterClick(letter.timeLetterReceiverId) },
+                )
+                ViewMode.Block -> TimeLetterBlockItem(
+                    letter = timeLetter,
+                    receiverNameMap = senderNameMap,
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp, vertical = 6.dp)
+                        .clickable { onLetterClick(letter.timeLetterReceiverId) },
+                )
+            }
         }
     }
 }
 
-@Composable
-private fun ReceivedTimeLetterItem(
-    letter: ReceivedTimeLetter,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .clickable(onClick = onClick)
-                .padding(horizontal = 20.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = letter.title ?: "제목 없음",
-                style = AfternoteDesign.typography.bodySmallB,
-                color = AfternoteDesign.colors.gray9,
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "발신인  ${letter.senderName ?: ""}",
-                style = AfternoteDesign.typography.captionLargeR,
-                color = AfternoteDesign.colors.gray6,
-            )
-        }
-        Text(
-            text = letter.deliveredAt?.take(10)?.replace("-", ".") ?: "",
-            style = AfternoteDesign.typography.captionLargeR,
-            color = AfternoteDesign.colors.gray4,
-        )
-    }
-}
+private fun ReceivedTimeLetter.toTimeLetter() = TimeLetter(
+    id = id,
+    title = title,
+    sendAt = deliveredAt,
+    deliveredAt = deliveredAt,
+    status = status,
+    blocks = blocks,
+    receiverIds = listOf(id),
+)
 
 private val previewLetters =
     ReceivedTimeLetterList(
@@ -207,6 +209,64 @@ private val previewLetters =
 
 @Preview(showBackground = true)
 @Composable
+private fun RecipientTimeletterScreenPreview() {
+    Scaffold(
+        topBar = { HomeTopBar() },
+    ) { innerPadding ->
+        RecipientTimeletterContent(
+            letters = previewLetters,
+            currentYear = 2027,
+            currentMonth = 11,
+            selectedDate = LocalDate.of(2027, 11, 24),
+            onDateSelect = {},
+            onLetterClick = {},
+            modifier = Modifier.padding(innerPadding),
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RecipientTimeletterScreenLoadingPreview() {
+    Scaffold(
+        topBar = { HomeTopBar() },
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier.fillMaxSize().padding(innerPadding),
+            contentAlignment = Alignment.Center,
+        ) {
+            CircularProgressIndicator()
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RecipientTimeletterScreenErrorPreview() {
+    Scaffold(
+        topBar = { HomeTopBar() },
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier.fillMaxSize().padding(innerPadding),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "타임레터를 불러올 수 없습니다.",
+                    style = AfternoteDesign.typography.bodySmallR,
+                    color = AfternoteDesign.colors.gray6,
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = {}) {
+                    Text("다시 시도")
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
 private fun RecipientTimeletterContentPreview() {
     RecipientTimeletterContent(
         letters = previewLetters,
@@ -231,11 +291,3 @@ private fun RecipientTimeletterContentEmptyPreview() {
     )
 }
 
-@Preview(showBackground = true)
-@Composable
-private fun ReceivedTimeLetterItemPreview() {
-    ReceivedTimeLetterItem(
-        letter = previewLetters.timeLetters.first(),
-        onClick = {},
-    )
-}
