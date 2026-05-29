@@ -196,44 +196,62 @@ fun DatePickerContent(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                val dayLabels = listOf("일", "월", "화", "수", "목", "금", "토")
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    dayLabels.forEach { label ->
-                        Text(
-                            text = label,
-                            modifier = Modifier.weight(1f),
-                            color = Color(0xFF000000).copy(alpha = 0.3f),
-                            style = AfternoteDesign.typography.footnoteCaption,
-                            textAlign = TextAlign.Center,
+                CalendarGridContent(
+                    currentYear = currentYear,
+                    currentMonth = currentMonth,
+                    selectedDate = selectedDate,
+                    onDateSelect = onDateSelect,
+                )
+            }
+            Spacer(modifier = Modifier.height(50.dp))
+        }
+    }
+}
+
+@Composable
+fun CalendarGridContent(
+    currentYear: Int,
+    currentMonth: Int,
+    selectedDate: LocalDate,
+    onDateSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        val dayLabels = listOf("일", "월", "화", "수", "목", "금", "토")
+        Row(modifier = Modifier.fillMaxWidth()) {
+            dayLabels.forEach { label ->
+                Text(
+                    text = label,
+                    modifier = Modifier.weight(1f),
+                    color = Color(0xFF000000).copy(alpha = 0.3f),
+                    style = AfternoteDesign.typography.footnoteCaption,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        val days =
+            buildPickerDays(
+                year = currentYear,
+                month = currentMonth,
+                selectedDate = selectedDate,
+            )
+        days.chunked(7).forEach { week ->
+            Row(modifier = Modifier.fillMaxWidth()) {
+                week.forEach { dayModel ->
+                    Box(modifier = Modifier.weight(1f)) {
+                        PickerDayCell(
+                            model = dayModel,
+                            onSelect = { dayModel.day?.let(onDateSelect) },
                         )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                val days =
-                    buildPickerDays(
-                        year = currentYear,
-                        month = currentMonth,
-                        selectedDate = selectedDate,
-                    )
-                days.chunked(7).forEach { week ->
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        week.forEach { dayModel ->
-                            Box(modifier = Modifier.weight(1f)) {
-                                PickerDayCell(
-                                    model = dayModel,
-                                    onSelect = { dayModel.day?.let(onDateSelect) },
-                                )
-                            }
-                        }
-                        repeat(7 - week.size) {
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
-                    }
+                repeat(7 - week.size) {
+                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
-            Spacer(modifier = Modifier.height(50.dp))
         }
     }
 }

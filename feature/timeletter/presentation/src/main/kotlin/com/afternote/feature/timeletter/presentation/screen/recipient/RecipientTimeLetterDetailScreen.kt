@@ -220,7 +220,7 @@ private fun RecipientTimeLetterBlockView(block: TimeLetterBlock) {
     }
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 private fun RecipientTimeLetterDetailScreenPrev() {
     RecipientTimeLetterDetailContent(
