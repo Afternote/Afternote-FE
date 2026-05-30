@@ -90,13 +90,20 @@ class DiaryListViewModel
 
         private fun InternalState.toUiState(): DiaryListUiState =
             when (val phase = loadPhase) {
-                LoadPhase.Loading -> DiaryListUiState.Loading
-                is LoadPhase.Loaded ->
+                LoadPhase.Loading -> {
+                    DiaryListUiState.Loading
+                }
+
+                is LoadPhase.Loaded -> {
                     DiaryListUiState.Success(
                         diaries = phase.list.diaries.map { it.toUi() },
                         monthDiaryCount = phase.list.monthDiaryCount,
                         weeklyDominantMood = phase.list.weeklyDominantMood,
                     )
-                is LoadPhase.Failed -> DiaryListUiState.Error(phase.message)
+                }
+
+                is LoadPhase.Failed -> {
+                    DiaryListUiState.Error(phase.message)
+                }
             }
     }
