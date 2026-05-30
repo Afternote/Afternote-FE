@@ -77,6 +77,7 @@ fun WriteTextField(
         )
 
     var showTextStyleToolbar by remember { mutableStateOf(false) }
+    var showLinkSheet by remember { mutableStateOf(false) }
     val imeVisible = WindowInsets.isImeVisible
     val editorFocusRequester = remember { FocusRequester() }
 
@@ -154,9 +155,25 @@ fun WriteTextField(
             onAlignChange = { align ->
                 keepEditorFocus { state.addParagraphStyle(ParagraphStyle(textAlign = align)) }
             },
+            onLinkClick = { showLinkSheet = true },
             onSaveDraftClick = onSaveDraftClick,
             onDraftCountClick = onDraftCountClick,
             draftCount = draftCount,
+        )
+    }
+
+    if (showLinkSheet) {
+        LinkBottomSheet(
+            onDismiss = { showLinkSheet = false },
+            onConfirm = { url ->
+                // TODO: compose-richeditor 의 link API 로 hyperlink 삽입 후속 처리.
+                //  지금은 사용자 입력 URL 을 plain text 로 에디터에 추가한다.
+                keepEditorFocus {
+                    val current = state.toHtml()
+                    state.setHtml(current + url)
+                }
+                showLinkSheet = false
+            },
         )
     }
 }
