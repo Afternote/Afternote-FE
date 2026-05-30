@@ -38,8 +38,6 @@
     <string name="mindrecord_diary_write_title">일기 기록하기</string>
     <string name="mindrecord_diary_write_title_placeholder">제목을 입력하세요.</string>
     <string name="mindrecord_diary_write_mood_label">오늘의 기분</string>
-    <string name="mindrecord_diary_write_add_location">위치 추가</string>
-    <string name="mindrecord_diary_write_add_photo">사진 추가</string>
 
     <string name="mindrecord_deep_thought_write_title">깊은 생각 기록하기</string>
     <string name="mindrecord_deep_thought_write_title_label">제목</string>

@@ -44,6 +44,7 @@ class DiaryWriteViewModel
         fun submit(isDraft: Boolean = false) {
             val state = _uiState.value
             if (!state.canSubmit) return
+            val mood = state.mood ?: return
 
             viewModelScope.launch {
                 _uiState.update { it.copy(submitState = SubmitState.InProgress) }
@@ -53,7 +54,7 @@ class DiaryWriteViewModel
                             title = state.title,
                             content = state.content,
                             isDraft = isDraft,
-                            todayMood = state.mood,
+                            todayMood = mood,
                             imageUrl = state.imageUrl,
                         ),
                     ).onSuccess {
