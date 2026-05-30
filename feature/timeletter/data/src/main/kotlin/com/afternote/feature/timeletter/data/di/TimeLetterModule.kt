@@ -42,7 +42,6 @@ object TimeLetterModule {
 
     @Provides
     @Singleton
-    fun provideReceiverTimeLetterRepository(
-        receiverTimeLetterApiService: ReceiverTimeLetterApiService,
-    ): ReceiverTimeLetterRepository = ReceiverTimeLetterRepositoryImpl(receiverTimeLetterApiService)
+    fun provideReceiverTimeLetterRepository(receiverTimeLetterApiService: ReceiverTimeLetterApiService): ReceiverTimeLetterRepository =
+        ReceiverTimeLetterRepositoryImpl(receiverTimeLetterApiService)
 }

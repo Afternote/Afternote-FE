@@ -281,6 +281,3 @@ private fun RecipientTimeletterScreenPreview() {
         )
     }
 }
-
-
-
