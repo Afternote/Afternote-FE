@@ -100,6 +100,7 @@
     <!-- Emotion keyword card -->
     <string name="mindrecord_emotion_card_title">나의 감정 키워드</string>
     <string name="mindrecord_emotion_card_default_description">이번 주 박서연 님의 기록에서는\n\'가족\'을 위한 \'감사\'의 마음이 엿보입니다.</string>
+    <string name="mindrecord_emotion_card_empty_description">이번 주 %1$s 님의 기록에서는 키워드가 나오지 않았어요.</string>
 
     <!-- Empty state -->
     <string name="mindrecord_empty_state_title">아직 등록된 답변이 없어요.</string>

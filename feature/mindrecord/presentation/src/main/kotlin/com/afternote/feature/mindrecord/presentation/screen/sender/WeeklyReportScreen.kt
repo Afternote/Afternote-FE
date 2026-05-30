@@ -103,8 +103,13 @@ private fun WeeklyReportContent(
             ) {
                 SectionHeader(title = "TOP KEYWORDS")
                 EmotionKeywordCard(
-                    bubbles = state.emotionBubbles,
-                    descriptionText = state.summaryText,
+                    keywords = state.emotionKeywords,
+                    descriptionText =
+                        if (state.emotionKeywords.isEmpty()) {
+                            stringResource(R.string.mindrecord_emotion_card_empty_description, state.userName)
+                        } else {
+                            state.summaryText
+                        },
                 )
                 InsightCard(bodyText = state.summaryText)
             }
@@ -202,7 +207,7 @@ private fun WeeklyReportScreenPreview() {
                     recordedDays = 3,
                     counts = emptyList(),
                     weekDays = emptyList(),
-                    emotionBubbles = emptyList(),
+                    emotionKeywords = emptyList(),
                     summaryText = "이번 주는 차분히 마음을 정리한 한 주였어요.",
                     dailyQuestions = emptyList(),
                 ),
