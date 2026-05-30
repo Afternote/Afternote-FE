@@ -1,5 +1,8 @@
 package com.afternote.feature.mindrecord.presentation.component
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -90,6 +93,29 @@ fun WriteTextField(
         runCatching { editorFocusRequester.requestFocus() }
     }
 
+    // 선택된 미디어 URI 를 에디터에 추가. TODO: compose-richeditor 의 image / audio / file
+    // 노드 삽입 API 로 교체 + 업로드 → 영구 URL 치환. 현재는 raw URI 를 plain text 로 append.
+    fun appendUriToEditor(uri: Uri?) {
+        if (uri == null) return
+        keepEditorFocus {
+            val current = state.toHtml()
+            state.setHtml(current + uri)
+        }
+    }
+
+    val imageLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            appendUriToEditor(uri)
+        }
+    val voiceLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            appendUriToEditor(uri)
+        }
+    val fileLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            appendUriToEditor(uri)
+        }
+
     Column(modifier = modifier.fillMaxSize()) {
         Box(
             modifier =
@@ -170,10 +196,18 @@ fun WriteTextField(
         KeyboardSheet.MediaSelect -> {
             MediaSelectBottomSheet(
                 onDismiss = { sheet = KeyboardSheet.None },
-                // 이미지/음성/파일 추가는 후속 PR. 일단 시트 닫기만.
-                onImageClick = { sheet = KeyboardSheet.None },
-                onVoiceClick = { sheet = KeyboardSheet.None },
-                onFileClick = { sheet = KeyboardSheet.None },
+                onImageClick = {
+                    sheet = KeyboardSheet.None
+                    imageLauncher.launch("image/*")
+                },
+                onVoiceClick = {
+                    sheet = KeyboardSheet.None
+                    voiceLauncher.launch("audio/*")
+                },
+                onFileClick = {
+                    sheet = KeyboardSheet.None
+                    fileLauncher.launch("*/*")
+                },
                 onLinkClick = { sheet = KeyboardSheet.LinkAdd },
             )
         }
