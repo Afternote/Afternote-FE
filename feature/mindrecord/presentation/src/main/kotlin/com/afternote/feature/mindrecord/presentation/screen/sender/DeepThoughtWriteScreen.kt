@@ -51,6 +51,7 @@ fun DeepThoughtWriteScreen(
     modifier: Modifier = Modifier,
     onSubmitSuccess: () -> Unit = {},
     onBackClick: () -> Unit = {},
+    onDraftListClick: () -> Unit = {},
     viewModel: DeepThoughtWriteViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -176,6 +177,8 @@ fun DeepThoughtWriteScreen(
             WriteTextField(
                 value = uiState.content,
                 onValueChange = viewModel::onContentChanged,
+                onSaveDraftClick = { viewModel.submit(isDraft = true) },
+                onDraftCountClick = onDraftListClick,
             )
         }
 

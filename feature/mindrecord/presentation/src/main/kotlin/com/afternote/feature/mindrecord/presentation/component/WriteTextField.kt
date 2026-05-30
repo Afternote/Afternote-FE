@@ -52,6 +52,9 @@ fun WriteTextField(
     modifier: Modifier = Modifier,
     value: String? = null,
     onValueChange: ((String) -> Unit)? = null,
+    onSaveDraftClick: () -> Unit = {},
+    onDraftCountClick: () -> Unit = {},
+    draftCount: Int = 0,
 ) {
     val state = rememberRichTextState()
 
@@ -151,6 +154,9 @@ fun WriteTextField(
             onAlignChange = { align ->
                 keepEditorFocus { state.addParagraphStyle(ParagraphStyle(textAlign = align)) }
             },
+            onSaveDraftClick = onSaveDraftClick,
+            onDraftCountClick = onDraftCountClick,
+            draftCount = draftCount,
         )
     }
 }

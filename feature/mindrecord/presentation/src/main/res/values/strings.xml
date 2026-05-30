@@ -116,6 +116,16 @@
     <string name="mindrecord_deep_thought_sample_category_today">오늘 떠올린 생각</string>
     <string name="mindrecord_deep_thought_sample_category_retrospective">인생을 되돌아 보며</string>
 
+    <!-- Draft list screen -->
+    <string name="mindrecord_draft_list_title">임시 저장</string>
+    <string name="mindrecord_draft_list_total">총 %d개</string>
+    <string name="mindrecord_draft_list_filter_all">전체</string>
+    <string name="mindrecord_draft_list_filter_daily">데일리질문</string>
+    <string name="mindrecord_draft_list_filter_diary">일기</string>
+    <string name="mindrecord_draft_list_filter_deep_thought">깊은생각</string>
+    <string name="mindrecord_draft_list_edit">수정</string>
+    <string name="mindrecord_draft_list_empty">임시 저장된 항목이 없습니다.</string>
+
     <!-- Keyboard toolbar -->
     <string name="mindrecord_toolbar_link_cd">링크</string>
     <string name="mindrecord_toolbar_align_left_cd">왼쪽 정렬</string>
@@ -123,6 +133,7 @@
     <string name="mindrecord_toolbar_align_right_cd">오른쪽 정렬</string>
     <string name="mindrecord_toolbar_close_cd">닫기</string>
     <string name="mindrecord_toolbar_draft_count">임시저장 %d</string>
+    <string name="mindrecord_toolbar_draft_label">임시저장</string>
     <string name="mindrecord_toolbar_text_settings">텍스트 설정</string>
     <string name="mindrecord_toolbar_style_title">제목</string>
     <string name="mindrecord_toolbar_style_header">머릿말</string>

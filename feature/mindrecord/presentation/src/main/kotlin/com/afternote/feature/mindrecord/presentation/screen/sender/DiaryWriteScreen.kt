@@ -57,6 +57,7 @@ fun DiaryWriteScreen(
     modifier: Modifier = Modifier,
     onSubmitSuccess: () -> Unit = {},
     onBackClick: () -> Unit = {},
+    onDraftListClick: () -> Unit = {},
     viewModel: DiaryWriteViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -188,6 +189,8 @@ fun DiaryWriteScreen(
             WriteTextField(
                 value = uiState.content,
                 onValueChange = viewModel::onContentChanged,
+                onSaveDraftClick = { viewModel.submit(isDraft = true) },
+                onDraftCountClick = onDraftListClick,
             )
         }
 
