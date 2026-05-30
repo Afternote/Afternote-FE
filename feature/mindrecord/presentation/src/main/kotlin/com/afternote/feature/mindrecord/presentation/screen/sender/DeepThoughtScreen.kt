@@ -274,20 +274,20 @@ private fun DeepThoughtContent(
             }
         }
     } else {
-        val today = java.time.LocalDate.now()
+        var yearMonth by remember { mutableStateOf(java.time.YearMonth.now()) }
         val answeredDays =
             items
-                .filter { it.date.year == today.year && it.date.monthValue == today.monthValue }
+                .filter { it.date.year == yearMonth.year && it.date.monthValue == yearMonth.monthValue }
                 .map { it.date.dayOfMonth }
                 .toSet()
         LazyColumn(modifier = modifier) {
             item {
                 DailyCalendar(
-                    year = today.year,
-                    month = today.monthValue,
+                    year = yearMonth.year,
+                    month = yearMonth.monthValue,
                     type = MindRecordCategoryUi.DeepThought,
-                    onNextMonth = {},
-                    onPrevMonth = {},
+                    onPrevMonth = { yearMonth = yearMonth.minusMonths(1) },
+                    onNextMonth = { yearMonth = yearMonth.plusMonths(1) },
                     answeredDays = answeredDays,
                 )
                 Spacer(modifier = Modifier.height(16.dp))

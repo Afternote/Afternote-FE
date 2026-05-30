@@ -18,6 +18,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -37,7 +40,7 @@ import com.afternote.feature.mindrecord.presentation.model.DailyDiary
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListViewModel
-import java.time.LocalDate
+import java.time.YearMonth
 import androidx.compose.foundation.lazy.grid.items as gridItems
 
 @Composable
@@ -65,6 +68,7 @@ fun DiaryScreen(
                 monthDiaryCount = state.monthDiaryCount,
                 weeklyMoodEmoji = state.weeklyDominantMood?.toEmoji(),
                 onDelete = viewModel::delete,
+                onYearMonthChanged = viewModel::refresh,
             )
         }
     }
@@ -78,14 +82,16 @@ private fun DiaryListContent(
     monthDiaryCount: Int = 0,
     weeklyMoodEmoji: String? = null,
     onDelete: (Long) -> Unit = {},
+    onYearMonthChanged: (YearMonth) -> Unit = {},
 ) {
     if (isListView && diaries.isEmpty()) {
         MindRecordEmptyState(modifier = modifier)
         return
     }
 
-    val today = LocalDate.now()
-    val currentMonthDiaries = diaries.filter { it.date.year == today.year && it.date.monthValue == today.monthValue }
+    var yearMonth by remember { mutableStateOf(YearMonth.now()) }
+    val currentMonthDiaries =
+        diaries.filter { it.date.year == yearMonth.year && it.date.monthValue == yearMonth.monthValue }
     val answeredDays = currentMonthDiaries.map { it.date.dayOfMonth }.toSet()
     val emotionByDay =
         currentMonthDiaries
@@ -96,11 +102,17 @@ private fun DiaryListContent(
         LazyColumn(modifier = modifier) {
             item {
                 DailyCalendar(
-                    year = today.year,
-                    month = today.monthValue,
+                    year = yearMonth.year,
+                    month = yearMonth.monthValue,
                     type = MindRecordCategoryUi.Diary,
-                    onNextMonth = {},
-                    onPrevMonth = {},
+                    onPrevMonth = {
+                        yearMonth = yearMonth.minusMonths(1)
+                        onYearMonthChanged(yearMonth)
+                    },
+                    onNextMonth = {
+                        yearMonth = yearMonth.plusMonths(1)
+                        onYearMonthChanged(yearMonth)
+                    },
                     answeredDays = answeredDays,
                     emotionByDay = emotionByDay,
                 )
