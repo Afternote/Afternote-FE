@@ -53,6 +53,12 @@ class DeepThoughtListViewModel
 
         fun refresh() = load()
 
+        fun delete(id: Long) {
+            viewModelScope.launch {
+                repository.delete(id).onSuccess { load() }
+            }
+        }
+
         private fun load() {
             val state = internalState.value
             viewModelScope.launch {

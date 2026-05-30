@@ -18,11 +18,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -36,7 +41,11 @@ import java.time.LocalDate
 fun DeepThoughtCard(
     deepThought: DeepThoughtModel,
     modifier: Modifier = Modifier,
+    onEdit: () -> Unit = {},
+    onDelete: () -> Unit = {},
 ) {
+    var menuExpanded by remember { mutableStateOf(false) }
+
     OutlinedCard(
         colors =
             CardDefaults.cardColors(
@@ -67,14 +76,26 @@ fun DeepThoughtCard(
                     )
                 }
 
-                Box(
-                    modifier = Modifier.clickable {},
-                ) {
+                Box {
                     Icon(
                         painter = painterResource(R.drawable.mindrecord_horizontal),
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.mindrecord_more_menu_cd),
                         tint = AfternoteDesign.colors.gray5,
+                        modifier = Modifier.clickable { menuExpanded = true },
                     )
+                    if (menuExpanded) {
+                        RecordActionPopup(
+                            onDismiss = { menuExpanded = false },
+                            onDelete = {
+                                menuExpanded = false
+                                onDelete()
+                            },
+                            onEdit = {
+                                menuExpanded = false
+                                onEdit()
+                            },
+                        )
+                    }
                 }
             }
 

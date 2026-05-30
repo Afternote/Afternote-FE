@@ -43,6 +43,12 @@ class DiaryListViewModel
             load(yearMonth)
         }
 
+        fun delete(id: Long) {
+            viewModelScope.launch {
+                repository.delete(id).onSuccess { load() }
+            }
+        }
+
         private fun load(yearMonth: YearMonth = YearMonth.now()) {
             viewModelScope.launch {
                 internalState.update { it.copy(loadPhase = LoadPhase.Loading) }

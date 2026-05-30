@@ -22,6 +22,11 @@
     <string name="mindrecord_action_delete">삭제</string>
     <string name="mindrecord_action_rename">이름 수정</string>
 
+    <!-- Record card more-menu -->
+    <string name="mindrecord_record_action_delete">삭제하기</string>
+    <string name="mindrecord_record_action_edit">수정하기</string>
+    <string name="mindrecord_more_menu_cd">더보기 메뉴</string>
+
     <!-- Mind record category meta (MindRecordCategoryUi) -->
     <string name="mindrecord_category_daily_question_title">데일리 질문</string>
     <string name="mindrecord_category_daily_question_description">매일 다른 질문을 남겨 보세요.</string>
