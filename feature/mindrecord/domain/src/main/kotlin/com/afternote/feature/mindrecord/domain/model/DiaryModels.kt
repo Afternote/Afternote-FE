@@ -15,6 +15,12 @@ data class Diary(
     val imageUrl: String? = null,
 )
 
+data class DiaryList(
+    val diaries: List<Diary>,
+    val monthDiaryCount: Int,
+    val weeklyDominantMood: TodayMood?,
+)
+
 data class DiaryCreatePayload(
     val title: String,
     val content: String,

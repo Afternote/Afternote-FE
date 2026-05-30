@@ -32,6 +32,7 @@ import com.afternote.feature.mindrecord.presentation.component.DiaryCard
 import com.afternote.feature.mindrecord.presentation.component.DiaryComponent
 import com.afternote.feature.mindrecord.presentation.component.DiaryReportCard
 import com.afternote.feature.mindrecord.presentation.component.MindRecordEmptyState
+import com.afternote.feature.mindrecord.presentation.mapper.toEmoji
 import com.afternote.feature.mindrecord.presentation.model.DailyDiary
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListUiState
@@ -61,6 +62,9 @@ fun DiaryScreen(
                 modifier = modifier,
                 isListView = isListView,
                 diaries = state.diaries,
+                monthDiaryCount = state.monthDiaryCount,
+                weeklyMoodEmoji = state.weeklyDominantMood?.toEmoji(),
+                onDelete = viewModel::delete,
             )
         }
     }
@@ -134,7 +138,10 @@ private fun DiaryListContent(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             item(span = { GridItemSpan(2) }) {
-                DiaryReportCard()
+                DiaryReportCard(
+                    monthDiaryCount = monthDiaryCount,
+                    weeklyMoodEmoji = weeklyMoodEmoji,
+                )
                 Spacer(modifier = Modifier.height(24.dp))
             }
             gridItems(diaries, key = { it.id }) { diary ->
