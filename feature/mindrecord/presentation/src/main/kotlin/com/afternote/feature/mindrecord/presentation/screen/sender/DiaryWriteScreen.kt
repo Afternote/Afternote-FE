@@ -1,6 +1,5 @@
 package com.afternote.feature.mindrecord.presentation.screen.sender
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -146,11 +145,16 @@ fun DiaryWriteScreen(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(
-                    painter = painterResource(com.afternote.feature.mindrecord.presentation.R.drawable.mindrecord_emotion),
-                    contentDescription = null,
-                    tint = Color(0xFF000000).copy(0.4f),
-                )
+                val selectedMood = uiState.mood
+                if (selectedMood != null) {
+                    Text(text = selectedMood.emoji())
+                } else {
+                    Icon(
+                        painter = painterResource(com.afternote.feature.mindrecord.presentation.R.drawable.mindrecord_emotion),
+                        contentDescription = null,
+                        tint = Color(0xFF000000).copy(0.4f),
+                    )
+                }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = stringResource(MindRecordR.string.mindrecord_diary_write_mood_label),
@@ -169,47 +173,6 @@ fun DiaryWriteScreen(
                 Spacer(modifier = Modifier.width(8.dp))
                 MoodChip("😢", selected = uiState.mood == TodayMood.SAD) {
                     viewModel.onMoodSelected(TodayMood.SAD)
-                }
-            }
-            Row {
-                Button(
-                    onClick = {},
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                    border = BorderStroke(1.dp, color = Color(0xFF000000).copy(0.05f)),
-                ) {
-                    Icon(
-                        painter = painterResource(com.afternote.feature.mindrecord.presentation.R.drawable.mindrecord_pos),
-                        contentDescription = null,
-                        tint = Color(0xFF000000).copy(0.6f),
-                        modifier = Modifier.size(12.dp),
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = stringResource(MindRecordR.string.mindrecord_diary_write_add_location),
-                        style = AfternoteDesign.typography.captionLargeR,
-                        color = AfternoteDesign.colors.black.copy(alpha = 0.6f),
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(4.dp))
-
-                Button(
-                    onClick = {},
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                    border = BorderStroke(1.dp, color = Color(0xFF000000).copy(0.05f)),
-                ) {
-                    Icon(
-                        painter = painterResource(com.afternote.feature.mindrecord.presentation.R.drawable.mindrecord_picture),
-                        contentDescription = null,
-                        tint = Color(0xFF000000).copy(0.6f),
-                        modifier = Modifier.size(12.dp),
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = stringResource(MindRecordR.string.mindrecord_diary_write_add_photo),
-                        style = AfternoteDesign.typography.captionLargeR,
-                        color = AfternoteDesign.colors.black.copy(alpha = 0.6f),
-                    )
                 }
             }
 
@@ -264,6 +227,13 @@ private fun MoodChip(
         Text(text = emoji)
     }
 }
+
+private fun TodayMood.emoji(): String =
+    when (this) {
+        TodayMood.HAPPY -> "😊"
+        TodayMood.SOSO -> "😐"
+        TodayMood.SAD -> "😢"
+    }
 
 @Preview(showBackground = true)
 @Composable
