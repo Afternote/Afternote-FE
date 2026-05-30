@@ -317,4 +317,7 @@
     <string name="afternote_editor_exit_confirm_message">작성 중인 내용이 사라집니다.\n정말 나가시겠어요?</string>
     <string name="afternote_editor_exit_confirm_confirm">나가기</string>
     <string name="afternote_editor_exit_confirm_cancel">계속 작성</string>
+    <string name="afternote_editor_media_source_gallery">갤러리에서 선택</string>
+    <string name="afternote_editor_media_source_take_photo">사진 촬영</string>
+    <string name="afternote_editor_media_source_take_video">영상 촬영</string>
 </resources>
