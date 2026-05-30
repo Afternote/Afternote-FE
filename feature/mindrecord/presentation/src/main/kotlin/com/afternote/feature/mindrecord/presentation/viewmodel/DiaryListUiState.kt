@@ -1,6 +1,7 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import com.afternote.core.ui.UiText
+import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.presentation.model.DailyDiary
 
 sealed interface DiaryListUiState {
@@ -8,6 +9,8 @@ sealed interface DiaryListUiState {
 
     data class Success(
         val diaries: List<DailyDiary>,
+        val monthDiaryCount: Int = 0,
+        val weeklyDominantMood: TodayMood? = null,
     ) : DiaryListUiState
 
     data class Error(

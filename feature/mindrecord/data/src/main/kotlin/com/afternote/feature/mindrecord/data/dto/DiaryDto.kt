@@ -44,10 +44,11 @@ data class DiaryListItem(
     @SerialName("todayMood") val todayMood: TodayMood,
 )
 
-// `/diary` 응답의 `data` 는 배열이 아니라 객체 — `diaries` 외에도
-// `yearMonth`, `monthDiaryCount`, `weeklyDominantMood` 가 함께 내려오지만
-// 현재는 목록만 사용. (Json 글로벌 설정에 `ignoreUnknownKeys = true` 적용됨)
+// `/diary` 응답의 `data` 는 객체 — `diaries` 외에 조회 대상 달의 비-임시 다이어리 수
+// (`monthDiaryCount`)와 최근 7일 최빈 기분(`weeklyDominantMood`)이 함께 내려옴.
 @Serializable
 data class DiaryListResponse(
     @SerialName("diaries") val diaries: List<DiaryListItem> = emptyList(),
+    @SerialName("monthDiaryCount") val monthDiaryCount: Int = 0,
+    @SerialName("weeklyDominantMood") val weeklyDominantMood: TodayMood? = null,
 )
