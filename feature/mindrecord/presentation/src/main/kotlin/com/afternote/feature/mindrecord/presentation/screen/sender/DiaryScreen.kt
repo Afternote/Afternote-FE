@@ -71,6 +71,9 @@ private fun DiaryListContent(
     isListView: Boolean,
     diaries: List<DailyDiary>,
     modifier: Modifier = Modifier,
+    monthDiaryCount: Int = 0,
+    weeklyMoodEmoji: String? = null,
+    onDelete: (Long) -> Unit = {},
 ) {
     if (isListView && diaries.isEmpty()) {
         MindRecordEmptyState(modifier = modifier)
@@ -119,6 +122,7 @@ private fun DiaryListContent(
                 DiaryComponent(
                     diary = diary,
                     modifier = Modifier.padding(vertical = 8.dp),
+                    onDelete = { onDelete(diary.id) },
                 )
             }
         }

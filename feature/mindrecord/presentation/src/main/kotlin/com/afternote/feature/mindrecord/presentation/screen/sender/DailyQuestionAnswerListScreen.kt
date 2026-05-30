@@ -60,6 +60,7 @@ fun DailyQuestionAnswerListScreen(
                 isListView = isListView,
                 todayQuestion = state.todayQuestion,
                 answers = state.answers,
+                onDelete = viewModel::delete,
             )
         }
     }
@@ -71,6 +72,7 @@ private fun DailyQuestionListContent(
     todayQuestion: TodayQuestionUi?,
     answers: List<DailyQuestion>,
     modifier: Modifier = Modifier,
+    onDelete: (Long) -> Unit = {},
 ) {
     if (isListView && todayQuestion == null && answers.isEmpty()) {
         MindRecordEmptyState(modifier = modifier)
@@ -85,7 +87,9 @@ private fun DailyQuestionListContent(
     ) {
         if (isListView) {
             item { DailyQuestionWriteHeaderCard(questionText = headerText) }
-            items(answers, key = { it.id }) { DailyQuestionListCard(answer = it) }
+            items(answers, key = { it.id }) { answer ->
+                DailyQuestionListCard(answer = answer, onDelete = { onDelete(answer.id) })
+            }
         } else {
             val today = LocalDate.now()
             val answeredDays =
@@ -119,7 +123,9 @@ private fun DailyQuestionListContent(
                 Spacer(modifier = Modifier.height(10.dp))
             }
             item { DailyQuestionWriteHeaderCard(questionText = headerText) }
-            items(answers, key = { it.id }) { DailyQuestionListCard(answer = it) }
+            items(answers, key = { it.id }) { answer ->
+                DailyQuestionListCard(answer = answer, onDelete = { onDelete(answer.id) })
+            }
         }
     }
 }

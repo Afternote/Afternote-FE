@@ -97,6 +97,7 @@ fun DeepThoughtScreen(
                 onTagClick = viewModel::onTagSelected,
                 onCategorySelect = viewModel::onCategorySelected,
                 onCategorySettingClick = { showCategorySheet = true },
+                onDelete = viewModel::delete,
             )
         }
     }
@@ -168,6 +169,7 @@ private fun DeepThoughtContent(
     onCategorySettingClick: () -> Unit,
     items: List<DeepThoughtModel>,
     modifier: Modifier = Modifier,
+    onDelete: (Long) -> Unit = {},
 ) {
     val allCategoryLabel = stringResource(MindRecordR.string.mindrecord_category_all)
     val tabs =
@@ -266,7 +268,9 @@ private fun DeepThoughtContent(
             )
 
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(items, key = { it.id }) { DeepThoughtCard(it) }
+                items(items, key = { it.id }) { item ->
+                    DeepThoughtCard(item, onDelete = { onDelete(item.id) })
+                }
             }
         }
     } else {
@@ -304,8 +308,8 @@ private fun DeepThoughtContent(
                 Spacer(modifier = Modifier.height(10.dp))
             }
 
-            items(items, key = { it.id }) {
-                DeepThoughtCard(it)
+            items(items, key = { it.id }) { item ->
+                DeepThoughtCard(item, onDelete = { onDelete(item.id) })
                 Spacer(modifier = Modifier.height(12.dp))
             }
         }
