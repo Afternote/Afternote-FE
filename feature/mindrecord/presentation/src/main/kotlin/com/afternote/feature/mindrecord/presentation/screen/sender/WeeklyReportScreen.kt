@@ -1,14 +1,14 @@
 package com.afternote.feature.mindrecord.presentation.screen.sender
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
@@ -67,7 +67,13 @@ private fun WeeklyReportContent(
     onWeekSelect: (java.time.LocalDate) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    LazyColumn(modifier = modifier) {
+    // Figma 노드 852:11543 — main 컨테이너의 섹션 간 gap=32, 시작 pt=8, 끝 pb=200.
+    // 가로 패딩(20dp)은 호출부(HomeScreen)에서 이미 제공하므로 여기선 추가하지 않는다.
+    LazyColumn(
+        modifier = modifier,
+        contentPadding = PaddingValues(top = 8.dp, bottom = 200.dp),
+        verticalArrangement = Arrangement.spacedBy(32.dp),
+    ) {
         item {
             WeeklyReportReviewCard(
                 selectedMonday = state.selectedMonday,
@@ -78,38 +84,40 @@ private fun WeeklyReportContent(
             )
         }
 
+        // 요약 메시지 + 캘린더 — gap=8, 메시지 좌측 pl=8.
         item {
-            Text(text = recordedSummary(userName = state.userName, recordedDays = state.recordedDays))
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = recordedSummary(userName = state.userName, recordedDays = state.recordedDays),
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+                WeeklyMoodCalendar(days = state.weekDays)
+            }
         }
 
+        // TOP KEYWORDS 섹션 — py=8, gap=12 (divider + 감정 카드 + INSIGHT 카드).
         item {
-            WeeklyMoodCalendar(days = state.weekDays)
+            Column(
+                modifier = Modifier.padding(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                SectionHeader(title = "TOP KEYWORDS")
+                EmotionKeywordCard(
+                    bubbles = state.emotionBubbles,
+                    descriptionText = state.summaryText,
+                )
+                InsightCard(bodyText = state.summaryText)
+            }
         }
 
+        // HISTORY 섹션 — gap=12 (divider + 다이어리 카드들).
         item {
-            SectionHeader(title = "TOP KEYWORDS")
-            Spacer(modifier = Modifier.height(10.dp))
-        }
-
-        item {
-            EmotionKeywordCard(
-                bubbles = state.emotionBubbles,
-                descriptionText = state.summaryText,
-            )
-        }
-
-        item {
-            InsightCard(bodyText = state.summaryText)
-            Spacer(modifier = Modifier.height(10.dp))
-        }
-
-        item {
-            SectionHeader(title = "HISTORY")
-            Spacer(modifier = Modifier.height(10.dp))
-        }
-
-        items(state.dailyQuestions, key = { it.id to it.date }) { dailyQuestion ->
-            DailyQuestionListCard(answer = dailyQuestion)
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                SectionHeader(title = "HISTORY")
+                state.dailyQuestions.forEach { dailyQuestion ->
+                    DailyQuestionListCard(answer = dailyQuestion)
+                }
+            }
         }
     }
 }

@@ -40,10 +40,7 @@ fun WeeklyMoodCalendar(
     days: List<DayItem> = defaultPreviewDays(),
 ) {
     Column(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         // 상단 슬라이더
