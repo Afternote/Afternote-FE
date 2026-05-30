@@ -107,6 +107,7 @@ fun DeepThoughtScreen(
             onDismiss = { showCategorySheet = false },
             onBackClick = { showCategorySheet = false },
             onAddCategory = { addingCategory = true },
+            onCategoryClick = { showCategorySheet = false },
             onMenuClick = { menuTarget = it },
         )
     }

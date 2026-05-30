@@ -1,5 +1,6 @@
 package com.afternote.feature.mindrecord.presentation.screen.sender
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -136,7 +137,12 @@ fun DeepThoughtWriteScreen(
                     style = AfternoteDesign.typography.bodySmallB,
                     color = AfternoteDesign.colors.gray7,
                 )
-                Column(modifier = Modifier.padding(start = 12.dp)) {
+                Column(
+                    modifier =
+                        Modifier
+                            .padding(start = 12.dp)
+                            .clickable { showCategorySheet = true },
+                ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -196,6 +202,10 @@ fun DeepThoughtWriteScreen(
                 onDismiss = { showCategorySheet = false },
                 onBackClick = { showCategorySheet = false },
                 onAddCategory = { },
+                onCategoryClick = { category ->
+                    viewModel.onCategoryChanged(category.name)
+                    showCategorySheet = false
+                },
                 onMenuClick = { },
             )
         }
