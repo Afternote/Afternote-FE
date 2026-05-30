@@ -45,6 +45,7 @@ import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
+import com.afternote.feature.mindrecord.presentation.util.htmlToPlainText
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftCategory
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftItem
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftListUiState
@@ -271,7 +272,7 @@ private fun DraftRow(item: DraftItem) {
             )
         }
         Text(
-            text = item.content,
+            text = item.content.htmlToPlainText(),
             style = AfternoteDesign.typography.bodySmallR,
             color = AfternoteDesign.colors.gray9,
         )

@@ -31,6 +31,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
+import com.afternote.feature.mindrecord.presentation.util.htmlToPlainText
 import java.time.LocalDate
 
 @Composable
@@ -99,7 +100,7 @@ fun DailyQuestionListCard(
 
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = answer.content,
+                text = answer.content.htmlToPlainText(),
                 style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray6,
             )

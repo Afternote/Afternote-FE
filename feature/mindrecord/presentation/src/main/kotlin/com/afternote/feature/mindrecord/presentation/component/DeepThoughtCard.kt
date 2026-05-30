@@ -35,6 +35,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.DeepThoughtModel
 import com.afternote.feature.mindrecord.presentation.model.Tag
+import com.afternote.feature.mindrecord.presentation.util.htmlToPlainText
 import java.time.LocalDate
 
 @Composable
@@ -108,7 +109,7 @@ fun DeepThoughtCard(
 
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = deepThought.content,
+                text = deepThought.content.htmlToPlainText(),
                 style = AfternoteDesign.typography.bodySmallR,
                 color = AfternoteDesign.colors.black.copy(alpha = 0.5f),
             )
