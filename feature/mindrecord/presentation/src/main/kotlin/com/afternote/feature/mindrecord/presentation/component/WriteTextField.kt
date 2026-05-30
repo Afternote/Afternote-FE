@@ -93,27 +93,30 @@ fun WriteTextField(
         runCatching { editorFocusRequester.requestFocus() }
     }
 
-    // 선택된 미디어 URI 를 에디터에 추가. TODO: compose-richeditor 의 image / audio / file
-    // 노드 삽입 API 로 교체 + 업로드 → 영구 URL 치환. 현재는 raw URI 를 plain text 로 append.
-    fun appendUriToEditor(uri: Uri?) {
+    // 선택된 미디어 URI 를 HTML 태그로 감싸 에디터에 append. compose-richeditor 의 setHtml 이
+    // <img>·<a href> 같은 표준 태그를 파싱해 rich span 으로 변환한다.
+    // 업로드 → 영구 URL 치환은 후속 PR (지금은 raw content:// URI 를 그대로 src/href 로 사용).
+    fun appendMediaToEditor(
+        uri: Uri?,
+        asImage: Boolean,
+    ) {
         if (uri == null) return
-        keepEditorFocus {
-            val current = state.toHtml()
-            state.setHtml(current + uri)
-        }
+        val html =
+            if (asImage) "<img src=\"$uri\" />" else "<a href=\"$uri\">$uri</a>"
+        keepEditorFocus { state.setHtml(state.toHtml() + html) }
     }
 
     val imageLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-            appendUriToEditor(uri)
+            appendMediaToEditor(uri, asImage = true)
         }
     val voiceLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-            appendUriToEditor(uri)
+            appendMediaToEditor(uri, asImage = false)
         }
     val fileLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-            appendUriToEditor(uri)
+            appendMediaToEditor(uri, asImage = false)
         }
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -216,11 +219,8 @@ fun WriteTextField(
             LinkBottomSheet(
                 onDismiss = { sheet = KeyboardSheet.None },
                 onConfirm = { url ->
-                    // TODO: compose-richeditor 의 link API 로 hyperlink 삽입 후속 처리.
-                    //  지금은 사용자 입력 URL 을 plain text 로 에디터에 추가한다.
                     keepEditorFocus {
-                        val current = state.toHtml()
-                        state.setHtml(current + url)
+                        state.setHtml(state.toHtml() + "<a href=\"$url\">$url</a>")
                     }
                     sheet = KeyboardSheet.None
                 },
