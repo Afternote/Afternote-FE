@@ -77,7 +77,7 @@ fun WriteTextField(
         )
 
     var showTextStyleToolbar by remember { mutableStateOf(false) }
-    var showLinkSheet by remember { mutableStateOf(false) }
+    var sheet: KeyboardSheet by remember { mutableStateOf(KeyboardSheet.None) }
     val imeVisible = WindowInsets.isImeVisible
     val editorFocusRequester = remember { FocusRequester() }
 
@@ -155,27 +155,53 @@ fun WriteTextField(
             onAlignChange = { align ->
                 keepEditorFocus { state.addParagraphStyle(ParagraphStyle(textAlign = align)) }
             },
-            onLinkClick = { showLinkSheet = true },
+            onLinkClick = { sheet = KeyboardSheet.MediaSelect },
             onSaveDraftClick = onSaveDraftClick,
             onDraftCountClick = onDraftCountClick,
             draftCount = draftCount,
         )
     }
 
-    if (showLinkSheet) {
-        LinkBottomSheet(
-            onDismiss = { showLinkSheet = false },
-            onConfirm = { url ->
-                // TODO: compose-richeditor 의 link API 로 hyperlink 삽입 후속 처리.
-                //  지금은 사용자 입력 URL 을 plain text 로 에디터에 추가한다.
-                keepEditorFocus {
-                    val current = state.toHtml()
-                    state.setHtml(current + url)
-                }
-                showLinkSheet = false
-            },
-        )
+    when (sheet) {
+        KeyboardSheet.None -> {
+            Unit
+        }
+
+        KeyboardSheet.MediaSelect -> {
+            MediaSelectBottomSheet(
+                onDismiss = { sheet = KeyboardSheet.None },
+                // 이미지/음성/파일 추가는 후속 PR. 일단 시트 닫기만.
+                onImageClick = { sheet = KeyboardSheet.None },
+                onVoiceClick = { sheet = KeyboardSheet.None },
+                onFileClick = { sheet = KeyboardSheet.None },
+                onLinkClick = { sheet = KeyboardSheet.LinkAdd },
+            )
+        }
+
+        KeyboardSheet.LinkAdd -> {
+            LinkBottomSheet(
+                onDismiss = { sheet = KeyboardSheet.None },
+                onConfirm = { url ->
+                    // TODO: compose-richeditor 의 link API 로 hyperlink 삽입 후속 처리.
+                    //  지금은 사용자 입력 URL 을 plain text 로 에디터에 추가한다.
+                    keepEditorFocus {
+                        val current = state.toHtml()
+                        state.setHtml(current + url)
+                    }
+                    sheet = KeyboardSheet.None
+                },
+            )
+        }
     }
+}
+
+/** [WriteTextField] 의 키보드 영역에서 토글되는 바텀시트 상태. 한 번에 하나만 표시한다. */
+private sealed interface KeyboardSheet {
+    data object None : KeyboardSheet
+
+    data object MediaSelect : KeyboardSheet
+
+    data object LinkAdd : KeyboardSheet
 }
 
 private fun TextStyleType.toSpanStyle(): SpanStyle =
