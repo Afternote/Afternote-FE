@@ -170,12 +170,8 @@ class SignUpViewModel
                     .verifyEmail(
                         email = state.email,
                         certificateCode = state.verificationCode,
-                    ).onSuccess { result ->
-                        if (result.isVerified) {
-                            _uiState.update { it.copy(shouldNavigateToResidentNumber = true) }
-                        } else {
-                            _uiState.update { it.copy(errorMessage = "인증번호가 일치하지 않습니다") }
-                        }
+                    ).onSuccess {
+                        _uiState.update { it.copy(shouldNavigateToResidentNumber = true) }
                     }.onFailure { error ->
                         _uiState.update { it.copy(errorMessage = error.message ?: "이메일 인증 실패") }
                     }

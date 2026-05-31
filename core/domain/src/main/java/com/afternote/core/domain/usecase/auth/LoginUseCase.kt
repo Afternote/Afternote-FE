@@ -24,7 +24,11 @@ class LoginUseCase
     constructor(
         private val authRepository: AuthRepository,
     ) {
-        suspend operator fun invoke(loginType: LoginType): Result<Unit> {
+        /**
+         * 로그인 후 세션을 저장한다. 반환 [Boolean] 은 "온보딩이 필요한 소셜 신규 가입자"인지 —
+         * 소셜 로그인 `newUser == true` 만 `true`, 이메일·기존 유저는 `false` (`newUser` 가 null 이어도 false).
+         */
+        suspend operator fun invoke(loginType: LoginType): Result<Boolean> {
             val sessionResult: Result<Session> =
                 when (loginType) {
                     is LoginType.Email -> {
@@ -48,9 +52,13 @@ class LoginUseCase
                     return Result.failure(exception)
                 }
 
-            return authRepository.saveSession(
-                accessToken = session.accessToken,
-                refreshToken = session.refreshToken,
-            )
+            return authRepository
+                .saveSession(
+                    accessToken = session.accessToken,
+                    refreshToken = session.refreshToken,
+                ).map {
+                    // 소셜 로그인이고 서버가 newUser=true 를 준 경우만 신규. 이메일(cast→null)·false·null 은 `== true` 로 모두 false.
+                    (session as? Session.SocialSession)?.isNewUser == true
+                }
         }
     }

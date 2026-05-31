@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.data.di
 
 import com.afternote.feature.afternote.data.repositoryimpl.receiver.ReceiverDeliveryDocumentUploadRepositoryImpl
-import com.afternote.feature.afternote.domain.repository.receiver.ReceiverDeliveryDocumentUploadRepository
+import com.afternote.feature.receiver.domain.repository.ReceiverDeliveryDocumentUploadRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

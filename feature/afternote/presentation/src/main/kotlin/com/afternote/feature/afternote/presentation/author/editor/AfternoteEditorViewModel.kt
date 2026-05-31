@@ -12,6 +12,7 @@ import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.SaveAfternoteCommand
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.domain.repository.author.AuthorReceiverRepository
+import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
 import com.afternote.feature.afternote.presentation.R
@@ -371,6 +372,23 @@ class AfternoteEditorViewModel
                 }
             }
 
+        // 영상: 로컬 pick(content://) 인지 원격 prefill URL 인지를 진입 경계에서 한 번 확정해 MediaInput 으로 넘긴다.
+        private fun videoMediaInput(url: String?): MediaInput {
+            if (url.isNullOrBlank()) return MediaInput.None
+            return if (url.startsWith("content://")) MediaInput.Local(url) else MediaInput.Remote(url)
+        }
+
+        // 영정 사진: 새로 고른 로컬 픽 우선 → 없으면 기존 원격 → 둘 다 없으면 없음.
+        private fun photoMediaInput(
+            picked: String?,
+            existing: String?,
+        ): MediaInput =
+            when {
+                !picked.isNullOrBlank() -> MediaInput.Local(picked)
+                !existing.isNullOrBlank() -> MediaInput.Remote(existing)
+                else -> MediaInput.None
+            }
+
         private suspend fun buildSaveCommand(
             editingId: Long?,
             categoryForApi: EditorCategory,
@@ -381,9 +399,12 @@ class AfternoteEditorViewModel
         ): Result<SaveAfternoteCommand> {
             val resolved =
                 resolveMemorialMediaForSave(
-                    funeralVideoUrl = memorialMedia.funeralVideoUrl,
-                    memorialPhotoUrl = memorialMedia.memorialPhotoUrl,
-                    pickedMemorialPhotoUri = memorialMedia.pickedMemorialPhotoUri,
+                    video = videoMediaInput(memorialMedia.funeralVideoUrl),
+                    photo =
+                        photoMediaInput(
+                            picked = memorialMedia.pickedMemorialPhotoUri,
+                            existing = memorialMedia.memorialPhotoUrl,
+                        ),
                 ).getOrElse { return Result.failure(it) }
 
             val command =

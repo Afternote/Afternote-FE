@@ -6,7 +6,7 @@ import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResul
 import com.afternote.feature.afternote.domain.model.receiver.LoadCountResult
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedExportBundle
-import com.afternote.feature.afternote.domain.model.receiver.SenderMessageInfo
+import com.afternote.feature.receiver.domain.model.SenderMessageInfo
 import kotlinx.coroutines.flow.Flow
 
 /**

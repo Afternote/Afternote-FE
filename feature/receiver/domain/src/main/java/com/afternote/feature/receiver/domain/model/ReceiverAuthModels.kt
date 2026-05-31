@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.domain.model.receiver
+package com.afternote.feature.receiver.domain.model
 
 data class ReceiverIdentity(
     val receiverId: Long,

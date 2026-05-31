@@ -4,8 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import com.afternote.feature.afternote.domain.repository.receiver.IdentityVerificationRepository
 import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceiverRoute
+import com.afternote.feature.receiver.domain.repository.IdentityVerificationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow

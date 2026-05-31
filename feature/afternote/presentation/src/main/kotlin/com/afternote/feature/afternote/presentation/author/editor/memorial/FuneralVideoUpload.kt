@@ -42,9 +42,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
-import coil3.network.NetworkHeaders
-import coil3.network.httpHeaders
-import coil3.request.ImageRequest
 import com.afternote.core.ui.button.PlusBadgeButton
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -186,21 +183,8 @@ fun FuneralVideoUpload(
             ) {
                 when {
                     !thumbnailUrl.isNullOrBlank() -> {
-                        val imageRequest =
-                            remember(thumbnailUrl) {
-                                ImageRequest
-                                    .Builder(context)
-                                    .data(thumbnailUrl)
-                                    .httpHeaders(
-                                        NetworkHeaders
-                                            .Builder()
-                                            .apply {
-                                                this["User-Agent"] = "Afternote Android App"
-                                            }.build(),
-                                    ).build()
-                            }
                         AsyncImage(
-                            model = imageRequest,
+                            model = thumbnailUrl,
                             contentDescription = null,
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop,

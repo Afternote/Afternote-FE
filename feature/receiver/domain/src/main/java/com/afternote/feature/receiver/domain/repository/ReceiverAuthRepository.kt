@@ -1,9 +1,9 @@
-package com.afternote.feature.afternote.domain.repository.receiver
+package com.afternote.feature.receiver.domain.repository
 
-import com.afternote.feature.afternote.domain.model.receiver.DeliveryVerification
-import com.afternote.feature.afternote.domain.model.receiver.ReceiverAuthPresignedUrl
-import com.afternote.feature.afternote.domain.model.receiver.ReceiverIdentity
-import com.afternote.feature.afternote.domain.model.receiver.SenderMessageInfo
+import com.afternote.feature.receiver.domain.model.DeliveryVerification
+import com.afternote.feature.receiver.domain.model.ReceiverAuthPresignedUrl
+import com.afternote.feature.receiver.domain.model.ReceiverIdentity
+import com.afternote.feature.receiver.domain.model.SenderMessageInfo
 
 /**
  * 수신자 인증 흐름 전용 Repository (`receiver-auth/...` 경로).
