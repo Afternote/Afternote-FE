@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.data.dto
 
-import com.afternote.feature.afternote.domain.model.receiver.DeliveryVerificationStatus
+import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
