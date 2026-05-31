@@ -100,7 +100,8 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
             .addInterceptor(loggingInterceptor)
             .build()
 
-    /** Coil 전용. 인증 헤더 없이 이미지 호스트만 다루며, DEBUG 멀티바인딩 인터셉터(예: mock.image → Picsum)를 동일하게 적용한다. */
+    /** Coil 전용. 인증 헤더 없이 이미지 호스트만 다루며, DEBUG 멀티바인딩 인터셉터(예: mock.image → Picsum)를 동일하게 적용한다.
+     *  모든 이미지 요청에 동일한 `User-Agent` 를 부착해 presentation 의 ImageRequest 별 부착 boilerplate 를 제거한다. */
     @Provides
     @Singleton
     @Named("CoilImage")
@@ -109,6 +110,15 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
         loggingInterceptor: HttpLoggingInterceptor,
     ): OkHttpClient {
         val builder = OkHttpClient.Builder()
+        builder.addInterceptor { chain ->
+            chain.proceed(
+                chain
+                    .request()
+                    .newBuilder()
+                    .header("User-Agent", "Afternote Android App")
+                    .build(),
+            )
+        }
         debugInterceptors.forEach { builder.addInterceptor(it) }
         return builder.addInterceptor(loggingInterceptor).build()
     }

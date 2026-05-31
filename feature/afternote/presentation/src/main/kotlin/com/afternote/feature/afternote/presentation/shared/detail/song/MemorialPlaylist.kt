@@ -25,7 +25,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -33,9 +32,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
-import coil3.network.NetworkHeaders
-import coil3.network.httpHeaders
-import coil3.request.ImageRequest
 import com.afternote.core.model.AlbumCover
 import com.afternote.core.ui.icon.ArrowIcon
 import com.afternote.core.ui.icon.RightArrowIcon
@@ -252,22 +248,8 @@ private fun MemorialPlaylistAlbumCoverBox(album: AlbumCover) {
             .size(80.dp)
             .clip(RoundedCornerShape(8.dp))
     if (!album.imageUrl.isNullOrBlank()) {
-        val context = LocalContext.current
-        val imageRequest =
-            remember(album.imageUrl) {
-                ImageRequest
-                    .Builder(context)
-                    .data(album.imageUrl)
-                    .httpHeaders(
-                        NetworkHeaders
-                            .Builder()
-                            .apply {
-                                this["User-Agent"] = "Afternote Android App"
-                            }.build(),
-                    ).build()
-            }
         AsyncImage(
-            model = imageRequest,
+            model = album.imageUrl,
             contentDescription = stringResource(R.string.content_description_album_cover),
             modifier = modifier,
             contentScale = ContentScale.Crop,

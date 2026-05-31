@@ -12,6 +12,7 @@ import dagger.hilt.android.HiltAndroidApp
 class GlobalApplication :
     Application(),
     SingletonImageLoader.Factory {
+    /** Hilt 가 만든 [ImageLoader] 를 Coil 앱 전역 싱글톤으로 등록 — 모든 AsyncImage 가 명시적 imageLoader 없이 이걸 사용. */
     override fun newImageLoader(context: PlatformContext): ImageLoader =
         EntryPointAccessors
             .fromApplication(context, CoilImageLoaderEntryPoint::class.java)
