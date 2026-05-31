@@ -22,6 +22,11 @@
     <string name="mindrecord_action_delete">삭제</string>
     <string name="mindrecord_action_rename">이름 수정</string>
 
+    <!-- Record card more-menu -->
+    <string name="mindrecord_record_action_delete">삭제하기</string>
+    <string name="mindrecord_record_action_edit">수정하기</string>
+    <string name="mindrecord_more_menu_cd">더보기 메뉴</string>
+
     <!-- Mind record category meta (MindRecordCategoryUi) -->
     <string name="mindrecord_category_daily_question_title">데일리 질문</string>
     <string name="mindrecord_category_daily_question_description">매일 다른 질문을 남겨 보세요.</string>
@@ -38,8 +43,6 @@
     <string name="mindrecord_diary_write_title">일기 기록하기</string>
     <string name="mindrecord_diary_write_title_placeholder">제목을 입력하세요.</string>
     <string name="mindrecord_diary_write_mood_label">오늘의 기분</string>
-    <string name="mindrecord_diary_write_add_location">위치 추가</string>
-    <string name="mindrecord_diary_write_add_photo">사진 추가</string>
 
     <string name="mindrecord_deep_thought_write_title">깊은 생각 기록하기</string>
     <string name="mindrecord_deep_thought_write_title_label">제목</string>
@@ -97,6 +100,7 @@
     <!-- Emotion keyword card -->
     <string name="mindrecord_emotion_card_title">나의 감정 키워드</string>
     <string name="mindrecord_emotion_card_default_description">이번 주 박서연 님의 기록에서는\n\'가족\'을 위한 \'감사\'의 마음이 엿보입니다.</string>
+    <string name="mindrecord_emotion_card_empty_description">이번 주 %1$s 님의 기록에서는 키워드가 나오지 않았어요.</string>
 
     <!-- Empty state -->
     <string name="mindrecord_empty_state_title">아직 등록된 답변이 없어요.</string>
@@ -113,13 +117,36 @@
     <string name="mindrecord_deep_thought_sample_category_today">오늘 떠올린 생각</string>
     <string name="mindrecord_deep_thought_sample_category_retrospective">인생을 되돌아 보며</string>
 
+    <!-- Draft list screen -->
+    <string name="mindrecord_draft_list_title">임시 저장</string>
+    <string name="mindrecord_draft_list_total">총 %d개</string>
+    <string name="mindrecord_draft_list_filter_all">전체</string>
+    <string name="mindrecord_draft_list_filter_daily">데일리질문</string>
+    <string name="mindrecord_draft_list_filter_diary">일기</string>
+    <string name="mindrecord_draft_list_filter_deep_thought">깊은생각</string>
+    <string name="mindrecord_draft_list_edit">수정</string>
+    <string name="mindrecord_draft_list_empty">임시 저장된 항목이 없습니다.</string>
+
     <!-- Keyboard toolbar -->
     <string name="mindrecord_toolbar_link_cd">링크</string>
+
+    <!-- Media select bottom sheet (키보드 툴바 링크 버튼 → 미디어 메인 메뉴) -->
+    <string name="mindrecord_media_sheet_title">미디어 추가하기</string>
+    <string name="mindrecord_media_sheet_image">이미지 추가하기</string>
+    <string name="mindrecord_media_sheet_voice">음성 추가하기</string>
+    <string name="mindrecord_media_sheet_file">파일 추가하기</string>
+    <string name="mindrecord_media_sheet_link">링크 추가하기</string>
+
+    <!-- Link bottom sheet (미디어 시트 → "링크 추가하기") -->
+    <string name="mindrecord_link_sheet_title">링크 추가하기</string>
+    <string name="mindrecord_link_sheet_confirm">완료</string>
+    <string name="mindrecord_link_sheet_placeholder">URL을 입력하세요.</string>
     <string name="mindrecord_toolbar_align_left_cd">왼쪽 정렬</string>
     <string name="mindrecord_toolbar_align_center_cd">가운데 정렬</string>
     <string name="mindrecord_toolbar_align_right_cd">오른쪽 정렬</string>
     <string name="mindrecord_toolbar_close_cd">닫기</string>
     <string name="mindrecord_toolbar_draft_count">임시저장 %d</string>
+    <string name="mindrecord_toolbar_draft_label">임시저장</string>
     <string name="mindrecord_toolbar_text_settings">텍스트 설정</string>
     <string name="mindrecord_toolbar_style_title">제목</string>
     <string name="mindrecord_toolbar_style_header">머릿말</string>

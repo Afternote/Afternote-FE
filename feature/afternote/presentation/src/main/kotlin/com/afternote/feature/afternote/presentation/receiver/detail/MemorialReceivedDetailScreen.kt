@@ -42,9 +42,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import coil3.compose.AsyncImage
-import coil3.network.NetworkHeaders
-import coil3.network.httpHeaders
-import coil3.request.ImageRequest
 import com.afternote.core.model.AlbumCover
 import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.bottombar.BottomBar
@@ -245,21 +242,8 @@ private fun ReceiverMemorialVideoThumbnail(thumbnailUrl: String?) {
                 .clip(RoundedCornerShape(16.dp)),
     ) {
         if (!thumbnailUrl.isNullOrBlank()) {
-            val ctx = LocalContext.current
-            val imageRequest =
-                remember(thumbnailUrl) {
-                    ImageRequest
-                        .Builder(ctx)
-                        .data(thumbnailUrl)
-                        .httpHeaders(
-                            NetworkHeaders
-                                .Builder()
-                                .set("User-Agent", "Afternote Android App")
-                                .build(),
-                        ).build()
-                }
             AsyncImage(
-                model = imageRequest,
+                model = thumbnailUrl,
                 contentDescription = "장례식에 남길 영상 썸네일",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,

@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.presentation.receiver.recordsbox
 
-import com.afternote.feature.afternote.domain.model.receiver.DeliveryVerificationStatus
-import com.afternote.feature.afternote.domain.model.receiver.ReceiverIdentity
+import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
+import com.afternote.feature.receiver.domain.model.ReceiverIdentity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update

@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.presentation.receiver.recordsbox
 
 import androidx.compose.runtime.Immutable
-import com.afternote.feature.afternote.domain.model.receiver.DeliveryVerificationStatus
+import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
 
 /**
  * 받은 기록함 카드 한 줄의 표시 데이터.
@@ -11,7 +11,7 @@ import com.afternote.feature.afternote.domain.model.receiver.DeliveryVerificatio
  *
  * `authCode` 는 마스터 키 검증 성공 후 채워지며, "기록 열람하기" 진입 시 [com.afternote.feature.afternote
  * .domain.repository.receiver.ReceiverRepository.saveAuthCode] 로 글로벌 헤더 컨텍스트에 복원한다.
- * `realSenderName`·`relation` 은 [com.afternote.feature.afternote.domain.model.receiver.ReceiverIdentity]
+ * `realSenderName`·`relation` 은 [com.afternote.feature.receiver.domain.model.ReceiverIdentity]
  * 응답에서 수신한 값으로 발신자 상세(11·12)의 인사말 및 관계 표기에 사용한다.
  *
  * `verificationStatus` 는 가장 최근에 조회한 열람 신청 상태 캐시. 발신자 상세 진입 시 서버 호출 결과로

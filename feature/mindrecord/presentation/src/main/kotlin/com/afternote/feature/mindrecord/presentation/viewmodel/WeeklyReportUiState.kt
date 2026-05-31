@@ -1,9 +1,9 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import com.afternote.core.ui.UiText
-import com.afternote.feature.mindrecord.presentation.component.EmotionBubble
 import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
 import com.afternote.feature.mindrecord.presentation.model.DayItem
+import com.afternote.feature.mindrecord.presentation.model.EmotionKeyword
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import java.time.LocalDate
 
@@ -25,7 +25,7 @@ sealed interface WeeklyReportUiState {
         val recordedDays: Int,
         val counts: List<Pair<Int, MindRecordCategoryUi>>,
         val weekDays: List<DayItem>,
-        val emotionBubbles: List<EmotionBubble>,
+        val emotionKeywords: List<EmotionKeyword>,
         val summaryText: String,
         val dailyQuestions: List<DailyQuestion>,
     ) : WeeklyReportUiState

@@ -39,7 +39,7 @@ class GetHomeSummaryUseCase
 
                     val profile = profileDeferred.await()
                     val receivers = receiversDeferred.await()
-                    val diaryCount = diaryDeferred.await().getOrNull()?.size ?: 0
+                    val diaryCount = diaryDeferred.await().getOrNull()?.monthDiaryCount ?: 0
                     val deepThoughtCount =
                         deepThoughtDeferred
                             .await()

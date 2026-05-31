@@ -32,7 +32,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -44,9 +43,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
-import coil3.network.NetworkHeaders
-import coil3.network.httpHeaders
-import coil3.request.ImageRequest
 import com.afternote.core.model.AlbumCover
 import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.modifierextention.FadingEdgeDirection
@@ -330,22 +326,8 @@ private fun VideoThumbnail(thumbnailUrl: String?) {
     ) {
         // 썸네일 이미지
         if (!thumbnailUrl.isNullOrBlank()) {
-            val context = LocalContext.current
-            val imageRequest =
-                remember(thumbnailUrl) {
-                    ImageRequest
-                        .Builder(context)
-                        .data(thumbnailUrl)
-                        .httpHeaders(
-                            NetworkHeaders
-                                .Builder()
-                                .apply {
-                                    this["User-Agent"] = "Afternote Android App"
-                                }.build(),
-                        ).build()
-                }
             AsyncImage(
-                model = imageRequest,
+                model = thumbnailUrl,
                 contentDescription = "장례식에 남길 영상 썸네일",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
@@ -477,22 +459,8 @@ private fun PlaylistAlbumRow(albumCovers: List<AlbumCover>) {
 @Composable
 private fun AlbumCoverItem(album: AlbumCover) {
     if (!album.imageUrl.isNullOrBlank()) {
-        val context = LocalContext.current
-        val imageRequest =
-            remember(album.imageUrl) {
-                ImageRequest
-                    .Builder(context)
-                    .data(album.imageUrl)
-                    .httpHeaders(
-                        NetworkHeaders
-                            .Builder()
-                            .apply {
-                                this["User-Agent"] = "Afternote Android App"
-                            }.build(),
-                    ).build()
-            }
         AsyncImage(
-            model = imageRequest,
+            model = album.imageUrl,
             contentDescription = album.title,
             modifier = Modifier.size(87.dp),
             contentScale = ContentScale.Crop,

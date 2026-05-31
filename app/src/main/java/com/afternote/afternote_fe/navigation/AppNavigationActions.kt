@@ -35,6 +35,14 @@ fun rememberOnboardingNavActions(navController: NavController): OnboardingNavAct
                 }
             }
 
+            override fun replaceLoginWithWelcome() {
+                navController.navigate(OnboardingRoute.WelcomeRoute) {
+                    // 소셜 신규 가입자 — Login(과 그 아래 Welcome)을 비우고 새 Welcome 진입. 뒤로가기로 Login 에 못 돌아가게.
+                    popUpTo<OnboardingRoute.WelcomeRoute> { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+
             override fun navigateToSignUp() {
                 navController.navigate(OnboardingRoute.SignUpRoute)
             }
@@ -105,6 +113,14 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
             }
 
             override fun onWriteSubmitSuccess() {
+                navController.popBackStack()
+            }
+
+            override fun onNavigateToDraftList() {
+                navController.navigate(MindRecordRoute.DraftListRoute)
+            }
+
+            override fun onDraftListBack() {
                 navController.popBackStack()
             }
         }

@@ -8,11 +8,11 @@ import com.afternote.feature.afternote.data.dto.ReceiverAuthVerifyRequest
 import com.afternote.feature.afternote.data.dto.toDomain
 import com.afternote.feature.afternote.data.service.ReceiverAuthApiService
 import com.afternote.feature.afternote.domain.error.ReceiverDeliverySubmitException
-import com.afternote.feature.afternote.domain.model.receiver.DeliveryVerification
-import com.afternote.feature.afternote.domain.model.receiver.ReceiverAuthPresignedUrl
-import com.afternote.feature.afternote.domain.model.receiver.ReceiverIdentity
-import com.afternote.feature.afternote.domain.model.receiver.SenderMessageInfo
-import com.afternote.feature.afternote.domain.repository.receiver.ReceiverAuthRepository
+import com.afternote.feature.receiver.domain.model.DeliveryVerification
+import com.afternote.feature.receiver.domain.model.ReceiverAuthPresignedUrl
+import com.afternote.feature.receiver.domain.model.ReceiverIdentity
+import com.afternote.feature.receiver.domain.model.SenderMessageInfo
+import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 

@@ -19,4 +19,8 @@ interface MindRecordNavActions {
     fun onWriteBack()
 
     fun onWriteSubmitSuccess()
+
+    fun onNavigateToDraftList()
+
+    fun onDraftListBack()
 }

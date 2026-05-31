@@ -13,4 +13,5 @@ dependencies {
     implementation(projects.core.domain)
     implementation(projects.core.model)
     implementation(projects.feature.afternote.domain)
+    implementation(projects.feature.receiver.domain)
 }
