@@ -3,11 +3,9 @@ plugins {
 }
 
 android {
-    namespace = "com.afternote.feature.afternote.domain"
+    namespace = "com.afternote.feature.receiver.domain"
 }
 dependencies {
     implementation(projects.core.domain)
-    implementation(projects.feature.receiver.domain)
     implementation(libs.coroutines.core)
-    implementation(libs.androidx.paging.common)
 }

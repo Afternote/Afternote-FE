@@ -3,9 +3,9 @@ package com.afternote.feature.afternote.presentation.receiver.deliveryverificati
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.feature.afternote.domain.error.ReceiverDeliverySubmitException
-import com.afternote.feature.afternote.domain.repository.receiver.ReceiverAuthRepository
-import com.afternote.feature.afternote.domain.repository.receiver.ReceiverDeliveryDocumentUploadRepository
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
+import com.afternote.feature.receiver.domain.repository.ReceiverDeliveryDocumentUploadRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
