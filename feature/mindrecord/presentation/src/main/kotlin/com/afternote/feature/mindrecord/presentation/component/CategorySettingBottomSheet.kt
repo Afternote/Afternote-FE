@@ -40,21 +40,22 @@ fun CategorySettingBottomSheet(
     onDismiss: () -> Unit,
     onBackClick: () -> Unit,
     onAddCategory: () -> Unit,
+    onCategoryClick: (CategoryUiModel) -> Unit,
     onMenuClick: (CategoryUiModel) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color.White,
+        containerColor = AfternoteDesign.colors.gray1,
         dragHandle = {
             Box(
                 modifier =
                     Modifier
                         .padding(top = 12.dp, bottom = 8.dp)
-                        .width(36.dp)
+                        .width(40.dp)
                         .height(4.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFFDDDDDD)),
+                        .background(Color(0xFFCCCCCC)),
             )
         },
     ) {
@@ -62,6 +63,7 @@ fun CategorySettingBottomSheet(
             categories = categories,
             onBackClick = onBackClick,
             onAddCategory = onAddCategory,
+            onCategoryClick = onCategoryClick,
             onMenuClick = onMenuClick,
         )
     }
@@ -74,6 +76,7 @@ fun CategorySettingContent(
     categories: List<CategoryUiModel>,
     onBackClick: () -> Unit,
     onAddCategory: () -> Unit,
+    onCategoryClick: (CategoryUiModel) -> Unit,
     onMenuClick: (CategoryUiModel) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -88,7 +91,7 @@ fun CategorySettingContent(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
             contentAlignment = Alignment.Center,
         ) {
             // 뒤로가기
@@ -100,17 +103,17 @@ fun CategorySettingContent(
                         .align(Alignment.CenterStart)
                         .size(24.dp)
                         .clickable { onBackClick() },
-                tint = AfternoteDesign.colors.gray9,
+                tint = AfternoteDesign.colors.gray6,
             )
             Text(
                 text = stringResource(MindRecordR.string.mindrecord_category_setting_title),
-                style = AfternoteDesign.typography.h3,
-                color = AfternoteDesign.colors.gray9,
+                style = AfternoteDesign.typography.bodyBase,
+                color = AfternoteDesign.colors.gray6,
                 textAlign = TextAlign.Center,
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         // 새 카테고리 만들기
         Row(
@@ -118,16 +121,16 @@ fun CategorySettingContent(
                 Modifier
                     .fillMaxWidth()
                     .clickable { onAddCategory() }
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                painter = painterResource(R.drawable.core_ui_add), // plus 아이콘
+                painter = painterResource(R.drawable.core_ui_add),
                 contentDescription = null,
                 tint = AfternoteDesign.colors.gray9,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(24.dp),
             )
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = stringResource(MindRecordR.string.mindrecord_category_new_title),
                 style = AfternoteDesign.typography.bodyBase,
@@ -135,15 +138,16 @@ fun CategorySettingContent(
             )
         }
 
-        HorizontalDivider(color = Color(0xFF000000).copy(alpha = 0.07f))
+        HorizontalDivider(color = AfternoteDesign.colors.gray3)
 
         // 카테고리 목록
         categories.forEach { category ->
             CategoryItem(
                 category = category,
+                onClick = { onCategoryClick(category) },
                 onMenuClick = { onMenuClick(category) },
             )
-            HorizontalDivider(color = Color(0xFF000000).copy(alpha = 0.07f))
+            HorizontalDivider(color = AfternoteDesign.colors.gray3)
         }
     }
 }
@@ -153,6 +157,7 @@ fun CategorySettingContent(
 @Composable
 fun CategoryItem(
     category: CategoryUiModel,
+    onClick: () -> Unit,
     onMenuClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -160,18 +165,19 @@ fun CategoryItem(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
+                .clickable { onClick() }
+                .padding(horizontal = 24.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // 색상 원
         Box(
             modifier =
                 Modifier
-                    .size(20.dp)
+                    .size(24.dp)
                     .clip(CircleShape)
                     .background(category.color),
         )
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = category.name,
             style = AfternoteDesign.typography.bodyBase,
@@ -180,12 +186,12 @@ fun CategoryItem(
         )
         // 더보기 메뉴
         Icon(
-            painter = painterResource(R.drawable.core_ui_vertical), // ⋮ 아이콘
+            painter = painterResource(R.drawable.core_ui_vertical),
             contentDescription = stringResource(MindRecordR.string.mindrecord_more_cd),
-            tint = AfternoteDesign.colors.gray5,
+            tint = AfternoteDesign.colors.gray9,
             modifier =
                 Modifier
-                    .size(20.dp)
+                    .size(24.dp)
                     .clickable { onMenuClick() },
         )
     }
@@ -208,6 +214,7 @@ private fun CategorySettingContentPreview() {
             categories = sampleCategories,
             onBackClick = {},
             onAddCategory = {},
+            onCategoryClick = {},
             onMenuClick = {},
         )
     }

@@ -2,9 +2,11 @@ package com.afternote.feature.mindrecord.data.mapper
 
 import com.afternote.feature.mindrecord.data.dto.DiaryCreateRequest
 import com.afternote.feature.mindrecord.data.dto.DiaryListItem
+import com.afternote.feature.mindrecord.data.dto.DiaryListResponse
 import com.afternote.feature.mindrecord.data.dto.DiaryUpdateRequest
 import com.afternote.feature.mindrecord.domain.model.Diary
 import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
+import com.afternote.feature.mindrecord.domain.model.DiaryList
 import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.data.dto.TodayMood as TodayMoodDto
@@ -17,6 +19,13 @@ fun DiaryListItem.toDomain(): Diary =
         createdAt = createdAt,
         todayMood = todayMood.toDomain(),
         imageUrl = imageUrl,
+    )
+
+fun DiaryListResponse.toDomain(): DiaryList =
+    DiaryList(
+        diaries = diaries.map { it.toDomain() },
+        monthDiaryCount = monthDiaryCount,
+        weeklyDominantMood = weeklyDominantMood?.toDomain(),
     )
 
 fun TodayMoodDto.toDomain(): TodayMood =

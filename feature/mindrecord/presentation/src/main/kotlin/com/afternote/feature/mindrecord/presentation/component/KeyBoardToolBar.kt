@@ -42,6 +42,9 @@ fun BottomToolbar(
     onAlignChange: (TextAlign) -> Unit,
     modifier: Modifier = Modifier,
     onLinkClick: () -> Unit = {},
+    onSaveDraftClick: () -> Unit = {},
+    onDraftCountClick: () -> Unit = {},
+    draftCount: Int = 0,
 ) {
     Row(
         modifier =
@@ -89,11 +92,21 @@ fun BottomToolbar(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        Text(
-            text = stringResource(R.string.mindrecord_toolbar_draft_count, 1),
-            style = AfternoteDesign.typography.captionLargeR,
-            color = AfternoteDesign.colors.gray6,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(R.string.mindrecord_toolbar_draft_label),
+                style = AfternoteDesign.typography.captionLargeR,
+                color = AfternoteDesign.colors.gray6,
+                modifier = Modifier.clickable(onClick = onSaveDraftClick),
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = draftCount.toString(),
+                style = AfternoteDesign.typography.captionLargeR,
+                color = AfternoteDesign.colors.gray4,
+                modifier = Modifier.clickable(onClick = onDraftCountClick),
+            )
+        }
     }
 }
 

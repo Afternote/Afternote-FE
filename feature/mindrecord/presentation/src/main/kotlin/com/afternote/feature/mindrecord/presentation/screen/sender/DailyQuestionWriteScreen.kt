@@ -40,6 +40,7 @@ fun DailyQuestionWriteScreen(
     modifier: Modifier = Modifier,
     onSubmitSuccess: () -> Unit = {},
     onBackClick: () -> Unit = {},
+    onDraftListClick: () -> Unit = {},
     viewModel: DailyQuestionWriteViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -117,6 +118,8 @@ fun DailyQuestionWriteScreen(
             WriteTextField(
                 value = uiState.answer,
                 onValueChange = viewModel::onAnswerChanged,
+                onSaveDraftClick = { viewModel.submit(isDraft = true) },
+                onDraftCountClick = onDraftListClick,
             )
         }
     }

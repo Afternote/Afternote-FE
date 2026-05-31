@@ -97,6 +97,7 @@ fun DeepThoughtScreen(
                 onTagClick = viewModel::onTagSelected,
                 onCategorySelect = viewModel::onCategorySelected,
                 onCategorySettingClick = { showCategorySheet = true },
+                onDelete = viewModel::delete,
             )
         }
     }
@@ -107,6 +108,7 @@ fun DeepThoughtScreen(
             onDismiss = { showCategorySheet = false },
             onBackClick = { showCategorySheet = false },
             onAddCategory = { addingCategory = true },
+            onCategoryClick = { showCategorySheet = false },
             onMenuClick = { menuTarget = it },
         )
     }
@@ -167,6 +169,7 @@ private fun DeepThoughtContent(
     onCategorySettingClick: () -> Unit,
     items: List<DeepThoughtModel>,
     modifier: Modifier = Modifier,
+    onDelete: (Long) -> Unit = {},
 ) {
     val allCategoryLabel = stringResource(MindRecordR.string.mindrecord_category_all)
     val tabs =
@@ -265,24 +268,26 @@ private fun DeepThoughtContent(
             )
 
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(items, key = { it.id }) { DeepThoughtCard(it) }
+                items(items, key = { it.id }) { item ->
+                    DeepThoughtCard(item, onDelete = { onDelete(item.id) })
+                }
             }
         }
     } else {
-        val today = java.time.LocalDate.now()
+        var yearMonth by remember { mutableStateOf(java.time.YearMonth.now()) }
         val answeredDays =
             items
-                .filter { it.date.year == today.year && it.date.monthValue == today.monthValue }
+                .filter { it.date.year == yearMonth.year && it.date.monthValue == yearMonth.monthValue }
                 .map { it.date.dayOfMonth }
                 .toSet()
         LazyColumn(modifier = modifier) {
             item {
                 DailyCalendar(
-                    year = today.year,
-                    month = today.monthValue,
+                    year = yearMonth.year,
+                    month = yearMonth.monthValue,
                     type = MindRecordCategoryUi.DeepThought,
-                    onNextMonth = {},
-                    onPrevMonth = {},
+                    onPrevMonth = { yearMonth = yearMonth.minusMonths(1) },
+                    onNextMonth = { yearMonth = yearMonth.plusMonths(1) },
                     answeredDays = answeredDays,
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -303,8 +308,8 @@ private fun DeepThoughtContent(
                 Spacer(modifier = Modifier.height(10.dp))
             }
 
-            items(items, key = { it.id }) {
-                DeepThoughtCard(it)
+            items(items, key = { it.id }) { item ->
+                DeepThoughtCard(item, onDelete = { onDelete(item.id) })
                 Spacer(modifier = Modifier.height(12.dp))
             }
         }

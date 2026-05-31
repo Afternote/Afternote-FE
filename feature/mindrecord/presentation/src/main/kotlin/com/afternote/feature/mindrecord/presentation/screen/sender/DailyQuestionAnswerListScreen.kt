@@ -15,6 +15,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -35,7 +38,7 @@ import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.TodayQuestionUi
-import java.time.LocalDate
+import java.time.YearMonth
 
 @Composable
 fun DailyQuestionAnswerListScreen(
@@ -60,6 +63,7 @@ fun DailyQuestionAnswerListScreen(
                 isListView = isListView,
                 todayQuestion = state.todayQuestion,
                 answers = state.answers,
+                onDelete = viewModel::delete,
             )
         }
     }
@@ -71,7 +75,11 @@ private fun DailyQuestionListContent(
     todayQuestion: TodayQuestionUi?,
     answers: List<DailyQuestion>,
     modifier: Modifier = Modifier,
+    onDelete: (Long) -> Unit = {},
 ) {
+    var yearMonth by remember { mutableStateOf(YearMonth.now()) }
+    val onYearMonthChanged: (YearMonth) -> Unit = { yearMonth = it }
+
     if (isListView && todayQuestion == null && answers.isEmpty()) {
         MindRecordEmptyState(modifier = modifier)
         return
@@ -85,21 +93,22 @@ private fun DailyQuestionListContent(
     ) {
         if (isListView) {
             item { DailyQuestionWriteHeaderCard(questionText = headerText) }
-            items(answers, key = { it.id }) { DailyQuestionListCard(answer = it) }
+            items(answers, key = { it.id }) { answer ->
+                DailyQuestionListCard(answer = answer, onDelete = { onDelete(answer.id) })
+            }
         } else {
-            val today = LocalDate.now()
             val answeredDays =
                 answers
-                    .filter { it.date.year == today.year && it.date.monthValue == today.monthValue }
+                    .filter { it.date.year == yearMonth.year && it.date.monthValue == yearMonth.monthValue }
                     .map { it.date.dayOfMonth }
                     .toSet()
             item {
                 DailyCalendar(
-                    year = today.year,
-                    month = today.monthValue,
+                    year = yearMonth.year,
+                    month = yearMonth.monthValue,
                     type = MindRecordCategoryUi.DailyQuestion,
-                    onPrevMonth = {},
-                    onNextMonth = {},
+                    onPrevMonth = { onYearMonthChanged(yearMonth.minusMonths(1)) },
+                    onNextMonth = { onYearMonthChanged(yearMonth.plusMonths(1)) },
                     answeredDays = answeredDays,
                 )
             }
@@ -119,7 +128,9 @@ private fun DailyQuestionListContent(
                 Spacer(modifier = Modifier.height(10.dp))
             }
             item { DailyQuestionWriteHeaderCard(questionText = headerText) }
-            items(answers, key = { it.id }) { DailyQuestionListCard(answer = it) }
+            items(answers, key = { it.id }) { answer ->
+                DailyQuestionListCard(answer = answer, onDelete = { onDelete(answer.id) })
+            }
         }
     }
 }

@@ -6,11 +6,11 @@ import java.time.LocalDate
 data class DiaryWriteUiState(
     val title: String = "",
     val content: String = "",
-    val mood: TodayMood = TodayMood.SOSO,
+    val mood: TodayMood? = null,
     val date: LocalDate = LocalDate.now(),
     val imageUrl: String? = null,
     val submitState: SubmitState = SubmitState.Idle,
 ) {
     val canSubmit: Boolean
-        get() = title.isNotBlank() && content.isNotBlank() && submitState != SubmitState.InProgress
+        get() = title.isNotBlank() && content.isNotBlank() && mood != null && submitState != SubmitState.InProgress
 }

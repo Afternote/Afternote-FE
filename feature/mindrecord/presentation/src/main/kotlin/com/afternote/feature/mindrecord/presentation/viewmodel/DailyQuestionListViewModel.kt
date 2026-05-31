@@ -43,6 +43,12 @@ class DailyQuestionListViewModel
             load(date)
         }
 
+        fun delete(id: Long) {
+            viewModelScope.launch {
+                repository.delete(id).onSuccess { load() }
+            }
+        }
+
         private fun load(date: String? = null) {
             viewModelScope.launch {
                 internalState.update { it.copy(loadPhase = LoadPhase.Loading) }
