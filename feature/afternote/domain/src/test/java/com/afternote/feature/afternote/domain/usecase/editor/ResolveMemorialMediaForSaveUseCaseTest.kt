@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.domain.usecase.editor
 
+import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.domain.repository.author.MemorialPhotoUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialVideoUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.PhotoUploadOutcome
@@ -15,7 +16,7 @@ import org.junit.Test
  * [ResolveMemorialMediaForSaveUseCase] 비즈니스 로직 회귀 가드.
  *
  * 검증 핵심:
- * 1. 입력 인자를 각 Repository 에 그대로 전달하는지 (영상=URL 1개, 사진=existingUrl/pickedUri 2개)
+ * 1. 입력 [MediaInput] 을 각 Repository 에 그대로 전달하는지 (로컬/원격 확정은 호출부 책임)
  * 2. sealed [VideoUploadOutcome]/[PhotoUploadOutcome] 분기를 저장 페이로드 URL 로 매핑하는지
  *    (Empty→null, Existing→url, FreshlyUploaded→url)
  * 3. 영상 resolve 실패면 [MemorialVideoSaveException] 으로 wrap 하고 **사진 Repository 는 호출하지 않은 채**
@@ -33,9 +34,8 @@ class ResolveMemorialMediaForSaveUseCaseTest {
         val result =
             runBlocking {
                 ResolveMemorialMediaForSaveUseCase(videoRepo, photoRepo)(
-                    funeralVideoUrl = "content://video",
-                    memorialPhotoUrl = "https://cdn/photo.jpg",
-                    pickedMemorialPhotoUri = null,
+                    video = MediaInput.Local("content://video"),
+                    photo = MediaInput.Remote("https://cdn/photo.jpg"),
                 )
             }
 
@@ -51,7 +51,7 @@ class ResolveMemorialMediaForSaveUseCaseTest {
 
         val resolved =
             runBlocking {
-                ResolveMemorialMediaForSaveUseCase(videoRepo, photoRepo)(null, null, null)
+                ResolveMemorialMediaForSaveUseCase(videoRepo, photoRepo)(MediaInput.None, MediaInput.None)
             }.getOrThrow()
 
         assertNull(resolved.resolvedVideoUrl)
@@ -65,7 +65,10 @@ class ResolveMemorialMediaForSaveUseCaseTest {
 
         val resolved =
             runBlocking {
-                ResolveMemorialMediaForSaveUseCase(videoRepo, photoRepo)(null, null, null)
+                ResolveMemorialMediaForSaveUseCase(videoRepo, photoRepo)(
+                    video = MediaInput.Remote("https://cdn/existing-v.mp4"),
+                    photo = MediaInput.Local("content://fresh-photo"),
+                )
             }.getOrThrow()
 
         assertEquals("existing-v", resolved.resolvedVideoUrl)
@@ -73,20 +76,18 @@ class ResolveMemorialMediaForSaveUseCaseTest {
     }
 
     @Test
-    fun `입력 인자를 각 Repository 에 그대로 전달`() {
+    fun `입력 MediaInput 을 각 Repository 에 그대로 전달`() {
         val videoRepo = FakeVideoUploadRepository()
         val photoRepo = FakePhotoUploadRepository()
 
+        val videoInput = MediaInput.Local("content://fv")
+        val photoInput = MediaInput.Remote("https://cdn/mp.jpg")
         runBlocking {
-            ResolveMemorialMediaForSaveUseCase(videoRepo, photoRepo)(
-                funeralVideoUrl = "fv",
-                memorialPhotoUrl = "mp",
-                pickedMemorialPhotoUri = "pick",
-            )
+            ResolveMemorialMediaForSaveUseCase(videoRepo, photoRepo)(videoInput, photoInput)
         }
 
-        assertEquals("fv", videoRepo.resolveVideoArg)
-        assertEquals("mp" to "pick", photoRepo.resolvePhotoArgs)
+        assertEquals(videoInput, videoRepo.resolveVideoArg)
+        assertEquals(photoInput, photoRepo.resolvePhotoArg)
     }
 
     @Test
@@ -97,7 +98,7 @@ class ResolveMemorialMediaForSaveUseCaseTest {
 
         val result =
             runBlocking {
-                ResolveMemorialMediaForSaveUseCase(videoRepo, photoRepo)("v", "p", null)
+                ResolveMemorialMediaForSaveUseCase(videoRepo, photoRepo)(MediaInput.Local("content://v"), MediaInput.None)
             }
 
         assertTrue(result.isFailure)
@@ -114,7 +115,7 @@ class ResolveMemorialMediaForSaveUseCaseTest {
 
         val result =
             runBlocking {
-                ResolveMemorialMediaForSaveUseCase(videoRepo, photoRepo)("v", "p", null)
+                ResolveMemorialMediaForSaveUseCase(videoRepo, photoRepo)(MediaInput.None, MediaInput.Remote("https://cdn/p.jpg"))
             }
 
         assertTrue(result.isFailure)
@@ -123,11 +124,11 @@ class ResolveMemorialMediaForSaveUseCaseTest {
     }
 
     private class FakeVideoUploadRepository : MemorialVideoUploadRepository {
-        var resolveVideoArg: String? = null
+        var resolveVideoArg: MediaInput? = null
         var callCount = 0
         var result: Result<VideoUploadOutcome> = Result.success(VideoUploadOutcome.Empty)
 
-        override suspend fun resolveVideo(input: String?): Result<VideoUploadOutcome> {
+        override suspend fun resolveVideo(input: MediaInput): Result<VideoUploadOutcome> {
             callCount++
             resolveVideoArg = input
             return result
@@ -135,16 +136,13 @@ class ResolveMemorialMediaForSaveUseCaseTest {
     }
 
     private class FakePhotoUploadRepository : MemorialPhotoUploadRepository {
-        var resolvePhotoArgs: Pair<String?, String?>? = null
+        var resolvePhotoArg: MediaInput? = null
         var callCount = 0
         var result: Result<PhotoUploadOutcome> = Result.success(PhotoUploadOutcome.Empty)
 
-        override suspend fun resolvePhoto(
-            existingUrl: String?,
-            pickedUri: String?,
-        ): Result<PhotoUploadOutcome> {
+        override suspend fun resolvePhoto(input: MediaInput): Result<PhotoUploadOutcome> {
             callCount++
-            resolvePhotoArgs = existingUrl to pickedUri
+            resolvePhotoArg = input
             return result
         }
     }
