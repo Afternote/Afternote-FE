@@ -9,6 +9,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import retrofit2.Retrofit
+import retrofit2.create
 import javax.inject.Singleton
 
 @Module
@@ -16,18 +17,17 @@ import javax.inject.Singleton
 object AfternoteServiceModule {
     @Provides
     @Singleton
-    fun provideAfternoteApiService(retrofit: Retrofit): AfternoteApiService = retrofit.create(AfternoteApiService::class.java)
+    fun provideAfternoteApiService(retrofit: Retrofit): AfternoteApiService = retrofit.create<AfternoteApiService>()
 
     @Provides
     @Singleton
-    fun provideMusicApiService(retrofit: Retrofit): MusicApiService = retrofit.create(MusicApiService::class.java)
+    fun provideMusicApiService(retrofit: Retrofit): MusicApiService = retrofit.create<MusicApiService>()
 
     @Provides
     @Singleton
-    fun provideReceiverAfternoteApiService(retrofit: Retrofit): ReceiverAfternoteApiService =
-        retrofit.create(ReceiverAfternoteApiService::class.java)
+    fun provideReceiverAfternoteApiService(retrofit: Retrofit): ReceiverAfternoteApiService = retrofit.create<ReceiverAfternoteApiService>()
 
     @Provides
     @Singleton
-    fun provideReceiverAuthApiService(retrofit: Retrofit): ReceiverAuthApiService = retrofit.create(ReceiverAuthApiService::class.java)
+    fun provideReceiverAuthApiService(retrofit: Retrofit): ReceiverAuthApiService = retrofit.create<ReceiverAuthApiService>()
 }
