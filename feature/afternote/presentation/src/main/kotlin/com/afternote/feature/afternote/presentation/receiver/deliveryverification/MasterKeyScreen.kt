@@ -72,7 +72,7 @@ fun MasterKeyScreen(
 }
 
 @Composable
-private fun MasterKeyScreenContent(
+internal fun MasterKeyScreenContent(
     authCodeState: TextFieldState,
     isSubmitting: Boolean,
     snackbarHostState: SnackbarHostState,
