@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.data.repositoryimpl.author
 
 import com.afternote.core.domain.repository.PhotoUploadRepository
+import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.domain.repository.author.MemorialPhotoUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.PhotoUploadOutcome
 import javax.inject.Inject
@@ -13,38 +14,32 @@ import javax.inject.Inject
 internal const val DIRECTORY_AFTERNOTES = "afternotes"
 
 /**
- * Android 의 *로컬 파일 URI* 스킴. 갤러리/카메라 picker 결과는 `content://...` 로 시작 → "아직 서버에 없음, 업로드 필요" 의 신호. `https://...` 같은 원격 URL 과 구분하는 용도.
+ * 영정 사진 *상태 해석* + 필요 시 업로드. 입력 [MediaInput] 의 sealed 분기:
+ * - [MediaInput.Local] → [PhotoUploadRepository] 업로드 후 [PhotoUploadOutcome.FreshlyUploaded]
+ * - [MediaInput.Remote] → 입력 그대로 [PhotoUploadOutcome.Existing]
+ * - [MediaInput.None] → [PhotoUploadOutcome.Empty]
  *
- * 같은 패키지의 [MemorialVideoUploadRepositoryImpl] 가 이 값을 공유하므로 `internal`.
- */
-internal const val LOCAL_CONTENT_SCHEME = "content://"
-
-/**
- * 영정 사진 *상태 해석* + 필요 시 업로드.
- *
- * `pickedUri` 가 로컬 `content://` 면 [PhotoUploadRepository] 로 업로드 후
- * [PhotoUploadOutcome.FreshlyUploaded]. 그 외엔 `existingUrl` 기준으로
- * [PhotoUploadOutcome.Existing] / [PhotoUploadOutcome.Empty] 분기.
- *
- * `content://` prefix 비교는 *data 레이어 안* 에 격리 — 도메인은 인프라 형식 디테일을 모름.
+ * 픽 우선순위·로컬/원격 판별은 호출부가 [MediaInput] 을 구성할 때 끝낸다.
  */
 class MemorialPhotoUploadRepositoryImpl
     @Inject
     constructor(
         private val photoUploadRepository: PhotoUploadRepository,
     ) : MemorialPhotoUploadRepository {
-        override suspend fun resolvePhoto(
-            existingUrl: String?,
-            pickedUri: String?,
-        ): Result<PhotoUploadOutcome> {
-            if (!pickedUri.isNullOrBlank() && pickedUri.startsWith(LOCAL_CONTENT_SCHEME)) {
-                return photoUploadRepository
-                    .upload(pickedUri, DIRECTORY_AFTERNOTES)
-                    .map { PhotoUploadOutcome.FreshlyUploaded(it) }
+        override suspend fun resolvePhoto(input: MediaInput): Result<PhotoUploadOutcome> =
+            when (input) {
+                MediaInput.None -> {
+                    Result.success(PhotoUploadOutcome.Empty)
+                }
+
+                is MediaInput.Remote -> {
+                    Result.success(PhotoUploadOutcome.Existing(input.url))
+                }
+
+                is MediaInput.Local -> {
+                    photoUploadRepository
+                        .upload(input.uri, DIRECTORY_AFTERNOTES)
+                        .map { PhotoUploadOutcome.FreshlyUploaded(it) }
+                }
             }
-            val fallback = existingUrl?.takeIf { it.isNotBlank() }
-            return Result.success(
-                if (fallback == null) PhotoUploadOutcome.Empty else PhotoUploadOutcome.Existing(fallback),
-            )
-        }
     }

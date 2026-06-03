@@ -1,0 +1,74 @@
+package com.afternote.core.data.mapper.auth
+
+import com.afternote.core.model.AccountRegistration
+import com.afternote.core.model.Session
+import com.afternote.core.model.TokenBundle
+import com.afternote.core.network.dto.LoginData
+import com.afternote.core.network.dto.ReissueData
+import com.afternote.core.network.dto.SignUpData
+import org.junit.Assert.assertEquals
+import org.junit.Test
+
+/**
+ * [AuthMapper] DTO → Domain 변환 회귀 가드.
+ *
+ * 매퍼가 단순 필드 복사라 분기 로직은 없지만, `accessToken` ↔ `refreshToken` 자리 바뀜·필드 누락·
+ * nullable 경계(`isNewUser`) 같은 사고를 잡는다. 두 토큰엔 서로 다른 sentinel 값을 줘서 자리가
+ * 바뀌면 도메인 객체 equals 비교가 실패하도록 하고, 결과는 전체 객체 단위로 비교한다.
+ */
+class AuthMapperTest {
+    @Test
+    fun `toSignUpResult - userId·email 매핑`() {
+        val result = AuthMapper.toSignUpResult(SignUpData(userId = 42L, email = "user@example.com"))
+
+        assertEquals(AccountRegistration(userId = 42L, email = "user@example.com"), result)
+    }
+
+    @Test
+    fun `toDefaultLoginResult - 토큰 매핑 (자리 바뀜 가드)`() {
+        val result =
+            AuthMapper.toDefaultLoginResult(
+                LoginData.DefaultLoginData(accessToken = "access-1", refreshToken = "refresh-1"),
+            )
+
+        assertEquals(
+            Session.DefaultSession(accessToken = "access-1", refreshToken = "refresh-1"),
+            result,
+        )
+    }
+
+    @Test
+    fun `toSocialLoginResult - 토큰·isNewUser 매핑 (null 경계 포함)`() {
+        // 서버가 newUser 를 생략할 수 있어(null) 그대로 보존돼야 한다 — true/false/null 왕복 확인.
+        // 토큰 자리 바뀜도 같은 케이스에서 객체 비교로 함께 가드.
+        listOf(true, false, null).forEach { newUser ->
+            val result =
+                AuthMapper.toSocialLoginResult(
+                    LoginData.SocialLoginData(
+                        accessToken = "access-1",
+                        refreshToken = "refresh-1",
+                        isNewUser = newUser,
+                    ),
+                )
+
+            assertEquals(
+                "isNewUser=$newUser",
+                Session.SocialSession(accessToken = "access-1", refreshToken = "refresh-1", isNewUser = newUser),
+                result,
+            )
+        }
+    }
+
+    @Test
+    fun `toRotateTokenResult - 토큰 매핑 (자리 바뀜 가드)`() {
+        val result =
+            AuthMapper.toRotateTokenResult(
+                ReissueData(accessToken = "access-1", refreshToken = "refresh-1"),
+            )
+
+        assertEquals(
+            TokenBundle(accessToken = "access-1", refreshToken = "refresh-1"),
+            result,
+        )
+    }
+}

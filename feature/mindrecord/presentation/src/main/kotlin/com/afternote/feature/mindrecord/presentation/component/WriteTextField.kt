@@ -1,5 +1,8 @@
 package com.afternote.feature.mindrecord.presentation.component
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,6 +55,9 @@ fun WriteTextField(
     modifier: Modifier = Modifier,
     value: String? = null,
     onValueChange: ((String) -> Unit)? = null,
+    onSaveDraftClick: () -> Unit = {},
+    onDraftCountClick: () -> Unit = {},
+    draftCount: Int = 0,
 ) {
     val state = rememberRichTextState()
 
@@ -74,6 +80,7 @@ fun WriteTextField(
         )
 
     var showTextStyleToolbar by remember { mutableStateOf(false) }
+    var sheet: KeyboardSheet by remember { mutableStateOf(KeyboardSheet.None) }
     val imeVisible = WindowInsets.isImeVisible
     val editorFocusRequester = remember { FocusRequester() }
 
@@ -85,6 +92,32 @@ fun WriteTextField(
         action()
         runCatching { editorFocusRequester.requestFocus() }
     }
+
+    // 선택된 미디어 URI 를 HTML 태그로 감싸 에디터에 append. compose-richeditor 의 setHtml 이
+    // <img>·<a href> 같은 표준 태그를 파싱해 rich span 으로 변환한다.
+    // 업로드 → 영구 URL 치환은 후속 PR (지금은 raw content:// URI 를 그대로 src/href 로 사용).
+    fun appendMediaToEditor(
+        uri: Uri?,
+        asImage: Boolean,
+    ) {
+        if (uri == null) return
+        val html =
+            if (asImage) "<img src=\"$uri\" />" else "<a href=\"$uri\">$uri</a>"
+        keepEditorFocus { state.setHtml(state.toHtml() + html) }
+    }
+
+    val imageLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            appendMediaToEditor(uri, asImage = true)
+        }
+    val voiceLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            appendMediaToEditor(uri, asImage = false)
+        }
+    val fileLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            appendMediaToEditor(uri, asImage = false)
+        }
 
     Column(modifier = modifier.fillMaxSize()) {
         Box(
@@ -151,8 +184,58 @@ fun WriteTextField(
             onAlignChange = { align ->
                 keepEditorFocus { state.addParagraphStyle(ParagraphStyle(textAlign = align)) }
             },
+            onLinkClick = { sheet = KeyboardSheet.MediaSelect },
+            onSaveDraftClick = onSaveDraftClick,
+            onDraftCountClick = onDraftCountClick,
+            draftCount = draftCount,
         )
     }
+
+    when (sheet) {
+        KeyboardSheet.None -> {
+            Unit
+        }
+
+        KeyboardSheet.MediaSelect -> {
+            MediaSelectBottomSheet(
+                onDismiss = { sheet = KeyboardSheet.None },
+                onImageClick = {
+                    sheet = KeyboardSheet.None
+                    imageLauncher.launch("image/*")
+                },
+                onVoiceClick = {
+                    sheet = KeyboardSheet.None
+                    voiceLauncher.launch("audio/*")
+                },
+                onFileClick = {
+                    sheet = KeyboardSheet.None
+                    fileLauncher.launch("*/*")
+                },
+                onLinkClick = { sheet = KeyboardSheet.LinkAdd },
+            )
+        }
+
+        KeyboardSheet.LinkAdd -> {
+            LinkBottomSheet(
+                onDismiss = { sheet = KeyboardSheet.None },
+                onConfirm = { url ->
+                    keepEditorFocus {
+                        state.setHtml(state.toHtml() + "<a href=\"$url\">$url</a>")
+                    }
+                    sheet = KeyboardSheet.None
+                },
+            )
+        }
+    }
+}
+
+/** [WriteTextField] 의 키보드 영역에서 토글되는 바텀시트 상태. 한 번에 하나만 표시한다. */
+private sealed interface KeyboardSheet {
+    data object None : KeyboardSheet
+
+    data object MediaSelect : KeyboardSheet
+
+    data object LinkAdd : KeyboardSheet
 }
 
 private fun TextStyleType.toSpanStyle(): SpanStyle =

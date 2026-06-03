@@ -1,8 +1,5 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.domain.repository.UserRepository
@@ -14,11 +11,11 @@ import com.afternote.feature.mindrecord.domain.model.WeeklyReportDay
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportEmotion
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
 import com.afternote.feature.mindrecord.presentation.R
-import com.afternote.feature.mindrecord.presentation.component.EmotionBubble
 import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
 import com.afternote.feature.mindrecord.presentation.model.DayBackground
 import com.afternote.feature.mindrecord.presentation.model.DayContent
 import com.afternote.feature.mindrecord.presentation.model.DayItem
+import com.afternote.feature.mindrecord.presentation.model.EmotionKeyword
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
@@ -184,7 +181,7 @@ class WeeklyReportViewModel
                         report.deepThoughtAmount to MindRecordCategoryUi.DeepThought,
                     ),
                 weekDays = mapWeekDays(monday, report.week),
-                emotionBubbles = mapEmotionBubbles(report.emotions),
+                emotionKeywords = mapEmotionKeywords(report.emotions),
                 summaryText = report.summaryText,
                 dailyQuestions = report.dailyQuestions.map { it.toUi() },
             )
@@ -204,31 +201,15 @@ class WeeklyReportViewModel
                     TodayMood.SAD -> "😢"
                 }
 
-            // 4개 슬롯의 크기/위치/색상은 디자인 시안에 맞춰 고정. API 의 emotions 를 percentage
-            // 내림차순으로 정렬해 슬롯에 채워 넣어, 1위가 가장 크고 진한 버블이 되도록 배치.
-            private val BUBBLE_SLOTS: List<BubbleSlot> =
-                listOf(
-                    BubbleSlot(size = 100.dp, bgColor = Color(0xFF212121), offsetX = 0.dp, offsetY = 30.dp),
-                    BubbleSlot(size = 82.dp, bgColor = Color(0xFF424242), offsetX = 88.dp, offsetY = 0.dp),
-                    BubbleSlot(size = 68.dp, bgColor = Color(0xFF616161), offsetX = 158.dp, offsetY = 68.dp),
-                    BubbleSlot(size = 58.dp, bgColor = Color(0xFF9E9E9E), offsetX = 230.dp, offsetY = 42.dp),
-                )
+            // 카드 측에서 키워드 개수(0~4)에 따라 슬롯(size·offset·color)을 결정하므로,
+            // 여기선 percentage 내림차순으로 정렬해 최대 4건만 잘라 키워드·카운트만 노출한다.
+            private const val MAX_EMOTION_KEYWORDS = 4
 
-            private fun mapEmotionBubbles(emotions: List<WeeklyReportEmotion>): List<EmotionBubble> =
+            private fun mapEmotionKeywords(emotions: List<WeeklyReportEmotion>): List<EmotionKeyword> =
                 emotions
                     .sortedByDescending { it.percentage }
-                    .take(BUBBLE_SLOTS.size)
-                    .mapIndexed { index, emotion ->
-                        val slot = BUBBLE_SLOTS[index]
-                        EmotionBubble(
-                            keyword = emotion.keyword,
-                            count = emotion.percentage,
-                            size = slot.size,
-                            bgColor = slot.bgColor,
-                            offsetX = slot.offsetX,
-                            offsetY = slot.offsetY,
-                        )
-                    }
+                    .take(MAX_EMOTION_KEYWORDS)
+                    .map { EmotionKeyword(keyword = it.keyword, count = it.percentage) }
 
             private fun WeeklyReportDailyQuestion.toUi(): DailyQuestion =
                 DailyQuestion(
@@ -252,11 +233,4 @@ class WeeklyReportViewModel
                 return LocalDate.now()
             }
         }
-
-        private data class BubbleSlot(
-            val size: Dp,
-            val bgColor: Color,
-            val offsetX: Dp,
-            val offsetY: Dp,
-        )
     }

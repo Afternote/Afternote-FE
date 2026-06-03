@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.data.di
 
 import com.afternote.feature.afternote.data.repositoryimpl.receiver.ReceiverAuthRepositoryImpl
-import com.afternote.feature.afternote.domain.repository.receiver.ReceiverAuthRepository
+import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

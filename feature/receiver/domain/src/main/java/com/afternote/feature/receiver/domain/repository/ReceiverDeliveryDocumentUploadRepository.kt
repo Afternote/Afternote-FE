@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.domain.repository.receiver
+package com.afternote.feature.receiver.domain.repository
 
 /**
  * 수신자 열람 신청 흐름의 증빙 서류 업로드 전용 Repository (이슈 #215, 디자인 6·7·8).

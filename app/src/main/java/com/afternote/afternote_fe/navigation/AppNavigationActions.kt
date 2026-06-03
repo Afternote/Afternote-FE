@@ -115,6 +115,14 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
             override fun onWriteSubmitSuccess() {
                 navController.popBackStack()
             }
+
+            override fun onNavigateToDraftList() {
+                navController.navigate(MindRecordRoute.DraftListRoute)
+            }
+
+            override fun onDraftListBack() {
+                navController.popBackStack()
+            }
         }
     }
 

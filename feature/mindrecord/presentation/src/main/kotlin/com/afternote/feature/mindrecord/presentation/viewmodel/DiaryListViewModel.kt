@@ -3,7 +3,7 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.ui.UiText
-import com.afternote.feature.mindrecord.domain.model.Diary
+import com.afternote.feature.mindrecord.domain.model.DiaryList
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.mapper.toUi
@@ -43,13 +43,19 @@ class DiaryListViewModel
             load(yearMonth)
         }
 
+        fun delete(id: Long) {
+            viewModelScope.launch {
+                repository.delete(id).onSuccess { load() }
+            }
+        }
+
         private fun load(yearMonth: YearMonth = YearMonth.now()) {
             viewModelScope.launch {
                 internalState.update { it.copy(loadPhase = LoadPhase.Loading) }
                 repository
                     .getList(yearMonth = yearMonth.toString(), draftOnly = null)
-                    .onSuccess { list ->
-                        internalState.update { it.copy(loadPhase = LoadPhase.Loaded(list)) }
+                    .onSuccess { result ->
+                        internalState.update { it.copy(loadPhase = LoadPhase.Loaded(result)) }
                     }.onFailure { e ->
                         internalState.update {
                             it.copy(
@@ -74,7 +80,7 @@ class DiaryListViewModel
             data object Loading : LoadPhase
 
             data class Loaded(
-                val diaries: List<Diary>,
+                val list: DiaryList,
             ) : LoadPhase
 
             data class Failed(
@@ -84,8 +90,20 @@ class DiaryListViewModel
 
         private fun InternalState.toUiState(): DiaryListUiState =
             when (val phase = loadPhase) {
-                LoadPhase.Loading -> DiaryListUiState.Loading
-                is LoadPhase.Loaded -> DiaryListUiState.Success(phase.diaries.map { it.toUi() })
-                is LoadPhase.Failed -> DiaryListUiState.Error(phase.message)
+                LoadPhase.Loading -> {
+                    DiaryListUiState.Loading
+                }
+
+                is LoadPhase.Loaded -> {
+                    DiaryListUiState.Success(
+                        diaries = phase.list.diaries.map { it.toUi() },
+                        monthDiaryCount = phase.list.monthDiaryCount,
+                        weeklyDominantMood = phase.list.weeklyDominantMood,
+                    )
+                }
+
+                is LoadPhase.Failed -> {
+                    DiaryListUiState.Error(phase.message)
+                }
             }
     }

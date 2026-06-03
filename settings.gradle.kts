@@ -53,6 +53,10 @@ include(":feature:onboarding:data")
 include(":feature:onboarding:domain")
 include(":feature:onboarding:presentation")
 
+include(":feature:receiver:data")
+include(":feature:receiver:domain")
+include(":feature:receiver:presentation")
+
 include(":feature:setting:data")
 include(":feature:setting:domain")
 include(":feature:setting:presentation")

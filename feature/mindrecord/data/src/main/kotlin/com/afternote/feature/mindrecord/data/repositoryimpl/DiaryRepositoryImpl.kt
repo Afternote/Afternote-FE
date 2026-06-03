@@ -5,8 +5,8 @@ import com.afternote.core.network.model.requireStatus
 import com.afternote.feature.mindrecord.data.api.DiaryApiService
 import com.afternote.feature.mindrecord.data.mapper.toDomain
 import com.afternote.feature.mindrecord.data.mapper.toRequest
-import com.afternote.feature.mindrecord.domain.model.Diary
 import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
+import com.afternote.feature.mindrecord.domain.model.DiaryList
 import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import javax.inject.Inject
@@ -19,13 +19,12 @@ class DiaryRepositoryImpl
         override suspend fun getList(
             yearMonth: String,
             draftOnly: Boolean?,
-        ): Result<List<Diary>> =
+        ): Result<DiaryList> =
             runCatching {
                 api
                     .getDiaries(yearMonth = yearMonth, draftOnly = draftOnly)
                     .requireData()
-                    .diaries
-                    .map { it.toDomain() }
+                    .toDomain()
             }
 
         override suspend fun create(payload: DiaryCreatePayload): Result<Unit> =

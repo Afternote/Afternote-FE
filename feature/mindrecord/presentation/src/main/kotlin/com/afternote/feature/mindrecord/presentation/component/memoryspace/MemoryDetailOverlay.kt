@@ -38,6 +38,7 @@ import com.afternote.core.ui.modifierextention.shimmerLoadingPlaceholder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryItem
+import com.afternote.feature.mindrecord.presentation.util.htmlToPlainText
 
 @Composable
 fun MemoryDetailOverlay(
@@ -141,7 +142,7 @@ fun MemoryDetailOverlay(
                 )
 
                 Text(
-                    text = memory.content,
+                    text = memory.content.htmlToPlainText(),
                     style =
                         AfternoteDesign.typography.inter.copy(
                             fontSize = 14.sp,

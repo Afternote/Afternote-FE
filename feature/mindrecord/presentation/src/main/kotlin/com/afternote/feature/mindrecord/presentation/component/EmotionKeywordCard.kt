@@ -5,13 +5,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
@@ -27,76 +27,62 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R
+import com.afternote.feature.mindrecord.presentation.model.EmotionKeyword
 
-// ───────────────────────────────────────────────
-// 데이터 모델
-// ───────────────────────────────────────────────
-
-data class EmotionBubble(
-    val keyword: String,
-    val count: Int,
-    val size: Dp, // 원 지름
-    val bgColor: Color,
-    val textColor: Color = Color.White,
-    val offsetX: Dp,
-    val offsetY: Dp,
-)
-
-// ───────────────────────────────────────────────
-// 메인 카드
-// ───────────────────────────────────────────────
-
+/**
+ * 주간 리포트의 "나의 감정 키워드" 카드.
+ *
+ * Figma 노드 2249:14059 — 키워드 개수(0~4)별로 버블 layout 이 다르며, 카드 자체에서 슬롯을 결정한다
+ * (ViewModel 은 keyword·count 만 넘긴다).
+ *
+ * - 4건: 가족(96) / 감사(72) / 사랑(56) / 그리움(64)
+ * - 3건: 가족(96) / 감사(72) / 사랑(56)
+ * - 2건: 가족(96) / 감사(72)
+ * - 1건: 가족(96)
+ * - 0건: 빈 96dp 검은 원에 "0" 만 표시 + 별도 안내 메시지(호출부 책임)
+ */
 @Composable
 fun EmotionKeywordCard(
+    keywords: List<EmotionKeyword>,
+    descriptionText: String,
     modifier: Modifier = Modifier,
     title: String = stringResource(R.string.mindrecord_emotion_card_title),
-    bubbles: List<EmotionBubble> = defaultBubbles(),
-    descriptionText: String = stringResource(R.string.mindrecord_emotion_card_default_description),
 ) {
-    val canvasHeight = 180.dp // 버블 영역 고정 높이
+    val capped = keywords.take(MAX_KEYWORDS)
 
     OutlinedCard(
-        colors =
-            CardDefaults.cardColors(
-                containerColor = Color(0xFFFFFFFF),
-            ),
-        border = BorderStroke(1.dp, color = Color(0xFF000000).copy(alpha = 0.05f)),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, AfternoteDesign.colors.gray2),
         modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // ── 타이틀 ──
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
             Text(
                 text = title,
-                style = AfternoteDesign.typography.bodyLargeR,
+                style = AfternoteDesign.typography.bodyLargeB,
                 color = AfternoteDesign.colors.gray9,
             )
 
-            // ── 버블 캔버스 ──
+            // Figma Frame 128: 320×133, 버블은 그 안에서 absolute offset.
             Box(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .height(canvasHeight),
+                        .height(BUBBLE_AREA_HEIGHT),
             ) {
-                bubbles.forEach { bubble ->
-                    BubbleItem(
-                        bubble = bubble,
-                        modifier = Modifier.offset(x = bubble.offsetX, y = bubble.offsetY),
-                    )
+                if (capped.isEmpty()) {
+                    EmptyBubble()
+                } else {
+                    val slots = slotsFor(capped.size)
+                    capped.forEachIndexed { index, keyword ->
+                        Bubble(slot = slots[index], keyword = keyword)
+                    }
                 }
             }
 
-            // ── 구분선 ──
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(Color(0xFFEEEEEE)),
-            )
-
-            Spacer(modifier = Modifier.height(5.dp))
-            // ── 하단 설명 텍스트 ──
             Text(
                 text = descriptionText,
                 style = AfternoteDesign.typography.bodySmallB,
@@ -106,94 +92,154 @@ fun EmotionKeywordCard(
     }
 }
 
-// ───────────────────────────────────────────────
-// 개별 버블
-// ───────────────────────────────────────────────
-
 @Composable
-private fun BubbleItem(
-    bubble: EmotionBubble,
-    modifier: Modifier = Modifier,
+private fun Bubble(
+    slot: BubbleSlot,
+    keyword: EmotionKeyword,
 ) {
     Box(
-        contentAlignment = Alignment.Center,
         modifier =
-            modifier
-                .size(bubble.size)
+            Modifier
+                .offset(x = slot.offsetX, y = slot.offsetY)
+                .size(slot.size)
                 .clip(CircleShape)
-                .background(bubble.bgColor),
+                .background(slot.color),
+        contentAlignment = Alignment.Center,
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = bubble.keyword,
-                color = bubble.textColor,
-                style = AfternoteDesign.typography.bodySmallB,
+                text = keyword.keyword,
+                style =
+                    if (slot.size >= LARGE_TEXT_THRESHOLD) {
+                        AfternoteDesign.typography.bodyLargeB
+                    } else {
+                        AfternoteDesign.typography.bodySmallB
+                    },
+                color = Color.White,
             )
-            Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = bubble.count.toString(),
-                color = bubble.textColor.copy(alpha = 0.7f),
-                style = AfternoteDesign.typography.captionLargeR,
+                text = keyword.count.toString(),
+                style = AfternoteDesign.typography.footnoteCaption,
+                color = AfternoteDesign.colors.gray3,
             )
         }
     }
 }
 
-// ───────────────────────────────────────────────
-// 기본 버블 데이터 (이미지 기준 위치/크기)
-// ───────────────────────────────────────────────
+@Composable
+private fun EmptyBubble() {
+    val slot = EMPTY_SLOT
+    Box(
+        modifier =
+            Modifier
+                .offset(x = slot.offsetX, y = slot.offsetY)
+                .size(slot.size)
+                .clip(CircleShape)
+                .background(slot.color),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = "0",
+            style = AfternoteDesign.typography.bodySmallR,
+            color = Color.White,
+        )
+    }
+}
 
-fun defaultBubbles() =
-    listOf(
-        // 가족 - 가장 크고 왼쪽 상단, 진한 회색
-        EmotionBubble(
-            keyword = "가족",
-            count = 8,
-            size = 100.dp,
-            bgColor = Color(0xFF212121),
-            offsetX = 0.dp,
-            offsetY = 30.dp,
-        ),
-        // 감사 - 두 번째 크기, 중앙 상단
-        EmotionBubble(
-            keyword = "감사",
-            count = 8,
-            size = 82.dp,
-            bgColor = Color(0xFF424242),
-            offsetX = 88.dp,
-            offsetY = 0.dp,
-        ),
-        // 사랑 - 세 번째 크기, 중앙 하단
-        EmotionBubble(
-            keyword = "사랑",
-            count = 8,
-            size = 68.dp,
-            bgColor = Color(0xFF616161),
-            offsetX = 158.dp,
-            offsetY = 68.dp,
-        ),
-        // 그리움 - 가장 작고 오른쪽
-        EmotionBubble(
-            keyword = "그리움",
-            count = 8,
-            size = 58.dp,
-            bgColor = Color(0xFF9E9E9E),
-            offsetX = 230.dp,
-            offsetY = 42.dp,
-        ),
-    )
+// ── Slot ──────────────────────────────────────────────────────────────────────
 
-// ───────────────────────────────────────────────
-// Preview
-// ───────────────────────────────────────────────
+private data class BubbleSlot(
+    val size: Dp,
+    val offsetX: Dp,
+    val offsetY: Dp,
+    val color: Color,
+)
+
+private const val MAX_KEYWORDS = 4
+private val BUBBLE_AREA_HEIGHT = 133.dp
+private val LARGE_TEXT_THRESHOLD = 72.dp
+
+// 색상 순위: 1위(가장 진함) → 4위(가장 옅음)
+private val ColorRank1 = Color(0xFF212121)
+private val ColorRank2 = Color(0xFF424242)
+private val ColorRank3 = Color(0xFF616161)
+private val ColorRank4 = Color(0xFF9E9E9E)
+
+// 0건 안내용 빈 검은 원.
+private val EMPTY_SLOT =
+    BubbleSlot(size = 96.dp, offsetX = 112.dp, offsetY = 15.dp, color = ColorRank1)
+
+private fun slotsFor(count: Int): List<BubbleSlot> =
+    when (count) {
+        1 -> {
+            listOf(
+                BubbleSlot(96.dp, 112.dp, 15.dp, ColorRank1),
+            )
+        }
+
+        2 -> {
+            listOf(
+                BubbleSlot(96.dp, 78.dp, 0.dp, ColorRank1),
+                BubbleSlot(72.dp, 171.dp, 47.dp, ColorRank2),
+            )
+        }
+
+        3 -> {
+            listOf(
+                BubbleSlot(96.dp, 48.dp, 4.dp, ColorRank1),
+                BubbleSlot(72.dp, 141.dp, 51.dp, ColorRank2),
+                BubbleSlot(56.dp, 205.dp, 25.dp, ColorRank3),
+            )
+        }
+
+        else -> {
+            // 4 이상은 4 로 cap
+            listOf(
+                BubbleSlot(96.dp, 37.dp, 30.dp, ColorRank1),
+                BubbleSlot(72.dp, 124.dp, 0.dp, ColorRank2),
+                BubbleSlot(56.dp, 149.dp, 72.dp, ColorRank3),
+                BubbleSlot(64.dp, 200.dp, 36.dp, ColorRank4),
+            )
+        }
+    }
+
+// ── Preview ───────────────────────────────────────────────────────────────────
 
 @Preview(showBackground = true, backgroundColor = 0xFFF5F5F5, widthDp = 360)
 @Composable
-private fun EmotionKeywordCardPreview() {
+private fun EmotionKeywordCardPreview4() {
     AfternoteTheme {
-        EmotionKeywordCard()
+        EmotionKeywordCard(
+            keywords =
+                listOf(
+                    EmotionKeyword("가족", 8),
+                    EmotionKeyword("감사", 8),
+                    EmotionKeyword("사랑", 8),
+                    EmotionKeyword("그리움", 8),
+                ),
+            descriptionText = "이번 주 박서연 님의 기록에서는 '가족'을 위한 '감사'의 마음이 엿보입니다.",
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFF5F5F5, widthDp = 360)
+@Composable
+private fun EmotionKeywordCardPreview1() {
+    AfternoteTheme {
+        EmotionKeywordCard(
+            keywords = listOf(EmotionKeyword("가족", 8)),
+            descriptionText = "이번 주 박서연 님의 기록에서는 '가족'의 마음이 엿보입니다.",
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFF5F5F5, widthDp = 360)
+@Composable
+private fun EmotionKeywordCardPreview0() {
+    AfternoteTheme {
+        EmotionKeywordCard(
+            keywords = emptyList(),
+            descriptionText = "이번 주 박서연 님의 기록에서는 키워드가 나오지 않았어요.",
+        )
     }
 }

@@ -5,17 +5,13 @@ import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
-internal fun Project.configureAndroidCommon(
-    extension: CommonExtension
-) {
+internal fun Project.configureAndroidCommon(extension: CommonExtension) {
     extension.compileSdk = 36
 
-    when (extension) {
-        is ApplicationExtension -> extension.configureDefaultConfig()
-        is LibraryExtension -> extension.configureDefaultConfig()
-    }
+    extension.configureDefaultConfig(this)
 
-    extensions.findByType(org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension::class.java)
+    extensions
+        .findByType(org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension::class.java)
         ?.compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
         }
@@ -25,11 +21,10 @@ internal fun Project.configureAndroidCommon(
         testImplementation("junit")
         androidTestImplementation("androidx-junit")
         androidTestImplementation("androidx-espresso-core")
-
     }
 }
 
-private fun CommonExtension.configureDefaultConfig() {
+private fun CommonExtension.configureDefaultConfig(project: Project) {
     when (this) {
         is ApplicationExtension -> {
             defaultConfig {
@@ -41,11 +36,15 @@ private fun CommonExtension.configureDefaultConfig() {
                 targetCompatibility = JavaVersion.VERSION_17
             }
         }
+
         is LibraryExtension -> {
             defaultConfig {
                 minSdk = 26
                 testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-                consumerProguardFiles("consumer-rules.pro")
+                // consumer-rules.pro 가 있는 모듈만 등록 — 없는 모듈(domain·res 등)엔 빈 파일을 강요하지 않음
+                if (project.file("consumer-rules.pro").exists()) {
+                    consumerProguardFiles("consumer-rules.pro")
+                }
             }
             compileOptions {
                 sourceCompatibility = JavaVersion.VERSION_17
@@ -55,9 +54,7 @@ private fun CommonExtension.configureDefaultConfig() {
     }
 }
 
-internal fun Project.configureCompose(
-    extension: CommonExtension
-) {
+internal fun Project.configureCompose(extension: CommonExtension) {
     when (extension) {
         is ApplicationExtension -> extension.buildFeatures { compose = true }
         is LibraryExtension -> extension.buildFeatures { compose = true }
@@ -72,27 +69,5 @@ internal fun Project.configureCompose(
         implementation("androidx-activity-compose")
         implementation("androidx-compose-ui-tooling-preview")
         debugImplementation("androidx-compose-ui-tooling")
-    }
-}
-
-private fun ApplicationExtension.configureDefaultConfig() {
-    defaultConfig {
-        minSdk = 26
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-}
-
-private fun LibraryExtension.configureDefaultConfig() {
-    defaultConfig {
-        minSdk = 26
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
     }
 }
