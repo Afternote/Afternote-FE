@@ -11,6 +11,7 @@ internal fun AfternoteHomeNavigation(
     onNavigateToGalleryDetail: (itemId: String) -> Unit,
     onNavigateToMemorialGuidelineDetail: (itemId: String) -> Unit,
     onNavigateToNewEditor: (initialCategory: String?) -> Unit,
+    onNavigateToSetting: () -> Unit,
 ) {
     AfternoteHomeEntry(
         actions =
@@ -23,6 +24,7 @@ internal fun AfternoteHomeNavigation(
                         if (selectedTab == AfternoteCategory.ALL) null else selectedTab.navKey
                     onNavigateToNewEditor(initialCategory)
                 },
+                onSettingClick = onNavigateToSetting,
             ),
     )
 }
