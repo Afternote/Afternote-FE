@@ -8,6 +8,7 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
@@ -27,6 +28,7 @@ fun CaptionLabeledTextField(
     label: String,
     state: TextFieldState,
     modifier: Modifier = Modifier,
+    placeholder: String = stringResource(R.string.core_ui_text_field_placeholder),
     keyboardType: KeyboardType = KeyboardType.Text,
 ) {
     Column(
@@ -40,6 +42,7 @@ fun CaptionLabeledTextField(
         )
         AfternoteTextField(
             state = state,
+            placeholder = placeholder,
             keyboardType = keyboardType,
         )
     }
