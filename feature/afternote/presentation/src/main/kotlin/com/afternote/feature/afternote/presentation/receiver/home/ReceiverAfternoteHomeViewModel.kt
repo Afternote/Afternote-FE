@@ -7,7 +7,7 @@ import androidx.paging.cachedIn
 import androidx.paging.filter
 import androidx.paging.map
 import com.afternote.feature.afternote.domain.AfternoteServiceType
-import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItemDto
+import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
@@ -58,7 +58,7 @@ class ReceiverAfternoteHomeViewModel
         }
     }
 
-private fun AfterNoteListItemDto.toUiModel(): ListItemUiModel {
+private fun AfterNoteListItem.toUiModel(): ListItemUiModel {
     val typeKey = sourceType.orEmpty()
     val displayRes = getAfternoteDisplayRes(typeKey)
     val serviceName = getServiceNameForTypeKey(typeKey)

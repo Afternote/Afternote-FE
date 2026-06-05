@@ -5,7 +5,7 @@ import androidx.paging.PagingState
 import com.afternote.core.network.model.requireData
 import com.afternote.feature.afternote.data.mapper.toReceiverDomainList
 import com.afternote.feature.afternote.data.service.ReceiverAfternoteApiService
-import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItemDto
+import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem
 import kotlinx.coroutines.CancellationException
 
 /**
@@ -17,10 +17,10 @@ import kotlinx.coroutines.CancellationException
  */
 internal class ReceiverAfternotePagingSource(
     private val api: ReceiverAfternoteApiService,
-) : PagingSource<Int, AfterNoteListItemDto>() {
-    override fun getRefreshKey(state: PagingState<Int, AfterNoteListItemDto>): Int? = null
+) : PagingSource<Int, AfterNoteListItem>() {
+    override fun getRefreshKey(state: PagingState<Int, AfterNoteListItem>): Int? = null
 
-    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, AfterNoteListItemDto> =
+    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, AfterNoteListItem> =
         try {
             val response = api.getReceiverAfternotes().requireData()
             LoadResult.Page(
