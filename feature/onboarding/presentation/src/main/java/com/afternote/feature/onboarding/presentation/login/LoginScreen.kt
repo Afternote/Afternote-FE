@@ -261,8 +261,8 @@ private fun SocialLoginGroup(
             contentPadding = PaddingValues(12.dp),
             colors =
                 ButtonDefaults.outlinedButtonColors(
-                    // 💡 주의: 0xF2F2F2 앞에 투명도(FF)를 붙여야 색상이 정상적으로 보입니다.
-                    containerColor = Color(0xFFF2F2F2),
+                    // 근사 토큰: 원본 #F2F2F2 → 최근접 gray2(#EEEEEE, 채널당 -4)
+                    containerColor = AfternoteDesign.colors.gray2,
                     contentColor = AfternoteDesign.colors.gray8,
                 ),
             border = BorderStroke(1.dp, AfternoteDesign.colors.gray3),
