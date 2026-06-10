@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.data.dto
 
+import com.afternote.feature.afternote.data.mapper.formatDateFromServer
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
 import com.afternote.feature.receiver.domain.model.ReceiverAuthPresignedUrl
@@ -53,7 +54,8 @@ data class DeliveryVerificationResponse(
 @Serializable
 data class ReceiverMessageResponse(
     @SerialName("senderName") val senderName: String,
-    @SerialName("message") val message: String,
+    @SerialName("message") val message: String? = null,
+    @SerialName("createdAt") val createdAt: String? = null,
 )
 
 fun ReceiverAuthVerifyResponse.toDomain(): ReceiverIdentity =
@@ -86,4 +88,5 @@ fun ReceiverMessageResponse.toDomain(): SenderMessageInfo =
     SenderMessageInfo(
         senderName = senderName,
         message = message,
+        createdAt = createdAt?.let(::formatDateFromServer),
     )

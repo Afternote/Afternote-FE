@@ -2,19 +2,34 @@ package com.afternote.feature.afternote.data.dto
 
 import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 /**
  * `ReceiverAuthDto` 의 toDomain 확장 회귀 가드.
- * 단순 전달 매핑(SenderMessageInfo·ReceiverIdentity·ReceiverAuthPresignedUrl)과,
+ * 단순 전달 매핑(SenderMessageInfo·ReceiverIdentity·ReceiverAuthPresignedUrl)과
+ * SenderMessageInfo 의 createdAt 표시 형식 변환,
  * 핵심 로직인 [DeliveryVerificationStatus.fromRaw] 의 대소문자 무시 + UNKNOWN fallback 을 검증.
  */
 class ReceiverAuthDtoMapperTest {
     @Test
     fun `ReceiverMessageResponse toDomain - SenderMessageInfo 매핑`() {
-        val result = ReceiverMessageResponse(senderName = "홍길동", message = "보고싶다").toDomain()
+        val result =
+            ReceiverMessageResponse(
+                senderName = "홍길동",
+                message = "보고싶다",
+                createdAt = "2026-06-08T12:00:53",
+            ).toDomain()
         assertEquals("홍길동", result.senderName)
         assertEquals("보고싶다", result.message)
+        assertEquals("2026.06.08", result.createdAt)
+    }
+
+    @Test
+    fun `ReceiverMessageResponse toDomain - message·createdAt 미제공 시 null 유지`() {
+        val result = ReceiverMessageResponse(senderName = "홍길동").toDomain()
+        assertNull(result.message)
+        assertNull(result.createdAt)
     }
 
     @Test
