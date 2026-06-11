@@ -3,7 +3,7 @@ package com.afternote.core.network.interceptor
 import com.afternote.core.model.TokenBundle
 import com.afternote.core.network.FakeAuthRepository
 import com.afternote.core.network.token.AccessTokenExpiryTracker
-import com.afternote.core.network.token.TokenReissueCoordinator
+import com.afternote.core.network.token.TokenReissuer
 import kotlinx.serialization.json.Json
 import okhttp3.Call
 import okhttp3.Connection
@@ -24,11 +24,11 @@ import java.util.concurrent.TimeUnit
  * [AuthInterceptor] 선제 reissue·`expiresIn` 수신 동작 회귀 가드 (#408).
  *
  * 가짜 시계·가짜 chain 기반 — 검증 계약:
- * 1. deadline 미학습이면 reissue 없이 기존 토큰 부착
+ * 1. 기록된 deadline 이 없으면 reissue 없이 기존 토큰 부착
  * 2. 만료 임박이면 요청 전 reissue 후 새 토큰 부착
  * 3. 선제 reissue 실패는 best-effort — 기존 토큰으로 진행하고 clearSession 하지 않음
  *    (Fake 의 clearSession 이 error 를 던지므로 호출 자체가 테스트 실패로 드러난다)
- * 4. 성공 응답 봉투의 expiresIn 을 deadline 으로 학습
+ * 4. 성공 응답 봉투의 expiresIn 을 deadline 으로 기록
  * 5. 기록 가드 — 실패 응답·비JSON·비봉투 본문·JSON null·rotate 가 끼어든 stale 응답은 무기록
  * 6. 토큰 부재 시 미부착 + stale deadline 폐기
  */
@@ -45,12 +45,12 @@ class AuthInterceptorTest {
         AuthInterceptor(
             authRepository = { repository },
             expiryTracker = tracker,
-            reissueCoordinator = TokenReissueCoordinator({ repository }, tracker),
+            tokenReissuer = TokenReissuer({ repository }, tracker),
             json = json,
         )
 
     @Test
-    fun `deadline 미학습 - reissue 없이 저장된 토큰 부착`() {
+    fun `기록된 deadline 없음 - reissue 없이 저장된 토큰 부착`() {
         val repository = FakeAuthRepository(accessToken = "stored-token")
         val chain = RecordingChain()
 
@@ -77,7 +77,7 @@ class AuthInterceptorTest {
 
         assertEquals(1, repository.rotateCallCount)
         assertEquals("Bearer fresh-token", chain.sentRequest?.header("Authorization"))
-        // 새 토큰 수명은 다음 목록 응답에서 재학습 — 직전 deadline 은 폐기됐어야 한다
+        // 새 토큰 수명은 다음 목록 응답에서 다시 기록됨 — 직전 deadline 은 폐기됐어야 한다
         assertFalse(tracker.isExpiringSoon())
     }
 
@@ -100,7 +100,7 @@ class AuthInterceptorTest {
     }
 
     @Test
-    fun `성공 응답 봉투의 expiresIn - deadline 으로 학습`() {
+    fun `성공 응답 봉투의 expiresIn - deadline 으로 기록`() {
         val repository = FakeAuthRepository(accessToken = "stored-token")
         val chain =
             RecordingChain(
@@ -116,7 +116,7 @@ class AuthInterceptorTest {
     }
 
     @Test
-    fun `expiresIn 없는 응답 - deadline 미학습 유지`() {
+    fun `expiresIn 없는 응답 - deadline 기록 없음 유지`() {
         val repository = FakeAuthRepository(accessToken = "stored-token")
         val chain =
             RecordingChain(
@@ -141,7 +141,7 @@ class AuthInterceptorTest {
 
         interceptor(repository).intercept(chain)
 
-        assertNotLearned()
+        assertNeverRecorded()
     }
 
     @Test
@@ -155,7 +155,7 @@ class AuthInterceptorTest {
 
         interceptor(repository).intercept(chain)
 
-        assertNotLearned()
+        assertNeverRecorded()
     }
 
     @Test
@@ -165,7 +165,7 @@ class AuthInterceptorTest {
 
         interceptor(repository).intercept(chain)
 
-        assertNotLearned()
+        assertNeverRecorded()
     }
 
     @Test
@@ -178,7 +178,7 @@ class AuthInterceptorTest {
 
         interceptor(repository).intercept(chain)
 
-        assertNotLearned()
+        assertNeverRecorded()
     }
 
     @Test
@@ -195,7 +195,7 @@ class AuthInterceptorTest {
         interceptor(repository).intercept(chain)
 
         // 구 토큰 기준 잔여 40초가 새 토큰 deadline 으로 기록되면 불필요 회전이 유발된다
-        assertNotLearned()
+        assertNeverRecorded()
     }
 
     @Test
@@ -211,8 +211,8 @@ class AuthInterceptorTest {
         assertFalse(tracker.isExpiringSoon())
     }
 
-    /** deadline 이 전혀 학습되지 않았음을 단언 — 아무리 시간이 흘러도 임박 판정이 나오면 안 된다. */
-    private fun assertNotLearned() {
+    /** deadline 이 전혀 기록되지 않았음을 단언 — 아무리 시간이 흘러도 임박 판정이 나오면 안 된다. */
+    private fun assertNeverRecorded() {
         nowElapsedMillis += Long.MAX_VALUE / 2
         assertFalse(tracker.isExpiringSoon())
     }

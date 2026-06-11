@@ -13,7 +13,7 @@ class AccessTokenExpiryTrackerTest {
     private val tracker = AccessTokenExpiryTracker { nowElapsedMillis }
 
     @Test
-    fun `deadline 미학습 상태 - 선제 갱신 대상 아님`() {
+    fun `기록된 deadline 없음 - 선제 갱신 대상 아님`() {
         assertFalse(tracker.isExpiringSoon())
     }
 
@@ -54,7 +54,7 @@ class AccessTokenExpiryTrackerTest {
     }
 
     @Test
-    fun `clear 후 - 미학습 상태로 복귀`() {
+    fun `clear 후 - 기록 없음 상태로 복귀`() {
         tracker.record(expiresInSeconds = 10)
         nowElapsedMillis = 100_000L
 

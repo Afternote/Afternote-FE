@@ -3,7 +3,7 @@ package com.afternote.core.network.interceptor
 import com.afternote.core.model.TokenBundle
 import com.afternote.core.network.FakeAuthRepository
 import com.afternote.core.network.token.AccessTokenExpiryTracker
-import com.afternote.core.network.token.TokenReissueCoordinator
+import com.afternote.core.network.token.TokenReissuer
 import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
@@ -21,7 +21,7 @@ class TokenAuthenticatorTest {
     private fun authenticator(repository: FakeAuthRepository) =
         TokenAuthenticator(
             authRepository = { repository },
-            reissueCoordinator = TokenReissueCoordinator({ repository }, tracker),
+            tokenReissuer = TokenReissuer({ repository }, tracker),
         )
 
     private fun unauthorizedResponse(
