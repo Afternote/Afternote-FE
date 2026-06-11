@@ -8,9 +8,9 @@ import java.io.IOException
  * 서버 공통 응답 봉투. 제네릭 [T] 는 `data` 필드의 페이로드 타입 — `data` 없는 엔드포인트는 `BaseResponse<Unit>`.
  *
  * 서버 스키마(`ApiResponse*`)에 더 있는 `expiresIn`(액세스 토큰 잔여 수명 초 — BE 2026-06-01 도입,
- * 클라의 만료 전 토큰 선제 갱신용이나 2026-06-11 실측 기준 라이브 무동작) 등 클라 미수신 필드는
- * 선언하지 않는다 — null 필드는 서버 직렬화에서 생략되고, `NetworkModule.provideJson` 의
- * ignoreUnknownKeys 가 선언 안 된 키를 무시한다. FE 가 토큰 선제 갱신을 구현하는 시점에 nullable 로 추가.
+ * 유효 토큰으로 호출한 일부 목록 endpoint 에서 실제로 내려옴) 등 클라 미소비 필드는 선언하지 않는다 —
+ * null 필드는 서버 직렬화에서 생략되고, `NetworkModule.provideJson` 의 ignoreUnknownKeys 가
+ * 선언 안 된 키를 무시한다. FE 가 토큰 선제 갱신을 구현하는 시점에 nullable 로 추가.
  */
 @Serializable
 data class BaseResponse<T>(

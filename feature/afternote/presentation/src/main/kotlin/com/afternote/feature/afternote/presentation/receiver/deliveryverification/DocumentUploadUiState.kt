@@ -4,10 +4,14 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
 
 /**
- * UI 에 노출할 에러 — sealed 로 "i18n string resource" vs "서버 동적 message" 상호 배타 보장.
+ * 화면이 표시할 에러 문구를 VM → UI 로 실어 나르는 상자 (payload = 운반되는 내용물).
+ * sealed 로 "i18n string resource" vs "서버 동적 message" 상호 배타 보장.
  *
  * 두 경우를 각각 별도 nullable 필드로 두면 컨벤션 의존 (둘 다 set 되는 버그 가능). sealed 로 묶으면
  * 타입 자체가 "하나만 가능" 강제.
+ *
+ * 두 타입을 String 하나로 합칠 수 없는 이유: 리소스 ID → String 변환에는 Context 가 필요해
+ * VM 에서 못 풀고(UI 의 stringResource 가 마지막에 한 번), 서버 동적 문구는 리소스가 될 수 없다.
  */
 sealed interface ErrorPayload {
     /** 클라이언트가 미리 정의한 generic 문구 (i18n 가능). 서버 message 미제공 시 fallback. */
