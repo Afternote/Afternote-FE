@@ -10,7 +10,9 @@ import javax.inject.Singleton
  *
  * 서버는 `@IncludeAccessTokenExpiresIn` 이 붙은 목록 endpoint 응답 봉투에만 `expiresIn`
  * (잔여 수명 초)을 내려준다 — `AuthInterceptor` 가 응답에서 이를 [record] 로 기록하고,
- * 다음 요청 전 [isExpiringSoon] 으로 선제 reissue 여부를 판단한다.
+ * 다음 요청 전 [isExpiringSoon] 으로 선제 reissue 여부를 판단한다. 따라서 수신 시점은
+ * 사용자 동선에 의존한다 — 운반 endpoint 를 한 번도 거치지 않으면 기록이 없어 선제 갱신이
+ * 조용히 쉬고, 만료는 401 안전망이 받는다 (발급 응답으로 옮기는 근본 해결은 #410).
  *
  * 의도적으로 영속화(DataStore)하지 않는다 — deadline 은 "수신 시각 + N초" 기반 휘발 정보라
  * 앱 재시작 후엔 어차피 stale 이고, 모르는 상태(null)면 선제 갱신만 건너뛸 뿐
