@@ -10,7 +10,8 @@ import org.junit.Test
 /**
  * [TokenReissuer] 단일 비행 계약 회귀 가드 (#408).
  * 핵심 계약 — "관찰 토큰 vs 저장 토큰" 재확인으로 늦게 진입한 경로는 회전을 생략하고,
- * 회전 시도(성공/실패 무관)는 항상 deadline 을 폐기한다.
+ * 회전 성공 시 발급 응답(#410)의 `expiresIn` 으로 deadline 을 기록(미동봉이면 폐기),
+ * 회전 실패 시 deadline 을 폐기한다.
  */
 class TokenReissuerTest {
     private var nowElapsedMillis = 0L
@@ -31,7 +32,30 @@ class TokenReissuerTest {
     }
 
     @Test
-    fun `저장 토큰이 관찰 토큰과 동일 - 회전 수행 후 새 토큰 반환, deadline 폐기`() {
+    fun `회전 성공 - 발급 응답 expiresIn 으로 deadline 기록`() {
+        val repository =
+            FakeAuthRepository(
+                accessToken = "old-token",
+                onRotateToken = {
+                    accessToken = "fresh-token"
+                    Result.success(
+                        TokenBundle(accessToken = "fresh-token", refreshToken = "r", expiresIn = 3599),
+                    )
+                },
+            )
+        val coordinator = TokenReissuer({ repository }, tracker)
+
+        val outcome = coordinator.reissue(expectedAccessToken = "old-token")
+
+        assertEquals(1, repository.rotateCallCount)
+        assertEquals(TokenReissuer.Outcome.Rotated("fresh-token"), outcome)
+        // 새 토큰 수명 3599초 기록 → 3540초 경과 후 잔여 59초 < 임계 60초
+        nowElapsedMillis += 3_540_000L
+        assertTrue(tracker.isExpiringSoon())
+    }
+
+    @Test
+    fun `회전 성공했지만 expiresIn 미동봉 - deadline 폐기`() {
         tracker.record(expiresInSeconds = 30)
         val repository =
             FakeAuthRepository(
@@ -45,8 +69,9 @@ class TokenReissuerTest {
 
         val outcome = coordinator.reissue(expectedAccessToken = "old-token")
 
-        assertEquals(1, repository.rotateCallCount)
         assertEquals(TokenReissuer.Outcome.Rotated("fresh-token"), outcome)
+        // expiresIn 이 없으면 직전 deadline 을 비워 선제 갱신을 쉰다 (401 안전망에 위임)
+        nowElapsedMillis += Long.MAX_VALUE / 2
         assertFalse(tracker.isExpiringSoon())
     }
 

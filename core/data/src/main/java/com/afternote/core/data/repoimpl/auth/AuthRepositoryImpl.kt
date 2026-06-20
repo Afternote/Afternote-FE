@@ -12,6 +12,7 @@ import com.afternote.core.network.dto.SocialLoginRequest
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.service.AuthApiService
 import com.afternote.core.network.service.TokenApiService
+import com.afternote.core.network.token.AccessTokenExpiryTracker
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -21,6 +22,8 @@ class AuthRepositoryImpl
         private val tokenDataSource: TokenDataSource,
         private val authApiService: AuthApiService,
         private val tokenApiService: TokenApiService,
+        // 발급(로그인) 응답의 expiresIn 으로 선제 reissue deadline 을 초기화한다 (#408/#410).
+        private val expiryTracker: AccessTokenExpiryTracker,
     ) : AuthRepository {
         override suspend fun clearSession() = runCatching { tokenDataSource.clearTokens() }
 
@@ -58,32 +61,37 @@ class AuthRepositoryImpl
             password: String,
         ): Result<Session.DefaultSession> =
             runCatching {
-                val response = authApiService.login(LoginRequest(email, password))
-                AuthMapper.toDefaultLoginResult(response.requireData())
+                val data = authApiService.login(LoginRequest(email, password)).requireData()
+                data.expiresIn?.let(expiryTracker::record)
+                AuthMapper.toDefaultLoginResult(data)
             }
 
         override suspend fun kakaoLogin(oauthToken: String): Result<Session.SocialSession> =
             runCatching {
-                val response =
-                    authApiService.socialLogin(
-                        SocialLoginRequest(
-                            provider = "KAKAO",
-                            accessToken = oauthToken,
-                        ),
-                    )
-                AuthMapper.toSocialLoginResult(response.requireData())
+                val data =
+                    authApiService
+                        .socialLogin(
+                            SocialLoginRequest(
+                                provider = "KAKAO",
+                                accessToken = oauthToken,
+                            ),
+                        ).requireData()
+                data.expiresIn?.let(expiryTracker::record)
+                AuthMapper.toSocialLoginResult(data)
             }
 
         override suspend fun googleLogin(idToken: String): Result<Session.SocialSession> =
             runCatching {
-                val response =
-                    authApiService.socialLogin(
-                        SocialLoginRequest(
-                            provider = "GOOGLE",
-                            accessToken = idToken,
-                        ),
-                    )
-                AuthMapper.toSocialLoginResult(response.requireData())
+                val data =
+                    authApiService
+                        .socialLogin(
+                            SocialLoginRequest(
+                                provider = "GOOGLE",
+                                accessToken = idToken,
+                            ),
+                        ).requireData()
+                data.expiresIn?.let(expiryTracker::record)
+                AuthMapper.toSocialLoginResult(data)
             }
 
         override suspend fun rotateToken(): Result<TokenBundle> =

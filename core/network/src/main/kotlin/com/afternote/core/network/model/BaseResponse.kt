@@ -7,11 +7,10 @@ import java.io.IOException
 /**
  * 서버 공통 응답 봉투. 제네릭 [T] 는 `data` 필드의 페이로드 타입 — `data` 없는 엔드포인트는 `BaseResponse<Unit>`.
  *
- * @property expiresIn 액세스 토큰 잔여 수명(초). BE 2026-06-01 도입 — `@IncludeAccessTokenExpiresIn`
- *   이 붙은 목록 endpoint 의 응답에만 내려오고(실측 3599), 로그인/reissue 응답에는 없다.
- *   토큰 선제 갱신(#408)의 입력값으로, 수신·저장은 `AuthInterceptor` 가 횡단 처리한다 —
- *   repository 가 이 필드를 직접 소비하지 않는다. 그 외 서버 스키마(`ApiResponse*`)의 클라
- *   미소비 필드는 여전히 선언하지 않는다 (`NetworkModule.provideJson` 의 ignoreUnknownKeys 가 무시).
+ * 액세스 토큰 잔여 수명(`expiresIn`)은 BE #410(2026-06-20)으로 발급 응답의 `data`(`LoginData`·
+ * `ReissueData`) 안으로 옮겨졌다 — 더 이상 봉투 최상위 필드가 아니다. 그 외 서버 스키마
+ * (`ApiResponse*`)의 클라 미소비 필드는 선언하지 않는다 (`NetworkModule.provideJson` 의
+ * ignoreUnknownKeys 가 무시).
  */
 @Serializable
 data class BaseResponse<T>(
@@ -23,17 +22,7 @@ data class BaseResponse<T>(
     val message: String? = null,
     @SerialName("data")
     val data: T? = null,
-    @SerialName(EXPIRES_IN_SERIAL_NAME)
-    val expiresIn: Long? = null,
-) {
-    companion object {
-        /**
-         * `expiresIn` 직렬화 키의 단일 진실원 — `AuthInterceptor` 의 사전 필터 리터럴이 이를
-         * 파생한다. BE 가 키를 바꾸면 여기 한 곳만 고치면 수신·필터가 함께 따라온다.
-         */
-        const val EXPIRES_IN_SERIAL_NAME = "expiresIn"
-    }
-}
+)
 
 fun <T : Any> BaseResponse<T>.requireData(): T {
     if (status != 200) {

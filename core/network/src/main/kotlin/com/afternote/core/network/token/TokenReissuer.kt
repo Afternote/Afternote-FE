@@ -67,17 +67,18 @@ class TokenReissuer
                     return Outcome.TokenAlreadyChanged(currentToken)
                 }
 
-                val newAccessToken =
-                    runBlocking { authRepository.get().rotateToken() }
-                        .getOrNull()
-                        ?.accessToken
-                // 회전 시도 자체가 기존 deadline 을 무효화한다 — 새 수명은 다음 목록 응답에서 다시 기록되고,
-                // 실패 시에도 비워 만료 deadline 잔존으로 인한 요청마다 재시도(폭주)를 막는다.
-                expiryTracker.clear()
+                val newBundle = runBlocking { authRepository.get().rotateToken() }.getOrNull()
+                val newAccessToken = newBundle?.accessToken
 
                 return if (newAccessToken.isNullOrEmpty()) {
+                    // 회전 실패 — 기존 deadline 은 이전(곧 만료될) 토큰 기준이라 남겨두면 매 요청마다
+                    // 선제 reissue 를 재시도(폭주)한다. 비워서 401 사후 대응(TokenAuthenticator)에 맡긴다.
+                    expiryTracker.clear()
                     Outcome.Failed
                 } else {
+                    // 회전 성공 — 발급 응답(#410)의 expiresIn 으로 새 토큰 deadline 을 갱신한다.
+                    // 서버가 생략하면(null) 비워, 다음 발급 응답이 채울 때까지 선제 갱신을 쉰다.
+                    newBundle.expiresIn?.let(expiryTracker::record) ?: expiryTracker.clear()
                     Outcome.Rotated(newAccessToken)
                 }
             }
