@@ -49,8 +49,10 @@ class AccessTokenExpiryTracker internal constructor(
     }
 
     /**
-     * 잔여 수명이 [PREEMPTIVE_REISSUE_THRESHOLD_MILLIS] 미만이면 true.
-     * 기록된 deadline 이 없으면(null) false — 선제 갱신은 기록이 있을 때만 동작한다.
+     * 잔여 수명이 [PREEMPTIVE_REISSUE_THRESHOLD_MILLIS] 미만이면 true. `AuthInterceptor` 가
+     * **매 요청 직전마다** 호출한다 — deadline 자체는 [record] 시 한 번 고정되지만, "임박" 여부는
+     * 호출 시점의 현재 시각 기준으로 매번 다시 계산된다(시간이 흘러 deadline 이 가까워지면 어느
+     * 요청부터 true 가 된다). 기록된 deadline 이 없으면(null) false — 선제 갱신은 기록이 있을 때만 동작한다.
      *
      * 주의: null 은 "곧 만료"가 아니라 **"만료 시각 모름"** 이다. 모를 땐 선제 reissue 를 *건너뛰고*
      * (시도 자체를 안 함) 토큰이 실제 만료되면 401 → `TokenAuthenticator` 사후 대응이 받는다.
