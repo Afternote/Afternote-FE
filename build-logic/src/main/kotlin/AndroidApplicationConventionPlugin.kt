@@ -15,7 +15,7 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                 configureAndroidCommon(this) // 기본 뼈대
                 configureCompose(this) // Compose 부품
 
-                defaultConfig.targetSdk = 34
+                defaultConfig.targetSdk = 36
             }
 
             afterNoteDependencies {

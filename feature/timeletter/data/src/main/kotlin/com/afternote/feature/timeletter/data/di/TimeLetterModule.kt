@@ -15,6 +15,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import retrofit2.Retrofit
+import retrofit2.create
 import javax.inject.Singleton
 
 @Module
@@ -22,7 +23,7 @@ import javax.inject.Singleton
 object TimeLetterModule {
     @Provides
     @Singleton
-    fun provideTimeLetterApiService(retrofit: Retrofit): TimeLetterApiService = retrofit.create(TimeLetterApiService::class.java)
+    fun provideTimeLetterApiService(retrofit: Retrofit): TimeLetterApiService = retrofit.create<TimeLetterApiService>()
 
     @Provides
     @Singleton

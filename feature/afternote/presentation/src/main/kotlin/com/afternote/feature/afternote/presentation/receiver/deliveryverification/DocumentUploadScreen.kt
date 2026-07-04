@@ -187,7 +187,7 @@ private fun handlePickedUri(
 }
 
 @Composable
-private fun DocumentUploadScreenContent(
+internal fun DocumentUploadScreenContent(
     uiState: DocumentUploadUiState,
     snackbarHostState: SnackbarHostState,
     onBackClick: () -> Unit,

@@ -7,12 +7,13 @@ import com.afternote.afternote_fe.screen.receiver.model.MindRecordSummary
 import com.afternote.afternote_fe.screen.receiver.model.ReceiverDownloadState
 import com.afternote.afternote_fe.screen.receiver.model.ReceiverHomeUiState
 import com.afternote.afternote_fe.screen.receiver.model.SenderMessage
-import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItemDto
+import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem
 import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResult
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
 import com.afternote.feature.afternote.presentation.shared.util.getAfternoteDisplayRes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -52,54 +53,56 @@ class ReceiverHomeViewModel
         private fun loadHome() {
             _uiState.value = ReceiverHomeUiState.Loading
             viewModelScope.launch {
-                val afternotes = async { receiverRepository.getReceivedAfterNotes() }
-                val mindRecords = async { receiverRepository.loadMindRecordsCount() }
-                val timeLetters = async { receiverRepository.loadTimeLettersCount() }
-                val message = async { receiverRepository.loadSenderMessage() }
-                val afternotesRes = afternotes.await()
-                val mindRecordsRes = mindRecords.await()
-                val timeLettersRes = timeLetters.await()
-                val messageRes = message.await()
+                coroutineScope {
+                    val afternotes = async { receiverRepository.getReceivedAfterNotes() }
+                    val mindRecords = async { receiverRepository.loadMindRecordsCount() }
+                    val timeLetters = async { receiverRepository.loadTimeLettersCount() }
+                    val message = async { receiverRepository.loadSenderMessage() }
+                    val afternotesRes = afternotes.await()
+                    val mindRecordsRes = mindRecords.await()
+                    val timeLettersRes = timeLetters.await()
+                    val messageRes = message.await()
 
-                // 모든 호출이 실패한 경우만 Error. 일부 실패는 fallback 으로 진행.
-                if (afternotesRes.isFailure &&
-                    mindRecordsRes.isFailure &&
-                    timeLettersRes.isFailure &&
-                    messageRes.isFailure
-                ) {
+                    // 모든 호출이 실패한 경우만 Error. 일부 실패는 fallback 으로 진행.
+                    if (afternotesRes.isFailure &&
+                        mindRecordsRes.isFailure &&
+                        timeLettersRes.isFailure &&
+                        messageRes.isFailure
+                    ) {
+                        _uiState.value =
+                            ReceiverHomeUiState.Error(
+                                afternotesRes.exceptionOrNull() ?: RuntimeException("All home requests failed"),
+                            )
+                        return@coroutineScope
+                    }
+
+                    val afternotesResult =
+                        afternotesRes.getOrNull() ?: AfterNotesListResult(items = emptyList(), totalCount = 0)
+                    val mindRecordsCount = mindRecordsRes.getOrNull()?.totalCount ?: 0
+                    val timeLettersCount = timeLettersRes.getOrNull()?.totalCount ?: 0
+                    val senderMessageInfo = messageRes.getOrNull()
+                    // senderName / senderMessage 둘 다 blank 가드 — sender 가 이름·메시지 미입력 케이스 대응.
+                    // ".orEmpty()" 만으로는 공백("  ") 통과해 "故 님이 남기신 기록" / "님의 한 마디" UI 깨짐.
+                    val senderName = senderMessageInfo?.senderName?.takeIf { it.isNotBlank() }.orEmpty()
+                    val senderMessageBody = senderMessageInfo?.message?.takeIf { it.isNotBlank() }
+
                     _uiState.value =
-                        ReceiverHomeUiState.Error(
-                            afternotesRes.exceptionOrNull() ?: RuntimeException("All home requests failed"),
+                        ReceiverHomeUiState.Success(
+                            senderName = senderName,
+                            // TODO: 백엔드 응답에 date 필드 추가되면 채울 것. 현재 receiver-auth/message 응답은 senderName/message 만.
+                            senderMessage = senderMessageBody?.let { SenderMessage(date = "", body = it) },
+                            mindRecord =
+                                MindRecordSummary(
+                                    totalCount = mindRecordsCount,
+                                    dailyQuestionCount = 0,
+                                    diaryCount = 0,
+                                    deepThoughtCount = 0,
+                                ),
+                            timeLetterTotalCount = timeLettersCount,
+                            afternoteTotalCount = afternotesResult.totalCount,
+                            afternoteIcons = afternotesResult.items.toAfternoteIcons(),
                         )
-                    return@launch
                 }
-
-                val afternotesResult =
-                    afternotesRes.getOrNull() ?: AfterNotesListResult(items = emptyList(), totalCount = 0)
-                val mindRecordsCount = mindRecordsRes.getOrNull()?.totalCount ?: 0
-                val timeLettersCount = timeLettersRes.getOrNull()?.totalCount ?: 0
-                val senderMessageInfo = messageRes.getOrNull()
-                // senderName / senderMessage 둘 다 blank 가드 — sender 가 이름·메시지 미입력 케이스 대응.
-                // ".orEmpty()" 만으로는 공백("  ") 통과해 "故 님이 남기신 기록" / "님의 한 마디" UI 깨짐.
-                val senderName = senderMessageInfo?.senderName?.takeIf { it.isNotBlank() }.orEmpty()
-                val senderMessageBody = senderMessageInfo?.message?.takeIf { it.isNotBlank() }
-
-                _uiState.value =
-                    ReceiverHomeUiState.Success(
-                        senderName = senderName,
-                        // TODO: 백엔드 응답에 date 필드 추가되면 채울 것. 현재 receiver-auth/message 응답은 senderName/message 만.
-                        senderMessage = senderMessageBody?.let { SenderMessage(date = "", body = it) },
-                        mindRecord =
-                            MindRecordSummary(
-                                totalCount = mindRecordsCount,
-                                dailyQuestionCount = 0,
-                                diaryCount = 0,
-                                deepThoughtCount = 0,
-                            ),
-                        timeLetterTotalCount = timeLettersCount,
-                        afternoteTotalCount = afternotesResult.totalCount,
-                        afternoteIcons = afternotesResult.items.toAfternoteIcons(),
-                    )
             }
         }
 
@@ -134,7 +137,7 @@ class ReceiverHomeViewModel
 
 private const val MAX_AFTERNOTE_ICONS = 4
 
-private fun List<AfterNoteListItemDto>.toAfternoteIcons(): List<AfternoteSourceIcon> =
+private fun List<AfterNoteListItem>.toAfternoteIcons(): List<AfternoteSourceIcon> =
     asSequence()
         .mapNotNull { it.sourceType?.takeIf(String::isNotBlank) }
         .distinct()

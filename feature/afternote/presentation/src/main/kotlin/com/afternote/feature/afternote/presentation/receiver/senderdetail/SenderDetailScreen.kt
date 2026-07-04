@@ -79,7 +79,7 @@ fun SenderDetailScreen(
 }
 
 @Composable
-private fun SenderDetailScreenContent(
+internal fun SenderDetailScreenContent(
     uiState: SenderDetailUiState,
     onBackClick: () -> Unit,
     onRequestVerification: () -> Unit,
