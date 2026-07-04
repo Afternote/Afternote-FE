@@ -74,4 +74,14 @@ class TimeletterViewModel
                     }
             }
         }
+
+        fun deleteTimeLetter(timeLetterId: Long) {
+            viewModelScope.launch {
+                runCatching { timeLetterRepository.deleteTimeLetters(listOf(timeLetterId)) }
+                    .onSuccess { load() }
+                    .onFailure {
+                        _uiState.value = TimeletterUiState.Error("타임레터를 삭제할 수 없습니다.")
+                    }
+            }
+        }
     }

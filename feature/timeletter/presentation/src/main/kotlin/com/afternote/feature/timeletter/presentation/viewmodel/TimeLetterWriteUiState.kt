@@ -4,6 +4,10 @@ import android.net.Uri
 import androidx.compose.ui.text.style.TextAlign
 
 data class TimeLetterWriteUiState(
+    val editingTimeLetterId: Long? = null,
+    val isLoadingEditingLetter: Boolean = false,
+    val initialTitle: String? = null,
+    val initialTextContents: Map<Long, String> = emptyMap(),
     val recipientIds: List<Long> = emptyList(),
     val recipientNames: List<String> = emptyList(),
     val sendAt: String? = null,
@@ -32,18 +36,21 @@ sealed class EditorBlock {
         override val id: Long,
         val uri: Uri,
         val name: String,
+        val mimeType: String? = null,
     ) : EditorBlock()
 
     data class Audio(
         override val id: Long,
         val uri: Uri,
         val name: String,
+        val mimeType: String? = null,
     ) : EditorBlock()
 
     data class File(
         override val id: Long,
         val uri: Uri,
         val name: String,
+        val mimeType: String? = null,
     ) : EditorBlock()
 
     data class Link(

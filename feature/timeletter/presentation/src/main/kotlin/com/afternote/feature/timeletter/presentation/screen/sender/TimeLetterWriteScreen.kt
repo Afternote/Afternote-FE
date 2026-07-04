@@ -24,6 +24,7 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -132,6 +133,35 @@ fun TimeLetterWriteScreen(
         val msg = uiState.errorMessage ?: return@LaunchedEffect
         snackbarHostState.showSnackbar(msg)
         onErrorShown()
+    }
+
+    LaunchedEffect(uiState.initialTitle) {
+        val title = uiState.initialTitle ?: return@LaunchedEffect
+        titleState.edit { replace(0, length, title) }
+    }
+
+    if (uiState.isLoadingEditingLetter) {
+        Scaffold(
+            modifier = modifier,
+            topBar = {
+                DetailTopBar(
+                    title = "",
+                    onBackClick = onBackClick,
+                )
+            },
+            containerColor = AfternoteDesign.colors.white,
+        ) { innerPadding ->
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+        return
     }
 
     var showDatePicker by remember { mutableStateOf(false) }
@@ -286,7 +316,7 @@ fun TimeLetterWriteScreen(
                 onBackClick = onBackClick,
                 actions = {
                     TimeLetterTextButton(
-                        text = "등록",
+                        text = if (uiState.editingTimeLetterId == null) "등록" else "수정",
                         onClick = {
                             onRegisterClick(
                                 titleState.text.toString(),
@@ -346,6 +376,7 @@ fun TimeLetterWriteScreen(
                         TextBlockItem(
                             blockId = block.id,
                             textBlockStates = textBlockStates,
+                            initialText = uiState.initialTextContents[block.id].orEmpty(),
                             textAlign = uiState.textAlign,
                             onFocused = { onSetFocusedBlock(block.id) },
                         )
@@ -391,14 +422,20 @@ fun TimeLetterWriteScreen(
 private fun TextBlockItem(
     blockId: Long,
     textBlockStates: SnapshotStateMap<Long, TextFieldState>,
+    initialText: String,
     textAlign: TextAlign,
     onFocused: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state =
         remember(blockId) {
-            textBlockStates.getOrPut(blockId) { TextFieldState() }
+            textBlockStates.getOrPut(blockId) { TextFieldState(initialText) }
         }
+    LaunchedEffect(initialText) {
+        if (initialText.isNotEmpty() && state.text.isEmpty()) {
+            state.edit { replace(0, length, initialText) }
+        }
+    }
     DisposableEffect(blockId) {
         onDispose { textBlockStates.remove(blockId) }
     }

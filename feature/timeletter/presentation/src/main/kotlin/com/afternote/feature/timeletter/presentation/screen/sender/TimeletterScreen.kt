@@ -35,6 +35,7 @@ fun TimeletterScreen(
     onLetterClick: (Long) -> Unit = {},
     modifier: Modifier = Modifier,
     onWriteClick: () -> Unit = {},
+    onEditClick: (Long) -> Unit = {},
     onFilterRecipientClick: () -> Unit = {},
     viewModel: TimeletterViewModel = hiltViewModel(),
 ) {
@@ -76,6 +77,8 @@ fun TimeletterScreen(
                     selectedFilterReceiverIds = state.selectedFilterReceiverIds,
                     onFilterClick = onFilterRecipientClick,
                     onLetterClick = onLetterClick,
+                    onEditClick = onEditClick,
+                    onDeleteClick = viewModel::deleteTimeLetter,
                     modifier = Modifier.padding(paddingValues),
                 )
             }
