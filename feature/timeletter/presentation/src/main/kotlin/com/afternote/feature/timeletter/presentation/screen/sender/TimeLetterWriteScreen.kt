@@ -109,7 +109,7 @@ fun TimeLetterWriteScreen(
     var linkUrlInput by remember { mutableStateOf("") }
 
     val textBlockStates =
-        remember { androidx.compose.runtime.mutableStateMapOf<Long, TextFieldState>() }
+        remember(uiState.editingTimeLetterId) { androidx.compose.runtime.mutableStateMapOf<Long, TextFieldState>() }
 
     fun collectTextContents(): Map<Long, String> =
         uiState.editorBlocks
@@ -135,9 +135,11 @@ fun TimeLetterWriteScreen(
         onErrorShown()
     }
 
-    LaunchedEffect(uiState.initialTitle) {
-        val title = uiState.initialTitle ?: return@LaunchedEffect
-        titleState.edit { replace(0, length, title) }
+    LaunchedEffect(uiState.editingTimeLetterId, uiState.initialTitle) {
+        val title = uiState.initialTitle
+        if (uiState.editingTimeLetterId == null || title != null) {
+            titleState.edit { replace(0, length, title.orEmpty()) }
+        }
     }
 
     if (uiState.isLoadingEditingLetter) {
@@ -431,10 +433,8 @@ private fun TextBlockItem(
         remember(blockId) {
             textBlockStates.getOrPut(blockId) { TextFieldState(initialText) }
         }
-    LaunchedEffect(initialText) {
-        if (initialText.isNotEmpty() && state.text.isEmpty()) {
-            state.edit { replace(0, length, initialText) }
-        }
+    LaunchedEffect(blockId, initialText) {
+        state.edit { replace(0, length, initialText) }
     }
     DisposableEffect(blockId) {
         onDispose { textBlockStates.remove(blockId) }
