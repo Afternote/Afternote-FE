@@ -15,7 +15,6 @@ dependencies {
     implementation(projects.core.common)
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
-    implementation(libs.androidx.compose.material.icons.core)
 
     // Compose Preview Screenshot Testing (#241)
     screenshotTestImplementation(libs.screenshot.validation.api)
