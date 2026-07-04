@@ -244,16 +244,17 @@ class TimeLetterWriteViewModel
                             )
                         }
                     }
-                saveResult.onSuccess {
-                    if (status == TimeLetterStatus.DRAFT) {
-                        loadDraftCount()
-                        _uiState.update { it.copy(savedAsDraft = true) }
-                    } else {
-                        _uiState.update { it.copy(registered = true) }
+                saveResult
+                    .onSuccess {
+                        if (status == TimeLetterStatus.DRAFT) {
+                            loadDraftCount()
+                            _uiState.update { it.copy(savedAsDraft = true) }
+                        } else {
+                            _uiState.update { it.copy(registered = true) }
+                        }
+                    }.onFailure {
+                        _uiState.update { it.copy(errorMessage = "저장에 실패했어요. 다시 시도해주세요.") }
                     }
-                }.onFailure {
-                    _uiState.update { it.copy(errorMessage = "저장에 실패했어요. 다시 시도해주세요.") }
-                }
                 _uiState.update { it.copy(isSaving = false) }
             }
         }
@@ -263,8 +264,19 @@ class TimeLetterWriteViewModel
                 .onSuccess { letter ->
                     val editorBlocks = letter.toEditorBlocks()
                     val sendAtDate = letter.sendAt?.take(10)
-                    val sendHour = letter.sendAt?.substringAfter("T")?.take(2)?.toIntOrNull() ?: 0
-                    val sendMinute = letter.sendAt?.substringAfter("T")?.drop(3)?.take(2)?.toIntOrNull() ?: 0
+                    val sendHour =
+                        letter.sendAt
+                            ?.substringAfter("T")
+                            ?.take(2)
+                            ?.toIntOrNull()
+                            ?: 0
+                    val sendMinute =
+                        letter.sendAt
+                            ?.substringAfter("T")
+                            ?.drop(3)
+                            ?.take(2)
+                            ?.toIntOrNull()
+                            ?: 0
 
                     _uiState.update {
                         it.copy(
@@ -298,9 +310,15 @@ class TimeLetterWriteViewModel
                     .sortedBy { it.blockOrder }
                     .mapNotNull { block ->
                         when (block.blockType) {
-                            TimeLetterBlockType.TEXT -> EditorBlock.Text(id = block.id)
-                            TimeLetterBlockType.LINK -> block.url?.let { EditorBlock.Link(id = block.id, url = it) }
-                            TimeLetterBlockType.IMAGE ->
+                            TimeLetterBlockType.TEXT -> {
+                                EditorBlock.Text(id = block.id)
+                            }
+
+                            TimeLetterBlockType.LINK -> {
+                                block.url?.let { EditorBlock.Link(id = block.id, url = it) }
+                            }
+
+                            TimeLetterBlockType.IMAGE -> {
                                 block.url?.let {
                                     EditorBlock.Image(
                                         id = block.id,
@@ -309,8 +327,9 @@ class TimeLetterWriteViewModel
                                         mimeType = block.mimeType,
                                     )
                                 }
+                            }
 
-                            TimeLetterBlockType.AUDIO ->
+                            TimeLetterBlockType.AUDIO -> {
                                 block.url?.let {
                                     EditorBlock.Audio(
                                         id = block.id,
@@ -319,8 +338,9 @@ class TimeLetterWriteViewModel
                                         mimeType = block.mimeType,
                                     )
                                 }
+                            }
 
-                            TimeLetterBlockType.FILE ->
+                            TimeLetterBlockType.FILE -> {
                                 block.url?.let {
                                     EditorBlock.File(
                                         id = block.id,
@@ -329,6 +349,7 @@ class TimeLetterWriteViewModel
                                         mimeType = block.mimeType,
                                     )
                                 }
+                            }
                         }
                     }
             return blocks.ifEmpty { listOf(EditorBlock.Text(id = 0L)) }
