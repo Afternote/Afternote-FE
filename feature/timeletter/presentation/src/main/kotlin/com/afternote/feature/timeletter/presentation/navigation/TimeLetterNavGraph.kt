@@ -69,6 +69,8 @@ fun NavGraphBuilder.timeLetterNavGraph(
                 onAlignCenterClick = { viewModel.setTextAlign(TextAlign.Center) },
                 onAlignLeftClick = { viewModel.setTextAlign(TextAlign.Start) },
                 onAlignRightClick = { viewModel.setTextAlign(TextAlign.End) },
+                onFreePlanLimitConfirm = { viewModel.dismissFreePlanLimitPopup() },
+                onFreePlanLimitDismiss = { viewModel.dismissFreePlanLimitPopup() },
             )
         }
 

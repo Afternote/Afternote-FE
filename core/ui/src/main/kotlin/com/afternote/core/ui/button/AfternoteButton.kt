@@ -43,6 +43,7 @@ fun AfternoteButton(
     modifier: Modifier = Modifier,
     type: AfternoteButtonType = AfternoteButtonType.Default,
     secondaryText: String? = null,
+    containerColor: Color? = null,
 ) {
     CompositionLocalProvider(
         LocalMinimumInteractiveComponentSize provides androidx.compose.ui.unit.Dp.Unspecified,
@@ -54,7 +55,7 @@ fun AfternoteButton(
             enabled = type != AfternoteButtonType.Un,
             shape = RoundedCornerShape(6.dp),
             color =
-                when (type) {
+                containerColor ?: when (type) {
                     AfternoteButtonType.Default -> AfternoteDesign.colors.gray9
                     AfternoteButtonType.Active -> AfternoteDesign.colors.gray6
                     AfternoteButtonType.Plain -> AfternoteDesign.colors.gray2
