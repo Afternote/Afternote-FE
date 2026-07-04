@@ -14,12 +14,12 @@
                 android:roundIcon="@mipmap/ic_launcher_dev"
                 android:taskAffinity=".devsettings"
                 android:excludeFromRecents="true"
-                android:theme="@style/Theme.Afternotefe.Main">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+                android:theme="@style/Theme.Afternotefe.Main" />
+        <!--
+          LAUNCHER intent-filter를 의도적으로 두지 않습니다.
+          런처 아이콘 중복(.MainActivity와 2개) 방지 — 디버그 mock 설정 화면은
+          `adb shell am start -n com.afternote.afternote_fe/.debug.DebugMockSettingsActivity` 로 진입합니다. (#396)
+        -->
     </application>
 
 </manifest>
