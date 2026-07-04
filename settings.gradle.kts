@@ -65,3 +65,6 @@ include(":feature:timeletter:data")
 include(":feature:timeletter:domain")
 include(":feature:timeletter:presentation")
 include(":feature:timeletter:res")
+
+// Architecture test module (Konsist) — 레이어 의존 방향 회귀 가드
+include(":konsist")
