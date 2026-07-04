@@ -64,7 +64,7 @@ fun ReceivedRecordsScreen(
 }
 
 @Composable
-private fun ReceivedRecordsScreenContent(
+internal fun ReceivedRecordsScreenContent(
     senders: List<SenderEntry>,
     onBackClick: () -> Unit,
     onAddSenderClick: () -> Unit,
