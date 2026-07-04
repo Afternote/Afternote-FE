@@ -19,6 +19,7 @@ data class AfternoteHomeEntryActions(
     val navigateToGalleryDetail: (String) -> Unit = {},
     val navigateToMemorialGuidelineDetail: (String) -> Unit = {},
     val navigateToAdd: (AfternoteCategory) -> Unit = {},
+    val onSettingClick: () -> Unit = {},
 )
 
 /**
@@ -63,5 +64,6 @@ fun AfternoteHomeEntry(
             }
         },
         onFabClick = { actions.navigateToAdd(selectedCategory) },
+        onSettingClick = actions.onSettingClick,
     )
 }
