@@ -89,8 +89,11 @@ class ReceiverHomeViewModel
                     _uiState.value =
                         ReceiverHomeUiState.Success(
                             senderName = senderName,
-                            // TODO: 백엔드 응답에 date 필드 추가되면 채울 것. 현재 receiver-auth/message 응답은 senderName/message 만.
-                            senderMessage = senderMessageBody?.let { SenderMessage(date = "", body = it) },
+                            senderMessage =
+                                senderMessageBody?.let {
+                                    // orEmpty(): null 이면 "" — createdAt 미제공(구버전 서버) 시 날짜 슬롯만 비워 보이게.
+                                    SenderMessage(date = senderMessageInfo.createdAt.orEmpty(), body = it)
+                                },
                             mindRecord =
                                 MindRecordSummary(
                                     totalCount = mindRecordsCount,

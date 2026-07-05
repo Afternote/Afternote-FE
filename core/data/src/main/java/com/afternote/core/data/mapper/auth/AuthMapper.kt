@@ -26,5 +26,6 @@ object AuthMapper {
             isNewUser = dto.isNewUser,
         )
 
-    fun toRotateTokenResult(dto: ReissueData): TokenBundle = TokenBundle(accessToken = dto.accessToken, refreshToken = dto.refreshToken)
+    fun toRotateTokenResult(dto: ReissueData): TokenBundle =
+        TokenBundle(accessToken = dto.accessToken, refreshToken = dto.refreshToken, expiresIn = dto.expiresIn)
 }

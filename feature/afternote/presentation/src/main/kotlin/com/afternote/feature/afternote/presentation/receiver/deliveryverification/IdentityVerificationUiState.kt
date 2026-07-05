@@ -10,7 +10,8 @@ data class IdentityVerificationUiState(
     val isVerificationSent: Boolean = false,
     val isSendingCode: Boolean = false,
     val isVerifying: Boolean = false,
-    val errorMessageRes: Int? = null,
+    /** 표시할 에러 — null 이면 에러 없음. 서버 message 는 [ErrorPayload.Text], 클라 fallback 은 [ErrorPayload.Res]. */
+    val error: ErrorPayload? = null,
     val isVerified: Boolean = false,
 ) {
     val canSubmit: Boolean
