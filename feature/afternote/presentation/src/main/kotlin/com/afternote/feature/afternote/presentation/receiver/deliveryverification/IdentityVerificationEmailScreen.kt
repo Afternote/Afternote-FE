@@ -87,7 +87,7 @@ fun IdentityVerificationEmailScreen(
 }
 
 @Composable
-private fun IdentityVerificationEmailScreenContent(
+internal fun IdentityVerificationEmailScreenContent(
     uiState: IdentityVerificationUiState,
     emailState: TextFieldState,
     codeState: TextFieldState,

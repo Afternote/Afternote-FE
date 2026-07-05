@@ -15,6 +15,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import retrofit2.create
 import javax.inject.Named
 import javax.inject.Singleton
 
@@ -24,7 +25,7 @@ object ServiceModule {
     // 반환 타입 생략하면 오류 남?
     @Provides
     @Singleton
-    fun provideAuthApiService(retrofit: Retrofit): AuthApiService = retrofit.create(AuthApiService::class.java)
+    fun provideAuthApiService(retrofit: Retrofit): AuthApiService = retrofit.create<AuthApiService>()
 
     @Provides
     @Singleton
@@ -38,17 +39,17 @@ object ServiceModule {
             .client(refreshClient)
             .addConverterFactory(json.asConverterFactory(contentType = "application/json".toMediaType()))
             .build()
-            .create(TokenApiService::class.java)
+            .create<TokenApiService>()
 
     @Provides
     @Singleton
-    fun provideAccountApiService(retrofit: Retrofit): AccountApiService = retrofit.create(AccountApiService::class.java)
+    fun provideAccountApiService(retrofit: Retrofit): AccountApiService = retrofit.create<AccountApiService>()
 
     @Provides
     @Singleton
-    fun provideUserApiService(retrofit: Retrofit): UserApiService = retrofit.create(UserApiService::class.java)
+    fun provideUserApiService(retrofit: Retrofit): UserApiService = retrofit.create<UserApiService>()
 
     @Provides
     @Singleton
-    fun provideImageApiService(retrofit: Retrofit): ImageApiService = retrofit.create(ImageApiService::class.java)
+    fun provideImageApiService(retrofit: Retrofit): ImageApiService = retrofit.create<ImageApiService>()
 }

@@ -8,7 +8,7 @@ import com.afternote.feature.afternote.data.local.ReceiverAuthCodeDataSource
 import com.afternote.feature.afternote.data.mapper.response.toDomain
 import com.afternote.feature.afternote.data.paging.ReceiverAfternotePagingSource
 import com.afternote.feature.afternote.data.service.ReceiverAfternoteApiService
-import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItemDto
+import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem
 import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResult
 import com.afternote.feature.afternote.domain.model.receiver.LoadCountResult
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
@@ -47,7 +47,7 @@ class ReceiverRepositoryImpl
             authCodeDataSource.clearCode()
         }
 
-        override fun getPagedReceivedAfternotes(): Flow<PagingData<AfterNoteListItemDto>> =
+        override fun getPagedReceivedAfternotes(): Flow<PagingData<AfterNoteListItem>> =
             Pager(
                 config = PagingConfig(pageSize = PAGE_SIZE),
                 pagingSourceFactory = { ReceiverAfternotePagingSource(api) },

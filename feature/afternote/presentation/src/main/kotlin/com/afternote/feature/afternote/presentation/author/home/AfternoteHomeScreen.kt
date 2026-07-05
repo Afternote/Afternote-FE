@@ -39,6 +39,7 @@ fun AfternoteHomeScreen(
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     onFabClick: (() -> Unit)? = null,
+    onSettingClick: () -> Unit = {},
 ) {
     val refreshState = items.loadState.refresh
     val isInitialLoading = refreshState is LoadState.Loading && items.itemCount == 0
@@ -50,7 +51,7 @@ fun AfternoteHomeScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             if (items.itemCount > 0) {
-                HomeTopBar()
+                HomeTopBar(onSettingClick = onSettingClick)
             } else {
                 DetailTopBar(title = "애프터노트")
             }

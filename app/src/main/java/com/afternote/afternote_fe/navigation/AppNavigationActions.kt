@@ -429,6 +429,10 @@ fun rememberAfternoteNavActions(
                     launchSingleTop = true
                 }
             }
+
+            override fun navigateToSetting() {
+                appState.navController.navigate(Route.Setting)
+            }
         }
     }
 }

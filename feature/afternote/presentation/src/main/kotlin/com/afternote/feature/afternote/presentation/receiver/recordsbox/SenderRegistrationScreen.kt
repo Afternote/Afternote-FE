@@ -61,7 +61,7 @@ fun SenderRegistrationScreen(
 }
 
 @Composable
-private fun SenderRegistrationScreenContent(
+internal fun SenderRegistrationScreenContent(
     nameState: TextFieldState,
     onBackClick: () -> Unit,
     onSubmitClick: () -> Unit,

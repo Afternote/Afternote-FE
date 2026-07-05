@@ -38,7 +38,11 @@ class AfternoteHostViewModel
         val isPasskeyRegistered: StateFlow<Boolean?> =
             userProfileRepository
                 .isPasskeyRegisteredFlow()
-                .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+                .stateIn(
+                    scope = viewModelScope,
+                    started = SharingStarted.WhileSubscribed(5_000),
+                    initialValue = null,
+                )
 
         private val _playlistSongs = MutableStateFlow<List<Song>>(emptyList())
         val playlistSongs: StateFlow<List<Song>> = _playlistSongs.asStateFlow()
