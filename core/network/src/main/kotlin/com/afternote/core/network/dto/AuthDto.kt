@@ -49,7 +49,8 @@ sealed class LoginData {
      * 액세스 토큰 잔여 수명(초). BE #410(2026-06-20)으로 발급 응답 `data` 안에 포함 —
      * RFC 6749 §5.1 의 `expires_in` 자리(access_token 형제)다. 선제 reissue(#408) deadline 의
      * 입력값으로, 토큰 저장 시점에 `AuthRepositoryImpl` 이 `AccessTokenExpiryTracker.record` 로
-     * 기록한다. 서버가 생략하면(과거 호환) null — 그땐 기록 없이 401 사후 대응이 받는다.
+     * 기록한다. 서버가 생략하면(과거 호환) null — 그땐 기존 deadline 을 비워(stale 방지)
+     * 401 사후 대응이 받는다.
      */
     abstract val expiresIn: Long?
 

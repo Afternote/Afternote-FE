@@ -48,9 +48,11 @@ class AuthInterceptor
 
             // 액세스 토큰이 없으면
             if (storedToken.isNullOrEmpty()) {
-                // 이전 토큰 기준 deadline 은 stale — tracker 는 in-memory 라 로그아웃이 지워 주지 않아,
-                // 안 씻으면 재로그인 후 첫 요청이 죽은 토큰의 deadline 로 임박 오판(새 토큰 불필요 reissue).
-                // 로그인 요청 자체가 이 인터셉터(MainClient)를 토큰 없이 지나므로 이 분기가 반드시 씻는다.
+                // 토큰이 없는데 deadline 이 남아 있다면 이전 토큰 기준 stale — 안 씻으면 재로그인 후
+                // 첫 요청이 죽은 토큰의 deadline 로 임박 오판(새 토큰 불필요 reissue). 1차 정리 책임은
+                // 세션을 끝내는 쪽(AuthRepositoryImpl 의 clearSession/logout)에 있고, 여기는 그 경로를
+                // 안 거치고 토큰만 사라지는 변경에 대비한 이중 방어다 — 로그인 요청 자체가 이 인터셉터
+                // (MainClient)를 토큰 없이 지나므로, 재로그인 전 반드시 한 번은 이 분기를 지난다.
                 expiryTracker.clear()
                 // 그냥 바로 다음 인터셉터한테 요청 넘기고 응답 받은 다음에 꺼져라
                 return chain.proceed(originalRequest)
