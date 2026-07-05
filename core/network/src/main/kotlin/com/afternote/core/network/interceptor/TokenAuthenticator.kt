@@ -2,6 +2,7 @@ package com.afternote.core.network.interceptor
 
 import android.util.Log
 import com.afternote.core.domain.repository.auth.AuthRepository
+import com.afternote.core.network.token.TokenReissuer
 import kotlinx.coroutines.runBlocking
 import okhttp3.Authenticator
 import okhttp3.Request
@@ -13,13 +14,14 @@ class TokenAuthenticator
     @Inject
     constructor(
         private val authRepository: dagger.Lazy<AuthRepository>,
+        private val tokenReissuer: TokenReissuer,
     ) : Authenticator {
         @Suppress("ReturnCount")
         override fun authenticate(
             route: Route?,
             response: Response,
         ): Request? {
-            if (responseCount(response) >= 3) {
+            if (response.responseCount >= 3) {
                 Log.e("TokenAuthenticator", "❌ 무한 루프 방지: 재시도 횟수 3회 이상. 세션 만료 처리")
                 runBlocking { authRepository.get().clearSession() }
                 return null
@@ -36,54 +38,43 @@ class TokenAuthenticator
                 return null
             }
 
-            synchronized(this) {
-                // 한 스레드만 접근할 수 있도록 락
-                val currentAccessToken = runBlocking { authRepository.get().getAccessToken() }.getOrNull()
-                // 앞선 다른 스레드가 토큰을 받아왔을 수도 있기 때문에 다시 현재 토큰을 확인
-                if (oldAccessToken != currentAccessToken && !currentAccessToken.isNullOrEmpty()) {
-                    return buildRequest(
-                        request = originalRequest,
-                        accessToken = currentAccessToken,
-                    )
+            // 회전은 선제 갱신 경로(AuthInterceptor)와 공유하는 단일 락(TokenReissuer) 경유 (#408) —
+            // 앞선 다른 경로/스레드가 이미 회전했으면 TokenAlreadyChanged 로 새 토큰만 받아 재시도
+            return when (val outcome = tokenReissuer.reissue(expectedAccessToken = oldAccessToken)) {
+                is TokenReissuer.Outcome.TokenAlreadyChanged -> {
+                    originalRequest.withBearer(outcome.accessToken)
                 }
 
-                val tokenBundle =
-                    runBlocking {
-                        authRepository.get().rotateToken()
-                    }.getOrNull()
-                val newAccessToken = tokenBundle?.accessToken
-                if (newAccessToken.isNullOrEmpty()) {
+                is TokenReissuer.Outcome.Rotated -> {
+                    if (outcome.accessToken == oldAccessToken) {
+                        Log.e("TokenAuthenticator", "❌ 리이슈 실패: 서버가 이전과 동일한 토큰을 반환함")
+                        runBlocking { authRepository.get().clearSession() }
+                        null
+                    } else {
+                        originalRequest.withBearer(outcome.accessToken)
+                    }
+                }
+
+                TokenReissuer.Outcome.Failed -> {
                     Log.e("TokenAuthenticator", "❌ 리이슈 실패: 세션 만료. 로그아웃 처리 진행")
                     runBlocking { authRepository.get().clearSession() }
-                    return null
+                    null
                 }
-                if (newAccessToken == oldAccessToken) {
-                    Log.e("TokenAuthenticator", "❌ 리이슈 실패: 서버가 이전과 동일한 토큰을 반환함")
-                    runBlocking { authRepository.get().clearSession() }
-                    return null
-                }
-                return buildRequest(
-                    request = originalRequest,
-                    accessToken = newAccessToken,
-                )
             }
         }
     }
 
-private fun buildRequest(
-    request: Request,
-    accessToken: String,
-) = request
-    .newBuilder()
-    .header("Authorization", "Bearer $accessToken")
-    .build()
+/** 액세스 토큰만 갈아 끼운 재시도용 요청 사본 (OkHttp 공식 recipes 의 인증 예제 형태). */
+private fun Request.withBearer(accessToken: String) =
+    newBuilder()
+        .header("Authorization", "Bearer $accessToken")
+        .build()
 
-private fun responseCount(response: Response): Int {
-    var count = 1
-    var prior = response.priorResponse
-    while (prior != null) {
-        count++
-        prior = prior.priorResponse
-    }
-    return count
-}
+/**
+ * 이 응답까지의 시도 횟수 — OkHttp 는 재시도마다 직전 시도의 응답을 [Response.priorResponse]
+ * 로 매달아 사슬을 만든다. generateSequence 는 현재 응답에서 시작해 priorResponse 가 null
+ * (첫 시도)이 될 때까지 사슬을 따라가고, count 가 그 길이 = 총 시도 횟수다.
+ * (develop 의 while 루프와 동일 계산 — OkHttp 공식 recipes 의 Kotlin 형태.)
+ */
+private val Response.responseCount: Int
+    get() = generateSequence(this) { it.priorResponse }.count()
