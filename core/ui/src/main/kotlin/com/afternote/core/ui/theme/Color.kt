@@ -8,7 +8,7 @@ import androidx.compose.ui.graphics.Color
 
 private val White = Color(0xFFFFFFFF)
 
-private val Black = Color(0xFF000000)
+internal val Black = Color(0xFF000000)
 
 private val IconBk = Color(0xFF000000).copy(alpha = 0.6F)
 
