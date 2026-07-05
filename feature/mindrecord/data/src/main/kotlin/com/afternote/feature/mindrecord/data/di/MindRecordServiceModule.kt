@@ -10,6 +10,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import retrofit2.Retrofit
+import retrofit2.create
 import javax.inject.Singleton
 
 @Module
@@ -17,22 +18,22 @@ import javax.inject.Singleton
 object MindRecordServiceModule {
     @Provides
     @Singleton
-    fun provideDailyQuestionApiService(retrofit: Retrofit): DailyQuestionApiService = retrofit.create(DailyQuestionApiService::class.java)
+    fun provideDailyQuestionApiService(retrofit: Retrofit): DailyQuestionApiService = retrofit.create<DailyQuestionApiService>()
 
     @Provides
     @Singleton
-    fun provideDiaryApiService(retrofit: Retrofit): DiaryApiService = retrofit.create(DiaryApiService::class.java)
+    fun provideDiaryApiService(retrofit: Retrofit): DiaryApiService = retrofit.create<DiaryApiService>()
 
     @Provides
     @Singleton
-    fun provideDeepThoughtApiService(retrofit: Retrofit): DeepThoughtApiService = retrofit.create(DeepThoughtApiService::class.java)
+    fun provideDeepThoughtApiService(retrofit: Retrofit): DeepThoughtApiService = retrofit.create<DeepThoughtApiService>()
 
     @Provides
     @Singleton
     fun provideMindRecordReceiverApiService(retrofit: Retrofit): MindRecordReceiverApiService =
-        retrofit.create(MindRecordReceiverApiService::class.java)
+        retrofit.create<MindRecordReceiverApiService>()
 
     @Provides
     @Singleton
-    fun provideWeeklyReportApiService(retrofit: Retrofit): WeeklyReportApiService = retrofit.create(WeeklyReportApiService::class.java)
+    fun provideWeeklyReportApiService(retrofit: Retrofit): WeeklyReportApiService = retrofit.create<WeeklyReportApiService>()
 }

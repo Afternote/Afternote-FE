@@ -32,11 +32,11 @@ lifecycleViewmodelKtx = "2.11.0-alpha03"
 hiltNavigationCompose = "1.4.0-alpha01"
 coilNetworkOkhttp = "3.2.0"
 coilCompose = "3.2.0"
-work = "2.9.1"
+work = "2.11.2"
 composeWheelPicker = "1.0.0-rc02"
 fragment = "1.8.5"
 kotlinxCoroutines = "1.10.2"
-splashscreen = "1.0.1"
+splashscreen = "1.2.0"
 startupRuntime = "1.2.0"
 navigationCommonKtx = "2.9.7"
 runtime = "1.10.6"
@@ -45,6 +45,7 @@ paging = "3.5.0"
 screenshot = "0.0.1-alpha15"
 googleServices = "4.4.4"
 firebaseAppDistribution = "5.2.1"
+konsist = "0.17.3"
 
 [libraries]
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
@@ -65,7 +66,6 @@ androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "u
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
-androidx-compose-material-icons-core = { group = "androidx.compose.material", name = "material-icons-core" }
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
@@ -107,6 +107,7 @@ androidx-paging-common = { group = "androidx.paging", name = "paging-common", ve
 androidx-paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging" }
 androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }
 screenshot-validation-api = { group = "com.android.tools.screenshot", name = "screenshot-validation-api", version.ref = "screenshot" }
+konsist = { group = "com.lemonappdev", name = "konsist", version.ref = "konsist" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
