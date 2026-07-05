@@ -92,6 +92,10 @@ class ReceiverHomeViewModel
                             senderMessage =
                                 senderMessageBody?.let {
                                     // orEmpty(): null 이면 "" — createdAt 미제공(구버전 서버) 시 날짜 슬롯만 비워 보이게.
+                                    // senderMessageInfo 에 ?. 가 없어도 안전: senderMessageBody(= info?.message?…) 가
+                                    // non-null 인 이 블록에선 안전 호출 체인의 대우로 info 도 non-null 이 보장되고,
+                                    // K2 가 이를 smart cast 한다 (Kotlin 2.0+ "Local variables and further scopes").
+                                    // ?. 를 붙이면 "여기서 null 일 수 있다" 는 거짓 신호가 되어 생략.
                                     SenderMessage(date = senderMessageInfo.createdAt.orEmpty(), body = it)
                                 },
                             mindRecord =
