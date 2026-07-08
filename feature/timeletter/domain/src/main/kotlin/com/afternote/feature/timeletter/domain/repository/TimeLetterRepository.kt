@@ -2,6 +2,7 @@ package com.afternote.feature.timeletter.domain.repository
 
 import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetter
+import com.afternote.feature.timeletter.domain.model.TimeLetterDeliveryMode
 import com.afternote.feature.timeletter.domain.model.TimeLetterList
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 
@@ -18,6 +19,7 @@ interface TimeLetterRepository {
         sendAt: String?,
         status: TimeLetterStatus,
         receiverIds: List<Long>?,
+        deliveryMode: TimeLetterDeliveryMode? = null,
     ): TimeLetter
 
     suspend fun updateTimeLetter(
@@ -26,6 +28,7 @@ interface TimeLetterRepository {
         blocks: List<NewTimeLetterBlock>,
         sendAt: String?,
         status: TimeLetterStatus?,
+        deliveryMode: TimeLetterDeliveryMode? = null,
     ): TimeLetter
 
     suspend fun deleteTimeLetters(timeLetterIds: List<Long>)

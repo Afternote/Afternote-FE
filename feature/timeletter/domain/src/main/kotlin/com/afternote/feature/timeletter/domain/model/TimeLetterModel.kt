@@ -48,3 +48,11 @@ enum class TimeLetterBlockType {
     FILE,
     LINK,
 }
+
+enum class TimeLetterDeliveryMode {
+    // 날짜 지정 발송
+    DATE,
+
+    // 사후(死後) 전달
+    POST_DEATH,
+}

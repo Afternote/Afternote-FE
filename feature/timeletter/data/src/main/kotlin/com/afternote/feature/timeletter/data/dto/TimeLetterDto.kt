@@ -16,6 +16,17 @@ enum class TimeLetterStatusDto {
 }
 
 @Serializable
+enum class TimeLetterDeliveryModeDto {
+    // 날짜 지정 발송
+    @SerialName("DATE")
+    DATE,
+
+    // 사후(死後) 전달
+    @SerialName("POST_DEATH")
+    POST_DEATH,
+}
+
+@Serializable
 enum class TimeLetterBlockTypeDto {
     @SerialName("TEXT")
     TEXT,
@@ -56,6 +67,7 @@ data class TimeLetterBlockResponseDto(
 data class TimeLetterCreateRequest(
     @SerialName("title") val title: String? = null,
     @SerialName("sendAt") val sendAt: String? = null,
+    @SerialName("deliveryMode") val deliveryMode: TimeLetterDeliveryModeDto? = null,
     @SerialName("status") val status: TimeLetterStatusDto,
     @SerialName("blocks") val blocks: List<TimeLetterBlockRequest> = emptyList(),
     @SerialName("receiverIds") val receiverIds: List<Long> = emptyList(),
@@ -65,6 +77,7 @@ data class TimeLetterCreateRequest(
 data class TimeLetterUpdateRequest(
     @SerialName("title") val title: String? = null,
     @SerialName("sendAt") val sendAt: String? = null,
+    @SerialName("deliveryMode") val deliveryMode: TimeLetterDeliveryModeDto? = null,
     @SerialName("status") val status: TimeLetterStatusDto? = null,
     @SerialName("blocks") val blocks: List<TimeLetterBlockRequest> = emptyList(),
 )

@@ -10,6 +10,7 @@ import com.afternote.feature.timeletter.data.mapper.toDomain
 import com.afternote.feature.timeletter.data.mapper.toDto
 import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetter
+import com.afternote.feature.timeletter.domain.model.TimeLetterDeliveryMode
 import com.afternote.feature.timeletter.domain.model.TimeLetterList
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
@@ -44,12 +45,14 @@ class TimeLetterRepositoryImpl
             sendAt: String?,
             status: TimeLetterStatus,
             receiverIds: List<Long>?,
+            deliveryMode: TimeLetterDeliveryMode?,
         ): TimeLetter =
             timeLetterApiService
                 .createTimeLetter(
                     TimeLetterCreateRequest(
                         title = title,
                         sendAt = sendAt,
+                        deliveryMode = deliveryMode?.toDto(),
                         status = status.toDto(),
                         blocks = blocks.map { it.toDto() },
                         receiverIds = receiverIds ?: emptyList(),
@@ -63,6 +66,7 @@ class TimeLetterRepositoryImpl
             blocks: List<NewTimeLetterBlock>,
             sendAt: String?,
             status: TimeLetterStatus?,
+            deliveryMode: TimeLetterDeliveryMode?,
         ): TimeLetter =
             timeLetterApiService
                 .updateTimeLetter(
@@ -71,6 +75,7 @@ class TimeLetterRepositoryImpl
                         TimeLetterUpdateRequest(
                             title = title,
                             sendAt = sendAt,
+                            deliveryMode = deliveryMode?.toDto(),
                             status = status?.toDto(),
                             blocks = blocks.map { it.toDto() },
                         ),
