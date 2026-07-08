@@ -93,3 +93,31 @@ data class PasswordChangeRequest(
     val currentPassword: String,
     val newPassword: String,
 )
+
+// 아이디/비밀번호 찾기 인증번호 발송 (POST /auth/find/send/code)
+@Serializable
+data class FindSendCodeRequest(
+    val email: String,
+)
+
+// 아이디(이메일) 찾기 (POST /auth/email/find)
+@Serializable
+data class EmailFindRequest(
+    val email: String,
+    @SerialName("certificateCode") val certificateCode: String,
+)
+
+@Serializable
+data class EmailFindData(
+    val name: String,
+    val email: String,
+)
+
+// 비밀번호 찾기/재설정 (POST /auth/password/find)
+@Serializable
+data class PasswordFindRequest(
+    val email: String,
+    @SerialName("certificateCode") val certificateCode: String,
+    val newPassword: String,
+    val confirmPassword: String,
+)

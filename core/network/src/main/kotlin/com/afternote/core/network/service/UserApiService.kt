@@ -2,6 +2,8 @@ package com.afternote.core.network.service
 
 import com.afternote.core.network.dto.DeliveryConditionRequest
 import com.afternote.core.network.dto.DeliveryConditionResponseDto
+import com.afternote.core.network.dto.ReceiverDeliveryConditionResponseDto
+import com.afternote.core.network.dto.ReceiverDeliveryConditionUpdateRequest
 import com.afternote.core.network.dto.ReceiverDetailResponseDto
 import com.afternote.core.network.dto.ReceiverListResponseDto
 import com.afternote.core.network.dto.SocialAccountLinkRequest
@@ -22,6 +24,7 @@ import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.PUT
 
 interface UserApiService {
     // 수신자 목록 조회
@@ -95,6 +98,8 @@ interface UserApiService {
         @Path("provider") provider: String,
     ): BaseResponse<UserConnectedAccountResponseDto>
 
+    // [DEPRECATED] 유저 단위 전달 조건 — 스웨거에서 제거됨. 수신자별 delivery-conditions 로 대체 예정.
+    // 사후 관리 재설계(수신자 × 콘텐츠) 마이그레이션 시 이 두 메서드와 관련 화면을 함께 정리해야 한다.
     // 전달 조건 조회
     @GET("users/delivery-condition")
     suspend fun getDeliveryCondition(): BaseResponse<DeliveryConditionResponseDto>
@@ -104,4 +109,21 @@ interface UserApiService {
     suspend fun updateDeliveryCondition(
         @Body request: DeliveryConditionRequest,
     ): BaseResponse<DeliveryConditionResponseDto>
+
+    // 활동 기록(ping) — 앱 실행 시 호출해 미사용 타이머 리셋
+    @POST("users/me/activity")
+    suspend fun recordActivity(): BaseResponse<Unit>
+
+    // 수신자별 전달 조건 조회 (사후 관리)
+    @GET("users/me/receivers/{receiverId}/delivery-conditions")
+    suspend fun getReceiverDeliveryConditions(
+        @Path("receiverId") receiverId: Long,
+    ): BaseResponse<ReceiverDeliveryConditionResponseDto>
+
+    // 수신자별 전달 조건 설정/변경 (사후 관리)
+    @PUT("users/me/receivers/{receiverId}/delivery-conditions")
+    suspend fun updateReceiverDeliveryConditions(
+        @Path("receiverId") receiverId: Long,
+        @Body request: ReceiverDeliveryConditionUpdateRequest,
+    ): BaseResponse<ReceiverDeliveryConditionResponseDto>
 }
