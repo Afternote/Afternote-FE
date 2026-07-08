@@ -34,6 +34,7 @@ data class DeepThoughtCreatePayload(
     val category: String,
     val tags: List<String>? = null,
     val imageUrl: String? = null,
+    val receiverIds: List<Long> = emptyList(),
 )
 
 data class DeepThoughtUpdatePayload(
@@ -43,6 +44,7 @@ data class DeepThoughtUpdatePayload(
     val category: String? = null,
     val tags: List<String>? = null,
     val imageUrl: String? = null,
+    val receiverIds: List<Long> = emptyList(),
 )
 
 data class DeepThoughtCategory(

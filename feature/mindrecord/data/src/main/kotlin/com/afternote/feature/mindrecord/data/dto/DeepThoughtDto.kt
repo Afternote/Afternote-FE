@@ -9,8 +9,8 @@ data class DeepThoughtCreateRequest(
     @SerialName("content") val content: String,
     @SerialName("isDraft") val isDraft: Boolean,
     @SerialName("category") val category: String,
-    @SerialName("tag") val tag: List<String>? = null,
-    @SerialName("imageUrl") val imageUrl: String? = null,
+    @SerialName("tags") val tags: List<String>? = null,
+    @SerialName("receiverIds") val receiverIds: List<Long> = emptyList(),
 )
 
 @Serializable
@@ -19,8 +19,8 @@ data class DeepThoughtUpdateRequest(
     @SerialName("content") val content: String? = null,
     @SerialName("isDraft") val isDraft: Boolean? = null,
     @SerialName("category") val category: String? = null,
-    @SerialName("tag") val tag: List<String>? = null,
-    @SerialName("imageUrl") val imageUrl: String? = null,
+    @SerialName("tags") val tags: List<String>? = null,
+    @SerialName("receiverIds") val receiverIds: List<Long> = emptyList(),
 )
 
 @Serializable
@@ -60,15 +60,20 @@ data class DeepThoughtCategoryItem(
     @SerialName("title") val title: String,
 )
 
+// 서버 응답 `data` 는 배열이 아니라 `{ "categories": [...] }` 객체로 감싸져 있음.
+@Serializable
+data class DeepThoughtCategoryListResponse(
+    @SerialName("categories") val categories: List<DeepThoughtCategoryItem> = emptyList(),
+)
+
 @Serializable
 data class DeepThoughtCategoryCreateRequest(
-    @SerialName("deepThoughtId") val deepThoughtId: Long? = null,
-    @SerialName("category") val category: String,
+    @SerialName("title") val title: String,
 )
 
 @Serializable
 data class DeepThoughtCategoryUpdateRequest(
-    @SerialName("category") val category: String,
+    @SerialName("title") val title: String,
 )
 
 @Serializable

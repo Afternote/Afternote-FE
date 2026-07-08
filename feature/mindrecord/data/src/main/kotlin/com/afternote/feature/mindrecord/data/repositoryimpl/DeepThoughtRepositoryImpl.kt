@@ -57,7 +57,7 @@ class DeepThoughtRepositoryImpl
 
         override suspend fun getCategories(): Result<List<DeepThoughtCategory>> =
             runCatching {
-                api.getDeepThoughtCategories().requireData().map { it.toDomain() }
+                api.getDeepThoughtCategories().requireData().categories.map { it.toDomain() }
             }
 
         override suspend fun createCategory(payload: DeepThoughtCategoryCreatePayload): Result<DeepThoughtCategory> =

@@ -57,8 +57,8 @@ fun DeepThoughtCreatePayload.toRequest(): DeepThoughtCreateRequest =
         content = content,
         isDraft = isDraft,
         category = category,
-        tag = tags,
-        imageUrl = imageUrl,
+        tags = tags,
+        receiverIds = receiverIds,
     )
 
 fun DeepThoughtUpdatePayload.toRequest(): DeepThoughtUpdateRequest =
@@ -67,8 +67,8 @@ fun DeepThoughtUpdatePayload.toRequest(): DeepThoughtUpdateRequest =
         content = content,
         isDraft = isDraft,
         category = category,
-        tag = tags,
-        imageUrl = imageUrl,
+        tags = tags,
+        receiverIds = receiverIds,
     )
 
 fun DeepThoughtCategoryItem.toDomain(): DeepThoughtCategory =
@@ -85,11 +85,10 @@ fun DeepThoughtCategoryMutationResponse.toDomain(): DeepThoughtCategory =
 
 fun DeepThoughtCategoryCreatePayload.toRequest(): DeepThoughtCategoryCreateRequest =
     DeepThoughtCategoryCreateRequest(
-        category = category,
-        deepThoughtId = deepThoughtId,
+        title = category,
     )
 
 fun DeepThoughtCategoryUpdatePayload.toRequest(): DeepThoughtCategoryUpdateRequest =
     DeepThoughtCategoryUpdateRequest(
-        category = category,
+        title = category,
     )

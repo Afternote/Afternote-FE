@@ -19,7 +19,7 @@ data class WeeklyReportResponse(
 data class WeeklyReportDayDto(
     @SerialName("diaryId") val diaryId: Long = 0L,
     @SerialName("day") val day: Int = 0,
-    @SerialName("isDiary") val isDiary: Boolean = false,
+    @SerialName("diary") val isDiary: Boolean = false,
     @SerialName("emotion") val emotion: TodayMood? = null,
 )
 

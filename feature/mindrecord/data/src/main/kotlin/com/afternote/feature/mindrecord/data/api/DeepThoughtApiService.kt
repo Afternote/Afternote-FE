@@ -2,7 +2,7 @@ package com.afternote.feature.mindrecord.data.api
 
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.feature.mindrecord.data.dto.DeepThoughtCategoryCreateRequest
-import com.afternote.feature.mindrecord.data.dto.DeepThoughtCategoryItem
+import com.afternote.feature.mindrecord.data.dto.DeepThoughtCategoryListResponse
 import com.afternote.feature.mindrecord.data.dto.DeepThoughtCategoryMutationResponse
 import com.afternote.feature.mindrecord.data.dto.DeepThoughtCategoryUpdateRequest
 import com.afternote.feature.mindrecord.data.dto.DeepThoughtCreateRequest
@@ -23,6 +23,7 @@ interface DeepThoughtApiService {
         @Query("date") date: String? = null,
         @Query("tag") tag: String? = null,
         @Query("category") category: String? = null,
+        @Query("draftOnly") draftOnly: Boolean? = null,
     ): BaseResponse<DeepThoughtListResponse>
 
     @GET("deep-thought/random")
@@ -45,7 +46,7 @@ interface DeepThoughtApiService {
     ): BaseResponse<Unit>
 
     @GET("deep-thought/categories")
-    suspend fun getDeepThoughtCategories(): BaseResponse<List<DeepThoughtCategoryItem>>
+    suspend fun getDeepThoughtCategories(): BaseResponse<DeepThoughtCategoryListResponse>
 
     @POST("deep-thought/categories")
     suspend fun createDeepThoughtCategory(

@@ -33,7 +33,6 @@ fun DailyQuestionCreatePayload.toRequest(): DailyQuestionCreateRequest =
         content = content,
         isDraft = isDraft,
         questionId = questionId,
-        imageUrl = imageUrl,
         receiverIds = receiverIds,
     )
 
@@ -41,7 +40,5 @@ fun DailyQuestionUpdatePayload.toRequest(): DailyQuestionUpdateRequest =
     DailyQuestionUpdateRequest(
         content = content,
         isDraft = isDraft,
-        date = date,
-        questionId = questionId,
-        imageUrl = imageUrl,
+        receiverIds = receiverIds,
     )

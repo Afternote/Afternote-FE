@@ -34,10 +34,9 @@ data class DiaryCreatePayload(
 )
 
 data class DiaryUpdatePayload(
-    val title: String,
-    val content: String,
-    val isDraft: Boolean,
-    val todayMood: TodayMood,
-    val date: String,
-    val imageUrl: String? = null,
+    val title: String? = null,
+    val content: String? = null,
+    val isDraft: Boolean? = null,
+    val todayMood: TodayMood? = null,
+    val receiverIds: List<Long> = emptyList(),
 )

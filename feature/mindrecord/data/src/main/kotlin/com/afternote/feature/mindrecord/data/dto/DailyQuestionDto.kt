@@ -16,7 +16,6 @@ data class DailyQuestionCreateRequest(
     @SerialName("content") val content: String,
     @SerialName("isDraft") val isDraft: Boolean,
     @SerialName("questionId") val questionId: Long,
-    @SerialName("imageUrl") val imageUrl: String? = null,
     @SerialName("receiverIds") val receiverIds: List<Long> = emptyList(),
 )
 
@@ -24,9 +23,7 @@ data class DailyQuestionCreateRequest(
 data class DailyQuestionUpdateRequest(
     @SerialName("content") val content: String? = null,
     @SerialName("isDraft") val isDraft: Boolean? = null,
-    @SerialName("date") val date: String? = null,
-    @SerialName("questionId") val questionId: Long? = null,
-    @SerialName("imageUrl") val imageUrl: String? = null,
+    @SerialName("receiverIds") val receiverIds: List<Long> = emptyList(),
 )
 
 @OptIn(ExperimentalSerializationApi::class)

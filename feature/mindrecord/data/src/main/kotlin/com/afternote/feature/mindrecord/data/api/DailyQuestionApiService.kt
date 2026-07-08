@@ -17,6 +17,7 @@ interface DailyQuestionApiService {
     @GET("daily-questions")
     suspend fun getDailyQuestions(
         @Query("date") date: String? = null,
+        @Query("draftOnly") draftOnly: Boolean? = null,
     ): BaseResponse<List<DailyQuestionListItem>>
 
     @GET("daily-questions/today")

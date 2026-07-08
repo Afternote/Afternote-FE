@@ -22,19 +22,17 @@ data class DiaryCreateRequest(
     @SerialName("title") val title: String,
     @SerialName("content") val content: String,
     @SerialName("isDraft") val isDraft: Boolean,
-    @SerialName("todayMood") val todayMood: TodayMood,
-    @SerialName("imageUrl") val imageUrl: String? = null,
+    @SerialName("todayMood") val todayMood: TodayMood? = null,
     @SerialName("receiverIds") val receiverIds: List<Long> = emptyList(),
 )
 
 @Serializable
 data class DiaryUpdateRequest(
-    @SerialName("title") val title: String,
-    @SerialName("content") val content: String,
-    @SerialName("isDraft") val isDraft: Boolean,
-    @SerialName("todayMood") val todayMood: TodayMood,
-    @SerialName("date") val date: String,
-    @SerialName("imageUrl") val imageUrl: String? = null,
+    @SerialName("title") val title: String? = null,
+    @SerialName("content") val content: String? = null,
+    @SerialName("isDraft") val isDraft: Boolean? = null,
+    @SerialName("todayMood") val todayMood: TodayMood? = null,
+    @SerialName("receiverIds") val receiverIds: List<Long> = emptyList(),
 )
 
 @OptIn(ExperimentalSerializationApi::class)

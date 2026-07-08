@@ -32,7 +32,5 @@ data class DailyQuestionCreatePayload(
 data class DailyQuestionUpdatePayload(
     val content: String? = null,
     val isDraft: Boolean? = null,
-    val date: String? = null,
-    val questionId: Long? = null,
-    val imageUrl: String? = null,
+    val receiverIds: List<Long> = emptyList(),
 )
