@@ -1,5 +1,7 @@
 package com.afternote.core.domain.repository
 
+import com.afternote.core.model.delivery.DeliveryConditionItem
+import com.afternote.core.model.delivery.ReceiverDeliveryConditions
 import com.afternote.core.model.user.DeliveryCondition
 import com.afternote.core.model.user.DeliveryConditionType
 import com.afternote.core.model.user.Receiver
@@ -87,4 +89,13 @@ interface UserRepository {
         inactivityPeriodDays: Int?,
         specificDate: String?,
     ): DeliveryCondition
+
+    // 수신자별 전달조건 조회 (콘텐츠별)
+    suspend fun getReceiverDeliveryConditions(receiverId: Long): ReceiverDeliveryConditions
+
+    // 수신자별 전달조건 설정/변경 (보낸 conditions 로 저장)
+    suspend fun updateReceiverDeliveryConditions(
+        receiverId: Long,
+        conditions: List<DeliveryConditionItem>,
+    ): ReceiverDeliveryConditions
 }

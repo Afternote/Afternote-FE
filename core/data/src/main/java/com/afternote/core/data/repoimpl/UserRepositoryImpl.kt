@@ -1,8 +1,11 @@
 package com.afternote.core.data.repoimpl
 
+import com.afternote.core.data.mapper.delivery.toRequestDto
 import com.afternote.core.data.mapper.user.toDomain
 import com.afternote.core.data.mapper.user.toDto
 import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.model.delivery.DeliveryConditionItem
+import com.afternote.core.model.delivery.ReceiverDeliveryConditions
 import com.afternote.core.model.user.DeliveryCondition
 import com.afternote.core.model.user.DeliveryConditionType
 import com.afternote.core.model.user.Receiver
@@ -18,6 +21,7 @@ import com.afternote.core.network.dto.UserPatchReceiverRequest
 import com.afternote.core.network.dto.UserUpdateProfileRequest
 import com.afternote.core.network.dto.UserUpdatePushSettingRequest
 import com.afternote.core.network.dto.UserUpdateReceiverMessageRequest
+import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionUpdateRequest
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
 import com.afternote.core.network.service.UserApiService
@@ -27,6 +31,7 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
+import com.afternote.core.data.mapper.delivery.toDomain as toDeliveryConditionsDomain
 
 class UserRepositoryImpl
     @Inject
@@ -202,4 +207,21 @@ class UserRepositoryImpl
                     ),
                 ).requireData()
                 .toDomain()
+
+        override suspend fun getReceiverDeliveryConditions(receiverId: Long): ReceiverDeliveryConditions =
+            userApiService
+                .getReceiverDeliveryConditions(receiverId)
+                .requireData()
+                .toDeliveryConditionsDomain()
+
+        override suspend fun updateReceiverDeliveryConditions(
+            receiverId: Long,
+            conditions: List<DeliveryConditionItem>,
+        ): ReceiverDeliveryConditions =
+            userApiService
+                .updateReceiverDeliveryConditions(
+                    receiverId = receiverId,
+                    request = ReceiverDeliveryConditionUpdateRequest(conditions.map { it.toRequestDto() }),
+                ).requireData()
+                .toDeliveryConditionsDomain()
     }
