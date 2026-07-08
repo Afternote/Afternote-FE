@@ -138,6 +138,12 @@ class UserRepositoryImpl
                 .requireStatus()
         }
 
+        override suspend fun logActivity() {
+            userApiService
+                .logActivity()
+                .requireStatus()
+        }
+
         override suspend fun getMyPushSettings(): UserPushSetting =
             userApiService
                 .getMyPushSettings()
