@@ -12,12 +12,14 @@ sealed class DayContent {
     ) : DayContent() // 숫자 + 하단 점
 
     data class EmojiWithDot(
+        val day: Int,
         val emoji: String,
-    ) : DayContent() // 이모지 + 하단 점
+    ) : DayContent() // 숫자 + 하단 이모지 (일기 기록됨)
 
     data class EmojiOnly(
+        val day: Int,
         val emoji: String,
-    ) : DayContent() // 이모지만 (dot 없음)
+    ) : DayContent() // 숫자 + 하단 이모지 (일기 없음)
 }
 
 // 배경 원형 색상 타입

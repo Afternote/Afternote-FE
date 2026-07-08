@@ -40,8 +40,10 @@ fun DailyCalendar(
     modifier: Modifier = Modifier,
     answeredDays: Set<Int> = emptySet(),
     emotionByDay: Map<Int, String> = emptyMap(),
+    selectedDay: Int? = null,
+    onDayClick: ((Int) -> Unit)? = null,
 ) {
-    val days = buildDays(year, month, answeredDays, emotionByDay)
+    val days = buildDays(year, month, answeredDays, emotionByDay, selectedDay)
 
     Column(
         modifier = modifier,
@@ -82,7 +84,7 @@ fun DailyCalendar(
                 CardDefaults.cardColors(
                     containerColor = Color(0xFFFFFFFF),
                 ),
-            border = BorderStroke(1.dp, color = Color(0xFF000000).copy(alpha = 0.05f)),
+            border = BorderStroke(1.dp, color = AfternoteDesign.colors.gray2),
             modifier = Modifier.fillMaxWidth(),
         ) {
             Column(
@@ -118,7 +120,17 @@ fun DailyCalendar(
                         Row(modifier = Modifier.fillMaxWidth()) {
                             week.forEach { dayModel ->
                                 Box(modifier = Modifier.weight(1f)) {
-                                    DayCell(model = dayModel, type = type)
+                                    val day = dayModel.day
+                                    DayCell(
+                                        model = dayModel,
+                                        type = type,
+                                        onClick =
+                                            if (onDayClick != null && day != null) {
+                                                { onDayClick(day) }
+                                            } else {
+                                                null
+                                            },
+                                    )
                                 }
                             }
                             // 마지막 주가 7개 미만이면 빈 셀로 채우기
@@ -138,6 +150,7 @@ fun buildDays(
     month: Int,
     answeredDays: Set<Int>,
     emotionByDay: Map<Int, String>,
+    selectedDay: Int? = null,
 ): List<DayUiModel> {
     val calendar =
         Calendar.getInstance().apply {
@@ -158,9 +171,11 @@ fun buildDays(
         // 앞 빈 셀
         repeat(firstDayOfWeek) { add(DayUiModel(day = null)) }
         for (day in 1..daysInMonth) {
+            // Figma 2671:16704/16718 — 선택한 날은 검은 원, 오늘은 연회색 원(isToday),
+            // 답변한 날은 점 인디케이터
             val state =
                 when {
-                    day == today -> DayState.TODAY
+                    day == selectedDay -> DayState.SELECTED
                     day in answeredDays -> DayState.ANSWERED
                     else -> DayState.NONE
                 }
@@ -169,6 +184,7 @@ fun buildDays(
                     day = day,
                     state = state,
                     emotion = emotionByDay[day],
+                    isToday = day == today,
                 ),
             )
         }
@@ -186,6 +202,8 @@ private fun DailyCalendarPreview() {
             onNextMonth = {},
             onPrevMonth = {},
             answeredDays = setOf(3, 7, 14),
+            selectedDay = 15,
+            onDayClick = {},
         )
     }
 }

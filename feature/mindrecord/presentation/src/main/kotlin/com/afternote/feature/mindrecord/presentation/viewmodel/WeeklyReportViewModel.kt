@@ -127,8 +127,8 @@ class WeeklyReportViewModel
                     dayOfWeek = date.dayOfWeek,
                     content =
                         when {
-                            emoji != null && isDiary -> DayContent.EmojiWithDot(emoji)
-                            emoji != null -> DayContent.EmojiOnly(emoji)
+                            emoji != null && isDiary -> DayContent.EmojiWithDot(dayOfMonth, emoji)
+                            emoji != null -> DayContent.EmojiOnly(dayOfMonth, emoji)
                             isDiary -> DayContent.NumberWithDot(dayOfMonth)
                             else -> DayContent.NumberOnly(dayOfMonth)
                         },

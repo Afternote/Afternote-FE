@@ -112,6 +112,7 @@ fun RecordCategoryCard(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
+            modifier = Modifier.padding(start = 4.dp),
             text = subtitle,
             style = AfternoteDesign.typography.captionLargeR,
             color = AfternoteDesign.colors.gray5,

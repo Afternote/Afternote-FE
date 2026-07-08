@@ -4,15 +4,18 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -22,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
@@ -48,6 +52,10 @@ import com.mohamedrejeb.richeditor.ui.BasicRichTextEditor
  * - 외부에서 받은 [value] 는 초기 시드 HTML 로만 사용된다 (이후 외부 업데이트는 무시).
  * - 사용자 입력이 발생하면 [onValueChange] 로 직렬화된 HTML 문자열을 emit 한다.
  *   서버 페이로드의 `content` 필드에 그대로 실어 보내면 된다.
+ *
+ * @param contentPadding 에디터 카드 바깥 여백. 화면 좌우 마진(예: 20dp)을 카드에만 적용하고
+ *   하단 툴바는 풀-블리드로 유지하고 싶을 때 사용한다.
+ * @param bottomContent 에디터 카드와 하단 툴바 사이에 렌더링되는 슬롯. 키보드가 올라오면 숨겨진다.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -58,6 +66,8 @@ fun WriteTextField(
     onSaveDraftClick: () -> Unit = {},
     onDraftCountClick: () -> Unit = {},
     draftCount: Int = 0,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    bottomContent: (@Composable () -> Unit)? = null,
 ) {
     val state = rememberRichTextState()
 
@@ -125,8 +135,11 @@ fun WriteTextField(
                 Modifier
                     .weight(1f)
                     .fillMaxWidth()
+                    .padding(contentPadding)
                     .padding(bottom = 16.dp)
-                    .background(color = AfternoteDesign.colors.white),
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(color = AfternoteDesign.colors.white)
+                    .border(1.dp, AfternoteDesign.colors.gray2, RoundedCornerShape(6.dp)),
         ) {
             BasicRichTextEditor(
                 state = state,
@@ -134,23 +147,29 @@ fun WriteTextField(
                     Modifier
                         .fillMaxSize()
                         .focusRequester(editorFocusRequester)
-                        .padding(16.dp),
+                        .padding(horizontal = 16.dp, vertical = 20.dp),
             )
             if (state.annotatedString.text.isEmpty()) {
                 Text(
                     text = stringResource(R.string.mindrecord_write_field_placeholder),
+                    style = AfternoteDesign.typography.textField,
                     color = AfternoteDesign.colors.gray4,
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp),
                 )
             }
             Text(
                 text = stringResource(R.string.mindrecord_write_field_character_count, state.annotatedString.text.length),
-                color = AfternoteDesign.colors.gray4,
+                style = AfternoteDesign.typography.footnoteCaption,
+                color = AfternoteDesign.colors.gray5,
                 modifier =
                     Modifier
                         .align(Alignment.BottomEnd)
                         .padding(16.dp),
             )
+        }
+
+        if (bottomContent != null && !imeVisible) {
+            bottomContent()
         }
 
         if (showTextStyleToolbar && imeVisible) {

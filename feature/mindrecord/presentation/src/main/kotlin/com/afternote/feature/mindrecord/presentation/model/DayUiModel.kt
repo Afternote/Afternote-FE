@@ -4,4 +4,5 @@ data class DayUiModel(
     val day: Int?,
     val state: DayState = DayState.NONE,
     val emotion: String? = null,
+    val isToday: Boolean = false,
 )

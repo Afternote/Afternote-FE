@@ -8,6 +8,7 @@ import com.afternote.feature.mindrecord.domain.model.Diary
 import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DiaryList
 import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
+import com.afternote.feature.mindrecord.domain.model.MindRecordReceiver
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.data.dto.TodayMood as TodayMoodDto
 
@@ -16,7 +17,9 @@ fun DiaryListItem.toDomain(): Diary =
         diaryId = diaryId,
         title = title,
         content = content,
+        date = date,
         createdAt = createdAt,
+        isDraft = isDraft,
         todayMood = todayMood.toDomain(),
         imageUrl = imageUrl,
     )
@@ -26,6 +29,7 @@ fun DiaryListResponse.toDomain(): DiaryList =
         diaries = diaries.map { it.toDomain() },
         monthDiaryCount = monthDiaryCount,
         weeklyDominantMood = weeklyDominantMood?.toDomain(),
+        receivers = receivers.map { MindRecordReceiver(receiverId = it.receiverId, name = it.name) },
     )
 
 fun TodayMoodDto.toDomain(): TodayMood =
@@ -49,6 +53,7 @@ fun DiaryCreatePayload.toRequest(): DiaryCreateRequest =
         isDraft = isDraft,
         todayMood = todayMood.toDto(),
         imageUrl = imageUrl,
+        receiverIds = receiverIds,
     )
 
 fun DiaryUpdatePayload.toRequest(): DiaryUpdateRequest =

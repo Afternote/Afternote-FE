@@ -2,6 +2,7 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
@@ -19,12 +20,25 @@ class DailyQuestionWriteViewModel
     @Inject
     constructor(
         private val repository: DailyQuestionRepository,
+        private val userRepository: UserRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(DailyQuestionWriteUiState())
         val uiState: StateFlow<DailyQuestionWriteUiState> = _uiState.asStateFlow()
 
         init {
             loadTodayQuestion()
+            loadReceivers()
+        }
+
+        private fun loadReceivers() {
+            viewModelScope.launch {
+                val receivers = runCatching { userRepository.getReceivers() }.getOrElse { emptyList() }
+                _uiState.update { it.copy(receivers = receivers) }
+            }
+        }
+
+        fun onReceiversSelected(ids: Set<Long>) {
+            _uiState.update { it.copy(selectedReceiverIds = ids) }
         }
 
         private fun loadTodayQuestion() {
@@ -37,6 +51,7 @@ class DailyQuestionWriteViewModel
                             it.copy(
                                 questionId = today.questionId,
                                 questionContent = today.content,
+                                questionDay = today.day.takeIf { day -> day > 0 },
                                 isQuestionLoading = false,
                             )
                         }
@@ -73,6 +88,7 @@ class DailyQuestionWriteViewModel
                             isDraft = isDraft,
                             questionId = questionId,
                             imageUrl = state.imageUrl,
+                            receiverIds = state.selectedReceiverIds.toList(),
                         ),
                     ).onSuccess {
                         _uiState.update { it.copy(submitState = SubmitState.Succeeded) }

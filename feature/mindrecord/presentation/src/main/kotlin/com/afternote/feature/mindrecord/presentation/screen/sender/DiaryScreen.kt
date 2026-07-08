@@ -9,10 +9,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
@@ -41,7 +41,7 @@ import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListViewModel
 import java.time.YearMonth
-import androidx.compose.foundation.lazy.grid.items as gridItems
+import androidx.compose.foundation.lazy.staggeredgrid.items as staggeredItems
 
 @Composable
 fun DiaryScreen(
@@ -116,10 +116,11 @@ private fun DiaryListContent(
                     answeredDays = answeredDays,
                     emotionByDay = emotionByDay,
                 )
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(24.dp))
             }
 
             item {
+                // Figma 110:16804 — DAILY ANSWER 구분 텍스트 + gray3 라인
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -127,11 +128,14 @@ private fun DiaryListContent(
                     Text(
                         text = "DAILY ANSWER",
                         style = AfternoteDesign.typography.mono,
-                        color = AfternoteDesign.colors.black.copy(alpha = 0.4f),
+                        color = AfternoteDesign.colors.gray6,
                     )
-                    HorizontalDivider(modifier = Modifier.padding(start = 12.dp))
+                    HorizontalDivider(
+                        modifier = Modifier.padding(start = 12.dp),
+                        color = AfternoteDesign.colors.gray3,
+                    )
                 }
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(4.dp))
             }
 
             items(diaries, key = { it.id }) { diary ->
@@ -143,21 +147,24 @@ private fun DiaryListContent(
             }
         }
     } else {
-        LazyVerticalGrid(
+        LazyVerticalStaggeredGrid(
             modifier = modifier,
-            columns = GridCells.Fixed(2),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            columns = StaggeredGridCells.Fixed(2),
+            verticalItemSpacing = 8.dp,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            item(span = { GridItemSpan(2) }) {
+            item(span = StaggeredGridItemSpan.FullLine) {
                 DiaryReportCard(
                     monthDiaryCount = monthDiaryCount,
                     weeklyMoodEmoji = weeklyMoodEmoji,
+                    modifier = Modifier.padding(bottom = 16.dp),
                 )
-                Spacer(modifier = Modifier.height(24.dp))
             }
-            gridItems(diaries, key = { it.id }) { diary ->
-                DiaryCard(diary = diary)
+            staggeredItems(diaries, key = { it.id }) { diary ->
+                DiaryCard(
+                    diary = diary,
+                    onDelete = { onDelete(diary.id) },
+                )
             }
         }
     }

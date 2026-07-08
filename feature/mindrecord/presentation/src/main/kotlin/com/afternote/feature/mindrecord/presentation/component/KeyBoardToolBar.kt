@@ -36,6 +36,13 @@ import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.TextStyleState
 import com.afternote.feature.mindrecord.presentation.model.TextStyleType
 
+/**
+ * 작성 화면 하단 고정 툴바.
+ *
+ * Figma `nav_daily_write` (2372:22759) 리디자인 반영 — 링크 첨부 아이콘과 임시저장 카운터만 노출한다.
+ * [onTextStyleClick]/[onAlignChange] 는 기존 콜사이트 호환을 위해 시그니처에 유지한다.
+ */
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun BottomToolbar(
     onTextStyleClick: () -> Unit,
@@ -46,66 +53,46 @@ fun BottomToolbar(
     onDraftCountClick: () -> Unit = {},
     draftCount: Int = 0,
 ) {
-    Row(
+    Column(
         modifier =
             modifier
                 .fillMaxWidth()
-                .background(AfternoteDesign.colors.white)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
+                .background(AfternoteDesign.colors.gray1),
     ) {
-        IconButton(onClick = onLinkClick) {
-            Icon(
-                painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_ic_link),
-                contentDescription = stringResource(R.string.mindrecord_toolbar_link_cd),
-            )
-        }
-        Spacer(modifier = Modifier.width(8.dp))
+        HorizontalDivider(thickness = 1.dp, color = AfternoteDesign.colors.gray3)
 
-        IconButton(onClick = onTextStyleClick) {
-            Text(
-                text = "T",
-                style = AfternoteDesign.typography.bodyLargeB,
-                color = AfternoteDesign.colors.gray9,
-            )
-        }
-        Spacer(modifier = Modifier.width(8.dp))
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onLinkClick) {
+                Icon(
+                    painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_ic_link),
+                    contentDescription = stringResource(R.string.mindrecord_toolbar_link_cd),
+                    tint = AfternoteDesign.colors.gray9,
+                )
+            }
 
-        IconButton(onClick = { onAlignChange(TextAlign.Start) }) {
-            Icon(
-                painter = painterResource(R.drawable.mindrecord_align_left),
-                contentDescription = stringResource(R.string.mindrecord_toolbar_align_left_cd),
-            )
-        }
-        IconButton(onClick = { onAlignChange(TextAlign.Center) }) {
-            Icon(
-                painter = painterResource(R.drawable.mindrecord_align_center),
-                contentDescription = stringResource(R.string.mindrecord_toolbar_align_center_cd),
-            )
-        }
-        IconButton(onClick = { onAlignChange(TextAlign.End) }) {
-            Icon(
-                painter = painterResource(R.drawable.mindrecord_align_right),
-                contentDescription = stringResource(R.string.mindrecord_toolbar_align_right_cd),
-            )
-        }
+            Spacer(modifier = Modifier.weight(1f))
 
-        Spacer(modifier = Modifier.weight(1f))
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = stringResource(R.string.mindrecord_toolbar_draft_label),
-                style = AfternoteDesign.typography.captionLargeR,
-                color = AfternoteDesign.colors.gray6,
-                modifier = Modifier.clickable(onClick = onSaveDraftClick),
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = draftCount.toString(),
-                style = AfternoteDesign.typography.captionLargeR,
-                color = AfternoteDesign.colors.gray4,
-                modifier = Modifier.clickable(onClick = onDraftCountClick),
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(R.string.mindrecord_toolbar_draft_label),
+                    style = AfternoteDesign.typography.bodySmallB,
+                    color = AfternoteDesign.colors.gray6,
+                    modifier = Modifier.clickable(onClick = onSaveDraftClick),
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = draftCount.toString(),
+                    style = AfternoteDesign.typography.bodySmallB,
+                    color = AfternoteDesign.colors.gray4,
+                    modifier = Modifier.clickable(onClick = onDraftCountClick),
+                )
+            }
         }
     }
 }

@@ -28,13 +28,16 @@ fun DailyQuestionDomain.toUi(): DailyQuestion =
         title = title,
         date = parseLocalDate(createdAt),
         content = content,
+        receiverNames = receivers.map { it.name },
+        imageUrl = imageUrl,
     )
 
 fun Diary.toUi(): DailyDiary =
     DailyDiary(
         id = diaryId,
         title = title,
-        date = parseLocalDate(createdAt),
+        // 명세의 `date` (작성일) 우선, 없으면 createdAt 으로 폴백.
+        date = parseLocalDate(date ?: createdAt),
         content = content,
         emotion = todayMood.toEmoji(),
     )

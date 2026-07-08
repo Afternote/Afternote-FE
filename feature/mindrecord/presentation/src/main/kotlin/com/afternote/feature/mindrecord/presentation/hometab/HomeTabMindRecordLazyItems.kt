@@ -23,7 +23,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_home_tab_memories_section_click_label
 import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_home_tab_memories_section_title
 import com.afternote.feature.mindrecord.presentation.component.MemoriesCard
-import com.afternote.feature.mindrecord.presentation.component.TodayQuestionCard
+import com.afternote.feature.mindrecord.presentation.component.hometab.HomeTabDailyQuestionCard
 import com.afternote.feature.mindrecord.presentation.component.hometab.RecordCategoryCard
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.core.ui.R as CoreUiR
@@ -38,7 +38,7 @@ fun LazyListScope.homeTabMindRecordQuestionAndCategories(
     isCategoryCountLoading: Boolean = false,
 ) {
     item(key = "mind_record_question") {
-        TodayQuestionCard(
+        HomeTabDailyQuestionCard(
             onAnswerClick = onAnswerClick,
         )
         Spacer(modifier = Modifier.height(8.dp))

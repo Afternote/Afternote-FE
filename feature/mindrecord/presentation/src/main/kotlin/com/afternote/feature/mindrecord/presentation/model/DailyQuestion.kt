@@ -7,4 +7,6 @@ data class DailyQuestion(
     val title: String,
     val date: LocalDate,
     val content: String,
+    val receiverNames: List<String> = emptyList(),
+    val imageUrl: String? = null,
 )

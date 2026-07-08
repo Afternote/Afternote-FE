@@ -2,6 +2,7 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayMood
@@ -21,9 +22,25 @@ class DiaryWriteViewModel
     @Inject
     constructor(
         private val repository: DiaryRepository,
+        private val userRepository: UserRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(DiaryWriteUiState())
         val uiState: StateFlow<DiaryWriteUiState> = _uiState.asStateFlow()
+
+        init {
+            loadReceivers()
+        }
+
+        private fun loadReceivers() {
+            viewModelScope.launch {
+                val receivers = runCatching { userRepository.getReceivers() }.getOrElse { emptyList() }
+                _uiState.update { it.copy(receivers = receivers) }
+            }
+        }
+
+        fun onReceiversSelected(ids: Set<Long>) {
+            _uiState.update { it.copy(selectedReceiverIds = ids) }
+        }
 
         fun onTitleChanged(value: String) {
             _uiState.update { it.copy(title = value) }
@@ -56,6 +73,7 @@ class DiaryWriteViewModel
                             isDraft = isDraft,
                             todayMood = mood,
                             imageUrl = state.imageUrl,
+                            receiverIds = state.selectedReceiverIds.toList(),
                         ),
                     ).onSuccess {
                         _uiState.update { it.copy(submitState = SubmitState.Succeeded) }

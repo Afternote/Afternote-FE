@@ -7,6 +7,7 @@ import com.afternote.feature.mindrecord.data.dto.TodayDailyQuestionResponse
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
+import com.afternote.feature.mindrecord.domain.model.MindRecordReceiver
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 
 fun DailyQuestionListItem.toDomain(): DailyQuestion =
@@ -16,11 +17,13 @@ fun DailyQuestionListItem.toDomain(): DailyQuestion =
         content = content,
         createdAt = createdAt,
         imageUrl = imageUrl,
+        receivers = receivers.map { MindRecordReceiver(receiverId = it.receiverId, name = it.name) },
     )
 
 fun TodayDailyQuestionResponse.toDomain(): TodayDailyQuestion =
     TodayDailyQuestion(
         questionId = questionId,
+        day = day,
         content = content,
         isAnswered = isAnswered,
     )
@@ -31,6 +34,7 @@ fun DailyQuestionCreatePayload.toRequest(): DailyQuestionCreateRequest =
         isDraft = isDraft,
         questionId = questionId,
         imageUrl = imageUrl,
+        receiverIds = receiverIds,
     )
 
 fun DailyQuestionUpdatePayload.toRequest(): DailyQuestionUpdateRequest =

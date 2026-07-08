@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
@@ -29,7 +30,6 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionListCard
 import com.afternote.feature.mindrecord.presentation.component.EmotionKeywordCard
-import com.afternote.feature.mindrecord.presentation.component.InsightCard
 import com.afternote.feature.mindrecord.presentation.component.WeeklyMoodCalendar
 import com.afternote.feature.mindrecord.presentation.component.WeeklyReportReviewCard
 import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportUiState
@@ -89,13 +89,16 @@ private fun WeeklyReportContent(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = recordedSummary(userName = state.userName, recordedDays = state.recordedDays),
+                    style = AfternoteDesign.typography.bodyBase,
+                    color = AfternoteDesign.colors.gray9,
                     modifier = Modifier.padding(start = 8.dp),
                 )
                 WeeklyMoodCalendar(days = state.weekDays)
             }
         }
 
-        // TOP KEYWORDS 섹션 — py=8, gap=12 (divider + 감정 카드 + INSIGHT 카드).
+        // TOP KEYWORDS 섹션 — py=8, gap=12 (divider + 감정 카드).
+        // INSIGHTS 는 감정 키워드 카드 안으로 통합됨 (Figma 2249:13964).
         item {
             Column(
                 modifier = Modifier.padding(vertical = 8.dp),
@@ -104,14 +107,13 @@ private fun WeeklyReportContent(
                 SectionHeader(title = "TOP KEYWORDS")
                 EmotionKeywordCard(
                     keywords = state.emotionKeywords,
-                    descriptionText =
+                    insightText =
                         if (state.emotionKeywords.isEmpty()) {
                             stringResource(R.string.mindrecord_emotion_card_empty_description, state.userName)
                         } else {
                             state.summaryText
                         },
                 )
-                InsightCard(bodyText = state.summaryText)
             }
         }
 
@@ -136,28 +138,17 @@ private fun recordedSummary(
     val middle = stringResource(R.string.mindrecord_weekly_report_recorded_middle)
     val daysText = stringResource(R.string.mindrecord_weekly_report_days_format, recordedDays)
     val suffix = stringResource(R.string.mindrecord_weekly_report_recorded_suffix)
+    // Figma 852:11578 — 16sp Regular, 이름·일수만 b1 컬러 강조.
     return buildAnnotatedString {
-        withStyle(style = AfternoteDesign.typography.bodyLargeB.toSpanStyle()) {
-            append(prefix)
-            withStyle(
-                style =
-                    AfternoteDesign.typography.bodyLargeB
-                        .copy(color = AfternoteDesign.colors.b1)
-                        .toSpanStyle(),
-            ) {
-                append(userName)
-            }
-            append(middle)
-            withStyle(
-                style =
-                    AfternoteDesign.typography.bodyLargeB
-                        .copy(color = AfternoteDesign.colors.b1)
-                        .toSpanStyle(),
-            ) {
-                append(daysText)
-            }
-            append(suffix)
+        append(prefix)
+        withStyle(style = SpanStyle(color = AfternoteDesign.colors.b1)) {
+            append(userName)
         }
+        append(middle)
+        withStyle(style = SpanStyle(color = AfternoteDesign.colors.b1)) {
+            append(daysText)
+        }
+        append(suffix)
     }
 }
 
@@ -170,9 +161,12 @@ private fun SectionHeader(title: String) {
         Text(
             text = title,
             style = AfternoteDesign.typography.mono,
-            color = AfternoteDesign.colors.black.copy(alpha = 0.4f),
+            color = AfternoteDesign.colors.gray6,
         )
-        HorizontalDivider(modifier = Modifier.padding(start = 12.dp))
+        HorizontalDivider(
+            modifier = Modifier.padding(start = 12.dp),
+            color = AfternoteDesign.colors.gray3,
+        )
     }
 }
 
