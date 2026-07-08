@@ -55,10 +55,18 @@ data class ReceiverAuthPresignedUrlResponse(
     @SerialName("contentType") val contentType: String,
 )
 
+/**
+ * 사망확인 서류 제출 요청 — 서버 스펙상 두 URL 중 하나 이상 필수 (이슈 #380).
+ *
+ * 두 필드를 `String? = null` 로 둔 이유: 사망진단서/가족관계증명서 중 하나만 내도 되도록(OR) 완화.
+ * `= null` 기본값은 kotlinx `encodeDefaults = false`(`NetworkModule.provideJson` 설정)와 맞물려,
+ * 제출하지 않은 슬롯은 페이로드에서 **키 자체가 생략**된다 (`"...":null` 을 명시 전송하지 않음).
+ * 이 직렬화 형태(미제출 슬롯 키 생략)는 `DeliveryVerificationContractTest` 가 고정한다.
+ */
 @Serializable
 data class DeliveryVerificationRequest(
-    @SerialName("deathCertificateUrl") val deathCertificateUrl: String,
-    @SerialName("familyRelationCertificateUrl") val familyRelationCertificateUrl: String,
+    @SerialName("deathCertificateUrl") val deathCertificateUrl: String? = null,
+    @SerialName("familyRelationCertificateUrl") val familyRelationCertificateUrl: String? = null,
 )
 
 @Serializable

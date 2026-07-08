@@ -81,7 +81,7 @@ sealed interface ReceiverRoute {
     data object MasterKeyRoute : ReceiverRoute
 
     /**
-     * 열람 신청 2단계: 증빙 서류 업로드(6·7·8). 사망진단서 + 가족관계증명서 각 1건 첨부.
+     * 열람 신청 2단계: 증빙 서류 업로드(6·7·8). 사망진단서 / 가족관계증명서 중 하나 이상 첨부 (이슈 #380).
      */
     @Serializable
     data object DocumentUploadRoute : ReceiverRoute
