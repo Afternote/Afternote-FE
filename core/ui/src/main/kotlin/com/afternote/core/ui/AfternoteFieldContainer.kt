@@ -27,6 +27,10 @@ import com.afternote.core.ui.theme.AfternoteTheme
  *
  * [onClick] 을 주면 ripple 이 둥근 코너 안쪽으로 잘리도록 `clip` 뒤에 `clickable` 이 걸린다.
  *
+ * [enabled] 가 false 면 클릭이 차단될 뿐 아니라 배경이 흰색→gray2, 보더가 gray2→gray3 로 바뀌어
+ * 비활성 상태가 시각적으로 드러난다 (비활성 버튼 `AfternoteButtonType.Un` 과 동일 팔레트). 내부 [content]
+ * 의 색은 슬롯 주입이라 호출부가 상태에 맞춰 결정한다.
+ *
  * 폭 / 크기 정책은 호출부가 [modifier] 로 결정 (Compose API 가이드라인: element function 의 modifier
  * default 는 빈 `Modifier`). 부모 폭 차지가 필요하면 `Modifier.fillMaxWidth()`, Row 안에서
  * 가변 비율이면 `Modifier.weight(...)` 등을 명시적으로 넘긴다.
@@ -39,12 +43,14 @@ fun AfternoteFieldContainer(
     enabled: Boolean = true,
     content: @Composable RowScope.() -> Unit,
 ) {
+    val backgroundColor = if (enabled) AfternoteDesign.colors.white else AfternoteDesign.colors.gray2
+    val borderColor = if (enabled) AfternoteDesign.colors.gray2 else AfternoteDesign.colors.gray3
     Row(
         modifier =
             modifier
                 .clip(RoundedCornerShape(8.dp))
-                .background(AfternoteDesign.colors.white)
-                .border(1.dp, AfternoteDesign.colors.gray2, RoundedCornerShape(8.dp))
+                .background(backgroundColor)
+                .border(1.dp, borderColor, RoundedCornerShape(8.dp))
                 .then(
                     if (onClick != null) {
                         Modifier.clickable(enabled = enabled, onClick = onClick)

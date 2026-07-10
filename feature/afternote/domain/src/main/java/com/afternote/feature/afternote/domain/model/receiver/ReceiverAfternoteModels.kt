@@ -3,11 +3,11 @@ package com.afternote.feature.afternote.domain.model.receiver
 import com.afternote.feature.afternote.domain.AfternoteServiceType
 
 data class AfterNotesListResult(
-    val items: List<AfterNoteListItemDto>,
+    val items: List<AfterNoteListItem>,
     val totalCount: Int,
 )
 
-data class AfterNoteListItemDto(
+data class AfterNoteListItem(
     val id: Long,
     val title: String?,
     val sourceType: String?,

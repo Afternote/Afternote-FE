@@ -7,7 +7,7 @@ import org.junit.Test
 
 /**
  * [ReceivedAfternoteResponse.toDomain] / [toReceiverDomainList] 회귀 가드.
- * 수신자 목록 DTO→[com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItemDto] 매핑.
+ * 수신자 목록 DTO→[com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem] 매핑.
  * 서버 카테고리(SOCIAL/GALLERY/PLAYLIST/MUSIC)를 presentation typeKey로 정규화하는 규칙과
  * null 가드(category·createdAt)를 검증한다.
  */

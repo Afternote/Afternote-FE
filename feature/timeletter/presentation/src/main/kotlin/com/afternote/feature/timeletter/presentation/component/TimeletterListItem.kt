@@ -57,7 +57,7 @@ fun TimeLetterListItem(
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
-                    text = "발송 예정일  ${letter.sendAt?.replace("-", ".") ?: ""}",
+                    text = "발송 예정일  ${letter.sendAt?.take(10)?.replace("-", ".") ?: ""}",
                     style = AfternoteDesign.typography.footnoteCaption,
                     color = AfternoteDesign.colors.gray6,
                 )

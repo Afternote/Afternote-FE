@@ -60,14 +60,14 @@ class AuthMapperTest {
     }
 
     @Test
-    fun `toRotateTokenResult - 토큰 매핑 (자리 바뀜 가드)`() {
+    fun `toRotateTokenResult - 토큰·expiresIn 매핑 (자리 바뀜 가드)`() {
         val result =
             AuthMapper.toRotateTokenResult(
-                ReissueData(accessToken = "access-1", refreshToken = "refresh-1"),
+                ReissueData(accessToken = "access-1", refreshToken = "refresh-1", expiresIn = 3599),
             )
 
         assertEquals(
-            TokenBundle(accessToken = "access-1", refreshToken = "refresh-1"),
+            TokenBundle(accessToken = "access-1", refreshToken = "refresh-1", expiresIn = 3599),
             result,
         )
     }

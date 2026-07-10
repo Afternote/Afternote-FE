@@ -25,8 +25,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -44,6 +42,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -481,7 +480,7 @@ private fun SongSearchSection(
         }
         SongSearchTextField(
             state = searchFieldState,
-            placeholder = "Text Field",
+            placeholder = stringResource(R.string.song_search_placeholder),
         )
     }
 }
@@ -539,7 +538,7 @@ private fun SongSearchTextField(
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Icon(
-                    imageVector = Icons.Default.Search,
+                    painter = painterResource(R.drawable.feature_afternote_ic_search),
                     contentDescription = stringResource(R.string.song_search_label),
                     tint = AfternoteDesign.colors.gray9,
                     modifier = Modifier.size(24.dp),

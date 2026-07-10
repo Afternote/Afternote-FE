@@ -19,8 +19,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -213,7 +211,7 @@ private fun ReceiverVideoSection(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    imageVector = Icons.Default.PlayArrow,
+                    painter = painterResource(R.drawable.feature_afternote_ic_play_arrow),
                     contentDescription = "Play",
                     tint = AfternoteDesign.colors.white,
                     modifier =

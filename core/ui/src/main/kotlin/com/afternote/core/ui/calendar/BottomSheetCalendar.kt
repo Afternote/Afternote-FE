@@ -31,9 +31,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -68,7 +70,8 @@ fun BottomSheetCalendar(
                         .width(36.dp)
                         .height(4.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFFDDDDDD)),
+                        // 근사 토큰: 원본 #DDDDDD → 최근접 gray3(#E0E0E0, 채널당 +3)
+                        .background(AfternoteDesign.colors.gray3),
             )
         },
     ) {
@@ -128,7 +131,7 @@ fun DatePickerContent(
     ) {
         Text(
             text = title,
-            style = AfternoteDesign.typography.h3,
+            style = AfternoteDesign.typography.bodyBase,
             color = AfternoteDesign.colors.gray9,
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
@@ -141,13 +144,14 @@ fun DatePickerContent(
                 Modifier
                     .fillMaxWidth()
                     .background(
-                        color = Color(0xFFF5F5F5),
+                        // 근사 토큰: 원본 #F5F5F5 → 최근접 gray1(#FAFAFA, 채널당 +5)
+                        color = AfternoteDesign.colors.gray1,
                         shape = RoundedCornerShape(12.dp),
                     ).padding(horizontal = 16.dp, vertical = 18.dp),
         ) {
             Text(
                 text = formattedDate,
-                style = AfternoteDesign.typography.h3,
+                style = AfternoteDesign.typography.textField,
                 color = AfternoteDesign.colors.gray9,
             )
         }
@@ -156,7 +160,7 @@ fun DatePickerContent(
 
         OutlinedCard(
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            border = BorderStroke(1.dp, Color(0xFF000000).copy(alpha = 0.05f)),
+            border = BorderStroke(1.dp, AfternoteDesign.colors.black.copy(alpha = 0.05f)),
             modifier = Modifier.fillMaxWidth(),
         ) {
             Column(modifier = Modifier.padding(vertical = 16.dp)) {
@@ -169,71 +173,103 @@ fun DatePickerContent(
                 ) {
                     Text(
                         text = "${currentYear}년 ${currentMonth}월",
-                        style = AfternoteDesign.typography.h3,
+                        style = AfternoteDesign.typography.bodySmallR,
                         color = AfternoteDesign.colors.gray9,
                         modifier = Modifier.weight(1f),
                     )
-                    Icon(
-                        painter = painterResource(R.drawable.core_ui_arrow_left),
-                        contentDescription = "이전 달",
+                    Box(
                         modifier =
                             Modifier
-                                .size(24.dp)
+                                .height(8.dp)
+                                .width(4.dp)
+                                .clipToBounds()
                                 .clickable { onPrevMonth() },
-                        tint = AfternoteDesign.colors.gray9,
-                    )
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.core_ui_arrow_left),
+                            contentDescription = "이전 달",
+                            modifier = Modifier.size(24.dp),
+                            tint = AfternoteDesign.colors.gray9,
+                        )
+                    }
                     Spacer(modifier = Modifier.width(4.dp))
-                    Icon(
-                        painter = painterResource(R.drawable.core_ui_right),
-                        contentDescription = "다음 달",
+                    Box(
                         modifier =
                             Modifier
-                                .size(24.dp)
+                                .height(8.dp)
+                                .width(4.dp)
+                                .clipToBounds()
                                 .clickable { onNextMonth() },
-                        tint = AfternoteDesign.colors.gray9,
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                val dayLabels = listOf("일", "월", "화", "수", "목", "금", "토")
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    dayLabels.forEach { label ->
-                        Text(
-                            text = label,
-                            modifier = Modifier.weight(1f),
-                            color = Color(0xFF000000).copy(alpha = 0.3f),
-                            style = AfternoteDesign.typography.footnoteCaption,
-                            textAlign = TextAlign.Center,
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.core_ui_right_arrow),
+                            contentDescription = "다음 달",
+                            modifier = Modifier.size(24.dp),
+                            tint = AfternoteDesign.colors.gray9,
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                val days =
-                    buildPickerDays(
-                        year = currentYear,
-                        month = currentMonth,
-                        selectedDate = selectedDate,
-                    )
-                days.chunked(7).forEach { week ->
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        week.forEach { dayModel ->
-                            Box(modifier = Modifier.weight(1f)) {
-                                PickerDayCell(
-                                    model = dayModel,
-                                    onSelect = { dayModel.day?.let(onDateSelect) },
-                                )
-                            }
-                        }
-                        repeat(7 - week.size) {
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
-                    }
-                }
+                CalendarGridContent(
+                    currentYear = currentYear,
+                    currentMonth = currentMonth,
+                    selectedDate = selectedDate,
+                    onDateSelect = onDateSelect,
+                )
             }
             Spacer(modifier = Modifier.height(50.dp))
+        }
+    }
+}
+
+@Composable
+fun CalendarGridContent(
+    currentYear: Int,
+    currentMonth: Int,
+    selectedDate: LocalDate,
+    onDateSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        val dayLabels = listOf("일", "월", "화", "수", "목", "금", "토")
+        Row(modifier = Modifier.fillMaxWidth()) {
+            dayLabels.forEach { label ->
+                Text(
+                    text = label,
+                    modifier = Modifier.weight(1f),
+                    color = AfternoteDesign.colors.black.copy(alpha = 0.3f),
+                    style = AfternoteDesign.typography.footnoteCaption,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        val days =
+            buildPickerDays(
+                year = currentYear,
+                month = currentMonth,
+                selectedDate = selectedDate,
+            )
+        days.chunked(7).forEach { week ->
+            Row(modifier = Modifier.fillMaxWidth()) {
+                week.forEach { dayModel ->
+                    Box(modifier = Modifier.weight(1f)) {
+                        PickerDayCell(
+                            model = dayModel,
+                            onSelect = { dayModel.day?.let(onDateSelect) },
+                        )
+                    }
+                }
+                repeat(7 - week.size) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
         }
     }
 }
@@ -249,8 +285,10 @@ fun PickerDayCell(
         return
     }
 
-    val bgColor = if (model.isSelected) Color(0xFF1A1A1A) else Color.Transparent
-    val textColor = if (model.isSelected) Color.White else Color(0xFF888888)
+    // 근사 토큰: 선택 셀 bg 원본 #1A1A1A → gray9(#212121, 채널당 +7)
+    val bgColor = if (model.isSelected) AfternoteDesign.colors.gray9 else Color.Transparent
+    // 근사 토큰: 미선택 텍스트 원본 #888888 → gray6(#757575, 채널당 -19). 토큰화 7곳 중 시각 차 가장 큼.
+    val textColor = if (model.isSelected) AfternoteDesign.colors.white else AfternoteDesign.colors.gray6
 
     Box(
         modifier =
@@ -268,6 +306,32 @@ fun PickerDayCell(
             color = textColor,
         )
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun DatePickerContentPreview() {
+    DatePickerContent(
+        title = "발송 예정일",
+        currentYear = 2026,
+        currentMonth = 5,
+        selectedDate = LocalDate.of(2026, 5, 30),
+        onPrevMonth = {},
+        onNextMonth = {},
+        onDateSelect = {},
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun CalendarGridContentPreview() {
+    CalendarGridContent(
+        currentYear = 2026,
+        currentMonth = 5,
+        selectedDate = LocalDate.of(2026, 5, 30),
+        onDateSelect = {},
+        modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+    )
 }
 
 fun buildPickerDays(

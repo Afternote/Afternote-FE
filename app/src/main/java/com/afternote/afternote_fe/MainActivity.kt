@@ -22,9 +22,9 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
 
         if (BuildConfig.DEBUG && intent.getBooleanExtra(EXTRA_DEBUG_START_TIMELETTER, false)) {
-            enableEdgeToEdge()
             setContent {
                 AfternoteTheme {
                     AppNavigation(startDestination = Route.TimeLetter)
@@ -37,8 +37,6 @@ class MainActivity : FragmentActivity() {
         splashScreen.setKeepOnScreenCondition {
             viewModel.startRoute.value == null
         }
-
-        enableEdgeToEdge()
 
         setContent {
             AfternoteTheme {

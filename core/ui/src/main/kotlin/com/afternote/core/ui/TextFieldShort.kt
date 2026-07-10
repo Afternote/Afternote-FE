@@ -39,6 +39,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
@@ -161,7 +162,7 @@ fun AfternoteTextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     type: TextFieldType = TextFieldType.Basic,
-    placeholder: String = "Text Field",
+    placeholder: String = stringResource(R.string.core_ui_text_field_placeholder),
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Default,
     onImeAction: (() -> Unit)? = null,

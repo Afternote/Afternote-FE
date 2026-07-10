@@ -16,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -31,6 +30,7 @@ fun TimeLetterBlockItem(
     letter: TimeLetter,
     modifier: Modifier = Modifier,
     receiverNameMap: Map<Long, String> = emptyMap(),
+    showMetaInfo: Boolean = true,
 ) {
     val thumbUrl = letter.blocks.firstOrNull { it.blockType == TimeLetterBlockType.IMAGE }?.url
 
@@ -60,38 +60,39 @@ fun TimeLetterBlockItem(
         Column(
             modifier = Modifier.padding(vertical = 16.dp, horizontal = 15.dp),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                val receiverText =
-                    letter.receiverIds
-                        .mapNotNull { receiverNameMap[it] }
-                        .joinToString(", ")
-                        .ifEmpty { "${letter.receiverIds.size}명" }
-                Text(
-                    text = "수신인  $receiverText",
-                    style = AfternoteDesign.typography.bodySmallR,
-                    color = AfternoteDesign.colors.gray6,
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = "발송 예정일  ${letter.sendAt?.replace("-", ".") ?: ""}",
-                    style = AfternoteDesign.typography.bodySmallR,
-                    color = AfternoteDesign.colors.gray6,
-                )
-                Spacer(modifier = Modifier.width(43.dp))
-                Image(
-                    painterResource(com.afternote.feature.timeletter.presentation.R.drawable.setting),
-                    contentDescription = "더보기 설정",
-                )
+            if (showMetaInfo) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    val receiverText =
+                        letter.receiverIds
+                            .mapNotNull { receiverNameMap[it] }
+                            .joinToString(", ")
+                            .ifEmpty { "${letter.receiverIds.size}명" }
+                    Text(
+                        text = "수신인  $receiverText",
+                        style = AfternoteDesign.typography.footnoteCaption,
+                        color = AfternoteDesign.colors.gray6,
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        text = "발송 예정일  ${letter.sendAt?.take(10)?.replace("-", ".") ?: ""}",
+                        style = AfternoteDesign.typography.footnoteCaption,
+                        color = AfternoteDesign.colors.gray6,
+                    )
+                    Spacer(modifier = Modifier.width(43.dp))
+                    Image(
+                        painterResource(com.afternote.feature.timeletter.presentation.R.drawable.setting),
+                        contentDescription = "더보기 설정",
+                    )
+                }
+                Spacer(modifier = Modifier.padding(top = 7.dp))
             }
-            Spacer(modifier = Modifier.padding(top = 7.dp))
 
             Text(
                 text = letter.title ?: "제목 없음",
-                style = AfternoteDesign.typography.bodyLargeB,
-                fontWeight = FontWeight.W600,
+                style = AfternoteDesign.typography.bodySmallR,
             )
             Spacer(modifier = Modifier.padding(top = 5.dp))
             Text(

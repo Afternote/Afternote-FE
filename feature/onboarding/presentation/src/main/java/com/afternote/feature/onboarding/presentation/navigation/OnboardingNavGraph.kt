@@ -40,7 +40,9 @@ fun NavGraphBuilder.onboardingNavGraph(
         // ── Welcome ──
         composable<OnboardingRoute.WelcomeRoute> {
             WelcomeScreen(
-                onStartClick = actions::navigateToSignUp,
+                // #381: "시작하기" 도 "로그인하기" 와 동일하게 로그인 화면으로 이동 (PM 요청).
+                // 신규 회원가입 진입은 로그인 화면 내 회원가입 링크(replaceLoginWithSignUp)로 유지.
+                onStartClick = actions::navigateToLogin,
                 onCheckRecordsClick = actions::navigateToReceivedRecords,
                 onLoginClick = actions::navigateToLogin,
             )

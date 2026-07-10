@@ -1,8 +1,10 @@
 package com.afternote.feature.afternote.data.dto
 
+import com.afternote.feature.afternote.data.mapper.formatDateFromServer
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
 import com.afternote.feature.receiver.domain.model.ReceiverAuthPresignedUrl
+import com.afternote.feature.receiver.domain.model.ReceiverEmailAuthResult
 import com.afternote.feature.receiver.domain.model.ReceiverIdentity
 import com.afternote.feature.receiver.domain.model.SenderMessageInfo
 import kotlinx.serialization.SerialName
@@ -19,6 +21,25 @@ data class ReceiverAuthVerifyResponse(
     @SerialName("receiverName") val receiverName: String,
     @SerialName("senderName") val senderName: String,
     @SerialName("relation") val relation: String,
+)
+
+@Serializable
+data class ReceiverAuthCodeEmailSendRequest(
+    @SerialName("email") val email: String,
+)
+
+@Serializable
+data class ReceiverEmailAuthVerifyRequest(
+    @SerialName("email") val email: String,
+    @SerialName("authCode") val authCode: String,
+)
+
+@Serializable
+data class ReceiverEmailAuthVerifyResponse(
+    @SerialName("receiverId") val receiverId: Long,
+    @SerialName("receiverName") val receiverName: String,
+    @SerialName("senderName") val senderName: String,
+    @SerialName("accessCode") val accessCode: String,
 )
 
 @Serializable
@@ -53,7 +74,8 @@ data class DeliveryVerificationResponse(
 @Serializable
 data class ReceiverMessageResponse(
     @SerialName("senderName") val senderName: String,
-    @SerialName("message") val message: String,
+    @SerialName("message") val message: String? = null,
+    @SerialName("createdAt") val createdAt: String? = null,
 )
 
 fun ReceiverAuthVerifyResponse.toDomain(): ReceiverIdentity =
@@ -62,6 +84,14 @@ fun ReceiverAuthVerifyResponse.toDomain(): ReceiverIdentity =
         receiverName = receiverName,
         senderName = senderName,
         relation = relation,
+    )
+
+fun ReceiverEmailAuthVerifyResponse.toDomain(): ReceiverEmailAuthResult =
+    ReceiverEmailAuthResult(
+        receiverId = receiverId,
+        receiverName = receiverName,
+        senderName = senderName,
+        accessCode = accessCode,
     )
 
 fun ReceiverAuthPresignedUrlResponse.toDomain(): ReceiverAuthPresignedUrl =
@@ -86,4 +116,5 @@ fun ReceiverMessageResponse.toDomain(): SenderMessageInfo =
     SenderMessageInfo(
         senderName = senderName,
         message = message,
+        createdAt = createdAt?.let(::formatDateFromServer),
     )
