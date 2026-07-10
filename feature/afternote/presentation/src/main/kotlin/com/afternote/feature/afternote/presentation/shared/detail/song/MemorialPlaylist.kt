@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -146,14 +147,26 @@ fun MemorialPlaylist(
     Column(
         verticalArrangement = Arrangement.spacedBy(space = 16.dp),
     ) {
-        Text(
-            text = label,
-            style =
-                AfternoteDesign.typography.textField.copy(
-                    fontWeight = FontWeight.Medium,
-                    color = AfternoteDesign.colors.gray9,
-                ),
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            // 시안: "추억 플레이리스트" 라벨 앞 음표 아이콘 (#274). 형제 헤더 관례대로 라벨 색으로 tint.
+            Icon(
+                painter = painterResource(R.drawable.feature_afternote_ic_playlist_header),
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = AfternoteDesign.colors.gray6,
+            )
+            Text(
+                text = label,
+                style =
+                    AfternoteDesign.typography.textField.copy(
+                        fontWeight = FontWeight.Medium,
+                        color = AfternoteDesign.colors.gray9,
+                    ),
+            )
+        }
         Column(
             modifier =
                 cardModifier

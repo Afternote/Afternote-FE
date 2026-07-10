@@ -23,10 +23,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,7 +31,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -51,9 +46,9 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.LastWishesRadioGroup
 import com.afternote.feature.afternote.presentation.shared.MemorialGuidelineContent
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
+import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
 
 /**
@@ -79,28 +74,27 @@ fun MemorialReceivedDetailScreen(
     songCount: Int = 16,
     memorialVideoUrl: String? = null,
     memorialThumbnailUrl: String? = null,
-    showBottomBar: Boolean = true,
 ) {
-    var selectedBottomNavItem by remember { mutableStateOf(BottomNavTab.TIMELETTER) }
     profileImageResId ?: R.drawable.feature_afternote_img_default_profile_deceased
 
     Scaffold(
         containerColor = Color.Transparent,
         topBar = {
+            // statusBarsPadding: 엣지투엣지로 그려 콘텐츠가 상태바 아래까지 깔리므로, 상태바 높이만큼 top 패딩
+            // → 탑바가 상태바(시계·배터리) 밑에서 시작(겹침 방지). 동적 인셋이라 회전·분할화면에도 대응.
             Column(modifier = Modifier.statusBarsPadding()) {
                 DetailTopBar(
-                    title = "故${senderName}님의 애프터노트",
+                    title = "故 ${senderName}님의 애프터노트",
                     onBackClick = { onBackClick() },
                 )
             }
         },
         bottomBar = {
-            if (showBottomBar) {
-                BottomBar(
-                    selectedNavTab = selectedBottomNavItem,
-                    onTabClick = { selectedBottomNavItem = it },
-                )
-            }
+            // 시안: 상세에도 하단 바 노출 + 애프터노트(NOTE) 탭 선택. 수신자 흐름이라 탭 이동은 미정 — 시각만 (#274).
+            BottomBar(
+                selectedNavTab = BottomNavTab.NOTE,
+                onTabClick = {},
+            )
         },
     ) { innerPadding ->
         LazyColumn(
@@ -133,10 +127,8 @@ fun MemorialReceivedDetailScreen(
                         )
                     },
                     lastWishContent = {
-                        LastWishesRadioGroup(
-                            label = stringResource(R.string.receiver_memorial_last_wish_label),
-                            displayTextOnly = leaveMessage,
-                        )
+                        // 시안: "남기신 말씀" 섹션 — 형제 수신자 상세와 동일하게 공용 MessageSection(💬 헤더 + 인용 카드) 사용 (#274).
+                        MessageSection(message = leaveMessage)
                     },
                     sectionSpacing = 32.dp,
                     videoContent = {
@@ -287,6 +279,17 @@ private fun ReceiverSectionHeader(title: String = LABEL_VIDEO_SECTION) {
 @Composable
 private fun PreviewMemorialReceivedDetail() {
     AfternoteTheme {
-        MemorialReceivedDetailScreen(senderName = "박서연", albumCovers = emptyList())
+        MemorialReceivedDetailScreen(
+            senderName = "박서연",
+            leaveMessage = "이 계정에는 우리 가족 여행 사진이 많아. 계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
+            // 프리뷰 대표 데이터: 실앱은 곡마다 coverUrl → 커버 로드. 프리뷰/스크린샷은 네트워크 미지원이라 회색 박스로 표시.
+            albumCovers =
+                listOf(
+                    AlbumCover(id = "1"),
+                    AlbumCover(id = "2"),
+                    AlbumCover(id = "3"),
+                ),
+            songCount = 3,
+        )
     }
 }
