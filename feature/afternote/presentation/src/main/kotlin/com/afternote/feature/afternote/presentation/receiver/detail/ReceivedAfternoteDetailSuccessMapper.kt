@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.presentation.receiver.detail
 
+import com.afternote.core.model.AlbumCover
 import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
 
@@ -14,7 +15,7 @@ internal fun ReceivedAfternoteDetail.toReceivedDetailContentUiModel(): ReceivedD
         }
 
         AfternoteServiceType.MEMORIAL -> {
-            ReceivedDetailContentUiModel.MemorialPending
+            ReceivedDetailContentUiModel.Memorial(toReceivedMemorialDetailContent())
         }
 
         // BUSINESS · ESTATE 는 디자인 확정 전 placeholder. 서버도 미지원이라 일반적으로 도달하지 않음.
@@ -44,3 +45,22 @@ private fun ReceivedAfternoteDetail.toReceivedGalleryDetailContent(): ReceivedGa
         processingMethods = actions,
         message = leaveMessage.orEmpty(),
     )
+
+private fun ReceivedAfternoteDetail.toReceivedMemorialDetailContent(): ReceivedMemorialDetailContent {
+    val songs = playlist?.songs.orEmpty()
+    return ReceivedMemorialDetailContent(
+        senderName = senderName.orEmpty(),
+        leaveMessage = leaveMessage.orEmpty(),
+        albumCovers =
+            songs.mapIndexed { index, song ->
+                AlbumCover(
+                    id = index.toString(),
+                    imageUrl = song.coverUrl,
+                    title = song.title,
+                )
+            },
+        songCount = songs.size,
+        memorialVideoUrl = playlist?.memorialVideoUrl,
+        memorialThumbnailUrl = playlist?.memorialThumbnailUrl,
+    )
+}

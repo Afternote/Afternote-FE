@@ -109,7 +109,7 @@ private fun MemorialPlaylistAddButton(
 }
 
 /**
- * 추모 플레이리스트 컴포넌트 (edit·view 공통, 오버로딩으로 모드 구분).
+ * 추억 플레이리스트 컴포넌트 (edit·view 공통, 오버로딩으로 모드 구분).
  *
  * - **Edit mode**: onAddSongClick를 넘기면 "노래 추가하기" 버튼이 보이고, 카드 상단에는 개수 텍스트만 표시.
  * - **View mode**: null이면 버튼 없음, 개수 텍스트 오른쪽에 화살표 아이콘 표시.
@@ -123,7 +123,7 @@ private fun MemorialPlaylistAddButton(
 @Composable
 fun MemorialPlaylist(
     modifier: Modifier = Modifier,
-    label: String = "추모 플레이리스트",
+    label: String = "추억 플레이리스트",
     songCount: Int = 0,
     albumCovers: List<AlbumCover> = emptyList(),
     onAddSongClick: (() -> Unit)? = null,

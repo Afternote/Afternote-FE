@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -66,11 +67,12 @@ import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialP
  * when 분기에서 본 화면을 호출하도록 wire-up 한다.
  *
  * 페어 sub-screen: [com.afternote.feature.afternote.presentation.receiver.playlist.MemorialPlaylistScreen]
- * (추모 플레이리스트 진입).
+ * (추억 플레이리스트 진입).
  */
 @Composable
 fun MemorialReceivedDetailScreen(
     senderName: String,
+    leaveMessage: String = "",
     onNavigateToFullList: () -> Unit = {},
     onNavigateToPlaylist: () -> Unit = {},
     onBackClick: () -> Unit = {},
@@ -113,17 +115,8 @@ fun MemorialReceivedDetailScreen(
         ) {
             item {
                 MemorialGuidelineContent(
-                    introContent = {
-                        Text(
-                            text = "故 ${senderName}님의 애프터노트입니다.",
-                            style =
-                                AfternoteDesign.typography.textField.copy(
-                                    fontWeight = FontWeight.Medium,
-                                    color = AfternoteDesign.colors.gray9,
-                                ),
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    },
+                    // 시안: 상세 타이틀(TopBar) 아래 바로 프로필 — 별도 안내 문구 없음 (#274).
+                    introContent = {},
                     photoContent = {
                         Column(
                             modifier = Modifier.fillMaxWidth(),
@@ -134,7 +127,7 @@ fun MemorialReceivedDetailScreen(
                     },
                     playlistContent = {
                         MemorialPlaylist(
-                            label = "추모 플레이리스트",
+                            label = "추억 플레이리스트",
                             songCount = songCount,
                             albumCovers = albumCovers,
                             onAddSongClick = null,
@@ -143,15 +136,19 @@ fun MemorialReceivedDetailScreen(
                     },
                     lastWishContent = {
                         LastWishesRadioGroup(
-                            displayTextOnly = "끼니 거르지 말고 건강 챙기고 지내.",
+                            label = stringResource(R.string.receiver_memorial_last_wish_label),
+                            displayTextOnly = leaveMessage,
                         )
                     },
                     sectionSpacing = 32.dp,
                     videoContent = {
-                        ReceiverVideoSection(
-                            memorialVideoUrl = memorialVideoUrl,
-                            memorialThumbnailUrl = memorialThumbnailUrl,
-                        )
+                        // 시안: 수신자 화면은 영상이 있을 때만 노출 (없으면 섹션 자체를 숨김, #274).
+                        if (!memorialVideoUrl.isNullOrBlank()) {
+                            ReceiverVideoSection(
+                                memorialVideoUrl = memorialVideoUrl,
+                                memorialThumbnailUrl = memorialThumbnailUrl,
+                            )
+                        }
                     },
                 )
             }

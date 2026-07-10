@@ -43,9 +43,11 @@
     <string name="afternote_last_written_date">최종 작성일 %1$s.</string>
     <string name="receiver_afternote_item_instagram">인스타그램</string>
     <string name="receiver_afternote_item_gallery">갤러리</string>
-    <string name="receiver_afternote_item_memorial_guideline">추모 가이드라인</string>
+    <string name="receiver_afternote_item_memorial_guideline">추억 노트</string>
     <string name="receiver_afternote_item_naver_mail">네이버 메일</string>
     <string name="receiver_memorial_video_no_app">영상을 재생할 수 있는 앱이 없습니다.</string>
+    <string name="receiver_memorial_playlist_screen_title">%1$s님의 플레이리스트</string>
+    <string name="receiver_memorial_last_wish_label">남기신 말씀</string>
 
     <string name="receiver_sender_record_title">故 %1$s님이 남기신 기록</string>
     <string name="receiver_afternote_section_count">%1$d개의 애프터노트가 있습니다.</string>
@@ -83,13 +85,13 @@
     <string name="afternote_category_business">비즈니스</string>
     <string name="afternote_category_gallery_and_files">갤러리 및 파일</string>
     <string name="afternote_category_estate">재산 처리</string>
-    <string name="afternote_category_memorial">추모 가이드라인</string>
+    <string name="afternote_category_memorial">추억 노트</string>
     <!-- Edit-screen category dropdown; must stay in sync with [EditorCategory.displayLabel] for [EditorCategory.fromDisplayLabel]. -->
     <string name="afternote_editor_category_social">소셜네트워크</string>
     <string name="afternote_editor_category_business">비즈니스</string>
     <string name="afternote_editor_category_gallery">갤러리 및 파일</string>
     <string name="afternote_editor_category_estate">재산 처리</string>
-    <string name="afternote_editor_category_memorial">추모 가이드라인</string>
+    <string name="afternote_editor_category_memorial">추억 노트</string>
     <!-- BUSINESS·ESTATE 카테고리 placeholder (디자인 확정 전 임시 화면) -->
     <string name="afternote_editor_category_unimplemented_title">준비 중인 카테고리예요</string>
     <string name="afternote_editor_category_unimplemented_description">디자인 확정 후 입력 화면이 제공됩니다.\n다른 카테고리를 먼저 이용해 주세요.</string>
