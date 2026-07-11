@@ -72,6 +72,11 @@ data class SearchableSongListSlots(
 /**
  * Content slots for the management-mode [SongPlaylistScreen]: leading header and selection bottom bar.
  *
+ * 공용 화면이 선택 상태(selectedIds)의 소유자이고, 그 위에 그릴 크롬은 호출부마다 달라
+ * (수신자 열람 = 없음 / 작성자 관리 = 곡 수 헤더 + 삭제 액션바) 슬롯으로 주입받는다 —
+ * Scaffold 의 topBar/bottomBar 와 같은 패턴. 상태는 람다 인자로 내려주고,
+ * 상태 조작(선택 해제)은 onClearSelection 콜백으로 화면에 되돌린다.
+ *
  * @param leadingContent Header composable receiving selectedIds.
  * @param selectionBottomBar Bottom bar composable when selection is non-empty.
  */
