@@ -17,7 +17,7 @@ import com.afternote.feature.afternote.presentation.shared.MemorialGuidelineCont
 import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
 
 /**
- * 추모 가이드라인 종류 선택 시 표시되는 콘텐츠 (편집 모드).
+ * 추억 노트 종류 선택 시 표시되는 콘텐츠 (편집 모드).
  * [MemorialGuidelineContent] 공통 레이아웃에 편집용 섹션 컴포저블을 넘깁니다.
  */
 @Composable
@@ -37,7 +37,7 @@ fun MemorialGuidelineEditorContent(
             MemorialPlaylist(
                 songCount = params.playlistSongCount,
                 albumCovers = params.playlistAlbumCovers,
-                onAddSongClick = params.onSongAddClick,
+                onCardClick = params.onSongAddClick,
             )
         },
         lastWishContent = {
