@@ -1,27 +1,15 @@
 package com.afternote.feature.afternote.presentation.author.editor.memorial.playlist
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.bottombar.BottomNavTab
+import com.afternote.core.ui.button.AfternoteButton
+import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
@@ -41,6 +29,13 @@ data class MemorialPlaylistEntryActions(
  *
  * graph-scoped [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs] SSOT의 곡 목록을
  * 공용 [SongPlaylistScreen]의 입력 형태로 매핑한다. 변경은 [actions] 인텐트로 위임한다.
+ *
+ * Screen을 직접 쓰지 않고 Entry로 감싸는 이유:
+ * (1) 공용 [SongPlaylistScreen]은 여러 호출부(수신자 열람·작성자 관리·노래 추가)가 공유하므로
+ *     이 화면 전용 지식([Song] 도메인 매핑, 타이틀, "총 N곡" 헤더·삭제 액션바 크롬)을 넣을 수 없고,
+ * (2) 그 전용 지식을 NavGraph destination 블록에 인라인하면 ViewModel 없이 렌더할 수 없어
+ *     Preview·스크린샷 테스트가 막힌다.
+ * Entry가 둘 사이에서 도메인→표시 모델 매핑과 화면 전용 크롬 주입을 맡는 stateless 어댑터다.
  *
  * @param songs graph-scoped HostViewModel에서 collect한 현재 곡 목록 스냅샷
  * @param actions 네비게이션 + 삭제 인텐트 콜백 모음
@@ -102,7 +97,6 @@ private fun MemorialPlaylistListHeader(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-//        Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = stringResource(R.string.afternote_editor_playlist_song_count_format, songCount),
             style =
@@ -110,74 +104,27 @@ private fun MemorialPlaylistListHeader(
                     color = AfternoteDesign.colors.gray9,
                 ),
         )
-//        Spacer(modifier = Modifier.height(8.dp))
     }
 }
 
+/**
+ * 선택 시 노출되는 하단 삭제 액션 바.
+ * [AfternoteButton] Variant5 dual-action 으로 "전체 삭제 | 선택 삭제" 두 클릭 타깃을 그리고,
+ * 리스트 위에 떠 있는 바라서 그림자만 이 래퍼에서 얹는다 (같은 화면의 추가하기 버튼과 동일한 5dp).
+ */
 @Composable
 private fun MemorialPlaylistActionBar(
     onDeleteAllClick: () -> Unit,
     onDeleteSelectedClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val actionBarShape = RoundedCornerShape(8.dp)
-    Row(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .shadow(
-                    elevation = 5.dp,
-                    shape = actionBarShape,
-                    clip = false,
-                    ambientColor = AfternoteDesign.colors.black.copy(alpha = 38f / 255f),
-                    spotColor = AfternoteDesign.colors.black.copy(alpha = 38f / 255f),
-                ).background(color = AfternoteDesign.colors.white, shape = actionBarShape)
-                .clip(actionBarShape),
-        horizontalArrangement = Arrangement.spacedBy(0.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .clickable(onClick = onDeleteAllClick)
-                    .padding(vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = stringResource(R.string.afternote_editor_playlist_delete_all),
-                style =
-                    AfternoteDesign.typography.textField.copy(
-                        color = AfternoteDesign.colors.gray9,
-                        textAlign = TextAlign.Center,
-                    ),
-            )
-        }
-        Box(
-            modifier =
-                Modifier
-                    .width(1.dp)
-                    .height(20.dp)
-                    .background(AfternoteDesign.colors.gray3),
-        )
-        Column(
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .clickable(onClick = onDeleteSelectedClick)
-                    .padding(vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = stringResource(R.string.afternote_editor_playlist_delete_selected),
-                style =
-                    AfternoteDesign.typography.textField.copy(
-                        color = AfternoteDesign.colors.gray9,
-                        textAlign = TextAlign.Center,
-                    ),
-            )
-        }
-    }
+    AfternoteButton(
+        text = stringResource(R.string.afternote_editor_playlist_delete_all),
+        onClick = onDeleteAllClick,
+        type = AfternoteButtonType.Variant5,
+        secondaryText = stringResource(R.string.afternote_editor_playlist_delete_selected),
+        onSecondaryClick = onDeleteSelectedClick,
+    )
 }
 
 private fun memorialPlaylistPreviewSongs(): List<Song> =

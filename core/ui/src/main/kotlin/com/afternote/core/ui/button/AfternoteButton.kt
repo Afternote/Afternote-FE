@@ -1,7 +1,9 @@
 package com.afternote.core.ui.button
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -36,6 +38,15 @@ enum class AfternoteButtonType {
     Variant5,
 }
 
+/**
+ * 공통 텍스트 버튼. [type] 으로 배경/전경/보더 스타일을 고른다.
+ *
+ * [AfternoteButtonType.Variant5] + [secondaryText] 조합은 가운데 divider 양쪽에 두 라벨을 그린다.
+ * 이때 [onSecondaryClick] 까지 주면 좌/우 절반이 **독립 클릭 타깃**인 dual-action 바가 되고
+ * (예: 전체 삭제 | 선택 삭제), 생략하면 버튼 전체가 [onClick] 하나로 눌리는 기존 동작 그대로다.
+ *
+ * @param onSecondaryClick Variant5 dual-action 모드에서 오른쪽 절반([secondaryText]) 클릭 콜백
+ */
 @Composable
 fun AfternoteButton(
     text: String,
@@ -43,10 +54,21 @@ fun AfternoteButton(
     modifier: Modifier = Modifier,
     type: AfternoteButtonType = AfternoteButtonType.Default,
     secondaryText: String? = null,
+    onSecondaryClick: (() -> Unit)? = null,
 ) {
     CompositionLocalProvider(
         LocalMinimumInteractiveComponentSize provides androidx.compose.ui.unit.Dp.Unspecified,
     ) {
+        if (type == AfternoteButtonType.Variant5 && secondaryText != null && onSecondaryClick != null) {
+            DualActionButtonSurface(
+                text = text,
+                onClick = onClick,
+                secondaryText = secondaryText,
+                onSecondaryClick = onSecondaryClick,
+                modifier = modifier,
+            )
+            return@CompositionLocalProvider
+        }
         Surface(
             onClick = onClick,
             modifier =
@@ -111,6 +133,60 @@ fun AfternoteButton(
     }
 }
 
+/**
+ * Variant5 dual-action 렌더링: 정적 [Surface] 안에서 좌/우 절반이 각각 clickable.
+ * 단일 Surface onClick 으로는 두 액션을 구분할 수 없어 별도 분기한다.
+ * 라벨은 각 절반의 중앙 정렬 — divider 에 붙는 단일 클릭 Variant5 레이아웃과 다르다.
+ */
+@Composable
+private fun DualActionButtonSurface(
+    text: String,
+    onClick: () -> Unit,
+    secondaryText: String,
+    onSecondaryClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(6.dp),
+        color = AfternoteDesign.colors.gray9,
+        contentColor = AfternoteDesign.colors.white,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .clickable(onClick = onClick)
+                        .padding(vertical = 13.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = text,
+                    style = AfternoteDesign.typography.captionLargeB,
+                )
+            }
+            VerticalDivider(
+                modifier = Modifier.height(12.dp),
+                color = AfternoteDesign.colors.gray2,
+            )
+            Box(
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .clickable(onClick = onSecondaryClick)
+                        .padding(vertical = 13.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = secondaryText,
+                    style = AfternoteDesign.typography.captionLargeB,
+                )
+            }
+        }
+    }
+}
+
 @Preview(showBackground = true, name = "Default")
 @Composable
 private fun AfternoteButtonDefaultPreview() {
@@ -141,6 +217,13 @@ private fun AfternoteButtonDefaultPreview() {
                 onClick = {},
                 type = AfternoteButtonType.Variant5,
                 secondaryText = "회원가입",
+            )
+            AfternoteButton(
+                text = "전체 삭제",
+                onClick = {},
+                type = AfternoteButtonType.Variant5,
+                secondaryText = "선택 삭제",
+                onSecondaryClick = {},
             )
         }
     }
@@ -173,7 +256,7 @@ fun AfternoteActionButton(
                 color = contentColor,
             )
             Spacer(modifier = Modifier.width(9.dp))
-            RightArrowIcon(modifier = Modifier.Companion.size(width = 5.dp, height = 9.dp))
+            RightArrowIcon(modifier = Modifier.size(width = 5.dp, height = 9.dp))
         }
     }
 }
