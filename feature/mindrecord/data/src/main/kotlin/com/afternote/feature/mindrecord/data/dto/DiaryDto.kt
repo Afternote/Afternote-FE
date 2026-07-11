@@ -22,6 +22,7 @@ data class DiaryCreateRequest(
     @SerialName("isDraft") val isDraft: Boolean,
     @SerialName("todayMood") val todayMood: TodayMood,
     @SerialName("imageUrl") val imageUrl: String? = null,
+    @SerialName("receiverIds") val receiverIds: List<Long>? = null,
 )
 
 @Serializable

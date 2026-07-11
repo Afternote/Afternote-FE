@@ -3,9 +3,10 @@ package com.afternote.feature.mindrecord.data.repositoryimpl
 import com.afternote.core.network.model.requireData
 import com.afternote.feature.mindrecord.data.api.MindRecordReceiverApiService
 import com.afternote.feature.mindrecord.data.mapper.toDomain
-import com.afternote.feature.mindrecord.domain.model.MindRecordDetail
-import com.afternote.feature.mindrecord.domain.model.MindRecordList
+import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import javax.inject.Inject
 
 class MindRecordReceiverRepositoryImpl
@@ -13,13 +14,20 @@ class MindRecordReceiverRepositoryImpl
     constructor(
         private val api: MindRecordReceiverApiService,
     ) : MindRecordReceiverRepository {
-        override suspend fun getList(): Result<MindRecordList> =
+        override suspend fun getAll(): Result<ReceiverMindRecords> =
             runCatching {
-                api.getReceiverMindRecords().requireData().toDomain()
-            }
+                coroutineScope {
+                    val dailyQuestionsDeferred = async { api.getReceiverDailyQuestions().requireData() }
+                    val diariesDeferred = async { api.getReceiverDiaries().requireData() }
+                    val deepThoughtsDeferred = async { api.getReceiverDeepThoughts().requireData() }
 
-        override suspend fun getDetail(id: Long): Result<MindRecordDetail> =
-            runCatching {
-                api.getReceiverMindRecordDetail(mindRecordId = id).requireData().toDomain()
+                    val deepThoughtResponse = deepThoughtsDeferred.await()
+                    ReceiverMindRecords(
+                        dailyQuestions = dailyQuestionsDeferred.await().dailyQuestions.map { it.toDomain() },
+                        diaries = diariesDeferred.await().diaries.map { it.toDomain() },
+                        deepThoughts = deepThoughtResponse.deepThoughts.map { it.toDomain() },
+                        deepThoughtCategories = deepThoughtResponse.categories,
+                    )
+                }
             }
     }
