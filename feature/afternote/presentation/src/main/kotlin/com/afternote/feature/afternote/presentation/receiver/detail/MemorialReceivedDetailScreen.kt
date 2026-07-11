@@ -52,15 +52,14 @@ import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
 
 /**
- * MEMORIAL 카테고리의 수신자 측 detail prototype.
+ * MEMORIAL(추억 노트) 카테고리의 수신자 측 상세 화면.
  *
- * 현재 [ReceivedAfternoteDetailSuccessMapper] 의 MEMORIAL 분기는 디자이너 보류라
- * [com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent] 로 폴백
- * 한다. 디자인 확정 시 mapper 에 MEMORIAL UI 모델을 추가하고 [ReceivedAfternoteDetailRoute] 의
- * when 분기에서 본 화면을 호출하도록 wire-up 한다.
+ * [ReceivedAfternoteDetailRoute] 의 MEMORIAL 분기에서 호출된다. 표시 데이터는
+ * ReceivedAfternoteDetailSuccessMapper.kt 의 매퍼가 만든 [ReceivedMemorialDetailContent] 를
+ * Route 가 풀어 파라미터로 전달한다.
  *
  * 페어 sub-screen: [com.afternote.feature.afternote.presentation.receiver.playlist.MemorialPlaylistScreen]
- * (추억 플레이리스트 진입).
+ * (추억 플레이리스트 카드 클릭 → 전체보기 진입).
  */
 @Composable
 fun MemorialReceivedDetailScreen(
@@ -122,8 +121,7 @@ fun MemorialReceivedDetailScreen(
                             label = "추억 플레이리스트",
                             songCount = songCount,
                             albumCovers = albumCovers,
-                            onAddSongClick = null,
-                            onPlaylistClick = onNavigateToPlaylist,
+                            onCardClick = onNavigateToPlaylist,
                         )
                     },
                     lastWishContent = {
@@ -172,6 +170,8 @@ private fun ReceiverVideoSection(
                 modifier =
                     Modifier
                         .fillMaxWidth()
+                        // clip 을 clickable 앞에: 눌림 피드백이 InfoCard 의 12dp 둥근 모서리 안에서만 그려지게 (모서리 밖 사각 번짐 방지)
+                        .clip(RoundedCornerShape(12.dp))
                         .clickable {
                             val intent = Intent(Intent.ACTION_VIEW, memorialVideoUrl.toUri())
                             if (context.packageManager.resolveActivity(
@@ -275,7 +275,7 @@ private fun ReceiverSectionHeader(title: String = LABEL_VIDEO_SECTION) {
     )
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "No video")
 @Composable
 private fun PreviewMemorialReceivedDetail() {
     AfternoteTheme {
@@ -290,6 +290,26 @@ private fun PreviewMemorialReceivedDetail() {
                     AlbumCover(id = "3"),
                 ),
             songCount = 3,
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "With video")
+@Composable
+private fun PreviewMemorialReceivedDetailWithVideo() {
+    AfternoteTheme {
+        MemorialReceivedDetailScreen(
+            senderName = "박서연",
+            leaveMessage = "이 계정에는 우리 가족 여행 사진이 많아. 계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
+            albumCovers =
+                listOf(
+                    AlbumCover(id = "1"),
+                    AlbumCover(id = "2"),
+                    AlbumCover(id = "3"),
+                ),
+            songCount = 3,
+            // 영상 섹션은 URL 있을 때만 노출 — 조건부 분기 상태 확인용 프리뷰 (썸네일은 네트워크 미지원이라 회색).
+            memorialVideoUrl = "https://example.com/memorial.mp4",
         )
     }
 }

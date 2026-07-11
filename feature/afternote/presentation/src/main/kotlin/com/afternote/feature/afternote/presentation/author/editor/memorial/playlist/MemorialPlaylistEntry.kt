@@ -6,11 +6,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -20,12 +18,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.bottombar.BottomNavTab
-import com.afternote.core.ui.icon.ArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
@@ -41,7 +37,7 @@ data class MemorialPlaylistEntryActions(
 )
 
 /**
- * 추모 플레이리스트 Entry.
+ * 추억 플레이리스트 Entry.
  *
  * graph-scoped [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs] SSOT의 곡 목록을
  * 공용 [SongPlaylistScreen]의 입력 형태로 매핑한다. 변경은 [actions] 인텐트로 위임한다.
@@ -73,12 +69,8 @@ fun MemorialPlaylistEntry(
         songs = displaySongs,
         managementContent =
             SongPlaylistScreenManagementContent(
-                leadingContent = { selectedIds ->
-                    MemorialPlaylistListHeader(
-                        songCount = displaySongs.size,
-                        isSelectionMode = selectedIds.isNotEmpty(),
-                        onAddSongClick = actions.onNavigateToAddSongScreen,
-                    )
+                leadingContent = {
+                    MemorialPlaylistListHeader(songCount = displaySongs.size)
                 },
                 selectionBottomBar = { selectedIds, onClearSelection ->
                     MemorialPlaylistActionBar(
@@ -99,94 +91,26 @@ fun MemorialPlaylistEntry(
 }
 
 /**
- * MemorialPlaylistList 화면 상단 헤더: "총 N곡" 및 "노래 추가하기" 버튼 (선택 모드가 아닐 때만 버튼 표시).
+ * MemorialPlaylistList 화면 상단 헤더: 선택 모드와 무관하게 항상 "총 N곡"만 왼쪽에 표시.
+ *
+ * "노래 추가하기" 진입 버튼은 시안에 없어 제거 — 부재가 의도인지 디자이너 확인 대기,
+ * 답변에 따라 복원 여부 결정 ([MemorialPlaylistEntryActions.onNavigateToAddSongScreen] 배선은 유지).
  */
 @Composable
 private fun MemorialPlaylistListHeader(
     songCount: Int,
-    isSelectionMode: Boolean,
-    onAddSongClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val songCountText = stringResource(R.string.afternote_editor_playlist_song_count_format, songCount)
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        if (isSelectionMode) {
-            Column {
-                Spacer(modifier = Modifier.height(24.dp))
-                Text(
-                    text = stringResource(R.string.afternote_editor_playlist_current_header),
-                    style =
-                        AfternoteDesign.typography.textField.copy(
-                            fontWeight = FontWeight.Medium,
-                            color = AfternoteDesign.colors.gray9,
-                        ),
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-            Column {
-                Spacer(modifier = Modifier.height(25.dp))
-                Text(
-                    text = songCountText,
-                    style =
-                        AfternoteDesign.typography.bodySmallR.copy(
-                            color = AfternoteDesign.colors.gray9,
-                        ),
-                )
-                Spacer(modifier = Modifier.height(17.dp))
-            }
-        } else {
-            Column {
-                Spacer(modifier = Modifier.height(25.dp))
-                Text(
-                    text = songCountText,
-                    style =
-                        AfternoteDesign.typography.bodySmallR.copy(
-                            color = AfternoteDesign.colors.gray9,
-                        ),
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-            Column {
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier =
-                        Modifier
-                            .background(
-                                color = AfternoteDesign.colors.gray9,
-                                shape = RoundedCornerShape(20.dp),
-                            ).clickable(onClick = onAddSongClick),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row {
-                            Text(
-                                text = stringResource(R.string.afternote_editor_playlist_add_songs),
-                                style =
-                                    AfternoteDesign.typography.captionLargeR.copy(
-                                        fontWeight = FontWeight.Medium,
-                                        color = AfternoteDesign.colors.gray9,
-                                    ),
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            ArrowIcon(
-                                iconRes = R.drawable.feature_afternote_ic_arrow_right_playlist,
-                                contentDescription = stringResource(R.string.afternote_editor_content_description_add),
-                                modifier = Modifier.size(12.dp),
-                                tint = AfternoteDesign.colors.white,
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                }
-                Spacer(modifier = Modifier.height(11.dp))
-            }
-        }
+    Column(modifier = modifier.fillMaxWidth()) {
+//        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = stringResource(R.string.afternote_editor_playlist_song_count_format, songCount),
+            style =
+                AfternoteDesign.typography.bodySmallR.copy(
+                    color = AfternoteDesign.colors.gray9,
+                ),
+        )
+//        Spacer(modifier = Modifier.height(8.dp))
     }
 }
 

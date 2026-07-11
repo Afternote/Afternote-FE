@@ -7,7 +7,7 @@ import com.afternote.feature.afternote.presentation.R
 /**
  * Maps API [typeKey] (when present), UI display keys / service titles, and label + icon resources.
  *
- * Replaces the former parallel [DISPLAY_ENTRIES] table in [com.afternote.feature.afternote.presentation.shared.util.AfternoteDisplayRes].
+ * Replaces the former parallel `DISPLAY_ENTRIES` table in AfternoteDisplayRes.kt.
  */
 enum class AfternoteService(
     val typeKey: String?,

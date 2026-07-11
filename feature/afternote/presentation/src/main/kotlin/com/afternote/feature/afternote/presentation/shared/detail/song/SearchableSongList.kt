@@ -74,14 +74,17 @@ data class SearchableSongListSlots(
  *
  * 공용 화면이 선택 상태(selectedIds)의 소유자이고, 그 위에 그릴 크롬은 호출부마다 달라
  * (수신자 열람 = 없음 / 작성자 관리 = 곡 수 헤더 + 삭제 액션바) 슬롯으로 주입받는다 —
- * Scaffold 의 topBar/bottomBar 와 같은 패턴. 상태는 람다 인자로 내려주고,
- * 상태 조작(선택 해제)은 onClearSelection 콜백으로 화면에 되돌린다.
+ * Scaffold 의 topBar/bottomBar 와 같은 패턴. 선택 상태가 필요한 조각(selectionBottomBar)에만
+ * 람다 인자로 내려주고, 상태 조작(선택 해제)은 onClearSelection 콜백으로 화면에 되돌린다.
  *
- * @param leadingContent Header composable receiving selectedIds.
+ * @param leadingContent Header composable (목록 첫 아이템으로 렌더 — 목록과 함께 스크롤).
  * @param selectionBottomBar Bottom bar composable when selection is non-empty.
+ *   onClearSelection = 선택 **전체** 해제(emptySet — 바 노출 조건이 isNotEmpty 라 바 자체도 닫힘).
+ *   선택 상태가 화면 내부 remember 라 호출부가 직접 못 만지므로, 소유자가 변이 함수를 내려주고
+ *   호출부가 시점(액션 완료 직후)을 정해 호출한다.
  */
 data class SongPlaylistScreenManagementContent(
-    val leadingContent: @Composable (selectedIds: Set<String>) -> Unit,
+    val leadingContent: @Composable () -> Unit,
     val selectionBottomBar: @Composable (selectedIds: Set<String>, onClearSelection: () -> Unit) -> Unit,
 )
 
@@ -107,7 +110,6 @@ data class SongPlaylistScreenSelectableOptions(
  * @param defaultBottomNavTab 초기 선택 BottomNavTab
  */
 @Composable
-@Suppress("AssignedValueIsNeverRead")
 fun SongPlaylistScreen(
     modifier: Modifier = Modifier,
     title: String,
@@ -117,7 +119,6 @@ fun SongPlaylistScreen(
 ) {
     val focusManager = LocalFocusManager.current
     var searchQuery by remember { mutableStateOf("") }
-    var selectedBottomNavTab by remember { mutableStateOf(defaultBottomNavTab) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -153,12 +154,9 @@ fun SongPlaylistScreen(
  * @param onBackClick 뒤로가기 콜백
  * @param songs 표시할 노래 목록
  * @param onSongsSelected 추가하기 버튼 클릭 시 선택된 노래 목록 전달
- * @param defaultBottomNavTab 초기 선택 BottomNavTab
- * @param initialSelectedSongIds Preview용 초기 선택 ID (기본 null)
- * @param options [SongPlaylistScreenSelectableOptions] for nav item, initial selection, and optional search binding.
+ * @param options [SongPlaylistScreenSelectableOptions] — 초기 BottomNavTab·초기 선택 ID(Preview 용)·검색 바인딩 묶음
  */
 @Composable
-@Suppress("AssignedValueIsNeverRead")
 fun SongPlaylistScreen(
     modifier: Modifier = Modifier,
     title: String,
@@ -170,11 +168,10 @@ fun SongPlaylistScreen(
     val focusManager = LocalFocusManager.current
     var selectedSongIds by remember {
         mutableStateOf(
-            options.initialSelectedSongIds ?: emptySet<String>(),
+            options.initialSelectedSongIds ?: emptySet(),
         )
     }
     var internalSearchQuery by remember { mutableStateOf("") }
-    var selectedBottomNavTab by remember { mutableStateOf(options.defaultBottomNavTab) }
 
     val effectiveQuery = options.searchQuery ?: internalSearchQuery
     val effectiveOnSearchQueryChange = options.onSearchQueryChange ?: { internalSearchQuery = it }
@@ -264,7 +261,6 @@ fun SongPlaylistScreen(
  * @param initialSelectedSongIds Preview용 초기 선택 ID
  */
 @Composable
-@Suppress("AssignedValueIsNeverRead")
 fun SongPlaylistScreen(
     modifier: Modifier = Modifier,
     title: String,
@@ -276,9 +272,8 @@ fun SongPlaylistScreen(
 ) {
     val focusManager = LocalFocusManager.current
     var selectedSongIds by remember {
-        mutableStateOf(initialSelectedSongIds ?: emptySet<String>())
+        mutableStateOf(initialSelectedSongIds ?: emptySet())
     }
-    var selectedBottomNavTab by remember { mutableStateOf(defaultBottomNavTab) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -293,7 +288,9 @@ fun SongPlaylistScreen(
             )
         },
     ) { paddingValues ->
-        Box(modifier = Modifier.padding(paddingValues)) {
+        Box(
+            modifier = Modifier.padding(paddingValues),
+        ) {
             SearchableSongList(
                 modifier = Modifier.fillMaxSize(),
                 songs = songs,
@@ -324,7 +321,7 @@ fun SongPlaylistScreen(
                                 unselectedColor = AfternoteDesign.colors.gray4,
                             )
                         },
-                        leadingContent = { managementContent.leadingContent(selectedSongIds) },
+                        leadingContent = managementContent.leadingContent,
                     ),
             )
             if (selectedSongIds.isNotEmpty()) {
@@ -406,7 +403,9 @@ private fun SearchableSongListRow(
  * @param searchQuery 현재 검색 텍스트
  * @param onSearchQueryChange 검색 텍스트 변경 콜백
  * @param onSongClick 노래 행 클릭 콜백 (null이면 비클릭)
- * @param contentPadding LazyColumn contentPadding
+ * @param contentPadding LazyColumn contentPadding — 파라미터 관통이 필수: 바깥 modifier.padding 은 스크롤
+ *   콘텐츠가 경계에서 잘리지만 contentPadding 은 콘텐츠가 패딩 영역 밑을 지나가며 스크롤된다.
+ *   값도 호출부 상태에 의존 (예: 선택 모드의 하단 플로팅 바 높이만큼 bottom 확보 — 바는 이 리스트 밖에 그려져 내부에선 알 수 없음)
  * @param slots Optional trailing (per row) and leading (header) content; nulls use defaults.
  */
 @Composable
@@ -657,7 +656,6 @@ private fun SongPlaylistScreenSelectablePreview() {
 
 @Preview(showBackground = true, name = "SearchableSongList 단독")
 @Composable
-@Suppress("AssignedValueIsNeverRead")
 private fun SearchableSongListPreview() {
     val songs =
         (1..5).map { i ->

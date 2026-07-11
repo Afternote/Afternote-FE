@@ -17,7 +17,9 @@ private const val LAST_WISH_DEFAULT_CALM = "차분하고 조용하게 보내주�
 private const val LAST_WISH_DEFAULT_BRIGHT = "슬퍼 하지 말고 밝고 따뜻하게 보내주세요."
 
 /**
- * 에디터 **비즈니스/도메인** 폼 상태. [AfternoteEditorViewModel]의 [kotlinx.coroutines.flow.StateFlow]가 SSOT이며,
+ * 에디터 **비즈니스/도메인** 폼 상태.
+ * [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel]의
+ * [kotlinx.coroutines.flow.StateFlow]가 SSOT이며,
  * 프로세스 종료 대비 스냅샷은 [androidx.lifecycle.SavedStateHandle]에 JSON으로 저장한다.
  *
  * 순수 UI(다이얼로그·탭·드롭다운·[androidx.compose.foundation.text.input.TextFieldState])는
