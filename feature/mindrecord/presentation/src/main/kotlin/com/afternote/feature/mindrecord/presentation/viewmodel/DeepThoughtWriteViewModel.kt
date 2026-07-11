@@ -2,6 +2,7 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DeepThoughtCreatePayload
 import com.afternote.feature.mindrecord.domain.repository.DeepThoughtRepository
@@ -19,6 +20,7 @@ class DeepThoughtWriteViewModel
     @Inject
     constructor(
         private val repository: DeepThoughtRepository,
+        private val photoUploadRepository: PhotoUploadRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(DeepThoughtWriteUiState())
         val uiState: StateFlow<DeepThoughtWriteUiState> = _uiState.asStateFlow()
@@ -38,6 +40,17 @@ class DeepThoughtWriteViewModel
         fun onTagsChanged(tags: List<String>) {
             _uiState.update { it.copy(tags = tags) }
         }
+
+        /**
+         * 에디터에서 고른 이미지를 presigned URL 로 업로드하고 영구 URL 을 반환한다 (실패 시 null).
+         * 첫 업로드 이미지는 등록 payload 의 `imageUrl` (목록 카드 썸네일) 로도 쓴다.
+         */
+        suspend fun uploadImage(uriString: String): String? =
+            photoUploadRepository
+                .upload(uriString = uriString, directory = MIND_RECORD_UPLOAD_DIRECTORY)
+                .onSuccess { url ->
+                    _uiState.update { if (it.imageUrl == null) it.copy(imageUrl = url) else it }
+                }.getOrNull()
 
         fun submit(isDraft: Boolean = false) {
             val state = _uiState.value

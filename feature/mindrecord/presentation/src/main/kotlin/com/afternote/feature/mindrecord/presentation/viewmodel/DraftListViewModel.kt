@@ -3,12 +3,14 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.ui.UiText
+import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DeepThoughtRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.mapper.toUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,6 +35,7 @@ class DraftListViewModel
     constructor(
         private val diaryRepository: DiaryRepository,
         private val deepThoughtRepository: DeepThoughtRepository,
+        private val dailyQuestionRepository: DailyQuestionRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<DraftListUiState>(DraftListUiState.Loading)
         val uiState: StateFlow<DraftListUiState> = _uiState.asStateFlow()
@@ -43,9 +46,50 @@ class DraftListViewModel
 
         fun refresh() = load()
 
-        fun onFilterChanged(filter: DraftCategory) {
+        /** 선택 삭제 — 삭제 후 목록을 다시 불러오고 완료 토스트 노출 플래그를 세운다. */
+        fun delete(items: List<DraftItem>) {
+            val current = _uiState.value as? DraftListUiState.Success ?: return
+            if (items.isEmpty() || current.isDeleting) return
+
+            viewModelScope.launch {
+                _uiState.update {
+                    if (it is DraftListUiState.Success) it.copy(isDeleting = true) else it
+                }
+                coroutineScope {
+                    items
+                        .map { item ->
+                            async {
+                                when (item.category) {
+                                    DraftCategory.Diary -> diaryRepository.delete(item.id)
+
+                                    DraftCategory.DeepThought -> deepThoughtRepository.delete(item.id)
+
+                                    DraftCategory.DailyQuestion -> dailyQuestionRepository.delete(item.id)
+
+                                    // All 은 필터 라벨용 — 실제 항목 카테고리로는 등장하지 않는다.
+                                    DraftCategory.All -> Result.success(Unit)
+                                }
+                            }
+                        }.awaitAll()
+                }
+                val refreshed = collectDrafts()
+                _uiState.value =
+                    if (refreshed != null) {
+                        DraftListUiState.Success(items = refreshed, deleteCompleted = true)
+                    } else {
+                        DraftListUiState.Error(UiText.Resource(R.string.mindrecord_error_generic))
+                    }
+            }
+        }
+
+        fun deleteAll() {
+            val current = _uiState.value as? DraftListUiState.Success ?: return
+            delete(current.items)
+        }
+
+        fun consumeDeleteCompleted() {
             _uiState.update {
-                if (it is DraftListUiState.Success) it.copy(filter = filter) else it
+                if (it is DraftListUiState.Success) it.copy(deleteCompleted = false) else it
             }
         }
 
@@ -55,7 +99,7 @@ class DraftListViewModel
                 val items = collectDrafts()
                 _uiState.value =
                     if (items != null) {
-                        DraftListUiState.Success(items = items, filter = DraftCategory.All)
+                        DraftListUiState.Success(items = items)
                     } else {
                         DraftListUiState.Error(UiText.Resource(R.string.mindrecord_error_generic))
                     }
@@ -90,6 +134,7 @@ class DraftListViewModel
                             DraftItem(
                                 id = ui.id,
                                 category = DraftCategory.Diary,
+                                title = ui.title,
                                 content = ui.content,
                                 date = ui.date,
                             )
@@ -100,6 +145,7 @@ class DraftListViewModel
                             DraftItem(
                                 id = ui.id,
                                 category = DraftCategory.DeepThought,
+                                title = ui.title,
                                 content = ui.content,
                                 date = ui.date,
                             )

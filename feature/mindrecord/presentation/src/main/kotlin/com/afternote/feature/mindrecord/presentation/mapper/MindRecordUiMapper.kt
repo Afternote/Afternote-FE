@@ -28,6 +28,7 @@ fun DailyQuestionDomain.toUi(): DailyQuestion =
         title = title,
         date = parseLocalDate(createdAt),
         content = content,
+        imageUrl = imageUrl,
     )
 
 fun Diary.toUi(): DailyDiary =
@@ -37,6 +38,7 @@ fun Diary.toUi(): DailyDiary =
         date = parseLocalDate(createdAt),
         content = content,
         emotion = todayMood.toEmoji(),
+        imageUrl = imageUrl,
     )
 
 fun DeepThought.toUi(): DeepThoughtModel =

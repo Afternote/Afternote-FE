@@ -7,4 +7,5 @@ data class DailyQuestion(
     val title: String,
     val date: LocalDate,
     val content: String,
+    val imageUrl: String? = null,
 )
