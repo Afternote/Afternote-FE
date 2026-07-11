@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -38,6 +39,10 @@ enum class AfternoteButtonType {
     Variant5,
 }
 
+/** [AfternoteButton] 공통 셰이프·라벨 세로 패딩 — 단일/dual-action 두 렌더 경로가 공유. */
+private val AfternoteButtonShape = RoundedCornerShape(6.dp)
+private val AfternoteButtonVerticalPadding = 13.dp
+
 /**
  * 공통 텍스트 버튼. [type] 으로 배경/전경/보더 스타일을 고른다.
  *
@@ -56,6 +61,22 @@ fun AfternoteButton(
     secondaryText: String? = null,
     onSecondaryClick: (() -> Unit)? = null,
 ) {
+    // 색 테이블을 여기서 한 번만 결정해 두 렌더 경로(단일 Surface·dual-action)에 같은 값을 공급한다 —
+    // dual 쪽에 Variant5 색을 재하드코딩하면 테이블 변경 시 조용히 어긋난다.
+    val containerColor =
+        when (type) {
+            AfternoteButtonType.Default -> AfternoteDesign.colors.gray9
+            AfternoteButtonType.Active -> AfternoteDesign.colors.gray6
+            AfternoteButtonType.Plain -> AfternoteDesign.colors.gray2
+            AfternoteButtonType.Un -> AfternoteDesign.colors.gray2
+            AfternoteButtonType.Variant5 -> AfternoteDesign.colors.gray9
+        }
+    val contentColor =
+        when (type) {
+            AfternoteButtonType.Plain -> AfternoteDesign.colors.gray9
+            AfternoteButtonType.Un -> AfternoteDesign.colors.gray5
+            else -> AfternoteDesign.colors.white
+        }
     CompositionLocalProvider(
         LocalMinimumInteractiveComponentSize provides androidx.compose.ui.unit.Dp.Unspecified,
     ) {
@@ -65,6 +86,8 @@ fun AfternoteButton(
                 onClick = onClick,
                 secondaryText = secondaryText,
                 onSecondaryClick = onSecondaryClick,
+                containerColor = containerColor,
+                contentColor = contentColor,
                 modifier = modifier,
             )
             return@CompositionLocalProvider
@@ -74,21 +97,9 @@ fun AfternoteButton(
             modifier =
                 modifier.fillMaxWidth(),
             enabled = type != AfternoteButtonType.Un,
-            shape = RoundedCornerShape(6.dp),
-            color =
-                when (type) {
-                    AfternoteButtonType.Default -> AfternoteDesign.colors.gray9
-                    AfternoteButtonType.Active -> AfternoteDesign.colors.gray6
-                    AfternoteButtonType.Plain -> AfternoteDesign.colors.gray2
-                    AfternoteButtonType.Un -> AfternoteDesign.colors.gray2
-                    AfternoteButtonType.Variant5 -> AfternoteDesign.colors.gray9
-                },
-            contentColor =
-                when (type) {
-                    AfternoteButtonType.Plain -> AfternoteDesign.colors.gray9
-                    AfternoteButtonType.Un -> AfternoteDesign.colors.gray5
-                    else -> AfternoteDesign.colors.white
-                },
+            shape = AfternoteButtonShape,
+            color = containerColor,
+            contentColor = contentColor,
             border =
                 if (type == AfternoteButtonType.Plain || type == AfternoteButtonType.Un) {
                     BorderStroke(
@@ -100,7 +111,7 @@ fun AfternoteButton(
                 },
         ) {
             Row(
-                modifier = Modifier.padding(vertical = 13.dp),
+                modifier = Modifier.padding(vertical = AfternoteButtonVerticalPadding),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
             ) {
@@ -112,10 +123,7 @@ fun AfternoteButton(
                         modifier = Modifier.weight(1f),
                     )
                     Spacer(modifier = Modifier.width(24.dp))
-                    VerticalDivider(
-                        modifier = Modifier.height(12.dp),
-                        color = AfternoteDesign.colors.gray2,
-                    )
+                    Variant5LabelDivider()
                     Spacer(modifier = Modifier.width(24.dp))
                     Text(
                         text = secondaryText,
@@ -137,6 +145,7 @@ fun AfternoteButton(
  * Variant5 dual-action 렌더링: 정적 [Surface] 안에서 좌/우 절반이 각각 clickable.
  * 단일 Surface onClick 으로는 두 액션을 구분할 수 없어 별도 분기한다.
  * 라벨은 각 절반의 중앙 정렬 — divider 에 붙는 단일 클릭 Variant5 레이아웃과 다르다.
+ * 색은 [AfternoteButton] 의 타입별 색 테이블에서 받는다 (재하드코딩 금지).
  */
 @Composable
 private fun DualActionButtonSurface(
@@ -144,47 +153,52 @@ private fun DualActionButtonSurface(
     onClick: () -> Unit,
     secondaryText: String,
     onSecondaryClick: () -> Unit,
+    containerColor: Color,
+    contentColor: Color,
     modifier: Modifier = Modifier,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(6.dp),
-        color = AfternoteDesign.colors.gray9,
-        contentColor = AfternoteDesign.colors.white,
+        shape = AfternoteButtonShape,
+        color = containerColor,
+        contentColor = contentColor,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .clickable(onClick = onClick)
-                        .padding(vertical = 13.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = text,
-                    style = AfternoteDesign.typography.captionLargeB,
-                )
-            }
-            VerticalDivider(
-                modifier = Modifier.height(12.dp),
-                color = AfternoteDesign.colors.gray2,
-            )
-            Box(
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .clickable(onClick = onSecondaryClick)
-                        .padding(vertical = 13.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = secondaryText,
-                    style = AfternoteDesign.typography.captionLargeB,
-                )
-            }
+            DualActionLabel(text = text, onClick = onClick)
+            Variant5LabelDivider()
+            DualActionLabel(text = secondaryText, onClick = onSecondaryClick)
         }
     }
+}
+
+/** dual-action 좌/우 절반 하나: 절반 전체가 클릭 타깃, 라벨은 중앙 정렬. */
+@Composable
+private fun RowScope.DualActionLabel(
+    text: String,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier =
+            Modifier
+                .weight(1f)
+                .clickable(onClick = onClick)
+                .padding(vertical = AfternoteButtonVerticalPadding),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = text,
+            style = AfternoteDesign.typography.captionLargeB,
+        )
+    }
+}
+
+/** Variant5 라벨 사이 세로 구분선 — 단일/dual-action 레이아웃이 같은 스펙(12dp·gray2)을 공유. */
+@Composable
+private fun Variant5LabelDivider() {
+    VerticalDivider(
+        modifier = Modifier.height(12.dp),
+        color = AfternoteDesign.colors.gray2,
+    )
 }
 
 @Preview(showBackground = true, name = "Default")

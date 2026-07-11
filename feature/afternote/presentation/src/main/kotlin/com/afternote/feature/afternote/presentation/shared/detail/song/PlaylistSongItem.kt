@@ -39,23 +39,25 @@ private const val TAG = "PlaylistSongItem"
  * UI: 앨범 48dp(gray8 placeholder), 제목 Bold 14sp Gray9, 가수 12sp Gray6, 하단 Gray6 1dp 구분선.
  *
  * - [onClick]이 있으면 클릭 가능, [trailingContent]로 라디오 버튼 등 오른쪽 UI 삽입 (없으면 null)
+ * - 콜백/슬롯은 [song] 을 실어 되돌려준다: 행이 이미 자기 곡을 알므로, 호출부(리스트 루프)가
+ *   곡 캡처용 래핑 람다를 만들지 않고 per-song 람다를 그대로 넘길 수 있다.
  *
  * @param song 표시용 모델 [PlaylistSongDisplay] (Feature별 Song/Entity에서 매핑)
 // * @param displayIndex 목록 내 순번 (이미지/placeholder용, 현재는 미사용, API 호환용)
- * @param onClick 클릭 시 호출 (null이면 비클릭)
- * @param trailingContent Row 오른쪽 콘텐츠 (AddSongScreen·MemorialPlaylistRouteScreen에서는 라디오)
+ * @param onClick 클릭 시 이 행의 [song] 과 함께 호출 (null이면 비클릭)
+ * @param trailingContent Row 오른쪽 콘텐츠, [song] 을 인자로 받음 (선택/관리 모드에서는 라디오)
  */
 @Composable
 fun PlaylistSongItem(
     song: PlaylistSongDisplay,
-    onClick: (() -> Unit)? = null,
-    trailingContent: (@Composable RowScope.() -> Unit)? = null,
+    onClick: ((PlaylistSongDisplay) -> Unit)? = null,
+    trailingContent: (@Composable RowScope.(PlaylistSongDisplay) -> Unit)? = null,
 ) {
     val base =
         if (onClick != null) {
             Modifier
                 .fillMaxWidth()
-                .clickable(onClick = onClick)
+                .clickable(onClick = { onClick(song) })
         } else {
             Modifier.fillMaxWidth()
         }
@@ -97,7 +99,7 @@ fun PlaylistSongItem(
                     )
                 }
                 if (trailingContent != null) {
-                    trailingContent()
+                    trailingContent(song)
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))

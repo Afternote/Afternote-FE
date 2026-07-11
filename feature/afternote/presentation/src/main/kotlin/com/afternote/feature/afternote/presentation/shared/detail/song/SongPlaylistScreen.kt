@@ -75,7 +75,7 @@ data class SongPlaylistScreenSelectableOptions(
 
 /**
  * 노래 검색 + 목록 전체 화면 (view-only).
- * Scaffold(HomeTopBar + BottomBar) + SearchableSongList.
+ * Scaffold(HomeTopBar + BottomBar) + PlaylistSongList.
  *
  * @param title TopBar에 표시할 타이틀
  * @param onBackClick 뒤로가기 콜백
@@ -106,7 +106,7 @@ fun SongPlaylistScreen(
             )
         },
     ) { paddingValues ->
-        SearchableSongList(
+        PlaylistSongList(
             modifier =
                 Modifier
                     .padding(paddingValues)
@@ -169,7 +169,7 @@ fun SongPlaylistScreen(
         },
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {
-            SearchableSongList(
+            PlaylistSongList(
                 modifier = Modifier.fillMaxSize(),
                 songs = displaySongs,
                 searchQuery = effectiveQuery,
@@ -188,15 +188,9 @@ fun SongPlaylistScreen(
                         end = 20.dp,
                     ),
                 slots =
-                    SearchableSongListSlots(
+                    PlaylistSongListSlots(
                         trailingContent = { song ->
-                            CustomRadioButton(
-                                selected = selectedSongIds.contains(song.id),
-                                onClick = null,
-                                buttonSize = 24.dp,
-                                selectedColor = AfternoteDesign.colors.gray9,
-                                unselectedColor = AfternoteDesign.colors.gray4,
-                            )
+                            SongSelectionRadio(selected = song.id in selectedSongIds)
                         },
                     ),
             )
@@ -263,7 +257,7 @@ fun SongPlaylistScreen(
         Box(
             modifier = Modifier.padding(paddingValues),
         ) {
-            SearchableSongList(
+            PlaylistSongList(
                 modifier = Modifier.fillMaxSize(),
                 songs = songs,
                 searchQuery = "",
@@ -283,15 +277,9 @@ fun SongPlaylistScreen(
                         end = 20.dp,
                     ),
                 slots =
-                    SearchableSongListSlots(
+                    PlaylistSongListSlots(
                         trailingContent = { song ->
-                            CustomRadioButton(
-                                selected = selectedSongIds.contains(song.id),
-                                onClick = null,
-                                buttonSize = 24.dp,
-                                selectedColor = AfternoteDesign.colors.gray9,
-                                unselectedColor = AfternoteDesign.colors.gray4,
-                            )
+                            SongSelectionRadio(selected = song.id in selectedSongIds)
                         },
                         leadingContent = managementContent.leadingContent,
                     ),
@@ -315,6 +303,23 @@ fun SongPlaylistScreen(
 // endregion
 
 // region ── Screen-private sub-components ──
+
+/**
+ * 선택/관리 모드 행 우측의 선택 라디오 (24dp·gray9/gray4).
+ *
+ * 행의 trailingContent 슬롯은 내용물을 모르는 위치 계약(M3 ListItem 의 trailingContent 와 같은 관례)이라,
+ * "라디오"라는 이름·스펙은 슬롯이 아니라 주입 조각인 여기에 붙는다. 선택·관리 두 오버로드가 공유.
+ */
+@Composable
+private fun SongSelectionRadio(selected: Boolean) {
+    CustomRadioButton(
+        selected = selected,
+        onClick = null,
+        buttonSize = 24.dp,
+        selectedColor = AfternoteDesign.colors.gray9,
+        unselectedColor = AfternoteDesign.colors.gray4,
+    )
+}
 
 /**
  * 선택 시에만 노출되는 추가하기 버튼.

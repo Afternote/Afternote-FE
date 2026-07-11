@@ -48,17 +48,17 @@ import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDis
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 /**
- * Slots for [SearchableSongList]: optional trailing (per row) and leading (header) content.
+ * Slots for [PlaylistSongList]: optional trailing (per row) and leading (header) content.
  *
  * @param trailingContent Optional composable for each row (e.g. radio button).
  * @param leadingContent Optional composable for the first item (e.g. custom header).
  */
-data class SearchableSongListSlots(
+data class PlaylistSongListSlots(
     val trailingContent: (@Composable RowScope.(PlaylistSongDisplay) -> Unit)? = null,
     val leadingContent: (@Composable () -> Unit)? = null,
 )
 
-// region ── SearchableSongList (list-level composable) ──
+// region ── PlaylistSongList (list-level composable) ──
 
 internal fun filterSongsByQuery(
     songs: List<PlaylistSongDisplay>,
@@ -72,32 +72,15 @@ internal fun filterSongsByQuery(
     }
 }
 
-@Composable
-private fun SearchableSongListRow(
-    song: PlaylistSongDisplay,
-    onSongClick: ((PlaylistSongDisplay) -> Unit)?,
-    trailingContent: (@Composable RowScope.(PlaylistSongDisplay) -> Unit)?,
-) {
-    PlaylistSongItem(
-        song = song,
-        onClick =
-            if (onSongClick != null) {
-                { onSongClick(song) }
-            } else {
-                null
-            },
-        trailingContent =
-            if (trailingContent != null) {
-                { trailingContent(song) }
-            } else {
-                null
-            },
-    )
-}
-
 /**
  * 검색창 + 노래 목록 패턴.
  * SongPlaylistScreen 내부에서 사용하거나, 커스텀 Scaffold가 필요한 경우 직접 사용.
+ *
+ * 검색 대상은 "지금 표시 중인 곡 목록"이다 — 곡 추가 플로우의 후보 목록(AddSong)뿐 아니라
+ * 이미 담긴 플레이리스트 안에서의 검색(수신자 열람)에도 그대로 쓰인다. 행 우측 조각(선택 라디오 등)은
+ * [slots] 주입이라 수신자 열람처럼 미주입이면 라디오 없이 렌더된다.
+ * 구명 SearchableSongList — addsong 패키지 태생이라 "추가용 검색" 함의가 남아
+ * [PlaylistSongDisplay]·[PlaylistSongItem] 가족 명명으로 개명 (2026-07).
  *
  * @param songs 표시할 노래 목록
  * @param searchQuery 현재 검색 텍스트
@@ -109,14 +92,14 @@ private fun SearchableSongListRow(
  * @param slots Optional trailing (per row) and leading (header) content; nulls use defaults.
  */
 @Composable
-fun SearchableSongList(
+fun PlaylistSongList(
     modifier: Modifier = Modifier,
     songs: List<PlaylistSongDisplay>,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     onSongClick: ((PlaylistSongDisplay) -> Unit)? = null,
     contentPadding: PaddingValues = PaddingValues(0.dp),
-    slots: SearchableSongListSlots = SearchableSongListSlots(),
+    slots: PlaylistSongListSlots = PlaylistSongListSlots(),
 ) {
     val focusManager = LocalFocusManager.current
     val filteredSongs =
@@ -142,9 +125,9 @@ fun SearchableSongList(
             }
         }
         itemsIndexed(filteredSongs) { _, song ->
-            SearchableSongListRow(
+            PlaylistSongItem(
                 song = song,
-                onSongClick = onSongClick,
+                onClick = onSongClick,
                 trailingContent = slots.trailingContent,
             )
         }
@@ -263,15 +246,15 @@ private fun SongSearchTextField(
 
 // region ── Previews ──
 
-@Preview(showBackground = true, name = "SearchableSongList 단독")
+@Preview(showBackground = true, name = "PlaylistSongList 단독")
 @Composable
-private fun SearchableSongListPreview() {
+private fun PlaylistSongListPreview() {
     val songs =
         (1..5).map { i ->
             PlaylistSongDisplay(id = "$i", title = "노래 제목 $i", artist = "가수 이름")
         }
     var query by remember { mutableStateOf("") }
-    SearchableSongList(
+    PlaylistSongList(
         songs = songs,
         searchQuery = query,
         onSearchQueryChange = { query = it },
