@@ -9,10 +9,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
@@ -41,7 +41,7 @@ import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListViewModel
 import java.time.YearMonth
-import androidx.compose.foundation.lazy.grid.items as gridItems
+import androidx.compose.foundation.lazy.staggeredgrid.items as gridItems
 
 @Composable
 fun DiaryScreen(
@@ -143,13 +143,14 @@ private fun DiaryListContent(
             }
         }
     } else {
-        LazyVerticalGrid(
+        // Figma 2671:16732 — 일기 카드 형: 리포트 카드 + 2열 masonry 그리드
+        LazyVerticalStaggeredGrid(
             modifier = modifier,
-            columns = GridCells.Fixed(2),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            columns = StaggeredGridCells.Fixed(2),
+            verticalItemSpacing = 8.dp,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            item(span = { GridItemSpan(2) }) {
+            item(span = StaggeredGridItemSpan.FullLine) {
                 DiaryReportCard(
                     monthDiaryCount = monthDiaryCount,
                     weeklyMoodEmoji = weeklyMoodEmoji,
@@ -157,7 +158,10 @@ private fun DiaryListContent(
                 Spacer(modifier = Modifier.height(24.dp))
             }
             gridItems(diaries, key = { it.id }) { diary ->
-                DiaryCard(diary = diary)
+                DiaryCard(
+                    diary = diary,
+                    onDelete = { onDelete(diary.id) },
+                )
             }
         }
     }

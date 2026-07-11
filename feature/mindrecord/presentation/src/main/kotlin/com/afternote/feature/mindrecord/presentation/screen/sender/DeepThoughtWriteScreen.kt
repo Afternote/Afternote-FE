@@ -179,6 +179,7 @@ fun DeepThoughtWriteScreen(
                 onValueChange = viewModel::onContentChanged,
                 onSaveDraftClick = { viewModel.submit(isDraft = true) },
                 onDraftCountClick = onDraftListClick,
+                onImagePicked = viewModel::uploadImage,
             )
         }
 

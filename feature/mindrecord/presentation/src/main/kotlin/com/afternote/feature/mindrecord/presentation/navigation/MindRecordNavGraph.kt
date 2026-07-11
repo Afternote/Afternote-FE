@@ -59,6 +59,9 @@ fun NavGraphBuilder.mindRecordNavGraph(actions: MindRecordNavActions) {
         )
     }
     composable<MindRecordRoute.DraftListRoute> {
-        DraftListScreen(onBackClick = actions::onDraftListBack)
+        DraftListScreen(
+            onBackClick = actions::onDraftListBack,
+            onDiaryDraftClick = actions::onEditDiaryDraft,
+        )
     }
 }

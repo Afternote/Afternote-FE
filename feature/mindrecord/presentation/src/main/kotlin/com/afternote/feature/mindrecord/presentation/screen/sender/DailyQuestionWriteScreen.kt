@@ -1,22 +1,21 @@
 package com.afternote.feature.mindrecord.presentation.screen.sender
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -29,11 +28,14 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.theme.Red
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.mindrecord.presentation.R
-import com.afternote.feature.mindrecord.presentation.component.DailyQuestionWriteHeaderCard
+import com.afternote.feature.mindrecord.presentation.component.DailyQuestionBanner
 import com.afternote.feature.mindrecord.presentation.component.WriteTextField
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionWriteViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.SubmitState
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
+private val TopBarDateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
 
 @Composable
 fun DailyQuestionWriteScreen(
@@ -45,6 +47,7 @@ fun DailyQuestionWriteScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentOnSubmitSuccess by rememberUpdatedState(onSubmitSuccess)
+    var questionExpanded by remember { mutableStateOf(true) }
 
     LaunchedEffect(uiState.submitState) {
         if (uiState.submitState is SubmitState.Succeeded) {
@@ -55,8 +58,9 @@ fun DailyQuestionWriteScreen(
 
     Scaffold(
         topBar = {
+            // Figma 2372:22546 — 상단바: 뒤로가기 / 가운데 날짜 / 우측 저장 버튼
             DetailTopBar(
-                title = LocalDate.now().toString(),
+                title = LocalDate.now().format(TopBarDateFormatter),
                 actions = {
                     Button(
                         onClick = { viewModel.submit() },
@@ -64,13 +68,15 @@ fun DailyQuestionWriteScreen(
                         shape = RoundedCornerShape(6.dp),
                         colors =
                             ButtonDefaults.buttonColors(
-                                containerColor = AfternoteDesign.colors.gray2,
+                                containerColor = AfternoteDesign.colors.gray9,
+                                contentColor = AfternoteDesign.colors.white,
+                                disabledContainerColor = AfternoteDesign.colors.gray2,
+                                disabledContentColor = AfternoteDesign.colors.gray6,
                             ),
                     ) {
                         Text(
-                            text = stringResource(R.string.mindrecord_action_register),
+                            text = stringResource(R.string.mindrecord_action_save),
                             style = AfternoteDesign.typography.bodySmallB,
-                            color = AfternoteDesign.colors.gray6,
                         )
                     }
                 },
@@ -79,47 +85,45 @@ fun DailyQuestionWriteScreen(
         },
         modifier = modifier,
     ) { paddingValues ->
-        Column {
-            Column(modifier = Modifier.padding(paddingValues).padding(horizontal = 20.dp)) {
-                val questionLoadErrorText = uiState.questionLoadError?.asString()
-                val headerText =
-                    when {
-                        uiState.isQuestionLoading -> stringResource(R.string.mindrecord_daily_question_write_loading)
-                        questionLoadErrorText != null -> questionLoadErrorText
-                        uiState.questionContent.isNotEmpty() -> uiState.questionContent
-                        else -> stringResource(R.string.mindrecord_daily_question_write_none)
-                    }
-                DailyQuestionWriteHeaderCard(
-                    questionText = headerText,
-                )
-                Spacer(modifier = Modifier.height(18.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = "YOUR ANSWER",
-                        style = AfternoteDesign.typography.mono,
-                        color = AfternoteDesign.colors.black.copy(alpha = 0.4f),
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(start = 12.dp))
+        Column(
+            modifier =
+                Modifier
+                    .padding(paddingValues)
+                    .padding(horizontal = 20.dp),
+        ) {
+            // Figma 2372:22574 — 오늘의 추천 질문 배너 (접기/펼치기)
+            val questionLoadErrorText = uiState.questionLoadError?.asString()
+            val questionText =
+                when {
+                    uiState.isQuestionLoading -> stringResource(R.string.mindrecord_daily_question_write_loading)
+                    questionLoadErrorText != null -> questionLoadErrorText
+                    uiState.questionContent.isNotEmpty() -> uiState.questionContent
+                    else -> stringResource(R.string.mindrecord_daily_question_write_none)
                 }
-                Spacer(modifier = Modifier.height(10.dp))
+            DailyQuestionBanner(
+                questionText = questionText,
+                expanded = questionExpanded,
+                onToggle = { questionExpanded = !questionExpanded },
+                dayNumber = uiState.questionDay,
+            )
 
-                val errorMessage = (uiState.submitState as? SubmitState.Failed)?.message?.asString()
-                if (errorMessage != null) {
-                    Text(
-                        text = errorMessage,
-                        color = Red,
-                        style = AfternoteDesign.typography.captionLargeR,
-                    )
-                }
+            val errorMessage = (uiState.submitState as? SubmitState.Failed)?.message?.asString()
+            if (errorMessage != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = errorMessage,
+                    color = Red,
+                    style = AfternoteDesign.typography.captionLargeR,
+                )
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
             WriteTextField(
                 value = uiState.answer,
                 onValueChange = viewModel::onAnswerChanged,
                 onSaveDraftClick = { viewModel.submit(isDraft = true) },
                 onDraftCountClick = onDraftListClick,
+                onImagePicked = viewModel::uploadImage,
             )
         }
     }

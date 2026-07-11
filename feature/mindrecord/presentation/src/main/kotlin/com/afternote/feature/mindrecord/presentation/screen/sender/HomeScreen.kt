@@ -33,7 +33,6 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.TitleTopBar
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListViewModel
-import com.afternote.feature.mindrecord.presentation.viewmodel.DeepThoughtListViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListViewModel
 import kotlinx.coroutines.flow.drop
 import com.afternote.feature.mindrecord.presentation.R as MindRecordR
@@ -43,10 +42,17 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     dailyQuestionViewModel: DailyQuestionListViewModel = hiltViewModel(),
     diaryViewModel: DiaryListViewModel = hiltViewModel(),
-    deepThoughtViewModel: DeepThoughtListViewModel = hiltViewModel(),
     onWriteClick: (MindRecordCategoryUi) -> Unit = {},
 ) {
-    val categories = remember { MindRecordCategoryUi.entries() }
+    // Figma 2757:16116 — 마음의 기록 탭은 데일리 질문 / 일기 / 주간리포트 3개 (깊은 생각 제외)
+    val categories =
+        remember {
+            listOf(
+                MindRecordCategoryUi.DailyQuestion,
+                MindRecordCategoryUi.Diary,
+                MindRecordCategoryUi.WeeklyReport,
+            )
+        }
 
     var isListView by remember { mutableStateOf(true) }
     var selectedIndex by remember { mutableIntStateOf(0) }
@@ -67,8 +73,7 @@ fun HomeScreen(
                 when (categories[index]) {
                     MindRecordCategoryUi.DailyQuestion -> dailyQuestionViewModel.refresh()
                     MindRecordCategoryUi.Diary -> diaryViewModel.refresh()
-                    MindRecordCategoryUi.DeepThought -> deepThoughtViewModel.refresh()
-                    MindRecordCategoryUi.WeeklyReport -> Unit
+                    else -> Unit
                 }
             }
     }
@@ -138,8 +143,7 @@ fun HomeScreen(
                 when (selectedCategory) {
                     MindRecordCategoryUi.DailyQuestion -> DailyQuestionAnswerListScreen(isListView = isListView)
                     MindRecordCategoryUi.Diary -> DiaryScreen(isListView = isListView)
-                    MindRecordCategoryUi.DeepThought -> DeepThoughtScreen(isListView = isListView)
-                    MindRecordCategoryUi.WeeklyReport -> WeeklyReportScreen()
+                    else -> WeeklyReportScreen()
                 }
             }
         }

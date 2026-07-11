@@ -25,6 +25,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -47,10 +48,14 @@ import com.afternote.core.ui.theme.Red
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.presentation.component.BottomSheetCalendar
+import com.afternote.feature.mindrecord.presentation.component.ReceiverSelectBottomSheet
 import com.afternote.feature.mindrecord.presentation.component.WriteTextField
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryWriteViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.SubmitState
+import java.time.format.DateTimeFormatter
 import com.afternote.feature.mindrecord.presentation.R as MindRecordR
+
+private val WriteDateFormatter = DateTimeFormatter.ofPattern("yyyy년 M월 d일")
 
 @Composable
 fun DiaryWriteScreen(
@@ -62,6 +67,7 @@ fun DiaryWriteScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showPicker by remember { mutableStateOf(false) }
+    var showReceiverSheet by remember { mutableStateOf(false) }
     val currentOnSubmitSuccess by rememberUpdatedState(onSubmitSuccess)
 
     LaunchedEffect(uiState.submitState) {
@@ -83,13 +89,15 @@ fun DiaryWriteScreen(
                         shape = RoundedCornerShape(6.dp),
                         colors =
                             ButtonDefaults.buttonColors(
-                                containerColor = AfternoteDesign.colors.gray2,
+                                containerColor = AfternoteDesign.colors.gray9,
+                                contentColor = AfternoteDesign.colors.white,
+                                disabledContainerColor = AfternoteDesign.colors.gray2,
+                                disabledContentColor = AfternoteDesign.colors.gray6,
                             ),
                     ) {
                         Text(
                             text = stringResource(MindRecordR.string.mindrecord_action_register),
                             style = AfternoteDesign.typography.bodySmallB,
-                            color = AfternoteDesign.colors.gray6,
                         )
                     }
                 },
@@ -103,13 +111,74 @@ fun DiaryWriteScreen(
                     .padding(paddingValues)
                     .padding(horizontal = 20.dp),
         ) {
+            // Figma 2671:17921 — 수신자 행: 아바타 + "OO님에게" / 미설정 시 "수신자 설정하기"
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { showReceiverSheet = true }
+                        .padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier =
+                        Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(AfternoteDesign.colors.gray2),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.core_ui_user),
+                        contentDescription = null,
+                        tint = AfternoteDesign.colors.gray6,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                val selectedReceivers = uiState.selectedReceivers
+                Text(
+                    text =
+                        when {
+                            selectedReceivers.isEmpty() -> {
+                                stringResource(MindRecordR.string.mindrecord_write_receiver_setting)
+                            }
+
+                            selectedReceivers.size == 1 -> {
+                                stringResource(MindRecordR.string.mindrecord_write_receiver_to, selectedReceivers.first().name)
+                            }
+
+                            else -> {
+                                stringResource(
+                                    MindRecordR.string.mindrecord_write_receiver_to_multiple,
+                                    selectedReceivers.first().name,
+                                    selectedReceivers.size - 1,
+                                )
+                            }
+                        },
+                    style = AfternoteDesign.typography.bodySmallB,
+                    color = AfternoteDesign.colors.gray9,
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Icon(
+                    painter = painterResource(R.drawable.core_ui_right),
+                    contentDescription = null,
+                    tint = AfternoteDesign.colors.gray9,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+
+            // Figma 2671:17922 — 날짜 선택 행 ("yyyy년 M월 d일" + 아래 화살표)
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { showPicker = !showPicker },
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = uiState.date.toString(),
+                    text = uiState.date.format(WriteDateFormatter),
                     style = AfternoteDesign.typography.captionLargeR,
                     color = AfternoteDesign.colors.gray9,
                 )
@@ -133,10 +202,11 @@ fun DiaryWriteScreen(
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                     ),
+                textStyle = AfternoteDesign.typography.h3,
                 placeholder = {
                     Text(
                         text = stringResource(MindRecordR.string.mindrecord_diary_write_title_placeholder),
-                        style = AfternoteDesign.typography.h2,
+                        style = AfternoteDesign.typography.h3,
                         color = AfternoteDesign.colors.black.copy(alpha = 0.2f),
                     )
                 },
@@ -177,7 +247,9 @@ fun DiaryWriteScreen(
                 }
             }
 
-            val errorMessage = (uiState.submitState as? SubmitState.Failed)?.message?.asString()
+            val errorMessage =
+                (uiState.submitState as? SubmitState.Failed)?.message?.asString()
+                    ?: uiState.draftLoadError?.asString()
             if (errorMessage != null) {
                 Text(
                     text = errorMessage,
@@ -186,12 +258,16 @@ fun DiaryWriteScreen(
                 )
             }
 
-            WriteTextField(
-                value = uiState.content,
-                onValueChange = viewModel::onContentChanged,
-                onSaveDraftClick = { viewModel.submit(isDraft = true) },
-                onDraftCountClick = onDraftListClick,
-            )
+            // draft 프리필은 비동기 완료 — draftLoaded 전환 시 에디터를 재생성해 content 를 다시 시드한다.
+            key(uiState.draftLoaded) {
+                WriteTextField(
+                    value = uiState.content,
+                    onValueChange = viewModel::onContentChanged,
+                    onSaveDraftClick = { viewModel.submit(isDraft = true) },
+                    onDraftCountClick = onDraftListClick,
+                    onImagePicked = viewModel::uploadImage,
+                )
+            }
         }
 
         if (showPicker) {
@@ -202,6 +278,15 @@ fun DiaryWriteScreen(
                     viewModel.onDateSelected(date)
                     showPicker = false
                 },
+            )
+        }
+
+        if (showReceiverSheet) {
+            ReceiverSelectBottomSheet(
+                receivers = uiState.receivers,
+                selectedReceiverIds = uiState.selectedReceiverIds,
+                onToggle = viewModel::onReceiverToggled,
+                onDismiss = { showReceiverSheet = false },
             )
         }
     }
