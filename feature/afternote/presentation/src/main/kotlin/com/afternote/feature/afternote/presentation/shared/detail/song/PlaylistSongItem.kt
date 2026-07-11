@@ -34,7 +34,7 @@ import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDis
 private const val TAG = "PlaylistSongItem"
 
 /**
- * 추모 플레이리스트·노래 추가 등에서 공통으로 쓰는 노래 한 줄 아이템.
+ * 추억 플레이리스트·노래 추가 등에서 공통으로 쓰는 노래 한 줄 아이템.
  *
  * UI: 앨범 48dp(gray8 placeholder), 제목 Bold 14sp Gray9, 가수 12sp Gray6, 하단 Gray6 1dp 구분선.
  *

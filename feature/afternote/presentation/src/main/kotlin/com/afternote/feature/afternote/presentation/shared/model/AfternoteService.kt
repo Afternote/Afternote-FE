@@ -47,7 +47,7 @@ enum class AfternoteService(
     ),
     MEMORIAL_GUIDELINE(
         typeKey = "GUIDE",
-        displayKey = "추모 가이드라인",
+        displayKey = "추억 노트",
         stringResId = R.string.receiver_afternote_item_memorial_guideline,
         iconResId = R.drawable.feature_afternote_ic_memorial_guideline,
     ),

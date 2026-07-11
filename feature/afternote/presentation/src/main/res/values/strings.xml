@@ -233,7 +233,7 @@
     <string name="afternote_validation_gallery_receivers_required">수신자를 한 명 이상 등록해 주세요. 설정에서 수신자를 등록해 주세요.</string>
     <string name="afternote_validation_receivers_required">수신자를 한 명 이상 선택해 주세요.</string>
     <string name="afternote_validation_playlist_songs_required">플레이리스트에 노래를 한 곡 이상 추가해 주세요.</string>
-    <string name="afternote_default_playlist_song_title">추모 플레이리스트 곡</string>
+    <string name="afternote_default_playlist_song_title">추억 플레이리스트 곡</string>
 
     <string name="time_letter_detail_send_date">발송 예정일: %1$s</string>
     <string name="time_letter_detail_delivery_date">발송 일자: %1$s</string>
@@ -294,8 +294,8 @@
     <string name="afternote_editor_last_wish_other">기타(직접 입력)</string>
     <string name="afternote_editor_custom_service_dialog_title">직접 입력하기</string>
     <string name="afternote_editor_custom_service_name_label">추가 서비스명</string>
-    <string name="afternote_editor_playlist_screen_title">추모 플레이리스트</string>
-    <string name="afternote_editor_playlist_add_screen_title">추모 플레이리스트 추가</string>
+    <string name="afternote_editor_playlist_screen_title">추억 플레이리스트</string>
+    <string name="afternote_editor_playlist_add_screen_title">추억 플레이리스트 추가</string>
     <string name="afternote_editor_playlist_current_header">현재 플레이리스트</string>
     <string name="afternote_editor_playlist_song_count_format">총 %1$d곡</string>
     <string name="afternote_editor_playlist_add_songs">노래 추가하기</string>

@@ -627,7 +627,7 @@ private fun SongPlaylistScreenPreview() {
             PlaylistSongDisplay(id = "$i", title = "노래 제목 $i", artist = "가수 이름")
         }
     SongPlaylistScreen(
-        title = "추모 플레이리스트",
+        title = "추억 플레이리스트",
         onBackClick = {},
         songs = songs,
         defaultBottomNavTab = BottomNavTab.NOTE,
@@ -642,7 +642,7 @@ private fun SongPlaylistScreenSelectablePreview() {
             PlaylistSongDisplay(id = "$i", title = "노래 제목 $i", artist = "가수 이름")
         }
     SongPlaylistScreen(
-        title = "추모 플레이리스트 추가",
+        title = "추억 플레이리스트 추가",
         onBackClick = {},
         songs = songs,
         onSongsSelected = {},
