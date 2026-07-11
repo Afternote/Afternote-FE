@@ -245,7 +245,7 @@ fun TimeLetterWriteScreen(
                 },
                 onFileClick = {
                     showMediaSheet = false
-                    fileLauncher.launch("*/*")
+                    fileLauncher.launch("application/pdf")
                 },
                 onLinkClick = {
                     showMediaSheet = false
