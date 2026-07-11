@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -71,7 +70,8 @@ fun BottomSheetCalendar(
                         .width(36.dp)
                         .height(4.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFFDDDDDD)),
+                        // 근사 토큰: 원본 #DDDDDD → 최근접 gray3(#E0E0E0, 채널당 +3)
+                        .background(AfternoteDesign.colors.gray3),
             )
         },
     ) {
@@ -144,7 +144,8 @@ fun DatePickerContent(
                 Modifier
                     .fillMaxWidth()
                     .background(
-                        color = Color(0xFFF5F5F5),
+                        // 근사 토큰: 원본 #F5F5F5 → 최근접 gray1(#FAFAFA, 채널당 +5)
+                        color = AfternoteDesign.colors.gray1,
                         shape = RoundedCornerShape(12.dp),
                     ).padding(horizontal = 16.dp, vertical = 18.dp),
         ) {
@@ -159,7 +160,7 @@ fun DatePickerContent(
 
         OutlinedCard(
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            border = BorderStroke(1.dp, Color(0xFF000000).copy(alpha = 0.05f)),
+            border = BorderStroke(1.dp, AfternoteDesign.colors.black.copy(alpha = 0.05f)),
             modifier = Modifier.fillMaxWidth(),
         ) {
             Column(modifier = Modifier.padding(vertical = 16.dp)) {
@@ -240,7 +241,7 @@ fun CalendarGridContent(
                 Text(
                     text = label,
                     modifier = Modifier.weight(1f),
-                    color = Color(0xFF000000).copy(alpha = 0.3f),
+                    color = AfternoteDesign.colors.black.copy(alpha = 0.3f),
                     style = AfternoteDesign.typography.footnoteCaption,
                     textAlign = TextAlign.Center,
                 )
@@ -284,8 +285,10 @@ fun PickerDayCell(
         return
     }
 
-    val bgColor = if (model.isSelected) Color(0xFF1A1A1A) else Color.Transparent
-    val textColor = if (model.isSelected) Color.White else Color(0xFF888888)
+    // 근사 토큰: 선택 셀 bg 원본 #1A1A1A → gray9(#212121, 채널당 +7)
+    val bgColor = if (model.isSelected) AfternoteDesign.colors.gray9 else Color.Transparent
+    // 근사 토큰: 미선택 텍스트 원본 #888888 → gray6(#757575, 채널당 -19). 토큰화 7곳 중 시각 차 가장 큼.
+    val textColor = if (model.isSelected) AfternoteDesign.colors.white else AfternoteDesign.colors.gray6
 
     Box(
         modifier =

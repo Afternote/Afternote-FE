@@ -2,6 +2,7 @@ package com.afternote.feature.receiver.domain.repository
 
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.ReceiverAuthPresignedUrl
+import com.afternote.feature.receiver.domain.model.ReceiverEmailAuthResult
 import com.afternote.feature.receiver.domain.model.ReceiverIdentity
 import com.afternote.feature.receiver.domain.model.SenderMessageInfo
 
@@ -17,6 +18,24 @@ import com.afternote.feature.receiver.domain.model.SenderMessageInfo
  */
 interface ReceiverAuthRepository {
     suspend fun verify(authCode: String): Result<ReceiverIdentity>
+
+    /**
+     * 수신자 본인 확인 — 수신자 레코드에 등록된 [email] 로 6자리 인증번호 발송.
+     *
+     * 발신자가 수신자 등록 시 email 을 넣지 않았으면 서버가 거절한다 (RECEIVER_EMAIL_NOT_FOUND).
+     * 실패는 `ReceiverEmailAuthException` 으로 매핑되어 serverMessage 에 안내 문구가 담긴다.
+     */
+    suspend fun sendEmailAuthCode(email: String): Result<Unit>
+
+    /**
+     * 수신자 본인 확인 — [email] 로 발송된 6자리 [authCode] 검증.
+     *
+     * 실패(만료/불일치 등)는 `ReceiverEmailAuthException` 으로 매핑된다.
+     */
+    suspend fun verifyEmailAuthCode(
+        email: String,
+        authCode: String,
+    ): Result<ReceiverEmailAuthResult>
 
     suspend fun getPresignedUrl(extension: String): Result<ReceiverAuthPresignedUrl>
 

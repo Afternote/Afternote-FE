@@ -4,7 +4,14 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.io.IOException
 
-/** 서버 공통 응답 봉투. 제네릭 [T] 는 `data` 필드의 페이로드 타입 — `data` 없는 엔드포인트는 `BaseResponse<Unit>`. */
+/**
+ * 서버 공통 응답 봉투. 제네릭 [T] 는 `data` 필드의 페이로드 타입 — `data` 없는 엔드포인트는 `BaseResponse<Unit>`.
+ *
+ * 액세스 토큰 잔여 수명(`expiresIn`)은 BE #410(2026-06-20)으로 발급 응답의 `data`(`LoginData`·
+ * `ReissueData`) 안으로 옮겨졌다 — 더 이상 봉투 최상위 필드가 아니다. 그 외 서버 스키마
+ * (`ApiResponse*`)의 클라 미소비 필드는 선언하지 않는다 (`NetworkModule.provideJson` 의
+ * ignoreUnknownKeys 가 무시).
+ */
 @Serializable
 data class BaseResponse<T>(
     @SerialName("status")
@@ -44,6 +51,10 @@ fun <T : Any> BaseResponse<T>.requireData(): T {
  *   을 판단 — `message` 는 클라 fallback 이 섞여 사용자에게 노출하면 안 됨.
  * @property message IOException 호환용 디버깅 메시지 (serverMessage 있으면 그것, 없으면 클라 fallback).
  *   사용자 직접 노출 X — Logcat·Crashlytics 용.
+ *
+ * 헤더의 `IOException(message)` 는 부모 생성자 호출(Java 의 `super(message)`) — 인자는 주 생성자의
+ * `message` 파라미터. 같은 값을 자기 프로퍼티(`String?` 인 Throwable.message 를 non-null 로 좁힘)와
+ * 부모 Throwable 내부 필드 양쪽에 설정해, 디버거·Java 경로의 메시지 표시를 보존한다.
  */
 class ApiException(
     val code: Int,
