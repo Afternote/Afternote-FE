@@ -38,7 +38,8 @@ import com.afternote.feature.afternote.presentation.receiver.deliveryverificatio
  * 디자인 3 (입력 전) 과 4 (인증번호 발송 후 안내 메시지 표시) 는 동일 화면. 발송 직후 두 입력 필드 아래
  * 강조 안내 텍스트가 나타난다.
  *
- * 백엔드 `receiver-auth/email/` 미구현이라 [IdentityEmailVerificationStub] 으로 시뮬레이션 — stub 코드는 `000000`.
+ * 인증번호 발송·검증은 실 API(`receiver-auth/email` 계열) — 서버 거절 안내 문구(이메일 미등록 등) 는
+ * 스낵바로 노출된다 (#407).
  */
 @Composable
 fun IdentityVerificationEmailScreen(
@@ -66,7 +67,13 @@ fun IdentityVerificationEmailScreen(
         }
     }
 
-    val errorMessage = uiState.errorMessageRes?.let { stringResource(it) }
+    val errorMessage =
+        uiState.error?.let { err ->
+            when (err) {
+                is ErrorPayload.Res -> stringResource(err.id)
+                is ErrorPayload.Text -> err.message
+            }
+        }
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
             snackbarHostState.showSnackbar(errorMessage)

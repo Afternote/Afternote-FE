@@ -3,10 +3,13 @@ package com.afternote.feature.afternote.data.service
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.feature.afternote.data.dto.DeliveryVerificationRequest
 import com.afternote.feature.afternote.data.dto.DeliveryVerificationResponse
+import com.afternote.feature.afternote.data.dto.ReceiverAuthCodeEmailSendRequest
 import com.afternote.feature.afternote.data.dto.ReceiverAuthPresignedUrlRequest
 import com.afternote.feature.afternote.data.dto.ReceiverAuthPresignedUrlResponse
 import com.afternote.feature.afternote.data.dto.ReceiverAuthVerifyRequest
 import com.afternote.feature.afternote.data.dto.ReceiverAuthVerifyResponse
+import com.afternote.feature.afternote.data.dto.ReceiverEmailAuthVerifyRequest
+import com.afternote.feature.afternote.data.dto.ReceiverEmailAuthVerifyResponse
 import com.afternote.feature.afternote.data.dto.ReceiverMessageResponse
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -15,15 +18,28 @@ import retrofit2.http.POST
 /**
  * 수신자 인증 흐름 전용 API.
  *
- * `verify` 외 모든 endpoint 는 `X-Auth-Code` 헤더가 필요하며
+ * 인증 코드 취득 전 단계인 `verify`·`email/auth-code`·`email/verify` 를 제외한 모든 endpoint 는
+ * `X-Auth-Code` 헤더가 필요하며
  * [com.afternote.feature.afternote.data.network.ReceiverAuthInterceptor] 가
- * 저장된 인증 코드를 자동 부착한다.
+ * 저장된 인증 코드를 자동 부착한다 (저장된 코드가 없으면 헤더 없이 통과).
  */
 interface ReceiverAuthApiService {
     @POST("receiver-auth/verify")
     suspend fun verify(
         @Body body: ReceiverAuthVerifyRequest,
     ): BaseResponse<ReceiverAuthVerifyResponse>
+
+    /** 수신자 레코드에 등록된 email 로 6자리 인증번호 발송. 미등록 email 은 404 (code 1901). */
+    @POST("receiver-auth/email/auth-code")
+    suspend fun sendEmailAuthCode(
+        @Body body: ReceiverAuthCodeEmailSendRequest,
+    ): BaseResponse<Unit>
+
+    /** 발송된 6자리 인증번호 검증. 만료/불일치는 400 (code 1902). */
+    @POST("receiver-auth/email/verify")
+    suspend fun verifyEmailAuthCode(
+        @Body body: ReceiverEmailAuthVerifyRequest,
+    ): BaseResponse<ReceiverEmailAuthVerifyResponse>
 
     @POST("receiver-auth/presigned-url")
     suspend fun getPresignedUrl(

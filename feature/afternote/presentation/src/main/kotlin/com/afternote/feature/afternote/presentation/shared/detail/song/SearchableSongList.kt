@@ -480,7 +480,7 @@ private fun SongSearchSection(
         }
         SongSearchTextField(
             state = searchFieldState,
-            placeholder = "Text Field",
+            placeholder = stringResource(R.string.song_search_placeholder),
         )
     }
 }
