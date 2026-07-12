@@ -144,7 +144,7 @@ fun DraftListScreen(
                             viewModel.delete(state.items.filter { it.key() in selectedKeys })
                         },
                         onItemClick = { item ->
-                            // 이어쓰기는 일기만 지원 — 깊은생각은 서버 PATCH 미구현(시작 전).
+                            // 이어쓰기는 일기만 지원.
                             if (item.category == DraftCategory.Diary) {
                                 onDiaryDraftClick(item.id, YearMonth.from(item.date).toString())
                             }
@@ -363,7 +363,6 @@ private fun DraftCategory.label(): String =
         DraftCategory.All -> stringResource(MindRecordR.string.mindrecord_draft_list_filter_all)
         DraftCategory.DailyQuestion -> stringResource(MindRecordR.string.mindrecord_draft_list_filter_daily)
         DraftCategory.Diary -> stringResource(MindRecordR.string.mindrecord_draft_list_filter_diary)
-        DraftCategory.DeepThought -> stringResource(MindRecordR.string.mindrecord_draft_list_filter_deep_thought)
     }
 
 @Preview(showBackground = true)

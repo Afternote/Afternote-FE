@@ -8,6 +8,5 @@ package com.afternote.core.model
 enum class MindRecordCategory {
     DAILY_QUESTION,
     DIARY,
-    DEEP_THOUGHT,
     WEEKLY_REPORT,
 }

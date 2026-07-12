@@ -1,7 +1,6 @@
 package com.afternote.feature.mindrecord.data.mapper
 
 import com.afternote.feature.mindrecord.data.dto.ReceiverDailyQuestionItem
-import com.afternote.feature.mindrecord.data.dto.ReceiverDeepThoughtItem
 import com.afternote.feature.mindrecord.data.dto.ReceiverDiaryItem
 import com.afternote.feature.mindrecord.domain.model.MindRecordSummary
 import com.afternote.feature.mindrecord.domain.model.MindRecordType
@@ -32,17 +31,4 @@ fun ReceiverDiaryItem.toDomain(): MindRecordSummary =
         isDraft = isDraft,
         createdAt = createdAt,
         imageUrl = imageUrl,
-    )
-
-fun ReceiverDeepThoughtItem.toDomain(): MindRecordSummary =
-    MindRecordSummary(
-        id = deepThoughtId,
-        type = MindRecordType.DEEP_THOUGHT,
-        title = title,
-        content = content,
-        recordDate = createdAt.toIsoDate(),
-        isDraft = isDraft,
-        createdAt = createdAt,
-        imageUrl = imageUrl,
-        category = category,
     )

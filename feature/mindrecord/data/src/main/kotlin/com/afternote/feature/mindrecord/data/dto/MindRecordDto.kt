@@ -40,31 +40,3 @@ data class ReceiverDiaryItem(
     @SerialName("createdAt") val createdAt: String = "",
     @SerialName("updatedAt") val updatedAt: String = "",
 )
-
-/** `GET /receiver-auth/deep-thought` 응답 (`data`) — 필터용 카테고리/태그 목록을 함께 내려준다. */
-@Serializable
-data class ReceiverDeepThoughtListResponse(
-    @SerialName("categories") val categories: List<String> = emptyList(),
-    @SerialName("tagCounts") val tagCounts: List<ReceiverDeepThoughtTagCount> = emptyList(),
-    @SerialName("deepThoughts") val deepThoughts: List<ReceiverDeepThoughtItem> = emptyList(),
-)
-
-@Serializable
-data class ReceiverDeepThoughtTagCount(
-    @SerialName("tag") val tag: String,
-    @SerialName("count") val count: Int,
-)
-
-@Serializable
-data class ReceiverDeepThoughtItem(
-    @SerialName("deepThoughtId") val deepThoughtId: Long,
-    @SerialName("title") val title: String,
-    @SerialName("content") val content: String,
-    @SerialName("isDraft") val isDraft: Boolean = false,
-    @SerialName("imageUrl") val imageUrl: String? = null,
-    @SerialName("category") val category: String? = null,
-    @SerialName("tags") val tags: List<String> = emptyList(),
-    // "yyyy.MM.dd 요일" 형식.
-    @SerialName("createdAt") val createdAt: String = "",
-    @SerialName("updatedAt") val updatedAt: String = "",
-)

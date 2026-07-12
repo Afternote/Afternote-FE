@@ -19,14 +19,10 @@ class MindRecordReceiverRepositoryImpl
                 coroutineScope {
                     val dailyQuestionsDeferred = async { api.getReceiverDailyQuestions().requireData() }
                     val diariesDeferred = async { api.getReceiverDiaries().requireData() }
-                    val deepThoughtsDeferred = async { api.getReceiverDeepThoughts().requireData() }
 
-                    val deepThoughtResponse = deepThoughtsDeferred.await()
                     ReceiverMindRecords(
                         dailyQuestions = dailyQuestionsDeferred.await().dailyQuestions.map { it.toDomain() },
                         diaries = diariesDeferred.await().diaries.map { it.toDomain() },
-                        deepThoughts = deepThoughtResponse.deepThoughts.map { it.toDomain() },
-                        deepThoughtCategories = deepThoughtResponse.categories,
                     )
                 }
             }

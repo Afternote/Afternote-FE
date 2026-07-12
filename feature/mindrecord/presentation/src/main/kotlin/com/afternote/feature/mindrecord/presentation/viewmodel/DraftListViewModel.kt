@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
-import com.afternote.feature.mindrecord.domain.repository.DeepThoughtRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.mapper.toUi
@@ -24,17 +23,13 @@ import javax.inject.Inject
  * 임시저장 목록 ViewModel.
  *
  * - 일기: 백엔드가 `draftOnly=true` 쿼리를 제공해 그대로 호출 (단, 이번 달 한정).
- * - 깊은 생각: 전체 리스트를 받아 `isDraft = true` client-side 필터 (전용 쿼리 없음).
  * - 데일리질문: 응답에 `isDraft` 가 없어 분류 불가 → 0건 처리 (TODO).
- *
- * 두 호출은 병렬로 묶고, 어느 한쪽이 실패해도 다른 쪽은 비어 있는 결과로 합쳐 화면이 깨지지 않게 한다.
  */
 @HiltViewModel
 class DraftListViewModel
     @Inject
     constructor(
         private val diaryRepository: DiaryRepository,
-        private val deepThoughtRepository: DeepThoughtRepository,
         private val dailyQuestionRepository: DailyQuestionRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<DraftListUiState>(DraftListUiState.Loading)
@@ -61,8 +56,6 @@ class DraftListViewModel
                             async {
                                 when (item.category) {
                                     DraftCategory.Diary -> diaryRepository.delete(item.id)
-
-                                    DraftCategory.DeepThought -> deepThoughtRepository.delete(item.id)
 
                                     DraftCategory.DailyQuestion -> dailyQuestionRepository.delete(item.id)
 
@@ -118,15 +111,6 @@ class DraftListViewModel
                                 ?.diaries
                                 .orEmpty()
                         }
-                    val deepThoughtDeferred =
-                        async {
-                            deepThoughtRepository
-                                .getList()
-                                .getOrNull()
-                                ?.items
-                                ?.filter { it.isDraft }
-                                .orEmpty()
-                        }
 
                     val diaryItems =
                         diaryDeferred.await().map { diary ->
@@ -139,19 +123,8 @@ class DraftListViewModel
                                 date = ui.date,
                             )
                         }
-                    val deepThoughtItems =
-                        deepThoughtDeferred.await().map { thought ->
-                            val ui = thought.toUi()
-                            DraftItem(
-                                id = ui.id,
-                                category = DraftCategory.DeepThought,
-                                title = ui.title,
-                                content = ui.content,
-                                date = ui.date,
-                            )
-                        }
 
-                    (diaryItems + deepThoughtItems).sortedByDescending { it.date }
+                    diaryItems.sortedByDescending { it.date }
                 }
             }.getOrNull()
     }

@@ -104,10 +104,6 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
                 navController.navigate(MindRecordRoute.DiaryWriteRoute())
             }
 
-            override fun onWriteDeepThought() {
-                navController.navigate(MindRecordRoute.DeepThoughtWriteRoute)
-            }
-
             override fun onWriteBack() {
                 navController.popBackStack()
             }

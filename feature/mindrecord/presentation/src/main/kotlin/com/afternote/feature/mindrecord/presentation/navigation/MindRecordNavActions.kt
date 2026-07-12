@@ -14,8 +14,6 @@ interface MindRecordNavActions {
 
     fun onWriteDiary()
 
-    fun onWriteDeepThought()
-
     fun onWriteBack()
 
     fun onWriteSubmitSuccess()

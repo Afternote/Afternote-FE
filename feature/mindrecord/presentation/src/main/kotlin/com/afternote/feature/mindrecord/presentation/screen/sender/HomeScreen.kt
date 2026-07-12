@@ -44,7 +44,7 @@ fun HomeScreen(
     diaryViewModel: DiaryListViewModel = hiltViewModel(),
     onWriteClick: (MindRecordCategoryUi) -> Unit = {},
 ) {
-    // Figma 2757:16116 — 마음의 기록 탭은 데일리 질문 / 일기 / 주간리포트 3개 (깊은 생각 제외)
+    // Figma 2757:16116 — 마음의 기록 탭은 데일리 질문 / 일기 / 주간리포트 3개
     val categories =
         remember {
             listOf(

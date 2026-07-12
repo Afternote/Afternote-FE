@@ -71,7 +71,6 @@ private fun HomeSummary.toHomeTabSuccess(): HomeTabUiState.Success =
             MindRecordCategory.entries.associateWith { category ->
                 when (category) {
                     MindRecordCategory.DIARY -> diaryCategoryCount
-                    MindRecordCategory.DEEP_THOUGHT -> deepThoughtCategoryCount
                     MindRecordCategory.DAILY_QUESTION -> 0
                     MindRecordCategory.WEEKLY_REPORT -> 0
                 }

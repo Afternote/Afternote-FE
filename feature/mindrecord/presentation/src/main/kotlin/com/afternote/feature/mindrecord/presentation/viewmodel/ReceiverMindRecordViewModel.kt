@@ -16,9 +16,8 @@ import javax.inject.Inject
 /**
  * 수신자 마음의 기록 화면 ViewModel.
  *
- * `receiver-auth` 의 데일리질문/일기/깊은생각 3개 엔드포인트를 병렬 조회해 탭별로 노출한다.
- * 정렬·기간 필터는 클라이언트에서 [ReceiverMindRecordFilter] 로 처리하고, 깊은생각 카테고리
- * 칩은 깊은생각 응답의 `categories` 를 그대로 사용해 실제 필터링한다.
+ * `receiver-auth` 의 데일리질문/일기 2개 엔드포인트를 병렬 조회해 탭별로 노출한다.
+ * 정렬·기간 필터는 클라이언트에서 [ReceiverMindRecordFilter] 로 처리한다.
  */
 @HiltViewModel
 class ReceiverMindRecordViewModel
@@ -35,16 +34,6 @@ class ReceiverMindRecordViewModel
         }
 
         fun refresh() = load()
-
-        fun selectDeepThoughtCategory(category: String?) {
-            _uiState.update { current ->
-                if (current is ReceiverMindRecordUiState.Success) {
-                    current.copy(selectedDeepThoughtCategory = category).withDerived()
-                } else {
-                    current
-                }
-            }
-        }
 
         fun applyFilter(filter: ReceiverMindRecordFilter) {
             _uiState.update { current ->
@@ -70,8 +59,6 @@ class ReceiverMindRecordViewModel
                                 .Success(
                                     dailyQuestions = emptyList(),
                                     diaries = emptyList(),
-                                    deepThoughts = emptyList(),
-                                    deepThoughtCategories = records.deepThoughtCategories,
                                 ).withDerived()
                     }.onFailure { e ->
                         _uiState.value =
@@ -83,7 +70,7 @@ class ReceiverMindRecordViewModel
         }
 
         /**
-         * 필터/카테고리 선택 변경 시 파생 list 3종을 재계산해 반환한다.
+         * 필터 변경 시 파생 list 2종을 재계산해 반환한다.
          * 수신자 view 는 임시저장 record 를 보지 않는다 — 서버가 제외하기를 기대하나 방어적으로 한 번 더 거른다.
          */
         private fun ReceiverMindRecordUiState.Success.withDerived(): ReceiverMindRecordUiState.Success {
@@ -94,15 +81,9 @@ class ReceiverMindRecordViewModel
                     .filterByDate(filter.fromDate, filter.toDate)
                     .sortBy(filter.sortOrder)
 
-            val deepThoughts =
-                records.deepThoughts.derived().let { list ->
-                    val category = selectedDeepThoughtCategory
-                    if (category == null) list else list.filter { it.category == category }
-                }
             return copy(
                 dailyQuestions = records.dailyQuestions.derived(),
                 diaries = records.diaries.derived(),
-                deepThoughts = deepThoughts,
             )
         }
 
