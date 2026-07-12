@@ -172,11 +172,12 @@ private fun RecordCategoryCardLargeCountPreview() {
     AfternoteTheme {
         RecordCategoryCard(
             modifier = Modifier.padding(16.dp),
-            iconResId = CoreUiR.drawable.core_ui_ic_deep_thought,
-            title = "깊은 생각",
-            subtitle = "오늘의 생각을 남기세요",
+            iconResId = CoreUiR.drawable.core_ui_ic_diary,
+            title = "일기",
+            subtitle = "나의 매일을 기록하세요",
             totalCount = 12_345,
             onClick = {},
+            useDiaryIconLayout = true,
         )
     }
 }

@@ -101,11 +101,7 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
             }
 
             override fun onWriteDiary() {
-                navController.navigate(MindRecordRoute.DiaryWriteRoute)
-            }
-
-            override fun onWriteDeepThought() {
-                navController.navigate(MindRecordRoute.DeepThoughtWriteRoute)
+                navController.navigate(MindRecordRoute.DiaryWriteRoute())
             }
 
             override fun onWriteBack() {
@@ -122,6 +118,15 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
 
             override fun onDraftListBack() {
                 navController.popBackStack()
+            }
+
+            override fun onEditDiaryDraft(
+                draftId: Long,
+                draftYearMonth: String,
+            ) {
+                navController.navigate(
+                    MindRecordRoute.DiaryWriteRoute(draftId = draftId, draftYearMonth = draftYearMonth),
+                )
             }
         }
     }

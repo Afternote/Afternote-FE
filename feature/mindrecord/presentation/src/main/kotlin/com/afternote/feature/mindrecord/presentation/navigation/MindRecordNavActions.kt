@@ -14,8 +14,6 @@ interface MindRecordNavActions {
 
     fun onWriteDiary()
 
-    fun onWriteDeepThought()
-
     fun onWriteBack()
 
     fun onWriteSubmitSuccess()
@@ -23,4 +21,10 @@ interface MindRecordNavActions {
     fun onNavigateToDraftList()
 
     fun onDraftListBack()
+
+    /** 임시저장 목록에서 일기 draft 를 탭 — 일기 작성 화면을 이어쓰기 모드로 연다. */
+    fun onEditDiaryDraft(
+        draftId: Long,
+        draftYearMonth: String,
+    )
 }

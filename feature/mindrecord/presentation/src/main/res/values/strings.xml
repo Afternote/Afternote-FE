@@ -17,10 +17,6 @@
     <!-- Common action labels -->
     <string name="mindrecord_action_register">등록</string>
     <string name="mindrecord_action_save">저장</string>
-    <string name="mindrecord_action_add">추가</string>
-    <string name="mindrecord_action_cancel">취소</string>
-    <string name="mindrecord_action_delete">삭제</string>
-    <string name="mindrecord_action_rename">이름 수정</string>
 
     <!-- Record card more-menu -->
     <string name="mindrecord_record_action_delete">삭제하기</string>
@@ -32,8 +28,6 @@
     <string name="mindrecord_category_daily_question_description">매일 다른 질문을 남겨 보세요.</string>
     <string name="mindrecord_category_diary_title">일기</string>
     <string name="mindrecord_category_diary_description">나의 매일을 기록하세요</string>
-    <string name="mindrecord_category_deep_thought_title">깊은 생각</string>
-    <string name="mindrecord_category_deep_thought_description">오늘의 생각을 남기세요</string>
     <string name="mindrecord_category_weekly_report_title">주간리포트</string>
 
     <!-- Home screen -->
@@ -43,14 +37,20 @@
     <string name="mindrecord_diary_write_title">일기 기록하기</string>
     <string name="mindrecord_diary_write_title_placeholder">제목을 입력하세요.</string>
     <string name="mindrecord_diary_write_mood_label">오늘의 기분</string>
-
-    <string name="mindrecord_deep_thought_write_title">깊은 생각 기록하기</string>
-    <string name="mindrecord_deep_thought_write_title_label">제목</string>
-    <string name="mindrecord_deep_thought_write_category_label">카테고리</string>
-    <string name="mindrecord_deep_thought_write_default_category">나의 가치관</string>
+    <string name="mindrecord_write_receiver_setting">수신자 설정하기</string>
+    <string name="mindrecord_write_receiver_to">%s님에게</string>
+    <string name="mindrecord_write_receiver_to_multiple">%1$s님 외 %2$d명에게</string>
+    <string name="mindrecord_write_receiver_sheet_title">수신자 선택</string>
+    <string name="mindrecord_write_receiver_empty">등록된 수신자가 없습니다.</string>
+    <string name="mindrecord_write_receiver_confirm">확인</string>
 
     <string name="mindrecord_daily_question_write_loading">오늘의 질문을 불러오는 중...</string>
     <string name="mindrecord_daily_question_write_none">오늘의 질문이 없습니다.</string>
+
+    <!-- Daily question banner (데일리기록 작성 화면 추천 질문) -->
+    <string name="mindrecord_daily_question_banner_day">Day %d</string>
+    <string name="mindrecord_daily_question_banner_label">오늘의 추천 질문</string>
+    <string name="mindrecord_daily_question_banner_toggle_cd">추천 질문 펼치기/접기</string>
 
     <!-- Calendar -->
     <string name="mindrecord_calendar_year_month">%1$d년 %2$d월</string>
@@ -63,13 +63,6 @@
     <string name="mindrecord_calendar_day_label_fri">금</string>
     <string name="mindrecord_calendar_day_label_sat">토</string>
     <string name="mindrecord_calendar_send_date_title">발송 날짜</string>
-
-    <!-- Category management -->
-    <string name="mindrecord_category_setting_title">카테고리 설정하기</string>
-    <string name="mindrecord_category_new_title">새 카테고리 만들기</string>
-    <string name="mindrecord_category_rename_title">카테고리 이름 수정</string>
-    <string name="mindrecord_category_all">전체 카테고리</string>
-    <string name="mindrecord_category_setting_cd">카테고리 설정</string>
 
     <!-- Daily question -->
     <string name="mindrecord_daily_question_default_today">오늘 하루,\n무엇이 가장 고마웠나요?</string>
@@ -106,25 +99,23 @@
     <string name="mindrecord_empty_state_title">아직 등록된 답변이 없어요.</string>
     <string name="mindrecord_empty_state_description">답변을 등록해 자신을 알아 보아요.</string>
 
-    <!-- Daily / DeepThought card -->
-    <string name="mindrecord_daily_deepthought_default_text">생각은 깊이를 더할수록 진실에 가까워진다.</string>
-
     <!-- Memories card sample question/answer -->
     <string name="mindrecord_memories_card_question">\"내 인생에서 가장 소중했던 순간은?\"</string>
     <string name="mindrecord_memories_card_answer">- 아이가 태어났을 때...</string>
 
-    <!-- DeepThought write screen sample categories -->
-    <string name="mindrecord_deep_thought_sample_category_today">오늘 떠올린 생각</string>
-    <string name="mindrecord_deep_thought_sample_category_retrospective">인생을 되돌아 보며</string>
-
     <!-- Draft list screen -->
-    <string name="mindrecord_draft_list_title">임시 저장</string>
+    <string name="mindrecord_draft_list_title">임시 저장된 기록</string>
     <string name="mindrecord_draft_list_total">총 %d개</string>
+    <string name="mindrecord_draft_list_total_selected">총 %d개 선택</string>
     <string name="mindrecord_draft_list_filter_all">전체</string>
     <string name="mindrecord_draft_list_filter_daily">데일리질문</string>
     <string name="mindrecord_draft_list_filter_diary">일기</string>
-    <string name="mindrecord_draft_list_filter_deep_thought">깊은생각</string>
-    <string name="mindrecord_draft_list_edit">수정</string>
+    <string name="mindrecord_draft_list_select">선택</string>
+    <string name="mindrecord_draft_list_done">완료</string>
+    <string name="mindrecord_draft_list_written_date">작성일 %s</string>
+    <string name="mindrecord_draft_list_delete_all">전체 삭제</string>
+    <string name="mindrecord_draft_list_delete_selected">선택 삭제</string>
+    <string name="mindrecord_draft_list_deleted_toast">임시 저장된 기록이 삭제 되었습니다</string>
     <string name="mindrecord_draft_list_empty">임시 저장된 항목이 없습니다.</string>
 
     <!-- Keyboard toolbar -->
@@ -158,7 +149,6 @@
     <string name="mindrecord_write_field_character_count">%d 글자</string>
 
     <!-- Tags / common -->
-    <string name="mindrecord_tag_all">전체</string>
     <string name="mindrecord_back_cd">뒤로가기</string>
     <string name="mindrecord_more_cd">더보기</string>
 
@@ -168,14 +158,7 @@
     <string name="mindrecord_error_daily_question_today_failed">오늘의 질문을 불러오지 못했습니다.</string>
     <string name="mindrecord_error_diary_list_failed">일기를 불러오지 못했습니다.</string>
     <string name="mindrecord_error_diary_submit_failed">일기 등록에 실패했습니다.</string>
-    <string name="mindrecord_error_deep_thought_list_failed">깊은 생각을 불러오지 못했습니다.</string>
-    <string name="mindrecord_error_deep_thought_submit_failed">깊은 생각 등록에 실패했습니다.</string>
+    <string name="mindrecord_error_diary_draft_load_failed">임시 저장된 일기를 불러오지 못했습니다.</string>
     <string name="mindrecord_error_daily_question_submit_failed">등록에 실패했습니다.</string>
     <string name="mindrecord_error_weekly_report_failed">주간 리포트를 불러오지 못했습니다.</string>
-    <string name="mindrecord_error_category_list_failed">카테고리 목록을 불러오지 못했습니다.</string>
-    <string name="mindrecord_error_category_add_failed">카테고리 추가에 실패했습니다.</string>
-    <string name="mindrecord_error_category_update_failed">카테고리 수정에 실패했습니다.</string>
-    <string name="mindrecord_error_category_delete_failed">카테고리 삭제에 실패했습니다.</string>
-    <string name="mindrecord_error_category_name_empty">카테고리 이름이 비어 있습니다.</string>
-    <string name="mindrecord_error_category_name_invalid">카테고리 이름이 올바르지 않습니다.</string>
 </resources>

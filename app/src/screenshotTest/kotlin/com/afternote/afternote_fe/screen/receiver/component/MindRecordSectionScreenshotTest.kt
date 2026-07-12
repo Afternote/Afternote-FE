@@ -20,7 +20,6 @@ internal fun mindRecordSectionScreenshot() {
                     totalCount = 24,
                     dailyQuestionCount = 10,
                     diaryCount = 8,
-                    deepThoughtCount = 6,
                 ),
             onGoClick = {},
             modifier = Modifier.padding(16.dp),

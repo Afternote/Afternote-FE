@@ -37,7 +37,6 @@ data class MindRecordSummary(
     val totalCount: Int,
     val dailyQuestionCount: Int,
     val diaryCount: Int,
-    val deepThoughtCount: Int,
 )
 
 @Immutable

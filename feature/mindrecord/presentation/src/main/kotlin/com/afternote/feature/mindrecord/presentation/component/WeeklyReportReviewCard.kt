@@ -51,7 +51,6 @@ fun WeeklyReportReviewCard(
         listOf(
             5 to MindRecordCategoryUi.DailyQuestion,
             4 to MindRecordCategoryUi.Diary,
-            3 to MindRecordCategoryUi.DeepThought,
         ),
 ) {
     var expanded by remember { mutableStateOf(false) }

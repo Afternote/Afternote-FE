@@ -49,6 +49,7 @@ fun DiaryCreatePayload.toRequest(): DiaryCreateRequest =
         isDraft = isDraft,
         todayMood = todayMood.toDto(),
         imageUrl = imageUrl,
+        receiverIds = receiverIds,
     )
 
 fun DiaryUpdatePayload.toRequest(): DiaryUpdateRequest =

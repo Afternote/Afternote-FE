@@ -13,7 +13,6 @@ fun WeeklyReportResponse.toDomain(): WeeklyReport =
     WeeklyReport(
         dailyQuestionAmount = dailyQuestionAmount,
         diaryAmount = diaryAmount,
-        deepThoughtAmount = deepThoughtAmount,
         summaryText = summaryText,
         week = week.map { it.toDomain() },
         dailyQuestions = dailyQuestions.map { it.toDomain() },

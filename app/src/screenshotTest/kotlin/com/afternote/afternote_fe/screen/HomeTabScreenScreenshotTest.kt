@@ -36,7 +36,6 @@ internal fun homeTabScreenSuccessScreenshot() {
                         mapOf(
                             MindRecordCategory.DAILY_QUESTION to 10,
                             MindRecordCategory.DIARY to 8,
-                            MindRecordCategory.DEEP_THOUGHT to 6,
                         ),
                 ),
         )
