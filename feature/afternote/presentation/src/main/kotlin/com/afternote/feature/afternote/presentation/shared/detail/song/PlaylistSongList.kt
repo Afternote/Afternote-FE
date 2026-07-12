@@ -1,27 +1,15 @@
 package com.afternote.feature.afternote.presentation.shared.detail.song
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -30,33 +18,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.AfternoteTextField
+import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.modifierextention.addFocusCleaner
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 import kotlinx.coroutines.flow.distinctUntilChanged
-
-/**
- * Slots for [PlaylistSongList]: optional trailing (per row) and leading (header) content.
- *
- * @param trailingContent Optional composable for each row (e.g. radio button).
- * @param leadingContent Optional composable for the first item (e.g. custom header).
- */
-data class PlaylistSongListSlots(
-    val trailingContent: (@Composable RowScope.(PlaylistSongDisplay) -> Unit)? = null,
-    val leadingContent: (@Composable () -> Unit)? = null,
-)
 
 // region ── PlaylistSongList (list-level composable) ──
 
@@ -73,39 +47,38 @@ internal fun filterSongsByQuery(
 }
 
 /**
- * 검색창 + 노래 목록 패턴.
+ * 노래 목록 렌더러 (헤더 슬롯 + 행들).
  * SongPlaylistScreen 내부에서 사용하거나, 커스텀 Scaffold가 필요한 경우 직접 사용.
  *
- * 검색 대상은 "지금 표시 중인 곡 목록"이다 — 곡 추가 플로우의 후보 목록(AddSong)뿐 아니라
- * 이미 담긴 플레이리스트 안에서의 검색(수신자 열람)에도 그대로 쓰인다. 행 우측 조각(선택 라디오 등)은
- * [slots] 주입이라 수신자 열람처럼 미주입이면 라디오 없이 렌더된다.
+ * 이 리스트는 필터도 검색도 소유하지 않는다 — [songs] 를 받은 그대로 그리고, 상단 헤더는 호출부가
+ * [header] 로 주입한다(필수 — 모든 호출부가 헤더를 가진다). 검색창이 필요한 화면은
+ * [SongSearchSection] 을 헤더로 주입하고, 관리 화면은 "총 N곡" 헤더를 주입한다 — 즉 검색은 "여러 헤더
+ * 중 하나"일 뿐 리스트의 고정 지식이 아니다. 무엇을 걸러 보여줄지도 호출부가 정한다: 로컬 목록(수신자
+ * 열람)은 [filterSongsByQuery] 로 좁혀 넘기고, API 검색(AddSong)은 서버 결과를 그대로 넘긴다. 리스트가
+ * 내부 필터·검색을 갖던 시절엔 API 결과 이중 필터·죽은 검색 바인딩 문제가 있어 둘 다 호출부로 넘겼다 (2026-07).
  * 구명 SearchableSongList — addsong 패키지 태생이라 "추가용 검색" 함의가 남아
  * [PlaylistSongDisplay]·[PlaylistSongItem] 가족 명명으로 개명 (2026-07).
  *
- * @param songs 표시할 노래 목록
- * @param searchQuery 현재 검색 텍스트
- * @param onSearchQueryChange 검색 텍스트 변경 콜백
+ * @param songs 표시할 노래 목록 (호출부가 이미 필터링한 최종 목록 — 리스트는 그대로 그린다)
  * @param onSongClick 노래 행 클릭 콜백 (null이면 비클릭)
  * @param contentPadding LazyColumn contentPadding — 파라미터 관통이 필수: 바깥 modifier.padding 은 스크롤
  *   콘텐츠가 경계에서 잘리지만 contentPadding 은 콘텐츠가 패딩 영역 밑을 지나가며 스크롤된다.
- *   값도 호출부 상태에 의존 (예: 선택 모드의 하단 플로팅 바 높이만큼 bottom 확보 — 바는 이 리스트 밖에 그려져 내부에선 알 수 없음)
- * @param slots Optional trailing (per row) and leading (header) content; nulls use defaults.
+ *   값도 호출부 상태에 의존 (예: 선택 모드의 하단 플로팅 바 높이만큼 bottom 확보 — 바는 이 리스트 밖에 그려져 내부에선 알 수 없음).
+ *   기본값은 일부러 없다 — 0 패딩이 유효한 시안이 없어(가장자리 밀착), 기본값이 있으면 깜빡한
+ *   호출부가 조용히 깨진 레이아웃을 얻는 함정이 된다. 호출부가 항상 명시할 것.
+ * @param isSelected 각 행의 선택 상태 판정 (null이면 라디오 없음 = 비선택 모드; 예: view-only 열람)
+ * @param header 첫 아이템으로 그릴 헤더 (검색창·"총 N곡" 등). 필수 — 현재 모든 호출부가 헤더를 가진다.
  */
 @Composable
 fun PlaylistSongList(
     modifier: Modifier = Modifier,
     songs: List<PlaylistSongDisplay>,
-    searchQuery: String,
-    onSearchQueryChange: (String) -> Unit,
+    contentPadding: PaddingValues,
     onSongClick: ((PlaylistSongDisplay) -> Unit)? = null,
-    contentPadding: PaddingValues = PaddingValues(0.dp),
-    slots: PlaylistSongListSlots = PlaylistSongListSlots(),
+    isSelected: ((PlaylistSongDisplay) -> Boolean)? = null,
+    header: @Composable () -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
-    val filteredSongs =
-        remember(songs, searchQuery) {
-            filterSongsByQuery(songs, searchQuery)
-        }
     LazyColumn(
         modifier =
             modifier
@@ -113,22 +86,15 @@ fun PlaylistSongList(
                 .addFocusCleaner(focusManager),
         contentPadding = contentPadding,
     ) {
-        item {
-            // 헤더 = 슬롯 있으면 그 조각, 없으면 기본 검색 섹션
-            if (slots.leadingContent != null) {
-                slots.leadingContent.invoke()
-            } else {
-                SongSearchSection(
-                    searchQuery = searchQuery,
-                    onSearchQueryChange = onSearchQueryChange,
-                )
-            }
-        }
-        itemsIndexed(filteredSongs) { _, song ->
+        // 헤더 = 호출부가 주입한 조각(검색창·"총 N곡" 등). 필수라 항상 첫 아이템으로 렌더.
+        // 헤더-리스트 8dp 간격은 별도 Spacer 아이템이 아니라 헤더 아이템의 bottom 패딩으로 준다 —
+        // 값을 여기 한 곳에만 두고(각 헤더에 중복 X), LazyColumn 에 빈 유령 아이템도 안 만든다.
+        item { Box(Modifier.padding(bottom = 8.dp)) { header() } }
+        itemsIndexed(songs) { _, song ->
             PlaylistSongItem(
                 song = song,
                 onClick = onSongClick,
-                trailingContent = slots.trailingContent,
+                selected = isSelected?.invoke(song),
             )
         }
     }
@@ -138,8 +104,39 @@ fun PlaylistSongList(
 
 // region ── Private sub-components ──
 
+/**
+ * hoisted String ↔ [TextFieldState] 양방향 바인딩 팩토리.
+ *
+ * [SongSearchSection] 의 레이아웃(label·입력창) 사이에 끼어 있던 상태 블록을 뽑아낸 것 — 호출부/VM 이
+ * 소유한 [searchQuery] 문자열과 Compose 가 소유하는 [TextFieldState] 를 잇는다: 밖→안(외부 쿼리 변경을
+ * 필드에 반영)은 [searchQuery] 키 [LaunchedEffect] 로, 안→밖(타이핑을 콜백으로)은 [snapshotFlow] +
+ * [distinctUntilChanged] 로. UI 레이어가 [TextFieldState] 를 소유하고 VM 은 String 만 주고받는 경계를 지킨다.
+ */
 @Composable
-private fun SongSearchSection(
+private fun rememberSongSearchFieldState(
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+): TextFieldState {
+    val state = rememberTextFieldState(searchQuery)
+    LaunchedEffect(searchQuery) {
+        if (state.text.toString() != searchQuery) {
+            state.edit { replace(0, length, searchQuery) }
+        }
+    }
+    LaunchedEffect(Unit) {
+        snapshotFlow { state.text.toString() }
+            .distinctUntilChanged()
+            .collect { onSearchQueryChange(it) }
+    }
+    return state
+}
+
+/**
+ * 곡 검색 헤더 (label + 입력창). [PlaylistSongList] 의 헤더 슬롯에 주입해 쓰는 여러 헤더 중 하나 —
+ * view-only(수신자 열람)·selectable(노래 추가)이 주입한다. 관리 모드는 대신 "총 N곡" 헤더를 주입한다.
+ */
+@Composable
+internal fun SongSearchSection(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
 ) {
@@ -150,96 +147,24 @@ private fun SongSearchSection(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(vertical = 20.dp),
+                .padding(top = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(7.dp),
     ) {
         Text(
             text = stringResource(R.string.song_search_label),
             style =
-                AfternoteDesign.typography.textField.copy(
-                    fontWeight = FontWeight.Medium,
+                AfternoteDesign.typography.bodyBase.copy(
                     color = AfternoteDesign.colors.gray9,
                 ),
-            modifier = Modifier.padding(bottom = 8.dp),
         )
-        val searchFieldState = rememberTextFieldState(searchQuery)
-        LaunchedEffect(searchQuery) {
-            if (searchFieldState.text.toString() != searchQuery) {
-                searchFieldState.edit { replace(0, length, searchQuery) }
-            }
-        }
-        LaunchedEffect(Unit) {
-            snapshotFlow { searchFieldState.text.toString() }
-                .distinctUntilChanged()
-                .collect { onSearchQueryChange(it) }
-        }
-        SongSearchTextField(
+        val searchFieldState = rememberSongSearchFieldState(searchQuery, onSearchQueryChange)
+        AfternoteTextField(
             state = searchFieldState,
+            type = TextFieldType.Search,
             placeholder = stringResource(R.string.song_search_placeholder),
+            imeAction = ImeAction.Search,
         )
     }
-}
-
-/**
- * 곡 검색용 텍스트 필드.
- *
- * 52dp 최소 높이·14dp 세로 패딩·검색 아이콘은 이 섹션 고유 사양이라
- * [BasicTextField]로 직접 구현합니다.
- */
-@Composable
-private fun SongSearchTextField(
-    state: TextFieldState,
-    placeholder: String,
-) {
-    val shape = RoundedCornerShape(8.dp)
-    BasicTextField(
-        state = state,
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .defaultMinSize(minHeight = 52.dp)
-                .background(AfternoteDesign.colors.white, shape)
-                .border(1.dp, AfternoteDesign.colors.gray2, shape),
-        lineLimits = TextFieldLineLimits.SingleLine,
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-        textStyle =
-            AfternoteDesign.typography.bodySmallR.copy(
-                color = AfternoteDesign.colors.gray9,
-            ),
-        cursorBrush = SolidColor(AfternoteDesign.colors.black),
-        decorator = { innerTextField ->
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(
-                    modifier = Modifier.weight(1f),
-                    contentAlignment = Alignment.CenterStart,
-                ) {
-                    if (state.text.isEmpty()) {
-                        Text(
-                            text = placeholder,
-                            style =
-                                AfternoteDesign.typography.bodyBase.copy(
-                                    lineHeight = 20.sp,
-                                ),
-                            color = AfternoteDesign.colors.gray4,
-                        )
-                    }
-                    innerTextField()
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(
-                    painter = painterResource(R.drawable.feature_afternote_ic_search),
-                    contentDescription = stringResource(R.string.song_search_label),
-                    tint = AfternoteDesign.colors.gray9,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
-        },
-    )
 }
 
 // endregion
@@ -254,11 +179,17 @@ private fun PlaylistSongListPreview() {
             PlaylistSongDisplay(id = "$i", title = "노래 제목 $i", artist = "가수 이름")
         }
     var query by remember { mutableStateOf("") }
+    // 리스트는 필터·검색을 소유하지 않으므로 호출부가 걸러 넘기고 검색 헤더도 주입한다 —
+    // 실제 view-only 호출부와 같은 패턴 시연.
     PlaylistSongList(
-        songs = songs,
-        searchQuery = query,
-        onSearchQueryChange = { query = it },
+        songs = filterSongsByQuery(songs, query),
         contentPadding = PaddingValues(horizontal = 20.dp),
+        header = {
+            SongSearchSection(
+                searchQuery = query,
+                onSearchQueryChange = { query = it },
+            )
+        },
     )
 }
 

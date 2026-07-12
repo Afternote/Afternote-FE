@@ -12,7 +12,6 @@ import com.afternote.core.ui.Route
 import com.afternote.feature.afternote.presentation.AfternoteHostViewModel
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.AddSongViewModel
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.MemorialPlaylistEntry
-import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.MemorialPlaylistEntryActions
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 
@@ -95,13 +94,10 @@ fun NavGraphBuilder.afternoteNavGraph(
             val graphSongs by hostViewModel.playlistSongs.collectAsStateWithLifecycle()
             MemorialPlaylistEntry(
                 songs = graphSongs,
-                actions =
-                    MemorialPlaylistEntryActions(
-                        onBackClick = actions::popBack,
-                        onNavigateToAddSongScreen = actions::navigateToAddSong,
-                        onClearAllSongs = hostViewModel::clearAllSongs,
-                        onRemoveSongs = hostViewModel::removeSongs,
-                    ),
+                onBackClick = actions::popBack,
+                onNavigateToAddSongScreen = actions::navigateToAddSong,
+                onClearAllSongs = hostViewModel::clearAllSongs,
+                onRemoveSongs = hostViewModel::removeSongs,
             )
         }
 
