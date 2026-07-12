@@ -8,5 +8,6 @@ android {
 
 dependencies {
     implementation(projects.feature.timeletter.domain)
+    implementation(projects.core.common)
     implementation(projects.core.network)
 }

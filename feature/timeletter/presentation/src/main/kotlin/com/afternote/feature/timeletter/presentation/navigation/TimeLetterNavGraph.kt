@@ -61,7 +61,6 @@ fun NavGraphBuilder.timeLetterNavGraph(
                 onDateSelected = { viewModel.setSendAt(it) },
                 onTimeSelected = { h, m -> viewModel.setSendTime(h, m) },
                 onAddImageBlock = { uri -> viewModel.addImageBlock(uri) },
-                onAddAudioBlock = { uri -> viewModel.addAudioBlock(uri) },
                 onAddFileBlock = { uri -> viewModel.addFileBlock(uri) },
                 onAddLinkBlock = { url -> viewModel.addLinkBlock(url) },
                 onRemoveBlock = { id -> viewModel.removeBlock(id) },
@@ -69,6 +68,12 @@ fun NavGraphBuilder.timeLetterNavGraph(
                 onAlignCenterClick = { viewModel.setTextAlign(TextAlign.Center) },
                 onAlignLeftClick = { viewModel.setTextAlign(TextAlign.Start) },
                 onAlignRightClick = { viewModel.setTextAlign(TextAlign.End) },
+                onOpenVoiceRecorder = viewModel::openVoiceRecorder,
+                onStartVoiceRecording = viewModel::startVoiceRecording,
+                onStopVoiceRecording = viewModel::stopVoiceRecording,
+                onRegisterVoiceRecording = viewModel::registerVoiceRecording,
+                onRetryVoiceRecording = viewModel::retryVoiceRecording,
+                onDiscardVoiceRecording = viewModel::discardVoiceRecording,
             )
         }
 

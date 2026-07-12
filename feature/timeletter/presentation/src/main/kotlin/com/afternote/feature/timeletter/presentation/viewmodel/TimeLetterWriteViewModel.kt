@@ -13,10 +13,13 @@ import com.afternote.feature.timeletter.domain.model.TimeLetterBlockType
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.domain.repository.FileMetadataRepository
 import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
+import com.afternote.feature.timeletter.domain.repository.VoiceRecorderRepository
 import com.afternote.feature.timeletter.domain.usecase.CreateTimeLetterUseCase
 import com.afternote.feature.timeletter.domain.usecase.ResolveTimeLetterBlocksUseCase
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,6 +39,7 @@ class TimeLetterWriteViewModel
         private val timeLetterRepository: TimeLetterRepository,
         private val userRepository: UserRepository,
         private val fileMetadataRepository: FileMetadataRepository,
+        private val voiceRecorderRepository: VoiceRecorderRepository,
         private val savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
         private val editingTimeLetterId =
@@ -50,6 +54,7 @@ class TimeLetterWriteViewModel
         val uiState: StateFlow<TimeLetterWriteUiState> = _uiState.asStateFlow()
 
         private var receiverNameMap: Map<Long, String> = emptyMap()
+        private var recordingTimerJob: Job? = null
 
         init {
             viewModelScope.launch {
@@ -153,6 +158,113 @@ class TimeLetterWriteViewModel
                 val mimeType = fileMetadataRepository.getMimeType(uriString)
                 addMediaBlockInternal { id -> EditorBlock.Audio(id, uri, name, mimeType) }
             }
+        }
+
+        fun openVoiceRecorder() {
+            _uiState.update {
+                it.copy(
+                    showVoiceRecorder = true,
+                    voiceRecordingState = VoiceRecordingState.Idle,
+                )
+            }
+        }
+
+        fun startVoiceRecording() {
+            viewModelScope.launch {
+                voiceRecorderRepository
+                    .start()
+                    .onSuccess {
+                        _uiState.update { state ->
+                            state.copy(voiceRecordingState = VoiceRecordingState.Recording(0L))
+                        }
+                        startRecordingTimer()
+                    }.onFailure {
+                        _uiState.update { state -> state.copy(errorMessage = "음성 녹음을 시작하지 못했습니다.") }
+                    }
+            }
+        }
+
+        fun stopVoiceRecording() {
+            recordingTimerJob?.cancel()
+            recordingTimerJob = null
+            viewModelScope.launch {
+                voiceRecorderRepository
+                    .stop()
+                    .onSuccess { audio ->
+                        _uiState.update { state ->
+                            state.copy(voiceRecordingState = VoiceRecordingState.Recorded(audio))
+                        }
+                    }.onFailure {
+                        _uiState.update { state ->
+                            state.copy(
+                                voiceRecordingState = VoiceRecordingState.Idle,
+                                errorMessage = "음성 녹음을 완료하지 못했습니다. 다시 시도해 주세요.",
+                            )
+                        }
+                    }
+            }
+        }
+
+        fun registerVoiceRecording() {
+            val recorded = _uiState.value.voiceRecordingState as? VoiceRecordingState.Recorded ?: return
+            val audio = recorded.audio
+            voiceRecorderRepository.retainRecordedFile()
+            addMediaBlockInternal { id ->
+                EditorBlock.Audio(
+                    id = id,
+                    uri = Uri.parse(audio.uriString),
+                    name = audio.fileName,
+                    mimeType = audio.mimeType,
+                )
+            }
+            _uiState.update {
+                it.copy(
+                    showVoiceRecorder = false,
+                    voiceRecordingState = VoiceRecordingState.Idle,
+                )
+            }
+        }
+
+        fun discardVoiceRecording() {
+            recordingTimerJob?.cancel()
+            recordingTimerJob = null
+            viewModelScope.launch {
+                voiceRecorderRepository.discard()
+                _uiState.update {
+                    it.copy(
+                        showVoiceRecorder = false,
+                        voiceRecordingState = VoiceRecordingState.Idle,
+                    )
+                }
+            }
+        }
+
+        fun retryVoiceRecording() {
+            recordingTimerJob?.cancel()
+            recordingTimerJob = null
+            viewModelScope.launch {
+                voiceRecorderRepository.discard()
+                _uiState.update { it.copy(voiceRecordingState = VoiceRecordingState.Idle) }
+            }
+        }
+
+        private fun startRecordingTimer() {
+            recordingTimerJob?.cancel()
+            recordingTimerJob =
+                viewModelScope.launch {
+                    var elapsedMillis = 0L
+                    while (true) {
+                        delay(RECORDING_TIMER_INTERVAL_MILLIS)
+                        elapsedMillis += RECORDING_TIMER_INTERVAL_MILLIS
+                        _uiState.update { state ->
+                            if (state.voiceRecordingState is VoiceRecordingState.Recording) {
+                                state.copy(voiceRecordingState = VoiceRecordingState.Recording(elapsedMillis))
+                            } else {
+                                state
+                            }
+                        }
+                    }
+                }
         }
 
         fun addFileBlock(uri: Uri) {
@@ -441,5 +553,15 @@ class TimeLetterWriteViewModel
                         _uiState.update { it.copy(draftCount = result.totalCount) }
                     }
             }
+        }
+
+        override fun onCleared() {
+            recordingTimerJob?.cancel()
+            voiceRecorderRepository.release()
+            super.onCleared()
+        }
+
+        private companion object {
+            const val RECORDING_TIMER_INTERVAL_MILLIS = 1_000L
         }
     }

@@ -1,10 +1,14 @@
 package com.afternote.feature.timeletter.presentation.screen.sender
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.media.MediaPlayer
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
@@ -53,11 +57,13 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import coil3.compose.AsyncImage
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.calendar.BottomSheetCalendar
@@ -74,6 +80,7 @@ import com.afternote.feature.timeletter.presentation.component.TimeLetterTitleTe
 import com.afternote.feature.timeletter.presentation.component.TimeWheelPicker
 import com.afternote.feature.timeletter.presentation.viewmodel.EditorBlock
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteUiState
+import com.afternote.feature.timeletter.presentation.viewmodel.VoiceRecordingState
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -92,7 +99,6 @@ fun TimeLetterWriteScreen(
     onNavigateToDraft: () -> Unit = {},
     onErrorShown: () -> Unit = {},
     onAddImageBlock: (Uri) -> Unit = {},
-    onAddAudioBlock: (Uri) -> Unit = {},
     onAddFileBlock: (Uri) -> Unit = {},
     onAddLinkBlock: (String) -> Unit = {},
     onRemoveBlock: (Long) -> Unit = {},
@@ -101,12 +107,20 @@ fun TimeLetterWriteScreen(
     onAlignCenterClick: () -> Unit = {},
     onAlignLeftClick: () -> Unit = {},
     onAlignRightClick: () -> Unit = {},
+    onOpenVoiceRecorder: () -> Unit = {},
+    onStartVoiceRecording: () -> Unit = {},
+    onStopVoiceRecording: () -> Unit = {},
+    onRegisterVoiceRecording: () -> Unit = {},
+    onRetryVoiceRecording: () -> Unit = {},
+    onDiscardVoiceRecording: () -> Unit = {},
 ) {
+    val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val sheetState = rememberModalBottomSheetState()
     var showMediaSheet by remember { mutableStateOf(false) }
     var showLinkDialog by remember { mutableStateOf(false) }
     var linkUrlInput by remember { mutableStateOf("") }
+    var permissionErrorMessage by remember { mutableStateOf<String?>(null) }
 
     val textBlockStates =
         remember(uiState.editingTimeLetterId) { androidx.compose.runtime.mutableStateMapOf<Long, TextFieldState>() }
@@ -120,9 +134,13 @@ fun TimeLetterWriteScreen(
         rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
             uri?.let { onAddImageBlock(it) }
         }
-    val audioLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-            uri?.let { onAddAudioBlock(it) }
+    val recordAudioPermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) {
+                onOpenVoiceRecorder()
+            } else {
+                permissionErrorMessage = "음성 메시지를 녹음하려면 마이크 권한이 필요합니다."
+            }
         }
     val fileLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
@@ -133,6 +151,12 @@ fun TimeLetterWriteScreen(
         val msg = uiState.errorMessage ?: return@LaunchedEffect
         snackbarHostState.showSnackbar(msg)
         onErrorShown()
+    }
+
+    LaunchedEffect(permissionErrorMessage) {
+        val message = permissionErrorMessage ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(message)
+        permissionErrorMessage = null
     }
 
     LaunchedEffect(uiState.editingTimeLetterId, uiState.initialTitle) {
@@ -241,7 +265,14 @@ fun TimeLetterWriteScreen(
                 },
                 onVoiceClick = {
                     showMediaSheet = false
-                    audioLauncher.launch("audio/*")
+                    if (
+                        ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+                        PackageManager.PERMISSION_GRANTED
+                    ) {
+                        onOpenVoiceRecorder()
+                    } else {
+                        recordAudioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                    }
                 },
                 onFileClick = {
                     showMediaSheet = false
@@ -254,6 +285,17 @@ fun TimeLetterWriteScreen(
                 },
             )
         }
+    }
+
+    if (uiState.showVoiceRecorder) {
+        VoiceRecorderBottomSheet(
+            state = uiState.voiceRecordingState,
+            onDismiss = onDiscardVoiceRecording,
+            onStart = onStartVoiceRecording,
+            onStop = onStopVoiceRecording,
+            onRegister = onRegisterVoiceRecording,
+            onRetry = onRetryVoiceRecording,
+        )
     }
 
     if (showLinkDialog) {
@@ -498,6 +540,146 @@ private fun ImageBlockItem(
             )
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun VoiceRecorderBottomSheet(
+    state: VoiceRecordingState,
+    onDismiss: () -> Unit,
+    onStart: () -> Unit,
+    onStop: () -> Unit,
+    onRegister: () -> Unit,
+    onRetry: () -> Unit,
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+    ) {
+        Text(
+            text = "음성 메시지 녹음",
+            style = AfternoteDesign.typography.h3,
+            color = AfternoteDesign.colors.gray9,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+
+        when (state) {
+            VoiceRecordingState.Idle -> {
+                Text(
+                    text = "녹음 버튼을 눌러 음성 메시지를 남겨주세요.",
+                    style = AfternoteDesign.typography.bodyBase,
+                    color = AfternoteDesign.colors.gray7,
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                AfternoteButton(
+                    text = "녹음 시작",
+                    onClick = onStart,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp),
+                )
+            }
+
+            is VoiceRecordingState.Recording -> {
+                Text(
+                    text = formatRecordingDuration(state.elapsedMillis),
+                    style = AfternoteDesign.typography.h2,
+                    color = AfternoteDesign.colors.gray9,
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                AfternoteButton(
+                    text = "녹음 완료",
+                    onClick = onStop,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp),
+                )
+            }
+
+            is VoiceRecordingState.Recorded -> {
+                RecordedVoiceControls(
+                    state = state,
+                    onRegister = onRegister,
+                    onRetry = onRetry,
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+    }
+}
+
+@Composable
+private fun ColumnScope.RecordedVoiceControls(
+    state: VoiceRecordingState.Recorded,
+    onRegister: () -> Unit,
+    onRetry: () -> Unit,
+) {
+    val context = LocalContext.current
+    var isPlaying by remember(state.audio.uriString) { mutableStateOf(false) }
+    val player =
+        remember(state.audio.uriString) {
+            runCatching { MediaPlayer.create(context, Uri.parse(state.audio.uriString)) }.getOrNull()
+        }
+
+    DisposableEffect(player) {
+        player?.setOnCompletionListener { isPlaying = false }
+        onDispose { player?.release() }
+    }
+
+    Text(
+        text = "녹음 시간 ${formatRecordingDuration(state.audio.durationMillis)}",
+        style = AfternoteDesign.typography.bodyBase,
+        color = AfternoteDesign.colors.gray7,
+        modifier = Modifier.fillMaxWidth(),
+        textAlign = TextAlign.Center,
+    )
+    Spacer(modifier = Modifier.height(16.dp))
+    TextButton(
+        onClick = {
+            player?.let {
+                if (it.isPlaying) {
+                    it.pause()
+                    isPlaying = false
+                } else {
+                    it.start()
+                    isPlaying = true
+                }
+            }
+        },
+        enabled = player != null,
+        modifier = Modifier.align(Alignment.CenterHorizontally),
+    ) {
+        Text(if (isPlaying) "재생 일시정지" else "녹음 듣기")
+    }
+    Spacer(modifier = Modifier.height(16.dp))
+    TextButton(
+        onClick = onRetry,
+        modifier = Modifier.align(Alignment.CenterHorizontally),
+    ) {
+        Text("다시 녹음")
+    }
+    AfternoteButton(
+        text = "음성 메시지 등록",
+        onClick = onRegister,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp),
+    )
+}
+
+private fun formatRecordingDuration(durationMillis: Long): String {
+    val totalSeconds = durationMillis / 1_000L
+    val minutes = totalSeconds / 60L
+    val seconds = totalSeconds % 60L
+    return "%02d:%02d".format(minutes, seconds)
 }
 
 @Composable
