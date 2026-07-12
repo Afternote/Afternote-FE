@@ -14,9 +14,6 @@ internal fun AfternoteAddSongNavigation(
     AddSongEntry(
         viewModel = viewModel,
         onBackClick = onPopBackStack,
-        onSongsAdded = { added ->
-            onSongsAdded(added)
-            onPopBackStack()
-        },
+        onSongsAdded = onSongsAdded,
     )
 }

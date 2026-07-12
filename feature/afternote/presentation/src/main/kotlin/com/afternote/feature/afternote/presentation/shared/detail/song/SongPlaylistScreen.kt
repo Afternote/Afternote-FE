@@ -9,9 +9,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.bottombar.BottomNavTab
+import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
 // region ── Screen-level config ──
@@ -115,25 +117,25 @@ fun SelectableSongPlaylistScreen(
             },
             contentPadding = PaddingValues(horizontal = 20.dp),
             initialSelectedSongIds = initialSelectedSongIds,
-        ) { selectedIds, _ ->
-            SongAddButton(
-                count = selectedIds.size,
-                onClick = { onSongsSelected(songs.filter { it.id in selectedIds }) },
-            )
-        }
+            actionLabel = stringResource(R.string.add_button),
+            onAction = { selectedIds -> onSongsSelected(songs.filter { it.id in selectedIds }) },
+        )
     }
 }
 
 /**
- * 노래 선택 + 커스텀 하단 액션 바가 있는 플레이리스트 화면 (관리 모드).
- * header로 "총 N곡" + 노래 추가하기 등 헤더를 넣고,
- * selectionBottomBar로 선택 시 표시할 액션 바(예: 전체 삭제/선택 삭제)를 넣을 수 있음.
+ * 노래 선택 + dual-action 하단 삭제 바가 있는 플레이리스트 화면 (관리 모드).
+ * header로 "총 N곡" 등을 넣고, 선택 시 (actionLabel | secondaryActionLabel) dual-action 버튼을 띄운다.
+ * 두 액션 모두 실행 후 선택은 [SelectableSongListBody] 가 자동으로 비운다.
  *
  * @param title HomeTopBar 타이틀
  * @param onBackClick 뒤로가기 콜백
  * @param songs 표시할 노래 목록
  * @param header 헤더 composable (목록 첫 아이템으로 렌더)
- * @param selectionBottomBar 선택 시 하단 액션 바 (selectedIds, onClearSelection 제공)
+ * @param actionLabel 왼쪽 액션 라벨 (예: 전체 삭제)
+ * @param onAction 왼쪽 액션 클릭 — 현재 선택된 id 집합을 받는다
+ * @param secondaryActionLabel 오른쪽 액션 라벨 (예: 선택 삭제)
+ * @param onSecondaryAction 오른쪽 액션 클릭 — 현재 선택된 id 집합을 받는다
  * @param defaultBottomNavTab 초기 BottomNavTab
  * @param initialSelectedSongIds Preview용 초기 선택 ID
  */
@@ -144,7 +146,10 @@ fun ManageableSongPlaylistScreen(
     onBackClick: () -> Unit,
     songs: List<PlaylistSongDisplay>,
     header: @Composable () -> Unit,
-    selectionBottomBar: @Composable (selectedIds: Set<String>, onClearSelection: () -> Unit) -> Unit,
+    actionLabel: String,
+    onAction: (selectedIds: Set<String>) -> Unit,
+    secondaryActionLabel: String,
+    onSecondaryAction: (selectedIds: Set<String>) -> Unit,
     defaultBottomNavTab: BottomNavTab = BottomNavTab.NOTE,
     initialSelectedSongIds: Set<String> = emptySet(),
 ) {
@@ -159,7 +164,10 @@ fun ManageableSongPlaylistScreen(
             header = header,
             contentPadding = PaddingValues(horizontal = 20.dp),
             initialSelectedSongIds = initialSelectedSongIds,
-            bottomBar = selectionBottomBar,
+            actionLabel = actionLabel,
+            onAction = onAction,
+            secondaryActionLabel = secondaryActionLabel,
+            onSecondaryAction = onSecondaryAction,
         )
     }
 }
