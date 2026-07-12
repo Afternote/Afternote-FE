@@ -10,8 +10,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.bottombar.BottomNavTab
-import com.afternote.core.ui.button.AfternoteButton
-import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
@@ -26,7 +24,7 @@ import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDis
  *
  * Screen을 직접 쓰지 않고 Entry로 감싸는 이유:
  * (1) 공용 SongPlaylist 화면 계열(shared/detail/song)은 여러 화면이 공유하는 범용 부품이라
- *     이 화면 전용 지식([Song] 도메인 매핑, 타이틀, "총 N곡" 헤더·삭제 액션바 크롬)을 넣을 수 없고,
+ *     이 화면 전용 지식([Song] 도메인 매핑, 타이틀, "총 N곡" 헤더·삭제 라벨·콜백)을 넣을 수 없고,
  * (2) 그 전용 지식을 NavGraph destination 블록에 인라인하면 ViewModel 없이 렌더할 수 없어
  *     Preview·스크린샷 테스트가 막힌다.
  * Entry가 둘 사이에서 도메인→표시 모델 매핑과 화면 전용 크롬 주입을 맡는 stateless 어댑터다.
@@ -65,18 +63,10 @@ fun MemorialPlaylistEntry(
         header = {
             MemorialPlaylistListHeader(songCount = displaySongs.size)
         },
-        selectionBottomBar = { selectedIds, onClearSelection ->
-            MemorialPlaylistActionBar(
-                onDeleteAllClick = {
-                    onClearAllSongs()
-                    onClearSelection()
-                },
-                onDeleteSelectedClick = {
-                    onRemoveSongs(selectedIds)
-                    onClearSelection()
-                },
-            )
-        },
+        actionLabel = stringResource(R.string.afternote_editor_playlist_delete_all),
+        onAction = { onClearAllSongs() },
+        secondaryActionLabel = stringResource(R.string.afternote_editor_playlist_delete_selected),
+        onSecondaryAction = onRemoveSongs,
         defaultBottomNavTab = BottomNavTab.NOTE,
         initialSelectedSongIds = initialSelectedSongIds,
     )
@@ -108,26 +98,6 @@ private fun MemorialPlaylistListHeader(
                 ),
         )
     }
-}
-
-/**
- * 선택 시 노출되는 하단 삭제 액션 바.
- * [AfternoteButton] Variant5 dual-action 으로 "전체 삭제 | 선택 삭제" 두 클릭 타깃을 그리고,
- * 리스트 위에 떠 있는 바라서 그림자만 이 래퍼에서 얹는다 (같은 화면의 추가하기 버튼과 동일한 5dp).
- */
-@Composable
-private fun MemorialPlaylistActionBar(
-    onDeleteAllClick: () -> Unit,
-    onDeleteSelectedClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    AfternoteButton(
-        text = stringResource(R.string.afternote_editor_playlist_delete_all),
-        onClick = onDeleteAllClick,
-        type = AfternoteButtonType.Variant5,
-        secondaryText = stringResource(R.string.afternote_editor_playlist_delete_selected),
-        onSecondaryClick = onDeleteSelectedClick,
-    )
 }
 
 private fun memorialPlaylistPreviewSongs(): List<Song> =
