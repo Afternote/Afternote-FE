@@ -48,7 +48,7 @@ internal fun filterSongsByQuery(
 
 /**
  * 노래 목록 렌더러 (헤더 슬롯 + 행들).
- * SongPlaylistScreen 내부에서 사용하거나, 커스텀 Scaffold가 필요한 경우 직접 사용.
+ * 소비자 화면이 [SongPlaylistScaffold] 안에서 직접 쓰거나, 선택 본문 [SelectableSongListBody] 를 통해 쓴다.
  *
  * 이 리스트는 필터도 검색도 소유하지 않는다 — [songs] 를 받은 그대로 그리고, 상단 헤더는 호출부가
  * [header] 로 주입한다(필수 — 모든 호출부가 헤더를 가진다). 검색창이 필요한 화면은
@@ -61,11 +61,6 @@ internal fun filterSongsByQuery(
  *
  * @param songs 표시할 노래 목록 (호출부가 이미 필터링한 최종 목록 — 리스트는 그대로 그린다)
  * @param onSongClick 노래 행 클릭 콜백 (null이면 비클릭)
- * @param contentPadding LazyColumn contentPadding — 파라미터 관통이 필수: 바깥 modifier.padding 은 스크롤
- *   콘텐츠가 경계에서 잘리지만 contentPadding 은 콘텐츠가 패딩 영역 밑을 지나가며 스크롤된다.
- *   값도 호출부 상태에 의존 (예: 선택 모드의 하단 플로팅 바 높이만큼 bottom 확보 — 바는 이 리스트 밖에 그려져 내부에선 알 수 없음).
- *   기본값은 일부러 없다 — 0 패딩이 유효한 시안이 없어(가장자리 밀착), 기본값이 있으면 깜빡한
- *   호출부가 조용히 깨진 레이아웃을 얻는 함정이 된다. 호출부가 항상 명시할 것.
  * @param isSelected 각 행의 선택 상태 판정 (null이면 라디오 없음 = 비선택 모드; 예: view-only 열람)
  * @param header 첫 아이템으로 그릴 헤더 (검색창·"총 N곡" 등). 필수 — 현재 모든 호출부가 헤더를 가진다.
  */
@@ -73,7 +68,6 @@ internal fun filterSongsByQuery(
 fun PlaylistSongList(
     modifier: Modifier = Modifier,
     songs: List<PlaylistSongDisplay>,
-    contentPadding: PaddingValues,
     onSongClick: ((PlaylistSongDisplay) -> Unit)? = null,
     isSelected: ((PlaylistSongDisplay) -> Boolean)? = null,
     header: @Composable () -> Unit,
@@ -84,7 +78,8 @@ fun PlaylistSongList(
             modifier
                 .fillMaxWidth()
                 .addFocusCleaner(focusManager),
-        contentPadding = contentPadding,
+        // side inset 은 앱 전 화면 공통 20dp 고정 — 다른 값이 필요한 호출부가 생기면 그때 파라미터로 승격.
+        contentPadding = PaddingValues(horizontal = 20.dp),
     ) {
         // 헤더 = 호출부가 주입한 조각(검색창·"총 N곡" 등). 필수라 항상 첫 아이템으로 렌더.
         // 헤더-리스트 8dp 간격은 별도 Spacer 아이템이 아니라 헤더 아이템의 bottom 패딩으로 준다 —
@@ -183,7 +178,6 @@ private fun PlaylistSongListPreview() {
     // 실제 view-only 호출부와 같은 패턴 시연.
     PlaylistSongList(
         songs = filterSongsByQuery(songs, query),
-        contentPadding = PaddingValues(horizontal = 20.dp),
         header = {
             SongSearchSection(
                 searchQuery = query,
