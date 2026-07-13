@@ -68,6 +68,17 @@ interface UserApiService {
     @DELETE("users/me")
     suspend fun deleteAccount(): BaseResponse<Unit>
 
+    /**
+     * 활동 기록(ping) — 서버에 "이 사용자가 방금 활동했다" 는 **사실만** 알리는 무바디 신호.
+     *
+     * 요청·응답 바디 없음(누구인지는 액세스 토큰으로 서버가 식별). 서버는 이를 받아 그 사용자의
+     * "마지막 활동 시각" 을 갱신한다. 사후 전달의 INACTIVITY(장기 미사용 → 사망 추정 → 자동 전달)
+     * 판정 기준이 이 시각이므로, 앱 실행/로그인 확정 시 1회 호출해 "아직 활동 중" 으로 미사용 타이머를
+     * 리셋한다. 사용자가 앱을 오래 안 열면 ping 이 끊겨 시각이 굳고 → 미사용 기간이 쌓여 조건 충족 (이슈 #429).
+     */
+    @POST("users/me/activity")
+    suspend fun logActivity(): BaseResponse<Unit>
+
     // 푸시 알림 설정 조회
     @GET("users/push-settings")
     suspend fun getMyPushSettings(): BaseResponse<UserPushSettingResponseDto>

@@ -56,6 +56,9 @@ interface UserRepository {
     // 회원 탈퇴
     suspend fun deleteAccount()
 
+    // 활동 기록(ping) — 앱 실행/로그인 확정 시 미사용(INACTIVITY) 전달조건 타이머를 리셋
+    suspend fun logActivity()
+
     // 푸시 알림 설정 조회
     suspend fun getMyPushSettings(): UserPushSetting
 
