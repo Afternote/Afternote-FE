@@ -13,7 +13,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 @Composable
 fun AddSongEntry(
     viewModel: AddSongViewModel,
-    callbacks: AddSongCallbacks,
+    onBackClick: () -> Unit,
+    onSongsAdded: (List<Song>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -22,7 +23,8 @@ fun AddSongEntry(
         uiState = uiState,
         onSearchQueryChange = viewModel::onSearchQueryChange,
         onErrorConsumed = viewModel::onErrorConsumed,
-        callbacks = callbacks,
+        onBackClick = onBackClick,
+        onSongsAdded = onSongsAdded,
         modifier = modifier,
     )
 }

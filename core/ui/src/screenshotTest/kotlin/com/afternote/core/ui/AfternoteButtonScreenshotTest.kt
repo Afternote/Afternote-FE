@@ -38,3 +38,18 @@ internal fun afternoteButtonPlainScreenshot() {
         )
     }
 }
+
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+internal fun afternoteButtonVariant5DualActionScreenshot() {
+    AfternoteTheme {
+        AfternoteButton(
+            text = "전체 삭제",
+            onClick = {},
+            type = AfternoteButtonType.Variant5,
+            secondaryText = "선택 삭제",
+            onSecondaryClick = {},
+        )
+    }
+}

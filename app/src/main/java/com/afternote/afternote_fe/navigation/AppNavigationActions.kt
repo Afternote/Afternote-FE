@@ -467,6 +467,12 @@ fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions =
                 )
             }
 
+            override fun navigateToMemorialPlaylist(afternoteId: String) {
+                appState.navController.navigate(
+                    ReceiverRoute.MemorialPlaylistRoute(afternoteId = afternoteId),
+                )
+            }
+
             override fun navigateToSenderRegistration() {
                 appState.navController.navigate(ReceiverRoute.SenderRegistrationRoute)
             }
