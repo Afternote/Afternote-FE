@@ -9,20 +9,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
-import com.afternote.feature.afternote.presentation.shared.detail.song.ManageableSongPlaylistScreen
+import com.afternote.feature.afternote.presentation.shared.detail.song.SelectableSongListBody
+import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScaffold
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
 /**
  * 추억 플레이리스트 Entry.
  *
  * graph-scoped [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs] SSOT의 곡 목록을
- * 공용 [ManageableSongPlaylistScreen]의 입력 형태로 매핑한다. 변경은 콜백 인텐트로 위임한다.
+ * 공용 부품([SongPlaylistScaffold] + [SelectableSongListBody])의 입력 형태로 매핑한다. 변경은 콜백 인텐트로 위임한다.
  *
- * Screen을 직접 쓰지 않고 Entry로 감싸는 이유:
+ * 이 조립을 NavGraph destination 에 인라인하지 않고 Entry로 빼는 이유:
  * (1) 공용 SongPlaylist 화면 계열(shared/detail/song)은 여러 화면이 공유하는 범용 부품이라
  *     이 화면 전용 지식([Song] 도메인 매핑, 타이틀, "총 N곡" 헤더·삭제 라벨·콜백)을 넣을 수 없고,
  * (2) 그 전용 지식을 NavGraph destination 블록에 인라인하면 ViewModel 없이 렌더할 수 없어
@@ -55,21 +55,24 @@ fun MemorialPlaylistEntry(
                 albumImageUrl = s.albumCoverUrl,
             )
         }
-    ManageableSongPlaylistScreen(
-        modifier = modifier,
+    SongPlaylistScaffold(
         title = stringResource(R.string.afternote_editor_playlist_screen_title),
         onBackClick = onBackClick,
-        songs = displaySongs,
-        header = {
-            MemorialPlaylistListHeader(songCount = displaySongs.size)
-        },
-        actionLabel = stringResource(R.string.afternote_editor_playlist_delete_all),
-        onAction = { onClearAllSongs() },
-        secondaryActionLabel = stringResource(R.string.afternote_editor_playlist_delete_selected),
-        onSecondaryAction = onRemoveSongs,
-        defaultBottomNavTab = BottomNavTab.NOTE,
-        initialSelectedSongIds = initialSelectedSongIds,
-    )
+        modifier = modifier,
+    ) { paddingValues ->
+        SelectableSongListBody(
+            modifier = Modifier.padding(paddingValues),
+            songs = displaySongs,
+            header = {
+                MemorialPlaylistListHeader(songCount = displaySongs.size)
+            },
+            initialSelectedSongIds = initialSelectedSongIds,
+            actionLabel = stringResource(R.string.afternote_editor_playlist_delete_all),
+            onAction = { onClearAllSongs() },
+            secondaryActionLabel = stringResource(R.string.afternote_editor_playlist_delete_selected),
+            onSecondaryAction = onRemoveSongs,
+        )
+    }
 }
 
 /**
