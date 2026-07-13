@@ -171,7 +171,7 @@
     <string name="receiver_verify_error_network">네트워크 연결을 확인해주세요.</string>
     <string name="receiver_verify_error_unknown">마스터 키 검증에 실패했습니다.</string>
     <string name="receiver_verify_complete_confirm">확인</string>
-    <string name="receiver_verify_documents_required">사망진단서와 가족관계증명서를 모두 업로드해주세요.</string>
+    <string name="receiver_verify_documents_required">사망진단서 또는 가족관계증명서 중 하나 이상 업로드해주세요.</string>
     <string name="receiver_verify_document_upload_failed">서류 업로드에 실패했습니다.</string>
     <string name="receiver_verify_submit_failed">열람 신청에 실패했습니다.</string>
     <string name="receiver_verify_complete_title">열람 신청 완료</string>

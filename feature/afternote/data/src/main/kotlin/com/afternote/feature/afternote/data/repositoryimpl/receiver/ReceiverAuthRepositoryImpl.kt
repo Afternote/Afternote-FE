@@ -71,8 +71,8 @@ class ReceiverAuthRepositoryImpl
             }
 
         override suspend fun submitDeliveryVerification(
-            deathCertificateUrl: String,
-            familyRelationCertificateUrl: String,
+            deathCertificateUrl: String?,
+            familyRelationCertificateUrl: String?,
         ): Result<DeliveryVerification> =
             runCatching {
                 try {
