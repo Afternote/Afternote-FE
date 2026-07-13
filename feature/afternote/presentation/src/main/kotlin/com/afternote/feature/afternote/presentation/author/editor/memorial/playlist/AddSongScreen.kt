@@ -1,10 +1,10 @@
 package com.afternote.feature.afternote.presentation.author.editor.memorial.playlist
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -15,24 +15,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
-import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScreen
-import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScreenSelectableOptions
+import com.afternote.feature.afternote.presentation.shared.detail.song.SelectableSongListBody
+import com.afternote.feature.afternote.presentation.shared.detail.song.SongPlaylistScaffold
+import com.afternote.feature.afternote.presentation.shared.detail.song.SongSearchSection
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
 /**
- * AddSong 화면의 외부 결과 콜백 묶음.
- *
- * Entry → Screen 으로 콜백을 묶어 전달해 시그니처 폭주를 막는다.
- * Screen 내부 입력 신호 ([onSearchQueryChange]·[onErrorConsumed]) 와는 분리 — 그쪽은 VM verb 메서드 직접 노출.
- */
-@Immutable
-data class AddSongCallbacks(
-    val onBackClick: () -> Unit,
-    val onSongsAdded: (List<Song>) -> Unit,
-)
-
-/**
  * 노래 추가하기 화면 (API 검색 연동).
+ *
+ * 공용 부품([SongPlaylistScaffold] + selectable 본문 [SelectableSongListBody])을 직접 조립하고, 이 기능
+ * 고유의 것(VM 상태·검색 실패 Snackbar·PlaylistSongDisplay↔Song 매핑)을 얹는 소비자 계층이다.
  *
  * ViewModel 의존성 없이 순수하게 UI만 그립니다. [AddSongUiState.error] 는 sealed [AddSongError]
  * 에서 UI 레이어가 [stringResource] 로 해석한 뒤 Snackbar 표출 → [onErrorConsumed] 로 VM 에 nullify
@@ -45,7 +37,8 @@ fun AddSongScreen(
     uiState: AddSongUiState,
     onSearchQueryChange: (String) -> Unit,
     onErrorConsumed: () -> Unit,
-    callbacks: AddSongCallbacks,
+    onBackClick: () -> Unit,
+    onSongsAdded: (List<Song>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val genericErrorMessage = stringResource(R.string.afternote_editor_search_failed_generic)
@@ -64,51 +57,31 @@ fun AddSongScreen(
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-        SongPlaylistScreen(
+        SongPlaylistScaffold(
             title = stringResource(R.string.afternote_editor_playlist_add_screen_title),
-            onBackClick = callbacks.onBackClick,
-            songs = uiState.songs,
-            onSongsSelected = { selected ->
-                callbacks.onSongsAdded(selected.map(::toSong))
-            },
-            options =
-                SongPlaylistScreenSelectableOptions(
-                    searchQuery = uiState.searchQuery,
-                    onSearchQueryChange = onSearchQueryChange,
-                ),
-        )
+            onBackClick = onBackClick,
+        ) { paddingValues ->
+            SelectableSongListBody(
+                modifier = Modifier.padding(paddingValues),
+                songs = uiState.songs,
+                header = {
+                    SongSearchSection(
+                        searchQuery = uiState.searchQuery,
+                        onSearchQueryChange = onSearchQueryChange,
+                    )
+                },
+                initialSelectedSongIds = emptySet(),
+                actionLabel = stringResource(R.string.add_button),
+                onAction = { selectedIds ->
+                    onSongsAdded(uiState.songs.filter { it.id in selectedIds }.map(::toSong))
+                },
+            )
+        }
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
     }
-}
-
-/**
- * 노래 추가하기 화면 (Preview·더미용).
- * 정적 목록만 표시하며 검색은 클라이언트 필터만 적용.
- *
- * @param songs 표시할 노래 목록
- * @param initialSelectedSongIds Preview용. 넣으면 해당 ID가 선택된 상태로 시작
- */
-@Composable
-fun AddSongScreen(
-    songs: List<PlaylistSongDisplay>,
-    onBackClick: () -> Unit,
-    onSongsAdded: (List<Song>) -> Unit,
-    modifier: Modifier = Modifier,
-    initialSelectedSongIds: Set<String>? = null,
-) {
-    SongPlaylistScreen(
-        modifier = modifier,
-        title = stringResource(R.string.afternote_editor_playlist_add_screen_title),
-        onBackClick = onBackClick,
-        songs = songs,
-        onSongsSelected = { selected ->
-            onSongsAdded(selected.map(::toSong))
-        },
-        options = SongPlaylistScreenSelectableOptions(initialSelectedSongIds = initialSelectedSongIds),
-    )
 }
 
 private fun toSong(display: PlaylistSongDisplay): Song =
@@ -119,57 +92,24 @@ private fun toSong(display: PlaylistSongDisplay): Song =
         albumCoverUrl = display.albumImageUrl,
     )
 
+// 선택 상태(추가하기 버튼 노출)는 [SelectableSongListBody] 내부 소유라 AddSongUiState 로 못 만든다 —
+// 이 프리뷰는 검색 목록만 보여준다 (버튼 노출 시각은 core AfternoteButton·memorial 선택 스크린샷이 커버).
 @Preview(showBackground = true)
 @Composable
 private fun AddSongScreenPreview() {
     AfternoteLightTheme {
         AddSongScreen(
-            songs =
-                (1..9).map { i ->
-                    PlaylistSongDisplay(id = "s$i", title = "노래 제목 $i", artist = "가수 이름")
-                },
-            onBackClick = {},
-            onSongsAdded = {},
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "추가하기 버튼 노출")
-@Composable
-private fun AddSongScreenAddButtonPreview() {
-    AfternoteLightTheme {
-        AddSongScreen(
-            songs =
-                (1..9).map { i ->
-                    PlaylistSongDisplay(id = "s$i", title = "노래 제목 $i", artist = "가수 이름")
-                },
-            onBackClick = {},
-            onSongsAdded = {},
-            initialSelectedSongIds = setOf("s1", "s3"),
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "API 검색 연동")
-@Composable
-private fun AddSongScreenWithSearchPreview() {
-    AfternoteLightTheme {
-        AddSongScreen(
             uiState =
                 AddSongUiState(
                     songs =
-                        (1..5).map { i ->
-                            PlaylistSongDisplay(
-                                id = "f$i",
-                                title = "노래 $i",
-                                artist = "가수",
-                            )
+                        (1..9).map { i ->
+                            PlaylistSongDisplay(id = "s$i", title = "노래 제목 $i", artist = "가수 이름")
                         },
-                    searchQuery = "아이유",
                 ),
             onSearchQueryChange = {},
             onErrorConsumed = {},
-            callbacks = AddSongCallbacks(onBackClick = {}, onSongsAdded = {}),
+            onBackClick = {},
+            onSongsAdded = {},
         )
     }
 }
