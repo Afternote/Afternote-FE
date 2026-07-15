@@ -37,8 +37,8 @@ sealed interface Route {
      * 수신자(추모자) 흐름의 그래프 루트.
      *
      * 작성자(`Route.Afternote`)와 별개로 받은 사람이 진입하는 별도 사용자 여정이며,
-     * 데이터 레이어도 별도 인증(`X-Auth-Code`)을 사용한다. 진입점(수신자 전용 온보딩)은
-     * 디자인 미정으로 후속 PR에서 연결한다 — 본 그래프는 내부 라우팅만 정의한다.
+     * 데이터 레이어도 별도 인증(`X-Auth-Code`)을 사용한다. 온보딩 Welcome 의
+     * "전달 받은 기록 확인하기" 콜백이 본 라우트로 진입하며, 받은 기록함이 시작 화면이다.
      */
     @Serializable
     data object Receiver : Route

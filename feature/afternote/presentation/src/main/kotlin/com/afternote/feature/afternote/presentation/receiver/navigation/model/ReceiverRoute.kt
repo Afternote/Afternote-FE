@@ -5,8 +5,8 @@ import kotlinx.serialization.Serializable
 /**
  * 수신자 흐름 [com.afternote.core.ui.Route.Receiver] 그래프 내부 라우트.
  *
- * 진입점(수신자 전용 온보딩)은 디자인 미정으로 미연결 상태이며, 본 그래프는
- * 그래프 내부 라우팅(Home → AfternoteList → AfternoteDetail)만 정의한다.
+ * 온보딩 Welcome 의 "전달 받은 기록 확인하기" 콜백이 [com.afternote.core.ui.Route.Receiver]
+ * (= startDestination [ReceivedRecordsRoute]) 로 진입한다.
  */
 sealed interface ReceiverRoute {
     /** 수신자 대시보드 — 발신자 한 마디 + 마음의 기록·타임레터·애프터노트 섹션 카드. */
