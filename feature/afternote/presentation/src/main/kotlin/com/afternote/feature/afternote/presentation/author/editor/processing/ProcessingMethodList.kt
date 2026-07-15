@@ -74,29 +74,26 @@ fun ProcessingMethodList(
                     item = item,
                     expanded = state.expandedStates[item.id] ?: false,
                     isEditing = state.editingItemId == item.id,
-                    callbacks =
-                        ProcessingMethodCheckboxCallbacks(
-                            onMoreClick = {
-                                focusManager.clearFocus()
-                                state.toggleItemExpanded(item.id)
-                            },
-                            onDismissDropdown = {
-                                state.expandedStates[item.id] = false
-                            },
-                            onEditClick = {
-                                state.expandedStates[item.id] = false
-                                // Defer editing to next frame so DropdownMenu dismiss settles first
-                                scope.launch {
-                                    withFrameNanos { }
-                                    state.startEditing(item.id)
-                                }
-                            },
-                            onDeleteClick = { onItemDeleteClick(item.id) },
-                            onEditConfirmed = { newText ->
-                                onItemEdited(item.id, newText)
-                                state.stopEditing()
-                            },
-                        ),
+                    onMoreClick = {
+                        focusManager.clearFocus()
+                        state.toggleItemExpanded(item.id)
+                    },
+                    onDismissDropdown = {
+                        state.expandedStates[item.id] = false
+                    },
+                    onEditClick = {
+                        state.expandedStates[item.id] = false
+                        // Defer editing to next frame so DropdownMenu dismiss settles first
+                        scope.launch {
+                            withFrameNanos { }
+                            state.startEditing(item.id)
+                        }
+                    },
+                    onDeleteClick = { onItemDeleteClick(item.id) },
+                    onEditConfirmed = { newText ->
+                        onItemEdited(item.id, newText)
+                        state.stopEditing()
+                    },
                 )
             }
         }

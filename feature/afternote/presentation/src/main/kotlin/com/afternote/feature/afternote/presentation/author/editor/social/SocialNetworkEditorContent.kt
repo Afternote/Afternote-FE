@@ -20,14 +20,20 @@ import com.afternote.feature.afternote.presentation.author.editor.account.Accoun
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListSection
+import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
 
 /**
  * 소셜네트워크 등 일반적인 종류 선택 시 표시되는 콘텐츠
  */
 @Composable
 fun SocialNetworkEditorContent(
+    editorMessages: List<EditorMessage>,
+    accountSection: AccountSection,
     modifier: Modifier = Modifier,
-    params: SocialNetworkEditorContentParams,
+    onMessageRegisterClick: (EditorMessage) -> Unit = {},
+    onMessageDeleteClick: (EditorMessage) -> Unit = {},
+    onMessageAddClick: () -> Unit = {},
+    processingMethodSection: ProcessingMethodSection = ProcessingMethodSection(),
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -46,25 +52,25 @@ fun SocialNetworkEditorContent(
 
             CaptionLabeledTextField(
                 label = stringResource(R.string.feature_afternote_detail_label_id),
-                state = params.accountSection.idState,
+                state = accountSection.idState,
             )
 
             CaptionLabeledTextField(
                 label = stringResource(R.string.feature_afternote_detail_label_password),
-                state = params.accountSection.passwordState,
+                state = accountSection.passwordState,
                 keyboardType = KeyboardType.Password,
             )
         }
 
         // 처리 방법 리스트 섹션
-        ProcessingMethodListSection(section = params.processingMethodSection)
+        ProcessingMethodListSection(section = processingMethodSection)
 
         // 남기실 말씀
         EditorMessageSection(
-            messages = params.editorMessages,
-            onRegisterClick = params.onMessageRegisterClick,
-            onDeleteClick = params.onMessageDeleteClick,
-            onAddClick = params.onMessageAddClick,
+            messages = editorMessages,
+            onRegisterClick = onMessageRegisterClick,
+            onDeleteClick = onMessageDeleteClick,
+            onAddClick = onMessageAddClick,
         )
     }
 }
@@ -81,20 +87,17 @@ private fun SocialNetworkEditorContentPreview() {
         ) {
             // 첫 번째 옵션 선택됨 (파란 테두리), 나머지는 선택 안 됨 (테두리 없음) 상태를 한 화면에 표시
             SocialNetworkEditorContent(
-                params =
-                    SocialNetworkEditorContentParams(
-                        editorMessages =
-                            listOf(
-                                EditorMessage(
-                                    titleState = rememberTextFieldState("남긴말1"),
-                                ),
-                                EditorMessage(),
-                            ),
-                        accountSection =
-                            AccountSection(
-                                idState = rememberTextFieldState(),
-                                passwordState = rememberTextFieldState(),
-                            ),
+                editorMessages =
+                    listOf(
+                        EditorMessage(
+                            titleState = rememberTextFieldState("남긴말1"),
+                        ),
+                        EditorMessage(),
+                    ),
+                accountSection =
+                    AccountSection(
+                        idState = rememberTextFieldState(),
+                        passwordState = rememberTextFieldState(),
                     ),
             )
         }
