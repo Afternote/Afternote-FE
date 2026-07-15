@@ -1,10 +1,10 @@
 package com.afternote.feature.afternote.data.mapper.response
 
-import com.afternote.feature.afternote.data.dto.AfternoteCredentials
-import com.afternote.feature.afternote.data.dto.AfternoteDetailReceiver
-import com.afternote.feature.afternote.data.dto.AfternoteDetailResponse
-import com.afternote.feature.afternote.data.dto.AfternotePlaylist
-import com.afternote.feature.afternote.data.dto.AfternoteSong
+import com.afternote.feature.afternote.data.dto.AfternoteCredentialsDto
+import com.afternote.feature.afternote.data.dto.AfternoteDetailDto
+import com.afternote.feature.afternote.data.dto.AfternoteDetailReceiverDto
+import com.afternote.feature.afternote.data.dto.AfternotePlaylistDto
+import com.afternote.feature.afternote.data.dto.AfternoteSongDto
 import com.afternote.feature.afternote.data.mapper.categoryToServiceType
 import com.afternote.feature.afternote.data.mapper.formatDateFromServer
 import com.afternote.feature.afternote.domain.model.author.Detail
@@ -16,7 +16,7 @@ import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
 import com.afternote.feature.afternote.domain.model.author.playlist.PlaylistDetail
 import com.afternote.feature.afternote.domain.model.author.playlist.PlaylistDetailMemorialMedia
 
-fun AfternoteDetailResponse.toDetailDomain(): Detail =
+fun AfternoteDetailDto.toDetailDomain(): Detail =
     Detail(
         id = afternoteId,
         category = category,
@@ -29,30 +29,30 @@ fun AfternoteDetailResponse.toDetailDomain(): Detail =
         playlist = playlist?.toDomain(),
     )
 
-private fun List<AfternoteDetailReceiver>?.toDomain() =
+private fun List<AfternoteDetailReceiverDto>?.toDomain() =
     this?.map { a ->
         a.toDomain()
     } ?: emptyList()
 
-private fun AfternoteDetailResponse.toTimestamps(): DetailTimestamps =
+private fun AfternoteDetailDto.toTimestamps(): DetailTimestamps =
     DetailTimestamps(
         createdAt = formatDateFromServer(createdAt),
         updatedAt = formatDateFromServer(updatedAt),
     )
 
-private fun AfternoteDetailResponse.toProcessing() =
+private fun AfternoteDetailDto.toProcessing() =
     DetailProcessing(
         actions = actions ?: emptyList(),
         leaveMessage = leaveMessage,
     )
 
-private fun AfternoteCredentials.toDomain() =
+private fun AfternoteCredentialsDto.toDomain() =
     DetailCredentials(
         id = id,
         password = password,
     )
 
-private fun AfternotePlaylist.toDomain() =
+private fun AfternotePlaylistDto.toDomain() =
     PlaylistDetail(
         profilePhoto = profilePhoto,
         atmosphere = atmosphere,
@@ -60,14 +60,14 @@ private fun AfternotePlaylist.toDomain() =
         playlistDetailMemorialMedia = toMemorialMedia(),
     )
 
-private fun AfternotePlaylist.toMemorialMedia() =
+private fun AfternotePlaylistDto.toMemorialMedia() =
     PlaylistDetailMemorialMedia(
         photoUrl = memorialPhotoUrl ?: profilePhoto,
         videoUrl = memorialVideo?.videoUrl,
         thumbnailUrl = memorialVideo?.thumbnailUrl,
     )
 
-private fun AfternoteDetailReceiver.toDomain() =
+private fun AfternoteDetailReceiverDto.toDomain() =
     DetailReceiver(
         receiverId = receiverId,
         name = name ?: "",
@@ -75,7 +75,7 @@ private fun AfternoteDetailReceiver.toDomain() =
         phone = phone ?: "",
     )
 
-private fun AfternoteSong.toDomain() =
+private fun AfternoteSongDto.toDomain() =
     DetailSong(
         id = id,
         title = title,

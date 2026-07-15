@@ -11,12 +11,12 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ReceiverAuthVerifyRequest(
+data class ReceiverAuthVerifyRequestDto(
     @SerialName("authCode") val authCode: String,
 )
 
 @Serializable
-data class ReceiverAuthVerifyResponse(
+data class ReceiverAuthVerifyDto(
     @SerialName("receiverId") val receiverId: Long,
     @SerialName("receiverName") val receiverName: String,
     @SerialName("senderName") val senderName: String,
@@ -24,18 +24,18 @@ data class ReceiverAuthVerifyResponse(
 )
 
 @Serializable
-data class ReceiverAuthCodeEmailSendRequest(
+data class ReceiverAuthCodeEmailSendRequestDto(
     @SerialName("email") val email: String,
 )
 
 @Serializable
-data class ReceiverEmailAuthVerifyRequest(
+data class ReceiverEmailAuthVerifyRequestDto(
     @SerialName("email") val email: String,
     @SerialName("authCode") val authCode: String,
 )
 
 @Serializable
-data class ReceiverEmailAuthVerifyResponse(
+data class ReceiverEmailAuthVerifyDto(
     @SerialName("receiverId") val receiverId: Long,
     @SerialName("receiverName") val receiverName: String,
     @SerialName("senderName") val senderName: String,
@@ -43,12 +43,12 @@ data class ReceiverEmailAuthVerifyResponse(
 )
 
 @Serializable
-data class ReceiverAuthPresignedUrlRequest(
+data class ReceiverAuthPresignedUrlRequestDto(
     @SerialName("extension") val extension: String,
 )
 
 @Serializable
-data class ReceiverAuthPresignedUrlResponse(
+data class ReceiverAuthPresignedUrlDto(
     @SerialName("presignedUrl") val presignedUrl: String,
     @SerialName("fileKey") val fileKey: String,
     @SerialName("fileUrl") val fileUrl: String,
@@ -64,13 +64,13 @@ data class ReceiverAuthPresignedUrlResponse(
  * 이 직렬화 형태(미제출 슬롯 키 생략)는 `DeliveryVerificationContractTest` 가 고정한다.
  */
 @Serializable
-data class DeliveryVerificationRequest(
+data class DeliveryVerificationRequestDto(
     @SerialName("deathCertificateUrl") val deathCertificateUrl: String? = null,
     @SerialName("familyRelationCertificateUrl") val familyRelationCertificateUrl: String? = null,
 )
 
 @Serializable
-data class DeliveryVerificationResponse(
+data class DeliveryVerificationDto(
     @SerialName("id") val id: Long,
     @SerialName("status") val status: String,
     @SerialName("deathCertificateUrl") val deathCertificateUrl: String? = null,
@@ -80,13 +80,13 @@ data class DeliveryVerificationResponse(
 )
 
 @Serializable
-data class ReceiverMessageResponse(
+data class ReceiverMessageDto(
     @SerialName("senderName") val senderName: String,
     @SerialName("message") val message: String? = null,
     @SerialName("createdAt") val createdAt: String? = null,
 )
 
-fun ReceiverAuthVerifyResponse.toDomain(): ReceiverIdentity =
+fun ReceiverAuthVerifyDto.toDomain(): ReceiverIdentity =
     ReceiverIdentity(
         receiverId = receiverId,
         receiverName = receiverName,
@@ -94,7 +94,7 @@ fun ReceiverAuthVerifyResponse.toDomain(): ReceiverIdentity =
         relation = relation,
     )
 
-fun ReceiverEmailAuthVerifyResponse.toDomain(): ReceiverEmailAuthResult =
+fun ReceiverEmailAuthVerifyDto.toDomain(): ReceiverEmailAuthResult =
     ReceiverEmailAuthResult(
         receiverId = receiverId,
         receiverName = receiverName,
@@ -102,7 +102,7 @@ fun ReceiverEmailAuthVerifyResponse.toDomain(): ReceiverEmailAuthResult =
         accessCode = accessCode,
     )
 
-fun ReceiverAuthPresignedUrlResponse.toDomain(): ReceiverAuthPresignedUrl =
+fun ReceiverAuthPresignedUrlDto.toDomain(): ReceiverAuthPresignedUrl =
     ReceiverAuthPresignedUrl(
         presignedUrl = presignedUrl,
         fileKey = fileKey,
@@ -110,7 +110,7 @@ fun ReceiverAuthPresignedUrlResponse.toDomain(): ReceiverAuthPresignedUrl =
         contentType = contentType,
     )
 
-fun DeliveryVerificationResponse.toDomain(): DeliveryVerification =
+fun DeliveryVerificationDto.toDomain(): DeliveryVerification =
     DeliveryVerification(
         id = id,
         status = DeliveryVerificationStatus.fromRaw(status),
@@ -120,7 +120,7 @@ fun DeliveryVerificationResponse.toDomain(): DeliveryVerification =
         createdAt = createdAt,
     )
 
-fun ReceiverMessageResponse.toDomain(): SenderMessageInfo =
+fun ReceiverMessageDto.toDomain(): SenderMessageInfo =
     SenderMessageInfo(
         senderName = senderName,
         message = message,

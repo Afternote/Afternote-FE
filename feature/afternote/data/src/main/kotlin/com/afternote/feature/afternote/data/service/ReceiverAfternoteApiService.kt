@@ -1,8 +1,8 @@
 package com.afternote.feature.afternote.data.service
 
 import com.afternote.core.network.model.BaseResponse
-import com.afternote.feature.afternote.data.dto.ReceivedAfternoteDetailResponse
-import com.afternote.feature.afternote.data.dto.ReceivedAfternoteListResponse
+import com.afternote.feature.afternote.data.dto.ReceivedAfternoteDetailDto
+import com.afternote.feature.afternote.data.dto.ReceivedAfternoteListDto
 import retrofit2.http.GET
 import retrofit2.http.Path
 
@@ -12,11 +12,11 @@ interface ReceiverAfternoteApiService {
      * `X-Auth-Code` 헤더는 [com.afternote.feature.afternote.data.network.ReceiverAuthInterceptor]가 자동 부착한다.
      */
     @GET("receiver-auth/after-notes")
-    suspend fun getReceiverAfternotes(): BaseResponse<ReceivedAfternoteListResponse>
+    suspend fun getReceiverAfternotes(): BaseResponse<ReceivedAfternoteListDto>
 
     /** 인증번호로 수신한 특정 애프터노트의 상세 조회. */
     @GET("receiver-auth/after-notes/{afternoteId}")
     suspend fun getReceiverAfternoteDetail(
         @Path("afternoteId") afternoteId: Long,
-    ): BaseResponse<ReceivedAfternoteDetailResponse>
+    ): BaseResponse<ReceivedAfternoteDetailDto>
 }

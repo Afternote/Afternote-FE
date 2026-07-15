@@ -13,9 +13,9 @@ import org.junit.Test
  */
 class ReceiverAuthDtoMapperTest {
     @Test
-    fun `ReceiverMessageResponse toDomain - SenderMessageInfo 매핑`() {
+    fun `ReceiverMessageDto toDomain - SenderMessageInfo 매핑`() {
         val result =
-            ReceiverMessageResponse(
+            ReceiverMessageDto(
                 senderName = "홍길동",
                 message = "보고싶다",
                 createdAt = "2026-06-08T12:00:53",
@@ -26,16 +26,16 @@ class ReceiverAuthDtoMapperTest {
     }
 
     @Test
-    fun `ReceiverMessageResponse toDomain - message·createdAt 미제공 시 null 유지`() {
-        val result = ReceiverMessageResponse(senderName = "홍길동").toDomain()
+    fun `ReceiverMessageDto toDomain - message·createdAt 미제공 시 null 유지`() {
+        val result = ReceiverMessageDto(senderName = "홍길동").toDomain()
         assertNull(result.message)
         assertNull(result.createdAt)
     }
 
     @Test
-    fun `ReceiverAuthVerifyResponse toDomain - ReceiverIdentity 매핑`() {
+    fun `ReceiverAuthVerifyDto toDomain - ReceiverIdentity 매핑`() {
         val result =
-            ReceiverAuthVerifyResponse(
+            ReceiverAuthVerifyDto(
                 receiverId = 3L,
                 receiverName = "김수신",
                 senderName = "홍발신",
@@ -49,9 +49,9 @@ class ReceiverAuthDtoMapperTest {
     }
 
     @Test
-    fun `ReceiverEmailAuthVerifyResponse toDomain - ReceiverEmailAuthResult 매핑`() {
+    fun `ReceiverEmailAuthVerifyDto toDomain - ReceiverEmailAuthResult 매핑`() {
         val result =
-            ReceiverEmailAuthVerifyResponse(
+            ReceiverEmailAuthVerifyDto(
                 receiverId = 7L,
                 receiverName = "김수신",
                 senderName = "홍발신",
@@ -65,9 +65,9 @@ class ReceiverAuthDtoMapperTest {
     }
 
     @Test
-    fun `ReceiverAuthPresignedUrlResponse toDomain - 매핑`() {
+    fun `ReceiverAuthPresignedUrlDto toDomain - 매핑`() {
         val result =
-            ReceiverAuthPresignedUrlResponse(
+            ReceiverAuthPresignedUrlDto(
                 presignedUrl = "url",
                 fileKey = "key",
                 fileUrl = "file",
@@ -81,18 +81,18 @@ class ReceiverAuthDtoMapperTest {
     }
 
     @Test
-    fun `DeliveryVerificationResponse toDomain - status fromRaw 대소문자 무시`() {
+    fun `DeliveryVerificationDto toDomain - status fromRaw 대소문자 무시`() {
         assertEquals(DeliveryVerificationStatus.APPROVED, response(status = "approved").toDomain().status)
         assertEquals(DeliveryVerificationStatus.PENDING, response(status = "PENDING").toDomain().status)
     }
 
     @Test
-    fun `DeliveryVerificationResponse toDomain - 알 수 없는 status는 UNKNOWN`() {
+    fun `DeliveryVerificationDto toDomain - 알 수 없는 status는 UNKNOWN`() {
         assertEquals(DeliveryVerificationStatus.UNKNOWN, response(status = "WeIrD").toDomain().status)
     }
 
     @Test
-    fun `DeliveryVerificationResponse toDomain - 나머지 필드 전달`() {
+    fun `DeliveryVerificationDto toDomain - 나머지 필드 전달`() {
         val result = response(status = "REJECTED").toDomain()
         assertEquals(11L, result.id)
         assertEquals(DeliveryVerificationStatus.REJECTED, result.status)
@@ -103,7 +103,7 @@ class ReceiverAuthDtoMapperTest {
     }
 
     private fun response(status: String) =
-        DeliveryVerificationResponse(
+        DeliveryVerificationDto(
             id = 11L,
             status = status,
             deathCertificateUrl = "death",
