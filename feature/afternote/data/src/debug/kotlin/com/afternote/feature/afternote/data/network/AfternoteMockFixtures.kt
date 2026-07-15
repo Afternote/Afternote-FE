@@ -109,7 +109,7 @@ internal object AfternoteMockFixtures {
           {"afternoteId":1,"title":"인스타그램","category":"SOCIAL","createdAt":"2024-06-01"},
           {"afternoteId":2,"title":"갤러리","category":"GALLERY","createdAt":"2024-06-02"},
           {"afternoteId":3,"title":"네이버 메일","category":"SOCIAL","createdAt":"2024-06-03"}
-        ],"pageNumber":0,"size":10,"hasNext":false}}
+        ],"page":0,"size":10,"hasNext":false}}
         """.trimIndent()
 
     val MOCK_CREATE_JSON =
