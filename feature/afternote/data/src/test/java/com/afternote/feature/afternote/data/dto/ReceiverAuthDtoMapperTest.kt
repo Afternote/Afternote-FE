@@ -55,13 +55,11 @@ class ReceiverAuthDtoMapperTest {
                 receiverId = 7L,
                 receiverName = "김수신",
                 senderName = "홍발신",
-                accessCode = "b7a3c9d1-1234-5678-9abc-def012345678",
             ).toDomain()
 
         assertEquals(7L, result.receiverId)
         assertEquals("김수신", result.receiverName)
         assertEquals("홍발신", result.senderName)
-        assertEquals("b7a3c9d1-1234-5678-9abc-def012345678", result.accessCode)
     }
 
     @Test

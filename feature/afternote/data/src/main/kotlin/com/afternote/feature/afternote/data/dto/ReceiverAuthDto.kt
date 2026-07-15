@@ -34,12 +34,19 @@ data class ReceiverEmailAuthVerifyRequestDto(
     @SerialName("authCode") val authCode: String,
 )
 
+/**
+ * `receiver-auth/email/verify` 성공 응답.
+ *
+ * 서버가 함께 내려주는 `accessCode`(마스터 키와 동일한 UUID)는 **의도적으로 매핑하지 않는다** —
+ * 수신하면 다음 단계인 마스터 키 입력에서 받을 값을 미리 아는 셈이라 그 단계가 무력화된다.
+ * 서버 측에서도 제거 예정이므로, 필드를 두지 않아야 제거 시점과 무관하게 파싱이 안전하다
+ * (`NetworkModule.provideJson` 의 `ignoreUnknownKeys` 가 잔여 키를 무시). 이슈 #454
+ */
 @Serializable
 data class ReceiverEmailAuthVerifyDto(
     @SerialName("receiverId") val receiverId: Long,
     @SerialName("receiverName") val receiverName: String,
     @SerialName("senderName") val senderName: String,
-    @SerialName("accessCode") val accessCode: String,
 )
 
 @Serializable
@@ -99,7 +106,6 @@ fun ReceiverEmailAuthVerifyDto.toDomain(): ReceiverEmailAuthResult =
         receiverId = receiverId,
         receiverName = receiverName,
         senderName = senderName,
-        accessCode = accessCode,
     )
 
 fun ReceiverAuthPresignedUrlDto.toDomain(): ReceiverAuthPresignedUrl =
