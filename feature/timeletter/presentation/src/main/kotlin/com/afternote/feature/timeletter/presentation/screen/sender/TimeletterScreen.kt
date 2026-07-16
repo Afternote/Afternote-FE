@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,11 +37,23 @@ fun TimeletterScreen(
     onLetterClick: (Long) -> Unit = {},
     modifier: Modifier = Modifier,
     onWriteClick: () -> Unit = {},
+    onEditClick: (Long) -> Unit = {},
     onFilterRecipientClick: () -> Unit = {},
     viewModel: TimeletterViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var viewMode by remember { mutableStateOf(ViewMode.List) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    val errorMessage = (uiState as? TimeletterUiState.Success)?.errorMessage
+    LaunchedEffect(errorMessage) {
+        errorMessage ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(
+            message = errorMessage,
+            withDismissAction = true,
+        )
+        viewModel.consumeErrorMessage()
+    }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(lifecycleOwner) {
@@ -52,6 +66,7 @@ fun TimeletterScreen(
         modifier = modifier,
         topBar = { HomeTopBar() },
         floatingActionButton = { PenFloatingActionButton(onClick = onWriteClick) },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { paddingValues ->
         when (val state = uiState) {
             is TimeletterUiState.Loading -> {
@@ -76,6 +91,8 @@ fun TimeletterScreen(
                     selectedFilterReceiverIds = state.selectedFilterReceiverIds,
                     onFilterClick = onFilterRecipientClick,
                     onLetterClick = onLetterClick,
+                    onEditClick = onEditClick,
+                    onDeleteClick = viewModel::deleteTimeLetter,
                     modifier = Modifier.padding(paddingValues),
                 )
             }

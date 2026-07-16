@@ -42,3 +42,7 @@ google-services.json
 # macOS 전용
 .DS_Store
 **/.DS_Store
+AGENTS.md
+
+.codex/
+.cursor/

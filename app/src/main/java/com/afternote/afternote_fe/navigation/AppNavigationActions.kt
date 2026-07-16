@@ -136,7 +136,11 @@ fun rememberTimeLetterNavActions(navController: NavController): TimeLetterNavAct
     remember(navController) {
         object : TimeLetterNavActions {
             override fun onNavigateToWrite() {
-                navController.navigate(TimeLetterRoute.TimeLetterWriteRoute)
+                navController.navigate(TimeLetterRoute.TimeLetterWriteRoute())
+            }
+
+            override fun onNavigateToEdit(timeLetterId: Long) {
+                navController.navigate(TimeLetterRoute.TimeLetterWriteRoute(timeLetterId = timeLetterId))
             }
 
             override fun onWriteBack() {
