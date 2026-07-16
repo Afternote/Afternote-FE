@@ -316,7 +316,7 @@ fun TimeLetterWriteScreen(
     if (uiState.showFreePlanLimitPopup) {
         Popup(
             type = PopupType.Variant2,
-            message = "현재 플랜은 달에 3건까지만 등록할 수 있습니다.\n구독시, 더 많은 타임레터를 제한 없이 \n 남기고 관리할 수 있습니다. ",
+            message = "현재 플랜은 타임레터를 3건까지만 등록할 수 있습니다.\n구독 시, 더 많은 타임레터를 제한 없이\n남기고 관리할 수 있습니다.",
             onConfirm = onFreePlanLimitConfirm,
             onDismiss = onFreePlanLimitDismiss,
             confirmText = "구독 후 기록하기",
