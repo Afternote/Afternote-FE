@@ -4,6 +4,8 @@ import com.afternote.core.ui.UiText
 
 data class DailyQuestionWriteUiState(
     val questionId: Long? = null,
+    /** "Day N" 배너 표기용 — 오늘의 질문이 서비스 기준 몇 일차인지. */
+    val questionDay: Int? = null,
     val questionContent: String = "",
     val answer: String = "",
     val imageUrl: String? = null,

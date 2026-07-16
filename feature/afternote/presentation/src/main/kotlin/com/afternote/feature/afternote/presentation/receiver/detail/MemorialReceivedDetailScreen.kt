@@ -23,10 +23,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,25 +46,25 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.LastWishesRadioGroup
 import com.afternote.feature.afternote.presentation.shared.MemorialGuidelineContent
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
+import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
 
 /**
- * MEMORIAL 카테고리의 수신자 측 detail prototype.
+ * MEMORIAL(추억 노트) 카테고리의 수신자 측 상세 화면.
  *
- * 현재 [ReceivedAfternoteDetailSuccessMapper] 의 MEMORIAL 분기는 디자이너 보류라
- * [com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent] 로 폴백
- * 한다. 디자인 확정 시 mapper 에 MEMORIAL UI 모델을 추가하고 [ReceivedAfternoteDetailRoute] 의
- * when 분기에서 본 화면을 호출하도록 wire-up 한다.
+ * [ReceivedAfternoteDetailRoute] 의 MEMORIAL 분기에서 호출된다. 표시 데이터는
+ * ReceivedAfternoteDetailSuccessMapper.kt 의 매퍼가 만든 [ReceivedMemorialDetailContent] 를
+ * Route 가 풀어 파라미터로 전달한다.
  *
  * 페어 sub-screen: [com.afternote.feature.afternote.presentation.receiver.playlist.MemorialPlaylistScreen]
- * (추모 플레이리스트 진입).
+ * (추억 플레이리스트 카드 클릭 → 전체보기 진입).
  */
 @Composable
 fun MemorialReceivedDetailScreen(
     senderName: String,
+    leaveMessage: String = "",
     onNavigateToFullList: () -> Unit = {},
     onNavigateToPlaylist: () -> Unit = {},
     onBackClick: () -> Unit = {},
@@ -77,28 +73,27 @@ fun MemorialReceivedDetailScreen(
     songCount: Int = 16,
     memorialVideoUrl: String? = null,
     memorialThumbnailUrl: String? = null,
-    showBottomBar: Boolean = true,
 ) {
-    var selectedBottomNavItem by remember { mutableStateOf(BottomNavTab.TIMELETTER) }
     profileImageResId ?: R.drawable.feature_afternote_img_default_profile_deceased
 
     Scaffold(
         containerColor = Color.Transparent,
         topBar = {
+            // statusBarsPadding: 엣지투엣지로 그려 콘텐츠가 상태바 아래까지 깔리므로, 상태바 높이만큼 top 패딩
+            // → 탑바가 상태바(시계·배터리) 밑에서 시작(겹침 방지). 동적 인셋이라 회전·분할화면에도 대응.
             Column(modifier = Modifier.statusBarsPadding()) {
                 DetailTopBar(
-                    title = "故${senderName}님의 애프터노트",
+                    title = "故 ${senderName}님의 애프터노트",
                     onBackClick = { onBackClick() },
                 )
             }
         },
         bottomBar = {
-            if (showBottomBar) {
-                BottomBar(
-                    selectedNavTab = selectedBottomNavItem,
-                    onTabClick = { selectedBottomNavItem = it },
-                )
-            }
+            // 시안: 상세에도 하단 바 노출 + 애프터노트(NOTE) 탭 선택. 수신자 흐름이라 탭 이동은 미정 — 시각만 (#274).
+            BottomBar(
+                selectedNavTab = BottomNavTab.NOTE,
+                onTabClick = {},
+            )
         },
     ) { innerPadding ->
         LazyColumn(
@@ -111,17 +106,8 @@ fun MemorialReceivedDetailScreen(
         ) {
             item {
                 MemorialGuidelineContent(
-                    introContent = {
-                        Text(
-                            text = "故 ${senderName}님의 애프터노트입니다.",
-                            style =
-                                AfternoteDesign.typography.textField.copy(
-                                    fontWeight = FontWeight.Medium,
-                                    color = AfternoteDesign.colors.gray9,
-                                ),
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    },
+                    // 시안: 상세 타이틀(TopBar) 아래 바로 프로필 — 별도 안내 문구 없음 (#274).
+                    introContent = {},
                     photoContent = {
                         Column(
                             modifier = Modifier.fillMaxWidth(),
@@ -132,24 +118,25 @@ fun MemorialReceivedDetailScreen(
                     },
                     playlistContent = {
                         MemorialPlaylist(
-                            label = "추모 플레이리스트",
+                            label = "추억 플레이리스트",
                             songCount = songCount,
                             albumCovers = albumCovers,
-                            onAddSongClick = null,
-                            onPlaylistClick = onNavigateToPlaylist,
+                            onCardClick = onNavigateToPlaylist,
                         )
                     },
                     lastWishContent = {
-                        LastWishesRadioGroup(
-                            displayTextOnly = "끼니 거르지 말고 건강 챙기고 지내.",
-                        )
+                        // 시안: "남기신 말씀" 섹션 — 형제 수신자 상세와 동일하게 공용 MessageSection(💬 헤더 + 인용 카드) 사용 (#274).
+                        MessageSection(message = leaveMessage)
                     },
                     sectionSpacing = 32.dp,
                     videoContent = {
-                        ReceiverVideoSection(
-                            memorialVideoUrl = memorialVideoUrl,
-                            memorialThumbnailUrl = memorialThumbnailUrl,
-                        )
+                        // 시안: 수신자 화면은 영상이 있을 때만 노출 (없으면 섹션 자체를 숨김, #274).
+                        if (!memorialVideoUrl.isNullOrBlank()) {
+                            ReceiverVideoSection(
+                                memorialVideoUrl = memorialVideoUrl,
+                                memorialThumbnailUrl = memorialThumbnailUrl,
+                            )
+                        }
                     },
                 )
             }
@@ -183,6 +170,8 @@ private fun ReceiverVideoSection(
                 modifier =
                     Modifier
                         .fillMaxWidth()
+                        // clip 을 clickable 앞에: 눌림 피드백이 InfoCard 의 12dp 둥근 모서리 안에서만 그려지게 (모서리 밖 사각 번짐 방지)
+                        .clip(RoundedCornerShape(12.dp))
                         .clickable {
                             val intent = Intent(Intent.ACTION_VIEW, memorialVideoUrl.toUri())
                             if (context.packageManager.resolveActivity(
@@ -286,10 +275,41 @@ private fun ReceiverSectionHeader(title: String = LABEL_VIDEO_SECTION) {
     )
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "No video")
 @Composable
 private fun PreviewMemorialReceivedDetail() {
     AfternoteTheme {
-        MemorialReceivedDetailScreen(senderName = "박서연", albumCovers = emptyList())
+        MemorialReceivedDetailScreen(
+            senderName = "박서연",
+            leaveMessage = "이 계정에는 우리 가족 여행 사진이 많아. 계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
+            // 프리뷰 대표 데이터: 실앱은 곡마다 coverUrl → 커버 로드. 프리뷰/스크린샷은 네트워크 미지원이라 회색 박스로 표시.
+            albumCovers =
+                listOf(
+                    AlbumCover(id = "1"),
+                    AlbumCover(id = "2"),
+                    AlbumCover(id = "3"),
+                ),
+            songCount = 3,
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "With video")
+@Composable
+private fun PreviewMemorialReceivedDetailWithVideo() {
+    AfternoteTheme {
+        MemorialReceivedDetailScreen(
+            senderName = "박서연",
+            leaveMessage = "이 계정에는 우리 가족 여행 사진이 많아. 계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
+            albumCovers =
+                listOf(
+                    AlbumCover(id = "1"),
+                    AlbumCover(id = "2"),
+                    AlbumCover(id = "3"),
+                ),
+            songCount = 3,
+            // 영상 섹션은 URL 있을 때만 노출 — 조건부 분기 상태 확인용 프리뷰 (썸네일은 네트워크 미지원이라 회색).
+            memorialVideoUrl = "https://example.com/memorial.mp4",
+        )
     }
 }

@@ -20,7 +20,7 @@ import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 import com.afternote.core.ui.R as CoreUiR
 
 /**
- * 수신자 목록 카드. 애프터노트 상세 화면(갤러리/소셜/추모 가이드라인)에서 공통 사용.
+ * 수신자 목록 카드. 애프터노트 상세 화면(갤러리/소셜/추억 노트)에서 공통 사용.
  *
  * [DetailSection] 뼈대를 재활용해 헤더(아이콘·라벨·가로선)와 아웃라인 카드 레이아웃을 맞춘다.
  * 수신자가 없으면 아무것도 표시하지 않음.

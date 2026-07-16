@@ -1,66 +1,34 @@
 package com.afternote.feature.mindrecord.data.mapper
 
-import com.afternote.feature.mindrecord.data.dto.MindRecordDetailResponse
-import com.afternote.feature.mindrecord.data.dto.MindRecordListItem
-import com.afternote.feature.mindrecord.data.dto.MindRecordListResponse
-import com.afternote.feature.mindrecord.domain.model.MindRecordDetail
-import com.afternote.feature.mindrecord.domain.model.MindRecordList
-import com.afternote.feature.mindrecord.domain.model.MindRecordMedia
-import com.afternote.feature.mindrecord.domain.model.MindRecordMediaType
+import com.afternote.feature.mindrecord.data.dto.ReceiverDailyQuestionItem
+import com.afternote.feature.mindrecord.data.dto.ReceiverDiaryItem
 import com.afternote.feature.mindrecord.domain.model.MindRecordSummary
 import com.afternote.feature.mindrecord.domain.model.MindRecordType
-import com.afternote.feature.mindrecord.data.dto.MindRecordMedia as MindRecordMediaDto
-import com.afternote.feature.mindrecord.data.dto.MindRecordMediaType as MindRecordMediaTypeDto
-import com.afternote.feature.mindrecord.data.dto.MindRecordType as MindRecordTypeDto
 
-fun MindRecordListResponse.toDomain(): MindRecordList =
-    MindRecordList(
-        mindRecords = mindRecords.map { it.toDomain() },
-        totalCount = totalCount,
-    )
+// 서버 createdAt 은 "yyyy.MM.dd 요일" — 기간 필터/정렬용 recordDate 는 ISO(yyyy-MM-dd)로 정규화.
+private fun String.toIsoDate(): String = take(10).replace('.', '-')
 
-fun MindRecordListItem.toDomain(): MindRecordSummary =
+fun ReceiverDailyQuestionItem.toDomain(): MindRecordSummary =
     MindRecordSummary(
-        id = id,
-        type = type.toDomain(),
+        id = userDailyQuestionId,
+        type = MindRecordType.DAILY_QUESTION,
         title = title,
-        recordDate = recordDate,
-        isDraft = isDraft,
-        senderName = senderName,
-        createdAt = createdAt,
-    )
-
-fun MindRecordDetailResponse.toDomain(): MindRecordDetail =
-    MindRecordDetail(
-        id = id,
-        type = type.toDomain(),
-        title = title,
-        recordDate = recordDate,
         content = content,
-        senderName = senderName,
+        recordDate = createdAt.toIsoDate(),
+        // 데일리질문 수신자 응답은 isDraft 미노출 — 서버가 draft 를 전달 대상에서 제외한다고 가정.
+        isDraft = false,
         createdAt = createdAt,
-        questionId = questionId,
-        questionContent = questionContent,
-        category = category,
-        mediaList = imageList.map { it.toDomain() },
-    )
-
-fun MindRecordMediaDto.toDomain(): MindRecordMedia =
-    MindRecordMedia(
-        id = id,
-        mediaType = mediaType.toDomain(),
         imageUrl = imageUrl,
     )
 
-fun MindRecordTypeDto.toDomain(): MindRecordType =
-    when (this) {
-        MindRecordTypeDto.DAILY_QUESTION -> MindRecordType.DAILY_QUESTION
-        MindRecordTypeDto.DIARY -> MindRecordType.DIARY
-        MindRecordTypeDto.DEEP_THOUGHT -> MindRecordType.DEEP_THOUGHT
-    }
-
-fun MindRecordMediaTypeDto.toDomain(): MindRecordMediaType =
-    when (this) {
-        MindRecordMediaTypeDto.IMAGE -> MindRecordMediaType.IMAGE
-        MindRecordMediaTypeDto.VIDEO -> MindRecordMediaType.VIDEO
-    }
+fun ReceiverDiaryItem.toDomain(): MindRecordSummary =
+    MindRecordSummary(
+        id = diaryId,
+        type = MindRecordType.DIARY,
+        title = title,
+        content = content,
+        recordDate = date.ifBlank { createdAt.toIsoDate() },
+        isDraft = isDraft,
+        createdAt = createdAt,
+        imageUrl = imageUrl,
+    )

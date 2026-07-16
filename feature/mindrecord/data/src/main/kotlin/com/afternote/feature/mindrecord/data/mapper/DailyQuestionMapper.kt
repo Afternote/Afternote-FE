@@ -21,6 +21,7 @@ fun DailyQuestionListItem.toDomain(): DailyQuestion =
 fun TodayDailyQuestionResponse.toDomain(): TodayDailyQuestion =
     TodayDailyQuestion(
         questionId = questionId,
+        day = day,
         content = content,
         isAnswered = isAnswered,
     )

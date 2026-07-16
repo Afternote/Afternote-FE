@@ -16,7 +16,6 @@
     <string name="receiver_home_mindrecord_total_label">TOTAL</string>
     <string name="receiver_home_mindrecord_daily_question">데일리 질문</string>
     <string name="receiver_home_mindrecord_diary">일기</string>
-    <string name="receiver_home_mindrecord_deep_thought">깊은 생각</string>
     <string name="receiver_home_afternote_extra_count">+%1$d</string>
     <string name="receiver_home_mindrecord_section_title">마음의 기록</string>
     <string name="receiver_home_mindrecord_section_desc">고인의 일상적인 생각과 감정, 일기들입니다.</string>

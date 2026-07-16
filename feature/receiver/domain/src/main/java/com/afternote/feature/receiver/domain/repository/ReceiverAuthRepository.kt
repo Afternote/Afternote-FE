@@ -39,9 +39,13 @@ interface ReceiverAuthRepository {
 
     suspend fun getPresignedUrl(extension: String): Result<ReceiverAuthPresignedUrl>
 
+    /**
+     * 사망확인 서류 제출 — 두 URL 중 **하나 이상** 은 non-null 이어야 한다 (서버가 최소 1개 요구).
+     * 둘 다 null 인 호출은 서버가 거절하므로 호출부(ViewModel)가 사전 차단한다.
+     */
     suspend fun submitDeliveryVerification(
-        deathCertificateUrl: String,
-        familyRelationCertificateUrl: String,
+        deathCertificateUrl: String?,
+        familyRelationCertificateUrl: String?,
     ): Result<DeliveryVerification>
 
     suspend fun getDeliveryVerificationStatus(): Result<DeliveryVerification>

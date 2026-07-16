@@ -29,7 +29,6 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionListCard
 import com.afternote.feature.mindrecord.presentation.component.EmotionKeywordCard
-import com.afternote.feature.mindrecord.presentation.component.InsightCard
 import com.afternote.feature.mindrecord.presentation.component.WeeklyMoodCalendar
 import com.afternote.feature.mindrecord.presentation.component.WeeklyReportReviewCard
 import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportUiState
@@ -95,7 +94,7 @@ private fun WeeklyReportContent(
             }
         }
 
-        // TOP KEYWORDS 섹션 — py=8, gap=12 (divider + 감정 카드 + INSIGHT 카드).
+        // TOP KEYWORDS 섹션 — py=8, gap=12 (divider + 감정 카드). Figma 852:11581 에는 INSIGHT 카드 없음.
         item {
             Column(
                 modifier = Modifier.padding(vertical = 8.dp),
@@ -111,7 +110,6 @@ private fun WeeklyReportContent(
                             state.summaryText
                         },
                 )
-                InsightCard(bodyText = state.summaryText)
             }
         }
 

@@ -12,7 +12,6 @@ import com.afternote.core.ui.Route
 import com.afternote.feature.afternote.presentation.AfternoteHostViewModel
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.AddSongViewModel
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.MemorialPlaylistEntry
-import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.MemorialPlaylistEntryActions
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 
@@ -20,7 +19,7 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.Afte
  * Afternote 피처의 네비게이션 그래프.
  *
  * 앱 모듈의 NavHost에 직접 연결되며, [Route.Afternote]를 graph route로 사용합니다.
- * [AfternoteHostViewModel]은 그래프 스코프에서 추모 플레이리스트 곡 목록 SSOT만 보유하며,
+ * [AfternoteHostViewModel]은 그래프 스코프에서 추억 플레이리스트 곡 목록 SSOT만 보유하며,
  * Compose UI 객체(TextFieldState·SnapshotStateList·UI 파사드)는 보유하지 않습니다.
  *
  * 네비게이션 호출은 [AfternoteNavActions]로만 전달합니다. 작성자 표시명 등 UI 데이터는
@@ -95,13 +94,10 @@ fun NavGraphBuilder.afternoteNavGraph(
             val graphSongs by hostViewModel.playlistSongs.collectAsStateWithLifecycle()
             MemorialPlaylistEntry(
                 songs = graphSongs,
-                actions =
-                    MemorialPlaylistEntryActions(
-                        onBackClick = actions::popBack,
-                        onNavigateToAddSongScreen = actions::navigateToAddSong,
-                        onClearAllSongs = hostViewModel::clearAllSongs,
-                        onRemoveSongs = hostViewModel::removeSongs,
-                    ),
+                onBackClick = actions::popBack,
+                onNavigateToAddSongScreen = actions::navigateToAddSong,
+                onClearAllSongs = hostViewModel::clearAllSongs,
+                onRemoveSongs = hostViewModel::removeSongs,
             )
         }
 

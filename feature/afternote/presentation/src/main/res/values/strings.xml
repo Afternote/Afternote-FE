@@ -29,9 +29,8 @@
     <string name="daily_answer_title">나의 모든 기록</string>
     <string name="daily_answer_intro_line1_suffix">님에게 전달 될</string>
     <string name="daily_answer_intro_line2">데일리 질문 답변입니다.</string>
-    <string name="receiver_mindrecord_intro_line2">마음의 기록 (일기, 깊은 생각, 데일리 질문 답변)입니다.</string>
+    <string name="receiver_mindrecord_intro_line2">마음의 기록 (일기, 데일리 질문 답변)입니다.</string>
     <string name="receiver_mindrecord_type_diary">일기</string>
-    <string name="receiver_mindrecord_type_deep_thought">깊은 생각</string>
     <string name="receiver_mindrecord_type_daily_question">데일리 질문 답변</string>
     <string name="receiver_delivery_row_mind_records">마음의 기록</string>
     <string name="daily_answer_sample_question">오늘 하루, 누구에게 가장 고마웠나요?</string>
@@ -43,9 +42,10 @@
     <string name="afternote_last_written_date">최종 작성일 %1$s.</string>
     <string name="receiver_afternote_item_instagram">인스타그램</string>
     <string name="receiver_afternote_item_gallery">갤러리</string>
-    <string name="receiver_afternote_item_memorial_guideline">추모 가이드라인</string>
+    <string name="receiver_afternote_item_memorial_guideline">추억 노트</string>
     <string name="receiver_afternote_item_naver_mail">네이버 메일</string>
     <string name="receiver_memorial_video_no_app">영상을 재생할 수 있는 앱이 없습니다.</string>
+    <string name="receiver_memorial_playlist_screen_title">%1$s님의 플레이리스트</string>
 
     <string name="receiver_sender_record_title">故 %1$s님이 남기신 기록</string>
     <string name="receiver_afternote_section_count">%1$d개의 애프터노트가 있습니다.</string>
@@ -83,13 +83,13 @@
     <string name="afternote_category_business">비즈니스</string>
     <string name="afternote_category_gallery_and_files">갤러리 및 파일</string>
     <string name="afternote_category_estate">재산 처리</string>
-    <string name="afternote_category_memorial">추모 가이드라인</string>
+    <string name="afternote_category_memorial">추억 노트</string>
     <!-- Edit-screen category dropdown; must stay in sync with [EditorCategory.displayLabel] for [EditorCategory.fromDisplayLabel]. -->
     <string name="afternote_editor_category_social">소셜네트워크</string>
     <string name="afternote_editor_category_business">비즈니스</string>
     <string name="afternote_editor_category_gallery">갤러리 및 파일</string>
     <string name="afternote_editor_category_estate">재산 처리</string>
-    <string name="afternote_editor_category_memorial">추모 가이드라인</string>
+    <string name="afternote_editor_category_memorial">추억 노트</string>
     <!-- BUSINESS·ESTATE 카테고리 placeholder (디자인 확정 전 임시 화면) -->
     <string name="afternote_editor_category_unimplemented_title">준비 중인 카테고리예요</string>
     <string name="afternote_editor_category_unimplemented_description">디자인 확정 후 입력 화면이 제공됩니다.\n다른 카테고리를 먼저 이용해 주세요.</string>
@@ -172,7 +172,7 @@
     <string name="receiver_verify_error_network">네트워크 연결을 확인해주세요.</string>
     <string name="receiver_verify_error_unknown">마스터 키 검증에 실패했습니다.</string>
     <string name="receiver_verify_complete_confirm">확인</string>
-    <string name="receiver_verify_documents_required">사망진단서와 가족관계증명서를 모두 업로드해주세요.</string>
+    <string name="receiver_verify_documents_required">사망진단서 또는 가족관계증명서 중 하나 이상 업로드해주세요.</string>
     <string name="receiver_verify_document_upload_failed">서류 업로드에 실패했습니다.</string>
     <string name="receiver_verify_submit_failed">열람 신청에 실패했습니다.</string>
     <string name="receiver_verify_complete_title">열람 신청 완료</string>
@@ -232,7 +232,7 @@
     <string name="afternote_validation_gallery_receivers_required">수신자를 한 명 이상 등록해 주세요. 설정에서 수신자를 등록해 주세요.</string>
     <string name="afternote_validation_receivers_required">수신자를 한 명 이상 선택해 주세요.</string>
     <string name="afternote_validation_playlist_songs_required">플레이리스트에 노래를 한 곡 이상 추가해 주세요.</string>
-    <string name="afternote_default_playlist_song_title">추모 플레이리스트 곡</string>
+    <string name="afternote_default_playlist_song_title">추억 플레이리스트 곡</string>
 
     <string name="time_letter_detail_send_date">발송 예정일: %1$s</string>
     <string name="time_letter_detail_delivery_date">발송 일자: %1$s</string>
@@ -293,9 +293,8 @@
     <string name="afternote_editor_last_wish_other">기타(직접 입력)</string>
     <string name="afternote_editor_custom_service_dialog_title">직접 입력하기</string>
     <string name="afternote_editor_custom_service_name_label">추가 서비스명</string>
-    <string name="afternote_editor_playlist_screen_title">추모 플레이리스트</string>
-    <string name="afternote_editor_playlist_add_screen_title">추모 플레이리스트 추가</string>
-    <string name="afternote_editor_playlist_current_header">현재 플레이리스트</string>
+    <string name="afternote_editor_playlist_screen_title">추억 플레이리스트</string>
+    <string name="afternote_editor_playlist_add_screen_title">추억 플레이리스트 추가</string>
     <string name="afternote_editor_playlist_song_count_format">총 %1$d곡</string>
     <string name="afternote_editor_playlist_add_songs">노래 추가하기</string>
     <string name="afternote_editor_playlist_delete_all">전체 삭제</string>

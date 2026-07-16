@@ -46,7 +46,6 @@ internal fun receiverHomeScreenSuccessScreenshot() {
                             totalCount = 24,
                             dailyQuestionCount = 10,
                             diaryCount = 8,
-                            deepThoughtCount = 6,
                         ),
                     timeLetterTotalCount = 3,
                     afternoteTotalCount = 5,

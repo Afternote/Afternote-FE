@@ -103,7 +103,6 @@ class ReceiverHomeViewModel
                                     totalCount = mindRecordsCount,
                                     dailyQuestionCount = 0,
                                     diaryCount = 0,
-                                    deepThoughtCount = 0,
                                 ),
                             timeLetterTotalCount = timeLettersCount,
                             afternoteTotalCount = afternotesResult.totalCount,

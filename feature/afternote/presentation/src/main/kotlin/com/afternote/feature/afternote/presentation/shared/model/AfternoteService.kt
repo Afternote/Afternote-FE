@@ -7,7 +7,7 @@ import com.afternote.feature.afternote.presentation.R
 /**
  * Maps API [typeKey] (when present), UI display keys / service titles, and label + icon resources.
  *
- * Replaces the former parallel [DISPLAY_ENTRIES] table in [com.afternote.feature.afternote.presentation.shared.util.AfternoteDisplayRes].
+ * Replaces the former parallel `DISPLAY_ENTRIES` table in AfternoteDisplayRes.kt.
  */
 enum class AfternoteService(
     val typeKey: String?,
@@ -47,7 +47,7 @@ enum class AfternoteService(
     ),
     MEMORIAL_GUIDELINE(
         typeKey = "GUIDE",
-        displayKey = "추모 가이드라인",
+        displayKey = "추억 노트",
         stringResId = R.string.receiver_afternote_item_memorial_guideline,
         iconResId = R.drawable.feature_afternote_ic_memorial_guideline,
     ),

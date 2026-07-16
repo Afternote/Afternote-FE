@@ -28,3 +28,19 @@ internal fun memorialPlaylistEntryWithSongsScreenshot() {
         )
     }
 }
+
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+internal fun memorialPlaylistEntrySelectionScreenshot() {
+    AfternoteTheme {
+        MemorialPlaylistEntry(
+            songs =
+                listOf(
+                    Song(id = "1", title = "노래 제목 1", artist = "아티스트 1", albumCoverUrl = null),
+                    Song(id = "2", title = "노래 제목 2", artist = "아티스트 2", albumCoverUrl = null),
+                ),
+            initialSelectedSongIds = setOf("1"),
+        )
+    }
+}
