@@ -37,6 +37,7 @@ fun LoginEntry(
     onLoginSuccess: () -> Unit,
     onNewUserOnboarding: () -> Unit,
     onSignUpClick: () -> Unit,
+    onFindAccountClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LoginViewModel = hiltViewModel(),
@@ -95,6 +96,7 @@ fun LoginEntry(
         onPasswordChange = viewModel::updatePassword,
         onLoginClick = { withClearFocus { viewModel.loginWithEmail() } },
         onSignUpClick = { withClearFocus { onSignUpClick() } },
+        onFindAccountClick = { withClearFocus { onFindAccountClick() } },
         onKakaoLoginClick = {
             withClearFocus {
                 val activity = context.findActivity<Activity>()

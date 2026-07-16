@@ -66,6 +66,10 @@ fun rememberOnboardingNavActions(navController: NavController): OnboardingNavAct
                 navController.popBackStack()
             }
 
+            override fun navigateToFindId() {
+                navController.navigate(OnboardingRoute.FindIdRoute)
+            }
+
             override fun proceedToSignUpResidentNumber() {
                 navController.navigate(OnboardingRoute.SignUpResidentNumberRoute)
             }

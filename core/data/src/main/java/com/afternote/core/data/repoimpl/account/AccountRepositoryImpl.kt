@@ -3,6 +3,9 @@ package com.afternote.core.data.repoimpl.account
 import com.afternote.core.data.mapper.auth.AuthMapper
 import com.afternote.core.domain.repository.account.AccountRepository
 import com.afternote.core.model.AccountRegistration
+import com.afternote.core.model.FoundAccount
+import com.afternote.core.network.dto.EmailFindRequestDto
+import com.afternote.core.network.dto.FindSendCodeRequestDto
 import com.afternote.core.network.dto.PasswordChangeRequestDto
 import com.afternote.core.network.dto.SendEmailCodeRequestDto
 import com.afternote.core.network.dto.SignUpRequestDto
@@ -35,6 +38,28 @@ class AccountRepositoryImpl
                             certificateCode,
                         ),
                     ).requireStatus()
+            }
+
+        override suspend fun sendFindCode(email: String): Result<Unit> =
+            runCatching {
+                accountApiService
+                    .sendFindCode(FindSendCodeRequestDto(email))
+                    .requireStatus()
+            }
+
+        override suspend fun findAccount(
+            email: String,
+            certificateCode: String,
+        ): Result<FoundAccount> =
+            runCatching {
+                val response =
+                    accountApiService.findEmail(
+                        EmailFindRequestDto(
+                            email,
+                            certificateCode,
+                        ),
+                    )
+                AuthMapper.toFoundAccount(response.requireData())
             }
 
         override suspend fun signUp(

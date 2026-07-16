@@ -40,4 +40,7 @@ interface OnboardingNavActions {
     fun proceedToProfile()
 
     fun navigateToTermsDetail()
+
+    /** 로그인 → 아이디 찾기. */
+    fun navigateToFindId()
 }

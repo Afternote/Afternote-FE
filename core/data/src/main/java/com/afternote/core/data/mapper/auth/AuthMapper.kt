@@ -1,8 +1,10 @@
 package com.afternote.core.data.mapper.auth
 
 import com.afternote.core.model.AccountRegistration
+import com.afternote.core.model.FoundAccount
 import com.afternote.core.model.Session
 import com.afternote.core.model.TokenBundle
+import com.afternote.core.network.dto.EmailFindDto
 import com.afternote.core.network.dto.LoginDto
 import com.afternote.core.network.dto.ReissueDto
 import com.afternote.core.network.dto.SignUpDto
@@ -12,6 +14,8 @@ import com.afternote.core.network.dto.SignUpDto
  */
 object AuthMapper {
     fun toSignUpResult(dto: SignUpDto): AccountRegistration = AccountRegistration(userId = dto.userId, email = dto.email)
+
+    fun toFoundAccount(dto: EmailFindDto): FoundAccount = FoundAccount(name = dto.name, email = dto.email)
 
     fun toDefaultLoginResult(dto: LoginDto.DefaultLoginDto): Session.DefaultSession =
         Session.DefaultSession(
