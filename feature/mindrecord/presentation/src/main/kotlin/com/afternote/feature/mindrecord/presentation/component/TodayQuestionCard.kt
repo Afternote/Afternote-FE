@@ -1,6 +1,5 @@
 package com.afternote.feature.mindrecord.presentation.component
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,10 +10,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -39,22 +38,21 @@ fun TodayQuestionCard(
     questionText: String = stringResource(mindrecord_daily_question_default_today),
     onAnswerClick: () -> Unit = {},
 ) {
-    val gradientBrush =
-        remember {
-            Brush.linearGradient(
-                colors = listOf(TodayQuestionCardGradientStart, TodayQuestionCardGradientEnd),
-                start = Offset.Zero,
-                end = Offset.Infinite,
-            )
-        }
-
     Column(
         modifier =
             modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(gradientBrush)
-                .padding(30.dp),
+                .clip(RoundedCornerShape(8.dp))
+                // Figma 2372:52503 — 하단 중앙에서 퍼지는 radial gradient (#B7CDC0 → #F8F8F7)
+                .drawWithCache {
+                    val brush =
+                        Brush.radialGradient(
+                            colors = listOf(TodayQuestionCardGradientEnd, TodayQuestionCardGradientStart),
+                            center = Offset(size.width / 2f, size.height),
+                            radius = size.width,
+                        )
+                    onDrawBehind { drawRect(brush) }
+                }.padding(30.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),

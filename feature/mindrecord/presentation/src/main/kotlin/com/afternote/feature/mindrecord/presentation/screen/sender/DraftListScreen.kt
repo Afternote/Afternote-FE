@@ -15,15 +15,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,17 +30,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.afternote.core.ui.R
 import com.afternote.core.ui.asString
+import com.afternote.core.ui.button.AfternoteCircularCheckbox
+import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
@@ -50,19 +47,39 @@ import com.afternote.feature.mindrecord.presentation.viewmodel.DraftCategory
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftItem
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftListViewModel
+import kotlinx.coroutines.delay
+import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 
+private val DateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy. MM. dd.")
+private const val DELETED_TOAST_DURATION_MS = 2_000L
+
 /**
- * 임시저장 목록 화면. Figma 노드 1716:13536 — 카테고리 필터 칩 + 총 개수 + 항목 리스트.
+ * 임시저장 목록 화면. Figma 2372:22842 (기본) / 2372:23669 (선택 모드) / 2372:25044 (삭제 토스트).
  */
 @Composable
 fun DraftListScreen(
     modifier: Modifier = Modifier,
     onBackClick: () -> Unit = {},
+    /** 일기 draft 탭 → 이어쓰기. (draftId, 해당 달 `yyyy-MM`) 전달. */
+    onDiaryDraftClick: (Long, String) -> Unit = { _, _ -> },
     viewModel: DraftListViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var selectionMode by remember { mutableStateOf(false) }
+    var selectedKeys by remember { mutableStateOf(setOf<String>()) }
+
+    val deleteCompleted = (uiState as? DraftListUiState.Success)?.deleteCompleted == true
+    LaunchedEffect(deleteCompleted) {
+        if (deleteCompleted) {
+            selectedKeys = emptySet()
+            selectionMode = false
+            delay(DELETED_TOAST_DURATION_MS)
+            viewModel.consumeDeleteCompleted()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -70,15 +87,26 @@ fun DraftListScreen(
                 title = stringResource(MindRecordR.string.mindrecord_draft_list_title),
                 onBackClick = onBackClick,
                 actions = {
+                    // Figma 2372:22854 — 우측 상단 "선택" / "완료" 토글 버튼
                     Box(
                         modifier =
                             Modifier
                                 .clip(RoundedCornerShape(6.dp))
                                 .background(AfternoteDesign.colors.gray2)
-                                .padding(horizontal = 18.dp, vertical = 8.dp),
+                                .clickable(role = Role.Button) {
+                                    selectionMode = !selectionMode
+                                    if (!selectionMode) selectedKeys = emptySet()
+                                }.padding(horizontal = 18.dp, vertical = 8.dp),
                     ) {
                         Text(
-                            text = stringResource(MindRecordR.string.mindrecord_draft_list_edit),
+                            text =
+                                stringResource(
+                                    if (selectionMode) {
+                                        MindRecordR.string.mindrecord_draft_list_done
+                                    } else {
+                                        MindRecordR.string.mindrecord_draft_list_select
+                                    },
+                                ),
                             style = AfternoteDesign.typography.bodySmallB,
                             color = AfternoteDesign.colors.gray6,
                         )
@@ -105,8 +133,33 @@ fun DraftListScreen(
                 is DraftListUiState.Success -> {
                     SuccessContent(
                         state = state,
-                        onFilterChanged = viewModel::onFilterChanged,
+                        selectionMode = selectionMode,
+                        selectedKeys = selectedKeys,
+                        onToggleSelect = { key ->
+                            selectedKeys =
+                                if (key in selectedKeys) selectedKeys - key else selectedKeys + key
+                        },
+                        onDeleteAll = viewModel::deleteAll,
+                        onDeleteSelected = {
+                            viewModel.delete(state.items.filter { it.key() in selectedKeys })
+                        },
+                        onItemClick = { item ->
+                            // 이어쓰기는 일기만 지원.
+                            if (item.category == DraftCategory.Diary) {
+                                onDiaryDraftClick(item.id, YearMonth.from(item.date).toString())
+                            }
+                        },
                     )
+
+                    // Figma 2372:25211 — 삭제 완료 토스트
+                    if (state.deleteCompleted) {
+                        DeletedToast(
+                            modifier =
+                                Modifier
+                                    .align(Alignment.TopCenter)
+                                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                        )
+                    }
                 }
             }
         }
@@ -116,171 +169,193 @@ fun DraftListScreen(
 @Composable
 private fun SuccessContent(
     state: DraftListUiState.Success,
-    onFilterChanged: (DraftCategory) -> Unit,
+    selectionMode: Boolean,
+    selectedKeys: Set<String>,
+    onToggleSelect: (String) -> Unit,
+    onDeleteAll: () -> Unit,
+    onDeleteSelected: () -> Unit,
+    onItemClick: (DraftItem) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        FilterRow(
-            selected = state.filter,
-            totalCount = state.totalCount,
-            onFilterChanged = onFilterChanged,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        if (state.filtered.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize().padding(20.dp), contentAlignment = Alignment.Center) {
-                Text(
-                    text = stringResource(MindRecordR.string.mindrecord_draft_list_empty),
-                    style = AfternoteDesign.typography.captionLargeR,
-                    color = AfternoteDesign.colors.gray6,
-                )
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                items(state.filtered, key = { "${it.category.name}-${it.id}" }) { item ->
-                    DraftRow(item)
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
+            Text(
+                text =
+                    if (selectionMode) {
+                        stringResource(MindRecordR.string.mindrecord_draft_list_total_selected, selectedKeys.size)
+                    } else {
+                        stringResource(MindRecordR.string.mindrecord_draft_list_total, state.totalCount)
+                    },
+                style = AfternoteDesign.typography.footnoteCaption,
+                color = AfternoteDesign.colors.gray9,
+                modifier = Modifier.padding(vertical = 8.dp),
+            )
+            if (state.items.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize().padding(20.dp), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = stringResource(MindRecordR.string.mindrecord_draft_list_empty),
+                        style = AfternoteDesign.typography.captionLargeR,
+                        color = AfternoteDesign.colors.gray6,
+                    )
+                }
+            } else {
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    items(state.items, key = { it.key() }) { item ->
+                        DraftRow(
+                            item = item,
+                            selectionMode = selectionMode,
+                            selected = item.key() in selectedKeys,
+                            onToggleSelect = { onToggleSelect(item.key()) },
+                            onClick = { onItemClick(item) },
+                        )
+                    }
                 }
             }
+        }
+
+        // Figma 2372:24660 — 선택 모드 하단 "전체 삭제 | 선택 삭제" 바
+        if (selectionMode) {
+            DeleteActionBar(
+                onDeleteAll = onDeleteAll,
+                onDeleteSelected = onDeleteSelected,
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+            )
         }
     }
 }
 
 @Composable
-private fun FilterRow(
-    selected: DraftCategory,
-    totalCount: Int,
-    onFilterChanged: (DraftCategory) -> Unit,
+private fun DraftRow(
+    item: DraftItem,
+    selectionMode: Boolean,
+    selected: Boolean,
+    onToggleSelect: () -> Unit,
+    onClick: () -> Unit = {},
 ) {
-    var expanded by remember { mutableStateOf(false) }
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .then(
+                    if (selectionMode) {
+                        Modifier.clickable(role = Role.Checkbox, onClick = onToggleSelect)
+                    } else {
+                        Modifier.clickable(onClick = onClick)
+                    },
+                ).padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box {
-            Row(
-                modifier =
-                    Modifier
-                        .clip(CircleShape)
-                        .background(AfternoteDesign.colors.gray2)
-                        .clickable { expanded = true }
-                        .padding(horizontal = 16.dp, vertical = 9.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = selected.label(),
-                    style = AfternoteDesign.typography.captionLargeR,
-                    color = AfternoteDesign.colors.gray9,
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(
-                    painter = painterResource(R.drawable.core_ui_arrowdown),
-                    contentDescription = null,
-                    tint = AfternoteDesign.colors.gray9,
-                    modifier = Modifier.size(8.dp),
-                )
-            }
-            if (expanded) {
-                FilterDropdown(
-                    selected = selected,
-                    onSelect = {
-                        onFilterChanged(it)
-                        expanded = false
-                    },
-                    onDismiss = { expanded = false },
-                )
-            }
+        if (selectionMode) {
+            AfternoteCircularCheckbox(
+                state = if (selected) CheckboxState.Default else CheckboxState.None,
+                size = 24.dp,
+                onClick = onToggleSelect,
+            )
+            Spacer(modifier = Modifier.width(16.dp))
         }
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = "총 ",
-                style = AfternoteDesign.typography.footnoteCaption,
-                color = AfternoteDesign.colors.gray9,
-            )
-            Text(
-                text = totalCount.toString(),
-                style = AfternoteDesign.typography.footnoteCaption,
-                color = AfternoteDesign.colors.gray6,
-            )
-            Text(
-                text = "개",
-                style = AfternoteDesign.typography.footnoteCaption,
-                color = AfternoteDesign.colors.gray9,
-            )
-        }
-    }
-}
-
-@Composable
-private fun FilterDropdown(
-    selected: DraftCategory,
-    onSelect: (DraftCategory) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    Popup(
-        alignment = Alignment.TopStart,
-        onDismissRequest = onDismiss,
-        properties = PopupProperties(focusable = true),
-    ) {
-        Surface(
-            modifier = Modifier.width(132.dp),
-            shape = RoundedCornerShape(8.dp),
-            color = Color.White,
-            shadowElevation = 10.dp,
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Column {
-                DraftCategory.entries.forEach { category ->
-                    Text(
-                        text = category.label(),
-                        style = AfternoteDesign.typography.bodySmallR,
-                        color = AfternoteDesign.colors.gray9,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable { onSelect(category) }
-                                .padding(16.dp),
-                    )
-                }
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = item.category.label(),
+                    style = AfternoteDesign.typography.footnoteCaption,
+                    color = AfternoteDesign.colors.gray6,
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text =
+                        stringResource(
+                            MindRecordR.string.mindrecord_draft_list_written_date,
+                            DateFormatter.format(item.date),
+                        ),
+                    style = AfternoteDesign.typography.footnoteCaption,
+                    color = AfternoteDesign.colors.gray6,
+                )
             }
+            Text(
+                text = item.title.ifBlank { item.content.htmlToPlainText() },
+                style = AfternoteDesign.typography.bodySmallR,
+                color = AfternoteDesign.colors.gray9,
+            )
+            HorizontalDivider(thickness = 0.5.dp, color = AfternoteDesign.colors.gray3)
         }
     }
 }
 
 @Composable
-private fun DraftRow(item: DraftItem) {
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+private fun DeleteActionBar(
+    onDeleteAll: () -> Unit,
+    onDeleteSelected: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(AfternoteDesign.colors.gray9)
+                .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .clickable(role = Role.Button, onClick = onDeleteAll)
+                    .padding(vertical = 12.dp),
+            contentAlignment = Alignment.Center,
+        ) {
             Text(
-                text = item.category.label(),
-                style = AfternoteDesign.typography.footnoteCaption,
-                color = AfternoteDesign.colors.gray6,
-            )
-            Spacer(modifier = Modifier.weight(1f))
-            Text(
-                text = DateFormatter.format(item.date),
-                style = AfternoteDesign.typography.footnoteCaption,
-                color = AfternoteDesign.colors.gray6,
+                text = stringResource(MindRecordR.string.mindrecord_draft_list_delete_all),
+                style = AfternoteDesign.typography.bodySmallB,
+                color = AfternoteDesign.colors.white,
             )
         }
-        Text(
-            text = item.content.htmlToPlainText(),
-            style = AfternoteDesign.typography.bodySmallR,
-            color = AfternoteDesign.colors.gray9,
+        VerticalDivider(
+            modifier = Modifier.height(16.dp),
+            color = AfternoteDesign.colors.gray6,
         )
-        HorizontalDivider(thickness = 0.5.dp, color = AfternoteDesign.colors.gray3)
+        Box(
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .clickable(role = Role.Button, onClick = onDeleteSelected)
+                    .padding(vertical = 12.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = stringResource(MindRecordR.string.mindrecord_draft_list_delete_selected),
+                style = AfternoteDesign.typography.bodySmallB,
+                color = AfternoteDesign.colors.white,
+            )
+        }
     }
 }
 
-private val DateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy. MM. dd.")
+@Composable
+private fun DeletedToast(modifier: Modifier = Modifier) {
+    Box(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(AfternoteDesign.colors.gray9)
+                .padding(vertical = 18.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = stringResource(MindRecordR.string.mindrecord_draft_list_deleted_toast),
+            style = AfternoteDesign.typography.bodySmallR,
+            color = AfternoteDesign.colors.white,
+        )
+    }
+}
+
+private fun DraftItem.key(): String = "${category.name}-$id"
 
 @Composable
 private fun DraftCategory.label(): String =
@@ -288,13 +363,27 @@ private fun DraftCategory.label(): String =
         DraftCategory.All -> stringResource(MindRecordR.string.mindrecord_draft_list_filter_all)
         DraftCategory.DailyQuestion -> stringResource(MindRecordR.string.mindrecord_draft_list_filter_daily)
         DraftCategory.Diary -> stringResource(MindRecordR.string.mindrecord_draft_list_filter_diary)
-        DraftCategory.DeepThought -> stringResource(MindRecordR.string.mindrecord_draft_list_filter_deep_thought)
     }
 
 @Preview(showBackground = true)
 @Composable
-private fun DraftListScreenPreview() {
+private fun DraftRowPreview() {
     AfternoteTheme {
-        // ViewModel 의존이 있어 Preview는 비워둠
+        Column {
+            DraftRow(
+                item =
+                    DraftItem(
+                        id = 1L,
+                        category = DraftCategory.Diary,
+                        title = "지은아 결혼을 축하해",
+                        content = "내용",
+                        date = LocalDate.of(2029, 11, 20),
+                    ),
+                selectionMode = true,
+                selected = true,
+                onToggleSelect = {},
+            )
+            DeleteActionBar(onDeleteAll = {}, onDeleteSelected = {})
+        }
     }
 }

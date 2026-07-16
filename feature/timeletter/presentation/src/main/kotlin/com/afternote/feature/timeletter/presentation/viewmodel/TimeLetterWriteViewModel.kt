@@ -8,13 +8,13 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.timeletter.domain.model.BlockInput
-import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlockType
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.domain.repository.FileMetadataRepository
 import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
 import com.afternote.feature.timeletter.domain.usecase.CreateTimeLetterUseCase
+import com.afternote.feature.timeletter.domain.usecase.ResolveTimeLetterBlocksUseCase
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +32,7 @@ class TimeLetterWriteViewModel
     @Inject
     constructor(
         private val createTimeLetterUseCase: CreateTimeLetterUseCase,
+        private val resolveTimeLetterBlocksUseCase: ResolveTimeLetterBlocksUseCase,
         private val timeLetterRepository: TimeLetterRepository,
         private val userRepository: UserRepository,
         private val fileMetadataRepository: FileMetadataRepository,
@@ -269,7 +270,10 @@ class TimeLetterWriteViewModel
                             timeLetterRepository.updateTimeLetter(
                                 timeLetterId = state.editingTimeLetterId,
                                 title = title.ifBlank { null },
-                                blocks = mapToUpdateBlocks(state.editorBlocks, textContents),
+                                blocks =
+                                    resolveTimeLetterBlocksUseCase(
+                                        mapToBlockInputs(state.editorBlocks, textContents),
+                                    ),
                                 sendAt = sendAt,
                                 status = status,
                             )
@@ -406,73 +410,6 @@ class TimeLetterWriteViewModel
             return "$amPm $displayHour:${minute.toString().padStart(2, '0')}"
         }
 
-        private fun mapToUpdateBlocks(
-            editorBlocks: List<EditorBlock>,
-            textContents: Map<Long, String>,
-        ): List<NewTimeLetterBlock> =
-            buildList {
-                var order = 1
-                for (block in editorBlocks) {
-                    when (block) {
-                        is EditorBlock.Text -> {
-                            val content = textContents[block.id] ?: ""
-                            if (content.isNotBlank()) {
-                                add(
-                                    NewTimeLetterBlock(
-                                        blockType = TimeLetterBlockType.TEXT,
-                                        blockOrder = order++,
-                                        textContent = content,
-                                    ),
-                                )
-                            }
-                        }
-
-                        is EditorBlock.Link -> {
-                            add(
-                                NewTimeLetterBlock(
-                                    blockType = TimeLetterBlockType.LINK,
-                                    blockOrder = order++,
-                                    url = block.url,
-                                ),
-                            )
-                        }
-
-                        is EditorBlock.Image -> {
-                            add(
-                                NewTimeLetterBlock(
-                                    blockType = TimeLetterBlockType.IMAGE,
-                                    blockOrder = order++,
-                                    url = block.uri.toString(),
-                                    mimeType = block.mimeType,
-                                ),
-                            )
-                        }
-
-                        is EditorBlock.Audio -> {
-                            add(
-                                NewTimeLetterBlock(
-                                    blockType = TimeLetterBlockType.AUDIO,
-                                    blockOrder = order++,
-                                    url = block.uri.toString(),
-                                    mimeType = block.mimeType,
-                                ),
-                            )
-                        }
-
-                        is EditorBlock.File -> {
-                            add(
-                                NewTimeLetterBlock(
-                                    blockType = TimeLetterBlockType.FILE,
-                                    blockOrder = order++,
-                                    url = block.uri.toString(),
-                                    mimeType = block.mimeType,
-                                ),
-                            )
-                        }
-                    }
-                }
-            }
-
         private suspend fun mapToBlockInputs(
             editorBlocks: List<EditorBlock>,
             textContents: Map<Long, String>,
@@ -489,7 +426,9 @@ class TimeLetterWriteViewModel
                             add(
                                 BlockInput.Media(
                                     uriString = block.uri.toString(),
-                                    mimeType = fileMetadataRepository.getMimeType(block.uri.toString()),
+                                    mimeType =
+                                        block.mimeType
+                                            ?: fileMetadataRepository.getMimeType(block.uri.toString()),
                                     blockType = TimeLetterBlockType.IMAGE,
                                 ),
                             )
@@ -499,7 +438,9 @@ class TimeLetterWriteViewModel
                             add(
                                 BlockInput.Media(
                                     uriString = block.uri.toString(),
-                                    mimeType = fileMetadataRepository.getMimeType(block.uri.toString()),
+                                    mimeType =
+                                        block.mimeType
+                                            ?: fileMetadataRepository.getMimeType(block.uri.toString()),
                                     blockType = TimeLetterBlockType.AUDIO,
                                 ),
                             )
@@ -509,7 +450,9 @@ class TimeLetterWriteViewModel
                             add(
                                 BlockInput.Media(
                                     uriString = block.uri.toString(),
-                                    mimeType = fileMetadataRepository.getMimeType(block.uri.toString()),
+                                    mimeType =
+                                        block.mimeType
+                                            ?: fileMetadataRepository.getMimeType(block.uri.toString()),
                                     blockType = TimeLetterBlockType.FILE,
                                 ),
                             )

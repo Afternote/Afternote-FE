@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -38,7 +37,6 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.domain.model.MindRecordSummary
 import com.afternote.feature.mindrecord.domain.model.MindRecordType
-import com.afternote.feature.mindrecord.presentation.component.ReceiverCategoryChips
 import com.afternote.feature.mindrecord.presentation.component.ReceiverDiaryGridCard
 import com.afternote.feature.mindrecord.presentation.component.ReceiverMindRecordTopBar
 import com.afternote.feature.mindrecord.presentation.component.ReceiverRecordCard
@@ -47,9 +45,9 @@ import com.afternote.feature.mindrecord.presentation.viewmodel.ReceiverMindRecor
 import androidx.compose.foundation.lazy.grid.items as gridItems
 
 /**
- * 수신자(추모자) 마음의 기록 화면 — 데일리질문 / 일기 / 깊은생각 3개 탭 + 필터 바텀시트.
+ * 수신자(추모자) 마음의 기록 화면 — 데일리질문 / 일기 2개 탭 + 필터 바텀시트.
  *
- * Figma 노드 1727-19620 / 1727-19688 / 1727-19627 (3 메인 탭) + 1727-25357 / 25054 / 23247 /
+ * Figma 노드 1727-19620 / 1727-19688 (2 메인 탭) + 1727-25357 / 25054 / 23247 /
  * 23886 (필터 바텀시트 4 상태) + 1727-24804 (필터 적용 헤더).
  */
 @Composable
@@ -77,7 +75,6 @@ fun ReceiverMindRecordScreen(
                     SuccessContent(
                         state = state,
                         onFilterClick = { filterSheetVisible = true },
-                        onCategorySelect = viewModel::selectDeepThoughtCategory,
                         onRecordClick = onRecordClick,
                     )
                 }
@@ -105,10 +102,9 @@ fun ReceiverMindRecordScreen(
 private fun SuccessContent(
     state: ReceiverMindRecordUiState.Success,
     onFilterClick: () -> Unit,
-    onCategorySelect: (String?) -> Unit,
     onRecordClick: (Long) -> Unit,
 ) {
-    val tabs = remember { listOf(ReceiverMindRecordTab.DailyQuestion, ReceiverMindRecordTab.Diary, ReceiverMindRecordTab.DeepThought) }
+    val tabs = remember { listOf(ReceiverMindRecordTab.DailyQuestion, ReceiverMindRecordTab.Diary) }
     var selectedIndex by remember { mutableIntStateOf(0) }
     val pagerState = rememberPagerState { tabs.size }
     LaunchedEffect(selectedIndex) { pagerState.animateScrollToPage(selectedIndex) }
@@ -150,16 +146,6 @@ private fun SuccessContent(
 
                 ReceiverMindRecordTab.Diary -> {
                     DiaryGrid(records = state.diaries, onClick = onRecordClick)
-                }
-
-                ReceiverMindRecordTab.DeepThought -> {
-                    DeepThoughtTab(
-                        categories = state.deepThoughtCategories,
-                        selected = state.selectedDeepThoughtCategory,
-                        onSelect = onCategorySelect,
-                        records = state.deepThoughts,
-                        onClick = onRecordClick,
-                    )
                 }
             }
         }
@@ -207,34 +193,6 @@ private fun DiaryGrid(
 }
 
 @Composable
-private fun DeepThoughtTab(
-    categories: List<String>,
-    selected: String?,
-    onSelect: (String?) -> Unit,
-    records: List<MindRecordSummary>,
-    onClick: (Long) -> Unit,
-) {
-    Column(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-        ReceiverCategoryChips(
-            categories = categories,
-            selected = selected,
-            onSelect = onSelect,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(modifier = Modifier.height(20.dp))
-        if (records.isEmpty()) {
-            EmptyBox()
-        } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(records, key = { it.id }) { record ->
-                    ReceiverRecordCard(record = record, onClick = { onClick(record.id) })
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun LoadingBox() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         CircularProgressIndicator()
@@ -267,7 +225,6 @@ private enum class ReceiverMindRecordTab(
 ) {
     DailyQuestion("데일리 질문", MindRecordType.DAILY_QUESTION),
     Diary("일기", MindRecordType.DIARY),
-    DeepThought("깊은 생각", MindRecordType.DEEP_THOUGHT),
 }
 
 @Preview(showBackground = true)
@@ -279,11 +236,8 @@ private fun ReceiverMindRecordScreenPreview() {
                 ReceiverMindRecordUiState.Success(
                     dailyQuestions = emptyList(),
                     diaries = emptyList(),
-                    deepThoughts = emptyList(),
-                    deepThoughtCategories = listOf("나의 가치관", "오늘 떠올린 생각", "커리어"),
                 ),
             onFilterClick = {},
-            onCategorySelect = {},
             onRecordClick = {},
         )
     }

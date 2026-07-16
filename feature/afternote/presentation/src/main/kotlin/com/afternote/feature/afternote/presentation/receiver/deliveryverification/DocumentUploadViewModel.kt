@@ -19,7 +19,8 @@ import javax.inject.Inject
  *
  * 슬롯별 파일 바이트는 UI 의 picker 콜백이 ContentResolver 로 추출해 [uploadDocument] 로 전달한다 —
  * 도메인 레이어가 Android Uri 에 의존하지 않도록 분리. 업로드 성공 시 슬롯에 fileUrl 이 채워지고,
- * 양 슬롯 fileUrl 이 모두 채워지면 "다음" 활성 → [submit] 으로 `submitDeliveryVerification` 호출.
+ * 두 슬롯 중 하나 이상 fileUrl 이 채워지면 "다음" 활성 → [submit] 으로 `submitDeliveryVerification` 호출
+ * (사망진단서/가족관계증명서 중 하나만으로 신청 가능 — 이슈 #380).
  */
 @HiltViewModel
 class DocumentUploadViewModel
@@ -62,7 +63,7 @@ class DocumentUploadViewModel
             val state = _uiState.value
             val deathUrl = state.deathCertificate.fileUrl
             val famRelUrl = state.familyRelationCertificate.fileUrl
-            if (deathUrl == null || famRelUrl == null || state.isSubmitting) {
+            if ((deathUrl == null && famRelUrl == null) || state.isSubmitting) {
                 _uiState.update {
                     it.copy(error = ErrorPayload.Res(R.string.receiver_verify_documents_required))
                 }

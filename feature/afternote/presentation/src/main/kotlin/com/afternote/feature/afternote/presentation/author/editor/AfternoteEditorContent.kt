@@ -187,7 +187,7 @@ private fun MemorialPrefillSkeleton() {
     // 추모 영상.
     SkeletonBar(height = 120.dp)
     Spacer(modifier = Modifier.height(20.dp))
-    // 추모 플레이리스트.
+    // 추억 플레이리스트.
     SkeletonBar(height = 96.dp)
     Spacer(modifier = Modifier.height(20.dp))
     // 마지막 인사 (라디오 + custom text).

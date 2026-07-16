@@ -31,7 +31,7 @@ fun DiaryReportCard(
     OutlinedCard(
         colors =
             CardDefaults.cardColors(
-                containerColor = AfternoteDesign.colors.gray1,
+                containerColor = AfternoteDesign.colors.white,
             ),
         border = BorderStroke(1.dp, color = AfternoteDesign.colors.gray2),
         modifier =

@@ -178,7 +178,6 @@ class WeeklyReportViewModel
                     listOf(
                         report.dailyQuestionAmount to MindRecordCategoryUi.DailyQuestion,
                         report.diaryAmount to MindRecordCategoryUi.Diary,
-                        report.deepThoughtAmount to MindRecordCategoryUi.DeepThought,
                     ),
                 weekDays = mapWeekDays(monday, report.week),
                 emotionKeywords = mapEmotionKeywords(report.emotions),

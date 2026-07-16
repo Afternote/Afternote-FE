@@ -17,7 +17,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.R as CoreUiR
 
 /**
- * 마음의 기록 섹션 — 데일리 질문 / 일기 / 깊은 생각 3개의 통계 카드를 함께 노출한다.
+ * 마음의 기록 섹션 — 데일리 질문 / 일기 2개의 통계 카드를 함께 노출한다.
  */
 @Composable
 fun MindRecordSection(
@@ -57,13 +57,6 @@ fun MindRecordSection(
                     count = summary.diaryCount,
                     modifier = Modifier.weight(1f),
                 )
-                MindRecordStatCard(
-                    iconResId = CoreUiR.drawable.core_ui_ic_deep_thought,
-                    label = stringResource(R.string.receiver_home_mindrecord_deep_thought),
-                    totalLabel = totalLabel,
-                    count = summary.deepThoughtCount,
-                    modifier = Modifier.weight(1f),
-                )
             }
         },
     )
@@ -79,7 +72,6 @@ private fun MindRecordSectionPreview() {
                     totalCount = 150,
                     dailyQuestionCount = 18,
                     diaryCount = 18,
-                    deepThoughtCount = 18,
                 ),
             onGoClick = {},
             modifier = Modifier.padding(20.dp),

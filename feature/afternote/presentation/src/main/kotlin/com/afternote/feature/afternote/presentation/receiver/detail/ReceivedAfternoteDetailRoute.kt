@@ -11,14 +11,14 @@ import com.afternote.feature.afternote.presentation.author.navigation.DetailLoad
  * 수신 애프터노트 상세 Stateful Route.
  *
  * Now in Android 가이드의 Route + Screen 분리 패턴을 따른다. UiState 분기 후 카테고리에 따라
- * Stateless Screen([SocialNetworkReceivedDetailScreen] / [GalleryReceivedDetailScreen]) 으로 위임한다.
- * 추모(MEMORIAL) 카테고리는 디자인 미정이므로 발신자와 동일하게 [DesignPendingDetailContent] 폴백.
- *
- * NavHost 통합은 receiver 네비게이션이 도입될 때 별도 라우트로 연결.
+ * Stateless Screen([SocialNetworkReceivedDetailScreen] / [GalleryReceivedDetailScreen] /
+ * [MemorialReceivedDetailScreen]) 으로 위임한다. 추억(MEMORIAL) 의 "추억 플레이리스트" 진입은
+ * [onNavigateToPlaylist] 로 위임한다 (#274). BUSINESS·ESTATE·Unknown 은 [DesignPendingDetailContent] 폴백.
  */
 @Composable
 fun ReceivedAfternoteDetailRoute(
     onBack: () -> Unit,
+    onNavigateToPlaylist: (afternoteId: String) -> Unit = {},
     viewModel: ReceivedAfternoteDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -48,7 +48,19 @@ fun ReceivedAfternoteDetailRoute(
                     )
                 }
 
-                ReceivedDetailContentUiModel.MemorialPending,
+                is ReceivedDetailContentUiModel.Memorial -> {
+                    MemorialReceivedDetailScreen(
+                        senderName = model.content.senderName,
+                        leaveMessage = model.content.leaveMessage,
+                        albumCovers = model.content.albumCovers,
+                        songCount = model.content.songCount,
+                        memorialVideoUrl = model.content.memorialVideoUrl,
+                        memorialThumbnailUrl = model.content.memorialThumbnailUrl,
+                        onNavigateToPlaylist = { onNavigateToPlaylist(state.detailId.toString()) },
+                        onBackClick = onBack,
+                    )
+                }
+
                 ReceivedDetailContentUiModel.Unimplemented,
                 ReceivedDetailContentUiModel.Unknown,
                 -> {

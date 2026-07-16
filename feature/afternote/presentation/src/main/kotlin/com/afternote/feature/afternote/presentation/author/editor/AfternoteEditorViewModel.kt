@@ -177,7 +177,7 @@ private data class EditorFormSnapshot(
  * `on*Consumed` 콜백으로 reset.
  *
  * **SSOT:** 비즈니스 폼 필드는 [EditorFormState] 로 [internalState] 안에 보관하며, 프로세스 종료 시
- * [SavedStateHandle] JSON 스냅샷으로 복원한다. 추모 플레이리스트 곡 목록은 폼의 [EditorFormState.memorialPlaylistSongs] 와
+ * [SavedStateHandle] JSON 스냅샷으로 복원한다. 추억 플레이리스트 곡 목록은 폼의 [EditorFormState.memorialPlaylistSongs] 와
  * 그래프 스코프 [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs] StateFlow 가
  * 동기화된 뒤 스냅샷에 포함된다.
  *

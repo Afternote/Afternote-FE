@@ -51,7 +51,7 @@ private fun AfternoteListContentPreview() {
                     listOf(
                         ListItemUiModel(
                             id = "1",
-                            serviceName = "추모 가이드라인",
+                            serviceName = "추억 노트",
                             date = "2025.12.01",
                             iconResId = R.drawable.feature_afternote_img_logo,
                             type = AfternoteServiceType.MEMORIAL,

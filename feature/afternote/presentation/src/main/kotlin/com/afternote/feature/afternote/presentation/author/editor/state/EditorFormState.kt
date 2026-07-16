@@ -17,7 +17,9 @@ private const val LAST_WISH_DEFAULT_CALM = "차분하고 조용하게 보내주�
 private const val LAST_WISH_DEFAULT_BRIGHT = "슬퍼 하지 말고 밝고 따뜻하게 보내주세요."
 
 /**
- * 에디터 **비즈니스/도메인** 폼 상태. [AfternoteEditorViewModel]의 [kotlinx.coroutines.flow.StateFlow]가 SSOT이며,
+ * 에디터 **비즈니스/도메인** 폼 상태.
+ * [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel]의
+ * [kotlinx.coroutines.flow.StateFlow]가 SSOT이며,
  * 프로세스 종료 대비 스냅샷은 [androidx.lifecycle.SavedStateHandle]에 JSON으로 저장한다.
  *
  * 순수 UI(다이얼로그·탭·드롭다운·[androidx.compose.foundation.text.input.TextFieldState])는
@@ -26,7 +28,7 @@ private const val LAST_WISH_DEFAULT_BRIGHT = "슬퍼 하지 말고 밝고 따뜻
  * **남기실 말씀:** [messageBlocks]는 SavedState 스냅샷·Process Death 복원용 SSOT이며,
  * 화면의 [androidx.compose.foundation.text.input.TextFieldState]와 디바운스 동기화된다.
  *
- * **추모 플레이리스트:** [memorialPlaylistSongs]는 [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs] 와
+ * **추억 플레이리스트:** [memorialPlaylistSongs]는 [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs] 와
  * 동기화되어 [androidx.lifecycle.SavedStateHandle] JSON에 포함된다 (프로세스 종료·설정 변경 복원).
  *
  * **Bundle 용량:** 스냅샷이 들어가는 SavedState/번들은 대략 500KB~1MB를 넘기면 [android.os.TransactionTooLargeException] 위험이 있다.
