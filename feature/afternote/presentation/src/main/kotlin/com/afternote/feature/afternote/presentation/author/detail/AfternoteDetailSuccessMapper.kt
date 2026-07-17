@@ -79,7 +79,7 @@ sealed interface DetailContentUiModel {
         val content: MemorialGuidelineDetailContent,
     ) : DetailContentUiModel
 
-    /** BUSINESS·ESTATE 등 디자인 확정 전 placeholder. */
+    /** ESTATE 등 디자인 확정 전 placeholder. */
     data object Unimplemented : DetailContentUiModel
 }
 
@@ -89,7 +89,8 @@ internal fun Detail.toDetailContentUiModel(authorDisplayName: String): DetailCon
             DetailContentUiModel.Gallery(toGalleryDetailContent(authorDisplayName))
         }
 
-        AfternoteServiceType.SOCIAL_NETWORK -> {
+        // BUSINESS 는 데이터 구성이 SOCIAL 과 동일(계정 정보·처리 방법·남긴 말씀)해 소셜 상세 UI 모델을 재사용 (이슈 #467).
+        AfternoteServiceType.SOCIAL_NETWORK, AfternoteServiceType.BUSINESS -> {
             DetailContentUiModel.SocialNetwork(toSocialNetworkDetailContent(authorDisplayName))
         }
 
@@ -97,8 +98,8 @@ internal fun Detail.toDetailContentUiModel(authorDisplayName: String): DetailCon
             DetailContentUiModel.Memorial(toMemorialGuidelineDetailContent(authorDisplayName))
         }
 
-        // BUSINESS · ESTATE 는 디자인 확정 전 placeholder. 백엔드도 미지원이라 일반적으로 도달하지 않음.
-        AfternoteServiceType.BUSINESS, AfternoteServiceType.ESTATE -> {
+        // ESTATE 는 디자인 확정 전 placeholder. 백엔드도 미지원이라 일반적으로 도달하지 않음.
+        AfternoteServiceType.ESTATE -> {
             DetailContentUiModel.Unimplemented
         }
     }

@@ -24,10 +24,10 @@ data class AfternoteCreatePlaylistRequest(
     @SerialName("receivers") val receivers: List<AfternoteReceiverRef> = emptyList(),
 )
 
-@OptIn(ExperimentalSerializationApi::class)
+/** SOCIAL·BUSINESS 공용 생성 요청 — 두 카테고리는 바디 스키마가 동일해 [category] 값으로만 구분된다. */
 @Serializable
-data class AfternoteCreateSocialRequest(
-    @EncodeDefault @SerialName("category") val category: String = "SOCIAL",
+data class AfternoteCreateAccountRequest(
+    @SerialName("category") val category: String,
     @SerialName("title") val title: String,
     @SerialName("actions") val actions: List<String>,
     @SerialName("leaveMessage") val leaveMessage: String? = null,

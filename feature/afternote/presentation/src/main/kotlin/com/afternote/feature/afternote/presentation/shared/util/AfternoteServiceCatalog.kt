@@ -38,6 +38,12 @@ object AfternoteServiceCatalog {
             AfternoteService.TALKDRIVE.displayKey,
         )
 
+    /** Display names for 비즈니스 (BUSINESS) category. 시안(700:38735) 확인 서비스는 네이버 메일 1종. */
+    val businessServices: List<String> =
+        listOf(
+            AfternoteService.NAVER_MAIL.displayKey,
+        )
+
     private val MEMORIAL_SERVICE_NAME: String = AfternoteService.MEMORIAL_GUIDELINE.displayKey
 
     /**
@@ -47,6 +53,7 @@ object AfternoteServiceCatalog {
     fun serviceTypeFor(serviceName: String): AfternoteServiceType =
         when {
             galleryServices.contains(serviceName) -> AfternoteServiceType.GALLERY_AND_FILES
+            businessServices.contains(serviceName) -> AfternoteServiceType.BUSINESS
             serviceName == MEMORIAL_SERVICE_NAME -> AfternoteServiceType.MEMORIAL
             else -> AfternoteServiceType.SOCIAL_NETWORK
         }
