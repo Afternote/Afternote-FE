@@ -51,7 +51,7 @@ class FindIdViewModel
                         _uiState.update { it.copy(isVerificationSent = true, verificationError = null) }
                         startResendCooldown()
                     }.onFailure { error ->
-                        _uiState.update { it.copy(errorMessage = error.message) }
+                        _uiState.update { it.copy(errorMessage = error.message ?: "") }
                     }
                 _uiState.update { it.copy(isSendingCode = false) }
             }

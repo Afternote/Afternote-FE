@@ -121,7 +121,7 @@ class SignUpViewModel
                         startResendCooldown()
                         startExpiryCountdown()
                     }.onFailure { error ->
-                        _uiState.update { it.copy(errorMessage = error.message) }
+                        _uiState.update { it.copy(errorMessage = error.message ?: "") }
                     }
                 _uiState.update { it.copy(isSendingCode = false) }
             }
@@ -214,7 +214,7 @@ class SignUpViewModel
                                 }
                             }
                     }.onFailure { error ->
-                        _uiState.update { it.copy(errorMessage = error.message) }
+                        _uiState.update { it.copy(errorMessage = error.message ?: "") }
                     }
                 _uiState.update { it.copy(isLoading = false) }
             }
