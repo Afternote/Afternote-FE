@@ -64,6 +64,7 @@ internal fun SongPlaylistScaffold(
  * @param onAction 버튼(또는 dual 왼쪽) 클릭 — 현재 선택된 id 집합을 받는다
  * @param secondaryActionLabel dual-action 오른쪽 라벨 (null 이면 단일 버튼)
  * @param onSecondaryAction dual-action 오른쪽 클릭 — 현재 선택된 id 집합을 받는다
+ * @param floatingActionButton 선택이 비었을 때만 우하단에 노출되는 부유 액션(선택 중엔 하단 액션 버튼이 대신 노출)
  */
 @Composable
 internal fun SelectableSongListBody(
@@ -75,6 +76,7 @@ internal fun SelectableSongListBody(
     modifier: Modifier = Modifier,
     secondaryActionLabel: String? = null,
     onSecondaryAction: ((selectedIds: Set<String>) -> Unit)? = null,
+    floatingActionButton: (@Composable () -> Unit)? = null,
 ) {
     var selectedSongIds by remember { mutableStateOf(initialSelectedSongIds) }
     Box(modifier = modifier) {
@@ -120,6 +122,18 @@ internal fun SelectableSongListBody(
                             }
                         },
                 )
+            }
+        }
+        if (floatingActionButton != null && selectedSongIds.isEmpty()) {
+            // 시안 실측(목록 2672:16318): FAB 는 end 22/bottom 72 — 하단 액션 바(사이드 20/bottom 54)와
+            // 다른 오프셋을 쓴다. 바 값을 재사용하지 말 것.
+            Box(
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 22.dp, bottom = 72.dp),
+            ) {
+                floatingActionButton()
             }
         }
     }
