@@ -81,7 +81,7 @@ sealed interface ReceiverRoute {
     data object MasterKeyRoute : ReceiverRoute
 
     /**
-     * 열람 신청 2단계: 증빙 서류 업로드(6·7·8). 사망진단서 + 가족관계증명서 각 1건 첨부.
+     * 열람 신청 2단계: 증빙 서류 업로드(6·7·8). 사망진단서 / 가족관계증명서 중 하나 이상 첨부 (이슈 #380).
      */
     @Serializable
     data object DocumentUploadRoute : ReceiverRoute
@@ -105,6 +105,20 @@ sealed interface ReceiverRoute {
      */
     @Serializable
     data class AfternoteDetailRoute(
+        val afternoteId: String,
+    ) : ReceiverRoute
+
+    /**
+     * 수신 추억 플레이리스트 — 추억 상세
+     * ([com.afternote.feature.afternote.presentation.receiver.detail.MemorialReceivedDetailScreen]) 의
+     * "추억 플레이리스트" 카드 클릭 진입.
+     *
+     * 프로퍼티 이름은
+     * [com.afternote.feature.afternote.presentation.receiver.playlist.ReceiverMemorialPlaylistViewModel] 의
+     * `SavedStateHandle` 키(`afternoteId`)와 일치해야 한다(typed-safe routes 규약).
+     */
+    @Serializable
+    data class MemorialPlaylistRoute(
         val afternoteId: String,
     ) : ReceiverRoute
 }

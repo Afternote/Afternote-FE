@@ -62,10 +62,10 @@ import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 import com.afternote.core.ui.R as CoreUiR
 
 /**
- * 추모 가이드라인 상세 Stateful Route.
+ * 추억 노트 상세 Stateful Route.
  *
  * [com.afternote.feature.afternote.presentation.author.detail.socialnetwork.SocialNetworkDetailRoute]·[GalleryDetailRoute] 와 동일한 VM·UiState·삭제 이펙트 패턴을 따르며,
- * 성공 시 [AfternoteDetailUiState.Success.contentUiModel] 이 추모가 아니면 폴백한다.
+ * 성공 시 [AfternoteDetailUiState.Success.contentUiModel] 이 추억 노트가 아니면 폴백한다.
  */
 @Composable
 internal fun MemorialGuidelineDetailRoute(
@@ -110,7 +110,7 @@ internal fun MemorialGuidelineDetailRoute(
 }
 
 /**
- * 추모 가이드라인 상세 표시 데이터.
+ * 추억 노트 상세 표시 데이터.
  */
 @Immutable
 data class MemorialGuidelineDetailContent(
@@ -126,7 +126,7 @@ data class MemorialGuidelineDetailContent(
 )
 
 /**
- * 추모 가이드라인 애프터노트 상세 화면 (Stateless).
+ * 추억 노트 애프터노트 상세 화면 (Stateless).
  *
  * [com.afternote.feature.afternote.presentation.author.detail.socialnetwork.SocialNetworkDetailScreen] 과 동일한 Scaffold·TopBar·드롭다운 배치·스크롤 modifier 패턴을 따른다.
  */
@@ -364,7 +364,7 @@ private fun VideoThumbnail(thumbnailUrl: String?) {
 }
 
 /**
- * 추모 플레이리스트 카드 — 피그마 node 4160:9168 기준.
+ * 추억 플레이리스트 카드 — 피그마 node 4160:9168 기준.
  *
  * 레이아웃 순서: 제목 → 앨범 커버 행 → 곡 수 텍스트.
  * InfoCard(AfternoteDesign.colors.gray2) 안에 직접 렌더링하며, 내부 AfternoteDesign.colors.white 카드 없이 flat 구조.
@@ -380,7 +380,7 @@ private fun PlaylistCard(
         content = {
             Column {
                 Text(
-                    text = "추모 플레이리스트",
+                    text = "추억 플레이리스트",
                     style =
                         AfternoteDesign.typography.textField.copy(
                             fontWeight = FontWeight.Medium,

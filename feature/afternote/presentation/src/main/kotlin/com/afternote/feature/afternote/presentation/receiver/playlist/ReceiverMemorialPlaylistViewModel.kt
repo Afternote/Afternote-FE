@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * 수신자 추모 플레이리스트 화면 ViewModel.
+ * 수신자 추억 플레이리스트 화면 ViewModel.
  *
  * GET /api/v1/receiver-auth/after-notes로 목록 조회 후 첫 항목으로 상세를 조회하거나,
  * afternoteId가 있으면 해당 ID로 상세를 조회하여 playlist.songs를 [PlaylistSongDisplay]로 표시합니다.
@@ -97,6 +97,7 @@ class ReceiverMemorialPlaylistViewModel
                                 }.orEmpty()
                         _uiState.update {
                             it.copy(
+                                senderName = detail.senderName.orEmpty(),
                                 songs = songs,
                                 memorialVideoUrl = playlist?.memorialVideoUrl,
                                 memorialThumbnailUrl = playlist?.memorialThumbnailUrl,

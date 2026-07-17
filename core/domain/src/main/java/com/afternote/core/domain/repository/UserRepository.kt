@@ -1,5 +1,7 @@
 package com.afternote.core.domain.repository
 
+import com.afternote.core.model.delivery.DeliveryConditionItem
+import com.afternote.core.model.delivery.ReceiverDeliveryConditions
 import com.afternote.core.model.user.DeliveryCondition
 import com.afternote.core.model.user.DeliveryConditionType
 import com.afternote.core.model.user.Receiver
@@ -56,6 +58,9 @@ interface UserRepository {
     // 회원 탈퇴
     suspend fun deleteAccount()
 
+    // 활동 기록(ping) — 앱 실행/로그인 확정 시 미사용(INACTIVITY) 전달조건 타이머를 리셋
+    suspend fun logActivity()
+
     // 푸시 알림 설정 조회
     suspend fun getMyPushSettings(): UserPushSetting
 
@@ -87,4 +92,13 @@ interface UserRepository {
         inactivityPeriodDays: Int?,
         specificDate: String?,
     ): DeliveryCondition
+
+    // 수신자별 전달조건 조회 (콘텐츠별)
+    suspend fun getReceiverDeliveryConditions(receiverId: Long): ReceiverDeliveryConditions
+
+    // 수신자별 전달조건 설정/변경 (보낸 conditions 로 저장)
+    suspend fun updateReceiverDeliveryConditions(
+        receiverId: Long,
+        conditions: List<DeliveryConditionItem>,
+    ): ReceiverDeliveryConditions
 }

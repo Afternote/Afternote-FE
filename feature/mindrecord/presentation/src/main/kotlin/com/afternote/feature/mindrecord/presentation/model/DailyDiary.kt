@@ -8,5 +8,5 @@ data class DailyDiary(
     val date: LocalDate,
     val content: String,
     val emotion: String? = null,
-    val imageUrl: Int? = null,
+    val imageUrl: String? = null,
 )

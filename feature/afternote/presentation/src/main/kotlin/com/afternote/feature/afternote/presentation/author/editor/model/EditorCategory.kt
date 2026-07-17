@@ -14,7 +14,7 @@ enum class EditorCategory(
     BUSINESS("비즈니스", "BUSINESS"),
     GALLERY("갤러리 및 파일", "GALLERY"),
     ESTATE("재산 처리", "ESTATE"),
-    MEMORIAL("추모 가이드라인", "PLAYLIST"),
+    MEMORIAL("추억 노트", "PLAYLIST"),
     ;
 
     companion object {

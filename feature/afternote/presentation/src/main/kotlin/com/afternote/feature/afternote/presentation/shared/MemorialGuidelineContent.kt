@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteTheme
 
 /**
- * 추모 가이드라인 공통 세로 레이아웃(섹션 순서·간격만 담당).
+ * 추억 노트 공통 세로 레이아웃(섹션 순서·간격만 담당).
  * 에디터·수신자(View) 화면에서 동일 골격을 쓰기 위해 분리했습니다.
  *
  * 슬롯은 data class가 아닌 **컴포저블의 직접 파라미터**로 열어, 호출 지점 기준 리컴포지션 추적이 끊기지 않게 합니다.

@@ -110,13 +110,6 @@ private fun MindRecordStatCardPreview() {
                 count = 18,
                 modifier = Modifier.weight(1f),
             )
-            MindRecordStatCard(
-                iconResId = CoreUiR.drawable.core_ui_ic_deep_thought,
-                label = "깊은 생각",
-                totalLabel = "TOTAL",
-                count = 18,
-                modifier = Modifier.weight(1f),
-            )
         }
     }
 }

@@ -7,7 +7,6 @@ import kotlinx.serialization.Serializable
 data class WeeklyReportResponse(
     @SerialName("dailyQuestionAmount") val dailyQuestionAmount: Int = 0,
     @SerialName("diaryAmount") val diaryAmount: Int = 0,
-    @SerialName("deepThoughtAmount") val deepThoughtAmount: Int = 0,
     @SerialName("summaryText") val summaryText: String = "",
     @SerialName("week") val week: List<WeeklyReportDayDto> = emptyList(),
     // 서버 JSON 키가 kebab-case (`daily-question`).

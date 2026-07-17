@@ -3,7 +3,7 @@ package com.afternote.feature.afternote.presentation.shared.model
 import androidx.compose.runtime.Immutable
 
 /**
- * 추모 플레이리스트·노래 추가 등에서 재사용하는 공통 표시용 모델.
+ * 추억 플레이리스트·노래 추가 등에서 재사용하는 공통 표시용 모델.
  *
  * Feature별 Song/Entity는 각자 [PlaylistSongDisplay]로 매핑하여 사용합니다.
  *

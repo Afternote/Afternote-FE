@@ -7,7 +7,7 @@ import com.afternote.feature.afternote.presentation.author.editor.receiver.model
 import com.afternote.feature.afternote.presentation.shared.LastWishOption
 
 /**
- * 추모 가이드라인 콘텐츠 파라미터
+ * 추억 노트 콘텐츠 파라미터
  */
 @Stable
 data class MemorialGuidelineEditorContentParams(

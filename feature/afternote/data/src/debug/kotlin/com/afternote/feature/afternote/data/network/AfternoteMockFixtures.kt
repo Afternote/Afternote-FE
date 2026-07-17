@@ -144,6 +144,6 @@ internal object AfternoteMockFixtures {
 
     val MOCK_HOME_SUMMARY_JSON =
         """
-        {"status":200,"code":0,"message":null,"data":{"userName":"박서연","isRecipientDesignated":false,"diaryCategoryCount":12,"deepThoughtCategoryCount":6}}
+        {"status":200,"code":0,"message":null,"data":{"userName":"박서연","isRecipientDesignated":false,"diaryCategoryCount":12}}
         """.trimIndent()
 }

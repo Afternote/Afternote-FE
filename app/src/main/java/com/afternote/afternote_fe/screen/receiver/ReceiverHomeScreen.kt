@@ -225,7 +225,6 @@ private fun ReceiverHomeScreenPreview() {
                             totalCount = 150,
                             dailyQuestionCount = 18,
                             diaryCount = 18,
-                            deepThoughtCount = 18,
                         ),
                     timeLetterTotalCount = 30,
                     afternoteTotalCount = 10,
