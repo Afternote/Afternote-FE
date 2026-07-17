@@ -1,8 +1,10 @@
 package com.afternote.feature.afternote.presentation.shared.detail.song
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -26,12 +28,15 @@ import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDis
 /**
  * 세 화면 공통 껍데기: 투명 배경 Scaffold + DetailTopBar (뒤로가기 시 포커스 해제).
  * [content] 슬롯에 각 모드의 본문(리스트 / 선택 본문)을 넣는다.
+ *
+ * @param topBarActions [DetailTopBar] 우측 액션 슬롯 (예: 관리 화면의 편집 모드 토글 연필)
  */
 @Composable
 internal fun SongPlaylistScaffold(
     title: String,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
+    topBarActions: @Composable RowScope.() -> Unit = {},
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
@@ -45,10 +50,30 @@ internal fun SongPlaylistScaffold(
                     focusManager.clearFocus()
                     onBackClick()
                 },
+                actions = topBarActions,
             )
         },
         content = content,
     )
+}
+
+/**
+ * 플레이리스트 화면 계열 공용 부유 액션 배치 슬롯.
+ *
+ * 시안 실측(목록 2672:16318): FAB 는 end 22/bottom 72 — 하단 액션 바(사이드 20/bottom 54)와
+ * 다른 오프셋을 쓴다. 바 값을 재사용하지 말 것. [SelectableSongListBody] 내부와 목록 모드처럼
+ * 리스트를 직접 조립하는 호출부가 같은 오프셋을 공유하도록 여기 한 곳에만 둔다.
+ */
+@Composable
+internal fun BoxScope.SongPlaylistFloatingActionSlot(content: @Composable () -> Unit) {
+    Box(
+        modifier =
+            Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 22.dp, bottom = 72.dp),
+    ) {
+        content()
+    }
 }
 
 /**
@@ -125,16 +150,7 @@ internal fun SelectableSongListBody(
             }
         }
         if (floatingActionButton != null && selectedSongIds.isEmpty()) {
-            // 시안 실측(목록 2672:16318): FAB 는 end 22/bottom 72 — 하단 액션 바(사이드 20/bottom 54)와
-            // 다른 오프셋을 쓴다. 바 값을 재사용하지 말 것.
-            Box(
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(end = 22.dp, bottom = 72.dp),
-            ) {
-                floatingActionButton()
-            }
+            SongPlaylistFloatingActionSlot { floatingActionButton() }
         }
     }
 }
