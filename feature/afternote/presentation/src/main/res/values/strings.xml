@@ -108,6 +108,8 @@
     <string name="afternote_editor_label_messages">남기실 말씀</string>
     <string name="afternote_editor_label_category">종류</string>
     <string name="afternote_editor_label_service_name">서비스명</string>
+    <!-- 서비스명 미선택 placeholder — %1$s 는 [EditorCategory.displayLabel] (시안 700:36383: "소셜네트워크 선택하기") -->
+    <string name="afternote_editor_service_placeholder">%1$s 선택하기</string>
     <string name="afternote_editor_label_receiver_relation">수신자와의 관계</string>
 
     <string name="afternote_editor_message_field_title">제목</string>
@@ -224,7 +226,7 @@
     <string name="afternote_detail_delete_failed">삭제에 실패했습니다.</string>
     <string name="afternote_edit_item_not_found">항목을 찾을 수 없습니다.</string>
 
-    <string name="afternote_validation_title_required">등록할 서비스(플랫폼)명을 입력해 주세요.</string>
+    <string name="afternote_validation_title_required">등록할 서비스(플랫폼)명을 선택해 주세요.</string>
     <string name="afternote_edit_service_label">등록할 서비스</string>
     <string name="afternote_validation_social_credentials_required">계정 ID와 비밀번호를 입력해 주세요.</string>
     <string name="afternote_validation_social_actions_required">처리 방법을 한 가지 이상 추가해 주세요.</string>

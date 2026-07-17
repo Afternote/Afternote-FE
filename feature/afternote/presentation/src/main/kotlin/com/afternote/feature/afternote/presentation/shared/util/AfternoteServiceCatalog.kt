@@ -50,12 +50,4 @@ object AfternoteServiceCatalog {
             serviceName == MEMORIAL_SERVICE_NAME -> AfternoteServiceType.MEMORIAL
             else -> AfternoteServiceType.SOCIAL_NETWORK
         }
-
-    /** Default service when social category is selected (first in list). */
-    val defaultSocialService: String
-        get() = socialServices.first()
-
-    /** Default service when gallery category is selected (first in list). */
-    val defaultGalleryService: String
-        get() = galleryServices.first()
 }

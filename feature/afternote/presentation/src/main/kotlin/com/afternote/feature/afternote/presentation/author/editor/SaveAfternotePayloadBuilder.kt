@@ -48,7 +48,8 @@ object SaveAfternotePayloadBuilder {
                 if (form.selectedCategory == EditorCategory.MEMORIAL) {
                     EditorCategory.MEMORIAL.displayLabel
                 } else {
-                    form.selectedService
+                    // 미선택(null)이면 빈 문자열 → Validator 의 TITLE_REQUIRED 가 등록을 차단한다.
+                    form.selectedService.orEmpty()
                 },
             date = date.format(dateFormatter),
             accountId = accountId,

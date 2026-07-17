@@ -83,11 +83,16 @@ internal fun EditorContent(
 
             SelectionDropdown(
                 label = stringResource(R.string.afternote_editor_label_service_name),
-                selectedValue = form.selectedService,
+                selectedValue = form.selectedService.orEmpty(),
                 options = form.currentServiceOptions,
                 onValueSelected = state::onServiceSelected,
                 expanded = state.serviceDropdownExpanded,
                 onExpandedChange = state::onServiceDropdownExpandedChange,
+                placeholder =
+                    stringResource(
+                        R.string.afternote_editor_service_placeholder,
+                        form.selectedCategory.displayLabel,
+                    ),
                 menuStyle =
                     DropdownMenuStyle(
                         shadowElevation = 10.dp,
