@@ -78,6 +78,10 @@
     <string name="receiver_mindrecord_today_empty">오늘의 기록이 없어요</string>
     <string name="receiver_mindrecord_card_logo">오늘의 기록 카드 로고</string>
     <string name="afternote_home_append_error">애프터노트 추가 목록을 불러오지 못했습니다.</string>
+    <string name="afternote_home_load_error">애프터노트 목록을 불러오지 못했습니다.</string>
+    <string name="afternote_home_retry">다시 시도</string>
+    <!-- 카테고리 필터 결과 0건 안내. 디자이너 미확정 플레이스홀더 문구 — 확정 시 교체. -->
+    <string name="afternote_home_filtered_empty">해당 카테고리에 등록된 애프터노트가 없어요.</string>
     <string name="afternote_category_all">전체</string>
     <string name="afternote_category_social_network">소셜네트워크</string>
     <string name="afternote_category_business">비즈니스</string>
