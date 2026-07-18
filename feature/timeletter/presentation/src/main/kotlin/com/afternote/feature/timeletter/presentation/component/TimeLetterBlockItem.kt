@@ -80,7 +80,7 @@ fun TimeLetterBlockItem(
                         letter.receiverIds
                             .mapNotNull { receiverNameMap[it] }
                             .joinToString(", ")
-                            .ifEmpty { "${letter.receiverIds.size}명" }
+                            .ifEmpty { "수신자 정보 없음" }
                     Text(
                         text = "수신인  $receiverText",
                         style = AfternoteDesign.typography.footnoteCaption,
