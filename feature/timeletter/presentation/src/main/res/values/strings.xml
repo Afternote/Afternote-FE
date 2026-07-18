@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="timeletter_delete_confirmation">타임레터를 삭제하시겠습니까?</string>
-    <string name="timeletter_delete_confirm">예</string>
-    <string name="timeletter_delete_dismiss">아니오</string>
-</resources>
