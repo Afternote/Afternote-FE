@@ -26,6 +26,7 @@ data class TimeLetterWriteUiState(
     val registered: Boolean = false,
     val showVoiceRecorder: Boolean = false,
     val voiceRecordingState: VoiceRecordingState = VoiceRecordingState.Idle,
+    val showFreePlanLimitPopup: Boolean = false,
 )
 
 sealed interface VoiceRecordingState {

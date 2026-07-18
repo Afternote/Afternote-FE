@@ -55,6 +55,7 @@ class TimeLetterWriteViewModel
 
         private var receiverNameMap: Map<Long, String> = emptyMap()
         private var recordingTimerJob: Job? = null
+        private var isCheckingRegisterLimit: Boolean = false
 
         init {
             viewModelScope.launch {
@@ -115,11 +116,37 @@ class TimeLetterWriteViewModel
             title: String,
             textContents: Map<Long, String>,
         ) {
-            if (_uiState.value.sendAt == null) {
+            val state = _uiState.value
+            if (state.isSaving || isCheckingRegisterLimit) return
+
+            if (state.sendAt == null) {
                 _uiState.update { it.copy(errorMessage = "발송 날짜를 선택해주세요.") }
                 return
             }
-            save(title = title, textContents = textContents, status = TimeLetterStatus.SCHEDULED)
+            isCheckingRegisterLimit = true
+            viewModelScope.launch {
+                try {
+                    if (state.editingTimeLetterId == null) {
+                        val registeredCount =
+                            runCatching { timeLetterRepository.getTimeLetters().totalCount }
+                                .getOrElse {
+                                    _uiState.update { current ->
+                                        current.copy(errorMessage = "타임레터를 불러올 수 없습니다.")
+                                    }
+                                    return@launch
+                                }
+
+                        if (registeredCount >= FREE_PLAN_REGISTER_LIMIT) {
+                            _uiState.update { it.copy(showFreePlanLimitPopup = true) }
+                            return@launch
+                        }
+                    }
+
+                    save(title = title, textContents = textContents, status = TimeLetterStatus.SCHEDULED)
+                } finally {
+                    isCheckingRegisterLimit = false
+                }
+            }
         }
 
         fun clearError() {
@@ -132,6 +159,10 @@ class TimeLetterWriteViewModel
 
         fun onRegisteredShown() {
             _uiState.update { it.copy(registered = false) }
+        }
+
+        fun dismissFreePlanLimitPopup() {
+            _uiState.update { it.copy(showFreePlanLimitPopup = false) }
         }
 
         fun setTextAlign(align: TextAlign) {
@@ -563,5 +594,6 @@ class TimeLetterWriteViewModel
 
         private companion object {
             const val RECORDING_TIMER_INTERVAL_MILLIS = 1_000L
+            const val FREE_PLAN_REGISTER_LIMIT = 3
         }
     }

@@ -67,6 +67,8 @@ import androidx.core.content.ContextCompat
 import coil3.compose.AsyncImage
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.calendar.BottomSheetCalendar
+import com.afternote.core.ui.popup.Popup
+import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
@@ -113,6 +115,8 @@ fun TimeLetterWriteScreen(
     onRegisterVoiceRecording: () -> Unit = {},
     onRetryVoiceRecording: () -> Unit = {},
     onDiscardVoiceRecording: () -> Unit = {},
+    onFreePlanLimitConfirm: () -> Unit = {},
+    onFreePlanLimitDismiss: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
@@ -348,6 +352,19 @@ fun TimeLetterWriteScreen(
                 }
             },
             containerColor = AfternoteDesign.colors.white,
+        )
+    }
+
+    if (uiState.showFreePlanLimitPopup) {
+        Popup(
+            type = PopupType.Variant2,
+            message = "현재 플랜은 타임레터를 3건까지만 등록할 수 있습니다.\n구독 시, 더 많은 타임레터를 제한 없이\n남기고 관리할 수 있습니다.",
+            onConfirm = onFreePlanLimitConfirm,
+            onDismiss = onFreePlanLimitDismiss,
+            confirmText = "구독 후 기록하기",
+            dismissText = "나중에 하기",
+            confirmButtonColor = AfternoteDesign.colors.gray3,
+            dismissButtonColor = AfternoteDesign.colors.gray3,
         )
     }
 
