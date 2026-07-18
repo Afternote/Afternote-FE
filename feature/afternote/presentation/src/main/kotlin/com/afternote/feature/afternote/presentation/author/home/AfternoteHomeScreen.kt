@@ -18,12 +18,12 @@ import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.afternote.core.ui.button.FAB.PenFloatingActionButton
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.body.EmptyListBody
+import com.afternote.feature.afternote.presentation.shared.body.ErrorListBody
 import com.afternote.feature.afternote.presentation.shared.body.LoadingListBody
 import com.afternote.feature.afternote.presentation.shared.body.infinite.InfiniteListBody
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
@@ -50,11 +50,7 @@ fun AfternoteHomeScreen(
         containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            if (items.itemCount > 0) {
-                HomeTopBar(onSettingClick = onSettingClick)
-            } else {
-                DetailTopBar(title = "애프터노트")
-            }
+            HomeTopBar(onSettingClick = onSettingClick)
         },
         floatingActionButton = {
             if (onFabClick != null) {
@@ -76,7 +72,17 @@ fun AfternoteHomeScreen(
                     LoadingListBody(modifier = bodyModifier)
                 }
 
-                items.itemCount > 0 -> {
+                // 전면 에러는 보여줄 데이터가 전무할 때만. 목록이 있는 상태의 refresh 실패는
+                // Paging 이 기존 페이지를 유지하므로(itemCount > 0) 아래 분기가 목록을 그대로 보여준다.
+                refreshState is LoadState.Error && items.itemCount == 0 -> {
+                    ErrorListBody(
+                        onRetry = items::retry,
+                        modifier = bodyModifier,
+                    )
+                }
+
+                // 카테고리 필터 0건도 이 경로에 남겨 카테고리 행을 유지한다(막다른 상태 방지).
+                items.itemCount > 0 || selectedCategory != AfternoteCategory.ALL -> {
                     InfiniteListBody(
                         modifier = bodyModifier,
                         items = items,
@@ -94,7 +100,7 @@ fun AfternoteHomeScreen(
     }
 }
 
-@Preview
+@Preview(showBackground = true, backgroundColor = 0xFFFAFAFA)
 @Composable
 private fun AfternoteHomeScreenPreview() {
     AfternoteTheme {
@@ -119,21 +125,6 @@ private fun AfternoteHomeScreenPreview() {
                     ),
                 ),
             ).collectAsLazyPagingItems()
-        AfternoteHomeScreen(
-            items = items,
-            selectedCategory = AfternoteCategory.ALL,
-            onCategorySelected = {},
-            onListItemClick = { _, _ -> },
-        )
-    }
-}
-
-@Preview
-@Composable
-private fun AfternoteHomeScreenEmptyPreview() {
-    AfternoteTheme {
-        val items =
-            flowOf(PagingData.empty<ListItemUiModel>()).collectAsLazyPagingItems()
         AfternoteHomeScreen(
             items = items,
             selectedCategory = AfternoteCategory.ALL,
