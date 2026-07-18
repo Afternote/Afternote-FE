@@ -64,7 +64,7 @@ import com.afternote.core.ui.R as CoreUiR
 /**
  * 추억 노트 상세 Stateful Route.
  *
- * [com.afternote.feature.afternote.presentation.author.detail.socialnetwork.SocialNetworkDetailRoute]·[GalleryDetailRoute] 와 동일한 VM·UiState·삭제 이펙트 패턴을 따르며,
+ * [com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailRoute]·[GalleryDetailRoute] 와 동일한 VM·UiState·삭제 이펙트 패턴을 따르며,
  * 성공 시 [AfternoteDetailUiState.Success.contentUiModel] 이 추억 노트가 아니면 폴백한다.
  */
 @Composable
@@ -128,7 +128,7 @@ data class MemorialGuidelineDetailContent(
 /**
  * 추억 노트 애프터노트 상세 화면 (Stateless).
  *
- * [com.afternote.feature.afternote.presentation.author.detail.socialnetwork.SocialNetworkDetailScreen] 과 동일한 Scaffold·TopBar·드롭다운 배치·스크롤 modifier 패턴을 따른다.
+ * [com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailScreen] 과 동일한 Scaffold·TopBar·드롭다운 배치·스크롤 modifier 패턴을 따른다.
  */
 @Composable
 fun MemorialGuidelineDetailScreen(

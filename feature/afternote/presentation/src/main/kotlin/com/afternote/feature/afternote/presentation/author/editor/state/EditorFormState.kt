@@ -35,14 +35,17 @@ private const val LAST_WISH_DEFAULT_BRIGHT = "슬퍼 하지 말고 밝고 따뜻
  * 사진·썸네일은 Base64/data URL 같은 거대 문자열이 아니라 짧은 HTTPS URL 또는 content [android.net.Uri] 문자열만 두는 것이 안전하다.
  *
  * **서비스명:** [selectedService]의 `null`은 미선택(드롭다운 placeholder 노출) 상태이며, 등록 검증에서 차단된다.
+ *
+ * **처리 방법 리스트:** [processingMethods]는 계정 폼(소셜·비즈니스)과 갤러리 폼이 공유하는 단일 리스트다.
+ * 화면엔 어느 시점에도 한 카테고리의 섹션만 렌더되고 카테고리 전환 시 리셋되므로([selectedService] 리셋과 같은 정책),
+ * 카테고리별로 리스트를 나눌 이유가 없다.
  */
 data class EditorFormState(
     val loadedItemId: String? = null,
     val selectedCategory: EditorCategory = EditorCategory.SOCIAL,
     val selectedService: String? = null,
     val afternoteEditReceivers: List<AfternoteEditorReceiver> = emptyList(),
-    val socialProcessingMethods: List<ProcessingMethodItem> = emptyList(),
-    val galleryProcessingMethods: List<ProcessingMethodItem> = emptyList(),
+    val processingMethods: List<ProcessingMethodItem> = emptyList(),
     val selectedLastWish: String? = null,
     val pickedMemorialPhotoUri: String? = null,
     val funeralVideoUrl: String? = null,
@@ -103,10 +106,18 @@ data class EditorFormState(
 
     val currentServiceOptions: List<String>
         get() =
-            if (selectedCategory == EditorCategory.GALLERY) {
-                AfternoteServiceCatalog.galleryServices
-            } else {
-                AfternoteServiceCatalog.socialServices + CUSTOM_ADD_OPTION
+            when (selectedCategory) {
+                EditorCategory.SOCIAL -> AfternoteServiceCatalog.socialServices + CUSTOM_ADD_OPTION
+
+                EditorCategory.GALLERY -> AfternoteServiceCatalog.galleryServices
+
+                // 비즈니스는 직접 추가 미제공 — 시안(700:38735)에 드롭다운 펼침·직접 추가 항목이 없다 (Ready for dev 07-01 실측).
+                EditorCategory.BUSINESS -> AfternoteServiceCatalog.businessServices
+
+                // [EditorCategory.hasServiceSelection]=false 로 드롭다운이 렌더되지 않는 동안만 유효한 자리 채움.
+                // 두 카테고리의 서비스명 UI 는 미확정 상태다(ESTATE: "제목만 구현" 보류, MEMORIAL: 현행 에디터 정본 시안 부재) —
+                // 구현이 열리면 hasServiceSelection 과 이 분기를 함께 갱신할 것.
+                EditorCategory.MEMORIAL, EditorCategory.ESTATE -> emptyList()
             }
 
     fun isCustomAddOption(service: String): Boolean = service == CUSTOM_ADD_OPTION

@@ -3,7 +3,7 @@ package com.afternote.feature.afternote.presentation.author.detail
 import com.afternote.core.model.AlbumCover
 import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.domain.model.author.Detail
-import com.afternote.feature.afternote.presentation.author.detail.socialnetwork.SocialNetworkDetailContent
+import com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailContent
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 
 /** 상세 화면에 쓰는 "최종 작성일": 갱신일이 있으면 그것, 공백이면 생성일. */
@@ -29,8 +29,8 @@ internal fun Detail.toGalleryDetailContent(authorDisplayName: String): GalleryDe
         message = processing?.leaveMessage ?: "",
     )
 
-internal fun Detail.toSocialNetworkDetailContent(authorDisplayName: String): SocialNetworkDetailContent =
-    SocialNetworkDetailContent(
+internal fun Detail.toAccountDetailContent(authorDisplayName: String): AccountDetailContent =
+    AccountDetailContent(
         serviceName = title,
         userName = authorDisplayName,
         accountId = credentials?.id ?: "",
@@ -71,8 +71,9 @@ sealed interface DetailContentUiModel {
         val content: GalleryDetailContent,
     ) : DetailContentUiModel
 
-    data class SocialNetwork(
-        val content: SocialNetworkDetailContent,
+    /** 계정 기반 상세(SOCIAL·BUSINESS 공용) — 두 카테고리는 상세 데이터 구성이 동일하다 (이슈 #467). */
+    data class Account(
+        val content: AccountDetailContent,
     ) : DetailContentUiModel
 
     data class Memorial(
@@ -89,9 +90,9 @@ internal fun Detail.toDetailContentUiModel(authorDisplayName: String): DetailCon
             DetailContentUiModel.Gallery(toGalleryDetailContent(authorDisplayName))
         }
 
-        // BUSINESS 는 데이터 구성이 SOCIAL 과 동일(계정 정보·처리 방법·남긴 말씀)해 소셜 상세 UI 모델을 재사용 (이슈 #467).
+        // BUSINESS 는 데이터 구성이 SOCIAL 과 동일(계정 정보·처리 방법·남긴 말씀)해 계정 상세 UI 모델을 공유한다 (이슈 #467).
         AfternoteServiceType.SOCIAL_NETWORK, AfternoteServiceType.BUSINESS -> {
-            DetailContentUiModel.SocialNetwork(toSocialNetworkDetailContent(authorDisplayName))
+            DetailContentUiModel.Account(toAccountDetailContent(authorDisplayName))
         }
 
         AfternoteServiceType.MEMORIAL -> {
