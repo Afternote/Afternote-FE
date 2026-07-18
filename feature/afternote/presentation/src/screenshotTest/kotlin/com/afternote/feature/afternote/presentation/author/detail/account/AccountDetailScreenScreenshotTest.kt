@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.detail.socialnetwork
+package com.afternote.feature.afternote.presentation.author.detail.account
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
@@ -8,8 +8,8 @@ import com.android.tools.screenshot.PreviewTest
 @PreviewTest
 @Preview(showBackground = true)
 @Composable
-internal fun socialNetworkDetailScreenScreenshot() {
+internal fun accountDetailScreenScreenshot() {
     AfternoteTheme {
-        SocialNetworkDetailScreen(onBackClick = {})
+        AccountDetailScreen(onBackClick = {})
     }
 }
