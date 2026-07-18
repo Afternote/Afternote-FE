@@ -92,7 +92,7 @@ fun TimeLetterBlockItem(
                         style = AfternoteDesign.typography.footnoteCaption,
                         color = AfternoteDesign.colors.gray6,
                     )
-                    Spacer(modifier = Modifier.width(43.dp))
+                    Spacer(modifier = Modifier.width(19.dp))
                     Box {
                         Image(
                             painterResource(com.afternote.feature.timeletter.presentation.R.drawable.setting),
