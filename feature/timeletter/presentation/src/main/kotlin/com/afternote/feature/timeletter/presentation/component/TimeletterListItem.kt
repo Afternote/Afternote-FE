@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -31,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.timeletter.domain.model.TimeLetter
+import com.afternote.feature.timeletter.domain.model.TimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlockType
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 
@@ -44,16 +46,21 @@ fun TimeLetterListItem(
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
-    Row(modifier = modifier) {
+    Row(
+        modifier =
+            modifier
+                .border(
+                    width = 1.dp,
+                    color = AfternoteDesign.colors.gray4,
+                    shape = RoundedCornerShape(size = 6.dp),
+                ).padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Column(
             modifier =
                 Modifier
-                    .border(
-                        width = 1.dp,
-                        color = AfternoteDesign.colors.gray4,
-                        shape = RoundedCornerShape(size = 6.dp),
-                    ).fillMaxWidth()
-                    .padding(vertical = 19.dp, horizontal = 15.dp),
+                    .weight(1f)
+                    .padding(vertical = 19.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -73,7 +80,7 @@ fun TimeLetterListItem(
                     style = AfternoteDesign.typography.footnoteCaption,
                     color = AfternoteDesign.colors.gray6,
                 )
-                Spacer(modifier = Modifier.width(19.dp))
+                Spacer(modifier = Modifier.width(15.dp))
                 Box {
                     Image(
                         painterResource(com.afternote.feature.timeletter.presentation.R.drawable.setting),
@@ -122,11 +129,17 @@ fun TimeLetterListItem(
         }
         val thumbUrl = letter.blocks.firstOrNull { it.blockType == TimeLetterBlockType.IMAGE }?.url
         if (thumbUrl != null) {
+            Spacer(modifier = Modifier.width(3.dp))
             AsyncImage(
-                model = thumbUrl,
+                model =
+                    if (LocalInspectionMode.current) {
+                        com.afternote.feature.timeletter.presentation.R.drawable.container
+                    } else {
+                        thumbUrl
+                    },
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.size(60.dp),
+                modifier = Modifier.size(80.dp),
             )
         }
     }
@@ -146,5 +159,33 @@ private fun TimeLetterItemPreview() {
                 blocks = emptyList(),
                 receiverIds = listOf(1L),
             ),
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TimeLetterItemWithImagePreview() {
+    TimeLetterListItem(
+        letter =
+            TimeLetter(
+                id = 1L,
+                title = "미래의 나에게",
+                sendAt = "2026-12-31T00:00:00",
+                deliveredAt = null,
+                status = TimeLetterStatus.SCHEDULED,
+                blocks =
+                    listOf(
+                        TimeLetterBlock(
+                            id = 1L,
+                            blockType = TimeLetterBlockType.IMAGE,
+                            blockOrder = 1,
+                            textContent = null,
+                            url = "preview-image",
+                            mimeType = "image/png",
+                        ),
+                    ),
+                receiverIds = listOf(1L),
+            ),
+        receiverNameMap = mapOf(1L to "박경민"),
     )
 }
