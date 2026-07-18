@@ -87,8 +87,7 @@ private data class EditorFormSnapshot(
     val categoryName: String = "SOCIAL",
     val selectedService: String = "",
     val receivers: List<ReceiverSnap> = emptyList(),
-    val social: List<PmSnap> = emptyList(),
-    val gallery: List<PmSnap> = emptyList(),
+    val methods: List<PmSnap> = emptyList(),
     val selectedLastWish: String? = null,
     val pickedMemorialPhotoUri: String? = null,
     val funeralVideoUrl: String? = null,
@@ -115,8 +114,7 @@ private data class EditorFormSnapshot(
             selectedService = selectedService.ifBlank { null },
             afternoteEditReceivers =
                 receivers.map { AfternoteEditorReceiver(id = it.id, name = it.name, label = it.label) },
-            socialProcessingMethods = social.map { ProcessingMethodItem(it.id, it.text) },
-            galleryProcessingMethods = gallery.map { ProcessingMethodItem(it.id, it.text) },
+            processingMethods = methods.map { ProcessingMethodItem(it.id, it.text) },
             selectedLastWish = selectedLastWish,
             pickedMemorialPhotoUri = pickedMemorialPhotoUri,
             funeralVideoUrl = funeralVideoUrl,
@@ -141,8 +139,7 @@ private data class EditorFormSnapshot(
                     form.afternoteEditReceivers.map {
                         ReceiverSnap(id = it.id, name = it.name, label = it.label)
                     },
-                social = form.socialProcessingMethods.map { PmSnap(it.id, it.text) },
-                gallery = form.galleryProcessingMethods.map { PmSnap(it.id, it.text) },
+                methods = form.processingMethods.map { PmSnap(it.id, it.text) },
                 selectedLastWish = form.selectedLastWish,
                 pickedMemorialPhotoUri = form.pickedMemorialPhotoUri,
                 funeralVideoUrl = form.funeralVideoUrl,
@@ -335,10 +332,10 @@ class AfternoteEditorViewModel
                                     )
                                 }
                             },
-                            onFailure = { e -> handleSaveFailure(e, categoryForApi) },
+                            onFailure = { e -> handleSaveFailure(e) },
                         )
                     },
-                    onFailure = { e -> handleSaveFailure(e, categoryForApi) },
+                    onFailure = { e -> handleSaveFailure(e) },
                 )
             }
         }
@@ -354,6 +351,7 @@ class AfternoteEditorViewModel
                 is SaveAfternoteCommand.Create -> {
                     when (val input = command.input) {
                         is CreateAfternoteInput.Social -> afternoteRepository.createSocial(input.payload)
+                        is CreateAfternoteInput.Business -> afternoteRepository.createBusiness(input.payload)
                         is CreateAfternoteInput.Gallery -> afternoteRepository.createGallery(input.payload)
                         is CreateAfternoteInput.Playlist -> afternoteRepository.createPlaylist(input.payload)
                     }
@@ -459,10 +457,7 @@ class AfternoteEditorViewModel
             internalState.update { it.copy(isPrefillLoading = false, pendingPrefill = null) }
         }
 
-        private fun handleSaveFailure(
-            e: Throwable,
-            category: EditorCategory,
-        ) {
+        private fun handleSaveFailure(e: Throwable) {
             val validationError =
                 when (e) {
                     is AfternoteAuthoringValidationException -> {
