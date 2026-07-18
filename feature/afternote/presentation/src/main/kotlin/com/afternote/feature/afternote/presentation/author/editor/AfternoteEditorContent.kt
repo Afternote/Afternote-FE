@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.modifierextention.shimmerLoadingPlaceholder
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.author.editor.account.AccountEditorContent
 import com.afternote.feature.afternote.presentation.author.editor.account.AccountSection
 import com.afternote.feature.afternote.presentation.author.editor.gallery.GalleryAndFileEditorContent
 import com.afternote.feature.afternote.presentation.author.editor.memorial.guideline.MemorialGuidelineEditorContent
@@ -31,7 +32,6 @@ import com.afternote.feature.afternote.presentation.author.editor.processing.mod
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverSection
 import com.afternote.feature.afternote.presentation.author.editor.selection.DropdownMenuStyle
 import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdown
-import com.afternote.feature.afternote.presentation.author.editor.social.SocialNetworkEditorContent
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
@@ -78,7 +78,7 @@ internal fun EditorContent(
             return@Column
         }
 
-        if (form.selectedCategory != EditorCategory.MEMORIAL) {
+        if (form.selectedCategory.hasServiceSelection) {
             Spacer(modifier = Modifier.height(20.dp))
 
             SelectionDropdown(
@@ -129,7 +129,7 @@ private fun EditorPrefillSkeleton(
     Column(modifier = modifier.fillMaxWidth()) {
         Spacer(modifier = Modifier.height(20.dp))
 
-        if (category != EditorCategory.MEMORIAL) {
+        if (category.hasServiceSelection) {
             // 서비스명 드롭다운 자리.
             SkeletonBar(height = 56.dp)
             Spacer(modifier = Modifier.height(32.dp))
@@ -140,16 +140,19 @@ private fun EditorPrefillSkeleton(
 
             EditorCategory.GALLERY -> GalleryPrefillSkeleton()
 
-            EditorCategory.SOCIAL -> SocialPrefillSkeleton()
+            // BUSINESS 는 SOCIAL 과 같은 구조(계정 2필드 + 처리 방법 + 메시지)라 skeleton 도 공유한다.
+            EditorCategory.SOCIAL, EditorCategory.BUSINESS -> AccountPrefillSkeleton()
 
-            // placeholder 카테고리는 prefill 자리가 없으므로 skeleton 도 그리지 않는다.
-            EditorCategory.BUSINESS, EditorCategory.ESTATE -> Unit
+            // ESTATE 는 로드가 끝나도 채울 폼이 없는 "준비 중" placeholder 라(UnimplementedCategoryContent)
+            // 로딩 동안 흉내 낼 뼈대도 없다 — 아무것도 그리지 않는다. 생성이 차단돼 수정 진입으로
+            // 실제 도달할 일은 사실상 없지만, exhaustive when 이라 분기를 명시한다.
+            EditorCategory.ESTATE -> Unit
         }
     }
 }
 
 @Composable
-private fun SocialPrefillSkeleton() {
+private fun AccountPrefillSkeleton() {
     // 계정 ID/PW.
     SkeletonBar(height = 56.dp)
     Spacer(modifier = Modifier.height(12.dp))
@@ -265,21 +268,23 @@ internal fun CategoryContent(
                     ),
                 processingMethodSection =
                     ProcessingMethodSection(
-                        items = form.galleryProcessingMethods,
-                        onItemDeleteClick = state::deleteGalleryProcessingMethod,
-                        onItemAdded = state::addGalleryProcessingMethod,
-                        onItemEdited = state::editGalleryProcessingMethod,
+                        items = form.processingMethods,
+                        onItemDeleteClick = state::deleteProcessingMethod,
+                        onItemAdded = state::addProcessingMethod,
+                        onItemEdited = state::editProcessingMethod,
                     ),
             )
         }
 
-        // BUSINESS · ESTATE 는 디자인 미확정. 입력 자리를 비워 두고 placeholder 만 노출한다 (이슈 #195).
-        EditorCategory.BUSINESS, EditorCategory.ESTATE -> {
+        // ESTATE 는 디자인 미확정. 입력 자리를 비워 두고 placeholder 만 노출한다 (이슈 #195).
+        EditorCategory.ESTATE -> {
             UnimplementedCategoryContent()
         }
 
-        EditorCategory.SOCIAL -> {
-            SocialNetworkEditorContent(
+        // BUSINESS(시안 700:38735)는 SOCIAL 과 폼 구조가 동일(계정 정보* + 처리 방법 리스트* + 남기실 말씀)해
+        // AccountEditorContent 를 그대로 재사용한다 (이슈 #467).
+        EditorCategory.SOCIAL, EditorCategory.BUSINESS -> {
+            AccountEditorContent(
                 editorMessages = state.editorMessages,
                 onMessageRegisterClick = {},
                 onMessageDeleteClick = state::removeEditorMessage,
@@ -291,7 +296,7 @@ internal fun CategoryContent(
                     ),
                 processingMethodSection =
                     ProcessingMethodSection(
-                        items = form.socialProcessingMethods,
+                        items = form.processingMethods,
                         onItemDeleteClick = state::deleteProcessingMethod,
                         onItemAdded = state::addProcessingMethod,
                         onItemEdited = state::editProcessingMethod,
@@ -309,6 +314,24 @@ private fun EditorContentSocialPreview() {
         EditorContent(
             state = state,
             form = state.currentForm().copy(selectedCategory = EditorCategory.SOCIAL),
+            graphSongs = emptyList(),
+            onNavigateToAddSong = {},
+            onNavigateToSelectReceiver = {},
+            onPhotoAddClick = {},
+            onVideoAddClick = {},
+            onThumbnailBytesReady = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun EditorContentBusinessPreview() {
+    AfternoteTheme {
+        val state = rememberAfternoteEditorState()
+        EditorContent(
+            state = state,
+            form = state.currentForm().copy(selectedCategory = EditorCategory.BUSINESS),
             graphSongs = emptyList(),
             onNavigateToAddSong = {},
             onNavigateToSelectReceiver = {},
