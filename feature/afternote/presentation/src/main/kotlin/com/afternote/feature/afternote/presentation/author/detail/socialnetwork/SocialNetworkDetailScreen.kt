@@ -15,6 +15,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,9 +40,12 @@ import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetai
 import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel
 import com.afternote.feature.afternote.presentation.author.detail.DetailContentUiModel
 import com.afternote.feature.afternote.presentation.author.detail.rememberAfternoteDetailState
+import com.afternote.feature.afternote.presentation.author.navigation.DeleteInProgressOverlay
 import com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent
+import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadErrorContent
 import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadingContent
 import com.afternote.feature.afternote.presentation.author.navigation.ObserveDeleteResult
+import com.afternote.feature.afternote.presentation.author.navigation.rememberDeleteFailedHandler
 import com.afternote.feature.afternote.presentation.shared.detail.AfternoteDetailServiceHeader
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.DetailInfoRow
@@ -68,11 +73,13 @@ internal fun SocialNetworkDetailRoute(
     viewModel: AfternoteDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     ObserveDeleteResult(
         deleteResult = (uiState as? AfternoteDetailUiState.Success)?.deleteResult,
         onConsumed = viewModel::onDeleteResultConsumed,
         onDeleteSucceeded = onBack,
+        onDeleteFailed = rememberDeleteFailedHandler(snackbarHostState),
     )
 
     when (val state = uiState) {
@@ -81,18 +88,28 @@ internal fun SocialNetworkDetailRoute(
         }
 
         is AfternoteDetailUiState.Error -> {
-            DesignPendingDetailContent(onBackClick = onBack)
+            DetailLoadErrorContent(
+                rawMessage = state.rawMessage,
+                messageRes = state.messageRes,
+                onBackClick = onBack,
+            )
         }
 
         is AfternoteDetailUiState.Success -> {
             when (val model = state.contentUiModel) {
                 is DetailContentUiModel.SocialNetwork -> {
-                    SocialNetworkDetailScreen(
-                        content = model.content,
-                        onBackClick = onBack,
-                        onEditClick = { onNavigateToEditor(state.detailId.toString()) },
-                        onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
-                    )
+                    Box {
+                        SocialNetworkDetailScreen(
+                            content = model.content,
+                            snackbarHostState = snackbarHostState,
+                            onBackClick = onBack,
+                            onEditClick = { onNavigateToEditor(state.detailId.toString()) },
+                            onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
+                        )
+                        if (state.isDeleting) {
+                            DeleteInProgressOverlay()
+                        }
+                    }
                 }
 
                 else -> {
@@ -111,6 +128,7 @@ fun SocialNetworkDetailScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
     content: SocialNetworkDetailContent = SocialNetworkDetailContent(),
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     isEditable: Boolean = true,
     onEditClick: () -> Unit = {},
     onDeleteConfirm: () -> Unit = {},
@@ -130,6 +148,7 @@ fun SocialNetworkDetailScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             DetailTopBar(
                 title = stringResource(R.string.feature_afternote_detail_title),
