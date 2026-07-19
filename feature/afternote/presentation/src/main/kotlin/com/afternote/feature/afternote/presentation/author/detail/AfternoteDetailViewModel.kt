@@ -27,7 +27,8 @@ import javax.inject.Inject
  *
  * 내부 [InternalState] (flat) 로 조회·작성자·삭제 진행 단계를 관리하고, public [uiState] 는
  * [AfternoteDetailUiState] 로 매핑해 Loading/Success/Error 3분기로 노출한다.
- * 삭제 결과(성공/실패)는 영속 상태가 아니라 [events] [Channel] 로 노출한다 — UI는 [com.afternote.core.ui.ObserveAsEvents] 로만 수집.
+ * 삭제 결과(성공/실패)는 [AfternoteDetailUiState.Success.deleteResult] nullable 필드에 흡수한다 —
+ * UI 가 LaunchedEffect 로 소비한 뒤 [onDeleteResultConsumed] 로 reset.
  *
  * 사용자 가시 메시지는 VM에 하드코딩하지 않고 [androidx.annotation.StringRes] id 로 노출한다 (서버 raw 메시지가 있으면 그쪽을 우선).
  * [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel] 의 `error: String?` + `errorRes: Int?` 페어 패턴과 동일.
@@ -60,6 +61,9 @@ class AfternoteDetailViewModel
                 runCatching { userRepository.getMyProfile() }
                     .onSuccess { profile ->
                         internalState.update { it.copy(authorDisplayName = profile.name) }
+                    }.onFailure {
+                        // 의도된 폴백: 표시명은 장식 정보라 실패해도 화면을 차단하지 않는다.
+                        // authorDisplayName 이 빈 문자열로 남으면 TitleSection 이 이름 세그먼트를 생략해 렌더한다.
                     }
             }
             val id = afternoteIdFromNav
