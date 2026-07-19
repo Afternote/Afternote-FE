@@ -20,6 +20,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -51,9 +53,12 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.author.navigation.DeleteInProgressOverlay
 import com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent
+import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadErrorContent
 import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadingContent
 import com.afternote.feature.afternote.presentation.author.navigation.ObserveDeleteResult
+import com.afternote.feature.afternote.presentation.author.navigation.rememberDeleteFailedHandler
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
@@ -74,11 +79,13 @@ internal fun MemorialGuidelineDetailRoute(
     viewModel: AfternoteDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     ObserveDeleteResult(
         deleteResult = (uiState as? AfternoteDetailUiState.Success)?.deleteResult,
         onConsumed = viewModel::onDeleteResultConsumed,
         onDeleteSucceeded = onBack,
+        onDeleteFailed = rememberDeleteFailedHandler(snackbarHostState),
     )
 
     when (val state = uiState) {
@@ -87,18 +94,28 @@ internal fun MemorialGuidelineDetailRoute(
         }
 
         is AfternoteDetailUiState.Error -> {
-            DesignPendingDetailContent(onBackClick = onBack)
+            DetailLoadErrorContent(
+                rawMessage = state.rawMessage,
+                messageRes = state.messageRes,
+                onBackClick = onBack,
+            )
         }
 
         is AfternoteDetailUiState.Success -> {
             when (val model = state.contentUiModel) {
                 is DetailContentUiModel.Memorial -> {
-                    MemorialGuidelineDetailScreen(
-                        content = model.content,
-                        onBackClick = onBack,
-                        onEditClick = { onNavigateToEditor(state.detailId.toString()) },
-                        onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
-                    )
+                    Box {
+                        MemorialGuidelineDetailScreen(
+                            content = model.content,
+                            snackbarHostState = snackbarHostState,
+                            onBackClick = onBack,
+                            onEditClick = { onNavigateToEditor(state.detailId.toString()) },
+                            onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
+                        )
+                        if (state.isDeleting) {
+                            DeleteInProgressOverlay()
+                        }
+                    }
                 }
 
                 else -> {
@@ -135,6 +152,7 @@ fun MemorialGuidelineDetailScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
     content: MemorialGuidelineDetailContent = MemorialGuidelineDetailContent(),
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     isEditable: Boolean = true,
     onEditClick: () -> Unit = {},
     onDeleteConfirm: () -> Unit = {},
@@ -156,6 +174,7 @@ fun MemorialGuidelineDetailScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             DetailTopBar(
                 title = stringResource(R.string.feature_afternote_detail_title),
@@ -224,7 +243,9 @@ private fun TitleSection(
                 withStyle(style = SpanStyle(color = AfternoteDesign.colors.gray9)) {
                     append(categoryLabel)
                 }
-                append("에 대한 ${userName}님의 기록")
+                // 프로필 로드 실패·로딩 경합으로 이름이 비어 있으면 이름 세그먼트를 생략해
+                // "…에 대한 님의 기록" 렌더를 막는다.
+                append(if (userName.isBlank()) "에 대한 기록" else "에 대한 ${userName}님의 기록")
             },
         style = AfternoteDesign.typography.bodyLargeB,
     )
