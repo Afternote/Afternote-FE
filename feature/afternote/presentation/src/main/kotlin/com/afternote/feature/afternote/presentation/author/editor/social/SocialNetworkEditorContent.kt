@@ -20,6 +20,9 @@ import com.afternote.feature.afternote.presentation.author.editor.account.Accoun
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListSection
+import com.afternote.feature.afternote.presentation.author.editor.receiver.RecipientDesignationSection
+import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
+import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverSection
 
 /**
  * 소셜네트워크 등 일반적인 종류 선택 시 표시되는 콘텐츠
@@ -54,6 +57,15 @@ fun SocialNetworkEditorContent(
                 state = params.accountSection.passwordState,
                 keyboardType = KeyboardType.Password,
             )
+        }
+
+        // 수신자 지정 섹션
+        // 위치 근거 = 비즈니스 시안(Figma 700:38735): 계정 정보 다음·처리 방법 리스트 앞.
+        // 소셜 시안엔 아직 수신자 섹션이 없어 비즈니스가 유일한 위치 근거다. '정보 처리 방법' 라디오
+        // 존폐가 확정되면 라디오와 이 섹션의 상대 순서만 조정하면 되고, '처리 방법 리스트 앞'은 불변.
+        // 저장 검증이 수신자 1인 이상을 요구하므로 UI 를 노출한다.
+        params.recipientSection?.let { section ->
+            RecipientDesignationSection(section = section)
         }
 
         // 처리 방법 리스트 섹션
@@ -94,6 +106,13 @@ private fun SocialNetworkEditorContentPreview() {
                             AccountSection(
                                 idState = rememberTextFieldState(),
                                 passwordState = rememberTextFieldState(),
+                            ),
+                        recipientSection =
+                            AfternoteEditorReceiverSection(
+                                afternoteEditReceivers =
+                                    listOf(
+                                        AfternoteEditorReceiver(id = "1", name = "홍길동", label = "가족"),
+                                    ),
                             ),
                     ),
             )
