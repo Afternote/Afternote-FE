@@ -22,7 +22,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
  * @param trailingSpacerHeight 하단 여백(편집 화면 등). [videoContent] 직후에만 두어 [spacedBy] 간격에 섞이지 않게 합니다.
  */
 @Composable
-fun MemorialGuidelineContent(
+fun MemorialContent(
     introContent: @Composable () -> Unit,
     photoContent: @Composable () -> Unit,
     playlistContent: @Composable () -> Unit,
@@ -53,9 +53,9 @@ fun MemorialGuidelineContent(
 
 @Preview(showBackground = true)
 @Composable
-private fun MemorialGuidelineContentPreview() {
+private fun MemorialContentPreview() {
     AfternoteTheme {
-        MemorialGuidelineContent(
+        MemorialContent(
             introContent = {},
             photoContent = {},
             playlistContent = {},

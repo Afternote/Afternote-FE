@@ -8,8 +8,8 @@ import com.android.tools.screenshot.PreviewTest
 @PreviewTest
 @Preview(showBackground = true)
 @Composable
-internal fun memorialGuidelineDetailScreenScreenshot() {
+internal fun memorialDetailScreenScreenshot() {
     AfternoteTheme {
-        MemorialGuidelineDetailScreen(onBackClick = {})
+        MemorialDetailScreen(onBackClick = {})
     }
 }

@@ -17,7 +17,7 @@ import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 data class AfternoteHomeEntryActions(
     val navigateToDetail: (String) -> Unit = {},
     val navigateToGalleryDetail: (String) -> Unit = {},
-    val navigateToMemorialGuidelineDetail: (String) -> Unit = {},
+    val navigateToMemorialDetail: (String) -> Unit = {},
     val navigateToAdd: (AfternoteCategory) -> Unit = {},
     val onSettingClick: () -> Unit = {},
 )
@@ -55,7 +55,7 @@ fun AfternoteHomeEntry(
             when (type) {
                 AfternoteServiceType.GALLERY_AND_FILES -> actions.navigateToGalleryDetail(id)
 
-                AfternoteServiceType.MEMORIAL -> actions.navigateToMemorialGuidelineDetail(id)
+                AfternoteServiceType.MEMORIAL -> actions.navigateToMemorialDetail(id)
 
                 AfternoteServiceType.SOCIAL_NETWORK -> actions.navigateToDetail(id)
 

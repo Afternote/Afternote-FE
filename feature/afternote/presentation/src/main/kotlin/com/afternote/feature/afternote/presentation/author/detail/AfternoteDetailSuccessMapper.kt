@@ -41,8 +41,8 @@ internal fun Detail.toSocialNetworkDetailContent(authorDisplayName: String): Soc
         afternoteEditReceivers = toReceiverUiModels(),
     )
 
-internal fun Detail.toMemorialGuidelineDetailContent(authorDisplayName: String): MemorialGuidelineDetailContent =
-    MemorialGuidelineDetailContent(
+internal fun Detail.toMemorialDetailContent(authorDisplayName: String): MemorialDetailContent =
+    MemorialDetailContent(
         userName = authorDisplayName,
         finalWriteDate = finalWriteDate,
         profileImageUri = playlist?.playlistDetailMemorialMedia?.photoUrl,
@@ -76,7 +76,7 @@ sealed interface DetailContentUiModel {
     ) : DetailContentUiModel
 
     data class Memorial(
-        val content: MemorialGuidelineDetailContent,
+        val content: MemorialDetailContent,
     ) : DetailContentUiModel
 
     /** BUSINESS·ESTATE 등 디자인 확정 전 placeholder. */
@@ -94,7 +94,7 @@ internal fun Detail.toDetailContentUiModel(authorDisplayName: String): DetailCon
         }
 
         AfternoteServiceType.MEMORIAL -> {
-            DetailContentUiModel.Memorial(toMemorialGuidelineDetailContent(authorDisplayName))
+            DetailContentUiModel.Memorial(toMemorialDetailContent(authorDisplayName))
         }
 
         // BUSINESS · ESTATE 는 디자인 확정 전 placeholder. 백엔드도 미지원이라 일반적으로 도달하지 않음.
