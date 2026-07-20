@@ -19,8 +19,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
  * 화면 우측 하단에 떠 있는 대장 버튼(FAB).
  *
  * [size] 기본값은 M3 [FloatingActionButton] 기본(56dp)이라 기존 호출부는 무변경이다.
- * 시안(plus_button 48×48, 글리프 16.67dp)에 맞추려면 호출부에서 [size] = 48.dp, [iconSize] = 17.dp 로 opt-in 한다.
- * (벡터 viewport 14 / 글리프 13.6 을 Icon 이 ContentScale.Fit 로 확대 → 17 × 13.6/14 ≈ 16.5dp.)
+ * 시안(plus_button 48×48)에 맞추려면 호출부에서 [size] = 48.dp, [iconSize] = 20.dp 로 opt-in 한다.
  */
 @Composable
 fun AfternoteFloatingActionButton(
