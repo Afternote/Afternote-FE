@@ -31,10 +31,14 @@ import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_today_q
 private val TodayQuestionCardGradientStart = Color(0xFFF8F8F7)
 private val TodayQuestionCardGradientEnd = Color(0xFFB7CDC0)
 
+/**
+ * @param dateText 오늘 날짜 (yyyy.MM.dd). 호출부가 실제 날짜를 넘겨야 한다 — 하드코딩 기본값 금지(#397).
+ * @param questionText 오늘의 질문 본문. 조회 실패 시에만 기본 문구를 사용한다.
+ */
 @Composable
 fun TodayQuestionCard(
+    dateText: String,
     modifier: Modifier = Modifier,
-    dateText: String = "2026.04.10",
     questionText: String = stringResource(mindrecord_daily_question_default_today),
     onAnswerClick: () -> Unit = {},
 ) {
@@ -100,6 +104,9 @@ fun TodayQuestionCard(
 @Composable
 private fun TodayQuestionCardPreview() {
     AfternoteTheme {
-        TodayQuestionCard(modifier = Modifier.padding(16.dp))
+        TodayQuestionCard(
+            dateText = "2026.04.10",
+            modifier = Modifier.padding(16.dp),
+        )
     }
 }
