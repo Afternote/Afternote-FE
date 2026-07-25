@@ -23,7 +23,8 @@ import javax.inject.Inject
  * 임시저장 목록 ViewModel.
  *
  * - 일기: 백엔드가 `draftOnly=true` 쿼리를 제공해 그대로 호출 (단, 이번 달 한정).
- * - 데일리질문: 응답에 `isDraft` 가 없어 분류 불가 → 0건 처리 (TODO).
+ * - 데일리질문: 전체 목록을 받아 `isDraft` 로 클라 필터. 서버가 목록에 draft 항목/플래그를
+ *   내려주지 않으면 (계약 미검증) 기본값 false 로 파싱되어 종전처럼 0건이 된다.
  */
 @HiltViewModel
 class DraftListViewModel
@@ -111,6 +112,14 @@ class DraftListViewModel
                                 ?.diaries
                                 .orEmpty()
                         }
+                    val dailyQuestionDeferred =
+                        async {
+                            dailyQuestionRepository
+                                .getList()
+                                .getOrNull()
+                                .orEmpty()
+                                .filter { it.isDraft }
+                        }
 
                     val diaryItems =
                         diaryDeferred.await().map { diary ->
@@ -123,8 +132,19 @@ class DraftListViewModel
                                 date = ui.date,
                             )
                         }
+                    val dailyQuestionItems =
+                        dailyQuestionDeferred.await().map { question ->
+                            val ui = question.toUi()
+                            DraftItem(
+                                id = ui.id,
+                                category = DraftCategory.DailyQuestion,
+                                title = ui.title,
+                                content = ui.content,
+                                date = ui.date,
+                            )
+                        }
 
-                    diaryItems.sortedByDescending { it.date }
+                    (diaryItems + dailyQuestionItems).sortedByDescending { it.date }
                 }
             }.getOrNull()
     }

@@ -16,6 +16,7 @@ fun DailyQuestionListItem.toDomain(): DailyQuestion =
         content = content,
         createdAt = createdAt,
         imageUrl = imageUrl,
+        isDraft = isDraft,
     )
 
 fun TodayDailyQuestionResponse.toDomain(): TodayDailyQuestion =
@@ -24,6 +25,7 @@ fun TodayDailyQuestionResponse.toDomain(): TodayDailyQuestion =
         day = day,
         content = content,
         isAnswered = isAnswered,
+        isDraft = isDraft,
     )
 
 fun DailyQuestionCreatePayload.toRequest(): DailyQuestionCreateRequest =

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
+import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
@@ -43,6 +45,7 @@ class DailyQuestionWriteViewModel
                                 isQuestionLoading = false,
                             )
                         }
+                        if (today.isDraft) resumeDraftIfFound()
                     }.onFailure { e ->
                         _uiState.update {
                             it.copy(
@@ -55,6 +58,26 @@ class DailyQuestionWriteViewModel
                             )
                         }
                     }
+            }
+        }
+
+        /**
+         * today 응답이 draft 존재를 알려주면 당일 목록에서 임시저장 레코드를 찾아 이어쓰기 상태로 프리필한다.
+         * 목록에 draft 항목/플래그가 없으면 (서버 계약 미검증) 아무것도 하지 않고 신규 작성으로 폴백.
+         */
+        private suspend fun resumeDraftIfFound() {
+            val draft =
+                repository
+                    .getList(date = LocalDate.now().toString())
+                    .getOrNull()
+                    ?.firstOrNull { it.isDraft }
+                    ?: return
+            _uiState.update {
+                it.copy(
+                    draftId = draft.dailyQuestionId,
+                    answer = draft.content,
+                    imageUrl = draft.imageUrl ?: it.imageUrl,
+                )
             }
         }
 
@@ -80,15 +103,31 @@ class DailyQuestionWriteViewModel
 
             viewModelScope.launch {
                 _uiState.update { it.copy(submitState = SubmitState.InProgress) }
-                repository
-                    .create(
-                        DailyQuestionCreatePayload(
-                            content = state.answer,
-                            isDraft = isDraft,
-                            questionId = questionId,
-                            imageUrl = state.imageUrl,
-                        ),
-                    ).onSuccess {
+                val result =
+                    if (state.draftId != null) {
+                        // 기존 임시저장 레코드가 있으면 새로 만들지 않고 PATCH 로 갱신/전환한다.
+                        repository.update(
+                            id = state.draftId,
+                            payload =
+                                DailyQuestionUpdatePayload(
+                                    content = state.answer,
+                                    isDraft = isDraft,
+                                    questionId = questionId,
+                                    imageUrl = state.imageUrl,
+                                ),
+                        )
+                    } else {
+                        repository.create(
+                            DailyQuestionCreatePayload(
+                                content = state.answer,
+                                isDraft = isDraft,
+                                questionId = questionId,
+                                imageUrl = state.imageUrl,
+                            ),
+                        )
+                    }
+                result
+                    .onSuccess {
                         _uiState.update { it.copy(submitState = SubmitState.Succeeded) }
                     }.onFailure { e ->
                         _uiState.update {

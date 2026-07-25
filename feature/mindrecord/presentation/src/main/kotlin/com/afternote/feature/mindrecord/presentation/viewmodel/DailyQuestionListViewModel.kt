@@ -55,7 +55,8 @@ class DailyQuestionListViewModel
 
                 val today = repository.getToday().getOrNull()
                 val listResult = repository.getList(date = date)
-                val list = listResult.getOrNull().orEmpty()
+                // 임시저장은 일반 답변 목록에 노출하지 않는다 (임시저장 목록 화면에서만 다룸).
+                val list = listResult.getOrNull().orEmpty().filter { !it.isDraft }
 
                 if (today == null && listResult.isFailure) {
                     val message =

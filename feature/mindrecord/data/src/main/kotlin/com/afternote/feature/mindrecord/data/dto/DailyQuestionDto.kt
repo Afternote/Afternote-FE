@@ -36,6 +36,10 @@ data class DailyQuestionListItem(
     @SerialName("content") val content: String,
     @SerialName("createdAt") val createdAt: String,
     @SerialName("imageUrl") val imageUrl: String? = null,
+    // 서버가 목록 응답에 draft 플래그를 내려주는지 미검증 (Swagger 접근 불가) — 없으면 false 로 파싱.
+    @SerialName("draft")
+    @JsonNames("isDraft")
+    val isDraft: Boolean = false,
 )
 
 @Serializable
@@ -44,4 +48,6 @@ data class TodayDailyQuestionResponse(
     @SerialName("day") val day: Int,
     @SerialName("content") val content: String,
     @SerialName("answered") val isAnswered: Boolean,
+    // QA logcat 실측 키는 `draft` — 구버전/미배포 서버 대비 기본값 false.
+    @SerialName("draft") val isDraft: Boolean = false,
 )
