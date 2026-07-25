@@ -168,12 +168,22 @@ class WeeklyReportViewModel
 
         private fun LoadPhase.Loaded.toSuccessUiState(): WeeklyReportUiState.Success {
             val sunday = monday.plusDays(6)
+            // 기록일수 = 일기가 있는 요일 + 주간 범위 내 데일리질문 답변 날짜의 합집합(중복 제거).
+            // week 리스트는 월요일부터 순서대로 내려오므로 index로 실제 날짜(LocalDate)를 복원해 합친다.
+            val diaryDates =
+                report.week.mapIndexedNotNull { index, day ->
+                    monday.plusDays(index.toLong()).takeIf { day.isDiary }
+                }
+            val dailyQuestionDates =
+                report.dailyQuestions
+                    .mapNotNull { parseLocalDateOrNull(it.date) }
+                    .filter { it in monday..sunday }
             return WeeklyReportUiState.Success(
                 selectedMonday = monday,
                 weekOptions = weekOptions,
                 dateRange = "${monday.format(RANGE_FORMATTER)} - ${sunday.format(RANGE_FORMATTER)}",
                 userName = userName,
-                recordedDays = report.week.count { it.isDiary },
+                recordedDays = (diaryDates + dailyQuestionDates).distinct().size,
                 counts =
                     listOf(
                         report.dailyQuestionAmount to MindRecordCategoryUi.DailyQuestion,
@@ -224,12 +234,14 @@ class WeeklyReportViewModel
                     DateTimeFormatter.ISO_DATE,
                 )
 
-            private fun parseLocalDate(raw: String): LocalDate {
+            private fun parseLocalDate(raw: String): LocalDate = parseLocalDateOrNull(raw) ?: LocalDate.now()
+
+            private fun parseLocalDateOrNull(raw: String): LocalDate? {
                 val datePart = raw.substringBefore(' ').trim()
                 for (formatter in DATE_FORMATTERS) {
                     runCatching { return LocalDate.parse(datePart, formatter) }
                 }
-                return LocalDate.now()
+                return null
             }
         }
     }
