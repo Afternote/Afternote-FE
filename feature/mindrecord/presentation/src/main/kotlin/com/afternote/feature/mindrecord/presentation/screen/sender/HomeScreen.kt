@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
@@ -25,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.afternote.core.ui.R
 import com.afternote.core.ui.ViewModeSwitcher
 import com.afternote.core.ui.button.FAB.AfternoteFloatingActionButton
@@ -34,6 +36,7 @@ import com.afternote.core.ui.topbar.TitleTopBar
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListViewModel
+import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportViewModel
 import kotlinx.coroutines.flow.drop
 import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 
@@ -42,6 +45,7 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     dailyQuestionViewModel: DailyQuestionListViewModel = hiltViewModel(),
     diaryViewModel: DiaryListViewModel = hiltViewModel(),
+    weeklyReportViewModel: WeeklyReportViewModel = hiltViewModel(),
     onWriteClick: (MindRecordCategoryUi) -> Unit = {},
 ) {
     // Figma 2757:16116 — 마음의 기록 탭은 데일리 질문 / 일기 / 주간리포트 3개
@@ -76,6 +80,23 @@ fun HomeScreen(
                     else -> Unit
                 }
             }
+    }
+
+    // 작성 화면(DailyQuestionWriteRoute/DiaryWriteRoute) 복귀 시 현재 탭 목록 refresh.
+    // 최초 진입은 각 VM 의 init { load() } 가 이미 로드하므로 첫 resume 은 스킵한다.
+    // (rememberSaveable: 작성 화면 이동으로 컴포지션에서 벗어나도 스킵 플래그가 초기화되지 않도록)
+    var isFirstResume by rememberSaveable { mutableStateOf(true) }
+    LifecycleResumeEffect(Unit) {
+        if (isFirstResume) {
+            isFirstResume = false
+        } else {
+            when (selectedCategory) {
+                MindRecordCategoryUi.DailyQuestion -> dailyQuestionViewModel.refresh()
+                MindRecordCategoryUi.Diary -> diaryViewModel.refresh()
+                MindRecordCategoryUi.WeeklyReport -> weeklyReportViewModel.refresh()
+            }
+        }
+        onPauseOrDispose { }
     }
 
     Scaffold(
