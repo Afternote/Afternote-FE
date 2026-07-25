@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -30,6 +31,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
 import com.afternote.feature.mindrecord.presentation.component.DiaryCard
 import com.afternote.feature.mindrecord.presentation.component.DiaryComponent
@@ -85,7 +87,11 @@ private fun DiaryListContent(
     onYearMonthChanged: (YearMonth) -> Unit = {},
 ) {
     if (isListView && diaries.isEmpty()) {
-        MindRecordEmptyState(modifier = modifier)
+        MindRecordEmptyState(
+            modifier = modifier,
+            title = stringResource(R.string.mindrecord_diary_empty_state_title),
+            description = stringResource(R.string.mindrecord_diary_empty_state_description),
+        )
         return
     }
 
