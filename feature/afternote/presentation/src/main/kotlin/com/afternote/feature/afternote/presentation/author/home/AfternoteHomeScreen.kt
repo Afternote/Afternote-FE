@@ -12,7 +12,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
+import androidx.paging.LoadStates
 import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
@@ -58,7 +60,8 @@ fun AfternoteHomeScreen(
         },
         floatingActionButton = {
             if (onFabClick != null) {
-                PenFloatingActionButton(onClick = onFabClick)
+                // 시안(plus_button 48×48) 정합: core/ui 기본 56dp 대신 48dp opt-in (#481).
+                PenFloatingActionButton(onClick = onFabClick, size = 48.dp, iconSize = 17.dp)
             }
         },
     ) { paddingValues ->
@@ -94,7 +97,8 @@ fun AfternoteHomeScreen(
     }
 }
 
-@Preview
+// 작성자(author) 플로우: onFabClick 을 넘겨 48dp Pen FAB(#481)를 프리뷰에 실제로 렌더한다.
+@Preview(showBackground = true)
 @Composable
 private fun AfternoteHomeScreenPreview() {
     AfternoteTheme {
@@ -124,11 +128,12 @@ private fun AfternoteHomeScreenPreview() {
             selectedCategory = AfternoteCategory.ALL,
             onCategorySelected = {},
             onListItemClick = { _, _ -> },
+            onFabClick = {},
         )
     }
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 private fun AfternoteHomeScreenEmptyPreview() {
     AfternoteTheme {
@@ -139,6 +144,32 @@ private fun AfternoteHomeScreenEmptyPreview() {
             selectedCategory = AfternoteCategory.ALL,
             onCategorySelected = {},
             onListItemClick = { _, _ -> },
+            onFabClick = {},
+        )
+    }
+}
+
+// 초기 로딩 상태(refresh=Loading, 0건) → LoadingListBody. Paging 의 loadState 를 주입해 재현한다.
+@Preview(showBackground = true)
+@Composable
+private fun AfternoteHomeScreenLoadingPreview() {
+    AfternoteTheme {
+        val items =
+            flowOf(
+                PagingData.empty<ListItemUiModel>(
+                    LoadStates(
+                        refresh = LoadState.Loading,
+                        prepend = LoadState.NotLoading(endOfPaginationReached = false),
+                        append = LoadState.NotLoading(endOfPaginationReached = false),
+                    ),
+                ),
+            ).collectAsLazyPagingItems()
+        AfternoteHomeScreen(
+            items = items,
+            selectedCategory = AfternoteCategory.ALL,
+            onCategorySelected = {},
+            onListItemClick = { _, _ -> },
+            onFabClick = {},
         )
     }
 }
