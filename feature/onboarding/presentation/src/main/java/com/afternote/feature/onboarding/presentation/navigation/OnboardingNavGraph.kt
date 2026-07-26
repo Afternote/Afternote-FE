@@ -242,8 +242,8 @@ private fun rememberFindIdEventHost(
         if (pendingErrorMessage != null) {
             snackbarHostState.showSnackbar(
                 // 서버 봉투 message 가 빈 문자열이면 non-null 로 여기까지 온다(requireStatus 의 `?:` 는
-                // null 만 폴백) — 빈 스낵바 방지. 단 message 가 아예 null 인 실패는 위 분기에서 걸러져
-                // 스낵바 자체가 안 뜬다 — VM 이 error.message 를 null 그대로 넘기는 한 이 폴백은 못 잡는다.
+                // null 만 폴백) — 빈 스낵바 방지. message 가 아예 null 인 실패도 VM 이 `?: ""` 로 수렴해
+                // 빈 문자열로 여기 도달하므로, null-message 실패 문구는 이 폴백이 책임진다.
                 message = pendingErrorMessage.ifBlank { failedMessage },
                 duration = SnackbarDuration.Short,
             )

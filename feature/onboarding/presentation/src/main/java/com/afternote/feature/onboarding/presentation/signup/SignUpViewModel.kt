@@ -114,7 +114,7 @@ class SignUpViewModel
                         _uiState.update { it.copy(isVerificationSent = true, verificationError = null) }
                         startResendCooldown()
                     }.onFailure { error ->
-                        _uiState.update { it.copy(errorMessage = error.message) }
+                        _uiState.update { it.copy(errorMessage = error.message ?: "") }
                     }
                 _uiState.update { it.copy(isSendingCode = false) }
             }
@@ -198,7 +198,7 @@ class SignUpViewModel
                                 }
                             }
                     }.onFailure { error ->
-                        _uiState.update { it.copy(errorMessage = error.message) }
+                        _uiState.update { it.copy(errorMessage = error.message ?: "") }
                     }
                 _uiState.update { it.copy(isLoading = false) }
             }
