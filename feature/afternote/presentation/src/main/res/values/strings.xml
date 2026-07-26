@@ -39,7 +39,7 @@
 
     <string name="receiver_afternote_intro_line2">애프터노트입니다.</string>
     <string name="receiver_timeletter_intro_line2">타임 레터입니다.</string>
-    <string name="afternote_last_written_date">최종 작성일 %1$s.</string>
+    <string name="afternote_last_written_date">최종 작성일 %1$s</string>
     <string name="receiver_afternote_item_instagram">인스타그램</string>
     <string name="receiver_afternote_item_gallery">갤러리</string>
     <string name="receiver_afternote_item_memorial_guideline">추억 노트</string>
@@ -78,6 +78,7 @@
     <string name="receiver_mindrecord_today_empty">오늘의 기록이 없어요</string>
     <string name="receiver_mindrecord_card_logo">오늘의 기록 카드 로고</string>
     <string name="afternote_home_append_error">애프터노트 추가 목록을 불러오지 못했습니다.</string>
+    <string name="afternote_home_header_description">소중한 사람에게 남길 기록을 미리 정리해 보세요.</string>
     <string name="afternote_category_all">전체</string>
     <string name="afternote_category_social_network">소셜네트워크</string>
     <string name="afternote_category_business">비즈니스</string>
@@ -201,7 +202,7 @@
     <string name="login_kakao_failed">카카오 로그인에 실패했습니다.</string>
     <string name="login_kakao_sdk_not_initialized">카카오 SDK가 초기화되지 않았습니다. KAKAO_NATIVE_APP_KEY를 확인해주세요.</string>
 
-    <string name="biometric_prompt_title">t=사용자 인증하기</string>
+    <string name="biometric_prompt_title">사용자 인증하기</string>
     <string name="biometric_prompt_subtitle">사용자 인증 후 조회가 가능합니다.</string>
     <string name="biometric_prompt_negative">취소</string>
     <string name="biometric_not_available">지문 인증을 사용할 수 없습니다.</string>

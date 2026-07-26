@@ -114,8 +114,8 @@ internal fun MemorialGuidelineDetailRoute(
  */
 @Immutable
 data class MemorialGuidelineDetailContent(
-    val userName: String = "서영",
-    val finalWriteDate: String = "2025.11.26.",
+    val userName: String = "",
+    val finalWriteDate: String = "",
     val profileImageUri: String? = null,
     val albumCovers: List<AlbumCover> = emptyList(),
     val songCount: Int = 0,
@@ -264,7 +264,7 @@ private fun PhotoCard(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    text = "최종 작성일 $finalWriteDate",
+                    text = stringResource(R.string.afternote_last_written_date, finalWriteDate),
                     modifier = Modifier.fillMaxWidth(),
                     style =
                         AfternoteDesign.typography.footnoteCaption.copy(
@@ -528,6 +528,8 @@ private fun MemorialGuidelineDetailScreenPreview() {
         MemorialGuidelineDetailScreen(
             content =
                 MemorialGuidelineDetailContent(
+                    userName = "서영",
+                    finalWriteDate = "2025.11.26",
                     songCount = 16,
                     albumCovers = memorialGuidelineDetailPreviewAlbumCovers(),
                     lastWish = "차분하고 조용하게 보내주세요.",
@@ -555,6 +557,8 @@ private fun MemorialGuidelineDetailScreenDeleteDialogPreview() {
         MemorialGuidelineDetailScreen(
             content =
                 MemorialGuidelineDetailContent(
+                    userName = "서영",
+                    finalWriteDate = "2025.11.26",
                     songCount = 16,
                     albumCovers = memorialGuidelineDetailPreviewAlbumCovers(),
                     lastWish = "차분하고 조용하게 보내주세요.1",
