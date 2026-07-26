@@ -3,9 +3,9 @@ package com.afternote.core.data.mapper.auth
 import com.afternote.core.model.AccountRegistration
 import com.afternote.core.model.Session
 import com.afternote.core.model.TokenBundle
-import com.afternote.core.network.dto.LoginData
-import com.afternote.core.network.dto.ReissueData
-import com.afternote.core.network.dto.SignUpData
+import com.afternote.core.network.dto.LoginDto
+import com.afternote.core.network.dto.ReissueDto
+import com.afternote.core.network.dto.SignUpDto
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -19,7 +19,7 @@ import org.junit.Test
 class AuthMapperTest {
     @Test
     fun `toSignUpResult - userId·email 매핑`() {
-        val result = AuthMapper.toSignUpResult(SignUpData(userId = 42L, email = "user@example.com"))
+        val result = AuthMapper.toSignUpResult(SignUpDto(userId = 42L, email = "user@example.com"))
 
         assertEquals(AccountRegistration(userId = 42L, email = "user@example.com"), result)
     }
@@ -28,7 +28,7 @@ class AuthMapperTest {
     fun `toDefaultLoginResult - 토큰 매핑 (자리 바뀜 가드)`() {
         val result =
             AuthMapper.toDefaultLoginResult(
-                LoginData.DefaultLoginData(accessToken = "access-1", refreshToken = "refresh-1"),
+                LoginDto.DefaultLoginDto(accessToken = "access-1", refreshToken = "refresh-1"),
             )
 
         assertEquals(
@@ -44,7 +44,7 @@ class AuthMapperTest {
         listOf(true, false, null).forEach { newUser ->
             val result =
                 AuthMapper.toSocialLoginResult(
-                    LoginData.SocialLoginData(
+                    LoginDto.SocialLoginDto(
                         accessToken = "access-1",
                         refreshToken = "refresh-1",
                         isNewUser = newUser,
@@ -63,7 +63,7 @@ class AuthMapperTest {
     fun `toRotateTokenResult - 토큰·expiresIn 매핑 (자리 바뀜 가드)`() {
         val result =
             AuthMapper.toRotateTokenResult(
-                ReissueData(accessToken = "access-1", refreshToken = "refresh-1", expiresIn = 3599),
+                ReissueDto(accessToken = "access-1", refreshToken = "refresh-1", expiresIn = 3599),
             )
 
         assertEquals(

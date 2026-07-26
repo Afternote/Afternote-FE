@@ -3,10 +3,10 @@ package com.afternote.core.data.repoimpl.account
 import com.afternote.core.data.mapper.auth.AuthMapper
 import com.afternote.core.domain.repository.account.AccountRepository
 import com.afternote.core.model.AccountRegistration
-import com.afternote.core.network.dto.PasswordChangeRequest
-import com.afternote.core.network.dto.SendEmailCodeRequest
-import com.afternote.core.network.dto.SignUpRequest
-import com.afternote.core.network.dto.VerifyEmailRequest
+import com.afternote.core.network.dto.PasswordChangeRequestDto
+import com.afternote.core.network.dto.SendEmailCodeRequestDto
+import com.afternote.core.network.dto.SignUpRequestDto
+import com.afternote.core.network.dto.VerifyEmailRequestDto
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
 import com.afternote.core.network.service.AccountApiService
@@ -20,7 +20,7 @@ class AccountRepositoryImpl
     ) : AccountRepository {
         override suspend fun sendEmailCode(email: String): Result<Unit> =
             runCatching {
-                accountApiService.sendEmailCode(SendEmailCodeRequest(email))
+                accountApiService.sendEmailCode(SendEmailCodeRequestDto(email))
             }
 
         override suspend fun verifyEmail(
@@ -30,7 +30,7 @@ class AccountRepositoryImpl
             runCatching {
                 accountApiService
                     .verifyEmail(
-                        VerifyEmailRequest(
+                        VerifyEmailRequestDto(
                             email,
                             certificateCode,
                         ),
@@ -46,7 +46,7 @@ class AccountRepositoryImpl
             runCatching {
                 val response =
                     accountApiService.signUp(
-                        SignUpRequest(
+                        SignUpRequestDto(
                             email,
                             password,
                             name,
@@ -63,7 +63,7 @@ class AccountRepositoryImpl
             runCatching {
                 accountApiService
                     .passwordChange(
-                        PasswordChangeRequest(
+                        PasswordChangeRequestDto(
                             currentPassword,
                             newPassword,
                         ),

@@ -12,7 +12,7 @@ import org.junit.Test
  *
  * 페이로드는 2026-06-11 라이브 Swagger(`afternote.kro.kr/v3/api-docs`) 스키마 기반 합성 —
  * verify 성공 응답은 6자리 인증번호를 메일로 받아야 해서 자동 캡처 불가
- * (`ReceiverEmailAuthVerifyResponse` 4필드 구성·타입은 Swagger 와 BE 소스로 확정, 이슈 #407 본문).
+ * (`ReceiverEmailAuthVerifyDto` 4필드 구성·타입은 Swagger 와 BE 소스로 확정, 이슈 #407 본문).
  * 프로덕션 경로(`ReceiverAuthRepositoryImpl`)와 동일하게 Json 디코드 → `requireData()`/`requireStatus()`
  * → `toDomain()` 을 통과시킨다 — Json 설정은 `NetworkModule.provideJson` 과 동일
  * (ignoreUnknownKeys + coerceInputValues).
@@ -32,7 +32,7 @@ class ReceiverEmailAuthContractTest {
         val payload =
             """{"status":200,"code":200,"message":"성공","data":{"receiverId":3,"receiverName":"큐에이수신자","senderName":"큐에이발신자","accessCode":"123e4567-e89b-12d3-a456-426614174000"}}"""
 
-        val result = json.decodeFromString<BaseResponse<ReceiverEmailAuthVerifyResponse>>(payload).requireData().toDomain()
+        val result = json.decodeFromString<BaseResponse<ReceiverEmailAuthVerifyDto>>(payload).requireData().toDomain()
 
         assertEquals(3L, result.receiverId)
         assertEquals("큐에이수신자", result.receiverName)
