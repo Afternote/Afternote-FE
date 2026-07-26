@@ -294,9 +294,8 @@
     <string name="afternote_editor_custom_service_dialog_title">직접 입력하기</string>
     <string name="afternote_editor_custom_service_name_label">추가 서비스명</string>
     <string name="afternote_editor_playlist_screen_title">추억 플레이리스트</string>
-    <string name="afternote_editor_playlist_add_screen_title">추억 플레이리스트 추가</string>
+    <string name="afternote_editor_playlist_add_screen_title">플레이리스트 추가</string>
     <string name="afternote_editor_playlist_song_count_format">총 %1$d곡</string>
-    <string name="afternote_editor_playlist_add_songs">노래 추가하기</string>
     <string name="afternote_editor_playlist_delete_all">전체 삭제</string>
     <string name="afternote_editor_playlist_delete_selected">선택 삭제</string>
     <string name="afternote_editor_content_description_dropdown">드롭다운</string>

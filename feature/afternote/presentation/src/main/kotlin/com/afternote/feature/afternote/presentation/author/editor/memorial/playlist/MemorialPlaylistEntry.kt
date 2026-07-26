@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.button.FAB.PenFloatingActionButton
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteLightTheme
@@ -31,7 +32,7 @@ import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDis
  *
  * @param songs graph-scoped HostViewModel에서 collect한 현재 곡 목록 스냅샷
  * @param onBackClick 뒤로가기
- * @param onNavigateToAddSongScreen 노래 추가 화면 진입 (현재 버튼 미노출·배선만 유지)
+ * @param onNavigateToAddSongScreen 노래 추가 화면 진입 (우하단 펜 FAB, 곡 선택 중엔 숨김)
  * @param onClearAllSongs 전체 삭제
  * @param onRemoveSongs 선택 삭제
  * @param initialSelectedSongIds Preview용. 넣으면 해당 ID가 선택된 상태로 시작 (기본 빈 셋)
@@ -71,15 +72,15 @@ fun MemorialPlaylistEntry(
             onAction = { onClearAllSongs() },
             secondaryActionLabel = stringResource(R.string.afternote_editor_playlist_delete_selected),
             onSecondaryAction = onRemoveSongs,
+            floatingActionButton = {
+                PenFloatingActionButton(onClick = onNavigateToAddSongScreen)
+            },
         )
     }
 }
 
 /**
  * MemorialPlaylistList 화면 상단 헤더: 선택 모드와 무관하게 항상 "총 N곡"만 왼쪽에 표시.
- *
- * "노래 추가하기" 진입 버튼은 시안에 없어 제거 — 부재가 의도인지 디자이너 확인 대기,
- * 답변에 따라 복원 여부 결정 (onNavigateToAddSongScreen 배선은 유지).
  */
 @Composable
 private fun MemorialPlaylistListHeader(
