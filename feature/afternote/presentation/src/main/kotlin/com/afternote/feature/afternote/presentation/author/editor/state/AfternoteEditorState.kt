@@ -16,7 +16,6 @@ import com.afternote.feature.afternote.presentation.author.editor.model.EditorCa
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
-import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 
 private const val TAG = "AfternoteEditorState"
 
@@ -99,12 +98,8 @@ class AfternoteEditorState(
         updateForm {
             it.copy(
                 selectedCategory = category,
-                selectedService =
-                    if (category == EditorCategory.GALLERY) {
-                        AfternoteServiceCatalog.defaultGalleryService
-                    } else {
-                        AfternoteServiceCatalog.defaultSocialService
-                    },
+                // 카테고리 전환 시 서비스명은 항상 미선택으로 리셋 — 임의 기본값 확정 방지 (이슈 #468).
+                selectedService = null,
                 socialProcessingMethods = emptyList(),
                 galleryProcessingMethods = emptyList(),
             )
