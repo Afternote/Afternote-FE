@@ -32,10 +32,10 @@ fun ProcessingMethodListSection(
         )
         ProcessingMethodList(
             items = section.items,
-            onItemAdded = section.callbacks.onItemAdded,
-            onItemDeleteClick = section.callbacks.onItemDeleteClick,
-            onItemEdited = section.callbacks.onItemEdited,
-            onTextFieldVisibilityChanged = section.callbacks.onTextFieldVisibilityChanged,
+            onItemAdded = section.onItemAdded,
+            onItemDeleteClick = section.onItemDeleteClick,
+            onItemEdited = section.onItemEdited,
+            onTextFieldVisibilityChanged = section.onTextFieldVisibilityChanged,
         )
     }
 }

@@ -14,7 +14,6 @@ import com.afternote.feature.afternote.presentation.author.editor.message.Editor
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
-import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
@@ -64,22 +63,6 @@ class AfternoteEditorState(
     val memorialPhotoUrl get() = getCurrentForm().memorialPhotoUrl
     val pickedMemorialPhotoUri get() = getCurrentForm().pickedMemorialPhotoUri
     val afternoteEditReceivers get() = getCurrentForm().afternoteEditReceivers
-
-    val galleryProcessingCallbacks: ProcessingMethodCallbacks =
-        ProcessingMethodCallbacks(
-            onItemDeleteClick = ::deleteGalleryProcessingMethod,
-            onItemAdded = ::addGalleryProcessingMethod,
-            onTextFieldVisibilityChanged = { },
-            onItemEdited = ::editGalleryProcessingMethod,
-        )
-
-    val socialProcessingCallbacks: ProcessingMethodCallbacks =
-        ProcessingMethodCallbacks(
-            onItemDeleteClick = ::deleteProcessingMethod,
-            onItemAdded = ::addProcessingMethod,
-            onTextFieldVisibilityChanged = { },
-            onItemEdited = ::editProcessingMethod,
-        )
 
     fun onCategoryDropdownExpandedChange(expanded: Boolean) = ui.onCategoryDropdownExpandedChange(expanded)
 
@@ -222,18 +205,6 @@ class AfternoteEditorState(
         }
     }
 
-    fun onAfternoteEditorReceiverItemAdded(text: String) {
-        updateForm { prev ->
-            val newReceiver =
-                AfternoteEditorReceiver(
-                    id = (prev.afternoteEditReceivers.size + 1).toString(),
-                    name = text,
-                    label = "친구",
-                )
-            prev.copy(afternoteEditReceivers = prev.afternoteEditReceivers + newReceiver)
-        }
-    }
-
     fun addEditorMessage() {
         ui.addEditorMessage()
         updateForm { prev ->
@@ -326,7 +297,7 @@ class AfternoteEditorState(
         }
     }
 
-    private fun addProcessingMethod(text: String) {
+    fun addProcessingMethod(text: String) {
         updateForm { prev ->
             val newItem =
                 ProcessingMethodItem(
@@ -337,13 +308,13 @@ class AfternoteEditorState(
         }
     }
 
-    private fun deleteProcessingMethod(itemId: String) {
+    fun deleteProcessingMethod(itemId: String) {
         updateForm { prev ->
             prev.copy(socialProcessingMethods = prev.socialProcessingMethods.filter { it.id != itemId })
         }
     }
 
-    private fun editProcessingMethod(
+    fun editProcessingMethod(
         itemId: String,
         newText: String,
     ) {
@@ -357,7 +328,7 @@ class AfternoteEditorState(
         }
     }
 
-    private fun addGalleryProcessingMethod(text: String) {
+    fun addGalleryProcessingMethod(text: String) {
         updateForm { prev ->
             val newItem =
                 ProcessingMethodItem(
@@ -368,13 +339,13 @@ class AfternoteEditorState(
         }
     }
 
-    private fun deleteGalleryProcessingMethod(itemId: String) {
+    fun deleteGalleryProcessingMethod(itemId: String) {
         updateForm { prev ->
             prev.copy(galleryProcessingMethods = prev.galleryProcessingMethods.filter { it.id != itemId })
         }
     }
 
-    private fun editGalleryProcessingMethod(
+    fun editGalleryProcessingMethod(
         itemId: String,
         newText: String,
     ) {
