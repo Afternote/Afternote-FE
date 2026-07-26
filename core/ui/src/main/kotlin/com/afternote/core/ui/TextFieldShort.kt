@@ -54,6 +54,22 @@ import android.view.KeyEvent as NativeKeyEvent
 // 1. 공통 내부 구현체 (건드릴 필요 없음)
 // ============================================================================
 
+private const val PASSWORD_MASK_CHAR = "•"
+
+/**
+ * 비밀번호 마스킹 [OutputTransformation].
+ *
+ * 전체 범위를 `replace(0, length, ...)` 로 한 번에 치환하면 그 구간이 통째로 wedge 가 되어
+ * 캐럿이 텍스트 중간에 들어가지 못하고 맨 앞/맨 뒤로만 스냅된다. 문자 단위 1:1 치환은
+ * `OffsetMappingCalculator` 가 편집 연산으로 기록조차 하지 않아 오프셋 매핑이 identity 로 남는다.
+ */
+private val PasswordMaskOutputTransformation =
+    OutputTransformation {
+        for (i in 0 until length) {
+            replace(i, i + 1, PASSWORD_MASK_CHAR)
+        }
+    }
+
 @Composable
 private fun TextFieldShort(
     state: TextFieldState,
@@ -87,9 +103,7 @@ private fun TextFieldShort(
         outputTransformation =
             outputTransformation
                 ?: if (keyboardType == KeyboardType.Password) {
-                    OutputTransformation {
-                        replace(0, length, '\u2022'.toString().repeat(length))
-                    }
+                    PasswordMaskOutputTransformation
                 } else {
                     null
                 },
