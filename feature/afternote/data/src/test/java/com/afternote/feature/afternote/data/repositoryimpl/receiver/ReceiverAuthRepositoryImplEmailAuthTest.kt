@@ -107,7 +107,6 @@ class ReceiverAuthRepositoryImplEmailAuthTest {
                                     receiverId = 3L,
                                     receiverName = "큐에이수신자",
                                     senderName = "큐에이발신자",
-                                    accessCode = "123e4567-e89b-12d3-a456-426614174000",
                                 ),
                         )
                     },
@@ -117,7 +116,8 @@ class ReceiverAuthRepositoryImplEmailAuthTest {
         val result = runBlocking { repository.verifyEmailAuthCode("a@b.com", "123456") }.getOrThrow()
 
         assertEquals(3L, result.receiverId)
-        assertEquals("123e4567-e89b-12d3-a456-426614174000", result.accessCode)
+        assertEquals("큐에이수신자", result.receiverName)
+        assertEquals("큐에이발신자", result.senderName)
     }
 }
 
