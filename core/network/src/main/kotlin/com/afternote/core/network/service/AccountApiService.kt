@@ -1,5 +1,8 @@
 package com.afternote.core.network.service
 
+import com.afternote.core.network.dto.EmailFindDto
+import com.afternote.core.network.dto.EmailFindRequestDto
+import com.afternote.core.network.dto.FindSendCodeRequestDto
 import com.afternote.core.network.dto.PasswordChangeRequestDto
 import com.afternote.core.network.dto.SendEmailCodeRequestDto
 import com.afternote.core.network.dto.SignUpDto
@@ -14,6 +17,16 @@ interface AccountApiService {
     suspend fun sendEmailCode(
         @Body body: SendEmailCodeRequestDto,
     ): BaseResponse<Unit>
+
+    @POST("auth/find/send/code")
+    suspend fun sendFindCode(
+        @Body body: FindSendCodeRequestDto,
+    ): BaseResponse<Unit>
+
+    @POST("auth/email/find")
+    suspend fun findEmail(
+        @Body body: EmailFindRequestDto,
+    ): BaseResponse<EmailFindDto>
 
     @POST("auth/email/verify")
     suspend fun verifyEmail(

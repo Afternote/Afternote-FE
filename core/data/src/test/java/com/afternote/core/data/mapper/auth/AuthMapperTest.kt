@@ -1,8 +1,10 @@
 package com.afternote.core.data.mapper.auth
 
 import com.afternote.core.model.AccountRegistration
+import com.afternote.core.model.FoundAccount
 import com.afternote.core.model.Session
 import com.afternote.core.model.TokenBundle
+import com.afternote.core.network.dto.EmailFindDto
 import com.afternote.core.network.dto.LoginDto
 import com.afternote.core.network.dto.ReissueDto
 import com.afternote.core.network.dto.SignUpDto
@@ -22,6 +24,14 @@ class AuthMapperTest {
         val result = AuthMapper.toSignUpResult(SignUpDto(userId = 42L, email = "user@example.com"))
 
         assertEquals(AccountRegistration(userId = 42L, email = "user@example.com"), result)
+    }
+
+    @Test
+    fun `toFoundAccount - name·email 매핑 (자리 바뀜 가드)`() {
+        // 둘 다 String 이라 자리가 바뀌어도 컴파일은 통과한다 — 서로 구분되는 값으로 가드.
+        val result = AuthMapper.toFoundAccount(EmailFindDto(name = "박채연", email = "parkchae01@gmail.com"))
+
+        assertEquals(FoundAccount(name = "박채연", email = "parkchae01@gmail.com"), result)
     }
 
     @Test

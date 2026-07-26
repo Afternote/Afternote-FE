@@ -17,12 +17,26 @@
     <string name="login_kakao">카카오 로그인</string>
     <string name="login_google">Google 계정으로 로그인</string>
     <string name="login_find_account">아이디/비밀번호 찾기</string>
-    <string name="login_find_account_message">아이디/비밀번호 찾기의 경우,\n고객센터로 문의 바랍니다.</string>
     <string name="login_failed">로그인 실패</string>
     <string name="login_kakao_failed">카카오 로그인에 실패했습니다.</string>
     <string name="login_google_failed">구글 로그인에 실패했습니다.</string>
     <string name="login_google_no_credentials">기기에 Google 계정이 없어요.\n설정 &gt; 계정에서 Google 계정을 추가해 주세요.</string>
     <string name="login_screen_unavailable">로그인 화면을 띄울 수 없습니다.</string>
+
+    <string name="find_id_title">아이디 찾기</string>
+    <string name="find_account_verify_email_title">이메일 인증하기</string>
+    <string name="find_account_verify_email_description">가입 시 사용한 이메일을 입력해 주세요</string>
+    <string name="find_account_email_placeholder">이메일 주소</string>
+    <string name="find_account_code_placeholder">인증 번호</string>
+    <string name="find_account_code_request">인증번호 받기</string>
+    <string name="find_account_code_requesting">전송 중…</string>
+    <string name="find_account_code_resend">재전송</string>
+    <string name="find_account_code_resend_cooldown">재전송 (%1$ds)</string>
+    <string name="find_account_code_confirm">확인</string>
+    <string name="find_account_code_sent">인증번호가 전송되었습니다.\n수신 된 인증번호를 입력해 주세요.</string>
+    <string name="find_account_code_mismatch">인증번호가 틀렸습니다.\n다시 확인 후 입력해 주세요.</string>
+    <string name="find_account_next">다음</string>
+    <string name="find_account_failed">요청에 실패했습니다.</string>
     <string name="content_description_google_login">구글 로그인</string>
 
     <string name="onboarding_step_description">회원가입 진행도 4단계 중 %1$d단계</string>
