@@ -140,7 +140,7 @@ private fun EditorPrefillSkeleton(
 
             EditorCategory.GALLERY -> GalleryPrefillSkeleton()
 
-            // BUSINESS 는 SOCIAL 과 같은 구조(계정 2필드 + 처리 방법 + 메시지)라 skeleton 도 공유한다.
+            // BUSINESS 는 SOCIAL 과 같은 구조(계정 2필드 + 수신자 지정 + 처리 방법 + 메시지)라 skeleton 도 공유한다.
             EditorCategory.SOCIAL, EditorCategory.BUSINESS -> AccountPrefillSkeleton()
 
             // ESTATE 는 로드가 끝나도 채울 폼이 없는 "준비 중" placeholder 라(UnimplementedCategoryContent)
@@ -157,6 +157,9 @@ private fun AccountPrefillSkeleton() {
     SkeletonBar(height = 56.dp)
     Spacer(modifier = Modifier.height(12.dp))
     SkeletonBar(height = 56.dp)
+    Spacer(modifier = Modifier.height(28.dp))
+    // 수신자 지정.
+    SkeletonBar(height = 72.dp)
     Spacer(modifier = Modifier.height(28.dp))
     // 처리 방법 리스트.
     SkeletonProcessingMethodList()
@@ -281,7 +284,7 @@ internal fun CategoryContent(
             UnimplementedCategoryContent()
         }
 
-        // BUSINESS(시안 700:38735)는 SOCIAL 과 폼 구조가 동일(계정 정보* + 처리 방법 리스트* + 남기실 말씀)해
+        // BUSINESS(시안 700:38735)는 SOCIAL 과 폼 구조가 동일(계정 정보* + 수신자 지정* + 처리 방법 리스트* + 남기실 말씀)해
         // AccountEditorContent 를 그대로 재사용한다 (이슈 #467).
         EditorCategory.SOCIAL, EditorCategory.BUSINESS -> {
             AccountEditorContent(
@@ -293,6 +296,12 @@ internal fun CategoryContent(
                     AccountSection(
                         idState = state.idState,
                         passwordState = state.passwordState,
+                    ),
+                recipientSection =
+                    AfternoteEditorReceiverSection(
+                        afternoteEditReceivers = form.afternoteEditReceivers,
+                        onAddClick = onNavigateToSelectReceiver,
+                        onItemDeleteClick = state::onAfternoteEditorReceiverDelete,
                     ),
                 processingMethodSection =
                     ProcessingMethodSection(
