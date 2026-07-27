@@ -6,6 +6,7 @@ plugins {
     id("afternote.android.navigation")
     alias(libs.plugins.google.services)
     alias(libs.plugins.firebase.app.distribution)
+    alias(libs.plugins.firebase.crashlytics)
     alias(libs.plugins.compose.screenshot)
 }
 
@@ -75,6 +76,11 @@ dependencies {
     // 카카오 OAuth redirect Activity(`com.kakao.sdk.auth.AuthCodeHandlerActivity`)를
     // app 매니페스트에서 직접 참조하므로 컴파일 classpath에 노출 필요.
     implementation(libs.kakao.sdk.auth)
+
+    // Firebase — Crashlytics 는 크래시 자동 수집이라 초기화 코드가 필요 없다.
+    // 버전은 BoM 이 관리하므로 crashlytics 좌표에는 버전을 적지 않는다.
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.crashlytics)
 
     // Core
     implementation(projects.core.network)
