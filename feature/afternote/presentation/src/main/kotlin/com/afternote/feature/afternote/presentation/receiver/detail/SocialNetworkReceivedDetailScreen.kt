@@ -37,7 +37,7 @@ import com.afternote.feature.afternote.presentation.shared.model.AfternoteServic
 /**
  * 수신 소셜 네트워크 상세 (Stateless).
  *
- * 발신자 [com.afternote.feature.afternote.presentation.author.detail.socialnetwork.SocialNetworkDetailScreen]
+ * 발신자 [com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailScreen]
  * 과 동일한 Scaffold/스크롤 패턴을 따르되, TopBar 우측 편집/삭제 액션을 두지 않는다.
  */
 @Composable
@@ -82,7 +82,6 @@ private fun SocialNetworkReceivedDetailScrollContent(
         AfternoteDetailServiceHeader(
             service = AfternoteServiceDisplay.fromServiceName(content.serviceName),
             finalWriteDate = content.finalWriteDate,
-            processingMethodChipLabel = content.processingMethods.firstOrNull().orEmpty(),
         )
 
         Spacer(modifier = Modifier.height(31.dp))

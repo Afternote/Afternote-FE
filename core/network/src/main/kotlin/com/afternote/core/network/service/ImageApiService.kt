@@ -1,7 +1,7 @@
 package com.afternote.core.network.service
 
+import com.afternote.core.network.dto.PresignedUrlDto
 import com.afternote.core.network.dto.PresignedUrlRequestDto
-import com.afternote.core.network.dto.PresignedUrlResponseDto
 import com.afternote.core.network.model.BaseResponse
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -15,5 +15,5 @@ interface ImageApiService {
     @POST("files/presigned-url")
     suspend fun getPresignedUrl(
         @Body body: PresignedUrlRequestDto,
-    ): BaseResponse<PresignedUrlResponseDto>
+    ): BaseResponse<PresignedUrlDto>
 }

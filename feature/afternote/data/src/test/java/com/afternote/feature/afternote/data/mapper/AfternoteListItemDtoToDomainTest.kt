@@ -1,12 +1,12 @@
 package com.afternote.feature.afternote.data.mapper
 
-import com.afternote.feature.afternote.data.dto.AfternoteListItem
+import com.afternote.feature.afternote.data.dto.AfternoteListItemDto
 import com.afternote.feature.afternote.domain.AfternoteServiceType
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
- * [AfternoteListItem.toDomain] / [toDomainList] 회귀 가드.
+ * [AfternoteListItemDto.toDomain] / [toDomainList] 회귀 가드.
  * 작성자 목록 DTO→[com.afternote.feature.afternote.domain.model.author.ListItem] 매핑 +
  * 공유 헬퍼([formatDateFromServer]·[categoryToServiceType])의 경계 동작을 toDomain 경유로 검증.
  */
@@ -14,7 +14,7 @@ class AfternoteListItemDtoToDomainTest {
     @Test
     fun `toDomain - 필드 매핑 + id Long을 String으로`() {
         val result =
-            AfternoteListItem(
+            AfternoteListItemDto(
                 afternoteId = 7L,
                 title = "은행 계정",
                 category = "SOCIAL",
@@ -46,7 +46,7 @@ class AfternoteListItemDtoToDomainTest {
 
     @Test
     fun `toDomainList - 빈 리스트는 빈 리스트`() {
-        assertEquals(emptyList<Any>(), emptyList<AfternoteListItem>().toDomainList())
+        assertEquals(emptyList<Any>(), emptyList<AfternoteListItemDto>().toDomainList())
     }
 
     @Test
@@ -60,7 +60,7 @@ class AfternoteListItemDtoToDomainTest {
         title: String = "t",
         category: String = "SOCIAL",
         createdAt: String = "2025-01-01T00:00:00",
-    ) = AfternoteListItem(
+    ) = AfternoteListItemDto(
         afternoteId = afternoteId,
         title = title,
         category = category,

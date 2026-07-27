@@ -28,7 +28,7 @@ class ReceiverMessageContractTest {
         val payload =
             """{"status":200,"code":200,"message":"성공","data":{"senderName":"큐에이발신자","message":"실서버 통신 검증용 한 마디입니다. 잘 지내렴.","createdAt":"2026-06-10T15:27:14.141643"}}"""
 
-        val info = json.decodeFromString<BaseResponse<ReceiverMessageResponse>>(payload).requireData().toDomain()
+        val info = json.decodeFromString<BaseResponse<ReceiverMessageDto>>(payload).requireData().toDomain()
 
         assertEquals("큐에이발신자", info.senderName)
         assertEquals("실서버 통신 검증용 한 마디입니다. 잘 지내렴.", info.message)
@@ -40,7 +40,7 @@ class ReceiverMessageContractTest {
     fun `createdAt·message 없는 구버전 응답 - 디코드 깨지지 않고 null 유지`() {
         val payload = """{"status":200,"code":200,"data":{"senderName":"김철수"}}"""
 
-        val info = json.decodeFromString<BaseResponse<ReceiverMessageResponse>>(payload).requireData().toDomain()
+        val info = json.decodeFromString<BaseResponse<ReceiverMessageDto>>(payload).requireData().toDomain()
 
         assertNull(info.message)
         assertNull(info.createdAt)

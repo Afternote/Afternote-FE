@@ -33,7 +33,8 @@ fun RecipientDesignationSection(
         )
         AfternoteEditorReceiverList(
             afternoteEditReceivers = section.afternoteEditReceivers,
-            events = section.callbacks,
+            onAddClick = section.onAddClick,
+            onItemDeleteClick = section.onItemDeleteClick,
         )
     }
 }
