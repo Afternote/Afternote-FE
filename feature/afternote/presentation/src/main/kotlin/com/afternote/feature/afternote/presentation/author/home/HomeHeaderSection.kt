@@ -46,11 +46,13 @@ internal fun HomeHeaderSection(
             style = AfternoteDesign.typography.captionLargeR,
             color = AfternoteDesign.colors.black.copy(alpha = 89f / 255f),
         )
-        Spacer(modifier = Modifier.height(16.dp))
-        NextStepCard(
-            text = nextStepText,
-            onClick = onNextStepClick,
-        )
+        if (nextStepText.isNotBlank()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            NextStepCard(
+                text = nextStepText,
+                onClick = onNextStepClick,
+            )
+        }
     }
 }
 

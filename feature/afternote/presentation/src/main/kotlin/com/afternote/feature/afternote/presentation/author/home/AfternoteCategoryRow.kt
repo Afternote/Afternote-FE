@@ -166,7 +166,6 @@ private fun CategoryItem(
 
 @Preview(showBackground = true)
 @Composable
-@Suppress("AssignedValueIsNeverRead")
 private fun AfternoteCategoryRowPreview() {
     AfternoteTheme {
         var selectedTab by remember { mutableStateOf(AfternoteCategory.ALL) }
