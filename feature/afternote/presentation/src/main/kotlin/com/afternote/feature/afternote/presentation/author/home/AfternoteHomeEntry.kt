@@ -26,7 +26,7 @@ fun AfternoteHomeEntry(
     viewModel: AfternoteHomeViewModel = hiltViewModel(),
     navigateToDetail: (String) -> Unit = {},
     navigateToGalleryDetail: (String) -> Unit = {},
-    navigateToMemorialGuidelineDetail: (String) -> Unit = {},
+    navigateToMemorialDetail: (String) -> Unit = {},
     navigateToAdd: (AfternoteCategory) -> Unit = {},
     onSettingClick: () -> Unit = {},
 ) {
@@ -51,7 +51,7 @@ fun AfternoteHomeEntry(
             when (type) {
                 AfternoteServiceType.GALLERY_AND_FILES -> navigateToGalleryDetail(id)
 
-                AfternoteServiceType.MEMORIAL -> navigateToMemorialGuidelineDetail(id)
+                AfternoteServiceType.MEMORIAL -> navigateToMemorialDetail(id)
 
                 // BUSINESS 상세는 소셜 상세 화면을 재사용한다 (구성 동일: 계정 정보·처리 방법·남긴 말씀 — 이슈 #467).
                 AfternoteServiceType.SOCIAL_NETWORK, AfternoteServiceType.BUSINESS -> navigateToDetail(id)

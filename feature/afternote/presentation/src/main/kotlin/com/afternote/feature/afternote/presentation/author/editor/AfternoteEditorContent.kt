@@ -24,8 +24,8 @@ import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.account.AccountEditorContent
 import com.afternote.feature.afternote.presentation.author.editor.account.AccountSection
 import com.afternote.feature.afternote.presentation.author.editor.gallery.GalleryAndFileEditorContent
-import com.afternote.feature.afternote.presentation.author.editor.memorial.guideline.MemorialGuidelineEditorContent
-import com.afternote.feature.afternote.presentation.author.editor.memorial.guideline.MemorialGuidelineEditorContentParams
+import com.afternote.feature.afternote.presentation.author.editor.memorial.guideline.MemorialEditorContent
+import com.afternote.feature.afternote.presentation.author.editor.memorial.guideline.MemorialEditorContentParams
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
@@ -228,9 +228,9 @@ internal fun CategoryContent(
 ) {
     when (form.selectedCategory) {
         EditorCategory.MEMORIAL -> {
-            MemorialGuidelineEditorContent(
+            MemorialEditorContent(
                 params =
-                    MemorialGuidelineEditorContentParams(
+                    MemorialEditorContentParams(
                         displayMemorialPhotoUri = form.displayMemorialPhotoUri(),
                         playlistSongCount = form.livePlaylistSongCount(graphSongs),
                         playlistAlbumCovers = form.displayAlbumCovers(graphSongs),

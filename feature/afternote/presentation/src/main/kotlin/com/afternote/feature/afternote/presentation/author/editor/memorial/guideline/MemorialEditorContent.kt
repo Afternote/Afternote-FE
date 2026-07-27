@@ -13,19 +13,19 @@ import com.afternote.feature.afternote.presentation.author.editor.memorial.Memor
 import com.afternote.feature.afternote.presentation.author.editor.receiver.RecipientDesignationSection
 import com.afternote.feature.afternote.presentation.shared.LastWishOtherState
 import com.afternote.feature.afternote.presentation.shared.LastWishesRadioGroup
-import com.afternote.feature.afternote.presentation.shared.MemorialGuidelineContent
+import com.afternote.feature.afternote.presentation.shared.MemorialContent
 import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
 
 /**
  * 추억 노트 종류 선택 시 표시되는 콘텐츠 (편집 모드).
- * [MemorialGuidelineContent] 공통 레이아웃에 편집용 섹션 컴포저블을 넘깁니다.
+ * [MemorialContent] 공통 레이아웃에 편집용 섹션 컴포저블을 넘깁니다.
  */
 @Composable
-fun MemorialGuidelineEditorContent(
+fun MemorialEditorContent(
     modifier: Modifier = Modifier,
-    params: MemorialGuidelineEditorContentParams,
+    params: MemorialEditorContentParams,
 ) {
-    MemorialGuidelineContent(
+    MemorialContent(
         introContent = { LastMomentQuestion() },
         photoContent = {
             MemorialPhotoUpload(
@@ -69,12 +69,12 @@ fun MemorialGuidelineEditorContent(
 
 @Preview(showBackground = true)
 @Composable
-private fun MemorialGuidelineEditorContentPreview() {
+private fun MemorialEditorContentPreview() {
     AfternoteTheme {
         val customLastWishState = rememberTextFieldState()
-        MemorialGuidelineEditorContent(
+        MemorialEditorContent(
             params =
-                MemorialGuidelineEditorContentParams(
+                MemorialEditorContentParams(
                     displayMemorialPhotoUri = null,
                     playlistSongCount = 16,
                     playlistAlbumCovers = emptyList(),

@@ -10,7 +10,7 @@ import com.afternote.feature.afternote.presentation.shared.LastWishOption
  * 추억 노트 콘텐츠 파라미터
  */
 @Stable
-data class MemorialGuidelineEditorContentParams(
+data class MemorialEditorContentParams(
     val displayMemorialPhotoUri: String?,
     val playlistSongCount: Int,
     val playlistAlbumCovers: List<AlbumCover>,

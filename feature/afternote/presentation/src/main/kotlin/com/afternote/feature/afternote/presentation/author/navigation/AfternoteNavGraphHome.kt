@@ -8,14 +8,14 @@ import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 internal fun AfternoteHomeNavigation(
     onNavigateToDetail: (itemId: String) -> Unit,
     onNavigateToGalleryDetail: (itemId: String) -> Unit,
-    onNavigateToMemorialGuidelineDetail: (itemId: String) -> Unit,
+    onNavigateToMemorialDetail: (itemId: String) -> Unit,
     onNavigateToNewEditor: (initialCategory: String?) -> Unit,
     onNavigateToSetting: () -> Unit,
 ) {
     AfternoteHomeEntry(
         navigateToDetail = onNavigateToDetail,
         navigateToGalleryDetail = onNavigateToGalleryDetail,
-        navigateToMemorialGuidelineDetail = onNavigateToMemorialGuidelineDetail,
+        navigateToMemorialDetail = onNavigateToMemorialDetail,
         navigateToAdd = { selectedTab ->
             val initialCategory =
                 if (selectedTab == AfternoteCategory.ALL) null else selectedTab.navKey
