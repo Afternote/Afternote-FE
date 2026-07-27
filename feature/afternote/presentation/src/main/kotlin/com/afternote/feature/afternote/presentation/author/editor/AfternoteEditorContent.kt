@@ -23,19 +23,15 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.account.AccountSection
 import com.afternote.feature.afternote.presentation.author.editor.gallery.GalleryAndFileEditorContent
-import com.afternote.feature.afternote.presentation.author.editor.gallery.GalleryAndFileEditorContentParams
 import com.afternote.feature.afternote.presentation.author.editor.memorial.guideline.MemorialGuidelineEditorContent
 import com.afternote.feature.afternote.presentation.author.editor.memorial.guideline.MemorialGuidelineEditorContentParams
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
-import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverSection
 import com.afternote.feature.afternote.presentation.author.editor.selection.DropdownMenuStyle
 import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdown
-import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdownLabelParams
 import com.afternote.feature.afternote.presentation.author.editor.social.SocialNetworkEditorContent
-import com.afternote.feature.afternote.presentation.author.editor.social.SocialNetworkEditorContentParams
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
@@ -64,10 +60,7 @@ internal fun EditorContent(
         Spacer(modifier = Modifier.height(8.dp))
 
         SelectionDropdown(
-            labelParams =
-                SelectionDropdownLabelParams(
-                    label = stringResource(R.string.afternote_editor_label_category),
-                ),
+            label = stringResource(R.string.afternote_editor_label_category),
             selectedValue = form.selectedCategory.toDropdownLabel(),
             options = editorCategoryDropdownLabels(),
             onValueSelected = state::onCategorySelected,
@@ -89,15 +82,17 @@ internal fun EditorContent(
             Spacer(modifier = Modifier.height(20.dp))
 
             SelectionDropdown(
-                labelParams =
-                    SelectionDropdownLabelParams(
-                        label = stringResource(R.string.afternote_editor_label_service_name),
-                    ),
-                selectedValue = form.selectedService,
+                label = stringResource(R.string.afternote_editor_label_service_name),
+                selectedValue = form.selectedService.orEmpty(),
                 options = form.currentServiceOptions,
                 onValueSelected = state::onServiceSelected,
                 expanded = state.serviceDropdownExpanded,
                 onExpandedChange = state::onServiceDropdownExpandedChange,
+                placeholder =
+                    stringResource(
+                        R.string.afternote_editor_service_placeholder,
+                        form.selectedCategory.displayLabel,
+                    ),
                 menuStyle =
                     DropdownMenuStyle(
                         shadowElevation = 10.dp,
@@ -244,12 +239,8 @@ internal fun CategoryContent(
                         recipientSection =
                             AfternoteEditorReceiverSection(
                                 afternoteEditReceivers = form.afternoteEditReceivers,
-                                callbacks =
-                                    AfternoteEditorReceiverCallbacks(
-                                        onAddClick = onNavigateToSelectReceiver,
-                                        onItemDeleteClick = state::onAfternoteEditorReceiverDelete,
-                                        onItemAdded = state::onAfternoteEditorReceiverItemAdded,
-                                    ),
+                                onAddClick = onNavigateToSelectReceiver,
+                                onItemDeleteClick = state::onAfternoteEditorReceiverDelete,
                             ),
                         onSongAddClick = onNavigateToAddSong,
                         onLastWishSelected = state::onLastWishSelected,
@@ -262,27 +253,22 @@ internal fun CategoryContent(
 
         EditorCategory.GALLERY -> {
             GalleryAndFileEditorContent(
-                params =
-                    GalleryAndFileEditorContentParams(
-                        editorMessages = state.editorMessages,
-                        onMessageRegisterClick = {},
-                        onMessageDeleteClick = state::removeEditorMessage,
-                        onMessageAddClick = state::addEditorMessage,
-                        recipientSection =
-                            AfternoteEditorReceiverSection(
-                                afternoteEditReceivers = form.afternoteEditReceivers,
-                                callbacks =
-                                    AfternoteEditorReceiverCallbacks(
-                                        onAddClick = state::showAddAfternoteEditorReceiverDialog,
-                                        onItemDeleteClick = state::onAfternoteEditorReceiverDelete,
-                                        onItemAdded = state::onAfternoteEditorReceiverItemAdded,
-                                    ),
-                            ),
-                        processingMethodSection =
-                            ProcessingMethodSection(
-                                items = form.galleryProcessingMethods,
-                                callbacks = state.galleryProcessingCallbacks,
-                            ),
+                editorMessages = state.editorMessages,
+                onMessageRegisterClick = {},
+                onMessageDeleteClick = state::removeEditorMessage,
+                onMessageAddClick = state::addEditorMessage,
+                recipientSection =
+                    AfternoteEditorReceiverSection(
+                        afternoteEditReceivers = form.afternoteEditReceivers,
+                        onAddClick = state::showAddAfternoteEditorReceiverDialog,
+                        onItemDeleteClick = state::onAfternoteEditorReceiverDelete,
+                    ),
+                processingMethodSection =
+                    ProcessingMethodSection(
+                        items = form.galleryProcessingMethods,
+                        onItemDeleteClick = state::deleteGalleryProcessingMethod,
+                        onItemAdded = state::addGalleryProcessingMethod,
+                        onItemEdited = state::editGalleryProcessingMethod,
                     ),
             )
         }
@@ -294,32 +280,21 @@ internal fun CategoryContent(
 
         EditorCategory.SOCIAL -> {
             SocialNetworkEditorContent(
-                params =
-                    SocialNetworkEditorContentParams(
-                        editorMessages = state.editorMessages,
-                        onMessageRegisterClick = {},
-                        onMessageDeleteClick = state::removeEditorMessage,
-                        onMessageAddClick = state::addEditorMessage,
-                        accountSection =
-                            AccountSection(
-                                idState = state.idState,
-                                passwordState = state.passwordState,
-                            ),
-                        recipientSection =
-                            AfternoteEditorReceiverSection(
-                                afternoteEditReceivers = form.afternoteEditReceivers,
-                                callbacks =
-                                    AfternoteEditorReceiverCallbacks(
-                                        onAddClick = onNavigateToSelectReceiver,
-                                        onItemDeleteClick = state::onAfternoteEditorReceiverDelete,
-                                        onItemAdded = state::onAfternoteEditorReceiverItemAdded,
-                                    ),
-                            ),
-                        processingMethodSection =
-                            ProcessingMethodSection(
-                                items = form.socialProcessingMethods,
-                                callbacks = state.socialProcessingCallbacks,
-                            ),
+                editorMessages = state.editorMessages,
+                onMessageRegisterClick = {},
+                onMessageDeleteClick = state::removeEditorMessage,
+                onMessageAddClick = state::addEditorMessage,
+                accountSection =
+                    AccountSection(
+                        idState = state.idState,
+                        passwordState = state.passwordState,
+                    ),
+                processingMethodSection =
+                    ProcessingMethodSection(
+                        items = form.socialProcessingMethods,
+                        onItemDeleteClick = state::deleteProcessingMethod,
+                        onItemAdded = state::addProcessingMethod,
+                        onItemEdited = state::editProcessingMethod,
                     ),
             )
         }

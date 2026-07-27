@@ -1,25 +1,25 @@
 package com.afternote.feature.afternote.data.mapper.response
 
-import com.afternote.feature.afternote.data.dto.ReceivedAfternoteDetailResponse
-import com.afternote.feature.afternote.data.dto.ReceivedCredentialsInfo
-import com.afternote.feature.afternote.data.dto.ReceivedMemorialVideoInfo
-import com.afternote.feature.afternote.data.dto.ReceivedPlaylistInfo
-import com.afternote.feature.afternote.data.dto.ReceivedSongInfo
+import com.afternote.feature.afternote.data.dto.ReceivedAfternoteDetailDto
+import com.afternote.feature.afternote.data.dto.ReceivedCredentialsDto
+import com.afternote.feature.afternote.data.dto.ReceivedMemorialVideoDto
+import com.afternote.feature.afternote.data.dto.ReceivedPlaylistDto
+import com.afternote.feature.afternote.data.dto.ReceivedSongDto
 import com.afternote.feature.afternote.domain.AfternoteServiceType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
 /**
- * [ReceivedAfternoteDetailResponse.toDomain] 회귀 가드 (수신자 상세).
+ * [ReceivedAfternoteDetailDto.toDomain] 회귀 가드 (수신자 상세).
  * 경계: createdAt null→null·있으면 포맷, category null→type null, playlist·credentials nullable 매핑,
  * memorialVideo의 video/thumbnail 추출.
  */
-class ReceivedAfternoteDetailResponseMapperTest {
+class ReceivedAfternoteDetailMapperTest {
     @Test
     fun `toDomain - 필드 매핑 + createdAt 포맷 + type 매핑`() {
         val result =
-            ReceivedAfternoteDetailResponse(
+            ReceivedAfternoteDetailDto(
                 id = 1L,
                 category = "MUSIC",
                 title = "추모",
@@ -36,29 +36,29 @@ class ReceivedAfternoteDetailResponseMapperTest {
 
     @Test
     fun `toDomain - category null이면 type null`() {
-        assertNull(ReceivedAfternoteDetailResponse(id = 1L, category = null).toDomain().type)
+        assertNull(ReceivedAfternoteDetailDto(id = 1L, category = null).toDomain().type)
     }
 
     @Test
     fun `toDomain - createdAt null이면 createdAt null`() {
-        assertNull(ReceivedAfternoteDetailResponse(id = 1L, createdAt = null).toDomain().createdAt)
+        assertNull(ReceivedAfternoteDetailDto(id = 1L, createdAt = null).toDomain().createdAt)
     }
 
     @Test
     fun `toDomain - playlist null이면 null`() {
-        assertNull(ReceivedAfternoteDetailResponse(id = 1L, playlist = null).toDomain().playlist)
+        assertNull(ReceivedAfternoteDetailDto(id = 1L, playlist = null).toDomain().playlist)
     }
 
     @Test
     fun `toDomain - playlist 있으면 songs·atmosphere·memorialVideo 매핑`() {
         val result =
-            ReceivedAfternoteDetailResponse(
+            ReceivedAfternoteDetailDto(
                 id = 1L,
                 playlist =
-                    ReceivedPlaylistInfo(
+                    ReceivedPlaylistDto(
                         atmosphere = "차분",
-                        songs = listOf(ReceivedSongInfo(title = "s", artist = "a", coverUrl = "c")),
-                        memorialVideo = ReceivedMemorialVideoInfo(videoUrl = "v", thumbnailUrl = "t"),
+                        songs = listOf(ReceivedSongDto(title = "s", artist = "a", coverUrl = "c")),
+                        memorialVideo = ReceivedMemorialVideoDto(videoUrl = "v", thumbnailUrl = "t"),
                     ),
             ).toDomain()
 
@@ -72,9 +72,9 @@ class ReceivedAfternoteDetailResponseMapperTest {
     @Test
     fun `toDomain - credentials 매핑`() {
         val result =
-            ReceivedAfternoteDetailResponse(
+            ReceivedAfternoteDetailDto(
                 id = 1L,
-                credentials = ReceivedCredentialsInfo(id = "u", password = "p"),
+                credentials = ReceivedCredentialsDto(id = "u", password = "p"),
             ).toDomain()
 
         assertEquals("u", result.credentials!!.id)

@@ -1,9 +1,9 @@
 package com.afternote.feature.afternote.data.mapper.response
 
-import com.afternote.feature.afternote.data.dto.ReceivedAfternoteDetailResponse
-import com.afternote.feature.afternote.data.dto.ReceivedCredentialsInfo
-import com.afternote.feature.afternote.data.dto.ReceivedPlaylistInfo
-import com.afternote.feature.afternote.data.dto.ReceivedSongInfo
+import com.afternote.feature.afternote.data.dto.ReceivedAfternoteDetailDto
+import com.afternote.feature.afternote.data.dto.ReceivedCredentialsDto
+import com.afternote.feature.afternote.data.dto.ReceivedPlaylistDto
+import com.afternote.feature.afternote.data.dto.ReceivedSongDto
 import com.afternote.feature.afternote.data.mapper.categoryToServiceType
 import com.afternote.feature.afternote.data.mapper.formatDateFromServer
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAccountCredentials
@@ -11,7 +11,7 @@ import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDe
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedPlaylistDetail
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedPlaylistSong
 
-fun ReceivedAfternoteDetailResponse.toDomain(): ReceivedAfternoteDetail =
+fun ReceivedAfternoteDetailDto.toDomain(): ReceivedAfternoteDetail =
     ReceivedAfternoteDetail(
         title = title,
         senderName = senderName,
@@ -24,13 +24,13 @@ fun ReceivedAfternoteDetailResponse.toDomain(): ReceivedAfternoteDetail =
         credentials = credentials?.toDomain(),
     )
 
-private fun ReceivedCredentialsInfo.toDomain(): ReceivedAccountCredentials =
+private fun ReceivedCredentialsDto.toDomain(): ReceivedAccountCredentials =
     ReceivedAccountCredentials(
         id = id,
         password = password,
     )
 
-private fun ReceivedPlaylistInfo.toDomain(): ReceivedPlaylistDetail =
+private fun ReceivedPlaylistDto.toDomain(): ReceivedPlaylistDetail =
     ReceivedPlaylistDetail(
         songs = songs.map { it.toDomain() },
         atmosphere = atmosphere,
@@ -38,7 +38,7 @@ private fun ReceivedPlaylistInfo.toDomain(): ReceivedPlaylistDetail =
         memorialThumbnailUrl = memorialVideo?.thumbnailUrl,
     )
 
-private fun ReceivedSongInfo.toDomain(): ReceivedPlaylistSong =
+private fun ReceivedSongDto.toDomain(): ReceivedPlaylistSong =
     ReceivedPlaylistSong(
         title = title,
         artist = artist,

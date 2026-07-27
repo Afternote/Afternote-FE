@@ -2,16 +2,16 @@ package com.afternote.feature.afternote.data.repositoryimpl.receiver
 
 import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.BaseResponse
-import com.afternote.feature.afternote.data.dto.DeliveryVerificationRequest
-import com.afternote.feature.afternote.data.dto.DeliveryVerificationResponse
-import com.afternote.feature.afternote.data.dto.ReceiverAuthCodeEmailSendRequest
-import com.afternote.feature.afternote.data.dto.ReceiverAuthPresignedUrlRequest
-import com.afternote.feature.afternote.data.dto.ReceiverAuthPresignedUrlResponse
-import com.afternote.feature.afternote.data.dto.ReceiverAuthVerifyRequest
-import com.afternote.feature.afternote.data.dto.ReceiverAuthVerifyResponse
-import com.afternote.feature.afternote.data.dto.ReceiverEmailAuthVerifyRequest
-import com.afternote.feature.afternote.data.dto.ReceiverEmailAuthVerifyResponse
-import com.afternote.feature.afternote.data.dto.ReceiverMessageResponse
+import com.afternote.feature.afternote.data.dto.DeliveryVerificationDto
+import com.afternote.feature.afternote.data.dto.DeliveryVerificationRequestDto
+import com.afternote.feature.afternote.data.dto.ReceiverAuthCodeEmailSendRequestDto
+import com.afternote.feature.afternote.data.dto.ReceiverAuthPresignedUrlDto
+import com.afternote.feature.afternote.data.dto.ReceiverAuthPresignedUrlRequestDto
+import com.afternote.feature.afternote.data.dto.ReceiverAuthVerifyDto
+import com.afternote.feature.afternote.data.dto.ReceiverAuthVerifyRequestDto
+import com.afternote.feature.afternote.data.dto.ReceiverEmailAuthVerifyDto
+import com.afternote.feature.afternote.data.dto.ReceiverEmailAuthVerifyRequestDto
+import com.afternote.feature.afternote.data.dto.ReceiverMessageDto
 import com.afternote.feature.afternote.data.service.ReceiverAuthApiService
 import com.afternote.feature.afternote.domain.error.ReceiverEmailAuthException
 import kotlinx.coroutines.runBlocking
@@ -103,11 +103,10 @@ class ReceiverAuthRepositoryImplEmailAuthTest {
                             code = 200,
                             message = "성공",
                             data =
-                                ReceiverEmailAuthVerifyResponse(
+                                ReceiverEmailAuthVerifyDto(
                                     receiverId = 3L,
                                     receiverName = "큐에이수신자",
                                     senderName = "큐에이발신자",
-                                    accessCode = "123e4567-e89b-12d3-a456-426614174000",
                                 ),
                         )
                     },
@@ -117,31 +116,32 @@ class ReceiverAuthRepositoryImplEmailAuthTest {
         val result = runBlocking { repository.verifyEmailAuthCode("a@b.com", "123456") }.getOrThrow()
 
         assertEquals(3L, result.receiverId)
-        assertEquals("123e4567-e89b-12d3-a456-426614174000", result.accessCode)
+        assertEquals("큐에이수신자", result.receiverName)
+        assertEquals("큐에이발신자", result.senderName)
     }
 }
 
 /** 이메일 인증 두 메서드만 주입 가능한 fake — 나머지 endpoint 는 본 테스트 대상 아님. */
 private class FakeReceiverAuthApiService(
-    private val onSendEmailAuthCode: (ReceiverAuthCodeEmailSendRequest) -> BaseResponse<Unit> = { error("unused") },
+    private val onSendEmailAuthCode: (ReceiverAuthCodeEmailSendRequestDto) -> BaseResponse<Unit> = { error("unused") },
     private val onVerifyEmailAuthCode: (
-        ReceiverEmailAuthVerifyRequest,
-    ) -> BaseResponse<ReceiverEmailAuthVerifyResponse> = { error("unused") },
+        ReceiverEmailAuthVerifyRequestDto,
+    ) -> BaseResponse<ReceiverEmailAuthVerifyDto> = { error("unused") },
 ) : ReceiverAuthApiService {
-    override suspend fun verify(body: ReceiverAuthVerifyRequest): BaseResponse<ReceiverAuthVerifyResponse> = error("unused")
+    override suspend fun verify(body: ReceiverAuthVerifyRequestDto): BaseResponse<ReceiverAuthVerifyDto> = error("unused")
 
-    override suspend fun sendEmailAuthCode(body: ReceiverAuthCodeEmailSendRequest): BaseResponse<Unit> = onSendEmailAuthCode(body)
+    override suspend fun sendEmailAuthCode(body: ReceiverAuthCodeEmailSendRequestDto): BaseResponse<Unit> = onSendEmailAuthCode(body)
 
-    override suspend fun verifyEmailAuthCode(body: ReceiverEmailAuthVerifyRequest): BaseResponse<ReceiverEmailAuthVerifyResponse> =
+    override suspend fun verifyEmailAuthCode(body: ReceiverEmailAuthVerifyRequestDto): BaseResponse<ReceiverEmailAuthVerifyDto> =
         onVerifyEmailAuthCode(body)
 
-    override suspend fun getPresignedUrl(body: ReceiverAuthPresignedUrlRequest): BaseResponse<ReceiverAuthPresignedUrlResponse> =
+    override suspend fun getPresignedUrl(body: ReceiverAuthPresignedUrlRequestDto): BaseResponse<ReceiverAuthPresignedUrlDto> =
         error("unused")
 
-    override suspend fun submitDeliveryVerification(body: DeliveryVerificationRequest): BaseResponse<DeliveryVerificationResponse> =
+    override suspend fun submitDeliveryVerification(body: DeliveryVerificationRequestDto): BaseResponse<DeliveryVerificationDto> =
         error("unused")
 
-    override suspend fun getDeliveryVerificationStatus(): BaseResponse<DeliveryVerificationResponse> = error("unused")
+    override suspend fun getDeliveryVerificationStatus(): BaseResponse<DeliveryVerificationDto> = error("unused")
 
-    override suspend fun getSenderMessage(): BaseResponse<ReceiverMessageResponse> = error("unused")
+    override suspend fun getSenderMessage(): BaseResponse<ReceiverMessageDto> = error("unused")
 }

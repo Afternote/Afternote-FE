@@ -33,11 +33,13 @@ private const val LAST_WISH_DEFAULT_BRIGHT = "슬퍼 하지 말고 밝고 따뜻
  *
  * **Bundle 용량:** 스냅샷이 들어가는 SavedState/번들은 대략 500KB~1MB를 넘기면 [android.os.TransactionTooLargeException] 위험이 있다.
  * 사진·썸네일은 Base64/data URL 같은 거대 문자열이 아니라 짧은 HTTPS URL 또는 content [android.net.Uri] 문자열만 두는 것이 안전하다.
+ *
+ * **서비스명:** [selectedService]의 `null`은 미선택(드롭다운 placeholder 노출) 상태이며, 등록 검증에서 차단된다.
  */
 data class EditorFormState(
     val loadedItemId: String? = null,
     val selectedCategory: EditorCategory = EditorCategory.SOCIAL,
-    val selectedService: String = AfternoteServiceCatalog.defaultSocialService,
+    val selectedService: String? = null,
     val afternoteEditReceivers: List<AfternoteEditorReceiver> = emptyList(),
     val socialProcessingMethods: List<ProcessingMethodItem> = emptyList(),
     val galleryProcessingMethods: List<ProcessingMethodItem> = emptyList(),

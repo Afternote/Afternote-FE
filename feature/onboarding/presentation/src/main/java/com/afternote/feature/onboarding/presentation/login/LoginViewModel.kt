@@ -77,7 +77,9 @@ class LoginViewModel
                         }
                     }.onFailure { exception ->
                         _uiState.update {
-                            it.copy(isLoading = false, errorMessage = exception.message)
+                            // message 가 null 이면 빈 문자열로 두어 실패 사실이 소실되지 않게 한다.
+                            // (null 은 "에러 없음"과 구분되지 않아 스낵바가 무음 처리되던 버그. UI 가 ifBlank 로 일반 문구 폴백.)
+                            it.copy(isLoading = false, errorMessage = exception.message.orEmpty())
                         }
                     }
             }

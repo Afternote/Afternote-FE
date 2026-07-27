@@ -1,8 +1,8 @@
 package com.afternote.feature.mindrecord.data.api
 
 import com.afternote.core.network.model.BaseResponse
-import com.afternote.feature.mindrecord.data.dto.ReceiverDailyQuestionListResponse
-import com.afternote.feature.mindrecord.data.dto.ReceiverDiaryListResponse
+import com.afternote.feature.mindrecord.data.dto.ReceiverDailyQuestionListDto
+import com.afternote.feature.mindrecord.data.dto.ReceiverDiaryListDto
 import retrofit2.http.GET
 import retrofit2.http.Query
 
@@ -18,12 +18,12 @@ interface MindRecordReceiverApiService {
         @Query("sort") sort: String? = null,
         @Query("startDate") startDate: String? = null,
         @Query("endDate") endDate: String? = null,
-    ): BaseResponse<ReceiverDailyQuestionListResponse>
+    ): BaseResponse<ReceiverDailyQuestionListDto>
 
     @GET("receiver-auth/diary")
     suspend fun getReceiverDiaries(
         @Query("sort") sort: String? = null,
         @Query("startDate") startDate: String? = null,
         @Query("endDate") endDate: String? = null,
-    ): BaseResponse<ReceiverDiaryListResponse>
+    ): BaseResponse<ReceiverDiaryListDto>
 }

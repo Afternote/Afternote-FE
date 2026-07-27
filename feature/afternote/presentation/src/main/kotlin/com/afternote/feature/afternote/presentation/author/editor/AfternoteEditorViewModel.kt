@@ -29,7 +29,6 @@ import com.afternote.feature.afternote.presentation.author.editor.state.Afternot
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationException
 import com.afternote.feature.afternote.presentation.author.editor.state.DEFAULT_EDITOR_MESSAGE_BLOCKS
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
-import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -103,14 +102,6 @@ private data class EditorFormSnapshot(
     fun toEditorFormState(restoreGeneration: Long): EditorFormState {
         val category =
             runCatching { EditorCategory.valueOf(categoryName) }.getOrElse { EditorCategory.SOCIAL }
-        val service =
-            selectedService.ifBlank {
-                if (category == EditorCategory.GALLERY) {
-                    AfternoteServiceCatalog.defaultGalleryService
-                } else {
-                    AfternoteServiceCatalog.defaultSocialService
-                }
-            }
         val blocks: List<EditorMessageTextBlock> =
             if (editorMessages.isEmpty()) {
                 DEFAULT_EDITOR_MESSAGE_BLOCKS
@@ -120,7 +111,8 @@ private data class EditorFormSnapshot(
         return EditorFormState(
             loadedItemId = loadedItemId,
             selectedCategory = category,
-            selectedService = service,
+            // 스냅샷의 빈 문자열은 미선택(null)로 복원 — process death 후에도 임의 기본값을 확정하지 않는다 (이슈 #468).
+            selectedService = selectedService.ifBlank { null },
             afternoteEditReceivers =
                 receivers.map { AfternoteEditorReceiver(id = it.id, name = it.name, label = it.label) },
             socialProcessingMethods = social.map { ProcessingMethodItem(it.id, it.text) },
@@ -144,7 +136,7 @@ private data class EditorFormSnapshot(
             EditorFormSnapshot(
                 loadedItemId = form.loadedItemId,
                 categoryName = form.selectedCategory.name,
-                selectedService = form.selectedService,
+                selectedService = form.selectedService.orEmpty(),
                 receivers =
                     form.afternoteEditReceivers.map {
                         ReceiverSnap(id = it.id, name = it.name, label = it.label)

@@ -23,6 +23,7 @@ data class TimeLetterWriteUiState(
     val nextBlockId: Long = 1L,
     val savedAsDraft: Boolean = false,
     val registered: Boolean = false,
+    val showFreePlanLimitPopup: Boolean = false,
 )
 
 sealed class EditorBlock {

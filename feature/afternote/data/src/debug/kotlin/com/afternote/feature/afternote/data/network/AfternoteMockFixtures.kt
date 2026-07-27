@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.data.network
 
-import com.afternote.feature.afternote.data.dto.MusicSearchResponse
-import com.afternote.feature.afternote.data.dto.MusicTrack
+import com.afternote.feature.afternote.data.dto.MusicSearchResponseDto
+import com.afternote.feature.afternote.data.dto.MusicTrackDto
 import kotlinx.serialization.json.Json
 
 /**
@@ -20,18 +20,18 @@ internal object AfternoteMockFixtures {
     val musicSearchResponseJson: String
         get() =
             json.encodeToString(
-                MusicSearchResponse(
+                MusicSearchResponseDto(
                     tracks =
                         listOf(
-                            MusicTrack(artist = "김범수", title = "보고싶다", albumImageUrl = null),
-                            MusicTrack(artist = "윤도현", title = "사랑했나봐", albumImageUrl = null),
-                            MusicTrack(artist = "김광석", title = "나의 옛날이야기", albumImageUrl = null),
-                            MusicTrack(artist = "이문세", title = "그대와 영원히", albumImageUrl = null),
-                            MusicTrack(artist = "넬", title = "흩어진 꿈", albumImageUrl = null),
-                            MusicTrack(artist = "폴킴", title = "안녕", albumImageUrl = null),
-                            MusicTrack(artist = "에일리", title = "첫눈처럼 너에게 가겠다", albumImageUrl = null),
-                            MusicTrack(artist = "폴킴", title = "너를 만나", albumImageUrl = null),
-                            MusicTrack(artist = "박효신", title = "겨울비", albumImageUrl = null),
+                            MusicTrackDto(artist = "김범수", title = "보고싶다", albumImageUrl = null),
+                            MusicTrackDto(artist = "윤도현", title = "사랑했나봐", albumImageUrl = null),
+                            MusicTrackDto(artist = "김광석", title = "나의 옛날이야기", albumImageUrl = null),
+                            MusicTrackDto(artist = "이문세", title = "그대와 영원히", albumImageUrl = null),
+                            MusicTrackDto(artist = "넬", title = "흩어진 꿈", albumImageUrl = null),
+                            MusicTrackDto(artist = "폴킴", title = "안녕", albumImageUrl = null),
+                            MusicTrackDto(artist = "에일리", title = "첫눈처럼 너에게 가겠다", albumImageUrl = null),
+                            MusicTrackDto(artist = "폴킴", title = "너를 만나", albumImageUrl = null),
+                            MusicTrackDto(artist = "박효신", title = "겨울비", albumImageUrl = null),
                         ),
                 ),
             )
