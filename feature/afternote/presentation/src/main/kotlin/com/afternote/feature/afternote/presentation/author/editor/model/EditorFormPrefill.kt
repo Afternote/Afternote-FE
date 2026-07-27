@@ -16,8 +16,7 @@ data class EditorFormPrefill(
     val accountId: String,
     val password: String,
     val messageBlocks: List<EditorMessageTextBlock>,
-    val socialProcessingMethods: List<ProcessingMethodItem>,
-    val galleryProcessingMethods: List<ProcessingMethodItem>,
+    val processingMethods: List<ProcessingMethodItem>,
     /** null이면 당부/직접입력 필드는 기존 값 유지 */
     val lastWishUpdate: LastWishPrefill?,
     val funeralVideoUrl: String?,
@@ -56,6 +55,5 @@ data class LoadFromExistingAccountParams(
 
 data class LoadFromExistingProcessingParams(
     val message: String = "",
-    val socialMethods: List<ProcessingMethodItem> = emptyList(),
-    val galleryMethods: List<ProcessingMethodItem> = emptyList(),
+    val methods: List<ProcessingMethodItem> = emptyList(),
 )

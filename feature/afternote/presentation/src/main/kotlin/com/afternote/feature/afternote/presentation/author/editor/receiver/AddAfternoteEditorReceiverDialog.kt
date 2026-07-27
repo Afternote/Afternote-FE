@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,7 +39,6 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.selection.DropdownMenuStyle
 import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdown
-import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdownLabelParams
 
 /**
  * 수신자와의 관계 드롭다운 (로컬 상태 사용)
@@ -53,10 +53,7 @@ private fun RelationshipDropdown(
     var expanded by remember { mutableStateOf(false) }
 
     SelectionDropdown(
-        labelParams =
-            SelectionDropdownLabelParams(
-                label = stringResource(R.string.afternote_editor_label_receiver_relation),
-            ),
+        label = stringResource(R.string.afternote_editor_label_receiver_relation),
         selectedValue = selectedValue,
         options = options,
         onValueSelected = onValueSelected,
@@ -78,11 +75,18 @@ private fun RelationshipDropdown(
  */
 @Composable
 fun AddAfternoteEditorReceiverDialog(
+    afternoteEditReceiverNameState: TextFieldState,
+    phoneNumberState: TextFieldState,
+    relationshipSelectedValue: String,
+    relationshipOptions: List<String>,
     modifier: Modifier = Modifier,
-    params: AddAfternoteEditorReceiverDialogParams,
+    onDismiss: () -> Unit = {},
+    onAddClick: () -> Unit = {},
+    onRelationshipSelected: (String) -> Unit = {},
+    onImportContactsClick: () -> Unit = {},
 ) {
     Dialog(
-        onDismissRequest = params.callbacks.onDismiss,
+        onDismissRequest = onDismiss,
         properties =
             DialogProperties(
                 dismissOnBackPress = true,
@@ -90,7 +94,13 @@ fun AddAfternoteEditorReceiverDialog(
             ),
     ) {
         AddAfternoteEditorReceiverDialogContent(
-            params = params,
+            afternoteEditReceiverNameState = afternoteEditReceiverNameState,
+            phoneNumberState = phoneNumberState,
+            relationshipSelectedValue = relationshipSelectedValue,
+            relationshipOptions = relationshipOptions,
+            onAddClick = onAddClick,
+            onRelationshipSelected = onRelationshipSelected,
+            onImportContactsClick = onImportContactsClick,
             modifier = modifier,
         )
     }
@@ -98,8 +108,14 @@ fun AddAfternoteEditorReceiverDialog(
 
 @Composable
 private fun AddAfternoteEditorReceiverDialogContent(
-    params: AddAfternoteEditorReceiverDialogParams,
+    afternoteEditReceiverNameState: TextFieldState,
+    phoneNumberState: TextFieldState,
+    relationshipSelectedValue: String,
+    relationshipOptions: List<String>,
     modifier: Modifier = Modifier,
+    onAddClick: () -> Unit = {},
+    onRelationshipSelected: (String) -> Unit = {},
+    onImportContactsClick: () -> Unit = {},
 ) {
     val focusManager = LocalFocusManager.current
     AfternotePopupCardLayout(
@@ -130,7 +146,7 @@ private fun AddAfternoteEditorReceiverDialogContent(
                             role = Role.Button,
                             onClick = {
                                 focusManager.clearFocus()
-                                params.callbacks.onAddClick()
+                                onAddClick()
                             },
                         ).padding(horizontal = 16.dp, vertical = 8.dp),
             ) {
@@ -154,15 +170,15 @@ private fun AddAfternoteEditorReceiverDialogContent(
                 color = AfternoteDesign.colors.gray6,
             )
             AfternoteTextField(
-                state = params.afternoteEditReceiverNameState,
+                state = afternoteEditReceiverNameState,
             )
         }
 
         // 수신자와의 관계 드롭다운
         RelationshipDropdown(
-            selectedValue = params.relationshipSelectedValue,
-            options = params.relationshipOptions,
-            onValueSelected = params.callbacks.onRelationshipSelected,
+            selectedValue = relationshipSelectedValue,
+            options = relationshipOptions,
+            onValueSelected = onRelationshipSelected,
             menuStyle =
                 DropdownMenuStyle(
                     menuOffset = 5.2.dp,
@@ -181,7 +197,7 @@ private fun AddAfternoteEditorReceiverDialogContent(
                 color = AfternoteDesign.colors.gray6,
             )
             AfternoteTextField(
-                state = params.phoneNumberState,
+                state = phoneNumberState,
                 keyboardType = KeyboardType.Phone,
                 inputTransformation = PhoneNumberInputTransformation,
                 outputTransformation = PhoneNumberVisualTransformation,
@@ -203,7 +219,7 @@ private fun AddAfternoteEditorReceiverDialogContent(
                 text = stringResource(R.string.afternote_editor_import_contacts_button),
                 onClick = {
                     focusManager.clearFocus()
-                    params.callbacks.onImportContactsClick()
+                    onImportContactsClick()
                 },
             )
         }
@@ -215,13 +231,10 @@ private fun AddAfternoteEditorReceiverDialogContent(
 private fun AddAfternoteEditorReceiverDialogPreview() {
     AfternoteTheme {
         AddAfternoteEditorReceiverDialogContent(
-            params =
-                AddAfternoteEditorReceiverDialogParams(
-                    afternoteEditReceiverNameState = rememberTextFieldState("홍길동"),
-                    phoneNumberState = rememberTextFieldState("01012345678"),
-                    relationshipSelectedValue = "친구",
-                    relationshipOptions = listOf("가족", "친구", "동료", "기타"),
-                ),
+            afternoteEditReceiverNameState = rememberTextFieldState("홍길동"),
+            phoneNumberState = rememberTextFieldState("01012345678"),
+            relationshipSelectedValue = "친구",
+            relationshipOptions = listOf("가족", "친구", "동료", "기타"),
         )
     }
 }

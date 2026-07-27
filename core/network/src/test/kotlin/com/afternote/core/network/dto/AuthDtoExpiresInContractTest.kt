@@ -27,7 +27,7 @@ class AuthDtoExpiresInContractTest {
         val payload =
             """{"status":200,"code":200,"message":"성공","data":{"accessToken":"a","refreshToken":"r","expiresIn":3600}}"""
 
-        val data = json.decodeFromString<BaseResponse<LoginData.DefaultLoginData>>(payload).requireData()
+        val data = json.decodeFromString<BaseResponse<LoginDto.DefaultLoginDto>>(payload).requireData()
 
         assertEquals(3600L, data.expiresIn)
         assertEquals("a", data.accessToken)
@@ -38,7 +38,7 @@ class AuthDtoExpiresInContractTest {
         val payload =
             """{"status":200,"code":200,"message":"성공","data":{"accessToken":"a","refreshToken":"r","expiresIn":3600}}"""
 
-        val data = json.decodeFromString<BaseResponse<ReissueData>>(payload).requireData()
+        val data = json.decodeFromString<BaseResponse<ReissueDto>>(payload).requireData()
 
         assertEquals(3600L, data.expiresIn)
         assertEquals("r", data.refreshToken)
@@ -49,7 +49,7 @@ class AuthDtoExpiresInContractTest {
         val payload =
             """{"status":200,"code":200,"message":"성공","data":{"accessToken":"a","refreshToken":"r"}}"""
 
-        val data = json.decodeFromString<BaseResponse<LoginData.DefaultLoginData>>(payload).requireData()
+        val data = json.decodeFromString<BaseResponse<LoginDto.DefaultLoginDto>>(payload).requireData()
 
         assertNull(data.expiresIn)
         assertEquals("a", data.accessToken)

@@ -66,17 +66,6 @@ internal fun editorSaveErrorFromUiState(
     return null
 }
 
-internal data class EditorScreenCallbacksParams(
-    val onPopBackStack: () -> Unit,
-    val onNavigateToMemorialPlaylist: () -> Unit,
-    val editViewModel: AfternoteEditorViewModel,
-    val state: AfternoteEditorState,
-    val route: AfternoteRoute.EditorRoute,
-    val graphSongs: List<Song>,
-    val onNavigateToSelectReceiver: () -> Unit,
-    val onBottomNavTabSelected: (BottomNavTab) -> Unit,
-)
-
 internal data class AfternoteEditorNavigationParams(
     val backStackEntry: NavBackStackEntry,
     val graphSongs: List<Song>,
@@ -100,14 +89,23 @@ internal fun tryApplyReceiverSelectionFromSavedState(
     state.addReceiverFromSelection(receiver.receiverId, receiver.name, receiver.relation)
 }
 
-internal fun buildEditorScreenCallbacks(params: EditorScreenCallbacksParams): AfternoteEditorScreenCallbacks =
+internal fun buildEditorScreenCallbacks(
+    onPopBackStack: () -> Unit,
+    onNavigateToMemorialPlaylist: () -> Unit,
+    editViewModel: AfternoteEditorViewModel,
+    state: AfternoteEditorState,
+    route: AfternoteRoute.EditorRoute,
+    graphSongs: List<Song>,
+    onNavigateToSelectReceiver: () -> Unit,
+    onBottomNavTabSelected: (BottomNavTab) -> Unit,
+): AfternoteEditorScreenCallbacks =
     AfternoteEditorScreenCallbacks(
         onBackClick = {
-            params.onPopBackStack()
+            onPopBackStack()
         },
         onRegisterClick = {
-            params.state.persistEditorMessagesFromTyping(
-                params.state.editorMessages.map { msg ->
+            state.persistEditorMessagesFromTyping(
+                state.editorMessages.map { msg ->
                     EditorMessageTextBlock(
                         title = msg.titleState.text.toString(),
                         body = msg.contentState.text.toString(),
@@ -116,39 +114,39 @@ internal fun buildEditorScreenCallbacks(params: EditorScreenCallbacksParams): Af
             )
             val payload =
                 SaveAfternotePayloadBuilder.build(
-                    form = params.state.currentForm(),
+                    form = state.currentForm(),
                     accountId =
-                        params.state.idState.text
+                        state.idState.text
                             .toString(),
                     password =
-                        params.state.passwordState.text
+                        state.passwordState.text
                             .toString(),
-                    atmosphere = params.state.getAtmosphereForSave(),
+                    atmosphere = state.getAtmosphereForSave(),
                 )
-            params.editViewModel.saveAfternote(
-                editingId = params.route.itemId?.toLongOrNull(),
-                category = params.state.selectedCategory,
+            editViewModel.saveAfternote(
+                editingId = route.itemId?.toLongOrNull(),
+                category = state.selectedCategory,
                 payload = payload,
-                selectedReceiverIds = params.state.afternoteEditReceivers.mapNotNull { it.id.toLongOrNull() },
-                playlistSongs = params.graphSongs,
+                selectedReceiverIds = state.afternoteEditReceivers.mapNotNull { it.id.toLongOrNull() },
+                playlistSongs = graphSongs,
                 memorialMedia =
                     SaveAfternoteMemorialMedia(
-                        funeralVideoUrl = params.state.funeralVideoUrl,
-                        funeralThumbnailUrl = params.state.funeralThumbnailUrl,
-                        memorialPhotoUrl = params.state.memorialPhotoUrl,
-                        pickedMemorialPhotoUri = params.state.pickedMemorialPhotoUri,
+                        funeralVideoUrl = state.funeralVideoUrl,
+                        funeralThumbnailUrl = state.funeralThumbnailUrl,
+                        memorialPhotoUrl = state.memorialPhotoUrl,
+                        pickedMemorialPhotoUri = state.pickedMemorialPhotoUri,
                     ),
             )
         },
-        onNavigateToAddSong = params.onNavigateToMemorialPlaylist,
-        onNavigateToSelectReceiver = params.onNavigateToSelectReceiver,
-        onBottomNavTabSelected = params.onBottomNavTabSelected,
+        onNavigateToAddSong = onNavigateToMemorialPlaylist,
+        onNavigateToSelectReceiver = onNavigateToSelectReceiver,
+        onBottomNavTabSelected = onBottomNavTabSelected,
         onThumbnailBytesReady = { bytes ->
             if (bytes != null) {
-                params.editViewModel.uploadMemorialThumbnail(bytes)
+                editViewModel.uploadMemorialThumbnail(bytes)
             }
         },
-        onThumbnailUploadErrorConsumed = params.editViewModel::onThumbnailUploadErrorConsumed,
+        onThumbnailUploadErrorConsumed = editViewModel::onThumbnailUploadErrorConsumed,
     )
 
 @Composable
@@ -239,16 +237,14 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
             params.graphSongs,
         ) {
             buildEditorScreenCallbacks(
-                EditorScreenCallbacksParams(
-                    onPopBackStack = params.onPopBackStack,
-                    onNavigateToMemorialPlaylist = params.onNavigateToMemorialPlaylist,
-                    editViewModel = editViewModel,
-                    state = state,
-                    route = route,
-                    graphSongs = params.graphSongs,
-                    onNavigateToSelectReceiver = params.onNavigateToSelectReceiver,
-                    onBottomNavTabSelected = params.onBottomNavTabSelected,
-                ),
+                onPopBackStack = params.onPopBackStack,
+                onNavigateToMemorialPlaylist = params.onNavigateToMemorialPlaylist,
+                editViewModel = editViewModel,
+                state = state,
+                route = route,
+                graphSongs = params.graphSongs,
+                onNavigateToSelectReceiver = params.onNavigateToSelectReceiver,
+                onBottomNavTabSelected = params.onBottomNavTabSelected,
             )
         }
 

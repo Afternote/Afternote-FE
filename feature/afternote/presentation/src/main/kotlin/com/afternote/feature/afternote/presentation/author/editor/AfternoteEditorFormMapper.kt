@@ -2,15 +2,16 @@ package com.afternote.feature.afternote.presentation.author.editor
 
 import com.afternote.feature.afternote.domain.model.author.AfternoteAccountCredentials
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
+import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreatePlaylistPayload
-import com.afternote.feature.afternote.domain.model.author.CreateSocialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
 import com.afternote.feature.afternote.domain.model.author.PlaylistSongPayload
 import com.afternote.feature.afternote.domain.model.author.PlaylistWritePayload
 import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
+import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorFormMapper.buildUpdatePayload
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessagesCodec
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
@@ -61,8 +62,7 @@ internal object AfternoteEditorFormMapper {
             accountId = params.account.id,
             password = params.account.password,
             messageBlocks = messageBlocks,
-            socialProcessingMethods = params.processing.socialMethods,
-            galleryProcessingMethods = params.processing.galleryMethods,
+            processingMethods = params.processing.methods,
             lastWishUpdate = lastWish,
             funeralVideoUrl = params.memorialVideoUrl,
             funeralThumbnailUrl = params.memorialThumbnailUrl,
@@ -80,7 +80,6 @@ internal object AfternoteEditorFormMapper {
                 )
             } ?: emptyList()
         val editorCategory = EditorCategory.fromServerValue(detail.category)
-        val isGallery = editorCategory == EditorCategory.GALLERY
         val memorialSongs: List<Song> =
             if (editorCategory == EditorCategory.MEMORIAL) {
                 detail.playlist?.songs?.mapIndexed { index, s ->
@@ -106,8 +105,7 @@ internal object AfternoteEditorFormMapper {
             processing =
                 LoadFromExistingProcessingParams(
                     message = detail.processing?.leaveMessage.orEmpty(),
-                    socialMethods = if (isGallery) emptyList() else actionItems,
-                    galleryMethods = if (isGallery) actionItems else emptyList(),
+                    methods = actionItems,
                 ),
             atmosphere = detail.playlist?.atmosphere,
             memorialVideoUrl = detail.playlist?.playlistDetailMemorialMedia?.videoUrl,
@@ -157,9 +155,7 @@ internal object AfternoteEditorFormMapper {
         funeralThumbnailUrl: String?,
         memorialPhotoUrl: String?,
     ): CreateAfternoteInput {
-        val actions =
-            payload.processingMethods.map { it.text } +
-                payload.galleryProcessingMethods.map { it.text }
+        val actions = payload.processingMethods.map { it.text }
         val leaveMessage = payload.message.ifBlank { null }
 
         return when (category) {
@@ -195,26 +191,42 @@ internal object AfternoteEditorFormMapper {
 
             EditorCategory.SOCIAL -> {
                 CreateAfternoteInput.Social(
-                    CreateSocialPayload(
-                        title = payload.serviceName,
-                        actions = actions,
-                        leaveMessage = leaveMessage,
-                        credentials =
-                            AfternoteAccountCredentials(
-                                id = payload.accountId.ifBlank { null },
-                                password = payload.password.ifBlank { null },
-                            ),
-                        receiverIds = selectedReceiverIds,
-                    ),
+                    buildAccountCreatePayload(payload, actions, leaveMessage, selectedReceiverIds),
+                )
+            }
+
+            // BUSINESS 는 서버 바디 스키마가 SOCIAL 과 동일(계정·처리 방법·남기실 말씀)해 [CreateAccountPayload] 를
+            // 공유하고, category 문자열만 data 계층 매퍼에서 "BUSINESS" 로 실린다 (이슈 #467).
+            EditorCategory.BUSINESS -> {
+                CreateAfternoteInput.Business(
+                    buildAccountCreatePayload(payload, actions, leaveMessage, selectedReceiverIds),
                 )
             }
 
             // placeholder 카테고리는 Validator 에서 이미 차단되므로 여기 도달 시 호출자 버그.
-            EditorCategory.BUSINESS, EditorCategory.ESTATE -> {
+            EditorCategory.ESTATE -> {
                 error("Unimplemented category cannot be saved: $category")
             }
         }
     }
+
+    private fun buildAccountCreatePayload(
+        payload: RegisterAfternotePayload,
+        actions: List<String>,
+        leaveMessage: String?,
+        selectedReceiverIds: List<Long>,
+    ): CreateAccountPayload =
+        CreateAccountPayload(
+            title = payload.serviceName,
+            actions = actions,
+            leaveMessage = leaveMessage,
+            credentials =
+                AfternoteAccountCredentials(
+                    id = payload.accountId.ifBlank { null },
+                    password = payload.password.ifBlank { null },
+                ),
+            receiverIds = selectedReceiverIds,
+        )
 
     fun buildUpdatePayload(
         category: EditorCategory,
@@ -239,25 +251,28 @@ internal object AfternoteEditorFormMapper {
                 )
             }
 
-            EditorCategory.GALLERY, EditorCategory.SOCIAL -> {
-                buildNonMemorialUpdatePayload(category, payload, selectedReceiverIds)
+            EditorCategory.GALLERY, EditorCategory.SOCIAL, EditorCategory.BUSINESS -> {
+                buildActionsUpdatePayload(category, payload, selectedReceiverIds)
             }
 
             // placeholder 카테고리는 Validator 에서 차단됨. 도달 시 호출자 버그.
-            EditorCategory.BUSINESS, EditorCategory.ESTATE -> {
+            EditorCategory.ESTATE -> {
                 error("Unimplemented category cannot be saved: $category")
             }
         }
 
-    private fun buildNonMemorialUpdatePayload(
+    /**
+     * actions(처리 방법) 기반 카테고리(SOCIAL·BUSINESS·GALLERY) 공용 update payload —
+     * [AfternoteUpdatePayload.actions] 를 채우고 계정형(SOCIAL·BUSINESS)만 credentials 를 싣는다.
+     * MEMORIAL 은 [AfternoteUpdatePayload.playlist] 기반이라 [buildUpdatePayload] 의 별도 분기.
+     */
+    private fun buildActionsUpdatePayload(
         category: EditorCategory,
         payload: RegisterAfternotePayload,
         selectedReceiverIds: List<Long>,
     ): AfternoteUpdatePayload {
-        val actions =
-            payload.processingMethods.map { it.text } +
-                payload.galleryProcessingMethods.map { it.text }
-        val hasCredentials = category == EditorCategory.SOCIAL
+        val actions = payload.processingMethods.map { it.text }
+        val hasCredentials = category == EditorCategory.SOCIAL || category == EditorCategory.BUSINESS
         val credentials =
             if (hasCredentials) {
                 val id = payload.accountId.ifBlank { null }

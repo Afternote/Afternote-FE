@@ -8,7 +8,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.R
 
-private val nanumGothic =
+private val nanumBarunGothic =
     FontFamily(
         Font(R.font.nanumbarungothic, FontWeight.Normal),
         Font(R.font.nanumbarungothicbold, FontWeight.Bold),
@@ -27,7 +27,7 @@ private val inter =
 data class AfternoteTypography(
     val h1: TextStyle =
         TextStyle(
-            fontFamily = nanumGothic,
+            fontFamily = nanumBarunGothic,
             fontWeight = FontWeight.Normal,
             fontSize = 28.sp,
             lineHeight = 36.sp,
@@ -35,7 +35,7 @@ data class AfternoteTypography(
         ),
     val h2: TextStyle =
         TextStyle(
-            fontFamily = nanumGothic,
+            fontFamily = nanumBarunGothic,
             fontWeight = FontWeight.Bold,
             fontSize = 24.sp,
             lineHeight = 30.sp,
@@ -43,7 +43,7 @@ data class AfternoteTypography(
         ),
     val h3: TextStyle =
         TextStyle(
-            fontFamily = nanumGothic,
+            fontFamily = nanumBarunGothic,
             fontWeight = FontWeight.Bold,
             fontSize = 20.sp,
             lineHeight = 26.sp,
@@ -51,42 +51,42 @@ data class AfternoteTypography(
         ),
     val bodyLargeB: TextStyle =
         TextStyle(
-            fontFamily = nanumGothic,
+            fontFamily = nanumBarunGothic,
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp,
             lineHeight = 24.sp,
         ),
     val bodyLargeR: TextStyle =
         TextStyle(
-            fontFamily = nanumGothic,
+            fontFamily = nanumBarunGothic,
             fontWeight = FontWeight.Normal,
             fontSize = 18.sp,
             lineHeight = 22.sp,
         ),
     val bodyBase: TextStyle =
         TextStyle(
-            fontFamily = nanumGothic,
+            fontFamily = nanumBarunGothic,
             fontWeight = FontWeight.Normal,
             fontSize = 16.sp,
             lineHeight = 24.sp,
         ),
     val bodySmallB: TextStyle =
         TextStyle(
-            fontFamily = nanumGothic,
+            fontFamily = nanumBarunGothic,
             fontWeight = FontWeight.Bold,
             fontSize = 14.sp,
             lineHeight = 20.sp,
         ),
     val bodySmallR: TextStyle =
         TextStyle(
-            fontFamily = nanumGothic,
+            fontFamily = nanumBarunGothic,
             fontWeight = FontWeight.Normal,
             fontSize = 14.sp,
             lineHeight = 20.sp,
         ),
     val primaryButton: TextStyle =
         TextStyle(
-            fontFamily = nanumGothic,
+            fontFamily = nanumBarunGothic,
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp,
             lineHeight = 24.sp,
@@ -94,7 +94,7 @@ data class AfternoteTypography(
         ),
     val secondaryButton: TextStyle =
         TextStyle(
-            fontFamily = nanumGothic,
+            fontFamily = nanumBarunGothic,
             fontWeight = FontWeight.Normal,
             fontSize = 22.sp,
             lineHeight = 20.sp,
@@ -102,21 +102,21 @@ data class AfternoteTypography(
         ),
     val footnoteCaption: TextStyle =
         TextStyle(
-            fontFamily = nanumGothic,
+            fontFamily = nanumBarunGothic,
             fontWeight = FontWeight.Normal,
             fontSize = 10.sp,
             lineHeight = 16.sp,
         ),
     val captionLargeB: TextStyle =
         TextStyle(
-            fontFamily = nanumGothic,
+            fontFamily = nanumBarunGothic,
             fontWeight = FontWeight.Bold,
             fontSize = 12.sp,
             lineHeight = 18.sp,
         ),
     val captionLargeR: TextStyle =
         TextStyle(
-            fontFamily = nanumGothic,
+            fontFamily = nanumBarunGothic,
             fontWeight = FontWeight.Normal,
             fontSize = 12.sp,
             lineHeight = 18.sp,
@@ -131,7 +131,7 @@ data class AfternoteTypography(
         ),
     val textField: TextStyle =
         TextStyle(
-            fontFamily = nanumGothic,
+            fontFamily = nanumBarunGothic,
             fontWeight = FontWeight.Normal,
             fontSize = 16.sp,
             lineHeight = 22.sp,

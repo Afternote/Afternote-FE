@@ -34,7 +34,7 @@ enum class TimeLetterBlockTypeDto {
 }
 
 @Serializable
-data class TimeLetterBlockRequest(
+data class TimeLetterBlockRequestDto(
     @SerialName("blockType") val blockType: TimeLetterBlockTypeDto,
     @SerialName("blockOrder") val blockOrder: Int,
     @SerialName("textContent") val textContent: String? = null,
@@ -43,7 +43,7 @@ data class TimeLetterBlockRequest(
 )
 
 @Serializable
-data class TimeLetterBlockResponseDto(
+data class TimeLetterBlockDto(
     @SerialName("id") val id: Long,
     @SerialName("blockType") val blockType: TimeLetterBlockTypeDto,
     @SerialName("blockOrder") val blockOrder: Int,
@@ -53,40 +53,40 @@ data class TimeLetterBlockResponseDto(
 )
 
 @Serializable
-data class TimeLetterCreateRequest(
+data class TimeLetterCreateRequestDto(
     @SerialName("title") val title: String? = null,
     @SerialName("sendAt") val sendAt: String? = null,
     @SerialName("status") val status: TimeLetterStatusDto,
-    @SerialName("blocks") val blocks: List<TimeLetterBlockRequest> = emptyList(),
+    @SerialName("blocks") val blocks: List<TimeLetterBlockRequestDto> = emptyList(),
     @SerialName("receiverIds") val receiverIds: List<Long> = emptyList(),
 )
 
 @Serializable
-data class TimeLetterUpdateRequest(
+data class TimeLetterUpdateRequestDto(
     @SerialName("title") val title: String? = null,
     @SerialName("sendAt") val sendAt: String? = null,
     @SerialName("status") val status: TimeLetterStatusDto? = null,
-    @SerialName("blocks") val blocks: List<TimeLetterBlockRequest> = emptyList(),
+    @SerialName("blocks") val blocks: List<TimeLetterBlockRequestDto> = emptyList(),
 )
 
 @Serializable
-data class TimeLetterDeleteRequest(
+data class TimeLetterDeleteRequestDto(
     @SerialName("timeLetterIds") val timeLetterIds: List<Long>,
 )
 
 @Serializable
-data class TimeLetterResponseDto(
+data class TimeLetterDto(
     @SerialName("id") val id: Long,
     @SerialName("title") val title: String? = null,
     @SerialName("sendAt") val sendAt: String? = null,
     @SerialName("deliveredAt") val deliveredAt: String? = null,
     @SerialName("status") val status: TimeLetterStatusDto,
-    @SerialName("blocks") val blocks: List<TimeLetterBlockResponseDto> = emptyList(),
+    @SerialName("blocks") val blocks: List<TimeLetterBlockDto> = emptyList(),
     @SerialName("receiverIds") val receiverIds: List<Long> = emptyList(),
 )
 
 @Serializable
-data class TimeLetterListResponseDto(
-    @SerialName("timeLetters") val timeLetters: List<TimeLetterResponseDto>,
+data class TimeLetterListDto(
+    @SerialName("timeLetters") val timeLetters: List<TimeLetterDto>,
     @SerialName("totalCount") val totalCount: Int,
 )
