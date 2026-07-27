@@ -40,7 +40,7 @@ internal object AfternoteMockFixtures {
         when (id) {
             1L -> MOCK_DETAIL_SOCIAL_INSTAGRAM_JSON
             2L -> MOCK_DETAIL_GALLERY_JSON
-            3L -> MOCK_DETAIL_SOCIAL_NAVER_MAIL_JSON
+            3L -> MOCK_DETAIL_BUSINESS_NAVER_MAIL_JSON
             else -> mockDetailGenericJson(id)
         }
 
@@ -86,12 +86,12 @@ internal object AfternoteMockFixtures {
         }}
         """.trimIndent()
 
-    /** 소셜 네트워크 상세 시나리오 — 네이버 메일 (구 NAVER_MAIL_PREVIEW_CONTENT). */
-    val MOCK_DETAIL_SOCIAL_NAVER_MAIL_JSON =
+    /** 비즈니스 상세 시나리오 — 네이버 메일 (구 NAVER_MAIL_PREVIEW_CONTENT, #467 에서 BUSINESS 카테고리로 정합). */
+    val MOCK_DETAIL_BUSINESS_NAVER_MAIL_JSON =
         """
         {"status":200,"code":0,"message":null,"data":{
           "afternoteId":3,
-          "category":"SOCIAL",
+          "category":"BUSINESS",
           "title":"네이버 메일",
           "createdAt":"2025-11-26T10:00:00",
           "updatedAt":"2025-11-26T12:00:00",
@@ -108,7 +108,7 @@ internal object AfternoteMockFixtures {
         {"status":200,"code":0,"message":null,"data":{"content":[
           {"afternoteId":1,"title":"인스타그램","category":"SOCIAL","createdAt":"2024-06-01"},
           {"afternoteId":2,"title":"갤러리","category":"GALLERY","createdAt":"2024-06-02"},
-          {"afternoteId":3,"title":"네이버 메일","category":"SOCIAL","createdAt":"2024-06-03"}
+          {"afternoteId":3,"title":"네이버 메일","category":"BUSINESS","createdAt":"2024-06-03"}
         ],"pageNumber":0,"size":10,"hasNext":false}}
         """.trimIndent()
 

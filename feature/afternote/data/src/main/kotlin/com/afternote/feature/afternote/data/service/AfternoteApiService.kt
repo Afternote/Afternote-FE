@@ -1,9 +1,9 @@
 package com.afternote.feature.afternote.data.service
 
 import com.afternote.core.network.model.BaseResponse
+import com.afternote.feature.afternote.data.dto.AfternoteCreateAccountRequestDto
 import com.afternote.feature.afternote.data.dto.AfternoteCreateGalleryRequestDto
 import com.afternote.feature.afternote.data.dto.AfternoteCreatePlaylistRequestDto
-import com.afternote.feature.afternote.data.dto.AfternoteCreateSocialRequestDto
 import com.afternote.feature.afternote.data.dto.AfternoteDetailDto
 import com.afternote.feature.afternote.data.dto.AfternoteIdDto
 import com.afternote.feature.afternote.data.dto.AfternotePageDto
@@ -29,9 +29,10 @@ interface AfternoteApiService {
         @Path("afternoteId") afternoteId: Long,
     ): BaseResponse<AfternoteDetailDto>
 
+    /** SOCIAL·BUSINESS 공용 생성 — 두 카테고리는 바디 스키마가 동일해 [AfternoteCreateAccountRequestDto.category] 로만 구분된다. */
     @POST("afternotes")
-    suspend fun createAfternoteSocial(
-        @Body request: AfternoteCreateSocialRequestDto,
+    suspend fun createAfternoteAccount(
+        @Body request: AfternoteCreateAccountRequestDto,
     ): BaseResponse<AfternoteIdDto>
 
     @POST("afternotes")

@@ -38,6 +38,15 @@ object AfternoteServiceCatalog {
             AfternoteService.TALKDRIVE.displayKey,
         )
 
+    /** Display names for 비즈니스 (BUSINESS) category. 시안 카탈로그(카테고리별 아이콘 34:3342) 정의 4종. */
+    val businessServices: List<String> =
+        listOf(
+            AfternoteService.NAVER_MAIL.displayKey,
+            AfternoteService.DAUM_MAIL.displayKey,
+            AfternoteService.GOOGLE_MAIL.displayKey,
+            AfternoteService.OUTLOOK.displayKey,
+        )
+
     private val MEMORIAL_SERVICE_NAME: String = AfternoteService.MEMORIAL_GUIDELINE.displayKey
 
     /**
@@ -47,6 +56,7 @@ object AfternoteServiceCatalog {
     fun serviceTypeFor(serviceName: String): AfternoteServiceType =
         when {
             galleryServices.contains(serviceName) -> AfternoteServiceType.GALLERY_AND_FILES
+            businessServices.contains(serviceName) -> AfternoteServiceType.BUSINESS
             serviceName == MEMORIAL_SERVICE_NAME -> AfternoteServiceType.MEMORIAL
             else -> AfternoteServiceType.SOCIAL_NETWORK
         }

@@ -100,8 +100,7 @@ class AfternoteEditorState(
                 selectedCategory = category,
                 // 카테고리 전환 시 서비스명은 항상 미선택으로 리셋 — 임의 기본값 확정 방지 (이슈 #468).
                 selectedService = null,
-                socialProcessingMethods = emptyList(),
-                galleryProcessingMethods = emptyList(),
+                processingMethods = emptyList(),
             )
         }
     }
@@ -257,7 +256,7 @@ class AfternoteEditorState(
             TAG,
             "applyFormPrefill: itemId=${prefill.loadedItemId}, serviceName=${prefill.serviceName}, " +
                 "category=${prefill.category}, " +
-                "socialPMs=${prefill.socialProcessingMethods.size}, galleryPMs=${prefill.galleryProcessingMethods.size}",
+                "PMs=${prefill.processingMethods.size}",
         )
         val prefillBlocks = normalizeEditorMessageBlocks(prefill.messageBlocks)
         updateForm { prev ->
@@ -269,8 +268,7 @@ class AfternoteEditorState(
                 loadedItemId = prefill.loadedItemId,
                 selectedCategory = prefill.category,
                 selectedService = prefill.serviceName,
-                socialProcessingMethods = prefill.socialProcessingMethods,
-                galleryProcessingMethods = prefill.galleryProcessingMethods,
+                processingMethods = prefill.processingMethods,
                 funeralVideoUrl = prefill.funeralVideoUrl,
                 funeralThumbnailUrl = prefill.funeralThumbnailUrl,
                 memorialPhotoUrl = prefill.memorialPhotoUrl,
@@ -296,16 +294,16 @@ class AfternoteEditorState(
         updateForm { prev ->
             val newItem =
                 ProcessingMethodItem(
-                    id = (prev.socialProcessingMethods.size + 1).toString(),
+                    id = (prev.processingMethods.size + 1).toString(),
                     text = text,
                 )
-            prev.copy(socialProcessingMethods = prev.socialProcessingMethods + newItem)
+            prev.copy(processingMethods = prev.processingMethods + newItem)
         }
     }
 
     fun deleteProcessingMethod(itemId: String) {
         updateForm { prev ->
-            prev.copy(socialProcessingMethods = prev.socialProcessingMethods.filter { it.id != itemId })
+            prev.copy(processingMethods = prev.processingMethods.filter { it.id != itemId })
         }
     }
 
@@ -315,39 +313,8 @@ class AfternoteEditorState(
     ) {
         updateForm { prev ->
             prev.copy(
-                socialProcessingMethods =
-                    prev.socialProcessingMethods.map { item ->
-                        if (item.id == itemId) item.copy(text = newText) else item
-                    },
-            )
-        }
-    }
-
-    fun addGalleryProcessingMethod(text: String) {
-        updateForm { prev ->
-            val newItem =
-                ProcessingMethodItem(
-                    id = (prev.galleryProcessingMethods.size + 1).toString(),
-                    text = text,
-                )
-            prev.copy(galleryProcessingMethods = prev.galleryProcessingMethods + newItem)
-        }
-    }
-
-    fun deleteGalleryProcessingMethod(itemId: String) {
-        updateForm { prev ->
-            prev.copy(galleryProcessingMethods = prev.galleryProcessingMethods.filter { it.id != itemId })
-        }
-    }
-
-    fun editGalleryProcessingMethod(
-        itemId: String,
-        newText: String,
-    ) {
-        updateForm { prev ->
-            prev.copy(
-                galleryProcessingMethods =
-                    prev.galleryProcessingMethods.map { item ->
+                processingMethods =
+                    prev.processingMethods.map { item ->
                         if (item.id == itemId) item.copy(text = newText) else item
                     },
             )

@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.editor.social
+package com.afternote.feature.afternote.presentation.author.editor.account
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,17 +16,17 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.EditorSectionLabel
-import com.afternote.feature.afternote.presentation.author.editor.account.AccountSection
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
 
 /**
- * 소셜네트워크 등 일반적인 종류 선택 시 표시되는 콘텐츠
+ * 계정 기반 카테고리(소셜네트워크·비즈니스) 공용 에디터 콘텐츠 —
+ * 계정 정보 + 처리 방법 리스트 + 남기실 말씀 구조가 동일해 두 카테고리가 공유한다 (이슈 #467).
  */
 @Composable
-fun SocialNetworkEditorContent(
+fun AccountEditorContent(
     editorMessages: List<EditorMessage>,
     accountSection: AccountSection,
     modifier: Modifier = Modifier,
@@ -77,7 +77,7 @@ fun SocialNetworkEditorContent(
 
 @Preview(showBackground = true)
 @Composable
-private fun SocialNetworkEditorContentPreview() {
+private fun AccountEditorContentPreview() {
     AfternoteTheme {
         Column(
             modifier =
@@ -86,7 +86,7 @@ private fun SocialNetworkEditorContentPreview() {
                     .padding(20.dp),
         ) {
             // 첫 번째 옵션 선택됨 (파란 테두리), 나머지는 선택 안 됨 (테두리 없음) 상태를 한 화면에 표시
-            SocialNetworkEditorContent(
+            AccountEditorContent(
                 editorMessages =
                     listOf(
                         EditorMessage(

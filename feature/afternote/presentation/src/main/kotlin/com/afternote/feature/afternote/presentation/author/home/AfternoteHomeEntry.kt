@@ -53,10 +53,11 @@ fun AfternoteHomeEntry(
 
                 AfternoteServiceType.MEMORIAL -> navigateToMemorialGuidelineDetail(id)
 
-                AfternoteServiceType.SOCIAL_NETWORK -> navigateToDetail(id)
+                // BUSINESS 상세는 소셜 상세 화면을 재사용한다 (구성 동일: 계정 정보·처리 방법·남긴 말씀 — 이슈 #467).
+                AfternoteServiceType.SOCIAL_NETWORK, AfternoteServiceType.BUSINESS -> navigateToDetail(id)
 
-                // BUSINESS · ESTATE 는 placeholder 카테고리. 서버 미지원이라 리스트에 노출되지 않으므로 도달 시 무시.
-                AfternoteServiceType.BUSINESS, AfternoteServiceType.ESTATE -> Unit
+                // ESTATE 는 placeholder 카테고리. 서버 미지원이라 리스트에 노출되지 않으므로 도달 시 무시.
+                AfternoteServiceType.ESTATE -> Unit
             }
         },
         onFabClick = { navigateToAdd(selectedCategory) },

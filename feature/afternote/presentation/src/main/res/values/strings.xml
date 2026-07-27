@@ -44,6 +44,9 @@
     <string name="receiver_afternote_item_gallery">갤러리</string>
     <string name="receiver_afternote_item_memorial_guideline">추억 노트</string>
     <string name="receiver_afternote_item_naver_mail">네이버 메일</string>
+    <string name="receiver_afternote_item_daum_mail">다음 메일</string>
+    <string name="receiver_afternote_item_google_mail">구글 메일</string>
+    <string name="receiver_afternote_item_outlook">outlook</string>
     <string name="receiver_memorial_video_no_app">영상을 재생할 수 있는 앱이 없습니다.</string>
     <string name="receiver_memorial_playlist_screen_title">%1$s님의 플레이리스트</string>
 
@@ -229,9 +232,8 @@
 
     <string name="afternote_validation_title_required">등록할 서비스(플랫폼)명을 선택해 주세요.</string>
     <string name="afternote_edit_service_label">등록할 서비스</string>
-    <string name="afternote_validation_social_credentials_required">계정 ID와 비밀번호를 입력해 주세요.</string>
-    <string name="afternote_validation_social_actions_required">처리 방법을 한 가지 이상 추가해 주세요.</string>
-    <string name="afternote_validation_gallery_actions_required">처리 방법을 한 가지 이상 추가해 주세요.</string>
+    <string name="afternote_validation_account_credentials_required">계정 ID와 비밀번호를 입력해 주세요.</string>
+    <string name="afternote_validation_actions_required">처리 방법을 한 가지 이상 추가해 주세요.</string>
     <string name="afternote_validation_gallery_receivers_required">수신자를 한 명 이상 등록해 주세요. 설정에서 수신자를 등록해 주세요.</string>
     <string name="afternote_validation_receivers_required">수신자를 한 명 이상 선택해 주세요.</string>
     <string name="afternote_validation_playlist_songs_required">플레이리스트에 노래를 한 곡 이상 추가해 주세요.</string>

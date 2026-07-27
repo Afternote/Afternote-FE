@@ -32,12 +32,8 @@ object SaveAfternotePayloadBuilder {
         atmosphere: String,
         date: LocalDate = LocalDate.now(),
     ): RegisterAfternotePayload {
-        val socialMethods =
-            form.socialProcessingMethods.map {
-                ProcessingMethod(it.id, it.text)
-            }
-        val galleryMethods =
-            form.galleryProcessingMethods.map {
+        val methods =
+            form.processingMethods.map {
                 ProcessingMethod(it.id, it.text)
             }
         val fullMessage =
@@ -55,8 +51,7 @@ object SaveAfternotePayloadBuilder {
             accountId = accountId,
             password = password,
             message = fullMessage,
-            processingMethods = socialMethods,
-            galleryProcessingMethods = galleryMethods,
+            processingMethods = methods,
             atmosphere = atmosphere,
         )
     }
