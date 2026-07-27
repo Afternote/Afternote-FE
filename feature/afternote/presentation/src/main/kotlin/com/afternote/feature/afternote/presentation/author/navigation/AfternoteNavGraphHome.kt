@@ -2,7 +2,6 @@ package com.afternote.feature.afternote.presentation.author.navigation
 
 import androidx.compose.runtime.Composable
 import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeEntry
-import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeEntryActions
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 
 @Composable
@@ -14,17 +13,14 @@ internal fun AfternoteHomeNavigation(
     onNavigateToSetting: () -> Unit,
 ) {
     AfternoteHomeEntry(
-        actions =
-            AfternoteHomeEntryActions(
-                navigateToDetail = onNavigateToDetail,
-                navigateToGalleryDetail = onNavigateToGalleryDetail,
-                navigateToMemorialDetail = onNavigateToMemorialDetail,
-                navigateToAdd = { selectedTab ->
-                    val initialCategory =
-                        if (selectedTab == AfternoteCategory.ALL) null else selectedTab.navKey
-                    onNavigateToNewEditor(initialCategory)
-                },
-                onSettingClick = onNavigateToSetting,
-            ),
+        navigateToDetail = onNavigateToDetail,
+        navigateToGalleryDetail = onNavigateToGalleryDetail,
+        navigateToMemorialDetail = onNavigateToMemorialDetail,
+        navigateToAdd = { selectedTab ->
+            val initialCategory =
+                if (selectedTab == AfternoteCategory.ALL) null else selectedTab.navKey
+            onNavigateToNewEditor(initialCategory)
+        },
+        onSettingClick = onNavigateToSetting,
     )
 }

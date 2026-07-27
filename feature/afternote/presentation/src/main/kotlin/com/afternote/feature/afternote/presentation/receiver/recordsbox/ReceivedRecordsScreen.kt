@@ -81,7 +81,8 @@ internal fun ReceivedRecordsScreenContent(
             )
         },
         floatingActionButton = {
-            AfternoteFloatingActionButton(onClick = onAddSenderClick)
+            // 시안(plus_button 48×48, 글리프 16.67dp) 정합: core/ui 기본 56dp 대신 48dp opt-in (#481).
+            AfternoteFloatingActionButton(onClick = onAddSenderClick, size = 48.dp, iconSize = 17.dp)
         },
     ) { paddingValues ->
         if (senders.isEmpty()) {

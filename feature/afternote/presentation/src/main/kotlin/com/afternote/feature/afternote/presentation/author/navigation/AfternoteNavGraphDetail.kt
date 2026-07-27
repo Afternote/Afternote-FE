@@ -19,7 +19,7 @@ import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailDeleteResult
 import com.afternote.feature.afternote.presentation.author.detail.GalleryDetailRoute
 import com.afternote.feature.afternote.presentation.author.detail.MemorialDetailRoute
-import com.afternote.feature.afternote.presentation.author.detail.socialnetwork.SocialNetworkDetailRoute
+import com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailRoute
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 
 @Composable
@@ -100,7 +100,7 @@ internal fun AfternoteDetailNavigation(
     if (route.itemId.isBlank()) {
         DesignPendingDetailContent(onBackClick = onBack)
     } else {
-        SocialNetworkDetailRoute(
+        AccountDetailRoute(
             onBack = onBack,
             onNavigateToEditor = onNavigateToEditor,
         )

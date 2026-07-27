@@ -5,10 +5,10 @@ import com.afternote.core.datastore.TokenDataSource
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.model.Session
 import com.afternote.core.model.TokenBundle
-import com.afternote.core.network.dto.LoginRequest
-import com.afternote.core.network.dto.LogoutRequest
-import com.afternote.core.network.dto.ReissueRequest
-import com.afternote.core.network.dto.SocialLoginRequest
+import com.afternote.core.network.dto.LoginRequestDto
+import com.afternote.core.network.dto.LogoutRequestDto
+import com.afternote.core.network.dto.ReissueRequestDto
+import com.afternote.core.network.dto.SocialLoginRequestDto
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.service.AuthApiService
 import com.afternote.core.network.service.TokenApiService
@@ -70,7 +70,7 @@ class AuthRepositoryImpl
             password: String,
         ): Result<Session.DefaultSession> =
             runCatching {
-                val data = authApiService.login(LoginRequest(email, password)).requireData()
+                val data = authApiService.login(LoginRequestDto(email, password)).requireData()
                 recordIssuedExpiresIn(data.expiresIn)
                 AuthMapper.toDefaultLoginResult(data)
             }
@@ -80,7 +80,7 @@ class AuthRepositoryImpl
                 val data =
                     authApiService
                         .socialLogin(
-                            SocialLoginRequest(
+                            SocialLoginRequestDto(
                                 provider = "KAKAO",
                                 accessToken = oauthToken,
                             ),
@@ -94,7 +94,7 @@ class AuthRepositoryImpl
                 val data =
                     authApiService
                         .socialLogin(
-                            SocialLoginRequest(
+                            SocialLoginRequestDto(
                                 provider = "GOOGLE",
                                 accessToken = idToken,
                             ),
@@ -108,7 +108,7 @@ class AuthRepositoryImpl
                 val refreshToken =
                     getRefreshToken().getOrNull()
                         ?: error("리프레시 토큰이 존재하지 않습니다.")
-                val response = tokenApiService.reissue(ReissueRequest(refreshToken))
+                val response = tokenApiService.reissue(ReissueRequestDto(refreshToken))
                 val tokenBundleResult = AuthMapper.toRotateTokenResult(response.requireData())
                 updateTokens(
                     accessToken = tokenBundleResult.accessToken,
@@ -125,7 +125,7 @@ class AuthRepositoryImpl
             runCatching {
                 val refreshToken = getRefreshToken().getOrNull()
                 if (refreshToken != null) {
-                    runCatching { authApiService.logout(LogoutRequest(refreshToken)) }
+                    runCatching { authApiService.logout(LogoutRequestDto(refreshToken)) }
                 }
                 tokenDataSource.clearTokens()
                 // deadline 은 방금 지운 액세스 토큰의 잔여 수명 기록 — 토큰이 사라지는 순간 의미를 잃으므로

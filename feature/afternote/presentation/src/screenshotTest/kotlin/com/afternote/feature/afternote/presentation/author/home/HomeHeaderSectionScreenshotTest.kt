@@ -16,3 +16,15 @@ internal fun homeHeaderSectionScreenshot() {
         )
     }
 }
+
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+internal fun homeHeaderSectionNoNextStepScreenshot() {
+    AfternoteTheme {
+        HomeHeaderSection(
+            nextStepText = "",
+            onNextStepClick = {},
+        )
+    }
+}

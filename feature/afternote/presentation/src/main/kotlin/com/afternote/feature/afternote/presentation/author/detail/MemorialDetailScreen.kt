@@ -64,7 +64,7 @@ import com.afternote.core.ui.R as CoreUiR
 /**
  * 추억 노트 상세 Stateful Route.
  *
- * [com.afternote.feature.afternote.presentation.author.detail.socialnetwork.SocialNetworkDetailRoute]·[GalleryDetailRoute] 와 동일한 VM·UiState·삭제 이펙트 패턴을 따르며,
+ * [com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailRoute]·[GalleryDetailRoute] 와 동일한 VM·UiState·삭제 이펙트 패턴을 따르며,
  * 성공 시 [AfternoteDetailUiState.Success.contentUiModel] 이 추억 노트가 아니면 폴백한다.
  */
 @Composable
@@ -114,8 +114,8 @@ internal fun MemorialDetailRoute(
  */
 @Immutable
 data class MemorialDetailContent(
-    val userName: String = "서영",
-    val finalWriteDate: String = "2025.11.26.",
+    val userName: String = "",
+    val finalWriteDate: String = "",
     val profileImageUri: String? = null,
     val albumCovers: List<AlbumCover> = emptyList(),
     val songCount: Int = 0,
@@ -128,7 +128,7 @@ data class MemorialDetailContent(
 /**
  * 추억 노트 애프터노트 상세 화면 (Stateless).
  *
- * [com.afternote.feature.afternote.presentation.author.detail.socialnetwork.SocialNetworkDetailScreen] 과 동일한 Scaffold·TopBar·드롭다운 배치·스크롤 modifier 패턴을 따른다.
+ * [com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailScreen] 과 동일한 Scaffold·TopBar·드롭다운 배치·스크롤 modifier 패턴을 따른다.
  */
 @Composable
 fun MemorialDetailScreen(
@@ -264,7 +264,7 @@ private fun PhotoCard(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
-                    text = "최종 작성일 $finalWriteDate",
+                    text = stringResource(R.string.afternote_last_written_date, finalWriteDate),
                     modifier = Modifier.fillMaxWidth(),
                     style =
                         AfternoteDesign.typography.footnoteCaption.copy(
@@ -528,6 +528,8 @@ private fun MemorialDetailScreenPreview() {
         MemorialDetailScreen(
             content =
                 MemorialDetailContent(
+                    userName = "서영",
+                    finalWriteDate = "2025.11.26",
                     songCount = 16,
                     albumCovers = memorialDetailPreviewAlbumCovers(),
                     lastWish = "차분하고 조용하게 보내주세요.",
@@ -555,6 +557,8 @@ private fun MemorialDetailScreenDeleteDialogPreview() {
         MemorialDetailScreen(
             content =
                 MemorialDetailContent(
+                    userName = "서영",
+                    finalWriteDate = "2025.11.26",
                     songCount = 16,
                     albumCovers = memorialDetailPreviewAlbumCovers(),
                     lastWish = "차분하고 조용하게 보내주세요.1",

@@ -19,7 +19,6 @@ import com.afternote.feature.afternote.presentation.receiver.deliveryverificatio
 import com.afternote.feature.afternote.presentation.receiver.deliveryverification.MasterKeyScreen
 import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailRoute
 import com.afternote.feature.afternote.presentation.receiver.home.ReceiverAfternoteHomeEntry
-import com.afternote.feature.afternote.presentation.receiver.home.ReceiverAfternoteHomeEntryActions
 import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceiverRoute
 import com.afternote.feature.afternote.presentation.receiver.playlist.MemorialPlaylistScreen
 import com.afternote.feature.afternote.presentation.receiver.playlist.ReceiverMemorialPlaylistViewModel
@@ -143,10 +142,7 @@ fun NavGraphBuilder.receiverNavGraph(
 
         receiverComposable<ReceiverRoute.AfternoteListRoute> {
             ReceiverAfternoteHomeEntry(
-                actions =
-                    ReceiverAfternoteHomeEntryActions(
-                        navigateToDetail = actions::navigateToReceivedAfternoteDetail,
-                    ),
+                navigateToDetail = actions::navigateToReceivedAfternoteDetail,
             )
         }
 

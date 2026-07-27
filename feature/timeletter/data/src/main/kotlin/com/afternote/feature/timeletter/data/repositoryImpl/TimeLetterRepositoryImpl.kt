@@ -3,9 +3,9 @@ package com.afternote.feature.timeletter.data.repositoryImpl
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
 import com.afternote.feature.timeletter.data.api.TimeLetterApiService
-import com.afternote.feature.timeletter.data.dto.TimeLetterCreateRequest
-import com.afternote.feature.timeletter.data.dto.TimeLetterDeleteRequest
-import com.afternote.feature.timeletter.data.dto.TimeLetterUpdateRequest
+import com.afternote.feature.timeletter.data.dto.TimeLetterCreateRequestDto
+import com.afternote.feature.timeletter.data.dto.TimeLetterDeleteRequestDto
+import com.afternote.feature.timeletter.data.dto.TimeLetterUpdateRequestDto
 import com.afternote.feature.timeletter.data.mapper.toDomain
 import com.afternote.feature.timeletter.data.mapper.toDto
 import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
@@ -47,7 +47,7 @@ class TimeLetterRepositoryImpl
         ): TimeLetter =
             timeLetterApiService
                 .createTimeLetter(
-                    TimeLetterCreateRequest(
+                    TimeLetterCreateRequestDto(
                         title = title,
                         sendAt = sendAt,
                         status = status.toDto(),
@@ -68,7 +68,7 @@ class TimeLetterRepositoryImpl
                 .updateTimeLetter(
                     timeLetterId = timeLetterId,
                     request =
-                        TimeLetterUpdateRequest(
+                        TimeLetterUpdateRequestDto(
                             title = title,
                             sendAt = sendAt,
                             status = status?.toDto(),
@@ -79,7 +79,7 @@ class TimeLetterRepositoryImpl
 
         override suspend fun deleteTimeLetters(timeLetterIds: List<Long>) {
             timeLetterApiService
-                .deleteTimeLetters(TimeLetterDeleteRequest(timeLetterIds = timeLetterIds))
+                .deleteTimeLetters(TimeLetterDeleteRequestDto(timeLetterIds = timeLetterIds))
                 .requireStatus()
         }
 

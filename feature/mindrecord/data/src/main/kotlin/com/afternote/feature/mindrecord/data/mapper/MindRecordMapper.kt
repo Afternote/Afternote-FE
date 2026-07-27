@@ -1,14 +1,14 @@
 package com.afternote.feature.mindrecord.data.mapper
 
-import com.afternote.feature.mindrecord.data.dto.ReceiverDailyQuestionItem
-import com.afternote.feature.mindrecord.data.dto.ReceiverDiaryItem
+import com.afternote.feature.mindrecord.data.dto.ReceiverDailyQuestionItemDto
+import com.afternote.feature.mindrecord.data.dto.ReceiverDiaryItemDto
 import com.afternote.feature.mindrecord.domain.model.MindRecordSummary
 import com.afternote.feature.mindrecord.domain.model.MindRecordType
 
 // 서버 createdAt 은 "yyyy.MM.dd 요일" — 기간 필터/정렬용 recordDate 는 ISO(yyyy-MM-dd)로 정규화.
 private fun String.toIsoDate(): String = take(10).replace('.', '-')
 
-fun ReceiverDailyQuestionItem.toDomain(): MindRecordSummary =
+fun ReceiverDailyQuestionItemDto.toDomain(): MindRecordSummary =
     MindRecordSummary(
         id = userDailyQuestionId,
         type = MindRecordType.DAILY_QUESTION,
@@ -21,7 +21,7 @@ fun ReceiverDailyQuestionItem.toDomain(): MindRecordSummary =
         imageUrl = imageUrl,
     )
 
-fun ReceiverDiaryItem.toDomain(): MindRecordSummary =
+fun ReceiverDiaryItemDto.toDomain(): MindRecordSummary =
     MindRecordSummary(
         id = diaryId,
         type = MindRecordType.DIARY,

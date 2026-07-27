@@ -10,6 +10,13 @@ import com.android.tools.screenshot.PreviewTest
 @Composable
 internal fun memorialDetailScreenScreenshot() {
     AfternoteTheme {
-        MemorialDetailScreen(onBackClick = {})
+        MemorialDetailScreen(
+            onBackClick = {},
+            content =
+                MemorialDetailContent(
+                    userName = "서영",
+                    finalWriteDate = "2025.11.26",
+                ),
+        )
     }
 }

@@ -7,13 +7,15 @@ import androidx.paging.PagingData
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
 import com.afternote.feature.afternote.data.mapper.response.toDetailDomain
+import com.afternote.feature.afternote.data.mapper.toBusinessRequest
 import com.afternote.feature.afternote.data.mapper.toRequest
+import com.afternote.feature.afternote.data.mapper.toSocialRequest
 import com.afternote.feature.afternote.data.paging.AfternotePagingSource
 import com.afternote.feature.afternote.data.service.AfternoteApiService
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
+import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreatePlaylistPayload
-import com.afternote.feature.afternote.domain.model.author.CreateSocialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
@@ -48,9 +50,14 @@ class AfternoteRepositoryImpl
                 api.getAfternoteDetail(afternoteId = id).requireData().toDetailDomain()
             }
 
-        override suspend fun createSocial(payload: CreateSocialPayload): Result<Long> =
+        override suspend fun createSocial(payload: CreateAccountPayload): Result<Long> =
             safeCall(errorMapper = ::mapAuthoringFailure) {
-                api.createAfternoteSocial(payload.toRequest()).requireData().afternoteId
+                api.createAfternoteAccount(payload.toSocialRequest()).requireData().afternoteId
+            }.onSuccess { invalidatePagedAfternotes() }
+
+        override suspend fun createBusiness(payload: CreateAccountPayload): Result<Long> =
+            safeCall(errorMapper = ::mapAuthoringFailure) {
+                api.createAfternoteAccount(payload.toBusinessRequest()).requireData().afternoteId
             }.onSuccess { invalidatePagedAfternotes() }
 
         override suspend fun createGallery(payload: CreateGalleryPayload): Result<Long> =

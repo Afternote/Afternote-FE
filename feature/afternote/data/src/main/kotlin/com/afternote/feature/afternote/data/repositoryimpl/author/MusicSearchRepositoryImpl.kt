@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.data.repositoryimpl.author
 
-import com.afternote.feature.afternote.data.dto.MusicTrack
+import com.afternote.feature.afternote.data.dto.MusicTrackDto
 import com.afternote.feature.afternote.data.service.MusicApiService
 import com.afternote.feature.afternote.domain.model.author.playlist.SearchedSong
 import com.afternote.feature.afternote.domain.repository.author.MusicSearchRepository
@@ -25,7 +25,7 @@ class MusicSearchRepositoryImpl
             }
         }
 
-        private fun MusicTrack.toPlaylistSongDisplay(index: Int): SearchedSong {
+        private fun MusicTrackDto.toPlaylistSongDisplay(index: Int): SearchedSong {
             val id = "$artist|$title|$index"
             return SearchedSong(
                 id = id,

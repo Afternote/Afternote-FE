@@ -2,11 +2,11 @@ package com.afternote.feature.onboarding.presentation.signup
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.domain.error.EmailVerificationException
 import com.afternote.core.domain.repository.account.AccountRepository
 import com.afternote.core.domain.usecase.auth.LoginType
 import com.afternote.core.domain.usecase.auth.LoginUseCase
 import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel.Companion.RESEND_COOLDOWN_SECONDS
-import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel.Companion.VERIFICATION_CODE_TTL_SECONDS
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -26,7 +26,7 @@ import javax.inject.Inject
  * `MutableStateFlow` 로 통합. UI 는 `collectAsStateWithLifecycle` 로 한 번에 구독.
  *
  * **TextFieldState 정책**: TextFieldState 는 각 Screen 이 `rememberTextFieldState` 로 소유하고,
- * ViewModel 은 평범한 [String] 으로 보관. Screen 이 LaunchedEffect + snapshotFlow 로 변경 사항을
+ * ViewModel 은 평범한 `String` 으로 보관. Screen 이 LaunchedEffect + snapshotFlow 로 변경 사항을
  * VM 에 push, 다른 Screen 은 VM 의 [uiState] 에서 String 으로 read.
  */
 @HiltViewModel
@@ -39,27 +39,21 @@ class SignUpViewModel
         companion object {
             /** "재전송" 클릭 후 다음 요청까지 강제 대기 초. 서버 비용 · SMS 발송량 보호. */
             private const val RESEND_COOLDOWN_SECONDS = 30
-
-            /**
-             * 인증번호 만료까지 남은 초. 백엔드 [EmailService.java](https://github.com/Afternote/Afternote-BE/blob/main/src/main/java/com/afternote/domain/auth/service/EmailService.java)
-             * 의 Redis TTL 과 일치 (`set(..., 3, TimeUnit.MINUTES)`). 메일 본문도 "3분 안에 입력해주세요" 안내.
-             */
-            private const val VERIFICATION_CODE_TTL_SECONDS = 180
         }
 
         private val _uiState = MutableStateFlow(SignUpUiState())
         val uiState: StateFlow<SignUpUiState> = _uiState.asStateFlow()
 
         private var cooldownJob: Job? = null
-        private var expiryJob: Job? = null
 
         // ─── 입력 reducer ───
-        fun updateEmail(value: String) = _uiState.update { it.copy(email = value) }
+        // 이메일이 바뀌면 앞서 받은 인증 에러는 더 이상 그 이메일의 것이 아니다.
+        fun updateEmail(value: String) = _uiState.update { it.copy(email = value, verificationError = null) }
 
         // photo picker 결과는 Entry 가 Uri.toString() 으로 변환해 push — VM 은 String 만 보관 (Framework Uri 의존 회피).
         fun onProfileImagePicked(uri: String?) = _uiState.update { it.copy(profileImageUri = uri) }
 
-        fun updateVerificationCode(value: String) = _uiState.update { it.copy(verificationCode = value) }
+        fun updateVerificationCode(value: String) = _uiState.update { it.copy(verificationCode = value, verificationError = null) }
 
         fun updateResidentFrontNumber(value: String) = _uiState.update { it.copy(residentFrontNumber = value) }
 
@@ -117,11 +111,10 @@ class SignUpViewModel
                 accountRepository
                     .sendEmailCode(state.email)
                     .onSuccess {
-                        _uiState.update { it.copy(isVerificationSent = true) }
+                        _uiState.update { it.copy(isVerificationSent = true, verificationError = null) }
                         startResendCooldown()
-                        startExpiryCountdown()
                     }.onFailure { error ->
-                        _uiState.update { it.copy(errorMessage = error.message) }
+                        _uiState.update { it.copy(errorMessage = error.message ?: "") }
                     }
                 _uiState.update { it.copy(isSendingCode = false) }
             }
@@ -141,31 +134,17 @@ class SignUpViewModel
         }
 
         /**
-         * 인증번호 발송 성공 직후 호출. [VERIFICATION_CODE_TTL_SECONDS] 부터 1초 틱으로 감소.
-         * 재전송 시 이전 카운트다운은 취소되고 새로 시작 — 마지막 발송 시점 기준 TTL.
-         */
-        private fun startExpiryCountdown() {
-            expiryJob?.cancel()
-            expiryJob =
-                viewModelScope.launch {
-                    _uiState.update { it.copy(verificationRemainingSeconds = VERIFICATION_CODE_TTL_SECONDS) }
-                    while (_uiState.value.verificationRemainingSeconds > 0) {
-                        delay(1000)
-                        _uiState.update { it.copy(verificationRemainingSeconds = it.verificationRemainingSeconds - 1) }
-                    }
-                }
-        }
-
-        /**
          * Step 1 "다음" 클릭 시점에 호출.
-         * 이메일/인증번호를 서버에 검증해 성공 시 [SignUpUiState.shouldNavigateToResidentNumber] = true 로 set,
-         * 실패/거부 시 [SignUpUiState.errorMessage] 로 set.
+         * 이메일/인증번호를 서버에 검증해 성공 시 [SignUpUiState.shouldNavigateToResidentNumber] = true,
+         * 인증번호 무효([EmailVerificationException] — 불일치/만료/미존재)는
+         * [SignUpUiState.verificationError] (인라인 문구), 그 외 실패는
+         * [SignUpUiState.errorMessage] (스낵바) 로 set. 만료 판정은 서버가 한다.
          */
         fun verifyEmailAndProceed() {
             val state = _uiState.value
             if (state.isVerifyingEmail) return
             viewModelScope.launch {
-                _uiState.update { it.copy(isVerifyingEmail = true) }
+                _uiState.update { it.copy(isVerifyingEmail = true, verificationError = null) }
                 accountRepository
                     .verifyEmail(
                         email = state.email,
@@ -173,7 +152,12 @@ class SignUpViewModel
                     ).onSuccess {
                         _uiState.update { it.copy(shouldNavigateToResidentNumber = true) }
                     }.onFailure { error ->
-                        _uiState.update { it.copy(errorMessage = error.message ?: "이메일 인증 실패") }
+                        if (error is EmailVerificationException) {
+                            // 표시 문구는 화면의 고정 리소스 — 이 값은 인라인 표시 트리거 + 디버깅용 원문.
+                            _uiState.update { it.copy(verificationError = error.serverMessage ?: "") }
+                        } else {
+                            _uiState.update { it.copy(errorMessage = error.message ?: "이메일 인증 실패") }
+                        }
                     }
                 _uiState.update { it.copy(isVerifyingEmail = false) }
             }
@@ -214,7 +198,7 @@ class SignUpViewModel
                                 }
                             }
                     }.onFailure { error ->
-                        _uiState.update { it.copy(errorMessage = error.message) }
+                        _uiState.update { it.copy(errorMessage = error.message ?: "") }
                     }
                 _uiState.update { it.copy(isLoading = false) }
             }
