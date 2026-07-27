@@ -5,13 +5,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.timeletter.domain.model.BlockInput
+import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlockType
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.domain.repository.FileMetadataRepository
 import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
 import com.afternote.feature.timeletter.domain.usecase.CreateTimeLetterUseCase
+import com.afternote.feature.timeletter.domain.usecase.ResolveTimeLetterBlocksUseCase
+import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,15 +32,25 @@ class TimeLetterWriteViewModel
     @Inject
     constructor(
         private val createTimeLetterUseCase: CreateTimeLetterUseCase,
+        private val resolveTimeLetterBlocksUseCase: ResolveTimeLetterBlocksUseCase,
         private val timeLetterRepository: TimeLetterRepository,
         private val userRepository: UserRepository,
         private val fileMetadataRepository: FileMetadataRepository,
         private val savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
-        private val _uiState = MutableStateFlow(TimeLetterWriteUiState())
+        private val editingTimeLetterId =
+            savedStateHandle.toRoute<TimeLetterRoute.TimeLetterWriteRoute>().timeLetterId
+
+        private val _uiState =
+            MutableStateFlow(
+                TimeLetterWriteUiState(
+                    isLoadingEditingLetter = editingTimeLetterId != null,
+                ),
+            )
         val uiState: StateFlow<TimeLetterWriteUiState> = _uiState.asStateFlow()
 
         private var receiverNameMap: Map<Long, String> = emptyMap()
+        private var isCheckingRegisterLimit: Boolean = false
 
         init {
             viewModelScope.launch {
@@ -44,6 +58,7 @@ class TimeLetterWriteViewModel
                     runCatching { userRepository.getReceivers() }
                         .getOrElse { emptyList() }
                         .associate { it.receiverId to it.name }
+                editingTimeLetterId?.let { loadEditingTimeLetter(it) }
             }
             loadDraftCount()
             observeRecipientResult()
@@ -96,11 +111,37 @@ class TimeLetterWriteViewModel
             title: String,
             textContents: Map<Long, String>,
         ) {
-            if (_uiState.value.sendAt == null) {
+            val state = _uiState.value
+            if (state.isSaving || isCheckingRegisterLimit) return
+
+            if (state.sendAt == null) {
                 _uiState.update { it.copy(errorMessage = "발송 날짜를 선택해주세요.") }
                 return
             }
-            save(title = title, textContents = textContents, status = TimeLetterStatus.SCHEDULED)
+            isCheckingRegisterLimit = true
+            viewModelScope.launch {
+                try {
+                    if (state.editingTimeLetterId == null) {
+                        val registeredCount =
+                            runCatching { timeLetterRepository.getTimeLetters().totalCount }
+                                .getOrElse {
+                                    _uiState.update { current ->
+                                        current.copy(errorMessage = "타임레터를 불러올 수 없습니다.")
+                                    }
+                                    return@launch
+                                }
+
+                        if (registeredCount >= FREE_PLAN_REGISTER_LIMIT) {
+                            _uiState.update { it.copy(showFreePlanLimitPopup = true) }
+                            return@launch
+                        }
+                    }
+
+                    save(title = title, textContents = textContents, status = TimeLetterStatus.SCHEDULED)
+                } finally {
+                    isCheckingRegisterLimit = false
+                }
+            }
         }
 
         fun clearError() {
@@ -115,6 +156,10 @@ class TimeLetterWriteViewModel
             _uiState.update { it.copy(registered = false) }
         }
 
+        fun dismissFreePlanLimitPopup() {
+            _uiState.update { it.copy(showFreePlanLimitPopup = false) }
+        }
+
         fun setTextAlign(align: TextAlign) {
             _uiState.update { it.copy(textAlign = align) }
         }
@@ -125,22 +170,28 @@ class TimeLetterWriteViewModel
 
         fun addImageBlock(uri: Uri) {
             viewModelScope.launch {
-                val name = fileMetadataRepository.getFileName(uri.toString())
-                addMediaBlockInternal { id -> EditorBlock.Image(id, uri, name) }
+                val uriString = uri.toString()
+                val name = fileMetadataRepository.getFileName(uriString)
+                val mimeType = fileMetadataRepository.getMimeType(uriString)
+                addMediaBlockInternal { id -> EditorBlock.Image(id, uri, name, mimeType) }
             }
         }
 
         fun addAudioBlock(uri: Uri) {
             viewModelScope.launch {
-                val name = fileMetadataRepository.getFileName(uri.toString())
-                addMediaBlockInternal { id -> EditorBlock.Audio(id, uri, name) }
+                val uriString = uri.toString()
+                val name = fileMetadataRepository.getFileName(uriString)
+                val mimeType = fileMetadataRepository.getMimeType(uriString)
+                addMediaBlockInternal { id -> EditorBlock.Audio(id, uri, name, mimeType) }
             }
         }
 
         fun addFileBlock(uri: Uri) {
             viewModelScope.launch {
-                val name = fileMetadataRepository.getFileName(uri.toString())
-                addMediaBlockInternal { id -> EditorBlock.File(id, uri, name) }
+                val uriString = uri.toString()
+                val name = fileMetadataRepository.getFileName(uriString)
+                val mimeType = fileMetadataRepository.getMimeType(uriString)
+                addMediaBlockInternal { id -> EditorBlock.File(id, uri, name, mimeType) }
             }
         }
 
@@ -198,31 +249,165 @@ class TimeLetterWriteViewModel
 
             viewModelScope.launch {
                 _uiState.update { it.copy(isSaving = true) }
-                val blocks = mapToBlockInputs(state.editorBlocks, textContents)
                 val sendAt =
                     state.sendAt?.let { date ->
                         "${date}T${
                             state.sendHour.toString().padStart(2, '0')
                         }:${state.sendMinute.toString().padStart(2, '0')}:00"
                     }
-                createTimeLetterUseCase(
-                    title = title.ifBlank { null },
-                    blocks = blocks,
-                    sendAt = sendAt,
-                    status = status,
-                    receiverIds = state.recipientIds.ifEmpty { null },
-                ).onSuccess {
-                    if (status == TimeLetterStatus.DRAFT) {
-                        loadDraftCount()
-                        _uiState.update { it.copy(savedAsDraft = true) }
+                val saveResult =
+                    if (state.editingTimeLetterId == null) {
+                        val blocks = mapToBlockInputs(state.editorBlocks, textContents)
+                        createTimeLetterUseCase(
+                            title = title.ifBlank { null },
+                            blocks = blocks,
+                            sendAt = sendAt,
+                            status = status,
+                            receiverIds = state.recipientIds.ifEmpty { null },
+                        )
                     } else {
-                        _uiState.update { it.copy(registered = true) }
+                        runCatching {
+                            timeLetterRepository.updateTimeLetter(
+                                timeLetterId = state.editingTimeLetterId,
+                                title = title.ifBlank { null },
+                                blocks =
+                                    resolveTimeLetterBlocksUseCase(
+                                        mapToBlockInputs(state.editorBlocks, textContents),
+                                    ),
+                                sendAt = sendAt,
+                                status = status,
+                            )
+                        }
                     }
-                }.onFailure {
-                    _uiState.update { it.copy(errorMessage = "저장에 실패했어요. 다시 시도해주세요.") }
-                }
+                saveResult
+                    .onSuccess {
+                        if (status == TimeLetterStatus.DRAFT) {
+                            loadDraftCount()
+                            _uiState.update { it.copy(savedAsDraft = true) }
+                        } else {
+                            _uiState.update { it.copy(registered = true) }
+                        }
+                    }.onFailure {
+                        _uiState.update { it.copy(errorMessage = "저장에 실패했어요. 다시 시도해주세요.") }
+                    }
                 _uiState.update { it.copy(isSaving = false) }
             }
+        }
+
+        private suspend fun loadEditingTimeLetter(timeLetterId: Long) {
+            runCatching { timeLetterRepository.getTimeLetter(timeLetterId) }
+                .onSuccess { letter ->
+                    val editorBlocks = letter.toEditorBlocks()
+                    val sendAtDate = letter.sendAt?.take(10)
+                    val sendHour =
+                        letter.sendAt
+                            ?.substringAfter("T")
+                            ?.take(2)
+                            ?.toIntOrNull()
+                            ?: 0
+                    val sendMinute =
+                        letter.sendAt
+                            ?.substringAfter("T")
+                            ?.drop(3)
+                            ?.take(2)
+                            ?.toIntOrNull()
+                            ?: 0
+
+                    _uiState.update {
+                        it.copy(
+                            editingTimeLetterId = letter.id,
+                            isLoadingEditingLetter = false,
+                            initialTitle = letter.title.orEmpty(),
+                            initialTextContents =
+                                letter.blocks
+                                    .filter { block -> block.blockType == TimeLetterBlockType.TEXT }
+                                    .associate { block -> block.id to (block.textContent ?: "") },
+                            recipientIds = letter.receiverIds,
+                            recipientNames = letter.receiverIds.mapNotNull { id -> receiverNameMap[id] },
+                            sendAt = sendAtDate,
+                            sendTime = formatDisplayTime(sendHour, sendMinute),
+                            sendHour = sendHour,
+                            sendMinute = sendMinute,
+                            editorBlocks = editorBlocks,
+                            focusedBlockId = editorBlocks.firstOrNull()?.id,
+                            nextBlockId = (editorBlocks.maxOfOrNull { block -> block.id } ?: 0L) + 1L,
+                        )
+                    }
+                }.onFailure {
+                    _uiState.update { it.copy(isLoadingEditingLetter = false) }
+                    _uiState.update { it.copy(errorMessage = "타임레터를 불러올 수 없습니다.") }
+                }
+        }
+
+        private fun TimeLetter.toEditorBlocks(): List<EditorBlock> {
+            val blocks =
+                this.blocks
+                    .sortedBy { it.blockOrder }
+                    .mapNotNull { block ->
+                        when (block.blockType) {
+                            TimeLetterBlockType.TEXT -> {
+                                EditorBlock.Text(id = block.id)
+                            }
+
+                            TimeLetterBlockType.LINK -> {
+                                block.url?.let { EditorBlock.Link(id = block.id, url = it) }
+                            }
+
+                            TimeLetterBlockType.IMAGE -> {
+                                block.url?.let {
+                                    EditorBlock.Image(
+                                        id = block.id,
+                                        uri = Uri.parse(it),
+                                        name = it.fileNameOrFallback("image"),
+                                        mimeType = block.mimeType,
+                                    )
+                                }
+                            }
+
+                            TimeLetterBlockType.AUDIO -> {
+                                block.url?.let {
+                                    EditorBlock.Audio(
+                                        id = block.id,
+                                        uri = Uri.parse(it),
+                                        name = it.fileNameOrFallback("audio"),
+                                        mimeType = block.mimeType,
+                                    )
+                                }
+                            }
+
+                            TimeLetterBlockType.FILE -> {
+                                block.url?.let {
+                                    EditorBlock.File(
+                                        id = block.id,
+                                        uri = Uri.parse(it),
+                                        name = it.fileNameOrFallback("file"),
+                                        mimeType = block.mimeType,
+                                    )
+                                }
+                            }
+                        }
+                    }
+            return blocks.ifEmpty { listOf(EditorBlock.Text(id = 0L)) }
+        }
+
+        private fun String.fileNameOrFallback(fallback: String): String =
+            substringBefore('?')
+                .substringAfterLast('/')
+                .takeIf { it.isNotBlank() }
+                ?: fallback
+
+        private fun formatDisplayTime(
+            hour: Int,
+            minute: Int,
+        ): String {
+            val amPm = if (hour < 12) "오전" else "오후"
+            val displayHour =
+                when {
+                    hour == 0 -> 12
+                    hour > 12 -> hour - 12
+                    else -> hour
+                }
+            return "$amPm $displayHour:${minute.toString().padStart(2, '0')}"
         }
 
         private suspend fun mapToBlockInputs(
@@ -241,7 +426,9 @@ class TimeLetterWriteViewModel
                             add(
                                 BlockInput.Media(
                                     uriString = block.uri.toString(),
-                                    mimeType = fileMetadataRepository.getMimeType(block.uri.toString()),
+                                    mimeType =
+                                        block.mimeType
+                                            ?: fileMetadataRepository.getMimeType(block.uri.toString()),
                                     blockType = TimeLetterBlockType.IMAGE,
                                 ),
                             )
@@ -251,7 +438,9 @@ class TimeLetterWriteViewModel
                             add(
                                 BlockInput.Media(
                                     uriString = block.uri.toString(),
-                                    mimeType = fileMetadataRepository.getMimeType(block.uri.toString()),
+                                    mimeType =
+                                        block.mimeType
+                                            ?: fileMetadataRepository.getMimeType(block.uri.toString()),
                                     blockType = TimeLetterBlockType.AUDIO,
                                 ),
                             )
@@ -261,7 +450,9 @@ class TimeLetterWriteViewModel
                             add(
                                 BlockInput.Media(
                                     uriString = block.uri.toString(),
-                                    mimeType = fileMetadataRepository.getMimeType(block.uri.toString()),
+                                    mimeType =
+                                        block.mimeType
+                                            ?: fileMetadataRepository.getMimeType(block.uri.toString()),
                                     blockType = TimeLetterBlockType.FILE,
                                 ),
                             )
@@ -281,5 +472,9 @@ class TimeLetterWriteViewModel
                         _uiState.update { it.copy(draftCount = result.totalCount) }
                     }
             }
+        }
+
+        private companion object {
+            const val FREE_PLAN_REGISTER_LIMIT = 3
         }
     }

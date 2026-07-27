@@ -25,7 +25,7 @@ class MockModePreferences
 
         // Data Layer(Interceptor)용: 동기적 접근
         var isEnabled: Boolean
-            get() = prefs.getBoolean(KEY_MOCK_ENABLED, true)
+            get() = prefs.getBoolean(KEY_MOCK_ENABLED, DEFAULT_MOCK_ENABLED)
             set(value) {
                 prefs.edit { putBoolean(KEY_MOCK_ENABLED, value) }
             }
@@ -49,5 +49,6 @@ class MockModePreferences
         private companion object {
             const val PREFS_NAME = "debug_mock_mode"
             const val KEY_MOCK_ENABLED = "mock_enabled"
+            const val DEFAULT_MOCK_ENABLED = false
         }
     }

@@ -3,6 +3,8 @@ package com.afternote.feature.timeletter.presentation.navigation
 interface TimeLetterNavActions {
     fun onNavigateToWrite()
 
+    fun onNavigateToEdit(timeLetterId: Long)
+
     fun onWriteBack()
 
     fun onNavigateToDraft()

@@ -38,6 +38,8 @@ fun TimeLetterContent(
     selectedFilterReceiverIds: Set<Long> = emptySet(),
     onFilterClick: () -> Unit = {},
     onLetterClick: (Long) -> Unit = {},
+    onEditClick: (Long) -> Unit = {},
+    onDeleteClick: (Long) -> Unit = {},
     onWriteClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -120,6 +122,8 @@ fun TimeLetterContent(
                         TimeLetterListItem(
                             letter = letter,
                             receiverNameMap = receiverNameMap,
+                            onEditClick = onEditClick,
+                            onDeleteClick = onDeleteClick,
                             modifier = Modifier.clickable { onLetterClick(letter.id) },
                         )
                     }
@@ -128,6 +132,8 @@ fun TimeLetterContent(
                         TimeLetterBlockItem(
                             letter = letter,
                             receiverNameMap = receiverNameMap,
+                            onEditClick = onEditClick,
+                            onDeleteClick = onDeleteClick,
                             modifier = Modifier.clickable { onLetterClick(letter.id) },
                         )
                     }

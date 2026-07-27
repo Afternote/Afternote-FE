@@ -24,6 +24,7 @@ internal fun loginScreenInitialScreenshot() {
             onPasswordChange = {},
             onLoginClick = {},
             onSignUpClick = {},
+            onFindAccountClick = {},
             onKakaoLoginClick = {},
             onGoogleLoginClick = {},
             onBackClick = {},

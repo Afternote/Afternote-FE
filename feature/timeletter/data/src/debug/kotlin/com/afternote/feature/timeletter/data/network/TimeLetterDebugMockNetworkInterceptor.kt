@@ -19,7 +19,7 @@ class TimeLetterDebugMockNetworkInterceptor
             get() =
                 context
                     .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                    .getBoolean(KEY_MOCK_ENABLED, true)
+                    .getBoolean(KEY_MOCK_ENABLED, DEFAULT_MOCK_ENABLED)
 
         override fun intercept(chain: Interceptor.Chain): Response {
             val request = chain.request()
@@ -83,6 +83,7 @@ class TimeLetterDebugMockNetworkInterceptor
             const val NETWORK_DELAY_MS = 300L
             const val PREFS_NAME = "debug_mock_mode"
             const val KEY_MOCK_ENABLED = "mock_enabled"
+            const val DEFAULT_MOCK_ENABLED = false
             val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
             val TIME_LETTER_ID_PATH_REGEX = Regex("^/api/v1/time-letters/\\d+$")
         }

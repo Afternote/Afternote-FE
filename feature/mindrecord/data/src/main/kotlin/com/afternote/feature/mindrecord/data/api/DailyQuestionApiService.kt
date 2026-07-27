@@ -1,10 +1,10 @@
 package com.afternote.feature.mindrecord.data.api
 
 import com.afternote.core.network.model.BaseResponse
-import com.afternote.feature.mindrecord.data.dto.DailyQuestionCreateRequest
-import com.afternote.feature.mindrecord.data.dto.DailyQuestionListItem
-import com.afternote.feature.mindrecord.data.dto.DailyQuestionUpdateRequest
-import com.afternote.feature.mindrecord.data.dto.TodayDailyQuestionResponse
+import com.afternote.feature.mindrecord.data.dto.DailyQuestionCreateRequestDto
+import com.afternote.feature.mindrecord.data.dto.DailyQuestionListItemDto
+import com.afternote.feature.mindrecord.data.dto.DailyQuestionUpdateRequestDto
+import com.afternote.feature.mindrecord.data.dto.TodayDailyQuestionDto
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -17,20 +17,20 @@ interface DailyQuestionApiService {
     @GET("daily-questions")
     suspend fun getDailyQuestions(
         @Query("date") date: String? = null,
-    ): BaseResponse<List<DailyQuestionListItem>>
+    ): BaseResponse<List<DailyQuestionListItemDto>>
 
     @GET("daily-questions/today")
-    suspend fun getTodayDailyQuestion(): BaseResponse<TodayDailyQuestionResponse>
+    suspend fun getTodayDailyQuestion(): BaseResponse<TodayDailyQuestionDto>
 
     @POST("daily-questions")
     suspend fun createDailyQuestion(
-        @Body request: DailyQuestionCreateRequest,
+        @Body request: DailyQuestionCreateRequestDto,
     ): BaseResponse<Unit>
 
     @PATCH("daily-questions/{userDailyQuestionId}")
     suspend fun updateDailyQuestion(
         @Path("userDailyQuestionId") userDailyQuestionId: Long,
-        @Body request: DailyQuestionUpdateRequest,
+        @Body request: DailyQuestionUpdateRequestDto,
     ): BaseResponse<Unit>
 
     @DELETE("daily-questions/{userDailyQuestionId}")

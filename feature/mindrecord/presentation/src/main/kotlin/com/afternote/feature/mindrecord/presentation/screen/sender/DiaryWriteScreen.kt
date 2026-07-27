@@ -44,7 +44,6 @@ import com.afternote.core.ui.R
 import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.core.ui.theme.Red
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.presentation.component.BottomSheetCalendar
@@ -253,7 +252,7 @@ fun DiaryWriteScreen(
             if (errorMessage != null) {
                 Text(
                     text = errorMessage,
-                    color = Red,
+                    color = AfternoteDesign.colors.error,
                     style = AfternoteDesign.typography.captionLargeR,
                 )
             }

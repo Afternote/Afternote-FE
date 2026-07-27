@@ -66,6 +66,10 @@ fun rememberOnboardingNavActions(navController: NavController): OnboardingNavAct
                 navController.popBackStack()
             }
 
+            override fun navigateToFindId() {
+                navController.navigate(OnboardingRoute.FindIdRoute)
+            }
+
             override fun proceedToSignUpResidentNumber() {
                 navController.navigate(OnboardingRoute.SignUpResidentNumberRoute)
             }
@@ -136,7 +140,11 @@ fun rememberTimeLetterNavActions(navController: NavController): TimeLetterNavAct
     remember(navController) {
         object : TimeLetterNavActions {
             override fun onNavigateToWrite() {
-                navController.navigate(TimeLetterRoute.TimeLetterWriteRoute)
+                navController.navigate(TimeLetterRoute.TimeLetterWriteRoute())
+            }
+
+            override fun onNavigateToEdit(timeLetterId: Long) {
+                navController.navigate(TimeLetterRoute.TimeLetterWriteRoute(timeLetterId = timeLetterId))
             }
 
             override fun onWriteBack() {

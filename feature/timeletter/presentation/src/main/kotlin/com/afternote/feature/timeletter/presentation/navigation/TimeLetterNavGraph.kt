@@ -27,6 +27,7 @@ fun NavGraphBuilder.timeLetterNavGraph(
         composable<TimeLetterRoute.TimeLetterHomeRoute> {
             TimeletterScreen(
                 onWriteClick = actions::onNavigateToWrite,
+                onEditClick = actions::onNavigateToEdit,
                 onLetterClick = actions::onNavigateToDetail,
                 onFilterRecipientClick = actions::onNavigateToRecipientFilter,
             )
@@ -68,6 +69,11 @@ fun NavGraphBuilder.timeLetterNavGraph(
                 onAlignCenterClick = { viewModel.setTextAlign(TextAlign.Center) },
                 onAlignLeftClick = { viewModel.setTextAlign(TextAlign.Start) },
                 onAlignRightClick = { viewModel.setTextAlign(TextAlign.End) },
+                onFreePlanLimitConfirm = {
+                    // TODO: 구독 화면 및 관련 플로우 구현 시 구독 화면 이동으로 변경
+                    viewModel.dismissFreePlanLimitPopup()
+                },
+                onFreePlanLimitDismiss = { viewModel.dismissFreePlanLimitPopup() },
             )
         }
 
@@ -84,7 +90,8 @@ fun NavGraphBuilder.timeLetterNavGraph(
         composable<TimeLetterRoute.TimeLetterRecipientRoute> {
             val writeEntry =
                 remember(it) {
-                    navController.getBackStackEntry(TimeLetterRoute.TimeLetterWriteRoute)
+                    navController.previousBackStackEntry
+                        ?: navController.getBackStackEntry(TimeLetterRoute.TimeLetterWriteRoute())
                 }
             val writeViewModel: TimeLetterWriteViewModel = hiltViewModel(writeEntry)
             RecipientListScreen(

@@ -4,8 +4,15 @@ import com.afternote.core.model.TokenBundle
 import com.afternote.core.network.FakeAuthRepository
 import com.afternote.core.network.token.AccessTokenExpiryTracker
 import com.afternote.core.network.token.TokenReissuer
+import okhttp3.Authenticator
+import okhttp3.Cache
 import okhttp3.Call
+import okhttp3.CertificatePinner
 import okhttp3.Connection
+import okhttp3.ConnectionPool
+import okhttp3.CookieJar
+import okhttp3.Dns
+import okhttp3.EventListener
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Protocol
@@ -16,7 +23,13 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Test
+import java.net.Proxy
+import java.net.ProxySelector
 import java.util.concurrent.TimeUnit
+import javax.net.SocketFactory
+import javax.net.ssl.HostnameVerifier
+import javax.net.ssl.SSLSocketFactory
+import javax.net.ssl.X509TrustManager
 
 /**
  * [AuthInterceptor] 선제 reissue 동작 회귀 가드 (#408).
@@ -149,4 +162,69 @@ private class RecordingChain : Interceptor.Chain {
         timeout: Int,
         unit: TimeUnit,
     ): Interceptor.Chain = this
+
+    // OkHttp 5.4 부터 Chain 이 클라이언트 설정 전체를 노출한다. 이 fake 는 요청 캡처만
+    // 담당하므로 전부 미사용 스텁 — with* 는 기존 withConnectTimeout 패턴, 조회는 call() 패턴.
+    override val followSslRedirects: Boolean get() = error("not used")
+
+    override val followRedirects: Boolean get() = error("not used")
+
+    override val dns: Dns get() = error("not used")
+
+    override val socketFactory: SocketFactory get() = error("not used")
+
+    override val retryOnConnectionFailure: Boolean get() = error("not used")
+
+    override val authenticator: Authenticator get() = error("not used")
+
+    override val cookieJar: CookieJar get() = error("not used")
+
+    override val cache: Cache? get() = null
+
+    override val proxy: Proxy? get() = null
+
+    override val proxySelector: ProxySelector get() = error("not used")
+
+    override val proxyAuthenticator: Authenticator get() = error("not used")
+
+    override val sslSocketFactoryOrNull: SSLSocketFactory? get() = null
+
+    override val x509TrustManagerOrNull: X509TrustManager? get() = null
+
+    override val hostnameVerifier: HostnameVerifier get() = error("not used")
+
+    override val certificatePinner: CertificatePinner get() = error("not used")
+
+    override val connectionPool: ConnectionPool get() = error("not used")
+
+    override val eventListener: EventListener get() = error("not used")
+
+    override fun withDns(dns: Dns): Interceptor.Chain = this
+
+    override fun withSocketFactory(socketFactory: SocketFactory): Interceptor.Chain = this
+
+    override fun withRetryOnConnectionFailure(retryOnConnectionFailure: Boolean): Interceptor.Chain = this
+
+    override fun withAuthenticator(authenticator: Authenticator): Interceptor.Chain = this
+
+    override fun withCookieJar(cookieJar: CookieJar): Interceptor.Chain = this
+
+    override fun withCache(cache: Cache?): Interceptor.Chain = this
+
+    override fun withProxy(proxy: Proxy?): Interceptor.Chain = this
+
+    override fun withProxySelector(proxySelector: ProxySelector): Interceptor.Chain = this
+
+    override fun withProxyAuthenticator(proxyAuthenticator: Authenticator): Interceptor.Chain = this
+
+    override fun withSslSocketFactory(
+        sslSocketFactory: SSLSocketFactory?,
+        x509TrustManager: X509TrustManager?,
+    ): Interceptor.Chain = this
+
+    override fun withHostnameVerifier(hostnameVerifier: HostnameVerifier): Interceptor.Chain = this
+
+    override fun withCertificatePinner(certificatePinner: CertificatePinner): Interceptor.Chain = this
+
+    override fun withConnectionPool(connectionPool: ConnectionPool): Interceptor.Chain = this
 }

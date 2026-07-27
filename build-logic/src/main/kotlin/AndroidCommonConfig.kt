@@ -6,7 +6,8 @@ import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 internal fun Project.configureAndroidCommon(extension: CommonExtension) {
-    extension.compileSdk = 36
+    // core-ktx 1.19 / lifecycle 2.11 이 android-37 컴파일을 요구한다 (targetSdk 는 36 유지).
+    extension.compileSdk = 37
 
     extension.configureDefaultConfig(this)
 

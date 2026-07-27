@@ -1,11 +1,11 @@
 package com.afternote.feature.afternote.data.mapper.response
 
-import com.afternote.feature.afternote.data.dto.AfternoteCredentials
-import com.afternote.feature.afternote.data.dto.AfternoteDetailReceiver
-import com.afternote.feature.afternote.data.dto.AfternoteDetailResponse
-import com.afternote.feature.afternote.data.dto.AfternoteMemorialVideo
-import com.afternote.feature.afternote.data.dto.AfternotePlaylist
-import com.afternote.feature.afternote.data.dto.AfternoteSong
+import com.afternote.feature.afternote.data.dto.AfternoteCredentialsDto
+import com.afternote.feature.afternote.data.dto.AfternoteDetailDto
+import com.afternote.feature.afternote.data.dto.AfternoteDetailReceiverDto
+import com.afternote.feature.afternote.data.dto.AfternoteMemorialVideoDto
+import com.afternote.feature.afternote.data.dto.AfternotePlaylistDto
+import com.afternote.feature.afternote.data.dto.AfternoteSongDto
 import com.afternote.feature.afternote.domain.AfternoteServiceType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -13,16 +13,16 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * [AfternoteDetailResponse.toDetailDomain] 회귀 가드 (작성자 상세).
+ * [AfternoteDetailDto.toDetailDomain] 회귀 가드 (작성자 상세).
  * 핵심 경계: receivers null→emptyList, receiver 필드 null→"", actions null→emptyList,
  * memorialPhotoUrl 없으면 profilePhoto로 대체, memorialVideo null→video/thumbnail null,
  * credentials·playlist nullable 매핑.
  */
-class AfternoteDetailResponseMapperTest {
+class AfternoteDetailMapperTest {
     @Test
     fun `toDetailDomain - 최소 응답은 nullable이 비거나 null`() {
         val result =
-            AfternoteDetailResponse(
+            AfternoteDetailDto(
                 afternoteId = 1L,
                 category = "SOCIAL",
                 title = "t",
@@ -39,7 +39,7 @@ class AfternoteDetailResponseMapperTest {
     @Test
     fun `toDetailDomain - timestamps 포맷`() {
         val result =
-            AfternoteDetailResponse(
+            AfternoteDetailDto(
                 afternoteId = 1L,
                 category = "SOCIAL",
                 title = "t",
@@ -54,11 +54,11 @@ class AfternoteDetailResponseMapperTest {
     @Test
     fun `toDetailDomain - receiver의 null 필드는 빈 문자열`() {
         val result =
-            AfternoteDetailResponse(
+            AfternoteDetailDto(
                 afternoteId = 1L,
                 category = "GALLERY",
                 title = "t",
-                receivers = listOf(AfternoteDetailReceiver(receiverId = 5L)),
+                receivers = listOf(AfternoteDetailReceiverDto(receiverId = 5L)),
             ).toDetailDomain()
 
         val receiver = result.receivers.single()
@@ -71,11 +71,11 @@ class AfternoteDetailResponseMapperTest {
     @Test
     fun `toDetailDomain - credentials 매핑`() {
         val result =
-            AfternoteDetailResponse(
+            AfternoteDetailDto(
                 afternoteId = 1L,
                 category = "SOCIAL",
                 title = "t",
-                credentials = AfternoteCredentials(id = "user", password = "pw"),
+                credentials = AfternoteCredentialsDto(id = "user", password = "pw"),
             ).toDetailDomain()
 
         assertEquals("user", result.credentials!!.id)
@@ -85,16 +85,16 @@ class AfternoteDetailResponseMapperTest {
     @Test
     fun `toDetailDomain - memorialPhotoUrl 없으면 profilePhoto로 대체`() {
         val result =
-            AfternoteDetailResponse(
+            AfternoteDetailDto(
                 afternoteId = 1L,
                 category = "PLAYLIST",
                 title = "t",
                 playlist =
-                    AfternotePlaylist(
+                    AfternotePlaylistDto(
                         profilePhoto = "profile.jpg",
                         memorialPhotoUrl = null,
-                        songs = listOf(AfternoteSong(id = 3L, title = "s", artist = "a")),
-                        memorialVideo = AfternoteMemorialVideo(videoUrl = "v.mp4", thumbnailUrl = "t.jpg"),
+                        songs = listOf(AfternoteSongDto(id = 3L, title = "s", artist = "a")),
+                        memorialVideo = AfternoteMemorialVideoDto(videoUrl = "v.mp4", thumbnailUrl = "t.jpg"),
                     ),
             ).toDetailDomain()
 
@@ -115,11 +115,11 @@ class AfternoteDetailResponseMapperTest {
     @Test
     fun `toDetailDomain - memorialPhotoUrl 있으면 그대로`() {
         val result =
-            AfternoteDetailResponse(
+            AfternoteDetailDto(
                 afternoteId = 1L,
                 category = "PLAYLIST",
                 title = "t",
-                playlist = AfternotePlaylist(profilePhoto = "profile.jpg", memorialPhotoUrl = "memorial.jpg"),
+                playlist = AfternotePlaylistDto(profilePhoto = "profile.jpg", memorialPhotoUrl = "memorial.jpg"),
             ).toDetailDomain()
 
         assertEquals("memorial.jpg", result.playlist!!.playlistDetailMemorialMedia.photoUrl)
@@ -128,11 +128,11 @@ class AfternoteDetailResponseMapperTest {
     @Test
     fun `toDetailDomain - memorialVideo null이면 video thumbnail null`() {
         val result =
-            AfternoteDetailResponse(
+            AfternoteDetailDto(
                 afternoteId = 1L,
                 category = "PLAYLIST",
                 title = "t",
-                playlist = AfternotePlaylist(profilePhoto = "p", memorialVideo = null),
+                playlist = AfternotePlaylistDto(profilePhoto = "p", memorialVideo = null),
             ).toDetailDomain()
 
         val media = result.playlist!!.playlistDetailMemorialMedia

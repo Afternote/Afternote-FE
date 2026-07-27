@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-enum class TodayMood {
+enum class TodayMoodDto {
     @SerialName("HAPPY")
     HAPPY,
 
@@ -16,40 +16,40 @@ enum class TodayMood {
 }
 
 @Serializable
-data class DiaryCreateRequest(
+data class DiaryCreateRequestDto(
     @SerialName("title") val title: String,
     @SerialName("content") val content: String,
     @SerialName("isDraft") val isDraft: Boolean,
-    @SerialName("todayMood") val todayMood: TodayMood,
+    @SerialName("todayMood") val todayMood: TodayMoodDto,
     @SerialName("imageUrl") val imageUrl: String? = null,
     @SerialName("receiverIds") val receiverIds: List<Long>? = null,
 )
 
 @Serializable
-data class DiaryUpdateRequest(
+data class DiaryUpdateRequestDto(
     @SerialName("title") val title: String,
     @SerialName("content") val content: String,
     @SerialName("isDraft") val isDraft: Boolean,
-    @SerialName("todayMood") val todayMood: TodayMood,
+    @SerialName("todayMood") val todayMood: TodayMoodDto,
     @SerialName("date") val date: String,
     @SerialName("imageUrl") val imageUrl: String? = null,
 )
 
 @Serializable
-data class DiaryListItem(
+data class DiaryListItemDto(
     @SerialName("diaryId") val diaryId: Long,
     @SerialName("title") val title: String,
     @SerialName("content") val content: String,
     @SerialName("createdAt") val createdAt: String,
     @SerialName("imageUrl") val imageUrl: String? = null,
-    @SerialName("todayMood") val todayMood: TodayMood,
+    @SerialName("todayMood") val todayMood: TodayMoodDto,
 )
 
 // `/diary` 응답의 `data` 는 객체 — `diaries` 외에 조회 대상 달의 비-임시 다이어리 수
 // (`monthDiaryCount`)와 최근 7일 최빈 기분(`weeklyDominantMood`)이 함께 내려옴.
 @Serializable
-data class DiaryListResponse(
-    @SerialName("diaries") val diaries: List<DiaryListItem> = emptyList(),
+data class DiaryListDto(
+    @SerialName("diaries") val diaries: List<DiaryListItemDto> = emptyList(),
     @SerialName("monthDiaryCount") val monthDiaryCount: Int = 0,
-    @SerialName("weeklyDominantMood") val weeklyDominantMood: TodayMood? = null,
+    @SerialName("weeklyDominantMood") val weeklyDominantMood: TodayMoodDto? = null,
 )
