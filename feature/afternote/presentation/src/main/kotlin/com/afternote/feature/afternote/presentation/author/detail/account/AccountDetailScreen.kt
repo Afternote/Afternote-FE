@@ -260,8 +260,7 @@ private fun AccountSection(
 // endregion
 
 /**
- * Android Studio @Preview 전용. Debug 빌드 런타임 목업은
- * `AfternoteDebugMockNetworkInterceptor`의 GET `/api/afternotes/{id}` (예: id 1, 3)를 사용한다.
+ * Android Studio @Preview 전용 고정 데이터.
  */
 private val PreviewAccountInstaContent =
     AccountDetailContent(
