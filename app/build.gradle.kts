@@ -86,6 +86,7 @@ dependencies {
     implementation(libs.firebase.analytics)
 
     // Core
+    implementation(projects.core.common)
     implementation(projects.core.network)
     implementation(projects.core.ui)
     implementation(projects.core.model)
