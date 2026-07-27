@@ -78,9 +78,12 @@ dependencies {
     implementation(libs.kakao.sdk.auth)
 
     // Firebase — Crashlytics 는 크래시 자동 수집이라 초기화 코드가 필요 없다.
-    // 버전은 BoM 이 관리하므로 crashlytics 좌표에는 버전을 적지 않는다.
+    // 버전은 BoM 이 관리하므로 개별 좌표에는 버전을 적지 않는다.
+    // analytics 는 크래시 직전 사용자 동선(breadcrumb) 수집용 — 없으면 Crashlytics 가
+    // "Could not register handler for breadcrumbs events" 로 기능을 건너뛴다.
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.analytics)
 
     // Core
     implementation(projects.core.network)
