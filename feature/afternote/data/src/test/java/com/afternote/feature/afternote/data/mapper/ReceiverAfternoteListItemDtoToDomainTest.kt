@@ -1,12 +1,12 @@
 package com.afternote.feature.afternote.data.mapper
 
-import com.afternote.feature.afternote.data.dto.ReceivedAfternoteResponse
+import com.afternote.feature.afternote.data.dto.ReceivedAfternoteDto
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
 /**
- * [ReceivedAfternoteResponse.toDomain] / [toReceiverDomainList] 회귀 가드.
+ * [ReceivedAfternoteDto.toDomain] / [toReceiverDomainList] 회귀 가드.
  * 수신자 목록 DTO→[com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem] 매핑.
  * 서버 카테고리(SOCIAL/GALLERY/PLAYLIST/MUSIC)를 presentation typeKey로 정규화하는 규칙과
  * null 가드(category·createdAt)를 검증한다.
@@ -15,7 +15,7 @@ class ReceiverAfternoteListItemDtoToDomainTest {
     @Test
     fun `toDomain - 필드 매핑 + category 정규화 + 날짜 포맷`() {
         val result =
-            ReceivedAfternoteResponse(
+            ReceivedAfternoteDto(
                 id = 9L,
                 title = "사진첩",
                 category = "GALLERY",
@@ -61,7 +61,7 @@ class ReceiverAfternoteListItemDtoToDomainTest {
         title: String? = "t",
         category: String? = "SOCIAL",
         createdAt: String? = "2025-01-01T00:00:00",
-    ) = ReceivedAfternoteResponse(
+    ) = ReceivedAfternoteDto(
         id = id,
         title = title,
         category = category,

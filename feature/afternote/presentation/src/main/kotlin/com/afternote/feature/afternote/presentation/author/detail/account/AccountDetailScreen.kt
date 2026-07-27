@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.detail.socialnetwork
+package com.afternote.feature.afternote.presentation.author.detail.account
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -58,11 +58,11 @@ import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
  * - 상세/작성자/삭제 상태는 공용 [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel] 에서 관리한다
  *   (상세 목적지마다 별도의 백스택 엔트리이므로 VM 인스턴스는 화면마다 갈리지만 클래스는 동일).
  *   초기 상세 로드는 ViewModel 의 `init` 과 네비게이션 인자(`itemId`)로만 트리거한다.
- * - UI 는 [SocialNetworkDetailScreen] (Stateless) 에 위임한다.
+ * - UI 는 [AccountDetailScreen] (Stateless) 에 위임한다.
  * - [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailUiState.Success.contentUiModel] 이 소셜이 아니면 [DesignPendingDetailContent] 로 폴백한다.
  */
 @Composable
-internal fun SocialNetworkDetailRoute(
+internal fun AccountDetailRoute(
     onBack: () -> Unit,
     onNavigateToEditor: (itemId: String) -> Unit,
     viewModel: AfternoteDetailViewModel = hiltViewModel(),
@@ -86,8 +86,8 @@ internal fun SocialNetworkDetailRoute(
 
         is AfternoteDetailUiState.Success -> {
             when (val model = state.contentUiModel) {
-                is DetailContentUiModel.SocialNetwork -> {
-                    SocialNetworkDetailScreen(
+                is DetailContentUiModel.Account -> {
+                    AccountDetailScreen(
                         content = model.content,
                         onBackClick = onBack,
                         onEditClick = { onNavigateToEditor(state.detailId.toString()) },
@@ -107,10 +107,10 @@ internal fun SocialNetworkDetailRoute(
  * 소셜 네트워크 애프터노트 상세 화면.
  */
 @Composable
-fun SocialNetworkDetailScreen(
+fun AccountDetailScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    content: SocialNetworkDetailContent = SocialNetworkDetailContent(),
+    content: AccountDetailContent = AccountDetailContent(),
     isEditable: Boolean = true,
     onEditClick: () -> Unit = {},
     onDeleteConfirm: () -> Unit = {},
@@ -156,7 +156,7 @@ fun SocialNetworkDetailScreen(
             )
         },
     ) { paddingValues ->
-        SocialNetworkDetailScrollContent(
+        AccountDetailScrollContent(
             content = content,
             modifier =
                 Modifier
@@ -169,8 +169,8 @@ fun SocialNetworkDetailScreen(
 // region — Scroll content
 
 @Composable
-private fun SocialNetworkDetailScrollContent(
-    content: SocialNetworkDetailContent,
+private fun AccountDetailScrollContent(
+    content: AccountDetailContent,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -184,7 +184,6 @@ private fun SocialNetworkDetailScrollContent(
         AfternoteDetailServiceHeader(
             service = AfternoteServiceDisplay.fromServiceName(content.serviceName),
             finalWriteDate = content.finalWriteDate,
-            processingMethodChipLabel = content.processingMethods.firstOrNull().orEmpty(),
         )
 
         Spacer(modifier = Modifier.height(31.dp))
@@ -264,8 +263,8 @@ private fun AccountSection(
  * Android Studio @Preview 전용. Debug 빌드 런타임 목업은
  * `AfternoteDebugMockNetworkInterceptor`의 GET `/api/afternotes/{id}` (예: id 1, 3)를 사용한다.
  */
-private val PreviewSocialNetworkInstaContent =
-    SocialNetworkDetailContent(
+private val PreviewAccountInstaContent =
+    AccountDetailContent(
         serviceName = "인스타그램",
         userName = "서영",
         accountId = "qwerty123",
@@ -285,10 +284,10 @@ private val PreviewSocialNetworkInstaContent =
 
 @Preview(showBackground = true)
 @Composable
-private fun SocialNetworkDetailScreenPreview() {
+private fun AccountDetailScreenPreview() {
     AfternoteTheme {
-        SocialNetworkDetailScreen(
-            content = PreviewSocialNetworkInstaContent,
+        AccountDetailScreen(
+            content = PreviewAccountInstaContent,
             onBackClick = {},
             onEditClick = {},
         )
@@ -297,7 +296,7 @@ private fun SocialNetworkDetailScreenPreview() {
 
 @Preview(showBackground = true)
 @Composable
-private fun SocialNetworkDetailScreenWithDropdownPreview() {
+private fun AccountDetailScreenWithDropdownPreview() {
     AfternoteTheme {
         val stateWithDropdown =
             remember {
@@ -305,8 +304,8 @@ private fun SocialNetworkDetailScreenWithDropdownPreview() {
                     toggleDropdownMenu()
                 }
             }
-        SocialNetworkDetailScreen(
-            content = PreviewSocialNetworkInstaContent,
+        AccountDetailScreen(
+            content = PreviewAccountInstaContent,
             onBackClick = {},
             onEditClick = {},
             state = stateWithDropdown,

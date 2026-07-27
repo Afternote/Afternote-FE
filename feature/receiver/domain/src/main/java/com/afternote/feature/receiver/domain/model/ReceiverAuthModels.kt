@@ -10,17 +10,15 @@ data class ReceiverIdentity(
 /**
  * 수신자 본인 확인 이메일 인증 검증(`receiver-auth/email/verify`) 성공 결과.
  *
- * [ReceiverIdentity] 와 비슷하지만 다른 계약 — `relation` 이 없고 [accessCode] 가 있다 (별개 endpoint).
+ * [ReceiverIdentity] 와 비슷하지만 다른 계약 — `relation` 이 없다 (별개 endpoint).
  *
- * @property accessCode 이후 `X-Auth-Code` 헤더에 쓰는 UUID 접근 코드. 백엔드가 "이메일 인증 성공
- *   = 마스터 키 획득" 으로 설계해 마스터 키와 동일한 값을 돌려준다. 마스터 키 입력 단계의
- *   스킵/자동 채움 여부는 디자인 결정 대기 — 결정 전까지 presentation 은 수신만 하고 사용하지 않는다 (#407).
+ * 이메일 인증은 신원 확인까지만 담당한다. `X-Auth-Code` 에 쓰는 마스터 키는 이 결과가 아니라
+ * 마스터 키 입력 화면의 사용자 입력에서 온다.
  */
 data class ReceiverEmailAuthResult(
     val receiverId: Long,
     val receiverName: String,
     val senderName: String,
-    val accessCode: String,
 )
 
 data class ReceiverAuthPresignedUrl(

@@ -34,6 +34,9 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
             ignoreUnknownKeys = true // dto로 정의되지 않은 키가 있어도 크래시 나지 않게 함
             coerceInputValues =
                 true // 응답 json으로 유효하지 않은 필드 값이 오더라도 대응되는 dto 변수의 디폴트 값이 있다면 그 값으로 치환
+            // useAlternativeNames 는 기본 true — DTO 프로퍼티에 @JsonNames("대체키") 를 달면
+            // 서버가 같은 필드를 다른 키로 내려줘도(명세·실서버 불일치, 키 리네임 과도기) 한 프로퍼티로 파싱된다.
+            // 디코딩 전용이라 요청 직렬화 출력 키는 항상 @SerialName 을 따름. 사용 예: mindrecord DailyQuestionListItem
         }
 
     // 로깅 설정 인터셉터

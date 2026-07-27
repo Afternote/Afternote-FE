@@ -59,18 +59,20 @@ fun AfternoteButton(
     modifier: Modifier = Modifier,
     type: AfternoteButtonType = AfternoteButtonType.Default,
     secondaryText: String? = null,
+    containerColor: Color? = null,
     onSecondaryClick: (() -> Unit)? = null,
 ) {
     // 색 테이블을 여기서 한 번만 결정해 두 렌더 경로(단일 Surface·dual-action)에 같은 값을 공급한다 —
     // dual 쪽에 Variant5 색을 재하드코딩하면 테이블 변경 시 조용히 어긋난다.
-    val containerColor =
-        when (type) {
-            AfternoteButtonType.Default -> AfternoteDesign.colors.gray9
-            AfternoteButtonType.Active -> AfternoteDesign.colors.gray6
-            AfternoteButtonType.Plain -> AfternoteDesign.colors.gray2
-            AfternoteButtonType.Un -> AfternoteDesign.colors.gray2
-            AfternoteButtonType.Variant5 -> AfternoteDesign.colors.gray9
-        }
+    val resolvedContainerColor =
+        containerColor
+            ?: when (type) {
+                AfternoteButtonType.Default -> AfternoteDesign.colors.gray9
+                AfternoteButtonType.Active -> AfternoteDesign.colors.gray6
+                AfternoteButtonType.Plain -> AfternoteDesign.colors.gray2
+                AfternoteButtonType.Un -> AfternoteDesign.colors.gray2
+                AfternoteButtonType.Variant5 -> AfternoteDesign.colors.gray9
+            }
     val contentColor =
         when (type) {
             AfternoteButtonType.Plain -> AfternoteDesign.colors.gray9
@@ -86,7 +88,7 @@ fun AfternoteButton(
                 onClick = onClick,
                 secondaryText = secondaryText,
                 onSecondaryClick = onSecondaryClick,
-                containerColor = containerColor,
+                containerColor = resolvedContainerColor,
                 contentColor = contentColor,
                 modifier = modifier,
             )
@@ -98,7 +100,7 @@ fun AfternoteButton(
                 modifier.fillMaxWidth(),
             enabled = type != AfternoteButtonType.Un,
             shape = AfternoteButtonShape,
-            color = containerColor,
+            color = resolvedContainerColor,
             contentColor = contentColor,
             border =
                 if (type == AfternoteButtonType.Plain || type == AfternoteButtonType.Un) {

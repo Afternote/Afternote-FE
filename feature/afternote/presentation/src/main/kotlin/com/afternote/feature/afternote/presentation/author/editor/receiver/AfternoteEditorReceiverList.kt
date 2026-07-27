@@ -27,7 +27,6 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
-import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverCallbacks
 import com.afternote.feature.afternote.presentation.shared.ReceiverAvatar
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 
@@ -43,7 +42,8 @@ import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMe
 fun AfternoteEditorReceiverList(
     modifier: Modifier = Modifier,
     afternoteEditReceivers: List<AfternoteEditorReceiver>,
-    events: AfternoteEditorReceiverCallbacks = AfternoteEditorReceiverCallbacks(),
+    onAddClick: () -> Unit = {},
+    onItemDeleteClick: (String) -> Unit = {},
     state: AfternoteEditorReceiverListState = rememberAfternoteEditorReceiverListState(),
 ) {
     val focusManager = LocalFocusManager.current
@@ -74,7 +74,7 @@ fun AfternoteEditorReceiverList(
                     state.expandedStates[receiver.id] = false
                 },
                 showEditItem = false,
-                onDeleteClick = { events.onItemDeleteClick(receiver.id) },
+                onDeleteClick = { onItemDeleteClick(receiver.id) },
             )
         }
 
@@ -82,7 +82,7 @@ fun AfternoteEditorReceiverList(
             contentDescription = stringResource(R.string.afternote_editor_content_description_add),
             onClick = {
                 state.toggleTextField()
-                events.onAddClick()
+                onAddClick()
             },
         )
     }

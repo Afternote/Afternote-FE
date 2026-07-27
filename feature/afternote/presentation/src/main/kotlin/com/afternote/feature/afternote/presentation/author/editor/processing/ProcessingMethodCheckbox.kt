@@ -40,17 +40,6 @@ import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 
-/**
- * Callbacks for processing method checkbox dropdown (more, dismiss, edit, delete).
- */
-data class ProcessingMethodCheckboxCallbacks(
-    val onMoreClick: () -> Unit = {},
-    val onDismissDropdown: () -> Unit = {},
-    val onEditClick: () -> Unit = {},
-    val onDeleteClick: () -> Unit = {},
-    val onEditConfirmed: (String) -> Unit = {},
-)
-
 @Composable
 private fun processingMethodTextStyle(): TextStyle =
     AfternoteDesign.typography.bodySmallR.copy(
@@ -68,7 +57,11 @@ fun ProcessingMethodCheckbox(
     item: ProcessingMethodItem,
     expanded: Boolean = false,
     isEditing: Boolean = false,
-    callbacks: ProcessingMethodCheckboxCallbacks = ProcessingMethodCheckboxCallbacks(),
+    onMoreClick: () -> Unit = {},
+    onDismissDropdown: () -> Unit = {},
+    onEditClick: () -> Unit = {},
+    onDeleteClick: () -> Unit = {},
+    onEditConfirmed: (String) -> Unit = {},
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -84,7 +77,7 @@ fun ProcessingMethodCheckbox(
         if (isEditing) {
             InlineEditTextField(
                 initialText = item.text,
-                onConfirm = callbacks.onEditConfirmed,
+                onConfirm = onEditConfirmed,
                 modifier = Modifier.weight(1f),
             )
         } else {
@@ -101,13 +94,13 @@ fun ProcessingMethodCheckbox(
                 contentDescription = stringResource(R.string.afternote_editor_content_description_more),
                 modifier =
                     Modifier
-                        .clickable(onClick = callbacks.onMoreClick),
+                        .clickable(onClick = onMoreClick),
             )
             EditDropdownMenu(
                 expanded = expanded,
-                onDismissRequest = callbacks.onDismissDropdown,
-                onDeleteClick = callbacks.onDeleteClick,
-                onEditClick = callbacks.onEditClick,
+                onDismissRequest = onDismissDropdown,
+                onDeleteClick = onDeleteClick,
+                onEditClick = onEditClick,
             )
         }
     }
@@ -194,10 +187,7 @@ private fun ProcessingMethodCheckboxEditingPreview() {
             ProcessingMethodCheckbox(
                 item = ProcessingMethodItem("1", "게시물 내리기"),
                 isEditing = true,
-                callbacks =
-                    ProcessingMethodCheckboxCallbacks(
-                        onEditConfirmed = {},
-                    ),
+                onEditConfirmed = {},
             )
         }
     }

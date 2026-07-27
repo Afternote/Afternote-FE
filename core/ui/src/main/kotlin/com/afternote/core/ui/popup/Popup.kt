@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -38,6 +39,8 @@ fun Popup(
         },
     dismissText: String = "아니요",
     isLoading: Boolean = false,
+    confirmButtonColor: Color? = null,
+    dismissButtonColor: Color? = null,
 ) {
     Dialog(
         onDismissRequest = { if (!isLoading) onDismiss() },
@@ -56,6 +59,8 @@ fun Popup(
             confirmText = confirmText,
             dismissText = dismissText,
             isLoading = isLoading,
+            confirmButtonColor = confirmButtonColor,
+            dismissButtonColor = dismissButtonColor,
         )
     }
 }
@@ -77,6 +82,8 @@ internal fun PopupContent(
         },
     dismissText: String = "아니요",
     isLoading: Boolean = false,
+    confirmButtonColor: Color? = null,
+    dismissButtonColor: Color? = null,
 ) {
     AfternotePopupCardLayout(
         message = message,
@@ -88,6 +95,7 @@ internal fun PopupContent(
                     text = confirmText,
                     onClick = { if (!isLoading) onConfirm() },
                     type = AfternoteButtonType.Default,
+                    containerColor = confirmButtonColor,
                 )
             }
 
@@ -101,12 +109,14 @@ internal fun PopupContent(
                         onClick = { if (!isLoading) onDismiss() },
                         type = AfternoteButtonType.Default,
                         modifier = Modifier.weight(1f),
+                        containerColor = dismissButtonColor,
                     )
                     AfternoteButton(
                         text = confirmText,
                         onClick = { if (!isLoading) onConfirm() },
                         type = AfternoteButtonType.Default,
                         modifier = Modifier.weight(1f),
+                        containerColor = confirmButtonColor,
                     )
                 }
             }

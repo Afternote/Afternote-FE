@@ -1,15 +1,15 @@
-package com.afternote.feature.afternote.presentation.author.detail.socialnetwork
+package com.afternote.feature.afternote.presentation.author.detail.account
 
 import androidx.compose.runtime.Immutable
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 
 /**
- * Display data for [SocialNetworkDetailScreen].
+ * Display data for [AccountDetailScreen].
  *
  * Used for 소셜 네트워크 category afternote detail.
  */
 @Immutable
-data class SocialNetworkDetailContent(
+data class AccountDetailContent(
     val serviceName: String = "",
     val userName: String = "",
     val accountId: String = "",
