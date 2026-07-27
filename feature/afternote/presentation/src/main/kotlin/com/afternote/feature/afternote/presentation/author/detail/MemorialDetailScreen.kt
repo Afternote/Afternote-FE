@@ -68,7 +68,7 @@ import com.afternote.core.ui.R as CoreUiR
  * 성공 시 [AfternoteDetailUiState.Success.contentUiModel] 이 추억 노트가 아니면 폴백한다.
  */
 @Composable
-internal fun MemorialGuidelineDetailRoute(
+internal fun MemorialDetailRoute(
     onBack: () -> Unit,
     onNavigateToEditor: (itemId: String) -> Unit,
     viewModel: AfternoteDetailViewModel = hiltViewModel(),
@@ -93,7 +93,7 @@ internal fun MemorialGuidelineDetailRoute(
         is AfternoteDetailUiState.Success -> {
             when (val model = state.contentUiModel) {
                 is DetailContentUiModel.Memorial -> {
-                    MemorialGuidelineDetailScreen(
+                    MemorialDetailScreen(
                         content = model.content,
                         onBackClick = onBack,
                         onEditClick = { onNavigateToEditor(state.detailId.toString()) },
@@ -113,7 +113,7 @@ internal fun MemorialGuidelineDetailRoute(
  * 추억 노트 상세 표시 데이터.
  */
 @Immutable
-data class MemorialGuidelineDetailContent(
+data class MemorialDetailContent(
     val userName: String = "",
     val finalWriteDate: String = "",
     val profileImageUri: String? = null,
@@ -131,10 +131,10 @@ data class MemorialGuidelineDetailContent(
  * [com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailScreen] 과 동일한 Scaffold·TopBar·드롭다운 배치·스크롤 modifier 패턴을 따른다.
  */
 @Composable
-fun MemorialGuidelineDetailScreen(
+fun MemorialDetailScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    content: MemorialGuidelineDetailContent = MemorialGuidelineDetailContent(),
+    content: MemorialDetailContent = MemorialDetailContent(),
     isEditable: Boolean = true,
     onEditClick: () -> Unit = {},
     onDeleteConfirm: () -> Unit = {},
@@ -182,7 +182,7 @@ fun MemorialGuidelineDetailScreen(
             )
         },
     ) { paddingValues ->
-        MemorialGuidelineDetailScrollContent(
+        MemorialDetailScrollContent(
             content = content,
             categoryLabel = memorialCategoryLabel,
             modifier =
@@ -194,8 +194,8 @@ fun MemorialGuidelineDetailScreen(
 }
 
 @Composable
-private fun MemorialGuidelineDetailScrollContent(
-    content: MemorialGuidelineDetailContent,
+private fun MemorialDetailScrollContent(
+    content: MemorialDetailContent,
     categoryLabel: String,
     modifier: Modifier = Modifier,
 ) {
@@ -231,7 +231,7 @@ private fun TitleSection(
 }
 
 @Composable
-private fun CardSection(content: MemorialGuidelineDetailContent) {
+private fun CardSection(content: MemorialDetailContent) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         PhotoCard(
             finalWriteDate = content.finalWriteDate,
@@ -510,7 +510,7 @@ private fun LastWishCard(lastWish: String) {
     )
 }
 
-private fun memorialGuidelineDetailPreviewAlbumCovers(): List<AlbumCover> =
+private fun memorialDetailPreviewAlbumCovers(): List<AlbumCover> =
     listOf(
         AlbumCover(id = "1"),
         AlbumCover(id = "2"),
@@ -523,15 +523,15 @@ private fun memorialGuidelineDetailPreviewAlbumCovers(): List<AlbumCover> =
     device = "spec:width=390dp,height=844dp,dpi=420,isRound=false",
 )
 @Composable
-private fun MemorialGuidelineDetailScreenPreview() {
+private fun MemorialDetailScreenPreview() {
     AfternoteTheme {
-        MemorialGuidelineDetailScreen(
+        MemorialDetailScreen(
             content =
-                MemorialGuidelineDetailContent(
+                MemorialDetailContent(
                     userName = "서영",
                     finalWriteDate = "2025.11.26",
                     songCount = 16,
-                    albumCovers = memorialGuidelineDetailPreviewAlbumCovers(),
+                    albumCovers = memorialDetailPreviewAlbumCovers(),
                     lastWish = "차분하고 조용하게 보내주세요.",
                 ),
             onBackClick = {},
@@ -546,7 +546,7 @@ private fun MemorialGuidelineDetailScreenPreview() {
     name = "Memorial Guideline Detail - Delete Dialog",
 )
 @Composable
-private fun MemorialGuidelineDetailScreenDeleteDialogPreview() {
+private fun MemorialDetailScreenDeleteDialogPreview() {
     AfternoteTheme {
         val stateWithDialog =
             remember {
@@ -554,13 +554,13 @@ private fun MemorialGuidelineDetailScreenDeleteDialogPreview() {
                     showDeleteDialog()
                 }
             }
-        MemorialGuidelineDetailScreen(
+        MemorialDetailScreen(
             content =
-                MemorialGuidelineDetailContent(
+                MemorialDetailContent(
                     userName = "서영",
                     finalWriteDate = "2025.11.26",
                     songCount = 16,
-                    albumCovers = memorialGuidelineDetailPreviewAlbumCovers(),
+                    albumCovers = memorialDetailPreviewAlbumCovers(),
                     lastWish = "차분하고 조용하게 보내주세요.1",
                 ),
             onBackClick = {},
