@@ -26,7 +26,7 @@ import javax.inject.Inject
  * `MutableStateFlow` 로 통합. UI 는 `collectAsStateWithLifecycle` 로 한 번에 구독.
  *
  * **TextFieldState 정책**: TextFieldState 는 각 Screen 이 `rememberTextFieldState` 로 소유하고,
- * ViewModel 은 평범한 [String] 으로 보관. Screen 이 LaunchedEffect + snapshotFlow 로 변경 사항을
+ * ViewModel 은 평범한 `String` 으로 보관. Screen 이 LaunchedEffect + snapshotFlow 로 변경 사항을
  * VM 에 push, 다른 Screen 은 VM 의 [uiState] 에서 String 으로 read.
  */
 @HiltViewModel
