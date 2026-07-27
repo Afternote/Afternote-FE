@@ -37,14 +37,6 @@ import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.EditorSectionLabel
 
 /**
- * Label configuration for [SelectionDropdown].
- */
-data class SelectionDropdownLabelParams(
-    val label: String,
-    val isRequired: Boolean = false,
-)
-
-/**
  * 드롭다운 메뉴 스타일 설정
  *
  * @param menuOffset 앵커 대비 메뉴 패널에 더할 수직 간격 (기본: 4.dp, 메뉴 modifier 세로 offset으로 반영)
@@ -62,25 +54,29 @@ data class DropdownMenuStyle(
 )
 
 /**
- * @param labelParams Label text, required indicator, and style
+ * @param label 라벨 텍스트
  * @param selectedValue Currently selected value
  * @param options List of selectable options
  * @param onValueSelected Callback when an option is selected
  * @param expanded Whether the dropdown menu is currently expanded
  * @param onExpandedChange Callback invoked when the user requests to open/close the menu
  * @param modifier Modifier for the component
+ * @param isRequired 라벨에 필수 표시(*) 노출 여부
+ * @param placeholder [selectedValue]가 비어 있을 때 앵커에 흐리게(gray5) 노출할 미선택 안내 문구 (null 이면 기존처럼 빈 값 그대로 렌더)
  * @param menuStyle Style configuration for the dropdown menu
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SelectionDropdown(
-    labelParams: SelectionDropdownLabelParams,
+    label: String,
     selectedValue: String,
     options: List<String>,
     onValueSelected: (String) -> Unit,
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    isRequired: Boolean = false,
+    placeholder: String? = null,
     menuStyle: DropdownMenuStyle = DropdownMenuStyle(),
 ) {
     val menuBackgroundResolved = menuStyle.menuBackgroundColor ?: AfternoteDesign.colors.white
@@ -92,8 +88,8 @@ fun SelectionDropdown(
     ) {
         // 라벨
         EditorSectionLabel(
-            text = labelParams.label,
-            isRequired = labelParams.isRequired,
+            text = label,
+            isRequired = isRequired,
             style = AfternoteDesign.typography.captionLargeR,
             color = AfternoteDesign.colors.gray7,
         )
@@ -114,11 +110,13 @@ fun SelectionDropdown(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
+                // 미선택(빈 값) + placeholder 지정 시 안내 문구를 흐리게 노출 — 타이포는 선택값과 동일(bodyBase), 색만 gray5 (시안 700:36383).
+                val showPlaceholder = selectedValue.isBlank() && placeholder != null
                 Text(
-                    text = selectedValue,
+                    text = if (showPlaceholder) placeholder else selectedValue,
                     style =
                         AfternoteDesign.typography.bodyBase.copy(
-                            color = AfternoteDesign.colors.gray8,
+                            color = if (showPlaceholder) AfternoteDesign.colors.gray5 else AfternoteDesign.colors.gray8,
                         ),
                 )
 
@@ -186,10 +184,7 @@ private fun SelectionDropdownPreview() {
         var expanded by remember { mutableStateOf(false) }
         Box(modifier = Modifier.padding(24.dp)) {
             SelectionDropdown(
-                labelParams =
-                    SelectionDropdownLabelParams(
-                        label = stringResource(R.string.afternote_editor_label_category),
-                    ),
+                label = stringResource(R.string.afternote_editor_label_category),
                 selectedValue = social,
                 options =
                     listOf(
@@ -200,6 +195,34 @@ private fun SelectionDropdownPreview() {
                 onValueSelected = {},
                 expanded = expanded,
                 onExpandedChange = { expanded = it },
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Placeholder (unselected)")
+@Composable
+private fun SelectionDropdownPlaceholderPreview() {
+    AfternoteTheme {
+        var expanded by remember { mutableStateOf(false) }
+        Box(modifier = Modifier.padding(24.dp)) {
+            SelectionDropdown(
+                label = stringResource(R.string.afternote_editor_label_service_name),
+                selectedValue = "",
+                options =
+                    listOf(
+                        "인스타그램",
+                        "페이스북",
+                        "직접 추가하기",
+                    ),
+                onValueSelected = {},
+                expanded = expanded,
+                onExpandedChange = { expanded = it },
+                placeholder =
+                    stringResource(
+                        R.string.afternote_editor_service_placeholder,
+                        stringResource(R.string.afternote_editor_category_social),
+                    ),
             )
         }
     }

@@ -33,6 +33,7 @@ import com.afternote.feature.afternote.presentation.author.editor.state.remember
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlin.time.Duration.Companion.milliseconds
 
 private const val EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE_MS = 1_000L
 
@@ -79,6 +80,9 @@ fun AfternoteEditorScreen(
         }
     }
 
+    // 타이핑 자동 저장: 각 블록의 TextFieldState(UI 소유)를 snapshotFlow 로 관찰해 순수 문자열
+    // 스냅샷으로 변환하고, 1s 디바운스로 묶어 폼 SSOT 에 반영한다. key=size 라 블록 추가/삭제 시
+    // 재시작해 새 블록 상태도 관찰에 편입. 디바운스 창 안의 이탈 손실은 아래 DisposableEffect 가 맡는다.
     LaunchedEffect(state.editorMessages.size) {
         snapshotFlow {
             state.editorMessages.map { msg ->
@@ -88,7 +92,7 @@ fun AfternoteEditorScreen(
                 )
             }
         }.distinctUntilChanged()
-            .debounce(EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE_MS)
+            .debounce(EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE_MS.milliseconds)
             .collect { blocks ->
                 state.persistEditorMessagesFromTyping(blocks)
             }

@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.AfternoteOutlinedCard
@@ -20,6 +21,7 @@ import com.afternote.core.ui.AfternoteSectionHeader
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.presentation.R
 
 @Composable
 internal fun HomeHeaderSection(
@@ -40,15 +42,17 @@ internal fun HomeHeaderSection(
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "애프터 노트 설명",
+            text = stringResource(R.string.afternote_home_header_description),
             style = AfternoteDesign.typography.captionLargeR,
             color = AfternoteDesign.colors.black.copy(alpha = 89f / 255f),
         )
-        Spacer(modifier = Modifier.height(16.dp))
-        NextStepCard(
-            text = nextStepText,
-            onClick = onNextStepClick,
-        )
+        if (nextStepText.isNotBlank()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            NextStepCard(
+                text = nextStepText,
+                onClick = onNextStepClick,
+            )
+        }
     }
 }
 

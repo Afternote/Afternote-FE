@@ -7,7 +7,7 @@ package com.afternote.core.model
  *
  * 표현 형식이 endpoint 마다 달라 변환 함수를 분리:
  * - [toPath]: `/users/connected-accounts/{provider}` 같은 URL path 용 (lowercase)
- * - [toBody]: `SocialLoginRequest.provider` 같은 request body 용 (uppercase)
+ * - [toBody]: `SocialLoginRequestDto.provider` 같은 request body 용 (uppercase)
  */
 enum class SocialProvider {
     GOOGLE,

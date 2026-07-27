@@ -9,7 +9,7 @@ data class PresignedUrlRequestDto(
 )
 
 @Serializable
-data class PresignedUrlResponseDto(
+data class PresignedUrlDto(
     val presignedUrl: String,
     val fileKey: String,
     val fileUrl: String,

@@ -14,14 +14,14 @@ import com.afternote.core.model.user.ReceiverDetail
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.model.user.UserPushSetting
-import com.afternote.core.network.dto.DeliveryConditionRequest
-import com.afternote.core.network.dto.SocialAccountLinkRequest
-import com.afternote.core.network.dto.UserCreateReceiverRequest
-import com.afternote.core.network.dto.UserPatchReceiverRequest
-import com.afternote.core.network.dto.UserUpdateProfileRequest
-import com.afternote.core.network.dto.UserUpdatePushSettingRequest
-import com.afternote.core.network.dto.UserUpdateReceiverMessageRequest
-import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionUpdateRequest
+import com.afternote.core.network.dto.DeliveryConditionRequestDto
+import com.afternote.core.network.dto.SocialAccountLinkRequestDto
+import com.afternote.core.network.dto.UserCreateReceiverRequestDto
+import com.afternote.core.network.dto.UserPatchReceiverRequestDto
+import com.afternote.core.network.dto.UserUpdateProfileRequestDto
+import com.afternote.core.network.dto.UserUpdatePushSettingRequestDto
+import com.afternote.core.network.dto.UserUpdateReceiverMessageRequestDto
+import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionUpdateRequestDto
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
 import com.afternote.core.network.service.UserApiService
@@ -66,7 +66,7 @@ class UserRepositoryImpl
             val result =
                 userApiService
                     .createReceiver(
-                        UserCreateReceiverRequest(
+                        UserCreateReceiverRequestDto(
                             name = name,
                             relation = relation,
                             phone = phone,
@@ -96,7 +96,7 @@ class UserRepositoryImpl
                 .updateReceiver(
                     receiverId = receiverId,
                     request =
-                        UserPatchReceiverRequest(
+                        UserPatchReceiverRequestDto(
                             name = name,
                             phone = phone,
                             relation = relation,
@@ -112,7 +112,7 @@ class UserRepositoryImpl
             userApiService
                 .updateReceiverMessage(
                     receiverId = receiverId,
-                    request = UserUpdateReceiverMessageRequest(message = message),
+                    request = UserUpdateReceiverMessageRequestDto(message = message),
                 ).requireStatus()
         }
 
@@ -129,7 +129,7 @@ class UserRepositoryImpl
         ): User =
             userApiService
                 .updateMyProfile(
-                    UserUpdateProfileRequest(
+                    UserUpdateProfileRequestDto(
                         name = name,
                         phone = phone,
                         profileImageUrl = profileImageUrl,
@@ -162,7 +162,7 @@ class UserRepositoryImpl
         ): UserPushSetting =
             userApiService
                 .updateMyPushSettings(
-                    UserUpdatePushSettingRequest(
+                    UserUpdatePushSettingRequestDto(
                         timeLetter = timeLetter,
                         mindRecord = mindRecord,
                         afterNote = afterNote,
@@ -183,7 +183,7 @@ class UserRepositoryImpl
             userApiService
                 .linkConnectedAccount(
                     provider = provider,
-                    request = SocialAccountLinkRequest(accessToken = accessToken),
+                    request = SocialAccountLinkRequestDto(accessToken = accessToken),
                 ).requireData()
                 .toDomain()
 
@@ -206,7 +206,7 @@ class UserRepositoryImpl
         ): DeliveryCondition =
             userApiService
                 .updateDeliveryCondition(
-                    DeliveryConditionRequest(
+                    DeliveryConditionRequestDto(
                         conditionType = conditionType.toDto(),
                         inactivityPeriodDays = inactivityPeriodDays,
                         specificDate = specificDate,
@@ -227,7 +227,7 @@ class UserRepositoryImpl
             userApiService
                 .updateReceiverDeliveryConditions(
                     receiverId = receiverId,
-                    request = ReceiverDeliveryConditionUpdateRequest(conditions.map { it.toRequestDto() }),
+                    request = ReceiverDeliveryConditionUpdateRequestDto(conditions.map { it.toRequestDto() }),
                 ).requireData()
                 .toDeliveryConditionsDomain()
     }

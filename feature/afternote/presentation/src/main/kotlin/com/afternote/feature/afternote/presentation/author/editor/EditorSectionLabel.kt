@@ -72,7 +72,7 @@ fun EditorSectionLabel(
                     Modifier
                         .size(4.dp)
                         .background(
-                            color = AfternoteDesign.colors.error,
+                            color = AfternoteDesign.colors.requiredMark,
                             shape = CircleShape,
                         ).align(Alignment.Top),
             )
