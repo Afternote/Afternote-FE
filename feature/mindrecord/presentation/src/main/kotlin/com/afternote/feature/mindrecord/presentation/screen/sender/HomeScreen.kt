@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -26,7 +27,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import com.afternote.core.ui.R
 import com.afternote.core.ui.ViewModeSwitcher
 import com.afternote.core.ui.button.FAB.AfternoteFloatingActionButton
@@ -45,6 +47,10 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     dailyQuestionViewModel: DailyQuestionListViewModel = hiltViewModel(),
     diaryViewModel: DiaryListViewModel = hiltViewModel(),
+    // WeeklyReportScreen 과 같은 NavBackStackEntry 를 owner 로 쓰므로 동일 인스턴스다.
+    // 여기서 호이스팅하면 주간리포트 탭에 들어가지 않아도 VM 의 init { load(...) } 가 돌아
+    // 마음의 기록 탭 진입마다 요약 조회가 한 번 나간다. 대신 탭을 열면 스피너 없이 즉시 보이는
+    // 프리페치가 되므로 트레이드오프를 받아들인다.
     weeklyReportViewModel: WeeklyReportViewModel = hiltViewModel(),
     onWriteClick: (MindRecordCategoryUi) -> Unit = {},
 ) {
@@ -85,18 +91,23 @@ fun HomeScreen(
     // 작성 화면(DailyQuestionWriteRoute/DiaryWriteRoute) 복귀 시 현재 탭 목록 refresh.
     // 최초 진입은 각 VM 의 init { load() } 가 이미 로드하므로 첫 resume 은 스킵한다.
     // (rememberSaveable: 작성 화면 이동으로 컴포지션에서 벗어나도 스킵 플래그가 초기화되지 않도록)
+    //
+    // 람다를 캡처하는 옵저버는 DisposableEffect(key) 안에서 한 번만 만들어지므로, 매 컴포지션
+    // 새로 계산되는 지역 val 인 selectedCategory 를 그대로 읽으면 화면 진입 시점 값에 고정된다.
+    // key 를 selectedCategory 로 주면 이미 RESUMED 인 상태에서 옵저버가 재등록되며 탭 전환마다
+    // refresh 가 한 번 더 돌아 위 snapshotFlow 경로와 중복되므로, 최신 값 읽기로 해결한다.
+    val currentCategory by rememberUpdatedState(selectedCategory)
     var isFirstResume by rememberSaveable { mutableStateOf(true) }
-    LifecycleResumeEffect(Unit) {
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         if (isFirstResume) {
             isFirstResume = false
         } else {
-            when (selectedCategory) {
+            when (currentCategory) {
                 MindRecordCategoryUi.DailyQuestion -> dailyQuestionViewModel.refresh()
                 MindRecordCategoryUi.Diary -> diaryViewModel.refresh()
                 MindRecordCategoryUi.WeeklyReport -> weeklyReportViewModel.refresh()
             }
         }
-        onPauseOrDispose { }
     }
 
     Scaffold(
