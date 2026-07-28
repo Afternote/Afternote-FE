@@ -14,6 +14,5 @@ data class RegisterAfternotePayload(
     val password: String = "",
     val message: String = "",
     val processingMethods: List<ProcessingMethod> = emptyList(),
-    val galleryProcessingMethods: List<ProcessingMethod> = emptyList(),
     val atmosphere: String = "",
 )

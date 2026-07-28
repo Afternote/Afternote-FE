@@ -98,6 +98,8 @@
     <!-- Empty state -->
     <string name="mindrecord_empty_state_title">아직 등록된 답변이 없어요.</string>
     <string name="mindrecord_empty_state_description">답변을 등록해 자신을 알아 보아요.</string>
+    <string name="mindrecord_diary_empty_state_title">아직 등록된 일기가 없어요.</string>
+    <string name="mindrecord_diary_empty_state_description">일기를 작성해 나의 매일을 기록해 보아요.</string>
 
     <!-- Memories card sample question/answer -->
     <string name="mindrecord_memories_card_question">\"내 인생에서 가장 소중했던 순간은?\"</string>

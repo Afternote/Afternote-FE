@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
+import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
@@ -43,6 +45,7 @@ class DailyQuestionWriteViewModel
                                 isQuestionLoading = false,
                             )
                         }
+                        if (today.isDraft) resumeDraft()
                     }.onFailure { e ->
                         _uiState.update {
                             it.copy(
@@ -55,6 +58,33 @@ class DailyQuestionWriteViewModel
                             )
                         }
                     }
+            }
+        }
+
+        /**
+         * today 응답이 draft 존재를 알려주면 당일 임시저장 레코드를 찾아 이어쓰기 상태로 프리필한다.
+         * 없으면 아무것도 하지 않고 신규 작성으로 폴백.
+         *
+         * 서버는 `draftOnly` 없이 조회하면 임시저장을 제외한 답변만 내려주므로 반드시 `draftOnly = true` 로 보낸다.
+         * 파라미터를 무시하는 서버를 만나도 오답을 잡지 않도록 `isDraft` 재확인은 남겨둔다.
+         *
+         * 이어쓸 본문은 today 응답에 없어 이 목록 조회가 필요하다. 반면 `draftId` 확보만을 위한
+         * 조회는 두지 않는다 — 서버가 같은 `questionId` 에 대해 upsert 라 `draftId` 가 null 인 채로
+         * POST 가 다시 나가도 레코드는 갱신될 뿐 중복 생성되지 않는다.
+         */
+        private suspend fun resumeDraft() {
+            val draft =
+                repository
+                    .getList(date = LocalDate.now().toString(), draftOnly = true)
+                    .getOrNull()
+                    ?.firstOrNull { it.isDraft }
+                    ?: return
+            _uiState.update {
+                it.copy(
+                    draftId = draft.dailyQuestionId,
+                    answer = draft.content,
+                    imageUrl = draft.imageUrl ?: it.imageUrl,
+                )
             }
         }
 
@@ -80,15 +110,31 @@ class DailyQuestionWriteViewModel
 
             viewModelScope.launch {
                 _uiState.update { it.copy(submitState = SubmitState.InProgress) }
-                repository
-                    .create(
-                        DailyQuestionCreatePayload(
-                            content = state.answer,
-                            isDraft = isDraft,
-                            questionId = questionId,
-                            imageUrl = state.imageUrl,
-                        ),
-                    ).onSuccess {
+                val result =
+                    if (state.draftId != null) {
+                        // 기존 임시저장 레코드가 있으면 새로 만들지 않고 PATCH 로 갱신/전환한다.
+                        repository.update(
+                            id = state.draftId,
+                            payload =
+                                DailyQuestionUpdatePayload(
+                                    content = state.answer,
+                                    isDraft = isDraft,
+                                    questionId = questionId,
+                                    imageUrl = state.imageUrl,
+                                ),
+                        )
+                    } else {
+                        repository.create(
+                            DailyQuestionCreatePayload(
+                                content = state.answer,
+                                isDraft = isDraft,
+                                questionId = questionId,
+                                imageUrl = state.imageUrl,
+                            ),
+                        )
+                    }
+                result
+                    .onSuccess {
                         _uiState.update { it.copy(submitState = SubmitState.Succeeded) }
                     }.onFailure { e ->
                         _uiState.update {

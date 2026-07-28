@@ -20,11 +20,12 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 
 /**
- * 디자인 미확정 카테고리(BUSINESS·ESTATE) 의 임시 placeholder.
+ * 디자인 미확정 카테고리(ESTATE) 의 임시 placeholder.
  *
  * 카테고리 enum 은 디자인-코드 정합을 위해 추가했지만, form/payload 구조는 디자인 확정 후
- * 별도 작업에서 정의한다. 본 화면에서 사용자가 카테고리 BUSINESS/ESTATE 를 골랐을 때 입력 자리를
+ * 별도 작업에서 정의한다. 본 화면에서 사용자가 카테고리 ESTATE 를 골랐을 때 입력 자리를
  * 의도적으로 비워 두고 "준비 중" 메시지만 보여 준다. 저장은 Validator·FormMapper 양쪽에서 차단된다.
+ * (BUSINESS 는 시안 700:38735 확정으로 소셜 폼을 재사용하도록 개통 — 이슈 #467)
  */
 @Composable
 internal fun UnimplementedCategoryContent(modifier: Modifier = Modifier) {

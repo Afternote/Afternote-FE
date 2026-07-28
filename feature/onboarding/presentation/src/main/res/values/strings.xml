@@ -17,12 +17,26 @@
     <string name="login_kakao">카카오 로그인</string>
     <string name="login_google">Google 계정으로 로그인</string>
     <string name="login_find_account">아이디/비밀번호 찾기</string>
-    <string name="login_find_account_message">아이디/비밀번호 찾기의 경우,\n고객센터로 문의 바랍니다.</string>
     <string name="login_failed">로그인 실패</string>
     <string name="login_kakao_failed">카카오 로그인에 실패했습니다.</string>
     <string name="login_google_failed">구글 로그인에 실패했습니다.</string>
     <string name="login_google_no_credentials">기기에 Google 계정이 없어요.\n설정 &gt; 계정에서 Google 계정을 추가해 주세요.</string>
     <string name="login_screen_unavailable">로그인 화면을 띄울 수 없습니다.</string>
+
+    <string name="find_id_title">아이디 찾기</string>
+    <string name="find_account_verify_email_title">이메일 인증하기</string>
+    <string name="find_account_verify_email_description">가입 시 사용한 이메일을 입력해 주세요</string>
+    <string name="find_account_email_placeholder">이메일 주소</string>
+    <string name="find_account_code_placeholder">인증 번호</string>
+    <string name="find_account_code_request">인증번호 받기</string>
+    <string name="find_account_code_requesting">전송 중…</string>
+    <string name="find_account_code_resend">재전송</string>
+    <string name="find_account_code_resend_cooldown">재전송 (%1$ds)</string>
+    <string name="find_account_code_confirm">확인</string>
+    <string name="find_account_code_sent">인증번호가 전송되었습니다.\n수신 된 인증번호를 입력해 주세요.</string>
+    <string name="find_account_code_mismatch">인증번호가 틀렸습니다.\n다시 확인 후 입력해 주세요.</string>
+    <string name="find_account_next">다음</string>
+    <string name="find_account_failed">요청에 실패했습니다.</string>
     <string name="content_description_google_login">구글 로그인</string>
 
     <string name="onboarding_step_description">회원가입 진행도 4단계 중 %1$d단계</string>
@@ -32,8 +46,7 @@
     <string name="signup_password_placeholder">비밀번호</string>
     <string name="signup_verification_code_placeholder">인증번호</string>
     <string name="signup_verification_sent">인증번호가 전송되었습니다.\n수신 된 인증번호를 입력해 주세요.</string>
-    <string name="signup_verification_sent_with_timer">인증번호가 전송되었습니다. 남은 시간 %1$d:%2$02d</string>
-    <string name="signup_verification_expired">인증번호가 만료되었어요. 다시 받기를 눌러주세요.</string>
+    <string name="signup_verification_mismatch">인증번호가 틀렸습니다.\n다시 확인 후 입력해 주세요.</string>
     <string name="signup_verification_request">인증번호 받기</string>
     <string name="signup_verification_requesting">전송 중…</string>
     <string name="signup_verification_resend">재전송</string>
@@ -61,7 +74,7 @@
 
     <string name="terms_detail_section_1">"애프터노트는 사용자가 자신의 생각, 기록, 메시지 및 디지털 자산을 저장하고 관리할 수 있도록 제공되는 개인 기록 관리 서비스입니다.\n사용자는 본 서비스를 통해 다음 기능을 이용할 수 있습니다.\n• 개인 기록 작성 및 저장\n• 특정 시점 또는 조건에 따른 메시지 전달 설정\n• 디지털 자산의 보관 및 관리\n• 지정된 수신인에게 기록 전달 설정\n사용자는 자신의 계정을 통해 작성한 모든 콘텐츠에 대한 권리를 보유하며, 애프터노트는 서비스 제공 목적 외 해당 콘텐츠를 사용하지 않습니다.\n단, 다음의 경우 서비스 이용이 제한될 수 있습니다.\n• 타인의 권리를 침해하는 콘텐츠를 작성한 경우\n• 불법적인 목적을 위해 서비스를 이용하는 경우\n• 서비스 운영을 방해하는 행위를 하는 경우"</string>
 
-    <string name="terms_detail_section_2">"애프터노트는 서비스 제공을 위해 최소한의 개인정보를 수집합니다.\n수집 항목\n• 필수: 이메일 주소, 비밀번호\n• 선택: 프로필 정보, 메시지 수신인 정보\n수집 목적\n• 계정 생성 및 사용자 식별\n• 서비스 안정성 및 보안 유지\n보관 기간\n• 계정 삭제 시까지 보관\n• 단, 관련 법령에 따라 일정 기간 보관이 필요한 경우 해당 기간 동안 보관"</string>
+    <string name="terms_detail_section_2">"애프터노트는 서비스 제공을 위해 최소한의 개인정보를 수집합니다.\n수집 항목\n• 필수: 이메일 주소, 비밀번호\n• 선택: 프로필 정보, 메시지 수신인 정보\n수집 목적\n• 계정 생성 및 사용자 식별\n• 기록 저장 및 관리\n• 메시지 전달 기능 제공\n• 서비스 안정성 및 보안 유지\n보관 기간\n• 계정 삭제 시까지 보관\n• 단, 관련 법령에 따라 일정 기간 보관이 필요한 경우 해당 기간 동안 보관"</string>
 
     <string name="terms_detail_section_3">"사용자가 작성한 기록 및 메시지는 사용자의 계정에 안전하게 저장됩니다.\n애프터노트는 다음 원칙을 따릅니다.\n• 사용자의 명시적인 설정 없이 기록을 외부에 공개하지 않습니다.\n• 사용자가 지정한 전달 조건에 따라 기록이 전달됩니다.\n• 사용자는 언제든지 기록을 수정하거나 삭제할 수 있습니다.\n애프터노트는 사용자의 기록을 안전하게 보관합니다."</string>
 

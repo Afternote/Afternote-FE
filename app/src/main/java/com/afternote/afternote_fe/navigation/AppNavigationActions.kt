@@ -66,6 +66,10 @@ fun rememberOnboardingNavActions(navController: NavController): OnboardingNavAct
                 navController.popBackStack()
             }
 
+            override fun navigateToFindId() {
+                navController.navigate(OnboardingRoute.FindIdRoute)
+            }
+
             override fun proceedToSignUpResidentNumber() {
                 navController.navigate(OnboardingRoute.SignUpResidentNumberRoute)
             }
@@ -388,9 +392,9 @@ fun rememberAfternoteNavActions(
                 appState.navController.navigate(AfternoteRoute.GalleryDetailRoute(itemId = itemId))
             }
 
-            override fun navigateToMemorialGuidelineDetail(itemId: String) {
+            override fun navigateToMemorialDetail(itemId: String) {
                 appState.navController.navigate(
-                    AfternoteRoute.MemorialGuidelineDetailRoute(itemId = itemId),
+                    AfternoteRoute.MemorialDetailRoute(itemId = itemId),
                 )
             }
 

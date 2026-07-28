@@ -17,9 +17,15 @@ class DailyQuestionRepositoryImpl
     constructor(
         private val api: DailyQuestionApiService,
     ) : DailyQuestionRepository {
-        override suspend fun getList(date: String?): Result<List<DailyQuestion>> =
+        override suspend fun getList(
+            date: String?,
+            draftOnly: Boolean?,
+        ): Result<List<DailyQuestion>> =
             runCatching {
-                api.getDailyQuestions(date = date).requireData().map { it.toDomain() }
+                api
+                    .getDailyQuestions(date = date, draftOnly = draftOnly)
+                    .requireData()
+                    .map { it.toDomain() }
             }
 
         override suspend fun getToday(): Result<TodayDailyQuestion> =
