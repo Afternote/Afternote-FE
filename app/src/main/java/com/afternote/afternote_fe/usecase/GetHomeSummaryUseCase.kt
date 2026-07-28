@@ -35,12 +35,12 @@ class GetHomeSummaryUseCase
                     // 백엔드가 `yearMonth` 를 필수 쿼리로 요구하므로 이번 달로 호출.
                     // 결과적으로 카운트는 "이번 달 작성된 일기 수" 의미가 됨.
                     val diaryDeferred = async { diaryRepository.getList(yearMonth = thisMonth) }
-                    val todayQuestionContentDeferred = async { dailyQuestionRepository.getToday() }
+                    val todayQuestionDeferred = async { dailyQuestionRepository.getToday() }
 
                     val profile = profileDeferred.await()
                     val receivers = receiversDeferred.await()
                     val diaryCount = diaryDeferred.await().getOrNull()?.monthDiaryCount ?: 0
-                    val todayQuestionContent = todayQuestionContentDeferred.await().getOrNull()?.content
+                    val todayQuestionContent = todayQuestionDeferred.await().getOrNull()?.content
 
                     HomeSummary(
                         userName = profile.name,

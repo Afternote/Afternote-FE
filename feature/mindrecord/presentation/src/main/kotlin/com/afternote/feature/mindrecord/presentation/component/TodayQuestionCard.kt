@@ -33,6 +33,10 @@ import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_today_q
 private val TodayQuestionCardGradientStart = Color(0xFFF8F8F7)
 private val TodayQuestionCardGradientEnd = Color(0xFFB7CDC0)
 
+// 질문 자리를 항상 2줄로 잡는다 — 1줄짜리 질문이 와도 로딩 스켈레톤과 높이가 같아야 한다.
+private const val QUESTION_MIN_LINES = 2
+private val QuestionSkeletonLineGap = 6.dp
+
 /**
  * @param dateText 오늘 날짜 (yyyy.MM.dd). 호출부가 실제 날짜를 넘겨야 한다 — 하드코딩 기본값 금지(#397).
  * @param questionText 오늘의 질문 본문.
@@ -88,35 +92,47 @@ fun TodayQuestionCard(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        when {
-            // 질문 2줄 높이(30.sp x 2)를 유지해 로드 완료 시 레이아웃이 튀지 않게 한다.
-            isQuestionLoading -> {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    QuestionSkeletonLine(widthFraction = 1f)
-                    QuestionSkeletonLine(widthFraction = 0.6f)
+        val questionTextStyle = AfternoteDesign.typography.h3.copy(lineHeight = 30.sp)
+
+        // 로딩·성공·실패 세 분기가 같은 높이 제약을 공유하게 한다. 높이를 상수로 박으면
+        // lineHeight 를 그대로 곱한 값과 실제 Text 측정 높이가 달라(line-height trim) 어긋나고,
+        // 폰트나 lineHeight 가 바뀌면 다시 어긋난다. 높이는 질문과 동일한 스타일의 빈 Text 가
+        // 결정하고(그리는 것은 없다) 각 분기는 그 안을 채우기만 한다.
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = "",
+                style = questionTextStyle,
+                minLines = QUESTION_MIN_LINES,
+            )
+
+            when {
+                isQuestionLoading -> {
+                    Column(
+                        modifier = Modifier.matchParentSize(),
+                        verticalArrangement = Arrangement.spacedBy(QuestionSkeletonLineGap),
+                    ) {
+                        QuestionSkeletonLine(widthFraction = 1f, modifier = Modifier.weight(1f))
+                        QuestionSkeletonLine(widthFraction = 0.6f, modifier = Modifier.weight(1f))
+                    }
                 }
-            }
 
-            questionText != null -> {
-                Text(
-                    text = questionText,
-                    style =
-                        AfternoteDesign.typography.h3.copy(
-                            lineHeight = 30.sp,
-                        ),
-                    color = AfternoteDesign.colors.black,
-                )
-            }
+                questionText != null -> {
+                    Text(
+                        text = questionText,
+                        style = questionTextStyle,
+                        minLines = QUESTION_MIN_LINES,
+                        color = AfternoteDesign.colors.black,
+                    )
+                }
 
-            else -> {
-                Text(
-                    text = stringResource(mindrecord_today_question_unavailable),
-                    style =
-                        AfternoteDesign.typography.h3.copy(
-                            lineHeight = 30.sp,
-                        ),
-                    color = AfternoteDesign.colors.gray6,
-                )
+                else -> {
+                    Text(
+                        text = stringResource(mindrecord_today_question_unavailable),
+                        style = questionTextStyle,
+                        minLines = QUESTION_MIN_LINES,
+                        color = AfternoteDesign.colors.gray6,
+                    )
+                }
             }
         }
 
@@ -131,12 +147,14 @@ fun TodayQuestionCard(
 }
 
 @Composable
-private fun QuestionSkeletonLine(widthFraction: Float) {
+private fun QuestionSkeletonLine(
+    widthFraction: Float,
+    modifier: Modifier = Modifier,
+) {
     Box(
         modifier =
-            Modifier
+            modifier
                 .fillMaxWidth(widthFraction)
-                .height(27.dp)
                 .clip(RoundedCornerShape(4.dp))
                 .shimmerLoadingPlaceholder(),
     )
