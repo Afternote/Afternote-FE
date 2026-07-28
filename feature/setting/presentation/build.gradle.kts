@@ -12,6 +12,13 @@ if (localPropertiesFile.exists()) {
     localPropertiesFile.inputStream().use { localProperties.load(it) }
 }
 
+val googleWebClientId =
+    localProperties.getProperty("GOOGLE_WEB_CLIENT_ID")
+        ?: System.getenv("GOOGLE_WEB_CLIENT_ID")
+        ?: ""
+
+requireKeyForReleaseBuild("GOOGLE_WEB_CLIENT_ID", googleWebClientId)
+
 android {
     namespace = "com.afternote.feature.setting.presentation"
 
@@ -20,10 +27,6 @@ android {
     }
 
     defaultConfig {
-        val googleWebClientId =
-            localProperties.getProperty("GOOGLE_WEB_CLIENT_ID")
-                ?: System.getenv("GOOGLE_WEB_CLIENT_ID")
-                ?: ""
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
     }
 }

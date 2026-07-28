@@ -13,6 +13,15 @@ if (localPropertiesFile.exists()) {
     localPropertiesFile.inputStream().use { localProperties.load(it) }
 }
 
+// Google Cloud Console에서 발급받은 Web Client ID. 저장소에 키를 박지 말 것.
+// 루트 local.properties(gitignore) 또는 CI 환경변수 GOOGLE_WEB_CLIENT_ID만 사용.
+val googleWebClientId =
+    localProperties.getProperty("GOOGLE_WEB_CLIENT_ID")
+        ?: System.getenv("GOOGLE_WEB_CLIENT_ID")
+        ?: ""
+
+requireKeyForReleaseBuild("GOOGLE_WEB_CLIENT_ID", googleWebClientId)
+
 android {
     namespace = "com.afternote.feature.onboarding.presentation"
 
@@ -23,12 +32,6 @@ android {
     }
 
     defaultConfig {
-        // Google Cloud Console에서 발급받은 Web Client ID. 저장소에 키를 박지 말 것.
-        // 루트 local.properties(gitignore) 또는 CI 환경변수 GOOGLE_WEB_CLIENT_ID만 사용.
-        val googleWebClientId =
-            localProperties.getProperty("GOOGLE_WEB_CLIENT_ID")
-                ?: System.getenv("GOOGLE_WEB_CLIENT_ID")
-                ?: ""
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
     }
 }
