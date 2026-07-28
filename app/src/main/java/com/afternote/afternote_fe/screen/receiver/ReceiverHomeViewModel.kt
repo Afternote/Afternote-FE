@@ -2,11 +2,14 @@ package com.afternote.afternote_fe.screen.receiver
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.afternote_fe.reporting.HomeFailureStage
+import com.afternote.afternote_fe.reporting.recordHomeFailure
 import com.afternote.afternote_fe.screen.receiver.model.AfternoteSourceIcon
 import com.afternote.afternote_fe.screen.receiver.model.MindRecordSummary
 import com.afternote.afternote_fe.screen.receiver.model.ReceiverDownloadState
 import com.afternote.afternote_fe.screen.receiver.model.ReceiverHomeUiState
 import com.afternote.afternote_fe.screen.receiver.model.SenderMessage
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem
 import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResult
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
@@ -32,6 +35,7 @@ class ReceiverHomeViewModel
     @Inject
     constructor(
         private val receiverRepository: ReceiverRepository,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<ReceiverHomeUiState>(ReceiverHomeUiState.Loading)
         val uiState: StateFlow<ReceiverHomeUiState> = _uiState.asStateFlow()
@@ -63,17 +67,33 @@ class ReceiverHomeViewModel
                     val timeLettersRes = timeLetters.await()
                     val messageRes = message.await()
 
+                    val failedSources =
+                        buildList {
+                            if (afternotesRes.isFailure) add("afternotes")
+                            if (mindRecordsRes.isFailure) add("mind_records")
+                            if (timeLettersRes.isFailure) add("time_letters")
+                            if (messageRes.isFailure) add("sender_message")
+                        }
+                    val firstFailure =
+                        afternotesRes.exceptionOrNull()
+                            ?: mindRecordsRes.exceptionOrNull()
+                            ?: timeLettersRes.exceptionOrNull()
+                            ?: messageRes.exceptionOrNull()
+
                     // 모든 호출이 실패한 경우만 Error. 일부 실패는 fallback 으로 진행.
-                    if (afternotesRes.isFailure &&
-                        mindRecordsRes.isFailure &&
-                        timeLettersRes.isFailure &&
-                        messageRes.isFailure
-                    ) {
-                        _uiState.value =
-                            ReceiverHomeUiState.Error(
-                                afternotesRes.exceptionOrNull() ?: RuntimeException("All home requests failed"),
-                            )
+                    if (failedSources.size == HOME_REQUEST_COUNT) {
+                        val error = firstFailure ?: RuntimeException("All home requests failed")
+                        errorReporter.recordHomeFailure(HomeFailureStage.RECEIVER_HOME_LOAD, error)
+                        _uiState.value = ReceiverHomeUiState.Error(error)
                         return@coroutineScope
+                    }
+                    // 일부 실패는 0·빈 값으로 덮여 화면에도 콘솔에도 흔적이 남지 않던 구간 — 여기서만 기록한다.
+                    if (firstFailure != null) {
+                        errorReporter.recordHomeFailure(
+                            stage = HomeFailureStage.RECEIVER_HOME_PARTIAL_LOAD,
+                            throwable = firstFailure,
+                            failedSources = failedSources,
+                        )
                     }
 
                     val afternotesResult =
@@ -116,17 +136,19 @@ class ReceiverHomeViewModel
             updateDownload(ReceiverDownloadState.InProgress)
             viewModelScope.launch {
                 receiverRepository
-                    .downloadAllReceived()
+                    .downloadReceivedExport()
                     .onSuccess { bundle ->
                         receiverRepository
                             .saveReceivedExportToFile(bundle)
                             .onSuccess { updateDownload(ReceiverDownloadState.Done) }
                             .onFailure { e ->
+                                errorReporter.recordHomeFailure(HomeFailureStage.RECEIVED_EXPORT_SAVE, e)
                                 updateDownload(
                                     ReceiverDownloadState.Failed(e.message ?: "파일 저장에 실패했습니다."),
                                 )
                             }
                     }.onFailure { e ->
+                        errorReporter.recordHomeFailure(HomeFailureStage.RECEIVED_EXPORT_DOWNLOAD, e)
                         updateDownload(
                             ReceiverDownloadState.Failed(e.message ?: "모든 기록 내려받기에 실패했습니다."),
                         )
@@ -140,6 +162,9 @@ class ReceiverHomeViewModel
             }
         }
     }
+
+/** [ReceiverHomeViewModel] 이 홈 한 화면을 그리려고 병렬로 던지는 요청 수 — 전부 실패해야 Error 로 떨어진다. */
+private const val HOME_REQUEST_COUNT = 4
 
 private const val MAX_AFTERNOTE_ICONS = 4
 
