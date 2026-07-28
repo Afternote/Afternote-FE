@@ -23,6 +23,7 @@
     <string name="settings_support_faq">FAQ</string>
     <string name="settings_support_inquiry">고객센터</string>
     <string name="settings_support_notice">공지사항</string>
+    <string name="settings_notice_empty">등록된 공지사항이 없어요.</string>
     <string name="settings_support_terms">이용약관</string>
     <string name="settings_support_privacy">개인정보 취급방침</string>
     <string name="settings_support_service_info">애프터노트 서비스 안내</string>

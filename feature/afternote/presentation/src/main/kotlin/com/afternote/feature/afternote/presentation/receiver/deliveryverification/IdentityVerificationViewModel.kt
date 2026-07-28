@@ -23,8 +23,8 @@ import javax.inject.Inject
  * 안내 문구는 [ReceiverEmailAuthException.serverMessage] 를 그대로 노출하고, 인프라 실패는 정적 리소스로 폴백.
  *
  * 검증 성공 시 [IdentityVerificationRepository.markVerified] 로 캐시를 켜고 isVerified 신호 발행 →
- * UI 가 마스터 키(5) 단계로 이동. 응답의 `accessCode`(마스터 키 동일 값) 활용 — 자동 채움/단계 스킵 —
- * 은 디자인 결정 대기라 현재는 수신만 하고 사용하지 않는다 (#407).
+ * UI 가 마스터 키(5) 단계로 이동. 이메일 인증은 신원 확인까지만 담당하며 마스터 키를 대신 획득하지
+ * 않는다 — 그랬다면 마스터 키 단계가 무력화된다 (#454).
  *
  * 메모리 정책상 ViewModel 은 [androidx.compose.foundation.text.input.TextFieldState] 를 보유하지 않는다.
  * UI 가 입력값을 [onEmailChange]·[onCodeChange] 로 흘려주고 본 VM 은 String 만 관리.

@@ -7,7 +7,7 @@
             android:roundIcon="@mipmap/ic_launcher_dev"
             tools:replace="android:icon,android:roundIcon">
         <activity
-                android:name="com.afternote.afternote_fe.debug.DebugMockSettingsActivity"
+                android:name="com.afternote.afternote_fe.debug.DebugSettingsActivity"
                 android:exported="true"
                 android:icon="@mipmap/ic_launcher_dev"
                 android:label="Afternote DEV"
@@ -17,8 +17,8 @@
                 android:theme="@style/Theme.Afternotefe.Main" />
         <!--
           LAUNCHER intent-filter를 의도적으로 두지 않습니다.
-          런처 아이콘 중복(.MainActivity와 2개) 방지 — 디버그 mock 설정 화면은
-          `adb shell am start -n com.afternote.afternote_fe/.debug.DebugMockSettingsActivity` 로 진입합니다. (#396)
+          런처 아이콘 중복(.MainActivity와 2개) 방지 — 디버그 설정 화면은
+          `adb shell am start -n com.afternote.afternote_fe/.debug.DebugSettingsActivity` 로 진입합니다. (#396)
         -->
     </application>
 

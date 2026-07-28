@@ -37,7 +37,7 @@ fun NavGraphBuilder.afternoteNavGraph(
             AfternoteHomeNavigation(
                 onNavigateToDetail = actions::navigateToAfternoteDetail,
                 onNavigateToGalleryDetail = actions::navigateToGalleryDetail,
-                onNavigateToMemorialGuidelineDetail = actions::navigateToMemorialGuidelineDetail,
+                onNavigateToMemorialDetail = actions::navigateToMemorialDetail,
                 onNavigateToNewEditor = actions::navigateToNewEditor,
                 onNavigateToSetting = actions::navigateToSetting,
             )
@@ -80,8 +80,8 @@ fun NavGraphBuilder.afternoteNavGraph(
             )
         }
 
-        afternoteComposable<AfternoteRoute.MemorialGuidelineDetailRoute> { _ ->
-            AfternoteMemorialGuidelineDetailNavigation(
+        afternoteComposable<AfternoteRoute.MemorialDetailRoute> { _ ->
+            AfternoteMemorialDetailNavigation(
                 onBack = actions::popBack,
                 onNavigateToEditor = { itemId ->
                     actions.navigateToEditorForEdit(itemId, EditorCategory.MEMORIAL)

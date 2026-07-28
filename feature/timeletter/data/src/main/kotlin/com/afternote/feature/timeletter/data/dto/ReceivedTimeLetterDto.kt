@@ -4,11 +4,11 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ReceivedTimeLetterResponseDto(
+data class ReceivedTimeLetterDto(
     @SerialName("id") val id: Long,
     @SerialName("timeLetterReceiverId") val timeLetterReceiverId: Long,
     @SerialName("title") val title: String? = null,
-    @SerialName("blocks") val blocks: List<TimeLetterBlockResponseDto> = emptyList(),
+    @SerialName("blocks") val blocks: List<TimeLetterBlockDto> = emptyList(),
     @SerialName("sendAt") val sendAt: String? = null,
     @SerialName("status") val status: TimeLetterStatusDto,
     @SerialName("senderName") val senderName: String? = null,
@@ -18,7 +18,7 @@ data class ReceivedTimeLetterResponseDto(
 )
 
 @Serializable
-data class ReceivedTimeLetterListResponseDto(
-    @SerialName("timeLetters") val timeLetters: List<ReceivedTimeLetterResponseDto>,
+data class ReceivedTimeLetterListDto(
+    @SerialName("timeLetters") val timeLetters: List<ReceivedTimeLetterDto>,
     @SerialName("totalCount") val totalCount: Int,
 )

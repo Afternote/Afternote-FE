@@ -29,10 +29,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,8 +50,6 @@ import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.modifierextention.addFocusCleaner
-import com.afternote.core.ui.popup.Popup
-import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
@@ -69,6 +64,7 @@ fun LoginScreen(
     onPasswordChange: (String) -> Unit,
     onLoginClick: () -> Unit,
     onSignUpClick: () -> Unit,
+    onFindAccountClick: () -> Unit,
     onKakaoLoginClick: () -> Unit,
     onGoogleLoginClick: () -> Unit,
     onBackClick: () -> Unit,
@@ -107,6 +103,7 @@ fun LoginScreen(
             ) {
                 SocialLoginGroup(
                     onSignUpClick = onSignUpClick,
+                    onFindAccountClick = onFindAccountClick,
                     onKakaoLoginClick = onKakaoLoginClick,
                     onGoogleLoginClick = onGoogleLoginClick,
                 )
@@ -184,27 +181,16 @@ fun LoginScreen(
  * 로그인 화면 하단 소셜 로그인 그룹.
  *
  * `LoginScreen`에서만 쓰이므로 외부 파일로 분리하지 않고 `private`로 캡슐화한다.
- * `showFindAccountPopup` 상태를 내부에 가두어 부모 화면의 리컴포지션 범위를 줄인다.
  */
 @Composable
 private fun SocialLoginGroup(
     onSignUpClick: () -> Unit,
+    onFindAccountClick: () -> Unit,
     onKakaoLoginClick: () -> Unit,
     onGoogleLoginClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val focusManager = LocalFocusManager.current
-    var showFindAccountPopup by remember { mutableStateOf(false) }
-
-    if (showFindAccountPopup) {
-        Popup(
-            type = PopupType.Default,
-            message = stringResource(R.string.login_find_account_message),
-            onConfirm = { showFindAccountPopup = false },
-            onDismiss = { showFindAccountPopup = false },
-        )
-    }
-
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -299,7 +285,7 @@ private fun SocialLoginGroup(
             modifier =
                 Modifier.clickable {
                     focusManager.clearFocus()
-                    showFindAccountPopup = true
+                    onFindAccountClick()
                 },
         )
     }
@@ -316,6 +302,7 @@ private fun LoginScreenPreview() {
             onPasswordChange = {},
             onLoginClick = {},
             onSignUpClick = {},
+            onFindAccountClick = {},
             onKakaoLoginClick = {},
             onGoogleLoginClick = {},
             onBackClick = {},

@@ -29,7 +29,6 @@ import com.afternote.feature.afternote.presentation.author.editor.state.Afternot
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationException
 import com.afternote.feature.afternote.presentation.author.editor.state.DEFAULT_EDITOR_MESSAGE_BLOCKS
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
-import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -88,8 +87,7 @@ private data class EditorFormSnapshot(
     val categoryName: String = "SOCIAL",
     val selectedService: String = "",
     val receivers: List<ReceiverSnap> = emptyList(),
-    val social: List<PmSnap> = emptyList(),
-    val gallery: List<PmSnap> = emptyList(),
+    val methods: List<PmSnap> = emptyList(),
     val selectedLastWish: String? = null,
     val pickedMemorialPhotoUri: String? = null,
     val funeralVideoUrl: String? = null,
@@ -103,14 +101,6 @@ private data class EditorFormSnapshot(
     fun toEditorFormState(restoreGeneration: Long): EditorFormState {
         val category =
             runCatching { EditorCategory.valueOf(categoryName) }.getOrElse { EditorCategory.SOCIAL }
-        val service =
-            selectedService.ifBlank {
-                if (category == EditorCategory.GALLERY) {
-                    AfternoteServiceCatalog.defaultGalleryService
-                } else {
-                    AfternoteServiceCatalog.defaultSocialService
-                }
-            }
         val blocks: List<EditorMessageTextBlock> =
             if (editorMessages.isEmpty()) {
                 DEFAULT_EDITOR_MESSAGE_BLOCKS
@@ -120,11 +110,11 @@ private data class EditorFormSnapshot(
         return EditorFormState(
             loadedItemId = loadedItemId,
             selectedCategory = category,
-            selectedService = service,
+            // 스냅샷의 빈 문자열은 미선택(null)로 복원 — process death 후에도 임의 기본값을 확정하지 않는다 (이슈 #468).
+            selectedService = selectedService.ifBlank { null },
             afternoteEditReceivers =
                 receivers.map { AfternoteEditorReceiver(id = it.id, name = it.name, label = it.label) },
-            socialProcessingMethods = social.map { ProcessingMethodItem(it.id, it.text) },
-            galleryProcessingMethods = gallery.map { ProcessingMethodItem(it.id, it.text) },
+            processingMethods = methods.map { ProcessingMethodItem(it.id, it.text) },
             selectedLastWish = selectedLastWish,
             pickedMemorialPhotoUri = pickedMemorialPhotoUri,
             funeralVideoUrl = funeralVideoUrl,
@@ -144,13 +134,12 @@ private data class EditorFormSnapshot(
             EditorFormSnapshot(
                 loadedItemId = form.loadedItemId,
                 categoryName = form.selectedCategory.name,
-                selectedService = form.selectedService,
+                selectedService = form.selectedService.orEmpty(),
                 receivers =
                     form.afternoteEditReceivers.map {
                         ReceiverSnap(id = it.id, name = it.name, label = it.label)
                     },
-                social = form.socialProcessingMethods.map { PmSnap(it.id, it.text) },
-                gallery = form.galleryProcessingMethods.map { PmSnap(it.id, it.text) },
+                methods = form.processingMethods.map { PmSnap(it.id, it.text) },
                 selectedLastWish = form.selectedLastWish,
                 pickedMemorialPhotoUri = form.pickedMemorialPhotoUri,
                 funeralVideoUrl = form.funeralVideoUrl,
@@ -343,10 +332,10 @@ class AfternoteEditorViewModel
                                     )
                                 }
                             },
-                            onFailure = { e -> handleSaveFailure(e, categoryForApi) },
+                            onFailure = { e -> handleSaveFailure(e) },
                         )
                     },
-                    onFailure = { e -> handleSaveFailure(e, categoryForApi) },
+                    onFailure = { e -> handleSaveFailure(e) },
                 )
             }
         }
@@ -362,6 +351,7 @@ class AfternoteEditorViewModel
                 is SaveAfternoteCommand.Create -> {
                     when (val input = command.input) {
                         is CreateAfternoteInput.Social -> afternoteRepository.createSocial(input.payload)
+                        is CreateAfternoteInput.Business -> afternoteRepository.createBusiness(input.payload)
                         is CreateAfternoteInput.Gallery -> afternoteRepository.createGallery(input.payload)
                         is CreateAfternoteInput.Playlist -> afternoteRepository.createPlaylist(input.payload)
                     }
@@ -467,10 +457,7 @@ class AfternoteEditorViewModel
             internalState.update { it.copy(isPrefillLoading = false, pendingPrefill = null) }
         }
 
-        private fun handleSaveFailure(
-            e: Throwable,
-            category: EditorCategory,
-        ) {
+        private fun handleSaveFailure(e: Throwable) {
             val validationError =
                 when (e) {
                     is AfternoteAuthoringValidationException -> {

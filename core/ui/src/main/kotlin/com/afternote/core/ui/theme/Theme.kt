@@ -1,7 +1,9 @@
 package com.afternote.core.ui.theme
 
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
@@ -21,6 +23,9 @@ private val LocalTypography =
     staticCompositionLocalOf {
         AfternoteTypography()
     }
+
+// ripple()은 컴포저블이 아니라서 remember가 필요 없고, 여러 컴포넌트가 함께 써도 되므로 할당을 아끼려 top-level로 추출
+private val AfternoteRipple = ripple()
 
 @Composable
 fun AfternoteTheme(
@@ -47,6 +52,9 @@ fun AfternoteTheme(
         // provides 앞의 객체의 current 프로퍼티를 호출하면 provides 뒤의 객체를 제공하도록 current를 호출한 컴포저블부터 모든 하위 트리에 세팅
         LocalColors provides rememberedColors,
         LocalTypography provides typography,
+        // 제공하지 않으면 clickable의 눌림 피드백이 foundation 기본값(DefaultDebugIndication)으로 떨어져
+        // 노드 전체를 덮는 검정 사각형이 그려짐 — MaterialTheme도 같은 방식으로 ripple을 제공함
+        LocalIndication provides AfternoteRipple,
     ) {
         // 별도의 style 지정이 없다면 value를 content 내부의 모든 Text 컴포저블의 style의 기본값으로 지정
         ProvideTextStyle(typography.bodyLargeR, content = content)

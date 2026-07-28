@@ -1,22 +1,22 @@
 package com.afternote.core.network.service
 
-import com.afternote.core.network.dto.DeliveryConditionRequest
-import com.afternote.core.network.dto.DeliveryConditionResponseDto
-import com.afternote.core.network.dto.ReceiverDetailResponseDto
-import com.afternote.core.network.dto.ReceiverListResponseDto
-import com.afternote.core.network.dto.SocialAccountLinkRequest
-import com.afternote.core.network.dto.UserConnectedAccountResponseDto
-import com.afternote.core.network.dto.UserCreateReceiverRequest
-import com.afternote.core.network.dto.UserCreateReceiverResponseDto
-import com.afternote.core.network.dto.UserPatchReceiverRequest
-import com.afternote.core.network.dto.UserPatchReceiverResponseDto
-import com.afternote.core.network.dto.UserPushSettingResponseDto
-import com.afternote.core.network.dto.UserResponseDto
-import com.afternote.core.network.dto.UserUpdateProfileRequest
-import com.afternote.core.network.dto.UserUpdatePushSettingRequest
-import com.afternote.core.network.dto.UserUpdateReceiverMessageRequest
-import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionResponse
-import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionUpdateRequest
+import com.afternote.core.network.dto.DeliveryConditionDto
+import com.afternote.core.network.dto.DeliveryConditionRequestDto
+import com.afternote.core.network.dto.ReceiverDetailDto
+import com.afternote.core.network.dto.ReceiverListDto
+import com.afternote.core.network.dto.SocialAccountLinkRequestDto
+import com.afternote.core.network.dto.UserConnectedAccountDto
+import com.afternote.core.network.dto.UserCreateReceiverDto
+import com.afternote.core.network.dto.UserCreateReceiverRequestDto
+import com.afternote.core.network.dto.UserDto
+import com.afternote.core.network.dto.UserPatchReceiverDto
+import com.afternote.core.network.dto.UserPatchReceiverRequestDto
+import com.afternote.core.network.dto.UserPushSettingDto
+import com.afternote.core.network.dto.UserUpdateProfileRequestDto
+import com.afternote.core.network.dto.UserUpdatePushSettingRequestDto
+import com.afternote.core.network.dto.UserUpdateReceiverMessageRequestDto
+import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionDto
+import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionUpdateRequestDto
 import com.afternote.core.network.model.BaseResponse
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -29,43 +29,43 @@ import retrofit2.http.Path
 interface UserApiService {
     // 수신자 목록 조회
     @GET("users/receivers")
-    suspend fun getReceivers(): BaseResponse<List<ReceiverListResponseDto>>
+    suspend fun getReceivers(): BaseResponse<List<ReceiverListDto>>
 
     // 수신자 등록
     @POST("users/receivers")
     suspend fun createReceiver(
-        @Body request: UserCreateReceiverRequest,
-    ): BaseResponse<UserCreateReceiverResponseDto>
+        @Body request: UserCreateReceiverRequestDto,
+    ): BaseResponse<UserCreateReceiverDto>
 
     // 수신자 상세 조회
     @GET("users/receivers/{receiverId}")
     suspend fun getReceiverDetail(
         @Path("receiverId") receiverId: Long,
-    ): BaseResponse<ReceiverDetailResponseDto>
+    ): BaseResponse<ReceiverDetailDto>
 
     // 수신자 정보 수정
     @PATCH("users/receivers/{receiverId}")
     suspend fun updateReceiver(
         @Path("receiverId") receiverId: Long,
-        @Body request: UserPatchReceiverRequest,
-    ): BaseResponse<UserPatchReceiverResponseDto>
+        @Body request: UserPatchReceiverRequestDto,
+    ): BaseResponse<UserPatchReceiverDto>
 
     // 수신자 메시지 수정
     @PATCH("users/receivers/{receiverId}/message")
     suspend fun updateReceiverMessage(
         @Path("receiverId") receiverId: Long,
-        @Body request: UserUpdateReceiverMessageRequest,
+        @Body request: UserUpdateReceiverMessageRequestDto,
     ): BaseResponse<Unit>
 
     // 내 프로필 조회
     @GET("users/me")
-    suspend fun getMyProfile(): BaseResponse<UserResponseDto>
+    suspend fun getMyProfile(): BaseResponse<UserDto>
 
     // 프로필 수정
     @PATCH("users/me")
     suspend fun updateMyProfile(
-        @Body request: UserUpdateProfileRequest,
-    ): BaseResponse<UserResponseDto>
+        @Body request: UserUpdateProfileRequestDto,
+    ): BaseResponse<UserDto>
 
     // 회원 탈퇴
     @DELETE("users/me")
@@ -84,40 +84,40 @@ interface UserApiService {
 
     // 푸시 알림 설정 조회
     @GET("users/push-settings")
-    suspend fun getMyPushSettings(): BaseResponse<UserPushSettingResponseDto>
+    suspend fun getMyPushSettings(): BaseResponse<UserPushSettingDto>
 
     // 푸시 알림 설정 수정
     @PATCH("users/push-settings")
     suspend fun updateMyPushSettings(
-        @Body request: UserUpdatePushSettingRequest,
-    ): BaseResponse<UserPushSettingResponseDto>
+        @Body request: UserUpdatePushSettingRequestDto,
+    ): BaseResponse<UserPushSettingDto>
 
     // 연결된 계정 조회
     @GET("users/connected-accounts")
-    suspend fun getConnectedAccounts(): BaseResponse<UserConnectedAccountResponseDto>
+    suspend fun getConnectedAccounts(): BaseResponse<UserConnectedAccountDto>
 
     // 소셜 계정 연결
     @POST("users/connected-accounts/{provider}")
     suspend fun linkConnectedAccount(
         @Path("provider") provider: String,
-        @Body request: SocialAccountLinkRequest,
-    ): BaseResponse<UserConnectedAccountResponseDto>
+        @Body request: SocialAccountLinkRequestDto,
+    ): BaseResponse<UserConnectedAccountDto>
 
     // 소셜 계정 연결 해제
     @DELETE("users/connected-accounts/{provider}")
     suspend fun unlinkConnectedAccount(
         @Path("provider") provider: String,
-    ): BaseResponse<UserConnectedAccountResponseDto>
+    ): BaseResponse<UserConnectedAccountDto>
 
     // 전달 조건 조회
     @GET("users/delivery-condition")
-    suspend fun getDeliveryCondition(): BaseResponse<DeliveryConditionResponseDto>
+    suspend fun getDeliveryCondition(): BaseResponse<DeliveryConditionDto>
 
     // 전달 조건 수정
     @PATCH("users/delivery-condition")
     suspend fun updateDeliveryCondition(
-        @Body request: DeliveryConditionRequest,
-    ): BaseResponse<DeliveryConditionResponseDto>
+        @Body request: DeliveryConditionRequestDto,
+    ): BaseResponse<DeliveryConditionDto>
 
     /**
      * 수신자별 전달조건 조회 — 특정 수신자(receiverId)에게 **콘텐츠 종류마다** 다르게 건 전달 조건 목록.
@@ -130,7 +130,7 @@ interface UserApiService {
     @GET("users/me/receivers/{receiverId}/delivery-conditions")
     suspend fun getReceiverDeliveryConditions(
         @Path("receiverId") receiverId: Long,
-    ): BaseResponse<ReceiverDeliveryConditionResponse>
+    ): BaseResponse<ReceiverDeliveryConditionDto>
 
     /**
      * 수신자별 전달조건 설정/변경 — 보낸 conditions[] 로 저장하고, **변경이 반영된 최신 전체 목록**을
@@ -147,6 +147,6 @@ interface UserApiService {
     @PUT("users/me/receivers/{receiverId}/delivery-conditions")
     suspend fun updateReceiverDeliveryConditions(
         @Path("receiverId") receiverId: Long,
-        @Body request: ReceiverDeliveryConditionUpdateRequest,
-    ): BaseResponse<ReceiverDeliveryConditionResponse>
+        @Body request: ReceiverDeliveryConditionUpdateRequestDto,
+    ): BaseResponse<ReceiverDeliveryConditionDto>
 }

@@ -1,15 +1,15 @@
 package com.afternote.feature.mindrecord.data.mapper
 
-import com.afternote.feature.mindrecord.data.dto.DailyQuestionCreateRequest
-import com.afternote.feature.mindrecord.data.dto.DailyQuestionListItem
-import com.afternote.feature.mindrecord.data.dto.DailyQuestionUpdateRequest
-import com.afternote.feature.mindrecord.data.dto.TodayDailyQuestionResponse
+import com.afternote.feature.mindrecord.data.dto.DailyQuestionCreateRequestDto
+import com.afternote.feature.mindrecord.data.dto.DailyQuestionListItemDto
+import com.afternote.feature.mindrecord.data.dto.DailyQuestionUpdateRequestDto
+import com.afternote.feature.mindrecord.data.dto.TodayDailyQuestionDto
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 
-fun DailyQuestionListItem.toDomain(): DailyQuestion =
+fun DailyQuestionListItemDto.toDomain(): DailyQuestion =
     DailyQuestion(
         dailyQuestionId = dailyQuestionId,
         title = title,
@@ -19,7 +19,7 @@ fun DailyQuestionListItem.toDomain(): DailyQuestion =
         isDraft = isDraft,
     )
 
-fun TodayDailyQuestionResponse.toDomain(): TodayDailyQuestion =
+fun TodayDailyQuestionDto.toDomain(): TodayDailyQuestion =
     TodayDailyQuestion(
         questionId = questionId,
         day = day,
@@ -28,16 +28,16 @@ fun TodayDailyQuestionResponse.toDomain(): TodayDailyQuestion =
         isDraft = isDraft,
     )
 
-fun DailyQuestionCreatePayload.toRequest(): DailyQuestionCreateRequest =
-    DailyQuestionCreateRequest(
+fun DailyQuestionCreatePayload.toRequest(): DailyQuestionCreateRequestDto =
+    DailyQuestionCreateRequestDto(
         content = content,
         isDraft = isDraft,
         questionId = questionId,
         imageUrl = imageUrl,
     )
 
-fun DailyQuestionUpdatePayload.toRequest(): DailyQuestionUpdateRequest =
-    DailyQuestionUpdateRequest(
+fun DailyQuestionUpdatePayload.toRequest(): DailyQuestionUpdateRequestDto =
+    DailyQuestionUpdateRequestDto(
         content = content,
         isDraft = isDraft,
         date = date,

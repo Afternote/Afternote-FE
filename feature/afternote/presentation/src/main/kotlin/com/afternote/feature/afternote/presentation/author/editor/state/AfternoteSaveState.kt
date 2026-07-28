@@ -20,11 +20,12 @@ enum class AfternoteValidationError(
     @param:StringRes val messageResId: Int,
 ) {
     TITLE_REQUIRED(R.string.afternote_validation_title_required),
-    SOCIAL_CREDENTIALS_REQUIRED(R.string.afternote_validation_social_credentials_required),
-    SOCIAL_ACTIONS_REQUIRED(R.string.afternote_validation_social_actions_required),
-    GALLERY_ACTIONS_REQUIRED(R.string.afternote_validation_gallery_actions_required),
+    ACCOUNT_CREDENTIALS_REQUIRED(R.string.afternote_validation_account_credentials_required),
 
-    /** BUSINESS·ESTATE 등 디자인 미확정으로 placeholder 만 노출되는 카테고리에서 저장 시도 시. */
+    /** 처리 방법 1개 이상 필요 (계정·갤러리 폼 공통 — [EditorFormState.processingMethods] 단일 리스트 검증). */
+    ACTIONS_REQUIRED(R.string.afternote_validation_actions_required),
+
+    /** ESTATE 등 디자인 미확정으로 placeholder 만 노출되는 카테고리에서 저장 시도 시. */
     UNIMPLEMENTED_CATEGORY(R.string.afternote_validation_unimplemented_category),
 
     /** 수신자 최소 1명 필요 (모든 카테고리). API 400/475와 동일 메시지. */

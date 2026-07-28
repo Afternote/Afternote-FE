@@ -4,12 +4,12 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
 import com.afternote.core.datastore.TokenDataSource
-import com.afternote.core.network.dto.LoginData
-import com.afternote.core.network.dto.LoginRequest
-import com.afternote.core.network.dto.LogoutRequest
-import com.afternote.core.network.dto.ReissueData
-import com.afternote.core.network.dto.ReissueRequest
-import com.afternote.core.network.dto.SocialLoginRequest
+import com.afternote.core.network.dto.LoginDto
+import com.afternote.core.network.dto.LoginRequestDto
+import com.afternote.core.network.dto.LogoutRequestDto
+import com.afternote.core.network.dto.ReissueDto
+import com.afternote.core.network.dto.ReissueRequestDto
+import com.afternote.core.network.dto.SocialLoginRequestDto
 import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.core.network.service.AuthApiService
@@ -51,7 +51,7 @@ class AuthRepositoryImplTest {
         val repository =
             repository(
                 FakeAuthApiService(
-                    onLogin = { success(LoginData.DefaultLoginData("access", "refresh", expiresIn = 30)) },
+                    onLogin = { success(LoginDto.DefaultLoginDto("access", "refresh", expiresIn = 30)) },
                 ),
             )
 
@@ -67,7 +67,7 @@ class AuthRepositoryImplTest {
         val repository =
             repository(
                 FakeAuthApiService(
-                    onLogin = { success(LoginData.DefaultLoginData("access", "refresh")) },
+                    onLogin = { success(LoginDto.DefaultLoginDto("access", "refresh")) },
                 ),
             )
 
@@ -83,7 +83,7 @@ class AuthRepositoryImplTest {
         val repository =
             repository(
                 FakeAuthApiService(
-                    onSocialLogin = { success(LoginData.SocialLoginData("access", "refresh")) },
+                    onSocialLogin = { success(LoginDto.SocialLoginDto("access", "refresh")) },
                 ),
             )
 
@@ -102,7 +102,7 @@ class AuthRepositoryImplTest {
         val result = runBlocking { repository(authApiService).logout() }
 
         assertTrue(result.isSuccess)
-        assertEquals(listOf(LogoutRequest("stored-refresh")), authApiService.logoutRequests)
+        assertEquals(listOf(LogoutRequestDto("stored-refresh")), authApiService.logoutRequests)
         assertNull(runBlocking { tokenDataSource.getRefreshToken() })
         assertFalse(tracker.isExpiringSoon())
     }
@@ -143,28 +143,28 @@ private fun <T> success(data: T) = BaseResponse(status = 200, code = 200, messag
  * (core:network 의 FakeAuthRepository 와 같은 규칙).
  */
 private class FakeAuthApiService(
-    private val onLogin: () -> BaseResponse<LoginData.DefaultLoginData> = {
+    private val onLogin: () -> BaseResponse<LoginDto.DefaultLoginDto> = {
         error("login 은 이 시나리오에서 호출되면 안 됨")
     },
-    private val onSocialLogin: () -> BaseResponse<LoginData.SocialLoginData> = {
+    private val onSocialLogin: () -> BaseResponse<LoginDto.SocialLoginDto> = {
         error("socialLogin 은 이 시나리오에서 호출되면 안 됨")
     },
     private val onLogout: () -> BaseResponse<Unit> = { success(Unit) },
 ) : AuthApiService {
-    val logoutRequests = mutableListOf<LogoutRequest>()
+    val logoutRequests = mutableListOf<LogoutRequestDto>()
 
-    override suspend fun login(body: LoginRequest): BaseResponse<LoginData.DefaultLoginData> = onLogin()
+    override suspend fun login(body: LoginRequestDto): BaseResponse<LoginDto.DefaultLoginDto> = onLogin()
 
-    override suspend fun socialLogin(body: SocialLoginRequest): BaseResponse<LoginData.SocialLoginData> = onSocialLogin()
+    override suspend fun socialLogin(body: SocialLoginRequestDto): BaseResponse<LoginDto.SocialLoginDto> = onSocialLogin()
 
-    override suspend fun logout(body: LogoutRequest): BaseResponse<Unit> {
+    override suspend fun logout(body: LogoutRequestDto): BaseResponse<Unit> {
         logoutRequests += body
         return onLogout()
     }
 }
 
 private class FakeTokenApiService : TokenApiService {
-    override suspend fun reissue(body: ReissueRequest): BaseResponse<ReissueData> = error("reissue 는 이 시나리오에서 호출되면 안 됨")
+    override suspend fun reissue(body: ReissueRequestDto): BaseResponse<ReissueDto> = error("reissue 는 이 시나리오에서 호출되면 안 됨")
 }
 
 /** 단위 테스트용 in-memory `DataStore<Preferences>` — 디스크 없이 [TokenDataSource] 실물을 구동한다. */
