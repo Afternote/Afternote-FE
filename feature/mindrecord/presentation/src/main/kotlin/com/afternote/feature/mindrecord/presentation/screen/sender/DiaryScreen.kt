@@ -18,9 +18,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -65,10 +62,11 @@ fun DiaryScreen(
                 modifier = modifier,
                 isListView = isListView,
                 diaries = state.diaries,
+                yearMonth = state.yearMonth,
                 monthDiaryCount = state.monthDiaryCount,
                 weeklyMoodEmoji = state.weeklyDominantMood?.toEmoji(),
                 onDelete = viewModel::delete,
-                onYearMonthChanged = viewModel::refresh,
+                onYearMonthChanged = viewModel::selectYearMonth,
             )
         }
     }
@@ -79,6 +77,9 @@ private fun DiaryListContent(
     isListView: Boolean,
     diaries: List<DailyDiary>,
     modifier: Modifier = Modifier,
+    // 조회 중인 월은 VM 이 들고 있다 — 자동 갱신이 같은 월을 다시 조회해야 하고,
+    // 로컬 remember 로 두면 로딩으로 이 컴포저블이 폐기될 때 함께 사라진다.
+    yearMonth: YearMonth = YearMonth.now(),
     monthDiaryCount: Int = 0,
     weeklyMoodEmoji: String? = null,
     onDelete: (Long) -> Unit = {},
@@ -89,7 +90,6 @@ private fun DiaryListContent(
         return
     }
 
-    var yearMonth by remember { mutableStateOf(YearMonth.now()) }
     val currentMonthDiaries =
         diaries.filter { it.date.year == yearMonth.year && it.date.monthValue == yearMonth.monthValue }
     val answeredDays = currentMonthDiaries.map { it.date.dayOfMonth }.toSet()
@@ -105,14 +105,8 @@ private fun DiaryListContent(
                     year = yearMonth.year,
                     month = yearMonth.monthValue,
                     type = MindRecordCategoryUi.Diary,
-                    onPrevMonth = {
-                        yearMonth = yearMonth.minusMonths(1)
-                        onYearMonthChanged(yearMonth)
-                    },
-                    onNextMonth = {
-                        yearMonth = yearMonth.plusMonths(1)
-                        onYearMonthChanged(yearMonth)
-                    },
+                    onPrevMonth = { onYearMonthChanged(yearMonth.minusMonths(1)) },
+                    onNextMonth = { onYearMonthChanged(yearMonth.plusMonths(1)) },
                     answeredDays = answeredDays,
                     emotionByDay = emotionByDay,
                 )

@@ -17,7 +17,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
@@ -80,32 +79,32 @@ fun HomeScreen(
             .drop(1)
             .collect { index ->
                 when (categories[index]) {
-                    MindRecordCategoryUi.DailyQuestion -> dailyQuestionViewModel.refresh()
-                    MindRecordCategoryUi.Diary -> diaryViewModel.refresh()
+                    MindRecordCategoryUi.DailyQuestion -> dailyQuestionViewModel.refreshOnReturn()
+                    MindRecordCategoryUi.Diary -> diaryViewModel.refreshOnReturn()
                     else -> Unit
                 }
             }
     }
 
-    // 작성 화면(DailyQuestionWriteRoute/DiaryWriteRoute) 복귀 시 현재 탭 목록 refresh.
-    // 최초 진입은 각 VM 의 init { load() } 가 이미 로드하므로 첫 resume 은 스킵한다.
-    // (rememberSaveable: 작성 화면 이동으로 컴포지션에서 벗어나도 스킵 플래그가 초기화되지 않도록)
+    // ON_RESUME 은 작성 화면 복귀뿐 아니라 화면 off/on · 홈 버튼 후 복귀 · 권한 다이얼로그
+    // 닫기에서도 발화한다. 화면이 살아 있는 채로 발화하므로 refreshOnReturn() 을 쓴다 —
+    // 로딩을 방출하지 않아 캘린더 월·스크롤 위치가 살아남고, 실패해도 보고 있던 화면을 유지한다.
+    //
+    // 최초 진입의 중복 호출은 각 VM 이 진행 중인 로드 Job 으로 막는다. 컴포지션 쪽 플래그로
+    // 막으면 수명이 어긋난다 — rememberSaveable 은 SavedState 수명이고 막으려는 init { load() }
+    // 는 ViewModelStore 수명이라, 프로세스 사망 후 복원에서 플래그는 false 로 살아 돌아오는데
+    // VM 은 새로 만들어져 같은 조회가 두 번 나간다.
     //
     // selectedCategory 는 State 가 아니라 매 컴포지션 새로 계산되는 지역 val 이지만 여기서는
     // 최신 값이 읽힌다 — LifecycleEventEffect 가 onEvent 를 rememberUpdatedState 로 감싸
     // 옵저버에 넘기기 때문이다 (lifecycle-runtime-compose 2.9.4 LifecycleEffect.kt:66).
     // LifecycleResumeEffect 는 effects 람다를 DisposableEffect(lifecycleOwner, scope) 안에서
     // 직접 캡처해 진입 시점 값에 고정되므로, 이 화면에서는 쓰면 안 된다.
-    var isFirstResume by rememberSaveable { mutableStateOf(true) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        if (isFirstResume) {
-            isFirstResume = false
-        } else {
-            when (selectedCategory) {
-                MindRecordCategoryUi.DailyQuestion -> dailyQuestionViewModel.refresh()
-                MindRecordCategoryUi.Diary -> diaryViewModel.refresh()
-                MindRecordCategoryUi.WeeklyReport -> weeklyReportViewModel.refresh()
-            }
+        when (selectedCategory) {
+            MindRecordCategoryUi.DailyQuestion -> dailyQuestionViewModel.refreshOnReturn()
+            MindRecordCategoryUi.Diary -> diaryViewModel.refreshOnReturn()
+            MindRecordCategoryUi.WeeklyReport -> weeklyReportViewModel.refreshOnReturn()
         }
     }
 

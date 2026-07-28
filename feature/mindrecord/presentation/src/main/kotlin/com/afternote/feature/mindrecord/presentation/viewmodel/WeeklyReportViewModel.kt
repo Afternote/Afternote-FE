@@ -18,8 +18,10 @@ import com.afternote.feature.mindrecord.presentation.model.DayItem
 import com.afternote.feature.mindrecord.presentation.model.EmotionKeyword
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -43,6 +45,7 @@ class WeeklyReportViewModel
             buildWeekOptions(today = LocalDate.now(), count = WEEK_OPTION_COUNT)
 
         private val internalState = MutableStateFlow(InternalState())
+        private var loadJob: Job? = null
 
         val uiState: StateFlow<WeeklyReportUiState> =
             internalState
@@ -59,48 +62,71 @@ class WeeklyReportViewModel
 
         fun selectWeek(monday: LocalDate) = load(monday)
 
-        fun refresh() {
+        /**
+         * 탭 전환·작성 화면 복귀 등 사용자가 요청하지 않은 자동 갱신.
+         *
+         * 화면이 살아 있는 채로 발화하므로 로딩을 방출하지 않고, 실패해도 보고 있던
+         * 화면을 유지한다. 보고 있던 주를 그대로 다시 조회한다.
+         */
+        fun refreshOnReturn() {
+            // 진입 직후의 ON_RESUME 은 init 로드와 겹친다 — 진행 중이면 건너뛴다.
+            if (loadJob?.isActive == true) return
             val current =
                 (internalState.value.loadPhase as? LoadPhase.Loaded)?.monday
                     ?: weekOptions.first().monday
-            load(current)
+            load(current, showsLoading = false, keepsStateOnFailure = true)
         }
 
-        private fun load(monday: LocalDate) {
-            viewModelScope.launch {
-                internalState.update { it.copy(loadPhase = LoadPhase.Loading) }
-                val result =
-                    runCatching {
-                        coroutineScope {
-                            val reportDeferred =
-                                async {
-                                    repository
-                                        .getWeeklyReport(date = monday.format(API_DATE_FORMATTER))
-                                        .getOrThrow()
+        private fun load(
+            monday: LocalDate,
+            showsLoading: Boolean = true,
+            keepsStateOnFailure: Boolean = false,
+        ) {
+            loadJob?.cancel()
+            loadJob =
+                viewModelScope.launch {
+                    if (showsLoading) {
+                        internalState.update { it.copy(loadPhase = LoadPhase.Loading) }
+                    }
+                    val result =
+                        runCatching {
+                            coroutineScope {
+                                val reportDeferred =
+                                    async {
+                                        repository
+                                            .getWeeklyReport(date = monday.format(API_DATE_FORMATTER))
+                                            .getOrThrow()
+                                    }
+                                val profileDeferred = async { userRepository.getMyProfile() }
+                                reportDeferred.await() to profileDeferred.await()
+                            }
+                        }
+                    // runCatching 이 CancellationException 까지 실패로 잡는다.
+                    // 새 로드가 이 Job 을 취소했다면 상태는 그쪽이 결정하므로 여기서 멈춘다.
+                    ensureActive()
+                    result
+                        .onSuccess { (report, profile) ->
+                            internalState.update {
+                                it.copy(loadPhase = LoadPhase.Loaded(monday, report, profile.name))
+                            }
+                        }.onFailure { e ->
+                            internalState.update { current ->
+                                if (keepsStateOnFailure && current.loadPhase is LoadPhase.Loaded) {
+                                    current
+                                } else {
+                                    current.copy(
+                                        loadPhase =
+                                            LoadPhase.Failed(
+                                                UiText.DynamicOrResource(
+                                                    value = e.message,
+                                                    fallbackResId = R.string.mindrecord_error_weekly_report_failed,
+                                                ),
+                                            ),
+                                    )
                                 }
-                            val profileDeferred = async { userRepository.getMyProfile() }
-                            reportDeferred.await() to profileDeferred.await()
+                            }
                         }
-                    }
-                result
-                    .onSuccess { (report, profile) ->
-                        internalState.update {
-                            it.copy(loadPhase = LoadPhase.Loaded(monday, report, profile.name))
-                        }
-                    }.onFailure { e ->
-                        internalState.update {
-                            it.copy(
-                                loadPhase =
-                                    LoadPhase.Failed(
-                                        UiText.DynamicOrResource(
-                                            value = e.message,
-                                            fallbackResId = R.string.mindrecord_error_weekly_report_failed,
-                                        ),
-                                    ),
-                            )
-                        }
-                    }
-            }
+                }
         }
 
         private fun buildWeekOptions(
