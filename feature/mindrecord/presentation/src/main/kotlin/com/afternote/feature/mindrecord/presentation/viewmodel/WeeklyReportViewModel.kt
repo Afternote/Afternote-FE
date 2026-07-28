@@ -167,23 +167,19 @@ class WeeklyReportViewModel
             }
 
         private fun LoadPhase.Loaded.toSuccessUiState(): WeeklyReportUiState.Success {
-            val sunday = monday.plusDays(6)
-            // 기록일수 = 일기가 있는 요일 + 주간 범위 내 데일리질문 답변 날짜의 합집합(중복 제거).
-            // week 리스트는 월요일부터 순서대로 내려오므로 index로 실제 날짜(LocalDate)를 복원해 합친다.
-            val diaryDates =
-                report.week.mapIndexedNotNull { index, day ->
-                    monday.plusDays(index.toLong()).takeIf { day.isDiary }
-                }
-            val dailyQuestionDates =
-                report.dailyQuestions
-                    .mapNotNull { parseLocalDateOrNull(it.date) }
-                    .filter { it in monday..sunday }
+            val sunday = monday.plusDays(WEEK_LENGTH - 1L)
+            val dailyQuestionDates = report.dailyQuestions.mapNotNull { parseLocalDateOrNull(it.date) }
             return WeeklyReportUiState.Success(
                 selectedMonday = monday,
                 weekOptions = weekOptions,
                 dateRange = "${monday.format(RANGE_FORMATTER)} - ${sunday.format(RANGE_FORMATTER)}",
                 userName = userName,
-                recordedDays = (diaryDates + dailyQuestionDates).distinct().size,
+                recordedDays =
+                    countRecordedDays(
+                        monday = monday,
+                        week = report.week,
+                        dailyQuestionDates = dailyQuestionDates,
+                    ),
                 counts =
                     listOf(
                         report.dailyQuestionAmount to MindRecordCategoryUi.DailyQuestion,
@@ -198,7 +194,6 @@ class WeeklyReportViewModel
 
         companion object {
             private const val WEEK_OPTION_COUNT = 5
-            private const val WEEK_LENGTH = 7
 
             private val API_DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
             private val RANGE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd.")
