@@ -112,7 +112,6 @@ screenshot-validation-api = { group = "com.android.tools.screenshot", name = "sc
 konsist = { group = "com.lemonappdev", name = "konsist", version.ref = "konsist" }
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics" }
-firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
