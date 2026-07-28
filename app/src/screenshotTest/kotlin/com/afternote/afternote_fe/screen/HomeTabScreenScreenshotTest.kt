@@ -39,6 +39,7 @@ internal fun homeTabScreenSuccessScreenshot() {
                             MindRecordCategory.DAILY_QUESTION to 10,
                             MindRecordCategory.DIARY to 8,
                         ),
+                    todayQuestionContent = "오늘 내가 배운\n가장 작은 교훈은 무엇인가요?",
                 ),
             todayDateText = "2026.04.10",
         )

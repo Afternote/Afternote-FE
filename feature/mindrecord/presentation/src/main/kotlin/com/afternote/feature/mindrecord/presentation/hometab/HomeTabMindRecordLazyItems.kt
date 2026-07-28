@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.model.MindRecordCategory
 import com.afternote.core.ui.AfternoteSectionHeader
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_daily_question_default_today
 import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_home_tab_memories_section_click_label
 import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_home_tab_memories_section_title
 import com.afternote.feature.mindrecord.presentation.component.MemoriesCard
@@ -33,7 +32,8 @@ import com.afternote.core.ui.R as CoreUiR
  * `:app`은 셸·애프터노트/주간 등 다른 섹션만 담당하고, 마인드레코드 UI는 이 모듈에 둔다.
  *
  * @param dateText TODAY'S QUESTION 카드에 표시할 오늘 날짜 (yyyy.MM.dd).
- * @param questionText 실제 오늘의 질문 본문. null 이면(로딩·조회 실패) 카드 기본 문구로 폴백한다.
+ * @param questionText 실제 오늘의 질문 본문. 로딩 중이거나 조회에 실패하면 null.
+ * @param isQuestionLoading 질문 조회 중이면 true. 조회 실패(null + false)와 구분하기 위해 함께 받는다.
  */
 fun LazyListScope.homeTabMindRecordQuestionAndCategories(
     dateText: String,
@@ -41,12 +41,14 @@ fun LazyListScope.homeTabMindRecordQuestionAndCategories(
     onAnswerClick: () -> Unit,
     onRecordCategoryClick: (MindRecordCategory) -> Unit,
     questionText: String? = null,
+    isQuestionLoading: Boolean = false,
     isCategoryCountLoading: Boolean = false,
 ) {
     item(key = "mind_record_question") {
         TodayQuestionCard(
             dateText = dateText,
-            questionText = questionText ?: stringResource(mindrecord_daily_question_default_today),
+            questionText = questionText,
+            isQuestionLoading = isQuestionLoading,
             onAnswerClick = onAnswerClick,
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -110,6 +112,7 @@ private fun HomeTabMindRecordQuestionAndCategoriesPreview() {
         LazyColumn {
             homeTabMindRecordQuestionAndCategories(
                 dateText = "2026.04.10",
+                questionText = "오늘 내가 배운\n가장 작은 교훈은 무엇인가요?",
                 categoryCounts =
                     mapOf(
                         MindRecordCategory.DIARY to 18,
