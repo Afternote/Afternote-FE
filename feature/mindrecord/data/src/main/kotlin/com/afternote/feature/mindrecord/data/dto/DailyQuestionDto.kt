@@ -36,6 +36,11 @@ data class DailyQuestionListItemDto(
     @SerialName("content") val content: String,
     @SerialName("createdAt") val createdAt: String,
     @SerialName("imageUrl") val imageUrl: String? = null,
+    // Swagger `DailyQuestionListResponse` 및 실서버 응답 모두 와이어 키는 `isDraft`.
+    // 과거 QA logcat 에서 `draft` 로 관측된 적이 있어 대체 키도 함께 허용한다.
+    @SerialName("isDraft")
+    @JsonNames("draft")
+    val isDraft: Boolean = false,
 )
 
 @Serializable
@@ -43,5 +48,13 @@ data class TodayDailyQuestionDto(
     @SerialName("questionId") val questionId: Long,
     @SerialName("day") val day: Int,
     @SerialName("content") val content: String,
-    @SerialName("answered") val isAnswered: Boolean,
+    // Swagger `DailyQuestionTodayResponse` 및 실서버 응답 모두 `isAnswered`/`isDraft`.
+    // 종전 `answered`/`draft` 로 잡혀 있어 필수 필드 누락(MissingFieldException)으로
+    // getToday() 가 항상 실패했다 (#548). 과도기 대비로 구 키도 함께 받고 기본값을 둔다.
+    @SerialName("isAnswered")
+    @JsonNames("answered")
+    val isAnswered: Boolean = false,
+    @SerialName("isDraft")
+    @JsonNames("draft")
+    val isDraft: Boolean = false,
 )
