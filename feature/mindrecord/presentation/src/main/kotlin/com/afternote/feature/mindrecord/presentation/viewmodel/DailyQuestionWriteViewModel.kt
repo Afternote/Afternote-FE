@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.ui.UiText
+import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
@@ -45,7 +46,7 @@ class DailyQuestionWriteViewModel
                                 isQuestionLoading = false,
                             )
                         }
-                        if (today.isDraft) resumeDraftIfFound()
+                        if (today.isDraft) resumeDraft()
                     }.onFailure { e ->
                         _uiState.update {
                             it.copy(
@@ -62,16 +63,20 @@ class DailyQuestionWriteViewModel
         }
 
         /**
-         * today 응답이 draft 존재를 알려주면 당일 목록에서 임시저장 레코드를 찾아 이어쓰기 상태로 프리필한다.
-         * 목록에 draft 항목/플래그가 없으면 (서버 계약 미검증) 아무것도 하지 않고 신규 작성으로 폴백.
+         * 당일 임시저장 레코드를 조회한다.
+         *
+         * 서버는 `draftOnly` 없이 조회하면 임시저장을 제외한 답변만 내려주므로 반드시 `draftOnly = true` 로 보낸다.
+         * 파라미터를 무시하는 서버를 만나도 오답을 잡지 않도록 `isDraft` 재확인은 남겨둔다.
          */
-        private suspend fun resumeDraftIfFound() {
-            val draft =
-                repository
-                    .getList(date = LocalDate.now().toString())
-                    .getOrNull()
-                    ?.firstOrNull { it.isDraft }
-                    ?: return
+        private suspend fun findTodayDraft(): DailyQuestion? =
+            repository
+                .getList(date = LocalDate.now().toString(), draftOnly = true)
+                .getOrNull()
+                ?.firstOrNull { it.isDraft }
+
+        /** today 응답이 draft 존재를 알려주면 그 레코드를 찾아 이어쓰기 상태로 프리필한다. 없으면 신규 작성으로 폴백. */
+        private suspend fun resumeDraft() {
+            val draft = findTodayDraft() ?: return
             _uiState.update {
                 it.copy(
                     draftId = draft.dailyQuestionId,
@@ -79,6 +84,20 @@ class DailyQuestionWriteViewModel
                     imageUrl = draft.imageUrl ?: it.imageUrl,
                 )
             }
+        }
+
+        /**
+         * 임시저장 POST 직후 생성된 레코드의 id 를 확보한다.
+         *
+         * `create` 가 `Result<Unit>` 이라 생성 응답에서 id 를 받을 수 없어 재조회로 채운다.
+         * 이게 없으면 화면을 벗어나지 않고 두 번째로 임시저장할 때 `draftId` 가 여전히 null 이라
+         * POST 가 한 번 더 나가 draft 가 중복 생성된다.
+         *
+         * 사용자가 이어서 편집 중일 수 있으므로 본문·이미지는 건드리지 않고 id 만 채운다.
+         */
+        private suspend fun adoptCreatedDraftId() {
+            val draft = findTodayDraft() ?: return
+            _uiState.update { if (it.draftId == null) it.copy(draftId = draft.dailyQuestionId) else it }
         }
 
         fun onAnswerChanged(text: String) {
@@ -100,6 +119,8 @@ class DailyQuestionWriteViewModel
             val state = _uiState.value
             val questionId = state.questionId ?: return
             if (!state.canSubmit) return
+
+            val isCreating = state.draftId == null
 
             viewModelScope.launch {
                 _uiState.update { it.copy(submitState = SubmitState.InProgress) }
@@ -128,6 +149,10 @@ class DailyQuestionWriteViewModel
                     }
                 result
                     .onSuccess {
+                        // 임시저장을 새로 만든 경우에만 id 를 확보한다. 같은 화면에서 이어서 저장할 때
+                        // 다시 POST 가 나가 draft 가 중복 생성되는 것을 막는다.
+                        // Succeeded 로 바꾸기 전에 채워야 연속 저장이 확보 전의 상태를 읽지 않는다.
+                        if (isCreating && isDraft) adoptCreatedDraftId()
                         _uiState.update { it.copy(submitState = SubmitState.Succeeded) }
                     }.onFailure { e ->
                         _uiState.update {

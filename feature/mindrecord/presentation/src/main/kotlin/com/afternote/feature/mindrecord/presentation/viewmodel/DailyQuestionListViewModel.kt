@@ -55,10 +55,13 @@ class DailyQuestionListViewModel
 
                 val today = repository.getToday().getOrNull()
                 val listResult = repository.getList(date = date)
-                // 임시저장은 일반 답변 목록에 노출하지 않는다 (임시저장 목록 화면에서만 다룸).
+                // 서버는 draftOnly 없이 조회하면 임시저장을 제외해 내려주지만, 파라미터를 무시하는
+                // 서버를 만나도 임시저장이 답변 목록에 새지 않도록 한 겹 더 거른다.
                 val list = listResult.getOrNull().orEmpty().filter { !it.isDraft }
 
-                if (today == null && listResult.isFailure) {
+                // 목록 조회 실패는 today 성공 여부와 무관하게 드러내야 한다. AND 로 묶으면
+                // today 만 성공했을 때 "답변 0개" 로 보여 실패가 화면에서 사라진다.
+                if (listResult.isFailure) {
                     val message =
                         UiText.DynamicOrResource(
                             value = listResult.exceptionOrNull()?.message,

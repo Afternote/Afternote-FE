@@ -22,9 +22,11 @@ import javax.inject.Inject
 /**
  * 임시저장 목록 ViewModel.
  *
- * - 일기: 백엔드가 `draftOnly=true` 쿼리를 제공해 그대로 호출 (단, 이번 달 한정).
- * - 데일리질문: 전체 목록을 받아 `isDraft` 로 클라 필터. 서버가 목록에 draft 항목/플래그를
- *   내려주지 않으면 (계약 미검증) 기본값 false 로 파싱되어 종전처럼 0건이 된다.
+ * 두 카테고리 모두 백엔드가 제공하는 `draftOnly=true` 쿼리로 조회한다 — 전체를 받아 클라에서 거르면
+ * 서버가 페이징을 붙였을 때 draft 가 뒤 페이지로 밀려 누락될 수 있다.
+ *
+ * 조회 범위는 일기가 이번 달 한정(`yearMonth`)인 반면 데일리질문은 전체 기간이다. 데일리질문 API 의
+ * `date` 는 특정 하루만 받아 "이번 달" 을 표현할 수 없어 맞추지 못했다.
  */
 @HiltViewModel
 class DraftListViewModel
@@ -104,25 +106,25 @@ class DraftListViewModel
             runCatching {
                 coroutineScope {
                     val yearMonth = YearMonth.now().toString()
-                    val diaryDeferred =
+                    // 조회 실패는 예외로 올려 바깥 runCatching 이 잡게 한다.
+                    // getOrNull().orEmpty() 로 흡수하면 "실패" 와 "0건" 이 같은 빈 화면이 되어
+                    // Error 상태가 도달 불가능한 죽은 경로가 된다.
+                    val draftDiariesDeferred =
                         async {
                             diaryRepository
                                 .getList(yearMonth = yearMonth, draftOnly = true)
-                                .getOrNull()
-                                ?.diaries
-                                .orEmpty()
+                                .getOrThrow()
+                                .diaries
                         }
-                    val dailyQuestionDeferred =
+                    val draftDailyQuestionsDeferred =
                         async {
                             dailyQuestionRepository
-                                .getList()
-                                .getOrNull()
-                                .orEmpty()
-                                .filter { it.isDraft }
+                                .getList(draftOnly = true)
+                                .getOrThrow()
                         }
 
                     val diaryItems =
-                        diaryDeferred.await().map { diary ->
+                        draftDiariesDeferred.await().map { diary ->
                             val ui = diary.toUi()
                             DraftItem(
                                 id = ui.id,
@@ -133,7 +135,7 @@ class DraftListViewModel
                             )
                         }
                     val dailyQuestionItems =
-                        dailyQuestionDeferred.await().map { question ->
+                        draftDailyQuestionsDeferred.await().map { question ->
                             val ui = question.toUi()
                             DraftItem(
                                 id = ui.id,

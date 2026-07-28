@@ -17,6 +17,8 @@ interface DailyQuestionApiService {
     @GET("daily-questions")
     suspend fun getDailyQuestions(
         @Query("date") date: String? = null,
+        // true 면 임시저장(isDraft=true)만 조회. 생략 시 서버가 임시저장을 제외한 답변만 내려준다.
+        @Query("draftOnly") draftOnly: Boolean? = null,
     ): BaseResponse<List<DailyQuestionListItem>>
 
     @GET("daily-questions/today")
