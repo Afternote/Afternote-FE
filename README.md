@@ -2,7 +2,7 @@
 
 # 🚀 신규 팀원 빌드 셋업
 
-`local.properties` 는 `.gitignore` 에 등록되어 있어 **git 으로 받아지지 않는다**. clone 직후 다음 두 키를 루트 `local.properties` 에 직접 채워야 카카오·구글 로그인이 정상 동작한다.
+`local.properties` 는 `.gitignore` 에 등록되어 있어 **git 으로 받아지지 않는다**. clone 직후 다음 두 키를 루트 `local.properties` 에 직접 채워야 카카오·구글 로그인이 정상 동작한다. 추가로 아래 **공유 debug keystore** 섹션까지 마치면 카카오 키 해시를 본인 머신용으로 따로 등록할 필요가 없다.
 
 ## 필요 키
 
@@ -32,9 +32,32 @@ GOOGLE_WEB_CLIENT_ID=<구글 OAuth web client id>.apps.googleusercontent.com
 - `AndroidManifest.xml` 의 `android:scheme="kakao${KAKAO_NATIVE_APP_KEY}"` 가 빈 scheme 으로 등록 → 카카오 로그인 콜백 intent-filter 매칭 안 됨
 - `requestGoogleIdToken(serverClientId = "")` → Credential Manager 가 invalid request 로 실패
 
+## 공유 debug keystore
+
+debug 빌드는 기본적으로 머신마다 다른 `~/.android/debug.keystore` 로 서명되어, 카카오 로그인 키 해시를 팀원 머신별로 콘솔에 등록해야 한다. 팀 공유 debug keystore 를 배치하면 전 머신이 동일 키 해시로 서명되어 콘솔 등록이 keystore 1개로 끝난다. (미배치 시에도 빌드는 정상 — 기본 debug keystore 폴백 — 대신 본인 머신 키 해시를 직접 등록해야 카카오 로그인이 동작한다.)
+
+1. **keystore 수령·배치** — `afternote-debug-shared.jks` 를 **Slack DM 으로 1hyok 에게 요청** 후 홈 디렉토리에 배치 (예: `~/afternote-debug-shared.jks`)
+
+2. **`local.properties` 끝에 4개 키 추가** (경로는 `~` 없이 **절대경로** — Gradle `file()` 은 `~` 를 확장하지 않는다)
+
+    ```properties
+    DEBUG_STORE_FILE=/Users/<you>/afternote-debug-shared.jks
+    DEBUG_STORE_PASSWORD=<keystore 비밀번호 — keystore 와 함께 전달>
+    DEBUG_KEY_ALIAS=afternote-debug-shared
+    DEBUG_KEY_PASSWORD=<key 비밀번호 — keystore 와 함께 전달>
+    ```
+
+3. **적용 확인** — `./gradlew :app:signingReport` 출력의 `Variant: debug` 에서 `Store:` 가 공유 keystore 경로를 가리키는지 확인
+
+공유 keystore 의 카카오 키 해시 추출 명령 (Kakao Developers → 앱 → 플랫폼 → Android → 키 해시 등록·재확인용):
+
+```bash
+keytool -exportcert -alias afternote-debug-shared -keystore ~/afternote-debug-shared.jks | openssl sha1 -binary | openssl base64
+```
+
 # 📦 비개발자 APK 배포 (Firebase App Distribution)
 
-디자이너·PM·QA·외부 베타테스터에게 release APK 를 자동 배포하는 흐름. Firebase 프로젝트 `afternote-b4d3c` + 테스터 그룹 `afternote` 사용.
+디자이너·PM·QA·외부 베타테스터에게 release APK 를 자동 배포하는 흐름. Firebase 프로젝트 `afternote-android` + 테스터 그룹 `afternote` 사용.
 
 ## 셋업 (1hyok 만 1회 — 신규 인계자도 동일)
 

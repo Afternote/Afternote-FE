@@ -48,6 +48,32 @@ android {
                 keyPassword = localProperties.getProperty("RELEASE_KEY_PASSWORD")
             }
         }
+        // 팀 공유 debug keystore 로 서명해 카카오 키 해시를 머신 간 통일.
+        //
+        // opt-in 이다. AGP 는 debug keystore 를 머신마다 자동 생성하는 것이 기본이고
+        // (https://developer.android.com/studio/publish/app-signing), 그 모델을 없애지 않는다 —
+        // `DEBUG_STORE_FILE` 이 없는 머신은 아래 if 를 그냥 건너뛰어 `~/.android/debug.keystore`
+        // 로 서명된다. 빌드·로그인 동작에 차이는 없고, 카카오 콘솔에 본인 해시를 등록하면 된다
+        // (카카오는 원래 "모든 개발자의 디버그 키 해시" 등록을 요구:
+        //  https://developers.kakao.com/docs/latest/ko/android/getting-started).
+        // 공유 keystore 는 그 등록 건수를 1개로 줄이려는 선택지이지 강제가 아니다.
+        // CI 도 프로퍼티가 없으므로 같은 경로로 폴백한다.
+        //
+        // 트레이드오프: 이 keystore 의 해시가 카카오·구글 콘솔에 등록되므로, 파일이 유출되면
+        // 제3자가 같은 키 해시로 우리 앱 행세를 하며 소셜 로그인을 호출할 수 있다. 영향은
+        // debug 한정이다 — release 는 별도 keystore(`RELEASE_*`) 이고, debug 인증서로 서명한
+        // 앱은 스토어 배포가 불가능하다("insecure by design", 위 Android 문서). 실수 커밋은
+        // 루트 `.gitignore` 의 `*.jks`·`*.keystore` 가 막지만, 전달 경로는 개인 채널로 유지한다.
+        // 이 리스크를 받아들이기 싫으면 위 opt-out(프로퍼티 미기재)을 쓰면 된다.
+        getByName("debug") {
+            val debugStoreFile = localProperties.getProperty("DEBUG_STORE_FILE")
+            if (debugStoreFile != null) {
+                storeFile = file(debugStoreFile)
+                storePassword = localProperties.getProperty("DEBUG_STORE_PASSWORD")
+                keyAlias = localProperties.getProperty("DEBUG_KEY_ALIAS")
+                keyPassword = localProperties.getProperty("DEBUG_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
