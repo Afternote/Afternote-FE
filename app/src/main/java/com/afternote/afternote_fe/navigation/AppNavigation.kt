@@ -17,7 +17,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -106,13 +107,12 @@ fun AppNavigation(
                 // 최초 진입은 VM 의 init { loadHomeSummary() } 가 이미 로드하므로 첫 resume 은 스킵한다.
                 // (rememberSaveable: 다른 화면 이동으로 컴포지션에서 벗어나도 스킵 플래그가 초기화되지 않도록)
                 var isFirstResume by rememberSaveable { mutableStateOf(true) }
-                LifecycleResumeEffect(Unit) {
+                LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
                     if (isFirstResume) {
                         isFirstResume = false
                     } else {
-                        viewModel.loadHomeSummary(isRefresh = true)
+                        viewModel.refreshOnReturn()
                     }
-                    onPauseOrDispose { }
                 }
 
                 HomeTabScreen(
