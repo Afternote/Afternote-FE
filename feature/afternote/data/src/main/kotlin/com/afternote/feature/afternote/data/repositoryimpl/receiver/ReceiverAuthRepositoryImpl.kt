@@ -10,8 +10,9 @@ import com.afternote.feature.afternote.data.dto.ReceiverAuthVerifyRequestDto
 import com.afternote.feature.afternote.data.dto.ReceiverEmailAuthVerifyRequestDto
 import com.afternote.feature.afternote.data.dto.toDomain
 import com.afternote.feature.afternote.data.service.ReceiverAuthApiService
-import com.afternote.feature.afternote.domain.error.ReceiverDeliverySubmitException
+import com.afternote.feature.afternote.domain.error.ReceiverDeliveryVerificationException
 import com.afternote.feature.afternote.domain.error.ReceiverEmailAuthException
+import com.afternote.feature.afternote.domain.error.ReceiverMasterKeyException
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.ReceiverAuthPresignedUrl
 import com.afternote.feature.receiver.domain.model.ReceiverEmailAuthResult
@@ -35,9 +36,13 @@ class ReceiverAuthRepositoryImpl
     constructor(
         private val api: ReceiverAuthApiService,
     ) : ReceiverAuthRepository {
-        override suspend fun verify(authCode: String): Result<ReceiverIdentity> =
+        override suspend fun verifyMasterKey(authCode: String): Result<ReceiverIdentity> =
             runCatching {
-                api.verify(ReceiverAuthVerifyRequestDto(authCode)).requireData().toDomain()
+                try {
+                    api.verifyMasterKey(ReceiverAuthVerifyRequestDto(authCode)).requireData().toDomain()
+                } catch (e: ApiException) {
+                    throw ReceiverMasterKeyException(serverMessage = e.serverMessage, serverCode = e.code)
+                }
             }
 
         override suspend fun sendEmailAuthCode(email: String): Result<Unit> =
@@ -85,7 +90,7 @@ class ReceiverAuthRepositoryImpl
                         ).requireData()
                         .toDomain()
                 } catch (e: ApiException) {
-                    throw ReceiverDeliverySubmitException(serverMessage = e.serverMessage, httpCode = e.code)
+                    throw ReceiverDeliveryVerificationException(serverMessage = e.serverMessage, serverCode = e.code)
                 }
             }
 

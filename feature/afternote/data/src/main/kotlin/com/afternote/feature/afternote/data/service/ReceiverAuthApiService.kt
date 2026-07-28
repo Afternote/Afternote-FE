@@ -25,7 +25,7 @@ import retrofit2.http.POST
  */
 interface ReceiverAuthApiService {
     @POST("receiver-auth/verify")
-    suspend fun verify(
+    suspend fun verifyMasterKey(
         @Body body: ReceiverAuthVerifyRequestDto,
     ): BaseResponse<ReceiverAuthVerifyDto>
 

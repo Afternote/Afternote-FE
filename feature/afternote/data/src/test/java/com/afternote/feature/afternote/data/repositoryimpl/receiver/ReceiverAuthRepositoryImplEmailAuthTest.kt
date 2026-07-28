@@ -126,7 +126,7 @@ private class FakeReceiverAuthApiService(
         ReceiverEmailAuthVerifyRequestDto,
     ) -> BaseResponse<ReceiverEmailAuthVerifyDto> = { error("unused") },
 ) : ReceiverAuthApiService {
-    override suspend fun verify(body: ReceiverAuthVerifyRequestDto): BaseResponse<ReceiverAuthVerifyDto> = error("unused")
+    override suspend fun verifyMasterKey(body: ReceiverAuthVerifyRequestDto): BaseResponse<ReceiverAuthVerifyDto> = error("unused")
 
     override suspend fun sendEmailAuthCode(body: ReceiverAuthCodeEmailSendRequestDto): BaseResponse<Unit> = onSendEmailAuthCode(body)
 
