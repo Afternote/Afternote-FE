@@ -17,7 +17,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -92,17 +91,17 @@ fun HomeScreen(
     // 최초 진입은 각 VM 의 init { load() } 가 이미 로드하므로 첫 resume 은 스킵한다.
     // (rememberSaveable: 작성 화면 이동으로 컴포지션에서 벗어나도 스킵 플래그가 초기화되지 않도록)
     //
-    // 람다를 캡처하는 옵저버는 DisposableEffect(key) 안에서 한 번만 만들어지므로, 매 컴포지션
-    // 새로 계산되는 지역 val 인 selectedCategory 를 그대로 읽으면 화면 진입 시점 값에 고정된다.
-    // key 를 selectedCategory 로 주면 이미 RESUMED 인 상태에서 옵저버가 재등록되며 탭 전환마다
-    // refresh 가 한 번 더 돌아 위 snapshotFlow 경로와 중복되므로, 최신 값 읽기로 해결한다.
-    val currentCategory by rememberUpdatedState(selectedCategory)
+    // selectedCategory 는 State 가 아니라 매 컴포지션 새로 계산되는 지역 val 이지만 여기서는
+    // 최신 값이 읽힌다 — LifecycleEventEffect 가 onEvent 를 rememberUpdatedState 로 감싸
+    // 옵저버에 넘기기 때문이다 (lifecycle-runtime-compose 2.9.4 LifecycleEffect.kt:66).
+    // LifecycleResumeEffect 는 effects 람다를 DisposableEffect(lifecycleOwner, scope) 안에서
+    // 직접 캡처해 진입 시점 값에 고정되므로, 이 화면에서는 쓰면 안 된다.
     var isFirstResume by rememberSaveable { mutableStateOf(true) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         if (isFirstResume) {
             isFirstResume = false
         } else {
-            when (currentCategory) {
+            when (selectedCategory) {
                 MindRecordCategoryUi.DailyQuestion -> dailyQuestionViewModel.refresh()
                 MindRecordCategoryUi.Diary -> diaryViewModel.refresh()
                 MindRecordCategoryUi.WeeklyReport -> weeklyReportViewModel.refresh()
