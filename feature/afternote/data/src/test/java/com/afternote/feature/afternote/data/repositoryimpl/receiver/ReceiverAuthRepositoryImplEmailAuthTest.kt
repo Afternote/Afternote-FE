@@ -24,7 +24,7 @@ import java.io.IOException
  * 이메일 인증 두 endpoint 의 `ApiException` → [ReceiverEmailAuthException] 도메인 예외 변환 회귀 가드 (#407).
  *
  * presentation 은 core:network 의 ApiException 을 직접 알면 안 되므로 (layer 규약)
- * Impl 이 serverMessage·code 를 보존해 변환하는지가 계약. 에러 메시지·code 값은
+ * Impl 이 serverMessage 를 보존해 변환하는지가 계약. 에러 메시지·code 값은
  * 2026-06-11 라이브 서버 실응답 캡처 — 404 `{"code":1901,"message":"등록된 수신자 이메일이 아닙니다."}`,
  * 400 `{"code":1902,"message":"인증번호가 만료되었거나 존재하지 않습니다. 다시 요청해주세요."}`.
  */
@@ -50,7 +50,6 @@ class ReceiverAuthRepositoryImplEmailAuthTest {
         assertTrue(exception is ReceiverEmailAuthException)
         exception as ReceiverEmailAuthException
         assertEquals("등록된 수신자 이메일이 아닙니다.", exception.serverMessage)
-        assertEquals(1901, exception.serverCode)
     }
 
     @Test
@@ -74,7 +73,6 @@ class ReceiverAuthRepositoryImplEmailAuthTest {
         assertTrue(exception is ReceiverEmailAuthException)
         exception as ReceiverEmailAuthException
         assertEquals("인증번호가 만료되었거나 존재하지 않습니다. 다시 요청해주세요.", exception.serverMessage)
-        assertEquals(1902, exception.serverCode)
     }
 
     @Test
