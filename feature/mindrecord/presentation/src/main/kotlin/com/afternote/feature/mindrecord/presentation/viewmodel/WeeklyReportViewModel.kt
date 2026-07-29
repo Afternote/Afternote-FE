@@ -167,13 +167,19 @@ class WeeklyReportViewModel
             }
 
         private fun LoadPhase.Loaded.toSuccessUiState(): WeeklyReportUiState.Success {
-            val sunday = monday.plusDays(6)
+            val sunday = monday.plusDays(WEEK_LENGTH - 1L)
+            val dailyQuestionDates = report.dailyQuestions.mapNotNull { parseLocalDateOrNull(it.date) }
             return WeeklyReportUiState.Success(
                 selectedMonday = monday,
                 weekOptions = weekOptions,
                 dateRange = "${monday.format(RANGE_FORMATTER)} - ${sunday.format(RANGE_FORMATTER)}",
                 userName = userName,
-                recordedDays = report.week.count { it.isDiary },
+                recordedDays =
+                    countRecordedDays(
+                        monday = monday,
+                        week = report.week,
+                        dailyQuestionDates = dailyQuestionDates,
+                    ),
                 counts =
                     listOf(
                         report.dailyQuestionAmount to MindRecordCategoryUi.DailyQuestion,
@@ -188,7 +194,6 @@ class WeeklyReportViewModel
 
         companion object {
             private const val WEEK_OPTION_COUNT = 5
-            private const val WEEK_LENGTH = 7
 
             private val API_DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
             private val RANGE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd.")
@@ -224,12 +229,14 @@ class WeeklyReportViewModel
                     DateTimeFormatter.ISO_DATE,
                 )
 
-            private fun parseLocalDate(raw: String): LocalDate {
+            private fun parseLocalDate(raw: String): LocalDate = parseLocalDateOrNull(raw) ?: LocalDate.now()
+
+            private fun parseLocalDateOrNull(raw: String): LocalDate? {
                 val datePart = raw.substringBefore(' ').trim()
                 for (formatter in DATE_FORMATTERS) {
                     runCatching { return LocalDate.parse(datePart, formatter) }
                 }
-                return LocalDate.now()
+                return null
             }
         }
     }
