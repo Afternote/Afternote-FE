@@ -95,6 +95,7 @@ private fun HomeSummary.toHomeTabSuccess(): HomeTabUiState.Success =
     HomeTabUiState.Success(
         userName = userName,
         isRecipientDesignated = isRecipientDesignated,
+        todayQuestionContent = todayQuestionContent,
         categoryCounts =
             MindRecordCategory.entries.associateWith { category ->
                 when (category) {
