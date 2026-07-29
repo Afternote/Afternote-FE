@@ -113,7 +113,7 @@ class AuthRepositoryImplTest {
         tracker.record(expiresInSeconds = 30)
         val authApiService =
             FakeAuthApiService(
-                onLogout = { throw ApiException(code = 500, serverMessage = null, message = "서버 오류") },
+                onLogout = { throw ApiException(status = 500, code = 500, serverMessage = null, message = "서버 오류") },
             )
 
         val result = runBlocking { repository(authApiService).logout() }

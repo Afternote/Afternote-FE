@@ -36,6 +36,7 @@ class ReceiverAuthRepositoryImplEmailAuthTest {
                 FakeReceiverAuthApiService(
                     onSendEmailAuthCode = {
                         throw ApiException(
+                            status = 404,
                             code = 1901,
                             serverMessage = "등록된 수신자 이메일이 아닙니다.",
                             message = "등록된 수신자 이메일이 아닙니다.",
@@ -50,6 +51,7 @@ class ReceiverAuthRepositoryImplEmailAuthTest {
         assertTrue(exception is ReceiverEmailAuthException)
         exception as ReceiverEmailAuthException
         assertEquals("등록된 수신자 이메일이 아닙니다.", exception.serverMessage)
+        assertEquals(404, exception.status)
     }
 
     @Test
@@ -59,6 +61,7 @@ class ReceiverAuthRepositoryImplEmailAuthTest {
                 FakeReceiverAuthApiService(
                     onVerifyEmailAuthCode = {
                         throw ApiException(
+                            status = 400,
                             code = 1902,
                             serverMessage = "인증번호가 만료되었거나 존재하지 않습니다. 다시 요청해주세요.",
                             message = "인증번호가 만료되었거나 존재하지 않습니다. 다시 요청해주세요.",
@@ -73,6 +76,7 @@ class ReceiverAuthRepositoryImplEmailAuthTest {
         assertTrue(exception is ReceiverEmailAuthException)
         exception as ReceiverEmailAuthException
         assertEquals("인증번호가 만료되었거나 존재하지 않습니다. 다시 요청해주세요.", exception.serverMessage)
+        assertEquals(400, exception.status)
     }
 
     @Test
