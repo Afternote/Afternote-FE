@@ -2,6 +2,7 @@ package com.afternote.feature.afternote.presentation.receiver.deliveryverificati
 
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
+import com.afternote.feature.afternote.domain.error.ReceiverServerRejectionException
 
 /**
  * 화면이 표시할 에러 문구를 VM → UI 로 실어 나르는 상자 (payload = 운반되는 내용물).
@@ -24,6 +25,22 @@ sealed interface ErrorPayload {
         val message: String,
     ) : ErrorPayload
 }
+
+/**
+ * 서버가 내려준 사용자 친화 message 가 있으면 그대로 노출, 없으면(인프라 예외·message 미제공)
+ * [fallbackRes] 로 폴백.
+ *
+ * 판정 기준을 `isExplainedReceiverRejection` 과 같은 [ReceiverServerRejectionException] 범위로 맞춘다 —
+ * 하위 타입 하나만 캐스팅하면 리포팅에서는 걸러지는데 화면에는 서버 문구가 안 뜨는 흐름이 생긴다.
+ */
+internal fun Throwable.toErrorPayload(
+    @StringRes fallbackRes: Int,
+): ErrorPayload =
+    (this as? ReceiverServerRejectionException)
+        ?.serverMessage
+        ?.takeIf { it.isNotBlank() }
+        ?.let { ErrorPayload.Text(it) }
+        ?: ErrorPayload.Res(fallbackRes)
 
 /**
  * 증빙 서류 업로드(6·7·8) UI 상태.

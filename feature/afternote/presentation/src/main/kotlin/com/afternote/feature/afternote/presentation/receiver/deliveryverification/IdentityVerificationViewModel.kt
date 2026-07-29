@@ -1,10 +1,9 @@
 package com.afternote.feature.afternote.presentation.receiver.deliveryverification
 
-import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.feature.afternote.domain.error.ReceiverEmailAuthException
+import com.afternote.feature.afternote.domain.error.ReceiverServerRejectionException
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.isExplainedReceiverRejection
@@ -24,7 +23,7 @@ import javax.inject.Inject
  *
  * [ReceiverAuthRepository.sendEmailAuthCode]·[ReceiverAuthRepository.verifyEmailAuthCode] 로
  * 실 API(`receiver-auth/email` 계열) 를 호출한다. 서버 거절(이메일 미등록·인증번호 만료/불일치 등) 의
- * 안내 문구는 [ReceiverEmailAuthException.serverMessage] 를 그대로 노출하고, 인프라 실패는 정적 리소스로 폴백.
+ * 안내 문구는 [ReceiverServerRejectionException.serverMessage] 를 그대로 노출하고, 인프라 실패는 정적 리소스로 폴백.
  *
  * 검증 성공 시 [IdentityVerificationRepository.markVerified] 로 캐시를 켜고 isVerified 신호 발행 →
  * UI 가 마스터 키(5) 단계로 이동. 이메일 인증은 신원 확인까지만 담당하며 마스터 키를 대신 획득하지
@@ -131,19 +130,3 @@ class IdentityVerificationViewModel
             val EMAIL_REGEX = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")
         }
     }
-
-/**
- * 서버가 내려준 사용자 친화 message 가 있으면 그대로 노출, 없으면(인프라 예외·message 미제공) [fallbackRes] 폴백.
- * [DocumentUploadViewModel] 의 serverMessage 우선 노출 패턴과 동일.
- *
- * 본문 전체가 값을 만드는 식 — `?.` 체인 어디서든 null 이 되면 `?:` 의 [ErrorPayload.Res] 로,
- * 끝까지 통과하면 `let` 이 만든 [ErrorPayload.Text] 가 그대로 반환값이 된다 (객체 생성 = 반환).
- */
-private fun Throwable.toErrorPayload(
-    @StringRes fallbackRes: Int,
-): ErrorPayload =
-    (this as? ReceiverEmailAuthException)
-        ?.serverMessage
-        ?.takeIf { it.isNotBlank() }
-        ?.let { ErrorPayload.Text(it) }
-        ?: ErrorPayload.Res(fallbackRes)
