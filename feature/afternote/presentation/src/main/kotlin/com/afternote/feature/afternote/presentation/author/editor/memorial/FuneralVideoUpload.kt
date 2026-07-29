@@ -127,9 +127,7 @@ fun FuneralVideoUpload(
             }
         thumbnailBitmap = extraction.getOrNull()?.first?.asImageBitmap()
         extraction.exceptionOrNull()?.let { onThumbnailExtractionFailed(it) }
-        runCatching {
-            onThumbnailBytesReady(extraction.getOrNull()?.second)
-        }.onFailure { /* avoid throwing from LaunchedEffect */ }
+        onThumbnailBytesReady(extraction.getOrNull()?.second)
     }
 
     Column(
