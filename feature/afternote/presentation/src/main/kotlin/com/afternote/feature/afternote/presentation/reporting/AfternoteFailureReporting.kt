@@ -34,6 +34,10 @@ enum class AfternoteFailureStage(
 
     DETAIL_LOAD("detail_load"),
 
+    /**
+     * 애프터노트 삭제 제출. `DETAIL` 은 삭제 종류가 아니라 화면 접두사다 — 삭제 진입점이 상세
+     * 3종(갤러리·추억·계정)뿐이라 [DETAIL_LOAD] 와 같은 접두사를 쓴다. 목록 등에 삭제가 생기면 분화한다.
+     */
     DETAIL_DELETE("detail_delete"),
 
     RECEIVED_DETAIL_LOAD("received_detail_load"),

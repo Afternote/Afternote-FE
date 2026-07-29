@@ -13,6 +13,8 @@ data class AfternoteEditorScreenCallbacks(
     val onNavigateToSelectReceiver: () -> Unit = {},
     val onBottomNavTabSelected: (BottomNavTab) -> Unit = {},
     val onThumbnailBytesReady: (ByteArray?) -> Unit = {},
+    /** 로컬 영상에서 썸네일 프레임 추출이 실패했을 때 호출 → VM 이 개발자 텔레메트리로 기록. */
+    val onThumbnailExtractionFailed: (Throwable) -> Unit = {},
     /** Snackbar 표출 직후 호출 → VM 의 `thumbnailUploadFailed` nullify. */
     val onThumbnailUploadErrorConsumed: () -> Unit = {},
 )

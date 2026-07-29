@@ -3,10 +3,13 @@ package com.afternote.feature.afternote.presentation.author.detail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
+import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -27,7 +30,8 @@ import javax.inject.Inject
  *
  * 내부 [InternalState] (flat) 로 조회·작성자·삭제 진행 단계를 관리하고, public [uiState] 는
  * [AfternoteDetailUiState] 로 매핑해 Loading/Success/Error 3분기로 노출한다.
- * 삭제 결과(성공/실패)는 영속 상태가 아니라 [events] [Channel] 로 노출한다 — UI는 [com.afternote.core.ui.ObserveAsEvents] 로만 수집.
+ * 삭제 결과(성공/실패)는 [AfternoteDetailUiState.Success] 안의 `deleteResult` 신호로 노출하고,
+ * UI 가 소비한 뒤 [onDeleteResultConsumed] 로 reset 한다.
  *
  * 사용자 가시 메시지는 VM에 하드코딩하지 않고 [androidx.annotation.StringRes] id 로 노출한다 (서버 raw 메시지가 있으면 그쪽을 우선).
  * [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel] 의 `error: String?` + `errorRes: Int?` 페어 패턴과 동일.
@@ -41,6 +45,7 @@ class AfternoteDetailViewModel
         savedStateHandle: SavedStateHandle,
         private val afternoteRepository: AfternoteRepository,
         private val userRepository: UserRepository,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val afternoteIdFromNav: Long? =
             savedStateHandle.get<String>(NAV_ARG_ITEM_ID)?.toLongOrNull()
@@ -88,6 +93,7 @@ class AfternoteDetailViewModel
                     .onSuccess { detail ->
                         internalState.update { it.copy(loadPhase = LoadPhase.Loaded(detail)) }
                     }.onFailure { e ->
+                        errorReporter.recordAfternoteFailure(AfternoteFailureStage.DETAIL_LOAD, e)
                         internalState.update {
                             it.copy(
                                 loadPhase =
@@ -115,6 +121,7 @@ class AfternoteDetailViewModel
                             )
                         }
                     }.onFailure { e ->
+                        errorReporter.recordAfternoteFailure(AfternoteFailureStage.DETAIL_DELETE, e)
                         internalState.update {
                             it.copy(
                                 isDeleting = false,

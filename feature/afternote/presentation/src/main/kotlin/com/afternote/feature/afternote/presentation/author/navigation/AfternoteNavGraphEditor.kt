@@ -146,6 +146,7 @@ internal fun buildEditorScreenCallbacks(
                 editViewModel.uploadMemorialThumbnail(bytes)
             }
         },
+        onThumbnailExtractionFailed = editViewModel::onMemorialThumbnailExtractionFailed,
         onThumbnailUploadErrorConsumed = editViewModel::onThumbnailUploadErrorConsumed,
     )
 
