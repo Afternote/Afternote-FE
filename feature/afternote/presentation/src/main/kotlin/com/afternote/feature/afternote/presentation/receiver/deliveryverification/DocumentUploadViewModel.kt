@@ -2,8 +2,12 @@ package com.afternote.feature.afternote.presentation.receiver.deliveryverificati
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.feature.afternote.domain.error.ReceiverDeliverySubmitException
+import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.feature.afternote.domain.error.ReceiverDeliveryVerificationException
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
+import com.afternote.feature.afternote.presentation.reporting.isExplainedReceiverRejection
+import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import com.afternote.feature.receiver.domain.repository.ReceiverDeliveryDocumentUploadRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,6 +32,7 @@ class DocumentUploadViewModel
     constructor(
         private val uploadRepository: ReceiverDeliveryDocumentUploadRepository,
         private val receiverAuthRepository: ReceiverAuthRepository,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(DocumentUploadUiState())
         val uiState: StateFlow<DocumentUploadUiState> = _uiState.asStateFlow()
@@ -50,7 +55,8 @@ class DocumentUploadViewModel
                                 isUploading = false,
                             )
                         }
-                    }.onFailure {
+                    }.onFailure { throwable ->
+                        errorReporter.recordAfternoteFailure(AfternoteFailureStage.DOCUMENT_UPLOAD, throwable)
                         updateSlot(slot) { DocumentSlotState() }
                         _uiState.update {
                             it.copy(error = ErrorPayload.Res(R.string.receiver_verify_document_upload_failed))
@@ -79,14 +85,18 @@ class DocumentUploadViewModel
                         _uiState.update { it.copy(isSubmitting = false, isSubmitted = true) }
                     }.onFailure { throwable ->
                         // 두 갈래로 분기한다:
-                        //  (1) data 레이어가 ApiException 을 ReceiverDeliverySubmitException 으로 매핑해 내려준 경우
+                        //  (1) data 레이어가 ApiException 을 ReceiverDeliveryVerificationException 으로 매핑해 내려준 경우
                         //      → 백엔드가 보낸 사용자 친화 message(예: 409 "이미 대기 중인 인증 요청이 존재합니다.")
                         //        가 serverMessage 에 담겨 있으면 그대로 노출. **null 이면 서버가 message 미제공** —
                         //        클라 fallback 으로 폴백 (이전엔 클라 fallback 이 ApiException.message 에 섞여
                         //        사용자에게 "서버 메시지" 인 척 노출되던 버그를 ApiException.serverMessage 분리로 해결).
                         //  (2) 그 외 throwable (UnknownHostException 등 도메인 매핑 안 된 인프라 예외) → 같은 fallback.
                         val serverMessage =
-                            (throwable as? ReceiverDeliverySubmitException)?.serverMessage?.takeIf { it.isNotBlank() }
+                            (throwable as? ReceiverDeliveryVerificationException)?.serverMessage?.takeIf { it.isNotBlank() }
+                        // 서버가 사유 문구를 준 거절(이미 대기 중 등)은 예상된 경로라 리포팅하지 않는다.
+                        if (!throwable.isExplainedReceiverRejection()) {
+                            errorReporter.recordAfternoteFailure(AfternoteFailureStage.DELIVERY_SUBMIT, throwable)
+                        }
                         _uiState.update {
                             it.copy(
                                 isSubmitting = false,

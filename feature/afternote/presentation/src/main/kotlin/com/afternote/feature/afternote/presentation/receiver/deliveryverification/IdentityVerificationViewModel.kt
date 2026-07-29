@@ -3,8 +3,12 @@ package com.afternote.feature.afternote.presentation.receiver.deliveryverificati
 import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.error.ReceiverEmailAuthException
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
+import com.afternote.feature.afternote.presentation.reporting.isExplainedReceiverRejection
+import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import com.afternote.feature.receiver.domain.repository.IdentityVerificationRepository
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -38,6 +42,7 @@ class IdentityVerificationViewModel
     constructor(
         private val receiverAuthRepository: ReceiverAuthRepository,
         private val identityVerificationRepository: IdentityVerificationRepository,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(IdentityVerificationUiState())
         val uiState: StateFlow<IdentityVerificationUiState> = _uiState.asStateFlow()
@@ -71,6 +76,12 @@ class IdentityVerificationViewModel
                             )
                         }
                     }.onFailure { throwable ->
+                        if (!throwable.isExplainedReceiverRejection()) {
+                            errorReporter.recordAfternoteFailure(
+                                AfternoteFailureStage.RECEIVER_EMAIL_CODE_SEND,
+                                throwable,
+                            )
+                        }
                         _uiState.update {
                             it.copy(
                                 isSendingCode = false,
@@ -92,6 +103,12 @@ class IdentityVerificationViewModel
                         identityVerificationRepository.markVerified()
                         _uiState.update { it.copy(isVerifying = false, isVerified = true) }
                     }.onFailure { throwable ->
+                        if (!throwable.isExplainedReceiverRejection()) {
+                            errorReporter.recordAfternoteFailure(
+                                AfternoteFailureStage.RECEIVER_EMAIL_VERIFY,
+                                throwable,
+                            )
+                        }
                         _uiState.update {
                             it.copy(
                                 isVerifying = false,
