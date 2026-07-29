@@ -91,17 +91,48 @@ fun ErrorReporter.recordAfternoteFailure(
 }
 
 /**
- * **수신자 흐름에서** 서버가 사용자에게 보여줄 안내 문구까지 실어 내려준 거절인지.
+ * **수신자 흐름에서** 이 실패를 텔레메트리에 기록해야 하는지.
  *
- * 문구가 있다는 것 자체가 "서버가 예상하고 처리한 거절"(이메일 미등록·인증번호 만료·마스터 키 오타 등)
- * 이라는 신호라 텔레메트리에서 제외한다 — 기록해 봐야 보관 한도(최근 8건)를 사용자 오류가 차지해 실제
- * 장애를 밀어낸다. 문구 없는 실패(5xx·인프라 예외)만 남는다.
+ * `Receiver` 는 타입이 아니라 적용 맥락이다 — `Throwable` 확장이라 네트워크 타임아웃처럼 수신자와
+ * 무관한 예외도 들어오고, 그런 실패는 기록 대상(true)이다. 타입으로 좁히는 건 아래 제외 판정뿐이다.
+ *
+ * 유일한 제외 대상은 "서버가 예상하고 처리한 거절"(이메일 미등록·인증번호 만료·마스터 키 오타 등)이다 —
+ * 앱이 정상 동작한 결과라 고칠 것이 없고, 무엇보다 보관 한도를 사용자 오류가 차지해 실제 장애를 밀어낸다.
+ * Crashlytics 는 non-fatal 을 **최근 8건만 보관하고 초과분은 오래된 것부터 버린다** — 이 수치가 코드 곳곳의
+ * "보관 한도(최근 8건)" 서술의 근거다.
+ * https://firebase.google.com/docs/crashlytics/android/customize-crash-reports
+ *
+ * 그 판정은 **4xx + 서버 문구** 두 조건을 모두 만족할 때만 성립하고, 나머지는 전부 기록한다.
+ *
+ * | | 문구 있음 | 문구 없음 |
+ * |---|---|---|
+ * | 4xx | 제외 | 기록 |
+ * | 5xx | 기록 | 기록 |
+ *
+ * 문구 유무만으로 가르지 않는 이유: 이 서버는 5xx 에도 `message` 를 싣는다 — 500 응답 body 에 내부 SQL
+ * 문구가 그대로 실려 온 실측(#511)이 있다. 문구만 보면 정작 잡으려던 장애가 통째로 제외된다.
+ *
+ * 반대로 status 만으로도 가를 수 없다: 문구 없는 4xx 는 서버가 안내한 거절이 아니라 이쪽이 잘못된 요청을
+ * 보내고 있다는 신호(파라미터 누락·잘못된 id·만료 토큰)라, 제외하면 FE 버그가 묻힌다. 이 서버는 4xx·5xx
+ * 가리지 않고 문구를 싣는 것으로 관측돼(400·401·500 실측), 문구가 없다는 것 자체가 정상 경로가 아니다.
+ *
+ * 두 조건을 모두 요구하는 건 **확실할 때만 제외**하려는 것이다 — 판정이 빗나가면 기록을 더 하는 쪽으로
+ * 빗나간다. 잡음은 콘솔에 보여서 나중에 좁힐 수 있지만, 제외한 건 보이지 않아 좁힐 기회조차 없다.
+ *
+ * 사유 code 로 좁히지 않은 이유: 서버의 code 체계가 사용자 오류와 장애를 아직 분리하지 않는다.
  *
  * 다른 흐름에는 쓰지 않는다. 회원가입 이메일 인증은 사용자 오류가 code 1207 하나로만 와서 호출부가
  * 타입(`EmailVerificationException`)만 보고 거른다 — 문구 유무를 따질 필요가 없다.
- *
- * 사유 code 로 좁히지 않은 이유: 서버의 code 체계가 사용자 오류와 장애를 아직 분리하지 않는다.
  */
-fun Throwable.isExplainedReceiverRejection(): Boolean = this is ReceiverServerRejectionException && !serverMessage.isNullOrBlank()
+fun Throwable.shouldReportInReceiverFlow(): Boolean {
+    val isExpectedUserRejection =
+        this is ReceiverServerRejectionException &&
+            status in CLIENT_ERROR_STATUS_RANGE &&
+            !serverMessage.isNullOrBlank()
+    return !isExpectedUserRejection
+}
+
+/** 4xx = 요청을 보낸 쪽 문제. 이 대역 밖(5xx·그 외)은 서버 문구가 실려 와도 장애로 보고 기록한다. */
+private val CLIENT_ERROR_STATUS_RANGE = 400..499
 
 private const val KEY_AFTERNOTE_STAGE = "afternote_stage"

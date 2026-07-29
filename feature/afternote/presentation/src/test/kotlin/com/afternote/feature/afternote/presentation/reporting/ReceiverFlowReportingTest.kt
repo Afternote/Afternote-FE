@@ -9,12 +9,12 @@ import org.junit.Test
 import java.io.IOException
 
 /**
- * [isReportableReceiverFailure] 회귀 가드.
+ * [shouldReportInReceiverFlow] 회귀 가드.
  *
  * 이 서버는 5xx 응답에도 `message` 를 싣는다(실측 #511). 문구 유무만으로 가르면 정작 잡으려던
  * 장애가 텔레메트리에서 통째로 빠지므로, 제외는 "4xx + 문구" 로만 성립해야 한다.
  */
-class ReportableReceiverFailureTest {
+class ReceiverFlowReportingTest {
     @Test
     fun `4xx 에 서버 문구가 실렸으면 사용자 오류라 제외한다`() {
         val rejection =
@@ -24,7 +24,7 @@ class ReportableReceiverFailureTest {
                 serverCode = 1902,
             )
 
-        assertFalse(rejection.isReportableReceiverFailure())
+        assertFalse(rejection.shouldReportInReceiverFlow())
     }
 
     @Test
@@ -36,7 +36,7 @@ class ReportableReceiverFailureTest {
                 serverCode = 1500,
             )
 
-        assertTrue(outage.isReportableReceiverFailure())
+        assertTrue(outage.shouldReportInReceiverFlow())
     }
 
     @Test
@@ -48,11 +48,11 @@ class ReportableReceiverFailureTest {
                 serverCode = 1700,
             )
 
-        assertTrue(silentRejection.isReportableReceiverFailure())
+        assertTrue(silentRejection.shouldReportInReceiverFlow())
     }
 
     @Test
     fun `수신자 거절이 아닌 인프라 예외는 기록 대상이다`() {
-        assertTrue(IOException("timeout").isReportableReceiverFailure())
+        assertTrue(IOException("timeout").shouldReportInReceiverFlow())
     }
 }
