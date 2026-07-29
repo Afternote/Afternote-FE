@@ -55,6 +55,10 @@ enum class AfternoteFailureStage(
     /** 추억 플레이리스트 곡 검색. */
     MUSIC_SEARCH("music_search"),
 
+    /**
+     * 수신 추억 플레이리스트 전체보기 로드. 전용 endpoint 가 없어 [RECEIVED_DETAIL_LOAD] 와 같은 상세
+     * 조회를 부르고 응답의 `playlist.songs` 만 쓴다 — 키를 나눈 건 실패한 화면이 달라서다.
+     */
     RECEIVED_PLAYLIST_LOAD("received_playlist_load"),
 
     /** 발신자 상세의 열람 인증 상태 조회. */

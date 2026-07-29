@@ -2,7 +2,10 @@ package com.afternote.feature.afternote.presentation.receiver.summary
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
+import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
+import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +22,7 @@ class ReceiverDownloadAllViewModel
     @Inject
     constructor(
         private val receiverRepository: ReceiverRepository,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(ReceiverDownloadAllUiState())
         val uiState: StateFlow<ReceiverDownloadAllUiState> = _uiState.asStateFlow()
@@ -37,7 +41,7 @@ class ReceiverDownloadAllViewModel
                     it.copy(isLoading = true, errorMessage = null, downloadSuccess = false)
                 }
                 receiverRepository
-                    .downloadAllReceived()
+                    .downloadReceivedExport()
                     .onSuccess { result ->
                         receiverRepository
                             .saveReceivedExportToFile(result)
@@ -46,6 +50,7 @@ class ReceiverDownloadAllViewModel
                                     it.copy(isLoading = false, downloadSuccess = true)
                                 }
                             }.onFailure { e ->
+                                errorReporter.recordAfternoteFailure(AfternoteFailureStage.RECEIVED_EXPORT_SAVE, e)
                                 _uiState.update {
                                     it.copy(
                                         isLoading = false,
@@ -54,6 +59,7 @@ class ReceiverDownloadAllViewModel
                                 }
                             }
                     }.onFailure { e ->
+                        errorReporter.recordAfternoteFailure(AfternoteFailureStage.RECEIVED_EXPORT_DOWNLOAD, e)
                         _uiState.update {
                             it.copy(
                                 isLoading = false,

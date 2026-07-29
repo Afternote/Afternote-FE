@@ -13,6 +13,9 @@ import com.afternote.feature.afternote.domain.error.ReceiverServerRejectionExcep
  *
  * 두 타입을 String 하나로 합칠 수 없는 이유: 리소스 ID → String 변환에는 Context 가 필요해
  * VM 에서 못 풀고(UI 의 stringResource 가 마지막에 한 번), 서버 동적 문구는 리소스가 될 수 없다.
+ *
+ * 쓰이는 곳이 열람 인증 흐름뿐인 건 서버 문구를 그대로 노출해도 되는 계약이 여기에만 있어서다.
+ * 같은 역할의 `core.ui.UiText.DynamicOrResource` 가 뒤늦게 들어와 중복이며, 통일은 #446 소관.
  */
 sealed interface ErrorPayload {
     /** 클라이언트가 미리 정의한 generic 문구 (i18n 가능). 서버 message 미제공 시 fallback. */
@@ -32,6 +35,9 @@ sealed interface ErrorPayload {
  *
  * 판정 기준을 `isExplainedReceiverRejection` 과 같은 [ReceiverServerRejectionException] 범위로 맞춘다 —
  * 하위 타입 하나만 캐스팅하면 리포팅에서는 걸러지는데 화면에는 서버 문구가 안 뜨는 흐름이 생긴다.
+ *
+ * 그래서 `isExplainedReceiverRejection()` 이 true 인 실패에서는 [fallbackRes] 가 쓰이지 않는다. 호출부가
+ * 리포팅 분기 밖 공통 경로에서 대입해 늘 함께 넘어갈 뿐 — 실제로 소비되는 건 리포팅되는 쪽뿐이다.
  */
 internal fun Throwable.toErrorPayload(
     @StringRes fallbackRes: Int,
