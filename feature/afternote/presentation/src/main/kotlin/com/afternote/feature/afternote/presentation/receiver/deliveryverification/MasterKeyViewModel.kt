@@ -2,9 +2,13 @@ package com.afternote.feature.afternote.presentation.receiver.deliveryverificati
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.receiver.recordsbox.SenderRegistry
+import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
+import com.afternote.feature.afternote.presentation.reporting.isExplainedReceiverRejection
+import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +21,7 @@ import javax.inject.Inject
 /**
  * 마스터 키 입력 화면(5) ViewModel — 발신자별 authCode 검증 (이슈 #215, #220 후속).
  *
- * `verify(authCode)` 성공 시:
+ * `verifyMasterKey(authCode)` 성공 시:
  * 1) [ReceiverRepository.saveAuthCode] 로 글로벌 헤더 컨텍스트에 저장 (이후 서류 업로드·신청 제출 API 가
  *    동일 발신자 컨텍스트로 호출되도록).
  * 2) [SenderRegistry.attachIdentity] 로 카드에 authCode + ReceiverIdentity 결합.
@@ -40,6 +44,7 @@ class MasterKeyViewModel
         private val senderRegistry: SenderRegistry,
         private val receiverRepository: ReceiverRepository,
         private val receiverAuthRepository: ReceiverAuthRepository,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(MasterKeyUiState())
         val uiState: StateFlow<MasterKeyUiState> = _uiState.asStateFlow()
@@ -51,19 +56,22 @@ class MasterKeyViewModel
             val trimmed = authCode.trim()
             if (trimmed.isEmpty() || _uiState.value.isSubmitting) return
 
-            _uiState.update { it.copy(isSubmitting = true, errorMessageRes = null) }
+            _uiState.update { it.copy(isSubmitting = true, error = null) }
             viewModelScope.launch {
                 receiverAuthRepository
-                    .verify(trimmed)
+                    .verifyMasterKey(trimmed)
                     .onSuccess { identity ->
                         receiverRepository.saveAuthCode(trimmed)
                         senderRegistry.attachIdentity(senderId, trimmed, identity)
                         _uiState.update { it.copy(isSubmitting = false, isVerified = true) }
-                    }.onFailure {
+                    }.onFailure { throwable ->
+                        if (!throwable.isExplainedReceiverRejection()) {
+                            errorReporter.recordAfternoteFailure(AfternoteFailureStage.MASTER_KEY_VERIFY, throwable)
+                        }
                         _uiState.update {
                             it.copy(
                                 isSubmitting = false,
-                                errorMessageRes = R.string.receiver_verify_error_unknown,
+                                error = throwable.toErrorPayload(R.string.receiver_verify_error_unknown),
                             )
                         }
                     }
@@ -71,7 +79,7 @@ class MasterKeyViewModel
         }
 
         fun consumeError() {
-            _uiState.update { it.copy(errorMessageRes = null) }
+            _uiState.update { it.copy(error = null) }
         }
 
         fun onVerifiedConsumed() {
