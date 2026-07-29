@@ -6,6 +6,7 @@ data class DailyQuestion(
     val content: String,
     val createdAt: String,
     val imageUrl: String? = null,
+    val isDraft: Boolean = false,
 )
 
 data class TodayDailyQuestion(
@@ -14,6 +15,7 @@ data class TodayDailyQuestion(
     val day: Int,
     val content: String,
     val isAnswered: Boolean,
+    val isDraft: Boolean = false,
 )
 
 data class DailyQuestionCreatePayload(

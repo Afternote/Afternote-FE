@@ -31,7 +31,6 @@ import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListViewModel
-import com.afternote.feature.mindrecord.presentation.viewmodel.TodayQuestionUi
 import java.time.YearMonth
 
 @Composable
@@ -55,7 +54,6 @@ fun DailyQuestionAnswerListScreen(
             DailyQuestionListContent(
                 modifier = modifier,
                 isListView = isListView,
-                todayQuestion = state.todayQuestion,
                 answers = state.answers,
                 onDelete = viewModel::delete,
             )
@@ -66,7 +64,6 @@ fun DailyQuestionAnswerListScreen(
 @Composable
 private fun DailyQuestionListContent(
     isListView: Boolean,
-    todayQuestion: TodayQuestionUi?,
     answers: List<DailyQuestion>,
     modifier: Modifier = Modifier,
     onDelete: (Long) -> Unit = {},
@@ -74,7 +71,7 @@ private fun DailyQuestionListContent(
     var yearMonth by remember { mutableStateOf(YearMonth.now()) }
     val onYearMonthChanged: (YearMonth) -> Unit = { yearMonth = it }
 
-    if (isListView && todayQuestion == null && answers.isEmpty()) {
+    if (isListView && answers.isEmpty()) {
         MindRecordEmptyState(modifier = modifier)
         return
     }
@@ -133,7 +130,6 @@ private fun DailyQuestionAnswerListScreenPreviewFalse() {
         DailyQuestionListContent(
             modifier = Modifier,
             isListView = false,
-            todayQuestion = null,
             answers = emptyList(),
         )
     }
@@ -146,7 +142,6 @@ private fun DailyQuestionAnswerListScreenPreviewTrue() {
         DailyQuestionListContent(
             modifier = Modifier,
             isListView = true,
-            todayQuestion = null,
             answers = emptyList(),
         )
     }

@@ -36,6 +36,11 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.mindrecord.presentation.hometab.homeTabMindRecordMemoriesSection
 import com.afternote.feature.mindrecord.presentation.hometab.homeTabMindRecordQuestionAndCategories
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
+/** TODAY'S QUESTION 카드 날짜 표기 포맷. */
+private val homeTabDateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
 
 sealed interface HomeTabUiState {
     /**
@@ -52,6 +57,8 @@ sealed interface HomeTabUiState {
         val isRecipientDesignated: Boolean,
         val categoryCounts: Map<MindRecordCategory, Int>,
         val isRefreshing: Boolean = false,
+        /** 오늘의 질문 본문. 조회 실패 시 null — 카드가 중립 문구를 표시한다. */
+        val todayQuestionContent: String? = null,
     ) : HomeTabUiState
 
     data class Error(
@@ -110,6 +117,8 @@ fun HomeTabScreen(
     modifier: Modifier = Modifier,
     uiState: HomeTabUiState = HomeTabUiState.Loading(),
     actions: HomeTabActions = HomeTabActionsNoop,
+    // 프리뷰·스크린샷 테스트가 고정 날짜를 주입할 수 있도록 파라미터로 노출한다.
+    todayDateText: String = LocalDate.now().format(homeTabDateFormatter),
 ) {
     Scaffold(
         modifier = modifier,
@@ -124,6 +133,9 @@ fun HomeTabScreen(
                     isRecipientDesignated = false,
                     categoryCounts = MindRecordCategory.entries.associateWith { 0 },
                     categoryCountsLoading = true,
+                    todayDateText = todayDateText,
+                    todayQuestionContent = null,
+                    isQuestionLoading = true,
                     actions = actions,
                 )
             }
@@ -143,6 +155,9 @@ fun HomeTabScreen(
                         isRecipientDesignated = uiState.isRecipientDesignated,
                         categoryCounts = uiState.categoryCounts,
                         categoryCountsLoading = false,
+                        todayDateText = todayDateText,
+                        todayQuestionContent = uiState.todayQuestionContent,
+                        isQuestionLoading = false,
                         actions = actions,
                     )
                 }
@@ -184,6 +199,9 @@ private fun HomeTabScrollContent(
     isRecipientDesignated: Boolean,
     categoryCounts: Map<MindRecordCategory, Int>,
     categoryCountsLoading: Boolean,
+    todayDateText: String,
+    todayQuestionContent: String?,
+    isQuestionLoading: Boolean,
     actions: HomeTabActions,
 ) {
     LazyColumn(
@@ -222,6 +240,9 @@ private fun HomeTabScrollContent(
         }
 
         homeTabMindRecordQuestionAndCategories(
+            dateText = todayDateText,
+            questionText = todayQuestionContent,
+            isQuestionLoading = isQuestionLoading,
             categoryCounts = categoryCounts,
             onAnswerClick = actions::onAnswerClick,
             onRecordCategoryClick = actions::onRecordCategoryClick,
@@ -278,6 +299,6 @@ private fun HomeTabScrollContent(
 @Composable
 private fun HomeTabScreenPreview() {
     AfternoteTheme {
-        HomeTabScreen()
+        HomeTabScreen(todayDateText = "2026.04.10")
     }
 }
