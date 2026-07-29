@@ -9,9 +9,11 @@ package com.afternote.feature.afternote.domain.error
  * 이 흐름의 `serverMessage` 예시 — 409 `"이미 대기 중인 인증 요청이 존재합니다."`
  */
 class ReceiverDeliveryVerificationException(
+    status: Int,
     serverMessage: String?,
     serverCode: Int,
 ) : ReceiverServerRejectionException(
+        status = status,
         serverMessage = serverMessage,
         serverMessageFallback = "delivery verification failed (serverCode=$serverCode)",
     )

@@ -41,7 +41,7 @@ class ReceiverAuthRepositoryImpl
                 try {
                     api.verifyMasterKey(ReceiverAuthVerifyRequestDto(authCode)).requireData().toDomain()
                 } catch (e: ApiException) {
-                    throw ReceiverMasterKeyException(serverMessage = e.serverMessage, serverCode = e.code)
+                    throw ReceiverMasterKeyException(status = e.status, serverMessage = e.serverMessage, serverCode = e.code)
                 }
             }
 
@@ -50,7 +50,7 @@ class ReceiverAuthRepositoryImpl
                 try {
                     api.sendEmailAuthCode(ReceiverAuthCodeEmailSendRequestDto(email)).requireStatus()
                 } catch (e: ApiException) {
-                    throw ReceiverEmailAuthException(serverMessage = e.serverMessage, serverCode = e.code)
+                    throw ReceiverEmailAuthException(status = e.status, serverMessage = e.serverMessage, serverCode = e.code)
                 }
             }
 
@@ -66,7 +66,7 @@ class ReceiverAuthRepositoryImpl
                         ).requireData()
                         .toDomain()
                 } catch (e: ApiException) {
-                    throw ReceiverEmailAuthException(serverMessage = e.serverMessage, serverCode = e.code)
+                    throw ReceiverEmailAuthException(status = e.status, serverMessage = e.serverMessage, serverCode = e.code)
                 }
             }
 
@@ -90,7 +90,11 @@ class ReceiverAuthRepositoryImpl
                         ).requireData()
                         .toDomain()
                 } catch (e: ApiException) {
-                    throw ReceiverDeliveryVerificationException(serverMessage = e.serverMessage, serverCode = e.code)
+                    throw ReceiverDeliveryVerificationException(
+                        status = e.status,
+                        serverMessage = e.serverMessage,
+                        serverCode = e.code,
+                    )
                 }
             }
 

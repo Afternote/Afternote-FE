@@ -45,6 +45,9 @@ class ApiErrorInterceptor
                     ?: response.message.takeUnless { it.isBlank() }
                     ?: "요청에 실패했습니다."
 
-            throw ApiException(code = code, serverMessage = serverMessage, message = message)
+            // 이름이 엇갈리는 지점 — OkHttp 의 `Response.code` 는 HTTP 상태다. ApiException 에서 그 자리
+            // 이름은 status 이고, code 는 서버 봉투의 비즈니스 코드(1901·475 등)라 서로 어긋나 보인다.
+            // 이름을 맞춰 `code = response.code` 로 넘기면 비즈니스 코드 자리에 HTTP 상태가 들어간다.
+            throw ApiException(status = response.code, code = code, serverMessage = serverMessage, message = message)
         }
     }

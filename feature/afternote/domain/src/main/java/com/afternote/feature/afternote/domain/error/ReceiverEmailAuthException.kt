@@ -11,9 +11,11 @@ package com.afternote.feature.afternote.domain.error
  * `"인증번호가 만료되었거나 존재하지 않습니다. 다시 요청해주세요."`
  */
 class ReceiverEmailAuthException(
+    status: Int,
     serverMessage: String?,
     serverCode: Int,
 ) : ReceiverServerRejectionException(
+        status = status,
         serverMessage = serverMessage,
         serverMessageFallback = "email auth failed (serverCode=$serverCode)",
     )
