@@ -6,8 +6,8 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.error.ReceiverServerRejectionException
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
-import com.afternote.feature.afternote.presentation.reporting.isExplainedReceiverRejection
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
+import com.afternote.feature.afternote.presentation.reporting.shouldReportInReceiverFlow
 import com.afternote.feature.receiver.domain.repository.IdentityVerificationRepository
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -75,7 +75,7 @@ class IdentityVerificationViewModel
                             )
                         }
                     }.onFailure { throwable ->
-                        if (!throwable.isExplainedReceiverRejection()) {
+                        if (throwable.shouldReportInReceiverFlow()) {
                             errorReporter.recordAfternoteFailure(
                                 AfternoteFailureStage.RECEIVER_EMAIL_CODE_SEND,
                                 throwable,
@@ -102,7 +102,7 @@ class IdentityVerificationViewModel
                         identityVerificationRepository.markVerified()
                         _uiState.update { it.copy(isVerifying = false, isVerified = true) }
                     }.onFailure { throwable ->
-                        if (!throwable.isExplainedReceiverRejection()) {
+                        if (throwable.shouldReportInReceiverFlow()) {
                             errorReporter.recordAfternoteFailure(
                                 AfternoteFailureStage.RECEIVER_EMAIL_VERIFY,
                                 throwable,

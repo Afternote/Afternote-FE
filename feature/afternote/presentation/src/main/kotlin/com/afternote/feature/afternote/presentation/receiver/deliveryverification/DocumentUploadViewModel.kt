@@ -5,8 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
-import com.afternote.feature.afternote.presentation.reporting.isExplainedReceiverRejection
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
+import com.afternote.feature.afternote.presentation.reporting.shouldReportInReceiverFlow
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import com.afternote.feature.receiver.domain.repository.ReceiverDeliveryDocumentUploadRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -84,7 +84,7 @@ class DocumentUploadViewModel
                         _uiState.update { it.copy(isSubmitting = false, isSubmitted = true) }
                     }.onFailure { throwable ->
                         // 서버가 사유 문구를 준 거절(이미 대기 중 등)은 예상된 경로라 리포팅하지 않는다.
-                        if (!throwable.isExplainedReceiverRejection()) {
+                        if (throwable.shouldReportInReceiverFlow()) {
                             errorReporter.recordAfternoteFailure(AfternoteFailureStage.DELIVERY_SUBMIT, throwable)
                         }
                         _uiState.update {

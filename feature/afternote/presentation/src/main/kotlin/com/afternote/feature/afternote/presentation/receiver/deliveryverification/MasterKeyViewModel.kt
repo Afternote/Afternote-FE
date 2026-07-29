@@ -7,8 +7,8 @@ import com.afternote.feature.afternote.domain.repository.receiver.ReceiverReposi
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.receiver.recordsbox.SenderRegistry
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
-import com.afternote.feature.afternote.presentation.reporting.isExplainedReceiverRejection
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
+import com.afternote.feature.afternote.presentation.reporting.shouldReportInReceiverFlow
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -65,7 +65,7 @@ class MasterKeyViewModel
                         senderRegistry.attachIdentity(senderId, trimmed, identity)
                         _uiState.update { it.copy(isSubmitting = false, isVerified = true) }
                     }.onFailure { throwable ->
-                        if (!throwable.isExplainedReceiverRejection()) {
+                        if (throwable.shouldReportInReceiverFlow()) {
                             errorReporter.recordAfternoteFailure(AfternoteFailureStage.MASTER_KEY_VERIFY, throwable)
                         }
                         _uiState.update {

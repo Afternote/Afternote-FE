@@ -33,11 +33,12 @@ sealed interface ErrorPayload {
  * 서버가 내려준 사용자 친화 message 가 있으면 그대로 노출, 없으면(인프라 예외·message 미제공)
  * [fallbackRes] 로 폴백.
  *
- * 판정 기준을 `isExplainedReceiverRejection` 과 같은 [ReceiverServerRejectionException] 범위로 맞춘다 —
+ * 판정 기준을 `shouldReportInReceiverFlow` 와 같은 [ReceiverServerRejectionException] 범위로 맞춘다 —
  * 하위 타입 하나만 캐스팅하면 리포팅에서는 걸러지는데 화면에는 서버 문구가 안 뜨는 흐름이 생긴다.
  *
- * 그래서 `isExplainedReceiverRejection()` 이 true 인 실패에서는 [fallbackRes] 가 쓰이지 않는다. 호출부가
- * 리포팅 분기 밖 공통 경로에서 대입해 늘 함께 넘어갈 뿐 — 실제로 소비되는 건 리포팅되는 쪽뿐이다.
+ * 그래서 `shouldReportInReceiverFlow()` 가 false 인 실패(= 안내된 4xx 거절)에서는 [fallbackRes] 가 쓰이지
+ * 않는다. 호출부가 리포팅 분기 밖 공통 경로에서 대입해 늘 함께 넘어갈 뿐 — 실제로 소비되는 건
+ * 리포팅되는 쪽뿐이다.
  */
 internal fun Throwable.toErrorPayload(
     @StringRes fallbackRes: Int,
