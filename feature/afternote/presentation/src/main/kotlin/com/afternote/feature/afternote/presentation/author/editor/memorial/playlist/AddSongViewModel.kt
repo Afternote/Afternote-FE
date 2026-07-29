@@ -2,7 +2,10 @@ package com.afternote.feature.afternote.presentation.author.editor.memorial.play
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.repository.author.MusicSearchRepository
+import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
+import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -12,6 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 private const val SEARCH_DEBOUNCE_MS = 300L
 
@@ -20,6 +24,7 @@ class AddSongViewModel
     @Inject
     constructor(
         private val musicSearchRepository: MusicSearchRepository,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(AddSongUiState())
         val uiState: StateFlow<AddSongUiState> = _uiState.asStateFlow()
@@ -31,7 +36,7 @@ class AddSongViewModel
             searchJob?.cancel()
             searchJob =
                 viewModelScope.launch {
-                    delay(SEARCH_DEBOUNCE_MS)
+                    delay(SEARCH_DEBOUNCE_MS.milliseconds)
                     val trimmed = query.trim()
                     if (trimmed.isEmpty()) {
                         _uiState.update { it.copy(songs = emptyList(), isLoading = false) }
@@ -45,6 +50,7 @@ class AddSongViewModel
                                 it.copy(songs = list.map { item -> item.toDisplay() }, isLoading = false, error = null)
                             }
                         }.onFailure { e ->
+                            errorReporter.recordAfternoteFailure(AfternoteFailureStage.MUSIC_SEARCH, e)
                             _uiState.update {
                                 it.copy(
                                     songs = emptyList(),
