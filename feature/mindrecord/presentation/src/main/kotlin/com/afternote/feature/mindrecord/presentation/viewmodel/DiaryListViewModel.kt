@@ -73,7 +73,12 @@ class DiaryListViewModel
 
         fun delete(id: Long) {
             viewModelScope.launch {
-                repository.delete(id).onSuccess { load(internalState.value.yearMonth) }
+                repository.delete(id).onSuccess {
+                    // 삭제는 사용자가 요청했지만 뒤따르는 재조회는 아니다. 로딩을 방출하면
+                    // 목록이 통째 교체되며 LazyColumn 스크롤이 맨 위로 돌아간다.
+                    // 다만 재조회가 실패하면 삭제한 항목이 그대로 남아 보이므로 에러는 드러낸다.
+                    load(internalState.value.yearMonth, showsLoading = false)
+                }
             }
         }
 

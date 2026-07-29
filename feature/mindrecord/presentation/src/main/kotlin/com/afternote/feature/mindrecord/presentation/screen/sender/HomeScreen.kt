@@ -74,16 +74,21 @@ fun HomeScreen(
         selectedIndex = pagerState.currentPage
     }
 
+    // 탭 전환과 ON_RESUME 은 성격이 같은 자동 갱신이므로 대상도 같아야 한다.
+    // 한쪽에만 주간리포트가 빠지면, 일기를 쓰고 돌아와 주간리포트 탭으로 넘겼을 때
+    // 방금 쓴 일기가 주간 집계에 잡히지 않는다.
+    val refreshTab: (MindRecordCategoryUi) -> Unit = { category ->
+        when (category) {
+            MindRecordCategoryUi.DailyQuestion -> dailyQuestionViewModel.refreshOnReturn()
+            MindRecordCategoryUi.Diary -> diaryViewModel.refreshOnReturn()
+            MindRecordCategoryUi.WeeklyReport -> weeklyReportViewModel.refreshOnReturn()
+        }
+    }
+
     LaunchedEffect(Unit) {
         snapshotFlow { selectedIndex }
             .drop(1)
-            .collect { index ->
-                when (categories[index]) {
-                    MindRecordCategoryUi.DailyQuestion -> dailyQuestionViewModel.refreshOnReturn()
-                    MindRecordCategoryUi.Diary -> diaryViewModel.refreshOnReturn()
-                    else -> Unit
-                }
-            }
+            .collect { index -> refreshTab(categories[index]) }
     }
 
     // ON_RESUME 은 작성 화면 복귀뿐 아니라 화면 off/on · 홈 버튼 후 복귀 · 권한 다이얼로그
@@ -101,11 +106,7 @@ fun HomeScreen(
     // LifecycleResumeEffect 는 effects 람다를 DisposableEffect(lifecycleOwner, scope) 안에서
     // 직접 캡처해 진입 시점 값에 고정되므로, 이 화면에서는 쓰면 안 된다.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        when (selectedCategory) {
-            MindRecordCategoryUi.DailyQuestion -> dailyQuestionViewModel.refreshOnReturn()
-            MindRecordCategoryUi.Diary -> diaryViewModel.refreshOnReturn()
-            MindRecordCategoryUi.WeeklyReport -> weeklyReportViewModel.refreshOnReturn()
-        }
+        refreshTab(selectedCategory)
     }
 
     Scaffold(

@@ -42,6 +42,8 @@ import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListViewMode
 import java.time.YearMonth
 import androidx.compose.foundation.lazy.staggeredgrid.items as gridItems
 
+private val PreviewYearMonth = YearMonth.of(2026, 7)
+
 @Composable
 fun DiaryScreen(
     modifier: Modifier = Modifier,
@@ -78,10 +80,11 @@ fun DiaryScreen(
 private fun DiaryListContent(
     isListView: Boolean,
     diaries: List<DailyDiary>,
-    modifier: Modifier = Modifier,
     // 조회 중인 월은 VM 이 들고 있다 — 자동 갱신이 같은 월을 다시 조회해야 하고,
     // 로컬 remember 로 두면 로딩으로 이 컴포저블이 폐기될 때 함께 사라진다.
-    yearMonth: YearMonth = YearMonth.now(),
+    // 기본값을 두지 않는다 — 빠뜨리면 조용히 이번 달로 돌아간다.
+    yearMonth: YearMonth,
+    modifier: Modifier = Modifier,
     monthDiaryCount: Int = 0,
     weeklyMoodEmoji: String? = null,
     onDelete: (Long) -> Unit = {},
@@ -192,6 +195,8 @@ private fun DiaryScreenPreviewTrue() {
             modifier = Modifier,
             isListView = true,
             diaries = emptyList(),
+            // 프리뷰는 고정 월로 렌더한다 — YearMonth.now() 면 달이 바뀔 때마다 결과가 달라진다.
+            yearMonth = PreviewYearMonth,
         )
     }
 }
@@ -204,6 +209,7 @@ private fun DiaryScreenPreviewFalse() {
             modifier = Modifier,
             isListView = false,
             diaries = emptyList(),
+            yearMonth = PreviewYearMonth,
         )
     }
 }

@@ -10,7 +10,8 @@ sealed interface DiaryListUiState {
 
     data class Success(
         val diaries: List<DailyDiary>,
-        val yearMonth: YearMonth = YearMonth.now(),
+        // 기본값을 두지 않는다 — 빠뜨리면 조용히 이번 달로 돌아간다.
+        val yearMonth: YearMonth,
         val monthDiaryCount: Int = 0,
         val weeklyDominantMood: TodayMood? = null,
     ) : DiaryListUiState
