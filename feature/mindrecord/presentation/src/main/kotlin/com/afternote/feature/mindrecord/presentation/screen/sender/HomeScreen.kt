@@ -102,7 +102,7 @@ fun HomeScreen(
     //
     // selectedCategory 는 State 가 아니라 매 컴포지션 새로 계산되는 지역 val 이지만 여기서는
     // 최신 값이 읽힌다 — LifecycleEventEffect 가 onEvent 를 rememberUpdatedState 로 감싸
-    // 옵저버에 넘기기 때문이다 (lifecycle-runtime-compose 2.9.4 LifecycleEffect.kt:66).
+    // 옵저버에 넘기기 때문이다 (lifecycle-runtime-compose 2.11.0 LifecycleEffect.kt:66).
     // LifecycleResumeEffect 는 effects 람다를 DisposableEffect(lifecycleOwner, scope) 안에서
     // 직접 캡처해 진입 시점 값에 고정되므로, 이 화면에서는 쓰면 안 된다.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
