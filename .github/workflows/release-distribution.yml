@@ -13,6 +13,14 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# 트리거가 둘로 늘면서 두 배포 경로가 겹칠 수 있게 됐다 — develop 기준 수동 테스터 배포 도중
+# main 릴리스 push 가 들어오면 러너 둘이 각각 빌드해 같은 App Distribution 앱에 올린다.
+# 한 그룹으로 묶어 직렬화한다. cancel-in-progress 는 기본값(false) 그대로 두어 진행 중인
+# 배포를 죽이지 않고 뒤차를 대기시킨다 — 릴리스 배포가 수동 배포에 밀려 취소되면 안 된다.
+# https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#concurrency
+concurrency:
+  group: release-distribution
+
 permissions:
   contents: read
 
