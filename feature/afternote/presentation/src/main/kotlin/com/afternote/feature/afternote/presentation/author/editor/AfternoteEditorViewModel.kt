@@ -492,14 +492,15 @@ class AfternoteEditorViewModel
                         null
                     }
                 }
-            // 입력 검증 실패(수신자 미선택 등)는 사용자가 고칠 정상 경로라 기록하지 않는다 —
+            // 필수 필드 검증에 걸린 실패(수신자 미선택 등)는 사용자가 채우면 풀리는 정상 경로라 기록하지 않는다 —
             // 보관 한도(최근 8건) 를 사용자 오류가 차지하면 실제 등록 장애가 밀려난다.
+            // 그 외 실패는 서버 5xx 본문에 내부 SQL 이 섞여 오므로 원문을 UI 에 싣지 않는다.
             if (validationError == null) {
+                Log.e(TAG, "handleSaveFailure", e)
                 errorReporter.recordAfternoteFailure(AfternoteFailureStage.SAVE, e)
             }
-            val errorMessage = if (validationError == null) e.message else null
             val errorRes =
-                if (validationError == null && errorMessage == null) {
+                if (validationError == null) {
                     R.string.afternote_editor_save_failed_generic
                 } else {
                     null
@@ -508,7 +509,6 @@ class AfternoteEditorViewModel
                 it.copy(
                     isSaving = false,
                     validationError = validationError,
-                    error = errorMessage,
                     errorRes = errorRes,
                 )
             }
