@@ -42,8 +42,8 @@ import com.afternote.feature.afternote.presentation.R
  * Welcome 의 "전달 받은 기록 확인하기" 에서 진입. 본인 확인 상태와 무관하게 진입 가능하며,
  * 발신자별 열람 신청 흐름은 발신자 상세 화면의 "열람 신청하기" 에서 시작한다 (이슈 #215).
  *
- * 빈 상태(14) / 채워진 상태(13) 를 sender 리스트 유무로 분기. 카드 디자인은 13 시안 따름:
- * 프로필 동그라미 + 이름 + 마지막 확인 날짜 + 우측 chevron.
+ * 빈 상태(14) / 채워진 상태(13) 를 sender 리스트 유무로 분기. 카드는 시안에 배치된 변형(Variant4)
+ * 따름: 프로필 동그라미 + 이름 + 우측 chevron.
  */
 @Composable
 fun ReceivedRecordsScreen(
