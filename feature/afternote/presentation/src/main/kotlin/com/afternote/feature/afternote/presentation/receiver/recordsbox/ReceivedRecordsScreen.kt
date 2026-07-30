@@ -166,25 +166,12 @@ private fun SenderCard(
 
         Column(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             Text(
                 text = sender.name,
                 style = AfternoteDesign.typography.bodySmallB,
                 color = AfternoteDesign.colors.gray9,
             )
-            // lastConfirmedAt(BE 미확정 stub) 이 null 이면 "마지막 확인: " 뒤가 빈 값으로 노출되므로 라벨 자체를 숨긴다.
-            sender.lastConfirmedAt?.let { lastConfirmedAt ->
-                Text(
-                    text =
-                        stringResource(
-                            R.string.receiver_records_box_card_last_confirmed,
-                            lastConfirmedAt,
-                        ),
-                    style = AfternoteDesign.typography.captionLargeR,
-                    color = AfternoteDesign.colors.gray5,
-                )
-            }
         }
 
         RightArrowIcon(
@@ -214,10 +201,10 @@ private fun ReceivedRecordsScreenFilledPreview() {
         ReceivedRecordsScreenContent(
             senders =
                 listOf(
-                    SenderEntry(id = "1", name = "김혜성", lastConfirmedAt = "2025.10.21."),
-                    SenderEntry(id = "2", name = "김혜성", lastConfirmedAt = "2025.10.21."),
-                    SenderEntry(id = "3", name = "김혜성", lastConfirmedAt = "2025.10.21."),
-                    SenderEntry(id = "4", name = "김혜성", lastConfirmedAt = "2025.10.21."),
+                    SenderEntry(id = "1", name = "김혜성"),
+                    SenderEntry(id = "2", name = "김혜성"),
+                    SenderEntry(id = "3", name = "김혜성"),
+                    SenderEntry(id = "4", name = "김혜성"),
                 ),
             onBackClick = {},
             onAddSenderClick = {},
