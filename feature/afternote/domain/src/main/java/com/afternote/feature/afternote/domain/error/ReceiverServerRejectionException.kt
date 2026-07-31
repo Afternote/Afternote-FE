@@ -9,7 +9,8 @@ package com.afternote.feature.afternote.domain.error
  *
  * @property status 거절 응답의 HTTP 상태 코드. 인프라 디테일을 걷어내는 이 계열에 굳이 남기는 건
  *   "사용자 오류(4xx)"와 "장애(5xx)"를 가를 유일한 단서라서다 — 서버가 양쪽 모두에 [serverMessage] 를
- *   실어 보내고(실측 #511), 사유 `code` 체계도 둘을 분리하지 않는다. 텔레메트리 제외 판정이 이 값을 쓴다.
+ *   실어 보내고(실측 #511), 사유 `code` 체계도 둘을 분리하지 않는다. 텔레메트리 제외 판정과
+ *   화면 노출 게이트(#651)가 이 값을 쓴다.
  * @property serverMessage 백엔드가 실제로 내려준 사용자 친화 message.
  *   **null 이면 서버가 message 미제공** — 호출처는 정적 R.string 으로 폴백한다. 클라가 만든 generic
  *   문구("알 수 없는 서버 에러" 등)는 여기 들어오지 않는다.

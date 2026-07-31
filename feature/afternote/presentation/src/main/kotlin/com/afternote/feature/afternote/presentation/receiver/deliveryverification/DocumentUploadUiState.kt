@@ -3,6 +3,7 @@ package com.afternote.feature.afternote.presentation.receiver.deliveryverificati
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
 import com.afternote.feature.afternote.domain.error.ReceiverServerRejectionException
+import com.afternote.feature.afternote.presentation.reporting.shouldReportInReceiverFlow
 
 /**
  * 화면이 표시할 에러 문구를 VM → UI 로 실어 나르는 상자 (payload = 운반되는 내용물).
@@ -18,7 +19,7 @@ import com.afternote.feature.afternote.domain.error.ReceiverServerRejectionExcep
  * 같은 역할의 `core.ui.UiText.DynamicOrResource` 가 뒤늦게 들어와 중복이며, 통일은 #446 소관.
  */
 sealed interface ErrorPayload {
-    /** 클라이언트가 미리 정의한 generic 문구 (i18n 가능). 서버 message 미제공 시 fallback. */
+    /** 클라이언트가 미리 정의한 generic 문구 (i18n 가능). 서버 message 미제공·5xx 장애 시 fallback. */
     data class Res(
         @param:StringRes val id: Int,
     ) : ErrorPayload
@@ -30,20 +31,20 @@ sealed interface ErrorPayload {
 }
 
 /**
- * 서버가 내려준 사용자 친화 message 가 있으면 그대로 노출, 없으면(인프라 예외·message 미제공)
- * [fallbackRes] 로 폴백.
+ * 서버가 안내한 4xx 거절(= [shouldReportInReceiverFlow] 가 기록에서 제외하는 실패)의 message 만
+ * 그대로 노출하고, 그 외(5xx·message 미제공·인프라 예외)는 [fallbackRes] 로 폴백.
  *
- * 판정 기준을 `shouldReportInReceiverFlow` 와 같은 [ReceiverServerRejectionException] 범위로 맞춘다 —
- * 하위 타입 하나만 캐스팅하면 리포팅에서는 걸러지는데 화면에는 서버 문구가 안 뜨는 흐름이 생긴다.
- *
- * 그래서 `shouldReportInReceiverFlow()` 가 false 인 실패(= 안내된 4xx 거절)에서는 [fallbackRes] 가 쓰이지
- * 않는다. 호출부가 리포팅 분기 밖 공통 경로에서 대입해 늘 함께 넘어갈 뿐 — 실제로 소비되는 건
- * 리포팅되는 쪽뿐이다.
+ * status 를 가르지 않고 message 유무만 보면 5xx 원문이 화면에 실린다 — 이 서버는 5xx 봉투에도
+ * 내부 문구(500 body 에 SQL 원문 실측 #511)를 싣는다(#651). 판정을 [shouldReportInReceiverFlow]
+ * 재사용으로 맞춘 건 "기록되는 실패(장애) ⟺ 정적 문구, 기록 제외(안내된 거절) ⟺ 서버 문구" 를
+ * 한 술어로 강제하기 위해서다 — 두 판정이 따로 굴러가면 리포팅에서는 장애로 치는데 화면에는
+ * 서버 원문이 뜨는 틈이 다시 생긴다.
  */
 internal fun Throwable.toErrorPayload(
     @StringRes fallbackRes: Int,
 ): ErrorPayload =
     (this as? ReceiverServerRejectionException)
+        ?.takeUnless { it.shouldReportInReceiverFlow() }
         ?.serverMessage
         ?.takeIf { it.isNotBlank() }
         ?.let { ErrorPayload.Text(it) }
