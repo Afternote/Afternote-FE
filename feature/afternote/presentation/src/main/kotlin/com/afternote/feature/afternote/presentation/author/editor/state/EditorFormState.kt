@@ -108,4 +108,22 @@ data class EditorFormState(
             }
 
     fun isCustomAddOption(service: String): Boolean = service == CUSTOM_ADD_OPTION
+
+    companion object {
+        /**
+         * 카테고리 전환 리셋과 이탈 가드의 '사용자가 바꾼 서비스명' 판정이 공유하는 기본값.
+         * 비갤러리 카테고리는 [currentServiceOptions]와 같은 기준으로 소셜 카탈로그를 공용한다
+         * (else 없는 when — 카테고리가 늘면 컴파일 단계에서 매핑 결정을 강제).
+         */
+        fun defaultServiceFor(category: EditorCategory): String =
+            when (category) {
+                EditorCategory.GALLERY -> AfternoteServiceCatalog.defaultGalleryService
+
+                EditorCategory.SOCIAL,
+                EditorCategory.BUSINESS,
+                EditorCategory.ESTATE,
+                EditorCategory.MEMORIAL,
+                -> AfternoteServiceCatalog.defaultSocialService
+            }
+    }
 }
