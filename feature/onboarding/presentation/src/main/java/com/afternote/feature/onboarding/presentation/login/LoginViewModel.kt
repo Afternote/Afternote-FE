@@ -2,8 +2,11 @@ package com.afternote.feature.onboarding.presentation.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.domain.error.NetworkUnavailableException
 import com.afternote.core.domain.usecase.auth.LoginType
 import com.afternote.core.domain.usecase.auth.LoginUseCase
+import com.afternote.core.ui.UiText
+import com.afternote.feature.onboarding.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -76,10 +79,24 @@ class LoginViewModel
                             }
                         }
                     }.onFailure { exception ->
+                        // 전송 계층 실패는 예외 원문(영문 기술 메시지)을 숨기고 네트워크 안내로 고정한다.
+                        // 그 외에는 예외 message(서버 응답 실패면 인터셉터가 채운 문구)를 쓰되,
+                        // null/blank 면 일반 문구로 폴백해 실패 사실이 소실되지 않게 한다 (#502 무음 버그 계약 유지).
+                        val errorMessage =
+                            when (exception) {
+                                is NetworkUnavailableException -> {
+                                    UiText.Resource(R.string.login_network_error)
+                                }
+
+                                else -> {
+                                    UiText.DynamicOrResource(
+                                        value = exception.message?.takeUnless { it.isBlank() },
+                                        fallbackResId = R.string.login_failed,
+                                    )
+                                }
+                            }
                         _uiState.update {
-                            // message 가 null 이면 빈 문자열로 두어 실패 사실이 소실되지 않게 한다.
-                            // (null 은 "에러 없음"과 구분되지 않아 스낵바가 무음 처리되던 버그. UI 가 ifBlank 로 일반 문구 폴백.)
-                            it.copy(isLoading = false, errorMessage = exception.message.orEmpty())
+                            it.copy(isLoading = false, errorMessage = errorMessage)
                         }
                     }
             }
