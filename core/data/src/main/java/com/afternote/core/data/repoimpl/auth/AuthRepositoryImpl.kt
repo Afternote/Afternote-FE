@@ -2,6 +2,7 @@ package com.afternote.core.data.repoimpl.auth
 
 import com.afternote.core.data.mapper.auth.AuthMapper
 import com.afternote.core.datastore.TokenDataSource
+import com.afternote.core.domain.error.NetworkUnavailableException
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.model.Session
 import com.afternote.core.model.TokenBundle
@@ -9,11 +10,13 @@ import com.afternote.core.network.dto.LoginRequestDto
 import com.afternote.core.network.dto.LogoutRequestDto
 import com.afternote.core.network.dto.ReissueRequestDto
 import com.afternote.core.network.dto.SocialLoginRequestDto
+import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.service.AuthApiService
 import com.afternote.core.network.service.TokenApiService
 import com.afternote.core.network.token.AccessTokenExpiryTracker
 import kotlinx.coroutines.flow.Flow
+import java.io.IOException
 import javax.inject.Inject
 
 class AuthRepositoryImpl
@@ -73,7 +76,7 @@ class AuthRepositoryImpl
                 val data = authApiService.login(LoginRequestDto(email, password)).requireData()
                 recordIssuedExpiresIn(data.expiresIn)
                 AuthMapper.toDefaultLoginResult(data)
-            }
+            }.mapTransportFailure()
 
         override suspend fun kakaoLogin(oauthToken: String): Result<Session.SocialSession> =
             runCatching {
@@ -87,7 +90,7 @@ class AuthRepositoryImpl
                         ).requireData()
                 recordIssuedExpiresIn(data.expiresIn)
                 AuthMapper.toSocialLoginResult(data)
-            }
+            }.mapTransportFailure()
 
         override suspend fun googleLogin(idToken: String): Result<Session.SocialSession> =
             runCatching {
@@ -101,7 +104,7 @@ class AuthRepositoryImpl
                         ).requireData()
                 recordIssuedExpiresIn(data.expiresIn)
                 AuthMapper.toSocialLoginResult(data)
-            }
+            }.mapTransportFailure()
 
         override suspend fun rotateToken(): Result<TokenBundle> =
             runCatching {
@@ -146,3 +149,17 @@ class AuthRepositoryImpl
             expiresInSeconds?.let(expiryTracker::record) ?: expiryTracker.clear()
         }
     }
+
+/**
+ * 로그인 경로 공통 — 서버 응답 없이 전송 계층에서 끝난 IO 실패를 [NetworkUnavailableException] 으로
+ * 치환한다. [ApiException] 은 IOException 서브클래스지만(인터셉터 throw 를 OkHttp 가 원형 전파하게
+ * 하려는 설계) 서버가 응답한 실패이므로 제외한다 — code·서버 message 가 소비처에서 그대로 쓰여야 한다.
+ */
+private fun <T> Result<T>.mapTransportFailure(): Result<T> {
+    val exception = exceptionOrNull()
+    return if (exception is IOException && exception !is ApiException) {
+        Result.failure(NetworkUnavailableException(exception))
+    } else {
+        this // 성공·그 외 예외 모두 통과
+    }
+}

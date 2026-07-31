@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
 import com.afternote.core.datastore.TokenDataSource
+import com.afternote.core.domain.error.NetworkUnavailableException
 import com.afternote.core.network.dto.LoginDto
 import com.afternote.core.network.dto.LoginRequestDto
 import com.afternote.core.network.dto.LogoutRequestDto
@@ -23,9 +24,11 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.net.UnknownHostException
 
 /**
  * [AuthRepositoryImpl] 의 선제 reissue deadline 관리 계약 회귀 가드 (#408, PR #411 리뷰 반영).
+ * 로그인 경로의 전송 계층 IO 실패 → [NetworkUnavailableException] 치환 계약(#517)도 함께 가드한다.
  *
  * 계약 — 발급(로그인) 응답의 `expiresIn` 은 기록하고, 생략(null)이면 이전 토큰 기준 stale
  * deadline 이 새 세션에 적용되지 않게 비우며(`TokenReissuer` 회전 경로와 같은 규칙),
@@ -133,6 +136,67 @@ class AuthRepositoryImplTest {
         assertTrue(result.isSuccess)
         assertNull(runBlocking { tokenDataSource.getAccessToken() })
         assertFalse(tracker.isExpiringSoon())
+    }
+
+    @Test
+    fun `defaultLogin - 전송 계층 IO 실패는 NetworkUnavailableException 으로 치환 (원인 보존)`() {
+        val repository =
+            repository(
+                FakeAuthApiService(
+                    onLogin = { throw UnknownHostException("Unable to resolve host") },
+                ),
+            )
+
+        val result = runBlocking { repository.defaultLogin("user@example.com", "pw") }
+
+        val exception = result.exceptionOrNull()
+        assertTrue(exception is NetworkUnavailableException)
+        assertTrue(exception?.cause is UnknownHostException)
+    }
+
+    @Test
+    fun `defaultLogin - 서버 응답 실패(ApiException)는 치환 없이 통과 (서버 message 보존)`() {
+        val serverMessage = "비밀번호가 일치하지 않습니다."
+        val repository =
+            repository(
+                FakeAuthApiService(
+                    onLogin = { throw ApiException(code = 401, serverMessage = serverMessage, message = serverMessage) },
+                ),
+            )
+
+        val result = runBlocking { repository.defaultLogin("user@example.com", "pw") }
+
+        val exception = result.exceptionOrNull()
+        assertTrue(exception is ApiException)
+        assertEquals(serverMessage, exception?.message)
+    }
+
+    @Test
+    fun `socialLogin - 전송 계층 IO 실패 치환은 소셜 경로에도 적용`() {
+        val repository =
+            repository(
+                FakeAuthApiService(
+                    onSocialLogin = { throw UnknownHostException("Unable to resolve host") },
+                ),
+            )
+
+        val result = runBlocking { repository.kakaoLogin("oauth-token") }
+
+        assertTrue(result.exceptionOrNull() is NetworkUnavailableException)
+    }
+
+    @Test
+    fun `googleLogin - 전송 계층 IO 실패 치환 (메서드별 독립 호출이라 개별 가드)`() {
+        val repository =
+            repository(
+                FakeAuthApiService(
+                    onSocialLogin = { throw UnknownHostException("Unable to resolve host") },
+                ),
+            )
+
+        val result = runBlocking { repository.googleLogin("id-token") }
+
+        assertTrue(result.exceptionOrNull() is NetworkUnavailableException)
     }
 }
 
