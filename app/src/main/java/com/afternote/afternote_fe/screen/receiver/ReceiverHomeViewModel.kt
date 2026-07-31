@@ -2,6 +2,7 @@ package com.afternote.afternote_fe.screen.receiver
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.afternote_fe.R
 import com.afternote.afternote_fe.reporting.HomeFailureStage
 import com.afternote.afternote_fe.reporting.recordHomeFailure
 import com.afternote.afternote_fe.screen.receiver.model.AfternoteSourceIcon
@@ -143,13 +144,13 @@ class ReceiverHomeViewModel
                             .onFailure { e ->
                                 errorReporter.recordHomeFailure(HomeFailureStage.RECEIVED_EXPORT_SAVE, e)
                                 updateDownload(
-                                    ReceiverDownloadState.Failed(e.message ?: "파일 저장에 실패했습니다."),
+                                    ReceiverDownloadState.Failed(R.string.receiver_home_download_all_save_failed),
                                 )
                             }
                     }.onFailure { e ->
                         errorReporter.recordHomeFailure(HomeFailureStage.RECEIVED_EXPORT_DOWNLOAD, e)
                         updateDownload(
-                            ReceiverDownloadState.Failed(e.message ?: "모든 기록 내려받기에 실패했습니다."),
+                            ReceiverDownloadState.Failed(R.string.receiver_home_download_all_failed),
                         )
                     }
             }
