@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,24 +16,33 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import com.afternote.core.ui.modifierextention.addFocusCleaner
+import com.afternote.core.ui.popup.Popup
+import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlin.time.Duration.Companion.milliseconds
 
 private const val EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE_MS = 1_000L
 
@@ -88,7 +98,7 @@ fun AfternoteEditorScreen(
                 )
             }
         }.distinctUntilChanged()
-            .debounce(EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE_MS)
+            .debounce(EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE_MS.milliseconds)
             .collect { blocks ->
                 state.persistEditorMessagesFromTyping(blocks)
             }
@@ -140,6 +150,35 @@ fun AfternoteEditorScreen(
             state.onFuneralVideoSelected(uri)
         }
 
+    // 작성 도중 이탈 가드: 진입 시점 스냅샷 대비 변경이 있으면 뒤로가기 시 이탈 확인 팝업을 띄운다.
+    // 입력이 debounce 로 휘발성 폼 상태에만 반영되어 pop 시 소실되기 때문. '내용 존재'가 아니라 '변경' 기준인
+    // 이유는 수정 모드(prefill)에서 무변경 이탈에도 매번 경고하게 되어서다. 스냅샷은 프리필 적용 완료
+    // (isPrefillLoading=false 전환) 후 1회 캡처하고, 하위 화면 왕복·프로세스 복원에도 유지되도록 saveable 로 둔다.
+    var showExitConfirm by rememberSaveable { mutableStateOf(false) }
+    var baselineContentSignature by rememberSaveable { mutableStateOf<String?>(null) }
+    LaunchedEffect(isPrefillLoading) {
+        if (!isPrefillLoading && baselineContentSignature == null) {
+            baselineContentSignature = editorContentSignature(form, state)
+        }
+    }
+    val hasUnsavedChanges by remember(form, baselineContentSignature) {
+        derivedStateOf {
+            baselineContentSignature != null &&
+                editorContentSignature(form, state) != baselineContentSignature
+        }
+    }
+    val onBackAttempt: () -> Unit = {
+        focusManager.clearFocus()
+        if (hasUnsavedChanges) {
+            showExitConfirm = true
+        } else {
+            callbacks.onBackClick()
+        }
+    }
+
+    // 변경이 없을 때는 시스템 기본 뒤로가기를 유지한다 (predictive back 애니메이션 보존).
+    BackHandler(enabled = hasUnsavedChanges) { onBackAttempt() }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = Color.Transparent,
@@ -147,7 +186,7 @@ fun AfternoteEditorScreen(
         topBar = {
             DetailTopBar(
                 title = stringResource(R.string.afternote_editor_screen_title),
-                onBackClick = callbacks.onBackClick,
+                onBackClick = onBackAttempt,
                 actions = {
                     Text(
                         text = stringResource(R.string.afternote_editor_submit),
@@ -193,6 +232,61 @@ fun AfternoteEditorScreen(
             )
 
             AfternoteEditorDialogs(state = state)
+
+            if (showExitConfirm) {
+                Popup(
+                    type = PopupType.Variant2,
+                    message = stringResource(R.string.afternote_editor_exit_confirm_message),
+                    onConfirm = {
+                        showExitConfirm = false
+                        callbacks.onBackClick()
+                    },
+                    onDismiss = { showExitConfirm = false },
+                    confirmText = stringResource(R.string.afternote_editor_exit_confirm_confirm),
+                    dismissText = stringResource(R.string.afternote_editor_exit_confirm_cancel),
+                )
+            }
         }
     }
+}
+
+/**
+ * 사용자가 에디터에서 편집할 수 있는 값 전부를 한 줄 문자열로 직렬화한 상태 지문.
+ * 진입 직후 값을 기준으로 저장해 두고, 뒤로가기 시점 값과 문자열 비교가 다르면 "작성 내용이
+ * 바뀌었다"로 판단해 이탈 확인 팝업을 띄운다.
+ *
+ * 폼은 필드를 골라 담지 않고 통째로 직렬화하되, 판정에서 뺄 것만 [EditorFormState.copy]로
+ * 기본값 치환한다 — 폼에 필드가 새로 생기면 자동으로 판정에 포함되므로(빠짐 불가능),
+ * 유지보수 대상은 아래 제외 목록뿐이다. 제외를 빠뜨리면 데이터 소실이 아니라
+ * "팝업이 한 번 더 뜨는" 눈에 보이는 오탐으로 드러난다.
+ */
+internal fun editorContentSignature(
+    form: EditorFormState,
+    state: AfternoteEditorState,
+): String {
+    val comparableForm =
+        form.copy(
+            // 식별자·자동 파생값 — 사용자 편집이 아니므로 판정 제외.
+            loadedItemId = null,
+            funeralThumbnailUrl = null,
+            playlistSongCount = 0,
+            playlistAlbumCovers = emptyList(),
+            messageBlocksRestoreGeneration = 0L,
+            // 남기실 말씀은 debounce 전 라이브 입력(state.editorMessages)으로 판정하므로 스냅샷은 제외.
+            messageBlocks = emptyList(),
+            // 카테고리 구경 자체는 변경으로 치지 않는다. 서비스명은 카테고리 전환 시 기본값으로
+            // 리셋되므로 현재 카테고리 기본값과 다를 때만 반영 (구경만으로 달라졌다는 오판 방지).
+            selectedCategory = EditorCategory.SOCIAL,
+            selectedService =
+                form.selectedService
+                    .takeIf { it != EditorFormState.defaultServiceFor(form.selectedCategory) }
+                    .orEmpty(),
+        )
+    return listOf(
+        comparableForm.toString(),
+        state.idState.text,
+        state.passwordState.text,
+        state.customLastWishState.text,
+        state.editorMessages.map { "${it.titleState.text}\u0001${it.contentState.text}" },
+    ).joinToString("\u0002")
 }
