@@ -36,7 +36,8 @@ object AfternoteActionsTemplate {
                 emptyList()
             }
 
-            // BUSINESS·ESTATE 는 디자인 확정 전 placeholder 만 노출되므로 prefill 대상 아님.
+            // BUSINESS 는 소셜 폼을 재사용하지만 템플릿 prefill 미연결 상태(호출처 없음)는 동일해 빈 목록 유지.
+            // ESTATE 는 디자인 확정 전 placeholder 만 노출되므로 prefill 대상 아님.
             EditorCategory.BUSINESS, EditorCategory.ESTATE -> {
                 emptyList()
             }

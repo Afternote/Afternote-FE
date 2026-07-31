@@ -20,7 +20,11 @@ STAGED_KT=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(kt|kts
 
 # CI(ScaCap/action-ktlint)에 핀된 버전과 일치. libs.versions.toml 의 `ktlint = "1.8.0"`.
 KTLINT_VERSION="1.8.0"
-KTLINT="$ROOT/.git/hooks/.ktlint-${KTLINT_VERSION}"
+# worktree 에서는 $ROOT/.git 이 디렉터리가 아니라 gitdir 포인터 파일이라
+# "$ROOT/.git/hooks/..." 경로가 성립하지 않는다. 캐시는 항상 공용 hooks
+# 디렉터리(메인 저장소의 .git/hooks) 기준으로 잡는다.
+HOOKS_DIR="$(cd "$(git rev-parse --git-common-dir)/hooks" && pwd)"
+KTLINT="$HOOKS_DIR/.ktlint-${KTLINT_VERSION}"
 
 if [ ! -x "$KTLINT" ]; then
     echo "Downloading ktlint ${KTLINT_VERSION}..."

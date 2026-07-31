@@ -89,6 +89,9 @@ fun AfternoteEditorScreen(
         }
     }
 
+    // 타이핑 자동 저장: 각 블록의 TextFieldState(UI 소유)를 snapshotFlow 로 관찰해 순수 문자열
+    // 스냅샷으로 변환하고, 1s 디바운스로 묶어 폼 SSOT 에 반영한다. key=size 라 블록 추가/삭제 시
+    // 재시작해 새 블록 상태도 관찰에 편입. 디바운스 창 안의 이탈 손실은 아래 DisposableEffect 가 맡는다.
     LaunchedEffect(state.editorMessages.size) {
         snapshotFlow {
             state.editorMessages.map { msg ->
@@ -274,13 +277,10 @@ internal fun editorContentSignature(
             messageBlocksRestoreGeneration = 0L,
             // 남기실 말씀은 debounce 전 라이브 입력(state.editorMessages)으로 판정하므로 스냅샷은 제외.
             messageBlocks = emptyList(),
-            // 카테고리 구경 자체는 변경으로 치지 않는다. 서비스명은 카테고리 전환 시 기본값으로
-            // 리셋되므로 현재 카테고리 기본값과 다를 때만 반영 (구경만으로 달라졌다는 오판 방지).
+            // 카테고리 구경 자체는 변경으로 치지 않는다 — 전환이 selectedService(null)·processingMethods(빈)를
+            // 함께 리셋하므로(#468 정책) 카테고리만 중립화하면 구경 왕복은 진입 상태와 같아진다.
+            // selectedService 는 그대로 비교한다: null=미선택이라 서비스 선택 자체가 변경으로 잡힌다.
             selectedCategory = EditorCategory.SOCIAL,
-            selectedService =
-                form.selectedService
-                    .takeIf { it != EditorFormState.defaultServiceFor(form.selectedCategory) }
-                    .orEmpty(),
         )
     return listOf(
         comparableForm.toString(),

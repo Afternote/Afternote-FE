@@ -32,7 +32,7 @@ sealed interface AfternoteRoute {
     data object MemorialPlaylistRoute : AfternoteRoute
 
     @Serializable
-    data class MemorialGuidelineDetailRoute(
+    data class MemorialDetailRoute(
         val itemId: String = "",
     ) : AfternoteRoute
 }

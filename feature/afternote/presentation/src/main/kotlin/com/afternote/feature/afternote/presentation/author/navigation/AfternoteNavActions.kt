@@ -21,7 +21,7 @@ interface AfternoteNavActions {
 
     fun navigateToGalleryDetail(itemId: String)
 
-    fun navigateToMemorialGuidelineDetail(itemId: String)
+    fun navigateToMemorialDetail(itemId: String)
 
     fun navigateToNewEditor(initialCategory: String?)
 

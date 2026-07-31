@@ -5,7 +5,6 @@ import com.afternote.feature.afternote.presentation.author.editor.model.EditorCa
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorUiHolder
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
-import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
@@ -17,7 +16,7 @@ import org.junit.Test
  * [AfternoteEditorUiHolder] 의 [TextFieldState] 를 리플렉션으로 전수 열거한 뒤 하나씩 실제로
  * 입력해 보고 지문이 반응하는지 검사한다. 홀더에 입력 상태가 새로 생기면 이 테스트가 자동으로
  * 그 필드를 집어 들므로, 지문에 반영하거나 [dialogTransientStates] 에 사유와 함께 올리는 결정이
- * 강제된다. 폼 쪽은 통째 직렬화 구조라 필드 추가가 자동 포함 — 카나리 1건만 둔다.
+ * 강제된다. 폼 쪽은 통째 직렬화 구조라 필드 추가가 자동 포함 — 카나리만 둔다.
  */
 class EditorContentSignatureCompletenessTest {
     /**
@@ -92,15 +91,20 @@ class EditorContentSignatureCompletenessTest {
     }
 
     @Test
+    fun `서비스 선택이 지문에 반영된다 - 미선택(null)과 구분`() {
+        val state = newState()
+        val before = editorContentSignature(EditorFormState(), state)
+        val after = editorContentSignature(EditorFormState(selectedService = "인스타그램"), state)
+        assertNotEquals(before, after)
+    }
+
+    @Test
     fun `카테고리 구경만으로는 지문이 달라지지 않는다`() {
         val state = newState()
         val social = editorContentSignature(EditorFormState(), state)
         val gallery =
             editorContentSignature(
-                EditorFormState(
-                    selectedCategory = EditorCategory.GALLERY,
-                    selectedService = AfternoteServiceCatalog.defaultGalleryService,
-                ),
+                EditorFormState(selectedCategory = EditorCategory.GALLERY),
                 state,
             )
         assertEquals(social, gallery)
