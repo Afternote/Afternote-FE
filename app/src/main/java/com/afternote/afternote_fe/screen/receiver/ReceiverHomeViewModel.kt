@@ -80,15 +80,14 @@ class ReceiverHomeViewModel
                             ?: timeLettersRes.exceptionOrNull()
                             ?: messageRes.exceptionOrNull()
 
-                    // 모든 호출이 실패한 경우만 Error. 일부 실패는 fallback 으로 진행.
-                    if (failedSources.size == HOME_REQUEST_COUNT) {
-                        val error = firstFailure ?: RuntimeException("All home requests failed")
-                        errorReporter.recordHomeFailure(HomeFailureStage.RECEIVER_HOME_LOAD, error)
-                        _uiState.value = ReceiverHomeUiState.Error(error)
-                        return@coroutineScope
-                    }
-                    // 일부 실패는 0·빈 값으로 덮여 화면에도 콘솔에도 흔적이 남지 않던 구간 — 여기서만 기록한다.
                     if (firstFailure != null) {
+                        // 모든 호출이 실패한 경우만 Error. 일부 실패는 fallback 으로 진행.
+                        if (failedSources.size == HOME_REQUEST_COUNT) {
+                            errorReporter.recordHomeFailure(HomeFailureStage.RECEIVER_HOME_LOAD, firstFailure)
+                            _uiState.value = ReceiverHomeUiState.Error(firstFailure)
+                            return@coroutineScope
+                        }
+                        // 일부 실패는 0·빈 값으로 덮여 화면에도 콘솔에도 흔적이 남지 않던 구간 — 여기서만 기록한다.
                         errorReporter.recordHomeFailure(
                             stage = HomeFailureStage.RECEIVER_HOME_PARTIAL_LOAD,
                             throwable = firstFailure,
