@@ -17,7 +17,6 @@ import com.afternote.feature.afternote.presentation.author.editor.model.EditorFo
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
-import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 
 private const val TAG = "AfternoteEditorState"
 
@@ -116,12 +115,7 @@ class AfternoteEditorState(
         updateForm {
             it.copy(
                 selectedCategory = category,
-                selectedService =
-                    if (category == EditorCategory.GALLERY) {
-                        AfternoteServiceCatalog.defaultGalleryService
-                    } else {
-                        AfternoteServiceCatalog.defaultSocialService
-                    },
+                selectedService = EditorFormState.defaultServiceFor(category),
                 socialProcessingMethods = emptyList(),
                 galleryProcessingMethods = emptyList(),
             )
