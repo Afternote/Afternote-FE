@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -51,6 +52,7 @@ private val AfternoteButtonVerticalPadding = 13.dp
  * (예: 전체 삭제 | 선택 삭제), 생략하면 버튼 전체가 [onClick] 하나로 눌리는 기존 동작 그대로다.
  *
  * @param onSecondaryClick Variant5 dual-action 모드에서 오른쪽 절반([secondaryText]) 클릭 콜백
+ * @param isLoading true 면 라벨 대신 스피너를 그리고 클릭을 막는다 (네트워크 대기 등 진행 중 표시).
  */
 @Composable
 fun AfternoteButton(
@@ -58,6 +60,7 @@ fun AfternoteButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     type: AfternoteButtonType = AfternoteButtonType.Default,
+    isLoading: Boolean = false,
     secondaryText: String? = null,
     containerColor: Color? = null,
     onSecondaryClick: (() -> Unit)? = null,
@@ -98,7 +101,7 @@ fun AfternoteButton(
             onClick = onClick,
             modifier =
                 modifier.fillMaxWidth(),
-            enabled = type != AfternoteButtonType.Un,
+            enabled = type != AfternoteButtonType.Un && !isLoading,
             shape = AfternoteButtonShape,
             color = resolvedContainerColor,
             contentColor = contentColor,
@@ -117,26 +120,39 @@ fun AfternoteButton(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
             ) {
-                if (type == AfternoteButtonType.Variant5 && secondaryText != null) {
-                    Text(
-                        text = text,
-                        style = AfternoteDesign.typography.captionLargeB,
-                        textAlign = TextAlign.End,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Spacer(modifier = Modifier.width(24.dp))
-                    Variant5LabelDivider()
-                    Spacer(modifier = Modifier.width(24.dp))
-                    Text(
-                        text = secondaryText,
-                        style = AfternoteDesign.typography.captionLargeB,
-                        modifier = Modifier.weight(1f),
-                    )
-                } else {
-                    Text(
-                        text = text,
-                        style = AfternoteDesign.typography.captionLargeB,
-                    )
+                when {
+                    // 로딩 중엔 라벨 대신 스피너 — 배경/높이는 유지하고 클릭은 위 Surface enabled 로 막는다.
+                    isLoading -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            color = contentColor,
+                            strokeWidth = 2.dp,
+                        )
+                    }
+
+                    type == AfternoteButtonType.Variant5 && secondaryText != null -> {
+                        Text(
+                            text = text,
+                            style = AfternoteDesign.typography.captionLargeB,
+                            textAlign = TextAlign.End,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Spacer(modifier = Modifier.width(24.dp))
+                        Variant5LabelDivider()
+                        Spacer(modifier = Modifier.width(24.dp))
+                        Text(
+                            text = secondaryText,
+                            style = AfternoteDesign.typography.captionLargeB,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+
+                    else -> {
+                        Text(
+                            text = text,
+                            style = AfternoteDesign.typography.captionLargeB,
+                        )
+                    }
                 }
             }
         }
@@ -227,6 +243,12 @@ private fun AfternoteButtonDefaultPreview() {
                 text = "비활성",
                 onClick = {},
                 type = AfternoteButtonType.Un,
+            )
+            AfternoteButton(
+                text = "로딩",
+                onClick = {},
+                type = AfternoteButtonType.Default,
+                isLoading = true,
             )
             AfternoteButton(
                 text = "로그인",

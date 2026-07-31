@@ -29,6 +29,20 @@ internal fun afternoteButtonDefaultScreenshot() {
 @PreviewTest
 @Preview(showBackground = true)
 @Composable
+internal fun afternoteButtonLoadingScreenshot() {
+    AfternoteTheme {
+        AfternoteButton(
+            text = "확인",
+            onClick = {},
+            type = AfternoteButtonType.Default,
+            isLoading = true,
+        )
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
 internal fun afternoteButtonPlainScreenshot() {
     AfternoteTheme {
         AfternoteButton(
