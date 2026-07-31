@@ -54,7 +54,7 @@ class ReceiverAuthRepositoryImplEmailAuthTest {
     }
 
     @Test
-    fun `verifyEmailAuthCode - 만료·불일치 1902 ApiException 을 도메인 예외로 변환`() {
+    fun `verifyEmailAuthCode - 만료·미존재 1902 ApiException 을 도메인 예외로 변환`() {
         val repository =
             ReceiverAuthRepositoryImpl(
                 FakeReceiverAuthApiService(
