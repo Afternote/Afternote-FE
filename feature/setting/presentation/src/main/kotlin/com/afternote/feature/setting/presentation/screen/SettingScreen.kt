@@ -165,7 +165,13 @@ private fun SettingScreenContent(
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState()),
             ) {
-                SettingProfile(name = state.name, email = state.email)
+                SettingProfile(
+                    name = state.name,
+                    email = state.email,
+                    onInquiryClick = onInquiryClick,
+                    onNoticeClick = onNoticeClick,
+                    onRecipientListClick = onRecipientListClick,
+                )
 
                 SettingSection(title = stringResource(R.string.settings_section_account)) {
                     SettingMenuItem(
