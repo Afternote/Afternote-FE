@@ -3,8 +3,12 @@ package com.afternote.feature.onboarding.presentation.login
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.domain.error.LoginRejectedException
+import com.afternote.core.domain.error.NetworkUnavailableException
 import com.afternote.core.domain.usecase.auth.LoginType
 import com.afternote.core.domain.usecase.auth.LoginUseCase
+import com.afternote.core.ui.UiText
+import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.reporting.AuthFailureStage
 import com.afternote.feature.onboarding.presentation.reporting.AuthProvider
 import com.afternote.feature.onboarding.presentation.reporting.recordAuthFailure
@@ -100,18 +104,32 @@ class LoginViewModel
                         }
                     }.onFailure { exception ->
                         // 화면 이탈로 스코프가 취소된 것을 장애로 기록하거나 실패 UI 로 소비하지 않는다.
-                        // suspend 호출을 감싼 runCatching 이 취소까지 Result.failure 로 만들기 때문에
-                        // 여기까지 들어온다 — 전파를 끊지 않도록 즉시 되던진다(전수 정정은 #661).
+                        // 리포지토리가 이미 되던지지만(mapLoginFailure), UseCase 등 다른 suspend 경계를
+                        // 감싼 runCatching 이 취소를 Result.failure 로 만들 수 있어 여기서도 막는다(전수 정정은 #661).
                         if (exception is CancellationException) throw exception
                         errorReporter.recordAuthFailure(
                             stage = AuthFailureStage.LOGIN,
                             throwable = exception,
                             provider = loginType.authProvider,
                         )
+                        // 예외 message 를 표시값으로 쓰지 않는다 — 서버 5xx 본문(내부 SQL 실측 #511)·
+                        // 역직렬화 원문이 그 경로로 샌다. 사유가 확인된 두 타입만 문구를 갖는다.
+                        val errorMessage =
+                            when (exception) {
+                                is NetworkUnavailableException -> {
+                                    UiText.Resource(R.string.login_network_error)
+                                }
+
+                                is LoginRejectedException -> {
+                                    UiText.Dynamic(exception.displayMessage)
+                                }
+
+                                else -> {
+                                    UiText.Resource(R.string.login_failed)
+                                }
+                            }
                         _uiState.update {
-                            // message 가 null 이면 빈 문자열로 두어 실패 사실이 소실되지 않게 한다.
-                            // (null 은 "에러 없음"과 구분되지 않아 스낵바가 무음 처리되던 버그. UI 가 ifBlank 로 일반 문구 폴백.)
-                            it.copy(isLoading = false, errorMessage = exception.message.orEmpty())
+                            it.copy(isLoading = false, errorMessage = errorMessage)
                         }
                     }
             }
