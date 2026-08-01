@@ -13,7 +13,6 @@ on:
     types: [closed, reopened]
 
 permissions:
-  actions: write # refresh 잡의 gh run rerun
   issues: read
   pull-requests: read
 
@@ -28,6 +27,9 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
+          # gh api 실패가 빈 목록으로 위장돼 가드가 초록으로 새는 것 방지(fail-closed)
+          set -euo pipefail
+
           fail=0
 
           # 스택 PR 방호 — base 가 feat 브랜치면 그 브랜치로 머지돼 버린다.
@@ -60,14 +62,22 @@ jobs:
   # blocker 이슈가 닫히면(=선행 PR 머지) 기다리던 PR 의 guard 를 재실행해 초록으로 갱신한다.
   refresh:
     if: github.event_name == 'issues'
+    permissions:
+      actions: write # gh run rerun — 필요한 이 잡에만 job-level 로 한정
+      issues: read
+      pull-requests: read
     runs-on: ubuntu-latest
     steps:
       - name: 이 이슈가 blocking 하던 열린 PR 의 guard 재실행
         env:
           GH_TOKEN: ${{ github.token }}
+          # 셸 보간은 없지만 gh CLI 가 소비한다 — checkout 없는 러너에서
+          # gh run list/rerun 의 저장소 컨텍스트가 이 env 로만 잡힌다.
           GH_REPO: ${{ github.repository }}
           ISSUE: ${{ github.event.issue.number }}
         run: |
+          set -euo pipefail
+
           owner="${GITHUB_REPOSITORY%/*}"
           repo="${GITHUB_REPOSITORY#*/}"
 
@@ -85,9 +95,10 @@ jobs:
               --jq '.data.repository.issue.closedByPullRequestsReferences.nodes[].headRefName')
             for h in $heads; do
               run_id=$(gh run list --workflow merge-order-guard.yml --branch "$h" \
-                --limit 1 --json databaseId --jq '.[0].databaseId')
+                --limit 1 --json databaseId --jq '.[0].databaseId // empty')
               if [ -n "$run_id" ]; then
-                gh run rerun "$run_id" || true
+                # 진행 중 런 재실행 거절 등은 치명 아님 — 경고로만 남긴다
+                gh run rerun "$run_id" || echo "::warning::run $run_id 재실행 실패 — 진행 중이거나 권한 문제"
               fi
             done
           done
