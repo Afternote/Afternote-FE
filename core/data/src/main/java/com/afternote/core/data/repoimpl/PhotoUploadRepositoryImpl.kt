@@ -53,7 +53,9 @@ private val MIME_TO_EXTENSION =
 
 private fun resolveExtension(mime: String?): String {
     if (mime == null) return DEFAULT_EXTENSION
-    MIME_TO_EXTENSION[mime]?.let { return it }
+    MIME_TO_EXTENSION[mime]
+        ?.takeIf { it in ALLOWED_EXTENSIONS }
+        ?.let { return it }
     val fromMime = MimeTypeMap.getSingleton().getExtensionFromMimeType(mime)
     val resolved =
         if (fromMime != null && fromMime in ALLOWED_EXTENSIONS) {
