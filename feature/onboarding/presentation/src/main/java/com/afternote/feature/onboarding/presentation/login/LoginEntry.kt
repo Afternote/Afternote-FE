@@ -16,6 +16,7 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.exceptions.NoCredentialException
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.asString
 import com.afternote.core.ui.findActivity
 import com.afternote.feature.onboarding.presentation.BuildConfig
 import com.afternote.feature.onboarding.presentation.R
@@ -50,7 +51,6 @@ fun LoginEntry(
     val context = LocalContext.current
     val credentialManager = remember(context) { CredentialManager.create(context) }
 
-    val loginFailedMessage = stringResource(R.string.login_failed)
     val kakaoFailedMessage = stringResource(R.string.login_kakao_failed)
     val googleFailedMessage = stringResource(R.string.login_google_failed)
     val googleNoCredentialsMessage = stringResource(R.string.login_google_no_credentials)
@@ -82,10 +82,10 @@ fun LoginEntry(
             viewModel.onOnboardingStartConsumed()
         }
     }
-    val pendingErrorMessage = uiState.errorMessage
+    val pendingErrorMessage = uiState.errorMessage?.asString()
     LaunchedEffect(pendingErrorMessage) {
         if (pendingErrorMessage != null) {
-            showErrorSnackbar(pendingErrorMessage.ifBlank { loginFailedMessage })
+            showErrorSnackbar(pendingErrorMessage)
             viewModel.onErrorConsumed()
         }
     }
