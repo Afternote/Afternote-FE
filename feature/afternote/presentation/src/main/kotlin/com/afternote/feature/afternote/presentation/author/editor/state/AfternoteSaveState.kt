@@ -49,8 +49,8 @@ enum class AfternoteValidationError(
  * 일회성 신호(`pending*`)를 Channel 이 아니라 상태로 둔 건 configuration change·process death 뒤
  * 재구독에서도 마지막 신호가 살아남아야 해서다. non-null 이면 UI 가 처리 후 `on*Consumed()` 로 되돌린다.
  *
- * 실패 문구는 [errorRes] 에 [StringRes] ID 로만 싣는다 — 서버 raw 메시지엔 5xx 내부 SQL 이 섞여 오고,
- * ViewModel 이 `Context` 에 의존하지 않으려는 이유도 있다.
+ * 실패 문구는 [errorRes] 에 [StringRes] ID 로만 싣는다 — 5xx 본문에 내부 SQL 이 섞여 오는 탓에 서버 raw
+ * 메시지를 그대로 쓸 수 없고, ViewModel 이 `Context` 에 의존하지 않으려는 이유도 있다.
  */
 data class AfternoteEditorUiState(
     val form: EditorFormState = EditorFormState(),
