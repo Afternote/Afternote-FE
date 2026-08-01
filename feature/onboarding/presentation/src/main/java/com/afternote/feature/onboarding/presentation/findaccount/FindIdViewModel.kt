@@ -2,7 +2,10 @@ package com.afternote.feature.onboarding.presentation.findaccount
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.repository.account.AccountRepository
+import com.afternote.feature.onboarding.presentation.reporting.AuthFailureStage
+import com.afternote.feature.onboarding.presentation.reporting.recordAuthFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -12,6 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -26,6 +30,7 @@ class FindIdViewModel
     @Inject
     constructor(
         private val accountRepository: AccountRepository,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(FindIdUiState())
         val uiState: StateFlow<FindIdUiState> = _uiState.asStateFlow()
@@ -51,6 +56,9 @@ class FindIdViewModel
                         _uiState.update { it.copy(isVerificationSent = true, verificationError = null) }
                         startResendCooldown()
                     }.onFailure { error ->
+                        // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
+                        if (error is CancellationException) throw error
+                        errorReporter.recordAuthFailure(AuthFailureStage.FIND_ACCOUNT_CODE_SEND, error)
                         _uiState.update { it.copy(errorMessage = error.message ?: "") }
                     }
                 _uiState.update { it.copy(isSendingCode = false) }
@@ -72,6 +80,11 @@ class FindIdViewModel
                     .onSuccess { account ->
                         _uiState.update { it.copy(foundAccount = account) }
                     }.onFailure { error ->
+                        // 취소는 장애가 아니다 — 여기는 계측 대상이 아니지만 실패 UI 로 소비하는 것도
+                        // 막아야 해서 되던진다(전수 정정은 #661).
+                        if (error is CancellationException) throw error
+                        // 계측하지 않는다 — 이 응답은 인증번호 오타와 서버 장애가 같은 예외로 와서
+                        // 구분할 수단이 없다. 자세한 사유는 AuthFailureStage.FIND_ACCOUNT_CODE_SEND KDoc.
                         _uiState.update { it.copy(verificationError = error.message ?: "") }
                     }
                 _uiState.update { it.copy(isVerifying = false) }

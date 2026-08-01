@@ -129,9 +129,8 @@
 
     <!-- 받은 기록함 (수신자 흐름) — 발신자 카드 리스트 -->
     <string name="receiver_records_box_title">받은 기록함</string>
-    <!-- 디자인 14 의 빈 상태 메시지. 디자인 시안의 "수신자" 표기는 의도일 가능성이라 그대로 유지 (이슈 #215). -->
-    <string name="receiver_records_box_empty">아직 등록된 수신자가 없습니다.\n수신자를 등록하여 기록을 확인해 보세요.</string>
-    <string name="receiver_records_box_card_last_confirmed">마지막 확인: %1$s</string>
+    <!-- 이 화면의 빈 상태는 시안 정의가 없어 FE 잠정안. 문구 확정 시 교체 (#508). -->
+    <string name="receiver_records_box_empty">아직 등록된 발신자가 없습니다.\n발신자를 등록하여 기록을 확인해 보세요.</string>
     <!-- 발신자 등록(15·16) -->
     <string name="receiver_sender_registration_title">발신자 등록하기</string>
     <string name="receiver_sender_registration_name_label">이름</string>
@@ -232,6 +231,7 @@
     <string name="afternote_detail_invalid_id">잘못된 항목 ID입니다.</string>
     <string name="afternote_detail_load_error">상세 정보를 불러오지 못했습니다.</string>
     <string name="afternote_detail_delete_failed">삭제에 실패했습니다.</string>
+    <string name="afternote_detail_deleting">삭제 중</string>
     <string name="afternote_edit_item_not_found">항목을 찾을 수 없습니다.</string>
 
     <string name="afternote_validation_title_required">등록할 서비스(플랫폼)명을 선택해 주세요.</string>
@@ -317,4 +317,7 @@
     <string name="afternote_editor_save_failed_generic">저장에 실패했습니다.</string>
     <string name="afternote_editor_search_failed_generic">검색 실패</string>
     <string name="afternote_editor_thumbnail_upload_failed">영정사진 업로드에 실패했습니다.</string>
+    <string name="afternote_editor_exit_confirm_message">작성 중인 내용이 사라집니다.\n정말 나가시겠어요?</string>
+    <string name="afternote_editor_exit_confirm_confirm">나가기</string>
+    <string name="afternote_editor_exit_confirm_cancel">계속 작성</string>
 </resources>

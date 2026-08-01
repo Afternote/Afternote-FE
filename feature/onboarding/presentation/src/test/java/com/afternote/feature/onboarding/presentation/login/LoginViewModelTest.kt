@@ -1,5 +1,6 @@
 package com.afternote.feature.onboarding.presentation.login
 
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.LoginRejectedException
 import com.afternote.core.domain.error.NetworkUnavailableException
 import com.afternote.core.domain.repository.auth.AuthRepository
@@ -45,8 +46,19 @@ class LoginViewModelTest {
         Dispatchers.resetMain()
     }
 
+    /** 이 테스트의 관심사는 표시 문구뿐이라 계측은 버린다 — 기록 계약은 [LoginViewModelReportingTest] 가 가드한다. */
+    private object NoopErrorReporter : ErrorReporter {
+        override fun writeFailure(
+            throwable: Throwable,
+            attributes: Map<String, String>,
+        ) = Unit
+    }
+
     private fun viewModel(onDefaultLogin: () -> Result<Session.DefaultSession>): LoginViewModel =
-        LoginViewModel(LoginUseCase(FakeAuthRepository(onDefaultLogin)))
+        LoginViewModel(
+            loginUseCase = LoginUseCase(FakeAuthRepository(onDefaultLogin)),
+            errorReporter = NoopErrorReporter,
+        )
 
     private fun LoginViewModel.attemptEmailLogin() {
         updateEmail("user@example.com")
