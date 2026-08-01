@@ -28,4 +28,6 @@
     <string name="receiver_home_afternote_section_button">애프터노트 확인하러 가기</string>
     <string name="receiver_home_download_all_button">모든 기록 내려받기</string>
     <string name="receiver_home_download_all_dialog_message">모든 기록을 내려받으시겠습니까?</string>
+    <string name="receiver_home_download_all_failed">모든 기록 내려받기에 실패했습니다.</string>
+    <string name="receiver_home_download_all_save_failed">파일 저장에 실패했습니다.</string>
 </resources>
