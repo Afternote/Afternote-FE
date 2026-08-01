@@ -77,6 +77,7 @@ dependencies {
     implementation(libs.kakao.sdk.auth)
 
     // Core
+    implementation(projects.core.common)
     implementation(projects.core.network)
     implementation(projects.core.ui)
     implementation(projects.core.model)
