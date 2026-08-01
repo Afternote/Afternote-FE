@@ -17,12 +17,7 @@ if (localPropertiesFile.exists()) {
 
 // 카카오 OAuth redirect(`kakao{KEY}://oauth`) 핸들러 등록용.
 // SDK 런타임 초기화 키는 `core:startup`의 BuildConfig.KAKAO_NATIVE_APP_KEY 사용.
-val kakaoKey =
-    localProperties.getProperty("KAKAO_NATIVE_APP_KEY")
-        ?: System.getenv("KAKAO_NATIVE_APP_KEY")
-        ?: ""
-
-requireKeyForReleaseBuild("KAKAO_NATIVE_APP_KEY", kakaoKey)
+val kakaoKey = socialLoginKey("KAKAO_NATIVE_APP_KEY")
 
 android {
     namespace = "com.afternote.afternote_fe"

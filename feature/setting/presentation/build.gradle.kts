@@ -1,23 +1,10 @@
-import java.util.Properties
-
 plugins {
     id("afternote.android.library.compose")
     id("afternote.android.hilt")
     id("afternote.android.navigation")
 }
 
-val localProperties = Properties()
-val localPropertiesFile = rootProject.file("local.properties")
-if (localPropertiesFile.exists()) {
-    localPropertiesFile.inputStream().use { localProperties.load(it) }
-}
-
-val googleWebClientId =
-    localProperties.getProperty("GOOGLE_WEB_CLIENT_ID")
-        ?: System.getenv("GOOGLE_WEB_CLIENT_ID")
-        ?: ""
-
-requireKeyForReleaseBuild("GOOGLE_WEB_CLIENT_ID", googleWebClientId)
+val googleWebClientId = socialLoginKey("GOOGLE_WEB_CLIENT_ID")
 
 android {
     namespace = "com.afternote.feature.setting.presentation"
