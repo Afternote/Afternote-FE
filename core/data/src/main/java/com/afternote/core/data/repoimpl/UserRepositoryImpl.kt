@@ -1,5 +1,6 @@
 package com.afternote.core.data.repoimpl
 
+import android.util.Log
 import com.afternote.core.data.mapper.delivery.toRequestDto
 import com.afternote.core.data.mapper.user.toDomain
 import com.afternote.core.data.mapper.user.toDto
@@ -148,12 +149,16 @@ class UserRepositoryImpl
          *
          * `clearSession()` 의 실패는 삼킨다. 서버 계정은 이미 지워졌으므로 여기서 예외를 올리면
          * 화면이 "탈퇴 실패" 로 표시돼 사용자가 재시도하고, 그 재시도는 없는 계정에 대해 실패한다.
+         * 대신 흔적은 남긴다 — 조용히 넘기면 로컬 토큰이 남은 채로 이 버그가 재발해도 탐지되지 않는다.
+         * 예외 인스턴스가 아니라 타입만 넘기는 건 release 에서 `Log.e` 가 제거되지 않아서다.
          */
         override suspend fun deleteAccount() {
             userApiService
                 .deleteAccount()
                 .requireStatus()
-            authRepository.clearSession()
+            authRepository.clearSession().onFailure {
+                Log.e("UserRepository", "탈퇴 후 세션 정리 실패: ${it.javaClass.name}")
+            }
         }
 
         override suspend fun logActivity() {

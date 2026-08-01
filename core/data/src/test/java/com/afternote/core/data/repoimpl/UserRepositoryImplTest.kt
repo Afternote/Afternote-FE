@@ -39,17 +39,25 @@ import org.junit.Test
 class UserRepositoryImplTest {
     private val calls = mutableListOf<String>()
 
-    private fun repository(deleteAccountResponse: BaseResponse<Unit> = success()) =
-        UserRepositoryImpl(
-            userApiService =
-                FakeUserApiService(
-                    onDeleteAccount = {
-                        calls += "deleteAccount"
-                        deleteAccountResponse
-                    },
-                ),
-            authRepository = FakeAuthRepository(onClearSession = { calls += "clearSession" }),
-        )
+    private fun repository(
+        deleteAccountResponse: BaseResponse<Unit> = success(),
+        clearSessionResult: Result<Unit> = Result.success(Unit),
+    ) = UserRepositoryImpl(
+        userApiService =
+            FakeUserApiService(
+                onDeleteAccount = {
+                    calls += "deleteAccount"
+                    deleteAccountResponse
+                },
+            ),
+        authRepository =
+            FakeAuthRepository(
+                onClearSession = {
+                    calls += "clearSession"
+                    clearSessionResult
+                },
+            ),
+    )
 
     @Test
     fun `deleteAccount - 탈퇴 성공 시 로컬 세션을 정리한다`() {
@@ -69,6 +77,19 @@ class UserRepositoryImplTest {
         }
 
         assertEquals(listOf("deleteAccount"), calls)
+    }
+
+    /**
+     * 서버 계정은 이미 지워진 뒤라 정리 실패를 예외로 올리면 화면이 "탈퇴 실패" 로 표시되고,
+     * 사용자의 재시도는 없는 계정에 대해 다시 실패한다. 삼키는 것이 계약이다.
+     */
+    @Test
+    fun `deleteAccount - 세션 정리가 실패해도 탈퇴는 성공으로 끝난다`() {
+        val repository = repository(clearSessionResult = Result.failure(IllegalStateException("datastore 쓰기 실패")))
+
+        runBlocking { repository.deleteAccount() }
+
+        assertEquals(listOf("deleteAccount", "clearSession"), calls)
     }
 
     /** 정리가 DELETE 앞에 오면 요청이 토큰 없이 나가므로, 순서 자체가 계약이다. */
@@ -140,14 +161,11 @@ private class FakeUserApiService(
 }
 
 private class FakeAuthRepository(
-    private val onClearSession: () -> Unit,
+    private val onClearSession: () -> Result<Unit>,
 ) : AuthRepository {
     override val isLoggedIn: Flow<Boolean> = flowOf(true)
 
-    override suspend fun clearSession(): Result<Unit> {
-        onClearSession()
-        return Result.success(Unit)
-    }
+    override suspend fun clearSession(): Result<Unit> = onClearSession()
 
     override suspend fun saveSession(
         accessToken: String,
