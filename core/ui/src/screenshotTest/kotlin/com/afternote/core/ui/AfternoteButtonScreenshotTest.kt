@@ -43,6 +43,22 @@ internal fun afternoteButtonLoadingScreenshot() {
 @PreviewTest
 @Preview(showBackground = true)
 @Composable
+internal fun afternoteButtonDualActionLoadingScreenshot() {
+    AfternoteTheme {
+        AfternoteButton(
+            text = "전체 삭제",
+            onClick = {},
+            type = AfternoteButtonType.Variant5,
+            secondaryText = "선택 삭제",
+            onSecondaryClick = {},
+            isLoading = true,
+        )
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
 internal fun afternoteButtonPlainScreenshot() {
     AfternoteTheme {
         AfternoteButton(
