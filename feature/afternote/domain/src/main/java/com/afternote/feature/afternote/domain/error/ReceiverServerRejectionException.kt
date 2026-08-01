@@ -12,9 +12,8 @@ package com.afternote.feature.afternote.domain.error
  *   실어 보내고(실측 #511), 사유 `code` 체계도 둘을 분리하지 않는다. 텔레메트리 제외 판정과
  *   화면 노출 게이트(#651)가 이 값을 쓴다.
  * @property serverCode 서버 봉투의 사유 code (BE `ErrorCode` 번호 — 1902 등). 화면 노출 게이트가
- *   "사용자 안내로 작성된 code 만 서버 문구를 노출"하는 allowlist 판정에 쓴다(PR #655 리뷰로 승격).
- *   주의: 서버의 `@Valid` 바디 검증 실패는 enum code 가 아니라 **리터럴 400** 으로 온다(실측) —
- *   형식 검증 문구("인증번호는 UUID 형식이어야 합니다." #600)가 allowlist 에서 배제되는 근거다.
+ *   표시 허용 allowlist 판정에 쓴다. 서버의 `@Valid` 바디 검증 실패는 enum code 가 아니라
+ *   **리터럴 400** 으로 온다(실측) — 형식 검증 문구가 allowlist 에 못 드는 건 이 때문이다.
  * @property serverMessage 백엔드가 실제로 내려준 사용자 친화 message.
  *   **null 이면 서버가 message 미제공** — 호출처는 정적 R.string 으로 폴백한다. 클라가 만든 generic
  *   문구("알 수 없는 서버 에러" 등)는 여기 들어오지 않는다.

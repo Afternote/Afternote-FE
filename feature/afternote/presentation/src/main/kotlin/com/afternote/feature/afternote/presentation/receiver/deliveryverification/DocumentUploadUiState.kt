@@ -3,7 +3,6 @@ package com.afternote.feature.afternote.presentation.receiver.deliveryverificati
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
 import com.afternote.feature.afternote.domain.error.ReceiverServerRejectionException
-import com.afternote.feature.afternote.presentation.reporting.shouldReportInReceiverFlow
 
 /**
  * 화면이 표시할 에러 문구를 VM → UI 로 실어 나르는 상자 (payload = 운반되는 내용물).
@@ -31,24 +30,33 @@ sealed interface ErrorPayload {
 }
 
 /**
- * 서버가 안내한 4xx 거절(= [shouldReportInReceiverFlow] 가 기록에서 제외하는 실패)의 message 만
- * 그대로 노출하고, 그 외(5xx·message 미제공·인프라 예외)는 [fallbackRes] 로 폴백.
- *
- * status 를 가르지 않고 message 유무만 보면 5xx 원문이 화면에 실린다 — 이 서버는 5xx 봉투에도
- * 내부 문구(500 body 에 SQL 원문 실측 #511)를 싣는다(#651). 판정을 [shouldReportInReceiverFlow]
- * 재사용으로 맞춘 건 "기록되는 실패(장애) ⟺ 정적 문구, 기록 제외(안내된 거절) ⟺ 서버 문구" 를
- * 한 술어로 강제하기 위해서다 — 두 판정이 따로 굴러가면 리포팅에서는 장애로 치는데 화면에는
- * 서버 원문이 뜨는 틈이 다시 생긴다.
+ * status 만 가르고 code 를 안 보면 4xx 검증류 개발자 문구까지 화면에 실린다 — `@Valid` 실패의
+ * "인증번호는 UUID 형식이어야 합니다."(리터럴 code=400, #600 실측)가 그 반례다.
  */
 internal fun Throwable.toErrorPayload(
     @StringRes fallbackRes: Int,
 ): ErrorPayload =
     (this as? ReceiverServerRejectionException)
-        ?.takeUnless { it.shouldReportInReceiverFlow() }
+        ?.takeIf { it.isUserDisplayableRejection() }
         ?.serverMessage
         ?.takeIf { it.isNotBlank() }
         ?.let { ErrorPayload.Text(it) }
         ?: ErrorPayload.Res(fallbackRes)
+
+/** 문구 유무는 보지 않는다 — 호출부 체인이 거른다. */
+private fun ReceiverServerRejectionException.isUserDisplayableRejection(): Boolean =
+    status in DISPLAYABLE_CLIENT_ERROR_RANGE && serverCode in USER_DISPLAYABLE_SERVER_CODES
+
+/** 등재 code 라도 5xx 봉투면 장애다 — code 게이트와 독립으로 대역을 한 번 더 본다. */
+private val DISPLAYABLE_CLIENT_ERROR_RANGE = 400..499
+
+/**
+ * 1900 유효하지 않은 인증번호(마스터 키) · 1901 미등록 수신자 이메일 · 1902 인증번호 만료/미존재 ·
+ * 1903 인증번호 불일치 · 2008 이미 대기 중인 인증 요청. BE `ErrorCode.java`@release 전수 대조로
+ * 문구가 사용자 안내인 것만 골랐다(2026-08-01 기준) — 서버가 표시 가능 여부를 알려주지는 않으므로,
+ * 신규 code 는 문구를 확인한 뒤에만 등재한다. 미등재 기본값은 폴백.
+ */
+private val USER_DISPLAYABLE_SERVER_CODES = setOf(1900, 1901, 1902, 1903, 2008)
 
 /**
  * 증빙 서류 업로드(6·7·8) UI 상태.
