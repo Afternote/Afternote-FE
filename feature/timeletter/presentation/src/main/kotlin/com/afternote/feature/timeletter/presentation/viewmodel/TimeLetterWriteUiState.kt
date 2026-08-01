@@ -2,6 +2,7 @@ package com.afternote.feature.timeletter.presentation.viewmodel
 
 import android.net.Uri
 import androidx.compose.ui.text.style.TextAlign
+import com.afternote.core.ui.UiText
 import com.afternote.feature.timeletter.domain.model.RecordedAudio
 
 data class TimeLetterWriteUiState(
@@ -18,7 +19,7 @@ data class TimeLetterWriteUiState(
     val draftCount: Int = 0,
     val isSaving: Boolean = false,
     val textAlign: TextAlign = TextAlign.Start,
-    val errorMessage: String? = null,
+    val errorMessage: UiText? = null,
     val editorBlocks: List<EditorBlock> = listOf(EditorBlock.Text(id = 0L)),
     val focusedBlockId: Long? = 0L,
     val nextBlockId: Long = 1L,

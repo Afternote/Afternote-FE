@@ -59,13 +59,17 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import coil3.compose.AsyncImage
 import com.afternote.core.ui.button.AfternoteButton
+import com.afternote.core.ui.asString
 import com.afternote.core.ui.calendar.BottomSheetCalendar
 import com.afternote.core.ui.popup.Popup
 import com.afternote.core.ui.popup.PopupType
@@ -125,6 +129,8 @@ fun TimeLetterWriteScreen(
     var showLinkDialog by remember { mutableStateOf(false) }
     var linkUrlInput by remember { mutableStateOf("") }
     var permissionErrorMessage by remember { mutableStateOf<String?>(null) }
+    val microphonePermissionError = stringResource(R.string.voice_recording_permission_error)
+    val errorMessage = uiState.errorMessage?.asString()
 
     val textBlockStates =
         remember(uiState.editingTimeLetterId) { androidx.compose.runtime.mutableStateMapOf<Long, TextFieldState>() }
@@ -143,7 +149,7 @@ fun TimeLetterWriteScreen(
             if (granted) {
                 onOpenVoiceRecorder()
             } else {
-                permissionErrorMessage = "음성 메시지를 녹음하려면 마이크 권한이 필요합니다."
+                permissionErrorMessage = microphonePermissionError
             }
         }
     val fileLauncher =
@@ -151,10 +157,16 @@ fun TimeLetterWriteScreen(
             uri?.let { onAddFileBlock(it) }
         }
 
-    LaunchedEffect(uiState.errorMessage) {
-        val msg = uiState.errorMessage ?: return@LaunchedEffect
+    LaunchedEffect(errorMessage) {
+        val msg = errorMessage ?: return@LaunchedEffect
         snackbarHostState.showSnackbar(msg)
         onErrorShown()
+    }
+
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        if (uiState.voiceRecordingState is VoiceRecordingState.Recording) {
+            onDiscardVoiceRecording()
+        }
     }
 
     LaunchedEffect(permissionErrorMessage) {
@@ -574,7 +586,7 @@ private fun VoiceRecorderBottomSheet(
         containerColor = Color.White,
     ) {
         Text(
-            text = "음성 메시지 녹음",
+            text = stringResource(R.string.voice_recording_title),
             style = AfternoteDesign.typography.h3,
             color = AfternoteDesign.colors.gray9,
             modifier = Modifier.fillMaxWidth(),
@@ -585,14 +597,14 @@ private fun VoiceRecorderBottomSheet(
         when (state) {
             VoiceRecordingState.Idle -> {
                 Text(
-                    text = "녹음 버튼을 눌러 음성 메시지를 남겨주세요.",
+                    text = stringResource(R.string.voice_recording_instruction),
                     style = AfternoteDesign.typography.bodyBase,
                     color = AfternoteDesign.colors.gray7,
                     modifier = Modifier.align(Alignment.CenterHorizontally),
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 AfternoteButton(
-                    text = "녹음 시작",
+                    text = stringResource(R.string.voice_recording_start),
                     onClick = onStart,
                     modifier =
                         Modifier
@@ -610,7 +622,7 @@ private fun VoiceRecorderBottomSheet(
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 AfternoteButton(
-                    text = "녹음 완료",
+                    text = stringResource(R.string.voice_recording_stop),
                     onClick = onStop,
                     modifier =
                         Modifier
@@ -651,7 +663,11 @@ private fun ColumnScope.RecordedVoiceControls(
     }
 
     Text(
-        text = "녹음 시간 ${formatRecordingDuration(state.audio.durationMillis)}",
+        text =
+            stringResource(
+                R.string.voice_recording_duration,
+                formatRecordingDuration(state.audio.durationMillis),
+            ),
         style = AfternoteDesign.typography.bodyBase,
         color = AfternoteDesign.colors.gray7,
         modifier = Modifier.fillMaxWidth(),
@@ -673,17 +689,21 @@ private fun ColumnScope.RecordedVoiceControls(
         enabled = player != null,
         modifier = Modifier.align(Alignment.CenterHorizontally),
     ) {
-        Text(if (isPlaying) "재생 일시정지" else "녹음 듣기")
+        Text(
+            stringResource(
+                if (isPlaying) R.string.voice_recording_pause else R.string.voice_recording_play,
+            ),
+        )
     }
     Spacer(modifier = Modifier.height(16.dp))
     TextButton(
         onClick = onRetry,
         modifier = Modifier.align(Alignment.CenterHorizontally),
     ) {
-        Text("다시 녹음")
+        Text(stringResource(R.string.voice_recording_retry))
     }
     AfternoteButton(
-        text = "음성 메시지 등록",
+        text = stringResource(R.string.voice_recording_register),
         onClick = onRegister,
         modifier =
             Modifier

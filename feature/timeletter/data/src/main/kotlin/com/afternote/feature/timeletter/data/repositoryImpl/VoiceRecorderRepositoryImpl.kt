@@ -22,6 +22,7 @@ class VoiceRecorderRepositoryImpl
         @param:ApplicationContext private val context: Context,
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : VoiceRecorderRepository {
+        private val recorderLock = Any()
         private var recorder: MediaRecorder? = null
         private var outputFile: File? = null
         private var startedAtMillis: Long = 0L
@@ -29,59 +30,63 @@ class VoiceRecorderRepositoryImpl
         override suspend fun start(): Result<Unit> =
             withContext(ioDispatcher) {
                 runCatching {
-                    discardInternal()
-                    val directory = File(context.filesDir, AUDIO_DIRECTORY).apply { mkdirs() }
-                    val file = File(directory, "${UUID.randomUUID()}.$AUDIO_EXTENSION")
-                    val mediaRecorder = createMediaRecorder()
-                    mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC)
-                    mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-                    mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-                    mediaRecorder.setAudioEncodingBitRate(AUDIO_BIT_RATE)
-                    mediaRecorder.setAudioSamplingRate(AUDIO_SAMPLE_RATE)
-                    mediaRecorder.setOutputFile(file.absolutePath)
-                    mediaRecorder.prepare()
-                    mediaRecorder.start()
-                    recorder = mediaRecorder
-                    outputFile = file
-                    startedAtMillis = SystemClock.elapsedRealtime()
+                    synchronized(recorderLock) {
+                        discardInternal()
+                        val directory = File(context.filesDir, AUDIO_DIRECTORY).apply { mkdirs() }
+                        val file = File(directory, "${UUID.randomUUID()}.$AUDIO_EXTENSION")
+                        val mediaRecorder = createMediaRecorder()
+                        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC)
+                        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                        mediaRecorder.setAudioEncodingBitRate(AUDIO_BIT_RATE)
+                        mediaRecorder.setAudioSamplingRate(AUDIO_SAMPLE_RATE)
+                        mediaRecorder.setOutputFile(file.absolutePath)
+                        mediaRecorder.prepare()
+                        mediaRecorder.start()
+                        recorder = mediaRecorder
+                        outputFile = file
+                        startedAtMillis = SystemClock.elapsedRealtime()
+                    }
                 }
             }
 
         override suspend fun stop(): Result<RecordedAudio> =
             withContext(ioDispatcher) {
                 runCatching {
-                    val activeRecorder = checkNotNull(recorder) { "Voice recording has not started" }
-                    val file = checkNotNull(outputFile) { "Voice recording file is missing" }
-                    val durationMillis = SystemClock.elapsedRealtime() - startedAtMillis
-                    try {
-                        activeRecorder.stop()
-                    } finally {
-                        activeRecorder.release()
-                        recorder = null
-                    }
-                    val uri =
-                        FileProvider.getUriForFile(
-                            context,
-                            "${context.packageName}.timeletter.fileprovider",
-                            file,
+                    synchronized(recorderLock) {
+                        val activeRecorder = checkNotNull(recorder) { "Voice recording has not started" }
+                        val file = checkNotNull(outputFile) { "Voice recording file is missing" }
+                        val durationMillis = SystemClock.elapsedRealtime() - startedAtMillis
+                        try {
+                            activeRecorder.stop()
+                        } finally {
+                            activeRecorder.release()
+                            recorder = null
+                        }
+                        val uri =
+                            FileProvider.getUriForFile(
+                                context,
+                                "${context.packageName}.timeletter.fileprovider",
+                                file,
+                            )
+                        RecordedAudio(
+                            uriString = uri.toString(),
+                            fileName = file.name,
+                            mimeType = AUDIO_MIME_TYPE,
+                            durationMillis = durationMillis,
                         )
-                    RecordedAudio(
-                        uriString = uri.toString(),
-                        fileName = file.name,
-                        mimeType = AUDIO_MIME_TYPE,
-                        durationMillis = durationMillis,
-                    )
+                    }
                 }.onFailure {
-                    discardInternal()
+                    synchronized(recorderLock) { discardInternal() }
                 }
             }
 
         override suspend fun discard() {
-            withContext(ioDispatcher) { discardInternal() }
+            withContext(ioDispatcher) { synchronized(recorderLock) { discardInternal() } }
         }
 
         override fun retainRecordedFile() {
-            outputFile = null
+            synchronized(recorderLock) { outputFile = null }
         }
 
         override suspend fun deleteRecordedFile(uriString: String) {
@@ -94,18 +99,16 @@ class VoiceRecorderRepositoryImpl
         }
 
         override fun release() {
-            val fileToDelete = releaseRecorder()
+            val fileToDelete = synchronized(recorderLock) { releaseRecorder() }
             fileToDelete?.let { file ->
                 ioDispatcher.dispatch(EmptyCoroutineContext) { file.delete() }
             }
         }
 
-        @Synchronized
         private fun discardInternal() {
             releaseRecorder()?.delete()
         }
 
-        @Synchronized
         private fun releaseRecorder(): File? {
             recorder?.runCatching { stop() }
             recorder?.release()

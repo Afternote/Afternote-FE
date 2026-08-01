@@ -1,12 +1,14 @@
 package com.afternote.feature.timeletter.presentation.viewmodel
 
 import android.net.Uri
+import android.os.SystemClock
 import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.ui.UiText
 import com.afternote.feature.timeletter.domain.model.BlockInput
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlockType
@@ -16,6 +18,7 @@ import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
 import com.afternote.feature.timeletter.domain.repository.VoiceRecorderRepository
 import com.afternote.feature.timeletter.domain.usecase.CreateTimeLetterUseCase
 import com.afternote.feature.timeletter.domain.usecase.ResolveTimeLetterBlocksUseCase
+import com.afternote.feature.timeletter.presentation.R
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -120,7 +123,7 @@ class TimeLetterWriteViewModel
             if (state.isSaving || isCheckingRegisterLimit) return
 
             if (state.sendAt == null) {
-                _uiState.update { it.copy(errorMessage = "발송 날짜를 선택해주세요.") }
+                _uiState.update { it.copy(errorMessage = UiText.Dynamic("발송 날짜를 선택해주세요.")) }
                 return
             }
             isCheckingRegisterLimit = true
@@ -131,7 +134,7 @@ class TimeLetterWriteViewModel
                             runCatching { timeLetterRepository.getTimeLetters().totalCount }
                                 .getOrElse {
                                     _uiState.update { current ->
-                                        current.copy(errorMessage = "타임레터를 불러올 수 없습니다.")
+                                        current.copy(errorMessage = UiText.Dynamic("타임레터를 불러올 수 없습니다."))
                                     }
                                     return@launch
                                 }
@@ -210,7 +213,9 @@ class TimeLetterWriteViewModel
                         }
                         startRecordingTimer()
                     }.onFailure {
-                        _uiState.update { state -> state.copy(errorMessage = "음성 녹음을 시작하지 못했습니다.") }
+                        _uiState.update { state ->
+                            state.copy(errorMessage = UiText.Resource(R.string.voice_recording_start_error))
+                        }
                     }
             }
         }
@@ -229,7 +234,7 @@ class TimeLetterWriteViewModel
                         _uiState.update { state ->
                             state.copy(
                                 voiceRecordingState = VoiceRecordingState.Idle,
-                                errorMessage = "음성 녹음을 완료하지 못했습니다. 다시 시도해 주세요.",
+                                errorMessage = UiText.Resource(R.string.voice_recording_stop_error),
                             )
                         }
                     }
@@ -283,10 +288,10 @@ class TimeLetterWriteViewModel
             recordingTimerJob?.cancel()
             recordingTimerJob =
                 viewModelScope.launch {
-                    var elapsedMillis = 0L
-                    while (true) {
+                    val startedAtMillis = SystemClock.elapsedRealtime()
+                    while (_uiState.value.voiceRecordingState is VoiceRecordingState.Recording) {
                         delay(RECORDING_TIMER_INTERVAL_MILLIS)
-                        elapsedMillis += RECORDING_TIMER_INTERVAL_MILLIS
+                        val elapsedMillis = SystemClock.elapsedRealtime() - startedAtMillis
                         _uiState.update { state ->
                             if (state.voiceRecordingState is VoiceRecordingState.Recording) {
                                 state.copy(voiceRecordingState = VoiceRecordingState.Recording(elapsedMillis))
@@ -410,7 +415,7 @@ class TimeLetterWriteViewModel
                             _uiState.update { it.copy(registered = true) }
                         }
                     }.onFailure {
-                        _uiState.update { it.copy(errorMessage = "저장에 실패했어요. 다시 시도해주세요.") }
+                        _uiState.update { it.copy(errorMessage = UiText.Dynamic("저장에 실패했어요. 다시 시도해주세요.")) }
                     }
                 _uiState.update { it.copy(isSaving = false) }
             }
@@ -457,7 +462,7 @@ class TimeLetterWriteViewModel
                     }
                 }.onFailure {
                     _uiState.update { it.copy(isLoadingEditingLetter = false) }
-                    _uiState.update { it.copy(errorMessage = "타임레터를 불러올 수 없습니다.") }
+                    _uiState.update { it.copy(errorMessage = UiText.Dynamic("타임레터를 불러올 수 없습니다.")) }
                 }
         }
 
