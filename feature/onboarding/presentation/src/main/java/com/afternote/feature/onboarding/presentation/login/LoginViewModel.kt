@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
 @HiltViewModel
 class LoginViewModel
@@ -98,6 +99,10 @@ class LoginViewModel
                             }
                         }
                     }.onFailure { exception ->
+                        // 화면 이탈로 스코프가 취소된 것을 장애로 기록하거나 실패 UI 로 소비하지 않는다.
+                        // suspend 호출을 감싼 runCatching 이 취소까지 Result.failure 로 만들기 때문에
+                        // 여기까지 들어온다 — 전파를 끊지 않도록 즉시 되던진다(전수 정정은 #661).
+                        if (exception is CancellationException) throw exception
                         errorReporter.recordAuthFailure(
                             stage = AuthFailureStage.LOGIN,
                             throwable = exception,

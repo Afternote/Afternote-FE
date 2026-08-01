@@ -30,11 +30,12 @@ import javax.inject.Inject
  *
  * 내부 [InternalState] (flat) 로 조회·작성자·삭제 진행 단계를 관리하고, public [uiState] 는
  * [AfternoteDetailUiState] 로 매핑해 Loading/Success/Error 3분기로 노출한다.
- * 삭제 결과(성공/실패)는 [AfternoteDetailUiState.Success] 안의 `deleteResult` 신호로 노출하고,
- * UI 가 소비한 뒤 [onDeleteResultConsumed] 로 reset 한다.
+ * 삭제 결과(성공/실패)는 [AfternoteDetailUiState.Success.deleteResult] nullable 필드에 흡수한다 —
+ * UI 가 LaunchedEffect 로 소비한 뒤 [onDeleteResultConsumed] 로 reset.
  *
- * 사용자 가시 메시지는 VM에 하드코딩하지 않고 [androidx.annotation.StringRes] id 로 노출한다 (서버 raw 메시지가 있으면 그쪽을 우선).
- * [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel] 의 `error: String?` + `errorRes: Int?` 페어 패턴과 동일.
+ * 사용자 가시 메시지는 VM 에 하드코딩하지 않고 [androidx.annotation.StringRes] id 로만 노출한다.
+ * 실패 시 예외 원문(`Throwable.message`)은 UI 로 넘기지 않는다 — 서버 5xx 본문·역직렬화 예외에
+ * 내부 SQL·응답 원문 발췌가 섞여 오므로 사용자에게 노출하면 안 된다.
  *
  * [SharingStarted.WhileSubscribed] 로 UI 구독이 없을 때 업스트림 [map] 을 중지해 백그라운드 리소스를 절약한다.
  */
@@ -65,6 +66,9 @@ class AfternoteDetailViewModel
                 runCatching { userRepository.getMyProfile() }
                     .onSuccess { profile ->
                         internalState.update { it.copy(authorDisplayName = profile.name) }
+                    }.onFailure {
+                        // 의도된 폴백: 표시명은 장식 정보라 실패해도 화면을 차단하지 않는다.
+                        // authorDisplayName 이 빈 문자열로 남으면 TitleSection 이 이름 세그먼트를 생략해 렌더한다.
                     }
             }
             val id = afternoteIdFromNav
@@ -96,11 +100,7 @@ class AfternoteDetailViewModel
                         errorReporter.recordAfternoteFailure(AfternoteFailureStage.DETAIL_LOAD, e)
                         internalState.update {
                             it.copy(
-                                loadPhase =
-                                    LoadPhase.Failed(
-                                        rawMessage = e.message,
-                                        messageRes = R.string.afternote_detail_load_error,
-                                    ),
+                                loadPhase = LoadPhase.Failed(messageRes = R.string.afternote_detail_load_error),
                             )
                         }
                     }
@@ -127,7 +127,6 @@ class AfternoteDetailViewModel
                                 isDeleting = false,
                                 deleteResult =
                                     AfternoteDetailDeleteResult.Failed(
-                                        rawMessage = e.message,
                                         messageRes = R.string.afternote_detail_delete_failed,
                                     ),
                             )
@@ -163,7 +162,6 @@ class AfternoteDetailViewModel
             ) : LoadPhase
 
             data class Failed(
-                val rawMessage: String? = null,
                 val messageRes: Int? = null,
             ) : LoadPhase
         }
@@ -186,10 +184,7 @@ class AfternoteDetailViewModel
                 }
 
                 is LoadPhase.Failed -> {
-                    AfternoteDetailUiState.Error(
-                        rawMessage = phase.rawMessage,
-                        messageRes = phase.messageRes,
-                    )
+                    AfternoteDetailUiState.Error(messageRes = phase.messageRes)
                 }
             }
 

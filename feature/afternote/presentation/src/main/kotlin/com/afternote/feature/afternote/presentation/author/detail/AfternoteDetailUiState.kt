@@ -10,10 +10,10 @@ import androidx.annotation.StringRes
  *   작성자 표시명은 홈 summary 에서 별도 조회되므로 로딩 경합 시 빈 문자열로 시작해 추후 copy 된다.
  *   삭제 결과(성공/실패)는 [Success.deleteResult] 에 흡수 — UI 가 LaunchedEffect 로 소비 후
  *   [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel.onDeleteResultConsumed] 로 reset.
- * - [Error] 상세 데이터 조회 실패. UI는 [Error.rawMessage](서버 메시지 등)를 우선 사용하고
- *   비어있으면 [Error.messageRes] 를 [androidx.compose.ui.res.stringResource] 로 변환한다.
- *   [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel] 의
- *   `error: String?` + `errorRes: Int?` 페어 패턴과 동일한 i18n 분리.
+ * - [Error] 상세 데이터 조회 실패. 표시 문구는 [Error.messageRes] 하나로만 운반한다.
+ *   예외 원문(`Throwable.message`)은 UI 에 싣지 않는다 — 서버 5xx 본문에 내부 SQL 이,
+ *   역직렬화 실패 메시지에 응답 원문 발췌·DTO 클래스명이 섞여 오기 때문이다
+ *   (`ApiException` 도 `message` 는 로그 전용이고 사용자 노출용으로 `serverMessage` 를 따로 둔다).
  */
 sealed interface AfternoteDetailUiState {
     data object Loading : AfternoteDetailUiState
@@ -28,7 +28,6 @@ sealed interface AfternoteDetailUiState {
     ) : AfternoteDetailUiState
 
     data class Error(
-        val rawMessage: String? = null,
         @param:StringRes val messageRes: Int? = null,
     ) : AfternoteDetailUiState
 }
@@ -46,7 +45,6 @@ sealed interface AfternoteDetailDeleteResult {
     ) : AfternoteDetailDeleteResult
 
     data class Failed(
-        val rawMessage: String? = null,
         @param:StringRes val messageRes: Int? = null,
     ) : AfternoteDetailDeleteResult
 }
