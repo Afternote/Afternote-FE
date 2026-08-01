@@ -45,6 +45,8 @@ paging = "3.5.0"
 screenshot = "0.0.1-alpha15"
 googleServices = "4.4.4"
 firebaseAppDistribution = "5.2.1"
+firebaseCrashlytics = "3.0.7"
+firebaseBom = "34.16.0"
 konsist = "0.17.3"
 
 [libraries]
@@ -108,6 +110,9 @@ androidx-paging-runtime = { group = "androidx.paging", name = "paging-runtime", 
 androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }
 screenshot-validation-api = { group = "com.android.tools.screenshot", name = "screenshot-validation-api", version.ref = "screenshot" }
 konsist = { group = "com.lemonappdev", name = "konsist", version.ref = "konsist" }
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics" }
+firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -121,3 +126,4 @@ ktlint-gradle = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintGra
 compose-screenshot = { id = "com.android.compose.screenshot", version.ref = "screenshot" }
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 firebase-app-distribution = { id = "com.google.firebase.appdistribution", version.ref = "firebaseAppDistribution" }
+firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlytics" }
