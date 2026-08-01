@@ -24,10 +24,15 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.afternote.core.ui.R
 import com.afternote.core.ui.icon.RightArrowIcon
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -53,6 +58,8 @@ private val AfternoteButtonVerticalPadding = 13.dp
  *
  * @param onSecondaryClick Variant5 dual-action 모드에서 오른쪽 절반([secondaryText]) 클릭 콜백
  * @param isLoading true 면 라벨 대신 스피너를 그리고 클릭을 막는다 (네트워크 대기 등 진행 중 표시).
+ *   dual-action 모드도 로딩 중엔 단일 스피너 바로 렌더되어 양쪽 클릭이 모두 막힌다.
+ *   접근성 이름은 [text] 로 유지되고, 로딩 상태는 stateDescription 으로 노출된다.
  */
 @Composable
 fun AfternoteButton(
@@ -85,7 +92,9 @@ fun AfternoteButton(
     CompositionLocalProvider(
         LocalMinimumInteractiveComponentSize provides androidx.compose.ui.unit.Dp.Unspecified,
     ) {
-        if (type == AfternoteButtonType.Variant5 && secondaryText != null && onSecondaryClick != null) {
+        // 로딩 중엔 dual-action 도 이 분기를 타지 않고 아래 단일 Surface 의 스피너·클릭 차단 경로로 합류한다 —
+        // dual 경로에 스피너를 따로 구현하면 isLoading 계약이 두 벌로 갈라진다.
+        if (type == AfternoteButtonType.Variant5 && secondaryText != null && onSecondaryClick != null && !isLoading) {
             DualActionButtonSurface(
                 text = text,
                 onClick = onClick,
@@ -97,10 +106,24 @@ fun AfternoteButton(
             )
             return@CompositionLocalProvider
         }
+        // 스피너가 라벨을 대체해도 버튼의 접근성 이름([text])과 로딩 상태는 남겨야 한다 —
+        // 스크린리더가 "이름 없는 버튼" 이 되는 것을 막는 최소 semantics.
+        val loadingStateDescription = stringResource(R.string.core_ui_button_loading)
         Surface(
             onClick = onClick,
             modifier =
-                modifier.fillMaxWidth(),
+                modifier
+                    .fillMaxWidth()
+                    .then(
+                        if (isLoading) {
+                            Modifier.semantics {
+                                contentDescription = text
+                                stateDescription = loadingStateDescription
+                            }
+                        } else {
+                            Modifier
+                        },
+                    ),
             enabled = type != AfternoteButtonType.Un && !isLoading,
             shape = AfternoteButtonShape,
             color = resolvedContainerColor,
