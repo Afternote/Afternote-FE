@@ -124,9 +124,11 @@ fun ErrorReporter.recordAfternoteFailure(
  * 다른 흐름에는 쓰지 않는다. 회원가입 이메일 인증은 사용자 오류가 code 1207 하나로만 와서 호출부가
  * 타입(`EmailVerificationException`)만 보고 거른다 — 문구 유무를 따질 필요가 없다.
  *
- * 소비처는 기록 판정만이 아니다 — 화면 노출 게이트(`toErrorPayload`, DocumentUploadUiState.kt)가
- * 같은 술어를 재사용해 "제외된 실패(안내된 거절)만 서버 문구 노출" 을 강제한다(#651). 이 판정을
- * 바꾸면 스낵바에 서버 원문이 뜨는 범위도 함께 바뀐다.
+ * 화면 노출 게이트(`toErrorPayload`, DocumentUploadUiState.kt)는 이 술어를 재사용하지 않는다 —
+ * 기록 제외(넓게: 4xx + 문구)와 문구 노출(좁게: 사유 code allowlist)은 다른 정책이라 분리했다
+ * (PR #655 리뷰). allowlist 가 "4xx + 문구"의 부분집합이므로 "기록되는 실패가 원문으로 노출"되는
+ * 조합은 성립하지 않고, allowlist 밖 4xx + 문구(검증류 거절)는 기록도 노출도 하지 않는다 —
+ * 장애가 아니므로 기록 제외를 유지하는 것이 이 술어의 "확실할 때만 제외" 원칙과 일치한다.
  */
 fun Throwable.shouldReportInReceiverFlow(): Boolean {
     val isExpectedUserRejection =
