@@ -3,6 +3,7 @@ package com.afternote.feature.afternote.presentation.author.editor.model
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
+import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 
 /**
  * ViewModel/Mapper가 [com.afternote.feature.afternote.domain.model.author.Detail] 등에서 조립해
@@ -17,6 +18,11 @@ data class EditorFormPrefill(
     val password: String,
     val messageBlocks: List<EditorMessageTextBlock>,
     val processingMethods: List<ProcessingMethodItem>,
+    /**
+     * 이 애프터노트에 지정된 수신자 (#566). 신규 작성 경로가 폼에 넣는
+     * `AfternoteSaveState.authorReceivers`(= 작성자가 등록한 수신자 **전체**) 와 다른 값이다.
+     */
+    val receivers: List<AfternoteEditorReceiver>,
     /** null이면 당부/직접입력 필드는 기존 값 유지 */
     val lastWishUpdate: LastWishPrefill?,
     val funeralVideoUrl: String?,
@@ -41,6 +47,7 @@ data class LoadFromExistingParams(
     val categoryDisplayString: String,
     val account: LoadFromExistingAccountParams = LoadFromExistingAccountParams(),
     val processing: LoadFromExistingProcessingParams = LoadFromExistingProcessingParams(),
+    val receivers: List<AfternoteEditorReceiver> = emptyList(),
     val atmosphere: String? = null,
     val memorialVideoUrl: String? = null,
     val memorialThumbnailUrl: String? = null,
