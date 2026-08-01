@@ -22,6 +22,7 @@ import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.login.social.UserCancelledAuthException
 import com.afternote.feature.onboarding.presentation.login.social.requestGoogleIdToken
 import com.afternote.feature.onboarding.presentation.login.social.requestKakaoAccessToken
+import com.afternote.feature.onboarding.presentation.reporting.AuthProvider
 import kotlinx.coroutines.launch
 
 /**
@@ -106,7 +107,10 @@ fun LoginEntry(
                             .onSuccess { oauthToken ->
                                 viewModel.loginWithKakao(oauthToken)
                             }.onFailure { exception ->
+                                // 카카오 동의 화면·계정 로그인 창을 사용자가 닫은 경우(ClientErrorCause.Cancelled).
+                                // 장애가 아니라 정상적인 이탈이므로 리포팅하지 않는다.
                                 if (exception is UserCancelledAuthException) return@onFailure
+                                viewModel.onSocialTokenRequestFailed(AuthProvider.KAKAO, exception)
                                 showErrorSnackbar(exception.message ?: kakaoFailedMessage)
                             }
                     }
@@ -127,10 +131,17 @@ fun LoginEntry(
                     }.onFailure { exception ->
                         val message =
                             when (exception) {
+                                // 계정 선택 시트를 사용자가 닫은 경우(GetCredentialCancellationException,
+                                // 내부 타입 TYPE_USER_CANCELED). 정상적인 이탈이라 리포팅하지 않는다.
                                 is UserCancelledAuthException -> return@onFailure
+
+                                // 반면 이건 취소가 아니라 "쓸 계정이 없어 로그인 불가"라 리포팅 대상이다 —
+                                // 배포본 소셜 로그인 불능을 잡아내려면 이쪽이 신호여야 한다.
                                 is NoCredentialException -> googleNoCredentialsMessage
+
                                 else -> exception.message ?: googleFailedMessage
                             }
+                        viewModel.onSocialTokenRequestFailed(AuthProvider.GOOGLE, exception)
                         showErrorSnackbar(message)
                     }
                 }
