@@ -121,7 +121,6 @@ internal fun buildEditorScreenCallbacks(
                     password =
                         state.passwordState.text
                             .toString(),
-                    atmosphere = state.getAtmosphereForSave(),
                 )
             editViewModel.saveAfternote(
                 editingId = route.itemId?.toLongOrNull(),

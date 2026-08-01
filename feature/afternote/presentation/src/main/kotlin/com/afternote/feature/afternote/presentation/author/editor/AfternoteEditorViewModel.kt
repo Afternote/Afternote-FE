@@ -88,7 +88,6 @@ private data class EditorFormSnapshot(
     val selectedService: String = "",
     val receivers: List<ReceiverSnap> = emptyList(),
     val methods: List<PmSnap> = emptyList(),
-    val selectedLastWish: String? = null,
     val pickedMemorialPhotoUri: String? = null,
     val funeralVideoUrl: String? = null,
     val funeralThumbnailUrl: String? = null,
@@ -115,7 +114,6 @@ private data class EditorFormSnapshot(
             afternoteEditReceivers =
                 receivers.map { AfternoteEditorReceiver(id = it.id, name = it.name, label = it.label) },
             processingMethods = methods.map { ProcessingMethodItem(it.id, it.text) },
-            selectedLastWish = selectedLastWish,
             pickedMemorialPhotoUri = pickedMemorialPhotoUri,
             funeralVideoUrl = funeralVideoUrl,
             funeralThumbnailUrl = funeralThumbnailUrl,
@@ -140,7 +138,6 @@ private data class EditorFormSnapshot(
                         ReceiverSnap(id = it.id, name = it.name, label = it.label)
                     },
                 methods = form.processingMethods.map { PmSnap(it.id, it.text) },
-                selectedLastWish = form.selectedLastWish,
                 pickedMemorialPhotoUri = form.pickedMemorialPhotoUri,
                 funeralVideoUrl = form.funeralVideoUrl,
                 funeralThumbnailUrl = form.funeralThumbnailUrl,
