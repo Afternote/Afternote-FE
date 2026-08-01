@@ -164,7 +164,7 @@ class AuthRepositoryImplTest {
         val repository =
             repository(
                 FakeAuthApiService(
-                    onLogin = { throw ApiException(code = 1202, serverMessage = serverMessage, message = serverMessage) },
+                    onLogin = { throw ApiException(status = 400, code = 1202, serverMessage = serverMessage, message = serverMessage) },
                 ),
             )
 
@@ -181,7 +181,7 @@ class AuthRepositoryImplTest {
         val repository =
             repository(
                 FakeAuthApiService(
-                    onLogin = { throw ApiException(code = 1904, serverMessage = internalMessage, message = internalMessage) },
+                    onLogin = { throw ApiException(status = 500, code = 1904, serverMessage = internalMessage, message = internalMessage) },
                 ),
             )
 
@@ -196,7 +196,7 @@ class AuthRepositoryImplTest {
         val repository =
             repository(
                 FakeAuthApiService(
-                    onLogin = { throw ApiException(code = 1201, serverMessage = null, message = "클라 폴백 문구") },
+                    onLogin = { throw ApiException(status = 400, code = 1201, serverMessage = null, message = "클라 폴백 문구") },
                 ),
             )
 
@@ -211,7 +211,14 @@ class AuthRepositoryImplTest {
         val repository =
             repository(
                 FakeAuthApiService(
-                    onSocialLogin = { throw ApiException(code = 1208, serverMessage = serverMessage, message = serverMessage) },
+                    onSocialLogin = {
+                        throw ApiException(
+                            status = 400,
+                            code = 1208,
+                            serverMessage = serverMessage,
+                            message = serverMessage,
+                        )
+                    },
                 ),
             )
 
