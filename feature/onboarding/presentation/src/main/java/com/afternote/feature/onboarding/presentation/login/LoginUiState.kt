@@ -1,5 +1,7 @@
 package com.afternote.feature.onboarding.presentation.login
 
+import com.afternote.core.ui.UiText
+
 /**
  * 로그인 화면 단일 UI 상태.
  *
@@ -17,6 +19,11 @@ data class LoginUiState(
     val isLoggedIn: Boolean = false,
     /** 소셜 신규 가입자 신호 — UI 가 온보딩(Welcome) nav 후 [LoginViewModel.onOnboardingStartConsumed] 로 reset. */
     val shouldStartOnboarding: Boolean = false,
-    /** 서버/UseCase 가 내려준 사용자 친화 message. UI 가 snackbar 표시 후 [LoginViewModel.onErrorConsumed] 로 reset. */
-    val errorMessage: String? = null,
+    /**
+     * 실패 안내. data 계층이 사유를 확인해 준 실패만 각자의 문구를 갖고(전송 계층 실패 → 네트워크
+     * 안내 리소스, 사유 확인된 로그인 거절 → 서버 문구), 그 밖의 실패는 전부 일반 문구로 고정한다 —
+     * 예외 message 를 표시값으로 쓰지 않으므로 서버 5xx 본문·역직렬화 원문이 화면에 닿지 않는다.
+     * UI 가 snackbar 표시 후 [LoginViewModel.onErrorConsumed] 로 reset.
+     */
+    val errorMessage: UiText? = null,
 )
