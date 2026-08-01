@@ -18,6 +18,13 @@ private const val LAST_WISH_DEFAULT_BRIGHT = "슬퍼 하지 말고 밝고 따뜻
 
 /**
  * 에디터 **비즈니스/도메인** 폼 상태.
+ *
+ * 필드를 개별 스트림으로 쪼개지 않고 하나의 불변 data class로 묶은 근거는 UI 레이어 가이드의
+ * "Use a single UI state object to handle states that are related to each other" 다.
+ * 쪼개는 편이 나은 경우는 가이드가 함께 못박은 예외 "Unrelated data types"(서로 독립적이고
+ * 갱신 빈도까지 다른 상태)인데, 이 폼은 카테고리 선택·검증·저장 payload 가 서로를 읽으므로 해당하지 않는다.
+ * https://developer.android.com/topic/architecture/ui-layer#define-ui-state
+ *
  * [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel]의
  * [kotlinx.coroutines.flow.StateFlow]가 SSOT이며,
  * 프로세스 종료 대비 스냅샷은 [androidx.lifecycle.SavedStateHandle]에 JSON으로 저장한다.
@@ -51,7 +58,8 @@ data class EditorFormState(
     val funeralVideoUrl: String? = null,
     val funeralThumbnailUrl: String? = null,
     val memorialPhotoUrl: String? = null,
-    val playlistSongCount: Int = 16,
+    /** 추모(PLAYLIST) 곡 수 폴백. 그래프·스냅샷 곡 목록이 모두 비면 이 값이 노출되므로 기본은 0(유령 곡수 방지). */
+    val playlistSongCount: Int = 0,
     /** 추모(PLAYLIST) 곡 목록 — 홀더와 양방향 동기화 후 스냅샷에 저장. */
     val memorialPlaylistSongs: List<Song> = emptyList(),
     val playlistAlbumCovers: List<AlbumCover> = emptyList(),

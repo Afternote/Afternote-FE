@@ -118,7 +118,7 @@ fun MemorialPlaylistEntry(
                     },
                 )
                 SongPlaylistFloatingActionSlot {
-                    PenFloatingActionButton(onClick = onNavigateToAddSongScreen)
+                    PenFloatingActionButton(onClick = onNavigateToAddSongScreen, size = 48.dp, iconSize = 17.dp)
                 }
             }
         }
