@@ -79,7 +79,6 @@ class ReceivedAfternoteDetailViewModel
                             it.copy(
                                 loadPhase =
                                     LoadPhase.Failed(
-                                        rawMessage = e.message,
                                         messageRes = R.string.afternote_detail_load_error,
                                     ),
                             )
@@ -105,7 +104,6 @@ class ReceivedAfternoteDetailViewModel
             ) : LoadPhase
 
             data class Failed(
-                val rawMessage: String? = null,
                 val messageRes: Int? = null,
             ) : LoadPhase
         }
@@ -125,7 +123,6 @@ class ReceivedAfternoteDetailViewModel
 
                 is LoadPhase.Failed -> {
                     ReceivedAfternoteDetailUiState.Error(
-                        rawMessage = phase.rawMessage,
                         messageRes = phase.messageRes,
                     )
                 }

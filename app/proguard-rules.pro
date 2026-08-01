@@ -42,3 +42,10 @@
 # 보호하지 않아 NoSuchFieldException 발생.
 -keep class com.kakao.sdk.**.model.** { *; }
 -keep enum com.kakao.sdk.** { *; }
+
+# 도메인 예외 — Crashlytics 리포트에서 예외 타입을 식별하기 위해 이름만 유지.
+# 스택 프레임은 mapping 으로 복원되지만 예외 타입 문자열에는 적용되지 않아,
+# 난독화되면 이슈 제목이 `nq` 같은 축약명으로 떠 어떤 실패인지 알 수 없고
+# 같은 지점의 실패가 서로 다른 이슈로 그룹핑된다.
+# 이름만 필요하므로 멤버 난독화와 미사용 클래스 제거는 그대로 둔다.
+-keepnames class com.afternote.** extends java.lang.Throwable

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
+import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -38,7 +39,7 @@ class ReceiverDownloadAllViewModel
         private fun handleConfirmDownload() {
             viewModelScope.launch {
                 _uiState.update {
-                    it.copy(isLoading = true, errorMessage = null, downloadSuccess = false)
+                    it.copy(isLoading = true, errorMessageRes = null, downloadSuccess = false)
                 }
                 receiverRepository
                     .downloadReceivedExport()
@@ -54,7 +55,7 @@ class ReceiverDownloadAllViewModel
                                 _uiState.update {
                                     it.copy(
                                         isLoading = false,
-                                        errorMessage = e.message ?: "파일 저장에 실패했습니다.",
+                                        errorMessageRes = R.string.receiver_download_all_save_failed,
                                     )
                                 }
                             }
@@ -63,7 +64,7 @@ class ReceiverDownloadAllViewModel
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                errorMessage = e.message ?: "모든 기록 내려받기에 실패했습니다.",
+                                errorMessageRes = R.string.receiver_download_all_failed,
                             )
                         }
                     }
@@ -75,6 +76,6 @@ class ReceiverDownloadAllViewModel
         }
 
         private fun handleClearError() {
-            _uiState.update { it.copy(errorMessage = null) }
+            _uiState.update { it.copy(errorMessageRes = null) }
         }
     }

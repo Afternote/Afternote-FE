@@ -58,7 +58,11 @@ enum class AfternoteValidationError(
  *
  * [error] 는 네트워크 등 서버 raw 메시지용. ViewModel은 `Context`에 의존하지 않고
  * 리소스 기반 일반 실패 메시지는 [errorRes] 에 [StringRes] ID로 담아 UI에서
- * [androidx.compose.ui.res.stringResource] 로 해석한다 (상세 화면 [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailUiState.Error] 와 동일 페어).
+ * [androidx.compose.ui.res.stringResource] 로 해석한다.
+ *
+ * ⚠️ 상세 화면([com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailUiState.Error])은
+ * 더 이상 이 raw+res 페어를 쓰지 않는다 — 예외 원문이 사용자에게 노출돼 리소스 ID 단일 운반으로 바뀌었다(#464).
+ * 여기 [error] 도 같은 노출 경로이며 정리 대상이다(#511).
  */
 data class AfternoteEditorUiState(
     val form: EditorFormState = EditorFormState(),
