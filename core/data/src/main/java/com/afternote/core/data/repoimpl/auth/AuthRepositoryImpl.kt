@@ -18,6 +18,7 @@ import com.afternote.core.network.token.AccessTokenExpiryTracker
 import kotlinx.coroutines.flow.Flow
 import java.io.IOException
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
 class AuthRepositoryImpl
     @Inject
@@ -154,9 +155,12 @@ class AuthRepositoryImpl
  * 로그인 경로 공통 — 서버 응답 없이 전송 계층에서 끝난 IO 실패를 [NetworkUnavailableException] 으로
  * 치환한다. [ApiException] 은 IOException 서브클래스지만(인터셉터 throw 를 OkHttp 가 원형 전파하게
  * 하려는 설계) 서버가 응답한 실패이므로 제외한다 — code·서버 message 가 소비처에서 그대로 쓰여야 한다.
+ * [CancellationException] 은 실패가 아니라 취소 신호 — runCatching 이 Throwable 전부를 잡아 Result 로
+ * 소비해 버리므로, 여기서 다시 던져 코루틴 취소 전파를 보존한다.
  */
 private fun <T> Result<T>.mapTransportFailure(): Result<T> {
     val exception = exceptionOrNull()
+    if (exception is CancellationException) throw exception
     return if (exception is IOException && exception !is ApiException) {
         Result.failure(NetworkUnavailableException(exception))
     } else {

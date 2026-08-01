@@ -25,6 +25,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.net.UnknownHostException
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * [AuthRepositoryImpl] 의 선제 reissue deadline 관리 계약 회귀 가드 (#408, PR #411 리뷰 반영).
@@ -186,6 +187,26 @@ class AuthRepositoryImplTest {
     }
 
     @Test
+    fun `defaultLogin - 취소는 Result 로 소비하지 않고 다시 던짐 (코루틴 취소 보존)`() {
+        val repository =
+            repository(
+                FakeAuthApiService(
+                    onLogin = { throw CancellationException("작업 취소") },
+                ),
+            )
+
+        val thrown =
+            try {
+                runBlocking { repository.defaultLogin("user@example.com", "pw") }
+                null
+            } catch (expected: CancellationException) {
+                expected
+            }
+
+        assertTrue(thrown is CancellationException)
+    }
+
+    @Test
     fun `googleLogin - 전송 계층 IO 실패 치환 (메서드별 독립 호출이라 개별 가드)`() {
         val repository =
             repository(
@@ -233,7 +254,7 @@ private class FakeTokenApiService : TokenApiService {
 
 /** 단위 테스트용 in-memory `DataStore<Preferences>` — 디스크 없이 [TokenDataSource] 실물을 구동한다. */
 private class InMemoryPreferencesDataStore : DataStore<Preferences> {
-    private val state = MutableStateFlow<Preferences>(emptyPreferences())
+    private val state = MutableStateFlow(emptyPreferences())
 
     override val data: Flow<Preferences> get() = state
 

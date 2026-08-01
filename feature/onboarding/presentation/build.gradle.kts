@@ -50,4 +50,7 @@ dependencies {
     // Compose Preview Screenshot Testing (#330)
     screenshotTestImplementation(libs.screenshot.validation.api)
     screenshotTestImplementation(libs.androidx.compose.ui.tooling)
+
+    // LoginViewModel 계약 단위 테스트 — Main 디스패처 치환용 (PR #647 리뷰 반영)
+    testImplementation(libs.coroutines.test)
 }
