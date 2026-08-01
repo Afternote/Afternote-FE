@@ -9,11 +9,14 @@ import javax.inject.Inject
 /**
  * [ErrorReporter] 의 Crashlytics 구현.
  *
+ * 채우는 건 [ErrorReporter.writeFailure] 뿐이다 — 무엇을 기록할지 거르는 정책(취소 제외·문구 제거)은
+ * 인터페이스가 이미 태우고 내려보낸다.
+ *
  * Firebase 의존이 app 모듈 밖으로 새지 않도록 구현체를 여기에만 둔다.
  * SDK 싱글톤([Firebase.crashlytics])은 이 어댑터가 직접 잡는다 — 대체가 필요한 층은
  * SDK 핸들이 아니라 [ErrorReporter] 자체이고, 그걸 갈아끼우는 건 Hilt 바인딩에서 한다.
  *
- * [attributes] 의 각 쌍은 이 예외 리포트 하나에 붙는 커스텀 키가 되어, 콘솔에서 이슈를 열고
+ * `attributes` 의 각 쌍은 이 예외 리포트 하나에 붙는 커스텀 키가 되어, 콘솔에서 이슈를 열고
  * 개별 이벤트 리포트까지 들어가면 보인다 — 스택트레이스만으로는 구분 안 되는 "어느 단계·어느
  * 수단에서 깨졌는지"를 남기려는 것이다. 같은 키를 다시 넣으면 값이 덮어써지고,
  * 최대 64쌍·쌍당 1kB 제한이 있다.
@@ -29,7 +32,7 @@ import javax.inject.Inject
 class CrashlyticsErrorReporter
     @Inject
     constructor() : ErrorReporter {
-        override fun recordFailure(
+        override fun writeFailure(
             throwable: Throwable,
             attributes: Map<String, String>,
         ) {

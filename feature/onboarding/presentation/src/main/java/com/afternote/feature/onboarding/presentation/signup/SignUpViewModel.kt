@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -120,6 +121,8 @@ class SignUpViewModel
                         _uiState.update { it.copy(isVerificationSent = true, verificationError = null) }
                         startResendCooldown()
                     }.onFailure { error ->
+                        // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
+                        if (error is CancellationException) throw error
                         errorReporter.recordAuthFailure(AuthFailureStage.EMAIL_CODE_SEND, error)
                         _uiState.update { it.copy(errorMessage = error.message ?: "") }
                     }
@@ -159,6 +162,8 @@ class SignUpViewModel
                     ).onSuccess {
                         _uiState.update { it.copy(shouldNavigateToResidentNumber = true) }
                     }.onFailure { error ->
+                        // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
+                        if (error is CancellationException) throw error
                         if (error is EmailVerificationException) {
                             // 표시 문구는 화면의 고정 리소스 — 이 값은 인라인 표시 트리거 + 디버깅용 원문.
                             // 인증번호 불일치·만료는 정상적인 사용자 입력 오류라 리포팅하지 않는다.
@@ -200,6 +205,8 @@ class SignUpViewModel
                             .onSuccess {
                                 _uiState.update { it.copy(isSignedUp = true) }
                             }.onFailure { error ->
+                                // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
+                                if (error is CancellationException) throw error
                                 errorReporter.recordAuthFailure(
                                     stage = AuthFailureStage.AUTO_LOGIN_AFTER_SIGN_UP,
                                     throwable = error,
@@ -212,6 +219,8 @@ class SignUpViewModel
                                 }
                             }
                     }.onFailure { error ->
+                        // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
+                        if (error is CancellationException) throw error
                         errorReporter.recordAuthFailure(AuthFailureStage.SIGN_UP, error)
                         _uiState.update { it.copy(errorMessage = error.message ?: "") }
                     }
