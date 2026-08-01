@@ -3,6 +3,7 @@ name: Unit Test
 # PR 대상 main/develop 일 때 JVM unit test 실행:
 #   - ./gradlew testDebugUnitTest : Android 모듈 debug unit test
 #   - :konsist:test : 순수 JVM 모듈(testDebugUnitTest 미보유)이라 별도 명시. 레이어 의존 아키텍처 가드.
+#   - :build-logic:test : included build 라 루트 태스크에 안 묶여 별도 명시. release 키 가드(TestKit) 회귀 가드.
 # lint.yml 과 setup 이 거의 동일하지만 분리 — lint 실패가 test 결과를 가리지 않도록 fail-fast 독립.
 
 on:
@@ -53,7 +54,7 @@ jobs:
           echo "$GOOGLE_SERVICES_JSON_B64" | base64 -d > app/google-services.json
 
       - name: Run unit tests
-        run: ./gradlew testDebugUnitTest :konsist:test --continue --parallel
+        run: ./gradlew testDebugUnitTest :konsist:test :build-logic:test --continue --parallel
         env:
           KAKAO_NATIVE_APP_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
           GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}

@@ -9,7 +9,7 @@ import javax.inject.Inject
 /**
  * [ErrorReporter] 의 Crashlytics 구현.
  *
- * 채우는 건 [ErrorReporter.writeFailure] 뿐이다 — 무엇을 기록할지 거르는 정책(취소 제외)은
+ * 채우는 건 [ErrorReporter.writeFailure] 뿐이다 — 무엇을 기록할지 거르는 정책(취소 제외·문구 제거)은
  * 인터페이스가 이미 태우고 내려보낸다.
  *
  * Firebase 의존이 app 모듈 밖으로 새지 않도록 구현체를 여기에만 둔다.

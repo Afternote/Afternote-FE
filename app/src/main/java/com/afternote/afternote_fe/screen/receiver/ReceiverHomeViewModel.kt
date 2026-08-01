@@ -2,6 +2,7 @@ package com.afternote.afternote_fe.screen.receiver
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.afternote_fe.R
 import com.afternote.afternote_fe.reporting.HomeFailureStage
 import com.afternote.afternote_fe.reporting.recordHomeFailure
 import com.afternote.afternote_fe.screen.receiver.model.AfternoteSourceIcon
@@ -80,15 +81,14 @@ class ReceiverHomeViewModel
                             ?: timeLettersRes.exceptionOrNull()
                             ?: messageRes.exceptionOrNull()
 
-                    // 모든 호출이 실패한 경우만 Error. 일부 실패는 fallback 으로 진행.
-                    if (failedSources.size == HOME_REQUEST_COUNT) {
-                        val error = firstFailure ?: RuntimeException("All home requests failed")
-                        errorReporter.recordHomeFailure(HomeFailureStage.RECEIVER_HOME_LOAD, error)
-                        _uiState.value = ReceiverHomeUiState.Error(error)
-                        return@coroutineScope
-                    }
-                    // 일부 실패는 0·빈 값으로 덮여 화면에도 콘솔에도 흔적이 남지 않던 구간 — 여기서만 기록한다.
                     if (firstFailure != null) {
+                        // 모든 호출이 실패한 경우만 Error. 일부 실패는 fallback 으로 진행.
+                        if (failedSources.size == HOME_REQUEST_COUNT) {
+                            errorReporter.recordHomeFailure(HomeFailureStage.RECEIVER_HOME_LOAD, firstFailure)
+                            _uiState.value = ReceiverHomeUiState.Error(firstFailure)
+                            return@coroutineScope
+                        }
+                        // 일부 실패는 0·빈 값으로 덮여 화면에도 콘솔에도 흔적이 남지 않던 구간 — 여기서만 기록한다.
                         errorReporter.recordHomeFailure(
                             stage = HomeFailureStage.RECEIVER_HOME_PARTIAL_LOAD,
                             throwable = firstFailure,
@@ -144,13 +144,13 @@ class ReceiverHomeViewModel
                             .onFailure { e ->
                                 errorReporter.recordHomeFailure(HomeFailureStage.RECEIVED_EXPORT_SAVE, e)
                                 updateDownload(
-                                    ReceiverDownloadState.Failed(e.message ?: "파일 저장에 실패했습니다."),
+                                    ReceiverDownloadState.Failed(R.string.receiver_home_download_all_save_failed),
                                 )
                             }
                     }.onFailure { e ->
                         errorReporter.recordHomeFailure(HomeFailureStage.RECEIVED_EXPORT_DOWNLOAD, e)
                         updateDownload(
-                            ReceiverDownloadState.Failed(e.message ?: "모든 기록 내려받기에 실패했습니다."),
+                            ReceiverDownloadState.Failed(R.string.receiver_home_download_all_failed),
                         )
                     }
             }

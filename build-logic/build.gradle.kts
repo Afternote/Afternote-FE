@@ -9,6 +9,18 @@ dependencies {
     implementation(libs.ktlint.gradle)
     compileOnly(libs.compose.compiler.gradle.plugin)
     compileOnly("org.jetbrains.kotlin:kotlin-serialization:${libs.versions.kotlin.get()}")
+    testImplementation(libs.junit)
+    testImplementation(gradleTestKit())
+}
+
+tasks.withType<Test>().configureEach {
+    // TestKit 스텁 프로젝트가 buildscript classpath 로 주입할 가드 클래스 위치 (ReleaseKeyGuardTest 참고).
+    systemProperty(
+        "guardClasspath",
+        sourceSets.main
+            .get()
+            .output.classesDirs.asPath,
+    )
 }
 
 gradlePlugin {
