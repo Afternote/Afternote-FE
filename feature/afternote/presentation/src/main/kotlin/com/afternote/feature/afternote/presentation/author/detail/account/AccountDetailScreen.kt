@@ -89,7 +89,6 @@ internal fun AccountDetailRoute(
 
         is AfternoteDetailUiState.Error -> {
             DetailLoadErrorContent(
-                rawMessage = state.rawMessage,
                 messageRes = state.messageRes,
                 onBackClick = onBack,
             )
