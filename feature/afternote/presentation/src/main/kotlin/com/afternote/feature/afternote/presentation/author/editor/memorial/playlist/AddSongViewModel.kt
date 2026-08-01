@@ -1,8 +1,10 @@
 package com.afternote.feature.afternote.presentation.author.editor.memorial.playlist
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.feature.afternote.domain.repository.author.MusicSearchRepository
+import com.afternote.feature.afternote.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -12,7 +14,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
+private const val TAG = "AddSongViewModel"
 private const val SEARCH_DEBOUNCE_MS = 300L
 
 @HiltViewModel
@@ -27,11 +31,11 @@ class AddSongViewModel
         private var searchJob: Job? = null
 
         fun onSearchQueryChange(query: String) {
-            _uiState.update { it.copy(searchQuery = query, error = null) }
+            _uiState.update { it.copy(searchQuery = query, errorRes = null) }
             searchJob?.cancel()
             searchJob =
                 viewModelScope.launch {
-                    delay(SEARCH_DEBOUNCE_MS)
+                    delay(SEARCH_DEBOUNCE_MS.milliseconds)
                     val trimmed = query.trim()
                     if (trimmed.isEmpty()) {
                         _uiState.update { it.copy(songs = emptyList(), isLoading = false) }
@@ -42,25 +46,30 @@ class AddSongViewModel
                         .search(trimmed)
                         .onSuccess { list ->
                             _uiState.update {
-                                it.copy(songs = list.map { item -> item.toDisplay() }, isLoading = false, error = null)
+                                it.copy(
+                                    songs = list.map { item -> item.toDisplay() },
+                                    isLoading = false,
+                                    errorRes = null,
+                                )
                             }
                         }.onFailure { e ->
+                            // 예외 원문은 서버 5xx 본문(내부 SQL)·역직렬화 예외(응답 원문 발췌·DTO 클래스명)를
+                            // 그대로 실어 오므로 화면에 싣지 않는다 — ApiException.message 는 Logcat 전용이라고
+                            // core:network 계약이 명시한다. 사용자에겐 원인과 무관하게 고정 안내만 노출.
+                            Log.e(TAG, "onSearchQueryChange: search failed", e)
                             _uiState.update {
                                 it.copy(
                                     songs = emptyList(),
                                     isLoading = false,
-                                    error =
-                                        e.message
-                                            ?.let { msg -> AddSongError.SearchFailedWithMessage(msg) }
-                                            ?: AddSongError.SearchFailedGeneric,
+                                    errorRes = R.string.afternote_editor_search_failed_generic,
                                 )
                             }
                         }
                 }
         }
 
-        /** UI 가 [AddSongUiState.error] 를 사용자에게 노출 직후 호출 → state nullify. */
+        /** UI 가 [AddSongUiState.errorRes] 를 사용자에게 노출 직후 호출 → state nullify. */
         fun onErrorConsumed() {
-            _uiState.update { it.copy(error = null) }
+            _uiState.update { it.copy(errorRes = null) }
         }
     }
