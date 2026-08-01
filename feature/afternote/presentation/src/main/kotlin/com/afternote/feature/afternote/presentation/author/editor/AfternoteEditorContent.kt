@@ -237,11 +237,8 @@ internal fun CategoryContent(
                         displayMemorialPhotoUri = form.displayMemorialPhotoUri(),
                         playlistSongCount = form.livePlaylistSongCount(graphSongs),
                         playlistAlbumCovers = form.displayAlbumCovers(graphSongs),
-                        selectedLastWish = form.selectedLastWish,
-                        lastWishOptions = editorLastWishOptions(),
                         funeralVideoUrl = form.funeralVideoUrl,
                         funeralThumbnailUrl = form.funeralThumbnailUrl,
-                        customLastWishState = state.customLastWishState,
                         recipientSection =
                             AfternoteEditorReceiverSection(
                                 afternoteEditReceivers = form.afternoteEditReceivers,
@@ -249,7 +246,6 @@ internal fun CategoryContent(
                                 onItemDeleteClick = state::onAfternoteEditorReceiverDelete,
                             ),
                         onSongAddClick = onNavigateToAddSong,
-                        onLastWishSelected = state::onLastWishSelected,
                         onPhotoAddClick = onPhotoAddClick,
                         onVideoAddClick = onVideoAddClick,
                         onThumbnailBytesReady = onThumbnailBytesReady,

@@ -13,9 +13,6 @@ internal const val CUSTOM_ADD_OPTION = "직접 추가하기"
 internal val DEFAULT_EDITOR_MESSAGE_BLOCKS: List<EditorMessageTextBlock> =
     listOf(EditorMessageTextBlock(title = "", body = ""))
 
-private const val LAST_WISH_DEFAULT_CALM = "차분하고 조용하게 보내주세요."
-private const val LAST_WISH_DEFAULT_BRIGHT = "슬퍼 하지 말고 밝고 따뜻하게 보내주세요."
-
 /**
  * 에디터 **비즈니스/도메인** 폼 상태.
  *
@@ -53,7 +50,6 @@ data class EditorFormState(
     val selectedService: String? = null,
     val afternoteEditReceivers: List<AfternoteEditorReceiver> = emptyList(),
     val processingMethods: List<ProcessingMethodItem> = emptyList(),
-    val selectedLastWish: String? = null,
     val pickedMemorialPhotoUri: String? = null,
     val funeralVideoUrl: String? = null,
     val funeralThumbnailUrl: String? = null,
@@ -71,15 +67,6 @@ data class EditorFormState(
      */
     val messageBlocksRestoreGeneration: Long = 0L,
 ) {
-    /** Memorial(PLAYLIST) 저장용 atmosphere 문자열. 기타(직접 입력) 텍스트는 UI 레이어에서 넘긴다. */
-    fun atmosphereForSave(customLastWishText: String): String =
-        when (selectedLastWish) {
-            "calm" -> LAST_WISH_DEFAULT_CALM
-            "bright" -> LAST_WISH_DEFAULT_BRIGHT
-            "other" -> customLastWishText.trim()
-            else -> ""
-        }
-
     fun displayMemorialPhotoUri(): String? = pickedMemorialPhotoUri ?: memorialPhotoUrl
 
     /**

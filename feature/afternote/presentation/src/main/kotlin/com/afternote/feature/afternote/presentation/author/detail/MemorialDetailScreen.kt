@@ -64,7 +64,6 @@ import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMe
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.ReceiversCard
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
-import com.afternote.core.ui.R as CoreUiR
 
 /**
  * 추억 노트 상세 Stateful Route.
@@ -135,7 +134,6 @@ data class MemorialDetailContent(
     val profileImageUri: String? = null,
     val albumCovers: List<AlbumCover> = emptyList(),
     val songCount: Int = 0,
-    val lastWish: String = "",
     val afternoteEditReceivers: List<ReceiverUiModel> = emptyList(),
     val memorialVideoUrl: String? = null,
     val memorialThumbnailUrl: String? = null,
@@ -262,7 +260,6 @@ private fun CardSection(content: MemorialDetailContent) {
             albumCovers = content.albumCovers,
             songCount = content.songCount,
         )
-        LastWishCard(lastWish = content.lastWish)
         VideoCard(
             videoUrl = content.memorialVideoUrl,
             thumbnailUrl = content.memorialThumbnailUrl,
@@ -498,38 +495,6 @@ private fun AlbumCoverItem(album: AlbumCover) {
     }
 }
 
-@Composable
-private fun LastWishCard(lastWish: String) {
-    val displayText =
-        lastWish.ifEmpty { stringResource(CoreUiR.string.core_ui_last_wish_empty_state) }
-    val textColor =
-        if (lastWish.isNotEmpty()) AfternoteDesign.colors.gray9 else AfternoteDesign.colors.gray5
-
-    InfoCard(
-        modifier = Modifier.fillMaxWidth(),
-        content = {
-            Column {
-                Text(
-                    text = stringResource(CoreUiR.string.core_ui_label_last_wish),
-                    style =
-                        AfternoteDesign.typography.textField.copy(
-                            fontWeight = FontWeight.Medium,
-                            color = AfternoteDesign.colors.gray9,
-                        ),
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = displayText,
-                    style =
-                        AfternoteDesign.typography.bodySmallR.copy(
-                            color = textColor,
-                        ),
-                )
-            }
-        },
-    )
-}
-
 private fun memorialDetailPreviewAlbumCovers(): List<AlbumCover> =
     listOf(
         AlbumCover(id = "1"),
@@ -552,7 +517,6 @@ private fun MemorialDetailScreenPreview() {
                     finalWriteDate = "2025.11.26",
                     songCount = 16,
                     albumCovers = memorialDetailPreviewAlbumCovers(),
-                    lastWish = "차분하고 조용하게 보내주세요.",
                 ),
             onBackClick = {},
             onEditClick = {},
@@ -581,7 +545,6 @@ private fun MemorialDetailScreenDeleteDialogPreview() {
                     finalWriteDate = "2025.11.26",
                     songCount = 16,
                     albumCovers = memorialDetailPreviewAlbumCovers(),
-                    lastWish = "차분하고 조용하게 보내주세요.1",
                 ),
             onBackClick = {},
             onEditClick = {},

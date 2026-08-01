@@ -56,7 +56,6 @@ internal fun Detail.toMemorialDetailContent(authorDisplayName: String): Memorial
                 )
             } ?: emptyList(),
         songCount = playlist?.songs?.size ?: 0,
-        lastWish = playlist?.atmosphere ?: "",
         memorialVideoUrl = playlist?.playlistDetailMemorialMedia?.videoUrl,
         memorialThumbnailUrl = playlist?.playlistDetailMemorialMedia?.thumbnailUrl,
     )

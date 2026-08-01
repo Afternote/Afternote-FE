@@ -286,7 +286,6 @@ internal fun editorContentSignature(
         comparableForm.toString(),
         state.idState.text,
         state.passwordState.text,
-        state.customLastWishState.text,
         state.editorMessages.map { "${it.titleState.text}\u0001${it.contentState.text}" },
     ).joinToString("\u0002")
 }
