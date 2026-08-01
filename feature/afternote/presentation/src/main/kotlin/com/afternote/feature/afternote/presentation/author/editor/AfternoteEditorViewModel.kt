@@ -93,7 +93,7 @@ private data class EditorFormSnapshot(
     val funeralVideoUrl: String? = null,
     val funeralThumbnailUrl: String? = null,
     val memorialPhotoUrl: String? = null,
-    val playlistSongCount: Int = 16,
+    val playlistSongCount: Int = 0,
     val memorialPlaylistSongs: List<Song> = emptyList(),
     val albumCovers: List<AlbumSnap> = emptyList(),
     val editorMessages: List<MessageBlockSnap> = emptyList(),
