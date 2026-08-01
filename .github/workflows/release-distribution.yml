@@ -3,7 +3,7 @@ name: Release Distribution (Firebase App Distribution)
 # 트리거 둘. 팀 운영은 "main 은 릴리스 때만 머지, 테스터 배포는 develop 기준으로 수시" 이므로
 # 배포 경로도 둘로 나뉜다:
 #   - push: [main]      릴리스 시 자동 배포.
-#   - workflow_dispatch  develop 등 임의 브랜치에서 수동 테스터 배포. 실행할 ref 를 골라 돌린다.
+#   - workflow_dispatch  수동 테스터 배포. 실행할 ref 를 고르되 develop·main 만 허용한다(아래 가드).
 # workflow_dispatch 는 워크플로 파일이 default branch(= develop) 에 있어야 트리거된다 —
 # https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows
 # PR 에서는 어느 쪽으로도 트리거되지 않는다.
@@ -28,7 +28,29 @@ jobs:
   distribute:
     name: Build Release and Upload to Firebase App Distribution
     runs-on: ubuntu-latest
+    # 배포 secret 을 environment secret 뒤로 옮기고 deployment branch 제한·required reviewer 를
+    # 걸기 위한 연결점. 보호 규칙 자체는 워크플로 파일로 지정할 수 없어 Settings → Environments 몫이고,
+    # 참조만 있으면 environment 는 첫 실행 때 생성된다.
+    # https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments
+    environment: release-distribution
     steps:
+      # workflow_dispatch 는 실행할 ref 를 임의로 고를 수 있는데 이 job 은 release keystore 와
+      # Firebase service account 를 secret 으로 받는다. 보호되지 않은 브랜치의 Gradle 스크립트가
+      # 그 값에 닿으면 secret 반출·변조 APK 배포가 가능하므로 checkout 전에 끊는다.
+      # workflow_dispatch 에는 push 와 달리 branches 필터가 없어 job 안에서 막는 수밖에 없다.
+      - name: Restrict manual runs to deployable branches
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          SELECTED_REF: ${{ github.ref }}
+        run: |
+          case "$SELECTED_REF" in
+            refs/heads/develop|refs/heads/main) ;;
+            *)
+              echo "::error::수동 배포는 develop·main 에서만 허용됩니다 (선택된 ref: $SELECTED_REF)"
+              exit 1
+              ;;
+          esac
+
       - name: Clone repo
         uses: actions/checkout@v4
 
