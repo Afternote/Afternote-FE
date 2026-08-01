@@ -337,6 +337,10 @@ class TimeLetterWriteViewModel
         }
 
         fun removeBlock(id: Long) {
+            val removedAudioUri =
+                (_uiState.value.editorBlocks.firstOrNull { it.id == id } as? EditorBlock.Audio)
+                    ?.uri
+                    ?.toString()
             _uiState.update { state ->
                 val filtered = state.editorBlocks.filter { it.id != id }
                 if (filtered.isEmpty()) {
@@ -348,6 +352,9 @@ class TimeLetterWriteViewModel
                 } else {
                     state.copy(editorBlocks = filtered)
                 }
+            }
+            removedAudioUri?.let { uri ->
+                viewModelScope.launch { voiceRecorderRepository.deleteRecordedFile(uri) }
             }
         }
 
@@ -393,6 +400,9 @@ class TimeLetterWriteViewModel
                     }
                 saveResult
                     .onSuccess {
+                        state.editorBlocks
+                            .filterIsInstance<EditorBlock.Audio>()
+                            .forEach { voiceRecorderRepository.deleteRecordedFile(it.uri.toString()) }
                         if (status == TimeLetterStatus.DRAFT) {
                             loadDraftCount()
                             _uiState.update { it.copy(savedAsDraft = true) }

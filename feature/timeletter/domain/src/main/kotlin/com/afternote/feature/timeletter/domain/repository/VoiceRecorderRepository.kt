@@ -11,5 +11,7 @@ interface VoiceRecorderRepository {
 
     fun retainRecordedFile()
 
+    suspend fun deleteRecordedFile(uriString: String)
+
     fun release()
 }

@@ -29,7 +29,7 @@ class VoiceRecorderRepositoryImpl
             withContext(ioDispatcher) {
                 runCatching {
                     discardInternal()
-                    val directory = File(context.cacheDir, AUDIO_CACHE_DIRECTORY).apply { mkdirs() }
+                    val directory = File(context.filesDir, AUDIO_DIRECTORY).apply { mkdirs() }
                     val file = File(directory, "${UUID.randomUUID()}.$AUDIO_EXTENSION")
                     val mediaRecorder = createMediaRecorder()
                     mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC)
@@ -83,6 +83,15 @@ class VoiceRecorderRepositoryImpl
             outputFile = null
         }
 
+        override suspend fun deleteRecordedFile(uriString: String) {
+            withContext(ioDispatcher) {
+                val uri = android.net.Uri.parse(uriString)
+                if (uri.authority != "${context.packageName}.timeletter.fileprovider") return@withContext
+                val fileName = uri.lastPathSegment?.substringAfterLast('/') ?: return@withContext
+                File(File(context.filesDir, AUDIO_DIRECTORY), fileName).delete()
+            }
+        }
+
         override fun release() {
             discardInternal()
         }
@@ -106,7 +115,7 @@ class VoiceRecorderRepositoryImpl
             }
 
         private companion object {
-            const val AUDIO_CACHE_DIRECTORY = "timeletter_audio"
+            const val AUDIO_DIRECTORY = "timeletter_audio"
             const val AUDIO_EXTENSION = "m4a"
             const val AUDIO_MIME_TYPE = "audio/mp4"
             const val AUDIO_BIT_RATE = 128_000
