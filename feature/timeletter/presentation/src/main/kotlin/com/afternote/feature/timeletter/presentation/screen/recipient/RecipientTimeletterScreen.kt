@@ -48,6 +48,7 @@ import java.time.LocalDate
 @Composable
 fun RecipientTimeletterScreen(
     onLetterClick: (Long) -> Unit = {},
+    onSettingClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: RecipientTimeletterViewModel = hiltViewModel(),
 ) {
@@ -59,7 +60,7 @@ fun RecipientTimeletterScreen(
 
     Scaffold(
         modifier = modifier,
-        topBar = { HomeTopBar() },
+        topBar = { HomeTopBar(onSettingClick = onSettingClick) },
     ) { innerPadding ->
         when (val state = uiState) {
             is RecipientTimeletterUiState.Loading -> {

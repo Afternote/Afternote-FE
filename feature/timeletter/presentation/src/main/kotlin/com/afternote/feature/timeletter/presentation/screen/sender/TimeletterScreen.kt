@@ -36,6 +36,7 @@ import com.afternote.feature.timeletter.presentation.viewmodel.ViewMode
 fun TimeletterScreen(
     onLetterClick: (Long) -> Unit = {},
     modifier: Modifier = Modifier,
+    onSettingClick: () -> Unit = {},
     onWriteClick: () -> Unit = {},
     onEditClick: (Long) -> Unit = {},
     onFilterRecipientClick: () -> Unit = {},
@@ -64,7 +65,7 @@ fun TimeletterScreen(
 
     Scaffold(
         modifier = modifier,
-        topBar = { HomeTopBar() },
+        topBar = { HomeTopBar(onSettingClick = onSettingClick) },
         floatingActionButton = { PenFloatingActionButton(onClick = onWriteClick) },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { paddingValues ->
