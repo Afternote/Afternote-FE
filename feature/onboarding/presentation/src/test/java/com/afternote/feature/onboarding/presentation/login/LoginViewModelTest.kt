@@ -1,5 +1,6 @@
 package com.afternote.feature.onboarding.presentation.login
 
+import com.afternote.core.domain.error.LoginRejectedException
 import com.afternote.core.domain.error.NetworkUnavailableException
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.domain.usecase.auth.LoginUseCase
@@ -25,9 +26,10 @@ import java.net.UnknownHostException
 /**
  * [LoginViewModel] 실패 안내 계약 회귀 가드 (#517, PR #647 리뷰 반영).
  *
- * 계약 — 전송 계층 실패([NetworkUnavailableException])는 네트워크 안내 리소스로 고정하고,
- * 그 외 예외는 message 를 쓰되 null/blank 면 일반 문구로 폴백하며([UiText.DynamicOrResource]),
- * 실패 시 [LoginUiState.isLoading] 을 해제하고 [LoginViewModel.onErrorConsumed] 가 안내를 리셋한다.
+ * 계약 — 전송 계층 실패([NetworkUnavailableException])는 네트워크 안내 리소스로, 사유가 확인된
+ * 거절([LoginRejectedException])은 서버 문구로 표시하고, **그 밖의 예외는 원문을 쓰지 않고**
+ * 일반 문구로 고정한다. 실패 시 [LoginUiState.isLoading] 을 해제하고
+ * [LoginViewModel.onErrorConsumed] 가 안내를 리셋한다.
  *
  * [LoginUseCase] 는 실물 사용 — Repository Result 가 VM 상태로 번역되는 경로 전체를 가드한다.
  */
@@ -67,30 +69,39 @@ class LoginViewModelTest {
     }
 
     @Test
-    fun `그 외 실패 - 예외 message 를 표시값으로 운반하고 isLoading 해제`() {
+    fun `사유 확인된 거절 - 서버 문구를 표시값으로 운반하고 isLoading 해제`() {
         val serverMessage = "아이디 또는 비밀번호가 일치하지 않습니다."
-        val viewModel = viewModel(onDefaultLogin = { Result.failure(Exception(serverMessage)) })
+        val viewModel =
+            viewModel(onDefaultLogin = {
+                Result.failure(LoginRejectedException(serverMessage, Exception("origin")))
+            })
 
         viewModel.attemptEmailLogin()
 
         val state = viewModel.uiState.value
-        assertEquals(
-            UiText.DynamicOrResource(value = serverMessage, fallbackResId = R.string.login_failed),
-            state.errorMessage,
-        )
+        assertEquals(UiText.Dynamic(serverMessage), state.errorMessage)
         assertFalse(state.isLoading)
     }
 
     @Test
-    fun `message 가 blank 인 실패 - 일반 문구 폴백으로 내려앉음 (무음 방지)`() {
-        val viewModel = viewModel(onDefaultLogin = { Result.failure(Exception("")) })
+    fun `그 외 실패 - 예외 원문 대신 일반 문구로 고정 (5xx 본문·역직렬화 원문 차단)`() {
+        val internalMessage = "ERROR: duplicate key value violates unique constraint"
+        val viewModel = viewModel(onDefaultLogin = { Result.failure(Exception(internalMessage)) })
 
         viewModel.attemptEmailLogin()
 
-        assertEquals(
-            UiText.DynamicOrResource(value = null, fallbackResId = R.string.login_failed),
-            viewModel.uiState.value.errorMessage,
-        )
+        val state = viewModel.uiState.value
+        assertEquals(UiText.Resource(R.string.login_failed), state.errorMessage)
+        assertFalse(state.isLoading)
+    }
+
+    @Test
+    fun `message 가 없는 실패 - 안내가 소실되지 않고 일반 문구로 표시 (무음 방지)`() {
+        val viewModel = viewModel(onDefaultLogin = { Result.failure(Exception()) })
+
+        viewModel.attemptEmailLogin()
+
+        assertEquals(UiText.Resource(R.string.login_failed), viewModel.uiState.value.errorMessage)
     }
 
     @Test

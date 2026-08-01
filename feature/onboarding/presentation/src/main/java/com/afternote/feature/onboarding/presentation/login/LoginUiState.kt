@@ -20,9 +20,9 @@ data class LoginUiState(
     /** 소셜 신규 가입자 신호 — UI 가 온보딩(Welcome) nav 후 [LoginViewModel.onOnboardingStartConsumed] 로 reset. */
     val shouldStartOnboarding: Boolean = false,
     /**
-     * 실패 안내. 전송 계층 실패는 네트워크 안내 리소스로 고정하고, 그 외에는 예외 message 를 쓰되
-     * null/blank 면 일반 문구로 폴백한다([UiText.DynamicOrResource]). 서버 응답 실패(ApiException)의
-     * message 는 인터셉터가 항상 채우므로(서버 문구 또는 클라 폴백) 이 폴백엔 사실상 닿지 않는다.
+     * 실패 안내. data 계층이 사유를 확인해 준 실패만 각자의 문구를 갖고(전송 계층 실패 → 네트워크
+     * 안내 리소스, 사유 확인된 로그인 거절 → 서버 문구), 그 밖의 실패는 전부 일반 문구로 고정한다 —
+     * 예외 message 를 표시값으로 쓰지 않으므로 서버 5xx 본문·역직렬화 원문이 화면에 닿지 않는다.
      * UI 가 snackbar 표시 후 [LoginViewModel.onErrorConsumed] 로 reset.
      */
     val errorMessage: UiText? = null,

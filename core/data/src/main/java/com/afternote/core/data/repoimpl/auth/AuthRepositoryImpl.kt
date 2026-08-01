@@ -2,6 +2,7 @@ package com.afternote.core.data.repoimpl.auth
 
 import com.afternote.core.data.mapper.auth.AuthMapper
 import com.afternote.core.datastore.TokenDataSource
+import com.afternote.core.domain.error.LoginRejectedException
 import com.afternote.core.domain.error.NetworkUnavailableException
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.model.Session
@@ -77,7 +78,7 @@ class AuthRepositoryImpl
                 val data = authApiService.login(LoginRequestDto(email, password)).requireData()
                 recordIssuedExpiresIn(data.expiresIn)
                 AuthMapper.toDefaultLoginResult(data)
-            }.mapTransportFailure()
+            }.mapLoginFailure()
 
         override suspend fun kakaoLogin(oauthToken: String): Result<Session.SocialSession> =
             runCatching {
@@ -91,7 +92,7 @@ class AuthRepositoryImpl
                         ).requireData()
                 recordIssuedExpiresIn(data.expiresIn)
                 AuthMapper.toSocialLoginResult(data)
-            }.mapTransportFailure()
+            }.mapLoginFailure()
 
         override suspend fun googleLogin(idToken: String): Result<Session.SocialSession> =
             runCatching {
@@ -105,7 +106,7 @@ class AuthRepositoryImpl
                         ).requireData()
                 recordIssuedExpiresIn(data.expiresIn)
                 AuthMapper.toSocialLoginResult(data)
-            }.mapTransportFailure()
+            }.mapLoginFailure()
 
         override suspend fun rotateToken(): Result<TokenBundle> =
             runCatching {
@@ -152,18 +153,43 @@ class AuthRepositoryImpl
     }
 
 /**
- * 로그인 경로 공통 — 서버 응답 없이 전송 계층에서 끝난 IO 실패를 [NetworkUnavailableException] 으로
- * 치환한다. [ApiException] 은 IOException 서브클래스지만(인터셉터 throw 를 OkHttp 가 원형 전파하게
- * 하려는 설계) 서버가 응답한 실패이므로 제외한다 — code·서버 message 가 소비처에서 그대로 쓰여야 한다.
- * [CancellationException] 은 실패가 아니라 취소 신호 — runCatching 이 Throwable 전부를 잡아 Result 로
- * 소비해 버리므로, 여기서 다시 던져 코루틴 취소 전파를 보존한다.
+ * 서버 문구를 그대로 표시해도 되는 로그인 거절 사유. BE `ErrorCode.java`(release) 대조로
+ * `AuthService.login()`(1201·1202)·`socialLogin()`(1208·1209)이 실제로 던지는 것만 담았다.
+ *
+ * 대역 판정(4xx 통과)으로 바꾸지 말 것 — [ApiException.code] 는 HTTP 상태가 아니라 본문의
+ * 비즈니스 코드고, BE 에는 5xx 에 붙는 코드도 있다(1904).
+ *
+ * 1603 SOCIAL_CREDENTIALS_REQUIRED 는 제외 — 문구가 에디터용이라 로그인 맥락에서 뜻이 통하지 않는다.
  */
-private fun <T> Result<T>.mapTransportFailure(): Result<T> {
+private val DISPLAYABLE_LOGIN_REJECTION_CODES = setOf(1201, 1202, 1208, 1209)
+
+/**
+ * 사유가 확인된 실패만 도메인 타입으로 치환하고 나머지는 그대로 둔다 — 소비처가 일반 문구로
+ * 내려앉아 5xx 본문(내부 SQL 실측 #511)·역직렬화 원문이 화면에 닿지 않게 하는 것이 목적이다.
+ *
+ * [ApiException] 을 먼저 거르는 이유 — IOException 서브클래스라(인터셉터 throw 를 OkHttp 가 원형
+ * 전파하게 하려는 설계) 순서를 바꾸면 서버 응답 실패가 전송 실패로 잡힌다.
+ * [CancellationException] 을 다시 던지는 이유 — runCatching 이 Throwable 전부를 잡아서다.
+ */
+private fun <T> Result<T>.mapLoginFailure(): Result<T> {
     val exception = exceptionOrNull()
     if (exception is CancellationException) throw exception
-    return if (exception is IOException && exception !is ApiException) {
-        Result.failure(NetworkUnavailableException(exception))
-    } else {
-        this // 성공·그 외 예외 모두 통과
+    return when (exception) {
+        is ApiException -> {
+            val displayMessage = exception.serverMessage?.takeUnless { it.isBlank() }
+            if (exception.code in DISPLAYABLE_LOGIN_REJECTION_CODES && displayMessage != null) {
+                Result.failure(LoginRejectedException(displayMessage, exception))
+            } else {
+                this
+            }
+        }
+
+        is IOException -> {
+            Result.failure(NetworkUnavailableException(exception))
+        }
+
+        else -> {
+            this // 성공·그 외 예외 모두 통과
+        }
     }
 }
