@@ -4,6 +4,7 @@ import com.afternote.core.data.mapper.delivery.toRequestDto
 import com.afternote.core.data.mapper.user.toDomain
 import com.afternote.core.data.mapper.user.toDto
 import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.model.delivery.DeliveryConditionItem
 import com.afternote.core.model.delivery.ReceiverDeliveryConditions
 import com.afternote.core.model.user.DeliveryCondition
@@ -37,6 +38,7 @@ class UserRepositoryImpl
     @Inject
     constructor(
         private val userApiService: UserApiService,
+        private val authRepository: AuthRepository,
     ) : UserRepository {
         private val receiverCache = MutableStateFlow<List<Receiver>?>(null)
 
@@ -137,10 +139,21 @@ class UserRepositoryImpl
                 ).requireData()
                 .toDomain()
 
+        /**
+         * 탈퇴 성공 후 로컬 세션도 정리한다 (#586) — 서버가 계정을 지워도 토큰이 남으면 재시작 시
+         * 죽은 토큰으로 홈이 뜨고 인증 요청이 연달아 401 로 실패한다(2026-07-28 에뮬 실측).
+         *
+         * 정리를 서버 호출 **뒤**에 두는 건 `AuthRepositoryImpl.logout()` 과 같은 이유 — DELETE 요청도
+         * `AuthInterceptor` 를 지나므로 그 시점엔 토큰이 살아 있어야 한다.
+         *
+         * `clearSession()` 의 실패는 삼킨다. 서버 계정은 이미 지워졌으므로 여기서 예외를 올리면
+         * 화면이 "탈퇴 실패" 로 표시돼 사용자가 재시도하고, 그 재시도는 없는 계정에 대해 실패한다.
+         */
         override suspend fun deleteAccount() {
             userApiService
                 .deleteAccount()
                 .requireStatus()
+            authRepository.clearSession()
         }
 
         override suspend fun logActivity() {
