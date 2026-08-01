@@ -14,6 +14,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.UUID
 import javax.inject.Inject
+import kotlin.coroutines.EmptyCoroutineContext
 
 class VoiceRecorderRepositoryImpl
     @Inject
@@ -93,17 +94,26 @@ class VoiceRecorderRepositoryImpl
         }
 
         override fun release() {
-            discardInternal()
+            val fileToDelete = releaseRecorder()
+            fileToDelete?.let { file ->
+                ioDispatcher.dispatch(EmptyCoroutineContext) { file.delete() }
+            }
         }
 
         @Synchronized
         private fun discardInternal() {
+            releaseRecorder()?.delete()
+        }
+
+        @Synchronized
+        private fun releaseRecorder(): File? {
             recorder?.runCatching { stop() }
             recorder?.release()
             recorder = null
-            outputFile?.delete()
+            val file = outputFile
             outputFile = null
             startedAtMillis = 0L
+            return file
         }
 
         @Suppress("DEPRECATION")
