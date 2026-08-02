@@ -94,7 +94,9 @@ class FindIdViewModel
                         // 자세한 사유는 AuthFailureStage.FIND_ACCOUNT_CODE_SEND KDoc.
                         _uiState.update {
                             if (error is EmailVerificationException) {
-                                it.copy(hasVerificationError = true)
+                                // 스낵바 신호를 함께 내린다 — 이번 실패는 인라인으로 알리므로,
+                                // 아직 소비되지 않은 이전 실패 문구가 인라인과 겹쳐 뜨지 않게 한다.
+                                it.copy(hasVerificationError = true, errorMessage = null)
                             } else {
                                 it.copy(errorMessage = error.toDisplayMessage(R.string.find_account_failed))
                             }

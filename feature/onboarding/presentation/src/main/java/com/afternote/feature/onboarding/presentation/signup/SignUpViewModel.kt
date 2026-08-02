@@ -169,7 +169,9 @@ class SignUpViewModel
                         if (error is EmailVerificationException) {
                             // 표시 문구는 화면의 고정 리소스 — 이 값은 인라인 표시 트리거 + 디버깅용 원문.
                             // 인증번호 불일치·만료는 정상적인 사용자 입력 오류라 리포팅하지 않는다.
-                            _uiState.update { it.copy(hasVerificationError = true) }
+                            // 스낵바 신호를 함께 내린다 — 이번 실패는 인라인으로 알리므로,
+                            // 아직 소비되지 않은 이전 실패 문구가 인라인과 겹쳐 뜨지 않게 한다.
+                            _uiState.update { it.copy(hasVerificationError = true, errorMessage = null) }
                         } else {
                             errorReporter.recordAuthFailure(AuthFailureStage.EMAIL_VERIFY, error)
                             _uiState.update { it.copy(errorMessage = error.toDisplayMessage(R.string.signup_email_verify_failed)) }
