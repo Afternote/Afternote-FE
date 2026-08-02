@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
 data class AfternoteCreateGalleryRequestDto(
     @EncodeDefault @SerialName("category") val category: String = "GALLERY",
     @SerialName("title") val title: String,
-    @SerialName("actions") val actions: List<String>,
+    @SerialName("actions") val processingMethods: List<String>,
     @SerialName("leaveMessage") val leaveMessage: String? = null,
     @SerialName("receivers") val receivers: List<AfternoteReceiverRefDto>,
 )
@@ -20,7 +20,7 @@ data class AfternoteCreateGalleryRequestDto(
 data class AfternoteCreatePlaylistRequestDto(
     @EncodeDefault @SerialName("category") val category: String = "PLAYLIST",
     @SerialName("title") val title: String,
-    @SerialName("playlist") val playlist: AfternotePlaylistDto,
+    @SerialName("playlist") val memorial: AfternotePlaylistDto,
     @SerialName("receivers") val receivers: List<AfternoteReceiverRefDto> = emptyList(),
 )
 
@@ -29,7 +29,7 @@ data class AfternoteCreatePlaylistRequestDto(
 data class AfternoteCreateAccountRequestDto(
     @SerialName("category") val category: String,
     @SerialName("title") val title: String,
-    @SerialName("actions") val actions: List<String>,
+    @SerialName("actions") val processingMethods: List<String>,
     @SerialName("leaveMessage") val leaveMessage: String? = null,
     @SerialName("credentials") val credentials: AfternoteCredentialsDto? = null,
     @SerialName("receivers") val receivers: List<AfternoteReceiverRefDto> = emptyList(),
@@ -39,11 +39,11 @@ data class AfternoteCreateAccountRequestDto(
 data class AfternoteUpdateRequestDto(
     @SerialName("category") val category: String,
     @SerialName("title") val title: String,
-    @SerialName("actions") val actions: List<String>? = null,
+    @SerialName("actions") val processingMethods: List<String>? = null,
     @SerialName("leaveMessage") val leaveMessage: String? = null,
     @SerialName("credentials") val credentials: AfternoteCredentialsDto? = null,
     @SerialName("receivers") val receivers: List<AfternoteReceiverRefDto>? = null,
-    @SerialName("playlist") val playlist: AfternotePlaylistDto? = null,
+    @SerialName("playlist") val memorial: AfternotePlaylistDto? = null,
 )
 
 @Serializable
@@ -55,9 +55,47 @@ data class AfternoteDetailDto(
     @SerialName("updatedAt") val updatedAt: String = "",
     @SerialName("credentials") val credentials: AfternoteCredentialsDto? = null,
     @SerialName("receivers") val receivers: List<AfternoteDetailReceiverDto>? = null,
-    @SerialName("actions") val actions: List<String>? = null,
+    @SerialName("actions") val processingMethods: List<String>? = null,
     @SerialName("leaveMessage") val leaveMessage: String? = null,
-    @SerialName("playlist") val playlist: AfternotePlaylistDto? = null,
+    @SerialName("playlist") val memorial: AfternotePlaylistDto? = null,
+)
+
+@Serializable
+data class AfternotePlaylistDto(
+    @SerialName("atmosphere") val atmosphere: String? = null,
+    @SerialName("memorialPhotoUrl") val memorialPhotoUrl: String? = null,
+    @SerialName("songs") val songs: List<AfternoteSongDto> = emptyList(),
+    @SerialName("memorialVideo") val memorialVideo: AfternoteMemorialVideoDto? = null,
+)
+
+@Serializable
+data class AfternoteSongDto(
+    @SerialName("id") val id: Long? = null,
+    @SerialName("title") val title: String,
+    @SerialName("artist") val artist: String,
+    @SerialName("coverUrl") val coverUrl: String? = null,
+)
+
+@Serializable
+data class AfternoteMemorialVideoDto(
+    @SerialName("videoUrl") val videoUrl: String? = null,
+    @SerialName("thumbnailUrl") val thumbnailUrl: String? = null,
+)
+
+@Serializable
+data class AfternoteDetailReceiverDto(
+    @SerialName("receiverId") val receiverId: Long? = null,
+    @SerialName("name") val name: String? = null,
+    @SerialName("relation") val relation: String? = null,
+    @SerialName("phone") val phone: String? = null,
+)
+
+@Serializable
+data class AfternoteListItemDto(
+    @SerialName("afternoteId") val afternoteId: Long,
+    @SerialName("title") val title: String,
+    @SerialName("category") val category: String,
+    @SerialName("createdAt") val createdAt: String,
 )
 
 @Serializable

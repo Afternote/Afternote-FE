@@ -8,24 +8,24 @@ import com.afternote.feature.afternote.data.dto.AfternoteUpdateRequestDto
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
-import com.afternote.feature.afternote.domain.model.author.CreatePlaylistPayload
+import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 
 fun AfternoteUpdatePayload.toRequest() =
     AfternoteUpdateRequestDto(
         category = category,
         title = title,
-        actions = actions,
+        processingMethods = processingMethods,
         leaveMessage = leaveMessage,
         credentials = credentials?.toDto(),
         receivers = receivers?.toDto(),
-        playlist = playlist?.toDto(),
+        memorial = memorial?.toDto(),
     )
 
 fun CreateAccountPayload.toSocialRequest() =
     AfternoteCreateAccountRequestDto(
         category = "SOCIAL",
         title = title,
-        actions = actions,
+        processingMethods = processingMethods,
         leaveMessage = leaveMessage,
         credentials = credentials?.toDto(),
         receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
@@ -36,7 +36,7 @@ fun CreateAccountPayload.toBusinessRequest() =
     AfternoteCreateAccountRequestDto(
         category = "BUSINESS",
         title = title,
-        actions = actions,
+        processingMethods = processingMethods,
         leaveMessage = leaveMessage,
         credentials = credentials?.toDto(),
         receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
@@ -46,15 +46,15 @@ fun CreateGalleryPayload.toRequest() =
     AfternoteCreateGalleryRequestDto(
         category = "GALLERY",
         title = title,
-        actions = actions,
+        processingMethods = processingMethods,
         leaveMessage = leaveMessage,
         receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
     )
 
-fun CreatePlaylistPayload.toRequest() =
+fun CreateMemorialPayload.toRequest() =
     AfternoteCreatePlaylistRequestDto(
         category = "PLAYLIST",
         title = title,
-        playlist = playlist.toDto(),
+        memorial = memorial.toDto(),
         receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
     )

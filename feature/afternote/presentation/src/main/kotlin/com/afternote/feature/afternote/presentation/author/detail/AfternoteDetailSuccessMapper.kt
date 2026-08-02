@@ -11,9 +11,9 @@ private val Detail.finalWriteDate: String
     get() = timestamps.updatedAt.ifBlank { timestamps.createdAt }
 
 internal fun Detail.toReceiverUiModels(): List<ReceiverUiModel> =
-    receivers.mapIndexed { index, r ->
+    receivers.map { r ->
         ReceiverUiModel(
-            id = r.receiverId?.toString() ?: "receiver_$index",
+            id = r.receiverId.toString(),
             name = r.name,
             label = r.relation,
         )
@@ -25,8 +25,8 @@ internal fun Detail.toGalleryDetailContent(authorDisplayName: String): GalleryDe
         userName = authorDisplayName,
         finalWriteDate = finalWriteDate,
         afternoteEditReceivers = toReceiverUiModels(),
-        processingMethods = processing?.actions ?: emptyList(),
-        message = processing?.leaveMessage ?: "",
+        processingMethods = processingMethods,
+        message = leaveMessage.orEmpty(),
     )
 
 internal fun Detail.toAccountDetailContent(authorDisplayName: String): AccountDetailContent =
@@ -35,8 +35,8 @@ internal fun Detail.toAccountDetailContent(authorDisplayName: String): AccountDe
         userName = authorDisplayName,
         accountId = credentials?.id ?: "",
         password = credentials?.password ?: "",
-        processingMethods = processing?.actions ?: emptyList(),
-        message = processing?.leaveMessage ?: "",
+        processingMethods = processingMethods,
+        message = leaveMessage.orEmpty(),
         finalWriteDate = finalWriteDate,
         afternoteEditReceivers = toReceiverUiModels(),
     )
@@ -45,19 +45,19 @@ internal fun Detail.toMemorialDetailContent(authorDisplayName: String): Memorial
     MemorialDetailContent(
         userName = authorDisplayName,
         finalWriteDate = finalWriteDate,
-        profileImageUri = playlist?.playlistDetailMemorialMedia?.photoUrl,
+        profileImageUri = memorial?.media?.photoUrl,
         afternoteEditReceivers = toReceiverUiModels(),
         albumCovers =
-            playlist?.songs?.map { s ->
+            memorial?.songs?.map { s ->
                 AlbumCover(
                     id = (s.id ?: 0L).toString(),
                     imageUrl = s.coverUrl,
                     title = s.title,
                 )
             } ?: emptyList(),
-        songCount = playlist?.songs?.size ?: 0,
-        memorialVideoUrl = playlist?.playlistDetailMemorialMedia?.videoUrl,
-        memorialThumbnailUrl = playlist?.playlistDetailMemorialMedia?.thumbnailUrl,
+        songCount = memorial?.songs?.size ?: 0,
+        memorialVideoUrl = memorial?.media?.videoUrl,
+        memorialThumbnailUrl = memorial?.media?.thumbnailUrl,
     )
 
 /**

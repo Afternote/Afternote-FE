@@ -15,7 +15,7 @@ import com.afternote.feature.afternote.data.service.AfternoteApiService
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
-import com.afternote.feature.afternote.domain.model.author.CreatePlaylistPayload
+import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
@@ -65,7 +65,7 @@ class AfternoteRepositoryImpl
                 api.createAfternoteGallery(payload.toRequest()).requireData().afternoteId
             }.onSuccess { invalidatePagedAfternotes() }
 
-        override suspend fun createPlaylist(payload: CreatePlaylistPayload): Result<Long> =
+        override suspend fun createMemorial(payload: CreateMemorialPayload): Result<Long> =
             safeCall(errorMapper = ::mapAuthoringFailure) {
                 api.createAfternotePlaylist(payload.toRequest()).requireData().afternoteId
             }.onSuccess { invalidatePagedAfternotes() }
