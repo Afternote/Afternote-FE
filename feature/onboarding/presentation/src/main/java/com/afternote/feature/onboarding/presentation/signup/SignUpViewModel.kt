@@ -7,10 +7,12 @@ import com.afternote.core.domain.error.EmailVerificationException
 import com.afternote.core.domain.repository.account.AccountRepository
 import com.afternote.core.domain.usecase.auth.LoginType
 import com.afternote.core.domain.usecase.auth.LoginUseCase
+import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.reporting.AuthFailureStage
 import com.afternote.feature.onboarding.presentation.reporting.AuthProvider
 import com.afternote.feature.onboarding.presentation.reporting.recordAuthFailure
 import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel.Companion.RESEND_COOLDOWN_SECONDS
+import com.afternote.feature.onboarding.presentation.toDisplayMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -55,12 +57,12 @@ class SignUpViewModel
 
         // ─── 입력 reducer ───
         // 이메일이 바뀌면 앞서 받은 인증 에러는 더 이상 그 이메일의 것이 아니다.
-        fun updateEmail(value: String) = _uiState.update { it.copy(email = value, verificationError = null) }
+        fun updateEmail(value: String) = _uiState.update { it.copy(email = value, hasVerificationError = false) }
 
         // photo picker 결과는 Entry 가 Uri.toString() 으로 변환해 push — VM 은 String 만 보관 (Framework Uri 의존 회피).
         fun onProfileImagePicked(uri: String?) = _uiState.update { it.copy(profileImageUri = uri) }
 
-        fun updateVerificationCode(value: String) = _uiState.update { it.copy(verificationCode = value, verificationError = null) }
+        fun updateVerificationCode(value: String) = _uiState.update { it.copy(verificationCode = value, hasVerificationError = false) }
 
         fun updateResidentFrontNumber(value: String) = _uiState.update { it.copy(residentFrontNumber = value) }
 
@@ -118,13 +120,13 @@ class SignUpViewModel
                 accountRepository
                     .sendEmailCode(state.email)
                     .onSuccess {
-                        _uiState.update { it.copy(isVerificationSent = true, verificationError = null) }
+                        _uiState.update { it.copy(isVerificationSent = true, hasVerificationError = false) }
                         startResendCooldown()
                     }.onFailure { error ->
                         // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
                         if (error is CancellationException) throw error
                         errorReporter.recordAuthFailure(AuthFailureStage.EMAIL_CODE_SEND, error)
-                        _uiState.update { it.copy(errorMessage = error.message ?: "") }
+                        _uiState.update { it.copy(errorMessage = error.toDisplayMessage(R.string.signup_code_send_failed)) }
                     }
                 _uiState.update { it.copy(isSendingCode = false) }
             }
@@ -147,14 +149,14 @@ class SignUpViewModel
          * Step 1 "다음" 클릭 시점에 호출.
          * 이메일/인증번호를 서버에 검증해 성공 시 [SignUpUiState.shouldNavigateToResidentNumber] = true,
          * 인증번호 무효([EmailVerificationException] — 불일치/만료/미존재)는
-         * [SignUpUiState.verificationError] (인라인 문구), 그 외 실패는
+         * [SignUpUiState.hasVerificationError] (인라인 문구), 그 외 실패는
          * [SignUpUiState.errorMessage] (스낵바) 로 set. 만료 판정은 서버가 한다.
          */
         fun verifyEmailAndProceed() {
             val state = _uiState.value
             if (state.isVerifyingEmail) return
             viewModelScope.launch {
-                _uiState.update { it.copy(isVerifyingEmail = true, verificationError = null) }
+                _uiState.update { it.copy(isVerifyingEmail = true, hasVerificationError = false) }
                 accountRepository
                     .verifyEmail(
                         email = state.email,
@@ -167,10 +169,10 @@ class SignUpViewModel
                         if (error is EmailVerificationException) {
                             // 표시 문구는 화면의 고정 리소스 — 이 값은 인라인 표시 트리거 + 디버깅용 원문.
                             // 인증번호 불일치·만료는 정상적인 사용자 입력 오류라 리포팅하지 않는다.
-                            _uiState.update { it.copy(verificationError = error.serverMessage ?: "") }
+                            _uiState.update { it.copy(hasVerificationError = true) }
                         } else {
                             errorReporter.recordAuthFailure(AuthFailureStage.EMAIL_VERIFY, error)
-                            _uiState.update { it.copy(errorMessage = error.message ?: "이메일 인증 실패") }
+                            _uiState.update { it.copy(errorMessage = error.toDisplayMessage(R.string.signup_email_verify_failed)) }
                         }
                     }
                 _uiState.update { it.copy(isVerifyingEmail = false) }
@@ -214,7 +216,7 @@ class SignUpViewModel
                                 )
                                 _uiState.update {
                                     it.copy(
-                                        errorMessage = error.message ?: "자동 로그인에 실패했어요. 로그인 화면에서 다시 시도해주세요.",
+                                        errorMessage = error.toDisplayMessage(R.string.signup_auto_login_failed),
                                     )
                                 }
                             }
@@ -222,7 +224,7 @@ class SignUpViewModel
                         // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
                         if (error is CancellationException) throw error
                         errorReporter.recordAuthFailure(AuthFailureStage.SIGN_UP, error)
-                        _uiState.update { it.copy(errorMessage = error.message ?: "") }
+                        _uiState.update { it.copy(errorMessage = error.toDisplayMessage(R.string.signup_failed)) }
                     }
                 _uiState.update { it.copy(isLoading = false) }
             }
