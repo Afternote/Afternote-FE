@@ -124,7 +124,7 @@ fun MemorialReceivedDetailScreen(
                             onCardClick = onNavigateToPlaylist,
                         )
                     },
-                    lastWishContent = {
+                    messageContent = {
                         // 시안: "남기신 말씀" 섹션 — 형제 수신자 상세와 동일하게 공용 MessageSection(💬 헤더 + 인용 카드) 사용 (#274).
                         MessageSection(message = leaveMessage)
                     },

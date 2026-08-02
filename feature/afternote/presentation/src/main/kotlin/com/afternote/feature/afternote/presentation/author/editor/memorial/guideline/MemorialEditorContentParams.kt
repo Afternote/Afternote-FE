@@ -10,10 +10,9 @@ import com.afternote.feature.afternote.presentation.author.editor.receiver.model
 @Stable
 data class MemorialEditorContentParams(
     val displayMemorialPhotoUri: String?,
-    val playlistSongCount: Int,
     val playlistAlbumCovers: List<AlbumCover>,
-    val funeralVideoUrl: String?,
-    val funeralThumbnailUrl: String? = null,
+    val memorialVideoUrl: String?,
+    val memorialThumbnailUrl: String? = null,
     val recipientSection: AfternoteEditorReceiverSection? = null,
     val onSongAddClick: () -> Unit,
     val onPhotoAddClick: () -> Unit,

@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.model.AlbumCover
 import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationException
 import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationKind
 import com.afternote.feature.afternote.domain.model.author.AuthorReceiverEntry
@@ -65,13 +64,6 @@ private data class PmSnap(
 )
 
 @Serializable
-private data class AlbumSnap(
-    val id: String,
-    val imageUrl: String? = null,
-    val title: String? = null,
-)
-
-@Serializable
 private data class MessageBlockSnap(
     val title: String = "",
     val body: String = "",
@@ -89,12 +81,10 @@ private data class EditorFormSnapshot(
     val receivers: List<ReceiverSnap> = emptyList(),
     val methods: List<PmSnap> = emptyList(),
     val pickedMemorialPhotoUri: String? = null,
-    val funeralVideoUrl: String? = null,
-    val funeralThumbnailUrl: String? = null,
+    val memorialVideoUrl: String? = null,
+    val memorialThumbnailUrl: String? = null,
     val memorialPhotoUrl: String? = null,
-    val playlistSongCount: Int = 0,
     val memorialPlaylistSongs: List<Song> = emptyList(),
-    val albumCovers: List<AlbumSnap> = emptyList(),
     val editorMessages: List<MessageBlockSnap> = emptyList(),
 ) {
     fun toEditorFormState(restoreGeneration: Long): EditorFormState {
@@ -115,15 +105,12 @@ private data class EditorFormSnapshot(
                 receivers.map { AfternoteEditorReceiver(id = it.id, name = it.name, label = it.label) },
             processingMethods = methods.map { ProcessingMethodItem(it.id, it.text) },
             pickedMemorialPhotoUri = pickedMemorialPhotoUri,
-            funeralVideoUrl = funeralVideoUrl,
-            funeralThumbnailUrl = funeralThumbnailUrl,
+            memorialVideoUrl = memorialVideoUrl,
+            memorialThumbnailUrl = memorialThumbnailUrl,
             memorialPhotoUrl = memorialPhotoUrl,
-            playlistSongCount = playlistSongCount,
             memorialPlaylistSongs = memorialPlaylistSongs,
-            playlistAlbumCovers =
-                albumCovers.map { AlbumCover(id = it.id, imageUrl = it.imageUrl, title = it.title) },
-            messageBlocks = blocks,
-            messageBlocksRestoreGeneration = restoreGeneration,
+            leaveMessageBlocks = blocks,
+            leaveMessageBlocksRestoreGeneration = restoreGeneration,
         )
     }
 
@@ -139,17 +126,12 @@ private data class EditorFormSnapshot(
                     },
                 methods = form.processingMethods.map { PmSnap(it.id, it.text) },
                 pickedMemorialPhotoUri = form.pickedMemorialPhotoUri,
-                funeralVideoUrl = form.funeralVideoUrl,
-                funeralThumbnailUrl = form.funeralThumbnailUrl,
+                memorialVideoUrl = form.memorialVideoUrl,
+                memorialThumbnailUrl = form.memorialThumbnailUrl,
                 memorialPhotoUrl = form.memorialPhotoUrl,
-                playlistSongCount = form.playlistSongCount,
                 memorialPlaylistSongs = form.memorialPlaylistSongs,
-                albumCovers =
-                    form.playlistAlbumCovers.map {
-                        AlbumSnap(id = it.id, imageUrl = it.imageUrl, title = it.title)
-                    },
                 editorMessages =
-                    form.messageBlocks.map { MessageBlockSnap(title = it.title, body = it.body) },
+                    form.leaveMessageBlocks.map { MessageBlockSnap(title = it.title, body = it.body) },
             )
     }
 }
@@ -350,7 +332,7 @@ class AfternoteEditorViewModel
                         is CreateAfternoteInput.Social -> afternoteRepository.createSocial(input.payload)
                         is CreateAfternoteInput.Business -> afternoteRepository.createBusiness(input.payload)
                         is CreateAfternoteInput.Gallery -> afternoteRepository.createGallery(input.payload)
-                        is CreateAfternoteInput.Playlist -> afternoteRepository.createPlaylist(input.payload)
+                        is CreateAfternoteInput.Memorial -> afternoteRepository.createMemorial(input.payload)
                     }
                 }
 
@@ -386,7 +368,7 @@ class AfternoteEditorViewModel
         ): Result<SaveAfternoteCommand> {
             val resolved =
                 resolveMemorialMediaForSave(
-                    video = videoMediaInput(memorialMedia.funeralVideoUrl),
+                    video = videoMediaInput(memorialMedia.memorialVideoUrl),
                     photo =
                         photoMediaInput(
                             picked = memorialMedia.pickedMemorialPhotoUri,
@@ -404,8 +386,8 @@ class AfternoteEditorViewModel
                             playlistSongs = playlistSongs,
                             memorialMedia =
                                 MemorialMediaUrls(
-                                    funeralVideoUrl = resolved.resolvedVideoUrl,
-                                    funeralThumbnailUrl = memorialMedia.funeralThumbnailUrl,
+                                    memorialVideoUrl = resolved.resolvedVideoUrl,
+                                    memorialThumbnailUrl = memorialMedia.memorialThumbnailUrl,
                                     memorialPhotoUrl = resolved.resolvedMemorialPhotoUrl,
                                 ),
                         )
@@ -417,8 +399,8 @@ class AfternoteEditorViewModel
                             payload = payload,
                             selectedReceiverIds = selectedReceiverIds,
                             playlistSongs = playlistSongs,
-                            funeralVideoUrl = resolved.resolvedVideoUrl,
-                            funeralThumbnailUrl = memorialMedia.funeralThumbnailUrl,
+                            memorialVideoUrl = resolved.resolvedVideoUrl,
+                            memorialThumbnailUrl = memorialMedia.memorialThumbnailUrl,
                             memorialPhotoUrl = resolved.resolvedMemorialPhotoUrl,
                         )
                     SaveAfternoteCommand.Create(input = createInput)

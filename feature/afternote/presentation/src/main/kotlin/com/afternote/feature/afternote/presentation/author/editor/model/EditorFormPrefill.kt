@@ -16,15 +16,15 @@ data class EditorFormPrefill(
     val category: EditorCategory,
     val accountId: String,
     val password: String,
-    val messageBlocks: List<EditorMessageTextBlock>,
+    val leaveMessageBlocks: List<EditorMessageTextBlock>,
     val processingMethods: List<ProcessingMethodItem>,
     /**
      * 이 애프터노트에 지정된 수신자 (#566). 신규 작성 경로가 폼에 넣는
      * `AfternoteSaveState.authorReceivers`(= 작성자가 등록한 수신자 **전체**) 와 다른 값이다.
      */
     val receivers: List<AfternoteEditorReceiver>,
-    val funeralVideoUrl: String?,
-    val funeralThumbnailUrl: String?,
+    val memorialVideoUrl: String?,
+    val memorialThumbnailUrl: String?,
     val memorialPhotoUrl: String?,
     val memorialPlaylistSongs: List<Song> = emptyList(),
 )

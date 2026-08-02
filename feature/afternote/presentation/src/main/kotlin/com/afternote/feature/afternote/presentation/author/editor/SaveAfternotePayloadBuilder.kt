@@ -35,7 +35,7 @@ object SaveAfternotePayloadBuilder {
                 ProcessingMethod(it.id, it.text)
             }
         val fullMessage =
-            EditorMessagesCodec.serializeBlocksToPersisted(form.messageBlocks)
+            EditorMessagesCodec.serializeBlocksToPersisted(form.leaveMessageBlocks)
 
         return RegisterAfternotePayload(
             serviceName =

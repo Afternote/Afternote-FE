@@ -59,7 +59,7 @@ private const val EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE_MS = 1_000L
  * - 남기실 말씀 (멀티라인 텍스트 필드; Process Death 대비 [snapshotFlow] + debounce로 폼 동기화)
  *
  * 추모 곡 목록은 [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs] SSOT의 스냅샷을
- * [graphSongs]로 전달받아 표시한다 (Compose 상태 홀더에 직접 의존하지 않는다).
+ * [liveSongs]로 전달받아 표시한다 (Compose 상태 홀더에 직접 의존하지 않는다).
  */
 @OptIn(FlowPreview::class)
 @Composable
@@ -68,7 +68,7 @@ fun AfternoteEditorScreen(
     modifier: Modifier = Modifier,
     callbacks: AfternoteEditorScreenCallbacks = AfternoteEditorScreenCallbacks(),
     state: AfternoteEditorState = rememberAfternoteEditorState(),
-    graphSongs: List<Song> = emptyList(),
+    liveSongs: List<Song> = emptyList(),
     saveError: String? = null,
     thumbnailUploadFailed: Boolean = false,
     isPrefillLoading: Boolean = false,
@@ -77,15 +77,15 @@ fun AfternoteEditorScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val thumbnailUploadFailedMessage = stringResource(R.string.afternote_editor_thumbnail_upload_failed)
 
-    // 화면 재진입 시 폼 SSOT의 messageBlocks를 휘발성 SnapshotStateList<EditorMessage>에 한 번 동기화한다.
+    // 화면 재진입 시 폼 SSOT의 leaveMessageBlocks를 휘발성 SnapshotStateList<EditorMessage>에 한 번 동기화한다.
     // (TextFieldState는 rememberSaveable로 복원되지만 EditorMessage SnapshotStateList는 비저장 상태라 폼에서 재구성한다.)
     LaunchedEffect(state) {
-        state.syncEditorMessagesFromForm(form.messageBlocks)
+        state.syncEditorMessagesFromForm(form.leaveMessageBlocks)
     }
 
-    LaunchedEffect(form.messageBlocksRestoreGeneration) {
-        if (form.messageBlocksRestoreGeneration != 0L) {
-            state.syncEditorMessagesFromForm(form.messageBlocks)
+    LaunchedEffect(form.leaveMessageBlocksRestoreGeneration) {
+        if (form.leaveMessageBlocksRestoreGeneration != 0L) {
+            state.syncEditorMessagesFromForm(form.leaveMessageBlocks)
         }
     }
 
@@ -140,8 +140,8 @@ fun AfternoteEditorScreen(
         }
     }
 
-    LaunchedEffect(graphSongs) {
-        state.syncMemorialPlaylistSongs(graphSongs)
+    LaunchedEffect(liveSongs) {
+        state.syncMemorialPlaylistSongs(liveSongs)
     }
 
     val memorialPhotoPickerLauncher =
@@ -217,7 +217,7 @@ fun AfternoteEditorScreen(
             EditorContent(
                 state = state,
                 form = form,
-                graphSongs = graphSongs,
+                liveSongs = liveSongs,
                 isPrefillLoading = isPrefillLoading,
                 onNavigateToAddSong = callbacks.onNavigateToAddSong,
                 onNavigateToSelectReceiver = callbacks.onNavigateToSelectReceiver,
@@ -271,12 +271,10 @@ internal fun editorContentSignature(
         form.copy(
             // 식별자·자동 파생값 — 사용자 편집이 아니므로 판정 제외.
             loadedItemId = null,
-            funeralThumbnailUrl = null,
-            playlistSongCount = 0,
-            playlistAlbumCovers = emptyList(),
-            messageBlocksRestoreGeneration = 0L,
+            memorialThumbnailUrl = null,
+            leaveMessageBlocksRestoreGeneration = 0L,
             // 남기실 말씀은 debounce 전 라이브 입력(state.editorMessages)으로 판정하므로 스냅샷은 제외.
-            messageBlocks = emptyList(),
+            leaveMessageBlocks = emptyList(),
             // 카테고리 구경 자체는 변경으로 치지 않는다 — 전환이 selectedService(null)·processingMethods(빈)를
             // 함께 리셋하므로(#468 정책) 카테고리만 중립화하면 구경 왕복은 진입 상태와 같아진다.
             // selectedService 는 그대로 비교한다: null=미선택이라 서비스 선택 자체가 변경으로 잡힌다.
