@@ -29,7 +29,7 @@ internal val DEFAULT_EDITOR_MESSAGE_BLOCKS: List<EditorMessageTextBlock> =
  * 순수 UI(다이얼로그·탭·드롭다운·[androidx.compose.foundation.text.input.TextFieldState])는
  * [AfternoteEditorUiHolder]가 담당한다.
  *
- * **남기실 말씀:** [messageBlocks]는 SavedState 스냅샷·Process Death 복원용 SSOT이며,
+ * **남기실 말씀:** [leaveMessageBlocks]는 SavedState 스냅샷·Process Death 복원용 SSOT이며,
  * 화면의 [androidx.compose.foundation.text.input.TextFieldState]와 디바운스 동기화된다.
  *
  * **추억 플레이리스트:** [memorialPlaylistSongs]는 [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs] 와
@@ -51,52 +51,29 @@ data class EditorFormState(
     val afternoteEditReceivers: List<AfternoteEditorReceiver> = emptyList(),
     val processingMethods: List<ProcessingMethodItem> = emptyList(),
     val pickedMemorialPhotoUri: String? = null,
-    val funeralVideoUrl: String? = null,
-    val funeralThumbnailUrl: String? = null,
+    val memorialVideoUrl: String? = null,
+    val memorialThumbnailUrl: String? = null,
     val memorialPhotoUrl: String? = null,
-    /** 추모(PLAYLIST) 곡 수 폴백. 그래프·스냅샷 곡 목록이 모두 비면 이 값이 노출되므로 기본은 0(유령 곡수 방지). */
-    val playlistSongCount: Int = 0,
     /** 추모(PLAYLIST) 곡 목록 — 홀더와 양방향 동기화 후 스냅샷에 저장. */
     val memorialPlaylistSongs: List<Song> = emptyList(),
-    val playlistAlbumCovers: List<AlbumCover> = emptyList(),
     /** 저장·복원용 남기실 말씀 블록 (화면 TextField와 주기적으로 맞춘다). */
-    val messageBlocks: List<EditorMessageTextBlock> = DEFAULT_EDITOR_MESSAGE_BLOCKS,
+    val leaveMessageBlocks: List<EditorMessageTextBlock> = DEFAULT_EDITOR_MESSAGE_BLOCKS,
     /**
      * 0이 아니면 SavedState 등에서 폼이 복원된 뒤 UI에 블록을 한 번 밀어 넣어야 함을 뜻한다.
      * 타이핑 동기화(debounce)로 갱신할 때는 바꾸지 않는다.
      */
-    val messageBlocksRestoreGeneration: Long = 0L,
+    val leaveMessageBlocksRestoreGeneration: Long = 0L,
 ) {
     fun displayMemorialPhotoUri(): String? = pickedMemorialPhotoUri ?: memorialPhotoUrl
 
     /**
-     * 그래프 스코프 SSOT([com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs])의 곡 목록을
-     * 우선 표시하고, 비어있으면 폼 스냅샷의 [memorialPlaylistSongs], 그래도 비어있으면 [playlistAlbumCovers] 순으로 폴백한다.
+     * 그래프 스코프 SSOT([com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs])의
+     * 곡 목록을 앨범 커버로 변환한다. 곡 수 표시도 이 목록의 크기를 쓴다 — 목록과 개수가 어긋날 수 있는
+     * 별도 카운트 필드는 두지 않는다.
      */
-    fun displayAlbumCovers(graphSongs: List<Song>): List<AlbumCover> =
-        when {
-            graphSongs.isNotEmpty() -> {
-                graphSongs.map { s ->
-                    AlbumCover(id = s.id, imageUrl = s.albumCoverUrl, title = s.title)
-                }
-            }
-
-            memorialPlaylistSongs.isNotEmpty() -> {
-                memorialPlaylistSongs.map { s ->
-                    AlbumCover(id = s.id, imageUrl = s.albumCoverUrl, title = s.title)
-                }
-            }
-
-            else -> {
-                playlistAlbumCovers
-            }
-        }
-
-    fun livePlaylistSongCount(graphSongs: List<Song>): Int =
-        when {
-            graphSongs.isNotEmpty() -> graphSongs.size
-            memorialPlaylistSongs.isNotEmpty() -> memorialPlaylistSongs.size
-            else -> playlistSongCount
+    fun displayAlbumCovers(liveSongs: List<Song>): List<AlbumCover> =
+        liveSongs.map { s ->
+            AlbumCover(id = s.id, imageUrl = s.albumCoverUrl, title = s.title)
         }
 
     val currentServiceOptions: List<String>

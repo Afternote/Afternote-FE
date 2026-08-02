@@ -33,17 +33,6 @@ class AfternoteEditorReceiverPrefillTest {
         assertEquals(listOf(7L), prefill.receivers.mapNotNull { it.id.toLongOrNull() })
     }
 
-    /** id 없는 수신자는 저장 시 어차피 탈락한다 — 폼에만 남으면 "선택했는데 저장 안 되는" 항목이 된다. */
-    @Test
-    fun `receiverId 가 없는 수신자는 프리필에서 제외된다`() {
-        val prefill =
-            AfternoteEditorFormMapper.buildEditorFormPrefill(
-                detail(receiver(null, "식별자없음", "아들"), receiver(9L, "김수신", "딸")),
-            )
-
-        assertEquals(listOf("9"), prefill.receivers.map { it.id })
-    }
-
     @Test
     fun `수신자를 싣지 않는 카테고리는 빈 목록이 된다`() {
         val prefill = AfternoteEditorFormMapper.buildEditorFormPrefill(detail())
@@ -52,7 +41,7 @@ class AfternoteEditorReceiverPrefillTest {
     }
 
     private fun receiver(
-        id: Long?,
+        id: Long,
         name: String,
         relation: String,
     ) = DetailReceiver(receiverId = id, name = name, relation = relation, phone = "010-0000-0000")
@@ -66,7 +55,8 @@ class AfternoteEditorReceiverPrefillTest {
             type = AfternoteServiceType.entries.first(),
             credentials = null,
             receivers = receivers.toList(),
-            processing = null,
-            playlist = null,
+            processingMethods = emptyList(),
+            leaveMessage = null,
+            memorial = null,
         )
 }

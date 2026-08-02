@@ -40,7 +40,7 @@ import com.afternote.feature.afternote.presentation.author.editor.state.remember
 internal fun EditorContent(
     state: AfternoteEditorState,
     form: EditorFormState,
-    graphSongs: List<Song>,
+    liveSongs: List<Song>,
     modifier: Modifier = Modifier,
     isPrefillLoading: Boolean = false,
     onNavigateToAddSong: () -> Unit,
@@ -105,7 +105,7 @@ internal fun EditorContent(
         CategoryContent(
             state = state,
             form = form,
-            graphSongs = graphSongs,
+            liveSongs = liveSongs,
             onNavigateToAddSong = onNavigateToAddSong,
             onNavigateToSelectReceiver = onNavigateToSelectReceiver,
             onPhotoAddClick = onPhotoAddClick,
@@ -222,7 +222,7 @@ private fun SkeletonBar(
 internal fun CategoryContent(
     state: AfternoteEditorState,
     form: EditorFormState,
-    graphSongs: List<Song>,
+    liveSongs: List<Song>,
     onNavigateToAddSong: () -> Unit,
     onNavigateToSelectReceiver: () -> Unit,
     onPhotoAddClick: () -> Unit,
@@ -235,10 +235,9 @@ internal fun CategoryContent(
                 params =
                     MemorialEditorContentParams(
                         displayMemorialPhotoUri = form.displayMemorialPhotoUri(),
-                        playlistSongCount = form.livePlaylistSongCount(graphSongs),
-                        playlistAlbumCovers = form.displayAlbumCovers(graphSongs),
-                        funeralVideoUrl = form.funeralVideoUrl,
-                        funeralThumbnailUrl = form.funeralThumbnailUrl,
+                        playlistAlbumCovers = form.displayAlbumCovers(liveSongs),
+                        memorialVideoUrl = form.memorialVideoUrl,
+                        memorialThumbnailUrl = form.memorialThumbnailUrl,
                         recipientSection =
                             AfternoteEditorReceiverSection(
                                 afternoteEditReceivers = form.afternoteEditReceivers,
@@ -319,7 +318,7 @@ private fun EditorContentSocialPreview() {
         EditorContent(
             state = state,
             form = state.currentForm().copy(selectedCategory = EditorCategory.SOCIAL),
-            graphSongs = emptyList(),
+            liveSongs = emptyList(),
             onNavigateToAddSong = {},
             onNavigateToSelectReceiver = {},
             onPhotoAddClick = {},
@@ -337,7 +336,7 @@ private fun EditorContentBusinessPreview() {
         EditorContent(
             state = state,
             form = state.currentForm().copy(selectedCategory = EditorCategory.BUSINESS),
-            graphSongs = emptyList(),
+            liveSongs = emptyList(),
             onNavigateToAddSong = {},
             onNavigateToSelectReceiver = {},
             onPhotoAddClick = {},
@@ -355,7 +354,7 @@ private fun EditorContentGalleryPreview() {
         EditorContent(
             state = state,
             form = state.currentForm().copy(selectedCategory = EditorCategory.GALLERY),
-            graphSongs = emptyList(),
+            liveSongs = emptyList(),
             onNavigateToAddSong = {},
             onNavigateToSelectReceiver = {},
             onPhotoAddClick = {},
@@ -373,7 +372,7 @@ private fun EditorContentMemorialPreview() {
         EditorContent(
             state = state,
             form = state.currentForm().copy(selectedCategory = EditorCategory.MEMORIAL),
-            graphSongs = emptyList(),
+            liveSongs = emptyList(),
             onNavigateToAddSong = {},
             onNavigateToSelectReceiver = {},
             onPhotoAddClick = {},

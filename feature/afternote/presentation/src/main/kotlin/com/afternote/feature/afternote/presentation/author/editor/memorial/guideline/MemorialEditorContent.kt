@@ -1,18 +1,14 @@
 package com.afternote.feature.afternote.presentation.author.editor.memorial.guideline
 
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.presentation.author.editor.editorLastWishOptions
 import com.afternote.feature.afternote.presentation.author.editor.memorial.FuneralVideoUpload
 import com.afternote.feature.afternote.presentation.author.editor.memorial.LastMomentQuestion
 import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialPhotoUpload
 import com.afternote.feature.afternote.presentation.author.editor.receiver.RecipientDesignationSection
-import com.afternote.feature.afternote.presentation.shared.LastWishOtherState
-import com.afternote.feature.afternote.presentation.shared.LastWishesRadioGroup
 import com.afternote.feature.afternote.presentation.shared.MemorialContent
 import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
 
@@ -35,20 +31,9 @@ fun MemorialEditorContent(
         },
         playlistContent = {
             MemorialPlaylist(
-                songCount = params.playlistSongCount,
+                songCount = params.playlistAlbumCovers.size,
                 albumCovers = params.playlistAlbumCovers,
                 onCardClick = params.onSongAddClick,
-            )
-        },
-        lastWishContent = {
-            LastWishesRadioGroup(
-                options = params.lastWishOptions,
-                selectedValue = params.selectedLastWish,
-                onOptionSelect = params.onLastWishSelected,
-                otherState =
-                    LastWishOtherState(
-                        textFieldState = params.customLastWishState,
-                    ),
             )
         },
         modifier = modifier,
@@ -58,8 +43,8 @@ fun MemorialEditorContent(
         },
         videoContent = {
             FuneralVideoUpload(
-                videoUrl = params.funeralVideoUrl,
-                thumbnailUrl = params.funeralThumbnailUrl,
+                videoUrl = params.memorialVideoUrl,
+                thumbnailUrl = params.memorialThumbnailUrl,
                 onAddVideoClick = params.onVideoAddClick,
                 onThumbnailBytesReady = params.onThumbnailBytesReady,
             )
@@ -71,19 +56,13 @@ fun MemorialEditorContent(
 @Composable
 private fun MemorialEditorContentPreview() {
     AfternoteTheme {
-        val customLastWishState = rememberTextFieldState()
         MemorialEditorContent(
             params =
                 MemorialEditorContentParams(
                     displayMemorialPhotoUri = null,
-                    playlistSongCount = 16,
                     playlistAlbumCovers = emptyList(),
-                    selectedLastWish = "calm",
-                    lastWishOptions = editorLastWishOptions(),
-                    funeralVideoUrl = null,
-                    customLastWishState = customLastWishState,
+                    memorialVideoUrl = null,
                     onSongAddClick = {},
-                    onLastWishSelected = {},
                     onPhotoAddClick = {},
                     onVideoAddClick = {},
                     onThumbnailBytesReady = {},
