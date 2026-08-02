@@ -86,7 +86,7 @@ internal fun tryApplyReceiverSelectionFromSavedState(
     val id = backStackEntry.savedStateHandle[SELECTED_RECEIVER_ID_KEY] as? Long ?: return
     backStackEntry.savedStateHandle.remove<Long>(SELECTED_RECEIVER_ID_KEY)
     val receiver = viewModel.getReceiverById(id) ?: return
-    state.addReceiverFromSelection(receiver.receiverId, receiver.name, receiver.relation)
+    state.addReceiverById(receiver.receiverId, receiver.name, receiver.relation)
 }
 
 internal fun buildEditorScreenCallbacks(
@@ -104,7 +104,7 @@ internal fun buildEditorScreenCallbacks(
             onPopBackStack()
         },
         onRegisterClick = {
-            state.persistEditorMessagesFromTyping(
+            state.setLeaveMessageBlocks(
                 state.editorMessages.map { msg ->
                     EditorMessageTextBlock(
                         title = msg.titleState.text.toString(),
@@ -112,9 +112,11 @@ internal fun buildEditorScreenCallbacks(
                     )
                 },
             )
+            // 폼 스냅샷은 한 번만 읽는다 — 필드마다 다시 읽으면 조립 도중 갱신이 끼어 서로 다른 시점의 값이 섞인다.
+            val form = state.currentForm()
             val payload =
                 SaveAfternotePayloadBuilder.build(
-                    form = state.currentForm(),
+                    form = form,
                     accountId =
                         state.idState.text
                             .toString(),
@@ -124,16 +126,16 @@ internal fun buildEditorScreenCallbacks(
                 )
             editViewModel.saveAfternote(
                 editingId = route.itemId?.toLongOrNull(),
-                category = state.selectedCategory,
+                category = form.selectedCategory,
                 payload = payload,
-                selectedReceiverIds = state.afternoteEditReceivers.mapNotNull { it.id.toLongOrNull() },
+                selectedReceiverIds = form.afternoteEditReceivers.mapNotNull { it.id.toLongOrNull() },
                 playlistSongs = liveSongs,
                 memorialMedia =
                     SaveAfternoteMemorialMedia(
-                        memorialVideoUrl = state.memorialVideoUrl,
-                        memorialThumbnailUrl = state.memorialThumbnailUrl,
-                        memorialPhotoUrl = state.memorialPhotoUrl,
-                        pickedMemorialPhotoUri = state.pickedMemorialPhotoUri,
+                        memorialVideoUrl = form.memorialVideoUrl,
+                        memorialThumbnailUrl = form.memorialThumbnailUrl,
+                        memorialPhotoUrl = form.memorialPhotoUrl,
+                        pickedMemorialPhotoUri = form.pickedMemorialPhotoUri,
                     ),
             )
         },
@@ -156,13 +158,27 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
     val state =
         rememberAfternoteEditorState(
             getCurrentForm = editViewModel::currentForm,
-            updateForm = editViewModel::updateForm,
+            setCategory = editViewModel::setCategory,
+            setService = editViewModel::setService,
+            setMemorialPhoto = editViewModel::setMemorialPhoto,
+            setMemorialVideo = editViewModel::setMemorialVideo,
+            addReceiver = editViewModel::addReceiver,
+            addReceiverIfAbsent = editViewModel::addReceiverIfAbsent,
+            applyPrefill = editViewModel::applyPrefill,
+            setMemorialThumbnail = editViewModel::setMemorialThumbnail,
+            setMemorialPlaylistSongs = editViewModel::setMemorialPlaylistSongs,
+            deleteReceiver = editViewModel::deleteReceiver,
+            replaceReceiversIfEmpty = editViewModel::replaceReceiversIfEmpty,
+            setLeaveMessageBlocks = editViewModel::setLeaveMessageBlocks,
+            addProcessingMethod = editViewModel::addProcessingMethod,
+            deleteProcessingMethod = editViewModel::deleteProcessingMethod,
+            editProcessingMethod = editViewModel::editProcessingMethod,
         )
 
     LaunchedEffect(Unit) {
         if (route.itemId == null) {
             params.onClearSongs()
-            state.resetMemorialPlaylistFormSnapshot()
+            state.setMemorialPlaylistSongs(emptyList())
         }
     }
     LaunchedEffect(Unit) { editViewModel.refreshAuthorReceivers() }
@@ -196,7 +212,7 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
     val pendingThumbnailUrl = uiState.pendingThumbnailUrl
     LaunchedEffect(pendingThumbnailUrl) {
         if (pendingThumbnailUrl != null) {
-            state.onFuneralThumbnailDataUrlReady(pendingThumbnailUrl)
+            state.setMemorialThumbnail(pendingThumbnailUrl)
             editViewModel.onThumbnailUploadedConsumed()
         }
     }
