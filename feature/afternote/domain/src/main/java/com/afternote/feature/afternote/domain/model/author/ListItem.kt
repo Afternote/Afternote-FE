@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.domain.model.author
 
-import com.afternote.feature.afternote.domain.AfternoteServiceType
+import com.afternote.feature.afternote.domain.AfternoteType
 
 /**
  * 애프터노트 아이템 도메인 모델
@@ -14,7 +14,7 @@ data class ListItem(
     val id: String,
     val serviceName: String,
     val date: String,
-    val type: AfternoteServiceType,
+    val type: AfternoteType,
     val account: Account = Account(),
     val processing: ItemProcessing = ItemProcessing(),
 )

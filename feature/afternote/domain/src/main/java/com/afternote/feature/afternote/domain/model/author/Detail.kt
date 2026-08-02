@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.domain.model.author
 
-import com.afternote.feature.afternote.domain.AfternoteServiceType
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.playlist.PlaylistDetail
 
 /**
@@ -17,7 +17,7 @@ data class Detail(
     val category: String,
     val title: String,
     val timestamps: DetailTimestamps,
-    val type: AfternoteServiceType,
+    val type: AfternoteType,
     val credentials: DetailCredentials?,
     val receivers: List<DetailReceiver>,
     val processing: DetailProcessing?,
