@@ -2,10 +2,14 @@ package com.afternote.feature.onboarding.presentation.signup
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.EmailVerificationException
 import com.afternote.core.domain.repository.account.AccountRepository
 import com.afternote.core.domain.usecase.auth.LoginType
 import com.afternote.core.domain.usecase.auth.LoginUseCase
+import com.afternote.feature.onboarding.presentation.reporting.AuthFailureStage
+import com.afternote.feature.onboarding.presentation.reporting.AuthProvider
+import com.afternote.feature.onboarding.presentation.reporting.recordAuthFailure
 import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel.Companion.RESEND_COOLDOWN_SECONDS
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -16,6 +20,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * 회원가입 플로우 전체에서 공유되는 뷰모델.
@@ -35,6 +41,7 @@ class SignUpViewModel
     constructor(
         private val accountRepository: AccountRepository,
         private val loginUseCase: LoginUseCase,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         companion object {
             /** "재전송" 클릭 후 다음 요청까지 강제 대기 초. 서버 비용 · SMS 발송량 보호. */
@@ -114,6 +121,9 @@ class SignUpViewModel
                         _uiState.update { it.copy(isVerificationSent = true, verificationError = null) }
                         startResendCooldown()
                     }.onFailure { error ->
+                        // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
+                        if (error is CancellationException) throw error
+                        errorReporter.recordAuthFailure(AuthFailureStage.EMAIL_CODE_SEND, error)
                         _uiState.update { it.copy(errorMessage = error.message ?: "") }
                     }
                 _uiState.update { it.copy(isSendingCode = false) }
@@ -127,7 +137,7 @@ class SignUpViewModel
                 viewModelScope.launch {
                     _uiState.update { it.copy(resendCooldownSeconds = RESEND_COOLDOWN_SECONDS) }
                     while (_uiState.value.resendCooldownSeconds > 0) {
-                        delay(1000)
+                        delay(1000.milliseconds)
                         _uiState.update { it.copy(resendCooldownSeconds = it.resendCooldownSeconds - 1) }
                     }
                 }
@@ -152,10 +162,14 @@ class SignUpViewModel
                     ).onSuccess {
                         _uiState.update { it.copy(shouldNavigateToResidentNumber = true) }
                     }.onFailure { error ->
+                        // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
+                        if (error is CancellationException) throw error
                         if (error is EmailVerificationException) {
                             // 표시 문구는 화면의 고정 리소스 — 이 값은 인라인 표시 트리거 + 디버깅용 원문.
+                            // 인증번호 불일치·만료는 정상적인 사용자 입력 오류라 리포팅하지 않는다.
                             _uiState.update { it.copy(verificationError = error.serverMessage ?: "") }
                         } else {
+                            errorReporter.recordAuthFailure(AuthFailureStage.EMAIL_VERIFY, error)
                             _uiState.update { it.copy(errorMessage = error.message ?: "이메일 인증 실패") }
                         }
                     }
@@ -191,6 +205,13 @@ class SignUpViewModel
                             .onSuccess {
                                 _uiState.update { it.copy(isSignedUp = true) }
                             }.onFailure { error ->
+                                // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
+                                if (error is CancellationException) throw error
+                                errorReporter.recordAuthFailure(
+                                    stage = AuthFailureStage.AUTO_LOGIN_AFTER_SIGN_UP,
+                                    throwable = error,
+                                    provider = AuthProvider.EMAIL,
+                                )
                                 _uiState.update {
                                     it.copy(
                                         errorMessage = error.message ?: "자동 로그인에 실패했어요. 로그인 화면에서 다시 시도해주세요.",
@@ -198,6 +219,9 @@ class SignUpViewModel
                                 }
                             }
                     }.onFailure { error ->
+                        // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
+                        if (error is CancellationException) throw error
+                        errorReporter.recordAuthFailure(AuthFailureStage.SIGN_UP, error)
                         _uiState.update { it.copy(errorMessage = error.message ?: "") }
                     }
                 _uiState.update { it.copy(isLoading = false) }

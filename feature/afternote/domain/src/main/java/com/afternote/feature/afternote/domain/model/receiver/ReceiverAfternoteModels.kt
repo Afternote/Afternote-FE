@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.domain.model.receiver
 
-import com.afternote.feature.afternote.domain.AfternoteServiceType
+import com.afternote.feature.afternote.domain.AfternoteType
 
 data class AfterNotesListResult(
     val items: List<AfterNoteListItem>,
@@ -27,7 +27,7 @@ data class ReceivedAfternoteDetail(
     val senderName: String? = null,
     val createdAt: String? = null,
     val category: String? = null,
-    val type: AfternoteServiceType? = null,
+    val type: AfternoteType? = null,
     val actions: List<String> = emptyList(),
     val leaveMessage: String? = null,
     val playlist: ReceivedPlaylistDetail? = null,

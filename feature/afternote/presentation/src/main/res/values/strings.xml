@@ -58,6 +58,8 @@
     <string name="receiver_timeletter_sort_unread_first">읽지 않은 순</string>
     <string name="receiver_download_all_button">모든 기록 내려받기</string>
     <string name="receiver_download_all_dialog_message">모든 기록을 내려받으시겠습니까?</string>
+    <string name="receiver_download_all_failed">모든 기록 내려받기에 실패했습니다.</string>
+    <string name="receiver_download_all_save_failed">파일 저장에 실패했습니다.</string>
     <string name="receiver_hero_default_message">가족들에게…\n내가 없어도 너무 슬퍼하지마.</string>
     <string name="receiver_mindrecord_section_title">마음의 기록</string>
     <string name="receiver_mindrecord_section_desc">고인의 일상적인 생각과 감정, 일기들입니다.</string>
@@ -231,6 +233,7 @@
     <string name="afternote_detail_invalid_id">잘못된 항목 ID입니다.</string>
     <string name="afternote_detail_load_error">상세 정보를 불러오지 못했습니다.</string>
     <string name="afternote_detail_delete_failed">삭제에 실패했습니다.</string>
+    <string name="afternote_detail_deleting">삭제 중</string>
     <string name="afternote_edit_item_not_found">항목을 찾을 수 없습니다.</string>
 
     <string name="afternote_validation_title_required">등록할 서비스(플랫폼)명을 선택해 주세요.</string>
@@ -316,4 +319,7 @@
     <string name="afternote_editor_save_failed_generic">저장에 실패했습니다.</string>
     <string name="afternote_editor_search_failed_generic">검색 실패</string>
     <string name="afternote_editor_thumbnail_upload_failed">영정사진 업로드에 실패했습니다.</string>
+    <string name="afternote_editor_exit_confirm_message">작성 중인 내용이 사라집니다.\n정말 나가시겠어요?</string>
+    <string name="afternote_editor_exit_confirm_confirm">나가기</string>
+    <string name="afternote_editor_exit_confirm_cancel">계속 작성</string>
 </resources>

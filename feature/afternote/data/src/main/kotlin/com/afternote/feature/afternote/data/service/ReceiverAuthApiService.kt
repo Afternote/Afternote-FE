@@ -25,7 +25,7 @@ import retrofit2.http.POST
  */
 interface ReceiverAuthApiService {
     @POST("receiver-auth/verify")
-    suspend fun verify(
+    suspend fun verifyMasterKey(
         @Body body: ReceiverAuthVerifyRequestDto,
     ): BaseResponse<ReceiverAuthVerifyDto>
 
@@ -35,7 +35,7 @@ interface ReceiverAuthApiService {
         @Body body: ReceiverAuthCodeEmailSendRequestDto,
     ): BaseResponse<Unit>
 
-    /** 발송된 6자리 인증번호 검증. 만료/불일치는 400 (code 1902). */
+    /** 발송된 6자리 인증번호 검증. 만료/미존재는 400 (code 1902), 불일치는 400 (code 1903). */
     @POST("receiver-auth/email/verify")
     suspend fun verifyEmailAuthCode(
         @Body body: ReceiverEmailAuthVerifyRequestDto,

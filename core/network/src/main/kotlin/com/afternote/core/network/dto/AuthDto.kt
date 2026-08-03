@@ -53,7 +53,15 @@ data class LoginRequestDto(
     val password: String,
 )
 
-/** Request for unified social login (POST /auth/social/login). */
+/**
+ * Request for unified social login (POST /auth/social/login).
+ *
+ * @property provider 서버가 토큰을 어느 플랫폼에 검증하러 갈지 정하는 값 — `"KAKAO"` / `"GOOGLE"`.
+ * @property accessToken **이름과 달리 provider 마다 종류가 다르다.** 카카오는 OAuth 액세스 토큰
+ *   (`OAuthToken.accessToken`), 구글은 서명된 ID 토큰(`GoogleIdTokenCredential.idToken`) 이 들어간다.
+ *   전자는 서버가 카카오 API 를 호출해야 신원을 알 수 있고, 후자는 서명 검증만으로 알 수 있다.
+ *   필드명은 서버 계약이라 클라에서 바꿀 수 없다 — 해석 분기는 [provider] 가 맡는다.
+ */
 @Serializable
 data class SocialLoginRequestDto(
     val provider: String,

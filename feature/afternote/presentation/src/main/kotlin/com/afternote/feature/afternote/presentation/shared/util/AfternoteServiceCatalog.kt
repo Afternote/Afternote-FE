@@ -1,12 +1,10 @@
 package com.afternote.feature.afternote.presentation.shared.util
 
-import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.presentation.shared.model.AfternoteService
 
 /**
  * Single source of truth for afternote service names by category.
- * Used for edit-screen dropdowns and for inferring [AfternoteServiceType] from service name
- * (e.g. dummy/legacy data). Shared by writer and receiver flows.
+ * Used for edit-screen dropdowns. Shared by writer and receiver flows.
  */
 object AfternoteServiceCatalog {
     /** Display names for 소셜 네트워크 (SOCIAL) category. */
@@ -46,18 +44,4 @@ object AfternoteServiceCatalog {
             AfternoteService.GOOGLE_MAIL.displayKey,
             AfternoteService.OUTLOOK.displayKey,
         )
-
-    private val MEMORIAL_SERVICE_NAME: String = AfternoteService.MEMORIAL_GUIDELINE.displayKey
-
-    /**
-     * Infers [AfternoteServiceType] from a service display name.
-     * Only for dummy/legacy data; when type is known from API or list item, use that instead.
-     */
-    fun serviceTypeFor(serviceName: String): AfternoteServiceType =
-        when {
-            galleryServices.contains(serviceName) -> AfternoteServiceType.GALLERY_AND_FILES
-            businessServices.contains(serviceName) -> AfternoteServiceType.BUSINESS
-            serviceName == MEMORIAL_SERVICE_NAME -> AfternoteServiceType.MEMORIAL
-            else -> AfternoteServiceType.SOCIAL_NETWORK
-        }
 }

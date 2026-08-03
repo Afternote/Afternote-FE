@@ -31,19 +31,10 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.SELE
  *
  * **수정 진입 데이터 로드:** 상세 화면과 같이 [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel]의 `init`에서
  * [androidx.lifecycle.SavedStateHandle]의 `itemId`만 보고 Repository `getDetail`을 호출한다 (Compose `LaunchedEffect` 위임 없음).
- *
- * **단일 UI 상태:** ViewModel 의 단일 [AfternoteEditorUiState] 만 collect 하고, 폼/저장진행/오류/수신자 목록은
- * 그 안의 필드로 분기한다 (CLAUDE.md *"loading/error/data 독립 스트림 분리 금지"* 규칙).
- *
- * ViewModel 단발 신호는 [AfternoteEditorUiState] 의 pending* 필드 + [androidx.compose.runtime.LaunchedEffect] 로 흡수한다.
  */
 internal sealed class EditorSaveErrorResult {
     data class Validation(
         val messageResId: Int,
-    ) : EditorSaveErrorResult()
-
-    data class Raw(
-        val message: String,
     ) : EditorSaveErrorResult()
 
     data class Generic(
@@ -61,7 +52,6 @@ internal fun editorSaveErrorFromUiState(
         return null
     }
     uiState.validationError?.let { return EditorSaveErrorResult.Validation(it.messageResId) }
-    uiState.error?.let { return EditorSaveErrorResult.Raw(it) }
     uiState.errorRes?.let { return EditorSaveErrorResult.Generic(it) }
     return null
 }
@@ -146,6 +136,7 @@ internal fun buildEditorScreenCallbacks(
                 editViewModel.uploadMemorialThumbnail(bytes)
             }
         },
+        onThumbnailExtractionFailed = editViewModel::onMemorialThumbnailExtractionFailed,
         onThumbnailUploadErrorConsumed = editViewModel::onThumbnailUploadErrorConsumed,
     )
 
@@ -213,14 +204,12 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
     val errorResult =
         remember(
             uiState.validationError,
-            uiState.error,
             uiState.errorRes,
             params.graphSongs.size,
         ) { editorSaveErrorFromUiState(uiState, params.graphSongs.size) }
     val saveError: String? =
         when (errorResult) {
             is EditorSaveErrorResult.Validation -> stringResource(errorResult.messageResId)
-            is EditorSaveErrorResult.Raw -> errorResult.message
             is EditorSaveErrorResult.Generic -> stringResource(errorResult.messageResId)
             null -> null
         }

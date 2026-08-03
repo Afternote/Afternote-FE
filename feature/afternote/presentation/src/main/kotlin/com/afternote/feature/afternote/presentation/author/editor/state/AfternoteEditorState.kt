@@ -80,7 +80,7 @@ class AfternoteEditorState(
     /** 신규 작성 진입 시 폼에 남은 추억 플레이리스트 스냅샷을 비운다 (호스트 SSOT clear는 호출부에서). */
     fun resetMemorialPlaylistFormSnapshot() {
         updateForm {
-            it.copy(memorialPlaylistSongs = emptyList(), playlistSongCount = 16)
+            it.copy(memorialPlaylistSongs = emptyList(), playlistSongCount = 0)
         }
     }
 
