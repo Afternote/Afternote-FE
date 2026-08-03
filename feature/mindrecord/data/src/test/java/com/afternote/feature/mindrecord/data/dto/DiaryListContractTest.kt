@@ -7,11 +7,14 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 /**
- * `GET /diary` 응답 파싱 계약 가드.
+ * `GET /diary` 응답 파싱 계약 가드 (Swagger `DiaryResponse` 실측, 2026-08-03).
  *
- * 명세("Diary 조회")의 예시와 실서버 관측 키가 갈린다 — 명세는 `id`·`date`, 실서버는
- * `diaryId`·`createdAt`. 목록 항목의 필수 프로퍼티가 하나라도 비면
- * `MissingFieldException` 으로 그 달 일기가 통째로 사라지므로, 두 형태 모두 파싱되어야 한다.
+ * 응답 스키마에 `required` 가 하나도 선언돼 있지 않아 어느 필드든 생략될 수 있다.
+ * 목록 항목의 필수 프로퍼티가 하나라도 비면 `MissingFieldException` 으로 그 달 일기가
+ * 통째로 사라지므로, 필드가 빠져도 살아남는지를 여기서 고정한다.
+ *
+ * `date`(사용자가 고른 일기 날짜)와 `createdAt`(레코드 생성 시각)은 **별개 필드**다.
+ * 한 프로퍼티에 묶으면 서버의 키 순서에 따라 값이 뒤바뀌므로 분리 상태를 함께 고정한다.
  *
  * Json 설정은 `NetworkModule.provideJson` 과 동일 (ignoreUnknownKeys + coerceInputValues).
  */
@@ -23,21 +26,28 @@ class DiaryListContractTest {
         }
 
     @Test
-    fun `실서버 형태 - diaryId createdAt 키로 파싱된다`() {
+    fun `Swagger DiaryResponse 전체 필드가 파싱된다`() {
+        // Swagger `DiaryResponse` 의 전 필드를 그대로 실은 형태.
         val body =
             """
             {
               "status": 200, "code": 200, "message": "성공",
               "data": {
-                "monthDiaryCount": 1,
+                "yearMonth": "2026-03",
+                "monthDiaryCount": 18,
                 "weeklyDominantMood": "HAPPY",
                 "diaries": [
                   {
                     "diaryId": 123,
-                    "title": "QA diary title",
+                    "title": "가족과 함께한 저녁 식사",
                     "content": "<p>본문</p>",
-                    "createdAt": "2026.03.21 토",
-                    "todayMood": "HAPPY"
+                    "isDraft": false,
+                    "emotion": "기쁨",
+                    "todayMood": "HAPPY",
+                    "date": "2026-03-21",
+                    "createdAt": "2026-03-25T20:13:42",
+                    "updatedAt": "2026-03-25T20:13:42",
+                    "receivers": [{ "receiverId": 1, "name": "박채연" }]
                   }
                 ]
               }
@@ -48,34 +58,23 @@ class DiaryListContractTest {
 
         val diary = decoded.data!!.diaries.single()
         assertEquals(123L, diary.diaryId)
-        assertEquals("2026.03.21 토", diary.createdAt)
         assertEquals(TodayMoodDto.HAPPY, diary.todayMood)
+        assertEquals(false, diary.isDraft)
+        // 두 날짜가 섞이지 않아야 한다. `date` 는 사용자가 고른 3/21, `createdAt` 은 생성 시각 3/25 —
+        // 한 프로퍼티에 묶으면 캘린더가 3/25 칸에 찍힌다.
+        assertEquals("2026-03-21", diary.date)
+        assertEquals("2026-03-25T20:13:42", diary.createdAt)
     }
 
     @Test
-    fun `명세 형태 - id date 키와 isDraft 도 같은 프로퍼티로 파싱된다`() {
-        // 명세 예시가 그대로 온 경우. 종전 DTO 는 diaryId·createdAt 이 필수라 여기서 통째로 실패했다.
+    fun `노션 명세 형태의 id 키도 대체 키로 파싱된다`() {
+        // 노션 명세("Diary 조회") 예시는 식별자를 `id` 로 적는다 — Swagger 와 갈려 있어 함께 받는다.
         val body =
             """
             {
               "status": 200, "code": 200,
-              "data": {
-                "yearMonth": "2026-03",
-                "monthDiaryCount": 18,
-                "weeklyDominantMood": "HAPPY",
-                "diaries": [
-                  {
-                    "id": 123,
-                    "date": "2026-03-21",
-                    "title": "가족과 함께한 저녁 식사",
-                    "content": "...",
-                    "todayMood": "SOSO",
-                    "isDraft": true,
-                    "createdAt": "2026-03-21T20:13:42"
-                  }
-                ],
-                "receivers": [{ "receiverId": 1, "name": "박채연" }]
-              }
+              "data": { "diaries": [{ "id": 123, "date": "2026-03-21",
+                        "title": "t", "content": "c", "todayMood": "SOSO", "isDraft": true }] }
             }
             """.trimIndent()
 
@@ -83,9 +82,26 @@ class DiaryListContractTest {
 
         val diary = decoded.data!!.diaries.single()
         assertEquals(123L, diary.diaryId)
-        // 두 키가 함께 오면 `createdAt` 이 이긴다 — 시각까지 있는 쪽이 정렬·표시에 더 정확하다.
-        assertEquals("2026-03-21T20:13:42", diary.createdAt)
+        assertEquals("2026-03-21", diary.date)
         assertEquals(true, diary.isDraft)
+    }
+
+    @Test
+    fun `date 가 없으면 null 로 남아 표시 단계가 createdAt 으로 폴백할 수 있다`() {
+        val body =
+            """
+            {
+              "status": 200, "code": 200,
+              "data": { "diaries": [{ "diaryId": 1, "title": "t", "content": "c",
+                        "createdAt": "2026.03.21 토", "todayMood": "SAD" }] }
+            }
+            """.trimIndent()
+
+        val decoded = json.decodeFromString(BaseResponse.serializer(DiaryListDto.serializer()), body)
+
+        val diary = decoded.data!!.diaries.single()
+        assertNull(diary.date)
+        assertEquals("2026.03.21 토", diary.createdAt)
     }
 
     @Test

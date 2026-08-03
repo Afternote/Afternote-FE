@@ -32,7 +32,10 @@ fun Diary.toUi(): DailyDiary =
     DailyDiary(
         id = diaryId,
         title = title,
-        date = parseLocalDate(createdAt),
+        // 캘린더에 찍히는 값은 사용자가 고른 일기 날짜(`date`)다. `createdAt`(레코드 생성
+        // 시각)을 쓰면 지난 날짜로 쓴 일기가 작성한 날에 찍힌다 — 서버가 `date` 를 주지
+        // 않을 때만 폴백한다.
+        date = parseLocalDate(date ?: createdAt),
         content = content,
         emotion = todayMood?.toEmoji(),
         imageUrl = imageUrl,

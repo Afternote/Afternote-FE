@@ -40,16 +40,18 @@ data class DiaryUpdateRequestDto(
 )
 
 /**
- * `/diary` 목록 항목.
+ * `/diary` 목록 항목 (Swagger `DiaryResponse` 실측, 2026-08-03).
  *
- * 와이어 키가 명세와 실서버 사이에서 갈린다 — 명세("Diary 조회")의 예시는 `id`·`date` 이고
- * 실서버는 `diaryId`·`createdAt` 로 관측됐다. 필수 프로퍼티가 하나라도 비면
- * `MissingFieldException` 으로 **목록 전체**가 날아가므로, 양쪽 키를 함께 받고
- * 식별자 외에는 기본값을 둔다.
+ * **응답 스키마에는 `required` 가 하나도 선언돼 있지 않다** — 이 API 문서의 required 목록은
+ * 요청 스키마에만 붙어 있다. 어느 필드든 생략될 수 있다는 뜻이라, 식별자를 뺀 나머지는
+ * 기본값을 둔다. 필수로 두면 필드 하나가 비는 순간 `MissingFieldException` 으로
+ * **그 달 목록 전체**가 날아간다.
  *
- * `todayMood` 를 nullable 로 둔 것도 같은 이유다. 명세 예시에는 클라 enum 에 없는
- * `"SMILE"` 이 적혀 있는데, non-null 이면 값 하나가 어긋난 순간 그 달 일기가 통째로
- * 사라진다 (`coerceInputValues` 는 기본값이 있어야 동작한다).
+ * `todayMood` 를 nullable 로 둔 것도 같은 맥락이다. non-null 이면 클라가 모르는 값
+ * 하나에 목록이 통째로 사라진다 (`coerceInputValues` 는 기본값이 있어야 동작한다).
+ *
+ * `id` 는 노션 명세("Diary 조회") 예시의 키다. Swagger 에는 없지만 두 문서가 갈려 있어
+ * 대체 키로 함께 받는다 — 실제 응답에 `id` 가 없어 충돌하지 않는다.
  */
 @Serializable
 data class DiaryListItemDto(
@@ -58,9 +60,16 @@ data class DiaryListItemDto(
     val diaryId: Long,
     @SerialName("title") val title: String = "",
     @SerialName("content") val content: String = "",
-    @SerialName("createdAt")
-    @JsonNames("date")
-    val createdAt: String = "",
+    /**
+     * 사용자가 고른 **일기의 날짜** (`format: date`, 예 `"2026-03-21"`).
+     *
+     * [createdAt] 과 **별개 필드**다 — 작성 화면의 날짜 선택 값이 여기 들어가고,
+     * `createdAt` 은 레코드가 만들어진 시각이다. 캘린더에 찍어야 하는 쪽은 이 값이다.
+     * 둘을 `@JsonNames` 로 한 프로퍼티에 묶으면 서버의 키 순서에 따라 값이 뒤바뀐다.
+     */
+    @SerialName("date") val date: String? = null,
+    @SerialName("createdAt") val createdAt: String = "",
+    // Swagger `DiaryResponse` 에 없는 필드 — 서버가 주기 시작하면 쓰이고, 아니면 계속 null.
     @SerialName("imageUrl") val imageUrl: String? = null,
     @SerialName("todayMood") val todayMood: TodayMoodDto? = null,
     @SerialName("isDraft")
