@@ -6,7 +6,7 @@ import com.afternote.afternote_fe.reporting.HomeFailureStage
 import com.afternote.afternote_fe.reporting.recordHomeFailure
 import com.afternote.afternote_fe.usecase.GetHomeSummaryUseCase
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.repository.UserRepository
+import com.afternote.core.domain.repository.UserProfileRepository
 import com.afternote.core.model.HomeSummary
 import com.afternote.core.model.MindRecordCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,7 +22,7 @@ class HomeTabViewModel
     @Inject
     constructor(
         private val getHomeSummary: GetHomeSummaryUseCase,
-        private val userRepository: UserRepository,
+        private val userProfileRepository: UserProfileRepository,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<HomeTabUiState>(HomeTabUiState.Loading())
@@ -77,7 +77,7 @@ class HomeTabViewModel
                     } else {
                         // 초기 진입 또는 에러 재시도: 캐시된 이름이 있으면 placeholder로 즉시 노출한다.
                         _uiState.value =
-                            HomeTabUiState.Loading()
+                            HomeTabUiState.Loading(cachedUserName = userProfileRepository.getCachedUserName())
                     }
 
                     getHomeSummary()

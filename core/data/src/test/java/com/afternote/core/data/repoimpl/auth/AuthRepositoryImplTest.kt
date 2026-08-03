@@ -3,9 +3,16 @@ package com.afternote.core.data.repoimpl.auth
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
+import com.afternote.core.data.repoimpl.UserProfileRepositoryImpl
+import com.afternote.core.data.session.UserProfileSessionResource
+import com.afternote.core.data.session.UserReceiverCache
+import com.afternote.core.data.session.UserSessionBoundary
 import com.afternote.core.datastore.TokenDataSource
+import com.afternote.core.datastore.UserProfileDataSource
 import com.afternote.core.domain.error.LoginRejectedException
 import com.afternote.core.domain.error.NetworkUnavailableException
+import com.afternote.core.domain.session.SessionScopedResource
+import com.afternote.core.model.user.Receiver
 import com.afternote.core.network.dto.LoginDto
 import com.afternote.core.network.dto.LoginRequestDto
 import com.afternote.core.network.dto.LogoutRequestDto
@@ -17,11 +24,16 @@ import com.afternote.core.network.model.BaseResponse
 import com.afternote.core.network.service.AuthApiService
 import com.afternote.core.network.service.TokenApiService
 import com.afternote.core.network.token.AccessTokenExpiryTracker
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -44,14 +56,107 @@ import kotlin.coroutines.cancellation.CancellationException
 class AuthRepositoryImplTest {
     private val tracker = AccessTokenExpiryTracker()
     private val tokenDataSource = TokenDataSource(InMemoryPreferencesDataStore())
+    private val sessionBoundary = UserSessionBoundary()
+    private val sessionResource = RecordingSessionScopedResource()
 
-    private fun repository(authApiService: AuthApiService = FakeAuthApiService()) =
-        AuthRepositoryImpl(
-            tokenDataSource = tokenDataSource,
-            authApiService = authApiService,
-            tokenApiService = FakeTokenApiService(),
-            expiryTracker = tracker,
-        )
+    private fun repository(
+        authApiService: AuthApiService = FakeAuthApiService(),
+        tokenApiService: TokenApiService = FakeTokenApiService(),
+        sessionBoundary: UserSessionBoundary = this.sessionBoundary,
+        sessionResources: Set<SessionScopedResource> = setOf(sessionResource),
+    ) = AuthRepositoryImpl(
+        tokenDataSource = tokenDataSource,
+        authApiService = authApiService,
+        tokenApiService = tokenApiService,
+        expiryTracker = tracker,
+        sessionBoundary = sessionBoundary,
+        sessionScopedResources = sessionResources,
+    )
+
+    @Test
+    fun `saveSession - 새 토큰 저장 전에 이전 사용자 상태를 정리한다`() {
+        runBlocking { tokenDataSource.saveTokens(accessToken = "old-access", refreshToken = "old-refresh") }
+        val orderingResource =
+            RecordingSessionScopedResource(
+                onClear = { assertNull(tokenDataSource.getAccessToken()) },
+            )
+        val repository = repository(sessionResources = setOf(orderingResource))
+        val result =
+            runBlocking {
+                repository.saveSession(
+                    accessToken = "new-access",
+                    refreshToken = "new-refresh",
+                )
+            }
+
+        assertTrue(result.isSuccess)
+        assertEquals(1, orderingResource.clearCallCount)
+        assertEquals("new-access", runBlocking { tokenDataSource.getAccessToken() })
+        assertTrue(runBlocking { repository.isLoggedIn.first() })
+    }
+
+    @Test
+    fun `saveSession - 사용자 상태 정리가 실패하면 새 토큰을 저장하지 않는다`() {
+        runBlocking { tokenDataSource.saveTokens(accessToken = "old-access", refreshToken = "old-refresh") }
+        val failing = RecordingSessionScopedResource(IllegalStateException("clear 실패"))
+        val repository = repository(sessionResources = setOf(failing))
+
+        val result =
+            runBlocking {
+                repository.saveSession(
+                    accessToken = "new-access",
+                    refreshToken = "new-refresh",
+                )
+            }
+
+        assertTrue(result.isFailure)
+        assertNull(runBlocking { tokenDataSource.getAccessToken() })
+        assertFalse(runBlocking { repository.isLoggedIn.first() })
+    }
+
+    @Test
+    fun `updateTokens - 같은 세션의 토큰 회전은 사용자 상태를 유지한다`() {
+        val result =
+            runBlocking {
+                repository().updateTokens(
+                    accessToken = "rotated-access",
+                    refreshToken = "rotated-refresh",
+                )
+            }
+
+        assertTrue(result.isSuccess)
+        assertEquals(0, sessionResource.clearCallCount)
+    }
+
+    @Test
+    fun `rotateToken - 세션 종료 뒤 완료된 이전 회전은 토큰을 복원하지 않는다`() =
+        runBlocking {
+            tokenDataSource.saveTokens(accessToken = "old-access", refreshToken = "old-refresh")
+            val requestStarted = CompletableDeferred<Unit>()
+            val releaseResponse = CompletableDeferred<Unit>()
+            val repository =
+                repository(
+                    tokenApiService =
+                        FakeTokenApiService {
+                            requestStarted.complete(Unit)
+                            releaseResponse.await()
+                            success(
+                                ReissueDto(
+                                    accessToken = "late-access",
+                                    refreshToken = "late-refresh",
+                                ),
+                            )
+                        },
+                )
+            val rotation = async { repository.rotateToken() }
+
+            requestStarted.await()
+            assertTrue(repository.clearSession().isSuccess)
+            releaseResponse.complete(Unit)
+
+            assertTrue(rotation.await().isFailure)
+            assertNull(tokenDataSource.getAccessToken())
+        }
 
     @Test
     fun `defaultLogin - 발급 응답 expiresIn 을 deadline 으로 기록`() {
@@ -112,6 +217,7 @@ class AuthRepositoryImplTest {
         assertEquals(listOf(LogoutRequestDto("stored-refresh")), authApiService.logoutRequests)
         assertNull(runBlocking { tokenDataSource.getRefreshToken() })
         assertFalse(tracker.isExpiringSoon())
+        assertEquals(1, sessionResource.clearCallCount)
     }
 
     @Test
@@ -128,7 +234,37 @@ class AuthRepositoryImplTest {
         assertTrue(result.isSuccess)
         assertNull(runBlocking { tokenDataSource.getRefreshToken() })
         assertFalse(tracker.isExpiringSoon())
+        assertEquals(1, sessionResource.clearCallCount)
     }
+
+    @Test
+    fun `logout - 서버 호출 중 취소돼도 사용자 상태와 토큰을 정리하고 취소를 전파한다`() =
+        runBlocking {
+            tokenDataSource.saveTokens(accessToken = "access", refreshToken = "stored-refresh")
+            val requestStarted = CompletableDeferred<Unit>()
+            val authApiService =
+                FakeAuthApiService(
+                    onLogout = {
+                        requestStarted.complete(Unit)
+                        awaitCancellation()
+                    },
+                )
+            val logoutRequest = async { repository(authApiService).logout() }
+
+            requestStarted.await()
+            logoutRequest.cancel(CancellationException("로그아웃 요청 취소"))
+            val thrown =
+                try {
+                    logoutRequest.await()
+                    null
+                } catch (expected: CancellationException) {
+                    expected
+                }
+
+            assertTrue(thrown is CancellationException)
+            assertEquals(1, sessionResource.clearCallCount)
+            assertNull(tokenDataSource.getAccessToken())
+        }
 
     @Test
     fun `clearSession - 로컬 토큰·deadline 함께 정리`() {
@@ -140,7 +276,62 @@ class AuthRepositoryImplTest {
         assertTrue(result.isSuccess)
         assertNull(runBlocking { tokenDataSource.getAccessToken() })
         assertFalse(tracker.isExpiringSoon())
+        assertEquals(1, sessionResource.clearCallCount)
+        val anonymousSession = runBlocking { sessionBoundary.currentActive() }
+        assertNotNull(anonymousSession)
+        assertFalse(requireNotNull(anonymousSession).isAuthenticated)
     }
+
+    @Test
+    fun `clearSession - 수신자와 프로필 캐시를 함께 정리한다`() =
+        runBlocking {
+            val sessionBoundary = UserSessionBoundary()
+            val receiverCache = UserReceiverCache(sessionBoundary)
+            val activeSession = requireNotNull(sessionBoundary.currentActive())
+            receiverCache.update(
+                session = activeSession,
+                receivers =
+                    listOf(
+                        Receiver(
+                            receiverId = 1L,
+                            name = "계정 A 수신자",
+                            relation = "친구",
+                            authCode = "AUTH-CODE-A",
+                        ),
+                    ),
+            )
+            val profileDataSource = UserProfileDataSource(InMemoryPreferencesDataStore())
+            profileDataSource.saveUserName("계정 A")
+            val profileResource = UserProfileSessionResource(UserProfileRepositoryImpl(profileDataSource))
+
+            val result =
+                repository(
+                    sessionBoundary = sessionBoundary,
+                    sessionResources = setOf(receiverCache, profileResource),
+                ).clearSession()
+
+            assertTrue(result.isSuccess)
+            assertNull(receiverCache.receiversFor(sessionBoundary.current))
+            assertNull(profileDataSource.getCachedUserName())
+        }
+
+    @Test
+    fun `clearSession - 한 사용자 상태 정리가 실패해도 나머지와 토큰을 모두 정리한다`() =
+        runBlocking {
+            tokenDataSource.saveTokens(accessToken = "access", refreshToken = "refresh")
+            val failing = RecordingSessionScopedResource(IllegalStateException("clear 실패"))
+            val succeeding = RecordingSessionScopedResource()
+
+            val result =
+                repository(
+                    sessionResources = linkedSetOf(failing, succeeding),
+                ).clearSession()
+
+            assertTrue(result.isFailure)
+            assertEquals(1, failing.clearCallCount)
+            assertEquals(1, succeeding.clearCallCount)
+            assertNull(tokenDataSource.getAccessToken())
+        }
 
     @Test
     fun `defaultLogin - 전송 계층 IO 실패는 NetworkUnavailableException 으로 치환 (원인 보존)`() {
@@ -289,7 +480,7 @@ private class FakeAuthApiService(
     private val onSocialLogin: () -> BaseResponse<LoginDto.SocialLoginDto> = {
         error("socialLogin 은 이 시나리오에서 호출되면 안 됨")
     },
-    private val onLogout: () -> BaseResponse<Unit> = { success(Unit) },
+    private val onLogout: suspend () -> BaseResponse<Unit> = { success(Unit) },
 ) : AuthApiService {
     val logoutRequests = mutableListOf<LogoutRequestDto>()
 
@@ -303,8 +494,26 @@ private class FakeAuthApiService(
     }
 }
 
-private class FakeTokenApiService : TokenApiService {
-    override suspend fun reissue(body: ReissueRequestDto): BaseResponse<ReissueDto> = error("reissue 는 이 시나리오에서 호출되면 안 됨")
+private class FakeTokenApiService(
+    private val onReissue: suspend (ReissueRequestDto) -> BaseResponse<ReissueDto> = {
+        error("reissue 는 이 시나리오에서 호출되면 안 됨")
+    },
+) : TokenApiService {
+    override suspend fun reissue(body: ReissueRequestDto): BaseResponse<ReissueDto> = onReissue(body)
+}
+
+private class RecordingSessionScopedResource(
+    private val failure: Throwable? = null,
+    private val onClear: suspend () -> Unit = {},
+) : SessionScopedResource {
+    var clearCallCount = 0
+        private set
+
+    override suspend fun clear() {
+        clearCallCount += 1
+        onClear()
+        failure?.let { throw it }
+    }
 }
 
 /** 단위 테스트용 in-memory `DataStore<Preferences>` — 디스크 없이 [TokenDataSource] 실물을 구동한다. */
