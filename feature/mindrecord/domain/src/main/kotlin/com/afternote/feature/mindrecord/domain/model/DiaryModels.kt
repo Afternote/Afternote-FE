@@ -11,8 +11,10 @@ data class Diary(
     val title: String,
     val content: String,
     val createdAt: String,
-    val todayMood: TodayMood,
+    /** 서버가 기분을 주지 않았거나 클라가 모르는 값이면 null — 목록 표시에서 이모지만 생략한다. */
+    val todayMood: TodayMood?,
     val imageUrl: String? = null,
+    val isDraft: Boolean = false,
 )
 
 data class DiaryList(

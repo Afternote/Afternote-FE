@@ -9,11 +9,14 @@ import java.time.format.DateTimeFormatter
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion as DailyQuestionDomain
 
 // 서버는 보통 `"yyyy.MM.dd 요일"` (예: "2026.05.22 금") 형식으로 내려주고,
-// 일부 경로는 ISO (`yyyy-MM-dd`) 도 가능하므로 두 포맷 모두 허용.
+// 일부 경로는 ISO 날짜(`2026-03-21`) · ISO 날짜시각(`2026-03-21T20:13:42`) 도 온다.
+// ISO_DATE 만 두면 시각이 붙은 값에서 뒤가 남아 파싱이 실패하고, 그대로 오늘 날짜로
+// 폴백해 모든 기록이 같은 날에 찍힌다 — 세 포맷을 모두 허용한다.
 private val DateFormatters: List<DateTimeFormatter> =
     listOf(
         DateTimeFormatter.ofPattern("yyyy.MM.dd"),
         DateTimeFormatter.ISO_DATE,
+        DateTimeFormatter.ISO_DATE_TIME,
     )
 
 fun DailyQuestionDomain.toUi(): DailyQuestion =
@@ -31,7 +34,7 @@ fun Diary.toUi(): DailyDiary =
         title = title,
         date = parseLocalDate(createdAt),
         content = content,
-        emotion = todayMood.toEmoji(),
+        emotion = todayMood?.toEmoji(),
         imageUrl = imageUrl,
     )
 
