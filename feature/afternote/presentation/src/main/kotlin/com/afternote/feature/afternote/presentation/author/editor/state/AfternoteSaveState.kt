@@ -10,6 +10,10 @@ import com.afternote.feature.afternote.presentation.author.editor.receiver.model
  * [validationError]로 [AfternoteValidationError.messageResId] 기반 UI 메시지를 표시합니다.
  *
  * [message]는 로깅·Crashlytics 등에서 원인 파악용으로 [validationError] 이름을 담습니다.
+ *
+ * 현재 이 예외를 던지는 곳은 없다 — 저장 전 로컬 검증은 `AfternoteEditorValidator` 결과를
+ * `validationError` 상태에 바로 넣고 반환하는 경로를 쓴다. 서버가 거절한 검증(수신자 필수 등)은
+ * domain 의 `AfternoteAuthoringValidationException` 이 맡는다.
  */
 class AfternoteValidationException(
     val validationError: AfternoteValidationError,
@@ -30,6 +34,11 @@ enum class AfternoteValidationError(
 
     /** 수신자 최소 1명 필요 (모든 카테고리). API 400/475와 동일 메시지. */
     RECEIVERS_REQUIRED(R.string.afternote_validation_receivers_required),
+
+    /**
+     * 갤러리 수신자 서버 확인용 — 사용처 0건. [AfternoteValidationException] 과 짝인데 그 비동기 검증
+     * 자체가 미구현이라 함께 떠 있다. 지우지 말고 그 경로가 붙을 때 같이 살린다.
+     */
     GALLERY_RECEIVERS_REQUIRED(R.string.afternote_validation_gallery_receivers_required),
     PLAYLIST_SONGS_REQUIRED(R.string.afternote_validation_playlist_songs_required),
 }

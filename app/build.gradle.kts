@@ -147,11 +147,11 @@ dependencies {
 
     // Firebase — Crashlytics 는 크래시 자동 수집이라 초기화 코드가 필요 없다.
     // 버전은 BoM 이 관리하므로 개별 좌표에는 버전을 적지 않는다.
-    // analytics 는 크래시 직전 사용자 동선(breadcrumb) 수집용 — 없으면 Crashlytics 가
-    // "Could not register handler for breadcrumbs events" 로 기능을 건너뛴다.
+    // Analytics 는 넣지 않는다. breadcrumb 이 그것에 의존하지만, 얻는 값보다 자동 수집되는
+    // 사용자 데이터 범위가 커서 제외했다 — 실패 지점은 `<흐름>_stage` 키로 직접 남긴다.
+    // 그래서 로그에 "Could not register handler for breadcrumbs events" 가 뜨는 건 정상이다.
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.crashlytics)
-    implementation(libs.firebase.analytics)
 
     // Core
     implementation(projects.core.common)

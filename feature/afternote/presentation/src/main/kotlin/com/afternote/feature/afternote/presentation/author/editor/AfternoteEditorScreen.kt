@@ -232,6 +232,7 @@ fun AfternoteEditorScreen(
                     )
                 },
                 onThumbnailBytesReady = callbacks.onThumbnailBytesReady,
+                onThumbnailExtractionFailed = callbacks.onThumbnailExtractionFailed,
             )
 
             AfternoteEditorDialogs(state = state)
