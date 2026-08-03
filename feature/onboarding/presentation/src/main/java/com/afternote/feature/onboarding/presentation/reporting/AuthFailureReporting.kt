@@ -24,7 +24,7 @@ enum class AuthFailureStage(
     EMAIL_VERIFY("email_verify"),
 
     /**
-     * 아이디 찾기 인증번호 발송 — 회원가입용 [EMAIL_CODE_SEND] 와 엔드포인트가 달라 따로 센다.
+     * 아이디 찾기 인증번호 발송 — 회원가입용 `EMAIL_CODE_SEND` 와 엔드포인트가 달라 따로 센다.
      *
      * 짝이 되는 "인증번호 확인"(`auth/email/find`)은 계측하지 않는다. 그 응답은 인증번호 오타와
      * 서버 장애가 같은 예외로 와서 클라이언트가 구분할 수단이 없고, 오타까지 기록하면

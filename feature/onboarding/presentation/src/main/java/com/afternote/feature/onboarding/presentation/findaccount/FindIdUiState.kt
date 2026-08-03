@@ -2,6 +2,7 @@ package com.afternote.feature.onboarding.presentation.findaccount
 
 import android.util.Patterns
 import com.afternote.core.model.FoundAccount
+import com.afternote.core.ui.UiText
 
 /**
  * 아이디 찾기 화면 상태.
@@ -13,7 +14,8 @@ import com.afternote.core.model.FoundAccount
  *   발송 성공마다 30초로 재잠금되는 클라이언트 측 연타 방지이며, **인증번호 유효시간과 무관**하다
  *   (만료 판정은 서버 몫, 쿨다운 종료 ≠ 코드 만료).
  * @property foundAccount "확인" 성공 시 서버가 돌려준 계정. non-null 이면 "다음" 이 열린다.
- * @property verificationError 인증번호 불일치 — 시안상 인증번호 필드 아래 인라인 문구로 표시(스낵바 아님).
+ * @property hasVerificationError 인증번호 불일치 — 시안상 인증번호 필드 아래 인라인 문구로 표시(스낵바 아님).
+ *   표시 문구는 화면의 고정 리소스라 서버 문구를 담지 않고 발생 여부만 든다.
  * @property errorMessage 인증번호 불일치 외의 실패(네트워크 등) — 스낵바로 표시.
  */
 data class FindIdUiState(
@@ -24,8 +26,8 @@ data class FindIdUiState(
     val isVerifying: Boolean = false,
     val resendCooldownSeconds: Int = 0,
     val foundAccount: FoundAccount? = null,
-    val verificationError: String? = null,
-    val errorMessage: String? = null,
+    val hasVerificationError: Boolean = false,
+    val errorMessage: UiText? = null,
 ) {
     /**
      * 이메일 형식 검사. [Patterns.EMAIL_ADDRESS] 는 컴파일된 정규식(`Pattern`) 상수라

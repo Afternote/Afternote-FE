@@ -28,12 +28,13 @@ class AccountRepositoryImplTest {
     private fun repository(accountApiService: AccountApiService) = AccountRepositoryImpl(accountApiService)
 
     @Test
-    fun `verifyEmail - 인증번호 무효(1207)는 EmailVerificationException 으로 번역하고 서버 message 보존`() {
+    fun `verifyEmail - 인증번호 무효(1207)는 EmailVerificationException 으로 번역`() {
         val repository =
             repository(
                 FakeAccountApiService(
                     onVerifyEmail = {
                         throw ApiException(
+                            status = 400,
                             code = 1207,
                             serverMessage = "인증번호가 유효하지 않습니다.",
                             message = "인증번호가 유효하지 않습니다.",
@@ -46,8 +47,6 @@ class AccountRepositoryImplTest {
 
         val error = result.exceptionOrNull()
         assertTrue(error is EmailVerificationException)
-        assertEquals("인증번호가 유효하지 않습니다.", (error as EmailVerificationException).serverMessage)
-        assertEquals(1207, error.serverCode)
     }
 
     @Test
@@ -56,7 +55,7 @@ class AccountRepositoryImplTest {
             repository(
                 FakeAccountApiService(
                     onVerifyEmail = {
-                        throw ApiException(code = 500, serverMessage = null, message = "서버 오류")
+                        throw ApiException(status = 500, code = 500, serverMessage = null, message = "서버 오류")
                     },
                 ),
             )

@@ -3,8 +3,11 @@ package com.afternote.feature.afternote.presentation.author.editor.memorial.play
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.repository.author.MusicSearchRepository
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
+import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -24,6 +27,7 @@ class AddSongViewModel
     @Inject
     constructor(
         private val musicSearchRepository: MusicSearchRepository,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(AddSongUiState())
         val uiState: StateFlow<AddSongUiState> = _uiState.asStateFlow()
@@ -57,6 +61,7 @@ class AddSongViewModel
                             // 그대로 실어 오므로 화면에 싣지 않는다 — ApiException.message 는 Logcat 전용이라고
                             // core:network 계약이 명시한다. 사용자에겐 원인과 무관하게 고정 안내만 노출.
                             Log.e(TAG, "onSearchQueryChange: search failed", e)
+                            errorReporter.recordAfternoteFailure(AfternoteFailureStage.MUSIC_SEARCH, e)
                             _uiState.update {
                                 it.copy(
                                     songs = emptyList(),

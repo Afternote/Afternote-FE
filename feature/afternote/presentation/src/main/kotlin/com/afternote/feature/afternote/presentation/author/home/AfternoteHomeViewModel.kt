@@ -9,7 +9,7 @@ import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
-import com.afternote.feature.afternote.presentation.shared.util.getIconResForServiceName
+import com.afternote.feature.afternote.presentation.shared.util.getIconResForService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -56,6 +56,6 @@ private fun ListItem.toUiModel(): ListItemUiModel =
         id = id,
         serviceName = serviceName,
         date = date,
-        iconResId = getIconResForServiceName(serviceName),
+        iconResId = getIconResForService(serviceName, type),
         type = type,
     )

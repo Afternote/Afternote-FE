@@ -18,4 +18,5 @@ data class MemorialEditorContentParams(
     val onPhotoAddClick: () -> Unit,
     val onVideoAddClick: () -> Unit,
     val onThumbnailBytesReady: (ByteArray?) -> Unit = {},
+    val onThumbnailExtractionFailed: (Throwable) -> Unit = {},
 )

@@ -1,25 +1,25 @@
 package com.afternote.feature.afternote.presentation.receiver.detail
 
 import com.afternote.core.model.AlbumCover
-import com.afternote.feature.afternote.domain.AfternoteServiceType
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
 
 internal fun ReceivedAfternoteDetail.toReceivedDetailContentUiModel(): ReceivedDetailContentUiModel =
     when (type) {
-        AfternoteServiceType.SOCIAL_NETWORK -> {
+        AfternoteType.SOCIAL_NETWORK -> {
             ReceivedDetailContentUiModel.SocialNetwork(toReceivedSocialNetworkDetailContent())
         }
 
-        AfternoteServiceType.GALLERY_AND_FILES -> {
+        AfternoteType.GALLERY_AND_FILES -> {
             ReceivedDetailContentUiModel.Gallery(toReceivedGalleryDetailContent())
         }
 
-        AfternoteServiceType.MEMORIAL -> {
+        AfternoteType.MEMORIAL -> {
             ReceivedDetailContentUiModel.Memorial(toReceivedMemorialDetailContent())
         }
 
         // BUSINESS · ESTATE 는 디자인 확정 전 placeholder. 서버도 미지원이라 일반적으로 도달하지 않음.
-        AfternoteServiceType.BUSINESS, AfternoteServiceType.ESTATE -> {
+        AfternoteType.BUSINESS, AfternoteType.ESTATE -> {
             ReceivedDetailContentUiModel.Unimplemented
         }
 

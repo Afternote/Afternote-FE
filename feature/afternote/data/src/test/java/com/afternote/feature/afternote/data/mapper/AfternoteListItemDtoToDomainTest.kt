@@ -1,14 +1,14 @@
 package com.afternote.feature.afternote.data.mapper
 
 import com.afternote.feature.afternote.data.dto.AfternoteListItemDto
-import com.afternote.feature.afternote.domain.AfternoteServiceType
+import com.afternote.feature.afternote.domain.AfternoteType
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
  * [AfternoteListItemDto.toDomain] / [toDomainList] 회귀 가드.
  * 작성자 목록 DTO→[com.afternote.feature.afternote.domain.model.author.ListItem] 매핑 +
- * 공유 헬퍼([formatDateFromServer]·[categoryToServiceType])의 경계 동작을 toDomain 경유로 검증.
+ * 공유 헬퍼([formatDateFromServer]·[categoryToAfternoteType])의 경계 동작을 toDomain 경유로 검증.
  */
 class AfternoteListItemDtoToDomainTest {
     @Test
@@ -24,19 +24,19 @@ class AfternoteListItemDtoToDomainTest {
         assertEquals("7", result.id)
         assertEquals("은행 계정", result.serviceName)
         assertEquals("2025.11.26", result.date)
-        assertEquals(AfternoteServiceType.SOCIAL_NETWORK, result.type)
+        assertEquals(AfternoteType.SOCIAL_NETWORK, result.type)
     }
 
     @Test
     fun `toDomain - category 매핑은 대소문자 무시 + MUSIC PLAYLIST는 MEMORIAL`() {
-        assertEquals(AfternoteServiceType.MEMORIAL, item(category = "music").toDomain().type)
-        assertEquals(AfternoteServiceType.MEMORIAL, item(category = "PLAYLIST").toDomain().type)
-        assertEquals(AfternoteServiceType.GALLERY_AND_FILES, item(category = "gallery").toDomain().type)
+        assertEquals(AfternoteType.MEMORIAL, item(category = "music").toDomain().type)
+        assertEquals(AfternoteType.MEMORIAL, item(category = "PLAYLIST").toDomain().type)
+        assertEquals(AfternoteType.GALLERY_AND_FILES, item(category = "gallery").toDomain().type)
     }
 
     @Test
     fun `toDomain - 알 수 없는 category는 SOCIAL_NETWORK 기본값`() {
-        assertEquals(AfternoteServiceType.SOCIAL_NETWORK, item(category = "???").toDomain().type)
+        assertEquals(AfternoteType.SOCIAL_NETWORK, item(category = "???").toDomain().type)
     }
 
     @Test

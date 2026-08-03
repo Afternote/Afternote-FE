@@ -3,10 +3,13 @@ package com.afternote.feature.afternote.presentation.author.detail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
+import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -43,6 +46,7 @@ class AfternoteDetailViewModel
         savedStateHandle: SavedStateHandle,
         private val afternoteRepository: AfternoteRepository,
         private val userRepository: UserRepository,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val afternoteIdFromNav: Long? =
             savedStateHandle.get<String>(NAV_ARG_ITEM_ID)?.toLongOrNull()
@@ -92,7 +96,8 @@ class AfternoteDetailViewModel
                     .getDetail(id = afternoteId)
                     .onSuccess { detail ->
                         internalState.update { it.copy(loadPhase = LoadPhase.Loaded(detail)) }
-                    }.onFailure {
+                    }.onFailure { e ->
+                        errorReporter.recordAfternoteFailure(AfternoteFailureStage.DETAIL_LOAD, e)
                         internalState.update {
                             it.copy(
                                 loadPhase = LoadPhase.Failed(messageRes = R.string.afternote_detail_load_error),
@@ -115,7 +120,8 @@ class AfternoteDetailViewModel
                                 deleteResult = AfternoteDetailDeleteResult.Succeeded(afternoteId),
                             )
                         }
-                    }.onFailure {
+                    }.onFailure { e ->
+                        errorReporter.recordAfternoteFailure(AfternoteFailureStage.DETAIL_DELETE, e)
                         internalState.update {
                             it.copy(
                                 isDeleting = false,

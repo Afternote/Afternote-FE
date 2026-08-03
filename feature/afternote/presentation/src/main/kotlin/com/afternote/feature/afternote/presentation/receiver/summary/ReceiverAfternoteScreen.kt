@@ -19,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -53,15 +54,16 @@ fun ReceiverAfterNoteEntry(
 ) {
     val downloadUiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val resources = LocalResources.current
 
     LaunchedEffect(downloadUiState.downloadSuccess) {
         if (downloadUiState.downloadSuccess) {
             viewModel.onEvent(ReceiverDownloadAllEvent.DownloadSuccessConsumed)
         }
     }
-    LaunchedEffect(downloadUiState.errorMessage) {
-        downloadUiState.errorMessage?.let { message ->
-            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    LaunchedEffect(downloadUiState.errorMessageRes) {
+        downloadUiState.errorMessageRes?.let { messageRes ->
+            Toast.makeText(context, resources.getString(messageRes), Toast.LENGTH_SHORT).show()
             viewModel.onEvent(ReceiverDownloadAllEvent.ErrorConsumed)
         }
     }

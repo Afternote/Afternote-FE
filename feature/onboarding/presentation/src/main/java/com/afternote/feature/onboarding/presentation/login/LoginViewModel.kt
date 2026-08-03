@@ -3,15 +3,13 @@ package com.afternote.feature.onboarding.presentation.login
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.error.LoginRejectedException
-import com.afternote.core.domain.error.NetworkUnavailableException
 import com.afternote.core.domain.usecase.auth.LoginType
 import com.afternote.core.domain.usecase.auth.LoginUseCase
-import com.afternote.core.ui.UiText
 import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.reporting.AuthFailureStage
 import com.afternote.feature.onboarding.presentation.reporting.AuthProvider
 import com.afternote.feature.onboarding.presentation.reporting.recordAuthFailure
+import com.afternote.feature.onboarding.presentation.toDisplayMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -112,24 +110,8 @@ class LoginViewModel
                             throwable = exception,
                             provider = loginType.authProvider,
                         )
-                        // 예외 message 를 표시값으로 쓰지 않는다 — 서버 5xx 본문(내부 SQL 실측 #511)·
-                        // 역직렬화 원문이 그 경로로 샌다. 사유가 확인된 두 타입만 문구를 갖는다.
-                        val errorMessage =
-                            when (exception) {
-                                is NetworkUnavailableException -> {
-                                    UiText.Resource(R.string.login_network_error)
-                                }
-
-                                is LoginRejectedException -> {
-                                    UiText.Dynamic(exception.displayMessage)
-                                }
-
-                                else -> {
-                                    UiText.Resource(R.string.login_failed)
-                                }
-                            }
                         _uiState.update {
-                            it.copy(isLoading = false, errorMessage = errorMessage)
+                            it.copy(isLoading = false, errorMessage = exception.toDisplayMessage(R.string.login_failed))
                         }
                     }
             }

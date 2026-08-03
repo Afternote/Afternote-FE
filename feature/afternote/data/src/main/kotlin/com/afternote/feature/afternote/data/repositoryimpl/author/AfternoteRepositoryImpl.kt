@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
 import com.afternote.feature.afternote.data.mapper.response.toDetailDomain
@@ -19,7 +20,6 @@ import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -91,19 +91,23 @@ class AfternoteRepositoryImpl
         }
     }
 
+/**
+ * 취소 보존은 [runCatchingCancellable] 에 맡기고, 이 계층 고유의 두 책임만 얹는다 —
+ * 실패 로깅과 [errorMapper] 를 통한 도메인 예외 치환.
+ *
+ * 실패 처리를 `Result` 위에서 하는 건 취소를 건드리지 않기 위해서다: 블록 안에서 `Throwable` 을
+ * 잡으면 [errorMapper] 가 취소까지 다른 예외로 바꿔 전파를 끊는다.
+ */
 private suspend inline fun <T> safeCall(
     crossinline errorMapper: (Throwable) -> Throwable = { it },
     crossinline block: suspend () -> T,
-): Result<T> =
-    try {
-        Result.success(block())
-    } catch (e: CancellationException) {
-        throw e
-    } catch (e: Exception) {
-        e.logRepositoryFailure()
-        Result.failure(errorMapper(e))
-    }
+): Result<T> {
+    val result = runCatchingCancellable { block() }
+    val failure = result.exceptionOrNull() ?: return result
+    failure.logRepositoryFailure()
+    return Result.failure(errorMapper(failure))
+}
 
-private fun Exception.logRepositoryFailure() {
+private fun Throwable.logRepositoryFailure() {
     Log.e("AfternoteRepository", message ?: "Unknown Error", this)
 }

@@ -69,7 +69,7 @@ class ReceiverRepositoryImpl
                     .toDomain()
             }
 
-        override suspend fun downloadAllReceived(): Result<ReceivedExportBundle> = Result.success(ReceivedExportBundle())
+        override suspend fun downloadReceivedExport(): Result<ReceivedExportBundle> = Result.success(ReceivedExportBundle())
 
         override suspend fun saveReceivedExportToFile(bundle: ReceivedExportBundle): Result<Unit> = Result.success(Unit)
 
