@@ -34,7 +34,7 @@ class AfternoteEditorReceiverPrefillTest {
     }
 
     @Test
-    fun `수신자를 싣지 않는 카테고리는 빈 목록이 된다`() {
+    fun `수신자가 없는 상세는 빈 목록이 된다`() {
         val prefill = AfternoteEditorFormMapper.buildEditorFormPrefill(detail())
 
         assertEquals(emptyList<String>(), prefill.receivers.map { it.id })
