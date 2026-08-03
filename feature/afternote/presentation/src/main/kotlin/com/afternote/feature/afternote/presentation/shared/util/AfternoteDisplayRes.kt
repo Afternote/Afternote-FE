@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.presentation.shared.util
 
-import com.afternote.feature.afternote.domain.AfternoteServiceType
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.AfternoteService
 
@@ -24,18 +24,25 @@ fun getAfternoteDisplayRes(typeKey: String): AfternoteRes {
 }
 
 /**
- * Icon drawable res for an [AfternoteServiceType]. Same mapping as [getAfternoteDisplayRes]; use when you have [AfternoteServiceType].
+ * Icon drawable res for an [AfternoteType]. Same mapping as [getAfternoteDisplayRes]; use when you have [AfternoteType].
  */
-fun getIconResForServiceType(serviceType: AfternoteServiceType): Int =
-    AfternoteService.fromTypeKeyOrNull(serviceType.name)?.iconResId
+fun getIconResForType(type: AfternoteType): Int =
+    AfternoteService.fromTypeKeyOrNull(type.name)?.iconResId
         ?: R.drawable.feature_afternote_img_logo
 
 /**
- * Uses the same display-key resolution as receiver typeKey lookups.
+ * Icon drawable res for a service title shown on a card.
+ *
+ * 시안([카테고리별 아이콘 보드 34:3342](https://www.figma.com/design/UP9ZR186jHvRBicjA2SOea/%EC%95%A0%ED%94%84%ED%84%B0%EB%85%B8%ED%8A%B8--new-?node-id=34-3342))이
+ * 아이콘을 정의한 서비스면 그 아이콘을, 정의하지 않은 이름(직접 입력 등)이면 [type] 의 카테고리 아이콘을 준다.
+ * 이름만으로 카테고리를 추론하지 않는다 — 카테고리는 서버 category 에서 온 [type] 이 정본이다.
  */
-fun getIconResForServiceName(serviceName: String): Int =
+fun getIconResForService(
+    serviceName: String,
+    type: AfternoteType,
+): Int =
     AfternoteService.fromDisplayKeyOrNull(serviceName)?.iconResId
-        ?: getIconResForServiceType(AfternoteServiceCatalog.serviceTypeFor(serviceName))
+        ?: getIconResForType(type)
 
 /**
  * API typeKey(예: "INSTAGRAM") → 화면 표시명(예: "인스타그램") 변환.

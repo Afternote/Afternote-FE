@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.detail
 
 import com.afternote.core.model.AlbumCover
-import com.afternote.feature.afternote.domain.AfternoteServiceType
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailContent
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
@@ -32,6 +32,7 @@ internal fun Detail.toGalleryDetailContent(authorDisplayName: String): GalleryDe
 internal fun Detail.toAccountDetailContent(authorDisplayName: String): AccountDetailContent =
     AccountDetailContent(
         serviceName = title,
+        type = type,
         userName = authorDisplayName,
         accountId = credentials?.id ?: "",
         password = credentials?.password ?: "",
@@ -86,21 +87,21 @@ sealed interface DetailContentUiModel {
 
 internal fun Detail.toDetailContentUiModel(authorDisplayName: String): DetailContentUiModel =
     when (type) {
-        AfternoteServiceType.GALLERY_AND_FILES -> {
+        AfternoteType.GALLERY_AND_FILES -> {
             DetailContentUiModel.Gallery(toGalleryDetailContent(authorDisplayName))
         }
 
         // BUSINESS 는 데이터 구성이 SOCIAL 과 동일(계정 정보·처리 방법·남긴 말씀)해 계정 상세 UI 모델을 공유한다 (이슈 #467).
-        AfternoteServiceType.SOCIAL_NETWORK, AfternoteServiceType.BUSINESS -> {
+        AfternoteType.SOCIAL_NETWORK, AfternoteType.BUSINESS -> {
             DetailContentUiModel.Account(toAccountDetailContent(authorDisplayName))
         }
 
-        AfternoteServiceType.MEMORIAL -> {
+        AfternoteType.MEMORIAL -> {
             DetailContentUiModel.Memorial(toMemorialDetailContent(authorDisplayName))
         }
 
         // ESTATE 는 디자인 확정 전 placeholder. 백엔드도 미지원이라 일반적으로 도달하지 않음.
-        AfternoteServiceType.ESTATE -> {
+        AfternoteType.ESTATE -> {
             DetailContentUiModel.Unimplemented
         }
     }
