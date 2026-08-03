@@ -1,5 +1,6 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
+import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDay
 import java.time.LocalDate
 
@@ -22,6 +23,38 @@ internal fun resolveDateInWeek(
         .firstOrNull { it.dayOfMonth == dayOfMonth }
 
 /**
+ * 한 날짜에 해당하는 `week[]` 원소들을 하나로 접은 결과.
+ *
+ * 서버는 같은 일자를 여러 원소로 내려줄 수 있다 (명세 예시의 `day:10` 2건 — 하나는
+ * `isDiary:true`, 하나는 `false`). 날짜 하나에 칸도 하나이므로 여기서 합쳐 둔다.
+ */
+internal data class WeekDayRecord(
+    val isDiary: Boolean,
+    val emotion: TodayMood?,
+)
+
+/**
+ * sparse 한 `week[]` 를 **일자 매칭**으로 날짜별 레코드에 접는다.
+ *
+ * 배열 index 는 요일 오프셋이 아니므로 위치로 매칭하면 기록이 엉뚱한 요일에 찍히고,
+ * 나머지 칸이 달력 날짜로 채워지며 같은 날짜가 두 번 보인다 (#563).
+ * 주 범위 밖 일자는 [resolveDateInWeek] 가 null 을 돌려 자연히 제외된다.
+ */
+internal fun indexWeekByDate(
+    monday: LocalDate,
+    week: List<WeeklyReportDay>,
+): Map<LocalDate, WeekDayRecord> =
+    week
+        .mapNotNull { day -> resolveDateInWeek(monday, day.day)?.let { date -> date to day } }
+        .groupBy(keySelector = { it.first }, valueTransform = { it.second })
+        .mapValues { (_, days) ->
+            WeekDayRecord(
+                isDiary = days.any { it.isDiary },
+                emotion = days.firstNotNullOfOrNull { it.emotion },
+            )
+        }
+
+/**
  * 기록일수 = 일기가 있는 날 + 주간 범위 내 데일리질문 답변 날짜의 합집합(중복 제거).
  *
  * 두 출처를 모두 `LocalDate` 로 복원한 뒤 합쳐야 같은 날의 일기·데일리질문이
@@ -34,9 +67,9 @@ internal fun countRecordedDays(
 ): Int {
     val sunday = monday.plusDays(WEEK_LENGTH - 1L)
     val diaryDates =
-        week.mapNotNull { day ->
-            day.takeIf { it.isDiary }?.let { resolveDateInWeek(monday, it.day) }
-        }
+        indexWeekByDate(monday, week)
+            .filterValues { it.isDiary }
+            .keys
     val questionDatesInWeek = dailyQuestionDates.filter { it in monday..sunday }
     return (diaryDates + questionDatesInWeek).distinct().size
 }

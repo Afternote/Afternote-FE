@@ -117,6 +117,45 @@ class WeeklyReportRecordedDaysTest {
         assertEquals(1, recordedDays)
     }
 
+    @Test
+    fun `sparse week 는 index 가 아니라 날짜에 매핑된다`() {
+        // #563 회귀 — 2026-07-28(화) 기록 1건. index 매칭이면 월요일 칸에 들어갔다.
+        val monday = LocalDate.of(2026, 7, 27)
+
+        val byDate = indexWeekByDate(monday, listOf(diaryDay(day = 28)))
+
+        assertEquals(setOf(LocalDate.of(2026, 7, 28)), byDate.keys)
+        assertEquals(true, byDate.getValue(LocalDate.of(2026, 7, 28)).isDiary)
+        assertNull(byDate[monday])
+    }
+
+    @Test
+    fun `같은 일자가 여러 원소로 와도 한 칸으로 합쳐진다`() {
+        // 명세 예시가 day=10 을 isDiary true·false 두 원소로 내려준다 — 칸은 하나뿐이다.
+        val monday = LocalDate.of(2026, 7, 27)
+        val week =
+            listOf(
+                WeeklyReportDay(diaryId = 1, day = 28, isDiary = false, emotion = null),
+                WeeklyReportDay(diaryId = 2, day = 28, isDiary = true, emotion = TodayMood.SAD),
+            )
+
+        val byDate = indexWeekByDate(monday, week)
+
+        val record = byDate.getValue(LocalDate.of(2026, 7, 28))
+        assertEquals(1, byDate.size)
+        assertEquals(true, record.isDiary)
+        assertEquals(TodayMood.SAD, record.emotion)
+    }
+
+    @Test
+    fun `주 범위 밖 일자는 어느 칸에도 붙지 않는다`() {
+        val monday = LocalDate.of(2026, 7, 27)
+
+        val byDate = indexWeekByDate(monday, listOf(diaryDay(day = 26), diaryDay(day = 28)))
+
+        assertEquals(setOf(LocalDate.of(2026, 7, 28)), byDate.keys)
+    }
+
     private fun diaryDay(
         day: Int,
         isDiary: Boolean = true,

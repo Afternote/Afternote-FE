@@ -139,33 +139,42 @@ class WeeklyReportViewModel
             }
         }
 
+        /**
+         * 월~일 7칸을 만든다.
+         *
+         * `week[]` 는 기록이 있는 날만 담겨 오는 sparse 배열이라 index 를 요일 오프셋으로
+         * 쓰면 안 된다 — 일자(`day`)로 매칭한다 ([indexWeekByDate], #563). 칸에 찍는 날짜는
+         * 언제나 달력이 계산한 [LocalDate.dayOfMonth] 다. 서버 원소의 `day` 를 그대로 쓰면
+         * 매칭이 어긋난 순간 같은 날짜가 두 칸에 나온다.
+         */
         private fun mapWeekDays(
             monday: LocalDate,
             week: List<WeeklyReportDay>,
-        ): List<DayItem> =
-            List(WEEK_LENGTH) { index ->
+        ): List<DayItem> {
+            val recordByDate = indexWeekByDate(monday, week)
+            return List(WEEK_LENGTH) { index ->
                 val date = monday.plusDays(index.toLong())
-                val apiDay = week.getOrNull(index)
-                val dayOfMonth = apiDay?.day ?: date.dayOfMonth
-                val isDiary = apiDay?.isDiary == true
-                val emoji = apiDay?.emotion?.toEmoji()
+                val record = recordByDate[date]
+                val isDiary = record?.isDiary == true
+                val emoji = record?.emotion?.toEmoji()
                 DayItem(
                     dayOfWeek = date.dayOfWeek,
                     content =
                         when {
                             emoji != null && isDiary -> DayContent.EmojiWithDot(emoji)
                             emoji != null -> DayContent.EmojiOnly(emoji)
-                            isDiary -> DayContent.NumberWithDot(dayOfMonth)
-                            else -> DayContent.NumberOnly(dayOfMonth)
+                            isDiary -> DayContent.NumberWithDot(date.dayOfMonth)
+                            else -> DayContent.NumberOnly(date.dayOfMonth)
                         },
                     background =
-                        when (apiDay?.emotion) {
+                        when (record?.emotion) {
                             TodayMood.HAPPY -> DayBackground.Green
                             TodayMood.SAD -> DayBackground.Pink
                             else -> DayBackground.None
                         },
                 )
             }
+        }
 
         private data class InternalState(
             val loadPhase: LoadPhase = LoadPhase.Loading,
@@ -248,11 +257,14 @@ class WeeklyReportViewModel
                     content = content,
                 )
 
-            // 서버는 "yyyy.MM.dd 요일" 또는 ISO 포맷으로 내려옴 — 둘 다 허용.
+            // 서버는 "yyyy.MM.dd 요일" · ISO 날짜 · ISO 날짜시각("2026-03-21T20:13:42") 중
+            // 하나로 내려온다 — 셋 다 허용한다. ISO_DATE 만 두면 시각이 붙은 값이 파싱에
+            // 실패해 조용히 오늘 날짜로 폴백한다.
             private val DATE_FORMATTERS: List<DateTimeFormatter> =
                 listOf(
                     DateTimeFormatter.ofPattern("yyyy.MM.dd"),
                     DateTimeFormatter.ISO_DATE,
+                    DateTimeFormatter.ISO_DATE_TIME,
                 )
 
             private fun parseLocalDate(raw: String): LocalDate = parseLocalDateOrNull(raw) ?: LocalDate.now()
