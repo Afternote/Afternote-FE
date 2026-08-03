@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.domain.model.author
 
-import com.afternote.feature.afternote.domain.AfternoteServiceType
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialDetail
 
 /**
@@ -17,7 +17,7 @@ data class Detail(
     val category: String,
     val title: String,
     val timestamps: DetailTimestamps,
-    val type: AfternoteServiceType,
+    val type: AfternoteType,
     val credentials: DetailCredentials?,
     val receivers: List<DetailReceiver>,
     /** 사후 처리 방법 선택지 — 서버 `actions` 필드. 화면·폼 어휘("처리 방법")에 맞춘 이름이다. */

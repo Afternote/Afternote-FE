@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.data.mapper
 
-import com.afternote.feature.afternote.domain.AfternoteServiceType
+import com.afternote.feature.afternote.domain.AfternoteType
 
 internal fun formatDateFromServer(serverDateTime: String): String =
     try {
@@ -11,12 +11,12 @@ internal fun formatDateFromServer(serverDateTime: String): String =
         serverDateTime
     }
 
-internal fun categoryToServiceType(category: String): AfternoteServiceType =
+internal fun categoryToAfternoteType(category: String): AfternoteType =
     when (category.uppercase()) {
-        "SOCIAL" -> AfternoteServiceType.SOCIAL_NETWORK
-        "BUSINESS" -> AfternoteServiceType.BUSINESS
-        "GALLERY" -> AfternoteServiceType.GALLERY_AND_FILES
-        "ESTATE" -> AfternoteServiceType.ESTATE
-        "MUSIC", "PLAYLIST" -> AfternoteServiceType.MEMORIAL
-        else -> AfternoteServiceType.SOCIAL_NETWORK
+        "SOCIAL" -> AfternoteType.SOCIAL_NETWORK
+        "BUSINESS" -> AfternoteType.BUSINESS
+        "GALLERY" -> AfternoteType.GALLERY_AND_FILES
+        "ESTATE" -> AfternoteType.ESTATE
+        "MUSIC", "PLAYLIST" -> AfternoteType.MEMORIAL
+        else -> AfternoteType.SOCIAL_NETWORK
     }

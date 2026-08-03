@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
-import com.afternote.feature.afternote.domain.AfternoteServiceType
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailReceiver
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
@@ -34,7 +34,7 @@ class AfternoteEditorReceiverPrefillTest {
     }
 
     @Test
-    fun `수신자를 싣지 않는 카테고리는 빈 목록이 된다`() {
+    fun `수신자가 없는 상세는 빈 목록이 된다`() {
         val prefill = AfternoteEditorFormMapper.buildEditorFormPrefill(detail())
 
         assertEquals(emptyList<String>(), prefill.receivers.map { it.id })
@@ -52,7 +52,7 @@ class AfternoteEditorReceiverPrefillTest {
             category = "GALLERY_AND_FILES",
             title = "구글 포토",
             timestamps = DetailTimestamps(createdAt = "2026-08-02", updatedAt = "2026-08-02"),
-            type = AfternoteServiceType.entries.first(),
+            type = AfternoteType.entries.first(),
             credentials = null,
             receivers = receivers.toList(),
             processingMethods = emptyList(),

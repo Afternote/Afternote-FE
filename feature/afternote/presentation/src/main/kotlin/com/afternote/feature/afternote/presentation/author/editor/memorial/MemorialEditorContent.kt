@@ -44,6 +44,7 @@ fun MemorialEditorContent(
                 thumbnailUrl = params.memorialThumbnailUrl,
                 onAddVideoClick = params.onVideoAddClick,
                 onThumbnailBytesReady = params.onThumbnailBytesReady,
+                onThumbnailExtractionFailed = params.onThumbnailExtractionFailed,
             )
         },
     )

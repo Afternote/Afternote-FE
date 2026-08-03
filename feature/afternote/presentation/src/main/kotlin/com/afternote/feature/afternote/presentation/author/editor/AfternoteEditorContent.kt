@@ -49,6 +49,7 @@ internal fun EditorContent(
     onPhotoAddClick: () -> Unit,
     onVideoAddClick: () -> Unit,
     onThumbnailBytesReady: (ByteArray?) -> Unit,
+    onThumbnailExtractionFailed: (Throwable) -> Unit = {},
 ) {
     Column(
         modifier =
@@ -112,6 +113,7 @@ internal fun EditorContent(
             onPhotoAddClick = onPhotoAddClick,
             onVideoAddClick = onVideoAddClick,
             onThumbnailBytesReady = onThumbnailBytesReady,
+            onThumbnailExtractionFailed = onThumbnailExtractionFailed,
         )
     }
 }
@@ -229,6 +231,7 @@ internal fun CategoryContent(
     onPhotoAddClick: () -> Unit,
     onVideoAddClick: () -> Unit,
     onThumbnailBytesReady: (ByteArray?) -> Unit,
+    onThumbnailExtractionFailed: (Throwable) -> Unit = {},
 ) {
     when (form.selectedCategory) {
         EditorCategory.MEMORIAL -> {
@@ -249,6 +252,7 @@ internal fun CategoryContent(
                         onPhotoAddClick = onPhotoAddClick,
                         onVideoAddClick = onVideoAddClick,
                         onThumbnailBytesReady = onThumbnailBytesReady,
+                        onThumbnailExtractionFailed = onThumbnailExtractionFailed,
                     ),
             )
         }

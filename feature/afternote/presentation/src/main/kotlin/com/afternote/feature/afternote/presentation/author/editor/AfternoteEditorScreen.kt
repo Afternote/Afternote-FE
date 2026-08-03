@@ -230,6 +230,7 @@ fun AfternoteEditorScreen(
                     )
                 },
                 onThumbnailBytesReady = callbacks.onThumbnailBytesReady,
+                onThumbnailExtractionFailed = callbacks.onThumbnailExtractionFailed,
             )
 
             AfternoteEditorDialogs(state = state)
@@ -252,7 +253,7 @@ fun AfternoteEditorScreen(
 }
 
 /** 카테고리 전용 입력이 비어 있을 때 싣는 고정 토큰. 지문 구분자와 겹치지 않는 제어문자. */
-private const val NO_ENTERED_CONTENT = ""
+private const val NO_ENTERED_CONTENT = "\u0003"
 
 /**
  * 사용자가 에디터에서 편집할 수 있는 값 전부를 한 줄 문자열로 직렬화한 상태 지문.

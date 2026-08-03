@@ -5,7 +5,7 @@ import com.afternote.feature.afternote.data.dto.AfternoteDetailDto
 import com.afternote.feature.afternote.data.dto.AfternoteDetailReceiverDto
 import com.afternote.feature.afternote.data.dto.AfternotePlaylistDto
 import com.afternote.feature.afternote.data.dto.AfternoteSongDto
-import com.afternote.feature.afternote.data.mapper.categoryToServiceType
+import com.afternote.feature.afternote.data.mapper.categoryToAfternoteType
 import com.afternote.feature.afternote.data.mapper.formatDateFromServer
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailCredentials
@@ -21,7 +21,7 @@ fun AfternoteDetailDto.toDetailDomain(): Detail =
         category = category,
         title = title,
         timestamps = toTimestamps(),
-        type = categoryToServiceType(category),
+        type = categoryToAfternoteType(category),
         credentials = credentials?.toDomain(),
         receivers = receivers.toDomain(),
         processingMethods = processingMethods ?: emptyList(),

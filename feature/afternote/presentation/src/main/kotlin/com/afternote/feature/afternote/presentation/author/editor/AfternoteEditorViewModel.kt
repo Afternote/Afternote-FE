@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationException
 import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationKind
 import com.afternote.feature.afternote.domain.model.author.AuthorReceiverEntry
@@ -44,6 +45,8 @@ import com.afternote.feature.afternote.presentation.author.editor.state.withRece
 import com.afternote.feature.afternote.presentation.author.editor.state.withReceiverDeleted
 import com.afternote.feature.afternote.presentation.author.editor.state.withReceiversReplacedIfEmpty
 import com.afternote.feature.afternote.presentation.author.editor.state.withService
+import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
+import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -197,6 +200,7 @@ class AfternoteEditorViewModel
         private val afternoteRepository: AfternoteRepository,
         private val memorialThumbnailUploadRepository: MemorialThumbnailUploadRepository,
         private val resolveMemorialMediaForSave: ResolveMemorialMediaForSaveUseCase,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val formSnapshotJson =
             Json {
@@ -324,9 +328,20 @@ class AfternoteEditorViewModel
                         internalState.update { it.copy(pendingThumbnailUrl = url) }
                     }.onFailure { e ->
                         Log.e(TAG, "uploadMemorialThumbnail: failed", e)
+                        errorReporter.recordAfternoteFailure(AfternoteFailureStage.MEMORIAL_THUMBNAIL_UPLOAD, e)
                         internalState.update { it.copy(thumbnailUploadFailed = true) }
                     }
             }
+        }
+
+        /**
+         * 선택한 영상에서 썸네일 프레임을 뽑지 못한 실패를 기록한다.
+         *
+         * 로컬 디코딩이라 [uploadMemorialThumbnail] 경로를 타지 않고, 사용자에게도 썸네일 자리가
+         * 비어 보일 뿐 오류로 알려주지 않아 UI 가 넘겨주지 않으면 콘솔에 흔적이 남지 않는다.
+         */
+        fun onMemorialThumbnailExtractionFailed(throwable: Throwable) {
+            errorReporter.recordAfternoteFailure(AfternoteFailureStage.MEMORIAL_THUMBNAIL_EXTRACT, throwable)
         }
 
         fun saveAfternote(
@@ -357,7 +372,7 @@ class AfternoteEditorViewModel
 
             viewModelScope.launch {
                 internalState.update {
-                    it.copy(isSaving = true, error = null, errorRes = null, validationError = null)
+                    it.copy(isSaving = true, errorRes = null, validationError = null)
                 }
                 buildSaveCommand(
                     editingId = editingId,
@@ -489,6 +504,7 @@ class AfternoteEditorViewModel
                         internalState.update { it.copy(pendingPrefill = prefill) }
                     }.onFailure { e ->
                         Log.e(TAG, "loadExistingAfternoteForEdit: id=$afternoteId failed", e)
+                        errorReporter.recordAfternoteFailure(AfternoteFailureStage.PREFILL_LOAD, e)
                         // 실패 시 skeleton 에 갇히지 않도록 즉시 종료.
                         internalState.update { it.copy(isPrefillLoading = false) }
                     }
@@ -522,9 +538,15 @@ class AfternoteEditorViewModel
                         null
                     }
                 }
-            val errorMessage = if (validationError == null) e.message else null
+            // 필수 필드 검증에 걸린 실패(수신자 미선택 등)는 사용자가 채우면 풀리는 정상 경로라 기록하지 않는다 —
+            // 보관 한도(최근 8건) 를 사용자 오류가 차지하면 실제 등록 장애가 밀려난다.
+            // 여기 걸리는 건 검증 외 실패 전부다 — 그중 5xx 본문엔 내부 SQL 이 섞여 오므로 예외 타입만 남긴다.
+            if (validationError == null) {
+                Log.e(TAG, "handleSaveFailure: ${e.javaClass.name}")
+                errorReporter.recordAfternoteFailure(AfternoteFailureStage.SAVE, e)
+            }
             val errorRes =
-                if (validationError == null && errorMessage == null) {
+                if (validationError == null) {
                     R.string.afternote_editor_save_failed_generic
                 } else {
                     null
@@ -533,7 +555,6 @@ class AfternoteEditorViewModel
                 it.copy(
                     isSaving = false,
                     validationError = validationError,
-                    error = errorMessage,
                     errorRes = errorRes,
                 )
             }
@@ -559,7 +580,6 @@ class AfternoteEditorViewModel
             val isPrefillLoading: Boolean = false,
             val savedId: Long? = null,
             val validationError: AfternoteValidationError? = null,
-            val error: String? = null,
             val errorRes: Int? = null,
             val pendingSaveSuccessId: Long? = null,
             val pendingThumbnailUrl: String? = null,
@@ -575,7 +595,6 @@ class AfternoteEditorViewModel
                 isPrefillLoading = isPrefillLoading,
                 savedId = savedId,
                 validationError = validationError,
-                error = error,
                 errorRes = errorRes,
                 pendingSaveSuccessId = pendingSaveSuccessId,
                 pendingThumbnailUrl = pendingThumbnailUrl,
