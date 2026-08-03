@@ -1,5 +1,6 @@
 package com.afternote.core.data.repoimpl.account
 
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.data.mapper.auth.AuthMapper
 import com.afternote.core.data.repoimpl.account.AccountRepositoryImpl.Companion.CODE_INVALID_VERIFICATION
 import com.afternote.core.domain.error.EmailVerificationException
@@ -34,13 +35,13 @@ class AccountRepositoryImpl
         }
 
         override suspend fun sendEmailCode(email: String): Result<Unit> =
-            runCatching {
+            runCatchingCancellable {
                 accountApiService.sendEmailCode(SendEmailCodeRequestDto(email))
             }
 
         /**
          * 안쪽 catch 가 [ApiException](인프라 타입) 중 [CODE_INVALID_VERIFICATION] 만
-         * [EmailVerificationException](도메인 타입)으로 바꿔 던지고, 바깥 runCatching 이 잡아
+         * [EmailVerificationException](도메인 타입)으로 바꿔 던지고, 바깥 [runCatchingCancellable] 이 잡아
          * `Result.failure(도메인 예외)` 로 반환한다 — 그 외 실패는 원본 그대로 유지
          * (feature:afternote 의 ReceiverAuthRepositoryImpl 과 같은 exception translation 구조).
          *
@@ -53,7 +54,7 @@ class AccountRepositoryImpl
             email: String,
             certificateCode: String,
         ): Result<Unit> =
-            runCatching {
+            runCatchingCancellable {
                 try {
                     accountApiService
                         .verifyEmail(
@@ -71,7 +72,7 @@ class AccountRepositoryImpl
             }
 
         override suspend fun sendFindCode(email: String): Result<Unit> =
-            runCatching {
+            runCatchingCancellable {
                 accountApiService
                     .sendFindCode(FindSendCodeRequestDto(email))
                     .requireStatus()
@@ -81,7 +82,7 @@ class AccountRepositoryImpl
             email: String,
             certificateCode: String,
         ): Result<FoundAccount> =
-            runCatching {
+            runCatchingCancellable {
                 val response =
                     accountApiService.findEmail(
                         EmailFindRequestDto(
@@ -98,7 +99,7 @@ class AccountRepositoryImpl
             name: String,
             profileUrl: String?,
         ): Result<AccountRegistration> =
-            runCatching {
+            runCatchingCancellable {
                 val response =
                     accountApiService.signUp(
                         SignUpRequestDto(
@@ -115,7 +116,7 @@ class AccountRepositoryImpl
             currentPassword: String,
             newPassword: String,
         ): Result<Unit> =
-            runCatching {
+            runCatchingCancellable {
                 accountApiService
                     .passwordChange(
                         PasswordChangeRequestDto(
