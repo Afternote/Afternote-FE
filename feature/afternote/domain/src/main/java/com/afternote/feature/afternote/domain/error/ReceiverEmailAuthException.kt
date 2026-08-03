@@ -17,6 +17,7 @@ class ReceiverEmailAuthException(
     serverCode: Int,
 ) : ReceiverServerRejectionException(
         status = status,
+        serverCode = serverCode,
         serverMessage = serverMessage,
         serverMessageFallback = "email auth failed (serverCode=$serverCode)",
     )

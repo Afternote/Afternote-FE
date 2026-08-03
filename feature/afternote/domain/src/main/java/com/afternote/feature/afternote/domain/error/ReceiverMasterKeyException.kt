@@ -12,6 +12,7 @@ class ReceiverMasterKeyException(
     serverCode: Int,
 ) : ReceiverServerRejectionException(
         status = status,
+        serverCode = serverCode,
         serverMessage = serverMessage,
         serverMessageFallback = "master key verify failed (serverCode=$serverCode)",
     )

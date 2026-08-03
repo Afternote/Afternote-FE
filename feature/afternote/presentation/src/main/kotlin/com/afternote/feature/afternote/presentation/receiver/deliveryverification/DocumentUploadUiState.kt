@@ -18,7 +18,7 @@ import com.afternote.feature.afternote.domain.error.ReceiverServerRejectionExcep
  * 같은 역할의 `core.ui.UiText.DynamicOrResource` 가 뒤늦게 들어와 중복이며, 통일은 #446 소관.
  */
 sealed interface ErrorPayload {
-    /** 클라이언트가 미리 정의한 generic 문구 (i18n 가능). 서버 message 미제공 시 fallback. */
+    /** 클라이언트가 미리 정의한 generic 문구 (i18n 가능). 서버 message 미제공·5xx 장애 시 fallback. */
     data class Res(
         @param:StringRes val id: Int,
     ) : ErrorPayload
@@ -30,24 +30,33 @@ sealed interface ErrorPayload {
 }
 
 /**
- * 서버가 내려준 사용자 친화 message 가 있으면 그대로 노출, 없으면(인프라 예외·message 미제공)
- * [fallbackRes] 로 폴백.
- *
- * 판정 기준을 `shouldReportInReceiverFlow` 와 같은 [ReceiverServerRejectionException] 범위로 맞춘다 —
- * 하위 타입 하나만 캐스팅하면 리포팅에서는 걸러지는데 화면에는 서버 문구가 안 뜨는 흐름이 생긴다.
- *
- * 그래서 `shouldReportInReceiverFlow()` 가 false 인 실패(= 안내된 4xx 거절)에서는 [fallbackRes] 가 쓰이지
- * 않는다. 호출부가 리포팅 분기 밖 공통 경로에서 대입해 늘 함께 넘어갈 뿐 — 실제로 소비되는 건
- * 리포팅되는 쪽뿐이다.
+ * status 만 가르고 code 를 안 보면 4xx 검증류 개발자 문구까지 화면에 실린다 — `@Valid` 실패의
+ * "인증번호는 UUID 형식이어야 합니다."(리터럴 code=400, #600 실측)가 그 반례다.
  */
 internal fun Throwable.toErrorPayload(
     @StringRes fallbackRes: Int,
 ): ErrorPayload =
     (this as? ReceiverServerRejectionException)
+        ?.takeIf { it.isUserDisplayableRejection() }
         ?.serverMessage
         ?.takeIf { it.isNotBlank() }
         ?.let { ErrorPayload.Text(it) }
         ?: ErrorPayload.Res(fallbackRes)
+
+/** 문구 유무는 보지 않는다 — 호출부 체인이 거른다. */
+private fun ReceiverServerRejectionException.isUserDisplayableRejection(): Boolean =
+    status in DISPLAYABLE_CLIENT_ERROR_RANGE && serverCode in USER_DISPLAYABLE_SERVER_CODES
+
+/** 등재 code 라도 5xx 봉투면 장애다 — code 게이트와 독립으로 대역을 한 번 더 본다. */
+private val DISPLAYABLE_CLIENT_ERROR_RANGE = 400..499
+
+/**
+ * 1900 유효하지 않은 인증번호(마스터 키) · 1901 미등록 수신자 이메일 · 1902 인증번호 만료/미존재 ·
+ * 1903 인증번호 불일치 · 2008 이미 대기 중인 인증 요청. BE `ErrorCode.java`@release 전수 대조로
+ * 문구가 사용자 안내인 것만 골랐다(2026-08-01 기준) — 서버가 표시 가능 여부를 알려주지는 않으므로,
+ * 신규 code 는 문구를 확인한 뒤에만 등재한다. 미등재 기본값은 폴백.
+ */
+private val USER_DISPLAYABLE_SERVER_CODES = setOf(1900, 1901, 1902, 1903, 2008)
 
 /**
  * 증빙 서류 업로드(6·7·8) UI 상태.

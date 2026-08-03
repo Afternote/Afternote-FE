@@ -14,6 +14,7 @@ class ReceiverDeliveryVerificationException(
     serverCode: Int,
 ) : ReceiverServerRejectionException(
         status = status,
+        serverCode = serverCode,
         serverMessage = serverMessage,
         serverMessageFallback = "delivery verification failed (serverCode=$serverCode)",
     )

@@ -158,13 +158,13 @@
     <string name="receiver_sender_detail_status_load_failed">열람 신청 상태를 불러오지 못했습니다.</string>
     <string name="receiver_sender_detail_not_found">발신자를 찾을 수 없습니다.</string>
 
-    <!-- 본인 확인 이메일 인증 (3·4) — 백엔드 receiver-auth/email/* 미구현 stub -->
+    <!-- 본인 확인 이메일 인증 (3·4) -->
     <string name="receiver_verify_email_placeholder">이메일 주소</string>
     <string name="receiver_verify_code_placeholder">인증번호</string>
     <string name="receiver_verify_request_code">인증번호 받기</string>
     <string name="receiver_verify_code_sent">인증번호가 전송되었습니다.\n수신 된 인증번호를 입력해 주세요.</string>
     <string name="receiver_verify_email_format_invalid">이메일 형식이 올바르지 않습니다.</string>
-    <string name="receiver_verify_code_mismatch">인증번호가 일치하지 않습니다.</string>
+    <string name="receiver_verify_code_verify_failed">인증번호 확인에 실패했습니다. 잠시 후 다시 시도해주세요.</string>
     <string name="receiver_verify_code_send_failed">인증번호 발송에 실패했습니다. 잠시 후 다시 시도해주세요.</string>
 
     <string name="receiver_verify_title">수신자 인증</string>
