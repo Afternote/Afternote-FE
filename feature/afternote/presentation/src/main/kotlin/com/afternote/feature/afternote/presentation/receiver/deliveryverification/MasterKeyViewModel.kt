@@ -68,10 +68,13 @@ class MasterKeyViewModel
                         if (throwable.shouldReportInReceiverFlow()) {
                             errorReporter.recordAfternoteFailure(AfternoteFailureStage.MASTER_KEY_VERIFY, throwable)
                         }
+                        // toErrorPayload 는 아직 상태 코드 게이트가 없어 5xx 서버 원문까지 노출한다.
+                        // 이 화면은 원래 서버 문구를 띄우지 않던 곳이라 신규 노출 경로를 만들지 않는다 — 게이트가
+                        // 들어오는 #651 에서 형제 화면과 함께 다시 연다.
                         _uiState.update {
                             it.copy(
                                 isSubmitting = false,
-                                error = throwable.toErrorPayload(R.string.receiver_verify_error_unknown),
+                                error = ErrorPayload.Res(R.string.receiver_verify_error_unknown),
                             )
                         }
                     }
