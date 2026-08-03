@@ -20,7 +20,6 @@ import com.afternote.core.network.token.AccessTokenExpiryTracker
 import kotlinx.coroutines.flow.Flow
 import java.io.IOException
 import javax.inject.Inject
-import kotlin.coroutines.cancellation.CancellationException
 
 class AuthRepositoryImpl
     @Inject
@@ -170,12 +169,12 @@ private val DISPLAYABLE_LOGIN_REJECTION_CODES = setOf(1201, 1202, 1208, 1209)
  *
  * [ApiException] 을 먼저 거르는 이유 — IOException 서브클래스라(인터셉터 throw 를 OkHttp 가 원형
  * 전파하게 하려는 설계) 순서를 바꾸면 서버 응답 실패가 전송 실패로 잡힌다.
- * [CancellationException] 을 다시 던지는 이유 — runCatching 이 Throwable 전부를 잡아서다.
+ *
+ * 취소는 여기서 다시 보지 않는다 — 호출부가 전부 [runCatchingCancellable] 이라 `CancellationException`
+ * 이 [Result] 에 담긴 채로 도달하지 않는다. 재던지기를 남기면 도달 불가능한 갈래가 된다.
  */
-private fun <T> Result<T>.mapLoginFailure(): Result<T> {
-    val exception = exceptionOrNull()
-    if (exception is CancellationException) throw exception
-    return when (exception) {
+private fun <T> Result<T>.mapLoginFailure(): Result<T> =
+    when (val exception = exceptionOrNull()) {
         is ApiException -> {
             val displayMessage = exception.serverMessage?.takeUnless { it.isBlank() }
             if (exception.code in DISPLAYABLE_LOGIN_REJECTION_CODES && displayMessage != null) {
@@ -193,4 +192,3 @@ private fun <T> Result<T>.mapLoginFailure(): Result<T> {
             this // 성공·그 외 예외 모두 통과
         }
     }
-}
