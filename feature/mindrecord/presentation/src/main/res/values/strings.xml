@@ -12,9 +12,12 @@
 
     <!-- MemorySpace 화면 -->
     <string name="mindrecord_memory_space_title">MEMORY SPACE</string>
-    <string name="mindrecord_memory_space_subtitle">마우스를 움직여 공간을 탐색하세요</string>
+    <string name="mindrecord_memory_space_subtitle">화면을 드래그해 공간을 둘러보세요</string>
     <string name="mindrecord_memory_space_back">돌아가기</string>
     <string name="mindrecord_read_again">그날의 기록 다시 읽기</string>
+    <string name="mindrecord_memory_space_loading">기록을 불러오는 중이에요…</string>
+    <string name="mindrecord_memory_space_empty">아직 담긴 기록이 없어요.\n일기나 데일리 질문을 남기면 이곳에 쌓입니다.</string>
+    <string name="mindrecord_error_memory_space_failed">기록을 불러오지 못했습니다.</string>
 
     <!-- Common action labels -->
     <string name="mindrecord_action_register">등록</string>
@@ -102,9 +105,12 @@
     <string name="mindrecord_diary_empty_state_title">아직 등록된 일기가 없어요.</string>
     <string name="mindrecord_diary_empty_state_description">일기를 작성해 나의 매일을 기록해 보아요.</string>
 
-    <!-- Memories card sample question/answer -->
-    <string name="mindrecord_memories_card_question">\"내 인생에서 가장 소중했던 순간은?\"</string>
-    <string name="mindrecord_memories_card_answer">- 아이가 태어났을 때...</string>
+    <!--
+      Memories card. 질문·답변은 사용자의 실제 기록으로 채운다 (MemoriesCardViewModel).
+      아래는 기록이 0건일 때만 쓰는 문구 — 시안에 0건 상태가 정의돼 있지 않아 작성 유도로 뒀다 (#559).
+    -->
+    <string name="mindrecord_memories_card_empty_question">아직 다시 읽을 기록이 없어요.</string>
+    <string name="mindrecord_memories_card_empty_answer">오늘의 질문에 답하면 이곳에 남습니다.</string>
 
     <!-- Draft list screen -->
     <string name="mindrecord_draft_list_title">임시 저장된 기록</string>

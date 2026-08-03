@@ -192,7 +192,7 @@ private fun PressedOverlay(
 private fun MemorySpacePhotoCardPreview() {
     AfternoteTheme {
         MemorySpacePhotoCard(
-            memory = MemoryItem(1, "https://picsum.photos/400/600?random=1", "기억 1", "2024.11.11", "미리보기", listOf("태그")),
+            memory = MemoryItem(1L, "https://picsum.photos/400/600?random=1", "기억 1", "2024.11.11", "미리보기", listOf("태그")),
             transform =
                 CardTransform(
                     offsetX = 0.dp,
