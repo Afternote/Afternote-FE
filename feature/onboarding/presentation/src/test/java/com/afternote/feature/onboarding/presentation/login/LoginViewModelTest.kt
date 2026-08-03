@@ -76,7 +76,7 @@ class LoginViewModelTest {
         viewModel.attemptEmailLogin()
 
         val state = viewModel.uiState.value
-        assertEquals(UiText.Resource(R.string.login_network_error), state.errorMessage)
+        assertEquals(UiText.Resource(R.string.onboarding_network_error), state.errorMessage)
         assertFalse(state.isLoading)
     }
 
