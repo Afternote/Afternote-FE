@@ -1,5 +1,6 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.domain.repository.PhotoUploadRepository
@@ -103,10 +104,31 @@ class DailyQuestionWriteViewModel
                     _uiState.update { if (it.imageUrl == null) it.copy(imageUrl = url) else it }
                 }.getOrNull()
 
+        /**
+         * 저장(`isDraft=false`) / 임시저장(`isDraft=true`).
+         *
+         * 중단할 때는 반드시 사유를 [SubmitState.Failed] 로 남긴다. 종전에는 `questionId` 가
+         * null 이면 조용히 return 해, 오늘 질문 조회가 실패한 상태에서 저장·임시저장 둘 다
+         * 요청 0건·화면 무변화로 고장처럼 보였다 (#565).
+         */
         fun submit(isDraft: Boolean = false) {
             val state = _uiState.value
-            val questionId = state.questionId ?: return
-            if (!state.canSubmit) return
+            if (state.submitState == SubmitState.InProgress) return
+
+            if (state.answer.isBlank()) {
+                failSubmit(R.string.mindrecord_error_daily_question_answer_required)
+                return
+            }
+
+            val questionId = state.questionId
+            if (questionId == null) {
+                // 오늘 질문이 없으면 서버가 답변을 어디에 붙일지 알 수 없어 요청 자체가 불가능하다.
+                // 사유를 알리고 조회를 다시 걸어 사용자가 재시도할 수 있게 한다.
+                failSubmit(R.string.mindrecord_error_daily_question_missing)
+                // 이미 조회 중이면 그대로 둔다 — 연타로 같은 요청을 겹쳐 쌓지 않는다.
+                if (!state.isQuestionLoading) loadTodayQuestion()
+                return
+            }
 
             viewModelScope.launch {
                 _uiState.update { it.copy(submitState = SubmitState.InProgress) }
@@ -154,5 +176,13 @@ class DailyQuestionWriteViewModel
 
         fun consumeSubmitResult() {
             _uiState.update { it.copy(submitState = SubmitState.Idle) }
+        }
+
+        private fun failSubmit(
+            @StringRes messageResId: Int,
+        ) {
+            _uiState.update {
+                it.copy(submitState = SubmitState.Failed(UiText.Resource(messageResId)))
+            }
         }
     }

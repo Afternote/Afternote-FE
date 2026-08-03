@@ -46,7 +46,10 @@ data class DailyQuestionListItemDto(
 @Serializable
 data class TodayDailyQuestionDto(
     @SerialName("questionId") val questionId: Long,
-    @SerialName("day") val day: Int,
+    // "Day N" 배너 표기 전용 부가 정보. 노션 명세의 today 응답에는 이 키가 없어,
+    // 필수로 두면 서버가 생략한 순간 MissingFieldException 으로 조회 전체가 실패한다.
+    // 그러면 questionId 가 비어 저장·임시저장까지 막힌다 (#565) — 없으면 배너만 비운다.
+    @SerialName("day") val day: Int? = null,
     @SerialName("content") val content: String,
     // Swagger `DailyQuestionTodayResponse` 및 실서버 응답 모두 `isAnswered`/`isDraft`.
     // 종전 `answered`/`draft` 로 잡혀 있어 필수 필드 누락(MissingFieldException)으로
