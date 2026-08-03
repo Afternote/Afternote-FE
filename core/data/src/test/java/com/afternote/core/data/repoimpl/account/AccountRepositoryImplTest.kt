@@ -34,6 +34,7 @@ class AccountRepositoryImplTest {
                 FakeAccountApiService(
                     onVerifyEmail = {
                         throw ApiException(
+                            status = 400,
                             code = 1207,
                             serverMessage = "인증번호가 유효하지 않습니다.",
                             message = "인증번호가 유효하지 않습니다.",
@@ -54,7 +55,7 @@ class AccountRepositoryImplTest {
             repository(
                 FakeAccountApiService(
                     onVerifyEmail = {
-                        throw ApiException(code = 500, serverMessage = null, message = "서버 오류")
+                        throw ApiException(status = 500, code = 500, serverMessage = null, message = "서버 오류")
                     },
                 ),
             )

@@ -2,7 +2,10 @@ package com.afternote.afternote_fe.screen
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.afternote_fe.reporting.HomeFailureStage
+import com.afternote.afternote_fe.reporting.recordHomeFailure
 import com.afternote.afternote_fe.usecase.GetHomeSummaryUseCase
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.HomeSummary
 import com.afternote.core.model.MindRecordCategory
@@ -20,6 +23,7 @@ class HomeTabViewModel
     constructor(
         private val getHomeSummary: GetHomeSummaryUseCase,
         private val userRepository: UserRepository,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<HomeTabUiState>(HomeTabUiState.Loading())
         val uiState: StateFlow<HomeTabUiState> = _uiState.asStateFlow()
@@ -80,6 +84,9 @@ class HomeTabViewModel
                         .onSuccess { summary ->
                             _uiState.value = summary.toHomeTabSuccess()
                         }.onFailure { error ->
+                            // 화면을 유지하는 자동 갱신 실패도 기록한다. 사용자에게 안 보이는 만큼
+                            // 콘솔이 유일한 관측 지점이다.
+                            errorReporter.recordHomeFailure(HomeFailureStage.AUTHOR_SUMMARY_LOAD, error)
                             _uiState.value =
                                 if (keepsStateOnFailure && currentState is HomeTabUiState.Success) {
                                     currentState.copy(isRefreshing = false)

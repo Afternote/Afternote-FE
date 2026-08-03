@@ -6,7 +6,7 @@ import com.afternote.feature.afternote.data.dto.AfternoteDetailReceiverDto
 import com.afternote.feature.afternote.data.dto.AfternoteMemorialVideoDto
 import com.afternote.feature.afternote.data.dto.AfternotePlaylistDto
 import com.afternote.feature.afternote.data.dto.AfternoteSongDto
-import com.afternote.feature.afternote.domain.AfternoteServiceType
+import com.afternote.feature.afternote.domain.AfternoteType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -29,7 +29,7 @@ class AfternoteDetailMapperTest {
             ).toDetailDomain()
 
         assertEquals(1L, result.id)
-        assertEquals(AfternoteServiceType.SOCIAL_NETWORK, result.type)
+        assertEquals(AfternoteType.SOCIAL_NETWORK, result.type)
         assertTrue(result.receivers.isEmpty())
         assertNull(result.credentials)
         assertNull(result.playlist)

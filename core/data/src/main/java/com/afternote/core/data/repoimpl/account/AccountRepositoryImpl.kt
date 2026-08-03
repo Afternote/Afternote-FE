@@ -1,5 +1,6 @@
 package com.afternote.core.data.repoimpl.account
 
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.data.mapper.auth.AuthMapper
 import com.afternote.core.domain.repository.account.AccountRepository
 import com.afternote.core.model.AccountRegistration
@@ -23,7 +24,7 @@ class AccountRepositoryImpl
         // requireStatus() 는 형제 메서드와 맞춘 것이다 — 이것만 빠져 있어 HTTP 200 봉투 안의
         // 실패 status 가 성공으로 통과했고, 그러면 실패를 옮길 매퍼가 볼 실패 자체가 생기지 않는다.
         override suspend fun sendEmailCode(email: String): Result<Unit> =
-            runCatching {
+            runCatchingCancellable {
                 accountApiService
                     .sendEmailCode(SendEmailCodeRequestDto(email))
                     .requireStatus()
@@ -42,7 +43,7 @@ class AccountRepositoryImpl
             email: String,
             certificateCode: String,
         ): Result<Unit> =
-            runCatching {
+            runCatchingCancellable {
                 accountApiService
                     .verifyEmail(
                         VerifyEmailRequestDto(
@@ -53,7 +54,7 @@ class AccountRepositoryImpl
             }.mapAccountFailure()
 
         override suspend fun sendFindCode(email: String): Result<Unit> =
-            runCatching {
+            runCatchingCancellable {
                 accountApiService
                     .sendFindCode(FindSendCodeRequestDto(email))
                     .requireStatus()
@@ -63,7 +64,7 @@ class AccountRepositoryImpl
             email: String,
             certificateCode: String,
         ): Result<FoundAccount> =
-            runCatching {
+            runCatchingCancellable {
                 val response =
                     accountApiService.findEmail(
                         EmailFindRequestDto(
@@ -80,7 +81,7 @@ class AccountRepositoryImpl
             name: String,
             profileUrl: String?,
         ): Result<AccountRegistration> =
-            runCatching {
+            runCatchingCancellable {
                 val response =
                     accountApiService.signUp(
                         SignUpRequestDto(
@@ -97,7 +98,7 @@ class AccountRepositoryImpl
             currentPassword: String,
             newPassword: String,
         ): Result<Unit> =
-            runCatching {
+            runCatchingCancellable {
                 accountApiService
                     .passwordChange(
                         PasswordChangeRequestDto(
