@@ -58,7 +58,7 @@ internal fun editorSaveErrorFromUiState(
 
 internal data class AfternoteEditorNavigationParams(
     val backStackEntry: NavBackStackEntry,
-    val graphSongs: List<Song>,
+    val liveSongs: List<Song>,
     val onReplaceSongs: (List<Song>) -> Unit,
     val onClearSongs: () -> Unit,
     val onNavigateToSelectReceiver: () -> Unit = {},
@@ -85,7 +85,7 @@ internal fun buildEditorScreenCallbacks(
     editViewModel: AfternoteEditorViewModel,
     state: AfternoteEditorState,
     route: AfternoteRoute.EditorRoute,
-    graphSongs: List<Song>,
+    liveSongs: List<Song>,
     onNavigateToSelectReceiver: () -> Unit,
     onBottomNavTabSelected: (BottomNavTab) -> Unit,
 ): AfternoteEditorScreenCallbacks =
@@ -111,18 +111,17 @@ internal fun buildEditorScreenCallbacks(
                     password =
                         state.passwordState.text
                             .toString(),
-                    atmosphere = state.getAtmosphereForSave(),
                 )
             editViewModel.saveAfternote(
                 editingId = route.itemId?.toLongOrNull(),
                 category = state.selectedCategory,
                 payload = payload,
                 selectedReceiverIds = state.afternoteEditReceivers.mapNotNull { it.id.toLongOrNull() },
-                playlistSongs = graphSongs,
+                playlistSongs = liveSongs,
                 memorialMedia =
                     SaveAfternoteMemorialMedia(
-                        funeralVideoUrl = state.funeralVideoUrl,
-                        funeralThumbnailUrl = state.funeralThumbnailUrl,
+                        memorialVideoUrl = state.memorialVideoUrl,
+                        memorialThumbnailUrl = state.memorialThumbnailUrl,
                         memorialPhotoUrl = state.memorialPhotoUrl,
                         pickedMemorialPhotoUri = state.pickedMemorialPhotoUri,
                     ),
@@ -205,8 +204,8 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
         remember(
             uiState.validationError,
             uiState.errorRes,
-            params.graphSongs.size,
-        ) { editorSaveErrorFromUiState(uiState, params.graphSongs.size) }
+            params.liveSongs.size,
+        ) { editorSaveErrorFromUiState(uiState, params.liveSongs.size) }
     val saveError: String? =
         when (errorResult) {
             is EditorSaveErrorResult.Validation -> stringResource(errorResult.messageResId)
@@ -223,7 +222,7 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
             editViewModel,
             state,
             route,
-            params.graphSongs,
+            params.liveSongs,
         ) {
             buildEditorScreenCallbacks(
                 onPopBackStack = params.onPopBackStack,
@@ -231,7 +230,7 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
                 editViewModel = editViewModel,
                 state = state,
                 route = route,
-                graphSongs = params.graphSongs,
+                liveSongs = params.liveSongs,
                 onNavigateToSelectReceiver = params.onNavigateToSelectReceiver,
                 onBottomNavTabSelected = params.onBottomNavTabSelected,
             )
@@ -240,7 +239,7 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
     AfternoteEditorScreen(
         form = uiState.form,
         callbacks = callbacks,
-        graphSongs = params.graphSongs,
+        liveSongs = params.liveSongs,
         state = state,
         saveError = saveError,
         thumbnailUploadFailed = uiState.thumbnailUploadFailed,

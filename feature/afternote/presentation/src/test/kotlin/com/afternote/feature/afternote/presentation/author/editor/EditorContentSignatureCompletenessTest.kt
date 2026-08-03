@@ -35,7 +35,6 @@ class EditorContentSignatureCompletenessTest {
                     afternoteEditReceiverNameState = TextFieldState(),
                     phoneNumberState = TextFieldState(),
                     customServiceNameState = TextFieldState(),
-                    customLastWishState = TextFieldState(),
                 ),
             getCurrentForm = { EditorFormState() },
             updateForm = {},
@@ -48,7 +47,7 @@ class EditorContentSignatureCompletenessTest {
     @Test
     fun `홀더의 모든 TextFieldState 는 지문에 반영되거나 제외 사유가 명시돼야 한다`() {
         val getters = textFieldStateGetters()
-        assertTrue("TextFieldState 게터 열거 실패 — 리플렉션 전제 붕괴", getters.size >= 6)
+        assertTrue("TextFieldState 게터 열거 실패 — 리플렉션 전제 붕괴", getters.size >= 5)
 
         getters.forEach { getter ->
             val name = getter.name.removePrefix("get").replaceFirstChar { it.lowercase() }
@@ -86,7 +85,7 @@ class EditorContentSignatureCompletenessTest {
     fun `폼 필드 변경이 지문에 반영된다 - 통째 직렬화 카나리`() {
         val state = newState()
         val before = editorContentSignature(EditorFormState(), state)
-        val after = editorContentSignature(EditorFormState(selectedLastWish = "calm"), state)
+        val after = editorContentSignature(EditorFormState(pickedMemorialPhotoUri = "content://photo"), state)
         assertNotEquals(before, after)
     }
 

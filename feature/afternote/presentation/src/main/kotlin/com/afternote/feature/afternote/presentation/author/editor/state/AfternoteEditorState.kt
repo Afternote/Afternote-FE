@@ -46,7 +46,6 @@ class AfternoteEditorState(
     val afternoteEditReceiverNameState: TextFieldState get() = ui.afternoteEditReceiverNameState
     val phoneNumberState: TextFieldState get() = ui.phoneNumberState
     val customServiceNameState: TextFieldState get() = ui.customServiceNameState
-    val customLastWishState: TextFieldState get() = ui.customLastWishState
 
     val activeDialog get() = ui.activeDialog
     val relationshipSelectedValue get() = ui.relationshipSelectedValue
@@ -57,8 +56,8 @@ class AfternoteEditorState(
     fun currentForm(): EditorFormState = getCurrentForm()
 
     val selectedCategory get() = getCurrentForm().selectedCategory
-    val funeralVideoUrl get() = getCurrentForm().funeralVideoUrl
-    val funeralThumbnailUrl get() = getCurrentForm().funeralThumbnailUrl
+    val memorialVideoUrl get() = getCurrentForm().memorialVideoUrl
+    val memorialThumbnailUrl get() = getCurrentForm().memorialThumbnailUrl
     val memorialPhotoUrl get() = getCurrentForm().memorialPhotoUrl
     val pickedMemorialPhotoUri get() = getCurrentForm().pickedMemorialPhotoUri
     val afternoteEditReceivers get() = getCurrentForm().afternoteEditReceivers
@@ -69,19 +68,12 @@ class AfternoteEditorState(
 
     /** 호스트 SSOT의 곡 목록을 폼 스냅샷으로 동기화한다 (SavedStateHandle JSON에 포함하기 위함). */
     fun syncMemorialPlaylistSongs(songs: List<Song>) {
-        updateForm {
-            it.copy(
-                memorialPlaylistSongs = songs,
-                playlistSongCount = if (songs.isNotEmpty()) songs.size else it.playlistSongCount,
-            )
-        }
+        updateForm { it.copy(memorialPlaylistSongs = songs) }
     }
 
     /** 신규 작성 진입 시 폼에 남은 추억 플레이리스트 스냅샷을 비운다 (호스트 SSOT clear는 호출부에서). */
     fun resetMemorialPlaylistFormSnapshot() {
-        updateForm {
-            it.copy(memorialPlaylistSongs = emptyList(), playlistSongCount = 0)
-        }
+        updateForm { it.copy(memorialPlaylistSongs = emptyList()) }
     }
 
     /** 드롭다운 UI에서 [categoryDisplayLabel] 문자열로 카테고리를 선택한다. */
@@ -113,22 +105,16 @@ class AfternoteEditorState(
         }
     }
 
-    fun onLastWishSelected(wish: String?) {
-        updateForm { it.copy(selectedLastWish = wish) }
-    }
-
-    fun getAtmosphereForSave(): String = getCurrentForm().atmosphereForSave(ui.customLastWishState.text.toString())
-
     fun onMemorialPhotoSelected(uri: Uri?) {
         updateForm { it.copy(pickedMemorialPhotoUri = uri?.toString()) }
     }
 
     fun onFuneralVideoSelected(uri: Uri?) {
-        updateForm { it.copy(funeralVideoUrl = uri?.toString(), funeralThumbnailUrl = null) }
+        updateForm { it.copy(memorialVideoUrl = uri?.toString(), memorialThumbnailUrl = null) }
     }
 
     fun onFuneralThumbnailDataUrlReady(dataUrl: String?) {
-        updateForm { it.copy(funeralThumbnailUrl = dataUrl) }
+        updateForm { it.copy(memorialThumbnailUrl = dataUrl) }
     }
 
     fun showAddAfternoteEditorReceiverDialog() = ui.showAddAfternoteEditorReceiverDialog()
@@ -203,7 +189,7 @@ class AfternoteEditorState(
         ui.addEditorMessage()
         updateForm { prev ->
             prev.copy(
-                messageBlocks = prev.messageBlocks + EditorMessageTextBlock(title = "", body = ""),
+                leaveMessageBlocks = prev.leaveMessageBlocks + EditorMessageTextBlock(title = "", body = ""),
             )
         }
     }
@@ -213,7 +199,7 @@ class AfternoteEditorState(
         ui.removeEditorMessage(message)
         updateForm { prev ->
             prev.copy(
-                messageBlocks =
+                leaveMessageBlocks =
                     normalizeEditorMessageBlocks(
                         ui.editorMessages.map { m ->
                             EditorMessageTextBlock(
@@ -242,9 +228,9 @@ class AfternoteEditorState(
         applyMessageBlocks(blocks)
     }
 
-    /** 타이핑 디바운스 후 폼(및 스냅샷)에만 반영; [EditorFormState.messageBlocksRestoreGeneration]은 건드리지 않는다. */
+    /** 타이핑 디바운스 후 폼(및 스냅샷)에만 반영; [EditorFormState.leaveMessageBlocksRestoreGeneration]은 건드리지 않는다. */
     fun persistEditorMessagesFromTyping(blocks: List<EditorMessageTextBlock>) {
-        updateForm { it.copy(messageBlocks = normalizeEditorMessageBlocks(blocks)) }
+        updateForm { it.copy(leaveMessageBlocks = normalizeEditorMessageBlocks(blocks)) }
     }
 
     /**
@@ -258,36 +244,24 @@ class AfternoteEditorState(
                 "category=${prefill.category}, " +
                 "PMs=${prefill.processingMethods.size}",
         )
-        val prefillBlocks = normalizeEditorMessageBlocks(prefill.messageBlocks)
+        val prefillBlocks = normalizeEditorMessageBlocks(prefill.leaveMessageBlocks)
         updateForm { prev ->
-            val withLastWish =
-                prefill.lastWishUpdate?.let { lw ->
-                    prev.copy(selectedLastWish = lw.selectedKey)
-                } ?: prev
-            withLastWish.copy(
+            prev.copy(
                 loadedItemId = prefill.loadedItemId,
                 selectedCategory = prefill.category,
                 selectedService = prefill.serviceName,
                 processingMethods = prefill.processingMethods,
-                funeralVideoUrl = prefill.funeralVideoUrl,
-                funeralThumbnailUrl = prefill.funeralThumbnailUrl,
+                memorialVideoUrl = prefill.memorialVideoUrl,
+                memorialThumbnailUrl = prefill.memorialThumbnailUrl,
                 memorialPhotoUrl = prefill.memorialPhotoUrl,
                 memorialPlaylistSongs = prefill.memorialPlaylistSongs,
-                playlistSongCount =
-                    if (prefill.memorialPlaylistSongs.isNotEmpty()) {
-                        prefill.memorialPlaylistSongs.size
-                    } else {
-                        withLastWish.playlistSongCount
-                    },
-                messageBlocks = prefillBlocks,
+                afternoteEditReceivers = prefill.receivers,
+                leaveMessageBlocks = prefillBlocks,
             )
         }
         ui.idState.edit { replace(0, length, prefill.accountId) }
         ui.passwordState.edit { replace(0, length, prefill.password) }
         applyMessageBlocks(prefillBlocks)
-        prefill.lastWishUpdate?.let { lw ->
-            ui.customLastWishState.edit { replace(0, length, lw.customText) }
-        }
     }
 
     fun addProcessingMethod(text: String) {
@@ -339,7 +313,6 @@ fun rememberAfternoteEditorState(
     val afternoteEditReceiverNameState = rememberTextFieldState()
     val phoneNumberState = rememberTextFieldState()
     val customServiceNameState = rememberTextFieldState()
-    val customLastWishState = rememberTextFieldState()
 
     val ui =
         rememberAfternoteEditorUiHolder(
@@ -348,7 +321,6 @@ fun rememberAfternoteEditorState(
             afternoteEditReceiverNameState = afternoteEditReceiverNameState,
             phoneNumberState = phoneNumberState,
             customServiceNameState = customServiceNameState,
-            customLastWishState = customLastWishState,
         )
 
     return remember(ui) {

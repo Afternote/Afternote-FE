@@ -297,9 +297,6 @@
     <string name="afternote_editor_relationship_friend">친구</string>
     <string name="afternote_editor_relationship_family">가족</string>
     <string name="afternote_editor_relationship_lover">연인</string>
-    <string name="afternote_editor_last_wish_calm">차분하고 조용하게 보내주세요.</string>
-    <string name="afternote_editor_last_wish_bright">슬퍼 하지 말고 밝고 따뜻하게 보내주세요.</string>
-    <string name="afternote_editor_last_wish_other">기타(직접 입력)</string>
     <string name="afternote_editor_custom_service_dialog_title">직접 입력하기</string>
     <string name="afternote_editor_custom_service_name_label">추가 서비스명</string>
     <string name="afternote_editor_playlist_screen_title">추억 플레이리스트</string>

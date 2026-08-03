@@ -14,9 +14,9 @@ import org.junit.Test
 
 /**
  * [AfternoteDetailDto.toDetailDomain] 회귀 가드 (작성자 상세).
- * 핵심 경계: receivers null→emptyList, receiver 필드 null→"", actions null→emptyList,
- * memorialPhotoUrl 없으면 profilePhoto로 대체, memorialVideo null→video/thumbnail null,
- * credentials·playlist nullable 매핑.
+ * 핵심 경계: receivers null→emptyList, receiver 필드 null→"", processingMethods null→emptyList,
+ * memorialVideo null→video/thumbnail null,
+ * credentials·memorial nullable 매핑.
  */
 class AfternoteDetailMapperTest {
     @Test
@@ -32,8 +32,8 @@ class AfternoteDetailMapperTest {
         assertEquals(AfternoteType.SOCIAL_NETWORK, result.type)
         assertTrue(result.receivers.isEmpty())
         assertNull(result.credentials)
-        assertNull(result.playlist)
-        assertTrue(result.processing!!.actions.isEmpty())
+        assertNull(result.memorial)
+        assertTrue(result.processingMethods.isEmpty())
     }
 
     @Test
@@ -68,6 +68,27 @@ class AfternoteDetailMapperTest {
         assertEquals("", receiver.phone)
     }
 
+    /**
+     * DTO 는 방어적으로 receiverId 가 nullable 이지만 서버 스펙상 필수다(상세 응답 `ReceiverRequest` 는
+     * 이 필드 하나뿐). 도메인은 non-null 이므로 경계인 이 매퍼가 걸러야 한다.
+     */
+    @Test
+    fun `toDetailDomain - receiverId 없는 항목은 도메인으로 올리지 않는다`() {
+        val result =
+            AfternoteDetailDto(
+                afternoteId = 1L,
+                category = "GALLERY",
+                title = "t",
+                receivers =
+                    listOf(
+                        AfternoteDetailReceiverDto(receiverId = null, name = "식별자없음"),
+                        AfternoteDetailReceiverDto(receiverId = 9L, name = "김수신"),
+                    ),
+            ).toDetailDomain()
+
+        assertEquals(listOf(9L), result.receivers.map { it.receiverId })
+    }
+
     @Test
     fun `toDetailDomain - credentials 매핑`() {
         val result =
@@ -83,46 +104,32 @@ class AfternoteDetailMapperTest {
     }
 
     @Test
-    fun `toDetailDomain - memorialPhotoUrl 없으면 profilePhoto로 대체`() {
+    fun `toDetailDomain - playlist 미디어·곡 매핑`() {
         val result =
             AfternoteDetailDto(
                 afternoteId = 1L,
                 category = "PLAYLIST",
                 title = "t",
-                playlist =
+                memorial =
                     AfternotePlaylistDto(
-                        profilePhoto = "profile.jpg",
-                        memorialPhotoUrl = null,
+                        memorialPhotoUrl = "memorial.jpg",
                         songs = listOf(AfternoteSongDto(id = 3L, title = "s", artist = "a")),
                         memorialVideo = AfternoteMemorialVideoDto(videoUrl = "v.mp4", thumbnailUrl = "t.jpg"),
                     ),
             ).toDetailDomain()
 
-        val media = result.playlist!!.playlistDetailMemorialMedia
-        assertEquals("profile.jpg", media.photoUrl)
+        val media = result.memorial!!.media
+        assertEquals("memorial.jpg", media.photoUrl)
         assertEquals("v.mp4", media.videoUrl)
         assertEquals("t.jpg", media.thumbnailUrl)
-        assertEquals(1, result.playlist!!.songs.size)
+        assertEquals(1, result.memorial!!.songs.size)
         assertEquals(
             3L,
-            result.playlist!!
+            result.memorial!!
                 .songs
                 .single()
                 .id,
         )
-    }
-
-    @Test
-    fun `toDetailDomain - memorialPhotoUrl 있으면 그대로`() {
-        val result =
-            AfternoteDetailDto(
-                afternoteId = 1L,
-                category = "PLAYLIST",
-                title = "t",
-                playlist = AfternotePlaylistDto(profilePhoto = "profile.jpg", memorialPhotoUrl = "memorial.jpg"),
-            ).toDetailDomain()
-
-        assertEquals("memorial.jpg", result.playlist!!.playlistDetailMemorialMedia.photoUrl)
     }
 
     @Test
@@ -132,10 +139,10 @@ class AfternoteDetailMapperTest {
                 afternoteId = 1L,
                 category = "PLAYLIST",
                 title = "t",
-                playlist = AfternotePlaylistDto(profilePhoto = "p", memorialVideo = null),
+                memorial = AfternotePlaylistDto(memorialVideo = null),
             ).toDetailDomain()
 
-        val media = result.playlist!!.playlistDetailMemorialMedia
+        val media = result.memorial!!.media
         assertNull(media.videoUrl)
         assertNull(media.thumbnailUrl)
     }

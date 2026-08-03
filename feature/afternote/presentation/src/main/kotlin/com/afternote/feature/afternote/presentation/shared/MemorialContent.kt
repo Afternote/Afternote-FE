@@ -26,10 +26,11 @@ fun MemorialContent(
     introContent: @Composable () -> Unit,
     photoContent: @Composable () -> Unit,
     playlistContent: @Composable () -> Unit,
-    lastWishContent: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     sectionSpacing: Dp = 32.dp,
     trailingSpacerHeight: Dp = 0.dp,
+    /** 플레이리스트와 수신자 사이 섹션. 수신자 상세는 "남기신 말씀"을 여기 넣는다(#274). */
+    messageContent: @Composable () -> Unit = {},
     recipientContent: @Composable () -> Unit = {},
     videoContent: @Composable () -> Unit,
 ) {
@@ -40,7 +41,7 @@ fun MemorialContent(
         introContent()
         photoContent()
         playlistContent()
-        lastWishContent()
+        messageContent()
         recipientContent()
         Column(modifier = Modifier.fillMaxWidth()) {
             videoContent()
@@ -59,7 +60,6 @@ private fun MemorialContentPreview() {
             introContent = {},
             photoContent = {},
             playlistContent = {},
-            lastWishContent = {},
             recipientContent = {},
             videoContent = {},
         )

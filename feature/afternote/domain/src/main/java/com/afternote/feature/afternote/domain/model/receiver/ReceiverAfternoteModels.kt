@@ -28,7 +28,7 @@ data class ReceivedAfternoteDetail(
     val createdAt: String? = null,
     val category: String? = null,
     val type: AfternoteType? = null,
-    val actions: List<String> = emptyList(),
+    val processingMethods: List<String> = emptyList(),
     val leaveMessage: String? = null,
     val playlist: ReceivedPlaylistDetail? = null,
     val credentials: ReceivedAccountCredentials? = null,

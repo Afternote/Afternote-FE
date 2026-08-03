@@ -33,7 +33,7 @@ private fun ReceivedAfternoteDetail.toReceivedSocialNetworkDetailContent(): Rece
         serviceName = title.orEmpty(),
         accountId = credentials?.id.orEmpty(),
         password = credentials?.password.orEmpty(),
-        processingMethods = actions,
+        processingMethods = processingMethods,
         message = leaveMessage.orEmpty(),
         finalWriteDate = createdAt.orEmpty(),
     )
@@ -42,7 +42,7 @@ private fun ReceivedAfternoteDetail.toReceivedGalleryDetailContent(): ReceivedGa
     ReceivedGalleryDetailContent(
         serviceName = title.orEmpty(),
         finalWriteDate = createdAt.orEmpty(),
-        processingMethods = actions,
+        processingMethods = processingMethods,
         message = leaveMessage.orEmpty(),
     )
 
