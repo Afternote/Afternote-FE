@@ -20,6 +20,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -51,15 +53,17 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.author.navigation.DeleteInProgressOverlay
 import com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent
+import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadErrorContent
 import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadingContent
 import com.afternote.feature.afternote.presentation.author.navigation.ObserveDeleteResult
+import com.afternote.feature.afternote.presentation.author.navigation.rememberDeleteFailedHandler
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.ReceiversCard
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
-import com.afternote.core.ui.R as CoreUiR
 
 /**
  * 추억 노트 상세 Stateful Route.
@@ -74,11 +78,13 @@ internal fun MemorialDetailRoute(
     viewModel: AfternoteDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     ObserveDeleteResult(
         deleteResult = (uiState as? AfternoteDetailUiState.Success)?.deleteResult,
         onConsumed = viewModel::onDeleteResultConsumed,
         onDeleteSucceeded = onBack,
+        onDeleteFailed = rememberDeleteFailedHandler(snackbarHostState),
     )
 
     when (val state = uiState) {
@@ -87,18 +93,27 @@ internal fun MemorialDetailRoute(
         }
 
         is AfternoteDetailUiState.Error -> {
-            DesignPendingDetailContent(onBackClick = onBack)
+            DetailLoadErrorContent(
+                messageRes = state.messageRes,
+                onBackClick = onBack,
+            )
         }
 
         is AfternoteDetailUiState.Success -> {
             when (val model = state.contentUiModel) {
                 is DetailContentUiModel.Memorial -> {
-                    MemorialDetailScreen(
-                        content = model.content,
-                        onBackClick = onBack,
-                        onEditClick = { onNavigateToEditor(state.detailId.toString()) },
-                        onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
-                    )
+                    Box {
+                        MemorialDetailScreen(
+                            content = model.content,
+                            snackbarHostState = snackbarHostState,
+                            onBackClick = onBack,
+                            onEditClick = { onNavigateToEditor(state.detailId.toString()) },
+                            onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
+                        )
+                        if (state.isDeleting) {
+                            DeleteInProgressOverlay()
+                        }
+                    }
                 }
 
                 else -> {
@@ -119,7 +134,6 @@ data class MemorialDetailContent(
     val profileImageUri: String? = null,
     val albumCovers: List<AlbumCover> = emptyList(),
     val songCount: Int = 0,
-    val lastWish: String = "",
     val afternoteEditReceivers: List<ReceiverUiModel> = emptyList(),
     val memorialVideoUrl: String? = null,
     val memorialThumbnailUrl: String? = null,
@@ -135,6 +149,7 @@ fun MemorialDetailScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
     content: MemorialDetailContent = MemorialDetailContent(),
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     isEditable: Boolean = true,
     onEditClick: () -> Unit = {},
     onDeleteConfirm: () -> Unit = {},
@@ -156,6 +171,7 @@ fun MemorialDetailScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             DetailTopBar(
                 title = stringResource(R.string.feature_afternote_detail_title),
@@ -224,7 +240,9 @@ private fun TitleSection(
                 withStyle(style = SpanStyle(color = AfternoteDesign.colors.gray9)) {
                     append(categoryLabel)
                 }
-                append("에 대한 ${userName}님의 기록")
+                // 프로필 로드 실패·로딩 경합으로 이름이 비어 있으면 이름 세그먼트를 생략해
+                // "…에 대한 님의 기록" 렌더를 막는다.
+                append(if (userName.isBlank()) "에 대한 기록" else "에 대한 ${userName}님의 기록")
             },
         style = AfternoteDesign.typography.bodyLargeB,
     )
@@ -242,7 +260,6 @@ private fun CardSection(content: MemorialDetailContent) {
             albumCovers = content.albumCovers,
             songCount = content.songCount,
         )
-        LastWishCard(lastWish = content.lastWish)
         VideoCard(
             videoUrl = content.memorialVideoUrl,
             thumbnailUrl = content.memorialThumbnailUrl,
@@ -478,38 +495,6 @@ private fun AlbumCoverItem(album: AlbumCover) {
     }
 }
 
-@Composable
-private fun LastWishCard(lastWish: String) {
-    val displayText =
-        lastWish.ifEmpty { stringResource(CoreUiR.string.core_ui_last_wish_empty_state) }
-    val textColor =
-        if (lastWish.isNotEmpty()) AfternoteDesign.colors.gray9 else AfternoteDesign.colors.gray5
-
-    InfoCard(
-        modifier = Modifier.fillMaxWidth(),
-        content = {
-            Column {
-                Text(
-                    text = stringResource(CoreUiR.string.core_ui_label_last_wish),
-                    style =
-                        AfternoteDesign.typography.textField.copy(
-                            fontWeight = FontWeight.Medium,
-                            color = AfternoteDesign.colors.gray9,
-                        ),
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = displayText,
-                    style =
-                        AfternoteDesign.typography.bodySmallR.copy(
-                            color = textColor,
-                        ),
-                )
-            }
-        },
-    )
-}
-
 private fun memorialDetailPreviewAlbumCovers(): List<AlbumCover> =
     listOf(
         AlbumCover(id = "1"),
@@ -532,7 +517,6 @@ private fun MemorialDetailScreenPreview() {
                     finalWriteDate = "2025.11.26",
                     songCount = 16,
                     albumCovers = memorialDetailPreviewAlbumCovers(),
-                    lastWish = "차분하고 조용하게 보내주세요.",
                 ),
             onBackClick = {},
             onEditClick = {},
@@ -561,7 +545,6 @@ private fun MemorialDetailScreenDeleteDialogPreview() {
                     finalWriteDate = "2025.11.26",
                     songCount = 16,
                     albumCovers = memorialDetailPreviewAlbumCovers(),
-                    lastWish = "차분하고 조용하게 보내주세요.1",
                 ),
             onBackClick = {},
             onEditClick = {},

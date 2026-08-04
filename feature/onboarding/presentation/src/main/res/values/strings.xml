@@ -18,6 +18,8 @@
     <string name="login_google">Google 계정으로 로그인</string>
     <string name="login_find_account">아이디/비밀번호 찾기</string>
     <string name="login_failed">로그인 실패</string>
+    <!-- 로그인·회원가입·아이디 찾기가 공유하는 전송 실패 문구 (Throwable.toDisplayMessage) -->
+    <string name="onboarding_network_error">네트워크 연결을 확인해주세요.</string>
     <string name="login_kakao_failed">카카오 로그인에 실패했습니다.</string>
     <string name="login_google_failed">구글 로그인에 실패했습니다.</string>
     <string name="login_google_no_credentials">기기에 Google 계정이 없어요.\n설정 &gt; 계정에서 Google 계정을 추가해 주세요.</string>
@@ -60,6 +62,11 @@
     <string name="signup_password_rule_combination">8 ~ 16자의 영문 대소문자, 숫자, 특수문자를 조합하여 설정해 주세요.</string>
     <string name="signup_password_rule_reuse">이전에 사용한 적 없는 비밀번호가 안전합니다.</string>
     <string name="signup_failed">회원가입 실패</string>
+    <string name="signup_code_send_failed">인증번호를 보내지 못했어요. 잠시 후 다시 시도해주세요.</string>
+    <!-- 시안 미정의 잠정 문구 — 서버 code 1200 을 클라가 자체 문구로 안내한다(서버 message 미사용) -->
+    <string name="signup_email_already_registered">이미 가입된 이메일이에요.</string>
+    <string name="signup_email_verify_failed">이메일 인증에 실패했어요. 잠시 후 다시 시도해주세요.</string>
+    <string name="signup_auto_login_failed">자동 로그인에 실패했어요. 로그인 화면에서 다시 시도해주세요.</string>
     <string name="signup_name_required">이름을 입력해주세요</string>
 
     <string name="terms_welcome">환영합니다!</string>

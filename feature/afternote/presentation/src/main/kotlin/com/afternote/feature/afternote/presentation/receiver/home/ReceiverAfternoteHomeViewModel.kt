@@ -6,7 +6,7 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.filter
 import androidx.paging.map
-import com.afternote.feature.afternote.domain.AfternoteServiceType
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
 import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
@@ -63,8 +63,8 @@ private fun AfterNoteListItem.toUiModel(): ListItemUiModel {
     val displayRes = getAfternoteDisplayRes(typeKey)
     val serviceName = getServiceNameForTypeKey(typeKey)
     val type =
-        runCatching { AfternoteServiceType.valueOf(typeKey) }
-            .getOrDefault(AfternoteServiceType.SOCIAL_NETWORK)
+        runCatching { AfternoteType.valueOf(typeKey) }
+            .getOrDefault(AfternoteType.SOCIAL_NETWORK)
     return ListItemUiModel(
         id = id.toString(),
         serviceName = serviceName,

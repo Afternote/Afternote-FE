@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.core.net.toUri
 import com.afternote.core.common.di.IoDispatcher
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.VideoUploadRepository
 import com.afternote.core.network.dto.PresignedUrlRequestDto
 import com.afternote.core.network.model.requireData
@@ -18,7 +19,6 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Named
-import kotlin.coroutines.cancellation.CancellationException
 
 /** MIME 타입에서 확장자를 못 뽑았을 때 폴백. 대부분의 안드로이드 영상이 mp4 라 합리적 디폴트. */
 private const val DEFAULT_VIDEO_EXTENSION = "mp4"
@@ -35,7 +35,7 @@ class VideoUploadRepositoryImpl
             uriString: String,
             directory: String,
         ): Result<String> =
-            try {
+            runCatchingCancellable {
                 val uri = uriString.toUri()
                 val extension = videoExtensionFromUri(uri)
 
@@ -78,14 +78,10 @@ class VideoUploadRepositoryImpl
                             }
                     }
 
-                    Result.success(presigned.fileUrl)
+                    presigned.fileUrl
                 } finally {
                     tempFile.delete()
                 }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Result.failure(e)
             }
 
         private fun videoExtensionFromUri(uri: Uri): String {

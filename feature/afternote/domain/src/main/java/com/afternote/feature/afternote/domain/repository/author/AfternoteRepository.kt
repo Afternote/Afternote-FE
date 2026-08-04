@@ -4,7 +4,7 @@ import androidx.paging.PagingData
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
-import com.afternote.feature.afternote.domain.model.author.CreatePlaylistPayload
+import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import kotlinx.coroutines.flow.Flow
@@ -30,7 +30,7 @@ interface AfternoteRepository {
 
     suspend fun createGallery(payload: CreateGalleryPayload): Result<Long>
 
-    suspend fun createPlaylist(payload: CreatePlaylistPayload): Result<Long>
+    suspend fun createMemorial(payload: CreateMemorialPayload): Result<Long>
 
     suspend fun update(
         id: Long,

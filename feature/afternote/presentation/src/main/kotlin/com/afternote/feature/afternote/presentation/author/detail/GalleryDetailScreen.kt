@@ -13,9 +13,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -26,10 +29,14 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.author.navigation.DeleteInProgressOverlay
 import com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent
+import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadErrorContent
 import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadingContent
 import com.afternote.feature.afternote.presentation.author.navigation.ObserveDeleteResult
+import com.afternote.feature.afternote.presentation.author.navigation.rememberDeleteFailedHandler
 import com.afternote.feature.afternote.presentation.shared.detail.AfternoteDetailServiceHeader
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
@@ -52,11 +59,13 @@ internal fun GalleryDetailRoute(
     viewModel: AfternoteDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     ObserveDeleteResult(
         deleteResult = (uiState as? AfternoteDetailUiState.Success)?.deleteResult,
         onConsumed = viewModel::onDeleteResultConsumed,
         onDeleteSucceeded = onBack,
+        onDeleteFailed = rememberDeleteFailedHandler(snackbarHostState),
     )
 
     when (val state = uiState) {
@@ -65,18 +74,27 @@ internal fun GalleryDetailRoute(
         }
 
         is AfternoteDetailUiState.Error -> {
-            DesignPendingDetailContent(onBackClick = onBack)
+            DetailLoadErrorContent(
+                messageRes = state.messageRes,
+                onBackClick = onBack,
+            )
         }
 
         is AfternoteDetailUiState.Success -> {
             when (val model = state.contentUiModel) {
                 is DetailContentUiModel.Gallery -> {
-                    GalleryDetailScreen(
-                        content = model.content,
-                        onBackClick = onBack,
-                        onEditClick = { onNavigateToEditor(state.detailId.toString()) },
-                        onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
-                    )
+                    Box {
+                        GalleryDetailScreen(
+                            content = model.content,
+                            snackbarHostState = snackbarHostState,
+                            onBackClick = onBack,
+                            onEditClick = { onNavigateToEditor(state.detailId.toString()) },
+                            onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
+                        )
+                        if (state.isDeleting) {
+                            DeleteInProgressOverlay()
+                        }
+                    }
                 }
 
                 else -> {
@@ -110,6 +128,7 @@ fun GalleryDetailScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
     content: GalleryDetailContent = GalleryDetailContent(),
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     isEditable: Boolean = true,
     onEditClick: () -> Unit = {},
     onDeleteConfirm: () -> Unit = {},
@@ -129,6 +148,7 @@ fun GalleryDetailScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             DetailTopBar(
                 title = stringResource(R.string.feature_afternote_detail_title),
@@ -181,7 +201,11 @@ private fun GalleryDetailScrollContent(
                 .padding(horizontal = 20.dp),
     ) {
         AfternoteDetailServiceHeader(
-            service = AfternoteServiceDisplay.fromServiceName(content.serviceName),
+            service =
+                AfternoteServiceDisplay.fromService(
+                    serviceName = content.serviceName,
+                    type = AfternoteType.GALLERY_AND_FILES,
+                ),
             finalWriteDate = content.finalWriteDate,
         )
 

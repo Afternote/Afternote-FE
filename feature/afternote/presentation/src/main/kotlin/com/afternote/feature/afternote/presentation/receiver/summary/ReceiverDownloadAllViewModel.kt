@@ -2,7 +2,11 @@ package com.afternote.feature.afternote.presentation.receiver.summary
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
+import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
+import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +23,7 @@ class ReceiverDownloadAllViewModel
     @Inject
     constructor(
         private val receiverRepository: ReceiverRepository,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(ReceiverDownloadAllUiState())
         val uiState: StateFlow<ReceiverDownloadAllUiState> = _uiState.asStateFlow()
@@ -34,10 +39,10 @@ class ReceiverDownloadAllViewModel
         private fun handleConfirmDownload() {
             viewModelScope.launch {
                 _uiState.update {
-                    it.copy(isLoading = true, errorMessage = null, downloadSuccess = false)
+                    it.copy(isLoading = true, errorMessageRes = null, downloadSuccess = false)
                 }
                 receiverRepository
-                    .downloadAllReceived()
+                    .downloadReceivedExport()
                     .onSuccess { result ->
                         receiverRepository
                             .saveReceivedExportToFile(result)
@@ -46,18 +51,20 @@ class ReceiverDownloadAllViewModel
                                     it.copy(isLoading = false, downloadSuccess = true)
                                 }
                             }.onFailure { e ->
+                                errorReporter.recordAfternoteFailure(AfternoteFailureStage.RECEIVED_EXPORT_SAVE, e)
                                 _uiState.update {
                                     it.copy(
                                         isLoading = false,
-                                        errorMessage = e.message ?: "파일 저장에 실패했습니다.",
+                                        errorMessageRes = R.string.receiver_download_all_save_failed,
                                     )
                                 }
                             }
                     }.onFailure { e ->
+                        errorReporter.recordAfternoteFailure(AfternoteFailureStage.RECEIVED_EXPORT_DOWNLOAD, e)
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                errorMessage = e.message ?: "모든 기록 내려받기에 실패했습니다.",
+                                errorMessageRes = R.string.receiver_download_all_failed,
                             )
                         }
                     }
@@ -69,6 +76,6 @@ class ReceiverDownloadAllViewModel
         }
 
         private fun handleClearError() {
-            _uiState.update { it.copy(errorMessage = null) }
+            _uiState.update { it.copy(errorMessageRes = null) }
         }
     }

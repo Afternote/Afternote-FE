@@ -3,7 +3,10 @@ package com.afternote.feature.afternote.presentation.receiver.playlist
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
+import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
+import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +29,7 @@ class ReceiverMemorialPlaylistViewModel
     constructor(
         savedStateHandle: SavedStateHandle,
         private val receiverRepository: ReceiverRepository,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(ReceiverMemorialPlaylistUiState())
         val uiState: StateFlow<ReceiverMemorialPlaylistUiState> = _uiState.asStateFlow()
@@ -106,6 +110,7 @@ class ReceiverMemorialPlaylistViewModel
                             )
                         }
                     }.onFailure { e ->
+                        errorReporter.recordAfternoteFailure(AfternoteFailureStage.RECEIVED_PLAYLIST_LOAD, e)
                         _uiState.update {
                             it.copy(
                                 isLoading = false,

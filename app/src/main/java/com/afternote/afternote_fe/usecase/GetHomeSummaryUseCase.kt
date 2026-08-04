@@ -1,5 +1,6 @@
 package com.afternote.afternote_fe.usecase
 
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.HomeSummary
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
@@ -27,7 +28,7 @@ class GetHomeSummaryUseCase
         private val dailyQuestionRepository: DailyQuestionRepository,
     ) {
         suspend operator fun invoke(): Result<HomeSummary> =
-            runCatching {
+            runCatchingCancellable {
                 coroutineScope {
                     val thisMonth = YearMonth.now().toString() // yyyy-MM
                     val profileDeferred = async { userRepository.getMyProfile() }

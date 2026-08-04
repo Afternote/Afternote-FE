@@ -6,7 +6,7 @@ package com.afternote.feature.afternote.domain.model.author
  */
 data class CreateAccountPayload(
     val title: String,
-    val actions: List<String>,
+    val processingMethods: List<String>,
     val leaveMessage: String? = null,
     val credentials: AfternoteAccountCredentials? = null,
     val receiverIds: List<Long> = emptyList(),

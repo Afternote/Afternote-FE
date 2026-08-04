@@ -3,8 +3,11 @@ package com.afternote.feature.afternote.presentation.receiver.detail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
+import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -19,7 +22,7 @@ import javax.inject.Inject
  * 수신 애프터노트 상세 ViewModel.
  *
  * - 상세 조회: [ReceiverRepository.getReceivedAfternoteDetail] (Retrofit baseUrl 기준
- *   `receiver-auth/after-notes/{afternoteId}` 경로 — 실제 경로는 [com.afternote.feature.afternote.data.service.ReceiverAfternoteApiService]).
+ *   `receiver-auth/after-notes/{afternoteId}` 경로 — 실제 경로는 data 모듈의 `ReceiverAfternoteApiService`).
  * - 상세 ID: [SavedStateHandle] 의 `afternoteId` (수신자 라우트 인자명).
  *
  * 발신자 [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel] 과
@@ -32,6 +35,7 @@ class ReceivedAfternoteDetailViewModel
     constructor(
         savedStateHandle: SavedStateHandle,
         private val receiverRepository: ReceiverRepository,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val afternoteIdFromNav: Long? =
             savedStateHandle.get<String>(NAV_ARG_AFTERNOTE_ID)?.toLongOrNull()
@@ -70,11 +74,11 @@ class ReceivedAfternoteDetailViewModel
                             it.copy(loadPhase = LoadPhase.Loaded(detail.toReceivedDetailContentUiModel()))
                         }
                     }.onFailure { e ->
+                        errorReporter.recordAfternoteFailure(AfternoteFailureStage.RECEIVED_DETAIL_LOAD, e)
                         internalState.update {
                             it.copy(
                                 loadPhase =
                                     LoadPhase.Failed(
-                                        rawMessage = e.message,
                                         messageRes = R.string.afternote_detail_load_error,
                                     ),
                             )
@@ -100,7 +104,6 @@ class ReceivedAfternoteDetailViewModel
             ) : LoadPhase
 
             data class Failed(
-                val rawMessage: String? = null,
                 val messageRes: Int? = null,
             ) : LoadPhase
         }
@@ -120,7 +123,6 @@ class ReceivedAfternoteDetailViewModel
 
                 is LoadPhase.Failed -> {
                     ReceivedAfternoteDetailUiState.Error(
-                        rawMessage = phase.rawMessage,
                         messageRes = phase.messageRes,
                     )
                 }
