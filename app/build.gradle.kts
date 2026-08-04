@@ -130,7 +130,6 @@ android {
             signingConfig = signingConfigs.getByName("release")
             firebaseAppDistribution {
                 groups = "afternote"
-                releaseNotes = "Release build for internal distribution"
             }
         }
     }
