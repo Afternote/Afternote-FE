@@ -48,6 +48,7 @@ import java.time.LocalDate
 @Composable
 fun RecipientTimeletterScreen(
     onLetterClick: (Long) -> Unit = {},
+    // TODO: 수신 타임레터 화면의 진입 경로가 기획되면 설정 화면 이동 콜백을 연결한다.
     onSettingClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: RecipientTimeletterViewModel = hiltViewModel(),
