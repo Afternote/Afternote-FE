@@ -5,26 +5,20 @@ import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayloa
 import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
-import com.afternote.feature.afternote.domain.model.author.CreatePlaylistPayload
+import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
+import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
-import com.afternote.feature.afternote.domain.model.author.PlaylistSongPayload
-import com.afternote.feature.afternote.domain.model.author.PlaylistWritePayload
+import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
 import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorFormMapper.buildUpdatePayload
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessagesCodec
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
-import com.afternote.feature.afternote.presentation.author.editor.model.LastWishPrefill
-import com.afternote.feature.afternote.presentation.author.editor.model.LoadFromExistingAccountParams
-import com.afternote.feature.afternote.presentation.author.editor.model.LoadFromExistingParams
-import com.afternote.feature.afternote.presentation.author.editor.model.LoadFromExistingProcessingParams
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
-
-private const val LAST_WISH_DEFAULT_CALM = "차분하고 조용하게 보내주세요."
-private const val LAST_WISH_DEFAULT_BRIGHT = "슬퍼 하지 말고 밝고 따뜻하게 보내주세요."
+import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 
 /**
  * 에디터 폼 프리필·저장 페이로드용 Domain ↔ UI 매핑.
@@ -36,53 +30,18 @@ private const val LAST_WISH_DEFAULT_BRIGHT = "슬퍼 하지 말고 밝고 따뜻
  * `playlistSongs: List<Song>`으로 받는다 (Compose 상태 홀더에 직접 의존하지 않는다).
  */
 internal object AfternoteEditorFormMapper {
-    fun buildEditorFormPrefill(detail: Detail): EditorFormPrefill = editorFormPrefillFromLoadParams(buildLoadFromExistingParams(detail))
-
-    /**
-     * [LoadFromExistingParams]의 문자열·분기를 해석해 폼에 바로 넣을 [EditorFormPrefill]을 만든다.
-     * (Preview·테스트에서도 사용)
-     */
-    fun editorFormPrefillFromLoadParams(params: LoadFromExistingParams): EditorFormPrefill {
-        val category = EditorCategory.fromDisplayLabel(params.categoryDisplayString)
-        val messageBlocks = EditorMessagesCodec.parsePersistedToBlocks(params.processing.message)
-        val lastWish =
-            params.atmosphere?.let { atmosphereValue ->
-                val trimmed = atmosphereValue.trim()
-                when {
-                    trimmed.isEmpty() -> LastWishPrefill(selectedKey = null, customText = "")
-                    trimmed == LAST_WISH_DEFAULT_CALM -> LastWishPrefill(selectedKey = "calm", customText = "")
-                    trimmed == LAST_WISH_DEFAULT_BRIGHT -> LastWishPrefill(selectedKey = "bright", customText = "")
-                    else -> LastWishPrefill(selectedKey = "other", customText = trimmed)
-                }
-            }
-        return EditorFormPrefill(
-            loadedItemId = params.itemId,
-            serviceName = params.serviceName,
-            category = category,
-            accountId = params.account.id,
-            password = params.account.password,
-            messageBlocks = messageBlocks,
-            processingMethods = params.processing.methods,
-            lastWishUpdate = lastWish,
-            funeralVideoUrl = params.memorialVideoUrl,
-            funeralThumbnailUrl = params.memorialThumbnailUrl,
-            memorialPhotoUrl = params.memorialPhotoUrl,
-            memorialPlaylistSongs = params.memorialSongs,
-        )
-    }
-
-    fun buildLoadFromExistingParams(detail: Detail): LoadFromExistingParams {
-        val actionItems =
-            detail.processing?.actions?.mapIndexed { index, text ->
+    fun buildEditorFormPrefill(detail: Detail): EditorFormPrefill {
+        val processingMethodItems =
+            detail.processingMethods.mapIndexed { index, text ->
                 ProcessingMethodItem(
                     id = (index + 1).toString(),
                     text = text,
                 )
-            } ?: emptyList()
+            }
         val editorCategory = EditorCategory.fromServerValue(detail.category)
         val memorialSongs: List<Song> =
             if (editorCategory == EditorCategory.MEMORIAL) {
-                detail.playlist?.songs?.mapIndexed { index, s ->
+                detail.memorial?.songs?.mapIndexed { index, s ->
                     Song(
                         id = (s.id ?: index.toLong()).toString(),
                         title = s.title,
@@ -93,38 +52,38 @@ internal object AfternoteEditorFormMapper {
             } else {
                 emptyList()
             }
-        return LoadFromExistingParams(
-            itemId = detail.id.toString(),
+        return EditorFormPrefill(
+            loadedItemId = detail.id.toString(),
             serviceName = detail.title,
-            categoryDisplayString = editorCategory.displayLabel,
-            account =
-                LoadFromExistingAccountParams(
-                    id = detail.credentials?.id.orEmpty(),
-                    password = detail.credentials?.password.orEmpty(),
-                ),
-            processing =
-                LoadFromExistingProcessingParams(
-                    message = detail.processing?.leaveMessage.orEmpty(),
-                    methods = actionItems,
-                ),
-            atmosphere = detail.playlist?.atmosphere,
-            memorialVideoUrl = detail.playlist?.playlistDetailMemorialMedia?.videoUrl,
-            memorialThumbnailUrl = detail.playlist?.playlistDetailMemorialMedia?.thumbnailUrl,
-            memorialPhotoUrl = detail.playlist?.playlistDetailMemorialMedia?.photoUrl,
-            memorialSongs = memorialSongs,
+            category = editorCategory,
+            accountId = detail.credentials?.id.orEmpty(),
+            password = detail.credentials?.password.orEmpty(),
+            leaveMessageBlocks = detail.leaveMessage?.let(EditorMessagesCodec::parsePersistedToBlocks).orEmpty(),
+            processingMethods = processingMethodItems,
+            memorialVideoUrl = detail.memorial?.media?.videoUrl,
+            memorialThumbnailUrl = detail.memorial?.media?.thumbnailUrl,
+            memorialPhotoUrl = detail.memorial?.media?.photoUrl,
+            memorialPlaylistSongs = memorialSongs,
+            receivers =
+                detail.receivers.map { receiver ->
+                    AfternoteEditorReceiver(
+                        id = receiver.receiverId.toString(),
+                        name = receiver.name,
+                        label = receiver.relation,
+                    )
+                },
         )
     }
 
-    fun buildPlaylistWritePayload(
+    fun buildMemorialWritePayload(
         playlistSongs: List<Song>,
-        atmosphere: String = "",
         memorialPhotoUrl: String? = null,
-        funeralVideoUrl: String? = null,
-        funeralThumbnailUrl: String? = null,
-    ): PlaylistWritePayload {
+        memorialVideoUrl: String? = null,
+        memorialThumbnailUrl: String? = null,
+    ): MemorialWritePayload {
         val songs =
             playlistSongs.map { song ->
-                PlaylistSongPayload(
+                MemorialSongPayload(
                     id = song.id.toLongOrNull(),
                     title = song.title,
                     artist = song.artist,
@@ -132,14 +91,13 @@ internal object AfternoteEditorFormMapper {
                 )
             }
         val memorialVideo =
-            funeralVideoUrl?.ifBlank { null }?.let { url ->
+            memorialVideoUrl?.ifBlank { null }?.let { url ->
                 MemorialVideoPayload(
                     videoUrl = url,
-                    thumbnailUrl = funeralThumbnailUrl?.ifBlank { null },
+                    thumbnailUrl = memorialThumbnailUrl?.ifBlank { null },
                 )
             }
-        return PlaylistWritePayload(
-            atmosphere = atmosphere.ifBlank { null },
+        return MemorialWritePayload(
             memorialPhotoUrl = memorialPhotoUrl?.ifBlank { null },
             songs = songs,
             memorialVideo = memorialVideo,
@@ -151,20 +109,20 @@ internal object AfternoteEditorFormMapper {
         payload: RegisterAfternotePayload,
         selectedReceiverIds: List<Long>,
         playlistSongs: List<Song>,
-        funeralVideoUrl: String?,
-        funeralThumbnailUrl: String?,
+        memorialVideoUrl: String?,
+        memorialThumbnailUrl: String?,
         memorialPhotoUrl: String?,
     ): CreateAfternoteInput {
-        val actions = payload.processingMethods.map { it.text }
+        val processingMethods = payload.processingMethods.map { it.text }
         val leaveMessage = payload.message.ifBlank { null }
 
         return when (category) {
             EditorCategory.GALLERY -> {
-                val galleryActions = actions.ifEmpty { listOf("정보 전달") }
+                val galleryMethods = processingMethods.ifEmpty { listOf("정보 전달") }
                 CreateAfternoteInput.Gallery(
                     CreateGalleryPayload(
                         title = payload.serviceName,
-                        actions = galleryActions,
+                        processingMethods = galleryMethods,
                         leaveMessage = leaveMessage,
                         receiverIds = selectedReceiverIds,
                     ),
@@ -172,18 +130,17 @@ internal object AfternoteEditorFormMapper {
             }
 
             EditorCategory.MEMORIAL -> {
-                val playlistPayload =
-                    buildPlaylistWritePayload(
+                val memorialPayload =
+                    buildMemorialWritePayload(
                         playlistSongs = playlistSongs,
-                        atmosphere = payload.atmosphere,
                         memorialPhotoUrl = memorialPhotoUrl,
-                        funeralVideoUrl = funeralVideoUrl,
-                        funeralThumbnailUrl = funeralThumbnailUrl,
+                        memorialVideoUrl = memorialVideoUrl,
+                        memorialThumbnailUrl = memorialThumbnailUrl,
                     )
-                CreateAfternoteInput.Playlist(
-                    CreatePlaylistPayload(
+                CreateAfternoteInput.Memorial(
+                    CreateMemorialPayload(
                         title = payload.serviceName,
-                        playlist = playlistPayload,
+                        memorial = memorialPayload,
                         receiverIds = selectedReceiverIds,
                     ),
                 )
@@ -191,7 +148,7 @@ internal object AfternoteEditorFormMapper {
 
             EditorCategory.SOCIAL -> {
                 CreateAfternoteInput.Social(
-                    buildAccountCreatePayload(payload, actions, leaveMessage, selectedReceiverIds),
+                    buildAccountCreatePayload(payload, processingMethods, leaveMessage, selectedReceiverIds),
                 )
             }
 
@@ -199,7 +156,7 @@ internal object AfternoteEditorFormMapper {
             // 공유하고, category 문자열만 data 계층 매퍼에서 "BUSINESS" 로 실린다 (이슈 #467).
             EditorCategory.BUSINESS -> {
                 CreateAfternoteInput.Business(
-                    buildAccountCreatePayload(payload, actions, leaveMessage, selectedReceiverIds),
+                    buildAccountCreatePayload(payload, processingMethods, leaveMessage, selectedReceiverIds),
                 )
             }
 
@@ -212,13 +169,13 @@ internal object AfternoteEditorFormMapper {
 
     private fun buildAccountCreatePayload(
         payload: RegisterAfternotePayload,
-        actions: List<String>,
+        processingMethods: List<String>,
         leaveMessage: String?,
         selectedReceiverIds: List<Long>,
     ): CreateAccountPayload =
         CreateAccountPayload(
             title = payload.serviceName,
-            actions = actions,
+            processingMethods = processingMethods,
             leaveMessage = leaveMessage,
             credentials =
                 AfternoteAccountCredentials(
@@ -240,13 +197,12 @@ internal object AfternoteEditorFormMapper {
                 AfternoteUpdatePayload(
                     category = EditorCategory.MEMORIAL.serverValue,
                     title = payload.serviceName,
-                    playlist =
-                        buildPlaylistWritePayload(
+                    memorial =
+                        buildMemorialWritePayload(
                             playlistSongs = playlistSongs,
-                            atmosphere = payload.atmosphere,
                             memorialPhotoUrl = memorialMedia.memorialPhotoUrl,
-                            funeralVideoUrl = memorialMedia.funeralVideoUrl,
-                            funeralThumbnailUrl = memorialMedia.funeralThumbnailUrl,
+                            memorialVideoUrl = memorialMedia.memorialVideoUrl,
+                            memorialThumbnailUrl = memorialMedia.memorialThumbnailUrl,
                         ),
                 )
             }
@@ -262,16 +218,16 @@ internal object AfternoteEditorFormMapper {
         }
 
     /**
-     * actions(처리 방법) 기반 카테고리(SOCIAL·BUSINESS·GALLERY) 공용 update payload —
-     * [AfternoteUpdatePayload.actions] 를 채우고 계정형(SOCIAL·BUSINESS)만 credentials 를 싣는다.
-     * MEMORIAL 은 [AfternoteUpdatePayload.playlist] 기반이라 [buildUpdatePayload] 의 별도 분기.
+     * 처리 방법 기반 카테고리(SOCIAL·BUSINESS·GALLERY) 공용 update payload —
+     * [AfternoteUpdatePayload.processingMethods] 를 채우고 계정형(SOCIAL·BUSINESS)만 credentials 를 싣는다.
+     * MEMORIAL 은 [AfternoteUpdatePayload.memorial] 기반이라 [buildUpdatePayload] 의 별도 분기.
      */
     private fun buildActionsUpdatePayload(
         category: EditorCategory,
         payload: RegisterAfternotePayload,
         selectedReceiverIds: List<Long>,
     ): AfternoteUpdatePayload {
-        val actions = payload.processingMethods.map { it.text }
+        val processingMethods = payload.processingMethods.map { it.text }
         val hasCredentials = category == EditorCategory.SOCIAL || category == EditorCategory.BUSINESS
         val credentials =
             if (hasCredentials) {
@@ -284,11 +240,11 @@ internal object AfternoteEditorFormMapper {
         return AfternoteUpdatePayload(
             category = category.serverValue,
             title = payload.serviceName,
-            actions = actions.ifEmpty { null },
+            processingMethods = processingMethods.ifEmpty { null },
             leaveMessage = payload.message.ifBlank { null },
             credentials = credentials,
             receivers = selectedReceiverIds.map { ReceiverRefPayload(receiverId = it) },
-            playlist = null,
+            memorial = null,
         )
     }
 }
@@ -297,7 +253,7 @@ internal object AfternoteEditorFormMapper {
  * Resolved memorial media URLs for performUpdate/performCreate.
  */
 internal data class MemorialMediaUrls(
-    val funeralVideoUrl: String? = null,
-    val funeralThumbnailUrl: String? = null,
+    val memorialVideoUrl: String? = null,
+    val memorialThumbnailUrl: String? = null,
     val memorialPhotoUrl: String? = null,
 )

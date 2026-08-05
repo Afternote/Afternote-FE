@@ -18,7 +18,7 @@ sealed interface CreateAfternoteInput {
         val payload: CreateGalleryPayload,
     ) : CreateAfternoteInput
 
-    data class Playlist(
-        val payload: CreatePlaylistPayload,
+    data class Memorial(
+        val payload: CreateMemorialPayload,
     ) : CreateAfternoteInput
 }

@@ -2,6 +2,7 @@ package com.afternote.afternote_fe
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.ui.Route
@@ -43,13 +44,13 @@ class MainViewModel
             // 완료(구독 취소)해 이후 true 재방출(토큰 갱신·DataStore 재방출 등)을 무시 → 중복 ping 을 막는다.
             // 결과: 프로세스(= MainViewModel 인스턴스)당 한 번만 발화. 앱 진입 Activity 스코프라 사실상 앱 실행당 1회.
             // WhileSubscribed 재구독으로 인한 중복 방출과 무관하게 최초 로그인 확정 1건만 소비한다.
-            // ping 실패가 스플래시/네비게이션을 막지 않도록 best-effort(runCatching) 처리.
+            // ping 실패가 스플래시/네비게이션을 막지 않도록 best-effort 처리 — 단 취소는 삼키지 않는다.
             viewModelScope.launch {
                 authRepository.isLoggedIn
                     .filter { it }
                     .take(1)
                     .collect {
-                        runCatching { userRepository.logActivity() }
+                        runCatchingCancellable { userRepository.logActivity() }
                     }
             }
         }

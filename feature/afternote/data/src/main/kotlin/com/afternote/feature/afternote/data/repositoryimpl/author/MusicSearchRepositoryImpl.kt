@@ -4,6 +4,7 @@ import com.afternote.feature.afternote.data.dto.MusicTrackDto
 import com.afternote.feature.afternote.data.service.MusicApiService
 import com.afternote.feature.afternote.domain.model.author.playlist.SearchedSong
 import com.afternote.feature.afternote.domain.repository.author.MusicSearchRepository
+import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 
 /**
@@ -18,10 +19,15 @@ class MusicSearchRepositoryImpl
         override suspend fun search(keyword: String): Result<List<SearchedSong>> {
             val trimmed = keyword.trim()
             if (trimmed.isEmpty()) return Result.success(emptyList())
-            return runCatching {
-                val response = api.search(keyword = trimmed)
-                val tracks = response.tracks
-                tracks.mapIndexed { index, dto -> dto.toPlaylistSongDisplay(index) }
+            return try {
+                val tracks = api.search(keyword = trimmed).tracks
+                Result.success(tracks.mapIndexed { index, dto -> dto.toPlaylistSongDisplay(index) })
+            } catch (e: CancellationException) {
+                // runCatching 은 in-flight 취소까지 Result.failure 로 삼켜, 타이핑으로 이전 검색이
+                // 취소될 때마다 유령 "검색 실패"가 화면에 남았다. 취소는 실패가 아니므로 되던진다.
+                throw e
+            } catch (e: Exception) {
+                Result.failure(e)
             }
         }
 

@@ -38,7 +38,7 @@ interface ReceiverRepository {
 
     suspend fun getReceivedAfternoteDetail(afternoteId: Long): Result<ReceivedAfternoteDetail>
 
-    suspend fun downloadAllReceived(): Result<ReceivedExportBundle>
+    suspend fun downloadReceivedExport(): Result<ReceivedExportBundle>
 
     suspend fun saveReceivedExportToFile(bundle: ReceivedExportBundle): Result<Unit>
 

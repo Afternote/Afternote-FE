@@ -58,6 +58,8 @@
     <string name="receiver_timeletter_sort_unread_first">읽지 않은 순</string>
     <string name="receiver_download_all_button">모든 기록 내려받기</string>
     <string name="receiver_download_all_dialog_message">모든 기록을 내려받으시겠습니까?</string>
+    <string name="receiver_download_all_failed">모든 기록 내려받기에 실패했습니다.</string>
+    <string name="receiver_download_all_save_failed">파일 저장에 실패했습니다.</string>
     <string name="receiver_hero_default_message">가족들에게…\n내가 없어도 너무 슬퍼하지마.</string>
     <string name="receiver_mindrecord_section_title">마음의 기록</string>
     <string name="receiver_mindrecord_section_desc">고인의 일상적인 생각과 감정, 일기들입니다.</string>
@@ -156,13 +158,13 @@
     <string name="receiver_sender_detail_status_load_failed">열람 신청 상태를 불러오지 못했습니다.</string>
     <string name="receiver_sender_detail_not_found">발신자를 찾을 수 없습니다.</string>
 
-    <!-- 본인 확인 이메일 인증 (3·4) — 백엔드 receiver-auth/email/* 미구현 stub -->
+    <!-- 본인 확인 이메일 인증 (3·4) -->
     <string name="receiver_verify_email_placeholder">이메일 주소</string>
     <string name="receiver_verify_code_placeholder">인증번호</string>
     <string name="receiver_verify_request_code">인증번호 받기</string>
     <string name="receiver_verify_code_sent">인증번호가 전송되었습니다.\n수신 된 인증번호를 입력해 주세요.</string>
     <string name="receiver_verify_email_format_invalid">이메일 형식이 올바르지 않습니다.</string>
-    <string name="receiver_verify_code_mismatch">인증번호가 일치하지 않습니다.</string>
+    <string name="receiver_verify_code_verify_failed">인증번호 확인에 실패했습니다. 잠시 후 다시 시도해주세요.</string>
     <string name="receiver_verify_code_send_failed">인증번호 발송에 실패했습니다. 잠시 후 다시 시도해주세요.</string>
 
     <string name="receiver_verify_title">수신자 인증</string>
@@ -231,6 +233,7 @@
     <string name="afternote_detail_invalid_id">잘못된 항목 ID입니다.</string>
     <string name="afternote_detail_load_error">상세 정보를 불러오지 못했습니다.</string>
     <string name="afternote_detail_delete_failed">삭제에 실패했습니다.</string>
+    <string name="afternote_detail_deleting">삭제 중</string>
     <string name="afternote_edit_item_not_found">항목을 찾을 수 없습니다.</string>
 
     <string name="afternote_validation_title_required">등록할 서비스(플랫폼)명을 선택해 주세요.</string>
@@ -294,9 +297,6 @@
     <string name="afternote_editor_relationship_friend">친구</string>
     <string name="afternote_editor_relationship_family">가족</string>
     <string name="afternote_editor_relationship_lover">연인</string>
-    <string name="afternote_editor_last_wish_calm">차분하고 조용하게 보내주세요.</string>
-    <string name="afternote_editor_last_wish_bright">슬퍼 하지 말고 밝고 따뜻하게 보내주세요.</string>
-    <string name="afternote_editor_last_wish_other">기타(직접 입력)</string>
     <string name="afternote_editor_custom_service_dialog_title">직접 입력하기</string>
     <string name="afternote_editor_custom_service_name_label">추가 서비스명</string>
     <string name="afternote_editor_playlist_screen_title">추억 플레이리스트</string>
@@ -316,4 +316,7 @@
     <string name="afternote_editor_save_failed_generic">저장에 실패했습니다.</string>
     <string name="afternote_editor_search_failed_generic">검색 실패</string>
     <string name="afternote_editor_thumbnail_upload_failed">영정사진 업로드에 실패했습니다.</string>
+    <string name="afternote_editor_exit_confirm_message">작성 중인 내용이 사라집니다.\n정말 나가시겠어요?</string>
+    <string name="afternote_editor_exit_confirm_confirm">나가기</string>
+    <string name="afternote_editor_exit_confirm_cancel">계속 작성</string>
 </resources>

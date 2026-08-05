@@ -4,7 +4,7 @@ import com.afternote.feature.afternote.data.dto.ReceivedAfternoteDetailDto
 import com.afternote.feature.afternote.data.dto.ReceivedCredentialsDto
 import com.afternote.feature.afternote.data.dto.ReceivedPlaylistDto
 import com.afternote.feature.afternote.data.dto.ReceivedSongDto
-import com.afternote.feature.afternote.data.mapper.categoryToServiceType
+import com.afternote.feature.afternote.data.mapper.categoryToAfternoteType
 import com.afternote.feature.afternote.data.mapper.formatDateFromServer
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAccountCredentials
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
@@ -17,8 +17,8 @@ fun ReceivedAfternoteDetailDto.toDomain(): ReceivedAfternoteDetail =
         senderName = senderName,
         createdAt = createdAt?.let(::formatDateFromServer),
         category = category,
-        type = category?.let(::categoryToServiceType),
-        actions = actions,
+        type = category?.let(::categoryToAfternoteType),
+        processingMethods = processingMethods,
         leaveMessage = leaveMessage,
         playlist = playlist?.toDomain(),
         credentials = credentials?.toDomain(),

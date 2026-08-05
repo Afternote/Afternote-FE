@@ -172,6 +172,7 @@ fun LoginScreen(
                         .fillMaxWidth()
                         .height(48.dp),
                 type = AfternoteButtonType.Default,
+                isLoading = isLoading,
             )
         }
     }
