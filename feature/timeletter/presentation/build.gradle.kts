@@ -19,4 +19,5 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.compose.wheel.picker)
     implementation(libs.coil.compose)
+    testImplementation(libs.coroutines.test)
 }

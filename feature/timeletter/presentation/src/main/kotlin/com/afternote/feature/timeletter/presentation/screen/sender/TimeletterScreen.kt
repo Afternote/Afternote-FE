@@ -12,9 +12,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -22,10 +24,13 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.afternote.core.ui.button.FAB.PenFloatingActionButton
+import com.afternote.core.ui.popup.Popup
+import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterList
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
+import com.afternote.feature.timeletter.presentation.R
 import com.afternote.feature.timeletter.presentation.component.EmptyTimeLetterContent
 import com.afternote.feature.timeletter.presentation.component.TimeLetterContent
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeletterUiState
@@ -43,7 +48,23 @@ fun TimeletterScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var viewMode by remember { mutableStateOf(ViewMode.List) }
+    var pendingDeleteId by rememberSaveable { mutableStateOf<Long?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
+    val deleteFailureMessage = stringResource(R.string.timeletter_delete_failure)
+
+    pendingDeleteId?.let { timeLetterId ->
+        Popup(
+            type = PopupType.Variant2,
+            message = stringResource(R.string.timeletter_delete_confirm_message),
+            confirmText = stringResource(R.string.timeletter_delete_confirm),
+            dismissText = stringResource(R.string.timeletter_delete_dismiss),
+            onConfirm = {
+                pendingDeleteId = null
+                viewModel.deleteTimeLetter(timeLetterId)
+            },
+            onDismiss = { pendingDeleteId = null },
+        )
+    }
 
     val errorMessage = (uiState as? TimeletterUiState.Success)?.errorMessage
     LaunchedEffect(errorMessage) {
@@ -53,6 +74,17 @@ fun TimeletterScreen(
             withDismissAction = true,
         )
         viewModel.consumeErrorMessage()
+    }
+
+    val showDeleteFailure = (uiState as? TimeletterUiState.Success)?.showDeleteFailure == true
+    LaunchedEffect(showDeleteFailure) {
+        if (showDeleteFailure) {
+            snackbarHostState.showSnackbar(
+                message = deleteFailureMessage,
+                withDismissAction = true,
+            )
+            viewModel.consumeDeleteFailure()
+        }
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -92,7 +124,7 @@ fun TimeletterScreen(
                     onFilterClick = onFilterRecipientClick,
                     onLetterClick = onLetterClick,
                     onEditClick = onEditClick,
-                    onDeleteClick = viewModel::deleteTimeLetter,
+                    onDeleteClick = { pendingDeleteId = it },
                     modifier = Modifier.padding(paddingValues),
                 )
             }

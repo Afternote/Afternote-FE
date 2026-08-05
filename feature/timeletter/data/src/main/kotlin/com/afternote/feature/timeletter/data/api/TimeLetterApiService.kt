@@ -9,6 +9,7 @@ import com.afternote.feature.timeletter.data.dto.TimeLetterUpdateRequestDto
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.HTTP
 import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -42,7 +43,7 @@ interface TimeLetterApiService {
     ): BaseResponse<TimeLetterDto>
 
     // 타임레터 단일/다건 삭제
-    @POST("time-letters/delete")
+    @HTTP(method = "DELETE", path = "time-letters", hasBody = true)
     suspend fun deleteTimeLetters(
         @Body request: TimeLetterDeleteRequestDto,
     ): BaseResponse<Unit>
