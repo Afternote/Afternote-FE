@@ -1,6 +1,5 @@
 package com.afternote.feature.timeletter.presentation.screen.recipient
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,8 +23,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -37,7 +36,6 @@ import com.afternote.feature.timeletter.domain.model.ReceivedTimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlockType
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
-import com.afternote.feature.timeletter.presentation.R
 import com.afternote.feature.timeletter.presentation.viewmodel.RecipientTimeLetterDetailUiState
 import com.afternote.feature.timeletter.presentation.viewmodel.RecipientTimeLetterDetailViewModel
 
@@ -97,7 +95,11 @@ private fun RecipientTimeLetterDetailContent(
     letter: ReceivedTimeLetter,
     contentPadding: PaddingValues,
 ) {
-    val sendAtText = letter.sendAt?.take(10)?.replace("-", ".") ?: ""
+    val sendAtText =
+        letter.sendAt
+            ?.takeIf { it.isNotBlank() }
+            ?.let { "${it.take(10).replace("-", ".")}." }
+            .orEmpty()
 
     val heroImageUrl =
         remember(letter.blocks) {
@@ -119,28 +121,36 @@ private fun RecipientTimeLetterDetailContent(
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.matchParentSize(),
                     )
+                    Box(
+                        modifier =
+                            Modifier
+                                .matchParentSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        colors =
+                                            listOf(
+                                                AfternoteDesign.colors.black.copy(alpha = 0f),
+                                                AfternoteDesign.colors.black.copy(alpha = 0.6f),
+                                            ),
+                                    ),
+                                ),
+                    )
                 } else {
-                    Image(
-                        painter = painterResource(R.drawable.ex_box_img),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.matchParentSize(),
+                    Box(
+                        modifier =
+                            Modifier
+                                .matchParentSize()
+                                .background(
+                                    Brush.radialGradient(
+                                        colors =
+                                            listOf(
+                                                Color(0xFFB7CDC0),
+                                                Color(0xFFF8F8F7),
+                                            ),
+                                    ),
+                                ),
                     )
                 }
-                Box(
-                    modifier =
-                        Modifier
-                            .matchParentSize()
-                            .background(
-                                Brush.verticalGradient(
-                                    colors =
-                                        listOf(
-                                            AfternoteDesign.colors.black.copy(alpha = 0f),
-                                            AfternoteDesign.colors.black.copy(alpha = 0.6f),
-                                        ),
-                                ),
-                            ),
-                )
                 Column(
                     modifier =
                         Modifier
@@ -150,7 +160,12 @@ private fun RecipientTimeLetterDetailContent(
                     Text(
                         text = letter.title ?: "제목 없음",
                         style = AfternoteDesign.typography.h2,
-                        color = AfternoteDesign.colors.white,
+                        color =
+                            if (heroImageUrl != null) {
+                                AfternoteDesign.colors.white
+                            } else {
+                                AfternoteDesign.colors.gray9
+                            },
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
@@ -160,12 +175,22 @@ private fun RecipientTimeLetterDetailContent(
                         Text(
                             text = "발신인  ${letter.senderName ?: ""}",
                             style = AfternoteDesign.typography.footnoteCaption,
-                            color = AfternoteDesign.colors.white,
+                            color =
+                                if (heroImageUrl != null) {
+                                    AfternoteDesign.colors.gray3
+                                } else {
+                                    AfternoteDesign.colors.gray8
+                                },
                         )
                         Text(
                             text = "발송 예정일  $sendAtText",
                             style = AfternoteDesign.typography.footnoteCaption,
-                            color = AfternoteDesign.colors.white,
+                            color =
+                                if (heroImageUrl != null) {
+                                    AfternoteDesign.colors.gray3
+                                } else {
+                                    AfternoteDesign.colors.gray8
+                                },
                         )
                     }
                 }
