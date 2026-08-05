@@ -62,7 +62,9 @@ fun ConnectedAccountsScreen(
                                     .onSuccess { token -> viewModel.link("kakao", token) }
                                     .onFailure { e ->
                                         if (e !is UserCancelledAuthException) {
-                                            viewModel.link("kakao", "") // error state 전달용 빈 호출 방지 — 아래 TODO로 대체 가능
+                                            viewModel.notifyLinkError(
+                                                context.getString(R.string.kakao_account_link_failed),
+                                            )
                                         }
                                     }
                             }
@@ -76,7 +78,9 @@ fun ConnectedAccountsScreen(
                             ).onSuccess { token -> viewModel.link("google", token) }
                                 .onFailure { e ->
                                     if (e !is UserCancelledAuthException) {
-                                        viewModel.notifyLinkError("Google 계정 연결에 실패했습니다.")
+                                        viewModel.notifyLinkError(
+                                            context.getString(R.string.google_account_link_failed),
+                                        )
                                     }
                                 }
                         }
