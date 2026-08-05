@@ -22,14 +22,12 @@ object SaveAfternotePayloadBuilder {
      * @param form 폼 SSOT 스냅샷
      * @param accountId 작성자 계정 ID (UI [androidx.compose.foundation.text.input.TextFieldState] 에서 추출)
      * @param password 작성자 계정 비밀번호 (UI 텍스트에서 추출)
-     * @param atmosphere 추모(MEMORIAL) 분위기 문자열 (`form.atmosphereForSave(...)` 결과)
      * @param date 저장 날짜. 기본값 [LocalDate.now] — 테스트에선 결정적 값 주입 가능.
      */
     fun build(
         form: EditorFormState,
         accountId: String,
         password: String,
-        atmosphere: String,
         date: LocalDate = LocalDate.now(),
     ): RegisterAfternotePayload {
         val methods =
@@ -37,7 +35,7 @@ object SaveAfternotePayloadBuilder {
                 ProcessingMethod(it.id, it.text)
             }
         val fullMessage =
-            EditorMessagesCodec.serializeBlocksToPersisted(form.messageBlocks)
+            EditorMessagesCodec.serializeBlocksToPersisted(form.leaveMessageBlocks)
 
         return RegisterAfternotePayload(
             serviceName =
@@ -52,7 +50,6 @@ object SaveAfternotePayloadBuilder {
             password = password,
             message = fullMessage,
             processingMethods = methods,
-            atmosphere = atmosphere,
         )
     }
 }

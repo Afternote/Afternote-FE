@@ -2,7 +2,13 @@ package com.afternote.feature.onboarding.presentation.findaccount
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.domain.error.EmailVerificationException
 import com.afternote.core.domain.repository.account.AccountRepository
+import com.afternote.feature.onboarding.presentation.R
+import com.afternote.feature.onboarding.presentation.reporting.AuthFailureStage
+import com.afternote.feature.onboarding.presentation.reporting.recordAuthFailure
+import com.afternote.feature.onboarding.presentation.toDisplayMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -12,6 +18,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -26,6 +33,7 @@ class FindIdViewModel
     @Inject
     constructor(
         private val accountRepository: AccountRepository,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(FindIdUiState())
         val uiState: StateFlow<FindIdUiState> = _uiState.asStateFlow()
@@ -35,10 +43,10 @@ class FindIdViewModel
         fun updateEmail(value: String) =
             _uiState.update {
                 // 이메일이 바뀌면 앞서 받은 계정·에러는 더 이상 그 이메일의 것이 아니다.
-                it.copy(email = value, foundAccount = null, verificationError = null)
+                it.copy(email = value, foundAccount = null, hasVerificationError = false)
             }
 
-        fun updateCertificateCode(value: String) = _uiState.update { it.copy(certificateCode = value, verificationError = null) }
+        fun updateCertificateCode(value: String) = _uiState.update { it.copy(certificateCode = value, hasVerificationError = false) }
 
         fun requestVerificationCode() {
             val state = _uiState.value
@@ -48,10 +56,13 @@ class FindIdViewModel
                 accountRepository
                     .sendFindCode(state.email)
                     .onSuccess {
-                        _uiState.update { it.copy(isVerificationSent = true, verificationError = null) }
+                        _uiState.update { it.copy(isVerificationSent = true, hasVerificationError = false) }
                         startResendCooldown()
                     }.onFailure { error ->
-                        _uiState.update { it.copy(errorMessage = error.message ?: "") }
+                        // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
+                        if (error is CancellationException) throw error
+                        errorReporter.recordAuthFailure(AuthFailureStage.FIND_ACCOUNT_CODE_SEND, error)
+                        _uiState.update { it.copy(errorMessage = error.toDisplayMessage(R.string.find_account_failed)) }
                     }
                 _uiState.update { it.copy(isSendingCode = false) }
             }
@@ -61,18 +72,35 @@ class FindIdViewModel
          * 인증번호 "확인". 찾기 흐름에는 검증 전용 엔드포인트가 없고 `auth/email/find` 가
          * 인증번호까지 함께 받아 계정을 돌려주므로, 확인 = 검증 + 조회를 한 번에 한다.
          * 결과는 [FindIdUiState.foundAccount] 에 담아두고 "다음" 에서 결과 화면이 소비한다.
+         *
+         * 실패는 두 갈래로 나뉜다 — 인증번호 무효([EmailVerificationException], 서버 code 1207)만
+         * 필드 아래 인라인 문구이고, 그 밖의 실패는 사용자가 입력으로 고칠 수 없어 스낵바로 보낸다.
+         * 갈래를 나누지 않으면 네트워크 실패에도 "인증번호가 일치하지 않습니다" 가 뜬다.
          */
         fun verifyCode() {
             val state = _uiState.value
             if (!state.isVerifyEnabled) return
             viewModelScope.launch {
-                _uiState.update { it.copy(isVerifying = true, verificationError = null) }
+                _uiState.update { it.copy(isVerifying = true, hasVerificationError = false) }
                 accountRepository
                     .findAccount(state.email, state.certificateCode)
                     .onSuccess { account ->
                         _uiState.update { it.copy(foundAccount = account) }
                     }.onFailure { error ->
-                        _uiState.update { it.copy(verificationError = error.message ?: "") }
+                        // 취소는 장애가 아니다 — 여기는 계측 대상이 아니지만 실패 UI 로 소비하는 것도
+                        // 막아야 해서 되던진다(전수 정정은 #661).
+                        if (error is CancellationException) throw error
+                        // 계측하지 않는다 — 인증번호 오타는 사용자의 정상적인 입력 실수다.
+                        // 자세한 사유는 AuthFailureStage.FIND_ACCOUNT_CODE_SEND KDoc.
+                        _uiState.update {
+                            if (error is EmailVerificationException) {
+                                // 스낵바 신호를 함께 내린다 — 이번 실패는 인라인으로 알리므로,
+                                // 아직 소비되지 않은 이전 실패 문구가 인라인과 겹쳐 뜨지 않게 한다.
+                                it.copy(hasVerificationError = true, errorMessage = null)
+                            } else {
+                                it.copy(errorMessage = error.toDisplayMessage(R.string.find_account_failed))
+                            }
+                        }
                     }
                 _uiState.update { it.copy(isVerifying = false) }
             }

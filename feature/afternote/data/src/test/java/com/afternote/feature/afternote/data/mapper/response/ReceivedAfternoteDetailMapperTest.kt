@@ -5,7 +5,7 @@ import com.afternote.feature.afternote.data.dto.ReceivedCredentialsDto
 import com.afternote.feature.afternote.data.dto.ReceivedMemorialVideoDto
 import com.afternote.feature.afternote.data.dto.ReceivedPlaylistDto
 import com.afternote.feature.afternote.data.dto.ReceivedSongDto
-import com.afternote.feature.afternote.domain.AfternoteServiceType
+import com.afternote.feature.afternote.domain.AfternoteType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -31,7 +31,7 @@ class ReceivedAfternoteDetailMapperTest {
         assertEquals("홍길동", result.senderName)
         assertEquals("2025.11.26", result.createdAt)
         assertEquals("MUSIC", result.category)
-        assertEquals(AfternoteServiceType.MEMORIAL, result.type)
+        assertEquals(AfternoteType.MEMORIAL, result.type)
     }
 
     @Test

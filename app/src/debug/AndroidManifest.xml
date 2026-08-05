@@ -6,6 +6,15 @@
             android:icon="@mipmap/ic_launcher_dev"
             android:roundIcon="@mipmap/ic_launcher_dev"
             tools:replace="android:icon,android:roundIcon">
+        <!--
+          디버그 빌드에서는 크래시·오류 수집을 끕니다.
+          non-fatal 계측(#536) 이후 로그인 실패가 전부 기록되는데, 개발 중 실패(백엔드 미기동,
+          미등록 키 해시 등)까지 배포본과 같은 콘솔에 섞이면 실제 장애 신호를 덮습니다.
+          검증은 release 빌드로 합니다.
+        -->
+        <meta-data
+                android:name="firebase_crashlytics_collection_enabled"
+                android:value="false" />
         <activity
                 android:name="com.afternote.afternote_fe.debug.DebugSettingsActivity"
                 android:exported="true"

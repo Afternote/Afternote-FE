@@ -1,6 +1,7 @@
 package com.afternote.feature.onboarding.presentation.signup
 
 import android.util.Patterns
+import com.afternote.core.ui.UiText
 import com.afternote.feature.onboarding.presentation.terms.TermsState
 
 /**
@@ -57,10 +58,17 @@ data class SignUpUiState(
     /**
      * 인증번호 무효(서버 code 1207) — 시안(2431:14204)상 인증번호 필드 아래 인라인 문구로
      * 표시(스낵바 아님). 만료 판정은 서버가 한다.
+     *
+     * 표시 문구는 화면의 고정 리소스라 서버 문구를 담지 않고 발생 여부만 든다.
      */
-    val verificationError: String? = null,
-    /** 인증번호 무효 외 실패(네트워크 등) — snackbar 로 노출할 에러 메시지. */
-    val errorMessage: String? = null,
+    val hasVerificationError: Boolean = false,
+    /**
+     * 인증번호 무효 외 실패(네트워크 등) — snackbar 로 노출할 문구.
+     *
+     * 예외 `message` 원문을 담지 않는다 — 사유를 확인해 준 타입만 각자의 문구를 갖고 나머지는
+     * 정적 리소스로 내려앉는다(`Throwable.toDisplayMessage`).
+     */
+    val errorMessage: UiText? = null,
 ) {
     val isEmailFormatValid: Boolean
         get() = email.isNotBlank() && Patterns.EMAIL_ADDRESS.matcher(email).matches()

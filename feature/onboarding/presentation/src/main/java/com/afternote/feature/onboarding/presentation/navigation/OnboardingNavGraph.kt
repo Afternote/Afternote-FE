@@ -14,6 +14,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import com.afternote.core.ui.Route
+import com.afternote.core.ui.asString
 import com.afternote.feature.onboarding.presentation.OnboardingProfileEntry
 import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.WelcomeScreen
@@ -77,7 +78,7 @@ fun NavGraphBuilder.onboardingNavGraph(
                 isVerifyEnabled = uiState.isVerifyEnabled,
                 isNextEnabled = uiState.isNextEnabled,
                 resendCooldownSeconds = uiState.resendCooldownSeconds,
-                hasVerificationError = uiState.verificationError != null,
+                hasVerificationError = uiState.hasVerificationError,
                 snackbarHostState = snackbarHostState,
                 onEmailChange = viewModel::updateEmail,
                 onCertificateCodeChange = viewModel::updateCertificateCode,
@@ -106,7 +107,7 @@ fun NavGraphBuilder.onboardingNavGraph(
                 isSendingCode = uiState.isSendingCode,
                 isEmailFormatValid = uiState.isEmailFormatValid,
                 resendCooldownSeconds = uiState.resendCooldownSeconds,
-                hasVerificationError = uiState.verificationError != null,
+                hasVerificationError = uiState.hasVerificationError,
                 isNextEnabled = uiState.isStep1NextEnabled,
                 snackbarHostState = snackbarHostState,
                 onEmailChange = signUpViewModel::updateEmail,
@@ -226,7 +227,7 @@ private fun graphScopedFindIdViewModel(graphScopedParentEntry: () -> NavBackStac
 /**
  * 아이디 찾기 화면의 Snackbar 호스트 + 단발성 에러 신호 처리.
  *
- * 인증번호 불일치는 시안상 인라인 문구라 여기서 다루지 않고([FindIdUiState.verificationError]),
+ * 인증번호 불일치는 시안상 인라인 문구라 여기서 다루지 않고([FindIdUiState.hasVerificationError]),
  * 그 외 실패([FindIdUiState.errorMessage])만 snackbar 로 노출한다.
  */
 @Composable
@@ -235,16 +236,13 @@ private fun rememberFindIdEventHost(
     uiState: FindIdUiState,
 ): SnackbarHostState {
     val snackbarHostState = remember { SnackbarHostState() }
-    val failedMessage = stringResource(R.string.find_account_failed)
-    val pendingErrorMessage = uiState.errorMessage
+    // VM 이 UiText 로 폴백까지 확정해 두므로 빈 문구가 도달하지 않는다.
+    val pendingErrorMessage = uiState.errorMessage?.asString()
 
     LaunchedEffect(pendingErrorMessage) {
         if (pendingErrorMessage != null) {
             snackbarHostState.showSnackbar(
-                // 서버 봉투 message 가 빈 문자열이면 non-null 로 여기까지 온다(requireStatus 의 `?:` 는
-                // null 만 폴백) — 빈 스낵바 방지. message 가 아예 null 인 실패도 VM 이 `?: ""` 로 수렴해
-                // 빈 문자열로 여기 도달하므로, null-message 실패 문구는 이 폴백이 책임진다.
-                message = pendingErrorMessage.ifBlank { failedMessage },
+                message = pendingErrorMessage,
                 duration = SnackbarDuration.Short,
             )
             viewModel.onErrorConsumed()
@@ -271,7 +269,6 @@ private fun rememberSignUpEventHost(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val signupFailedMessage = stringResource(R.string.signup_failed)
     val nameRequiredMessage = stringResource(R.string.signup_name_required)
 
     LaunchedEffect(uiState.shouldNavigateToResidentNumber) {
@@ -291,11 +288,11 @@ private fun rememberSignUpEventHost(
         }
     }
 
-    val pendingErrorMessage = uiState.errorMessage
+    val pendingErrorMessage = uiState.errorMessage?.asString()
     LaunchedEffect(pendingErrorMessage) {
         if (pendingErrorMessage != null) {
             snackbarHostState.showSnackbar(
-                message = pendingErrorMessage.ifBlank { signupFailedMessage },
+                message = pendingErrorMessage,
                 duration = SnackbarDuration.Short,
             )
             viewModel.onErrorConsumed()

@@ -4,7 +4,7 @@ import com.afternote.feature.afternote.presentation.author.editor.message.Editor
 
 /**
  * API에 저장되는 "남기실 말씀" 단일 문자열 ↔ UI 블록 목록.
- * UI는 `TextFieldState`로 편집하고, SSOT 백업은 [com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState.messageBlocks]에 둔다. 직렬화 규칙만 이 객체에 둔다.
+ * UI는 `TextFieldState`로 편집하고, SSOT 백업은 [com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState.leaveMessageBlocks]에 둔다. 직렬화 규칙만 이 객체에 둔다.
  */
 data class EditorMessageTextBlock(
     val title: String,

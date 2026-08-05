@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.data.repositoryimpl.receiver
 
 import com.afternote.core.common.di.IoDispatcher
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import com.afternote.feature.receiver.domain.repository.ReceiverDeliveryDocumentUploadRepository
 import kotlinx.coroutines.CoroutineDispatcher
@@ -30,7 +31,7 @@ class ReceiverDeliveryDocumentUploadRepositoryImpl
             bytes: ByteArray,
             extension: String,
         ): Result<String> =
-            runCatching {
+            runCatchingCancellable {
                 val presigned =
                     receiverAuthRepository
                         .getPresignedUrl(extension)
