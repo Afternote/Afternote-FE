@@ -12,9 +12,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -39,9 +43,19 @@ fun PushNotificationScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val saveFailureMessage = stringResource(R.string.push_notification_save_failure)
+
+    LaunchedEffect(uiState.showSaveFailure) {
+        if (uiState.showSaveFailure) {
+            snackbarHostState.showSnackbar(saveFailureMessage)
+            viewModel.onSaveFailureShown()
+        }
+    }
 
     PushNotificationContent(
         uiState = uiState,
+        snackbarHostState = snackbarHostState,
         onBack = onBack,
         onDeviceAlarmClick = {
             val intent =
@@ -62,6 +76,7 @@ fun PushNotificationScreen(
 @Composable
 private fun PushNotificationContent(
     uiState: PushNotificationUiState,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     onBack: () -> Unit,
     onDeviceAlarmClick: () -> Unit,
     onNewsletterToggle: (Boolean) -> Unit,
@@ -72,6 +87,7 @@ private fun PushNotificationContent(
     onPushCheck: (Boolean) -> Unit,
 ) {
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             DetailTopBar(
                 title = stringResource(R.string.push_notification_title),

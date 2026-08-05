@@ -67,7 +67,7 @@ class PushNotificationViewModel
                     .onSuccess { Log.d(TAG, "onNewsletterToggle: success, on=$on") }
                     .onFailure { e ->
                         Log.e(TAG, "onNewsletterToggle: failed, on=$on", e)
-                        _uiState.update { it.copy(isNewsletterOn = !on) }
+                        _uiState.update { it.copy(isNewsletterOn = !on, showSaveFailure = true) }
                     }
             }
         }
@@ -79,7 +79,7 @@ class PushNotificationViewModel
                     .onSuccess { Log.d(TAG, "onMindRecordToggle: success, on=$on") }
                     .onFailure { e ->
                         Log.e(TAG, "onMindRecordToggle: failed, on=$on", e)
-                        _uiState.update { it.copy(isMindRecordOn = !on) }
+                        _uiState.update { it.copy(isMindRecordOn = !on, showSaveFailure = true) }
                     }
             }
         }
@@ -91,9 +91,13 @@ class PushNotificationViewModel
                     .onSuccess { Log.d(TAG, "onAfternoteToggle: success, on=$on") }
                     .onFailure { e ->
                         Log.e(TAG, "onAfternoteToggle: failed, on=$on", e)
-                        _uiState.update { it.copy(isAfternoteOn = !on) }
+                        _uiState.update { it.copy(isAfternoteOn = !on, showSaveFailure = true) }
                     }
             }
+        }
+
+        fun onSaveFailureShown() {
+            _uiState.update { it.copy(showSaveFailure = false) }
         }
 
         companion object {

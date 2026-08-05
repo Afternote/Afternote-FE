@@ -11,4 +11,5 @@ data class PushNotificationUiState(
     val isNewsletterOn: Boolean = false,
     val isMindRecordOn: Boolean = false,
     val isAfternoteOn: Boolean = false,
+    val showSaveFailure: Boolean = false,
 )
