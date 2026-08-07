@@ -10,9 +10,11 @@ import com.afternote.core.network.model.requireStatus
 import com.afternote.feature.afternote.data.mapper.response.toDetailDomain
 import com.afternote.feature.afternote.data.mapper.toBusinessRequest
 import com.afternote.feature.afternote.data.mapper.toRequest
+import com.afternote.feature.afternote.data.mapper.toServerCategory
 import com.afternote.feature.afternote.data.mapper.toSocialRequest
 import com.afternote.feature.afternote.data.paging.AfternotePagingSource
 import com.afternote.feature.afternote.data.service.AfternoteApiService
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
@@ -24,6 +26,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import javax.inject.Inject
 
 private const val PAGE_SIZE = 10
@@ -37,13 +40,18 @@ class AfternoteRepositoryImpl
         private val invalidationTrigger = MutableStateFlow(0L)
 
         @OptIn(ExperimentalCoroutinesApi::class)
-        override fun getPagedAfternotes(category: String?): Flow<PagingData<ListItem>> =
-            invalidationTrigger.flatMapLatest {
+        override fun getPagedAfternotes(type: AfternoteType?): Flow<PagingData<ListItem>> {
+            val category = type?.toServerCategory()
+            // 서버가 모르는 종류는 보내면 400 이므로 요청 자체를 만들지 않는다.
+            if (type != null && category == null) return flowOf(PagingData.empty())
+
+            return invalidationTrigger.flatMapLatest {
                 Pager(
                     config = PagingConfig(pageSize = PAGE_SIZE),
                     pagingSourceFactory = { AfternotePagingSource(api, category) },
                 ).flow
             }
+        }
 
         override suspend fun getDetail(id: Long): Result<Detail> =
             safeCall {

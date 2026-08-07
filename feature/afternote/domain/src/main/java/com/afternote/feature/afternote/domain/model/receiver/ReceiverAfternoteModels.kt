@@ -10,7 +10,7 @@ data class AfterNotesListResult(
 data class AfterNoteListItem(
     val id: Long,
     val title: String?,
-    val sourceType: String?,
+    val type: AfternoteType?,
     val lastUpdatedAt: String?,
 )
 
