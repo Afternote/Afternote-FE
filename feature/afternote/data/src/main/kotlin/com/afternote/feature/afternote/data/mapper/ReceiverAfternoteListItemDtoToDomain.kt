@@ -7,7 +7,7 @@ import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem
 fun ReceivedAfternoteDto.toDomain(): AfterNoteListItem =
     AfterNoteListItem(
         id = id,
-        title = title,
+        serviceName = title,
         type = category?.let(::afternoteTypeFromServerCategory),
         lastUpdatedAt = createdAt?.let { formatDateFromServer(it) },
     )
