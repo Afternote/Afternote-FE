@@ -46,6 +46,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,6 +77,7 @@ import com.afternote.feature.timeletter.presentation.component.TimeLetterTitleTe
 import com.afternote.feature.timeletter.presentation.component.TimeWheelPicker
 import com.afternote.feature.timeletter.presentation.viewmodel.EditorBlock
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteUiState
+import kotlinx.coroutines.flow.distinctUntilChanged
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -84,10 +86,12 @@ import java.time.LocalTime
 fun TimeLetterWriteScreen(
     modifier: Modifier = Modifier,
     uiState: TimeLetterWriteUiState = TimeLetterWriteUiState(),
-    titleState: TextFieldState = rememberTextFieldState(),
+    titleState: TextFieldState = rememberTextFieldState(uiState.initialTitle.orEmpty()),
     onBackClick: () -> Unit = {},
     onRegisterClick: (title: String, textContents: Map<Long, String>) -> Unit = { _, _ -> },
-    onRecipientClick: () -> Unit = {},
+    onRecipientClick: (title: String, textContents: Map<Long, String>) -> Unit = { _, _ -> },
+    onTitleChanged: (String) -> Unit = {},
+    onTextContentChanged: (blockId: Long, content: String) -> Unit = { _, _ -> },
     onDateSelected: (String) -> Unit = {},
     onTimeSelected: (hour: Int, minute: Int) -> Unit = { _, _ -> },
     onDraftClick: (title: String, textContents: Map<Long, String>) -> Unit = { _, _ -> },
@@ -139,11 +143,10 @@ fun TimeLetterWriteScreen(
         onErrorShown()
     }
 
-    LaunchedEffect(uiState.editingTimeLetterId, uiState.initialTitle) {
-        val title = uiState.initialTitle
-        if (uiState.editingTimeLetterId == null || title != null) {
-            titleState.edit { replace(0, length, title.orEmpty()) }
-        }
+    LaunchedEffect(titleState) {
+        snapshotFlow { titleState.text.toString() }
+            .distinctUntilChanged()
+            .collect(onTitleChanged)
     }
 
     if (uiState.isLoadingEditingLetter) {
@@ -369,7 +372,12 @@ fun TimeLetterWriteScreen(
             item(key = "recipient") {
                 RecipientCard(
                     recipientName = uiState.recipientNames.joinToString(", "),
-                    onClick = onRecipientClick,
+                    onClick = {
+                        onRecipientClick(
+                            titleState.text.toString(),
+                            collectTextContents(),
+                        )
+                    },
                 )
             }
             item(key = "divider_1") {
@@ -398,6 +406,7 @@ fun TimeLetterWriteScreen(
                             initialText = uiState.initialTextContents[block.id].orEmpty(),
                             textAlign = uiState.textAlign,
                             onFocused = { onSetFocusedBlock(block.id) },
+                            onTextChanged = { content -> onTextContentChanged(block.id, content) },
                         )
                     }
 
@@ -444,14 +453,17 @@ private fun TextBlockItem(
     initialText: String,
     textAlign: TextAlign,
     onFocused: () -> Unit,
+    onTextChanged: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state =
         remember(blockId) {
             textBlockStates.getOrPut(blockId) { TextFieldState(initialText) }
         }
-    LaunchedEffect(blockId, initialText) {
-        state.edit { replace(0, length, initialText) }
+    LaunchedEffect(state) {
+        snapshotFlow { state.text.toString() }
+            .distinctUntilChanged()
+            .collect(onTextChanged)
     }
     DisposableEffect(blockId) {
         onDispose { textBlockStates.remove(blockId) }
