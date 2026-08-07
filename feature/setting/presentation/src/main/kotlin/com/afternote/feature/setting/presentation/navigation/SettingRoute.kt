@@ -22,13 +22,17 @@ sealed interface SettingRoute {
     data object NotificationRoute : SettingRoute
 
     @Serializable
-    data object RecipientListRoute : SettingRoute
+    data class RecipientListRoute(
+        val selectForDeliveryConditions: Boolean = false,
+    ) : SettingRoute
 
     @Serializable
     data object RecipientRegisterRoute : SettingRoute
 
     @Serializable
-    data object AfterDeliveryRoute : SettingRoute
+    data class AfterDeliveryRoute(
+        val receiverId: Long,
+    ) : SettingRoute
 
     @Serializable
     data object PasskeyRoute : SettingRoute

@@ -1,11 +1,17 @@
 package com.afternote.feature.setting.presentation.viewmodel
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
 import com.afternote.core.domain.repository.UserRepository
-import com.afternote.core.model.user.DeliveryConditionType
+import com.afternote.core.model.delivery.ConditionState
+import com.afternote.core.model.delivery.DeliveryConditionItem
+import com.afternote.core.model.delivery.DeliveryConditionType
+import com.afternote.core.model.delivery.DeliveryContentType
+import com.afternote.core.model.delivery.InactivityPeriod
+import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
-import jakarta.inject.Inject
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,14 +19,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
+import javax.inject.Inject
 
 @HiltViewModel
 class DeliveryConditionViewModel
     @Inject
     constructor(
+        savedStateHandle: SavedStateHandle,
         private val userRepository: UserRepository,
     ) : ViewModel() {
+        private val receiverId = savedStateHandle.toRoute<SettingRoute.AfterDeliveryRoute>().receiverId
+
         private val _uiState = MutableStateFlow(DeliveryConditionUiState())
         val uiState: StateFlow<DeliveryConditionUiState> = _uiState.asStateFlow()
 
@@ -28,82 +37,103 @@ class DeliveryConditionViewModel
         val saveSuccess = _saveSuccess.receiveAsFlow()
 
         init {
-            loadDeliveryCondition()
+            loadDeliveryConditions()
         }
 
-        private fun loadDeliveryCondition() {
+        private fun loadDeliveryConditions() {
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoading = true) }
-                runCatching { userRepository.getDeliveryCondition() }
-                    .onSuccess { condition ->
-                        val option =
-                            when (condition.conditionType) {
-                                DeliveryConditionType.INACTIVITY -> ProcessingConditionOption.INACTIVITY
-                                DeliveryConditionType.SPECIFIC_DATE -> ProcessingConditionOption.SPECIFIC_DATE
-                                DeliveryConditionType.NONE -> ProcessingConditionOption.INACTIVITY
+                runCatching { userRepository.getReceiverDeliveryConditions(receiverId) }
+                    .onSuccess { response ->
+                        val representative =
+                            response.conditions.firstOrNull {
+                                it.contentType == DeliveryContentType.TIME_LETTER
                             }
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                processingOption = option,
-                                specificDate = condition.specificDate?.let { date -> LocalDate.parse(date) },
+                                conditionType = representative?.conditionType ?: DeliveryConditionType.INACTIVITY,
+                                inactivityPeriod = representative?.inactivityPeriod ?: InactivityPeriod.ONE_YEAR,
+                                conditions = response.conditions,
                             )
                         }
-                    }.onFailure {
-                        _uiState.update { it.copy(isLoading = false) }
+                    }.onFailure { error ->
+                        _uiState.update { it.copy(isLoading = false, errorMessage = error.message) }
                     }
             }
         }
 
-        fun onSelectDeliveryMethodIndex(index: Int) = _uiState.update { it.copy(selectedDeliveryMethodIndex = index) }
+        fun onConditionTypeSelected(index: Int) {
+            val conditionType =
+                if (index == 1) DeliveryConditionType.RECEIVER_REQUEST else DeliveryConditionType.INACTIVITY
+            _uiState.update { it.copy(conditionType = conditionType) }
+        }
 
-        fun onConditionTypeSelected(option: ProcessingConditionOption) {
+        fun onContentTypeSelected(index: Int) {
+            val contentType = DeliveryContentType.entries.getOrElse(index) { DeliveryContentType.TIME_LETTER }
+            val condition = _uiState.value.conditions.firstOrNull { it.contentType == contentType }
             _uiState.update {
                 it.copy(
-                    processingOption = option,
-                    specificDate = if (option != ProcessingConditionOption.SPECIFIC_DATE) null else it.specificDate,
-                    isDatePickerVisible = option == ProcessingConditionOption.SPECIFIC_DATE,
+                    selectedContentType = contentType,
+                    conditionType = condition?.conditionType ?: DeliveryConditionType.INACTIVITY,
+                    inactivityPeriod = condition?.inactivityPeriod ?: InactivityPeriod.ONE_YEAR,
                 )
             }
         }
 
-        fun onDateSelected(date: LocalDate) {
-            _uiState.update { it.copy(specificDate = date, isDatePickerVisible = false) }
+        fun onInactivityPeriodSelected(index: Int) {
+            val inactivityPeriod =
+                when (index) {
+                    0 -> InactivityPeriod.THREE_MONTHS
+                    1 -> InactivityPeriod.SIX_MONTHS
+                    else -> InactivityPeriod.ONE_YEAR
+                }
+            _uiState.update { it.copy(inactivityPeriod = inactivityPeriod) }
         }
-
-        fun onDatePickerToggle(visible: Boolean) {
-            _uiState.update { it.copy(isDatePickerVisible = visible) }
-        }
-
-        fun onFarewellMessageChange(message: String) = _uiState.update { it.copy(farewellMessage = message) }
 
         fun onSave() {
             val state = _uiState.value
-            val conditionType =
-                when (state.processingOption) {
-                    ProcessingConditionOption.INACTIVITY -> DeliveryConditionType.INACTIVITY
-                    ProcessingConditionOption.SPECIFIC_DATE -> DeliveryConditionType.SPECIFIC_DATE
-                    ProcessingConditionOption.RECIPIENT_REQUEST -> return
+            val sourceConditions =
+                DeliveryContentType.entries.map { contentType ->
+                    state.conditions.firstOrNull { it.contentType == contentType }
+                        ?: defaultCondition(contentType)
                 }
+            val updatedConditions =
+                sourceConditions.map { condition ->
+                    if (condition.contentType == state.selectedContentType) {
+                        condition.copy(
+                            conditionType = state.conditionType,
+                            inactivityPeriod =
+                                state.inactivityPeriod.takeIf {
+                                    state.conditionType == DeliveryConditionType.INACTIVITY
+                                },
+                        )
+                    } else {
+                        condition
+                    }
+                }
+
             viewModelScope.launch {
                 _uiState.update { it.copy(isSaving = true) }
                 runCatching {
-                    userRepository.updateDeliveryCondition(
-                        conditionType = conditionType,
-                        inactivityPeriodDays = if (state.processingOption == ProcessingConditionOption.INACTIVITY) 365 else null,
-                        specificDate =
-                            if (state.processingOption == ProcessingConditionOption.SPECIFIC_DATE) {
-                                state.specificDate?.toString()
-                            } else {
-                                null
-                            },
-                    )
-                }.onSuccess {
-                    _uiState.update { it.copy(isSaving = false) }
+                    userRepository.updateReceiverDeliveryConditions(receiverId, updatedConditions)
+                }.onSuccess { response ->
+                    _uiState.update { it.copy(isSaving = false, conditions = response.conditions) }
                     _saveSuccess.send(Unit)
-                }.onFailure { e ->
-                    _uiState.update { it.copy(isSaving = false, errorMessage = e.message) }
+                }.onFailure { error ->
+                    _uiState.update { it.copy(isSaving = false, errorMessage = error.message) }
                 }
             }
         }
+
+        private fun defaultCondition(contentType: DeliveryContentType) =
+            DeliveryConditionItem(
+                contentType = contentType,
+                conditionType = DeliveryConditionType.INACTIVITY,
+                inactivityPeriod = InactivityPeriod.ONE_YEAR,
+                state = ConditionState.ACTIVE,
+                fulfilled = false,
+                gracePeriodStartedAt = null,
+                fulfilledAt = null,
+            )
     }

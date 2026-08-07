@@ -10,6 +10,7 @@ import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.timeletter.domain.model.BlockInput
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlockType
+import com.afternote.feature.timeletter.domain.model.TimeLetterDeliveryMode
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.domain.repository.FileMetadataRepository
 import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
@@ -262,6 +263,7 @@ class TimeLetterWriteViewModel
                             title = title.ifBlank { null },
                             blocks = blocks,
                             sendAt = sendAt,
+                            deliveryMode = TimeLetterDeliveryMode.DATE,
                             status = status,
                             receiverIds = state.recipientIds.ifEmpty { null },
                         )
@@ -275,6 +277,7 @@ class TimeLetterWriteViewModel
                                         mapToBlockInputs(state.editorBlocks, textContents),
                                     ),
                                 sendAt = sendAt,
+                                deliveryMode = TimeLetterDeliveryMode.DATE,
                                 status = status,
                             )
                         }

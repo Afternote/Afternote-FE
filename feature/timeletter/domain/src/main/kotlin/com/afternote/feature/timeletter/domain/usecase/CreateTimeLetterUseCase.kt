@@ -2,6 +2,7 @@ package com.afternote.feature.timeletter.domain.usecase
 
 import com.afternote.feature.timeletter.domain.model.BlockInput
 import com.afternote.feature.timeletter.domain.model.TimeLetter
+import com.afternote.feature.timeletter.domain.model.TimeLetterDeliveryMode
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
 import javax.inject.Inject
@@ -16,6 +17,7 @@ class CreateTimeLetterUseCase
             title: String?,
             blocks: List<BlockInput>,
             sendAt: String?,
+            deliveryMode: TimeLetterDeliveryMode,
             status: TimeLetterStatus,
             receiverIds: List<Long>?,
         ): Result<TimeLetter> =
@@ -25,6 +27,7 @@ class CreateTimeLetterUseCase
                     title = title,
                     blocks = newBlocks,
                     sendAt = sendAt,
+                    deliveryMode = deliveryMode,
                     status = status,
                     receiverIds = receiverIds,
                 )

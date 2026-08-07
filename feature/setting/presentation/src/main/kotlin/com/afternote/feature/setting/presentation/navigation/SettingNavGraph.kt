@@ -8,6 +8,7 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
+import androidx.navigation.toRoute
 import com.afternote.core.ui.Route
 import com.afternote.feature.setting.presentation.component.PinSetupStep
 import com.afternote.feature.setting.presentation.screen.AppLockSetupScreen
@@ -44,7 +45,9 @@ fun NavGraphBuilder.settingNavGraph(
                 onNotificationClick = actions::onNavigateToNotification,
                 onRecipientListClick = actions::onNavigateToRecipientList,
                 onRecipientRegisterClick = actions::onNavigateToRecipientRegister,
-                onAfterDeliveryClick = actions::onNavigateToAfterDelivery,
+                onAfterDeliveryClick = {
+                    actions.onNavigateToRecipientListForDeliveryConditions()
+                },
                 onPasskeyClick = actions::onNavigateToPasskey,
                 onAppLockClick = actions::onNavigateToAppLock,
                 onFaqClick = {},
@@ -101,12 +104,19 @@ fun NavGraphBuilder.settingNavGraph(
         }
 
         composable<SettingRoute.RecipientListRoute> {
+            val route = it.toRoute<SettingRoute.RecipientListRoute>()
             val viewModel: ReceiverListViewModel = hiltViewModel()
             val receivers by viewModel.receivers.collectAsStateWithLifecycle()
             ReceiverListScreen(
                 receivers = receivers,
                 onBackClick = actions::onRecipientListBack,
-                onConfirmClick = { _ -> actions.onRecipientListBack() },
+                onConfirmClick = { receiver ->
+                    if (route.selectForDeliveryConditions) {
+                        actions.onNavigateToAfterDelivery(receiver.receiverId)
+                    } else {
+                        actions.onRecipientListBack()
+                    }
+                },
             )
         }
 

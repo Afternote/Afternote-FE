@@ -248,7 +248,13 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
             }
 
             override fun onNavigateToRecipientList() {
-                appState.navController.navigate(SettingRoute.RecipientListRoute)
+                appState.navController.navigate(SettingRoute.RecipientListRoute())
+            }
+
+            override fun onNavigateToRecipientListForDeliveryConditions() {
+                appState.navController.navigate(
+                    SettingRoute.RecipientListRoute(selectForDeliveryConditions = true),
+                )
             }
 
             override fun onRecipientListBack() {
@@ -263,8 +269,8 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
                 appState.navController.popBackStack()
             }
 
-            override fun onNavigateToAfterDelivery() {
-                appState.navController.navigate(SettingRoute.AfterDeliveryRoute)
+            override fun onNavigateToAfterDelivery(receiverId: Long) {
+                appState.navController.navigate(SettingRoute.AfterDeliveryRoute(receiverId))
             }
 
             override fun onAfterDeliveryBack() {

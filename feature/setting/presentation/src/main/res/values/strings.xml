@@ -156,4 +156,15 @@
     <!-- 하단 안내 문구 -->
     <string name="after_delivery_notice_1">해당 정보는 지정된 조건이 충족 시에만 전달됩니다.</string>
     <string name="after_delivery_notice_2">예기치 않은 상황에서도 설정된 방식에 따라 안전하게 전달됩니다.</string>
+    <string name="inactivity_period_section_title">미사용 기간</string>
+    <string name="inactivity_period_three_months">3개월</string>
+    <string name="inactivity_period_six_months">6개월</string>
+    <string name="inactivity_period_one_year">1년</string>
+    <string name="delivery_condition_save">저장</string>
+    <string name="delivery_content_section_title">콘텐츠 유형</string>
+    <string name="delivery_content_time_letter">타임레터</string>
+    <string name="delivery_content_afternote">애프터노트</string>
+    <string name="delivery_content_daily_question">데일리 질문</string>
+    <string name="delivery_content_diary">다이어리</string>
+    <string name="delivery_content_deep_thought">깊은 생각</string>
 </resources>

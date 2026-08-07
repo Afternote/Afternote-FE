@@ -29,13 +29,15 @@ interface SettingNavActions {
 
     fun onNavigateToRecipientList()
 
+    fun onNavigateToRecipientListForDeliveryConditions()
+
     fun onRecipientListBack()
 
     fun onNavigateToRecipientRegister()
 
     fun onRecipientRegisterBack()
 
-    fun onNavigateToAfterDelivery()
+    fun onNavigateToAfterDelivery(receiverId: Long)
 
     fun onAfterDeliveryBack()
 
