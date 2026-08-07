@@ -5,6 +5,6 @@ import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 data class CreateGalleryPayload(
     val title: String,
     val processingMethods: List<String>,
-    val leaveMessageBlocks: List<LeaveMessageBlock>? = null,
+    val leaveMessageBlocks: List<LeaveMessageBlock> = emptyList(),
     val receiverIds: List<Long> = emptyList(),
 )

@@ -9,7 +9,7 @@ import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 data class CreateAccountPayload(
     val title: String,
     val processingMethods: List<String>,
-    val leaveMessageBlocks: List<LeaveMessageBlock>? = null,
+    val leaveMessageBlocks: List<LeaveMessageBlock> = emptyList(),
     val credentials: AfternoteAccountCredentials? = null,
     val receiverIds: List<Long> = emptyList(),
 )

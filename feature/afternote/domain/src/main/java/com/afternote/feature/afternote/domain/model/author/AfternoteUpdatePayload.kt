@@ -6,7 +6,7 @@ data class AfternoteUpdatePayload(
     val category: String,
     val title: String,
     val processingMethods: List<String>? = null,
-    val leaveMessageBlocks: List<LeaveMessageBlock>? = null,
+    val leaveMessageBlocks: List<LeaveMessageBlock> = emptyList(),
     val credentials: AfternoteAccountCredentials? = null,
     val receivers: List<ReceiverRefPayload>? = null,
     val memorial: MemorialWritePayload? = null,
