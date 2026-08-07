@@ -6,6 +6,8 @@ import com.afternote.afternote_fe.reporting.HomeFailureStage
 import com.afternote.afternote_fe.reporting.recordHomeFailure
 import com.afternote.afternote_fe.usecase.GetHomeSummaryUseCase
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.common.result.runCatchingCancellable
+import com.afternote.core.domain.repository.UserProfileRepository
 import com.afternote.core.model.HomeSummary
 import com.afternote.core.model.MindRecordCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,6 +23,7 @@ class HomeTabViewModel
     @Inject
     constructor(
         private val getHomeSummary: GetHomeSummaryUseCase,
+        private val userProfileRepository: UserProfileRepository,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<HomeTabUiState>(HomeTabUiState.Loading())
@@ -75,12 +78,13 @@ class HomeTabViewModel
                     } else {
                         // 초기 진입 또는 에러 재시도: 캐시된 이름이 있으면 placeholder로 즉시 노출한다.
                         _uiState.value =
-                            HomeTabUiState.Loading()
+                            HomeTabUiState.Loading(cachedUserName = userProfileRepository.getCachedUserName())
                     }
 
                     getHomeSummary()
                         .onSuccess { summary ->
                             _uiState.value = summary.toHomeTabSuccess()
+                            cacheUserName(summary.userName)
                         }.onFailure { error ->
                             // 화면을 유지하는 자동 갱신 실패도 기록한다. 사용자에게 안 보이는 만큼
                             // 콘솔이 유일한 관측 지점이다.
@@ -93,6 +97,16 @@ class HomeTabViewModel
                                 }
                         }
                 }
+        }
+
+        /**
+         * 다음 콜드스타트에서 placeholder 로 쓸 이름을 디스크에 남긴다.
+         *
+         * 저장 실패는 화면에 반영하지 않는다 — 이름은 이미 응답으로 표시돼 있고, 손실은
+         * 다음 진입의 placeholder 가 한 번 더 비는 것뿐이다.
+         */
+        private suspend fun cacheUserName(name: String) {
+            runCatchingCancellable { userProfileRepository.saveUserName(name) }
         }
     }
 
