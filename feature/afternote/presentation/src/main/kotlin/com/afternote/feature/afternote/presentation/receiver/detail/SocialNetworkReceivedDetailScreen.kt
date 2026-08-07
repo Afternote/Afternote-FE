@@ -34,6 +34,7 @@ import com.afternote.feature.afternote.presentation.shared.detail.DetailSection
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.ProcessingMethodsSection
 import com.afternote.feature.afternote.presentation.shared.model.AfternoteServiceDisplay
+import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiModel
 
 /**
  * 수신 소셜 네트워크 상세 (Stateless).
@@ -96,7 +97,7 @@ private fun SocialNetworkReceivedDetailScrollContent(
                 password = content.password,
             )
             ProcessingMethodsSection(methods = content.processingMethods)
-            MessageSection(message = content.message)
+            MessageSection(blocks = content.messageBlocks)
         }
     }
 }
@@ -176,7 +177,13 @@ private fun SocialNetworkReceivedDetailScreenPreview() {
                     accountId = "qwerty123",
                     password = "qwerty123!",
                     processingMethods = listOf("게시물 내리기", "추모 게시물 올리기", "추모 계정으로 전환하기"),
-                    message = "이 계정에는 우리 가족 여행 사진이 많아.\n계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
+                    messageBlocks =
+                        listOf(
+                            MessageBlockUiModel(
+                                title = "가족에게",
+                                body = "이 계정에는 우리 가족 여행 사진이 많아.\n계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
+                            ),
+                        ),
                     finalWriteDate = "2025.11.26",
                 ),
         )

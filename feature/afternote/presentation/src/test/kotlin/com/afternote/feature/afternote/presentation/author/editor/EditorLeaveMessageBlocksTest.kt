@@ -5,8 +5,9 @@ import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
+import org.junit.Assert.assertNotEquals
 import org.junit.Test
 
 /**
@@ -17,21 +18,40 @@ import org.junit.Test
  */
 class EditorLeaveMessageBlocksTest {
     @Test
-    fun `본문이 빈 블록은 전송에서 제외된다`() {
+    fun `아무것도 안 쓴 빈 칸은 전송에서 제외된다`() {
         val blocks =
             createSocial(
-                EditorMessageTextBlock(title = "제목만", body = ""),
-                EditorMessageTextBlock(title = "공백만", body = "   "),
+                EditorMessageTextBlock(title = "", body = ""),
+                EditorMessageTextBlock(title = "   ", body = "   "),
                 EditorMessageTextBlock(title = "가족에게", body = "잘 부탁해"),
             )
 
         assertEquals(listOf(LeaveMessageBlock(title = "가족에게", body = "잘 부탁해")), blocks)
     }
 
+    /** 제목만 쓴 블록을 조용히 버리면 입력이 사라진다. 서버도 본문 없는 블록을 400 으로 막는다. */
     @Test
-    fun `남는 블록이 없으면 null 이라 필드가 실리지 않는다`() {
-        assertNull(createSocial(EditorMessageTextBlock(title = "", body = "")))
-        assertNull(createSocial())
+    fun `제목만 쓰고 본문을 비우면 저장이 막힌다`() {
+        val error =
+            validateSocial(
+                EditorMessageTextBlock(title = "가족에게", body = "   "),
+            )
+
+        assertEquals(AfternoteValidationError.LEAVE_MESSAGE_BODY_REQUIRED, error)
+    }
+
+    @Test
+    fun `제목도 본문도 안 쓴 빈 칸은 저장을 막지 않는다`() {
+        val error = validateSocial(EditorMessageTextBlock(title = "", body = ""))
+
+        assertNotEquals(AfternoteValidationError.LEAVE_MESSAGE_BODY_REQUIRED, error)
+    }
+
+    /** 필드를 뺄지는 data 계층 `toDto` 가 정하므로, 여기서는 빈 목록까지만 만든다. */
+    @Test
+    fun `남는 블록이 없으면 빈 목록이다`() {
+        assertEquals(emptyList<LeaveMessageBlock>(), createSocial(EditorMessageTextBlock(title = "", body = "")))
+        assertEquals(emptyList<LeaveMessageBlock>(), createSocial())
     }
 
     @Test
@@ -71,6 +91,14 @@ class EditorLeaveMessageBlocksTest {
             )
         return (input as CreateAfternoteInput.Social).payload.leaveMessageBlocks
     }
+
+    private fun validateSocial(vararg blocks: EditorMessageTextBlock): AfternoteValidationError? =
+        AfternoteEditorValidator.validate(
+            category = EditorCategory.SOCIAL,
+            payload = payloadOf(*blocks),
+            selectedReceiverIds = listOf(1L),
+            playlistSongs = emptyList(),
+        )
 
     private fun payloadOf(vararg blocks: EditorMessageTextBlock) =
         RegisterAfternotePayload(

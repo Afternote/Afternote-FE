@@ -142,10 +142,6 @@ class LeaveMessageBlockContractTest {
 
     @Test
     fun `요청 직렬화 - 블록이 없으면 필드를 싣지 않는다`() {
-        val empty: List<LeaveMessageBlock> = emptyList()
-        val absent: List<LeaveMessageBlock>? = null
-
-        assertNull(empty.toDto())
-        assertNull(absent.toDto())
+        assertNull(emptyList<LeaveMessageBlock>().toDto())
     }
 }
