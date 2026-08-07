@@ -14,8 +14,12 @@ import com.afternote.feature.afternote.data.dto.ReceiverEmailAuthVerifyRequestDt
 import com.afternote.feature.afternote.data.dto.ReceiverMessageDto
 import com.afternote.feature.afternote.data.service.ReceiverAuthApiService
 import com.afternote.feature.afternote.domain.error.ReceiverEmailAuthException
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.yield
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
@@ -27,6 +31,9 @@ import java.io.IOException
  * Impl 이 serverMessage 를 보존해 변환하는지가 계약. 에러 메시지·code 값은
  * 2026-06-11 라이브 서버 실응답 캡처 — 404 `{"code":1901,"message":"등록된 수신자 이메일이 아닙니다."}`,
  * 400 `{"code":1902,"message":"인증번호가 만료되었거나 존재하지 않습니다. 다시 요청해주세요."}`.
+ *
+ * 취소 전파도 여기서 함께 지킨다 (#671) — 예외를 Result 로 바꾸는 경계라 취소까지 삼키면
+ * 취소된 코루틴에서 호출부의 onFailure 갈래가 돈다.
  */
 class ReceiverAuthRepositoryImplEmailAuthTest {
     @Test
@@ -93,6 +100,23 @@ class ReceiverAuthRepositoryImplEmailAuthTest {
     }
 
     @Test
+    fun `sendEmailAuthCode - in-flight 취소는 Result 로 삼키지 않고 CancellationException 을 전파`() =
+        runBlocking {
+            val repository =
+                ReceiverAuthRepositoryImpl(
+                    FakeReceiverAuthApiService(onSendEmailAuthCode = { awaitCancellation() }),
+                )
+
+            var result: Result<Unit>? = null
+            val job = launch { result = repository.sendEmailAuthCode("a@b.com") }
+            yield() // job 이 api 호출 지점(awaitCancellation)까지 진행하도록
+            job.cancel()
+            job.join()
+
+            assertNull(result) // 취소가 Result 로 둔갑했다면 non-null 로 남는다
+        }
+
+    @Test
     fun `verifyEmailAuthCode - 성공 응답을 도메인 모델로 매핑`() {
         val repository =
             ReceiverAuthRepositoryImpl(
@@ -125,8 +149,8 @@ class ReceiverAuthRepositoryImplEmailAuthTest {
 
 /** 이메일 인증 두 메서드만 주입 가능한 fake — 나머지 endpoint 는 본 테스트 대상 아님. */
 private class FakeReceiverAuthApiService(
-    private val onSendEmailAuthCode: (ReceiverAuthCodeEmailSendRequestDto) -> BaseResponse<Unit> = { error("unused") },
-    private val onVerifyEmailAuthCode: (
+    private val onSendEmailAuthCode: suspend (ReceiverAuthCodeEmailSendRequestDto) -> BaseResponse<Unit> = { error("unused") },
+    private val onVerifyEmailAuthCode: suspend (
         ReceiverEmailAuthVerifyRequestDto,
     ) -> BaseResponse<ReceiverEmailAuthVerifyDto> = { error("unused") },
 ) : ReceiverAuthApiService {
