@@ -2,6 +2,7 @@ package com.afternote.feature.timeletter.presentation.screen.sender
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -68,14 +69,15 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import coil3.compose.AsyncImage
-import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.asString
+import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.calendar.BottomSheetCalendar
 import com.afternote.core.ui.popup.Popup
 import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
+import com.afternote.feature.timeletter.domain.model.RecordedAudio
 import com.afternote.feature.timeletter.presentation.R
 import com.afternote.feature.timeletter.presentation.component.MediaBottomSheetContent
 import com.afternote.feature.timeletter.presentation.component.RecipientCard
@@ -652,14 +654,37 @@ private fun ColumnScope.RecordedVoiceControls(
 ) {
     val context = LocalContext.current
     var isPlaying by remember(state.audio.uriString) { mutableStateOf(false) }
-    val player =
-        remember(state.audio.uriString) {
-            runCatching { MediaPlayer.create(context, Uri.parse(state.audio.uriString)) }.getOrNull()
+    var isPlayerReady by remember(state.audio.uriString) { mutableStateOf(false) }
+    var playbackFailed by remember(state.audio.uriString) { mutableStateOf(false) }
+    val player = remember(state.audio.uriString) { MediaPlayer() }
+
+    DisposableEffect(player, state.audio.uriString) {
+        player.setAudioAttributes(
+            AudioAttributes
+                .Builder()
+                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .build(),
+        )
+        player.setOnPreparedListener {
+            isPlayerReady = true
+            playbackFailed = false
+        }
+        player.setOnCompletionListener { isPlaying = false }
+        player.setOnErrorListener { _, _, _ ->
+            isPlaying = false
+            isPlayerReady = false
+            playbackFailed = true
+            true
+        }
+        runCatching {
+            player.setDataSource(context, Uri.parse(state.audio.uriString))
+            player.prepareAsync()
+        }.onFailure {
+            playbackFailed = true
         }
 
-    DisposableEffect(player) {
-        player?.setOnCompletionListener { isPlaying = false }
-        onDispose { player?.release() }
+        onDispose { player.release() }
     }
 
     Text(
@@ -676,23 +701,35 @@ private fun ColumnScope.RecordedVoiceControls(
     Spacer(modifier = Modifier.height(16.dp))
     TextButton(
         onClick = {
-            player?.let {
-                if (it.isPlaying) {
-                    it.pause()
+            runCatching {
+                if (player.isPlaying) {
+                    player.pause()
                     isPlaying = false
                 } else {
-                    it.start()
+                    player.start()
                     isPlaying = true
                 }
+            }.onFailure {
+                isPlaying = false
+                playbackFailed = true
             }
         },
-        enabled = player != null,
+        enabled = isPlayerReady,
         modifier = Modifier.align(Alignment.CenterHorizontally),
     ) {
         Text(
             stringResource(
                 if (isPlaying) R.string.voice_recording_pause else R.string.voice_recording_play,
             ),
+        )
+    }
+    if (playbackFailed) {
+        Text(
+            text = stringResource(R.string.voice_recording_playback_error),
+            style = AfternoteDesign.typography.bodyBase,
+            color = AfternoteDesign.colors.gray7,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
         )
     }
     Spacer(modifier = Modifier.height(16.dp))
@@ -769,5 +806,59 @@ private fun MediaBlockChip(
 private fun TimeLetterWriteScreenPreview() {
     AfternoteTheme {
         TimeLetterWriteScreen()
+    }
+}
+
+@Preview(name = "Voice recorder - idle", showBackground = true)
+@Composable
+private fun VoiceRecorderBottomSheetIdlePreview() {
+    AfternoteTheme {
+        VoiceRecorderBottomSheet(
+            state = VoiceRecordingState.Idle,
+            onDismiss = {},
+            onStart = {},
+            onStop = {},
+            onRegister = {},
+            onRetry = {},
+        )
+    }
+}
+
+@Preview(name = "Voice recorder - recording", showBackground = true)
+@Composable
+private fun VoiceRecorderBottomSheetRecordingPreview() {
+    AfternoteTheme {
+        VoiceRecorderBottomSheet(
+            state = VoiceRecordingState.Recording(elapsedMillis = 65_000L),
+            onDismiss = {},
+            onStart = {},
+            onStop = {},
+            onRegister = {},
+            onRetry = {},
+        )
+    }
+}
+
+@Preview(name = "Voice recorder - recorded", showBackground = true)
+@Composable
+private fun VoiceRecorderBottomSheetRecordedPreview() {
+    AfternoteTheme {
+        VoiceRecorderBottomSheet(
+            state =
+                VoiceRecordingState.Recorded(
+                    audio =
+                        RecordedAudio(
+                            uriString = "content://preview/voice.m4a",
+                            fileName = "voice.m4a",
+                            mimeType = "audio/mp4",
+                            durationMillis = 65_000L,
+                        ),
+                ),
+            onDismiss = {},
+            onStart = {},
+            onStop = {},
+            onRegister = {},
+            onRetry = {},
+        )
     }
 }

@@ -7,6 +7,7 @@
     <string name="voice_recording_duration">녹음 시간 %1$s</string>
     <string name="voice_recording_play">녹음 듣기</string>
     <string name="voice_recording_pause">재생 일시정지</string>
+    <string name="voice_recording_playback_error">녹음 파일을 재생하지 못했습니다. 다시 녹음해 주세요.</string>
     <string name="voice_recording_retry">다시 녹음</string>
     <string name="voice_recording_register">음성 메시지 등록</string>
     <string name="voice_recording_permission_error">음성 메시지를 녹음하려면 마이크 권한이 필요합니다.</string>
