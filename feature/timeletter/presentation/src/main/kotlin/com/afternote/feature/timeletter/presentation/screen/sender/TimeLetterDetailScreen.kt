@@ -23,7 +23,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -36,6 +35,13 @@ import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlockType
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
+import com.afternote.feature.timeletter.presentation.component.TimeLetterHeroEmptyCaption
+import com.afternote.feature.timeletter.presentation.component.TimeLetterHeroEmptyTitle
+import com.afternote.feature.timeletter.presentation.component.TimeLetterHeroGradientEnd
+import com.afternote.feature.timeletter.presentation.component.TimeLetterHeroGradientStart
+import com.afternote.feature.timeletter.presentation.component.TimeLetterHeroImageCaption
+import com.afternote.feature.timeletter.presentation.component.TimeLetterHeroImageOverlay
+import com.afternote.feature.timeletter.presentation.component.TimeLetterHeroImageTitle
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterDetailUiState
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterDetailViewModel
 
@@ -136,8 +142,8 @@ private fun TimeLetterDetailContent(
                                     Brush.verticalGradient(
                                         colors =
                                             listOf(
-                                                AfternoteDesign.colors.black.copy(alpha = 0f),
-                                                AfternoteDesign.colors.black.copy(alpha = 0.6f),
+                                                TimeLetterHeroImageOverlay.copy(alpha = 0f),
+                                                TimeLetterHeroImageOverlay.copy(alpha = 0.6f),
                                             ),
                                     ),
                                 ),
@@ -151,8 +157,8 @@ private fun TimeLetterDetailContent(
                                     Brush.radialGradient(
                                         colors =
                                             listOf(
-                                                Color(0xFFB7CDC0),
-                                                Color(0xFFF8F8F7),
+                                                TimeLetterHeroGradientStart,
+                                                TimeLetterHeroGradientEnd,
                                             ),
                                     ),
                                 ),
@@ -169,9 +175,9 @@ private fun TimeLetterDetailContent(
                         style = AfternoteDesign.typography.h2,
                         color =
                             if (heroImageUrl != null) {
-                                AfternoteDesign.colors.white
+                                TimeLetterHeroImageTitle
                             } else {
-                                AfternoteDesign.colors.gray9
+                                TimeLetterHeroEmptyTitle
                             },
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -184,9 +190,9 @@ private fun TimeLetterDetailContent(
                             style = AfternoteDesign.typography.footnoteCaption,
                             color =
                                 if (heroImageUrl != null) {
-                                    AfternoteDesign.colors.gray3
+                                    TimeLetterHeroImageCaption
                                 } else {
-                                    AfternoteDesign.colors.gray8
+                                    TimeLetterHeroEmptyCaption
                                 },
                         )
                         Text(
@@ -194,9 +200,9 @@ private fun TimeLetterDetailContent(
                             style = AfternoteDesign.typography.footnoteCaption,
                             color =
                                 if (heroImageUrl != null) {
-                                    AfternoteDesign.colors.gray3
+                                    TimeLetterHeroImageCaption
                                 } else {
-                                    AfternoteDesign.colors.gray8
+                                    TimeLetterHeroEmptyCaption
                                 },
                         )
                     }
