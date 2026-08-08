@@ -131,6 +131,7 @@ fun NavGraphBuilder.settingNavGraph(
             DeliveryConditionScreen(
                 onBack = actions::onAfterDeliveryBack,
                 onSaveSuccess = actions::onAfterDeliveryBack,
+                onLastGreetingEditClick = actions::onNavigateToRecipientList,
             )
         }
 
