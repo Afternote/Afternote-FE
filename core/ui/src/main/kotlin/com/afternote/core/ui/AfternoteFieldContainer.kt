@@ -31,6 +31,9 @@ import com.afternote.core.ui.theme.AfternoteTheme
  * 비활성 상태가 시각적으로 드러난다 (비활성 버튼 `AfternoteButtonType.Un` 과 동일 팔레트). 내부 [content]
  * 의 색은 슬롯 주입이라 호출부가 상태에 맞춰 결정한다.
  *
+ * [isError] 는 보더만 error 색으로 바꾼다(시안 `3628:23437` 로그인 자격 거절 상태). 비활성이
+ * 우선한다 — 입력이 막힌 필드에 에러 강조가 남는 조합을 시안이 정의하지 않아서다.
+ *
  * 폭 / 크기 정책은 호출부가 [modifier] 로 결정 (Compose API 가이드라인: element function 의 modifier
  * default 는 빈 `Modifier`). 부모 폭 차지가 필요하면 `Modifier.fillMaxWidth()`, Row 안에서
  * 가변 비율이면 `Modifier.weight(...)` 등을 명시적으로 넘긴다.
@@ -41,10 +44,16 @@ fun AfternoteFieldContainer(
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
     onClick: (() -> Unit)? = null,
     enabled: Boolean = true,
+    isError: Boolean = false,
     content: @Composable RowScope.() -> Unit,
 ) {
     val backgroundColor = if (enabled) AfternoteDesign.colors.white else AfternoteDesign.colors.gray2
-    val borderColor = if (enabled) AfternoteDesign.colors.gray2 else AfternoteDesign.colors.gray3
+    val borderColor =
+        when {
+            !enabled -> AfternoteDesign.colors.gray3
+            isError -> AfternoteDesign.colors.error
+            else -> AfternoteDesign.colors.gray2
+        }
     Row(
         modifier =
             modifier
