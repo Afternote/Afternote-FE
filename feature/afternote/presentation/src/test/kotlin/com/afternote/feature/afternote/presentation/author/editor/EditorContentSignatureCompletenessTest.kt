@@ -27,14 +27,12 @@ class EditorContentSignatureCompletenessTest {
      * 지문에서 제외한다. 여기 올리려면 같은 성질(닫힐 때 소거되는 입력)이어야 한다.
      */
     private val dialogTransientStates =
-        setOf("afternoteEditReceiverNameState", "phoneNumberState", "customServiceNameState")
+        setOf("customServiceNameState")
 
     private fun newHolder(): AfternoteEditorUiHolder =
         AfternoteEditorUiHolder(
             idState = TextFieldState(),
             passwordState = TextFieldState(),
-            afternoteEditReceiverNameState = TextFieldState(),
-            phoneNumberState = TextFieldState(),
             customServiceNameState = TextFieldState(),
         )
 
@@ -46,7 +44,6 @@ class EditorContentSignatureCompletenessTest {
             setService = {},
             setMemorialPhoto = {},
             setMemorialVideo = {},
-            addReceiver = { _, _ -> },
             addReceiverIfAbsent = { _, _, _ -> },
             applyPrefill = {},
             setMemorialThumbnail = {},
@@ -66,7 +63,7 @@ class EditorContentSignatureCompletenessTest {
     @Test
     fun `홀더의 모든 TextFieldState 는 지문에 반영되거나 제외 사유가 명시돼야 한다`() {
         val getters = textFieldStateGetters()
-        assertTrue("TextFieldState 게터 열거 실패 — 리플렉션 전제 붕괴", getters.size >= 5)
+        assertTrue("TextFieldState 게터 열거 실패 — 리플렉션 전제 붕괴", getters.size >= 3)
 
         getters.forEach { getter ->
             val name = getter.name.removePrefix("get").replaceFirstChar { it.lowercase() }

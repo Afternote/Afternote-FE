@@ -153,7 +153,6 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
             setService = editViewModel::setService,
             setMemorialPhoto = editViewModel::setMemorialPhoto,
             setMemorialVideo = editViewModel::setMemorialVideo,
-            addReceiver = editViewModel::addReceiver,
             addReceiverIfAbsent = editViewModel::addReceiverIfAbsent,
             applyPrefill = editViewModel::applyPrefill,
             setMemorialThumbnail = editViewModel::setMemorialThumbnail,

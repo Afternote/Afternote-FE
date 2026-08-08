@@ -17,11 +17,3 @@ internal fun EditorCategory.toDropdownLabel(): String =
         EditorCategory.ESTATE -> stringResource(R.string.afternote_editor_category_estate)
         EditorCategory.MEMORIAL -> stringResource(R.string.afternote_editor_category_memorial)
     }
-
-@Composable
-internal fun editorRelationshipOptions(): List<String> =
-    listOf(
-        stringResource(R.string.afternote_editor_relationship_friend),
-        stringResource(R.string.afternote_editor_relationship_family),
-        stringResource(R.string.afternote_editor_relationship_lover),
-    )
