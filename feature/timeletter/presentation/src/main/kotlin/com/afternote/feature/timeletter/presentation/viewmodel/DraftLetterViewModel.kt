@@ -2,8 +2,11 @@ package com.afternote.feature.timeletter.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,6 +18,7 @@ class DraftLetterViewModel
     @Inject
     constructor(
         private val timeLetterRepository: TimeLetterRepository,
+        private val userRepository: UserRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<DraftLetterUiState>(DraftLetterUiState.Loading)
         val uiState: StateFlow<DraftLetterUiState> = _uiState.asStateFlow()
@@ -26,12 +30,21 @@ class DraftLetterViewModel
         fun loadDrafts() {
             viewModelScope.launch {
                 _uiState.value = DraftLetterUiState.Loading
-                runCatching { timeLetterRepository.getTemporaryTimeLetters() }
-                    .onSuccess { result ->
-                        _uiState.value = DraftLetterUiState.Success(drafts = result.timeLetters)
-                    }.onFailure {
-                        _uiState.value = DraftLetterUiState.Error("임시저장 레터를 불러올 수 없습니다.")
-                    }
+                try {
+                    val receiversDeferred = async { userRepository.getReceivers() }
+                    val result = timeLetterRepository.getTemporaryTimeLetters()
+                    val receiverNameMap =
+                        receiversDeferred.await().associate { receiver -> receiver.receiverId to receiver.name }
+                    _uiState.value =
+                        DraftLetterUiState.Success(
+                            drafts = result.timeLetters,
+                            receiverNameMap = receiverNameMap,
+                        )
+                } catch (cancellationException: CancellationException) {
+                    throw cancellationException
+                } catch (_: Exception) {
+                    _uiState.value = DraftLetterUiState.Error("임시 저장된 레터를 불러올 수 없습니다.")
+                }
             }
         }
 
@@ -42,6 +55,7 @@ class DraftLetterViewModel
 
         fun toggleSelection(id: Long) {
             val current = _uiState.value as? DraftLetterUiState.Success ?: return
+            if (id !in current.drafts.map { it.id }) return
             val updated = if (id in current.selectedIds) current.selectedIds - id else current.selectedIds + id
             _uiState.value = current.copy(selectedIds = updated)
         }
@@ -50,25 +64,32 @@ class DraftLetterViewModel
             val current = _uiState.value as? DraftLetterUiState.Success ?: return
             if (current.selectedIds.isEmpty()) return
             viewModelScope.launch {
-                runCatching {
+                try {
                     timeLetterRepository.deleteTimeLetters(current.selectedIds.toList())
-                }.onSuccess {
                     _uiState.value =
                         current.copy(
                             drafts = current.drafts.filter { it.id !in current.selectedIds },
                             selectedIds = emptySet(),
                             isEditMode = false,
                         )
+                } catch (cancellationException: CancellationException) {
+                    throw cancellationException
+                } catch (_: Exception) {
+                    _uiState.value = DraftLetterUiState.Error("임시 저장된 레터를 삭제하지 못했습니다.")
                 }
             }
         }
 
         fun deleteAll() {
+            if (_uiState.value !is DraftLetterUiState.Success) return
             viewModelScope.launch {
-                runCatching {
+                try {
                     timeLetterRepository.deleteAllTemporary()
-                }.onSuccess {
                     _uiState.value = DraftLetterUiState.Success(drafts = emptyList())
+                } catch (cancellationException: CancellationException) {
+                    throw cancellationException
+                } catch (_: Exception) {
+                    _uiState.value = DraftLetterUiState.Error("임시 저장된 레터를 삭제하지 못했습니다.")
                 }
             }
         }

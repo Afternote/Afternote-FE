@@ -9,4 +9,18 @@
     <string name="timeletter_delete_dismiss">아니오</string>
     <string name="timeletter_delete_failure">타임레터를 삭제하지 못했습니다. 다시 시도해 주세요.</string>
     <string name="timeletter_recipient_search_placeholder">이름으로 검색하기</string>
+    <string name="timeletter_draft_title">임시 저장된 레터</string>
+    <string name="timeletter_draft_edit">수정</string>
+    <string name="timeletter_draft_done">완료</string>
+    <string name="timeletter_draft_total">총 %1$d 개</string>
+    <string name="timeletter_draft_total_selected">총 %1$d 개 선택</string>
+    <string name="timeletter_draft_recipient_names">수신인 %1$s</string>
+    <string name="timeletter_draft_recipient_unspecified">수신인 지정되지 않았습니다.</string>
+    <string name="timeletter_draft_scheduled_date">발송 예정일 %1$s</string>
+    <string name="timeletter_draft_untitled">제목 없음</string>
+    <string name="timeletter_draft_delete_all">전체 삭제</string>
+    <string name="timeletter_draft_delete_selected">선택 삭제</string>
+    <string name="timeletter_draft_empty">임시 저장된 레터가 없습니다.</string>
+    <string name="timeletter_draft_load_error">임시 저장된 레터를 불러올 수 없습니다.</string>
+    <string name="timeletter_draft_delete_error">임시 저장된 레터를 삭제하지 못했습니다.</string>
 </resources>

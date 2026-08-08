@@ -7,6 +7,7 @@ sealed interface DraftLetterUiState {
 
     data class Success(
         val drafts: List<TimeLetter>,
+        val receiverNameMap: Map<Long, String> = emptyMap(),
         val isEditMode: Boolean = false,
         val selectedIds: Set<Long> = emptySet(),
     ) : DraftLetterUiState
