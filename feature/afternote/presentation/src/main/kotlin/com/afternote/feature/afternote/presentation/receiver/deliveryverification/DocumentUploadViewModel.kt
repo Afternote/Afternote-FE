@@ -76,6 +76,14 @@ class DocumentUploadViewModel
 
         fun submit() {
             val state = _uiState.value
+            // 버튼 비활성(canSubmit)과 별개의 최종 방어선 — 탭 시점과 recomposition 사이 race 로
+            // 업로드 중에도 도달할 수 있고, 그대로 보내면 진행 중 파일이 신청에서 빠진다 (#711).
+            if (state.deathCertificate.isUploading || state.familyRelationCertificate.isUploading) {
+                _uiState.update {
+                    it.copy(error = ErrorPayload.Res(R.string.receiver_verify_document_upload_in_progress))
+                }
+                return
+            }
             val deathUrl = state.deathCertificate.fileUrl
             val famRelUrl = state.familyRelationCertificate.fileUrl
             if ((deathUrl == null && famRelUrl == null) || state.isSubmitting) {
