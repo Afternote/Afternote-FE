@@ -30,6 +30,11 @@ sealed interface SettingRoute {
     data object RecipientRegisterRoute : SettingRoute
 
     @Serializable
+    data class RecipientEditRoute(
+        val receiverId: Long,
+    ) : SettingRoute
+
+    @Serializable
     data class AfterDeliveryRoute(
         val receiverId: Long,
     ) : SettingRoute

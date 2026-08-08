@@ -22,6 +22,7 @@ import com.afternote.feature.setting.presentation.screen.PassKeyScreen
 import com.afternote.feature.setting.presentation.screen.ProfileEditScreen
 import com.afternote.feature.setting.presentation.screen.PushNotificationScreen
 import com.afternote.feature.setting.presentation.screen.ReceiverListScreen
+import com.afternote.feature.setting.presentation.screen.ReceiverEditScreen
 import com.afternote.feature.setting.presentation.screen.ReceiverRegisterScreen
 import com.afternote.feature.setting.presentation.screen.SettingScreen
 import com.afternote.feature.setting.presentation.screen.WithdrawConfirmScreen
@@ -127,11 +128,21 @@ fun NavGraphBuilder.settingNavGraph(
             )
         }
 
+        composable<SettingRoute.RecipientEditRoute> {
+            ReceiverEditScreen(
+                onBackClick = actions::onRecipientEditBack,
+                onEditSuccess = actions::onRecipientEditBack,
+            )
+        }
+
         composable<SettingRoute.AfterDeliveryRoute> {
+            val route = it.toRoute<SettingRoute.AfterDeliveryRoute>()
             DeliveryConditionScreen(
                 onBack = actions::onAfterDeliveryBack,
                 onSaveSuccess = actions::onAfterDeliveryBack,
-                onLastGreetingEditClick = actions::onNavigateToRecipientList,
+                onLastGreetingEditClick = {
+                    actions.onNavigateToRecipientEdit(route.receiverId)
+                },
             )
         }
 

@@ -37,6 +37,10 @@ interface SettingNavActions {
 
     fun onRecipientRegisterBack()
 
+    fun onNavigateToRecipientEdit(receiverId: Long)
+
+    fun onRecipientEditBack()
+
     fun onNavigateToAfterDelivery(receiverId: Long)
 
     fun onAfterDeliveryBack()

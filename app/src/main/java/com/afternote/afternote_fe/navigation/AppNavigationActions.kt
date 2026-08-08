@@ -269,6 +269,14 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
                 appState.navController.popBackStack()
             }
 
+            override fun onNavigateToRecipientEdit(receiverId: Long) {
+                appState.navController.navigate(SettingRoute.RecipientEditRoute(receiverId))
+            }
+
+            override fun onRecipientEditBack() {
+                appState.navController.popBackStack()
+            }
+
             override fun onNavigateToAfterDelivery(receiverId: Long) {
                 appState.navController.navigate(SettingRoute.AfterDeliveryRoute(receiverId))
             }
