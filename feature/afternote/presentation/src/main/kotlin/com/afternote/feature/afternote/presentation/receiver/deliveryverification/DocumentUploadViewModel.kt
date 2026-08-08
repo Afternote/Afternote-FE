@@ -42,7 +42,12 @@ class DocumentUploadViewModel
             extension: String,
             displayName: String,
         ) {
-            if (bytes.isEmpty()) return
+            if (bytes.isEmpty()) {
+                onDocumentReadFailed()
+                return
+            }
+            // 실패 시 이 상태로 복원 — 재첨부 실패가 이미 성공해 둔 첨부(fileUrl)까지 지우면 안 된다 (#740).
+            val previous = _uiState.value.slotOf(slot)
             updateSlot(slot) { it.copy(displayName = displayName, isUploading = true) }
             viewModelScope.launch {
                 uploadRepository
@@ -56,12 +61,17 @@ class DocumentUploadViewModel
                         }
                     }.onFailure { throwable ->
                         errorReporter.recordAfternoteFailure(AfternoteFailureStage.DOCUMENT_UPLOAD, throwable)
-                        updateSlot(slot) { DocumentSlotState() }
+                        updateSlot(slot) { previous }
                         _uiState.update {
                             it.copy(error = ErrorPayload.Res(R.string.receiver_verify_document_upload_failed))
                         }
                     }
             }
+        }
+
+        /** picker 가 돌려준 Uri 에서 바이트 추출이 실패한 경우 — 업로드 요청 전이므로 슬롯은 건드리지 않는다 (#740). */
+        fun onDocumentReadFailed() {
+            _uiState.update { it.copy(error = ErrorPayload.Res(R.string.receiver_verify_document_read_failed)) }
         }
 
         fun submit() {
@@ -121,4 +131,10 @@ class DocumentUploadViewModel
                 }
             }
         }
+
+        private fun DocumentUploadUiState.slotOf(slot: DocumentSlot): DocumentSlotState =
+            when (slot) {
+                DocumentSlot.DeathCertificate -> deathCertificate
+                DocumentSlot.FamilyRelationCertificate -> familyRelationCertificate
+            }
     }
