@@ -152,6 +152,7 @@ dependencies {
     // 그래서 로그에 "Could not register handler for breadcrumbs events" 가 뜨는 건 정상이다.
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.messaging)
 
     // Core
     implementation(projects.core.common)
