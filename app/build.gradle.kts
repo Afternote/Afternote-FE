@@ -136,6 +136,13 @@ android {
     }
 }
 
+configurations.configureEach {
+    if (name == "debugScreenshotTestCompileClasspath") {
+        // Keep the renderer from loading firebase-datatransport R classes from two different versions.
+        exclude(group = "com.google.firebase", module = "firebase-datatransport")
+    }
+}
+
 dependencies {
     implementation(libs.coil.compose)
     implementation(libs.androidx.hilt.navigation.compose)
