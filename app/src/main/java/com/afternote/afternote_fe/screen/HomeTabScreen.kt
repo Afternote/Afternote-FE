@@ -1,7 +1,6 @@
 package com.afternote.afternote_fe.screen
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -172,23 +171,26 @@ fun HomeTabScreen(
                 }
 
                 is HomeTabUiState.Error -> {
-                    Box(
+                    LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = stringResource(R.string.home_tab_error_message),
-                                style = AfternoteDesign.typography.bodySmallR,
-                                color = AfternoteDesign.colors.gray7,
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            TextButton(onClick = actions::onRetryLoad) {
+                        item {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
-                                    text = stringResource(R.string.home_tab_retry),
-                                    style = AfternoteDesign.typography.captionLargeB,
-                                    color = AfternoteDesign.colors.gray9,
+                                    text = stringResource(R.string.home_tab_error_message),
+                                    style = AfternoteDesign.typography.bodySmallR,
+                                    color = AfternoteDesign.colors.gray7,
                                 )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                TextButton(onClick = actions::onRetryLoad) {
+                                    Text(
+                                        text = stringResource(R.string.home_tab_retry),
+                                        style = AfternoteDesign.typography.captionLargeB,
+                                        color = AfternoteDesign.colors.gray9,
+                                    )
+                                }
                             }
                         }
                     }
