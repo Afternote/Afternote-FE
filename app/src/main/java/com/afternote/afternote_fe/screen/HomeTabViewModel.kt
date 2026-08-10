@@ -32,6 +32,9 @@ class HomeTabViewModel
         /** 진행 중인 API 요청. 상태 대신 Job으로 가드하여 초기 Loading 딜레마를 회피한다. */
         private var fetchJob: Job? = null
 
+        /** [fetchJob] 이 사용자가 직접 요청한 로드인지. 자동 갱신과의 우선순위를 가른다. */
+        private var isUserRequestedFetch = false
+
         init {
             loadHomeSummary()
         }
@@ -45,7 +48,7 @@ class HomeTabViewModel
             // 이미 데이터가 있고 새로고침도 아니면 재요청하지 않는다.
             if (_uiState.value is HomeTabUiState.Success && !isRefresh) return
 
-            fetch(showsRefreshingSpinner = isRefresh, keepsStateOnFailure = false)
+            fetch(showsRefreshingSpinner = isRefresh, keepsStateOnFailure = false, isUserRequested = true)
         }
 
         /**
@@ -57,15 +60,26 @@ class HomeTabViewModel
          *   에러 화면으로 대체되면 사용자 입장에서는 인과가 설명되지 않는다.
          */
         fun refreshOnReturn() {
-            fetch(showsRefreshingSpinner = false, keepsStateOnFailure = true)
+            fetch(showsRefreshingSpinner = false, keepsStateOnFailure = true, isUserRequested = false)
         }
 
+        /**
+         * @param isUserRequested 당겨서 새로고침·재시도처럼 사용자가 직접 일으킨 로드인지.
+         *   자동 갱신과 겹쳤을 때 어느 쪽이 살아남는지를 가른다.
+         */
         private fun fetch(
             showsRefreshingSpinner: Boolean,
             keepsStateOnFailure: Boolean,
+            isUserRequested: Boolean,
         ) {
-            // Job이 아직 살아 있으면 중복 요청을 막는다.
-            if (fetchJob?.isActive == true) return
+            if (fetchJob?.isActive == true) {
+                // 사용자 요청끼리 겹치면 뒤엣것을 버린다 — 앞선 요청의 스피너가 이미 떠 있어 무음이 아니다.
+                // 반대로 응답 없이 매달린 자동 갱신에는 자리를 내주게 한다. 그러지 않으면 서버가
+                // 무응답인 동안 "다시 시도"·당겨서 새로고침이 통째로 삼켜진다.
+                if (isUserRequestedFetch || !isUserRequested) return
+                fetchJob?.cancel()
+            }
+            isUserRequestedFetch = isUserRequested
 
             fetchJob =
                 viewModelScope.launch {
@@ -78,7 +92,10 @@ class HomeTabViewModel
                     } else {
                         // 초기 진입 또는 에러 재시도: 캐시된 이름이 있으면 placeholder로 즉시 노출한다.
                         _uiState.value =
-                            HomeTabUiState.Loading(cachedUserName = userProfileRepository.getCachedUserName())
+                            HomeTabUiState.Loading(
+                                cachedUserName = userProfileRepository.getCachedUserName(),
+                                showsRefreshIndicator = showsRefreshingSpinner,
+                            )
                     }
 
                     getHomeSummary()
