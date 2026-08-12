@@ -2,9 +2,9 @@ package com.afternote.feature.afternote.domain.repository.author
 
 import androidx.paging.PagingData
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
+import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
-import com.afternote.feature.afternote.domain.model.author.CreatePlaylistPayload
-import com.afternote.feature.afternote.domain.model.author.CreateSocialPayload
+import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.ListItem
 import kotlinx.coroutines.flow.Flow
@@ -23,11 +23,14 @@ interface AfternoteRepository {
 
     suspend fun getDetail(id: Long): Result<Detail>
 
-    suspend fun createSocial(payload: CreateSocialPayload): Result<Long>
+    suspend fun createSocial(payload: CreateAccountPayload): Result<Long>
+
+    /** BUSINESS 생성. 바디 스키마가 SOCIAL 과 동일해 [CreateAccountPayload] 를 공유한다 (category 만 상이). */
+    suspend fun createBusiness(payload: CreateAccountPayload): Result<Long>
 
     suspend fun createGallery(payload: CreateGalleryPayload): Result<Long>
 
-    suspend fun createPlaylist(payload: CreatePlaylistPayload): Result<Long>
+    suspend fun createMemorial(payload: CreateMemorialPayload): Result<Long>
 
     suspend fun update(
         id: Long,

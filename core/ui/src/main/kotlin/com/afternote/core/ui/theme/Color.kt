@@ -45,8 +45,14 @@ private val Accent8 = Color(0xFF6E5A7F)
 private val Accent9 = Color(0xFF24324A)
 private val Accent10 = Color(0xFF3A4A8A)
 
-/** 시맨틱 에러/필수표시 색. 필수 입력 마커·검증 실패 등에 사용. */
-private val Error = Color(0xFFFF3647)
+/** 에러 문구 색. 검증 실패 등 인라인 에러 텍스트에 사용 (시안 에러 문구 6곳 정본). */
+private val Error = Color(0xFFFF0C0C)
+
+/**
+ * 필수 입력 표시 점 색 (시안 필수 마커 32곳 정본).
+ * 에러 문구([Error])와 값이 다른 것은 시안의 용도별 구분 의도 — 통일 금지.
+ */
+private val RequiredMark = Color(0xFFFF3647)
 
 internal fun lightColors() =
     AfternoteColors(
@@ -74,6 +80,7 @@ internal fun lightColors() =
         accent9 = Accent9,
         accent10 = Accent10,
         error = Error,
+        requiredMark = RequiredMark,
         isLightMode = true,
     )
 
@@ -103,6 +110,7 @@ internal fun darkColors() =
         accent9 = Accent9,
         accent10 = Accent10,
         error = Error,
+        requiredMark = RequiredMark,
         isLightMode = false,
     )
 
@@ -136,6 +144,7 @@ class AfternoteColors(
     accent9: Color,
     accent10: Color,
     error: Color,
+    requiredMark: Color,
     isLightMode: Boolean,
 ) {
     var white by mutableStateOf(white)
@@ -186,6 +195,8 @@ class AfternoteColors(
         private set
     var error by mutableStateOf(error)
         private set
+    var requiredMark by mutableStateOf(requiredMark)
+        private set
     var isLightMode by mutableStateOf(isLightMode)
         private set
 
@@ -214,6 +225,7 @@ class AfternoteColors(
         accent9: Color = this.accent9,
         accent10: Color = this.accent10,
         error: Color = this.error,
+        requiredMark: Color = this.requiredMark,
         isLightMode: Boolean = this.isLightMode,
     ) = AfternoteColors(
         white = white,
@@ -240,6 +252,7 @@ class AfternoteColors(
         accent9 = accent9,
         accent10 = accent10,
         error = error,
+        requiredMark = requiredMark,
         isLightMode = isLightMode,
     )
 
@@ -268,8 +281,7 @@ class AfternoteColors(
         this.accent9 = other.accent9
         this.accent10 = other.accent10
         this.error = other.error
+        this.requiredMark = other.requiredMark
         this.isLightMode = other.isLightMode
     }
 }
-
-val Red = Color(0xFFFF0C0C) // 에러 메시지용 빨간색

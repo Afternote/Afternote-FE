@@ -33,7 +33,6 @@ class AfternoteEditorUiHolder(
     val afternoteEditReceiverNameState: TextFieldState,
     val phoneNumberState: TextFieldState,
     val customServiceNameState: TextFieldState,
-    val customLastWishState: TextFieldState,
 ) {
     val editorMessages: SnapshotStateList<EditorMessage> =
         mutableStateListOf(EditorMessage())
@@ -96,7 +95,6 @@ fun rememberAfternoteEditorUiHolder(
     afternoteEditReceiverNameState: TextFieldState,
     phoneNumberState: TextFieldState,
     customServiceNameState: TextFieldState,
-    customLastWishState: TextFieldState,
 ): AfternoteEditorUiHolder =
     remember(
         idState,
@@ -104,7 +102,6 @@ fun rememberAfternoteEditorUiHolder(
         afternoteEditReceiverNameState,
         phoneNumberState,
         customServiceNameState,
-        customLastWishState,
     ) {
         AfternoteEditorUiHolder(
             idState = idState,
@@ -112,6 +109,5 @@ fun rememberAfternoteEditorUiHolder(
             afternoteEditReceiverNameState = afternoteEditReceiverNameState,
             phoneNumberState = phoneNumberState,
             customServiceNameState = customServiceNameState,
-            customLastWishState = customLastWishState,
         )
     }

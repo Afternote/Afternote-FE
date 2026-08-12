@@ -3,15 +3,16 @@ package com.afternote.feature.afternote.data.repositoryimpl.receiver
 import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
-import com.afternote.feature.afternote.data.dto.DeliveryVerificationRequest
-import com.afternote.feature.afternote.data.dto.ReceiverAuthCodeEmailSendRequest
-import com.afternote.feature.afternote.data.dto.ReceiverAuthPresignedUrlRequest
-import com.afternote.feature.afternote.data.dto.ReceiverAuthVerifyRequest
-import com.afternote.feature.afternote.data.dto.ReceiverEmailAuthVerifyRequest
+import com.afternote.feature.afternote.data.dto.DeliveryVerificationRequestDto
+import com.afternote.feature.afternote.data.dto.ReceiverAuthCodeEmailSendRequestDto
+import com.afternote.feature.afternote.data.dto.ReceiverAuthPresignedUrlRequestDto
+import com.afternote.feature.afternote.data.dto.ReceiverAuthVerifyRequestDto
+import com.afternote.feature.afternote.data.dto.ReceiverEmailAuthVerifyRequestDto
 import com.afternote.feature.afternote.data.dto.toDomain
 import com.afternote.feature.afternote.data.service.ReceiverAuthApiService
-import com.afternote.feature.afternote.domain.error.ReceiverDeliverySubmitException
+import com.afternote.feature.afternote.domain.error.ReceiverDeliveryVerificationException
 import com.afternote.feature.afternote.domain.error.ReceiverEmailAuthException
+import com.afternote.feature.afternote.domain.error.ReceiverMasterKeyException
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.ReceiverAuthPresignedUrl
 import com.afternote.feature.receiver.domain.model.ReceiverEmailAuthResult
@@ -35,17 +36,21 @@ class ReceiverAuthRepositoryImpl
     constructor(
         private val api: ReceiverAuthApiService,
     ) : ReceiverAuthRepository {
-        override suspend fun verify(authCode: String): Result<ReceiverIdentity> =
+        override suspend fun verifyMasterKey(authCode: String): Result<ReceiverIdentity> =
             runCatching {
-                api.verify(ReceiverAuthVerifyRequest(authCode)).requireData().toDomain()
+                try {
+                    api.verifyMasterKey(ReceiverAuthVerifyRequestDto(authCode)).requireData().toDomain()
+                } catch (e: ApiException) {
+                    throw ReceiverMasterKeyException(status = e.status, serverMessage = e.serverMessage, serverCode = e.code)
+                }
             }
 
         override suspend fun sendEmailAuthCode(email: String): Result<Unit> =
             runCatching {
                 try {
-                    api.sendEmailAuthCode(ReceiverAuthCodeEmailSendRequest(email)).requireStatus()
+                    api.sendEmailAuthCode(ReceiverAuthCodeEmailSendRequestDto(email)).requireStatus()
                 } catch (e: ApiException) {
-                    throw ReceiverEmailAuthException(serverMessage = e.serverMessage, serverCode = e.code)
+                    throw ReceiverEmailAuthException(status = e.status, serverMessage = e.serverMessage, serverCode = e.code)
                 }
             }
 
@@ -57,17 +62,17 @@ class ReceiverAuthRepositoryImpl
                 try {
                     api
                         .verifyEmailAuthCode(
-                            ReceiverEmailAuthVerifyRequest(email = email, authCode = authCode),
+                            ReceiverEmailAuthVerifyRequestDto(email = email, authCode = authCode),
                         ).requireData()
                         .toDomain()
                 } catch (e: ApiException) {
-                    throw ReceiverEmailAuthException(serverMessage = e.serverMessage, serverCode = e.code)
+                    throw ReceiverEmailAuthException(status = e.status, serverMessage = e.serverMessage, serverCode = e.code)
                 }
             }
 
         override suspend fun getPresignedUrl(extension: String): Result<ReceiverAuthPresignedUrl> =
             runCatching {
-                api.getPresignedUrl(ReceiverAuthPresignedUrlRequest(extension)).requireData().toDomain()
+                api.getPresignedUrl(ReceiverAuthPresignedUrlRequestDto(extension)).requireData().toDomain()
             }
 
         override suspend fun submitDeliveryVerification(
@@ -78,14 +83,18 @@ class ReceiverAuthRepositoryImpl
                 try {
                     api
                         .submitDeliveryVerification(
-                            DeliveryVerificationRequest(
+                            DeliveryVerificationRequestDto(
                                 deathCertificateUrl = deathCertificateUrl,
                                 familyRelationCertificateUrl = familyRelationCertificateUrl,
                             ),
                         ).requireData()
                         .toDomain()
                 } catch (e: ApiException) {
-                    throw ReceiverDeliverySubmitException(serverMessage = e.serverMessage, httpCode = e.code)
+                    throw ReceiverDeliveryVerificationException(
+                        status = e.status,
+                        serverMessage = e.serverMessage,
+                        serverCode = e.code,
+                    )
                 }
             }
 

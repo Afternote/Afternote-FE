@@ -14,10 +14,8 @@ import com.afternote.feature.afternote.presentation.author.editor.message.Editor
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
-import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
-import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
 
 private const val TAG = "AfternoteEditorState"
 
@@ -48,7 +46,6 @@ class AfternoteEditorState(
     val afternoteEditReceiverNameState: TextFieldState get() = ui.afternoteEditReceiverNameState
     val phoneNumberState: TextFieldState get() = ui.phoneNumberState
     val customServiceNameState: TextFieldState get() = ui.customServiceNameState
-    val customLastWishState: TextFieldState get() = ui.customLastWishState
 
     val activeDialog get() = ui.activeDialog
     val relationshipSelectedValue get() = ui.relationshipSelectedValue
@@ -59,27 +56,11 @@ class AfternoteEditorState(
     fun currentForm(): EditorFormState = getCurrentForm()
 
     val selectedCategory get() = getCurrentForm().selectedCategory
-    val funeralVideoUrl get() = getCurrentForm().funeralVideoUrl
-    val funeralThumbnailUrl get() = getCurrentForm().funeralThumbnailUrl
+    val memorialVideoUrl get() = getCurrentForm().memorialVideoUrl
+    val memorialThumbnailUrl get() = getCurrentForm().memorialThumbnailUrl
     val memorialPhotoUrl get() = getCurrentForm().memorialPhotoUrl
     val pickedMemorialPhotoUri get() = getCurrentForm().pickedMemorialPhotoUri
     val afternoteEditReceivers get() = getCurrentForm().afternoteEditReceivers
-
-    val galleryProcessingCallbacks: ProcessingMethodCallbacks =
-        ProcessingMethodCallbacks(
-            onItemDeleteClick = ::deleteGalleryProcessingMethod,
-            onItemAdded = ::addGalleryProcessingMethod,
-            onTextFieldVisibilityChanged = { },
-            onItemEdited = ::editGalleryProcessingMethod,
-        )
-
-    val socialProcessingCallbacks: ProcessingMethodCallbacks =
-        ProcessingMethodCallbacks(
-            onItemDeleteClick = ::deleteProcessingMethod,
-            onItemAdded = ::addProcessingMethod,
-            onTextFieldVisibilityChanged = { },
-            onItemEdited = ::editProcessingMethod,
-        )
 
     fun onCategoryDropdownExpandedChange(expanded: Boolean) = ui.onCategoryDropdownExpandedChange(expanded)
 
@@ -87,19 +68,12 @@ class AfternoteEditorState(
 
     /** 호스트 SSOT의 곡 목록을 폼 스냅샷으로 동기화한다 (SavedStateHandle JSON에 포함하기 위함). */
     fun syncMemorialPlaylistSongs(songs: List<Song>) {
-        updateForm {
-            it.copy(
-                memorialPlaylistSongs = songs,
-                playlistSongCount = if (songs.isNotEmpty()) songs.size else it.playlistSongCount,
-            )
-        }
+        updateForm { it.copy(memorialPlaylistSongs = songs) }
     }
 
     /** 신규 작성 진입 시 폼에 남은 추억 플레이리스트 스냅샷을 비운다 (호스트 SSOT clear는 호출부에서). */
     fun resetMemorialPlaylistFormSnapshot() {
-        updateForm {
-            it.copy(memorialPlaylistSongs = emptyList(), playlistSongCount = 16)
-        }
+        updateForm { it.copy(memorialPlaylistSongs = emptyList()) }
     }
 
     /** 드롭다운 UI에서 [categoryDisplayLabel] 문자열로 카테고리를 선택한다. */
@@ -116,14 +90,9 @@ class AfternoteEditorState(
         updateForm {
             it.copy(
                 selectedCategory = category,
-                selectedService =
-                    if (category == EditorCategory.GALLERY) {
-                        AfternoteServiceCatalog.defaultGalleryService
-                    } else {
-                        AfternoteServiceCatalog.defaultSocialService
-                    },
-                socialProcessingMethods = emptyList(),
-                galleryProcessingMethods = emptyList(),
+                // 카테고리 전환 시 서비스명은 항상 미선택으로 리셋 — 임의 기본값 확정 방지 (이슈 #468).
+                selectedService = null,
+                processingMethods = emptyList(),
             )
         }
     }
@@ -136,22 +105,16 @@ class AfternoteEditorState(
         }
     }
 
-    fun onLastWishSelected(wish: String?) {
-        updateForm { it.copy(selectedLastWish = wish) }
-    }
-
-    fun getAtmosphereForSave(): String = getCurrentForm().atmosphereForSave(ui.customLastWishState.text.toString())
-
     fun onMemorialPhotoSelected(uri: Uri?) {
         updateForm { it.copy(pickedMemorialPhotoUri = uri?.toString()) }
     }
 
     fun onFuneralVideoSelected(uri: Uri?) {
-        updateForm { it.copy(funeralVideoUrl = uri?.toString(), funeralThumbnailUrl = null) }
+        updateForm { it.copy(memorialVideoUrl = uri?.toString(), memorialThumbnailUrl = null) }
     }
 
     fun onFuneralThumbnailDataUrlReady(dataUrl: String?) {
-        updateForm { it.copy(funeralThumbnailUrl = dataUrl) }
+        updateForm { it.copy(memorialThumbnailUrl = dataUrl) }
     }
 
     fun showAddAfternoteEditorReceiverDialog() = ui.showAddAfternoteEditorReceiverDialog()
@@ -222,23 +185,11 @@ class AfternoteEditorState(
         }
     }
 
-    fun onAfternoteEditorReceiverItemAdded(text: String) {
-        updateForm { prev ->
-            val newReceiver =
-                AfternoteEditorReceiver(
-                    id = (prev.afternoteEditReceivers.size + 1).toString(),
-                    name = text,
-                    label = "친구",
-                )
-            prev.copy(afternoteEditReceivers = prev.afternoteEditReceivers + newReceiver)
-        }
-    }
-
     fun addEditorMessage() {
         ui.addEditorMessage()
         updateForm { prev ->
             prev.copy(
-                messageBlocks = prev.messageBlocks + EditorMessageTextBlock(title = "", body = ""),
+                leaveMessageBlocks = prev.leaveMessageBlocks + EditorMessageTextBlock(title = "", body = ""),
             )
         }
     }
@@ -248,7 +199,7 @@ class AfternoteEditorState(
         ui.removeEditorMessage(message)
         updateForm { prev ->
             prev.copy(
-                messageBlocks =
+                leaveMessageBlocks =
                     normalizeEditorMessageBlocks(
                         ui.editorMessages.map { m ->
                             EditorMessageTextBlock(
@@ -277,9 +228,9 @@ class AfternoteEditorState(
         applyMessageBlocks(blocks)
     }
 
-    /** 타이핑 디바운스 후 폼(및 스냅샷)에만 반영; [EditorFormState.messageBlocksRestoreGeneration]은 건드리지 않는다. */
+    /** 타이핑 디바운스 후 폼(및 스냅샷)에만 반영; [EditorFormState.leaveMessageBlocksRestoreGeneration]은 건드리지 않는다. */
     fun persistEditorMessagesFromTyping(blocks: List<EditorMessageTextBlock>) {
-        updateForm { it.copy(messageBlocks = normalizeEditorMessageBlocks(blocks)) }
+        updateForm { it.copy(leaveMessageBlocks = normalizeEditorMessageBlocks(blocks)) }
     }
 
     /**
@@ -291,97 +242,53 @@ class AfternoteEditorState(
             TAG,
             "applyFormPrefill: itemId=${prefill.loadedItemId}, serviceName=${prefill.serviceName}, " +
                 "category=${prefill.category}, " +
-                "socialPMs=${prefill.socialProcessingMethods.size}, galleryPMs=${prefill.galleryProcessingMethods.size}",
+                "PMs=${prefill.processingMethods.size}",
         )
-        val prefillBlocks = normalizeEditorMessageBlocks(prefill.messageBlocks)
+        val prefillBlocks = normalizeEditorMessageBlocks(prefill.leaveMessageBlocks)
         updateForm { prev ->
-            val withLastWish =
-                prefill.lastWishUpdate?.let { lw ->
-                    prev.copy(selectedLastWish = lw.selectedKey)
-                } ?: prev
-            withLastWish.copy(
+            prev.copy(
                 loadedItemId = prefill.loadedItemId,
                 selectedCategory = prefill.category,
                 selectedService = prefill.serviceName,
-                socialProcessingMethods = prefill.socialProcessingMethods,
-                galleryProcessingMethods = prefill.galleryProcessingMethods,
-                funeralVideoUrl = prefill.funeralVideoUrl,
-                funeralThumbnailUrl = prefill.funeralThumbnailUrl,
+                processingMethods = prefill.processingMethods,
+                memorialVideoUrl = prefill.memorialVideoUrl,
+                memorialThumbnailUrl = prefill.memorialThumbnailUrl,
                 memorialPhotoUrl = prefill.memorialPhotoUrl,
                 memorialPlaylistSongs = prefill.memorialPlaylistSongs,
-                playlistSongCount =
-                    if (prefill.memorialPlaylistSongs.isNotEmpty()) {
-                        prefill.memorialPlaylistSongs.size
-                    } else {
-                        withLastWish.playlistSongCount
-                    },
-                messageBlocks = prefillBlocks,
+                afternoteEditReceivers = prefill.receivers,
+                leaveMessageBlocks = prefillBlocks,
             )
         }
         ui.idState.edit { replace(0, length, prefill.accountId) }
         ui.passwordState.edit { replace(0, length, prefill.password) }
         applyMessageBlocks(prefillBlocks)
-        prefill.lastWishUpdate?.let { lw ->
-            ui.customLastWishState.edit { replace(0, length, lw.customText) }
-        }
     }
 
-    private fun addProcessingMethod(text: String) {
+    fun addProcessingMethod(text: String) {
         updateForm { prev ->
             val newItem =
                 ProcessingMethodItem(
-                    id = (prev.socialProcessingMethods.size + 1).toString(),
+                    id = (prev.processingMethods.size + 1).toString(),
                     text = text,
                 )
-            prev.copy(socialProcessingMethods = prev.socialProcessingMethods + newItem)
+            prev.copy(processingMethods = prev.processingMethods + newItem)
         }
     }
 
-    private fun deleteProcessingMethod(itemId: String) {
+    fun deleteProcessingMethod(itemId: String) {
         updateForm { prev ->
-            prev.copy(socialProcessingMethods = prev.socialProcessingMethods.filter { it.id != itemId })
+            prev.copy(processingMethods = prev.processingMethods.filter { it.id != itemId })
         }
     }
 
-    private fun editProcessingMethod(
+    fun editProcessingMethod(
         itemId: String,
         newText: String,
     ) {
         updateForm { prev ->
             prev.copy(
-                socialProcessingMethods =
-                    prev.socialProcessingMethods.map { item ->
-                        if (item.id == itemId) item.copy(text = newText) else item
-                    },
-            )
-        }
-    }
-
-    private fun addGalleryProcessingMethod(text: String) {
-        updateForm { prev ->
-            val newItem =
-                ProcessingMethodItem(
-                    id = (prev.galleryProcessingMethods.size + 1).toString(),
-                    text = text,
-                )
-            prev.copy(galleryProcessingMethods = prev.galleryProcessingMethods + newItem)
-        }
-    }
-
-    private fun deleteGalleryProcessingMethod(itemId: String) {
-        updateForm { prev ->
-            prev.copy(galleryProcessingMethods = prev.galleryProcessingMethods.filter { it.id != itemId })
-        }
-    }
-
-    private fun editGalleryProcessingMethod(
-        itemId: String,
-        newText: String,
-    ) {
-        updateForm { prev ->
-            prev.copy(
-                galleryProcessingMethods =
-                    prev.galleryProcessingMethods.map { item ->
+                processingMethods =
+                    prev.processingMethods.map { item ->
                         if (item.id == itemId) item.copy(text = newText) else item
                     },
             )
@@ -406,7 +313,6 @@ fun rememberAfternoteEditorState(
     val afternoteEditReceiverNameState = rememberTextFieldState()
     val phoneNumberState = rememberTextFieldState()
     val customServiceNameState = rememberTextFieldState()
-    val customLastWishState = rememberTextFieldState()
 
     val ui =
         rememberAfternoteEditorUiHolder(
@@ -415,7 +321,6 @@ fun rememberAfternoteEditorState(
             afternoteEditReceiverNameState = afternoteEditReceiverNameState,
             phoneNumberState = phoneNumberState,
             customServiceNameState = customServiceNameState,
-            customLastWishState = customLastWishState,
         )
 
     return remember(ui) {

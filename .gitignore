@@ -2,6 +2,9 @@
 .gradle/
 build/
 **/bin/
+# Kotlin 2.0+ 프로젝트 데이터(.salive 세션 마커·데몬 에러 로그) — 커밋 금지 권고
+# https://kotlinlang.org/docs/whatsnew20.html#new-directory-for-kotlin-data-in-gradle-projects
+.kotlin/
 
 # Local configuration file (sdk path, etc)
 local.properties
@@ -35,6 +38,7 @@ render.experimental.xml
 
 # Google Services (e.g. APIs or Firebase)
 google-services.json
+google-services.json.bak-*
 
 # Android Profiling
 *.hprof
@@ -46,3 +50,4 @@ AGENTS.md
 
 .codex/
 .cursor/
+.artifacts/

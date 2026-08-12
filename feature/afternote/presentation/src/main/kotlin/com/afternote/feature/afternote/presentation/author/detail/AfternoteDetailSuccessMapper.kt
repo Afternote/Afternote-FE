@@ -1,9 +1,9 @@
 package com.afternote.feature.afternote.presentation.author.detail
 
 import com.afternote.core.model.AlbumCover
-import com.afternote.feature.afternote.domain.AfternoteServiceType
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.Detail
-import com.afternote.feature.afternote.presentation.author.detail.socialnetwork.SocialNetworkDetailContent
+import com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailContent
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 
 /** 상세 화면에 쓰는 "최종 작성일": 갱신일이 있으면 그것, 공백이면 생성일. */
@@ -11,9 +11,9 @@ private val Detail.finalWriteDate: String
     get() = timestamps.updatedAt.ifBlank { timestamps.createdAt }
 
 internal fun Detail.toReceiverUiModels(): List<ReceiverUiModel> =
-    receivers.mapIndexed { index, r ->
+    receivers.map { r ->
         ReceiverUiModel(
-            id = r.receiverId?.toString() ?: "receiver_$index",
+            id = r.receiverId.toString(),
             name = r.name,
             label = r.relation,
         )
@@ -25,40 +25,40 @@ internal fun Detail.toGalleryDetailContent(authorDisplayName: String): GalleryDe
         userName = authorDisplayName,
         finalWriteDate = finalWriteDate,
         afternoteEditReceivers = toReceiverUiModels(),
-        processingMethods = processing?.actions ?: emptyList(),
-        message = processing?.leaveMessage ?: "",
+        processingMethods = processingMethods,
+        message = leaveMessage.orEmpty(),
     )
 
-internal fun Detail.toSocialNetworkDetailContent(authorDisplayName: String): SocialNetworkDetailContent =
-    SocialNetworkDetailContent(
+internal fun Detail.toAccountDetailContent(authorDisplayName: String): AccountDetailContent =
+    AccountDetailContent(
         serviceName = title,
+        type = type,
         userName = authorDisplayName,
         accountId = credentials?.id ?: "",
         password = credentials?.password ?: "",
-        processingMethods = processing?.actions ?: emptyList(),
-        message = processing?.leaveMessage ?: "",
+        processingMethods = processingMethods,
+        message = leaveMessage.orEmpty(),
         finalWriteDate = finalWriteDate,
         afternoteEditReceivers = toReceiverUiModels(),
     )
 
-internal fun Detail.toMemorialGuidelineDetailContent(authorDisplayName: String): MemorialGuidelineDetailContent =
-    MemorialGuidelineDetailContent(
+internal fun Detail.toMemorialDetailContent(authorDisplayName: String): MemorialDetailContent =
+    MemorialDetailContent(
         userName = authorDisplayName,
         finalWriteDate = finalWriteDate,
-        profileImageUri = playlist?.playlistDetailMemorialMedia?.photoUrl,
+        profileImageUri = memorial?.media?.photoUrl,
         afternoteEditReceivers = toReceiverUiModels(),
         albumCovers =
-            playlist?.songs?.map { s ->
+            memorial?.songs?.map { s ->
                 AlbumCover(
                     id = (s.id ?: 0L).toString(),
                     imageUrl = s.coverUrl,
                     title = s.title,
                 )
             } ?: emptyList(),
-        songCount = playlist?.songs?.size ?: 0,
-        lastWish = playlist?.atmosphere ?: "",
-        memorialVideoUrl = playlist?.playlistDetailMemorialMedia?.videoUrl,
-        memorialThumbnailUrl = playlist?.playlistDetailMemorialMedia?.thumbnailUrl,
+        songCount = memorial?.songs?.size ?: 0,
+        memorialVideoUrl = memorial?.media?.videoUrl,
+        memorialThumbnailUrl = memorial?.media?.thumbnailUrl,
     )
 
 /**
@@ -71,34 +71,36 @@ sealed interface DetailContentUiModel {
         val content: GalleryDetailContent,
     ) : DetailContentUiModel
 
-    data class SocialNetwork(
-        val content: SocialNetworkDetailContent,
+    /** 계정 기반 상세(SOCIAL·BUSINESS 공용) — 두 카테고리는 상세 데이터 구성이 동일하다 (이슈 #467). */
+    data class Account(
+        val content: AccountDetailContent,
     ) : DetailContentUiModel
 
     data class Memorial(
-        val content: MemorialGuidelineDetailContent,
+        val content: MemorialDetailContent,
     ) : DetailContentUiModel
 
-    /** BUSINESS·ESTATE 등 디자인 확정 전 placeholder. */
+    /** ESTATE 등 디자인 확정 전 placeholder. */
     data object Unimplemented : DetailContentUiModel
 }
 
 internal fun Detail.toDetailContentUiModel(authorDisplayName: String): DetailContentUiModel =
     when (type) {
-        AfternoteServiceType.GALLERY_AND_FILES -> {
+        AfternoteType.GALLERY_AND_FILES -> {
             DetailContentUiModel.Gallery(toGalleryDetailContent(authorDisplayName))
         }
 
-        AfternoteServiceType.SOCIAL_NETWORK -> {
-            DetailContentUiModel.SocialNetwork(toSocialNetworkDetailContent(authorDisplayName))
+        // BUSINESS 는 데이터 구성이 SOCIAL 과 동일(계정 정보·처리 방법·남긴 말씀)해 계정 상세 UI 모델을 공유한다 (이슈 #467).
+        AfternoteType.SOCIAL_NETWORK, AfternoteType.BUSINESS -> {
+            DetailContentUiModel.Account(toAccountDetailContent(authorDisplayName))
         }
 
-        AfternoteServiceType.MEMORIAL -> {
-            DetailContentUiModel.Memorial(toMemorialGuidelineDetailContent(authorDisplayName))
+        AfternoteType.MEMORIAL -> {
+            DetailContentUiModel.Memorial(toMemorialDetailContent(authorDisplayName))
         }
 
-        // BUSINESS · ESTATE 는 디자인 확정 전 placeholder. 백엔드도 미지원이라 일반적으로 도달하지 않음.
-        AfternoteServiceType.BUSINESS, AfternoteServiceType.ESTATE -> {
+        // ESTATE 는 디자인 확정 전 placeholder. 백엔드도 미지원이라 일반적으로 도달하지 않음.
+        AfternoteType.ESTATE -> {
             DetailContentUiModel.Unimplemented
         }
     }

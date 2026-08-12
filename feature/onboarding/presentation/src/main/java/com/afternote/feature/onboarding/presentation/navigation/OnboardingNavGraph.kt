@@ -14,9 +14,13 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import com.afternote.core.ui.Route
+import com.afternote.core.ui.asString
 import com.afternote.feature.onboarding.presentation.OnboardingProfileEntry
 import com.afternote.feature.onboarding.presentation.R
 import com.afternote.feature.onboarding.presentation.WelcomeScreen
+import com.afternote.feature.onboarding.presentation.findaccount.FindIdScreen
+import com.afternote.feature.onboarding.presentation.findaccount.FindIdUiState
+import com.afternote.feature.onboarding.presentation.findaccount.FindIdViewModel
 import com.afternote.feature.onboarding.presentation.login.LoginEntry
 import com.afternote.feature.onboarding.presentation.signup.SignUpPasswordScreen
 import com.afternote.feature.onboarding.presentation.signup.SignUpResidentNumberScreen
@@ -54,6 +58,34 @@ fun NavGraphBuilder.onboardingNavGraph(
                 onLoginSuccess = actions::replaceOnboardingWithHome,
                 onNewUserOnboarding = actions::replaceLoginWithWelcome,
                 onSignUpClick = actions::replaceLoginWithSignUp,
+                onFindAccountClick = actions::navigateToFindId,
+                onBackClick = actions::popBack,
+            )
+        }
+
+        // ── 아이디 찾기 (인증 → 결과) ──
+        composable<OnboardingRoute.FindIdRoute> {
+            val viewModel = graphScopedFindIdViewModel(graphScopedParentEntry)
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val snackbarHostState = rememberFindIdEventHost(viewModel, uiState)
+
+            FindIdScreen(
+                initialEmail = uiState.email,
+                initialCertificateCode = uiState.certificateCode,
+                isSendingCode = uiState.isSendingCode,
+                isVerificationSent = uiState.isVerificationSent,
+                isSendCodeEnabled = uiState.isSendCodeEnabled,
+                isVerifyEnabled = uiState.isVerifyEnabled,
+                isNextEnabled = uiState.isNextEnabled,
+                resendCooldownSeconds = uiState.resendCooldownSeconds,
+                hasVerificationError = uiState.hasVerificationError,
+                snackbarHostState = snackbarHostState,
+                onEmailChange = viewModel::updateEmail,
+                onCertificateCodeChange = viewModel::updateCertificateCode,
+                onRequestCode = viewModel::requestVerificationCode,
+                onVerifyCode = viewModel::verifyCode,
+                // 결과 화면 연결은 아이디 찾기 존치 결정(#456 코멘트) 대기 — 확정 전까지 미배선.
+                onNextClick = {},
                 onBackClick = actions::popBack,
             )
         }
@@ -75,7 +107,7 @@ fun NavGraphBuilder.onboardingNavGraph(
                 isSendingCode = uiState.isSendingCode,
                 isEmailFormatValid = uiState.isEmailFormatValid,
                 resendCooldownSeconds = uiState.resendCooldownSeconds,
-                verificationRemainingSeconds = uiState.verificationRemainingSeconds,
+                hasVerificationError = uiState.hasVerificationError,
                 isNextEnabled = uiState.isStep1NextEnabled,
                 snackbarHostState = snackbarHostState,
                 onEmailChange = signUpViewModel::updateEmail,
@@ -176,6 +208,50 @@ private fun graphScopedSignUpViewModel(graphScopedParentEntry: () -> NavBackStac
 }
 
 /**
+ * `Route.Onboarding` 그래프 스코프에 묶인 [FindIdViewModel]을 가져옵니다.
+ *
+ * [NavBackStackEntry] 는 ViewModelStoreOwner 라서, [hiltViewModel] 에 부모 그래프 엔트리를 넘기면
+ * VM 을 "만드는" 게 아니라 **그 엔트리의 store 에서 조회**한다 — 최초 호출만 생성이고, 같은 엔트리를
+ * 넘기는 모든 화면이 동일 인스턴스를 받는다(인자를 생략하면 현재 화면 엔트리 스코프라 화면 pop 과 함께
+ * 소멸). 수명은 그래프가 백스택에서 내려갈 때까지: 화면을 나갔다 재진입해도 상태가 남는 것은
+ * [graphScopedSignUpViewModel] 과 동일 특성이다. 지금은 인증 화면 단독 소비지만 결과 화면(#474)·
+ * 비밀번호 찾기(#457)가 [FindIdUiState.foundAccount] 등을 이어받는 통로로 이 스코프를 쓴다.
+ * 람다를 [remember] 로 감싸는 건 getBackStackEntry 조회를 컴포지션당 1회로 고정하기 위함.
+ */
+@Composable
+private fun graphScopedFindIdViewModel(graphScopedParentEntry: () -> NavBackStackEntry): FindIdViewModel {
+    val parentEntry = remember { graphScopedParentEntry() }
+    return hiltViewModel(parentEntry)
+}
+
+/**
+ * 아이디 찾기 화면의 Snackbar 호스트 + 단발성 에러 신호 처리.
+ *
+ * 인증번호 불일치는 시안상 인라인 문구라 여기서 다루지 않고([FindIdUiState.hasVerificationError]),
+ * 그 외 실패([FindIdUiState.errorMessage])만 snackbar 로 노출한다.
+ */
+@Composable
+private fun rememberFindIdEventHost(
+    viewModel: FindIdViewModel,
+    uiState: FindIdUiState,
+): SnackbarHostState {
+    val snackbarHostState = remember { SnackbarHostState() }
+    // VM 이 UiText 로 폴백까지 확정해 두므로 빈 문구가 도달하지 않는다.
+    val pendingErrorMessage = uiState.errorMessage?.asString()
+
+    LaunchedEffect(pendingErrorMessage) {
+        if (pendingErrorMessage != null) {
+            snackbarHostState.showSnackbar(
+                message = pendingErrorMessage,
+                duration = SnackbarDuration.Short,
+            )
+            viewModel.onErrorConsumed()
+        }
+    }
+    return snackbarHostState
+}
+
+/**
  * SignUp Step 화면 공통의 Snackbar 호스트 + UI state 단발성 신호 처리.
  *
  * 각 Step composable 에서 호출해 [SignUpUiState.errorMessage] / [SignUpUiState.isNameRequired]
@@ -193,7 +269,6 @@ private fun rememberSignUpEventHost(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val signupFailedMessage = stringResource(R.string.signup_failed)
     val nameRequiredMessage = stringResource(R.string.signup_name_required)
 
     LaunchedEffect(uiState.shouldNavigateToResidentNumber) {
@@ -213,11 +288,11 @@ private fun rememberSignUpEventHost(
         }
     }
 
-    val pendingErrorMessage = uiState.errorMessage
+    val pendingErrorMessage = uiState.errorMessage?.asString()
     LaunchedEffect(pendingErrorMessage) {
         if (pendingErrorMessage != null) {
             snackbarHostState.showSnackbar(
-                message = pendingErrorMessage.ifBlank { signupFailedMessage },
+                message = pendingErrorMessage,
                 duration = SnackbarDuration.Short,
             )
             viewModel.onErrorConsumed()

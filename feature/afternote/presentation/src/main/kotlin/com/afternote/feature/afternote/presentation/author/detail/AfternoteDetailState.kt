@@ -9,8 +9,8 @@ import androidx.compose.runtime.setValue
 
 /**
  * Detail screen UI state (dropdown, delete dialog).
- * Used by [com.afternote.feature.afternote.presentation.author.detail.socialnetwork.SocialNetworkDetailScreen], [GalleryDetailScreen], and
- * [MemorialGuidelineDetailScreen].
+ * Used by [com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailScreen], [GalleryDetailScreen], and
+ * [MemorialDetailScreen].
  */
 @Stable
 class AfternoteDetailState {

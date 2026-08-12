@@ -1,12 +1,10 @@
 package com.afternote.feature.afternote.presentation.shared.util
 
-import com.afternote.feature.afternote.domain.AfternoteServiceType
 import com.afternote.feature.afternote.presentation.shared.model.AfternoteService
 
 /**
  * Single source of truth for afternote service names by category.
- * Used for edit-screen dropdowns and for inferring [AfternoteServiceType] from service name
- * (e.g. dummy/legacy data). Shared by writer and receiver flows.
+ * Used for edit-screen dropdowns. Shared by writer and receiver flows.
  */
 object AfternoteServiceCatalog {
     /** Display names for 소셜 네트워크 (SOCIAL) category. */
@@ -38,24 +36,12 @@ object AfternoteServiceCatalog {
             AfternoteService.TALKDRIVE.displayKey,
         )
 
-    private val MEMORIAL_SERVICE_NAME: String = AfternoteService.MEMORIAL_GUIDELINE.displayKey
-
-    /**
-     * Infers [AfternoteServiceType] from a service display name.
-     * Only for dummy/legacy data; when type is known from API or list item, use that instead.
-     */
-    fun serviceTypeFor(serviceName: String): AfternoteServiceType =
-        when {
-            galleryServices.contains(serviceName) -> AfternoteServiceType.GALLERY_AND_FILES
-            serviceName == MEMORIAL_SERVICE_NAME -> AfternoteServiceType.MEMORIAL
-            else -> AfternoteServiceType.SOCIAL_NETWORK
-        }
-
-    /** Default service when social category is selected (first in list). */
-    val defaultSocialService: String
-        get() = socialServices.first()
-
-    /** Default service when gallery category is selected (first in list). */
-    val defaultGalleryService: String
-        get() = galleryServices.first()
+    /** Display names for 비즈니스 (BUSINESS) category. 시안 카탈로그(카테고리별 아이콘 34:3342) 정의 4종. */
+    val businessServices: List<String> =
+        listOf(
+            AfternoteService.NAVER_MAIL.displayKey,
+            AfternoteService.DAUM_MAIL.displayKey,
+            AfternoteService.GOOGLE_MAIL.displayKey,
+            AfternoteService.OUTLOOK.displayKey,
+        )
 }

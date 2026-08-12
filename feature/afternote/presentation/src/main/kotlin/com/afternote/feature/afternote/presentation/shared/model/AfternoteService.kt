@@ -57,6 +57,24 @@ enum class AfternoteService(
         stringResId = R.string.receiver_afternote_item_naver_mail,
         iconResId = R.drawable.feature_afternote_img_naver_mail_pattern,
     ),
+    DAUM_MAIL(
+        typeKey = "DAUM_MAIL",
+        displayKey = "다음 메일",
+        stringResId = R.string.receiver_afternote_item_daum_mail,
+        iconResId = R.drawable.feature_afternote_img_daum_mail_pattern,
+    ),
+    GOOGLE_MAIL(
+        typeKey = "GOOGLE_MAIL",
+        displayKey = "구글 메일",
+        stringResId = R.string.receiver_afternote_item_google_mail,
+        iconResId = R.drawable.feature_afternote_img_google_mail_pattern,
+    ),
+    OUTLOOK(
+        typeKey = "OUTLOOK",
+        displayKey = "outlook",
+        stringResId = R.string.receiver_afternote_item_outlook,
+        iconResId = R.drawable.feature_afternote_img_outlook_pattern,
+    ),
     FACEBOOK(
         typeKey = "FACEBOOK",
         displayKey = "페이스북",

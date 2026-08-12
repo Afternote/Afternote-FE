@@ -42,8 +42,8 @@ import com.afternote.feature.afternote.presentation.R
  * Welcome 의 "전달 받은 기록 확인하기" 에서 진입. 본인 확인 상태와 무관하게 진입 가능하며,
  * 발신자별 열람 신청 흐름은 발신자 상세 화면의 "열람 신청하기" 에서 시작한다 (이슈 #215).
  *
- * 빈 상태(14) / 채워진 상태(13) 를 sender 리스트 유무로 분기. 카드 디자인은 13 시안 따름:
- * 프로필 동그라미 + 이름 + 마지막 확인 날짜 + 우측 chevron.
+ * 빈 상태(14) / 채워진 상태(13) 를 sender 리스트 유무로 분기. 카드는 시안에 배치된 변형(Variant4)
+ * 따름: 프로필 동그라미 + 이름 + 우측 chevron.
  */
 @Composable
 fun ReceivedRecordsScreen(
@@ -81,7 +81,8 @@ internal fun ReceivedRecordsScreenContent(
             )
         },
         floatingActionButton = {
-            AfternoteFloatingActionButton(onClick = onAddSenderClick)
+            // 시안(plus_button 48×48, 글리프 16.67dp) 정합: core/ui 기본 56dp 대신 48dp opt-in (#481).
+            AfternoteFloatingActionButton(onClick = onAddSenderClick, size = 48.dp, iconSize = 17.dp)
         },
     ) { paddingValues ->
         if (senders.isEmpty()) {
@@ -165,21 +166,11 @@ private fun SenderCard(
 
         Column(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             Text(
                 text = sender.name,
                 style = AfternoteDesign.typography.bodySmallB,
                 color = AfternoteDesign.colors.gray9,
-            )
-            Text(
-                text =
-                    stringResource(
-                        R.string.receiver_records_box_card_last_confirmed,
-                        sender.lastConfirmedAt.orEmpty(),
-                    ),
-                style = AfternoteDesign.typography.captionLargeR,
-                color = AfternoteDesign.colors.gray5,
             )
         }
 
@@ -210,10 +201,10 @@ private fun ReceivedRecordsScreenFilledPreview() {
         ReceivedRecordsScreenContent(
             senders =
                 listOf(
-                    SenderEntry(id = "1", name = "김혜성", lastConfirmedAt = "2025.10.21."),
-                    SenderEntry(id = "2", name = "김혜성", lastConfirmedAt = "2025.10.21."),
-                    SenderEntry(id = "3", name = "김혜성", lastConfirmedAt = "2025.10.21."),
-                    SenderEntry(id = "4", name = "김혜성", lastConfirmedAt = "2025.10.21."),
+                    SenderEntry(id = "1", name = "김혜성"),
+                    SenderEntry(id = "2", name = "김혜성"),
+                    SenderEntry(id = "3", name = "김혜성"),
+                    SenderEntry(id = "4", name = "김혜성"),
                 ),
             onBackClick = {},
             onAddSenderClick = {},

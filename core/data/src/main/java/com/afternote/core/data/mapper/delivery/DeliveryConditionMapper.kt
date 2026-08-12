@@ -7,12 +7,12 @@ import com.afternote.core.model.delivery.DeliveryContentType
 import com.afternote.core.model.delivery.InactivityPeriod
 import com.afternote.core.model.delivery.ReceiverDeliveryConditions
 import com.afternote.core.network.dto.delivery.ConditionStateDto
-import com.afternote.core.network.dto.delivery.DeliveryConditionItemRequest
-import com.afternote.core.network.dto.delivery.DeliveryConditionItemResponse
+import com.afternote.core.network.dto.delivery.DeliveryConditionItemDto
+import com.afternote.core.network.dto.delivery.DeliveryConditionItemRequestDto
 import com.afternote.core.network.dto.delivery.DeliveryConditionTypeDto
 import com.afternote.core.network.dto.delivery.DeliveryContentTypeDto
 import com.afternote.core.network.dto.delivery.InactivityPeriodDto
-import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionResponse
+import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionDto
 
 // ========================================
 // Enum Mapper (DTO → Domain)
@@ -78,7 +78,7 @@ fun InactivityPeriod.toDto(): InactivityPeriodDto =
 // Response Mapper (DTO → Domain)
 // ========================================
 
-fun DeliveryConditionItemResponse.toDomain(): DeliveryConditionItem =
+fun DeliveryConditionItemDto.toDomain(): DeliveryConditionItem =
     DeliveryConditionItem(
         contentType = contentType.toDomain(),
         conditionType = conditionType.toDomain(),
@@ -89,7 +89,7 @@ fun DeliveryConditionItemResponse.toDomain(): DeliveryConditionItem =
         fulfilledAt = fulfilledAt,
     )
 
-fun ReceiverDeliveryConditionResponse.toDomain(): ReceiverDeliveryConditions =
+fun ReceiverDeliveryConditionDto.toDomain(): ReceiverDeliveryConditions =
     ReceiverDeliveryConditions(
         receiverId = receiverId,
         conditions = conditions.map { it.toDomain() },
@@ -100,8 +100,8 @@ fun ReceiverDeliveryConditionResponse.toDomain(): ReceiverDeliveryConditions =
 // ========================================
 
 /** 설정(PUT) 요청 항목으로 변환 — 서버 판정 필드(state/fulfilled/시각)는 보내지 않는다. */
-fun DeliveryConditionItem.toRequestDto(): DeliveryConditionItemRequest =
-    DeliveryConditionItemRequest(
+fun DeliveryConditionItem.toRequestDto(): DeliveryConditionItemRequestDto =
+    DeliveryConditionItemRequestDto(
         contentType = contentType.toDto(),
         conditionType = conditionType.toDto(),
         inactivityPeriod = inactivityPeriod?.toDto(),

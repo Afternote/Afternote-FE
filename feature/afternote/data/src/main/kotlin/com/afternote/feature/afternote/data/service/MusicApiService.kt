@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.data.service
 
-import com.afternote.feature.afternote.data.dto.MusicSearchResponse
+import com.afternote.feature.afternote.data.dto.MusicSearchResponseDto
 import retrofit2.http.GET
 import retrofit2.http.Query
 
@@ -14,5 +14,5 @@ fun interface MusicApiService {
     @GET("music/search")
     suspend fun search(
         @Query("keyword") keyword: String,
-    ): MusicSearchResponse
+    ): MusicSearchResponseDto
 }

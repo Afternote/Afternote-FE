@@ -26,8 +26,6 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.onboarding.presentation.R
 
-private const val SECONDS_PER_MINUTE = 60
-
 @Composable
 fun SignUpScreen(
     initialEmail: String,
@@ -36,7 +34,7 @@ fun SignUpScreen(
     isSendingCode: Boolean,
     isEmailFormatValid: Boolean,
     resendCooldownSeconds: Int,
-    verificationRemainingSeconds: Int,
+    hasVerificationError: Boolean,
     isNextEnabled: Boolean,
     snackbarHostState: SnackbarHostState,
     onEmailChange: (String) -> Unit,
@@ -122,21 +120,16 @@ fun SignUpScreen(
                     },
                 )
 
-                // 인증번호 전송 안내 — 발송 직후 남은 시간 카운트다운, 만료 시 다시 받기 안내.
-                if (isVerificationSent) {
-                    val isExpired = verificationRemainingSeconds == 0
-                    val message =
-                        if (isExpired) {
-                            stringResource(R.string.signup_verification_expired)
-                        } else {
-                            stringResource(
-                                R.string.signup_verification_sent_with_timer,
-                                verificationRemainingSeconds / SECONDS_PER_MINUTE,
-                                verificationRemainingSeconds % SECONDS_PER_MINUTE,
-                            )
-                        }
+                // 인증번호 불일치는 인라인 에러로, 그 외 실패는 스낵바로 나뉜다 (시안 2431-14204).
+                if (hasVerificationError) {
                     Text(
-                        text = message,
+                        text = stringResource(R.string.signup_verification_mismatch),
+                        style = AfternoteDesign.typography.captionLargeB,
+                        color = AfternoteDesign.colors.error,
+                    )
+                } else if (isVerificationSent) {
+                    Text(
+                        text = stringResource(R.string.signup_verification_sent),
                         style = AfternoteDesign.typography.captionLargeB,
                         color = AfternoteDesign.colors.b1,
                     )
@@ -157,7 +150,7 @@ private fun SignUpScreenPreview() {
             isSendingCode = false,
             isEmailFormatValid = false,
             resendCooldownSeconds = 0,
-            verificationRemainingSeconds = 172,
+            hasVerificationError = false,
             isNextEnabled = false,
             snackbarHostState = remember { SnackbarHostState() },
             onEmailChange = {},
@@ -169,18 +162,18 @@ private fun SignUpScreenPreview() {
     }
 }
 
-@Preview(showBackground = true, name = "인증번호 만료")
+@Preview(showBackground = true, name = "인증번호 불일치")
 @Composable
-private fun SignUpScreenExpiredPreview() {
+private fun SignUpScreenMismatchPreview() {
     AfternoteTheme {
         SignUpScreen(
             initialEmail = "user@example.com",
-            initialVerificationCode = "",
+            initialVerificationCode = "000000",
             isVerificationSent = true,
             isSendingCode = false,
             isEmailFormatValid = true,
             resendCooldownSeconds = 0,
-            verificationRemainingSeconds = 0,
+            hasVerificationError = true,
             isNextEnabled = false,
             snackbarHostState = remember { SnackbarHostState() },
             onEmailChange = {},

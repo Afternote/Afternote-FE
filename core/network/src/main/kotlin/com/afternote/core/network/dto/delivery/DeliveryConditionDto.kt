@@ -69,15 +69,15 @@ enum class ConditionStateDto {
 // ========================================
 
 @Serializable
-data class DeliveryConditionItemRequest(
+data class DeliveryConditionItemRequestDto(
     @SerialName("contentType") val contentType: DeliveryContentTypeDto,
     @SerialName("conditionType") val conditionType: DeliveryConditionTypeDto,
     @SerialName("inactivityPeriod") val inactivityPeriod: InactivityPeriodDto? = null,
 )
 
 @Serializable
-data class ReceiverDeliveryConditionUpdateRequest(
-    @SerialName("conditions") val conditions: List<DeliveryConditionItemRequest>,
+data class ReceiverDeliveryConditionUpdateRequestDto(
+    @SerialName("conditions") val conditions: List<DeliveryConditionItemRequestDto>,
 )
 
 // ========================================
@@ -85,7 +85,7 @@ data class ReceiverDeliveryConditionUpdateRequest(
 // ========================================
 
 /**
- * 수신자별 전달조건 1건의 조회 응답. 요청([DeliveryConditionItemRequest])엔 없는 4개 필드
+ * 수신자별 전달조건 1건의 조회 응답. 요청([DeliveryConditionItemRequestDto])엔 없는 4개 필드
  * (state·fulfilled·gracePeriodStartedAt·fulfilledAt)는 **서버가 판정해 내려주는 값**이라 응답에만 있다.
  *
  * @property state 조건 진행 상태 — ACTIVE(대기) / PENDING_CONFIRMATION(미사용 감지 후 본인확인 유예 중) /
@@ -99,7 +99,7 @@ data class ReceiverDeliveryConditionUpdateRequest(
  * @property fulfilledAt 조건이 충족(전달 확정)된 시각(ISO-8601). 아직 미충족이면 null.
  */
 @Serializable
-data class DeliveryConditionItemResponse(
+data class DeliveryConditionItemDto(
     @SerialName("contentType") val contentType: DeliveryContentTypeDto,
     @SerialName("conditionType") val conditionType: DeliveryConditionTypeDto,
     @SerialName("inactivityPeriod") val inactivityPeriod: InactivityPeriodDto? = null,
@@ -110,7 +110,7 @@ data class DeliveryConditionItemResponse(
 )
 
 @Serializable
-data class ReceiverDeliveryConditionResponse(
+data class ReceiverDeliveryConditionDto(
     @SerialName("receiverId") val receiverId: Long,
-    @SerialName("conditions") val conditions: List<DeliveryConditionItemResponse>,
+    @SerialName("conditions") val conditions: List<DeliveryConditionItemDto>,
 )

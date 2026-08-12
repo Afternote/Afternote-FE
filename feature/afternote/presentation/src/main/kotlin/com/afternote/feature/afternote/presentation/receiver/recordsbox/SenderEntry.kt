@@ -16,10 +16,6 @@ import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
  *
  * `verificationStatus` 는 가장 최근에 조회한 열람 신청 상태 캐시. 발신자 상세 진입 시 서버 호출 결과로
  * 갱신되며, 카드 리스트 자체에서는 표시하지 않는다.
- *
- * `lastConfirmedAt` 은 디자인 13 의 "마지막 확인: 2025.10.21." 텍스트에 표시되는 값. 백엔드 API
- * 미확정이라 현재(이슈 #215) stub registry 에서는 비워 둔다. 후속 단계에서 발신자 리스트 조회 API
- * 응답 필드로 채운다.
  */
 @Immutable
 data class SenderEntry(
@@ -29,5 +25,4 @@ data class SenderEntry(
     val realSenderName: String? = null,
     val relation: String? = null,
     val verificationStatus: DeliveryVerificationStatus? = null,
-    val lastConfirmedAt: String? = null,
 )

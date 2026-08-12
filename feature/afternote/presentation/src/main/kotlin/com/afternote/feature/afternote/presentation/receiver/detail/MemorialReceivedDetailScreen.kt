@@ -46,7 +46,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.MemorialGuidelineContent
+import com.afternote.feature.afternote.presentation.shared.MemorialContent
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
@@ -105,7 +105,7 @@ fun MemorialReceivedDetailScreen(
             contentPadding = PaddingValues(vertical = 20.dp),
         ) {
             item {
-                MemorialGuidelineContent(
+                MemorialContent(
                     // 시안: 상세 타이틀(TopBar) 아래 바로 프로필 — 별도 안내 문구 없음 (#274).
                     introContent = {},
                     photoContent = {
@@ -124,7 +124,7 @@ fun MemorialReceivedDetailScreen(
                             onCardClick = onNavigateToPlaylist,
                         )
                     },
-                    lastWishContent = {
+                    messageContent = {
                         // 시안: "남기신 말씀" 섹션 — 형제 수신자 상세와 동일하게 공용 MessageSection(💬 헤더 + 인용 카드) 사용 (#274).
                         MessageSection(message = leaveMessage)
                     },

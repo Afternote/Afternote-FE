@@ -22,41 +22,34 @@ object SaveAfternotePayloadBuilder {
      * @param form 폼 SSOT 스냅샷
      * @param accountId 작성자 계정 ID (UI [androidx.compose.foundation.text.input.TextFieldState] 에서 추출)
      * @param password 작성자 계정 비밀번호 (UI 텍스트에서 추출)
-     * @param atmosphere 추모(MEMORIAL) 분위기 문자열 (`form.atmosphereForSave(...)` 결과)
      * @param date 저장 날짜. 기본값 [LocalDate.now] — 테스트에선 결정적 값 주입 가능.
      */
     fun build(
         form: EditorFormState,
         accountId: String,
         password: String,
-        atmosphere: String,
         date: LocalDate = LocalDate.now(),
     ): RegisterAfternotePayload {
-        val socialMethods =
-            form.socialProcessingMethods.map {
-                ProcessingMethod(it.id, it.text)
-            }
-        val galleryMethods =
-            form.galleryProcessingMethods.map {
+        val methods =
+            form.processingMethods.map {
                 ProcessingMethod(it.id, it.text)
             }
         val fullMessage =
-            EditorMessagesCodec.serializeBlocksToPersisted(form.messageBlocks)
+            EditorMessagesCodec.serializeBlocksToPersisted(form.leaveMessageBlocks)
 
         return RegisterAfternotePayload(
             serviceName =
                 if (form.selectedCategory == EditorCategory.MEMORIAL) {
                     EditorCategory.MEMORIAL.displayLabel
                 } else {
-                    form.selectedService
+                    // 미선택(null)이면 빈 문자열 → Validator 의 TITLE_REQUIRED 가 등록을 차단한다.
+                    form.selectedService.orEmpty()
                 },
             date = date.format(dateFormatter),
             accountId = accountId,
             password = password,
             message = fullMessage,
-            processingMethods = socialMethods,
-            galleryProcessingMethods = galleryMethods,
-            atmosphere = atmosphere,
+            processingMethods = methods,
         )
     }
 }

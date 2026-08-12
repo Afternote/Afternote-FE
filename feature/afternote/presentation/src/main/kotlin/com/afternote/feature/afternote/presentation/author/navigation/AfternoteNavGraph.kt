@@ -37,7 +37,7 @@ fun NavGraphBuilder.afternoteNavGraph(
             AfternoteHomeNavigation(
                 onNavigateToDetail = actions::navigateToAfternoteDetail,
                 onNavigateToGalleryDetail = actions::navigateToGalleryDetail,
-                onNavigateToMemorialGuidelineDetail = actions::navigateToMemorialGuidelineDetail,
+                onNavigateToMemorialDetail = actions::navigateToMemorialDetail,
                 onNavigateToNewEditor = actions::navigateToNewEditor,
                 onNavigateToSetting = actions::navigateToSetting,
             )
@@ -64,11 +64,11 @@ fun NavGraphBuilder.afternoteNavGraph(
 
         afternoteComposable<AfternoteRoute.EditorRoute> { backStackEntry ->
             val hostViewModel = graphScopedHostViewModel(graphScopedParentEntry)
-            val graphSongs by hostViewModel.playlistSongs.collectAsStateWithLifecycle()
+            val liveSongs by hostViewModel.playlistSongs.collectAsStateWithLifecycle()
             AfternoteEditorNavigation(
                 AfternoteEditorNavigationParams(
                     backStackEntry = backStackEntry,
-                    graphSongs = graphSongs,
+                    liveSongs = liveSongs,
                     onReplaceSongs = hostViewModel::replaceSongs,
                     onClearSongs = hostViewModel::clearAllSongs,
                     onNavigateToSelectReceiver = {}, // TODO: 수신인 선택 화면 라우팅 연결
@@ -80,8 +80,8 @@ fun NavGraphBuilder.afternoteNavGraph(
             )
         }
 
-        afternoteComposable<AfternoteRoute.MemorialGuidelineDetailRoute> { _ ->
-            AfternoteMemorialGuidelineDetailNavigation(
+        afternoteComposable<AfternoteRoute.MemorialDetailRoute> { _ ->
+            AfternoteMemorialDetailNavigation(
                 onBack = actions::popBack,
                 onNavigateToEditor = { itemId ->
                     actions.navigateToEditorForEdit(itemId, EditorCategory.MEMORIAL)
@@ -91,9 +91,9 @@ fun NavGraphBuilder.afternoteNavGraph(
 
         afternoteComposable<AfternoteRoute.MemorialPlaylistRoute> {
             val hostViewModel = graphScopedHostViewModel(graphScopedParentEntry)
-            val graphSongs by hostViewModel.playlistSongs.collectAsStateWithLifecycle()
+            val liveSongs by hostViewModel.playlistSongs.collectAsStateWithLifecycle()
             MemorialPlaylistEntry(
-                songs = graphSongs,
+                songs = liveSongs,
                 onBackClick = actions::popBack,
                 onNavigateToAddSongScreen = actions::navigateToAddSong,
                 onClearAllSongs = hostViewModel::clearAllSongs,

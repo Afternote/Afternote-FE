@@ -4,7 +4,7 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.model.AlbumCover
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationException
 import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationKind
 import com.afternote.feature.afternote.domain.model.author.AuthorReceiverEntry
@@ -29,7 +29,8 @@ import com.afternote.feature.afternote.presentation.author.editor.state.Afternot
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationException
 import com.afternote.feature.afternote.presentation.author.editor.state.DEFAULT_EDITOR_MESSAGE_BLOCKS
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
-import com.afternote.feature.afternote.presentation.shared.util.AfternoteServiceCatalog
+import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
+import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -66,13 +67,6 @@ private data class PmSnap(
 )
 
 @Serializable
-private data class AlbumSnap(
-    val id: String,
-    val imageUrl: String? = null,
-    val title: String? = null,
-)
-
-@Serializable
 private data class MessageBlockSnap(
     val title: String = "",
     val body: String = "",
@@ -88,29 +82,17 @@ private data class EditorFormSnapshot(
     val categoryName: String = "SOCIAL",
     val selectedService: String = "",
     val receivers: List<ReceiverSnap> = emptyList(),
-    val social: List<PmSnap> = emptyList(),
-    val gallery: List<PmSnap> = emptyList(),
-    val selectedLastWish: String? = null,
+    val methods: List<PmSnap> = emptyList(),
     val pickedMemorialPhotoUri: String? = null,
-    val funeralVideoUrl: String? = null,
-    val funeralThumbnailUrl: String? = null,
+    val memorialVideoUrl: String? = null,
+    val memorialThumbnailUrl: String? = null,
     val memorialPhotoUrl: String? = null,
-    val playlistSongCount: Int = 16,
     val memorialPlaylistSongs: List<Song> = emptyList(),
-    val albumCovers: List<AlbumSnap> = emptyList(),
     val editorMessages: List<MessageBlockSnap> = emptyList(),
 ) {
     fun toEditorFormState(restoreGeneration: Long): EditorFormState {
         val category =
             runCatching { EditorCategory.valueOf(categoryName) }.getOrElse { EditorCategory.SOCIAL }
-        val service =
-            selectedService.ifBlank {
-                if (category == EditorCategory.GALLERY) {
-                    AfternoteServiceCatalog.defaultGalleryService
-                } else {
-                    AfternoteServiceCatalog.defaultSocialService
-                }
-            }
         val blocks: List<EditorMessageTextBlock> =
             if (editorMessages.isEmpty()) {
                 DEFAULT_EDITOR_MESSAGE_BLOCKS
@@ -120,22 +102,18 @@ private data class EditorFormSnapshot(
         return EditorFormState(
             loadedItemId = loadedItemId,
             selectedCategory = category,
-            selectedService = service,
+            // 스냅샷의 빈 문자열은 미선택(null)로 복원 — process death 후에도 임의 기본값을 확정하지 않는다 (이슈 #468).
+            selectedService = selectedService.ifBlank { null },
             afternoteEditReceivers =
                 receivers.map { AfternoteEditorReceiver(id = it.id, name = it.name, label = it.label) },
-            socialProcessingMethods = social.map { ProcessingMethodItem(it.id, it.text) },
-            galleryProcessingMethods = gallery.map { ProcessingMethodItem(it.id, it.text) },
-            selectedLastWish = selectedLastWish,
+            processingMethods = methods.map { ProcessingMethodItem(it.id, it.text) },
             pickedMemorialPhotoUri = pickedMemorialPhotoUri,
-            funeralVideoUrl = funeralVideoUrl,
-            funeralThumbnailUrl = funeralThumbnailUrl,
+            memorialVideoUrl = memorialVideoUrl,
+            memorialThumbnailUrl = memorialThumbnailUrl,
             memorialPhotoUrl = memorialPhotoUrl,
-            playlistSongCount = playlistSongCount,
             memorialPlaylistSongs = memorialPlaylistSongs,
-            playlistAlbumCovers =
-                albumCovers.map { AlbumCover(id = it.id, imageUrl = it.imageUrl, title = it.title) },
-            messageBlocks = blocks,
-            messageBlocksRestoreGeneration = restoreGeneration,
+            leaveMessageBlocks = blocks,
+            leaveMessageBlocksRestoreGeneration = restoreGeneration,
         )
     }
 
@@ -144,26 +122,19 @@ private data class EditorFormSnapshot(
             EditorFormSnapshot(
                 loadedItemId = form.loadedItemId,
                 categoryName = form.selectedCategory.name,
-                selectedService = form.selectedService,
+                selectedService = form.selectedService.orEmpty(),
                 receivers =
                     form.afternoteEditReceivers.map {
                         ReceiverSnap(id = it.id, name = it.name, label = it.label)
                     },
-                social = form.socialProcessingMethods.map { PmSnap(it.id, it.text) },
-                gallery = form.galleryProcessingMethods.map { PmSnap(it.id, it.text) },
-                selectedLastWish = form.selectedLastWish,
+                methods = form.processingMethods.map { PmSnap(it.id, it.text) },
                 pickedMemorialPhotoUri = form.pickedMemorialPhotoUri,
-                funeralVideoUrl = form.funeralVideoUrl,
-                funeralThumbnailUrl = form.funeralThumbnailUrl,
+                memorialVideoUrl = form.memorialVideoUrl,
+                memorialThumbnailUrl = form.memorialThumbnailUrl,
                 memorialPhotoUrl = form.memorialPhotoUrl,
-                playlistSongCount = form.playlistSongCount,
                 memorialPlaylistSongs = form.memorialPlaylistSongs,
-                albumCovers =
-                    form.playlistAlbumCovers.map {
-                        AlbumSnap(id = it.id, imageUrl = it.imageUrl, title = it.title)
-                    },
                 editorMessages =
-                    form.messageBlocks.map { MessageBlockSnap(title = it.title, body = it.body) },
+                    form.leaveMessageBlocks.map { MessageBlockSnap(title = it.title, body = it.body) },
             )
     }
 }
@@ -202,6 +173,7 @@ class AfternoteEditorViewModel
         private val afternoteRepository: AfternoteRepository,
         private val memorialThumbnailUploadRepository: MemorialThumbnailUploadRepository,
         private val resolveMemorialMediaForSave: ResolveMemorialMediaForSaveUseCase,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val formSnapshotJson =
             Json {
@@ -289,9 +261,20 @@ class AfternoteEditorViewModel
                         internalState.update { it.copy(pendingThumbnailUrl = url) }
                     }.onFailure { e ->
                         Log.e(TAG, "uploadMemorialThumbnail: failed", e)
+                        errorReporter.recordAfternoteFailure(AfternoteFailureStage.MEMORIAL_THUMBNAIL_UPLOAD, e)
                         internalState.update { it.copy(thumbnailUploadFailed = true) }
                     }
             }
+        }
+
+        /**
+         * 선택한 영상에서 썸네일 프레임을 뽑지 못한 실패를 기록한다.
+         *
+         * 로컬 디코딩이라 [uploadMemorialThumbnail] 경로를 타지 않고, 사용자에게도 썸네일 자리가
+         * 비어 보일 뿐 오류로 알려주지 않아 UI 가 넘겨주지 않으면 콘솔에 흔적이 남지 않는다.
+         */
+        fun onMemorialThumbnailExtractionFailed(throwable: Throwable) {
+            errorReporter.recordAfternoteFailure(AfternoteFailureStage.MEMORIAL_THUMBNAIL_EXTRACT, throwable)
         }
 
         fun saveAfternote(
@@ -322,7 +305,7 @@ class AfternoteEditorViewModel
 
             viewModelScope.launch {
                 internalState.update {
-                    it.copy(isSaving = true, error = null, errorRes = null, validationError = null)
+                    it.copy(isSaving = true, errorRes = null, validationError = null)
                 }
                 buildSaveCommand(
                     editingId = editingId,
@@ -343,10 +326,10 @@ class AfternoteEditorViewModel
                                     )
                                 }
                             },
-                            onFailure = { e -> handleSaveFailure(e, categoryForApi) },
+                            onFailure = { e -> handleSaveFailure(e) },
                         )
                     },
-                    onFailure = { e -> handleSaveFailure(e, categoryForApi) },
+                    onFailure = { e -> handleSaveFailure(e) },
                 )
             }
         }
@@ -362,8 +345,9 @@ class AfternoteEditorViewModel
                 is SaveAfternoteCommand.Create -> {
                     when (val input = command.input) {
                         is CreateAfternoteInput.Social -> afternoteRepository.createSocial(input.payload)
+                        is CreateAfternoteInput.Business -> afternoteRepository.createBusiness(input.payload)
                         is CreateAfternoteInput.Gallery -> afternoteRepository.createGallery(input.payload)
-                        is CreateAfternoteInput.Playlist -> afternoteRepository.createPlaylist(input.payload)
+                        is CreateAfternoteInput.Memorial -> afternoteRepository.createMemorial(input.payload)
                     }
                 }
 
@@ -399,7 +383,7 @@ class AfternoteEditorViewModel
         ): Result<SaveAfternoteCommand> {
             val resolved =
                 resolveMemorialMediaForSave(
-                    video = videoMediaInput(memorialMedia.funeralVideoUrl),
+                    video = videoMediaInput(memorialMedia.memorialVideoUrl),
                     photo =
                         photoMediaInput(
                             picked = memorialMedia.pickedMemorialPhotoUri,
@@ -417,8 +401,8 @@ class AfternoteEditorViewModel
                             playlistSongs = playlistSongs,
                             memorialMedia =
                                 MemorialMediaUrls(
-                                    funeralVideoUrl = resolved.resolvedVideoUrl,
-                                    funeralThumbnailUrl = memorialMedia.funeralThumbnailUrl,
+                                    memorialVideoUrl = resolved.resolvedVideoUrl,
+                                    memorialThumbnailUrl = memorialMedia.memorialThumbnailUrl,
                                     memorialPhotoUrl = resolved.resolvedMemorialPhotoUrl,
                                 ),
                         )
@@ -430,8 +414,8 @@ class AfternoteEditorViewModel
                             payload = payload,
                             selectedReceiverIds = selectedReceiverIds,
                             playlistSongs = playlistSongs,
-                            funeralVideoUrl = resolved.resolvedVideoUrl,
-                            funeralThumbnailUrl = memorialMedia.funeralThumbnailUrl,
+                            memorialVideoUrl = resolved.resolvedVideoUrl,
+                            memorialThumbnailUrl = memorialMedia.memorialThumbnailUrl,
                             memorialPhotoUrl = resolved.resolvedMemorialPhotoUrl,
                         )
                     SaveAfternoteCommand.Create(input = createInput)
@@ -453,6 +437,7 @@ class AfternoteEditorViewModel
                         internalState.update { it.copy(pendingPrefill = prefill) }
                     }.onFailure { e ->
                         Log.e(TAG, "loadExistingAfternoteForEdit: id=$afternoteId failed", e)
+                        errorReporter.recordAfternoteFailure(AfternoteFailureStage.PREFILL_LOAD, e)
                         // 실패 시 skeleton 에 갇히지 않도록 즉시 종료.
                         internalState.update { it.copy(isPrefillLoading = false) }
                     }
@@ -467,10 +452,7 @@ class AfternoteEditorViewModel
             internalState.update { it.copy(isPrefillLoading = false, pendingPrefill = null) }
         }
 
-        private fun handleSaveFailure(
-            e: Throwable,
-            category: EditorCategory,
-        ) {
+        private fun handleSaveFailure(e: Throwable) {
             val validationError =
                 when (e) {
                     is AfternoteAuthoringValidationException -> {
@@ -489,9 +471,15 @@ class AfternoteEditorViewModel
                         null
                     }
                 }
-            val errorMessage = if (validationError == null) e.message else null
+            // 필수 필드 검증에 걸린 실패(수신자 미선택 등)는 사용자가 채우면 풀리는 정상 경로라 기록하지 않는다 —
+            // 보관 한도(최근 8건) 를 사용자 오류가 차지하면 실제 등록 장애가 밀려난다.
+            // 여기 걸리는 건 검증 외 실패 전부다 — 그중 5xx 본문엔 내부 SQL 이 섞여 오므로 예외 타입만 남긴다.
+            if (validationError == null) {
+                Log.e(TAG, "handleSaveFailure: ${e.javaClass.name}")
+                errorReporter.recordAfternoteFailure(AfternoteFailureStage.SAVE, e)
+            }
             val errorRes =
-                if (validationError == null && errorMessage == null) {
+                if (validationError == null) {
                     R.string.afternote_editor_save_failed_generic
                 } else {
                     null
@@ -500,7 +488,6 @@ class AfternoteEditorViewModel
                 it.copy(
                     isSaving = false,
                     validationError = validationError,
-                    error = errorMessage,
                     errorRes = errorRes,
                 )
             }
@@ -526,7 +513,6 @@ class AfternoteEditorViewModel
             val isPrefillLoading: Boolean = false,
             val savedId: Long? = null,
             val validationError: AfternoteValidationError? = null,
-            val error: String? = null,
             val errorRes: Int? = null,
             val pendingSaveSuccessId: Long? = null,
             val pendingThumbnailUrl: String? = null,
@@ -542,7 +528,6 @@ class AfternoteEditorViewModel
                 isPrefillLoading = isPrefillLoading,
                 savedId = savedId,
                 validationError = validationError,
-                error = error,
                 errorRes = errorRes,
                 pendingSaveSuccessId = pendingSaveSuccessId,
                 pendingThumbnailUrl = pendingThumbnailUrl,

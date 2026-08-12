@@ -8,6 +8,8 @@ android {
     namespace = "com.afternote.core.ui"
     resourcePrefix = "core_ui_"
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
+    // robolectric Compose UI 테스트가 stringResource 를 읽으려면 JVM 테스트에 리소스가 실려야 한다 (#516)
+    testOptions.unitTests.isIncludeAndroidResources = true
 }
 
 dependencies {
@@ -19,4 +21,11 @@ dependencies {
     // Compose Preview Screenshot Testing (#241)
     screenshotTestImplementation(libs.screenshot.validation.api)
     screenshotTestImplementation(libs.androidx.compose.ui.tooling)
+
+    // robolectric Compose UI 동작 테스트 — BOM 은 convention 이 test 구성엔 안 걸어 줘서 직접 (#516)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

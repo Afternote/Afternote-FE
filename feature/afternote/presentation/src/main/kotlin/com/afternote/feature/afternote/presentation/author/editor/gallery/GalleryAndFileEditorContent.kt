@@ -23,24 +23,29 @@ import com.afternote.feature.afternote.presentation.author.editor.receiver.model
  */
 @Composable
 fun GalleryAndFileEditorContent(
+    editorMessages: List<EditorMessage>,
+    recipientSection: AfternoteEditorReceiverSection,
     modifier: Modifier = Modifier,
-    params: GalleryAndFileEditorContentParams,
+    onMessageRegisterClick: (EditorMessage) -> Unit = {},
+    onMessageDeleteClick: (EditorMessage) -> Unit = {},
+    onMessageAddClick: () -> Unit = {},
+    processingMethodSection: ProcessingMethodSection = ProcessingMethodSection(),
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(32.dp),
     ) {
-        RecipientDesignationSection(section = params.recipientSection)
+        RecipientDesignationSection(section = recipientSection)
 
         // 처리 방법 리스트 섹션
-        ProcessingMethodListSection(section = params.processingMethodSection)
+        ProcessingMethodListSection(section = processingMethodSection)
 
         // 남기실 말씀
         EditorMessageSection(
-            messages = params.editorMessages,
-            onRegisterClick = params.onMessageRegisterClick,
-            onDeleteClick = params.onMessageDeleteClick,
-            onAddClick = params.onMessageAddClick,
+            messages = editorMessages,
+            onRegisterClick = onMessageRegisterClick,
+            onDeleteClick = onMessageDeleteClick,
+            onAddClick = onMessageAddClick,
         )
     }
 }
@@ -50,29 +55,26 @@ fun GalleryAndFileEditorContent(
 private fun GalleryAndFileEditorContentPreview() {
     AfternoteTheme {
         GalleryAndFileEditorContent(
-            params =
-                GalleryAndFileEditorContentParams(
-                    editorMessages =
+            editorMessages =
+                listOf(
+                    EditorMessage(
+                        titleState = rememberTextFieldState("가족들에게"),
+                        contentState = rememberTextFieldState("항상 고마워요."),
+                    ),
+                ),
+            recipientSection =
+                AfternoteEditorReceiverSection(
+                    afternoteEditReceivers =
                         listOf(
-                            EditorMessage(
-                                titleState = rememberTextFieldState("가족들에게"),
-                                contentState = rememberTextFieldState("항상 고마워요."),
-                            ),
+                            AfternoteEditorReceiver(id = "1", name = "홍길동", label = "가족"),
                         ),
-                    recipientSection =
-                        AfternoteEditorReceiverSection(
-                            afternoteEditReceivers =
-                                listOf(
-                                    AfternoteEditorReceiver(id = "1", name = "홍길동", label = "가족"),
-                                ),
-                        ),
-                    processingMethodSection =
-                        ProcessingMethodSection(
-                            items =
-                                listOf(
-                                    ProcessingMethodItem(id = "1", text = "계정 삭제"),
-                                    ProcessingMethodItem(id = "2", text = "게시글 백업"),
-                                ),
+                ),
+            processingMethodSection =
+                ProcessingMethodSection(
+                    items =
+                        listOf(
+                            ProcessingMethodItem(id = "1", text = "계정 삭제"),
+                            ProcessingMethodItem(id = "2", text = "게시글 백업"),
                         ),
                 ),
         )

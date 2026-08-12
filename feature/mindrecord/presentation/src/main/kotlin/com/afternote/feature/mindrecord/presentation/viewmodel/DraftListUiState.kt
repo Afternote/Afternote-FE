@@ -7,8 +7,8 @@ import java.time.LocalDate
  * 작성 화면 키보드 툴바 "임시저장 N" 영역에서 진입하는 임시저장 목록 화면 상태.
  *
  * 데일리질문 / 일기 2개 카테고리의 isDraft=true 항목을 합쳐 보여준다.
- * 데일리질문 응답은 isDraft 필드를 노출하지 않아 현재는 분류 불가 — 실제 항목은 비어 있게
- * 보인다 (TODO: 백엔드 응답 확장 후 매핑).
+ * 데일리질문은 목록 응답의 draft 플래그로 클라 필터하며, 서버가 플래그를 내려주지 않으면
+ * 기본값 false 로 파싱되어 해당 카테고리는 비어 보인다 (서버 계약 미검증).
  */
 sealed interface DraftListUiState {
     data object Loading : DraftListUiState

@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.detail.AfternoteDetailServiceHeader
 import com.afternote.feature.afternote.presentation.shared.detail.DetailInfoRow
@@ -37,7 +38,7 @@ import com.afternote.feature.afternote.presentation.shared.model.AfternoteServic
 /**
  * 수신 소셜 네트워크 상세 (Stateless).
  *
- * 발신자 [com.afternote.feature.afternote.presentation.author.detail.socialnetwork.SocialNetworkDetailScreen]
+ * 발신자 [com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailScreen]
  * 과 동일한 Scaffold/스크롤 패턴을 따르되, TopBar 우측 편집/삭제 액션을 두지 않는다.
  */
 @Composable
@@ -80,9 +81,12 @@ private fun SocialNetworkReceivedDetailScrollContent(
                 .padding(horizontal = 20.dp),
     ) {
         AfternoteDetailServiceHeader(
-            service = AfternoteServiceDisplay.fromServiceName(content.serviceName),
+            service =
+                AfternoteServiceDisplay.fromService(
+                    serviceName = content.serviceName,
+                    type = AfternoteType.SOCIAL_NETWORK,
+                ),
             finalWriteDate = content.finalWriteDate,
-            processingMethodChipLabel = content.processingMethods.firstOrNull().orEmpty(),
         )
 
         Spacer(modifier = Modifier.height(31.dp))

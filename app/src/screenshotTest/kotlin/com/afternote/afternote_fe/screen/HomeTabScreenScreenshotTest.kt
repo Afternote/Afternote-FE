@@ -18,6 +18,8 @@ internal fun homeTabScreenLoadingScreenshot() {
     AfternoteTheme {
         HomeTabScreen(
             uiState = HomeTabUiState.Loading(cachedUserName = "일혁"),
+            // 실제 오늘 날짜가 렌더되면 baseline 이 날마다 달라지므로 고정 날짜를 주입한다.
+            todayDateText = "2026.04.10",
         )
     }
 }
@@ -37,7 +39,9 @@ internal fun homeTabScreenSuccessScreenshot() {
                             MindRecordCategory.DAILY_QUESTION to 10,
                             MindRecordCategory.DIARY to 8,
                         ),
+                    todayQuestionContent = "오늘 내가 배운\n가장 작은 교훈은 무엇인가요?",
                 ),
+            todayDateText = "2026.04.10",
         )
     }
 }

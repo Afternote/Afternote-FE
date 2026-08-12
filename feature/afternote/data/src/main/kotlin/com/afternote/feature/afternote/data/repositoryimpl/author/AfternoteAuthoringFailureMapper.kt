@@ -13,7 +13,7 @@ private val apiErrorJson =
     }
 
 @Serializable
-private data class ApiErrorBody(
+private data class ApiErrorBodyDto(
     val code: Int? = null,
 )
 
@@ -31,7 +31,7 @@ internal fun mapAuthoringFailure(throwable: Throwable): Throwable {
         val body = throwable.response()?.errorBody()?.string() ?: return throwable
         val parsed =
             runCatching {
-                apiErrorJson.decodeFromString<ApiErrorBody>(body)
+                apiErrorJson.decodeFromString<ApiErrorBodyDto>(body)
             }.getOrNull()
         if (parsed?.code == RECEIVERS_REQUIRED_SERVER_CODE) {
             return AfternoteAuthoringValidationException(AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED)

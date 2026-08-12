@@ -31,19 +31,10 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.SELE
  *
  * **수정 진입 데이터 로드:** 상세 화면과 같이 [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel]의 `init`에서
  * [androidx.lifecycle.SavedStateHandle]의 `itemId`만 보고 Repository `getDetail`을 호출한다 (Compose `LaunchedEffect` 위임 없음).
- *
- * **단일 UI 상태:** ViewModel 의 단일 [AfternoteEditorUiState] 만 collect 하고, 폼/저장진행/오류/수신자 목록은
- * 그 안의 필드로 분기한다 (CLAUDE.md *"loading/error/data 독립 스트림 분리 금지"* 규칙).
- *
- * ViewModel 단발 신호는 [AfternoteEditorUiState] 의 pending* 필드 + [androidx.compose.runtime.LaunchedEffect] 로 흡수한다.
  */
 internal sealed class EditorSaveErrorResult {
     data class Validation(
         val messageResId: Int,
-    ) : EditorSaveErrorResult()
-
-    data class Raw(
-        val message: String,
     ) : EditorSaveErrorResult()
 
     data class Generic(
@@ -61,25 +52,13 @@ internal fun editorSaveErrorFromUiState(
         return null
     }
     uiState.validationError?.let { return EditorSaveErrorResult.Validation(it.messageResId) }
-    uiState.error?.let { return EditorSaveErrorResult.Raw(it) }
     uiState.errorRes?.let { return EditorSaveErrorResult.Generic(it) }
     return null
 }
 
-internal data class EditorScreenCallbacksParams(
-    val onPopBackStack: () -> Unit,
-    val onNavigateToMemorialPlaylist: () -> Unit,
-    val editViewModel: AfternoteEditorViewModel,
-    val state: AfternoteEditorState,
-    val route: AfternoteRoute.EditorRoute,
-    val graphSongs: List<Song>,
-    val onNavigateToSelectReceiver: () -> Unit,
-    val onBottomNavTabSelected: (BottomNavTab) -> Unit,
-)
-
 internal data class AfternoteEditorNavigationParams(
     val backStackEntry: NavBackStackEntry,
-    val graphSongs: List<Song>,
+    val liveSongs: List<Song>,
     val onReplaceSongs: (List<Song>) -> Unit,
     val onClearSongs: () -> Unit,
     val onNavigateToSelectReceiver: () -> Unit = {},
@@ -100,14 +79,23 @@ internal fun tryApplyReceiverSelectionFromSavedState(
     state.addReceiverFromSelection(receiver.receiverId, receiver.name, receiver.relation)
 }
 
-internal fun buildEditorScreenCallbacks(params: EditorScreenCallbacksParams): AfternoteEditorScreenCallbacks =
+internal fun buildEditorScreenCallbacks(
+    onPopBackStack: () -> Unit,
+    onNavigateToMemorialPlaylist: () -> Unit,
+    editViewModel: AfternoteEditorViewModel,
+    state: AfternoteEditorState,
+    route: AfternoteRoute.EditorRoute,
+    liveSongs: List<Song>,
+    onNavigateToSelectReceiver: () -> Unit,
+    onBottomNavTabSelected: (BottomNavTab) -> Unit,
+): AfternoteEditorScreenCallbacks =
     AfternoteEditorScreenCallbacks(
         onBackClick = {
-            params.onPopBackStack()
+            onPopBackStack()
         },
         onRegisterClick = {
-            params.state.persistEditorMessagesFromTyping(
-                params.state.editorMessages.map { msg ->
+            state.persistEditorMessagesFromTyping(
+                state.editorMessages.map { msg ->
                     EditorMessageTextBlock(
                         title = msg.titleState.text.toString(),
                         body = msg.contentState.text.toString(),
@@ -116,39 +104,39 @@ internal fun buildEditorScreenCallbacks(params: EditorScreenCallbacksParams): Af
             )
             val payload =
                 SaveAfternotePayloadBuilder.build(
-                    form = params.state.currentForm(),
+                    form = state.currentForm(),
                     accountId =
-                        params.state.idState.text
+                        state.idState.text
                             .toString(),
                     password =
-                        params.state.passwordState.text
+                        state.passwordState.text
                             .toString(),
-                    atmosphere = params.state.getAtmosphereForSave(),
                 )
-            params.editViewModel.saveAfternote(
-                editingId = params.route.itemId?.toLongOrNull(),
-                category = params.state.selectedCategory,
+            editViewModel.saveAfternote(
+                editingId = route.itemId?.toLongOrNull(),
+                category = state.selectedCategory,
                 payload = payload,
-                selectedReceiverIds = params.state.afternoteEditReceivers.mapNotNull { it.id.toLongOrNull() },
-                playlistSongs = params.graphSongs,
+                selectedReceiverIds = state.afternoteEditReceivers.mapNotNull { it.id.toLongOrNull() },
+                playlistSongs = liveSongs,
                 memorialMedia =
                     SaveAfternoteMemorialMedia(
-                        funeralVideoUrl = params.state.funeralVideoUrl,
-                        funeralThumbnailUrl = params.state.funeralThumbnailUrl,
-                        memorialPhotoUrl = params.state.memorialPhotoUrl,
-                        pickedMemorialPhotoUri = params.state.pickedMemorialPhotoUri,
+                        memorialVideoUrl = state.memorialVideoUrl,
+                        memorialThumbnailUrl = state.memorialThumbnailUrl,
+                        memorialPhotoUrl = state.memorialPhotoUrl,
+                        pickedMemorialPhotoUri = state.pickedMemorialPhotoUri,
                     ),
             )
         },
-        onNavigateToAddSong = params.onNavigateToMemorialPlaylist,
-        onNavigateToSelectReceiver = params.onNavigateToSelectReceiver,
-        onBottomNavTabSelected = params.onBottomNavTabSelected,
+        onNavigateToAddSong = onNavigateToMemorialPlaylist,
+        onNavigateToSelectReceiver = onNavigateToSelectReceiver,
+        onBottomNavTabSelected = onBottomNavTabSelected,
         onThumbnailBytesReady = { bytes ->
             if (bytes != null) {
-                params.editViewModel.uploadMemorialThumbnail(bytes)
+                editViewModel.uploadMemorialThumbnail(bytes)
             }
         },
-        onThumbnailUploadErrorConsumed = params.editViewModel::onThumbnailUploadErrorConsumed,
+        onThumbnailExtractionFailed = editViewModel::onMemorialThumbnailExtractionFailed,
+        onThumbnailUploadErrorConsumed = editViewModel::onThumbnailUploadErrorConsumed,
     )
 
 @Composable
@@ -215,14 +203,12 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
     val errorResult =
         remember(
             uiState.validationError,
-            uiState.error,
             uiState.errorRes,
-            params.graphSongs.size,
-        ) { editorSaveErrorFromUiState(uiState, params.graphSongs.size) }
+            params.liveSongs.size,
+        ) { editorSaveErrorFromUiState(uiState, params.liveSongs.size) }
     val saveError: String? =
         when (errorResult) {
             is EditorSaveErrorResult.Validation -> stringResource(errorResult.messageResId)
-            is EditorSaveErrorResult.Raw -> errorResult.message
             is EditorSaveErrorResult.Generic -> stringResource(errorResult.messageResId)
             null -> null
         }
@@ -236,26 +222,24 @@ internal fun AfternoteEditorNavigation(params: AfternoteEditorNavigationParams) 
             editViewModel,
             state,
             route,
-            params.graphSongs,
+            params.liveSongs,
         ) {
             buildEditorScreenCallbacks(
-                EditorScreenCallbacksParams(
-                    onPopBackStack = params.onPopBackStack,
-                    onNavigateToMemorialPlaylist = params.onNavigateToMemorialPlaylist,
-                    editViewModel = editViewModel,
-                    state = state,
-                    route = route,
-                    graphSongs = params.graphSongs,
-                    onNavigateToSelectReceiver = params.onNavigateToSelectReceiver,
-                    onBottomNavTabSelected = params.onBottomNavTabSelected,
-                ),
+                onPopBackStack = params.onPopBackStack,
+                onNavigateToMemorialPlaylist = params.onNavigateToMemorialPlaylist,
+                editViewModel = editViewModel,
+                state = state,
+                route = route,
+                liveSongs = params.liveSongs,
+                onNavigateToSelectReceiver = params.onNavigateToSelectReceiver,
+                onBottomNavTabSelected = params.onBottomNavTabSelected,
             )
         }
 
     AfternoteEditorScreen(
         form = uiState.form,
         callbacks = callbacks,
-        graphSongs = params.graphSongs,
+        liveSongs = params.liveSongs,
         state = state,
         saveError = saveError,
         thumbnailUploadFailed = uiState.thumbnailUploadFailed,

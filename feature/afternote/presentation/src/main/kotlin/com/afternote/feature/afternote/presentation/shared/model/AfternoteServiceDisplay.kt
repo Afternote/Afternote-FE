@@ -1,7 +1,8 @@
 package com.afternote.feature.afternote.presentation.shared.model
 
 import androidx.annotation.DrawableRes
-import com.afternote.feature.afternote.presentation.shared.util.getIconResForServiceName
+import com.afternote.feature.afternote.domain.AfternoteType
+import com.afternote.feature.afternote.presentation.shared.util.getIconResForService
 
 /**
  * 상세 헤더 등에서 쓰는 서비스 표시 묶음.
@@ -10,18 +11,25 @@ import com.afternote.feature.afternote.presentation.shared.util.getIconResForSer
  * 어긋나는 실수를 방지한다.
  *
  * API 제목 문자열은 [AfternoteService] 카탈로그에 없을 수 있으므로 이 타입으로 감싼다.
- * 아이콘 해석은 [getIconResForServiceName] 과 동일한 규칙(알려진 표시명 → enum, 그 외 → 카테고리 기본 아이콘)을 따른다.
+ * 아이콘 해석은 [getIconResForService] 규칙(알려진 표시명 → 서비스 아이콘, 그 외 → 카테고리 아이콘)을 따른다.
  */
 data class AfternoteServiceDisplay(
     val serviceName: String,
     @param:DrawableRes val iconResId: Int,
 ) {
     companion object {
-        /** API 서비스 이름으로부터 아이콘을 해석해 묶음을 만든다. */
-        fun fromServiceName(serviceName: String): AfternoteServiceDisplay =
+        /**
+         * API 서비스 이름과 카테고리로부터 아이콘을 해석해 묶음을 만든다.
+         *
+         * @param type 서버 category 에서 온 카테고리. 이름이 카탈로그에 없을 때 아이콘의 근거가 된다.
+         */
+        fun fromService(
+            serviceName: String,
+            type: AfternoteType,
+        ): AfternoteServiceDisplay =
             AfternoteServiceDisplay(
                 serviceName = serviceName,
-                iconResId = getIconResForServiceName(serviceName),
+                iconResId = getIconResForService(serviceName, type),
             )
     }
 }
