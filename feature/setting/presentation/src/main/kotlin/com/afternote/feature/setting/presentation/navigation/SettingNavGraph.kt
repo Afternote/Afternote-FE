@@ -13,6 +13,7 @@ import com.afternote.core.ui.Route
 import com.afternote.feature.setting.presentation.component.PinSetupStep
 import com.afternote.feature.setting.presentation.screen.AppLockSetupScreen
 import com.afternote.feature.setting.presentation.screen.ConnectedAccountsScreen
+import com.afternote.feature.setting.presentation.screen.CustomerCenterScreen
 import com.afternote.feature.setting.presentation.screen.DeliveryConditionScreen
 import com.afternote.feature.setting.presentation.screen.NoticeListScreen
 import com.afternote.feature.setting.presentation.screen.PassKeyListScreen
@@ -52,7 +53,7 @@ fun NavGraphBuilder.settingNavGraph(
                 onPasskeyClick = actions::onNavigateToPasskey,
                 onAppLockClick = actions::onNavigateToAppLock,
                 onFaqClick = {},
-                onInquiryClick = {},
+                onInquiryClick = actions::onNavigateToCustomerCenter,
                 onNoticeClick = actions::onNavigateToNotice,
                 onTermsClick = {},
                 onPrivacyClick = {},
@@ -185,6 +186,17 @@ fun NavGraphBuilder.settingNavGraph(
             NoticeListScreen(
                 notices = emptyList(),
                 onBackClick = actions::onNoticeBack,
+            )
+        }
+
+        composable<SettingRoute.CustomerCenterRoute> {
+            CustomerCenterScreen(
+                onBackClick = actions::onCustomerCenterBack,
+                onPhoneInquiryClick = {},
+                onOneToOneInquiryClick = {},
+                onEmailInquiryClick = {},
+                onRecipientInquiryClick = {},
+                onFaqClick = {},
             )
         }
     }

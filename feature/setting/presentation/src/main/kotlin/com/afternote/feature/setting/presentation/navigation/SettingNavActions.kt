@@ -64,4 +64,8 @@ interface SettingNavActions {
     fun onNavigateToNotice()
 
     fun onNoticeBack()
+
+    fun onNavigateToCustomerCenter()
+
+    fun onCustomerCenterBack()
 }

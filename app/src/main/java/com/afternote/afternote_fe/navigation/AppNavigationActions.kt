@@ -328,6 +328,14 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
             override fun onNoticeBack() {
                 appState.navController.popBackStack()
             }
+
+            override fun onNavigateToCustomerCenter() {
+                appState.navController.navigate(SettingRoute.CustomerCenterRoute)
+            }
+
+            override fun onCustomerCenterBack() {
+                appState.navController.popBackStack()
+            }
         }
     }
 
