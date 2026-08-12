@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -22,6 +23,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.afternote.core.ui.button.FAB.PenFloatingActionButton
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterList
@@ -65,6 +67,7 @@ fun TimeletterScreen(
 
     Scaffold(
         modifier = modifier,
+        containerColor = Color.Transparent,
         topBar = { HomeTopBar(onSettingClick = onSettingClick) },
         floatingActionButton = { PenFloatingActionButton(onClick = onWriteClick) },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
