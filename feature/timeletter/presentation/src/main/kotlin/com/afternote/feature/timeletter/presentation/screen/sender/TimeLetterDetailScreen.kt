@@ -22,6 +22,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
@@ -140,11 +142,9 @@ private fun TimeLetterDetailContent(
                                 .matchParentSize()
                                 .background(
                                     Brush.verticalGradient(
-                                        colors =
-                                            listOf(
-                                                TimeLetterHeroImageOverlay.copy(alpha = 0f),
-                                                TimeLetterHeroImageOverlay.copy(alpha = 0.6f),
-                                            ),
+                                        0f to TimeLetterHeroImageOverlay.copy(alpha = 0f),
+                                        0.5f to TimeLetterHeroImageOverlay.copy(alpha = 0f),
+                                        1f to TimeLetterHeroImageOverlay.copy(alpha = 0.4f),
                                     ),
                                 ),
                     )
@@ -153,15 +153,15 @@ private fun TimeLetterDetailContent(
                         modifier =
                             Modifier
                                 .matchParentSize()
-                                .background(
-                                    Brush.radialGradient(
-                                        colors =
-                                            listOf(
-                                                TimeLetterHeroGradientStart,
-                                                TimeLetterHeroGradientEnd,
-                                            ),
-                                    ),
-                                ),
+                                .drawWithCache {
+                                    val brush =
+                                        Brush.radialGradient(
+                                            colors = listOf(TimeLetterHeroGradientEnd, TimeLetterHeroGradientStart),
+                                            center = Offset(size.width / 2f, size.height),
+                                            radius = size.width,
+                                        )
+                                    onDrawBehind { drawRect(brush) }
+                                },
                     )
                 }
                 Column(
