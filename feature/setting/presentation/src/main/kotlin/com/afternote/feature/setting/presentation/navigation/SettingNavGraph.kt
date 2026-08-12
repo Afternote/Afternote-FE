@@ -48,9 +48,7 @@ fun NavGraphBuilder.settingNavGraph(
                 onPasskeyClick = actions::onNavigateToPasskey,
                 onAppLockClick = actions::onNavigateToAppLock,
                 onFaqClick = {},
-                onInquiryClick = {
-                    // TODO: 고객센터 화면과 이동 정책이 확정되면 목적지를 연결한다.
-                },
+                onInquiryClick = {},
                 onNoticeClick = actions::onNavigateToNotice,
                 onTermsClick = {},
                 onPrivacyClick = {},

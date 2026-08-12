@@ -25,7 +25,6 @@ import com.afternote.feature.setting.presentation.R
 fun SettingProfile(
     name: String,
     email: String,
-    onInquiryClick: () -> Unit,
     onNoticeClick: () -> Unit,
     onRecipientListClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -78,7 +77,7 @@ fun SettingProfile(
         ) {
             val items =
                 listOf(
-                    stringResource(R.string.settings_support_inquiry) to onInquiryClick,
+                    stringResource(R.string.settings_support_inquiry) to null,
                     stringResource(R.string.settings_support_notice) to onNoticeClick,
                     stringResource(R.string.settings_recipient_list) to onRecipientListClick,
                 )
@@ -88,7 +87,13 @@ fun SettingProfile(
                     modifier =
                         Modifier
                             .weight(1f)
-                            .clickable(onClick = onClick),
+                            .then(
+                                if (onClick != null) {
+                                    Modifier.clickable(onClick = onClick)
+                                } else {
+                                    Modifier
+                                },
+                            ),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Image(
@@ -113,7 +118,6 @@ private fun SettingProfilePrev() {
     SettingProfile(
         name = "박서연",
         email = "afternote@email.com",
-        onInquiryClick = {},
         onNoticeClick = {},
         onRecipientListClick = {},
     )
