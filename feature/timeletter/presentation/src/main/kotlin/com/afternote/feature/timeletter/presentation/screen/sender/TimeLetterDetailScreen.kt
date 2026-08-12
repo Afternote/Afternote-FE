@@ -156,7 +156,7 @@ private fun TimeLetterDetailContent(
                                 .drawWithCache {
                                     val brush =
                                         Brush.radialGradient(
-                                            colors = listOf(TimeLetterHeroGradientEnd, TimeLetterHeroGradientStart),
+                                            colors = listOf(TimeLetterHeroGradientStart, TimeLetterHeroGradientEnd),
                                             center = Offset(size.width / 2f, size.height),
                                             radius = size.width,
                                         )
