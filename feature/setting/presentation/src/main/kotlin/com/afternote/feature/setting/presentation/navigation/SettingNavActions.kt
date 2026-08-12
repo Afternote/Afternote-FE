@@ -64,4 +64,14 @@ interface SettingNavActions {
     fun onNavigateToNotice()
 
     fun onNoticeBack()
+
+    fun onNavigateToInquiry()
+
+    fun onInquiryBack()
+
+    fun onNavigateToInquiryDetail(inquiryId: Long)
+
+    fun onNavigateToInquiryWrite()
+
+    fun onInquirySubmitted()
 }

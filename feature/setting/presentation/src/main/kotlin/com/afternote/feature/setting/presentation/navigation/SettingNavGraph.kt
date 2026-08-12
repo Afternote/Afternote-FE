@@ -11,9 +11,13 @@ import androidx.navigation.navigation
 import androidx.navigation.toRoute
 import com.afternote.core.ui.Route
 import com.afternote.feature.setting.presentation.component.PinSetupStep
+import com.afternote.feature.setting.presentation.model.sampleInquiries
 import com.afternote.feature.setting.presentation.screen.AppLockSetupScreen
 import com.afternote.feature.setting.presentation.screen.ConnectedAccountsScreen
 import com.afternote.feature.setting.presentation.screen.DeliveryConditionScreen
+import com.afternote.feature.setting.presentation.screen.InquiryDetailScreen
+import com.afternote.feature.setting.presentation.screen.InquiryListScreen
+import com.afternote.feature.setting.presentation.screen.InquiryWriteScreen
 import com.afternote.feature.setting.presentation.screen.NoticeListScreen
 import com.afternote.feature.setting.presentation.screen.PassKeyListScreen
 import com.afternote.feature.setting.presentation.screen.PassKeyMakingScreen
@@ -52,7 +56,7 @@ fun NavGraphBuilder.settingNavGraph(
                 onPasskeyClick = actions::onNavigateToPasskey,
                 onAppLockClick = actions::onNavigateToAppLock,
                 onFaqClick = {},
-                onInquiryClick = {},
+                onInquiryClick = actions::onNavigateToInquiry,
                 onNoticeClick = actions::onNavigateToNotice,
                 onTermsClick = {},
                 onPrivacyClick = {},
@@ -185,6 +189,28 @@ fun NavGraphBuilder.settingNavGraph(
             NoticeListScreen(
                 notices = emptyList(),
                 onBackClick = actions::onNoticeBack,
+            )
+        }
+
+        composable<SettingRoute.InquiryListRoute> {
+            InquiryListScreen(
+                inquiries = sampleInquiries,
+                onBackClick = actions::onInquiryBack,
+                onInquiryClick = actions::onNavigateToInquiryDetail,
+                onNewInquiryClick = actions::onNavigateToInquiryWrite,
+            )
+        }
+
+        composable<SettingRoute.InquiryDetailRoute> { backStackEntry ->
+            val id = backStackEntry.toRoute<SettingRoute.InquiryDetailRoute>().inquiryId
+            val inquiry = sampleInquiries.firstOrNull { it.id == id } ?: return@composable
+            InquiryDetailScreen(inquiry = inquiry, onBackClick = actions::onInquiryBack)
+        }
+
+        composable<SettingRoute.InquiryWriteRoute> {
+            InquiryWriteScreen(
+                onBackClick = actions::onInquiryBack,
+                onSubmitClick = actions::onInquirySubmitted,
             )
         }
     }
