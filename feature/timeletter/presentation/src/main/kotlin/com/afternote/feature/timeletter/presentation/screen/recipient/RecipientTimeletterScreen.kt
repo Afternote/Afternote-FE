@@ -59,6 +59,7 @@ fun RecipientTimeletterScreen(
 
     Scaffold(
         modifier = modifier,
+        containerColor = AfternoteDesign.colors.gray1,
         topBar = { HomeTopBar() },
     ) { innerPadding ->
         when (val state = uiState) {
@@ -266,6 +267,7 @@ private val previewLetters =
 @Composable
 private fun RecipientTimeletterScreenPreview() {
     Scaffold(
+        containerColor = AfternoteDesign.colors.gray1,
         topBar = { HomeTopBar() },
     ) { innerPadding ->
         RecipientTimeletterContent(
