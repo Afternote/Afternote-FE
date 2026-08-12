@@ -66,16 +66,6 @@ fun TimeletterScreen(
         )
     }
 
-    val errorMessage = (uiState as? TimeletterUiState.Success)?.errorMessage
-    LaunchedEffect(errorMessage) {
-        errorMessage ?: return@LaunchedEffect
-        snackbarHostState.showSnackbar(
-            message = errorMessage,
-            withDismissAction = true,
-        )
-        viewModel.consumeErrorMessage()
-    }
-
     val showDeleteFailure = (uiState as? TimeletterUiState.Success)?.showDeleteFailure == true
     LaunchedEffect(showDeleteFailure) {
         if (showDeleteFailure) {

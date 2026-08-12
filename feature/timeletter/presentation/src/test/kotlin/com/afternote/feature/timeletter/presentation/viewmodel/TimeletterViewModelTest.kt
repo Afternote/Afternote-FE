@@ -60,7 +60,8 @@ class TimeletterViewModelTest {
 
         assertEquals(listOf(1L), deletedIds)
         assertEquals(2, loadCount)
-        assertTrue(viewModel.uiState.value is TimeletterUiState.Success)
+        val state = viewModel.uiState.value as TimeletterUiState.Success
+        assertFalse(state.isDeleting)
     }
 
     @Test
@@ -86,6 +87,22 @@ class TimeletterViewModelTest {
         viewModel.consumeDeleteFailure()
 
         assertFalse((viewModel.uiState.value as TimeletterUiState.Success).showDeleteFailure)
+    }
+
+    @Test
+    fun `load failure exposes error state`() {
+        val repository =
+            timeLetterRepository { methodName, _ ->
+                when (methodName) {
+                    "getTimeLetters" -> throw IllegalStateException("load failed")
+                    else -> error("Unexpected repository call: $methodName")
+                }
+            }
+        val viewModel = TimeletterViewModel(repository, userRepository())
+
+        viewModel.load()
+
+        assertEquals(TimeletterUiState.Error, viewModel.uiState.value)
     }
 
     private fun timeLetterRepository(handler: (String, Array<out Any?>?) -> Any?): TimeLetterRepository =

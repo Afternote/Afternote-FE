@@ -11,10 +11,7 @@ sealed interface TimeletterUiState {
         val selectedFilterReceiverIds: Set<Long> = emptySet(),
         val isDeleting: Boolean = false,
         val showDeleteFailure: Boolean = false,
-        val errorMessage: String? = null,
     ) : TimeletterUiState
 
-    data class Error(
-        val message: String,
-    ) : TimeletterUiState
+    data object Error : TimeletterUiState
 }

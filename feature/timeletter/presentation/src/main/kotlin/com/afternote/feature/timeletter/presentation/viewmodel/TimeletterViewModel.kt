@@ -54,7 +54,6 @@ class TimeletterViewModel
                     selectedFilterReceiverIds = filterIds,
                     isDeleting = currentState?.isDeleting ?: false,
                     showDeleteFailure = currentState?.showDeleteFailure ?: false,
-                    errorMessage = currentState?.errorMessage,
                 )
         }
 
@@ -75,7 +74,7 @@ class TimeletterViewModel
                         allLetters = letters
                         applyFilter()
                     }.onFailure {
-                        _uiState.value = TimeletterUiState.Error("타임레터를 불러올 수 없습니다.")
+                        _uiState.value = TimeletterUiState.Error
                     }
             }
         }
@@ -87,13 +86,17 @@ class TimeletterViewModel
                 currentState.copy(
                     isDeleting = true,
                     showDeleteFailure = false,
-                    errorMessage = null,
                 )
 
             viewModelScope.launch {
                 runCatchingCancellable { timeLetterRepository.deleteTimeLetters(listOf(timeLetterId)) }
-                    .onSuccess { load() }
-                    .onFailure {
+                    .onSuccess {
+                        val latestState = _uiState.value
+                        if (latestState is TimeletterUiState.Success) {
+                            _uiState.value = latestState.copy(isDeleting = false)
+                        }
+                        load()
+                    }.onFailure {
                         val latestState = _uiState.value
                         if (latestState is TimeletterUiState.Success) {
                             _uiState.value =
@@ -103,13 +106,6 @@ class TimeletterViewModel
                                 )
                         }
                     }
-            }
-        }
-
-        fun consumeErrorMessage() {
-            val currentState = _uiState.value
-            if (currentState is TimeletterUiState.Success) {
-                _uiState.value = currentState.copy(errorMessage = null)
             }
         }
 
