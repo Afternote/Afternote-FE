@@ -26,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -59,6 +60,7 @@ fun RecipientTimeletterScreen(
 
     Scaffold(
         modifier = modifier,
+        containerColor = Color.Transparent,
         topBar = { HomeTopBar() },
     ) { innerPadding ->
         when (val state = uiState) {
@@ -266,6 +268,7 @@ private val previewLetters =
 @Composable
 private fun RecipientTimeletterScreenPreview() {
     Scaffold(
+        containerColor = AfternoteDesign.colors.gray1,
         topBar = { HomeTopBar() },
     ) { innerPadding ->
         RecipientTimeletterContent(
