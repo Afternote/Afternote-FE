@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.presentation.shared.util
 
+import androidx.annotation.StringRes
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.AfternoteService
@@ -9,6 +10,30 @@ data class AfternoteRes(
     val stringResId: Int,
     val drawableResId: Int,
 )
+
+/**
+ * 종류 필터 탭 순서. `null` 은 "전체" 탭이다.
+ * 비즈니스·재산 처리는 목록 조회 미지원(Afternote-BE#110, #491)이라 빠져 있다.
+ */
+val CATEGORY_FILTER_TABS: List<AfternoteType?> =
+    listOf(
+        null,
+        AfternoteType.SOCIAL_NETWORK,
+        AfternoteType.GALLERY_AND_FILES,
+        AfternoteType.MEMORIAL,
+    )
+
+/** 종류 탭 라벨. `null` 은 "전체" 탭이다. */
+@StringRes
+fun categoryLabelResFor(type: AfternoteType?): Int =
+    when (type) {
+        null -> R.string.afternote_category_all
+        AfternoteType.SOCIAL_NETWORK -> R.string.afternote_category_social_network
+        AfternoteType.BUSINESS -> R.string.afternote_category_business
+        AfternoteType.GALLERY_AND_FILES -> R.string.afternote_category_gallery_and_files
+        AfternoteType.ESTATE -> R.string.afternote_category_estate
+        AfternoteType.MEMORIAL -> R.string.afternote_category_memorial
+    }
 
 /**
  * @param typeKey Writer: e.g. SOCIAL_NETWORK, GALLERY_AND_FILES, MEMORIAL. Receiver: e.g. INSTAGRAM, GALLERY, GUIDE, NAVER_MAIL.

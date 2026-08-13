@@ -9,9 +9,8 @@ import androidx.paging.map
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
-import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
-import com.afternote.feature.afternote.presentation.shared.util.getAfternoteDisplayRes
+import com.afternote.feature.afternote.presentation.shared.util.getIconResForType
 import com.afternote.feature.afternote.presentation.shared.util.getServiceNameForTypeKey
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -36,8 +35,9 @@ class ReceiverAfternoteHomeViewModel
     constructor(
         private val receiverRepository: ReceiverRepository,
     ) : ViewModel() {
-        private val _selectedTab = MutableStateFlow(AfternoteCategory.ALL)
-        val selectedTab: StateFlow<AfternoteCategory> = _selectedTab.asStateFlow()
+        /** 선택된 종류 필터. `null` 은 전체다. */
+        private val _selectedTab = MutableStateFlow<AfternoteType?>(null)
+        val selectedTab: StateFlow<AfternoteType?> = _selectedTab.asStateFlow()
 
         @OptIn(ExperimentalCoroutinesApi::class)
         val pagedAfternotes: Flow<PagingData<ListItemUiModel>> =
@@ -48,28 +48,24 @@ class ReceiverAfternoteHomeViewModel
                         .map { pagingData ->
                             pagingData
                                 .map { it.toUiModel() }
-                                .filter { tab == AfternoteCategory.ALL || it.type.name == tab.name }
+                                .filter { tab == null || it.type == tab }
                         }
                 }.cachedIn(viewModelScope)
 
-        fun selectTab(tab: AfternoteCategory) {
+        fun selectTab(tab: AfternoteType?) {
             if (_selectedTab.value == tab) return
             _selectedTab.value = tab
         }
     }
 
 private fun AfterNoteListItem.toUiModel(): ListItemUiModel {
-    val typeKey = sourceType.orEmpty()
-    val displayRes = getAfternoteDisplayRes(typeKey)
-    val serviceName = getServiceNameForTypeKey(typeKey)
-    val type =
-        runCatching { AfternoteType.valueOf(typeKey) }
-            .getOrDefault(AfternoteType.SOCIAL_NETWORK)
+    // 서버가 종류를 안 줬거나 모르는 값이면 표시할 것이 없어 소셜네트워크로 떨어진다.
+    val resolvedType = type ?: AfternoteType.SOCIAL_NETWORK
     return ListItemUiModel(
         id = id.toString(),
-        serviceName = serviceName,
+        serviceName = getServiceNameForTypeKey(resolvedType.name),
         date = lastUpdatedAt.orEmpty(),
-        iconResId = displayRes.drawableResId,
-        type = type,
+        iconResId = getIconResForType(resolvedType),
+        type = resolvedType,
     )
 }

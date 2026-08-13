@@ -18,7 +18,6 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.home.AfternoteCategoryRow
-import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.AfternoteList
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
 import kotlinx.coroutines.flow.flowOf
@@ -26,8 +25,8 @@ import kotlinx.coroutines.flow.flowOf
 @Composable
 fun AfternoteListContent(
     items: LazyPagingItems<ListItemUiModel>,
-    selectedCategory: AfternoteCategory,
-    onCategorySelected: (AfternoteCategory) -> Unit,
+    selectedCategory: AfternoteType?,
+    onCategorySelected: (AfternoteType?) -> Unit,
     onListItemClick: (id: String, type: AfternoteType) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -89,7 +88,7 @@ private fun AfternoteListContentPreview() {
             ).collectAsLazyPagingItems()
         AfternoteListContent(
             items = items,
-            selectedCategory = AfternoteCategory.SOCIAL_NETWORK,
+            selectedCategory = AfternoteType.SOCIAL_NETWORK,
             onCategorySelected = {},
             onListItemClick = { _, _ -> },
         )
@@ -104,7 +103,7 @@ private fun AfternoteListContentFilteredEmptyPreview() {
             flowOf(PagingData.empty<ListItemUiModel>()).collectAsLazyPagingItems()
         AfternoteListContent(
             items = items,
-            selectedCategory = AfternoteCategory.SOCIAL_NETWORK,
+            selectedCategory = AfternoteType.SOCIAL_NETWORK,
             onCategorySelected = {},
             onListItemClick = { _, _ -> },
         )

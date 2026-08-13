@@ -15,9 +15,9 @@ import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeScr
  */
 @Composable
 fun ReceiverAfternoteHomeEntry(
+    navigateToDetail: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ReceiverAfternoteHomeViewModel = hiltViewModel(),
-    navigateToDetail: (String) -> Unit = {},
 ) {
     val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
     val items = viewModel.pagedAfternotes.collectAsLazyPagingItems()

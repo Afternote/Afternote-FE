@@ -30,14 +30,21 @@ import com.afternote.core.ui.modifierextention.bottomBorder
 import com.afternote.core.ui.modifierextention.horizontalFadingEdge
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
+import com.afternote.feature.afternote.presentation.shared.util.CATEGORY_FILTER_TABS
+import com.afternote.feature.afternote.presentation.shared.util.categoryLabelResFor
 
+/**
+ * 종류 필터 탭 행. `null` 은 "전체" 탭이다.
+ *
+ * 노출 대상은 [CATEGORY_FILTER_TABS] 가 정한다.
+ */
 @Composable
 fun AfternoteCategoryRow(
-    onTabSelected: (AfternoteCategory) -> Unit,
+    onTabSelected: (AfternoteType?) -> Unit,
     modifier: Modifier = Modifier,
-    selectedTab: AfternoteCategory = AfternoteCategory.ALL,
+    selectedTab: AfternoteType? = null,
 ) {
     val scrollState = rememberScrollState()
     val canScrollRight by remember {
@@ -89,7 +96,7 @@ fun AfternoteCategoryRow(
                         },
                     ).horizontalScroll(scrollState),
         ) {
-            AfternoteCategory.entries.forEach { tab ->
+            CATEGORY_FILTER_TABS.forEach { tab ->
                 CategoryItem(
                     isSelected = tab == selectedTab,
                     onClick = { onTabSelected(tab) },
@@ -122,7 +129,7 @@ fun AfternoteCategoryRow(
  */
 @Composable
 private fun CategoryItem(
-    category: AfternoteCategory,
+    category: AfternoteType?,
     isSelected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -137,7 +144,7 @@ private fun CategoryItem(
                 ),
     ) {
         Text(
-            text = stringResource(category.labelResId),
+            text = stringResource(categoryLabelResFor(category)),
             style =
                 AfternoteDesign.typography.bodySmallB.copy(
                     color =
@@ -168,7 +175,7 @@ private fun CategoryItem(
 @Composable
 private fun AfternoteCategoryRowPreview() {
     AfternoteTheme {
-        var selectedTab by remember { mutableStateOf(AfternoteCategory.ALL) }
+        var selectedTab by remember { mutableStateOf<AfternoteType?>(null) }
         AfternoteCategoryRow(
             onTabSelected = { selectedTab = it },
             selectedTab = selectedTab,

@@ -14,7 +14,7 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem
 import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResult
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
-import com.afternote.feature.afternote.presentation.shared.util.getAfternoteDisplayRes
+import com.afternote.feature.afternote.presentation.shared.util.getIconResForType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -170,11 +170,8 @@ private const val MAX_AFTERNOTE_ICONS = 4
 
 private fun List<AfterNoteListItem>.toAfternoteIcons(): List<AfternoteSourceIcon> =
     asSequence()
-        .mapNotNull { it.sourceType?.takeIf(String::isNotBlank) }
+        .mapNotNull { it.type }
         .distinct()
         .take(MAX_AFTERNOTE_ICONS)
-        .map { typeKey ->
-            AfternoteSourceIcon(
-                drawableResId = getAfternoteDisplayRes(typeKey).drawableResId,
-            )
-        }.toList()
+        .map { AfternoteSourceIcon(drawableResId = getIconResForType(it)) }
+        .toList()
