@@ -5,6 +5,7 @@ import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailContent
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
+import com.afternote.feature.afternote.presentation.shared.model.toMessageBlockUiModels
 
 /** 상세 화면에 쓰는 "최종 작성일": 갱신일이 있으면 그것, 공백이면 생성일. */
 private val Detail.finalWriteDate: String
@@ -26,7 +27,7 @@ internal fun Detail.toGalleryDetailContent(authorDisplayName: String): GalleryDe
         finalWriteDate = finalWriteDate,
         afternoteEditReceivers = toReceiverUiModels(),
         processingMethods = processingMethods,
-        message = leaveMessage.orEmpty(),
+        messageBlocks = leaveMessageBlocks.toMessageBlockUiModels(),
     )
 
 internal fun Detail.toAccountDetailContent(authorDisplayName: String): AccountDetailContent =
@@ -37,7 +38,7 @@ internal fun Detail.toAccountDetailContent(authorDisplayName: String): AccountDe
         accountId = credentials?.id ?: "",
         password = credentials?.password ?: "",
         processingMethods = processingMethods,
-        message = leaveMessage.orEmpty(),
+        messageBlocks = leaveMessageBlocks.toMessageBlockUiModels(),
         finalWriteDate = finalWriteDate,
         afternoteEditReceivers = toReceiverUiModels(),
     )

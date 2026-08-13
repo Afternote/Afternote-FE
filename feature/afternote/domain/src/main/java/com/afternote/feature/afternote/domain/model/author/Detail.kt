@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.domain.model.author
 
 import com.afternote.feature.afternote.domain.AfternoteType
+import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialDetail
 
 /**
@@ -22,7 +23,8 @@ data class Detail(
     val receivers: List<DetailReceiver>,
     /** 사후 처리 방법 선택지 — 서버 `actions` 필드. 화면·폼 어휘("처리 방법")에 맞춘 이름이다. */
     val processingMethods: List<String>,
-    val leaveMessage: String?,
+    /** 서버 `leaveMessage` 배열 — 값이 없으면 빈 목록이다. */
+    val leaveMessageBlocks: List<LeaveMessageBlock>,
     val memorial: MemorialDetail?,
 )
 

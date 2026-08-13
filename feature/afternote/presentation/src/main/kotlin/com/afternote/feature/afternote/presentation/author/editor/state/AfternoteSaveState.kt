@@ -41,6 +41,12 @@ enum class AfternoteValidationError(
      */
     GALLERY_RECEIVERS_REQUIRED(R.string.afternote_validation_gallery_receivers_required),
     PLAYLIST_SONGS_REQUIRED(R.string.afternote_validation_playlist_songs_required),
+
+    /**
+     * 남기실 말씀에 제목만 쓰고 본문을 비운 블록이 있을 때. 서버가 본문을 필수로 검증해
+     * 그대로 보내면 400 이므로 저장 전에 막는다 — 입력한 제목을 조용히 버리지 않기 위함이다.
+     */
+    LEAVE_MESSAGE_BODY_REQUIRED(R.string.afternote_validation_leave_message_body_required),
 }
 
 /**

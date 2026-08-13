@@ -51,7 +51,7 @@ fun ReceivedAfternoteDetailRoute(
                 is ReceivedDetailContentUiModel.Memorial -> {
                     MemorialReceivedDetailScreen(
                         senderName = model.content.senderName,
-                        leaveMessage = model.content.leaveMessage,
+                        messageBlocks = model.content.messageBlocks,
                         albumCovers = model.content.albumCovers,
                         songCount = model.content.songCount,
                         memorialVideoUrl = model.content.memorialVideoUrl,
