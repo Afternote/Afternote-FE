@@ -88,10 +88,18 @@ class MemorySpaceViewModel
                     questionResult.getOrThrow()
                 }
 
-                val diaries = diaryResults.mapNotNull { it.getOrNull() }.flatMap { it.diaries }
+                val diaries =
+                    diaryResults
+                        .mapNotNull { it.getOrNull() }
+                        .flatMap { it.diaries }
+                        // 쓰다 만 초안은 전시하지 않는다. `GET /diary` 는 `draftOnly` 를 생략하면
+                        // 그 달 **전체**(임시저장 포함)를 내려주므로 클라가 걸러야 한다.
+                        // 데일리질문(`GET /daily-questions`)은 생략 시 서버가 제출 완료만 주므로
+                        // 같은 필터가 필요 없다 — 두 API 의 기본값이 다르다.
+                        .filterNot { it.isDraft }
                 val questions = questionResult.getOrNull().orEmpty()
 
-                (diaries.map { it.toDatedMemory() } + questions.map { it.toDatedMemory() })
+                (diaries.mapNotNull { it.toDatedMemory() } + questions.map { it.toDatedMemory() })
                     .sortedByDescending { it.date }
                     .take(MEMORY_CARD_LIMIT)
                     .map { it.item }
@@ -108,8 +116,9 @@ class MemorySpaceViewModel
             val item: MemoryItem,
         )
 
-        private fun Diary.toDatedMemory(): DatedMemory {
-            val ui = toUi()
+        /** 날짜를 못 정한 일기는 정렬 키가 없어 카드로 만들지 않는다 ([toUi] 가 null 을 돌린다). */
+        private fun Diary.toDatedMemory(): DatedMemory? {
+            val ui = toUi() ?: return null
             return DatedMemory(
                 date = ui.date,
                 item =
