@@ -42,13 +42,17 @@ data class DiaryUpdateRequestDto(
 /**
  * `/diary` 목록 항목 (Swagger `DiaryResponse` 실측, 2026-08-03).
  *
- * **응답 스키마에는 `required` 가 하나도 선언돼 있지 않다** — 이 API 문서의 required 목록은
- * 요청 스키마에만 붙어 있다. 어느 필드든 생략될 수 있다는 뜻이라, 식별자를 뺀 나머지는
- * 기본값을 둔다. 필수로 두면 필드 하나가 비는 순간 `MissingFieldException` 으로
- * **그 달 목록 전체**가 날아간다.
+ * 식별자를 뺀 나머지에 기본값을 두는 이유는 **실패의 폭**이다. 이 DTO 는 목록 원소라,
+ * 필드 하나가 비어 `MissingFieldException` 이 나면 그 항목이 아니라 **그 달 목록 전체**가
+ * 날아간다. 반면 값이 없을 때 잃는 것은 카드 한 장의 표시 요소뿐이다.
  *
- * `todayMood` 를 nullable 로 둔 것도 같은 맥락이다. non-null 이면 클라가 모르는 값
+ * `todayMood` 를 nullable 로 둔 것도 같은 맥락이다. non-null 이면 클라가 모르는 기분 값
  * 하나에 목록이 통째로 사라진다 (`coerceInputValues` 는 기본값이 있어야 동작한다).
+ * 실제로 `emotion` 은 한글로 내려오는 중이다 (#591).
+ *
+ * (문서의 `required` 목록은 근거로 쓰지 않는다 — springdoc 은 `@Schema(requiredMode)` 가
+ * 없으면 non-null 프로퍼티도 required 에 넣지 않아, 비어 있다는 사실이 서버가 그 필드를
+ * 생략한다는 신호가 아니다. 응답 필드의 nullable 판단 기준 자체는 #676 소관.)
  *
  * `id` 는 노션 명세("Diary 조회") 예시의 키다. Swagger 에는 없지만 두 문서가 갈려 있어
  * 대체 키로 함께 받는다 — 실제 응답에 `id` 가 없어 충돌하지 않는다.
