@@ -6,7 +6,6 @@ import com.afternote.afternote_fe.reporting.HomeFailureStage
 import com.afternote.afternote_fe.reporting.recordHomeFailure
 import com.afternote.afternote_fe.usecase.GetHomeSummaryUseCase
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.HomeSummary
 import com.afternote.core.model.MindRecordCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,7 +21,6 @@ class HomeTabViewModel
     @Inject
     constructor(
         private val getHomeSummary: GetHomeSummaryUseCase,
-        private val userRepository: UserRepository,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<HomeTabUiState>(HomeTabUiState.Loading())
