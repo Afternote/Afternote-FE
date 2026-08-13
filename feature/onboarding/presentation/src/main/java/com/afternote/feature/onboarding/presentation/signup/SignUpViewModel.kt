@@ -55,6 +55,12 @@ class SignUpViewModel
 
         private var cooldownJob: Job? = null
 
+        /**
+         * 진행 중인 최종 제출. 상태 플래그만으로는 연타를 막지 못한다 — 두 호출이 모두
+         * `isLoading = false` 를 읽고 통과한 뒤 각자 요청을 시작할 수 있다.
+         */
+        private var signUpJob: Job? = null
+
         // ─── 입력 reducer ───
         // 이메일이 바뀌면 앞서 받은 인증 에러는 더 이상 그 이메일의 것이 아니다.
         fun updateEmail(value: String) = _uiState.update { it.copy(email = value, hasVerificationError = false) }
@@ -185,26 +191,42 @@ class SignUpViewModel
          * 최종 회원가입 제출.
          * 1~4단계와 프로필에서 수집한 데이터를 취합하여 서버에 전송.
          * 회원가입 API 는 토큰을 내려주지 않으므로 같은 자격증명으로 자동 로그인.
+         *
+         * 가입과 자동 로그인은 따로 성공할 수 있어 재시도 지점이 다르다
+         * ([SignUpUiState.isAccountCreated]).
          */
         fun submitSignUp() {
+            if (signUpJob?.isActive == true) return
+
             val state = _uiState.value
-            viewModelScope.launch {
-                if (state.isLoading) return@launch
+            val trimmedName = state.name.trim()
+            if (trimmedName.isEmpty()) {
+                _uiState.update { it.copy(isNameRequired = true) }
+                return
+            }
 
-                val trimmedName = state.name.trim()
-                if (trimmedName.isEmpty()) {
-                    _uiState.update { it.copy(isNameRequired = true) }
-                    return@launch
-                }
+            signUpJob =
+                viewModelScope.launch {
+                    _uiState.update { it.copy(isLoading = true) }
+                    try {
+                        if (!state.isAccountCreated) {
+                            accountRepository
+                                .signUp(
+                                    email = state.email,
+                                    password = state.signUpPassword,
+                                    name = trimmedName,
+                                    profileUrl = state.profileImageUri,
+                                ).onSuccess {
+                                    _uiState.update { it.copy(isAccountCreated = true) }
+                                }.onFailure { error ->
+                                    // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
+                                    if (error is CancellationException) throw error
+                                    errorReporter.recordAuthFailure(AuthFailureStage.SIGN_UP, error)
+                                    _uiState.update { it.copy(errorMessage = error.toDisplayMessage(R.string.signup_failed)) }
+                                    return@launch
+                                }
+                        }
 
-                _uiState.update { it.copy(isLoading = true) }
-                accountRepository
-                    .signUp(
-                        email = state.email,
-                        password = state.signUpPassword,
-                        name = trimmedName,
-                        profileUrl = state.profileImageUri,
-                    ).onSuccess {
                         loginUseCase(LoginType.Email(email = state.email, password = state.signUpPassword))
                             .onSuccess {
                                 _uiState.update { it.copy(isSignedUp = true) }
@@ -222,13 +244,10 @@ class SignUpViewModel
                                     )
                                 }
                             }
-                    }.onFailure { error ->
-                        // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
-                        if (error is CancellationException) throw error
-                        errorReporter.recordAuthFailure(AuthFailureStage.SIGN_UP, error)
-                        _uiState.update { it.copy(errorMessage = error.toDisplayMessage(R.string.signup_failed)) }
+                    } finally {
+                        // 어느 갈래로 빠져나가든 버튼 잠금은 풀어야 한다.
+                        _uiState.update { it.copy(isLoading = false) }
                     }
-                _uiState.update { it.copy(isLoading = false) }
-            }
+                }
         }
     }
