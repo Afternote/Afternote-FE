@@ -2,14 +2,21 @@ package com.afternote.core.network.interceptor
 
 import com.afternote.core.model.TokenBundle
 import com.afternote.core.network.FakeAuthRepository
+import com.afternote.core.network.FakeErrorReporter
 import com.afternote.core.network.token.AccessTokenExpiryTracker
 import com.afternote.core.network.token.TokenReissuer
 import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
+import org.junit.Assert.assertThrows
 import org.junit.Test
+import retrofit2.HttpException
+import java.net.SocketTimeoutException
+import retrofit2.Response as RetrofitResponse
 
 /**
  * [TokenAuthenticator] 401 사후 대응 계약 회귀 가드 (#408 에서 코디네이터 경유로 전환).
@@ -21,8 +28,10 @@ class TokenAuthenticatorTest {
     private fun authenticator(repository: FakeAuthRepository) =
         TokenAuthenticator(
             authRepository = { repository },
-            tokenReissuer = TokenReissuer({ repository }, tracker),
+            tokenReissuer = TokenReissuer({ repository }, tracker, FakeErrorReporter()),
         )
+
+    private fun httpFailure(status: Int): HttpException = HttpException(RetrofitResponse.error<Unit>(status, "".toResponseBody()))
 
     private fun unauthorizedResponse(
         accessToken: String? = "old-token",
@@ -124,18 +133,60 @@ class TokenAuthenticatorTest {
     }
 
     @Test
-    fun `회전 실패 - 세션 정리 후 중단`() {
+    fun `refresh 인증 거절 401 403 - 세션 정리 후 중단`() {
+        listOf(401, 403).forEach { status ->
+            val repository =
+                FakeAuthRepository(
+                    accessToken = "old-token",
+                    onRotateToken = { Result.failure(httpFailure(status)) },
+                    onClearSession = { Result.success(Unit) },
+                )
+
+            val request = authenticator(repository).authenticate(null, unauthorizedResponse())
+
+            assertNull(request)
+            assertEquals(1, repository.rotateCallCount)
+            assertEquals(1, repository.clearSessionCallCount)
+        }
+    }
+
+    @Test
+    fun `refresh timeout - 세션 유지하고 현재 요청만 실패`() {
+        val failure = SocketTimeoutException("temporary timeout")
         val repository =
             FakeAuthRepository(
                 accessToken = "old-token",
-                onRotateToken = { Result.failure(IllegalStateException("리프레시 만료")) },
-                onClearSession = { Result.success(Unit) },
+                onRotateToken = { Result.failure(failure) },
             )
 
-        val request = authenticator(repository).authenticate(null, unauthorizedResponse())
+        val thrown =
+            assertThrows(TokenReissueFailureException::class.java) {
+                authenticator(repository).authenticate(null, unauthorizedResponse())
+            }
 
-        assertNull(request)
+        assertNull(thrown.message)
+        assertSame(failure, thrown.cause)
         assertEquals(1, repository.rotateCallCount)
-        assertEquals(1, repository.clearSessionCallCount)
+        assertEquals(0, repository.clearSessionCallCount)
+    }
+
+    @Test
+    fun `refresh 5xx - 세션 유지하고 현재 요청만 실패`() {
+        val failure = httpFailure(503)
+        val repository =
+            FakeAuthRepository(
+                accessToken = "old-token",
+                onRotateToken = { Result.failure(failure) },
+            )
+
+        val thrown =
+            assertThrows(TokenReissueFailureException::class.java) {
+                authenticator(repository).authenticate(null, unauthorizedResponse())
+            }
+
+        assertNull(thrown.message)
+        assertSame(failure, thrown.cause)
+        assertEquals(1, repository.rotateCallCount)
+        assertEquals(0, repository.clearSessionCallCount)
     }
 }

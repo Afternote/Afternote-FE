@@ -64,7 +64,7 @@ class AuthInterceptor
                     when (val outcome = tokenReissuer.reissue(expectedAccessToken = storedToken)) {
                         is TokenReissuer.Outcome.TokenAlreadyChanged -> outcome.accessToken
                         is TokenReissuer.Outcome.Rotated -> outcome.accessToken
-                        TokenReissuer.Outcome.Failed -> storedToken
+                        is TokenReissuer.Outcome.Failure -> storedToken
                     }
                 } else {
                     storedToken
