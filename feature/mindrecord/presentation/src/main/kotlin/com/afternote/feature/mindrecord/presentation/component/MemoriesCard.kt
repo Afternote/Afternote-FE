@@ -38,13 +38,17 @@ import com.afternote.feature.mindrecord.presentation.R
  * 홈 탭 MEMORIES 카드.
  *
  * 시안(홈_수신자지정완료 57:8186)의 질문·답변은 **예시값**이라 문자열 리소스에 그대로 넣어
- * 두면 기록이 0건인 사용자에게도 남의 답변처럼 보인다 (#559). 실제 기록을 받아 표시하고,
- * 없으면 예시 대신 작성 유도 문구로 떨어진다.
+ * 두면 기록이 0건인 사용자에게도 남의 답변처럼 보인다 (#559). 실제 기록을 받아 표시한다.
+ *
+ * **0건 상태는 아직 시안에 없다** (Figma 카드 노드 `109:15028` 에 해당 변형 없음).
+ * 임의 문구를 넣으면 미확정 상태가 제품 동작으로 굳으므로, 표시할 기록이 없으면
+ * 질문·답변 줄을 아예 그리지 않는다. 디자인 확정 시 이 자리에 변형을 붙이면 된다.
  *
  * @param question 최근 기록의 제목(데일리질문이면 질문 원문). null 이면 표시할 기록이 없다.
  * @param answer 그 기록의 본문 미리보기.
- * @param onReadAgainClick "그날의 기록 다시 읽기" 목적지. 시안에 프로토타입 연결이 없어
- *   현재는 추억 공간(MEMORY SPACE)으로 보낸다 — 확정 시 이 인자만 바꾸면 된다.
+ * @param onReadAgainClick "그날의 기록 다시 읽기" 목적지. **아직 확정되지 않았다** — Figma 의
+ *   이 버튼에 프로토타입 연결이 없고 #559 에도 확정 답변이 없어, 기본값은 아무 데도 보내지
+ *   않는다. 목적지가 정해지면 호출부에서 이 인자만 채우면 된다.
  */
 @Composable
 fun MemoriesCard(
@@ -92,23 +96,29 @@ fun MemoriesCard(
                     .fillMaxWidth()
                     .padding(16.dp),
         ) {
-            Text(
-                text = question ?: stringResource(R.string.mindrecord_memories_card_empty_question),
-                style = AfternoteDesign.typography.bodySmallR,
-                color = AfternoteDesign.colors.gray8,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(Modifier.height(1.dp))
-            Text(
-                text = answer ?: stringResource(R.string.mindrecord_memories_card_empty_answer),
-                style = AfternoteDesign.typography.captionLargeR,
-                color = AfternoteDesign.colors.gray6,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
+            if (question != null) {
+                Text(
+                    text = question,
+                    style = AfternoteDesign.typography.bodySmallR,
+                    color = AfternoteDesign.colors.gray8,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            if (answer != null) {
+                Spacer(Modifier.height(1.dp))
+                Text(
+                    text = answer,
+                    style = AfternoteDesign.typography.captionLargeR,
+                    color = AfternoteDesign.colors.gray6,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            if (question != null || answer != null) {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
             Row(
                 modifier =
@@ -148,6 +158,7 @@ private fun MemoriesCardPreview() {
     }
 }
 
+/** 기록 0건 — 시안에 변형이 없어 질문·답변 줄 없이 이미지와 버튼만 남는다 (#559). */
 @Preview(showBackground = true, name = "기록 0건")
 @Composable
 private fun MemoriesCardEmptyPreview() {

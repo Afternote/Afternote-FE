@@ -140,11 +140,12 @@ private fun MemoriesSectionContent(
         ) {
             AfternoteSectionHeader(title = stringResource(mindrecord_home_tab_memories_section_title))
             Spacer(modifier = Modifier.height(12.dp))
+            // "그날의 기록 다시 읽기" 목적지는 넘기지 않는다 — Figma 의 이 버튼에 프로토타입
+            // 연결이 없고 #559 에도 확정 답변이 없다. 임의 목적지를 붙이면 미확정 탐색 동작이
+            // 제품 동작으로 굳는다. 확정되면 여기서 `onReadAgainClick` 을 채운다.
             MemoriesCard(
                 question = question,
                 answer = answer,
-                // 시안에 목적지 프로토타입이 없어 섹션과 같은 추억 공간으로 보낸다 (#559).
-                onReadAgainClick = onMemoriesSectionClick,
             )
         }
     }
