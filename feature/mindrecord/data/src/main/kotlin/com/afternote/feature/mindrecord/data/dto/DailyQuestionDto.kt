@@ -46,13 +46,13 @@ data class DailyQuestionListItemDto(
 @Serializable
 data class TodayDailyQuestionDto(
     @SerialName("questionId") val questionId: Long,
-    // "Day N" 배너 표기 전용 부가 정보.
+    // "Day N" 배너 표기 전용 부가 정보 — 이 값이 없어도 화면은 그대로 성립한다.
+    // 배너 숫자만 비고 질문 본문·저장·임시저장은 영향받지 않는다 (`questionDay` 는 이미 Int?).
     //
-    // Swagger `DailyQuestionTodayResponse` 에는 이 키가 있으나(2026-08-03 실측) 노션 명세의
-    // today 응답 예시에는 없고, 무엇보다 **이 API 문서는 응답 스키마에 required 를 하나도
-    // 선언하지 않는다** (required 는 요청 스키마에만 존재). 어느 필드든 생략될 수 있다는 뜻이다.
-    // 필수로 두면 서버가 한 번 생략하는 순간 MissingFieldException 으로 조회 전체가 죽고,
-    // questionId 가 비어 저장·임시저장까지 막힌다 (#565). 없으면 배너만 비우면 되는 값이다.
+    // 반면 필수로 두면 서버가 한 번 생략하는 순간 MissingFieldException 으로 today 조회 전체가
+    // 죽고, questionId 가 비어 저장·임시저장까지 막힌다 (#565). 잃는 것과 막는 것의 크기가
+    // 달라 nullable 로 둔다. 노션 명세의 today 응답 예시에도 이 키는 없다
+    // (Swagger `DailyQuestionTodayResponse` 에는 있음, 2026-08-03 실측).
     //
     // Swagger 타입은 int64 지만 서비스 시작일 기준 일차라 Int 범위를 넘지 않는다.
     @SerialName("day") val day: Int? = null,
