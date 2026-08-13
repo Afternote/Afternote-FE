@@ -50,6 +50,7 @@ import com.afternote.feature.afternote.presentation.shared.MemorialContent
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialPlaylist
+import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiModel
 
 /**
  * MEMORIAL(추억 노트) 카테고리의 수신자 측 상세 화면.
@@ -64,7 +65,7 @@ import com.afternote.feature.afternote.presentation.shared.detail.song.MemorialP
 @Composable
 fun MemorialReceivedDetailScreen(
     senderName: String,
-    leaveMessage: String = "",
+    messageBlocks: List<MessageBlockUiModel> = emptyList(),
     onNavigateToFullList: () -> Unit = {},
     onNavigateToPlaylist: () -> Unit = {},
     onBackClick: () -> Unit = {},
@@ -126,7 +127,7 @@ fun MemorialReceivedDetailScreen(
                     },
                     messageContent = {
                         // 시안: "남기신 말씀" 섹션 — 형제 수신자 상세와 동일하게 공용 MessageSection(💬 헤더 + 인용 카드) 사용 (#274).
-                        MessageSection(message = leaveMessage)
+                        MessageSection(blocks = messageBlocks)
                     },
                     sectionSpacing = 32.dp,
                     videoContent = {
@@ -281,7 +282,12 @@ private fun PreviewMemorialReceivedDetail() {
     AfternoteTheme {
         MemorialReceivedDetailScreen(
             senderName = "박서연",
-            leaveMessage = "이 계정에는 우리 가족 여행 사진이 많아. 계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
+            messageBlocks =
+                listOf(
+                    MessageBlockUiModel(
+                        body = "이 계정에는 우리 가족 여행 사진이 많아. 계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
+                    ),
+                ),
             // 프리뷰 대표 데이터: 실앱은 곡마다 coverUrl → 커버 로드. 프리뷰/스크린샷은 네트워크 미지원이라 회색 박스로 표시.
             albumCovers =
                 listOf(
@@ -300,7 +306,12 @@ private fun PreviewMemorialReceivedDetailWithVideo() {
     AfternoteTheme {
         MemorialReceivedDetailScreen(
             senderName = "박서연",
-            leaveMessage = "이 계정에는 우리 가족 여행 사진이 많아. 계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
+            messageBlocks =
+                listOf(
+                    MessageBlockUiModel(
+                        body = "이 계정에는 우리 가족 여행 사진이 많아. 계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
+                    ),
+                ),
             albumCovers =
                 listOf(
                     AlbumCover(id = "1"),

@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
+import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.domain.model.author.AfternoteAccountCredentials
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
 import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
@@ -13,7 +14,7 @@ import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
 import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorFormMapper.buildUpdatePayload
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
-import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessagesCodec
+import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
@@ -58,7 +59,7 @@ internal object AfternoteEditorFormMapper {
             category = editorCategory,
             accountId = detail.credentials?.id.orEmpty(),
             password = detail.credentials?.password.orEmpty(),
-            leaveMessageBlocks = detail.leaveMessage?.let(EditorMessagesCodec::parsePersistedToBlocks).orEmpty(),
+            leaveMessageBlocks = detail.leaveMessageBlocks.map(LeaveMessageBlock::toEditorBlock),
             processingMethods = processingMethodItems,
             memorialVideoUrl = detail.memorial?.media?.videoUrl,
             memorialThumbnailUrl = detail.memorial?.media?.thumbnailUrl,
@@ -114,7 +115,7 @@ internal object AfternoteEditorFormMapper {
         memorialPhotoUrl: String?,
     ): CreateAfternoteInput {
         val processingMethods = payload.processingMethods.map { it.text }
-        val leaveMessage = payload.message.ifBlank { null }
+        val leaveMessageBlocks = payload.messageBlocks.toLeaveMessageBlocks()
 
         return when (category) {
             EditorCategory.GALLERY -> {
@@ -123,7 +124,7 @@ internal object AfternoteEditorFormMapper {
                     CreateGalleryPayload(
                         title = payload.serviceName,
                         processingMethods = galleryMethods,
-                        leaveMessage = leaveMessage,
+                        leaveMessageBlocks = leaveMessageBlocks,
                         receiverIds = selectedReceiverIds,
                     ),
                 )
@@ -148,7 +149,7 @@ internal object AfternoteEditorFormMapper {
 
             EditorCategory.SOCIAL -> {
                 CreateAfternoteInput.Social(
-                    buildAccountCreatePayload(payload, processingMethods, leaveMessage, selectedReceiverIds),
+                    buildAccountCreatePayload(payload, processingMethods, leaveMessageBlocks, selectedReceiverIds),
                 )
             }
 
@@ -156,7 +157,7 @@ internal object AfternoteEditorFormMapper {
             // 공유하고, category 문자열만 data 계층 매퍼에서 "BUSINESS" 로 실린다 (이슈 #467).
             EditorCategory.BUSINESS -> {
                 CreateAfternoteInput.Business(
-                    buildAccountCreatePayload(payload, processingMethods, leaveMessage, selectedReceiverIds),
+                    buildAccountCreatePayload(payload, processingMethods, leaveMessageBlocks, selectedReceiverIds),
                 )
             }
 
@@ -170,13 +171,13 @@ internal object AfternoteEditorFormMapper {
     private fun buildAccountCreatePayload(
         payload: RegisterAfternotePayload,
         processingMethods: List<String>,
-        leaveMessage: String?,
+        leaveMessageBlocks: List<LeaveMessageBlock>,
         selectedReceiverIds: List<Long>,
     ): CreateAccountPayload =
         CreateAccountPayload(
             title = payload.serviceName,
             processingMethods = processingMethods,
-            leaveMessage = leaveMessage,
+            leaveMessageBlocks = leaveMessageBlocks,
             credentials =
                 AfternoteAccountCredentials(
                     id = payload.accountId.ifBlank { null },
@@ -241,13 +242,30 @@ internal object AfternoteEditorFormMapper {
             category = category.serverValue,
             title = payload.serviceName,
             processingMethods = processingMethods.ifEmpty { null },
-            leaveMessage = payload.message.ifBlank { null },
+            leaveMessageBlocks = payload.messageBlocks.toLeaveMessageBlocks(),
             credentials = credentials,
             receivers = selectedReceiverIds.map { ReceiverRefPayload(receiverId = it) },
             memorial = null,
         )
     }
 }
+
+private fun LeaveMessageBlock.toEditorBlock(): EditorMessageTextBlock =
+    EditorMessageTextBlock(
+        title = title.orEmpty(),
+        body = body,
+    )
+
+/**
+ * 편집 블록을 서버로 보낼 도메인 블록으로 좁힌다.
+ *
+ * 에디터가 입력 전에도 띄워 두는 빈 칸은 버린다. 제목만 채운 블록은 여기 오기 전에
+ * [AfternoteEditorValidator] 가 막으므로(서버가 본문을 필수로 검증한다) 버려서 입력을 잃는 경우는 없다.
+ * 남는 블록이 없을 때 요청에서 필드를 뺄지는 data 계층 `toDto` 가 정한다.
+ */
+private fun List<EditorMessageTextBlock>.toLeaveMessageBlocks(): List<LeaveMessageBlock> =
+    filter { it.body.isNotBlank() }
+        .map { LeaveMessageBlock(title = it.title.trim().ifEmpty { null }, body = it.body.trim()) }
 
 /**
  * Resolved memorial media URLs for performUpdate/performCreate.

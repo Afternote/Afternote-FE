@@ -26,6 +26,7 @@ fun NavGraphBuilder.timeLetterNavGraph(
     navigation<Route.TimeLetter>(startDestination = TimeLetterRoute.TimeLetterHomeRoute) {
         composable<TimeLetterRoute.TimeLetterHomeRoute> {
             TimeletterScreen(
+                onSettingClick = actions::onSettingClick,
                 onWriteClick = actions::onNavigateToWrite,
                 onEditClick = actions::onNavigateToEdit,
                 onLetterClick = actions::onNavigateToDetail,

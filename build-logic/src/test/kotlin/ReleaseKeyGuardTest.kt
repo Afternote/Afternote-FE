@@ -96,6 +96,37 @@ class ReleaseKeyGuardTest {
         assertTrue(result.output.contains("TEST_SOCIAL_KEY 가 비어 있어 release 빌드를 중단합니다"))
     }
 
+    @Test
+    fun `서명 자격이 없으면 release 경로가 누락 항목과 함께 실패한다`() {
+        writeStubProject(
+            """requireReleaseSigningForReleaseBuild(listOf("RELEASE_STORE_FILE", "RELEASE_KEY_ALIAS"))""",
+        )
+
+        val result = runner("assembleRelease").buildAndFail()
+
+        assertEquals(TaskOutcome.FAILED, result.task(":checkReleaseSigningForRelease")?.outcome)
+        assertTrue(result.output.contains("release 서명 자격이 없어 release 빌드를 중단합니다"))
+        assertTrue(result.output.contains("RELEASE_STORE_FILE, RELEASE_KEY_ALIAS"))
+    }
+
+    @Test
+    fun `서명 자격이 갖춰지면 release 경로가 통과한다`() {
+        writeStubProject("""requireReleaseSigningForReleaseBuild(emptyList<String>())""")
+
+        val result = runner("assembleRelease").build()
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":checkReleaseSigningForRelease")?.outcome)
+    }
+
+    @Test
+    fun `서명 자격이 없어도 debug 경로는 가드를 태우지 않는다`() {
+        writeStubProject("""requireReleaseSigningForReleaseBuild(listOf("RELEASE_STORE_FILE"))""")
+
+        val result = runner("assembleDebug").build()
+
+        assertNull(result.task(":checkReleaseSigningForRelease"))
+    }
+
     private fun writeStubProject(guardWiring: String) {
         val classpathLiteral =
             guardClasspath()

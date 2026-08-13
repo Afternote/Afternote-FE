@@ -1,6 +1,7 @@
 package com.afternote.feature.setting.presentation.component
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -23,11 +25,13 @@ import com.afternote.feature.setting.presentation.R
 fun SettingProfile(
     name: String,
     email: String,
+    onNoticeClick: () -> Unit,
+    onRecipientListClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier =
-            Modifier
+            modifier
                 .fillMaxWidth()
                 .height(180.dp),
     ) {
@@ -71,11 +75,25 @@ fun SettingProfile(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            val items = listOf("고객센터", "공지사항", "수신자목록")
+            val items =
+                listOf(
+                    stringResource(R.string.settings_support_inquiry) to null,
+                    stringResource(R.string.settings_support_notice) to onNoticeClick,
+                    stringResource(R.string.settings_recipient_list) to onRecipientListClick,
+                )
 
-            items.forEach { label ->
+            items.forEach { (label, onClick) ->
                 Column(
-                    modifier = Modifier.weight(1f),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .then(
+                                if (onClick != null) {
+                                    Modifier.clickable(onClick = onClick)
+                                } else {
+                                    Modifier
+                                },
+                            ),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Image(
@@ -97,5 +115,10 @@ fun SettingProfile(
 @Preview(showBackground = true)
 @Composable
 private fun SettingProfilePrev() {
-    SettingProfile(name = "박서연", email = "afternote@email.com")
+    SettingProfile(
+        name = "박서연",
+        email = "afternote@email.com",
+        onNoticeClick = {},
+        onRecipientListClick = {},
+    )
 }

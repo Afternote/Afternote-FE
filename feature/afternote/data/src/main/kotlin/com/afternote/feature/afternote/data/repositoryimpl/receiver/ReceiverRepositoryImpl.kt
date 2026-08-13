@@ -3,6 +3,7 @@ package com.afternote.feature.afternote.data.repositoryimpl.receiver
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.network.model.requireData
 import com.afternote.feature.afternote.data.local.ReceiverAuthCodeDataSource
 import com.afternote.feature.afternote.data.mapper.response.toDomain
@@ -62,7 +63,7 @@ class ReceiverRepositoryImpl
             )
 
         override suspend fun getReceivedAfternoteDetail(afternoteId: Long): Result<ReceivedAfternoteDetail> =
-            runCatching {
+            runCatchingCancellable {
                 api
                     .getReceiverAfternoteDetail(afternoteId = afternoteId)
                     .requireData()

@@ -1,6 +1,6 @@
 package com.afternote.feature.timeletter.presentation.screen.recipient
 
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,8 +22,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -35,7 +37,13 @@ import com.afternote.feature.timeletter.domain.model.ReceivedTimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlockType
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
-import com.afternote.feature.timeletter.presentation.R
+import com.afternote.feature.timeletter.presentation.component.TimeLetterHeroEmptyCaption
+import com.afternote.feature.timeletter.presentation.component.TimeLetterHeroEmptyTitle
+import com.afternote.feature.timeletter.presentation.component.TimeLetterHeroGradientEnd
+import com.afternote.feature.timeletter.presentation.component.TimeLetterHeroGradientStart
+import com.afternote.feature.timeletter.presentation.component.TimeLetterHeroImageCaption
+import com.afternote.feature.timeletter.presentation.component.TimeLetterHeroImageOverlay
+import com.afternote.feature.timeletter.presentation.component.TimeLetterHeroImageTitle
 import com.afternote.feature.timeletter.presentation.viewmodel.RecipientTimeLetterDetailUiState
 import com.afternote.feature.timeletter.presentation.viewmodel.RecipientTimeLetterDetailViewModel
 
@@ -95,7 +103,11 @@ private fun RecipientTimeLetterDetailContent(
     letter: ReceivedTimeLetter,
     contentPadding: PaddingValues,
 ) {
-    val sendAtText = letter.sendAt?.take(10)?.replace("-", ".") ?: ""
+    val sendAtText =
+        letter.sendAt
+            ?.takeIf { it.isNotBlank() }
+            ?.let { "${it.take(10).replace("-", ".")}." }
+            .orEmpty()
 
     val heroImageUrl =
         remember(letter.blocks) {
@@ -117,12 +129,32 @@ private fun RecipientTimeLetterDetailContent(
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.matchParentSize(),
                     )
+                    Box(
+                        modifier =
+                            Modifier
+                                .matchParentSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        0f to TimeLetterHeroImageOverlay.copy(alpha = 0f),
+                                        0.5f to TimeLetterHeroImageOverlay.copy(alpha = 0f),
+                                        1f to TimeLetterHeroImageOverlay.copy(alpha = 0.4f),
+                                    ),
+                                ),
+                    )
                 } else {
-                    Image(
-                        painter = painterResource(R.drawable.ex_box_img),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.matchParentSize(),
+                    Box(
+                        modifier =
+                            Modifier
+                                .matchParentSize()
+                                .drawWithCache {
+                                    val brush =
+                                        Brush.radialGradient(
+                                            colors = listOf(TimeLetterHeroGradientStart, TimeLetterHeroGradientEnd),
+                                            center = Offset(size.width / 2f, size.height),
+                                            radius = size.width,
+                                        )
+                                    onDrawBehind { drawRect(brush) }
+                                },
                     )
                 }
                 Column(
@@ -134,7 +166,12 @@ private fun RecipientTimeLetterDetailContent(
                     Text(
                         text = letter.title ?: "제목 없음",
                         style = AfternoteDesign.typography.h2,
-                        color = AfternoteDesign.colors.white,
+                        color =
+                            if (heroImageUrl != null) {
+                                TimeLetterHeroImageTitle
+                            } else {
+                                TimeLetterHeroEmptyTitle
+                            },
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
@@ -144,12 +181,22 @@ private fun RecipientTimeLetterDetailContent(
                         Text(
                             text = "발신인  ${letter.senderName ?: ""}",
                             style = AfternoteDesign.typography.footnoteCaption,
-                            color = AfternoteDesign.colors.white,
+                            color =
+                                if (heroImageUrl != null) {
+                                    TimeLetterHeroImageCaption
+                                } else {
+                                    TimeLetterHeroEmptyCaption
+                                },
                         )
                         Text(
                             text = "발송 예정일  $sendAtText",
                             style = AfternoteDesign.typography.footnoteCaption,
-                            color = AfternoteDesign.colors.white,
+                            color =
+                                if (heroImageUrl != null) {
+                                    TimeLetterHeroImageCaption
+                                } else {
+                                    TimeLetterHeroEmptyCaption
+                                },
                         )
                     }
                 }

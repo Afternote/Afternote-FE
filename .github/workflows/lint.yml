@@ -1,8 +1,9 @@
 name: Static Analysis (Reviewdog)
 
+# base 필터를 두지 않는다 — base 변경(feat/* → develop)은 pull_request 기본 activity type 에
+# 없어 재트리거되지 않으므로, 필터가 있으면 스택 PR 이 검증을 한 번도 거치지 않고 머지된다.
 on:
   pull_request:
-    branches: [main, develop]
 
 permissions:
   contents: read

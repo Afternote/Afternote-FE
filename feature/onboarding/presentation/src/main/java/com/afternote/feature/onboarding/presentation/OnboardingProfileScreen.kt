@@ -54,6 +54,7 @@ fun OnboardingProfileScreen(
     onBackClick: () -> Unit,
     onCompleteClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isSubmitting: Boolean = false,
 ) {
     val focusManager = LocalFocusManager.current
     val nameState = rememberTextFieldState(initialName)
@@ -120,13 +121,16 @@ fun OnboardingProfileScreen(
                         .trim()
                         .isNotEmpty()
 
+                // 제출 중에는 버튼과 IME 두 경로 모두 잠근다. 한쪽만 막으면 다른 쪽으로 중복 제출된다.
+                val isCompleteEnabled = isNameProvided && !isSubmitting
+
                 AfternoteTextField(
                     state = nameState,
                     placeholder = stringResource(R.string.profile_name_placeholder),
                     imeAction = ImeAction.Done,
                     onImeAction = {
                         focusManager.clearFocus()
-                        if (isNameProvided) onCompleteClick()
+                        if (isCompleteEnabled) onCompleteClick()
                     },
                 )
 
@@ -134,9 +138,10 @@ fun OnboardingProfileScreen(
                     text = stringResource(R.string.profile_complete),
                     onClick = {
                         focusManager.clearFocus()
-                        onCompleteClick()
+                        if (isCompleteEnabled) onCompleteClick()
                     },
-                    type = if (isNameProvided) AfternoteButtonType.Default else AfternoteButtonType.Un,
+                    type = if (isCompleteEnabled) AfternoteButtonType.Default else AfternoteButtonType.Un,
+                    isLoading = isSubmitting,
                 )
             }
         }

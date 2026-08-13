@@ -29,9 +29,8 @@ import com.afternote.core.network.model.requireStatus
 import com.afternote.core.network.service.UserApiService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 import com.afternote.core.data.mapper.delivery.toDomain as toDeliveryConditionsDomain
 
@@ -41,23 +40,16 @@ class UserRepositoryImpl
         private val userApiService: UserApiService,
         private val authRepository: AuthRepository,
     ) : UserRepository {
-        private val receiverCache = MutableStateFlow<List<Receiver>?>(null)
+        private val receiverRefreshRevision = MutableStateFlow(0L)
 
         override val receiverListFlow: Flow<List<Receiver>> =
-            flow {
-                if (receiverCache.value == null) {
-                    receiverCache.value =
-                        userApiService.getReceivers().requireData().map { it.toDomain() }
-                }
-                emitAll(receiverCache.filterNotNull())
-            }
+            receiverRefreshRevision.map { getReceivers() }
 
         override suspend fun getReceivers(): List<Receiver> =
-            receiverCache.value ?: userApiService
+            userApiService
                 .getReceivers()
                 .requireData()
                 .map { it.toDomain() }
-                .also { receiverCache.value = it }
 
         override suspend fun createReceiver(
             name: String,
@@ -78,7 +70,7 @@ class UserRepositoryImpl
                         ),
                     ).requireData()
                     .toDomain()
-            receiverCache.value = userApiService.getReceivers().requireData().map { it.toDomain() }
+            receiverRefreshRevision.update { it + 1 }
             return result
         }
 

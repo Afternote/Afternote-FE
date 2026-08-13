@@ -20,6 +20,23 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
+# release APK에 URL·상태·예외를 남기는 앱 Log 호출 제거.
+# https://developer.android.com/topic/performance/app-optimization/additional-rule-types
+-maximumremovedandroidloglevel 7 class com.afternote.** {
+    <methods>;
+}
+
+# Hilt가 최적화 금지로 보존하는 ViewModel 안의 Log 호출도 release에서 제거.
+-assumenosideeffects class android.util.Log {
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+    public static int w(...);
+    public static int e(...);
+    public static int wtf(...);
+    public static int println(...);
+}
+
 # Room — RoomDatabase 서브클래스가 reflection 으로 인스턴스화될 때
 # Class.canonicalName 매칭이 필요해서 obfuscate 되면 안 됨.
 -keep class * extends androidx.room.RoomDatabase

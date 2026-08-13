@@ -3,6 +3,7 @@ package com.afternote.feature.afternote.presentation.receiver.detail
 import com.afternote.core.model.AlbumCover
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
+import com.afternote.feature.afternote.presentation.shared.model.toMessageBlockUiModels
 
 internal fun ReceivedAfternoteDetail.toReceivedDetailContentUiModel(): ReceivedDetailContentUiModel =
     when (type) {
@@ -34,7 +35,7 @@ private fun ReceivedAfternoteDetail.toReceivedSocialNetworkDetailContent(): Rece
         accountId = credentials?.id.orEmpty(),
         password = credentials?.password.orEmpty(),
         processingMethods = processingMethods,
-        message = leaveMessage.orEmpty(),
+        messageBlocks = leaveMessageBlocks.toMessageBlockUiModels(),
         finalWriteDate = createdAt.orEmpty(),
     )
 
@@ -43,14 +44,14 @@ private fun ReceivedAfternoteDetail.toReceivedGalleryDetailContent(): ReceivedGa
         serviceName = title.orEmpty(),
         finalWriteDate = createdAt.orEmpty(),
         processingMethods = processingMethods,
-        message = leaveMessage.orEmpty(),
+        messageBlocks = leaveMessageBlocks.toMessageBlockUiModels(),
     )
 
 private fun ReceivedAfternoteDetail.toReceivedMemorialDetailContent(): ReceivedMemorialDetailContent {
     val songs = playlist?.songs.orEmpty()
     return ReceivedMemorialDetailContent(
         senderName = senderName.orEmpty(),
-        leaveMessage = leaveMessage.orEmpty(),
+        messageBlocks = leaveMessageBlocks.toMessageBlockUiModels(),
         albumCovers =
             songs.mapIndexed { index, song ->
                 AlbumCover(

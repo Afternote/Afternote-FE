@@ -1,0 +1,151 @@
+package com.afternote.core.ui.popup
+
+import androidx.annotation.DrawableRes
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import com.afternote.core.ui.R
+import com.afternote.core.ui.button.AfternoteButton
+import com.afternote.core.ui.button.AfternoteButtonType
+import com.afternote.core.ui.theme.AfternoteDesign
+import com.afternote.core.ui.theme.AfternoteTheme
+
+/** 시안 아이콘 원 배경(#FEE2E2)의 파생 표현 — error 12% on white ≈ #FFE2E2 (R 채널 1/255 차 근사). */
+private const val ICON_CONTAINER_ALPHA = 0.12f
+
+/**
+ * 오류 안내 팝업 — 아이콘 원 + 제목 + 본문 + 단일 액션. 시안의 오류 팝업 4종(네트워크 연결
+ * 오류·서버 오류·업로드 실패·접근 권한 없음, `3628:23827`)이 공유하는 골격이다.
+ *
+ * [Popup] 과 별개인 이유 — 그쪽은 "메시지 + 버튼" 골격이라 아이콘·제목 슬롯이 없고,
+ * [PopupType] 은 enum 이라 타입별 필수 값을 담을 수 없다.
+ */
+@Composable
+fun AfternoteErrorPopup(
+    @DrawableRes iconRes: Int,
+    title: String,
+    description: String,
+    buttonText: String,
+    onButtonClick: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        AfternoteErrorPopupContent(
+            iconRes = iconRes,
+            title = title,
+            description = description,
+            buttonText = buttonText,
+            onButtonClick = onButtonClick,
+            modifier = modifier,
+        )
+    }
+}
+
+/**
+ * 네트워크 연결 실패 안내(시안 `3628:23575`). 문구는 이 컴포넌트가 갖고 재시도 동작만 받는다 —
+ * 전송 계층 실패 안내는 화면과 무관하게 동일해서다.
+ */
+@Composable
+fun NetworkErrorPopup(
+    onRetry: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AfternoteErrorPopup(
+        iconRes = R.drawable.core_ui_ic_wifi_off,
+        title = stringResource(R.string.core_ui_network_error_title),
+        description = stringResource(R.string.core_ui_network_error_description),
+        buttonText = stringResource(R.string.core_ui_network_error_retry),
+        onButtonClick = onRetry,
+        onDismiss = onDismiss,
+        modifier = modifier,
+    )
+}
+
+/** Dialog 래퍼 없이 카드 본체만 렌더링합니다. 프리뷰 및 테스트 전용. */
+@Composable
+internal fun AfternoteErrorPopupContent(
+    @DrawableRes iconRes: Int,
+    title: String,
+    description: String,
+    buttonText: String,
+    onButtonClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AfternotePopupCardLayout(modifier = modifier) {
+        Box(
+            modifier =
+                Modifier
+                    .size(48.dp)
+                    .background(
+                        color = AfternoteDesign.colors.error.copy(alpha = ICON_CONTAINER_ALPHA),
+                        shape = CircleShape,
+                    ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                painter = painterResource(iconRes),
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = AfternoteDesign.colors.error,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = title,
+            style = AfternoteDesign.typography.h3.copy(textAlign = TextAlign.Center),
+            color = AfternoteDesign.colors.gray9,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = description,
+            style = AfternoteDesign.typography.bodySmallR.copy(textAlign = TextAlign.Center),
+            color = AfternoteDesign.colors.gray6,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        AfternoteButton(
+            text = buttonText,
+            onClick = onButtonClick,
+            type = AfternoteButtonType.Default,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun NetworkErrorPopupPreview() {
+    AfternoteTheme {
+        AfternoteErrorPopupContent(
+            iconRes = R.drawable.core_ui_ic_wifi_off,
+            title = "네트워크 연결 오류",
+            description = "인터넷 연결을 확인한 후 다시 시도해 주세요.",
+            buttonText = "다시 시도하기",
+            onButtonClick = {},
+        )
+    }
+}
