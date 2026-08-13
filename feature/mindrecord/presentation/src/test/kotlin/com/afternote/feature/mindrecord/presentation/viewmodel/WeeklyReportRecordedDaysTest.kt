@@ -22,7 +22,7 @@ class WeeklyReportRecordedDaysTest {
             )
 
         assertEquals(1, recordedDays)
-        assertEquals(LocalDate.of(2026, 7, 28), resolveDateInWeek(monday, 28))
+        assertEquals(LocalDate.of(2026, 7, 28), resolveDateInWeekOrNull(monday, 28))
     }
 
     @Test
@@ -59,9 +59,9 @@ class WeeklyReportRecordedDaysTest {
         // 2026-06-29(월) ~ 2026-07-05(일) — day=1 은 6월 1일이 아니라 7월 1일이다.
         val monday = LocalDate.of(2026, 6, 29)
 
-        assertEquals(LocalDate.of(2026, 6, 30), resolveDateInWeek(monday, 30))
-        assertEquals(LocalDate.of(2026, 7, 1), resolveDateInWeek(monday, 1))
-        assertEquals(LocalDate.of(2026, 7, 5), resolveDateInWeek(monday, 5))
+        assertEquals(LocalDate.of(2026, 6, 30), resolveDateInWeekOrNull(monday, 30))
+        assertEquals(LocalDate.of(2026, 7, 1), resolveDateInWeekOrNull(monday, 1))
+        assertEquals(LocalDate.of(2026, 7, 5), resolveDateInWeekOrNull(monday, 5))
 
         val recordedDays =
             countRecordedDays(
@@ -77,7 +77,7 @@ class WeeklyReportRecordedDaysTest {
     fun `주 범위 밖 일자는 집계에서 제외된다`() {
         val monday = LocalDate.of(2026, 7, 27)
 
-        assertNull(resolveDateInWeek(monday, 26))
+        assertNull(resolveDateInWeekOrNull(monday, 26))
 
         val recordedDays =
             countRecordedDays(
@@ -122,7 +122,7 @@ class WeeklyReportRecordedDaysTest {
         // #563 회귀 — 2026-07-28(화) 기록 1건. index 매칭이면 월요일 칸에 들어갔다.
         val monday = LocalDate.of(2026, 7, 27)
 
-        val byDate = indexWeekByDate(monday, listOf(diaryDay(day = 28)))
+        val byDate = aggregateWeekRecordsByDate(monday, listOf(diaryDay(day = 28)))
 
         assertEquals(setOf(LocalDate.of(2026, 7, 28)), byDate.keys)
         assertEquals(true, byDate.getValue(LocalDate.of(2026, 7, 28)).isDiary)
@@ -139,7 +139,7 @@ class WeeklyReportRecordedDaysTest {
                 WeeklyReportDay(diaryId = 2, day = 28, isDiary = true, emotion = TodayMood.SAD),
             )
 
-        val byDate = indexWeekByDate(monday, week)
+        val byDate = aggregateWeekRecordsByDate(monday, week)
 
         val record = byDate.getValue(LocalDate.of(2026, 7, 28))
         assertEquals(1, byDate.size)
@@ -148,10 +148,39 @@ class WeeklyReportRecordedDaysTest {
     }
 
     @Test
+    fun `감정 병합은 응답 순서가 뒤집혀도 같은 결과를 낸다`() {
+        // 명세에 week[] 순서 의미도 같은 날짜 복수 원소의 병합 규칙도 없다 (Afternote-BE#131).
+        // 순서에 의존하면 서버가 정렬만 바꿔도 화면 이모지가 바뀐다 — diaryId 최대값으로 고정한다.
+        val monday = LocalDate.of(2026, 7, 27)
+        val older = WeeklyReportDay(diaryId = 1, day = 28, isDiary = true, emotion = TodayMood.HAPPY)
+        val newer = WeeklyReportDay(diaryId = 2, day = 28, isDiary = true, emotion = TodayMood.SAD)
+
+        val ascending = aggregateWeekRecordsByDate(monday, listOf(older, newer))
+        val descending = aggregateWeekRecordsByDate(monday, listOf(newer, older))
+
+        assertEquals(TodayMood.SAD, ascending.getValue(LocalDate.of(2026, 7, 28)).emotion)
+        assertEquals(descending, ascending)
+    }
+
+    @Test
+    fun `감정이 없는 원소가 먼저 와도 감정 있는 원소가 선택된다`() {
+        val monday = LocalDate.of(2026, 7, 27)
+        val week =
+            listOf(
+                WeeklyReportDay(diaryId = 9, day = 28, isDiary = true, emotion = null),
+                WeeklyReportDay(diaryId = 1, day = 28, isDiary = false, emotion = TodayMood.HAPPY),
+            )
+
+        val byDate = aggregateWeekRecordsByDate(monday, week)
+
+        assertEquals(TodayMood.HAPPY, byDate.getValue(LocalDate.of(2026, 7, 28)).emotion)
+    }
+
+    @Test
     fun `주 범위 밖 일자는 어느 칸에도 붙지 않는다`() {
         val monday = LocalDate.of(2026, 7, 27)
 
-        val byDate = indexWeekByDate(monday, listOf(diaryDay(day = 26), diaryDay(day = 28)))
+        val byDate = aggregateWeekRecordsByDate(monday, listOf(diaryDay(day = 26), diaryDay(day = 28)))
 
         assertEquals(setOf(LocalDate.of(2026, 7, 28)), byDate.keys)
     }
