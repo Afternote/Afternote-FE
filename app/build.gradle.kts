@@ -165,6 +165,13 @@ android {
     }
 }
 
+configurations.configureEach {
+    if (name == "debugScreenshotTestCompileClasspath") {
+        // Keep the renderer from loading firebase-datatransport R classes from two different versions.
+        exclude(group = "com.google.firebase", module = "firebase-datatransport")
+    }
+}
+
 dependencies {
     implementation(libs.coil.compose)
     implementation(libs.androidx.hilt.navigation.compose)
@@ -181,6 +188,7 @@ dependencies {
     // 그래서 로그에 "Could not register handler for breadcrumbs events" 가 뜨는 건 정상이다.
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.messaging)
 
     // Core
     implementation(projects.core.common)
