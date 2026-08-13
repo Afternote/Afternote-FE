@@ -9,9 +9,13 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -58,6 +62,8 @@ fun MemorySpaceScreen(
         modifier = modifier,
         memories = (uiState as? MemorySpaceUiState.Success)?.memories.orEmpty(),
         statusText = uiState.statusText(),
+        // 전체 조회 실패만 재시도로 풀린다 — 로딩·0건은 다시 눌러 봐야 결과가 같다.
+        onRetryClick = viewModel::retry.takeIf { uiState is MemorySpaceUiState.Error },
     )
 }
 
@@ -88,6 +94,7 @@ private fun MemorySpaceContent(
     memories: List<MemoryItem>,
     modifier: Modifier = Modifier,
     statusText: String? = null,
+    onRetryClick: (() -> Unit)? = null,
 ) {
     var selectedMemoryId: Long? by rememberSaveable { mutableStateOf(null) }
     val selectedMemory = selectedMemoryId?.let { id -> memories.firstOrNull { it.id == id } }
@@ -142,16 +149,30 @@ private fun MemorySpaceContent(
             )
 
             if (statusText != null) {
-                Text(
-                    text = statusText,
-                    style = AfternoteDesign.typography.bodySmallR,
-                    color = AfternoteDesign.colors.gray6,
-                    textAlign = TextAlign.Center,
+                Column(
                     modifier =
                         Modifier
                             .align(Alignment.Center)
                             .padding(horizontal = 40.dp),
-                )
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = statusText,
+                        style = AfternoteDesign.typography.bodySmallR,
+                        color = AfternoteDesign.colors.gray6,
+                        textAlign = TextAlign.Center,
+                    )
+                    if (onRetryClick != null) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        TextButton(onClick = onRetryClick) {
+                            Text(
+                                text = stringResource(R.string.mindrecord_memory_space_retry),
+                                style = AfternoteDesign.typography.captionLargeB,
+                                color = AfternoteDesign.colors.gray9,
+                            )
+                        }
+                    }
+                }
             }
 
             MemorySpaceHeader(onBackClick = onBackClick)
@@ -229,6 +250,21 @@ private fun MemorySpaceScreenEmptyPreview() {
             modifier = Modifier.fillMaxSize(),
             memories = emptyList(),
             statusText = "아직 담긴 기록이 없어요.\n일기나 데일리 질문에 답하면 이곳에 쌓입니다.",
+        )
+    }
+}
+
+/** 조회 실패 — 0건과 달리 재시도 버튼이 함께 그려진다. */
+@Preview(showBackground = true, backgroundColor = 0xFFF5F5F5)
+@Composable
+private fun MemorySpaceScreenErrorPreview() {
+    AfternoteTheme {
+        MemorySpaceContent(
+            onBackClick = {},
+            modifier = Modifier.fillMaxSize(),
+            memories = emptyList(),
+            statusText = "기록을 불러오지 못했습니다.",
+            onRetryClick = {},
         )
     }
 }

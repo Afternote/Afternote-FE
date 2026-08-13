@@ -18,6 +18,7 @@
     <string name="mindrecord_memory_space_loading">기록을 불러오는 중이에요…</string>
     <string name="mindrecord_memory_space_empty">아직 담긴 기록이 없어요.\n일기나 데일리 질문을 남기면 이곳에 쌓입니다.</string>
     <string name="mindrecord_error_memory_space_failed">기록을 불러오지 못했습니다.</string>
+    <string name="mindrecord_memory_space_retry">다시 시도하기</string>
 
     <!-- Common action labels -->
     <string name="mindrecord_action_register">등록</string>
