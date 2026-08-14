@@ -77,7 +77,6 @@ import com.afternote.feature.timeletter.presentation.component.TimeLetterTitleTe
 import com.afternote.feature.timeletter.presentation.component.TimeWheelPicker
 import com.afternote.feature.timeletter.presentation.viewmodel.EditorBlock
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteUiState
-import kotlinx.coroutines.flow.distinctUntilChanged
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -86,7 +85,7 @@ import java.time.LocalTime
 fun TimeLetterWriteScreen(
     modifier: Modifier = Modifier,
     uiState: TimeLetterWriteUiState = TimeLetterWriteUiState(),
-    titleState: TextFieldState = rememberTextFieldState(uiState.initialTitle.orEmpty()),
+    titleState: TextFieldState = rememberTextFieldState(uiState.draftTitle.orEmpty()),
     onBackClick: () -> Unit = {},
     onRegisterClick: (title: String, textContents: Map<Long, String>) -> Unit = { _, _ -> },
     onRecipientClick: (title: String, textContents: Map<Long, String>) -> Unit = { _, _ -> },
@@ -120,9 +119,11 @@ fun TimeLetterWriteScreen(
         remember(uiState.editingTimeLetterId) { androidx.compose.runtime.mutableStateMapOf<Long, TextFieldState>() }
 
     fun collectTextContents(): Map<Long, String> =
-        uiState.editorBlocks
-            .filterIsInstance<EditorBlock.Text>()
-            .associate { it.id to (textBlockStates[it.id]?.text?.toString() ?: "") }
+        collectTextBlockContents(
+            editorBlocks = uiState.editorBlocks,
+            visibleTextContents = textBlockStates.mapValues { (_, state) -> state.text.toString() },
+            draftTextContents = uiState.draftTextContents,
+        )
 
     val imageLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
@@ -145,7 +146,6 @@ fun TimeLetterWriteScreen(
 
     LaunchedEffect(titleState) {
         snapshotFlow { titleState.text.toString() }
-            .distinctUntilChanged()
             .collect(onTitleChanged)
     }
 
@@ -171,6 +171,14 @@ fun TimeLetterWriteScreen(
             }
         }
         return
+    }
+
+    LaunchedEffect(uiState.editingTimeLetterId) {
+        if (uiState.editingTimeLetterId != null) {
+            titleState.edit {
+                replace(0, length, uiState.draftTitle.orEmpty())
+            }
+        }
     }
 
     var showDatePicker by remember { mutableStateOf(false) }
@@ -403,7 +411,7 @@ fun TimeLetterWriteScreen(
                         TextBlockItem(
                             blockId = block.id,
                             textBlockStates = textBlockStates,
-                            initialText = uiState.initialTextContents[block.id].orEmpty(),
+                            initialText = uiState.draftTextContents[block.id].orEmpty(),
                             textAlign = uiState.textAlign,
                             onFocused = { onSetFocusedBlock(block.id) },
                             onTextChanged = { content -> onTextContentChanged(block.id, content) },
@@ -446,6 +454,17 @@ fun TimeLetterWriteScreen(
     }
 }
 
+internal fun collectTextBlockContents(
+    editorBlocks: List<EditorBlock>,
+    visibleTextContents: Map<Long, String>,
+    draftTextContents: Map<Long, String>,
+): Map<Long, String> =
+    editorBlocks
+        .filterIsInstance<EditorBlock.Text>()
+        .associate { block ->
+            block.id to (visibleTextContents[block.id] ?: draftTextContents[block.id].orEmpty())
+        }
+
 @Composable
 private fun TextBlockItem(
     blockId: Long,
@@ -462,7 +481,6 @@ private fun TextBlockItem(
         }
     LaunchedEffect(state) {
         snapshotFlow { state.text.toString() }
-            .distinctUntilChanged()
             .collect(onTextChanged)
     }
     DisposableEffect(blockId) {

@@ -81,31 +81,26 @@ class TimeLetterWriteViewModel
             }
         }
 
+        fun updateDraftTitle(title: String) {
+            _uiState.update { state -> state.withDraftTitle(title) }
+        }
+
         fun updateDraftContent(
             title: String,
             textContents: Map<Long, String>,
         ) {
-            val savedTextContents = textContents.toMap()
-            _uiState.update {
-                it.copy(
-                    initialTitle = title,
-                    initialTextContents = savedTextContents,
-                )
+            _uiState.update { state ->
+                state.withDraftContent(title, textContents)
             }
-        }
-
-        fun updateDraftTitle(title: String) {
-            updateDraftContent(title, _uiState.value.initialTextContents)
         }
 
         fun updateDraftTextContent(
             blockId: Long,
             content: String,
         ) {
-            updateDraftContent(
-                title = _uiState.value.initialTitle.orEmpty(),
-                textContents = _uiState.value.initialTextContents + (blockId to content),
-            )
+            _uiState.update { state ->
+                state.withDraftTextContent(blockId, content)
+            }
         }
 
         fun setSendAt(sendAt: String) {
@@ -344,8 +339,8 @@ class TimeLetterWriteViewModel
                         it.copy(
                             editingTimeLetterId = letter.id,
                             isLoadingEditingLetter = false,
-                            initialTitle = letter.title.orEmpty(),
-                            initialTextContents =
+                            draftTitle = letter.title.orEmpty(),
+                            draftTextContents =
                                 letter.blocks
                                     .filter { block -> block.blockType == TimeLetterBlockType.TEXT }
                                     .associate { block -> block.id to (block.textContent ?: "") },
@@ -360,13 +355,6 @@ class TimeLetterWriteViewModel
                             nextBlockId = (editorBlocks.maxOfOrNull { block -> block.id } ?: 0L) + 1L,
                         )
                     }
-                    updateDraftContent(
-                        title = letter.title.orEmpty(),
-                        textContents =
-                            letter.blocks
-                                .filter { block -> block.blockType == TimeLetterBlockType.TEXT }
-                                .associate { block -> block.id to (block.textContent ?: "") },
-                    )
                 }.onFailure {
                     _uiState.update { it.copy(isLoadingEditingLetter = false) }
                     _uiState.update { it.copy(errorMessage = "타임레터를 불러올 수 없습니다.") }
@@ -512,3 +500,19 @@ class TimeLetterWriteViewModel
             const val FREE_PLAN_REGISTER_LIMIT = 3
         }
     }
+
+internal fun TimeLetterWriteUiState.withDraftTitle(title: String): TimeLetterWriteUiState = copy(draftTitle = title)
+
+internal fun TimeLetterWriteUiState.withDraftContent(
+    title: String,
+    textContents: Map<Long, String>,
+): TimeLetterWriteUiState =
+    copy(
+        draftTitle = title,
+        draftTextContents = draftTextContents + textContents,
+    )
+
+internal fun TimeLetterWriteUiState.withDraftTextContent(
+    blockId: Long,
+    content: String,
+): TimeLetterWriteUiState = copy(draftTextContents = draftTextContents + (blockId to content))
