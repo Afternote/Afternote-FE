@@ -21,8 +21,28 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import java.util.concurrent.TimeUnit
 import javax.inject.Named
 import javax.inject.Singleton
+
+private const val CONNECT_TIMEOUT_SECONDS = 10L
+private const val IO_TIMEOUT_SECONDS = 10L
+
+/**
+ * 한 호출의 전체 상한. OkHttp 기본값 0(무제한)에서는 read timeout 이 바이트 사이 간격에만 걸려,
+ * 서버가 조금씩 흘려보내는 동안 요청이 끝나지 않고 화면도 로딩에서 못 벗어난다.
+ */
+private const val CALL_TIMEOUT_SECONDS = 30L
+
+/** 업로드는 본문 크기에 비례해 길어진다 — 일반 호출과 같은 상한을 걸면 큰 파일이 전송 도중 끊긴다. */
+private const val UPLOAD_IO_TIMEOUT_SECONDS = 60L
+private const val UPLOAD_CALL_TIMEOUT_SECONDS = 10 * 60L
+
+private fun OkHttpClient.Builder.withApiTimeouts(): OkHttpClient.Builder =
+    connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .readTimeout(IO_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .writeTimeout(IO_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .callTimeout(CALL_TIMEOUT_SECONDS, TimeUnit.SECONDS)
 
 @Module // 힐트야 여기 타입별로 객체 어떻게 만드는지 적어 놓은 설명서야
 @InstallIn(SingletonComponent::class) // 앱 자체와 수명을 함께하는 창고에 이 설명서의 객체들을 보관해 줘
@@ -61,6 +81,7 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
     fun provideRefreshOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient =
         OkHttpClient
             .Builder() // 이제부터 인터셉터를 담을게
+            .withApiTimeouts()
             .addInterceptor(loggingInterceptor)
             .build() // 인터셉터 다 담았어
 
@@ -75,7 +96,7 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
         tokenAuthenticator: TokenAuthenticator,
         apiErrorInterceptor: ApiErrorInterceptor,
     ): OkHttpClient {
-        val builder = OkHttpClient.Builder()
+        val builder = OkHttpClient.Builder().withApiTimeouts()
         // 가장 외곽(응답 마지막) — 4xx/5xx 본문의 message 를 파싱해 ApiException 으로 변환
         builder.addInterceptor(apiErrorInterceptor)
         // 디버그 전용(피처 모듈) 인터셉터: 네트워크로 나가기 전에 가짜 응답을 반환할 수 있음
@@ -100,6 +121,10 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
     fun provideS3UploadOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient =
         OkHttpClient
             .Builder()
+            .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .readTimeout(UPLOAD_IO_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .writeTimeout(UPLOAD_IO_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .callTimeout(UPLOAD_CALL_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .addInterceptor(loggingInterceptor)
             .build()
 
@@ -112,7 +137,7 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
         @OptionalDebugNetworkInterceptor debugInterceptors: Set<@JvmSuppressWildcards Interceptor>,
         loggingInterceptor: HttpLoggingInterceptor,
     ): OkHttpClient {
-        val builder = OkHttpClient.Builder()
+        val builder = OkHttpClient.Builder().withApiTimeouts()
         builder.addInterceptor { chain ->
             chain.proceed(
                 chain

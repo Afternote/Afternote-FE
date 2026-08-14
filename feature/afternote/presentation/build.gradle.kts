@@ -34,6 +34,8 @@ dependencies {
     implementation(libs.androidx.paging.runtime)
     implementation(libs.androidx.paging.compose)
 
+    testImplementation(libs.coroutines.test)
+
     // Compose Preview Screenshot Testing (#330) — 1hyok 영역 마무리 묶음
     screenshotTestImplementation(libs.screenshot.validation.api)
     screenshotTestImplementation(libs.androidx.compose.ui.tooling)

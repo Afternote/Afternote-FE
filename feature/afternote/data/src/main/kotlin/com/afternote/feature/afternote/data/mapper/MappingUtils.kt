@@ -11,12 +11,10 @@ internal fun formatDateFromServer(serverDateTime: String): String =
         serverDateTime
     }
 
+/**
+ * 서버 `category` → [AfternoteType]. 대응이 없으면 [AfternoteType.SOCIAL_NETWORK] 로 폴백한다.
+ *
+ * 값 표는 [afternoteTypeFromServerCategory] 가 정본이다 — 여기에 다시 적으면 갈라진다.
+ */
 internal fun categoryToAfternoteType(category: String): AfternoteType =
-    when (category.uppercase()) {
-        "SOCIAL" -> AfternoteType.SOCIAL_NETWORK
-        "BUSINESS" -> AfternoteType.BUSINESS
-        "GALLERY" -> AfternoteType.GALLERY_AND_FILES
-        "ESTATE" -> AfternoteType.ESTATE
-        "MUSIC", "PLAYLIST" -> AfternoteType.MEMORIAL
-        else -> AfternoteType.SOCIAL_NETWORK
-    }
+    afternoteTypeFromServerCategory(category) ?: AfternoteType.SOCIAL_NETWORK

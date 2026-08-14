@@ -76,5 +76,6 @@ fun OnboardingProfileEntry(
         onCompleteClick = viewModel::submitSignUp,
         onBackClick = onBackClick,
         modifier = modifier,
+        isSubmitting = uiState.isLoading,
     )
 }

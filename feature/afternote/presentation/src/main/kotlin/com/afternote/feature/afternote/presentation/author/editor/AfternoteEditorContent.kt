@@ -24,8 +24,8 @@ import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.account.AccountEditorContent
 import com.afternote.feature.afternote.presentation.author.editor.account.AccountSection
 import com.afternote.feature.afternote.presentation.author.editor.gallery.GalleryAndFileEditorContent
-import com.afternote.feature.afternote.presentation.author.editor.memorial.guideline.MemorialEditorContent
-import com.afternote.feature.afternote.presentation.author.editor.memorial.guideline.MemorialEditorContentParams
+import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialEditorContent
+import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialEditorContentParams
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
@@ -33,6 +33,7 @@ import com.afternote.feature.afternote.presentation.author.editor.receiver.model
 import com.afternote.feature.afternote.presentation.author.editor.selection.DropdownMenuStyle
 import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdown
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
+import com.afternote.feature.afternote.presentation.author.editor.state.CategoryForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
 
@@ -43,7 +44,7 @@ internal fun EditorContent(
     liveSongs: List<Song>,
     modifier: Modifier = Modifier,
     isPrefillLoading: Boolean = false,
-    onNavigateToAddSong: () -> Unit,
+    onNavigateToMemorialPlaylist: () -> Unit,
     onNavigateToSelectReceiver: () -> Unit,
     onPhotoAddClick: () -> Unit,
     onVideoAddClick: () -> Unit,
@@ -107,7 +108,7 @@ internal fun EditorContent(
             state = state,
             form = form,
             liveSongs = liveSongs,
-            onNavigateToAddSong = onNavigateToAddSong,
+            onNavigateToMemorialPlaylist = onNavigateToMemorialPlaylist,
             onNavigateToSelectReceiver = onNavigateToSelectReceiver,
             onPhotoAddClick = onPhotoAddClick,
             onVideoAddClick = onVideoAddClick,
@@ -225,7 +226,7 @@ internal fun CategoryContent(
     state: AfternoteEditorState,
     form: EditorFormState,
     liveSongs: List<Song>,
-    onNavigateToAddSong: () -> Unit,
+    onNavigateToMemorialPlaylist: () -> Unit,
     onNavigateToSelectReceiver: () -> Unit,
     onPhotoAddClick: () -> Unit,
     onVideoAddClick: () -> Unit,
@@ -245,9 +246,9 @@ internal fun CategoryContent(
                             AfternoteEditorReceiverSection(
                                 afternoteEditReceivers = form.afternoteEditReceivers,
                                 onAddClick = onNavigateToSelectReceiver,
-                                onItemDeleteClick = state::onAfternoteEditorReceiverDelete,
+                                onItemDeleteClick = state.deleteReceiver,
                             ),
-                        onSongAddClick = onNavigateToAddSong,
+                        onSongAddClick = onNavigateToMemorialPlaylist,
                         onPhotoAddClick = onPhotoAddClick,
                         onVideoAddClick = onVideoAddClick,
                         onThumbnailBytesReady = onThumbnailBytesReady,
@@ -265,15 +266,15 @@ internal fun CategoryContent(
                 recipientSection =
                     AfternoteEditorReceiverSection(
                         afternoteEditReceivers = form.afternoteEditReceivers,
-                        onAddClick = state::showAddAfternoteEditorReceiverDialog,
-                        onItemDeleteClick = state::onAfternoteEditorReceiverDelete,
+                        onAddClick = onNavigateToSelectReceiver,
+                        onItemDeleteClick = state.deleteReceiver,
                     ),
                 processingMethodSection =
                     ProcessingMethodSection(
                         items = form.processingMethods,
-                        onItemDeleteClick = state::deleteProcessingMethod,
-                        onItemAdded = state::addProcessingMethod,
-                        onItemEdited = state::editProcessingMethod,
+                        onItemDeleteClick = state.deleteProcessingMethod,
+                        onItemAdded = state.addProcessingMethod,
+                        onItemEdited = state.editProcessingMethod,
                     ),
             )
         }
@@ -300,14 +301,14 @@ internal fun CategoryContent(
                     AfternoteEditorReceiverSection(
                         afternoteEditReceivers = form.afternoteEditReceivers,
                         onAddClick = onNavigateToSelectReceiver,
-                        onItemDeleteClick = state::onAfternoteEditorReceiverDelete,
+                        onItemDeleteClick = state.deleteReceiver,
                     ),
                 processingMethodSection =
                     ProcessingMethodSection(
                         items = form.processingMethods,
-                        onItemDeleteClick = state::deleteProcessingMethod,
-                        onItemAdded = state::addProcessingMethod,
-                        onItemEdited = state::editProcessingMethod,
+                        onItemDeleteClick = state.deleteProcessingMethod,
+                        onItemAdded = state.addProcessingMethod,
+                        onItemEdited = state.editProcessingMethod,
                     ),
             )
         }
@@ -321,9 +322,9 @@ private fun EditorContentSocialPreview() {
         val state = rememberAfternoteEditorState()
         EditorContent(
             state = state,
-            form = state.currentForm().copy(selectedCategory = EditorCategory.SOCIAL),
+            form = state.currentForm().copy(categoryForm = CategoryForm.pristineFor(EditorCategory.SOCIAL)),
             liveSongs = emptyList(),
-            onNavigateToAddSong = {},
+            onNavigateToMemorialPlaylist = {},
             onNavigateToSelectReceiver = {},
             onPhotoAddClick = {},
             onVideoAddClick = {},
@@ -339,9 +340,9 @@ private fun EditorContentBusinessPreview() {
         val state = rememberAfternoteEditorState()
         EditorContent(
             state = state,
-            form = state.currentForm().copy(selectedCategory = EditorCategory.BUSINESS),
+            form = state.currentForm().copy(categoryForm = CategoryForm.pristineFor(EditorCategory.BUSINESS)),
             liveSongs = emptyList(),
-            onNavigateToAddSong = {},
+            onNavigateToMemorialPlaylist = {},
             onNavigateToSelectReceiver = {},
             onPhotoAddClick = {},
             onVideoAddClick = {},
@@ -357,9 +358,9 @@ private fun EditorContentGalleryPreview() {
         val state = rememberAfternoteEditorState()
         EditorContent(
             state = state,
-            form = state.currentForm().copy(selectedCategory = EditorCategory.GALLERY),
+            form = state.currentForm().copy(categoryForm = CategoryForm.pristineFor(EditorCategory.GALLERY)),
             liveSongs = emptyList(),
-            onNavigateToAddSong = {},
+            onNavigateToMemorialPlaylist = {},
             onNavigateToSelectReceiver = {},
             onPhotoAddClick = {},
             onVideoAddClick = {},
@@ -375,9 +376,9 @@ private fun EditorContentMemorialPreview() {
         val state = rememberAfternoteEditorState()
         EditorContent(
             state = state,
-            form = state.currentForm().copy(selectedCategory = EditorCategory.MEMORIAL),
+            form = state.currentForm().copy(categoryForm = CategoryForm.pristineFor(EditorCategory.MEMORIAL)),
             liveSongs = emptyList(),
-            onNavigateToAddSong = {},
+            onNavigateToMemorialPlaylist = {},
             onNavigateToSelectReceiver = {},
             onPhotoAddClick = {},
             onVideoAddClick = {},

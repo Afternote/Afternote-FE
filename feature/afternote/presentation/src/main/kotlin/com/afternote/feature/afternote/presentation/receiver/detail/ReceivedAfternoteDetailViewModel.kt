@@ -58,10 +58,22 @@ class ReceivedAfternoteDetailViewModel
             } else {
                 internalState.update {
                     it.copy(
-                        loadPhase = LoadPhase.Failed(messageRes = R.string.afternote_detail_invalid_id),
+                        loadPhase =
+                            LoadPhase.Failed(
+                                messageRes = R.string.afternote_detail_invalid_id,
+                                canRetry = false,
+                            ),
                     )
                 }
             }
+        }
+
+        /**
+         * 조회 실패 화면의 재시도 진입점. 상세 ID 가 없는 실패는 재요청해도 결과가 같으므로 무시한다
+         * (그 상태의 [ReceivedAfternoteDetailUiState.Error.canRetry] 는 `false` 라 화면에도 버튼이 없다).
+         */
+        fun retry() {
+            loadDetail(afternoteIdFromNav ?: return)
         }
 
         private fun loadDetail(afternoteId: Long) {
@@ -80,6 +92,7 @@ class ReceivedAfternoteDetailViewModel
                                 loadPhase =
                                     LoadPhase.Failed(
                                         messageRes = R.string.afternote_detail_load_error,
+                                        canRetry = true,
                                     ),
                             )
                         }
@@ -105,6 +118,7 @@ class ReceivedAfternoteDetailViewModel
 
             data class Failed(
                 val messageRes: Int? = null,
+                val canRetry: Boolean = false,
             ) : LoadPhase
         }
 
@@ -124,6 +138,7 @@ class ReceivedAfternoteDetailViewModel
                 is LoadPhase.Failed -> {
                     ReceivedAfternoteDetailUiState.Error(
                         messageRes = phase.messageRes,
+                        canRetry = phase.canRetry,
                     )
                 }
             }
