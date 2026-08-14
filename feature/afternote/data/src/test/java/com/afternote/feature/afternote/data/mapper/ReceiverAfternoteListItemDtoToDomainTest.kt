@@ -23,7 +23,7 @@ class ReceiverAfternoteListItemDtoToDomainTest {
             ).toDomain()
 
         assertEquals(9L, result.id)
-        assertEquals("사진첩", result.title)
+        assertEquals("사진첩", result.serviceName)
         assertEquals(AfternoteType.GALLERY_AND_FILES, result.type)
         assertEquals("2025.11.26", result.lastUpdatedAt)
     }
@@ -59,7 +59,7 @@ class ReceiverAfternoteListItemDtoToDomainTest {
 
     private fun resp(
         id: Long = 1L,
-        title: String? = "t",
+        title: String = "t",
         category: String? = "SOCIAL",
         createdAt: String? = "2025-01-01T00:00:00",
     ) = ReceivedAfternoteDto(
