@@ -36,7 +36,6 @@ class AfternoteEditorState(
     private val getCurrentForm: () -> EditorFormState,
     private val setCategory: (EditorCategory) -> Unit,
     private val setService: (String) -> Unit,
-    private val addReceiver: (name: String, label: String) -> Unit,
     private val addReceiverIfAbsent: (receiverId: String, name: String, label: String) -> Unit,
     private val applyPrefill: (EditorFormPrefill) -> Unit,
     /** 영정 사진·추모 영상 picker 결과 (`Uri?.toString()`). */
@@ -58,12 +57,9 @@ class AfternoteEditorState(
 
     val idState: TextFieldState get() = ui.idState
     val passwordState: TextFieldState get() = ui.passwordState
-    val afternoteEditReceiverNameState: TextFieldState get() = ui.afternoteEditReceiverNameState
-    val phoneNumberState: TextFieldState get() = ui.phoneNumberState
     val customServiceNameState: TextFieldState get() = ui.customServiceNameState
 
     val activeDialog get() = ui.activeDialog
-    val relationshipSelectedValue get() = ui.relationshipSelectedValue
     val categoryDropdownExpanded get() = ui.categoryDropdownExpanded
     val serviceDropdownExpanded get() = ui.serviceDropdownExpanded
 
@@ -92,8 +88,6 @@ class AfternoteEditorState(
         }
     }
 
-    fun showAddAfternoteEditorReceiverDialog() = ui.showAddAfternoteEditorReceiverDialog()
-
     fun dismissDialog() = ui.dismissDialog()
 
     fun onAddCustomService() {
@@ -105,18 +99,6 @@ class AfternoteEditorState(
         setService(serviceName)
         dismissDialog()
     }
-
-    fun onAddAfternoteEditorReceiver() {
-        val name =
-            ui.afternoteEditReceiverNameState.text
-                .toString()
-                .trim()
-        if (name.isEmpty()) return
-        addReceiver(name, ui.relationshipSelectedValue)
-        dismissDialog()
-    }
-
-    fun onRelationshipSelected(relationship: String) = ui.onRelationshipSelected(relationship)
 
     fun addReceiverById(
         receiverId: Long,
@@ -193,7 +175,6 @@ fun rememberAfternoteEditorState(
     setService: (String) -> Unit,
     setMemorialPhoto: (String?) -> Unit,
     setMemorialVideo: (String?) -> Unit,
-    addReceiver: (name: String, label: String) -> Unit,
     addReceiverIfAbsent: (receiverId: String, name: String, label: String) -> Unit,
     applyPrefill: (EditorFormPrefill) -> Unit,
     setMemorialThumbnail: (String?) -> Unit,
@@ -207,16 +188,12 @@ fun rememberAfternoteEditorState(
 ): AfternoteEditorState {
     val idState = rememberTextFieldState()
     val passwordState = rememberTextFieldState()
-    val afternoteEditReceiverNameState = rememberTextFieldState()
-    val phoneNumberState = rememberTextFieldState()
     val customServiceNameState = rememberTextFieldState()
 
     val ui =
         rememberAfternoteEditorUiHolder(
             idState = idState,
             passwordState = passwordState,
-            afternoteEditReceiverNameState = afternoteEditReceiverNameState,
-            phoneNumberState = phoneNumberState,
             customServiceNameState = customServiceNameState,
         )
 
@@ -228,7 +205,6 @@ fun rememberAfternoteEditorState(
             setService = setService,
             setMemorialPhoto = setMemorialPhoto,
             setMemorialVideo = setMemorialVideo,
-            addReceiver = addReceiver,
             addReceiverIfAbsent = addReceiverIfAbsent,
             applyPrefill = applyPrefill,
             setMemorialThumbnail = setMemorialThumbnail,
@@ -258,7 +234,6 @@ fun rememberAfternoteEditorState(): AfternoteEditorState {
         setService = { service -> mutate { it.withService(service) } },
         setMemorialPhoto = { uri -> mutate { it.withMemorialPhoto(uri) } },
         setMemorialVideo = { url -> mutate { it.withMemorialVideo(url) } },
-        addReceiver = { name, label -> mutate { it.withReceiverAdded(name = name, label = label) } },
         addReceiverIfAbsent = { receiverId, name, label ->
             mutate { it.withReceiverAddedIfAbsent(receiverId = receiverId, name = name, label = label) }
         },

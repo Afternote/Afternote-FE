@@ -40,7 +40,6 @@ import com.afternote.feature.afternote.presentation.author.editor.state.withPref
 import com.afternote.feature.afternote.presentation.author.editor.state.withProcessingMethodAdded
 import com.afternote.feature.afternote.presentation.author.editor.state.withProcessingMethodDeleted
 import com.afternote.feature.afternote.presentation.author.editor.state.withProcessingMethodEdited
-import com.afternote.feature.afternote.presentation.author.editor.state.withReceiverAdded
 import com.afternote.feature.afternote.presentation.author.editor.state.withReceiverAddedIfAbsent
 import com.afternote.feature.afternote.presentation.author.editor.state.withReceiverDeleted
 import com.afternote.feature.afternote.presentation.author.editor.state.withReceiversReplacedIfEmpty
@@ -248,11 +247,6 @@ class AfternoteEditorViewModel
         fun setMemorialThumbnail(dataUrl: String?) = mutateForm { it.withMemorialThumbnail(dataUrl) }
 
         fun setMemorialPlaylistSongs(songs: List<Song>) = mutateForm { it.withMemorialPlaylistSongs(songs) }
-
-        fun addReceiver(
-            name: String,
-            label: String,
-        ) = mutateForm { it.withReceiverAdded(name = name, label = label) }
 
         fun deleteReceiver(receiverId: String) = mutateForm { it.withReceiverDeleted(receiverId) }
 

@@ -44,24 +44,10 @@ internal fun EditorFormState.withMemorialThumbnail(dataUrl: String?): EditorForm
 
 internal fun EditorFormState.withMemorialPlaylistSongs(songs: List<Song>): EditorFormState = mapMemorial { it.copy(playlistSongs = songs) }
 
-internal fun EditorFormState.withReceiverAdded(
-    name: String,
-    label: String,
-): EditorFormState {
-    val next =
-        AfternoteEditorReceiver(
-            id = nextLocalId(afternoteEditReceivers.map { it.id }),
-            name = name,
-            label = label,
-        )
-    return copy(afternoteEditReceivers = afternoteEditReceivers + next)
-}
-
 /**
  * 목록에 이미 있는 수치 id 중 최대값 + 1.
  *
  * `size + 1` 은 중간 항목을 지운 뒤 추가할 때 남은 id 와 겹친다 — 겹치면 삭제·수정이 두 항목에 함께 걸린다.
- * 수신자 목록은 서버 receiverId 와 로컬 임시 id 가 섞이므로 최대값 기준이어야 겹칠 확률도 낮다.
  */
 private fun nextLocalId(existing: List<String>): String {
     val max = existing.maxOfOrNull(String::toLong) ?: 0L

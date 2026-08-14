@@ -266,7 +266,7 @@ internal fun CategoryContent(
                 recipientSection =
                     AfternoteEditorReceiverSection(
                         afternoteEditReceivers = form.afternoteEditReceivers,
-                        onAddClick = state::showAddAfternoteEditorReceiverDialog,
+                        onAddClick = onNavigateToSelectReceiver,
                         onItemDeleteClick = state.deleteReceiver,
                     ),
                 processingMethodSection =
