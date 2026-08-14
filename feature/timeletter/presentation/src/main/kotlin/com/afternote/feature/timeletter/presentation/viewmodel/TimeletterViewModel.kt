@@ -80,10 +80,10 @@ class TimeletterViewModel
         }
 
         fun deleteTimeLetter(timeLetterId: Long) {
-            val currentState = _uiState.value as? TimeletterUiState.Success ?: return
-            if (currentState.isDeleting) return
+            val stateBeforeDelete = _uiState.value as? TimeletterUiState.Success ?: return
+            if (stateBeforeDelete.isDeleting) return
             _uiState.value =
-                currentState.copy(
+                stateBeforeDelete.copy(
                     isDeleting = true,
                     showDeleteFailure = false,
                 )
@@ -97,14 +97,12 @@ class TimeletterViewModel
                         }
                         load()
                     }.onFailure {
-                        val latestState = _uiState.value
-                        if (latestState is TimeletterUiState.Success) {
-                            _uiState.value =
-                                latestState.copy(
-                                    isDeleting = false,
-                                    showDeleteFailure = true,
-                                )
-                        }
+                        val latestSuccess = _uiState.value as? TimeletterUiState.Success
+                        _uiState.value =
+                            (latestSuccess ?: stateBeforeDelete).copy(
+                                isDeleting = false,
+                                showDeleteFailure = true,
+                            )
                     }
             }
         }
