@@ -64,18 +64,26 @@ class TokenReissuer
                 }
 
                 val rotationResult = runBlocking { authRepository.get().rotateToken() }
-                val newBundle = rotationResult.getOrNull()
-                val newAccessToken = newBundle?.accessToken
-
-                return if (newAccessToken.isNullOrEmpty()) {
+                val rotationException = rotationResult.exceptionOrNull()
+                if (rotationException != null) {
                     // 실패한 토큰의 deadline 을 지워 선제 재시도 반복을 막는다.
                     expiryTracker.clear()
-                    Outcome.Failed
-                } else {
-                    // 만료 정보가 없으면 이전 토큰의 deadline 을 남기지 않는다.
-                    newBundle.expiresIn?.let(expiryTracker::record) ?: expiryTracker.clear()
-                    Outcome.Rotated(newAccessToken)
+                    val failure = classifyFailure(rotationException)
+                    reportObservableFailure(failure)
+                    return failure
                 }
+
+                val newBundle = rotationResult.getOrThrow()
+                if (newBundle.accessToken.isEmpty()) {
+                    expiryTracker.clear()
+                    return Outcome.UnexpectedFailure(
+                        IllegalStateException("Token rotation returned an empty access token"),
+                    )
+                }
+
+                // 만료 정보가 없으면 이전 토큰의 deadline 을 남기지 않는다.
+                newBundle.expiresIn?.let(expiryTracker::record) ?: expiryTracker.clear()
+                return Outcome.Rotated(newBundle.accessToken)
             }
         }
 

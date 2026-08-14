@@ -161,6 +161,26 @@ class TokenReissuerTest {
     }
 
     @Test
+    fun `회전 성공했지만 액세스 토큰이 빈 값 - UnexpectedFailure 반환`() {
+        tracker.record(expiresInSeconds = 30)
+        val reporter = FakeErrorReporter()
+        val repository =
+            FakeAuthRepository(
+                accessToken = "old-token",
+                onRotateToken = {
+                    Result.success(TokenBundle(accessToken = "", refreshToken = "refresh-token"))
+                },
+            )
+
+        val outcome = reissuer(repository, reporter).reissue(expectedAccessToken = "old-token")
+
+        assertTrue(outcome is TokenReissuer.Outcome.UnexpectedFailure)
+        assertFalse(tracker.isExpiringSoon())
+        assertTrue(reporter.writtenFailures.isEmpty())
+        assertEquals(0, repository.clearSessionCallCount)
+    }
+
+    @Test
     fun `저장 토큰이 빈 값 - TokenAlreadyChanged 가 아니라 회전 시도로 진행`() {
         val repository =
             FakeAuthRepository(
