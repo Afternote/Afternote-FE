@@ -34,7 +34,6 @@ import com.afternote.core.ui.KoreanConsonantIndex
 import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
-import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.ReceiverListItem
