@@ -63,20 +63,45 @@ class TokenReissuer
                     return Outcome.TokenAlreadyChanged(currentToken)
                 }
 
-                val newBundle = runBlocking { authRepository.get().rotateToken() }.getOrNull()
+                val rotationResult = runBlocking { authRepository.get().rotateToken() }
+                val newBundle = rotationResult.getOrNull()
                 val newAccessToken = newBundle?.accessToken
 
                 return if (newAccessToken.isNullOrEmpty()) {
-                    // 회전 실패 — 기존 deadline 은 이전(곧 만료될) 토큰 기준이라 남겨두면 매 요청마다
-                    // 선제 reissue 를 재시도(폭주)한다. 비워서 401 사후 대응(TokenAuthenticator)에 맡긴다.
+                    // 실패한 토큰의 deadline 을 지워 선제 재시도 반복을 막는다.
                     expiryTracker.clear()
                     Outcome.Failed
                 } else {
-                    // 회전 성공 — 발급 응답(#410)의 expiresIn 으로 새 토큰 deadline 을 갱신한다.
-                    // 서버가 생략하면(null) 비워, 다음 발급 응답이 채울 때까지 선제 갱신을 쉰다.
+                    // 만료 정보가 없으면 이전 토큰의 deadline 을 남기지 않는다.
                     newBundle.expiresIn?.let(expiryTracker::record) ?: expiryTracker.clear()
                     Outcome.Rotated(newAccessToken)
                 }
             }
+        }
+
+        private fun classifyFailure(exception: Throwable): Outcome.Failure =
+            when (exception) {
+                is ApiException -> classifyHttpFailure(exception, exception.status)
+                is HttpException -> classifyHttpFailure(exception, exception.code())
+                is IOException -> Outcome.TransportFailure(exception)
+                else -> Outcome.UnexpectedFailure(exception)
+            }
+
+        private fun classifyHttpFailure(
+            exception: Throwable,
+            status: Int,
+        ): Outcome.Failure =
+            when (status) {
+                401, 403 -> Outcome.AuthenticationRejected(exception)
+                in 500..599 -> Outcome.ServerFailure(exception)
+                else -> Outcome.UnexpectedFailure(exception)
+            }
+
+        private fun reportObservableFailure(failure: Outcome.Failure) {
+            if (failure !is Outcome.TransportFailure && failure !is Outcome.ServerFailure) return
+            errorReporter.recordFailure(
+                throwable = failure.exception,
+                attributes = mapOf("auth_stage" to "token_reissue"),
+            )
         }
     }
