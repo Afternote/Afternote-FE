@@ -120,7 +120,6 @@
     <string name="afternote_editor_label_service_name">서비스명</string>
     <!-- 서비스명 미선택 placeholder — %1$s 는 [EditorCategory.displayLabel] (시안 700:36383: "소셜네트워크 선택하기") -->
     <string name="afternote_editor_service_placeholder">%1$s 선택하기</string>
-    <string name="afternote_editor_label_receiver_relation">수신자와의 관계</string>
 
     <string name="afternote_editor_message_field_title">제목</string>
     <string name="afternote_editor_message_field_body">내용</string>
@@ -185,6 +184,8 @@
     <string name="receiver_verify_complete_confirm">확인</string>
     <string name="receiver_verify_documents_required">사망진단서 또는 가족관계증명서 중 하나 이상 업로드해주세요.</string>
     <string name="receiver_verify_document_upload_failed">서류 업로드에 실패했습니다.</string>
+    <string name="receiver_verify_document_read_failed">선택한 파일을 불러오지 못했습니다. 다시 선택해 주세요.</string>
+    <string name="receiver_verify_document_upload_in_progress">서류 업로드가 진행 중입니다. 완료된 후 신청해 주세요.</string>
     <string name="receiver_verify_submit_failed">열람 신청에 실패했습니다.</string>
     <string name="receiver_verify_complete_title">열람 신청 완료</string>
     <string name="receiver_verify_status_pending">현재 서류 확인중입니다.\n빠르게 처리하여 열람하실 수 있도록 하겠습니다.</string>
@@ -232,6 +233,7 @@
     <string name="afternote_detail_extra_receivers_label">추가 수신자</string>
     <string name="afternote_detail_invalid_id">잘못된 항목 ID입니다.</string>
     <string name="afternote_detail_load_error">상세 정보를 불러오지 못했습니다.</string>
+    <string name="afternote_detail_retry">다시 시도하기</string>
     <string name="afternote_detail_delete_failed">삭제에 실패했습니다.</string>
     <string name="afternote_detail_deleting">삭제 중</string>
     <string name="afternote_edit_item_not_found">항목을 찾을 수 없습니다.</string>
@@ -243,6 +245,7 @@
     <string name="afternote_validation_gallery_receivers_required">수신자를 한 명 이상 등록해 주세요. 설정에서 수신자를 등록해 주세요.</string>
     <string name="afternote_validation_receivers_required">수신자를 한 명 이상 선택해 주세요.</string>
     <string name="afternote_validation_playlist_songs_required">플레이리스트에 노래를 한 곡 이상 추가해 주세요.</string>
+    <string name="afternote_validation_leave_message_body_required">남기실 말씀의 내용을 입력해 주세요.</string>
     <string name="afternote_default_playlist_song_title">추억 플레이리스트 곡</string>
 
     <string name="time_letter_detail_send_date">발송 예정일: %1$s</string>
@@ -290,13 +293,6 @@
     <!-- Afternote editor (author) — UI strings -->
     <string name="afternote_editor_screen_title">애프터노트 작성하기</string>
     <string name="afternote_editor_submit">등록</string>
-    <string name="afternote_editor_receiver_name_label">수신자 이름</string>
-    <string name="afternote_editor_add_by_phone_label">전화번호로 추가하기</string>
-    <string name="afternote_editor_contact_import_section">연락처에서 추가하기</string>
-    <string name="afternote_editor_import_contacts_button">연락처 가져오기</string>
-    <string name="afternote_editor_relationship_friend">친구</string>
-    <string name="afternote_editor_relationship_family">가족</string>
-    <string name="afternote_editor_relationship_lover">연인</string>
     <string name="afternote_editor_custom_service_dialog_title">직접 입력하기</string>
     <string name="afternote_editor_custom_service_name_label">추가 서비스명</string>
     <string name="afternote_editor_playlist_screen_title">추억 플레이리스트</string>

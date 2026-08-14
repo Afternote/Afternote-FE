@@ -23,7 +23,6 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.body.EmptyListBody
 import com.afternote.feature.afternote.presentation.shared.body.ErrorListBody
 import com.afternote.feature.afternote.presentation.shared.body.LoadingListBody
@@ -35,8 +34,8 @@ import kotlinx.coroutines.flow.flowOf
 @Composable
 fun AfternoteHomeScreen(
     items: LazyPagingItems<ListItemUiModel>,
-    selectedCategory: AfternoteCategory,
-    onCategorySelected: (AfternoteCategory) -> Unit,
+    selectedCategory: AfternoteType?,
+    onCategorySelected: (AfternoteType?) -> Unit,
     onListItemClick: (id: String, type: AfternoteType) -> Unit,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
@@ -85,7 +84,7 @@ fun AfternoteHomeScreen(
                 }
 
                 // 카테고리 필터 0건도 이 경로에 남겨 카테고리 행을 유지한다(막다른 상태 방지).
-                items.itemCount > 0 || selectedCategory != AfternoteCategory.ALL -> {
+                items.itemCount > 0 || selectedCategory != null -> {
                     InfiniteListBody(
                         modifier = bodyModifier,
                         items = items,
@@ -131,7 +130,7 @@ private fun AfternoteHomeScreenPreview() {
             ).collectAsLazyPagingItems()
         AfternoteHomeScreen(
             items = items,
-            selectedCategory = AfternoteCategory.ALL,
+            selectedCategory = null,
             onCategorySelected = {},
             onListItemClick = { _, _ -> },
             onFabClick = {},
@@ -156,7 +155,7 @@ private fun AfternoteHomeScreenLoadingPreview() {
             ).collectAsLazyPagingItems()
         AfternoteHomeScreen(
             items = items,
-            selectedCategory = AfternoteCategory.ALL,
+            selectedCategory = null,
             onCategorySelected = {},
             onListItemClick = { _, _ -> },
             onFabClick = {},

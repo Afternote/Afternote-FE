@@ -4,4 +4,5 @@
     <string name="timeletter_delete_confirm">예</string>
     <string name="timeletter_delete_dismiss">아니오</string>
     <string name="timeletter_delete_failure">타임레터를 삭제하지 못했습니다. 다시 시도해 주세요.</string>
+    <string name="timeletter_recipient_search_placeholder">이름으로 검색하기</string>
 </resources>

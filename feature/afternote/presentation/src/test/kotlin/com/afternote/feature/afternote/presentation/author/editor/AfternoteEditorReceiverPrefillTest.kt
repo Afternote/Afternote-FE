@@ -56,7 +56,7 @@ class AfternoteEditorReceiverPrefillTest {
             credentials = null,
             receivers = receivers.toList(),
             processingMethods = emptyList(),
-            leaveMessage = null,
+            leaveMessageBlocks = emptyList(),
             memorial = null,
         )
 }

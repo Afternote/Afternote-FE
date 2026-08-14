@@ -1,8 +1,9 @@
 package com.afternote.feature.onboarding.presentation.login
 
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.error.LoginRejectedException
+import com.afternote.core.domain.error.InvalidLoginCredentialsException
 import com.afternote.core.domain.error.NetworkUnavailableException
+import com.afternote.core.domain.error.SocialLoginRejectedException
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.domain.usecase.auth.LoginUseCase
 import com.afternote.core.model.Session
@@ -20,17 +21,19 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.net.UnknownHostException
 
 /**
- * [LoginViewModel] 실패 안내 계약 회귀 가드 (#517, PR #647 리뷰 반영).
+ * [LoginViewModel] 실패 안내 계약 회귀 가드 (#628).
  *
- * 계약 — 전송 계층 실패([NetworkUnavailableException])는 네트워크 안내 리소스로, 사유가 확인된
- * 거절([LoginRejectedException])은 서버 문구로 표시하고, **그 밖의 예외는 원문을 쓰지 않고**
- * 일반 문구로 고정한다. 실패 시 [LoginUiState.isLoading] 을 해제하고
- * [LoginViewModel.onErrorConsumed] 가 안내를 리셋한다.
+ * 계약 — 자격 거절([InvalidLoginCredentialsException])은 인라인 상태
+ * ([LoginUiState.hasCredentialError], 입력 변경으로 해제), 전송 계층 실패
+ * ([NetworkUnavailableException])는 재시도 팝업([LoginUiState.showNetworkErrorPopup]),
+ * 소셜 거절([SocialLoginRejectedException])과 그 밖의 예외는 **원문을 쓰지 않고**
+ * 리소스 문구 스낵바로 고정한다. 실패 시 [LoginUiState.isLoading] 을 해제한다.
  *
  * [LoginUseCase] 는 실물 사용 — Repository Result 가 VM 상태로 번역되는 경로 전체를 가드한다.
  */
@@ -67,7 +70,7 @@ class LoginViewModelTest {
     }
 
     @Test
-    fun `전송 계층 실패 - 네트워크 안내 리소스로 고정하고 isLoading 해제`() {
+    fun `전송 계층 실패 - 재시도 팝업 상태로 표시하고 isLoading 해제`() {
         val viewModel =
             viewModel(onDefaultLogin = {
                 Result.failure(NetworkUnavailableException(UnknownHostException("Unable to resolve host")))
@@ -76,23 +79,80 @@ class LoginViewModelTest {
         viewModel.attemptEmailLogin()
 
         val state = viewModel.uiState.value
-        assertEquals(UiText.Resource(R.string.onboarding_network_error), state.errorMessage)
+        assertTrue(state.showNetworkErrorPopup)
+        assertNull(state.errorMessage)
         assertFalse(state.isLoading)
     }
 
     @Test
-    fun `사유 확인된 거절 - 서버 문구를 표시값으로 운반하고 isLoading 해제`() {
-        val serverMessage = "아이디 또는 비밀번호가 일치하지 않습니다."
+    fun `retryLogin - 팝업을 닫고 마지막 시도를 같은 자격으로 재실행`() {
+        var attempts = 0
         val viewModel =
             viewModel(onDefaultLogin = {
-                Result.failure(LoginRejectedException(serverMessage, Exception("origin")))
+                attempts++
+                Result.failure(NetworkUnavailableException(UnknownHostException("Unable to resolve host")))
+            })
+        viewModel.attemptEmailLogin()
+
+        viewModel.retryLogin()
+
+        assertEquals(2, attempts)
+    }
+
+    @Test
+    fun `onNetworkErrorDismissed - 재실행 없이 팝업만 닫음`() {
+        var attempts = 0
+        val viewModel =
+            viewModel(onDefaultLogin = {
+                attempts++
+                Result.failure(NetworkUnavailableException(UnknownHostException("Unable to resolve host")))
+            })
+        viewModel.attemptEmailLogin()
+
+        viewModel.onNetworkErrorDismissed()
+
+        assertFalse(viewModel.uiState.value.showNetworkErrorPopup)
+        assertEquals(1, attempts)
+    }
+
+    @Test
+    fun `자격 거절 - 인라인 상태로 표시하고 스낵바는 비움`() {
+        val viewModel =
+            viewModel(onDefaultLogin = {
+                Result.failure(InvalidLoginCredentialsException(Exception("origin")))
             })
 
         viewModel.attemptEmailLogin()
 
         val state = viewModel.uiState.value
-        assertEquals(UiText.Dynamic(serverMessage), state.errorMessage)
+        assertTrue(state.hasCredentialError)
+        assertNull(state.errorMessage)
         assertFalse(state.isLoading)
+    }
+
+    @Test
+    fun `자격 거절 - 입력이 바뀌면 인라인 표시 해제`() {
+        val viewModel =
+            viewModel(onDefaultLogin = {
+                Result.failure(InvalidLoginCredentialsException(Exception("origin")))
+            })
+        viewModel.attemptEmailLogin()
+
+        viewModel.updatePassword("new-pw")
+
+        assertFalse(viewModel.uiState.value.hasCredentialError)
+    }
+
+    @Test
+    fun `소셜 거절 - 서버 문구 대신 자체 리소스 문구로 표시`() {
+        val viewModel =
+            viewModel(onDefaultLogin = {
+                Result.failure(SocialLoginRejectedException(Exception("origin")))
+            })
+
+        viewModel.attemptEmailLogin()
+
+        assertEquals(UiText.Resource(R.string.login_social_rejected), viewModel.uiState.value.errorMessage)
     }
 
     @Test

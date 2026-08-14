@@ -51,7 +51,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 
-private const val TAG = "FuneralVideoUpload"
+private const val TAG = "MemorialVideoUpload"
 
 /**
  * 장례식에 남길 영상 추가 컴포넌트
@@ -67,7 +67,7 @@ private const val TAG = "FuneralVideoUpload"
  *   화면에는 썸네일 자리가 비는 것 외에 아무 표시도 하지 않으므로, 호출처가 개발자 텔레메트리로 남긴다.
  */
 @Composable
-fun FuneralVideoUpload(
+fun MemorialVideoUpload(
     modifier: Modifier = Modifier,
     label: String? = null,
     videoUrl: String? = null,
@@ -232,19 +232,19 @@ fun FuneralVideoUpload(
 
 @Preview(showBackground = true)
 @Composable
-private fun FuneralVideoUploadPreview() {
+private fun MemorialVideoUploadPreview() {
     AfternoteTheme {
         Column(
             modifier = Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             // 영상 없음
-            FuneralVideoUpload(
+            MemorialVideoUpload(
                 onAddVideoClick = {},
             )
 
             // 영상 있음 (실기기에서 선택 시 썸네일 표시)
-            FuneralVideoUpload(
+            MemorialVideoUpload(
                 videoUrl = "test",
                 onAddVideoClick = {},
             )

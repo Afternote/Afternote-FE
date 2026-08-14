@@ -84,6 +84,7 @@ private fun TextFieldShort(
     onImeAction: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource? = null,
     focusRequester: FocusRequester? = null,
+    isError: Boolean = false,
 ) {
     BasicTextField(
         state = state,
@@ -111,7 +112,10 @@ private fun TextFieldShort(
         textStyle = AfternoteDesign.typography.textField.copy(color = AfternoteDesign.colors.gray9), // 👈 무조건 textField 스타일 고정!
         cursorBrush = SolidColor(AfternoteDesign.colors.black),
         decorator = { innerTextField ->
-            AfternoteFieldContainer(modifier = Modifier.fillMaxWidth()) {
+            AfternoteFieldContainer(
+                modifier = Modifier.fillMaxWidth(),
+                isError = isError,
+            ) {
                 Row(
                     modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically,
@@ -183,6 +187,7 @@ fun AfternoteTextField(
     inputTransformation: InputTransformation? = null,
     outputTransformation: OutputTransformation? = null,
     focusRequester: FocusRequester? = null,
+    isError: Boolean = false,
 ) {
     TextFieldShort(
         state = state,
@@ -194,6 +199,7 @@ fun AfternoteTextField(
         inputTransformation = inputTransformation,
         outputTransformation = outputTransformation,
         focusRequester = focusRequester,
+        isError = isError,
         trailingContent =
             when (type) {
                 TextFieldType.Search -> {
