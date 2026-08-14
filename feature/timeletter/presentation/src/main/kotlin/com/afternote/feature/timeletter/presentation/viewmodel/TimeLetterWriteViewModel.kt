@@ -82,7 +82,7 @@ class TimeLetterWriteViewModel
         }
 
         fun updateDraftTitle(title: String) {
-            _uiState.update { state -> state.withDraftTitle(title) }
+            _uiState.update { state -> state.copy(draftTitle = title) }
         }
 
         fun updateDraftContent(
@@ -90,7 +90,10 @@ class TimeLetterWriteViewModel
             textContents: Map<Long, String>,
         ) {
             _uiState.update { state ->
-                state.withDraftContent(title, textContents)
+                state.copy(
+                    draftTitle = title,
+                    draftTextContents = state.draftTextContents + textContents,
+                )
             }
         }
 
@@ -99,7 +102,9 @@ class TimeLetterWriteViewModel
             content: String,
         ) {
             _uiState.update { state ->
-                state.withDraftTextContent(blockId, content)
+                state.copy(
+                    draftTextContents = state.draftTextContents + (blockId to content),
+                )
             }
         }
 
@@ -500,19 +505,3 @@ class TimeLetterWriteViewModel
             const val FREE_PLAN_REGISTER_LIMIT = 3
         }
     }
-
-internal fun TimeLetterWriteUiState.withDraftTitle(title: String): TimeLetterWriteUiState = copy(draftTitle = title)
-
-internal fun TimeLetterWriteUiState.withDraftContent(
-    title: String,
-    textContents: Map<Long, String>,
-): TimeLetterWriteUiState =
-    copy(
-        draftTitle = title,
-        draftTextContents = draftTextContents + textContents,
-    )
-
-internal fun TimeLetterWriteUiState.withDraftTextContent(
-    blockId: Long,
-    content: String,
-): TimeLetterWriteUiState = copy(draftTextContents = draftTextContents + (blockId to content))

@@ -45,6 +45,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.SnapshotStateMap
@@ -144,9 +145,10 @@ fun TimeLetterWriteScreen(
         onErrorShown()
     }
 
+    val currentOnTitleChanged by rememberUpdatedState(onTitleChanged)
     LaunchedEffect(titleState) {
         snapshotFlow { titleState.text.toString() }
-            .collect(onTitleChanged)
+            .collect { currentOnTitleChanged(it) }
     }
 
     if (uiState.isLoadingEditingLetter) {
@@ -173,6 +175,8 @@ fun TimeLetterWriteScreen(
         return
     }
 
+    // Apply the loaded title once per editing destination. Keying this to draftTitle would
+    // overwrite the user's input whenever the draft is synchronized back to the ViewModel.
     LaunchedEffect(uiState.editingTimeLetterId) {
         if (uiState.editingTimeLetterId != null) {
             titleState.edit {
@@ -479,9 +483,10 @@ private fun TextBlockItem(
         remember(blockId) {
             textBlockStates.getOrPut(blockId) { TextFieldState(initialText) }
         }
+    val currentOnTextChanged by rememberUpdatedState(onTextChanged)
     LaunchedEffect(state) {
         snapshotFlow { state.text.toString() }
-            .collect(onTextChanged)
+            .collect { currentOnTextChanged(it) }
     }
     DisposableEffect(blockId) {
         onDispose { textBlockStates.remove(blockId) }

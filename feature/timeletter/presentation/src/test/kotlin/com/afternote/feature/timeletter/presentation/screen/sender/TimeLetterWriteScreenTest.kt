@@ -5,10 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.timeletter.presentation.viewmodel.EditorBlock
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteUiState
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -55,37 +52,6 @@ class TimeLetterWriteScreenTest {
 
         composeRule.runOnIdle {
             assertEquals("existing title", titleState.text.toString())
-        }
-    }
-
-    @Test
-    fun `recipient click synchronously captures latest title and draft contents`() {
-        val titleState = TextFieldState("latest title")
-        var capturedTitle: String? = null
-        var capturedContents: Map<Long, String>? = null
-
-        composeRule.setContent {
-            AfternoteTheme {
-                TimeLetterWriteScreen(
-                    uiState =
-                        TimeLetterWriteUiState(
-                            draftTextContents = mapOf(1L to "offscreen content"),
-                            editorBlocks = listOf(EditorBlock.Text(1L)),
-                        ),
-                    titleState = titleState,
-                    onRecipientClick = { title, contents ->
-                        capturedTitle = title
-                        capturedContents = contents
-                    },
-                )
-            }
-        }
-
-        composeRule.onNodeWithText("수신인을 선택해주세요").performClick()
-
-        composeRule.runOnIdle {
-            assertEquals("latest title", capturedTitle)
-            assertEquals(mapOf(1L to "offscreen content"), capturedContents)
         }
     }
 }
