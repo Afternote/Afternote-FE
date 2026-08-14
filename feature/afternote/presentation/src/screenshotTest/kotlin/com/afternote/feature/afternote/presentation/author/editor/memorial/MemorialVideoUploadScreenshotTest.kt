@@ -11,9 +11,9 @@ import com.android.tools.screenshot.PreviewTest
 @PreviewTest
 @Preview(showBackground = true)
 @Composable
-internal fun funeralVideoUploadEmptyScreenshot() {
+internal fun memorialVideoUploadEmptyScreenshot() {
     AfternoteTheme {
-        FuneralVideoUpload(
+        MemorialVideoUpload(
             modifier = Modifier.padding(16.dp),
             label = "장례 영상",
             videoUrl = null,

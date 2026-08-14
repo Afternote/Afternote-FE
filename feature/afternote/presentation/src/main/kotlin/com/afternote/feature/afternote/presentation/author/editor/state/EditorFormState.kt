@@ -16,10 +16,9 @@ internal val DEFAULT_EDITOR_MESSAGE_BLOCKS: List<EditorMessageTextBlock> =
 /**
  * 에디터 **비즈니스/도메인** 폼 상태.
  *
- * 필드를 개별 스트림으로 쪼개지 않고 하나의 불변 data class로 묶은 근거는 UI 레이어 가이드의
- * "Use a single UI state object to handle states that are related to each other" 다.
- * 쪼개는 편이 나은 경우는 가이드가 함께 못박은 예외 "Unrelated data types"(서로 독립적이고
- * 갱신 빈도까지 다른 상태)인데, 이 폼은 카테고리 선택·검증·저장 payload 가 서로를 읽으므로 해당하지 않는다.
+ * 전 카테고리 공용 필드만 직접 들고, 카테고리 전용 입력은 [categoryForm] 으로 분리한다 —
+ * UI 레이어 가이드가 단일 상태 객체의 예외로 못박은 "Unrelated data types" 에 해당한다.
+ * 이 분리로 카테고리 전환 시 이전 값 잔류가 구조적으로 불가능해진다 (선행 사고 #213).
  * https://developer.android.com/topic/architecture/ui-layer#define-ui-state
  *
  * [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel]의
@@ -31,31 +30,14 @@ internal val DEFAULT_EDITOR_MESSAGE_BLOCKS: List<EditorMessageTextBlock> =
  *
  * **남기실 말씀:** [leaveMessageBlocks]는 SavedState 스냅샷·Process Death 복원용 SSOT이며,
  * 화면의 [androidx.compose.foundation.text.input.TextFieldState]와 디바운스 동기화된다.
- *
- * **추억 플레이리스트:** [memorialPlaylistSongs]는 [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs] 와
- * 동기화되어 [androidx.lifecycle.SavedStateHandle] JSON에 포함된다 (프로세스 종료·설정 변경 복원).
- *
- * **Bundle 용량:** 스냅샷이 들어가는 SavedState/번들은 대략 500KB~1MB를 넘기면 [android.os.TransactionTooLargeException] 위험이 있다.
- * 사진·썸네일은 Base64/data URL 같은 거대 문자열이 아니라 짧은 HTTPS URL 또는 content [android.net.Uri] 문자열만 두는 것이 안전하다.
+ * 현재 MEMORIAL 화면은 이 섹션을 렌더하지 않지만 전 카테고리 공용 자리에 둔다 — 프리필 읽기 경로가
+ * 이미 카테고리와 무관하고, 추억 노트에도 이 입력을 추가하는 작업(#678)이 예정돼 있다.
  *
  * **서비스명:** [selectedService]의 `null`은 미선택(드롭다운 placeholder 노출) 상태이며, 등록 검증에서 차단된다.
- *
- * **처리 방법 리스트:** [processingMethods]는 계정 폼(소셜·비즈니스)과 갤러리 폼이 공유하는 단일 리스트다.
- * 화면엔 어느 시점에도 한 카테고리의 섹션만 렌더되고 카테고리 전환 시 리셋되므로([selectedService] 리셋과 같은 정책),
- * 카테고리별로 리스트를 나눌 이유가 없다.
  */
 data class EditorFormState(
     val loadedItemId: String? = null,
-    val selectedCategory: EditorCategory = EditorCategory.SOCIAL,
-    val selectedService: String? = null,
     val afternoteEditReceivers: List<AfternoteEditorReceiver> = emptyList(),
-    val processingMethods: List<ProcessingMethodItem> = emptyList(),
-    val pickedMemorialPhotoUri: String? = null,
-    val memorialVideoUrl: String? = null,
-    val memorialThumbnailUrl: String? = null,
-    val memorialPhotoUrl: String? = null,
-    /** 추모(PLAYLIST) 곡 목록 — 홀더와 양방향 동기화 후 스냅샷에 저장. */
-    val memorialPlaylistSongs: List<Song> = emptyList(),
     /** 저장·복원용 남기실 말씀 블록 (화면 TextField와 주기적으로 맞춘다). */
     val leaveMessageBlocks: List<EditorMessageTextBlock> = DEFAULT_EDITOR_MESSAGE_BLOCKS,
     /**
@@ -63,8 +45,24 @@ data class EditorFormState(
      * 타이핑 동기화(debounce)로 갱신할 때는 바꾸지 않는다.
      */
     val leaveMessageBlocksRestoreGeneration: Long = 0L,
+    val categoryForm: CategoryForm = CategoryForm.Social(),
 ) {
-    fun displayMemorialPhotoUri(): String? = pickedMemorialPhotoUri ?: memorialPhotoUrl
+    val selectedCategory: EditorCategory get() = categoryForm.category
+
+    val selectedService: String? get() = (categoryForm as? CategoryForm.WithServiceAndProcessingMethods)?.selectedService
+
+    val processingMethods: List<ProcessingMethodItem>
+        get() = (categoryForm as? CategoryForm.WithServiceAndProcessingMethods)?.processingMethods.orEmpty()
+
+    val memorialForm: CategoryForm.Memorial? get() = categoryForm as? CategoryForm.Memorial
+
+    val pickedMemorialPhotoUri: String? get() = memorialForm?.pickedPhotoUri
+    val memorialVideoUrl: String? get() = memorialForm?.videoUrl
+    val memorialThumbnailUrl: String? get() = memorialForm?.thumbnailUrl
+    val memorialPhotoUrl: String? get() = memorialForm?.photoUrl
+    val memorialPlaylistSongs: List<Song> get() = memorialForm?.playlistSongs.orEmpty()
+
+    fun displayMemorialPhotoUri(): String? = memorialForm?.displayPhotoUri()
 
     /**
      * 그래프 스코프 SSOT([com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs])의

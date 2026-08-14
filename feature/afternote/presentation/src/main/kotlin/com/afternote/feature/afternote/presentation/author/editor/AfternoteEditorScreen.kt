@@ -35,13 +35,12 @@ import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
+import com.afternote.feature.afternote.presentation.author.editor.state.CategoryForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlin.time.Duration.Companion.milliseconds
 
 private const val EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE_MS = 1_000L
@@ -100,10 +99,9 @@ fun AfternoteEditorScreen(
                     body = msg.contentState.text.toString(),
                 )
             }
-        }.distinctUntilChanged()
-            .debounce(EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE_MS.milliseconds)
+        }.debounce(EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE_MS.milliseconds)
             .collect { blocks ->
-                state.persistEditorMessagesFromTyping(blocks)
+                state.setLeaveMessageBlocks(blocks)
             }
     }
 
@@ -117,7 +115,7 @@ fun AfternoteEditorScreen(
                         body = msg.contentState.text.toString(),
                     )
                 }
-            state.persistEditorMessagesFromTyping(blocks)
+            state.setLeaveMessageBlocks(blocks)
         }
     }
 
@@ -141,16 +139,16 @@ fun AfternoteEditorScreen(
     }
 
     LaunchedEffect(liveSongs) {
-        state.syncMemorialPlaylistSongs(liveSongs)
+        state.setMemorialPlaylistSongs(liveSongs)
     }
 
     val memorialPhotoPickerLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
-            state.onMemorialPhotoSelected(uri)
+            state.setMemorialPhoto(uri?.toString())
         }
     val memorialVideoPickerLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
-            state.onFuneralVideoSelected(uri)
+            state.setMemorialVideo(uri?.toString())
         }
 
     // 작성 도중 이탈 가드: 진입 시점 스냅샷 대비 변경이 있으면 뒤로가기 시 이탈 확인 팝업을 띄운다.
@@ -254,15 +252,21 @@ fun AfternoteEditorScreen(
     }
 }
 
+/** 카테고리 전용 입력이 비어 있을 때 싣는 고정 토큰. 지문 구분자와 겹치지 않는 제어문자. */
+private const val NO_ENTERED_CONTENT = "\u0003"
+
 /**
  * 사용자가 에디터에서 편집할 수 있는 값 전부를 한 줄 문자열로 직렬화한 상태 지문.
  * 진입 직후 값을 기준으로 저장해 두고, 뒤로가기 시점 값과 문자열 비교가 다르면 "작성 내용이
  * 바뀌었다"로 판단해 이탈 확인 팝업을 띄운다.
  *
- * 폼은 필드를 골라 담지 않고 통째로 직렬화하되, 판정에서 뺄 것만 [EditorFormState.copy]로
+ * 공용 폼은 필드를 골라 담지 않고 통째로 직렬화하되, 판정에서 뺄 것만 [EditorFormState.copy]로
  * 기본값 치환한다 — 폼에 필드가 새로 생기면 자동으로 판정에 포함되므로(빠짐 불가능),
  * 유지보수 대상은 아래 제외 목록뿐이다. 제외를 빠뜨리면 데이터 소실이 아니라
  * "팝업이 한 번 더 뜨는" 눈에 보이는 오탐으로 드러난다.
+ *
+ * 카테고리 전용 입력은 판별자 없이 "넣은 값" 으로만 싣는다 — 구경은 되돌리는 비용이 탭 한 번이라
+ * 잃을 것이 없고, 값을 넣은 카테고리를 떠나면 그 값은 전환 시점에 이미 폐기되므로 지문이 달라진다.
  */
 internal fun editorContentSignature(
     form: EditorFormState,
@@ -272,17 +276,15 @@ internal fun editorContentSignature(
         form.copy(
             // 식별자·자동 파생값 — 사용자 편집이 아니므로 판정 제외.
             loadedItemId = null,
-            memorialThumbnailUrl = null,
             leaveMessageBlocksRestoreGeneration = 0L,
             // 남기실 말씀은 debounce 전 라이브 입력(state.editorMessages)으로 판정하므로 스냅샷은 제외.
             leaveMessageBlocks = emptyList(),
-            // 카테고리 구경 자체는 변경으로 치지 않는다 — 전환이 selectedService(null)·processingMethods(빈)를
-            // 함께 리셋하므로(#468 정책) 카테고리만 중립화하면 구경 왕복은 진입 상태와 같아진다.
-            // selectedService 는 그대로 비교한다: null=미선택이라 서비스 선택 자체가 변경으로 잡힌다.
-            selectedCategory = EditorCategory.SOCIAL,
+            // 카테고리 전용 입력은 아래에서 따로 낸다 — 전용 필드가 0개인 ESTATE 를 중립 원소로 쓴다.
+            categoryForm = CategoryForm.Estate,
         )
     return listOf(
         comparableForm.toString(),
+        form.categoryForm.enteredContentOrNull() ?: NO_ENTERED_CONTENT,
         state.idState.text,
         state.passwordState.text,
         state.editorMessages.map { "${it.titleState.text}\u0001${it.contentState.text}" },

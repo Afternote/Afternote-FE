@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.presentation.author.editor.memorial.guideline
+package com.afternote.feature.afternote.presentation.author.editor.memorial
 
 import androidx.compose.runtime.Stable
 import com.afternote.core.model.AlbumCover
