@@ -1,7 +1,6 @@
 package com.afternote.core.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -17,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.InputTransformation
@@ -41,6 +39,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
@@ -54,6 +53,22 @@ import android.view.KeyEvent as NativeKeyEvent
 // ============================================================================
 // 1. 공통 내부 구현체 (건드릴 필요 없음)
 // ============================================================================
+
+private const val PASSWORD_MASK_CHAR = "•"
+
+/**
+ * 비밀번호 마스킹 [OutputTransformation].
+ *
+ * 전체 범위를 `replace(0, length, ...)` 로 한 번에 치환하면 그 구간이 통째로 wedge 가 되어
+ * 캐럿이 텍스트 중간에 들어가지 못하고 맨 앞/맨 뒤로만 스냅된다. 문자 단위 1:1 치환은
+ * `OffsetMappingCalculator` 가 편집 연산으로 기록조차 하지 않아 오프셋 매핑이 identity 로 남는다.
+ */
+private val PasswordMaskOutputTransformation =
+    OutputTransformation {
+        for (i in 0 until length) {
+            replace(i, i + 1, PASSWORD_MASK_CHAR)
+        }
+    }
 
 @Composable
 private fun TextFieldShort(
@@ -69,8 +84,8 @@ private fun TextFieldShort(
     onImeAction: (() -> Unit)? = null,
     interactionSource: MutableInteractionSource? = null,
     focusRequester: FocusRequester? = null,
+    isError: Boolean = false,
 ) {
-    val textFieldShape = RoundedCornerShape(8.dp)
     BasicTextField(
         state = state,
         modifier =
@@ -81,9 +96,7 @@ private fun TextFieldShort(
                     } else {
                         Modifier
                     },
-                ).fillMaxWidth()
-                .background(AfternoteDesign.colors.white, textFieldShape)
-                .border(1.dp, AfternoteDesign.colors.gray2, textFieldShape),
+                ).fillMaxWidth(),
         lineLimits = TextFieldLineLimits.SingleLine,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
         onKeyboardAction = onImeAction?.let { action -> { action() } },
@@ -91,9 +104,7 @@ private fun TextFieldShort(
         outputTransformation =
             outputTransformation
                 ?: if (keyboardType == KeyboardType.Password) {
-                    OutputTransformation {
-                        replace(0, length, '\u2022'.toString().repeat(length))
-                    }
+                    PasswordMaskOutputTransformation
                 } else {
                     null
                 },
@@ -101,12 +112,9 @@ private fun TextFieldShort(
         textStyle = AfternoteDesign.typography.textField.copy(color = AfternoteDesign.colors.gray9), // 👈 무조건 textField 스타일 고정!
         cursorBrush = SolidColor(AfternoteDesign.colors.black),
         decorator = { innerTextField ->
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 13.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            AfternoteFieldContainer(
+                modifier = Modifier.fillMaxWidth(),
+                isError = isError,
             ) {
                 Row(
                     modifier = Modifier.weight(1f),
@@ -172,13 +180,14 @@ fun AfternoteTextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     type: TextFieldType = TextFieldType.Basic,
-    placeholder: String = "Text Field",
+    placeholder: String = stringResource(R.string.core_ui_text_field_placeholder),
     keyboardType: KeyboardType = KeyboardType.Text,
     imeAction: ImeAction = ImeAction.Default,
     onImeAction: (() -> Unit)? = null,
     inputTransformation: InputTransformation? = null,
     outputTransformation: OutputTransformation? = null,
     focusRequester: FocusRequester? = null,
+    isError: Boolean = false,
 ) {
     TextFieldShort(
         state = state,
@@ -190,6 +199,7 @@ fun AfternoteTextField(
         inputTransformation = inputTransformation,
         outputTransformation = outputTransformation,
         focusRequester = focusRequester,
+        isError = isError,
         trailingContent =
             when (type) {
                 TextFieldType.Search -> {

@@ -53,7 +53,13 @@ fun MasterKeyScreen(
         }
     }
 
-    val errorMessage = uiState.errorMessageRes?.let { stringResource(it) }
+    val errorMessage =
+        uiState.error?.let { err ->
+            when (err) {
+                is ErrorPayload.Res -> stringResource(err.id)
+                is ErrorPayload.Text -> err.message
+            }
+        }
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
             snackbarHostState.showSnackbar(errorMessage)
@@ -72,7 +78,7 @@ fun MasterKeyScreen(
 }
 
 @Composable
-private fun MasterKeyScreenContent(
+internal fun MasterKeyScreenContent(
     authCodeState: TextFieldState,
     isSubmitting: Boolean,
     snackbarHostState: SnackbarHostState,

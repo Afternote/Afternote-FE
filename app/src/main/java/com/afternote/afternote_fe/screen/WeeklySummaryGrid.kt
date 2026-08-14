@@ -36,7 +36,7 @@ fun WeeklySummaryGrid(
     modifier: Modifier = Modifier,
     recordedCount: Int = 7,
     recentRecordDate: String = "26.02.01",
-    recentRecordTitle: String = "깊은생각 제목깊은생각 제목깊...",
+    recentRecordTitle: String = "최근 기록 제목최근 기록 제목...",
     onImageClick: () -> Unit = {},
     onCountCardClick: () -> Unit = {},
     onRecentRecordClick: () -> Unit = {},
@@ -122,7 +122,7 @@ fun WeeklySummaryGrid(
                     }
                 }
 
-                // [우측 하단] 최근 깊은 생각 카드
+                // [우측 하단] 최근 기록 카드
                 Surface(
                     modifier = Modifier.size(smallSquareSize),
                     shape = RoundedCornerShape(6.dp),

@@ -1,26 +1,26 @@
 package com.afternote.feature.afternote.data.mapper
 
-import com.afternote.feature.afternote.data.dto.AfternoteCredentials
-import com.afternote.feature.afternote.data.dto.AfternoteMemorialVideo
-import com.afternote.feature.afternote.data.dto.AfternoteReceiverRef
+import com.afternote.feature.afternote.data.dto.AfternoteCredentialsDto
+import com.afternote.feature.afternote.data.dto.AfternoteMemorialVideoDto
+import com.afternote.feature.afternote.data.dto.AfternoteReceiverRefDto
 import com.afternote.feature.afternote.domain.model.author.AfternoteAccountCredentials
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
 import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
 
 fun MemorialVideoPayload.toDto() =
-    AfternoteMemorialVideo(
+    AfternoteMemorialVideoDto(
         videoUrl = videoUrl,
         thumbnailUrl = thumbnailUrl,
     )
 
 fun AfternoteAccountCredentials.toDto() =
-    AfternoteCredentials(
+    AfternoteCredentialsDto(
         id = id,
         password = password,
     )
 
 fun ReceiverRefPayload.toDto() =
-    AfternoteReceiverRef(
+    AfternoteReceiverRefDto(
         receiverId = receiverId,
     )
 

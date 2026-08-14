@@ -1,13 +1,15 @@
 package com.afternote.feature.afternote.domain.model.author
 
+import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
+
 data class AfternoteUpdatePayload(
     val category: String,
     val title: String,
-    val actions: List<String>? = null,
-    val leaveMessage: String? = null,
+    val processingMethods: List<String>? = null,
+    val leaveMessageBlocks: List<LeaveMessageBlock> = emptyList(),
     val credentials: AfternoteAccountCredentials? = null,
     val receivers: List<ReceiverRefPayload>? = null,
-    val playlist: PlaylistWritePayload? = null,
+    val memorial: MemorialWritePayload? = null,
 )
 
 data class AfternoteAccountCredentials(

@@ -12,10 +12,13 @@
     <string name="core_ui_content_description_profile_edit">프로필 수정 버튼</string>
     <string name="core_ui_content_description_profile_image">프로필 이미지</string>
     <string name="core_ui_fab_content_description_add">추가</string>
-    <string name="core_ui_label_last_wish">남기고 싶은 당부</string>
-    <string name="core_ui_last_wish_empty_state">남기고 싶은 당부가 없습니다.</string>
+    <string name="core_ui_button_loading">로딩 중</string>
     <string name="core_ui_text_field_placeholder">입력해 주세요</string>
 
     <string name="core_ui_recipient_designated">수신인 지정 완료</string>
     <string name="core_ui_recipient_not_designated">수신인 지정 미완료</string>
+
+    <string name="core_ui_network_error_title">네트워크 연결 오류</string>
+    <string name="core_ui_network_error_description">인터넷 연결을 확인한 후 다시 시도해 주세요.</string>
+    <string name="core_ui_network_error_retry">다시 시도하기</string>
 </resources>

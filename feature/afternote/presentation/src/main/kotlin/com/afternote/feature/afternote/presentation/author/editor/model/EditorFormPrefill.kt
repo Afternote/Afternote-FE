@@ -3,6 +3,7 @@ package com.afternote.feature.afternote.presentation.author.editor.model
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
+import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 
 /**
  * ViewModel/Mapper가 [com.afternote.feature.afternote.domain.model.author.Detail] 등에서 조립해
@@ -15,47 +16,15 @@ data class EditorFormPrefill(
     val category: EditorCategory,
     val accountId: String,
     val password: String,
-    val messageBlocks: List<EditorMessageTextBlock>,
-    val socialProcessingMethods: List<ProcessingMethodItem>,
-    val galleryProcessingMethods: List<ProcessingMethodItem>,
-    /** null이면 당부/직접입력 필드는 기존 값 유지 */
-    val lastWishUpdate: LastWishPrefill?,
-    val funeralVideoUrl: String?,
-    val funeralThumbnailUrl: String?,
+    val leaveMessageBlocks: List<EditorMessageTextBlock>,
+    val processingMethods: List<ProcessingMethodItem>,
+    /**
+     * 이 애프터노트에 지정된 수신자 (#566). 신규 작성 경로가 폼에 넣는
+     * `AfternoteSaveState.authorReceivers`(= 작성자가 등록한 수신자 **전체**) 와 다른 값이다.
+     */
+    val receivers: List<AfternoteEditorReceiver>,
+    val memorialVideoUrl: String?,
+    val memorialThumbnailUrl: String?,
     val memorialPhotoUrl: String?,
     val memorialPlaylistSongs: List<Song> = emptyList(),
-)
-
-/** "남기고 싶은 당부" UI 반영용 (이미 API 문자열과 기본 문구 매칭이 끝난 상태). */
-data class LastWishPrefill(
-    val selectedKey: String?,
-    val customText: String,
-)
-
-/**
- * Preview·테스트용 중간 표현. [com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorFormMapper.editorFormPrefillFromLoadParams]로
- * [EditorFormPrefill]로 변환한다.
- */
-data class LoadFromExistingParams(
-    val itemId: String,
-    val serviceName: String,
-    val categoryDisplayString: String,
-    val account: LoadFromExistingAccountParams = LoadFromExistingAccountParams(),
-    val processing: LoadFromExistingProcessingParams = LoadFromExistingProcessingParams(),
-    val atmosphere: String? = null,
-    val memorialVideoUrl: String? = null,
-    val memorialThumbnailUrl: String? = null,
-    val memorialPhotoUrl: String? = null,
-    val memorialSongs: List<Song> = emptyList(),
-)
-
-data class LoadFromExistingAccountParams(
-    val id: String = "",
-    val password: String = "",
-)
-
-data class LoadFromExistingProcessingParams(
-    val message: String = "",
-    val socialMethods: List<ProcessingMethodItem> = emptyList(),
-    val galleryMethods: List<ProcessingMethodItem> = emptyList(),
 )

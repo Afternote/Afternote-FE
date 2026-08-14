@@ -17,11 +17,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.detail.AfternoteDetailServiceHeader
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.ProcessingMethodsSection
 import com.afternote.feature.afternote.presentation.shared.model.AfternoteServiceDisplay
+import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiModel
 
 /**
  * 수신 갤러리 상세 (Stateless).
@@ -69,15 +71,18 @@ private fun GalleryReceivedDetailScrollContent(
                 .padding(horizontal = 20.dp),
     ) {
         AfternoteDetailServiceHeader(
-            service = AfternoteServiceDisplay.fromServiceName(content.serviceName),
+            service =
+                AfternoteServiceDisplay.fromService(
+                    serviceName = content.serviceName,
+                    type = AfternoteType.GALLERY_AND_FILES,
+                ),
             finalWriteDate = content.finalWriteDate,
-            processingMethodChipLabel = content.processingMethods.firstOrNull().orEmpty(),
         )
 
         Spacer(modifier = Modifier.height(31.dp))
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             ProcessingMethodsSection(methods = content.processingMethods)
-            MessageSection(message = content.message)
+            MessageSection(blocks = content.messageBlocks)
         }
     }
 }
@@ -93,7 +98,12 @@ private fun GalleryReceivedDetailScreenPreview() {
                     serviceName = "갤러리",
                     finalWriteDate = "2025.11.26",
                     processingMethods = listOf("'엽사' 폴더 박선호에게 전송", "'흑역사' 폴더 삭제"),
-                    message = "이 계정에는 우리 가족 여행 사진이 많아.\n계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
+                    messageBlocks =
+                        listOf(
+                            MessageBlockUiModel(
+                                body = "이 계정에는 우리 가족 여행 사진이 많아.\n계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
+                            ),
+                        ),
                 ),
         )
     }

@@ -3,62 +3,40 @@ package com.afternote.feature.mindrecord.data.dto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/** `GET /receiver-auth/daily-question` 응답 (`data`). */
 @Serializable
-enum class MindRecordType {
-    @SerialName("DAILY_QUESTION")
-    DAILY_QUESTION,
-
-    @SerialName("DIARY")
-    DIARY,
-
-    @SerialName("DEEP_THOUGHT")
-    DEEP_THOUGHT,
-}
-
-@Serializable
-enum class MindRecordMediaType {
-    @SerialName("IMAGE")
-    IMAGE,
-
-    @SerialName("VIDEO")
-    VIDEO,
-}
-
-@Serializable
-data class MindRecordListResponse(
-    @SerialName("mindRecords") val mindRecords: List<MindRecordListItem> = emptyList(),
-    @SerialName("totalCount") val totalCount: Int,
+data class ReceiverDailyQuestionListDto(
+    @SerialName("dailyQuestions") val dailyQuestions: List<ReceiverDailyQuestionItemDto> = emptyList(),
 )
 
 @Serializable
-data class MindRecordListItem(
-    @SerialName("id") val id: Long,
-    @SerialName("type") val type: MindRecordType,
+data class ReceiverDailyQuestionItemDto(
+    @SerialName("userDailyQuestionId") val userDailyQuestionId: Long,
+    // 원본 질문 내용이 title, 사용자가 작성한 답변이 content.
     @SerialName("title") val title: String,
-    @SerialName("recordDate") val recordDate: String,
-    @SerialName("isDraft") val isDraft: Boolean,
-    @SerialName("senderName") val senderName: String,
-    @SerialName("createdAt") val createdAt: String,
-)
-
-@Serializable
-data class MindRecordDetailResponse(
-    @SerialName("id") val id: Long,
-    @SerialName("type") val type: MindRecordType,
-    @SerialName("title") val title: String,
-    @SerialName("recordDate") val recordDate: String,
     @SerialName("content") val content: String,
-    @SerialName("questionId") val questionId: Long? = null,
-    @SerialName("questionContent") val questionContent: String? = null,
-    @SerialName("category") val category: String? = null,
-    @SerialName("senderName") val senderName: String,
+    // "yyyy.MM.dd 요일" 형식.
     @SerialName("createdAt") val createdAt: String,
-    @SerialName("imageList") val imageList: List<MindRecordMedia> = emptyList(),
+    @SerialName("imageUrl") val imageUrl: String? = null,
+)
+
+/** `GET /receiver-auth/diary` 응답 (`data`). */
+@Serializable
+data class ReceiverDiaryListDto(
+    @SerialName("diaries") val diaries: List<ReceiverDiaryItemDto> = emptyList(),
 )
 
 @Serializable
-data class MindRecordMedia(
-    @SerialName("id") val id: Long,
-    @SerialName("mediaType") val mediaType: MindRecordMediaType,
-    @SerialName("imageUrl") val imageUrl: String,
+data class ReceiverDiaryItemDto(
+    @SerialName("diaryId") val diaryId: Long,
+    @SerialName("title") val title: String,
+    @SerialName("content") val content: String,
+    @SerialName("isDraft") val isDraft: Boolean = false,
+    @SerialName("imageUrl") val imageUrl: String? = null,
+    @SerialName("todayMood") val todayMood: TodayMoodDto? = null,
+    // 작성일 (yyyy-MM-dd).
+    @SerialName("date") val date: String = "",
+    // "yyyy.MM.dd 요일" 형식.
+    @SerialName("createdAt") val createdAt: String = "",
+    @SerialName("updatedAt") val updatedAt: String = "",
 )

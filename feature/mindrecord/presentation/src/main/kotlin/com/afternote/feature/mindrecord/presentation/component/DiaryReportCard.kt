@@ -23,11 +23,15 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R
 
 @Composable
-fun DiaryReportCard(modifier: Modifier = Modifier) {
+fun DiaryReportCard(
+    monthDiaryCount: Int,
+    weeklyMoodEmoji: String?,
+    modifier: Modifier = Modifier,
+) {
     OutlinedCard(
         colors =
             CardDefaults.cardColors(
-                containerColor = AfternoteDesign.colors.gray1,
+                containerColor = AfternoteDesign.colors.white,
             ),
         border = BorderStroke(1.dp, color = AfternoteDesign.colors.gray2),
         modifier =
@@ -64,13 +68,13 @@ fun DiaryReportCard(modifier: Modifier = Modifier) {
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
-                    text = "18",
+                    text = monthDiaryCount.toString(),
                     style = AfternoteDesign.typography.h2,
                     color = AfternoteDesign.colors.gray9,
                 )
 
                 Text(
-                    text = "\uD83D\uDE0A",
+                    text = weeklyMoodEmoji.orEmpty(),
                 )
             }
         }
@@ -81,6 +85,6 @@ fun DiaryReportCard(modifier: Modifier = Modifier) {
 @Composable
 private fun DiaryCardPreview() {
     AfternoteTheme {
-        DiaryReportCard()
+        DiaryReportCard(monthDiaryCount = 18, weeklyMoodEmoji = "\uD83D\uDE0A")
     }
 }

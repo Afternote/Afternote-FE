@@ -3,7 +3,6 @@ package com.afternote.feature.mindrecord.domain.model
 data class WeeklyReport(
     val dailyQuestionAmount: Int,
     val diaryAmount: Int,
-    val deepThoughtAmount: Int,
     val summaryText: String,
     val week: List<WeeklyReportDay>,
     val dailyQuestions: List<WeeklyReportDailyQuestion>,

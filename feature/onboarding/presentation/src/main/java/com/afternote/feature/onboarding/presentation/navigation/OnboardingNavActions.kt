@@ -15,6 +15,9 @@ interface OnboardingNavActions {
     /** 회원가입/로그인 성공 → Onboarding 그래프 전체 비우고 Home 진입 (replace). */
     fun replaceOnboardingWithHome()
 
+    /** 소셜 신규 가입자 로그인 성공 → Login 비우고 Welcome 진입 (온보딩 시작). */
+    fun replaceLoginWithWelcome()
+
     fun navigateToSignUp()
 
     fun navigateToLogin()
@@ -37,4 +40,7 @@ interface OnboardingNavActions {
     fun proceedToProfile()
 
     fun navigateToTermsDetail()
+
+    /** 로그인 → 아이디 찾기. */
+    fun navigateToFindId()
 }

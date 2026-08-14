@@ -4,57 +4,57 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ReceivedAfternoteListResponse(
-    @SerialName("afternotes") val afternotes: List<ReceivedAfternoteResponse> = emptyList(),
+data class ReceivedAfternoteListDto(
+    @SerialName("afternotes") val afternotes: List<ReceivedAfternoteDto> = emptyList(),
     @SerialName("totalCount") val totalCount: Int = 0,
 )
 
 @Serializable
-data class ReceivedAfternoteResponse(
+data class ReceivedAfternoteDto(
     @SerialName("id") val id: Long,
     @SerialName("title") val title: String? = null,
     @SerialName("category") val category: String? = null,
-    @SerialName("leaveMessage") val leaveMessage: String? = null,
+    @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
     @SerialName("senderId") val senderId: Long? = null,
     @SerialName("senderName") val senderName: String? = null,
     @SerialName("createdAt") val createdAt: String? = null,
 )
 
 @Serializable
-data class ReceivedAfternoteDetailResponse(
+data class ReceivedAfternoteDetailDto(
     @SerialName("id") val id: Long,
     @SerialName("category") val category: String? = null,
     @SerialName("title") val title: String? = null,
-    @SerialName("actions") val actions: List<String> = emptyList(),
-    @SerialName("leaveMessage") val leaveMessage: String? = null,
+    @SerialName("actions") val processingMethods: List<String> = emptyList(),
+    @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
     @SerialName("senderName") val senderName: String? = null,
     @SerialName("createdAt") val createdAt: String? = null,
-    @SerialName("credentials") val credentials: ReceivedCredentialsInfo? = null,
-    @SerialName("playlist") val playlist: ReceivedPlaylistInfo? = null,
+    @SerialName("credentials") val credentials: ReceivedCredentialsDto? = null,
+    @SerialName("playlist") val playlist: ReceivedPlaylistDto? = null,
 )
 
 @Serializable
-data class ReceivedCredentialsInfo(
+data class ReceivedCredentialsDto(
     @SerialName("id") val id: String? = null,
     @SerialName("password") val password: String? = null,
 )
 
 @Serializable
-data class ReceivedPlaylistInfo(
+data class ReceivedPlaylistDto(
     @SerialName("atmosphere") val atmosphere: String? = null,
-    @SerialName("songs") val songs: List<ReceivedSongInfo> = emptyList(),
-    @SerialName("memorialVideo") val memorialVideo: ReceivedMemorialVideoInfo? = null,
+    @SerialName("songs") val songs: List<ReceivedSongDto> = emptyList(),
+    @SerialName("memorialVideo") val memorialVideo: ReceivedMemorialVideoDto? = null,
 )
 
 @Serializable
-data class ReceivedSongInfo(
+data class ReceivedSongDto(
     @SerialName("title") val title: String,
     @SerialName("artist") val artist: String,
     @SerialName("coverUrl") val coverUrl: String? = null,
 )
 
 @Serializable
-data class ReceivedMemorialVideoInfo(
+data class ReceivedMemorialVideoDto(
     @SerialName("videoUrl") val videoUrl: String? = null,
     @SerialName("thumbnailUrl") val thumbnailUrl: String? = null,
 )

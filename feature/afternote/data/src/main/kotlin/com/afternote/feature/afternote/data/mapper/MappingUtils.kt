@@ -1,6 +1,6 @@
 package com.afternote.feature.afternote.data.mapper
 
-import com.afternote.feature.afternote.domain.AfternoteServiceType
+import com.afternote.feature.afternote.domain.AfternoteType
 
 internal fun formatDateFromServer(serverDateTime: String): String =
     try {
@@ -11,12 +11,10 @@ internal fun formatDateFromServer(serverDateTime: String): String =
         serverDateTime
     }
 
-internal fun categoryToServiceType(category: String): AfternoteServiceType =
-    when (category.uppercase()) {
-        "SOCIAL" -> AfternoteServiceType.SOCIAL_NETWORK
-        "BUSINESS" -> AfternoteServiceType.BUSINESS
-        "GALLERY" -> AfternoteServiceType.GALLERY_AND_FILES
-        "ESTATE" -> AfternoteServiceType.ESTATE
-        "MUSIC", "PLAYLIST" -> AfternoteServiceType.MEMORIAL
-        else -> AfternoteServiceType.SOCIAL_NETWORK
-    }
+/**
+ * 서버 `category` → [AfternoteType]. 대응이 없으면 [AfternoteType.SOCIAL_NETWORK] 로 폴백한다.
+ *
+ * 값 표는 [afternoteTypeFromServerCategory] 가 정본이다 — 여기에 다시 적으면 갈라진다.
+ */
+internal fun categoryToAfternoteType(category: String): AfternoteType =
+    afternoteTypeFromServerCategory(category) ?: AfternoteType.SOCIAL_NETWORK

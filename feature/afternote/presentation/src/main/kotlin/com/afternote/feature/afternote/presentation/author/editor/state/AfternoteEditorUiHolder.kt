@@ -23,7 +23,7 @@ enum class DialogType {
  * 에디터 **순수 UI** 상태: 탭·다이얼로그·드롭다운·텍스트 필드·멀티 메시지 입력 UI.
  * 프로세스가 죽어도 복원되지 않아도 되는 휘발성 상태를 둔다.
  *
- * 추모 플레이리스트 곡 목록은 [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs] SSOT가 보유하며,
+ * 추억 플레이리스트 곡 목록은 [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs] SSOT가 보유하며,
  * 본 UI 상태는 곡 목록을 직접 들고 있지 않는다.
  */
 @Stable
@@ -33,7 +33,6 @@ class AfternoteEditorUiHolder(
     val afternoteEditReceiverNameState: TextFieldState,
     val phoneNumberState: TextFieldState,
     val customServiceNameState: TextFieldState,
-    val customLastWishState: TextFieldState,
 ) {
     val editorMessages: SnapshotStateList<EditorMessage> =
         mutableStateListOf(EditorMessage())
@@ -96,7 +95,6 @@ fun rememberAfternoteEditorUiHolder(
     afternoteEditReceiverNameState: TextFieldState,
     phoneNumberState: TextFieldState,
     customServiceNameState: TextFieldState,
-    customLastWishState: TextFieldState,
 ): AfternoteEditorUiHolder =
     remember(
         idState,
@@ -104,7 +102,6 @@ fun rememberAfternoteEditorUiHolder(
         afternoteEditReceiverNameState,
         phoneNumberState,
         customServiceNameState,
-        customLastWishState,
     ) {
         AfternoteEditorUiHolder(
             idState = idState,
@@ -112,6 +109,5 @@ fun rememberAfternoteEditorUiHolder(
             afternoteEditReceiverNameState = afternoteEditReceiverNameState,
             phoneNumberState = phoneNumberState,
             customServiceNameState = customServiceNameState,
-            customLastWishState = customLastWishState,
         )
     }

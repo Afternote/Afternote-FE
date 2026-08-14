@@ -177,7 +177,13 @@ private fun handlePickedUri(
     slot: DocumentSlot,
     uri: Uri,
 ) {
-    val result = contentResolver.readDocumentUri(uri) ?: return
+    val result = contentResolver.readDocumentUri(uri)
+    if (result == null) {
+        // 클라우드 전용 사진 등 provider 가 스트림을 못 여는 Uri — 무음으로 삼키면
+        // "선택했는데 아무 일도 없는" 화면이 된다 (#740).
+        viewModel.onDocumentReadFailed()
+        return
+    }
     viewModel.uploadDocument(
         slot = slot,
         bytes = result.bytes,
@@ -187,7 +193,7 @@ private fun handlePickedUri(
 }
 
 @Composable
-private fun DocumentUploadScreenContent(
+internal fun DocumentUploadScreenContent(
     uiState: DocumentUploadUiState,
     snackbarHostState: SnackbarHostState,
     onBackClick: () -> Unit,

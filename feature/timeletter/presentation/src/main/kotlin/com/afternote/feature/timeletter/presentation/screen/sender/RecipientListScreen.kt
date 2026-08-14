@@ -24,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -38,10 +39,10 @@ import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
+import com.afternote.feature.timeletter.presentation.R
 import com.afternote.feature.timeletter.presentation.component.RecipientListItem
 import com.afternote.feature.timeletter.presentation.viewmodel.RecipientListViewModel
 import kotlinx.coroutines.launch
-import kotlin.collections.filter
 
 @Composable
 fun RecipientListScreen(
@@ -133,7 +134,7 @@ private fun RecipientListContent(
         ) {
             AfternoteTextField(
                 state = searchState,
-                placeholder = "Text Field",
+                placeholder = stringResource(R.string.timeletter_recipient_search_placeholder),
                 type = TextFieldType.Search,
                 imeAction = ImeAction.Search,
                 modifier = Modifier.padding(horizontal = 20.dp),

@@ -2,11 +2,11 @@ package com.afternote.feature.afternote.data.paging
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.network.model.requireData
 import com.afternote.feature.afternote.data.mapper.toReceiverDomainList
 import com.afternote.feature.afternote.data.service.ReceiverAfternoteApiService
-import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItemDto
-import kotlinx.coroutines.CancellationException
+import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem
 
 /**
  * 서버는 페이지네이션을 지원하지 않으므로 응답 전체를 한 페이지로 감싸서 반환한다.
@@ -17,20 +17,18 @@ import kotlinx.coroutines.CancellationException
  */
 internal class ReceiverAfternotePagingSource(
     private val api: ReceiverAfternoteApiService,
-) : PagingSource<Int, AfterNoteListItemDto>() {
-    override fun getRefreshKey(state: PagingState<Int, AfterNoteListItemDto>): Int? = null
+) : PagingSource<Int, AfterNoteListItem>() {
+    override fun getRefreshKey(state: PagingState<Int, AfterNoteListItem>): Int? = null
 
-    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, AfterNoteListItemDto> =
-        try {
+    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, AfterNoteListItem> =
+        // 타입 인자를 적는 건 prevKey·nextKey 가 둘 다 null 이라(단일 페이지) key 가 Nothing 으로
+        // 좁혀지기 때문 — 반환 타입이 추론을 잡아 주던 try/catch 와 달리 여기선 블록이 먼저 추론된다.
+        runCatchingCancellable<LoadResult<Int, AfterNoteListItem>> {
             val response = api.getReceiverAfternotes().requireData()
             LoadResult.Page(
                 data = response.afternotes.toReceiverDomainList(),
                 prevKey = null,
                 nextKey = null,
             )
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            LoadResult.Error(e)
-        }
+        }.getOrElse { LoadResult.Error(it) }
 }

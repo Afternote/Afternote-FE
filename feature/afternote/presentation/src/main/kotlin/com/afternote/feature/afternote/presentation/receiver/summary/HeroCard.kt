@@ -26,6 +26,23 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
 
+/**
+ * HeroCard 전용 파스텔 그라데이션 (라이트 블루 → 화이트-ish → 라이트 피치).
+ *
+ * 본 화면 1회용 + 다른 화면 (예: SenderMessageHeroCard) 의 그라데이션과 색 조합이 달라
+ * 디자인 시스템 토큰으로 추상화하면 재사용성보다 SSOT 위반 비용이 큼.
+ * 디자인 시스템 룰 (`feedback_use_theme_colors`) 의 예외로 본 한 곳에 고정.
+ */
+private val HeroGradient: Brush =
+    Brush.linearGradient(
+        colors =
+            listOf(
+                Color(0xFFD0E4FF),
+                Color(0xFFF0F4F8),
+                Color(0xFFFFE0CC),
+            ),
+    )
+
 @Composable
 fun HeroCard(
     modifier: Modifier = Modifier,
@@ -37,17 +54,7 @@ fun HeroCard(
                 .fillMaxWidth()
                 .height(140.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(
-                    brush =
-                        Brush.linearGradient(
-                            colors =
-                                listOf(
-                                    Color(0xFFD0E4FF), // Light Blue
-                                    Color(0xFFF0F4F8), // White-ish
-                                    Color(0xFFFFE0CC), // Light Peach
-                                ),
-                        ),
-                ),
+                .background(brush = HeroGradient),
     ) {
         Image(
             painter = painterResource(R.drawable.feature_afternote_img_hero_background),

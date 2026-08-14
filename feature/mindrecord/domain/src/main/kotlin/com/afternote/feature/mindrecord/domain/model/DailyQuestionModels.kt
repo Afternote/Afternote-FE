@@ -6,12 +6,16 @@ data class DailyQuestion(
     val content: String,
     val createdAt: String,
     val imageUrl: String? = null,
+    val isDraft: Boolean = false,
 )
 
 data class TodayDailyQuestion(
     val questionId: Long,
+    /** 서비스 시작일 기준 몇 번째 질문인지 ("Day N" 표기용). */
+    val day: Int,
     val content: String,
     val isAnswered: Boolean,
+    val isDraft: Boolean = false,
 )
 
 data class DailyQuestionCreatePayload(

@@ -1,8 +1,9 @@
 name: Static Analysis (Reviewdog)
 
+# base 필터를 두지 않는다 — base 변경(feat/* → develop)은 pull_request 기본 activity type 에
+# 없어 재트리거되지 않으므로, 필터가 있으면 스택 PR 이 검증을 한 번도 거치지 않고 머지된다.
 on:
   pull_request:
-    branches: [main, develop]
 
 permissions:
   contents: read
@@ -71,6 +72,27 @@ jobs:
           KAKAO_NATIVE_APP_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
           GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
 
+      # 모듈별 lint XML 을 한 파일로 합쳐 Reviewdog 가 :feature/* · :core/* 위반도
+      # PR 인라인 코멘트로 띄우도록 한다. 이전엔 :app XML 한 개만 전달돼 다른 모듈 위반이
+      # Actions step 로그(수만 줄)에 묻혔다.
+      - name: Merge module lint XMLs into one
+        if: always()
+        run: |
+          set -e
+          out=app/build/reports/lint-results-merged.xml
+          mkdir -p app/build/reports
+          {
+            echo '<?xml version="1.0" encoding="UTF-8"?>'
+            echo '<issues format="6" by="lint" client="gradle" type="baseline" name="merged">'
+            find . -path '*/build/reports/lint-results-debug.xml' -print | while read -r xml; do
+              xmllint --xpath '//issue' "$xml" 2>/dev/null || true
+            done
+            echo '</issues>'
+          } > "$out"
+          modules=$(find . -path '*/build/reports/lint-results-debug.xml' | wc -l)
+          issues=$(grep -c '<issue ' "$out" || echo 0)
+          echo "merged $issues issues from $modules modules → $out"
+
       - name: Report Android Lint (Reviewdog)
         if: always()
         uses: dvdandroid/action-android-lint@master
@@ -78,4 +100,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
           level: warning
-          lint_xml_file: app/build/reports/lint-results-debug.xml
+          lint_xml_file: app/build/reports/lint-results-merged.xml

@@ -8,7 +8,7 @@ import androidx.compose.ui.graphics.Color
 
 private val White = Color(0xFFFFFFFF)
 
-private val Black = Color(0xFF000000)
+internal val Black = Color(0xFF000000)
 
 private val IconBk = Color(0xFF000000).copy(alpha = 0.6F)
 
@@ -45,6 +45,15 @@ private val Accent8 = Color(0xFF6E5A7F)
 private val Accent9 = Color(0xFF24324A)
 private val Accent10 = Color(0xFF3A4A8A)
 
+/** 에러 문구 색. 검증 실패 등 인라인 에러 텍스트에 사용 (시안 에러 문구 6곳 정본). */
+private val Error = Color(0xFFFF0C0C)
+
+/**
+ * 필수 입력 표시 점 색 (시안 필수 마커 32곳 정본).
+ * 에러 문구([Error])와 값이 다른 것은 시안의 용도별 구분 의도 — 통일 금지.
+ */
+private val RequiredMark = Color(0xFFFF3647)
+
 internal fun lightColors() =
     AfternoteColors(
         white = White,
@@ -70,6 +79,8 @@ internal fun lightColors() =
         accent8 = Accent8,
         accent9 = Accent9,
         accent10 = Accent10,
+        error = Error,
+        requiredMark = RequiredMark,
         isLightMode = true,
     )
 
@@ -98,6 +109,8 @@ internal fun darkColors() =
         accent8 = Accent8,
         accent9 = Accent9,
         accent10 = Accent10,
+        error = Error,
+        requiredMark = RequiredMark,
         isLightMode = false,
     )
 
@@ -130,6 +143,8 @@ class AfternoteColors(
     accent8: Color,
     accent9: Color,
     accent10: Color,
+    error: Color,
+    requiredMark: Color,
     isLightMode: Boolean,
 ) {
     var white by mutableStateOf(white)
@@ -178,6 +193,10 @@ class AfternoteColors(
         private set
     var accent10 by mutableStateOf(accent10)
         private set
+    var error by mutableStateOf(error)
+        private set
+    var requiredMark by mutableStateOf(requiredMark)
+        private set
     var isLightMode by mutableStateOf(isLightMode)
         private set
 
@@ -205,6 +224,8 @@ class AfternoteColors(
         accent8: Color = this.accent8,
         accent9: Color = this.accent9,
         accent10: Color = this.accent10,
+        error: Color = this.error,
+        requiredMark: Color = this.requiredMark,
         isLightMode: Boolean = this.isLightMode,
     ) = AfternoteColors(
         white = white,
@@ -230,6 +251,8 @@ class AfternoteColors(
         accent8 = accent8,
         accent9 = accent9,
         accent10 = accent10,
+        error = error,
+        requiredMark = requiredMark,
         isLightMode = isLightMode,
     )
 
@@ -257,8 +280,8 @@ class AfternoteColors(
         this.accent8 = other.accent8
         this.accent9 = other.accent9
         this.accent10 = other.accent10
+        this.error = other.error
+        this.requiredMark = other.requiredMark
         this.isLightMode = other.isLightMode
     }
 }
-
-val Red = Color(0xFFFF0C0C) // 에러 메시지용 빨간색

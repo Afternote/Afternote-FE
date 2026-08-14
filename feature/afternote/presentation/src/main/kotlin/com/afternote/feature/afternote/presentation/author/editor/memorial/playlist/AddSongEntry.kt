@@ -21,7 +21,8 @@ fun AddSongEntry(
 
     AddSongScreen(
         uiState = uiState,
-        onSearchQueryChange = { viewModel.onEvent(AddSongEvent.SearchQueryChange(it)) },
+        onSearchQueryChange = viewModel::onSearchQueryChange,
+        onErrorConsumed = viewModel::onErrorConsumed,
         onBackClick = onBackClick,
         onSongsAdded = onSongsAdded,
         modifier = modifier,

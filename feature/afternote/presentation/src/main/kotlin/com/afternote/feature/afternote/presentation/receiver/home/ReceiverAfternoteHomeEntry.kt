@@ -6,13 +6,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.collectAsLazyPagingItems
-import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeScreen
-
-data class ReceiverAfternoteHomeEntryActions(
-    val navigateToDetail: (String) -> Unit = {},
-    val onNavTabSelected: (BottomNavTab) -> Unit = {},
-)
 
 /**
  * 수신자 애프터노트 목록 Entry.
@@ -21,9 +15,9 @@ data class ReceiverAfternoteHomeEntryActions(
  */
 @Composable
 fun ReceiverAfternoteHomeEntry(
+    navigateToDetail: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ReceiverAfternoteHomeViewModel = hiltViewModel(),
-    actions: ReceiverAfternoteHomeEntryActions = ReceiverAfternoteHomeEntryActions(),
 ) {
     val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
     val items = viewModel.pagedAfternotes.collectAsLazyPagingItems()
@@ -32,7 +26,7 @@ fun ReceiverAfternoteHomeEntry(
         items = items,
         selectedCategory = selectedTab,
         onCategorySelected = viewModel::selectTab,
-        onListItemClick = { id, _ -> actions.navigateToDetail(id) },
+        onListItemClick = { id, _ -> navigateToDetail(id) },
         modifier = modifier,
     )
 }

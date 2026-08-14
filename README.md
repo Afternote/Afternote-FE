@@ -2,7 +2,7 @@
 
 # 🚀 신규 팀원 빌드 셋업
 
-`local.properties` 는 `.gitignore` 에 등록되어 있어 **git 으로 받아지지 않는다**. clone 직후 다음 두 키를 루트 `local.properties` 에 직접 채워야 카카오·구글 로그인이 정상 동작한다.
+`local.properties` 는 `.gitignore` 에 등록되어 있어 **git 으로 받아지지 않는다**. clone 직후 다음 두 키를 루트 `local.properties` 에 직접 채워야 카카오·구글 로그인이 정상 동작한다. 추가로 아래 **공유 debug keystore** 섹션까지 마치면 카카오 키 해시를 본인 머신용으로 따로 등록할 필요가 없다.
 
 ## 필요 키
 
@@ -26,15 +26,40 @@ GOOGLE_WEB_CLIENT_ID=<구글 OAuth web client id>.apps.googleusercontent.com
 
 ## 누락 시 증상
 
-두 키가 비어 있으면 빌드는 통과하지만 다음이 깨진다:
+**release 빌드는 두 키 중 하나라도 비어 있으면 실패한다** — 가드 태스크 `checkKakaoNativeAppKeyForRelease` / `checkGoogleWebClientIdForRelease` 가 `preReleaseBuild` 앞에서 차단한다 (빈 키로 배포된 APK 의 소셜 로그인 전면 불능 재발 방지, #535). release variant 를 조립하는 라이프사이클 태스크(`build`·`assemble`·`bundleRelease`·`lintRelease`, `build-leaf.sh` 의 `:모듈:build` 포함)도 동일하게 실패한다. `check` 는 `preReleaseBuild` 를 타지 않아 영향받지 않는다.
+
+debug 빌드는 빈 값으로도 통과하지만(로컬 개발 편의) 다음이 깨진다:
 
 - `KakaoSdk.init("")` → SDK 초기화 실패 (앱 내 안내: `KAKAO_NATIVE_APP_KEY를 확인해주세요.`)
 - `AndroidManifest.xml` 의 `android:scheme="kakao${KAKAO_NATIVE_APP_KEY}"` 가 빈 scheme 으로 등록 → 카카오 로그인 콜백 intent-filter 매칭 안 됨
 - `requestGoogleIdToken(serverClientId = "")` → Credential Manager 가 invalid request 로 실패
 
+## 공유 debug keystore
+
+debug 빌드는 기본적으로 머신마다 다른 `~/.android/debug.keystore` 로 서명되어, 카카오 로그인 키 해시를 팀원 머신별로 콘솔에 등록해야 한다. 팀 공유 debug keystore 를 배치하면 전 머신이 동일 키 해시로 서명되어 콘솔 등록이 keystore 1개로 끝난다. (미배치 시에도 빌드는 정상 — 기본 debug keystore 폴백 — 대신 본인 머신 키 해시를 직접 등록해야 카카오 로그인이 동작한다.)
+
+1. **keystore 수령·배치** — `afternote-debug-shared.jks` 를 **Slack DM 으로 1hyok 에게 요청** 후 홈 디렉토리에 배치 (예: `~/afternote-debug-shared.jks`)
+
+2. **`local.properties` 끝에 4개 키 추가** (경로는 `~` 없이 **절대경로** — Gradle `file()` 은 `~` 를 확장하지 않는다)
+
+    ```properties
+    DEBUG_STORE_FILE=/Users/<you>/afternote-debug-shared.jks
+    DEBUG_STORE_PASSWORD=<keystore 비밀번호 — keystore 와 함께 전달>
+    DEBUG_KEY_ALIAS=afternote-debug-shared
+    DEBUG_KEY_PASSWORD=<key 비밀번호 — keystore 와 함께 전달>
+    ```
+
+3. **적용 확인** — `./gradlew :app:signingReport` 출력의 `Variant: debug` 에서 `Store:` 가 공유 keystore 경로를 가리키는지 확인
+
+공유 keystore 의 카카오 키 해시 추출 명령 (Kakao Developers → 앱 → 플랫폼 → Android → 키 해시 등록·재확인용):
+
+```bash
+keytool -exportcert -alias afternote-debug-shared -keystore ~/afternote-debug-shared.jks | openssl sha1 -binary | openssl base64
+```
+
 # 📦 비개발자 APK 배포 (Firebase App Distribution)
 
-디자이너·PM·QA·외부 베타테스터에게 release APK 를 자동 배포하는 흐름. Firebase 프로젝트 `afternote-b4d3c` + 테스터 그룹 `afternote` 사용.
+디자이너·PM·QA·외부 베타테스터에게 release APK 를 자동 배포하는 흐름. Firebase 프로젝트 `afternote-android` + 테스터 그룹 `afternote` 사용.
 
 ## 셋업 (1hyok 만 1회 — 신규 인계자도 동일)
 
@@ -73,11 +98,78 @@ GOOGLE_WEB_CLIENT_ID=<구글 OAuth web client id>.apps.googleusercontent.com
 
 ## 배포 (매 회)
 
-```bash
-./gradlew assembleRelease appDistributionUploadRelease
+모든 배포의 릴리스 노트에는 `포함 이슈`와 `QA 포인트`가 필요하다. 둘 중 하나라도 비어 있거나 포함 이슈에 `#123` 형식의 번호가 없으면 Firebase 업로드 전에 실패한다.
+
+### 배포 판단 기준
+
+배포 시점은 일 단위 주기가 아니라 `develop`에 머지된 변경 묶음의 크기와 위험도로 정한다.
+
+- 인증·온보딩·데이터 손실·API 계약·빌드/서명처럼 영향이 큰 변경은 다른 변경을 기다리지 않고 단독 배포한다.
+- 작은 변경은 하나의 QA 세션에서 회귀 원인을 구분할 수 있는 범위까지만 묶는다. 서로 다른 사용자 흐름을 한꺼번에 확인해야 하거나 함께 롤백하기 어려워지는 시점이 배포 경계다.
+- 수정 결과를 테스터가 확인해야 하는 결함이 머지되면, 묶음 크기와 관계없이 확인 가능한 빌드를 배포한다.
+- 현재 묶음의 모든 QA 포인트가 통과한 뒤 `develop`을 `main`으로 승격한다.
+
+### 머지별 자동 판단
+
+`develop` 대상 PR이 머지되면 [`deployment-decision.yml`](.github/workflows/deployment-decision.yml)이 마지막 성공 QA 배포 이후의 누적 PR·연결 이슈·실제 diff를 읽는다. 고위험 경로, 버그·기능 PR, 누적 이슈 수, 명시 QA 포인트 수, 영향 스코프 수를 위 기준으로 판정해 `QA 배포 권장` 또는 `QA 배포 보류`, 포함 이슈, QA 포인트를 머지된 PR에 코멘트한다. 판단만 자동화하며 APK 업로드는 실행하지 않는다.
+
+별도 API나 유료 AI를 호출하지 않으며 기존 GitHub Actions 실행량만 사용한다. Actions의 **Evaluate QA Distribution Candidate**에서 이미 머지된 PR 번호를 입력해 같은 규칙으로 수동 재검증할 수도 있다.
+
+### QA 배포 — `develop` → Firebase App Distribution (수동, 기본 경로)
+
+GitHub Actions의 **Release Distribution**에서 `Run workflow`를 누르고 ref를 `develop`으로 선택한 뒤 다음 값을 입력한다.
+
+- `issue_numbers`: 포함된 이슈 번호. 예: `#716, #723`
+- `qa_points`: 확인할 동작과 기대 결과. 여러 건은 세미콜론(`;`)으로 구분
+
+워크플로가 위 입력을 릴리스 노트로 만들어 APK를 빌드하고 Firebase App Distribution의 `afternote` 그룹에 배포한다.
+
+### 릴리스 후보 배포 — `main` → Firebase App Distribution (자동)
+
+여기서 릴리스 후보 배포는 검증할 `main` 빌드를 Firebase 테스터에게 전달하는 단계이며, Play Store 프로덕션 릴리스를 뜻하지 않는다.
+
+`develop` → `main` 릴리스 PR 본문에 다음 섹션을 채운다.
+
+```markdown
+## 포함 이슈
+- #716
+- #723
+
+## QA 포인트
+- 오프라인에서 오류 안내와 재시도 수단이 표시되는지 확인
+- 주차를 변경한 뒤 최신 리포트가 표시되는지 확인
 ```
 
-→ APK 빌드 + Firebase 업로드 + 테스터 그룹 `afternote` 전원에게 자동 이메일 발송.
+PR이 `main`에 머지되면 워크플로가 두 섹션을 릴리스 노트로 사용한다. 연결된 PR이나 필수 섹션을 찾지 못하면 배포하지 않는다.
+
+CI 가 사용하는 GitHub Secrets (Settings → Secrets and variables → Actions):
+
+| 키 | 용도 |
+|---|---|
+| `RELEASE_STORE_FILE_B64` | release keystore 파일 (`~/afternote-release.jks`) 의 base64 인코딩 |
+| `RELEASE_STORE_PASSWORD` | keystore 비밀번호 |
+| `RELEASE_KEY_ALIAS` | key alias (`afternote-release`) |
+| `RELEASE_KEY_PASSWORD` | key 비밀번호 |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | App Distribution Admin 권한 부여된 service account JSON 원문 |
+| `KAKAO_NATIVE_APP_KEY` · `GOOGLE_WEB_CLIENT_ID` · `GOOGLE_SERVICES_JSON_B64` | `local.properties` 키 (`lint.yml` 과 공유) |
+
+> base64 인코딩: `base64 -i ~/afternote-release.jks | pbcopy` (macOS)
+
+### 로컬 — 1hyok 머신 (fallback / 긴급 시)
+
+```bash
+EVENT_NAME=workflow_dispatch \
+ISSUE_NUMBERS="#716, #723" \
+QA_POINTS="오프라인 오류 안내 확인;주차 변경 후 재시도 확인" \
+SOURCE_REF=develop \
+SOURCE_SHA="$(git rev-parse HEAD)" \
+bash .github/scripts/render-distribution-release-notes.sh /tmp/afternote-release-notes.txt
+
+./gradlew assembleRelease appDistributionUploadRelease \
+  --releaseNotesFile=/tmp/afternote-release-notes.txt
+```
+
+→ 동일하게 APK 빌드 + Firebase 업로드. CI 장애 시에만 사용한다.
 
 > 같은 `versionCode` 로 재업로드하면 기존 release 갱신. 새 release 만들려면 `app/build.gradle.kts` 의 `versionCode` 증가.
 
@@ -85,6 +177,57 @@ GOOGLE_WEB_CLIENT_ID=<구글 OAuth web client id>.apps.googleusercontent.com
 
 - 추가/제거: Firebase Console → App Distribution → 테스터 및 그룹 → `afternote` 그룹 편집
 - 신규 테스터는 첫 초대 이메일에서 **App Tester** 앱 설치 안내를 받음 → 이후 빌드는 자동 알림
+
+# 📸 Compose Preview Screenshot Testing (docker baseline)
+
+`Compose Preview Screenshot Testing` 의 anti-aliasing / font hinting / scale 등 host 환경 의존 렌더링 차이로 CI rendered PNG 를 baseline 으로 교체하는 ping-pong 이 발생해 왔다 (PR [#302](https://github.com/Afternote/Afternote-FE/pull/302) / [#322](https://github.com/Afternote/Afternote-FE/pull/322)). 본 리포의 `Dockerfile.screenshot` + `.github/workflows/screenshot.yml` 의 container 단계가 baseline 생성·검증을 동일 환경에서 수행해 환경 차이 root fix.
+
+## 사전 준비
+
+- Docker Desktop 설치 (로컬 macOS · Linux 모두 동일)
+
+## 로컬 baseline 갱신 (의도된 시각 변경 시)
+
+```bash
+docker build -t afternote-screenshot:latest -f Dockerfile.screenshot .
+docker run --rm -v "$PWD":/workspace -w /workspace afternote-screenshot:latest \
+  ./gradlew :core:ui:updateScreenshotTest \
+            :app:updateScreenshotTest \
+            :feature:onboarding:presentation:updateScreenshotTest \
+            :feature:afternote:presentation:updateScreenshotTest
+```
+
+→ 변경된 PNG 가 각 모듈 `src/screenshotTestDebug/reference/...` 에 갱신. `git add` 후 commit.
+
+## 로컬 baseline 검증 (CI 실패 재현)
+
+```bash
+docker run --rm -v "$PWD":/workspace -w /workspace afternote-screenshot:latest \
+  ./gradlew :core:ui:validateScreenshotTest \
+            :app:validateScreenshotTest \
+            :feature:onboarding:presentation:validateScreenshotTest \
+            :feature:afternote:presentation:validateScreenshotTest
+```
+
+→ baseline 과 docker 환경에서 새로 그린 PNG 비교. 실패 시 `build/outputs/screenshotTest-results/preview/debug/diffs/` 에서 diff PNG 확인.
+
+## 호스트 직접 실행은 더 이상 권장하지 않음
+
+`./gradlew :<module>:updateScreenshotTest` 를 host 에서 직접 실행하면 macOS / Linux / JDK 마이너 버전 / 폰트 캐시 차이로 CI 와 baseline 이 어긋난다. docker 환경 통일이 root fix.
+
+# 🤖 (옵션) Claude Code 워크플로 참고
+
+`docs/claude/` 에 **1hyok** 이 본 repo 에서 [Claude Code](https://claude.com/claude-code) 를 쓰면서 누적한 hook · `CLAUDE.md` 샘플 · 메모리 템플릿이 있다. **강제 아니고 참고용**.
+
+본인 Claude Code 워크플로에 도입하고 싶으면:
+
+```bash
+./scripts/install-claude-hooks.sh
+```
+
+→ `docs/claude/hooks/*.sh` 를 자기 `.claude/hooks/` 로 symlink (기존 파일 있으면 skip — 덮어쓰기 0). hook 등록·`CLAUDE.md` 일부 가져가기·메모리 도입 등 자세한 가이드는 [`docs/claude/README.md`](docs/claude/README.md) 참고.
+
+본인 `.claude/` 는 `.gitignore` 그대로라 본 폴더와 무관 — 어느 쪽도 다른 쪽을 강제하지 않는다.
 
 # 💻 코딩 컨벤션
 

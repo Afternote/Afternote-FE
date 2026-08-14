@@ -1,12 +1,12 @@
 package com.afternote.feature.afternote.domain.repository.receiver
 
 import androidx.paging.PagingData
-import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItemDto
+import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem
 import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResult
 import com.afternote.feature.afternote.domain.model.receiver.LoadCountResult
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedExportBundle
-import com.afternote.feature.afternote.domain.model.receiver.SenderMessageInfo
+import com.afternote.feature.receiver.domain.model.SenderMessageInfo
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -32,13 +32,13 @@ interface ReceiverRepository {
      * 수신 애프터노트 스트림. 서버는 페이지네이션 미지원이므로 단일 페이지로 받지만,
      * Paging 3 API(LoadState/refresh/cachedIn) 통일과 추후 페이지네이션 도입을 위해 PagingData로 노출한다.
      */
-    fun getPagedReceivedAfternotes(): Flow<PagingData<AfterNoteListItemDto>>
+    fun getPagedReceivedAfternotes(): Flow<PagingData<AfterNoteListItem>>
 
     suspend fun getReceivedAfterNotes(): Result<AfterNotesListResult>
 
     suspend fun getReceivedAfternoteDetail(afternoteId: Long): Result<ReceivedAfternoteDetail>
 
-    suspend fun downloadAllReceived(): Result<ReceivedExportBundle>
+    suspend fun downloadReceivedExport(): Result<ReceivedExportBundle>
 
     suspend fun saveReceivedExportToFile(bundle: ReceivedExportBundle): Result<Unit>
 

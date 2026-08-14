@@ -7,8 +7,8 @@ import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.screen.memoryspace.MemorySpaceScreen
 import com.afternote.feature.mindrecord.presentation.screen.receiver.ReceiverMindRecordScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestionWriteScreen
-import com.afternote.feature.mindrecord.presentation.screen.sender.DeepThoughtWriteScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DiaryWriteScreen
+import com.afternote.feature.mindrecord.presentation.screen.sender.DraftListScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.HomeScreen
 
 /**
@@ -24,7 +24,6 @@ fun NavGraphBuilder.mindRecordNavGraph(actions: MindRecordNavActions) {
                 when (category) {
                     MindRecordCategoryUi.DailyQuestion -> actions.onWriteDailyQuestion()
                     MindRecordCategoryUi.Diary -> actions.onWriteDiary()
-                    MindRecordCategoryUi.DeepThought -> actions.onWriteDeepThought()
                     MindRecordCategoryUi.WeeklyReport -> Unit
                 }
             },
@@ -40,18 +39,20 @@ fun NavGraphBuilder.mindRecordNavGraph(actions: MindRecordNavActions) {
         DailyQuestionWriteScreen(
             onSubmitSuccess = actions::onWriteSubmitSuccess,
             onBackClick = actions::onWriteBack,
+            onDraftListClick = actions::onNavigateToDraftList,
         )
     }
     composable<MindRecordRoute.DiaryWriteRoute> {
         DiaryWriteScreen(
             onSubmitSuccess = actions::onWriteSubmitSuccess,
             onBackClick = actions::onWriteBack,
+            onDraftListClick = actions::onNavigateToDraftList,
         )
     }
-    composable<MindRecordRoute.DeepThoughtWriteRoute> {
-        DeepThoughtWriteScreen(
-            onSubmitSuccess = actions::onWriteSubmitSuccess,
-            onBackClick = actions::onWriteBack,
+    composable<MindRecordRoute.DraftListRoute> {
+        DraftListScreen(
+            onBackClick = actions::onDraftListBack,
+            onDiaryDraftClick = actions::onEditDiaryDraft,
         )
     }
 }

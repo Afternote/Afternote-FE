@@ -53,21 +53,6 @@ sealed class MindRecordCategoryUi(
         }
     }
 
-    data object DeepThought : MindRecordCategoryUi(
-        category = MindRecordCategory.DEEP_THOUGHT,
-        titleRes = R.string.mindrecord_category_deep_thought_title,
-        descriptionRes = R.string.mindrecord_category_deep_thought_description,
-        imageRes = R.drawable.mindrecord_deepthought,
-    ) {
-        @Composable
-        override fun DayIndicator(
-            model: DayUiModel,
-            textColor: Color,
-        ) {
-            if (model.state == DayState.ANSWERED) Dot(textColor)
-        }
-    }
-
     data object WeeklyReport : MindRecordCategoryUi(
         category = MindRecordCategory.WEEKLY_REPORT,
         titleRes = R.string.mindrecord_category_weekly_report_title,
@@ -92,11 +77,10 @@ sealed class MindRecordCategoryUi(
             when (category) {
                 MindRecordCategory.DAILY_QUESTION -> DailyQuestion
                 MindRecordCategory.DIARY -> Diary
-                MindRecordCategory.DEEP_THOUGHT -> DeepThought
                 MindRecordCategory.WEEKLY_REPORT -> WeeklyReport
             }
 
-        fun entries(): List<MindRecordCategoryUi> = listOf(DailyQuestion, Diary, DeepThought, WeeklyReport)
+        fun entries(): List<MindRecordCategoryUi> = listOf(DailyQuestion, Diary, WeeklyReport)
     }
 }
 

@@ -10,16 +10,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
-import com.afternote.feature.afternote.domain.AfternoteServiceType
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
-
-data class AfternoteHomeEntryActions(
-    val navigateToDetail: (String) -> Unit = {},
-    val navigateToGalleryDetail: (String) -> Unit = {},
-    val navigateToMemorialGuidelineDetail: (String) -> Unit = {},
-    val navigateToAdd: (AfternoteCategory) -> Unit = {},
-)
 
 /**
  * 애프터노트 목록 Entry.
@@ -30,8 +22,12 @@ data class AfternoteHomeEntryActions(
  */
 @Composable
 fun AfternoteHomeEntry(
+    navigateToDetail: (String) -> Unit,
+    navigateToGalleryDetail: (String) -> Unit,
+    navigateToMemorialDetail: (String) -> Unit,
+    navigateToAdd: (AfternoteType?) -> Unit,
+    onSettingClick: () -> Unit,
     viewModel: AfternoteHomeViewModel = hiltViewModel(),
-    actions: AfternoteHomeEntryActions = AfternoteHomeEntryActions(),
 ) {
     val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
     val items = viewModel.pagedAfternotes.collectAsLazyPagingItems()
@@ -52,16 +48,18 @@ fun AfternoteHomeEntry(
         onCategorySelected = viewModel::selectTab,
         onListItemClick = { id, type ->
             when (type) {
-                AfternoteServiceType.GALLERY_AND_FILES -> actions.navigateToGalleryDetail(id)
+                AfternoteType.GALLERY_AND_FILES -> navigateToGalleryDetail(id)
 
-                AfternoteServiceType.MEMORIAL -> actions.navigateToMemorialGuidelineDetail(id)
+                AfternoteType.MEMORIAL -> navigateToMemorialDetail(id)
 
-                AfternoteServiceType.SOCIAL_NETWORK -> actions.navigateToDetail(id)
+                // BUSINESS 상세는 소셜 상세 화면을 재사용한다 (구성 동일: 계정 정보·처리 방법·남긴 말씀 — 이슈 #467).
+                AfternoteType.SOCIAL_NETWORK, AfternoteType.BUSINESS -> navigateToDetail(id)
 
-                // BUSINESS · ESTATE 는 placeholder 카테고리. 서버 미지원이라 리스트에 노출되지 않으므로 도달 시 무시.
-                AfternoteServiceType.BUSINESS, AfternoteServiceType.ESTATE -> Unit
+                // ESTATE 는 placeholder 카테고리. 서버 미지원이라 리스트에 노출되지 않으므로 도달 시 무시.
+                AfternoteType.ESTATE -> Unit
             }
         },
-        onFabClick = { actions.navigateToAdd(selectedCategory) },
+        onFabClick = { navigateToAdd(selectedCategory) },
+        onSettingClick = onSettingClick,
     )
 }

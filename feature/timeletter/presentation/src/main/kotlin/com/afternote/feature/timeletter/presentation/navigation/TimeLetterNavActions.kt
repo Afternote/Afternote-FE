@@ -1,7 +1,11 @@
 package com.afternote.feature.timeletter.presentation.navigation
 
 interface TimeLetterNavActions {
+    fun onSettingClick()
+
     fun onNavigateToWrite()
+
+    fun onNavigateToEdit(timeLetterId: Long)
 
     fun onWriteBack()
 

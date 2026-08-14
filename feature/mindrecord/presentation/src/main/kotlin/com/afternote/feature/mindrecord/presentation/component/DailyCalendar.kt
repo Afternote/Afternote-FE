@@ -2,12 +2,12 @@ package com.afternote.feature.mindrecord.presentation.component
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedCard
@@ -43,34 +43,40 @@ fun DailyCalendar(
 ) {
     val days = buildDays(year, month, answeredDays, emotionByDay)
 
-    Column(modifier = modifier) {
-        Row(
-            modifier = Modifier.clickable {},
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.core_ui_arrow_left),
-                contentDescription = null,
-                modifier = Modifier.clickable { onPrevMonth() },
-            )
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(24.dp),
+    ) {
+        // Figma 700:35895 — 헤더 영역 (chevron < / 년월 / chevron >), 그 아래 답변 카운트
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.core_ui_arrow_left),
+                    contentDescription = null,
+                    modifier = Modifier.clickable { onPrevMonth() },
+                )
+                Text(
+                    text = stringResource(MindRecordR.string.mindrecord_calendar_year_month, year, month),
+                    color = AfternoteDesign.colors.gray9,
+                    style = AfternoteDesign.typography.h3,
+                )
+                Icon(
+                    painter = painterResource(R.drawable.core_ui_right),
+                    contentDescription = null,
+                    modifier = Modifier.clickable { onNextMonth() },
+                )
+            }
             Text(
-                text = stringResource(MindRecordR.string.mindrecord_calendar_year_month, year, month),
-                color = AfternoteDesign.colors.gray9,
-                style = AfternoteDesign.typography.h3,
-            )
-            Icon(
-                painter = painterResource(R.drawable.core_ui_right),
-                contentDescription = null,
-                modifier = Modifier.clickable { onNextMonth() },
+                text = stringResource(MindRecordR.string.mindrecord_calendar_answered_count, answeredDays.size),
+                style = AfternoteDesign.typography.captionLargeR,
+                color = AfternoteDesign.colors.black.copy(alpha = 0.35f),
             )
         }
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = stringResource(MindRecordR.string.mindrecord_calendar_answered_count, answeredDays.size),
-            style = AfternoteDesign.typography.captionLargeR,
-            color = AfternoteDesign.colors.black.copy(alpha = 0.35f),
-        )
-        Spacer(modifier = Modifier.height(18.dp))
+
+        // Figma 110:19831 — 캘린더 카드: bg white / border #eee / p=16 / gap=12 / radius=6
         OutlinedCard(
             colors =
                 CardDefaults.cardColors(
@@ -79,7 +85,10 @@ fun DailyCalendar(
             border = BorderStroke(1.dp, color = Color(0xFF000000).copy(alpha = 0.05f)),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Column {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 val dayLabels =
                     listOf(
                         stringResource(MindRecordR.string.mindrecord_calendar_day_label_sun),
@@ -91,22 +100,19 @@ fun DailyCalendar(
                         stringResource(MindRecordR.string.mindrecord_calendar_day_label_sat),
                     )
 
-                Spacer(modifier = Modifier.height(16.dp))
                 Row(modifier = Modifier.fillMaxWidth()) {
                     dayLabels.forEach { dayLabel ->
                         Text(
                             text = dayLabel,
                             modifier = Modifier.weight(1f),
-                            color = AfternoteDesign.colors.black.copy(alpha = 0.3f),
+                            color = AfternoteDesign.colors.gray6,
                             style = AfternoteDesign.typography.footnoteCaption,
                             textAlign = TextAlign.Center,
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
                 val chunked = days.chunked(7)
-
                 Column {
                     chunked.forEach { week ->
                         Row(modifier = Modifier.fillMaxWidth()) {
@@ -117,13 +123,11 @@ fun DailyCalendar(
                             }
                             // 마지막 주가 7개 미만이면 빈 셀로 채우기
                             repeat(7 - week.size) {
-                                Spacer(modifier = Modifier.weight(1f))
+                                Box(modifier = Modifier.weight(1f))
                             }
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(18.dp))
             }
         }
     }

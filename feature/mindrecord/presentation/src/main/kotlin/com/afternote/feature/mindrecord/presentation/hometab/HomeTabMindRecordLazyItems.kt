@@ -30,15 +30,25 @@ import com.afternote.core.ui.R as CoreUiR
 
 /**
  * `:app`은 셸·애프터노트/주간 등 다른 섹션만 담당하고, 마인드레코드 UI는 이 모듈에 둔다.
+ *
+ * @param dateText TODAY'S QUESTION 카드에 표시할 오늘 날짜 (yyyy.MM.dd).
+ * @param questionText 실제 오늘의 질문 본문. 로딩 중이거나 조회에 실패하면 null.
+ * @param isQuestionLoading 질문 조회 중이면 true. 조회 실패(null + false)와 구분하기 위해 함께 받는다.
  */
 fun LazyListScope.homeTabMindRecordQuestionAndCategories(
+    dateText: String,
     categoryCounts: Map<MindRecordCategory, Int>,
     onAnswerClick: () -> Unit,
     onRecordCategoryClick: (MindRecordCategory) -> Unit,
+    questionText: String? = null,
+    isQuestionLoading: Boolean = false,
     isCategoryCountLoading: Boolean = false,
 ) {
     item(key = "mind_record_question") {
         TodayQuestionCard(
+            dateText = dateText,
+            questionText = questionText,
+            isQuestionLoading = isQuestionLoading,
             onAnswerClick = onAnswerClick,
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -58,16 +68,6 @@ fun LazyListScope.homeTabMindRecordQuestionAndCategories(
                 totalCount = categoryCounts[MindRecordCategory.DIARY] ?: 0,
                 onClick = { onRecordCategoryClick(MindRecordCategory.DIARY) },
                 useDiaryIconLayout = true,
-                isCountLoading = isCategoryCountLoading,
-            )
-            RecordCategoryCard(
-                modifier =
-                    Modifier.weight(1f),
-                iconResId = CoreUiR.drawable.core_ui_ic_deep_thought,
-                title = stringResource(MindRecordCategoryUi.DeepThought.titleRes),
-                subtitle = stringResource(MindRecordCategoryUi.DeepThought.descriptionRes),
-                totalCount = categoryCounts[MindRecordCategory.DEEP_THOUGHT] ?: 0,
-                onClick = { onRecordCategoryClick(MindRecordCategory.DEEP_THOUGHT) },
                 isCountLoading = isCategoryCountLoading,
             )
         }
@@ -111,10 +111,11 @@ private fun HomeTabMindRecordQuestionAndCategoriesPreview() {
     AfternoteTheme {
         LazyColumn {
             homeTabMindRecordQuestionAndCategories(
+                dateText = "2026.04.10",
+                questionText = "오늘 내가 배운\n가장 작은 교훈은 무엇인가요?",
                 categoryCounts =
                     mapOf(
                         MindRecordCategory.DIARY to 18,
-                        MindRecordCategory.DEEP_THOUGHT to 7,
                     ),
                 onAnswerClick = {},
                 onRecordCategoryClick = {},

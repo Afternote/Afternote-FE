@@ -1,49 +1,60 @@
 package com.afternote.feature.afternote.data.mapper
 
-import com.afternote.feature.afternote.data.dto.AfternoteCreateGalleryRequest
-import com.afternote.feature.afternote.data.dto.AfternoteCreatePlaylistRequest
-import com.afternote.feature.afternote.data.dto.AfternoteCreateSocialRequest
-import com.afternote.feature.afternote.data.dto.AfternoteReceiverRef
-import com.afternote.feature.afternote.data.dto.AfternoteUpdateRequest
+import com.afternote.feature.afternote.data.dto.AfternoteCreateAccountRequestDto
+import com.afternote.feature.afternote.data.dto.AfternoteCreateGalleryRequestDto
+import com.afternote.feature.afternote.data.dto.AfternoteCreatePlaylistRequestDto
+import com.afternote.feature.afternote.data.dto.AfternoteReceiverRefDto
+import com.afternote.feature.afternote.data.dto.AfternoteUpdateRequestDto
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
+import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
-import com.afternote.feature.afternote.domain.model.author.CreatePlaylistPayload
-import com.afternote.feature.afternote.domain.model.author.CreateSocialPayload
+import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 
 fun AfternoteUpdatePayload.toRequest() =
-    AfternoteUpdateRequest(
+    AfternoteUpdateRequestDto(
         category = category,
         title = title,
-        actions = actions,
-        leaveMessage = leaveMessage,
+        processingMethods = processingMethods,
+        leaveMessage = leaveMessageBlocks.toDto(),
         credentials = credentials?.toDto(),
         receivers = receivers?.toDto(),
-        playlist = playlist?.toDto(),
+        memorial = memorial?.toDto(),
     )
 
-fun CreateSocialPayload.toRequest() =
-    AfternoteCreateSocialRequest(
+fun CreateAccountPayload.toSocialRequest() =
+    AfternoteCreateAccountRequestDto(
         category = "SOCIAL",
         title = title,
-        actions = actions,
-        leaveMessage = leaveMessage,
+        processingMethods = processingMethods,
+        leaveMessage = leaveMessageBlocks.toDto(),
         credentials = credentials?.toDto(),
-        receivers = receiverIds.map { AfternoteReceiverRef(receiverId = it) },
+        receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
+    )
+
+/** BUSINESS 생성 요청. [toSocialRequest] 와 동일 필드 조립이며 category 만 "BUSINESS" 로 실린다. */
+fun CreateAccountPayload.toBusinessRequest() =
+    AfternoteCreateAccountRequestDto(
+        category = "BUSINESS",
+        title = title,
+        processingMethods = processingMethods,
+        leaveMessage = leaveMessageBlocks.toDto(),
+        credentials = credentials?.toDto(),
+        receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
     )
 
 fun CreateGalleryPayload.toRequest() =
-    AfternoteCreateGalleryRequest(
+    AfternoteCreateGalleryRequestDto(
         category = "GALLERY",
         title = title,
-        actions = actions,
-        leaveMessage = leaveMessage,
-        receivers = receiverIds.map { AfternoteReceiverRef(receiverId = it) },
+        processingMethods = processingMethods,
+        leaveMessage = leaveMessageBlocks.toDto(),
+        receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
     )
 
-fun CreatePlaylistPayload.toRequest() =
-    AfternoteCreatePlaylistRequest(
+fun CreateMemorialPayload.toRequest() =
+    AfternoteCreatePlaylistRequestDto(
         category = "PLAYLIST",
         title = title,
-        playlist = playlist.toDto(),
-        receivers = receiverIds.map { AfternoteReceiverRef(receiverId = it) },
+        memorial = memorial.toDto(),
+        receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
     )

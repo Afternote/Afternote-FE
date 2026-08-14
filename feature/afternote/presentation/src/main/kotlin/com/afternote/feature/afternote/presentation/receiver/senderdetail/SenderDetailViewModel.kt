@@ -4,13 +4,16 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import com.afternote.feature.afternote.domain.model.receiver.DeliveryVerification
-import com.afternote.feature.afternote.domain.model.receiver.DeliveryVerificationStatus
-import com.afternote.feature.afternote.domain.repository.receiver.ReceiverAuthRepository
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
 import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceiverRoute
 import com.afternote.feature.afternote.presentation.receiver.recordsbox.SenderEntry
 import com.afternote.feature.afternote.presentation.receiver.recordsbox.SenderRegistry
+import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
+import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
+import com.afternote.feature.receiver.domain.model.DeliveryVerification
+import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
+import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,6 +39,7 @@ class SenderDetailViewModel
         private val senderRegistry: SenderRegistry,
         private val receiverRepository: ReceiverRepository,
         private val receiverAuthRepository: ReceiverAuthRepository,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val senderId: String =
             savedStateHandle.toRoute<ReceiverRoute.SenderDetailRoute>().senderId
@@ -111,7 +115,8 @@ class SenderDetailViewModel
                     senderRegistry.updateVerificationStatus(sender.id, verification.status)
                     verification.toSuccessState(displayName)
                 },
-                onFailure = {
+                onFailure = { e ->
+                    errorReporter.recordAfternoteFailure(AfternoteFailureStage.SENDER_STATUS_LOAD, e)
                     SenderDetailUiState.StatusLoadFailed(displayName = displayName)
                 },
             )

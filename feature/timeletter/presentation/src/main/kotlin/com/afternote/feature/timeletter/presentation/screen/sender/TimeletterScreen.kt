@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -13,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -34,12 +37,25 @@ import com.afternote.feature.timeletter.presentation.viewmodel.ViewMode
 fun TimeletterScreen(
     onLetterClick: (Long) -> Unit = {},
     modifier: Modifier = Modifier,
+    onSettingClick: () -> Unit = {},
     onWriteClick: () -> Unit = {},
+    onEditClick: (Long) -> Unit = {},
     onFilterRecipientClick: () -> Unit = {},
     viewModel: TimeletterViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var viewMode by remember { mutableStateOf(ViewMode.List) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    val errorMessage = (uiState as? TimeletterUiState.Success)?.errorMessage
+    LaunchedEffect(errorMessage) {
+        errorMessage ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(
+            message = errorMessage,
+            withDismissAction = true,
+        )
+        viewModel.consumeErrorMessage()
+    }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     LaunchedEffect(lifecycleOwner) {
@@ -50,8 +66,10 @@ fun TimeletterScreen(
 
     Scaffold(
         modifier = modifier,
-        topBar = { HomeTopBar() },
+        containerColor = Color.Transparent,
+        topBar = { HomeTopBar(onSettingClick = onSettingClick) },
         floatingActionButton = { PenFloatingActionButton(onClick = onWriteClick) },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { paddingValues ->
         when (val state = uiState) {
             is TimeletterUiState.Loading -> {
@@ -76,6 +94,8 @@ fun TimeletterScreen(
                     selectedFilterReceiverIds = state.selectedFilterReceiverIds,
                     onFilterClick = onFilterRecipientClick,
                     onLetterClick = onLetterClick,
+                    onEditClick = onEditClick,
+                    onDeleteClick = viewModel::deleteTimeLetter,
                     modifier = Modifier.padding(paddingValues),
                 )
             }

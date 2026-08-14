@@ -3,7 +3,7 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 import com.afternote.feature.mindrecord.domain.model.MindRecordSummary
 
 /**
- * 수신자 마음의 기록 화면 — 단일 list 응답을 type 으로 그룹핑한 후 3개 탭에 분배한다.
+ * 수신자 마음의 기록 화면 — `receiver-auth` 2개 엔드포인트 응답을 탭별로 분배한다.
  *
  * 정렬은 클라이언트에서 [SortOrder] 로 처리하며 필터(`filter`)가 적용된 경우 헤더에 인디케이터 노출.
  */
@@ -13,13 +13,6 @@ sealed interface ReceiverMindRecordUiState {
     data class Success(
         val dailyQuestions: List<MindRecordSummary>,
         val diaries: List<MindRecordSummary>,
-        val deepThoughts: List<MindRecordSummary>,
-        /**
-         * 깊은생각 카테고리 칩 라벨 목록. API 미연동이라 임시 mock 데이터 (ViewModel 의
-         * `MOCK_DEEP_THOUGHT_CATEGORIES`).
-         */
-        val deepThoughtCategories: List<String>,
-        val selectedDeepThoughtCategory: String? = null,
         val filter: ReceiverMindRecordFilter = ReceiverMindRecordFilter(),
     ) : ReceiverMindRecordUiState
 

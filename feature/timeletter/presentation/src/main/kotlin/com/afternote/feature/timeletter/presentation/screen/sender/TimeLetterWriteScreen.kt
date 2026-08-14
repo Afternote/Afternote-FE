@@ -24,6 +24,7 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -44,7 +45,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
@@ -61,6 +61,8 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.calendar.BottomSheetCalendar
+import com.afternote.core.ui.popup.Popup
+import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
@@ -101,6 +103,8 @@ fun TimeLetterWriteScreen(
     onAlignCenterClick: () -> Unit = {},
     onAlignLeftClick: () -> Unit = {},
     onAlignRightClick: () -> Unit = {},
+    onFreePlanLimitConfirm: () -> Unit = {},
+    onFreePlanLimitDismiss: () -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val sheetState = rememberModalBottomSheetState()
@@ -109,7 +113,7 @@ fun TimeLetterWriteScreen(
     var linkUrlInput by remember { mutableStateOf("") }
 
     val textBlockStates =
-        remember { androidx.compose.runtime.mutableStateMapOf<Long, TextFieldState>() }
+        remember(uiState.editingTimeLetterId) { androidx.compose.runtime.mutableStateMapOf<Long, TextFieldState>() }
 
     fun collectTextContents(): Map<Long, String> =
         uiState.editorBlocks
@@ -133,6 +137,37 @@ fun TimeLetterWriteScreen(
         val msg = uiState.errorMessage ?: return@LaunchedEffect
         snackbarHostState.showSnackbar(msg)
         onErrorShown()
+    }
+
+    LaunchedEffect(uiState.editingTimeLetterId, uiState.initialTitle) {
+        val title = uiState.initialTitle
+        if (uiState.editingTimeLetterId == null || title != null) {
+            titleState.edit { replace(0, length, title.orEmpty()) }
+        }
+    }
+
+    if (uiState.isLoadingEditingLetter) {
+        Scaffold(
+            modifier = modifier,
+            topBar = {
+                DetailTopBar(
+                    title = "",
+                    onBackClick = onBackClick,
+                )
+            },
+            containerColor = AfternoteDesign.colors.white,
+        ) { innerPadding ->
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+        return
     }
 
     var showDatePicker by remember { mutableStateOf(false) }
@@ -214,7 +249,7 @@ fun TimeLetterWriteScreen(
                 },
                 onFileClick = {
                     showMediaSheet = false
-                    fileLauncher.launch("*/*")
+                    fileLauncher.launch("application/pdf")
                 },
                 onLinkClick = {
                     showMediaSheet = false
@@ -278,6 +313,19 @@ fun TimeLetterWriteScreen(
         )
     }
 
+    if (uiState.showFreePlanLimitPopup) {
+        Popup(
+            type = PopupType.Variant2,
+            message = "현재 플랜은 타임레터를 3건까지만 등록할 수 있습니다.\n구독 시, 더 많은 타임레터를 제한 없이\n남기고 관리할 수 있습니다.",
+            onConfirm = onFreePlanLimitConfirm,
+            onDismiss = onFreePlanLimitDismiss,
+            confirmText = "구독 후 기록하기",
+            dismissText = "나중에 하기",
+            confirmButtonColor = AfternoteDesign.colors.gray3,
+            dismissButtonColor = AfternoteDesign.colors.gray3,
+        )
+    }
+
     Scaffold(
         modifier = modifier,
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -287,7 +335,7 @@ fun TimeLetterWriteScreen(
                 onBackClick = onBackClick,
                 actions = {
                     TimeLetterTextButton(
-                        text = "등록",
+                        text = if (uiState.editingTimeLetterId == null) "등록" else "수정",
                         onClick = {
                             onRegisterClick(
                                 titleState.text.toString(),
@@ -347,6 +395,7 @@ fun TimeLetterWriteScreen(
                         TextBlockItem(
                             blockId = block.id,
                             textBlockStates = textBlockStates,
+                            initialText = uiState.initialTextContents[block.id].orEmpty(),
                             textAlign = uiState.textAlign,
                             onFocused = { onSetFocusedBlock(block.id) },
                         )
@@ -392,14 +441,18 @@ fun TimeLetterWriteScreen(
 private fun TextBlockItem(
     blockId: Long,
     textBlockStates: SnapshotStateMap<Long, TextFieldState>,
+    initialText: String,
     textAlign: TextAlign,
     onFocused: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state =
         remember(blockId) {
-            textBlockStates.getOrPut(blockId) { TextFieldState() }
+            textBlockStates.getOrPut(blockId) { TextFieldState(initialText) }
         }
+    LaunchedEffect(blockId, initialText) {
+        state.edit { replace(0, length, initialText) }
+    }
     DisposableEffect(blockId) {
         onDispose { textBlockStates.remove(blockId) }
     }

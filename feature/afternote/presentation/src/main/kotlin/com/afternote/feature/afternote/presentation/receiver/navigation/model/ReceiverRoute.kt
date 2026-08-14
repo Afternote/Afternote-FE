@@ -5,8 +5,8 @@ import kotlinx.serialization.Serializable
 /**
  * 수신자 흐름 [com.afternote.core.ui.Route.Receiver] 그래프 내부 라우트.
  *
- * 진입점(수신자 전용 온보딩)은 디자인 미정으로 미연결 상태이며, 본 그래프는
- * 그래프 내부 라우팅(Home → AfternoteList → AfternoteDetail)만 정의한다.
+ * 온보딩 Welcome 의 "전달 받은 기록 확인하기" 콜백이 [com.afternote.core.ui.Route.Receiver]
+ * (= startDestination [ReceivedRecordsRoute]) 로 진입한다.
  */
 sealed interface ReceiverRoute {
     /** 수신자 대시보드 — 발신자 한 마디 + 마음의 기록·타임레터·애프터노트 섹션 카드. */
@@ -66,7 +66,7 @@ sealed interface ReceiverRoute {
     /**
      * 본인 확인 이메일 인증 화면(designs 3·4). 인증 시작하기 → 진입.
      *
-     * 인증 성공 시 [com.afternote.feature.afternote.domain.repository.receiver.IdentityVerificationRepository]
+     * 인증 성공 시 [com.afternote.feature.receiver.domain.repository.IdentityVerificationRepository]
      * 캐시가 켜져 이후 동일 사용자(폰)에서는 마스터 키로 직진. DataStore 영구 저장이라 앱 재시작 후에도 유지.
      */
     @Serializable
@@ -81,7 +81,7 @@ sealed interface ReceiverRoute {
     data object MasterKeyRoute : ReceiverRoute
 
     /**
-     * 열람 신청 2단계: 증빙 서류 업로드(6·7·8). 사망진단서 + 가족관계증명서 각 1건 첨부.
+     * 열람 신청 2단계: 증빙 서류 업로드(6·7·8). 사망진단서 / 가족관계증명서 중 하나 이상 첨부 (이슈 #380).
      */
     @Serializable
     data object DocumentUploadRoute : ReceiverRoute
@@ -105,6 +105,20 @@ sealed interface ReceiverRoute {
      */
     @Serializable
     data class AfternoteDetailRoute(
+        val afternoteId: String,
+    ) : ReceiverRoute
+
+    /**
+     * 수신 추억 플레이리스트 — 추억 상세
+     * ([com.afternote.feature.afternote.presentation.receiver.detail.MemorialReceivedDetailScreen]) 의
+     * "추억 플레이리스트" 카드 클릭 진입.
+     *
+     * 프로퍼티 이름은
+     * [com.afternote.feature.afternote.presentation.receiver.playlist.ReceiverMemorialPlaylistViewModel] 의
+     * `SavedStateHandle` 키(`afternoteId`)와 일치해야 한다(typed-safe routes 규약).
+     */
+    @Serializable
+    data class MemorialPlaylistRoute(
         val afternoteId: String,
     ) : ReceiverRoute
 }

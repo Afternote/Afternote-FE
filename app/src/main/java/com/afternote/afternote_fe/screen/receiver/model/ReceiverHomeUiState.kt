@@ -1,5 +1,6 @@
 package com.afternote.afternote_fe.screen.receiver.model
 
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
 
 /**
@@ -37,7 +38,6 @@ data class MindRecordSummary(
     val totalCount: Int,
     val dailyQuestionCount: Int,
     val diaryCount: Int,
-    val deepThoughtCount: Int,
 )
 
 @Immutable
@@ -55,6 +55,6 @@ sealed interface ReceiverDownloadState {
     data object Done : ReceiverDownloadState
 
     data class Failed(
-        val message: String,
+        @param:StringRes val messageRes: Int,
     ) : ReceiverDownloadState
 }

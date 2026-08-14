@@ -9,10 +9,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
@@ -20,7 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -28,17 +28,21 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
 import com.afternote.feature.mindrecord.presentation.component.DiaryCard
 import com.afternote.feature.mindrecord.presentation.component.DiaryComponent
 import com.afternote.feature.mindrecord.presentation.component.DiaryReportCard
 import com.afternote.feature.mindrecord.presentation.component.MindRecordEmptyState
+import com.afternote.feature.mindrecord.presentation.mapper.toEmoji
 import com.afternote.feature.mindrecord.presentation.model.DailyDiary
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListViewModel
-import java.time.LocalDate
-import androidx.compose.foundation.lazy.grid.items as gridItems
+import java.time.YearMonth
+import androidx.compose.foundation.lazy.staggeredgrid.items as gridItems
+
+private val PreviewYearMonth = YearMonth.of(2026, 7)
 
 @Composable
 fun DiaryScreen(
@@ -62,6 +66,11 @@ fun DiaryScreen(
                 modifier = modifier,
                 isListView = isListView,
                 diaries = state.diaries,
+                yearMonth = state.yearMonth,
+                monthDiaryCount = state.monthDiaryCount,
+                weeklyMoodEmoji = state.weeklyDominantMood?.toEmoji(),
+                onDelete = viewModel::delete,
+                onYearMonthChanged = viewModel::selectYearMonth,
             )
         }
     }
@@ -71,15 +80,27 @@ fun DiaryScreen(
 private fun DiaryListContent(
     isListView: Boolean,
     diaries: List<DailyDiary>,
+    // 조회 중인 월은 VM 이 들고 있다 — 자동 갱신이 같은 월을 다시 조회해야 하고,
+    // 로컬 remember 로 두면 로딩으로 이 컴포저블이 폐기될 때 함께 사라진다.
+    // 기본값을 두지 않는다 — 빠뜨리면 조용히 이번 달로 돌아간다.
+    yearMonth: YearMonth,
     modifier: Modifier = Modifier,
+    monthDiaryCount: Int = 0,
+    weeklyMoodEmoji: String? = null,
+    onDelete: (Long) -> Unit = {},
+    onYearMonthChanged: (YearMonth) -> Unit = {},
 ) {
     if (isListView && diaries.isEmpty()) {
-        MindRecordEmptyState(modifier = modifier)
+        MindRecordEmptyState(
+            modifier = modifier,
+            title = stringResource(R.string.mindrecord_diary_empty_state_title),
+            description = stringResource(R.string.mindrecord_diary_empty_state_description),
+        )
         return
     }
 
-    val today = LocalDate.now()
-    val currentMonthDiaries = diaries.filter { it.date.year == today.year && it.date.monthValue == today.monthValue }
+    val currentMonthDiaries =
+        diaries.filter { it.date.year == yearMonth.year && it.date.monthValue == yearMonth.monthValue }
     val answeredDays = currentMonthDiaries.map { it.date.dayOfMonth }.toSet()
     val emotionByDay =
         currentMonthDiaries
@@ -90,11 +111,11 @@ private fun DiaryListContent(
         LazyColumn(modifier = modifier) {
             item {
                 DailyCalendar(
-                    year = today.year,
-                    month = today.monthValue,
+                    year = yearMonth.year,
+                    month = yearMonth.monthValue,
                     type = MindRecordCategoryUi.Diary,
-                    onNextMonth = {},
-                    onPrevMonth = {},
+                    onPrevMonth = { onYearMonthChanged(yearMonth.minusMonths(1)) },
+                    onNextMonth = { onYearMonthChanged(yearMonth.plusMonths(1)) },
                     answeredDays = answeredDays,
                     emotionByDay = emotionByDay,
                 )
@@ -120,22 +141,30 @@ private fun DiaryListContent(
                 DiaryComponent(
                     diary = diary,
                     modifier = Modifier.padding(vertical = 8.dp),
+                    onDelete = { onDelete(diary.id) },
                 )
             }
         }
     } else {
-        LazyVerticalGrid(
+        // Figma 2671:16732 — 일기 카드 형: 리포트 카드 + 2열 masonry 그리드
+        LazyVerticalStaggeredGrid(
             modifier = modifier,
-            columns = GridCells.Fixed(2),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            columns = StaggeredGridCells.Fixed(2),
+            verticalItemSpacing = 8.dp,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            item(span = { GridItemSpan(2) }) {
-                DiaryReportCard()
+            item(span = StaggeredGridItemSpan.FullLine) {
+                DiaryReportCard(
+                    monthDiaryCount = monthDiaryCount,
+                    weeklyMoodEmoji = weeklyMoodEmoji,
+                )
                 Spacer(modifier = Modifier.height(24.dp))
             }
             gridItems(diaries, key = { it.id }) { diary ->
-                DiaryCard(diary = diary)
+                DiaryCard(
+                    diary = diary,
+                    onDelete = { onDelete(diary.id) },
+                )
             }
         }
     }
@@ -166,6 +195,8 @@ private fun DiaryScreenPreviewTrue() {
             modifier = Modifier,
             isListView = true,
             diaries = emptyList(),
+            // 프리뷰는 고정 월로 렌더한다 — YearMonth.now() 면 달이 바뀔 때마다 결과가 달라진다.
+            yearMonth = PreviewYearMonth,
         )
     }
 }
@@ -178,6 +209,7 @@ private fun DiaryScreenPreviewFalse() {
             modifier = Modifier,
             isListView = false,
             diaries = emptyList(),
+            yearMonth = PreviewYearMonth,
         )
     }
 }

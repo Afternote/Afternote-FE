@@ -1,74 +1,112 @@
 package com.afternote.feature.afternote.data.repositoryimpl.receiver
 
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.requireData
-import com.afternote.feature.afternote.data.dto.DeliveryVerificationRequest
-import com.afternote.feature.afternote.data.dto.ReceiverAuthPresignedUrlRequest
-import com.afternote.feature.afternote.data.dto.ReceiverAuthVerifyRequest
+import com.afternote.core.network.model.requireStatus
+import com.afternote.feature.afternote.data.dto.DeliveryVerificationRequestDto
+import com.afternote.feature.afternote.data.dto.ReceiverAuthCodeEmailSendRequestDto
+import com.afternote.feature.afternote.data.dto.ReceiverAuthPresignedUrlRequestDto
+import com.afternote.feature.afternote.data.dto.ReceiverAuthVerifyRequestDto
+import com.afternote.feature.afternote.data.dto.ReceiverEmailAuthVerifyRequestDto
 import com.afternote.feature.afternote.data.dto.toDomain
 import com.afternote.feature.afternote.data.service.ReceiverAuthApiService
-import com.afternote.feature.afternote.domain.error.ReceiverDeliverySubmitException
-import com.afternote.feature.afternote.domain.model.receiver.DeliveryVerification
-import com.afternote.feature.afternote.domain.model.receiver.ReceiverAuthPresignedUrl
-import com.afternote.feature.afternote.domain.model.receiver.ReceiverIdentity
-import com.afternote.feature.afternote.domain.model.receiver.SenderMessageInfo
-import com.afternote.feature.afternote.domain.repository.receiver.ReceiverAuthRepository
+import com.afternote.feature.afternote.domain.error.ReceiverDeliveryVerificationException
+import com.afternote.feature.afternote.domain.error.ReceiverEmailAuthException
+import com.afternote.feature.afternote.domain.error.ReceiverMasterKeyException
+import com.afternote.feature.receiver.domain.model.DeliveryVerification
+import com.afternote.feature.receiver.domain.model.ReceiverAuthPresignedUrl
+import com.afternote.feature.receiver.domain.model.ReceiverEmailAuthResult
+import com.afternote.feature.receiver.domain.model.ReceiverIdentity
+import com.afternote.feature.receiver.domain.model.SenderMessageInfo
+import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * `receiver-auth` 계열 endpoint 의 [ReceiverAuthRepository] 구현.
+ *
+ * 에러 처리 구조 — 일부 메서드는 try/catch 가 [runCatchingCancellable] *안에* 포개져 있다:
+ * 안쪽 catch 가 [ApiException](인프라 타입)을 도메인 예외로 바꿔 던지면(exception translation),
+ * 그 새 예외는 자기를 만든 try 로 되돌아가지 않고 바깥 [runCatchingCancellable] 이 잡아
+ * `Result.failure(도메인 예외)` 로 반환된다 — 호출자에게 예외가 throw 되어 나가는 일은 없다.
+ * 안쪽 catch 는 [ApiException] 만 받으므로 취소는 여기 걸리지 않고 바깥 래퍼가 그대로 되던진다.
+ */
 @Singleton
 class ReceiverAuthRepositoryImpl
     @Inject
     constructor(
         private val api: ReceiverAuthApiService,
     ) : ReceiverAuthRepository {
-        override suspend fun verify(authCode: String): Result<ReceiverIdentity> =
-            runCatching {
-                api.verify(ReceiverAuthVerifyRequest(authCode)).requireData().toDomain()
+        override suspend fun verifyMasterKey(authCode: String): Result<ReceiverIdentity> =
+            runCatchingCancellable {
+                try {
+                    api.verifyMasterKey(ReceiverAuthVerifyRequestDto(authCode)).requireData().toDomain()
+                } catch (e: ApiException) {
+                    throw ReceiverMasterKeyException(status = e.status, serverMessage = e.serverMessage, serverCode = e.code)
+                }
+            }
+
+        override suspend fun sendEmailAuthCode(email: String): Result<Unit> =
+            runCatchingCancellable {
+                try {
+                    api.sendEmailAuthCode(ReceiverAuthCodeEmailSendRequestDto(email)).requireStatus()
+                } catch (e: ApiException) {
+                    throw ReceiverEmailAuthException(status = e.status, serverMessage = e.serverMessage, serverCode = e.code)
+                }
+            }
+
+        override suspend fun verifyEmailAuthCode(
+            email: String,
+            authCode: String,
+        ): Result<ReceiverEmailAuthResult> =
+            runCatchingCancellable {
+                try {
+                    api
+                        .verifyEmailAuthCode(
+                            ReceiverEmailAuthVerifyRequestDto(email = email, authCode = authCode),
+                        ).requireData()
+                        .toDomain()
+                } catch (e: ApiException) {
+                    throw ReceiverEmailAuthException(status = e.status, serverMessage = e.serverMessage, serverCode = e.code)
+                }
             }
 
         override suspend fun getPresignedUrl(extension: String): Result<ReceiverAuthPresignedUrl> =
-            runCatching {
-                api.getPresignedUrl(ReceiverAuthPresignedUrlRequest(extension)).requireData().toDomain()
+            runCatchingCancellable {
+                api.getPresignedUrl(ReceiverAuthPresignedUrlRequestDto(extension)).requireData().toDomain()
             }
 
         override suspend fun submitDeliveryVerification(
-            deathCertificateUrl: String,
-            familyRelationCertificateUrl: String,
+            deathCertificateUrl: String?,
+            familyRelationCertificateUrl: String?,
         ): Result<DeliveryVerification> =
-            runCatching {
-                api
-                    .submitDeliveryVerification(
-                        DeliveryVerificationRequest(
-                            deathCertificateUrl = deathCertificateUrl,
-                            familyRelationCertificateUrl = familyRelationCertificateUrl,
-                        ),
-                    ).requireData()
-                    .toDomain()
-            }.recoverCatching { throwable ->
-                // ApiErrorInterceptor 가 4xx/5xx 응답을 ApiException 으로 변환 (백엔드 message 포함).
-                // presentation 이 core:network 의 ApiException 을 직접 알면 layer 위반이므로
-                // 도메인 예외 ReceiverDeliverySubmitException 으로 변환해 노출한다.
-                //
-                // ApiException.serverMessage = 서버가 실제 보낸 message (null 가능),
-                // ApiException.message = 클라 fallback 섞여 있어 사용자 노출 부적합 — serverMessage 만 전달.
-                throw if (throwable is ApiException) {
-                    ReceiverDeliverySubmitException(
-                        serverMessage = throwable.serverMessage,
-                        httpCode = throwable.code,
+            runCatchingCancellable {
+                try {
+                    api
+                        .submitDeliveryVerification(
+                            DeliveryVerificationRequestDto(
+                                deathCertificateUrl = deathCertificateUrl,
+                                familyRelationCertificateUrl = familyRelationCertificateUrl,
+                            ),
+                        ).requireData()
+                        .toDomain()
+                } catch (e: ApiException) {
+                    throw ReceiverDeliveryVerificationException(
+                        status = e.status,
+                        serverMessage = e.serverMessage,
+                        serverCode = e.code,
                     )
-                } else {
-                    throwable
                 }
             }
 
         override suspend fun getDeliveryVerificationStatus(): Result<DeliveryVerification> =
-            runCatching {
+            runCatchingCancellable {
                 api.getDeliveryVerificationStatus().requireData().toDomain()
             }
 
         override suspend fun getSenderMessage(): Result<SenderMessageInfo> =
-            runCatching {
+            runCatchingCancellable {
                 api.getSenderMessage().requireData().toDomain()
             }
     }

@@ -1,35 +1,35 @@
 package com.afternote.core.data.mapper.auth
 
 import com.afternote.core.model.AccountRegistration
-import com.afternote.core.model.EmailVerification
+import com.afternote.core.model.FoundAccount
 import com.afternote.core.model.Session
 import com.afternote.core.model.TokenBundle
-import com.afternote.core.network.dto.LoginData
-import com.afternote.core.network.dto.ReissueData
-import com.afternote.core.network.dto.SignUpData
-import com.afternote.core.network.dto.VerifyEmailData
+import com.afternote.core.network.dto.EmailFindDto
+import com.afternote.core.network.dto.LoginDto
+import com.afternote.core.network.dto.ReissueDto
+import com.afternote.core.network.dto.SignUpDto
 
 /**
  * Auth DTO를 Domain 모델로 변환. (스웨거 기준)
- * TODO:리팩토링 점검 필요
  */
 object AuthMapper {
-    fun toEmailVerifyResult(dto: VerifyEmailData): EmailVerification = EmailVerification(isVerified = dto.isVerified ?: true)
+    fun toSignUpResult(dto: SignUpDto): AccountRegistration = AccountRegistration(userId = dto.userId, email = dto.email)
 
-    fun toSignUpResult(dto: SignUpData): AccountRegistration = AccountRegistration(userId = dto.userId, email = dto.email)
+    fun toFoundAccount(dto: EmailFindDto): FoundAccount = FoundAccount(name = dto.name, email = dto.email)
 
-    fun toDefaultLoginResult(dto: LoginData.DefaultLoginData): Session.DefaultSession =
+    fun toDefaultLoginResult(dto: LoginDto.DefaultLoginDto): Session.DefaultSession =
         Session.DefaultSession(
             accessToken = dto.accessToken,
             refreshToken = dto.refreshToken,
         )
 
-    fun toSocialLoginResult(dto: LoginData.SocialLoginData): Session.SocialSession =
+    fun toSocialLoginResult(dto: LoginDto.SocialLoginDto): Session.SocialSession =
         Session.SocialSession(
             accessToken = dto.accessToken,
             refreshToken = dto.refreshToken,
             isNewUser = dto.isNewUser,
         )
 
-    fun toRotateTokenResult(dto: ReissueData): TokenBundle = TokenBundle(accessToken = dto.accessToken, refreshToken = dto.refreshToken)
+    fun toRotateTokenResult(dto: ReissueDto): TokenBundle =
+        TokenBundle(accessToken = dto.accessToken, refreshToken = dto.refreshToken, expiresIn = dto.expiresIn)
 }

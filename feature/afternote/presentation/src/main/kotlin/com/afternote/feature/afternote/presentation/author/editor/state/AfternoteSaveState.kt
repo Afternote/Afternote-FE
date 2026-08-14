@@ -10,6 +10,10 @@ import com.afternote.feature.afternote.presentation.author.editor.receiver.model
  * [validationError]로 [AfternoteValidationError.messageResId] 기반 UI 메시지를 표시합니다.
  *
  * [message]는 로깅·Crashlytics 등에서 원인 파악용으로 [validationError] 이름을 담습니다.
+ *
+ * 현재 이 예외를 던지는 곳은 없다 — 저장 전 로컬 검증은 `AfternoteEditorValidator` 결과를
+ * `validationError` 상태에 바로 넣고 반환하는 경로를 쓴다. 서버가 거절한 검증(수신자 필수 등)은
+ * domain 의 `AfternoteAuthoringValidationException` 이 맡는다.
  */
 class AfternoteValidationException(
     val validationError: AfternoteValidationError,
@@ -20,35 +24,39 @@ enum class AfternoteValidationError(
     @param:StringRes val messageResId: Int,
 ) {
     TITLE_REQUIRED(R.string.afternote_validation_title_required),
-    SOCIAL_CREDENTIALS_REQUIRED(R.string.afternote_validation_social_credentials_required),
-    SOCIAL_ACTIONS_REQUIRED(R.string.afternote_validation_social_actions_required),
-    GALLERY_ACTIONS_REQUIRED(R.string.afternote_validation_gallery_actions_required),
+    ACCOUNT_CREDENTIALS_REQUIRED(R.string.afternote_validation_account_credentials_required),
 
-    /** BUSINESS·ESTATE 등 디자인 미확정으로 placeholder 만 노출되는 카테고리에서 저장 시도 시. */
+    /** 처리 방법 1개 이상 필요 (계정·갤러리 폼 공통 — [EditorFormState.processingMethods] 단일 리스트 검증). */
+    ACTIONS_REQUIRED(R.string.afternote_validation_actions_required),
+
+    /** ESTATE 등 디자인 미확정으로 placeholder 만 노출되는 카테고리에서 저장 시도 시. */
     UNIMPLEMENTED_CATEGORY(R.string.afternote_validation_unimplemented_category),
 
     /** 수신자 최소 1명 필요 (모든 카테고리). API 400/475와 동일 메시지. */
     RECEIVERS_REQUIRED(R.string.afternote_validation_receivers_required),
+
+    /**
+     * 갤러리 수신자 서버 확인용 — 사용처 0건. [AfternoteValidationException] 과 짝인데 그 비동기 검증
+     * 자체가 미구현이라 함께 떠 있다. 지우지 말고 그 경로가 붙을 때 같이 살린다.
+     */
     GALLERY_RECEIVERS_REQUIRED(R.string.afternote_validation_gallery_receivers_required),
     PLAYLIST_SONGS_REQUIRED(R.string.afternote_validation_playlist_songs_required),
+
+    /**
+     * 남기실 말씀에 제목만 쓰고 본문을 비운 블록이 있을 때. 서버가 본문을 필수로 검증해
+     * 그대로 보내면 400 이므로 저장 전에 막는다 — 입력한 제목을 조용히 버리지 않기 위함이다.
+     */
+    LEAVE_MESSAGE_BODY_REQUIRED(R.string.afternote_validation_leave_message_body_required),
 }
 
 /**
  * 에디터 화면의 단일 UI 상태.
  *
- * CLAUDE.md UI Layer 규칙(*"한 화면당 단일 UI State 객체. loading/error/data 독립 스트림 분리 금지"*)에 따라
- * 폼 SSOT([form]), 작성자 수신자 목록([authorReceivers]), 저장 진행/오류 필드를 한 객체로 묶는다.
+ * 일회성 신호(`pending*`)를 Channel 이 아니라 상태로 둔 건 configuration change·process death 뒤
+ * 재구독에서도 마지막 신호가 살아남아야 해서다. non-null 이면 UI 가 처리 후 `on*Consumed()` 로 되돌린다.
  *
-일회성 신호 (`pending*` 필드 — 저장 성공·썸네일 업로드 완료·수정 모드 prefill 도착) 는 nullable 로 흡수.
- * non-null = 처리 대기, null = 소비 완료. UI 패턴:
- * `LaunchedEffect(pending*) { if (pending* != null) { 처리; viewModel.on*Consumed() } }`.
- * Channel + ObserveAsEvents 대비 장점 — configuration change · process death · 분할 화면에서
- * StateFlow 영속성 덕에 재구독 시 마지막 신호 재배달 (Channel 은 한 번만 소비 → 손실 가능).
- * Google 공식 가이드: ViewModel events → UI state update.
- *
- * [error] 는 네트워크 등 서버 raw 메시지용. ViewModel은 `Context`에 의존하지 않고
- * 리소스 기반 일반 실패 메시지는 [errorRes] 에 [StringRes] ID로 담아 UI에서
- * [androidx.compose.ui.res.stringResource] 로 해석한다 (상세 화면 [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailUiState.Error] 와 동일 페어).
+ * 실패 문구는 [errorRes] 에 [StringRes] ID 로만 싣는다 — 5xx 본문에 내부 SQL 이 섞여 오는 탓에 서버 raw
+ * 메시지를 그대로 쓸 수 없고, ViewModel 이 `Context` 에 의존하지 않으려는 이유도 있다.
  */
 data class AfternoteEditorUiState(
     val form: EditorFormState = EditorFormState(),
@@ -62,12 +70,13 @@ data class AfternoteEditorUiState(
     val isPrefillLoading: Boolean = false,
     val savedId: Long? = null,
     val validationError: AfternoteValidationError? = null,
-    val error: String? = null,
     @param:StringRes val errorRes: Int? = null,
     /** 저장 성공 신호 — UI 가 nav 후 `onSaveSuccessConsumed` 로 reset. */
     val pendingSaveSuccessId: Long? = null,
     /** 추모 영상 썸네일 업로드 완료 신호 — UI 파사드가 form 에 url 적용 후 `onThumbnailUploadedConsumed` 로 reset. */
     val pendingThumbnailUrl: String? = null,
+    /** 추모 썸네일 업로드 실패 신호 — UI 가 Snackbar 표출 후 `onThumbnailUploadErrorConsumed` 로 reset. Boolean 단일 신호 (실패 사유 분기 없음, 메시지는 [R.string.afternote_editor_thumbnail_upload_failed] 고정). */
+    val thumbnailUploadFailed: Boolean = false,
     /** 수정 모드 prefill 데이터 — UI 파사드가 form 에 적용 후 `onPrefillApplied` 로 reset (skeleton 종료 동시). */
     val pendingPrefill: EditorFormPrefill? = null,
 )

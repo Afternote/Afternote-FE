@@ -9,7 +9,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.asString
 import com.afternote.feature.onboarding.presentation.signup.SignUpUiState
 import com.afternote.feature.onboarding.presentation.signup.SignUpViewModel
 import kotlinx.coroutines.launch
@@ -32,7 +34,6 @@ fun OnboardingProfileEntry(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
-    val signupFailedMessage = stringResource(R.string.signup_failed)
     val nameRequiredMessage = stringResource(R.string.signup_name_required)
 
     val showSnackbar: (String) -> Unit = { message ->
@@ -56,22 +57,25 @@ fun OnboardingProfileEntry(
             viewModel.onNameRequiredConsumed()
         }
     }
-    val pendingErrorMessage = uiState.errorMessage
+    // VM 이 UiText 로 폴백까지 확정해 두므로 빈 문구가 도달하지 않는다.
+    val pendingErrorMessage = uiState.errorMessage?.asString()
     LaunchedEffect(pendingErrorMessage) {
         if (pendingErrorMessage != null) {
-            showSnackbar(pendingErrorMessage.ifBlank { signupFailedMessage })
+            showSnackbar(pendingErrorMessage)
             viewModel.onErrorConsumed()
         }
     }
 
+    // VM 은 Android Framework 의존 제거를 위해 String 으로 보관. UI 레이어에서 Uri 와 변환.
     OnboardingProfileScreen(
         initialName = uiState.name,
-        displayImageUri = uiState.profileImageUri,
+        displayImageUri = uiState.profileImageUri?.toUri(),
         snackbarHostState = snackbarHostState,
         onNameChange = viewModel::updateName,
-        onProfileImagePick = viewModel::onProfileImagePicked,
+        onProfileImagePick = { uri -> viewModel.onProfileImagePicked(uri?.toString()) },
         onCompleteClick = viewModel::submitSignUp,
         onBackClick = onBackClick,
         modifier = modifier,
+        isSubmitting = uiState.isLoading,
     )
 }

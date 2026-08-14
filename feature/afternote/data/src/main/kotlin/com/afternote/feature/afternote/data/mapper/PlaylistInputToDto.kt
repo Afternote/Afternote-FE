@@ -1,28 +1,26 @@
 package com.afternote.feature.afternote.data.mapper
 
-import com.afternote.feature.afternote.data.dto.AfternotePlaylist
-import com.afternote.feature.afternote.data.dto.AfternoteSong
-import com.afternote.feature.afternote.domain.model.author.PlaylistSongPayload
-import com.afternote.feature.afternote.domain.model.author.PlaylistWritePayload
+import com.afternote.feature.afternote.data.dto.AfternotePlaylistDto
+import com.afternote.feature.afternote.data.dto.AfternoteSongDto
+import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
+import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
 
-fun PlaylistWritePayload.toDto() =
-    AfternotePlaylist(
-        profilePhoto = profilePhoto,
-        atmosphere = atmosphere,
+fun MemorialWritePayload.toDto() =
+    AfternotePlaylistDto(
         memorialPhotoUrl = memorialPhotoUrl,
         songs = songs.toDto(),
         memorialVideo = memorialVideo?.toDto(),
     )
 
-fun PlaylistSongPayload.toDto() =
-    AfternoteSong(
+fun MemorialSongPayload.toDto() =
+    AfternoteSongDto(
         id = id,
         title = title,
         artist = artist,
         coverUrl = coverUrl,
     )
 
-fun List<PlaylistSongPayload>.toDto() =
+fun List<MemorialSongPayload>.toDto() =
     map {
         it.toDto()
     }

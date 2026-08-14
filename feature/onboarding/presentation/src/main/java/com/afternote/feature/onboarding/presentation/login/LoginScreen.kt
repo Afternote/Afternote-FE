@@ -29,10 +29,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,8 +50,7 @@ import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.modifierextention.addFocusCleaner
-import com.afternote.core.ui.popup.Popup
-import com.afternote.core.ui.popup.PopupType
+import com.afternote.core.ui.popup.NetworkErrorPopup
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
@@ -69,12 +65,17 @@ fun LoginScreen(
     onPasswordChange: (String) -> Unit,
     onLoginClick: () -> Unit,
     onSignUpClick: () -> Unit,
+    onFindAccountClick: () -> Unit,
     onKakaoLoginClick: () -> Unit,
     onGoogleLoginClick: () -> Unit,
+    onRetryLogin: () -> Unit,
+    onNetworkErrorDismiss: () -> Unit,
     onBackClick: () -> Unit,
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     isLoading: Boolean = false,
+    hasCredentialError: Boolean = false,
+    showNetworkErrorPopup: Boolean = false,
 ) {
     val focusManager = LocalFocusManager.current
     val emailState = rememberTextFieldState(initialEmail)
@@ -107,6 +108,7 @@ fun LoginScreen(
             ) {
                 SocialLoginGroup(
                     onSignUpClick = onSignUpClick,
+                    onFindAccountClick = onFindAccountClick,
                     onKakaoLoginClick = onKakaoLoginClick,
                     onGoogleLoginClick = onGoogleLoginClick,
                 )
@@ -142,21 +144,33 @@ fun LoginScreen(
                     imeAction = ImeAction.Next,
                 )
 
-                // 비밀번호 입력 필드
-                AfternoteTextField(
-                    state = passwordState,
-                    modifier =
-                        Modifier.semantics { contentType = ContentType.Password },
-                    placeholder = stringResource(R.string.login_password_label),
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done,
-                    onImeAction = {
-                        if (!isLoading) {
-                            focusManager.clearFocus()
-                            onLoginClick()
-                        }
-                    },
-                )
+                // 비밀번호 필드와 인라인 안내(시안 3628:23437)를 6dp 로 묶는다 — 바깥 8dp 와 달라
+                // 별도 Column. 문구 스타일은 아이디 찾기 인라인(FindIdScreen)과 동일 토큰.
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    AfternoteTextField(
+                        state = passwordState,
+                        modifier =
+                            Modifier.semantics { contentType = ContentType.Password },
+                        placeholder = stringResource(R.string.login_password_label),
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done,
+                        onImeAction = {
+                            if (!isLoading) {
+                                focusManager.clearFocus()
+                                onLoginClick()
+                            }
+                        },
+                        isError = hasCredentialError,
+                    )
+
+                    if (hasCredentialError) {
+                        Text(
+                            text = stringResource(R.string.login_invalid_credentials),
+                            style = AfternoteDesign.typography.captionLargeB,
+                            color = AfternoteDesign.colors.error,
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -175,8 +189,16 @@ fun LoginScreen(
                         .fillMaxWidth()
                         .height(48.dp),
                 type = AfternoteButtonType.Default,
+                isLoading = isLoading,
             )
         }
+    }
+
+    if (showNetworkErrorPopup) {
+        NetworkErrorPopup(
+            onRetry = onRetryLogin,
+            onDismiss = onNetworkErrorDismiss,
+        )
     }
 }
 
@@ -184,27 +206,16 @@ fun LoginScreen(
  * 로그인 화면 하단 소셜 로그인 그룹.
  *
  * `LoginScreen`에서만 쓰이므로 외부 파일로 분리하지 않고 `private`로 캡슐화한다.
- * `showFindAccountPopup` 상태를 내부에 가두어 부모 화면의 리컴포지션 범위를 줄인다.
  */
 @Composable
 private fun SocialLoginGroup(
     onSignUpClick: () -> Unit,
+    onFindAccountClick: () -> Unit,
     onKakaoLoginClick: () -> Unit,
     onGoogleLoginClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val focusManager = LocalFocusManager.current
-    var showFindAccountPopup by remember { mutableStateOf(false) }
-
-    if (showFindAccountPopup) {
-        Popup(
-            type = PopupType.Default,
-            message = stringResource(R.string.login_find_account_message),
-            onConfirm = { showFindAccountPopup = false },
-            onDismiss = { showFindAccountPopup = false },
-        )
-    }
-
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -261,8 +272,8 @@ private fun SocialLoginGroup(
             contentPadding = PaddingValues(12.dp),
             colors =
                 ButtonDefaults.outlinedButtonColors(
-                    // 💡 주의: 0xF2F2F2 앞에 투명도(FF)를 붙여야 색상이 정상적으로 보입니다.
-                    containerColor = Color(0xFFF2F2F2),
+                    // 근사 토큰: 원본 #F2F2F2 → 최근접 gray2(#EEEEEE, 채널당 -4)
+                    containerColor = AfternoteDesign.colors.gray2,
                     contentColor = AfternoteDesign.colors.gray8,
                 ),
             border = BorderStroke(1.dp, AfternoteDesign.colors.gray3),
@@ -299,7 +310,7 @@ private fun SocialLoginGroup(
             modifier =
                 Modifier.clickable {
                     focusManager.clearFocus()
-                    showFindAccountPopup = true
+                    onFindAccountClick()
                 },
         )
     }
@@ -316,8 +327,11 @@ private fun LoginScreenPreview() {
             onPasswordChange = {},
             onLoginClick = {},
             onSignUpClick = {},
+            onFindAccountClick = {},
             onKakaoLoginClick = {},
             onGoogleLoginClick = {},
+            onRetryLogin = {},
+            onNetworkErrorDismiss = {},
             onBackClick = {},
             snackbarHostState = remember { SnackbarHostState() },
         )

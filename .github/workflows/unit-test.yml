@@ -1,0 +1,78 @@
+name: Unit Test
+
+# 모든 PR 에서 unit test 실행:
+#   - node --test .github/scripts/*.test.mjs : 배포 판단 스크립트 회귀 가드.
+#   - ./gradlew testDebugUnitTest : Android 모듈 debug unit test
+#   - :konsist:test : 순수 JVM 모듈(testDebugUnitTest 미보유)이라 별도 명시. 레이어 의존 아키텍처 가드.
+#   - :build-logic:test : included build 라 루트 태스크에 안 묶여 별도 명시. release 키 가드(TestKit) 회귀 가드.
+# lint.yml 과 setup 이 거의 동일하지만 분리 — lint 실패가 test 결과를 가리지 않도록 fail-fast 독립.
+
+# base 필터를 두지 않는다 — base 변경(feat/* → develop)은 pull_request 기본 activity type 에
+# 없어 재트리거되지 않으므로, 필터가 있으면 스택 PR 이 검증을 한 번도 거치지 않고 머지된다.
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  unit-test:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v4
+
+      - name: Run deployment script tests
+        run: node --test .github/scripts/*.test.mjs
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      # fail-fast — secret 누락 시 Gradle 까지 가지 않고 즉시 실패.
+      # secret 값은 echo 하지 않음 (env 로만 받아서 길이 검사). 누락 키 이름은 안전.
+      - name: Verify required secrets are set
+        env:
+          KAKAO_NATIVE_APP_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
+          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+          GOOGLE_SERVICES_JSON_B64: ${{ secrets.GOOGLE_SERVICES_JSON_B64 }}
+        run: |
+          missing=""
+          [ -z "$KAKAO_NATIVE_APP_KEY" ] && missing="$missing KAKAO_NATIVE_APP_KEY"
+          [ -z "$GOOGLE_WEB_CLIENT_ID" ] && missing="$missing GOOGLE_WEB_CLIENT_ID"
+          [ -z "$GOOGLE_SERVICES_JSON_B64" ] && missing="$missing GOOGLE_SERVICES_JSON_B64"
+          if [ -n "$missing" ]; then
+            echo "::error::필수 secret 누락:$missing — Settings → Secrets and variables → Actions 에 등록"
+            exit 1
+          fi
+
+      # google-services plugin 이 app/google-services.json 을 요구. 파일은 .gitignore 라
+      # CI 환경엔 없음. base64 인코딩된 secret 으로 받아서 decode.
+      - name: Decode google-services.json
+        env:
+          GOOGLE_SERVICES_JSON_B64: ${{ secrets.GOOGLE_SERVICES_JSON_B64 }}
+        run: |
+          echo "$GOOGLE_SERVICES_JSON_B64" | base64 -d > app/google-services.json
+
+      - name: Run unit tests
+        run: ./gradlew testDebugUnitTest :konsist:test :build-logic:test --continue --parallel
+        env:
+          KAKAO_NATIVE_APP_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
+          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+
+      # 실패한 테스트의 HTML/XML 리포트를 PR artifact 로 보존 — CI 로그에서 stack trace 추적이 빠름.
+      - name: Upload test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-reports
+          path: |
+            **/build/reports/tests/testDebugUnitTest
+            **/build/test-results/testDebugUnitTest
+            **/build/reports/tests/test
+            **/build/test-results/test
+          retention-days: 7

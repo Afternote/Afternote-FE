@@ -1,7 +1,7 @@
 package com.afternote.feature.onboarding.presentation.signup
 
-import android.net.Uri
 import android.util.Patterns
+import com.afternote.core.ui.UiText
 import com.afternote.feature.onboarding.presentation.terms.TermsState
 
 /**
@@ -30,8 +30,6 @@ data class SignUpUiState(
     val isVerifyingEmail: Boolean = false,
     /** 재전송 쿨다운 남은 초. 0 이면 즉시 재요청 가능. */
     val resendCooldownSeconds: Int = 0,
-    /** 발송된 인증번호의 만료까지 남은 초. 0 이면 만료 (백엔드 Redis TTL 만료로 verify 도 거절). */
-    val verificationRemainingSeconds: Int = 0,
     /** Step 2 입력값 — 주민등록번호 앞자리. */
     val residentFrontNumber: String = "",
     /** Step 2 입력값 — 주민등록번호 뒷자리 첫 1글자. */
@@ -44,18 +42,39 @@ data class SignUpUiState(
     val termsState: TermsState = TermsState(),
     /** Profile — 사용자 이름. */
     val name: String = "",
-    /** Profile — 프로필 이미지 Uri. 이미지 picker 가 선택된 Uri 를 push, 미선택 시 null. */
-    val profileImageUri: Uri? = null,
+    /**
+     * Profile — 프로필 이미지 Uri 의 String 표현. UI 가 picker `Uri.toString()` 으로 push,
+     * 표시 시 `toUri()` 로 다시 변환. VM 이 framework `android.net.Uri` 의존을 갖지 않도록 String 보관.
+     */
+    val profileImageUri: String? = null,
     /** 회원가입 + 자동 로그인 진행 중. */
     val isLoading: Boolean = false,
+    /**
+     * 회원가입 POST 가 이미 성공한 상태. 자동 로그인만 실패해 같은 화면에 남았을 때,
+     * 재제출이 가입을 다시 호출하지 않도록 가른다 — 다시 부르면 서버가 이메일 중복으로
+     * 거절해 복구 자체가 막힌다.
+     */
+    val isAccountCreated: Boolean = false,
     /** 회원가입 + 자동 로그인 성공. UI 가 홈으로 navigate 후 reset. */
     val isSignedUp: Boolean = false,
     /** Step 1 검증 통과 — 주민등록번호 단계로 이동. */
     val shouldNavigateToResidentNumber: Boolean = false,
     /** 이름 미입력 — UI 가 명시적 메시지 표시. */
     val isNameRequired: Boolean = false,
-    /** snackbar 로 노출할 에러 메시지. */
-    val errorMessage: String? = null,
+    /**
+     * 인증번호 무효(서버 code 1207) — 시안(2431:14204)상 인증번호 필드 아래 인라인 문구로
+     * 표시(스낵바 아님). 만료 판정은 서버가 한다.
+     *
+     * 표시 문구는 화면의 고정 리소스라 서버 문구를 담지 않고 발생 여부만 든다.
+     */
+    val hasVerificationError: Boolean = false,
+    /**
+     * 인증번호 무효 외 실패(네트워크 등) — snackbar 로 노출할 문구.
+     *
+     * 예외 `message` 원문을 담지 않는다 — 사유를 확인해 준 타입만 각자의 문구를 갖고 나머지는
+     * 정적 리소스로 내려앉는다(`Throwable.toDisplayMessage`).
+     */
+    val errorMessage: UiText? = null,
 ) {
     val isEmailFormatValid: Boolean
         get() = email.isNotBlank() && Patterns.EMAIL_ADDRESS.matcher(email).matches()

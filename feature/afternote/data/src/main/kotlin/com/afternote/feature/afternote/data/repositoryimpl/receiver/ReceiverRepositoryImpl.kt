@@ -3,19 +3,20 @@ package com.afternote.feature.afternote.data.repositoryimpl.receiver
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.network.model.requireData
 import com.afternote.feature.afternote.data.local.ReceiverAuthCodeDataSource
 import com.afternote.feature.afternote.data.mapper.response.toDomain
 import com.afternote.feature.afternote.data.paging.ReceiverAfternotePagingSource
 import com.afternote.feature.afternote.data.service.ReceiverAfternoteApiService
-import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItemDto
+import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem
 import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResult
 import com.afternote.feature.afternote.domain.model.receiver.LoadCountResult
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedExportBundle
-import com.afternote.feature.afternote.domain.model.receiver.SenderMessageInfo
-import com.afternote.feature.afternote.domain.repository.receiver.ReceiverAuthRepository
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
+import com.afternote.feature.receiver.domain.model.SenderMessageInfo
+import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
@@ -47,7 +48,7 @@ class ReceiverRepositoryImpl
             authCodeDataSource.clearCode()
         }
 
-        override fun getPagedReceivedAfternotes(): Flow<PagingData<AfterNoteListItemDto>> =
+        override fun getPagedReceivedAfternotes(): Flow<PagingData<AfterNoteListItem>> =
             Pager(
                 config = PagingConfig(pageSize = PAGE_SIZE),
                 pagingSourceFactory = { ReceiverAfternotePagingSource(api) },
@@ -62,14 +63,14 @@ class ReceiverRepositoryImpl
             )
 
         override suspend fun getReceivedAfternoteDetail(afternoteId: Long): Result<ReceivedAfternoteDetail> =
-            runCatching {
+            runCatchingCancellable {
                 api
                     .getReceiverAfternoteDetail(afternoteId = afternoteId)
                     .requireData()
                     .toDomain()
             }
 
-        override suspend fun downloadAllReceived(): Result<ReceivedExportBundle> = Result.success(ReceivedExportBundle())
+        override suspend fun downloadReceivedExport(): Result<ReceivedExportBundle> = Result.success(ReceivedExportBundle())
 
         override suspend fun saveReceivedExportToFile(bundle: ReceivedExportBundle): Result<Unit> = Result.success(Unit)
 

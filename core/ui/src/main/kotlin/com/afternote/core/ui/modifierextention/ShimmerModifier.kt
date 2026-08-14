@@ -16,6 +16,15 @@ import androidx.compose.ui.unit.IntSize
 import kotlinx.coroutines.launch
 
 /**
+ * Shimmer 그라데이션의 두 색 — 본 Modifier 가 `Modifier.Node` 라 Composable 컨텍스트 밖이라
+ * `AfternoteDesign.colors` 직접 접근 불가. 디자인 시스템 토큰화 + 다크 모드 대응은
+ * `shimmerLoadingPlaceholder(highlight, base)` 시그니처 변경 + 호출처 전수 갱신을 동반하는
+ * 별 PR. 본 const 는 매직 넘버 → 이름 부여까지의 중간 단계.
+ */
+private val ShimmerBase = Color(0xFFE8E8E8)
+private val ShimmerHighlight = Color(0xFFF6F6F6)
+
+/**
  * 이미지·썸네일 로딩 구간에 쓰는 가벼운 shimmer 배경.
  * [Modifier.composed] 대신 [Modifier.Node]로 그리기만 갱신해 리컴포지션·할당을 줄인다.
  */
@@ -65,10 +74,10 @@ private class ShimmerLoadingPlaceholderNode :
             Brush.linearGradient(
                 colorStops =
                     arrayOf(
-                        0f to Color(0xFFE8E8E8),
-                        0.4f to Color(0xFFF6F6F6),
-                        0.6f to Color(0xFFF6F6F6),
-                        1f to Color(0xFFE8E8E8),
+                        0f to ShimmerBase,
+                        0.4f to ShimmerHighlight,
+                        0.6f to ShimmerHighlight,
+                        1f to ShimmerBase,
                     ),
                 start = Offset(startX, 0f),
                 end = Offset(startX + widthPx, widthPx),

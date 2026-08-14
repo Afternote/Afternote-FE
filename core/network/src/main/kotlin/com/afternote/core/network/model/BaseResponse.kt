@@ -4,6 +4,14 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.io.IOException
 
+/**
+ * 서버 공통 응답 봉투. 제네릭 [T] 는 `data` 필드의 페이로드 타입 — `data` 없는 엔드포인트는 `BaseResponse<Unit>`.
+ *
+ * 액세스 토큰 잔여 수명(`expiresIn`)은 BE #410(2026-06-20)으로 발급 응답의 `data`(`LoginDto`·
+ * `ReissueDto`) 안으로 옮겨졌다 — 더 이상 봉투 최상위 필드가 아니다. 그 외 서버 스키마
+ * (`ApiResponse*`)의 클라 미소비 필드는 선언하지 않는다 (`NetworkModule.provideJson` 의
+ * ignoreUnknownKeys 가 무시).
+ */
 @Serializable
 data class BaseResponse<T>(
     @SerialName("status")
@@ -19,12 +27,15 @@ data class BaseResponse<T>(
 fun <T : Any> BaseResponse<T>.requireData(): T {
     if (status != 200) {
         throw ApiException(
+            status = status,
             code = code,
             serverMessage = message,
             message = message ?: "알 수 없는 서버 에러가 발생했습니다.",
         )
     }
     return data ?: throw ApiException(
+        // 봉투는 성공(200)이라 했는데 payload 가 비었다 — 계약 위반이므로 status 는 그대로 200 으로 남긴다.
+        status = status,
         code = code,
         serverMessage = null,
         message = "성공했으나 데이터가 비어있습니다.",
@@ -38,13 +49,21 @@ fun <T : Any> BaseResponse<T>.requireData(): T {
  * 가 4xx/5xx 응답을 가로채 throw 할 때 OkHttp 가 그대로 전파할 수 있어야 하기 때문.
  * `Exception` 으로 두면 OkHttp 가 `IOException` 으로 래핑해 백엔드 message 가 손실된다.
  *
+ * @property status HTTP 상태 코드. 서버가 4xx·5xx 응답 모두에 `message` 를 실어 보내므로
+ *   (실측: 500 응답 body 에 내부 SQL 문구 — #511), [serverMessage] 유무만으로는 "서버가 예상하고
+ *   처리한 사용자 오류"와 "장애"를 가를 수 없다. 그 판정이 필요한 호출처는 이 값의 대역을 본다.
  * @property serverMessage 서버가 실제로 내려준 사용자 친화 message. **null 이면 서버가 message 미제공**
  *   (4xx body 없거나 message blank). 호출처는 이 값이 null/non-null 인지로 "서버 message 있음/없음"
  *   을 판단 — `message` 는 클라 fallback 이 섞여 사용자에게 노출하면 안 됨.
  * @property message IOException 호환용 디버깅 메시지 (serverMessage 있으면 그것, 없으면 클라 fallback).
  *   사용자 직접 노출 X — Logcat·Crashlytics 용.
+ *
+ * 헤더의 `IOException(message)` 는 부모 생성자 호출(Java 의 `super(message)`) — 인자는 주 생성자의
+ * `message` 파라미터. 같은 값을 자기 프로퍼티(`String?` 인 Throwable.message 를 non-null 로 좁힘)와
+ * 부모 Throwable 내부 필드 양쪽에 설정해, 디버거·Java 경로의 메시지 표시를 보존한다.
  */
 class ApiException(
+    val status: Int,
     val code: Int,
     val serverMessage: String?,
     override val message: String,
@@ -53,6 +72,7 @@ class ApiException(
 fun BaseResponse<*>.requireStatus() {
     if (status != 200) {
         throw ApiException(
+            status = status,
             code = code,
             serverMessage = message,
             message = message ?: "요청에 실패했습니다.",

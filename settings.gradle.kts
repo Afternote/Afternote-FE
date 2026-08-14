@@ -53,6 +53,10 @@ include(":feature:onboarding:data")
 include(":feature:onboarding:domain")
 include(":feature:onboarding:presentation")
 
+include(":feature:receiver:data")
+include(":feature:receiver:domain")
+include(":feature:receiver:presentation")
+
 include(":feature:setting:data")
 include(":feature:setting:domain")
 include(":feature:setting:presentation")
@@ -61,3 +65,6 @@ include(":feature:timeletter:data")
 include(":feature:timeletter:domain")
 include(":feature:timeletter:presentation")
 include(":feature:timeletter:res")
+
+// Architecture test module (Konsist) — 레이어 의존 방향 회귀 가드
+include(":konsist")

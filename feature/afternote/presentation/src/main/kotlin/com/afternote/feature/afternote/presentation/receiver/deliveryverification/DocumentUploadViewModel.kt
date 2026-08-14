@@ -2,10 +2,13 @@ package com.afternote.feature.afternote.presentation.receiver.deliveryverificati
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.feature.afternote.domain.error.ReceiverDeliverySubmitException
-import com.afternote.feature.afternote.domain.repository.receiver.ReceiverAuthRepository
-import com.afternote.feature.afternote.domain.repository.receiver.ReceiverDeliveryDocumentUploadRepository
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
+import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
+import com.afternote.feature.afternote.presentation.reporting.shouldReportInReceiverFlow
+import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
+import com.afternote.feature.receiver.domain.repository.ReceiverDeliveryDocumentUploadRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,7 +22,8 @@ import javax.inject.Inject
  *
  * 슬롯별 파일 바이트는 UI 의 picker 콜백이 ContentResolver 로 추출해 [uploadDocument] 로 전달한다 —
  * 도메인 레이어가 Android Uri 에 의존하지 않도록 분리. 업로드 성공 시 슬롯에 fileUrl 이 채워지고,
- * 양 슬롯 fileUrl 이 모두 채워지면 "다음" 활성 → [submit] 으로 `submitDeliveryVerification` 호출.
+ * 두 슬롯 중 하나 이상 fileUrl 이 채워지면 "다음" 활성 → [submit] 으로 `submitDeliveryVerification` 호출
+ * (사망진단서/가족관계증명서 중 하나만으로 신청 가능 — 이슈 #380).
  */
 @HiltViewModel
 class DocumentUploadViewModel
@@ -27,6 +31,7 @@ class DocumentUploadViewModel
     constructor(
         private val uploadRepository: ReceiverDeliveryDocumentUploadRepository,
         private val receiverAuthRepository: ReceiverAuthRepository,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(DocumentUploadUiState())
         val uiState: StateFlow<DocumentUploadUiState> = _uiState.asStateFlow()
@@ -37,7 +42,12 @@ class DocumentUploadViewModel
             extension: String,
             displayName: String,
         ) {
-            if (bytes.isEmpty()) return
+            if (bytes.isEmpty()) {
+                onDocumentReadFailed()
+                return
+            }
+            // 실패 시 이 상태로 복원 — 재첨부 실패가 이미 성공해 둔 첨부(fileUrl)까지 지우면 안 된다 (#740).
+            val previous = _uiState.value.slotOf(slot)
             updateSlot(slot) { it.copy(displayName = displayName, isUploading = true) }
             viewModelScope.launch {
                 uploadRepository
@@ -49,8 +59,9 @@ class DocumentUploadViewModel
                                 isUploading = false,
                             )
                         }
-                    }.onFailure {
-                        updateSlot(slot) { DocumentSlotState() }
+                    }.onFailure { throwable ->
+                        errorReporter.recordAfternoteFailure(AfternoteFailureStage.DOCUMENT_UPLOAD, throwable)
+                        updateSlot(slot) { previous }
                         _uiState.update {
                             it.copy(error = ErrorPayload.Res(R.string.receiver_verify_document_upload_failed))
                         }
@@ -58,11 +69,24 @@ class DocumentUploadViewModel
             }
         }
 
+        /** picker 가 돌려준 Uri 에서 바이트 추출이 실패한 경우 — 업로드 요청 전이므로 슬롯은 건드리지 않는다 (#740). */
+        fun onDocumentReadFailed() {
+            _uiState.update { it.copy(error = ErrorPayload.Res(R.string.receiver_verify_document_read_failed)) }
+        }
+
         fun submit() {
             val state = _uiState.value
+            // 버튼 비활성(canSubmit)과 별개의 최종 방어선 — 탭 시점과 recomposition 사이 race 로
+            // 업로드 중에도 도달할 수 있고, 그대로 보내면 진행 중 파일이 신청에서 빠진다 (#711).
+            if (state.deathCertificate.isUploading || state.familyRelationCertificate.isUploading) {
+                _uiState.update {
+                    it.copy(error = ErrorPayload.Res(R.string.receiver_verify_document_upload_in_progress))
+                }
+                return
+            }
             val deathUrl = state.deathCertificate.fileUrl
             val famRelUrl = state.familyRelationCertificate.fileUrl
-            if (deathUrl == null || famRelUrl == null || state.isSubmitting) {
+            if ((deathUrl == null && famRelUrl == null) || state.isSubmitting) {
                 _uiState.update {
                     it.copy(error = ErrorPayload.Res(R.string.receiver_verify_documents_required))
                 }
@@ -77,24 +101,14 @@ class DocumentUploadViewModel
                     .onSuccess {
                         _uiState.update { it.copy(isSubmitting = false, isSubmitted = true) }
                     }.onFailure { throwable ->
-                        // 두 갈래로 분기한다:
-                        //  (1) data 레이어가 ApiException 을 ReceiverDeliverySubmitException 으로 매핑해 내려준 경우
-                        //      → 백엔드가 보낸 사용자 친화 message(예: 409 "이미 대기 중인 인증 요청이 존재합니다.")
-                        //        가 serverMessage 에 담겨 있으면 그대로 노출. **null 이면 서버가 message 미제공** —
-                        //        클라 fallback 으로 폴백 (이전엔 클라 fallback 이 ApiException.message 에 섞여
-                        //        사용자에게 "서버 메시지" 인 척 노출되던 버그를 ApiException.serverMessage 분리로 해결).
-                        //  (2) 그 외 throwable (UnknownHostException 등 도메인 매핑 안 된 인프라 예외) → 같은 fallback.
-                        val serverMessage =
-                            (throwable as? ReceiverDeliverySubmitException)?.serverMessage?.takeIf { it.isNotBlank() }
+                        // 서버가 사유 문구를 준 거절(이미 대기 중 등)은 예상된 경로라 리포팅하지 않는다.
+                        if (throwable.shouldReportInReceiverFlow()) {
+                            errorReporter.recordAfternoteFailure(AfternoteFailureStage.DELIVERY_SUBMIT, throwable)
+                        }
                         _uiState.update {
                             it.copy(
                                 isSubmitting = false,
-                                error =
-                                    if (serverMessage != null) {
-                                        ErrorPayload.Text(serverMessage)
-                                    } else {
-                                        ErrorPayload.Res(R.string.receiver_verify_submit_failed)
-                                    },
+                                error = throwable.toErrorPayload(R.string.receiver_verify_submit_failed),
                             )
                         }
                     }
@@ -125,4 +139,10 @@ class DocumentUploadViewModel
                 }
             }
         }
+
+        private fun DocumentUploadUiState.slotOf(slot: DocumentSlot): DocumentSlotState =
+            when (slot) {
+                DocumentSlot.DeathCertificate -> deathCertificate
+                DocumentSlot.FamilyRelationCertificate -> familyRelationCertificate
+            }
     }

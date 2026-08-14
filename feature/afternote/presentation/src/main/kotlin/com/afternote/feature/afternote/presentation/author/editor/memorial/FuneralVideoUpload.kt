@@ -42,9 +42,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
-import coil3.network.NetworkHeaders
-import coil3.network.httpHeaders
-import coil3.request.ImageRequest
 import com.afternote.core.ui.button.PlusBadgeButton
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -66,6 +63,8 @@ private const val TAG = "FuneralVideoUpload"
  * - 플러스 아이콘: 중앙에 위치, 24dp
  *
  * @param thumbnailUrl When set (e.g. from API when loading for edit), shown as thumbnail instead of extracting from video.
+ * @param onThumbnailExtractionFailed 로컬 영상에서 썸네일 프레임을 뽑지 못했을 때 호출된다.
+ *   화면에는 썸네일 자리가 비는 것 외에 아무 표시도 하지 않으므로, 호출처가 개발자 텔레메트리로 남긴다.
  */
 @Composable
 fun FuneralVideoUpload(
@@ -75,6 +74,7 @@ fun FuneralVideoUpload(
     thumbnailUrl: String? = null,
     onAddVideoClick: () -> Unit,
     onThumbnailBytesReady: (ByteArray?) -> Unit = {},
+    onThumbnailExtractionFailed: (Throwable) -> Unit = {},
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     val hasVideo = !videoUrl.isNullOrBlank()
@@ -99,29 +99,35 @@ fun FuneralVideoUpload(
             onThumbnailBytesReady(null)
             return@LaunchedEffect
         }
-        val (bitmap, jpegBytes) =
+        // 프레임을 못 뽑은 사유를 호출처에 넘기기 위해 Result 로 감싼다. 예외 없이 null 프레임만
+        // 돌아오는 경로(코덱 미지원 등)도 있어, 그 경우는 여기서 실패로 승격시켜 사유를 만든다.
+        val extraction =
             withContext(ioDispatcher) {
-                val bmp =
-                    runCatching {
-                        val retriever = MediaMetadataRetriever()
-                        try {
-                            retriever.setDataSource(context, videoUrl.toUri())
-                            retriever.getFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
-                        } finally {
-                            retriever.release()
-                        }
-                    }.getOrNull()
-                val bytes =
-                    bmp?.let { frame ->
+                runCatching {
+                    val frame =
+                        // run 은 블록을 식으로 만든다. try/finally 는 그 자체로 식이지만 val retriever
+                        // 선언은 문이라 식 자리에 못 온다 — 밖에 선언하면 release 된 retriever 가 아래
+                        // 압축 구간까지 살아남으므로, 수명을 프레임 추출 구간에 가둔다.
+                        run {
+                            val retriever = MediaMetadataRetriever()
+                            try {
+                                retriever.setDataSource(context, videoUrl.toUri())
+                                retriever.getFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+                            } finally {
+                                retriever.release()
+                            }
+                        } ?: error("no video frame at position 0")
+                    val bytes =
                         ByteArrayOutputStream().use { out ->
                             frame.compress(Bitmap.CompressFormat.JPEG, 85, out)
                             out.toByteArray()
                         }
-                    }
-                Pair(bmp, bytes)
+                    frame to bytes
+                }
             }
-        thumbnailBitmap = bitmap?.asImageBitmap()
-        runCatching { onThumbnailBytesReady(jpegBytes) }.onFailure { /* avoid throwing from LaunchedEffect */ }
+        thumbnailBitmap = extraction.getOrNull()?.first?.asImageBitmap()
+        extraction.exceptionOrNull()?.let { onThumbnailExtractionFailed(it) }
+        onThumbnailBytesReady(extraction.getOrNull()?.second)
     }
 
     Column(
@@ -186,21 +192,8 @@ fun FuneralVideoUpload(
             ) {
                 when {
                     !thumbnailUrl.isNullOrBlank() -> {
-                        val imageRequest =
-                            remember(thumbnailUrl) {
-                                ImageRequest
-                                    .Builder(context)
-                                    .data(thumbnailUrl)
-                                    .httpHeaders(
-                                        NetworkHeaders
-                                            .Builder()
-                                            .apply {
-                                                this["User-Agent"] = "Afternote Android App"
-                                            }.build(),
-                                    ).build()
-                            }
                         AsyncImage(
-                            model = imageRequest,
+                            model = thumbnailUrl,
                             contentDescription = null,
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop,

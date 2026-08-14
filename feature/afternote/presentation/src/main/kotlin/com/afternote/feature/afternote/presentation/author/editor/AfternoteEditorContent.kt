@@ -21,21 +21,17 @@ import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.modifierextention.shimmerLoadingPlaceholder
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.author.editor.account.AccountEditorContent
 import com.afternote.feature.afternote.presentation.author.editor.account.AccountSection
 import com.afternote.feature.afternote.presentation.author.editor.gallery.GalleryAndFileEditorContent
-import com.afternote.feature.afternote.presentation.author.editor.gallery.GalleryAndFileEditorContentParams
-import com.afternote.feature.afternote.presentation.author.editor.memorial.guideline.MemorialGuidelineEditorContent
-import com.afternote.feature.afternote.presentation.author.editor.memorial.guideline.MemorialGuidelineEditorContentParams
+import com.afternote.feature.afternote.presentation.author.editor.memorial.guideline.MemorialEditorContent
+import com.afternote.feature.afternote.presentation.author.editor.memorial.guideline.MemorialEditorContentParams
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
-import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverCallbacks
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverSection
 import com.afternote.feature.afternote.presentation.author.editor.selection.DropdownMenuStyle
 import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdown
-import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdownLabelParams
-import com.afternote.feature.afternote.presentation.author.editor.social.SocialNetworkEditorContent
-import com.afternote.feature.afternote.presentation.author.editor.social.SocialNetworkEditorContentParams
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
@@ -44,7 +40,7 @@ import com.afternote.feature.afternote.presentation.author.editor.state.remember
 internal fun EditorContent(
     state: AfternoteEditorState,
     form: EditorFormState,
-    graphSongs: List<Song>,
+    liveSongs: List<Song>,
     modifier: Modifier = Modifier,
     isPrefillLoading: Boolean = false,
     onNavigateToAddSong: () -> Unit,
@@ -52,6 +48,7 @@ internal fun EditorContent(
     onPhotoAddClick: () -> Unit,
     onVideoAddClick: () -> Unit,
     onThumbnailBytesReady: (ByteArray?) -> Unit,
+    onThumbnailExtractionFailed: (Throwable) -> Unit = {},
 ) {
     Column(
         modifier =
@@ -64,10 +61,7 @@ internal fun EditorContent(
         Spacer(modifier = Modifier.height(8.dp))
 
         SelectionDropdown(
-            labelParams =
-                SelectionDropdownLabelParams(
-                    label = stringResource(R.string.afternote_editor_label_category),
-                ),
+            label = stringResource(R.string.afternote_editor_label_category),
             selectedValue = form.selectedCategory.toDropdownLabel(),
             options = editorCategoryDropdownLabels(),
             onValueSelected = state::onCategorySelected,
@@ -85,19 +79,21 @@ internal fun EditorContent(
             return@Column
         }
 
-        if (form.selectedCategory != EditorCategory.MEMORIAL) {
+        if (form.selectedCategory.hasServiceSelection) {
             Spacer(modifier = Modifier.height(20.dp))
 
             SelectionDropdown(
-                labelParams =
-                    SelectionDropdownLabelParams(
-                        label = stringResource(R.string.afternote_editor_label_service_name),
-                    ),
-                selectedValue = form.selectedService,
+                label = stringResource(R.string.afternote_editor_label_service_name),
+                selectedValue = form.selectedService.orEmpty(),
                 options = form.currentServiceOptions,
                 onValueSelected = state::onServiceSelected,
                 expanded = state.serviceDropdownExpanded,
                 onExpandedChange = state::onServiceDropdownExpandedChange,
+                placeholder =
+                    stringResource(
+                        R.string.afternote_editor_service_placeholder,
+                        form.selectedCategory.displayLabel,
+                    ),
                 menuStyle =
                     DropdownMenuStyle(
                         shadowElevation = 10.dp,
@@ -110,12 +106,13 @@ internal fun EditorContent(
         CategoryContent(
             state = state,
             form = form,
-            graphSongs = graphSongs,
+            liveSongs = liveSongs,
             onNavigateToAddSong = onNavigateToAddSong,
             onNavigateToSelectReceiver = onNavigateToSelectReceiver,
             onPhotoAddClick = onPhotoAddClick,
             onVideoAddClick = onVideoAddClick,
             onThumbnailBytesReady = onThumbnailBytesReady,
+            onThumbnailExtractionFailed = onThumbnailExtractionFailed,
         )
     }
 }
@@ -134,7 +131,7 @@ private fun EditorPrefillSkeleton(
     Column(modifier = modifier.fillMaxWidth()) {
         Spacer(modifier = Modifier.height(20.dp))
 
-        if (category != EditorCategory.MEMORIAL) {
+        if (category.hasServiceSelection) {
             // 서비스명 드롭다운 자리.
             SkeletonBar(height = 56.dp)
             Spacer(modifier = Modifier.height(32.dp))
@@ -145,20 +142,26 @@ private fun EditorPrefillSkeleton(
 
             EditorCategory.GALLERY -> GalleryPrefillSkeleton()
 
-            EditorCategory.SOCIAL -> SocialPrefillSkeleton()
+            // BUSINESS 는 SOCIAL 과 같은 구조(계정 2필드 + 수신자 지정 + 처리 방법 + 메시지)라 skeleton 도 공유한다.
+            EditorCategory.SOCIAL, EditorCategory.BUSINESS -> AccountPrefillSkeleton()
 
-            // placeholder 카테고리는 prefill 자리가 없으므로 skeleton 도 그리지 않는다.
-            EditorCategory.BUSINESS, EditorCategory.ESTATE -> Unit
+            // ESTATE 는 로드가 끝나도 채울 폼이 없는 "준비 중" placeholder 라(UnimplementedCategoryContent)
+            // 로딩 동안 흉내 낼 뼈대도 없다 — 아무것도 그리지 않는다. 생성이 차단돼 수정 진입으로
+            // 실제 도달할 일은 사실상 없지만, exhaustive when 이라 분기를 명시한다.
+            EditorCategory.ESTATE -> Unit
         }
     }
 }
 
 @Composable
-private fun SocialPrefillSkeleton() {
+private fun AccountPrefillSkeleton() {
     // 계정 ID/PW.
     SkeletonBar(height = 56.dp)
     Spacer(modifier = Modifier.height(12.dp))
     SkeletonBar(height = 56.dp)
+    Spacer(modifier = Modifier.height(28.dp))
+    // 수신자 지정.
+    SkeletonBar(height = 72.dp)
     Spacer(modifier = Modifier.height(28.dp))
     // 처리 방법 리스트.
     SkeletonProcessingMethodList()
@@ -187,7 +190,7 @@ private fun MemorialPrefillSkeleton() {
     // 추모 영상.
     SkeletonBar(height = 120.dp)
     Spacer(modifier = Modifier.height(20.dp))
-    // 추모 플레이리스트.
+    // 추억 플레이리스트.
     SkeletonBar(height = 96.dp)
     Spacer(modifier = Modifier.height(20.dp))
     // 마지막 인사 (라디오 + custom text).
@@ -221,105 +224,90 @@ private fun SkeletonBar(
 internal fun CategoryContent(
     state: AfternoteEditorState,
     form: EditorFormState,
-    graphSongs: List<Song>,
+    liveSongs: List<Song>,
     onNavigateToAddSong: () -> Unit,
     onNavigateToSelectReceiver: () -> Unit,
     onPhotoAddClick: () -> Unit,
     onVideoAddClick: () -> Unit,
     onThumbnailBytesReady: (ByteArray?) -> Unit,
+    onThumbnailExtractionFailed: (Throwable) -> Unit = {},
 ) {
     when (form.selectedCategory) {
         EditorCategory.MEMORIAL -> {
-            MemorialGuidelineEditorContent(
+            MemorialEditorContent(
                 params =
-                    MemorialGuidelineEditorContentParams(
+                    MemorialEditorContentParams(
                         displayMemorialPhotoUri = form.displayMemorialPhotoUri(),
-                        playlistSongCount = form.livePlaylistSongCount(graphSongs),
-                        playlistAlbumCovers = form.displayAlbumCovers(graphSongs),
-                        selectedLastWish = form.selectedLastWish,
-                        lastWishOptions = editorLastWishOptions(),
-                        funeralVideoUrl = form.funeralVideoUrl,
-                        funeralThumbnailUrl = form.funeralThumbnailUrl,
-                        customLastWishState = state.customLastWishState,
+                        playlistAlbumCovers = form.displayAlbumCovers(liveSongs),
+                        memorialVideoUrl = form.memorialVideoUrl,
+                        memorialThumbnailUrl = form.memorialThumbnailUrl,
                         recipientSection =
                             AfternoteEditorReceiverSection(
                                 afternoteEditReceivers = form.afternoteEditReceivers,
-                                callbacks =
-                                    AfternoteEditorReceiverCallbacks(
-                                        onAddClick = onNavigateToSelectReceiver,
-                                        onItemDeleteClick = state::onAfternoteEditorReceiverDelete,
-                                        onItemAdded = state::onAfternoteEditorReceiverItemAdded,
-                                    ),
+                                onAddClick = onNavigateToSelectReceiver,
+                                onItemDeleteClick = state::onAfternoteEditorReceiverDelete,
                             ),
                         onSongAddClick = onNavigateToAddSong,
-                        onLastWishSelected = state::onLastWishSelected,
                         onPhotoAddClick = onPhotoAddClick,
                         onVideoAddClick = onVideoAddClick,
                         onThumbnailBytesReady = onThumbnailBytesReady,
+                        onThumbnailExtractionFailed = onThumbnailExtractionFailed,
                     ),
             )
         }
 
         EditorCategory.GALLERY -> {
             GalleryAndFileEditorContent(
-                params =
-                    GalleryAndFileEditorContentParams(
-                        editorMessages = state.editorMessages,
-                        onMessageRegisterClick = {},
-                        onMessageDeleteClick = state::removeEditorMessage,
-                        onMessageAddClick = state::addEditorMessage,
-                        recipientSection =
-                            AfternoteEditorReceiverSection(
-                                afternoteEditReceivers = form.afternoteEditReceivers,
-                                callbacks =
-                                    AfternoteEditorReceiverCallbacks(
-                                        onAddClick = state::showAddAfternoteEditorReceiverDialog,
-                                        onItemDeleteClick = state::onAfternoteEditorReceiverDelete,
-                                        onItemAdded = state::onAfternoteEditorReceiverItemAdded,
-                                    ),
-                            ),
-                        processingMethodSection =
-                            ProcessingMethodSection(
-                                items = form.galleryProcessingMethods,
-                                callbacks = state.galleryProcessingCallbacks,
-                            ),
+                editorMessages = state.editorMessages,
+                onMessageRegisterClick = {},
+                onMessageDeleteClick = state::removeEditorMessage,
+                onMessageAddClick = state::addEditorMessage,
+                recipientSection =
+                    AfternoteEditorReceiverSection(
+                        afternoteEditReceivers = form.afternoteEditReceivers,
+                        onAddClick = state::showAddAfternoteEditorReceiverDialog,
+                        onItemDeleteClick = state::onAfternoteEditorReceiverDelete,
+                    ),
+                processingMethodSection =
+                    ProcessingMethodSection(
+                        items = form.processingMethods,
+                        onItemDeleteClick = state::deleteProcessingMethod,
+                        onItemAdded = state::addProcessingMethod,
+                        onItemEdited = state::editProcessingMethod,
                     ),
             )
         }
 
-        // BUSINESS · ESTATE 는 디자인 미확정. 입력 자리를 비워 두고 placeholder 만 노출한다 (이슈 #195).
-        EditorCategory.BUSINESS, EditorCategory.ESTATE -> {
+        // ESTATE 는 디자인 미확정. 입력 자리를 비워 두고 placeholder 만 노출한다 (이슈 #195).
+        EditorCategory.ESTATE -> {
             UnimplementedCategoryContent()
         }
 
-        EditorCategory.SOCIAL -> {
-            SocialNetworkEditorContent(
-                params =
-                    SocialNetworkEditorContentParams(
-                        editorMessages = state.editorMessages,
-                        onMessageRegisterClick = {},
-                        onMessageDeleteClick = state::removeEditorMessage,
-                        onMessageAddClick = state::addEditorMessage,
-                        accountSection =
-                            AccountSection(
-                                idState = state.idState,
-                                passwordState = state.passwordState,
-                            ),
-                        recipientSection =
-                            AfternoteEditorReceiverSection(
-                                afternoteEditReceivers = form.afternoteEditReceivers,
-                                callbacks =
-                                    AfternoteEditorReceiverCallbacks(
-                                        onAddClick = onNavigateToSelectReceiver,
-                                        onItemDeleteClick = state::onAfternoteEditorReceiverDelete,
-                                        onItemAdded = state::onAfternoteEditorReceiverItemAdded,
-                                    ),
-                            ),
-                        processingMethodSection =
-                            ProcessingMethodSection(
-                                items = form.socialProcessingMethods,
-                                callbacks = state.socialProcessingCallbacks,
-                            ),
+        // BUSINESS(시안 700:38735)는 SOCIAL 과 폼 구조가 동일(계정 정보* + 수신자 지정* + 처리 방법 리스트* + 남기실 말씀)해
+        // AccountEditorContent 를 그대로 재사용한다 (이슈 #467).
+        EditorCategory.SOCIAL, EditorCategory.BUSINESS -> {
+            AccountEditorContent(
+                editorMessages = state.editorMessages,
+                onMessageRegisterClick = {},
+                onMessageDeleteClick = state::removeEditorMessage,
+                onMessageAddClick = state::addEditorMessage,
+                accountSection =
+                    AccountSection(
+                        idState = state.idState,
+                        passwordState = state.passwordState,
+                    ),
+                recipientSection =
+                    AfternoteEditorReceiverSection(
+                        afternoteEditReceivers = form.afternoteEditReceivers,
+                        onAddClick = onNavigateToSelectReceiver,
+                        onItemDeleteClick = state::onAfternoteEditorReceiverDelete,
+                    ),
+                processingMethodSection =
+                    ProcessingMethodSection(
+                        items = form.processingMethods,
+                        onItemDeleteClick = state::deleteProcessingMethod,
+                        onItemAdded = state::addProcessingMethod,
+                        onItemEdited = state::editProcessingMethod,
                     ),
             )
         }
@@ -334,7 +322,25 @@ private fun EditorContentSocialPreview() {
         EditorContent(
             state = state,
             form = state.currentForm().copy(selectedCategory = EditorCategory.SOCIAL),
-            graphSongs = emptyList(),
+            liveSongs = emptyList(),
+            onNavigateToAddSong = {},
+            onNavigateToSelectReceiver = {},
+            onPhotoAddClick = {},
+            onVideoAddClick = {},
+            onThumbnailBytesReady = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun EditorContentBusinessPreview() {
+    AfternoteTheme {
+        val state = rememberAfternoteEditorState()
+        EditorContent(
+            state = state,
+            form = state.currentForm().copy(selectedCategory = EditorCategory.BUSINESS),
+            liveSongs = emptyList(),
             onNavigateToAddSong = {},
             onNavigateToSelectReceiver = {},
             onPhotoAddClick = {},
@@ -352,7 +358,7 @@ private fun EditorContentGalleryPreview() {
         EditorContent(
             state = state,
             form = state.currentForm().copy(selectedCategory = EditorCategory.GALLERY),
-            graphSongs = emptyList(),
+            liveSongs = emptyList(),
             onNavigateToAddSong = {},
             onNavigateToSelectReceiver = {},
             onPhotoAddClick = {},
@@ -370,7 +376,7 @@ private fun EditorContentMemorialPreview() {
         EditorContent(
             state = state,
             form = state.currentForm().copy(selectedCategory = EditorCategory.MEMORIAL),
-            graphSongs = emptyList(),
+            liveSongs = emptyList(),
             onNavigateToAddSong = {},
             onNavigateToSelectReceiver = {},
             onPhotoAddClick = {},

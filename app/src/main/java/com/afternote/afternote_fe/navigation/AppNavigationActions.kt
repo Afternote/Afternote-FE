@@ -35,6 +35,14 @@ fun rememberOnboardingNavActions(navController: NavController): OnboardingNavAct
                 }
             }
 
+            override fun replaceLoginWithWelcome() {
+                navController.navigate(OnboardingRoute.WelcomeRoute) {
+                    // 소셜 신규 가입자 — Login(과 그 아래 Welcome)을 비우고 새 Welcome 진입. 뒤로가기로 Login 에 못 돌아가게.
+                    popUpTo<OnboardingRoute.WelcomeRoute> { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+
             override fun navigateToSignUp() {
                 navController.navigate(OnboardingRoute.SignUpRoute)
             }
@@ -56,6 +64,10 @@ fun rememberOnboardingNavActions(navController: NavController): OnboardingNavAct
 
             override fun popBack() {
                 navController.popBackStack()
+            }
+
+            override fun navigateToFindId() {
+                navController.navigate(OnboardingRoute.FindIdRoute)
             }
 
             override fun proceedToSignUpResidentNumber() {
@@ -93,11 +105,7 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
             }
 
             override fun onWriteDiary() {
-                navController.navigate(MindRecordRoute.DiaryWriteRoute)
-            }
-
-            override fun onWriteDeepThought() {
-                navController.navigate(MindRecordRoute.DeepThoughtWriteRoute)
+                navController.navigate(MindRecordRoute.DiaryWriteRoute())
             }
 
             override fun onWriteBack() {
@@ -107,6 +115,23 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
             override fun onWriteSubmitSuccess() {
                 navController.popBackStack()
             }
+
+            override fun onNavigateToDraftList() {
+                navController.navigate(MindRecordRoute.DraftListRoute)
+            }
+
+            override fun onDraftListBack() {
+                navController.popBackStack()
+            }
+
+            override fun onEditDiaryDraft(
+                draftId: Long,
+                draftYearMonth: String,
+            ) {
+                navController.navigate(
+                    MindRecordRoute.DiaryWriteRoute(draftId = draftId, draftYearMonth = draftYearMonth),
+                )
+            }
         }
     }
 
@@ -114,8 +139,16 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
 fun rememberTimeLetterNavActions(navController: NavController): TimeLetterNavActions =
     remember(navController) {
         object : TimeLetterNavActions {
+            override fun onSettingClick() {
+                navController.navigate(Route.Setting)
+            }
+
             override fun onNavigateToWrite() {
-                navController.navigate(TimeLetterRoute.TimeLetterWriteRoute)
+                navController.navigate(TimeLetterRoute.TimeLetterWriteRoute())
+            }
+
+            override fun onNavigateToEdit(timeLetterId: Long) {
+                navController.navigate(TimeLetterRoute.TimeLetterWriteRoute(timeLetterId = timeLetterId))
             }
 
             override fun onWriteBack() {
@@ -363,9 +396,9 @@ fun rememberAfternoteNavActions(
                 appState.navController.navigate(AfternoteRoute.GalleryDetailRoute(itemId = itemId))
             }
 
-            override fun navigateToMemorialGuidelineDetail(itemId: String) {
+            override fun navigateToMemorialDetail(itemId: String) {
                 appState.navController.navigate(
-                    AfternoteRoute.MemorialGuidelineDetailRoute(itemId = itemId),
+                    AfternoteRoute.MemorialDetailRoute(itemId = itemId),
                 )
             }
 
@@ -413,6 +446,10 @@ fun rememberAfternoteNavActions(
                     launchSingleTop = true
                 }
             }
+
+            override fun navigateToSetting() {
+                appState.navController.navigate(Route.Setting)
+            }
         }
     }
 }
@@ -439,6 +476,12 @@ fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions =
             override fun navigateToReceivedAfternoteDetail(afternoteId: String) {
                 appState.navController.navigate(
                     ReceiverRoute.AfternoteDetailRoute(afternoteId = afternoteId),
+                )
+            }
+
+            override fun navigateToMemorialPlaylist(afternoteId: String) {
+                appState.navController.navigate(
+                    ReceiverRoute.MemorialPlaylistRoute(afternoteId = afternoteId),
                 )
             }
 

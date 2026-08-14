@@ -4,6 +4,7 @@ import android.content.Context
 import android.webkit.MimeTypeMap
 import androidx.core.net.toUri
 import com.afternote.core.common.di.IoDispatcher
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.network.dto.PresignedUrlRequestDto
 import com.afternote.core.network.model.requireData
@@ -18,7 +19,6 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Named
-import kotlin.coroutines.cancellation.CancellationException
 
 private const val DEFAULT_EXTENSION = "jpg"
 private const val DEFAULT_CONTENT_TYPE = "image/jpeg"
@@ -74,7 +74,7 @@ class PhotoUploadRepositoryImpl
             uriString: String,
             directory: String,
         ): Result<String> =
-            try {
+            runCatchingCancellable {
                 val uri = uriString.toUri()
                 val mime = context.contentResolver.getType(uri)
                 val extension = resolveExtension(mime)
@@ -102,31 +102,26 @@ class PhotoUploadRepositoryImpl
                     val contentType = presigned.contentType.ifBlank { DEFAULT_CONTENT_TYPE }
                     val requestBody = tempFile.asRequestBody(contentType.toMediaType())
 
-                    val response =
-                        withContext(ioDispatcher) {
-                            s3Client
-                                .newCall(
-                                    Request
-                                        .Builder()
-                                        .url(presigned.presignedUrl)
-                                        .put(requestBody)
-                                        .header("Content-Type", contentType)
-                                        .build(),
-                                ).execute()
-                        }
-                    check(response.isSuccessful) {
-                        "S3 upload failed: ${response.code} ${response.message}"
+                    withContext(ioDispatcher) {
+                        s3Client
+                            .newCall(
+                                Request
+                                    .Builder()
+                                    .url(presigned.presignedUrl)
+                                    .put(requestBody)
+                                    .header("Content-Type", contentType)
+                                    .build(),
+                            ).execute()
+                            .use { response ->
+                                check(response.isSuccessful) {
+                                    "S3 upload failed: ${response.code} ${response.message}"
+                                }
+                            }
                     }
 
-                    android.util.Log.d("PhotoUpload", "S3 upload success → ${presigned.fileUrl}")
-                    Result.success(presigned.fileUrl)
+                    presigned.fileUrl
                 } finally {
                     tempFile.delete()
                 }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                android.util.Log.e("PhotoUpload", "upload failed", e)
-                Result.failure(e)
             }
     }

@@ -1,8 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!--
+      광고 SDK 미사용 — Analytics 는 Crashlytics breadcrumb 목적뿐이므로,
+      firebase-analytics(play-services-measurement)가 병합해 오는 광고 ID 권한을 제거한다.
+      https://developer.android.com/build/manage-manifests#node_markers
+    -->
+    <uses-permission
+            android:name="com.google.android.gms.permission.AD_ID"
+            tools:node="remove" />
+    <uses-permission
+            android:name="android.permission.ACCESS_ADSERVICES_AD_ID"
+            tools:node="remove" />
 
     <application
             android:name=".GlobalApplication"
@@ -14,6 +27,34 @@
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
             android:theme="@style/Theme.Afternotefe.Main">
+        <!--
+          광고 ID 수집·광고 개인화 신호 비활성화 — Analytics 는 breadcrumb 전용.
+          https://firebase.google.com/docs/analytics/android/configure-data-collection
+        -->
+        <meta-data
+                android:name="google_analytics_adid_collection_enabled"
+                android:value="false" />
+        <meta-data
+                android:name="google_analytics_default_allow_ad_personalization_signals"
+                android:value="false" />
+        <meta-data
+                android:name="firebase_messaging_installation_id_enabled"
+                android:value="true" />
+        <meta-data
+                android:name="com.google.firebase.messaging.default_notification_icon"
+                android:resource="@drawable/core_common_logo" />
+        <meta-data
+                android:name="com.google.firebase.messaging.default_notification_channel_id"
+                android:value="@string/fcm_notification_channel_id" />
+
+        <service
+                android:name=".messaging.AfternoteFirebaseMessagingService"
+                android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
         <activity
                 android:name=".MainActivity"
                 android:exported="true"

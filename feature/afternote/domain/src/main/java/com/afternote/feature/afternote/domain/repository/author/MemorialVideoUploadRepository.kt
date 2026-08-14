@@ -1,15 +1,15 @@
 package com.afternote.feature.afternote.domain.repository.author
 
 /**
- * Memorial (playlist) video upload via POST /files/presigned-url and S3 PUT.
- * Used so the server receives an HTTPS video URL, not a local content:// URI.
+ * 추모(플레이리스트) 영상의 *서버 자원 상태 해석* + 필요 시 업로드.
+ *
+ * 입력 [MediaInput] 으로 로컬/원격이 이미 확정돼 들어오므로, Repository 는 `content://` prefix 를
+ * 판별하지 않고 [when] 분기로 [VideoUploadOutcome] 를 만든다.
+ *
+ * - [MediaInput.Local] → S3 presigned upload → [VideoUploadOutcome.FreshlyUploaded]
+ * - [MediaInput.Remote] → 입력 그대로 [VideoUploadOutcome.Existing]
+ * - [MediaInput.None] → [VideoUploadOutcome.Empty]
  */
 fun interface MemorialVideoUploadRepository {
-    /**
-     * Uploads the video at the given content URI to S3 and returns the file URL.
-     *
-     * @param contentUriString Local content URI (e.g. from Photo Picker).
-     * @return Success with video fileUrl (https) or failure.
-     */
-    suspend fun uploadVideo(contentUriString: String): Result<String>
+    suspend fun resolveVideo(input: MediaInput): Result<VideoUploadOutcome>
 }

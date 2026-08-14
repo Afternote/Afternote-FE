@@ -21,7 +21,7 @@ interface AfternoteNavActions {
 
     fun navigateToGalleryDetail(itemId: String)
 
-    fun navigateToMemorialGuidelineDetail(itemId: String)
+    fun navigateToMemorialDetail(itemId: String)
 
     fun navigateToNewEditor(initialCategory: String?)
 
@@ -46,4 +46,7 @@ interface AfternoteNavActions {
 
     /** Editor 저장 성공 → Afternote 홈 위 화면(에디터·미디어 등)만 pop. Home 자체는 유지. */
     fun popToAfternoteHome()
+
+    /** Afternote 홈 TopBar 설정 기어 → 설정 화면(Route.Setting) 진입. */
+    fun navigateToSetting()
 }

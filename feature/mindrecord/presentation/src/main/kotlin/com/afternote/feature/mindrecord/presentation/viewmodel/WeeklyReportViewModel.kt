@@ -1,8 +1,5 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.domain.repository.UserRepository
@@ -14,15 +11,17 @@ import com.afternote.feature.mindrecord.domain.model.WeeklyReportDay
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportEmotion
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
 import com.afternote.feature.mindrecord.presentation.R
-import com.afternote.feature.mindrecord.presentation.component.EmotionBubble
 import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
 import com.afternote.feature.mindrecord.presentation.model.DayBackground
 import com.afternote.feature.mindrecord.presentation.model.DayContent
 import com.afternote.feature.mindrecord.presentation.model.DayItem
+import com.afternote.feature.mindrecord.presentation.model.EmotionKeyword
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -46,6 +45,7 @@ class WeeklyReportViewModel
             buildWeekOptions(today = LocalDate.now(), count = WEEK_OPTION_COUNT)
 
         private val internalState = MutableStateFlow(InternalState())
+        private var loadJob: Job? = null
 
         val uiState: StateFlow<WeeklyReportUiState> =
             internalState
@@ -62,48 +62,71 @@ class WeeklyReportViewModel
 
         fun selectWeek(monday: LocalDate) = load(monday)
 
-        fun refresh() {
+        /**
+         * 탭 전환·작성 화면 복귀 등 사용자가 요청하지 않은 자동 갱신.
+         *
+         * 화면이 살아 있는 채로 발화하므로 로딩을 방출하지 않고, 실패해도 보고 있던
+         * 화면을 유지한다. 보고 있던 주를 그대로 다시 조회한다.
+         */
+        fun refreshOnReturn() {
+            // 진입 직후의 ON_RESUME 은 init 로드와 겹친다 — 진행 중이면 건너뛴다.
+            if (loadJob?.isActive == true) return
             val current =
                 (internalState.value.loadPhase as? LoadPhase.Loaded)?.monday
                     ?: weekOptions.first().monday
-            load(current)
+            load(current, showsLoading = false, keepsStateOnFailure = true)
         }
 
-        private fun load(monday: LocalDate) {
-            viewModelScope.launch {
-                internalState.update { it.copy(loadPhase = LoadPhase.Loading) }
-                val result =
-                    runCatching {
-                        coroutineScope {
-                            val reportDeferred =
-                                async {
-                                    repository
-                                        .getWeeklyReport(date = monday.format(API_DATE_FORMATTER))
-                                        .getOrThrow()
+        private fun load(
+            monday: LocalDate,
+            showsLoading: Boolean = true,
+            keepsStateOnFailure: Boolean = false,
+        ) {
+            loadJob?.cancel()
+            loadJob =
+                viewModelScope.launch {
+                    if (showsLoading) {
+                        internalState.update { it.copy(loadPhase = LoadPhase.Loading) }
+                    }
+                    val result =
+                        runCatching {
+                            coroutineScope {
+                                val reportDeferred =
+                                    async {
+                                        repository
+                                            .getWeeklyReport(date = monday.format(API_DATE_FORMATTER))
+                                            .getOrThrow()
+                                    }
+                                val profileDeferred = async { userRepository.getMyProfile() }
+                                reportDeferred.await() to profileDeferred.await()
+                            }
+                        }
+                    // runCatching 이 CancellationException 까지 실패로 잡는다.
+                    // 새 로드가 이 Job 을 취소했다면 상태는 그쪽이 결정하므로 여기서 멈춘다.
+                    ensureActive()
+                    result
+                        .onSuccess { (report, profile) ->
+                            internalState.update {
+                                it.copy(loadPhase = LoadPhase.Loaded(monday, report, profile.name))
+                            }
+                        }.onFailure { e ->
+                            internalState.update { current ->
+                                if (keepsStateOnFailure && current.loadPhase is LoadPhase.Loaded) {
+                                    current
+                                } else {
+                                    current.copy(
+                                        loadPhase =
+                                            LoadPhase.Failed(
+                                                UiText.DynamicOrResource(
+                                                    value = e.message,
+                                                    fallbackResId = R.string.mindrecord_error_weekly_report_failed,
+                                                ),
+                                            ),
+                                    )
                                 }
-                            val profileDeferred = async { userRepository.getMyProfile() }
-                            reportDeferred.await() to profileDeferred.await()
+                            }
                         }
-                    }
-                result
-                    .onSuccess { (report, profile) ->
-                        internalState.update {
-                            it.copy(loadPhase = LoadPhase.Loaded(monday, report, profile.name))
-                        }
-                    }.onFailure { e ->
-                        internalState.update {
-                            it.copy(
-                                loadPhase =
-                                    LoadPhase.Failed(
-                                        UiText.DynamicOrResource(
-                                            value = e.message,
-                                            fallbackResId = R.string.mindrecord_error_weekly_report_failed,
-                                        ),
-                                    ),
-                            )
-                        }
-                    }
-            }
+                }
         }
 
         private fun buildWeekOptions(
@@ -170,21 +193,26 @@ class WeeklyReportViewModel
             }
 
         private fun LoadPhase.Loaded.toSuccessUiState(): WeeklyReportUiState.Success {
-            val sunday = monday.plusDays(6)
+            val sunday = monday.plusDays(WEEK_LENGTH - 1L)
+            val dailyQuestionDates = report.dailyQuestions.mapNotNull { parseLocalDateOrNull(it.date) }
             return WeeklyReportUiState.Success(
                 selectedMonday = monday,
                 weekOptions = weekOptions,
                 dateRange = "${monday.format(RANGE_FORMATTER)} - ${sunday.format(RANGE_FORMATTER)}",
                 userName = userName,
-                recordedDays = report.week.count { it.isDiary },
+                recordedDays =
+                    countRecordedDays(
+                        monday = monday,
+                        week = report.week,
+                        dailyQuestionDates = dailyQuestionDates,
+                    ),
                 counts =
                     listOf(
                         report.dailyQuestionAmount to MindRecordCategoryUi.DailyQuestion,
                         report.diaryAmount to MindRecordCategoryUi.Diary,
-                        report.deepThoughtAmount to MindRecordCategoryUi.DeepThought,
                     ),
                 weekDays = mapWeekDays(monday, report.week),
-                emotionBubbles = mapEmotionBubbles(report.emotions),
+                emotionKeywords = mapEmotionKeywords(report.emotions),
                 summaryText = report.summaryText,
                 dailyQuestions = report.dailyQuestions.map { it.toUi() },
             )
@@ -192,7 +220,6 @@ class WeeklyReportViewModel
 
         companion object {
             private const val WEEK_OPTION_COUNT = 5
-            private const val WEEK_LENGTH = 7
 
             private val API_DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
             private val RANGE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd.")
@@ -204,31 +231,15 @@ class WeeklyReportViewModel
                     TodayMood.SAD -> "😢"
                 }
 
-            // 4개 슬롯의 크기/위치/색상은 디자인 시안에 맞춰 고정. API 의 emotions 를 percentage
-            // 내림차순으로 정렬해 슬롯에 채워 넣어, 1위가 가장 크고 진한 버블이 되도록 배치.
-            private val BUBBLE_SLOTS: List<BubbleSlot> =
-                listOf(
-                    BubbleSlot(size = 100.dp, bgColor = Color(0xFF212121), offsetX = 0.dp, offsetY = 30.dp),
-                    BubbleSlot(size = 82.dp, bgColor = Color(0xFF424242), offsetX = 88.dp, offsetY = 0.dp),
-                    BubbleSlot(size = 68.dp, bgColor = Color(0xFF616161), offsetX = 158.dp, offsetY = 68.dp),
-                    BubbleSlot(size = 58.dp, bgColor = Color(0xFF9E9E9E), offsetX = 230.dp, offsetY = 42.dp),
-                )
+            // 카드 측에서 키워드 개수(0~4)에 따라 슬롯(size·offset·color)을 결정하므로,
+            // 여기선 percentage 내림차순으로 정렬해 최대 4건만 잘라 키워드·카운트만 노출한다.
+            private const val MAX_EMOTION_KEYWORDS = 4
 
-            private fun mapEmotionBubbles(emotions: List<WeeklyReportEmotion>): List<EmotionBubble> =
+            private fun mapEmotionKeywords(emotions: List<WeeklyReportEmotion>): List<EmotionKeyword> =
                 emotions
                     .sortedByDescending { it.percentage }
-                    .take(BUBBLE_SLOTS.size)
-                    .mapIndexed { index, emotion ->
-                        val slot = BUBBLE_SLOTS[index]
-                        EmotionBubble(
-                            keyword = emotion.keyword,
-                            count = emotion.percentage,
-                            size = slot.size,
-                            bgColor = slot.bgColor,
-                            offsetX = slot.offsetX,
-                            offsetY = slot.offsetY,
-                        )
-                    }
+                    .take(MAX_EMOTION_KEYWORDS)
+                    .map { EmotionKeyword(keyword = it.keyword, count = it.percentage) }
 
             private fun WeeklyReportDailyQuestion.toUi(): DailyQuestion =
                 DailyQuestion(
@@ -244,19 +255,14 @@ class WeeklyReportViewModel
                     DateTimeFormatter.ISO_DATE,
                 )
 
-            private fun parseLocalDate(raw: String): LocalDate {
+            private fun parseLocalDate(raw: String): LocalDate = parseLocalDateOrNull(raw) ?: LocalDate.now()
+
+            private fun parseLocalDateOrNull(raw: String): LocalDate? {
                 val datePart = raw.substringBefore(' ').trim()
                 for (formatter in DATE_FORMATTERS) {
                     runCatching { return LocalDate.parse(datePart, formatter) }
                 }
-                return LocalDate.now()
+                return null
             }
         }
-
-        private data class BubbleSlot(
-            val size: Dp,
-            val bgColor: Color,
-            val offsetX: Dp,
-            val offsetY: Dp,
-        )
     }
