@@ -89,10 +89,17 @@ class TokenReissuer
 
         private fun classifyFailure(exception: Throwable): Outcome.Failure =
             when (exception) {
-                is ApiException -> classifyHttpFailure(exception, exception.status)
+                is ApiException -> classifyApiFailure(exception)
                 is HttpException -> classifyHttpFailure(exception, exception.code())
                 is IOException -> Outcome.TransportFailure(exception)
                 else -> Outcome.UnexpectedFailure(exception)
+            }
+
+        private fun classifyApiFailure(exception: ApiException): Outcome.Failure =
+            if (exception.code == CODE_INVALID_REFRESH_TOKEN) {
+                Outcome.AuthenticationRejected(exception)
+            } else {
+                classifyHttpFailure(exception, exception.status)
             }
 
         private fun classifyHttpFailure(
@@ -113,3 +120,5 @@ class TokenReissuer
             )
         }
     }
+
+private const val CODE_INVALID_REFRESH_TOKEN = 1107

@@ -3,6 +3,7 @@ package com.afternote.core.network.interceptor
 import com.afternote.core.model.TokenBundle
 import com.afternote.core.network.FakeAuthRepository
 import com.afternote.core.network.FakeErrorReporter
+import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.token.AccessTokenExpiryTracker
 import com.afternote.core.network.token.TokenReissuer
 import okhttp3.Protocol
@@ -148,6 +149,29 @@ class TokenAuthenticatorTest {
             assertEquals(1, repository.rotateCallCount)
             assertEquals(1, repository.clearSessionCallCount)
         }
+    }
+
+    @Test
+    fun `refresh 무효 400 code 1107 - 세션 정리 후 중단`() {
+        val failure =
+            ApiException(
+                status = 400,
+                code = 1107,
+                serverMessage = "유효하지 않은 리프레시 토큰",
+                message = "유효하지 않은 리프레시 토큰",
+            )
+        val repository =
+            FakeAuthRepository(
+                accessToken = "old-token",
+                onRotateToken = { Result.failure(failure) },
+                onClearSession = { Result.success(Unit) },
+            )
+
+        val request = authenticator(repository).authenticate(null, unauthorizedResponse())
+
+        assertNull(request)
+        assertEquals(1, repository.rotateCallCount)
+        assertEquals(1, repository.clearSessionCallCount)
     }
 
     @Test

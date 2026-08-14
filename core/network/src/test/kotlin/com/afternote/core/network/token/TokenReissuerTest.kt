@@ -109,6 +109,29 @@ class TokenReissuerTest {
     }
 
     @Test
+    fun `refresh 무효 400 code 1107 - 인증 거절로 분류하고 리포팅 제외`() {
+        val failure =
+            ApiException(
+                status = 400,
+                code = 1107,
+                serverMessage = "유효하지 않은 리프레시 토큰",
+                message = "유효하지 않은 리프레시 토큰",
+            )
+        val reporter = FakeErrorReporter()
+        val repository =
+            FakeAuthRepository(
+                accessToken = "old-token",
+                onRotateToken = { Result.failure(failure) },
+            )
+
+        val outcome = reissuer(repository, reporter).reissue(expectedAccessToken = "old-token")
+
+        assertTrue(outcome is TokenReissuer.Outcome.AuthenticationRejected)
+        assertSame(failure, (outcome as TokenReissuer.Outcome.AuthenticationRejected).exception)
+        assertTrue(reporter.writtenFailures.isEmpty())
+    }
+
+    @Test
     fun `transport 실패 - 원인 보존, deadline 폐기, 비민감 non-fatal 기록`() {
         tracker.record(expiresInSeconds = 30)
         val secret = "refresh-token-secret"
