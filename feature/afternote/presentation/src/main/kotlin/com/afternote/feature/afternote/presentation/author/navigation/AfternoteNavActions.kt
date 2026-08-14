@@ -34,6 +34,14 @@ interface AfternoteNavActions {
 
     fun navigateToAddSong()
 
+    fun navigateToReceiverSelection()
+
+    fun completeReceiverSelection(
+        receiverId: Long,
+        name: String,
+        relation: String,
+    )
+
     /** 지문 인증 성공 → Afternote 홈으로 진입하며 지문 로그인 화면 자체를 stack 에서 제거 (replace). */
     fun replaceFingerprintLoginWithAfternoteHome()
 
