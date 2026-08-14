@@ -313,7 +313,8 @@ class AfternoteEditorViewModel
             }
         }
 
-        fun uploadMemorialThumbnail(jpegBytes: ByteArray) {
+        fun uploadMemorialThumbnail(jpegBytes: ByteArray?) {
+            if (jpegBytes == null) return
             viewModelScope.launch {
                 memorialThumbnailUploadRepository
                     .uploadThumbnail(jpegBytes)
@@ -606,6 +607,10 @@ class AfternoteEditorViewModel
 
         fun onThumbnailUploadErrorConsumed() {
             internalState.update { it.copy(thumbnailUploadFailed = false) }
+        }
+
+        fun onValidationErrorConsumed() {
+            internalState.update { it.copy(validationError = null) }
         }
 
         // endregion

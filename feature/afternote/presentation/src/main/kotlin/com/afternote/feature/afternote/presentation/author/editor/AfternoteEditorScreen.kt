@@ -64,8 +64,15 @@ private const val EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE_MS = 1_000L
 @Composable
 fun AfternoteEditorScreen(
     form: EditorFormState,
+    onBackClick: () -> Unit,
+    onRegisterClick: () -> Unit,
+    onNavigateToMemorialPlaylist: () -> Unit,
+    onNavigateToSelectReceiver: () -> Unit,
+    onThumbnailBytesReady: (ByteArray?) -> Unit,
+    onThumbnailExtractionFailed: (Throwable) -> Unit,
+    onThumbnailUploadErrorConsumed: () -> Unit,
+    onValidationErrorConsumed: () -> Unit,
     modifier: Modifier = Modifier,
-    callbacks: AfternoteEditorScreenCallbacks = AfternoteEditorScreenCallbacks(),
     state: AfternoteEditorState = rememberAfternoteEditorState(),
     liveSongs: List<Song> = emptyList(),
     saveError: String? = null,
@@ -121,10 +128,15 @@ fun AfternoteEditorScreen(
 
     LaunchedEffect(saveError) {
         saveError?.let { message ->
-            snackbarHostState.showSnackbar(
-                message = message,
-                withDismissAction = true,
-            )
+            try {
+                snackbarHostState.showSnackbar(
+                    message = message,
+                    withDismissAction = true,
+                )
+            } finally {
+                // dismiss 뿐 아니라 화면 이탈로 취소돼도 소비해야, 복귀 시 이미 고친 오류의 stale 안내가 재표출되지 않는다.
+                onValidationErrorConsumed()
+            }
         }
     }
 
@@ -134,7 +146,7 @@ fun AfternoteEditorScreen(
                 message = thumbnailUploadFailedMessage,
                 withDismissAction = true,
             )
-            callbacks.onThumbnailUploadErrorConsumed()
+            onThumbnailUploadErrorConsumed()
         }
     }
 
@@ -173,7 +185,7 @@ fun AfternoteEditorScreen(
         if (hasUnsavedChanges) {
             showExitConfirm = true
         } else {
-            callbacks.onBackClick()
+            onBackClick()
         }
     }
 
@@ -197,7 +209,7 @@ fun AfternoteEditorScreen(
                             Modifier.clickable(
                                 onClick = {
                                     focusManager.clearFocus()
-                                    callbacks.onRegisterClick()
+                                    onRegisterClick()
                                 },
                             ),
                     )
@@ -217,8 +229,8 @@ fun AfternoteEditorScreen(
                 form = form,
                 liveSongs = liveSongs,
                 isPrefillLoading = isPrefillLoading,
-                onNavigateToAddSong = callbacks.onNavigateToAddSong,
-                onNavigateToSelectReceiver = callbacks.onNavigateToSelectReceiver,
+                onNavigateToMemorialPlaylist = onNavigateToMemorialPlaylist,
+                onNavigateToSelectReceiver = onNavigateToSelectReceiver,
                 onPhotoAddClick = {
                     memorialPhotoPickerLauncher.launch(
                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
@@ -229,8 +241,8 @@ fun AfternoteEditorScreen(
                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly),
                     )
                 },
-                onThumbnailBytesReady = callbacks.onThumbnailBytesReady,
-                onThumbnailExtractionFailed = callbacks.onThumbnailExtractionFailed,
+                onThumbnailBytesReady = onThumbnailBytesReady,
+                onThumbnailExtractionFailed = onThumbnailExtractionFailed,
             )
 
             AfternoteEditorDialogs(state = state)
@@ -241,7 +253,7 @@ fun AfternoteEditorScreen(
                     message = stringResource(R.string.afternote_editor_exit_confirm_message),
                     onConfirm = {
                         showExitConfirm = false
-                        callbacks.onBackClick()
+                        onBackClick()
                     },
                     onDismiss = { showExitConfirm = false },
                     confirmText = stringResource(R.string.afternote_editor_exit_confirm_confirm),
