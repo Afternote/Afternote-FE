@@ -15,7 +15,7 @@
     <string name="timeletter_draft_total">총 %1$d 개</string>
     <string name="timeletter_draft_total_selected">총 %1$d 개 선택</string>
     <string name="timeletter_draft_recipient_names">수신인 %1$s</string>
-    <string name="timeletter_draft_recipient_unspecified">수신인 지정되지 않았습니다.</string>
+    <string name="timeletter_draft_recipient_count">수신인 %1$d명</string>
     <string name="timeletter_draft_scheduled_date">발송 예정일 %1$s</string>
     <string name="timeletter_draft_untitled">제목 없음</string>
     <string name="timeletter_draft_delete_all">전체 삭제</string>

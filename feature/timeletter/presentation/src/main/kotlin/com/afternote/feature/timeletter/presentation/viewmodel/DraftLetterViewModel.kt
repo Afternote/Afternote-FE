@@ -4,9 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
+import com.afternote.feature.timeletter.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,10 +31,11 @@ class DraftLetterViewModel
             viewModelScope.launch {
                 _uiState.value = DraftLetterUiState.Loading
                 try {
-                    val receiversDeferred = async { userRepository.getReceivers() }
                     val result = timeLetterRepository.getTemporaryTimeLetters()
                     val receiverNameMap =
-                        receiversDeferred.await().associate { receiver -> receiver.receiverId to receiver.name }
+                        runCatching { userRepository.getReceivers() }
+                            .getOrDefault(emptyList())
+                            .associate { receiver -> receiver.receiverId to receiver.name }
                     _uiState.value =
                         DraftLetterUiState.Success(
                             drafts = result.timeLetters,
@@ -43,7 +44,7 @@ class DraftLetterViewModel
                 } catch (cancellationException: CancellationException) {
                     throw cancellationException
                 } catch (_: Exception) {
-                    _uiState.value = DraftLetterUiState.Error("임시 저장된 레터를 불러올 수 없습니다.")
+                    _uiState.value = DraftLetterUiState.Error(R.string.timeletter_draft_load_error)
                 }
             }
         }
@@ -75,13 +76,13 @@ class DraftLetterViewModel
                 } catch (cancellationException: CancellationException) {
                     throw cancellationException
                 } catch (_: Exception) {
-                    _uiState.value = DraftLetterUiState.Error("임시 저장된 레터를 삭제하지 못했습니다.")
+                    _uiState.value = current.copy(messageRes = R.string.timeletter_draft_delete_error)
                 }
             }
         }
 
         fun deleteAll() {
-            if (_uiState.value !is DraftLetterUiState.Success) return
+            val current = _uiState.value as? DraftLetterUiState.Success ?: return
             viewModelScope.launch {
                 try {
                     timeLetterRepository.deleteAllTemporary()
@@ -89,8 +90,13 @@ class DraftLetterViewModel
                 } catch (cancellationException: CancellationException) {
                     throw cancellationException
                 } catch (_: Exception) {
-                    _uiState.value = DraftLetterUiState.Error("임시 저장된 레터를 삭제하지 못했습니다.")
+                    _uiState.value = current.copy(messageRes = R.string.timeletter_draft_delete_error)
                 }
             }
+        }
+
+        fun onMessageShown() {
+            val current = _uiState.value as? DraftLetterUiState.Success ?: return
+            _uiState.value = current.copy(messageRes = null)
         }
     }

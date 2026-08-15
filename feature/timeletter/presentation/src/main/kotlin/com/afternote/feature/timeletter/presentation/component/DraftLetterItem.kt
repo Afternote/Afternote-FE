@@ -33,10 +33,23 @@ fun DraftLetterItem(
     isSelected: Boolean = false,
     onToggle: () -> Unit = {},
 ) {
-    val receiverNames =
+    val resolvedReceiverNames =
         draft.receiverIds
             .mapNotNull(receiverNameMap::get)
-            .joinToString(", ")
+    val receiverText =
+        when {
+            draft.receiverIds.isEmpty() -> {
+                null
+            }
+
+            resolvedReceiverNames.size == draft.receiverIds.size -> {
+                stringResource(R.string.timeletter_draft_recipient_names, resolvedReceiverNames.joinToString(", "))
+            }
+
+            else -> {
+                stringResource(R.string.timeletter_draft_recipient_count, draft.receiverIds.size)
+            }
+        }
 
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
@@ -65,16 +78,13 @@ fun DraftLetterItem(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Row(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text =
-                            if (receiverNames.isEmpty()) {
-                                stringResource(R.string.timeletter_draft_recipient_unspecified)
-                            } else {
-                                stringResource(R.string.timeletter_draft_recipient_names, receiverNames)
-                            },
-                        style = AfternoteDesign.typography.footnoteCaption,
-                        color = AfternoteDesign.colors.gray6,
-                    )
+                    if (receiverText != null) {
+                        Text(
+                            text = receiverText,
+                            style = AfternoteDesign.typography.footnoteCaption,
+                            color = AfternoteDesign.colors.gray6,
+                        )
+                    }
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
                         text =

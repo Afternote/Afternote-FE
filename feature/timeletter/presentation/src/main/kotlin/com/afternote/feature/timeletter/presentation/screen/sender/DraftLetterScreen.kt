@@ -9,9 +9,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -38,6 +42,16 @@ fun DraftLetterScreen(
     viewModel: DraftLetterViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val messageRes = (uiState as? DraftLetterUiState.Success)?.messageRes
+    val message = messageRes?.let { stringResource(it) }
+
+    LaunchedEffect(messageRes) {
+        if (message != null) {
+            snackbarHostState.showSnackbar(message)
+            viewModel.onMessageShown()
+        }
+    }
 
     DraftLetterContent(
         uiState = uiState,
@@ -46,6 +60,7 @@ fun DraftLetterScreen(
         onToggleSelection = viewModel::toggleSelection,
         onDeleteAll = viewModel::deleteAll,
         onDeleteSelected = viewModel::deleteSelected,
+        snackbarHostState = snackbarHostState,
         modifier = modifier,
     )
 }
@@ -58,6 +73,7 @@ private fun DraftLetterContent(
     onToggleSelection: (Long) -> Unit,
     onDeleteAll: () -> Unit,
     onDeleteSelected: () -> Unit,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     modifier: Modifier = Modifier,
 ) {
     val successState = uiState as? DraftLetterUiState.Success
@@ -65,6 +81,7 @@ private fun DraftLetterContent(
 
     Scaffold(
         modifier = modifier,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             DetailTopBar(
                 title = stringResource(R.string.timeletter_draft_title),
@@ -107,7 +124,11 @@ private fun DraftLetterContent(
                     modifier = Modifier.fillMaxSize().padding(innerPadding).padding(20.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(uiState.message, style = AfternoteDesign.typography.captionLargeR, color = AfternoteDesign.colors.gray6)
+                    Text(
+                        stringResource(uiState.messageRes),
+                        style = AfternoteDesign.typography.captionLargeR,
+                        color = AfternoteDesign.colors.gray6,
+                    )
                 }
             }
 

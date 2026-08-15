@@ -1,5 +1,6 @@
 package com.afternote.feature.timeletter.presentation.viewmodel
 
+import androidx.annotation.StringRes
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 
 sealed interface DraftLetterUiState {
@@ -10,9 +11,10 @@ sealed interface DraftLetterUiState {
         val receiverNameMap: Map<Long, String> = emptyMap(),
         val isEditMode: Boolean = false,
         val selectedIds: Set<Long> = emptySet(),
+        @StringRes val messageRes: Int? = null,
     ) : DraftLetterUiState
 
     data class Error(
-        val message: String,
+        @StringRes val messageRes: Int,
     ) : DraftLetterUiState
 }
