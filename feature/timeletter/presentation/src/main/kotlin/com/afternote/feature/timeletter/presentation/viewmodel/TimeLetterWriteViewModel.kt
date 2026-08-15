@@ -265,7 +265,7 @@ class TimeLetterWriteViewModel
                             sendAt = sendAt,
                             deliveryMode = TimeLetterDeliveryMode.DATE,
                             status = status,
-                            receiverIds = state.recipientIds.ifEmpty { null },
+                            receiverIds = state.recipientIds,
                         )
                     } else {
                         runCatching {
@@ -290,8 +290,14 @@ class TimeLetterWriteViewModel
                         } else {
                             _uiState.update { it.copy(registered = true) }
                         }
-                    }.onFailure {
-                        _uiState.update { it.copy(errorMessage = "저장에 실패했어요. 다시 시도해주세요.") }
+                    }.onFailure { error ->
+                        _uiState.update {
+                            it.copy(
+                                errorMessage =
+                                    error.message?.takeIf(String::isNotBlank)
+                                        ?: "저장에 실패했어요. 다시 시도해주세요.",
+                            )
+                        }
                     }
                 _uiState.update { it.copy(isSaving = false) }
             }

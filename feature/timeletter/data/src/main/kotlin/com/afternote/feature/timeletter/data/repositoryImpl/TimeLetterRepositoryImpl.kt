@@ -45,7 +45,7 @@ class TimeLetterRepositoryImpl
             sendAt: String?,
             deliveryMode: TimeLetterDeliveryMode,
             status: TimeLetterStatus,
-            receiverIds: List<Long>?,
+            receiverIds: List<Long>,
         ): TimeLetter =
             timeLetterApiService
                 .createTimeLetter(
@@ -55,7 +55,7 @@ class TimeLetterRepositoryImpl
                         deliveryMode = deliveryMode.toDto(),
                         status = status.toDto(),
                         blocks = blocks.map { it.toDto() },
-                        receiverIds = receiverIds ?: emptyList(),
+                        receiverIds = receiverIds,
                     ),
                 ).requireData()
                 .toDomain()

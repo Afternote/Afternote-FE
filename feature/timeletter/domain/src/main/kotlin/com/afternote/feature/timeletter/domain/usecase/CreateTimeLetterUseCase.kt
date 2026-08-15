@@ -19,7 +19,7 @@ class CreateTimeLetterUseCase
             sendAt: String?,
             deliveryMode: TimeLetterDeliveryMode,
             status: TimeLetterStatus,
-            receiverIds: List<Long>?,
+            receiverIds: List<Long>,
         ): Result<TimeLetter> =
             runCatching {
                 val newBlocks = resolveTimeLetterBlocksUseCase(blocks)

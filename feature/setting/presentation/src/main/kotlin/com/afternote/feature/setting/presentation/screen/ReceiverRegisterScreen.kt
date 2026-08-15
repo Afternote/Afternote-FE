@@ -215,7 +215,12 @@ internal fun ReceiverRegisterContent(
                             Text(
                                 text = selectedRelation ?: "관계를 선택하세요",
                                 style = AfternoteDesign.typography.bodyBase,
-                                color = AfternoteDesign.colors.gray8,
+                                color =
+                                    if (selectedRelation == null) {
+                                        AfternoteDesign.colors.gray4
+                                    } else {
+                                        AfternoteDesign.colors.gray9
+                                    },
                             )
                             Spacer(modifier = Modifier.weight(1f))
                             Icon(

@@ -52,6 +52,7 @@ class DeliveryConditionViewModel
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
+                                isInitialized = true,
                                 conditionType = representative?.conditionType ?: DeliveryConditionType.INACTIVITY,
                                 inactivityPeriod = representative?.inactivityPeriod ?: InactivityPeriod.ONE_YEAR,
                                 conditions = response.conditions,
@@ -69,38 +70,15 @@ class DeliveryConditionViewModel
             _uiState.update { it.copy(conditionType = conditionType) }
         }
 
-        fun onContentTypeSelected(index: Int) {
-            val contentType = DeliveryContentType.entries.getOrElse(index) { DeliveryContentType.TIME_LETTER }
-            val condition = _uiState.value.conditions.firstOrNull { it.contentType == contentType }
-            _uiState.update {
-                it.copy(
-                    selectedContentType = contentType,
-                    conditionType = condition?.conditionType ?: DeliveryConditionType.INACTIVITY,
-                    inactivityPeriod = condition?.inactivityPeriod ?: InactivityPeriod.ONE_YEAR,
-                )
-            }
-        }
-
-        fun onInactivityPeriodSelected(index: Int) {
-            val inactivityPeriod =
-                when (index) {
-                    0 -> InactivityPeriod.THREE_MONTHS
-                    1 -> InactivityPeriod.SIX_MONTHS
-                    else -> InactivityPeriod.ONE_YEAR
-                }
-            _uiState.update { it.copy(inactivityPeriod = inactivityPeriod) }
-        }
-
         fun onSave() {
             val state = _uiState.value
-            val sourceConditions =
-                DeliveryContentType.entries.map { contentType ->
-                    state.conditions.firstOrNull { it.contentType == contentType }
-                        ?: defaultCondition(contentType)
-                }
+            if (!state.isInitialized || state.isSaving) return
+
+            val hasTimeLetterCondition =
+                state.conditions.any { it.contentType == DeliveryContentType.TIME_LETTER }
             val updatedConditions =
-                sourceConditions.map { condition ->
-                    if (condition.contentType == state.selectedContentType) {
+                state.conditions.map { condition ->
+                    if (condition.contentType == DeliveryContentType.TIME_LETTER) {
                         condition.copy(
                             conditionType = state.conditionType,
                             inactivityPeriod =
@@ -110,6 +88,19 @@ class DeliveryConditionViewModel
                         )
                     } else {
                         condition
+                    }
+                }.let { conditions ->
+                    if (hasTimeLetterCondition) {
+                        conditions
+                    } else {
+                        conditions +
+                            defaultCondition(DeliveryContentType.TIME_LETTER).copy(
+                                conditionType = state.conditionType,
+                                inactivityPeriod =
+                                    state.inactivityPeriod.takeIf {
+                                        state.conditionType == DeliveryConditionType.INACTIVITY
+                                    },
+                            )
                     }
                 }
 

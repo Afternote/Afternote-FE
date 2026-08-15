@@ -58,14 +58,24 @@ class ReceiverEditViewModel
 
             _uiState.update { it.copy(isSaving = true, errorMessage = null) }
             viewModelScope.launch {
+                val receiverUpdateResult =
+                    runCatching {
+                        userRepository.updateReceiver(
+                            receiverId = receiverId,
+                            name = name,
+                            phone = phone,
+                            relation = relation,
+                            email = email,
+                        )
+                    }
+                if (receiverUpdateResult.isFailure) {
+                    _uiState.update {
+                        it.copy(isSaving = false, errorMessage = "수신자 수정에 실패했습니다.")
+                    }
+                    return@launch
+                }
+
                 runCatching {
-                    userRepository.updateReceiver(
-                        receiverId = receiverId,
-                        name = name,
-                        phone = phone,
-                        relation = relation,
-                        email = email,
-                    )
                     userRepository.updateReceiverMessage(
                         receiverId = receiverId,
                         message = message,
@@ -75,7 +85,10 @@ class ReceiverEditViewModel
                     _events.send(ReceiverEditEvent.EditSuccess)
                 }.onFailure {
                     _uiState.update {
-                        it.copy(isSaving = false, errorMessage = "수신자 수정에 실패했습니다.")
+                        it.copy(
+                            isSaving = false,
+                            errorMessage = "기본 정보는 수정됐지만 마지막 인사말 수정에 실패했습니다.",
+                        )
                     }
                 }
             }

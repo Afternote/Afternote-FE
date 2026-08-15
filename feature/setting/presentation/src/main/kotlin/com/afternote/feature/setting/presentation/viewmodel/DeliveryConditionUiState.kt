@@ -7,7 +7,7 @@ import com.afternote.core.model.delivery.InactivityPeriod
 
 data class DeliveryConditionUiState(
     val isLoading: Boolean = false,
-    val selectedContentType: DeliveryContentType = DeliveryContentType.TIME_LETTER,
+    val isInitialized: Boolean = false,
     val conditionType: DeliveryConditionType = DeliveryConditionType.INACTIVITY,
     val inactivityPeriod: InactivityPeriod = InactivityPeriod.ONE_YEAR,
     val conditions: List<DeliveryConditionItem> = emptyList(),

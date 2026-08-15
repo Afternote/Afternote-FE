@@ -88,11 +88,17 @@ private fun DeliveryConditionContent(
                 title = stringResource(R.string.settings_recipient_after_delivery),
                 onBackClick = onBack,
                 actions = {
-                    TextButton(onClick = onSave, enabled = !uiState.isLoading && !uiState.isSaving) {
+                    val isSaveEnabled = uiState.isInitialized && !uiState.isLoading && !uiState.isSaving
+                    TextButton(onClick = onSave, enabled = isSaveEnabled) {
                         Text(
                             text = stringResource(R.string.delivery_condition_save),
                             style = AfternoteDesign.typography.bodySmallB,
-                            color = AfternoteDesign.colors.gray9,
+                            color =
+                                if (isSaveEnabled) {
+                                    AfternoteDesign.colors.gray9
+                                } else {
+                                    AfternoteDesign.colors.gray2
+                                },
                         )
                     }
                 },
@@ -108,6 +114,14 @@ private fun DeliveryConditionContent(
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 20.dp, vertical = 16.dp),
         ) {
+            if (uiState.errorMessage != null) {
+                Text(
+                    text = uiState.errorMessage,
+                    style = AfternoteDesign.typography.bodySmallR,
+                    color = AfternoteDesign.colors.error,
+                )
+                Spacer(Modifier.height(16.dp))
+            }
             SectionLabel(text = stringResource(R.string.processing_method_section_title))
             Spacer(Modifier.height(28.dp))
             RadioGroup(
