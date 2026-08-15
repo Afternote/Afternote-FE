@@ -97,28 +97,19 @@ sealed interface ReceiverRoute {
     @Serializable
     data object AfternoteListRoute : ReceiverRoute
 
-    /**
-     * 수신 애프터노트 상세.
-     *
-     * 프로퍼티 이름은 [com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailViewModel] 의
-     * `SavedStateHandle` 키(`afternoteId`)와 일치해야 한다(typed-safe routes 규약).
-     */
+    /** 수신 애프터노트 상세. */
     @Serializable
     data class AfternoteDetailRoute(
-        val afternoteId: String,
+        val afternoteId: Long,
     ) : ReceiverRoute
 
     /**
      * 수신 추억 플레이리스트 — 추억 상세
      * ([com.afternote.feature.afternote.presentation.receiver.detail.MemorialReceivedDetailScreen]) 의
      * "추억 플레이리스트" 카드 클릭 진입.
-     *
-     * 프로퍼티 이름은
-     * [com.afternote.feature.afternote.presentation.receiver.playlist.ReceiverMemorialPlaylistViewModel] 의
-     * `SavedStateHandle` 키(`afternoteId`)와 일치해야 한다(typed-safe routes 규약).
      */
     @Serializable
     data class MemorialPlaylistRoute(
-        val afternoteId: String,
+        val afternoteId: Long,
     ) : ReceiverRoute
 }

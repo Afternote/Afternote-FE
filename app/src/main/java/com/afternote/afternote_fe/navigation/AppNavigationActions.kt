@@ -473,13 +473,13 @@ fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions =
                 appState.navController.navigate(ReceiverRoute.AfternoteListRoute)
             }
 
-            override fun navigateToReceivedAfternoteDetail(afternoteId: String) {
+            override fun navigateToReceivedAfternoteDetail(afternoteId: Long) {
                 appState.navController.navigate(
                     ReceiverRoute.AfternoteDetailRoute(afternoteId = afternoteId),
                 )
             }
 
-            override fun navigateToMemorialPlaylist(afternoteId: String) {
+            override fun navigateToMemorialPlaylist(afternoteId: Long) {
                 appState.navController.navigate(
                     ReceiverRoute.MemorialPlaylistRoute(afternoteId = afternoteId),
                 )
