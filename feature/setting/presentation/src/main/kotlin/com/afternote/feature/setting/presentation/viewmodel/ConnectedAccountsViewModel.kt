@@ -30,7 +30,7 @@ class ConnectedAccountsViewModel
             loadConnectedAccounts()
         }
 
-        private fun loadConnectedAccounts() {
+        fun loadConnectedAccounts() {
             viewModelScope.launch {
                 runCatching { userRepository.getConnectedAccounts() }
                     .onSuccess { accounts ->

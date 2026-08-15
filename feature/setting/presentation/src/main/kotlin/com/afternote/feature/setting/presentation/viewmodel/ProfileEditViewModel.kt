@@ -28,7 +28,7 @@ class ProfileEditViewModel
             loadProfile()
         }
 
-        private fun loadProfile() {
+        fun loadProfile() {
             viewModelScope.launch {
                 runCatching { userRepository.getMyProfile() }
                     .onSuccess { user ->
