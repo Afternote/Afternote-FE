@@ -45,22 +45,63 @@ fun Project.requireKeyForReleaseBuild(
         keyName.split("_").joinToString("") { word ->
             word.lowercase().replaceFirstChar { it.uppercase() }
         }
+    registerReleaseBuildGuard(
+        taskName = "check${taskSuffix}ForRelease",
+        taskDescription = "release 빌드 전에 $keyName 주입 여부를 검증한다.",
+        isMissing = value.isBlank(),
+        failureMessage =
+            """
+            |$keyName 가 비어 있어 release 빌드를 중단합니다.
+            |빈 키로 빌드된 release APK 는 소셜 로그인이 동작하지 않습니다.
+            |루트 local.properties 또는 CI 환경변수 $keyName 를 설정한 뒤 다시 빌드하세요.
+            |발급·설정 방법은 README '신규 팀원 빌드 셋업' 섹션 참고.
+            """.trimMargin(),
+    )
+}
+
+/**
+ * release 서명 자격 네 키가 하나도 없을 때 release variant 빌드를 시작 시점에 끊는다.
+ *
+ * 두지 않아도 AGP 가 `packageRelease` 에서 실패시키기는 한다. 다만 R8·lintVital 을 모두 마친
+ * 뒤라 느리고(실측 1분 31초) 무엇을 채워야 하는지도 알리지 않는다.
+ *
+ * [missingKeys] 가 비어 있으면 통과한다. 일부만 기재된 경우는 debug 빌드에서도 잘못된 상태라
+ * 호출부가 configuration 단계에서 끊는다.
+ */
+fun Project.requireReleaseSigningForReleaseBuild(missingKeys: List<String>) {
+    registerReleaseBuildGuard(
+        taskName = "checkReleaseSigningForRelease",
+        taskDescription = "release 빌드 전에 서명 자격 네 키 주입 여부를 검증한다.",
+        isMissing = missingKeys.isNotEmpty(),
+        failureMessage =
+            """
+            |release 서명 자격이 없어 release 빌드를 중단합니다.
+            |루트 local.properties 누락 항목: ${missingKeys.joinToString()}
+            |네 키는 하나의 단위입니다 — 모두 채우세요. debug 와 달리 release 에는 폴백 keystore 가 없습니다.
+            |생성·설정 방법은 README '비개발자 APK 배포' 섹션 참고.
+            """.trimMargin(),
+    )
+}
+
+/**
+ * `preReleaseBuild` 에 매달아 release variant 를 실제로 빌드할 때만 도는 검증 태스크를 등록한다.
+ *
+ * 판정과 메시지를 값으로 받는 이유는 configuration cache 다 — 태스크 상태가 직렬화되므로 액션
+ * 람다가 [Project] 를 캡처하면 안 된다.
+ */
+private fun Project.registerReleaseBuildGuard(
+    taskName: String,
+    taskDescription: String,
+    isMissing: Boolean,
+    failureMessage: String,
+) {
     val guard =
-        tasks.register("check${taskSuffix}ForRelease") {
+        tasks.register(taskName) {
             group = "verification"
-            description = "release 빌드 전에 $keyName 주입 여부를 검증한다."
-            // configuration cache 가 태스크 상태를 직렬화하므로 Project 참조 없이 값만 캡처한다.
-            val isMissing = value.isBlank()
+            description = taskDescription
             doFirst {
                 if (isMissing) {
-                    throw GradleException(
-                        """
-                        |$keyName 가 비어 있어 release 빌드를 중단합니다.
-                        |빈 키로 빌드된 release APK 는 소셜 로그인이 동작하지 않습니다.
-                        |루트 local.properties 또는 CI 환경변수 $keyName 를 설정한 뒤 다시 빌드하세요.
-                        |발급·설정 방법은 README '신규 팀원 빌드 셋업' 섹션 참고.
-                        """.trimMargin(),
-                    )
+                    throw GradleException(failureMessage)
                 }
             }
         }

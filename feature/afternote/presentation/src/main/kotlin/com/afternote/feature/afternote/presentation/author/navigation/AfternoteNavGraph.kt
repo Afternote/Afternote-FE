@@ -66,17 +66,14 @@ fun NavGraphBuilder.afternoteNavGraph(
             val hostViewModel = graphScopedHostViewModel(graphScopedParentEntry)
             val liveSongs by hostViewModel.playlistSongs.collectAsStateWithLifecycle()
             AfternoteEditorNavigation(
-                AfternoteEditorNavigationParams(
-                    backStackEntry = backStackEntry,
-                    liveSongs = liveSongs,
-                    onReplaceSongs = hostViewModel::replaceSongs,
-                    onClearSongs = hostViewModel::clearAllSongs,
-                    onNavigateToSelectReceiver = {}, // TODO: 수신인 선택 화면 라우팅 연결
-                    onBottomNavTabSelected = actions::navigateToBottomTab,
-                    onPopBackStack = actions::popBack,
-                    onNavigateToMemorialPlaylist = actions::navigateToMemorialPlaylist,
-                    onSaveSuccessNavigateHome = actions::popToAfternoteHome,
-                ),
+                backStackEntry = backStackEntry,
+                liveSongs = liveSongs,
+                onReplaceSongs = hostViewModel::replaceSongs,
+                onClearSongs = hostViewModel::clearAllSongs,
+                onNavigateToSelectReceiver = {}, // TODO: 수신인 선택 화면 라우팅 연결
+                onPopBackStack = actions::popBack,
+                onNavigateToMemorialPlaylist = actions::navigateToMemorialPlaylist,
+                onSaveSuccessNavigateHome = actions::popToAfternoteHome,
             )
         }
 

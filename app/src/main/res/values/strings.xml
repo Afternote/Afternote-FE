@@ -1,5 +1,8 @@
 <resources>
     <string name="app_name">afternote-fe</string>
+    <string name="fcm_notification_channel_id" translatable="false">afternote_fcm</string>
+    <string name="fcm_notification_channel_name">애프터노트 알림</string>
+    <string name="fcm_notification_fallback_title" translatable="false">AFTERNOTE</string>
 
     <!-- 홈 탭 -->
     <string name="home_tab_greeting">안녕하세요,\n%1$s님</string>

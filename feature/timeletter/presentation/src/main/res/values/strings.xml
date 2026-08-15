@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="timeletter_recipient_search_placeholder">이름으로 검색하기</string>
+</resources>

@@ -1,7 +1,6 @@
 package com.afternote.afternote_fe.screen
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -43,12 +42,19 @@ import java.time.format.DateTimeFormatter
 private val homeTabDateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
 
 sealed interface HomeTabUiState {
+    /** 당겨서 새로고침 인디케이터를 띄운 채로 둘지. */
+    val showsRefreshIndicator: Boolean
+
     /**
      * @property cachedUserName 마지막 성공 응답에서 디스크 캐시된 이름. 콜드스타트 시 GET /users/me
      * 응답이 도착하기 전 placeholder로 즉시 노출하기 위해 사용한다. 신규 로그인 등 캐시가 없으면 null.
+     * @property showsRefreshIndicator 당겨서 새로고침·재시도로 진입한 로딩이면 true. Success 가 아닌
+     * 상태에서 당기면 이 상태로 넘어오는데, 여기서 인디케이터를 내리면 당긴 직후 사라져 요청이 씹힌
+     * 것처럼 보인다. 최초 진입은 사용자가 당긴 적이 없으므로 false.
      */
     data class Loading(
         val cachedUserName: String? = null,
+        override val showsRefreshIndicator: Boolean = false,
     ) : HomeTabUiState
 
     @Immutable
@@ -59,11 +65,15 @@ sealed interface HomeTabUiState {
         val isRefreshing: Boolean = false,
         /** 오늘의 질문 본문. 조회 실패 시 null — 카드가 중립 문구를 표시한다. */
         val todayQuestionContent: String? = null,
-    ) : HomeTabUiState
+    ) : HomeTabUiState {
+        override val showsRefreshIndicator: Boolean get() = isRefreshing
+    }
 
     data class Error(
         val throwable: Throwable,
-    ) : HomeTabUiState
+    ) : HomeTabUiState {
+        override val showsRefreshIndicator: Boolean = false
+    }
 }
 
 /** 홈 탭에서 발생하는 사용자 이벤트를 한곳에 모은다. */
@@ -125,32 +135,30 @@ fun HomeTabScreen(
         topBar = { HomeTopBar(onSettingClick = actions::onSettingClick) },
         containerColor = Color.Transparent,
     ) { paddingValues ->
-        when (uiState) {
-            is HomeTabUiState.Loading -> {
-                HomeTabScrollContent(
-                    paddingValues = paddingValues,
-                    userName = uiState.cachedUserName ?: "\u2026",
-                    isRecipientDesignated = false,
-                    categoryCounts = MindRecordCategory.entries.associateWith { 0 },
-                    categoryCountsLoading = true,
-                    todayDateText = todayDateText,
-                    todayQuestionContent = null,
-                    isQuestionLoading = true,
-                    actions = actions,
-                )
-            }
-
-            is HomeTabUiState.Success -> {
-                PullToRefreshBox(
-                    isRefreshing = uiState.isRefreshing,
-                    onRefresh = actions::onRetryLoad,
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .padding(paddingValues),
-                ) {
+        PullToRefreshBox(
+            isRefreshing = uiState.showsRefreshIndicator,
+            onRefresh = actions::onRetryLoad,
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+        ) {
+            when (uiState) {
+                is HomeTabUiState.Loading -> {
                     HomeTabScrollContent(
-                        paddingValues = PaddingValues(0.dp),
+                        userName = uiState.cachedUserName ?: "\u2026",
+                        isRecipientDesignated = false,
+                        categoryCounts = MindRecordCategory.entries.associateWith { 0 },
+                        categoryCountsLoading = true,
+                        todayDateText = todayDateText,
+                        todayQuestionContent = null,
+                        isQuestionLoading = true,
+                        actions = actions,
+                    )
+                }
+
+                is HomeTabUiState.Success -> {
+                    HomeTabScrollContent(
                         userName = uiState.userName,
                         isRecipientDesignated = uiState.isRecipientDesignated,
                         categoryCounts = uiState.categoryCounts,
@@ -161,29 +169,29 @@ fun HomeTabScreen(
                         actions = actions,
                     )
                 }
-            }
 
-            is HomeTabUiState.Error -> {
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .padding(paddingValues),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = stringResource(R.string.home_tab_error_message),
-                            style = AfternoteDesign.typography.bodySmallR,
-                            color = AfternoteDesign.colors.gray7,
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        TextButton(onClick = actions::onRetryLoad) {
-                            Text(
-                                text = stringResource(R.string.home_tab_retry),
-                                style = AfternoteDesign.typography.captionLargeB,
-                                color = AfternoteDesign.colors.gray9,
-                            )
+                is HomeTabUiState.Error -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        item {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = stringResource(R.string.home_tab_error_message),
+                                    style = AfternoteDesign.typography.bodySmallR,
+                                    color = AfternoteDesign.colors.gray7,
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                TextButton(onClick = actions::onRetryLoad) {
+                                    Text(
+                                        text = stringResource(R.string.home_tab_retry),
+                                        style = AfternoteDesign.typography.captionLargeB,
+                                        color = AfternoteDesign.colors.gray9,
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -194,7 +202,6 @@ fun HomeTabScreen(
 
 @Composable
 private fun HomeTabScrollContent(
-    paddingValues: PaddingValues,
     userName: String,
     isRecipientDesignated: Boolean,
     categoryCounts: Map<MindRecordCategory, Int>,
@@ -205,7 +212,6 @@ private fun HomeTabScrollContent(
     actions: HomeTabActions,
 ) {
     LazyColumn(
-        modifier = Modifier.padding(paddingValues),
         contentPadding = PaddingValues(horizontal = 20.dp),
     ) {
         item {

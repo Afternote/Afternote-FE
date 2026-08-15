@@ -42,7 +42,12 @@ class DocumentUploadViewModel
             extension: String,
             displayName: String,
         ) {
-            if (bytes.isEmpty()) return
+            if (bytes.isEmpty()) {
+                onDocumentReadFailed()
+                return
+            }
+            // 실패 시 이 상태로 복원 — 재첨부 실패가 이미 성공해 둔 첨부(fileUrl)까지 지우면 안 된다 (#740).
+            val previous = _uiState.value.slotOf(slot)
             updateSlot(slot) { it.copy(displayName = displayName, isUploading = true) }
             viewModelScope.launch {
                 uploadRepository
@@ -56,7 +61,7 @@ class DocumentUploadViewModel
                         }
                     }.onFailure { throwable ->
                         errorReporter.recordAfternoteFailure(AfternoteFailureStage.DOCUMENT_UPLOAD, throwable)
-                        updateSlot(slot) { DocumentSlotState() }
+                        updateSlot(slot) { previous }
                         _uiState.update {
                             it.copy(error = ErrorPayload.Res(R.string.receiver_verify_document_upload_failed))
                         }
@@ -64,8 +69,21 @@ class DocumentUploadViewModel
             }
         }
 
+        /** picker 가 돌려준 Uri 에서 바이트 추출이 실패한 경우 — 업로드 요청 전이므로 슬롯은 건드리지 않는다 (#740). */
+        fun onDocumentReadFailed() {
+            _uiState.update { it.copy(error = ErrorPayload.Res(R.string.receiver_verify_document_read_failed)) }
+        }
+
         fun submit() {
             val state = _uiState.value
+            // 버튼 비활성(canSubmit)과 별개의 최종 방어선 — 탭 시점과 recomposition 사이 race 로
+            // 업로드 중에도 도달할 수 있고, 그대로 보내면 진행 중 파일이 신청에서 빠진다 (#711).
+            if (state.deathCertificate.isUploading || state.familyRelationCertificate.isUploading) {
+                _uiState.update {
+                    it.copy(error = ErrorPayload.Res(R.string.receiver_verify_document_upload_in_progress))
+                }
+                return
+            }
             val deathUrl = state.deathCertificate.fileUrl
             val famRelUrl = state.familyRelationCertificate.fileUrl
             if ((deathUrl == null && famRelUrl == null) || state.isSubmitting) {
@@ -121,4 +139,10 @@ class DocumentUploadViewModel
                 }
             }
         }
+
+        private fun DocumentUploadUiState.slotOf(slot: DocumentSlot): DocumentSlotState =
+            when (slot) {
+                DocumentSlot.DeathCertificate -> deathCertificate
+                DocumentSlot.FamilyRelationCertificate -> familyRelationCertificate
+            }
     }
