@@ -6,6 +6,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.timeletter.domain.model.BlockInput
 import com.afternote.feature.timeletter.domain.model.TimeLetter
@@ -272,7 +273,7 @@ class TimeLetterWriteViewModel
                             receiverIds = state.recipientIds,
                         )
                     } else {
-                        runCatching {
+                        runCatchingCancellable {
                             timeLetterRepository.updateTimeLetter(
                                 timeLetterId = state.editingTimeLetterId,
                                 title = title.ifBlank { null },
