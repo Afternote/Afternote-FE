@@ -21,8 +21,8 @@ import com.afternote.feature.setting.presentation.screen.PassKeyPasswordScreen
 import com.afternote.feature.setting.presentation.screen.PassKeyScreen
 import com.afternote.feature.setting.presentation.screen.ProfileEditScreen
 import com.afternote.feature.setting.presentation.screen.PushNotificationScreen
-import com.afternote.feature.setting.presentation.screen.ReceiverListScreen
 import com.afternote.feature.setting.presentation.screen.ReceiverEditScreen
+import com.afternote.feature.setting.presentation.screen.ReceiverListScreen
 import com.afternote.feature.setting.presentation.screen.ReceiverRegisterScreen
 import com.afternote.feature.setting.presentation.screen.SettingScreen
 import com.afternote.feature.setting.presentation.screen.WithdrawConfirmScreen

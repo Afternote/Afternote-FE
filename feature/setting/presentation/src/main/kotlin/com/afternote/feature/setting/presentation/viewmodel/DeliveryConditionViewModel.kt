@@ -77,32 +77,33 @@ class DeliveryConditionViewModel
             val hasTimeLetterCondition =
                 state.conditions.any { it.contentType == DeliveryContentType.TIME_LETTER }
             val updatedConditions =
-                state.conditions.map { condition ->
-                    if (condition.contentType == DeliveryContentType.TIME_LETTER) {
-                        condition.copy(
-                            conditionType = state.conditionType,
-                            inactivityPeriod =
-                                state.inactivityPeriod.takeIf {
-                                    state.conditionType == DeliveryConditionType.INACTIVITY
-                                },
-                        )
-                    } else {
-                        condition
-                    }
-                }.let { conditions ->
-                    if (hasTimeLetterCondition) {
-                        conditions
-                    } else {
-                        conditions +
-                            defaultCondition(DeliveryContentType.TIME_LETTER).copy(
+                state.conditions
+                    .map { condition ->
+                        if (condition.contentType == DeliveryContentType.TIME_LETTER) {
+                            condition.copy(
                                 conditionType = state.conditionType,
                                 inactivityPeriod =
                                     state.inactivityPeriod.takeIf {
                                         state.conditionType == DeliveryConditionType.INACTIVITY
                                     },
                             )
+                        } else {
+                            condition
+                        }
+                    }.let { conditions ->
+                        if (hasTimeLetterCondition) {
+                            conditions
+                        } else {
+                            conditions +
+                                defaultCondition(DeliveryContentType.TIME_LETTER).copy(
+                                    conditionType = state.conditionType,
+                                    inactivityPeriod =
+                                        state.inactivityPeriod.takeIf {
+                                            state.conditionType == DeliveryConditionType.INACTIVITY
+                                        },
+                                )
+                        }
                     }
-                }
 
             viewModelScope.launch {
                 _uiState.update { it.copy(isSaving = true) }
