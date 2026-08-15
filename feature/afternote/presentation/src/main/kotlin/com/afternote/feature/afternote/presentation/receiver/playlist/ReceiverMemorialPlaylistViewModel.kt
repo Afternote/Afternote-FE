@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
+import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
@@ -12,15 +13,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
  * 수신자 추억 플레이리스트 화면 ViewModel.
  *
- * GET /api/v1/receiver-auth/after-notes로 목록 조회 후 첫 항목으로 상세를 조회하거나,
- * afternoteId가 있으면 해당 ID로 상세를 조회하여 playlist.songs를 [PlaylistSongDisplay]로 표시합니다.
+ * 라우트의 afternoteId로 상세를 조회하여 playlist.songs를 [PlaylistSongDisplay]로 표시합니다.
  * `X-Auth-Code` 헤더는 ReceiverAuthInterceptor가 자동 부착합니다.
  */
 @HiltViewModel
