@@ -2,6 +2,7 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.Diary
@@ -53,7 +54,7 @@ class MemorySpaceViewModel
         private fun load() {
             viewModelScope.launch {
                 _uiState.value = MemorySpaceUiState.Loading
-                runCatching { collectMemories() }
+                runCatchingCancellable { collectMemories() }
                     .onSuccess { memories -> _uiState.value = MemorySpaceUiState.Success(memories) }
                     .onFailure { e ->
                         _uiState.value =
