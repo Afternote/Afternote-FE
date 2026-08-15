@@ -20,6 +20,7 @@ import com.afternote.feature.timeletter.domain.repository.FileMetadataRepository
 import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
 import com.afternote.feature.timeletter.domain.usecase.CreateTimeLetterUseCase
 import com.afternote.feature.timeletter.domain.usecase.ResolveTimeLetterBlocksUseCase
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -32,6 +33,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -81,6 +83,21 @@ class TimeLetterWriteViewModelTest {
             assertFalse(viewModel.uiState.value.savedAsDraft)
         }
 
+    @Test
+    fun `등록 개수 조회 취소 - 사용자 오류로 변환하지 않음`() =
+        runTest {
+            val repository = FakeTimeLetterRepository(listFailure = CancellationException("cancelled"))
+            val viewModel = viewModel(repository)
+            viewModel.setSendAt("2026-08-16")
+
+            viewModel.register(title = "제목", textContents = emptyMap())
+            advanceUntilIdle()
+
+            assertEquals(1, repository.listCallCount)
+            assertNull(viewModel.uiState.value.error)
+            assertFalse(viewModel.uiState.value.registered)
+        }
+
     private fun viewModel(repository: FakeTimeLetterRepository): TimeLetterWriteViewModel {
         val resolveUseCase = ResolveTimeLetterBlocksUseCase(FakePhotoUploadRepository)
         return TimeLetterWriteViewModel(
@@ -96,8 +113,12 @@ class TimeLetterWriteViewModelTest {
 
 private class FakeTimeLetterRepository(
     private val createFailure: Throwable? = null,
+    private val listFailure: Throwable? = null,
 ) : TimeLetterRepository {
     var createCallCount: Int = 0
+        private set
+
+    var listCallCount: Int = 0
         private set
 
     override suspend fun getTemporaryTimeLetters(): TimeLetterList = TimeLetterList(emptyList(), 0)
@@ -115,7 +136,11 @@ private class FakeTimeLetterRepository(
         return TimeLetter(1L, title, sendAt, null, status, emptyList(), receiverIds)
     }
 
-    override suspend fun getTimeLetters(): TimeLetterList = error("getTimeLetters should not be called")
+    override suspend fun getTimeLetters(): TimeLetterList {
+        listCallCount++
+        listFailure?.let { throw it }
+        return TimeLetterList(emptyList(), 0)
+    }
 
     override suspend fun getTimeLetter(timeLetterId: Long): TimeLetter = error("getTimeLetter should not be called")
 

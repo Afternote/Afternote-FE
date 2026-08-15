@@ -57,7 +57,7 @@ class TimeLetterWriteViewModel
         init {
             viewModelScope.launch {
                 receiverNameMap =
-                    runCatching { userRepository.getReceivers() }
+                    runCatchingCancellable { userRepository.getReceivers() }
                         .getOrElse { emptyList() }
                         .associate { it.receiverId to it.name }
                 editingTimeLetterId?.let { loadEditingTimeLetter(it) }
@@ -125,7 +125,7 @@ class TimeLetterWriteViewModel
                 try {
                     if (state.editingTimeLetterId == null) {
                         val registeredCount =
-                            runCatching { timeLetterRepository.getTimeLetters().totalCount }
+                            runCatchingCancellable { timeLetterRepository.getTimeLetters().totalCount }
                                 .getOrElse {
                                     _uiState.update { current ->
                                         current.copy(error = TimeLetterWriteError.LOAD_FAILED)
@@ -305,7 +305,7 @@ class TimeLetterWriteViewModel
         }
 
         private suspend fun loadEditingTimeLetter(timeLetterId: Long) {
-            runCatching { timeLetterRepository.getTimeLetter(timeLetterId) }
+            runCatchingCancellable { timeLetterRepository.getTimeLetter(timeLetterId) }
                 .onSuccess { letter ->
                     val editorBlocks = letter.toEditorBlocks()
                     val sendAtDate = letter.sendAt?.take(10)
@@ -477,7 +477,7 @@ class TimeLetterWriteViewModel
 
         private fun loadDraftCount() {
             viewModelScope.launch {
-                runCatching { timeLetterRepository.getTemporaryTimeLetters() }
+                runCatchingCancellable { timeLetterRepository.getTemporaryTimeLetters() }
                     .onSuccess { result ->
                         _uiState.update { it.copy(draftCount = result.totalCount) }
                     }
