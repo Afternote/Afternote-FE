@@ -199,6 +199,10 @@ fun rememberTimeLetterNavActions(navController: NavController): TimeLetterNavAct
                 navController.popBackStack()
             }
 
+            override fun onNavigateToRecipientRegister() {
+                navController.navigate(SettingRoute.RecipientRegisterRoute)
+            }
+
             override fun onNavigateToDetail(timeLetterId: Long) {
                 navController.navigate(TimeLetterRoute.TimeLetterDetailRoute(timeLetterId))
             }

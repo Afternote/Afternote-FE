@@ -111,6 +111,7 @@ fun NavGraphBuilder.settingNavGraph(
             ReceiverListScreen(
                 receivers = receivers,
                 onBackClick = actions::onRecipientListBack,
+                onRegisterClick = actions::onNavigateToRecipientRegister,
                 onConfirmClick = { receiver ->
                     if (route.selectForDeliveryConditions) {
                         actions.onNavigateToAfterDelivery(receiver.receiverId)

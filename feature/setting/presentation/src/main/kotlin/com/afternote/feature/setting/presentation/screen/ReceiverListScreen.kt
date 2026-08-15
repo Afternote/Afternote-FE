@@ -1,17 +1,22 @@
 package com.afternote.feature.setting.presentation.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,6 +28,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
@@ -34,6 +40,7 @@ import com.afternote.core.ui.KoreanConsonantIndex
 import com.afternote.core.ui.TextFieldType
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
+import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.ReceiverListItem
@@ -44,6 +51,7 @@ fun ReceiverListScreen(
     receivers: List<ReceiverListItem>,
     onBackClick: () -> Unit,
     onConfirmClick: (ReceiverListItem) -> Unit,
+    onRegisterClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val searchState = rememberTextFieldState()
@@ -92,71 +100,141 @@ fun ReceiverListScreen(
             )
         },
         bottomBar = {
-            AfternoteButton(
-                text = "수신자 선택 완료하기",
-                onClick = {
-                    receivers.find { it.receiverId == selectedId }?.let(onConfirmClick)
-                },
-                type = if (selectedId != null) AfternoteButtonType.Default else AfternoteButtonType.Un,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
-            )
+            if (receivers.isNotEmpty()) {
+                AfternoteButton(
+                    text = "수신자 선택 완료하기",
+                    onClick = {
+                        receivers.find { it.receiverId == selectedId }?.let(onConfirmClick)
+                    },
+                    type = if (selectedId != null) AfternoteButtonType.Default else AfternoteButtonType.Un,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+                )
+            }
         },
     ) { innerPadding ->
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(top = 10.dp),
-        ) {
-            AfternoteTextField(
-                state = searchState,
-                placeholder = stringResource(R.string.setting_receiver_search_placeholder),
-                type = TextFieldType.Search,
-                imeAction = ImeAction.Search,
-                modifier = Modifier.padding(horizontal = 20.dp),
+        if (receivers.isEmpty()) {
+            RecipientListEmptyContent(
+                onRegisterClick = onRegisterClick,
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
             )
-            Row(modifier = Modifier.fillMaxSize()) {
-                LazyColumn(
-                    state = listState,
-                    modifier =
-                        Modifier
-                            .weight(1f)
-                            .padding(start = 20.dp),
-                ) {
-                    groupedReceivers.forEach { (_, items) ->
-                        items(items, key = { it.receiverId }) { receiver ->
-                            ReceiverListItem(
-                                receiver = receiver,
-                                selected = receiver.receiverId == selectedId,
-                                onSelectedChange = {
-                                    selectedId = if (selectedId == receiver.receiverId) null else receiver.receiverId
-                                },
-                            )
-                        }
-                    }
-                    item { Spacer(modifier = Modifier.padding(14.dp)) }
-                }
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxHeight()
-                            .padding(end = 8.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    KoreanConsonantIndex(
-                        selectedConsonant = selectedConsonant,
-                        onConsonantSelect = { consonant ->
-                            selectedConsonant = consonant
-                            consonantIndexMap[consonant]?.let { index ->
-                                coroutineScope.launch { listState.scrollToItem(index) }
+        } else {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .padding(top = 10.dp),
+            ) {
+                AfternoteTextField(
+                    state = searchState,
+                    placeholder = stringResource(R.string.setting_receiver_search_placeholder),
+                    type = TextFieldType.Search,
+                    imeAction = ImeAction.Search,
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                )
+                Row(modifier = Modifier.fillMaxSize()) {
+                    LazyColumn(
+                        state = listState,
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .padding(start = 20.dp),
+                    ) {
+                        groupedReceivers.forEach { (_, items) ->
+                            items(items, key = { it.receiverId }) { receiver ->
+                                ReceiverListItem(
+                                    receiver = receiver,
+                                    selected = receiver.receiverId == selectedId,
+                                    onSelectedChange = {
+                                        selectedId =
+                                            if (selectedId == receiver.receiverId) null else receiver.receiverId
+                                    },
+                                )
                             }
-                        },
-                    )
+                        }
+                        item { Spacer(modifier = Modifier.padding(14.dp)) }
+                    }
+                    Box(
+                        modifier =
+                            Modifier
+                                .fillMaxHeight()
+                                .padding(end = 8.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        KoreanConsonantIndex(
+                            selectedConsonant = selectedConsonant,
+                            onConsonantSelect = { consonant ->
+                                selectedConsonant = consonant
+                                consonantIndexMap[consonant]?.let { index ->
+                                    coroutineScope.launch { listState.scrollToItem(index) }
+                                }
+                            },
+                        )
+                    }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun RecipientListEmptyContent(
+    onRegisterClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.padding(horizontal = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Spacer(modifier = Modifier.height(105.dp))
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.Start,
+            ) {
+                Text(
+                    text = stringResource(R.string.setting_receiver_empty_title),
+                    style = AfternoteDesign.typography.h1,
+                    color = AfternoteDesign.colors.black,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.setting_receiver_empty_description),
+                    style = AfternoteDesign.typography.h3,
+                    color = AfternoteDesign.colors.gray6,
+                )
+            }
+            Spacer(modifier = Modifier.height(56.dp))
+            Image(
+                painter = painterResource(R.drawable.ic_default_profile),
+                contentDescription = null,
+                modifier = Modifier.size(134.dp),
+            )
+        }
+        Spacer(modifier = Modifier.height(56.dp))
+
+        AfternoteButton(
+            text = stringResource(R.string.setting_receiver_empty_register),
+            onClick = onRegisterClick,
+            modifier = Modifier.padding(bottom = 16.dp),
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ReceiverListEmptyPreview() {
+    ReceiverListScreen(
+        receivers = emptyList(),
+        onBackClick = {},
+        onConfirmClick = {},
+        onRegisterClick = {},
+    )
 }
 
 @Preview(showBackground = true)

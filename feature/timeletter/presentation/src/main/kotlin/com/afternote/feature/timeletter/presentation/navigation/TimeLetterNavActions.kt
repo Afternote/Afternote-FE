@@ -17,6 +17,8 @@ interface TimeLetterNavActions {
 
     fun onRecipientBack()
 
+    fun onNavigateToRecipientRegister()
+
     fun onNavigateToDetail(timeLetterId: Long)
 
     fun onDetailBack()

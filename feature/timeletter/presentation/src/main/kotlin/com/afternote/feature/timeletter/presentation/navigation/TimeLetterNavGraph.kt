@@ -102,6 +102,7 @@ fun NavGraphBuilder.timeLetterNavGraph(
             val writeViewModel: TimeLetterWriteViewModel = hiltViewModel(writeEntry)
             RecipientListScreen(
                 onBackClick = actions::onRecipientBack,
+                onRegisterClick = actions::onNavigateToRecipientRegister,
                 onConfirmClick = { recipients ->
                     writeViewModel.setRecipients(recipients.map { it.receiverId })
                     actions.onRecipientBack()
@@ -117,6 +118,7 @@ fun NavGraphBuilder.timeLetterNavGraph(
             val timeletterViewModel: TimeletterViewModel = hiltViewModel(homeEntry)
             RecipientListScreen(
                 onBackClick = actions::onRecipientFilterBack,
+                onRegisterClick = actions::onNavigateToRecipientRegister,
                 onConfirmClick = { recipients ->
                     timeletterViewModel.setReceiverFilter(recipients.map { it.receiverId })
                     actions.onRecipientFilterBack()

@@ -1,12 +1,17 @@
 package com.afternote.feature.timeletter.presentation.screen.sender
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -24,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
@@ -48,6 +54,7 @@ import kotlinx.coroutines.launch
 fun RecipientListScreen(
     onBackClick: () -> Unit,
     onConfirmClick: (List<ReceiverListItem>) -> Unit,
+    onRegisterClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     allowEmptyConfirm: Boolean = false,
     viewModel: RecipientListViewModel = hiltViewModel(),
@@ -57,6 +64,7 @@ fun RecipientListScreen(
         recipients = recipients,
         onBackClick = onBackClick,
         onConfirmClick = onConfirmClick,
+        onRegisterClick = onRegisterClick,
         allowEmptyConfirm = allowEmptyConfirm,
         modifier = modifier,
     )
@@ -67,6 +75,7 @@ private fun RecipientListContent(
     recipients: List<ReceiverListItem>,
     onBackClick: () -> Unit,
     onConfirmClick: (List<ReceiverListItem>) -> Unit,
+    onRegisterClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     allowEmptyConfirm: Boolean = false,
 ) {
@@ -115,77 +124,135 @@ private fun RecipientListContent(
             )
         },
         bottomBar = {
-            AfternoteButton(
-                text = "수신자 선택 완료하기",
-                onClick = {
-                    onConfirmClick(recipients.filter { it.receiverId in selectedIds })
-                },
-                type = if (selectedIds.isNotEmpty() || allowEmptyConfirm) AfternoteButtonType.Default else AfternoteButtonType.Un,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
-            )
+            if (recipients.isNotEmpty()) {
+                AfternoteButton(
+                    text = "수신자 선택 완료하기",
+                    onClick = {
+                        onConfirmClick(recipients.filter { it.receiverId in selectedIds })
+                    },
+                    type = if (selectedIds.isNotEmpty() || allowEmptyConfirm) AfternoteButtonType.Default else AfternoteButtonType.Un,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+                )
+            }
         },
     ) { innerPadding ->
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(top = 10.dp),
-        ) {
-            AfternoteTextField(
-                state = searchState,
-                placeholder = stringResource(R.string.timeletter_recipient_search_placeholder),
-                type = TextFieldType.Search,
-                imeAction = ImeAction.Search,
-                modifier = Modifier.padding(horizontal = 20.dp),
+        if (recipients.isEmpty()) {
+            RecipientListEmptyContent(
+                onRegisterClick = onRegisterClick,
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
             )
-            Row(modifier = Modifier.fillMaxSize()) {
-                LazyColumn(
-                    state = listState,
-                    modifier =
-                        Modifier
-                            .weight(1f)
-                            .padding(start = 20.dp),
-                ) {
-                    groupedRecipients.forEach { (consonant, groupItems) ->
-                        stickyHeader(key = "header_$consonant") {
-                            ConsonantSectionHeader(consonant = consonant)
-                        }
-                        items(groupItems, key = { it.receiverId }) { recipient ->
-                            RecipientListItem(
-                                recipient = recipient,
-                                selected = recipient.receiverId in selectedIds,
-                                onSelectedChange = { checked ->
-                                    if (checked) {
-                                        selectedIds.add(recipient.receiverId)
-                                    } else {
-                                        selectedIds.remove(recipient.receiverId)
-                                    }
-                                },
-                            )
-                        }
-                    }
-                    item { Spacer(modifier = Modifier.padding(14.dp)) }
-                }
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxHeight()
-                            .padding(end = 8.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    KoreanConsonantIndex(
-                        selectedConsonant = selectedConsonant,
-                        onConsonantSelect = { consonant ->
-                            selectedConsonant = consonant
-                            consonantIndexMap[consonant]?.let { index ->
-                                coroutineScope.launch { listState.scrollToItem(index) }
+        } else {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .padding(top = 10.dp),
+            ) {
+                AfternoteTextField(
+                    state = searchState,
+                    placeholder = stringResource(R.string.timeletter_recipient_search_placeholder),
+                    type = TextFieldType.Search,
+                    imeAction = ImeAction.Search,
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                )
+                Row(modifier = Modifier.fillMaxSize()) {
+                    LazyColumn(
+                        state = listState,
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .padding(start = 20.dp),
+                    ) {
+                        groupedRecipients.forEach { (consonant, groupItems) ->
+                            stickyHeader(key = "header_$consonant") {
+                                ConsonantSectionHeader(consonant = consonant)
                             }
-                        },
-                    )
+                            items(groupItems, key = { it.receiverId }) { recipient ->
+                                RecipientListItem(
+                                    recipient = recipient,
+                                    selected = recipient.receiverId in selectedIds,
+                                    onSelectedChange = { checked ->
+                                        if (checked) {
+                                            selectedIds.add(recipient.receiverId)
+                                        } else {
+                                            selectedIds.remove(recipient.receiverId)
+                                        }
+                                    },
+                                )
+                            }
+                        }
+                        item { Spacer(modifier = Modifier.padding(14.dp)) }
+                    }
+                    Box(
+                        modifier =
+                            Modifier
+                                .fillMaxHeight()
+                                .padding(end = 8.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        KoreanConsonantIndex(
+                            selectedConsonant = selectedConsonant,
+                            onConsonantSelect = { consonant ->
+                                selectedConsonant = consonant
+                                consonantIndexMap[consonant]?.let { index ->
+                                    coroutineScope.launch { listState.scrollToItem(index) }
+                                }
+                            },
+                        )
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun RecipientListEmptyContent(
+    onRegisterClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.padding(horizontal = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Spacer(modifier = Modifier.height(105.dp))
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.Start,
+            ) {
+                Text(
+                    text = stringResource(R.string.timeletter_recipient_empty_title),
+                    style = AfternoteDesign.typography.h1,
+                    color = AfternoteDesign.colors.black,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.timeletter_recipient_empty_description),
+                    style = AfternoteDesign.typography.h3,
+                    color = AfternoteDesign.colors.gray6,
+                )
+            }
+            Spacer(modifier = Modifier.height(56.dp))
+            Image(
+                painter = painterResource(R.drawable.ic_recipient_empty),
+                contentDescription = null,
+                modifier = Modifier.size(134.dp),
+            )
+        }
+        Spacer(modifier = Modifier.height(56.dp))
+
+        AfternoteButton(
+            text = stringResource(R.string.timeletter_recipient_register),
+            onClick = onRegisterClick,
+            modifier = Modifier.padding(bottom = 16.dp),
+        )
     }
 }
 
@@ -196,6 +263,17 @@ private fun ConsonantSectionHeader(consonant: Char) {
         style = AfternoteDesign.typography.captionLargeB,
         color = AfternoteDesign.colors.gray5,
         modifier = Modifier.padding(vertical = 8.dp),
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RecipientListEmptyPreview() {
+    RecipientListContent(
+        recipients = emptyList(),
+        onBackClick = {},
+        onConfirmClick = {},
+        onRegisterClick = {},
     )
 }
 
