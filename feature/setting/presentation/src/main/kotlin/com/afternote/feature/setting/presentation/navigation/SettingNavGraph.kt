@@ -15,6 +15,7 @@ import com.afternote.feature.setting.presentation.screen.AppLockSetupScreen
 import com.afternote.feature.setting.presentation.screen.ConnectedAccountsScreen
 import com.afternote.feature.setting.presentation.screen.DeliveryConditionScreen
 import com.afternote.feature.setting.presentation.screen.NoticeListScreen
+import com.afternote.feature.setting.presentation.screen.NotificationSettingScreen
 import com.afternote.feature.setting.presentation.screen.PassKeyListScreen
 import com.afternote.feature.setting.presentation.screen.PassKeyMakingScreen
 import com.afternote.feature.setting.presentation.screen.PassKeyPasswordScreen
@@ -99,8 +100,15 @@ fun NavGraphBuilder.settingNavGraph(
         }
 
         composable<SettingRoute.NotificationRoute> {
-            PushNotificationScreen(
+            NotificationSettingScreen(
                 onBack = actions::onNotificationBack,
+                onPushNotificationClick = actions::onNavigateToPushNotification,
+            )
+        }
+
+        composable<SettingRoute.PushNotificationRoute> {
+            PushNotificationScreen(
+                onBack = actions::onPushNotificationBack,
             )
         }
 

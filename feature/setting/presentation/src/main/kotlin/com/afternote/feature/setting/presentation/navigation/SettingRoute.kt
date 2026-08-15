@@ -27,6 +27,9 @@ sealed interface SettingRoute {
     ) : SettingRoute
 
     @Serializable
+    data object PushNotificationRoute : SettingRoute
+
+    @Serializable
     data object RecipientRegisterRoute : SettingRoute
 
     @Serializable
