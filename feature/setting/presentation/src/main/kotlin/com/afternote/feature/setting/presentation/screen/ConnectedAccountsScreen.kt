@@ -29,9 +29,11 @@ import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.BuildConfig
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.SocialAccountRow
+import com.afternote.feature.setting.presentation.social.KakaoAuthResult
 import com.afternote.feature.setting.presentation.social.UserCancelledAuthException
 import com.afternote.feature.setting.presentation.social.requestGoogleIdToken
 import com.afternote.feature.setting.presentation.social.requestKakaoAccessToken
+import com.afternote.feature.setting.presentation.social.toKakaoAuthResult
 import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsEvent
 import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsViewModel
 
@@ -57,16 +59,22 @@ fun ConnectedAccountsScreen(
                     when (event.provider) {
                         "kakao" -> {
                             val activity = context.findActivity<Activity>()
-                            if (activity != null) {
-                                requestKakaoAccessToken(activity)
-                                    .onSuccess { token -> viewModel.link("kakao", token) }
-                                    .onFailure { e ->
-                                        if (e !is UserCancelledAuthException) {
-                                            viewModel.notifyLinkError(
-                                                context.getString(R.string.kakao_account_link_failed),
-                                            )
-                                        }
-                                    }
+                            val authResult =
+                                activity
+                                    ?.let { requestKakaoAccessToken(it).toKakaoAuthResult() }
+                                    ?: KakaoAuthResult.Failure
+                            when (authResult) {
+                                is KakaoAuthResult.Success -> {
+                                    viewModel.link("kakao", authResult.accessToken)
+                                }
+
+                                KakaoAuthResult.Cancelled -> {}
+
+                                KakaoAuthResult.Failure -> {
+                                    snackbarHostState.showSnackbar(
+                                        context.getString(R.string.kakao_account_link_failed),
+                                    )
+                                }
                             }
                         }
 
