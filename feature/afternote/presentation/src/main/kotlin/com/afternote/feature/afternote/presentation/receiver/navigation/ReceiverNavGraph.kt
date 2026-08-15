@@ -11,6 +11,8 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.navigation
 import androidx.navigation.toRoute
 import com.afternote.core.ui.Route
+import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadErrorContent
+import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadingContent
 import com.afternote.feature.afternote.presentation.receiver.deliveryverification.DeliveryVerificationCompleteScreen
 import com.afternote.feature.afternote.presentation.receiver.deliveryverification.DeliveryVerificationFlowViewModel
 import com.afternote.feature.afternote.presentation.receiver.deliveryverification.DocumentUploadScreen
@@ -21,6 +23,7 @@ import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfte
 import com.afternote.feature.afternote.presentation.receiver.home.ReceiverAfternoteHomeEntry
 import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceiverRoute
 import com.afternote.feature.afternote.presentation.receiver.playlist.MemorialPlaylistScreen
+import com.afternote.feature.afternote.presentation.receiver.playlist.ReceiverMemorialPlaylistUiState
 import com.afternote.feature.afternote.presentation.receiver.playlist.ReceiverMemorialPlaylistViewModel
 import com.afternote.feature.afternote.presentation.receiver.recordsbox.ReceivedRecordsScreen
 import com.afternote.feature.afternote.presentation.receiver.recordsbox.SenderRegistrationScreen
@@ -156,11 +159,27 @@ fun NavGraphBuilder.receiverNavGraph(
         receiverComposable<ReceiverRoute.MemorialPlaylistRoute> {
             val playlistViewModel: ReceiverMemorialPlaylistViewModel = hiltViewModel()
             val playlistUiState by playlistViewModel.uiState.collectAsStateWithLifecycle()
-            MemorialPlaylistScreen(
-                senderName = playlistUiState.senderName,
-                songs = playlistUiState.songs,
-                onBackClick = actions::popBack,
-            )
+            when (val state = playlistUiState) {
+                ReceiverMemorialPlaylistUiState.Loading -> {
+                    DetailLoadingContent()
+                }
+
+                is ReceiverMemorialPlaylistUiState.Error -> {
+                    DetailLoadErrorContent(
+                        messageRes = state.messageRes,
+                        onBackClick = actions::popBack,
+                        onRetryClick = if (state.canRetry) playlistViewModel::retry else null,
+                    )
+                }
+
+                is ReceiverMemorialPlaylistUiState.Success -> {
+                    MemorialPlaylistScreen(
+                        senderName = state.senderName,
+                        songs = state.songs,
+                        onBackClick = actions::popBack,
+                    )
+                }
+            }
         }
     }
 }

@@ -1,17 +1,20 @@
 package com.afternote.feature.afternote.presentation.receiver.playlist
+
+import androidx.annotation.StringRes
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
 
-/**
- * 수신자 추억 플레이리스트 화면 UI 상태.
- *
- * GET /api/receiver-auth/after-notes/{afternoteId}의 playlist.songs 및
- * playlist.memorialVideo(장례식에 남길 영상)를 표시합니다.
- */
-data class ReceiverMemorialPlaylistUiState(
-    val senderName: String = "",
-    val songs: List<PlaylistSongDisplay> = emptyList(),
-    val memorialVideoUrl: String? = null,
-    val memorialThumbnailUrl: String? = null,
-    val isLoading: Boolean = false,
-    val errorMessage: String? = null,
-)
+sealed interface ReceiverMemorialPlaylistUiState {
+    data object Loading : ReceiverMemorialPlaylistUiState
+
+    data class Success(
+        val senderName: String,
+        val songs: List<PlaylistSongDisplay>,
+        val memorialVideoUrl: String?,
+        val memorialThumbnailUrl: String?,
+    ) : ReceiverMemorialPlaylistUiState
+
+    data class Error(
+        @param:StringRes val messageRes: Int,
+        val canRetry: Boolean,
+    ) : ReceiverMemorialPlaylistUiState
+}
