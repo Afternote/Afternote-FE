@@ -247,6 +247,10 @@ class TimeLetterWriteViewModel
         ) {
             val state = _uiState.value
             if (state.isSaving) return
+            if (status == TimeLetterStatus.DRAFT && state.recipientIds.isEmpty()) {
+                _uiState.update { it.copy(errorMessage = RECIPIENT_REQUIRED_MESSAGE) }
+                return
+            }
 
             viewModelScope.launch {
                 _uiState.update { it.copy(isSaving = true) }
@@ -290,13 +294,9 @@ class TimeLetterWriteViewModel
                         } else {
                             _uiState.update { it.copy(registered = true) }
                         }
-                    }.onFailure { error ->
+                    }.onFailure {
                         _uiState.update {
-                            it.copy(
-                                errorMessage =
-                                    error.message?.takeIf(String::isNotBlank)
-                                        ?: "저장에 실패했어요. 다시 시도해주세요.",
-                            )
+                            it.copy(errorMessage = SAVE_FAILED_MESSAGE)
                         }
                     }
                 _uiState.update { it.copy(isSaving = false) }
@@ -485,5 +485,7 @@ class TimeLetterWriteViewModel
 
         private companion object {
             const val FREE_PLAN_REGISTER_LIMIT = 3
+            const val RECIPIENT_REQUIRED_MESSAGE = "수신자를 선택해주세요."
+            const val SAVE_FAILED_MESSAGE = "저장에 실패했어요. 다시 시도해주세요."
         }
     }
