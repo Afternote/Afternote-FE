@@ -17,7 +17,7 @@ data class TimeLetterWriteUiState(
     val draftCount: Int = 0,
     val isSaving: Boolean = false,
     val textAlign: TextAlign = TextAlign.Start,
-    val errorMessage: String? = null,
+    val error: TimeLetterWriteError? = null,
     val editorBlocks: List<EditorBlock> = listOf(EditorBlock.Text(id = 0L)),
     val focusedBlockId: Long? = 0L,
     val nextBlockId: Long = 1L,
@@ -25,6 +25,13 @@ data class TimeLetterWriteUiState(
     val registered: Boolean = false,
     val showFreePlanLimitPopup: Boolean = false,
 )
+
+enum class TimeLetterWriteError {
+    SEND_DATE_REQUIRED,
+    LOAD_FAILED,
+    RECIPIENT_REQUIRED,
+    SAVE_FAILED,
+}
 
 sealed class EditorBlock {
     abstract val id: Long

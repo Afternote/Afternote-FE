@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -75,6 +76,7 @@ import com.afternote.feature.timeletter.presentation.component.TimeLetterTextBut
 import com.afternote.feature.timeletter.presentation.component.TimeLetterTitleTextField
 import com.afternote.feature.timeletter.presentation.component.TimeWheelPicker
 import com.afternote.feature.timeletter.presentation.viewmodel.EditorBlock
+import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteError
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteUiState
 import java.time.LocalDate
 import java.time.LocalTime
@@ -133,9 +135,10 @@ fun TimeLetterWriteScreen(
             uri?.let { onAddFileBlock(it) }
         }
 
-    LaunchedEffect(uiState.errorMessage) {
-        val msg = uiState.errorMessage ?: return@LaunchedEffect
-        snackbarHostState.showSnackbar(msg)
+    val errorMessage = uiState.error?.message()
+    LaunchedEffect(uiState.error) {
+        val message = errorMessage ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(message)
         onErrorShown()
     }
 
@@ -436,6 +439,17 @@ fun TimeLetterWriteScreen(
         }
     }
 }
+
+@Composable
+private fun TimeLetterWriteError.message(): String =
+    stringResource(
+        when (this) {
+            TimeLetterWriteError.SEND_DATE_REQUIRED -> R.string.timeletter_write_send_date_required
+            TimeLetterWriteError.LOAD_FAILED -> R.string.timeletter_write_load_failed
+            TimeLetterWriteError.RECIPIENT_REQUIRED -> R.string.timeletter_write_recipient_required
+            TimeLetterWriteError.SAVE_FAILED -> R.string.timeletter_write_save_failed
+        },
+    )
 
 @Composable
 private fun TextBlockItem(

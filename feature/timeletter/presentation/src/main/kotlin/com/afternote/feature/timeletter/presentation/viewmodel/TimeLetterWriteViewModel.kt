@@ -117,7 +117,7 @@ class TimeLetterWriteViewModel
             if (state.isSaving || isCheckingRegisterLimit) return
 
             if (state.sendAt == null) {
-                _uiState.update { it.copy(errorMessage = "발송 날짜를 선택해주세요.") }
+                _uiState.update { it.copy(error = TimeLetterWriteError.SEND_DATE_REQUIRED) }
                 return
             }
             isCheckingRegisterLimit = true
@@ -128,7 +128,7 @@ class TimeLetterWriteViewModel
                             runCatching { timeLetterRepository.getTimeLetters().totalCount }
                                 .getOrElse {
                                     _uiState.update { current ->
-                                        current.copy(errorMessage = "타임레터를 불러올 수 없습니다.")
+                                        current.copy(error = TimeLetterWriteError.LOAD_FAILED)
                                     }
                                     return@launch
                                 }
@@ -147,7 +147,7 @@ class TimeLetterWriteViewModel
         }
 
         fun clearError() {
-            _uiState.update { it.copy(errorMessage = null) }
+            _uiState.update { it.copy(error = null) }
         }
 
         fun onSavedAsDraftShown() {
@@ -249,7 +249,7 @@ class TimeLetterWriteViewModel
             val state = _uiState.value
             if (state.isSaving) return
             if (status == TimeLetterStatus.DRAFT && state.recipientIds.isEmpty()) {
-                _uiState.update { it.copy(errorMessage = RECIPIENT_REQUIRED_MESSAGE) }
+                _uiState.update { it.copy(error = TimeLetterWriteError.RECIPIENT_REQUIRED) }
                 return
             }
 
@@ -297,7 +297,7 @@ class TimeLetterWriteViewModel
                         }
                     }.onFailure {
                         _uiState.update {
-                            it.copy(errorMessage = SAVE_FAILED_MESSAGE)
+                            it.copy(error = TimeLetterWriteError.SAVE_FAILED)
                         }
                     }
                 _uiState.update { it.copy(isSaving = false) }
@@ -345,7 +345,7 @@ class TimeLetterWriteViewModel
                     }
                 }.onFailure {
                     _uiState.update { it.copy(isLoadingEditingLetter = false) }
-                    _uiState.update { it.copy(errorMessage = "타임레터를 불러올 수 없습니다.") }
+                    _uiState.update { it.copy(error = TimeLetterWriteError.LOAD_FAILED) }
                 }
         }
 
@@ -486,7 +486,5 @@ class TimeLetterWriteViewModel
 
         private companion object {
             const val FREE_PLAN_REGISTER_LIMIT = 3
-            const val RECIPIENT_REQUIRED_MESSAGE = "수신자를 선택해주세요."
-            const val SAVE_FAILED_MESSAGE = "저장에 실패했어요. 다시 시도해주세요."
         }
     }
