@@ -26,8 +26,12 @@ class PushNotificationViewModel
         val uiState: StateFlow<PushNotificationUiState> = _uiState.asStateFlow()
 
         init {
+            refresh()
+        }
+
+        fun refresh() {
             val deviceAlarmOn = NotificationManagerCompat.from(context).areNotificationsEnabled()
-            Log.d(TAG, "init: deviceAlarmOn=$deviceAlarmOn")
+            Log.d(TAG, "refresh: deviceAlarmOn=$deviceAlarmOn")
             _uiState.update { it.copy(isDeviceAlarmOn = deviceAlarmOn) }
             loadPushSettings()
         }

@@ -41,7 +41,7 @@ class DeliveryConditionViewModel
             loadDeliveryConditions()
         }
 
-        private fun loadDeliveryConditions() {
+        fun loadDeliveryConditions() {
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoading = true) }
                 runCatchingCancellable { userRepository.getReceiverDeliveryConditions(receiverId) }
