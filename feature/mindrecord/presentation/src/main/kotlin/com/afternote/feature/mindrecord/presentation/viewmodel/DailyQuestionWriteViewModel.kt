@@ -73,10 +73,11 @@ class DailyQuestionWriteViewModel
          * 조회는 두지 않는다 — 서버가 같은 `questionId` 에 대해 upsert 라 `draftId` 가 null 인 채로
          * POST 가 다시 나가도 레코드는 갱신될 뿐 중복 생성되지 않는다.
          *
-         * **이미 입력된 답변은 덮지 않는다.** [submit] 이 `questionId` 부재를 만나면 조회를 다시
-         * 걸기 때문에, 화면 진입뿐 아니라 사용자가 답변을 다 쓴 뒤에도 이 경로가 돈다. 무조건
-         * 덮으면 그 순간 방금 친 답변이 서버 임시저장본으로 교체된다.
-         * `draftId`·`imageUrl` 은 화면 입력과 겹치지 않아 그대로 채운다.
+         * **이미 입력된 값은 덮지 않는다.** [submit] 이 `questionId` 부재를 만나면 조회를 다시
+         * 걸기 때문에, 화면 진입뿐 아니라 사용자가 답변을 다 쓰고 이미지를 고른 뒤에도 이 경로가
+         * 돈다. 무조건 덮으면 그 순간 방금 넣은 답변·이미지가 서버 임시저장본으로 교체된다.
+         * 화면 값이 비어 있을 때만 draft 로 채우고, `draftId` 는 화면 입력과 겹치지 않아 항상 채운다
+         * (없으면 재제출이 POST 로 나가 이어쓰기가 안 된다).
          */
         private suspend fun resumeDraft() {
             val draft =
@@ -89,7 +90,7 @@ class DailyQuestionWriteViewModel
                 it.copy(
                     draftId = draft.dailyQuestionId,
                     answer = if (it.answer.isBlank()) draft.content else it.answer,
-                    imageUrl = draft.imageUrl ?: it.imageUrl,
+                    imageUrl = it.imageUrl ?: draft.imageUrl,
                 )
             }
         }
