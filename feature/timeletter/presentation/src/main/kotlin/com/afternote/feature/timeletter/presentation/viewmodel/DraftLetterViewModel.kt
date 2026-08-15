@@ -33,9 +33,14 @@ class DraftLetterViewModel
                 try {
                     val result = timeLetterRepository.getTemporaryTimeLetters()
                     val receiverNameMap =
-                        runCatching { userRepository.getReceivers() }
-                            .getOrDefault(emptyList())
+                        userRepository
+                            .getReceivers()
                             .associate { receiver -> receiver.receiverId to receiver.name }
+                    check(
+                        result.timeLetters.all { draft ->
+                            draft.receiverIds.isNotEmpty() && receiverNameMap.keys.containsAll(draft.receiverIds)
+                        },
+                    )
                     _uiState.value =
                         DraftLetterUiState.Success(
                             drafts = result.timeLetters,
