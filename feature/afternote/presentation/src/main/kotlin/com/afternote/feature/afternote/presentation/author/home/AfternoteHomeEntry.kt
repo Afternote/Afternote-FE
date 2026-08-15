@@ -12,7 +12,6 @@ import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 
 /**
  * 애프터노트 목록 Entry.
@@ -23,12 +22,12 @@ import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
  */
 @Composable
 fun AfternoteHomeEntry(
+    navigateToDetail: (String) -> Unit,
+    navigateToGalleryDetail: (String) -> Unit,
+    navigateToMemorialDetail: (String) -> Unit,
+    navigateToAdd: (AfternoteType?) -> Unit,
+    onSettingClick: () -> Unit,
     viewModel: AfternoteHomeViewModel = hiltViewModel(),
-    navigateToDetail: (String) -> Unit = {},
-    navigateToGalleryDetail: (String) -> Unit = {},
-    navigateToMemorialDetail: (String) -> Unit = {},
-    navigateToAdd: (AfternoteCategory) -> Unit = {},
-    onSettingClick: () -> Unit = {},
 ) {
     val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
     val items = viewModel.pagedAfternotes.collectAsLazyPagingItems()

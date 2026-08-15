@@ -139,6 +139,10 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
 fun rememberTimeLetterNavActions(navController: NavController): TimeLetterNavActions =
     remember(navController) {
         object : TimeLetterNavActions {
+            override fun onSettingClick() {
+                navController.navigate(Route.Setting)
+            }
+
             override fun onNavigateToWrite() {
                 navController.navigate(TimeLetterRoute.TimeLetterWriteRoute())
             }

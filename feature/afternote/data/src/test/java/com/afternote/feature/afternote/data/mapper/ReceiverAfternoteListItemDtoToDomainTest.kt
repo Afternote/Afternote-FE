@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.data.mapper
 
 import com.afternote.feature.afternote.data.dto.ReceivedAfternoteDto
+import com.afternote.feature.afternote.domain.AfternoteType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -8,8 +9,7 @@ import org.junit.Test
 /**
  * [ReceivedAfternoteDto.toDomain] / [toReceiverDomainList] 회귀 가드.
  * 수신자 목록 DTO→[com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem] 매핑.
- * 서버 카테고리(SOCIAL/GALLERY/PLAYLIST/MUSIC)를 presentation typeKey로 정규화하는 규칙과
- * null 가드(category·createdAt)를 검증한다.
+ * 서버 카테고리를 [AfternoteType] 으로 바꾸는 규칙과 null 가드(category·createdAt)를 검증한다.
  */
 class ReceiverAfternoteListItemDtoToDomainTest {
     @Test
@@ -23,26 +23,27 @@ class ReceiverAfternoteListItemDtoToDomainTest {
             ).toDomain()
 
         assertEquals(9L, result.id)
-        assertEquals("사진첩", result.title)
-        assertEquals("GALLERY_AND_FILES", result.sourceType)
+        assertEquals("사진첩", result.serviceName)
+        assertEquals(AfternoteType.GALLERY_AND_FILES, result.type)
         assertEquals("2025.11.26", result.lastUpdatedAt)
     }
 
     @Test
-    fun `toDomain - category 정규화는 대소문자 무시 + MUSIC PLAYLIST는 MEMORIAL`() {
-        assertEquals("SOCIAL_NETWORK", resp(category = "social").toDomain().sourceType)
-        assertEquals("MEMORIAL", resp(category = "PLAYLIST").toDomain().sourceType)
-        assertEquals("MEMORIAL", resp(category = "music").toDomain().sourceType)
+    fun `toDomain - 변환은 대소문자 무시 + MUSIC PLAYLIST는 MEMORIAL`() {
+        assertEquals(AfternoteType.SOCIAL_NETWORK, resp(category = "social").toDomain().type)
+        assertEquals(AfternoteType.MEMORIAL, resp(category = "PLAYLIST").toDomain().type)
+        assertEquals(AfternoteType.MEMORIAL, resp(category = "music").toDomain().type)
     }
 
     @Test
-    fun `toDomain - 정규화 규칙에 없는 category는 원본 유지`() {
-        assertEquals("ESTATE", resp(category = "ESTATE").toDomain().sourceType)
+    fun `toDomain - 서버가 모르는 category 를 보내면 type null`() {
+        assertNull(resp(category = "ESTATE").toDomain().type)
+        assertNull(resp(category = "BUSINESS").toDomain().type)
     }
 
     @Test
-    fun `toDomain - category null이면 sourceType null`() {
-        assertNull(resp(category = null).toDomain().sourceType)
+    fun `toDomain - category null이면 type null`() {
+        assertNull(resp(category = null).toDomain().type)
     }
 
     @Test
@@ -58,7 +59,7 @@ class ReceiverAfternoteListItemDtoToDomainTest {
 
     private fun resp(
         id: Long = 1L,
-        title: String? = "t",
+        title: String = "t",
         category: String? = "SOCIAL",
         createdAt: String? = "2025-01-01T00:00:00",
     ) = ReceivedAfternoteDto(
