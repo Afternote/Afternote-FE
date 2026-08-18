@@ -47,6 +47,8 @@ fun ConnectedAccountsScreen(
     val context = LocalContext.current
     val credentialManager = remember(context) { CredentialManager.create(context) }
     val snackbarHostState = remember { SnackbarHostState() }
+    val kakaoAccountLinkFailedMessage = stringResource(R.string.kakao_account_link_failed)
+    val googleAccountLinkFailedMessage = stringResource(R.string.google_account_link_failed)
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -72,7 +74,7 @@ fun ConnectedAccountsScreen(
 
                                 KakaoAuthResult.Failure -> {
                                     snackbarHostState.showSnackbar(
-                                        context.getString(R.string.kakao_account_link_failed),
+                                        kakaoAccountLinkFailedMessage,
                                     )
                                 }
                             }
@@ -87,7 +89,7 @@ fun ConnectedAccountsScreen(
                                 .onFailure { e ->
                                     if (e !is UserCancelledAuthException) {
                                         viewModel.notifyLinkError(
-                                            context.getString(R.string.google_account_link_failed),
+                                            googleAccountLinkFailedMessage,
                                         )
                                     }
                                 }
