@@ -17,4 +17,6 @@ dependencies {
     implementation(projects.core.model)
     implementation(libs.coil.compose)
     implementation(libs.compose.rich.editor)
+
+    testImplementation(libs.coroutines.test)
 }
