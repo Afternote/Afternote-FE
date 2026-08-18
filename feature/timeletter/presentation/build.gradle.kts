@@ -6,6 +6,7 @@ plugins {
 
 android {
     namespace = "com.afternote.feature.timeletter.presentation"
+    testOptions.unitTests.isIncludeAndroidResources = true
 }
 
 dependencies {
@@ -19,4 +20,10 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.compose.wheel.picker)
     implementation(libs.coil.compose)
+
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
