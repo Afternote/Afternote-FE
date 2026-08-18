@@ -147,6 +147,8 @@
     <string name="after_delivery_notice_safety">• 예기치 않은 상황에서도 설정된 방식에 따라 안전하게 전달됩니다.</string>
 
     <string name="delivery_condition_save">저장</string>
+    <string name="delivery_condition_load_error">전달 조건을 불러오지 못했습니다.</string>
+    <string name="delivery_condition_save_error">전달 조건을 저장하지 못했습니다.</string>
     <string name="receiver_last_greeting_label">마지막 인사말</string>
     <string name="receiver_last_greeting_placeholder">마지막 인사말을 입력해주세요</string>
     <string name="receiver_custom_relation_placeholder">관계를 직접 입력해주세요</string>

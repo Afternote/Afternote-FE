@@ -36,6 +36,7 @@ import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.RadioGroup
 import com.afternote.feature.setting.presentation.component.RadioGroupItem
+import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionError
 import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionUiState
 import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionViewModel
 
@@ -114,9 +115,15 @@ private fun DeliveryConditionContent(
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 20.dp, vertical = 16.dp),
         ) {
-            if (uiState.errorMessage != null) {
+            val errorMessageRes =
+                when (uiState.error) {
+                    DeliveryConditionError.LOAD_FAILED -> R.string.delivery_condition_load_error
+                    DeliveryConditionError.SAVE_FAILED -> R.string.delivery_condition_save_error
+                    null -> null
+                }
+            if (errorMessageRes != null) {
                 Text(
-                    text = uiState.errorMessage,
+                    text = stringResource(errorMessageRes),
                     style = AfternoteDesign.typography.bodySmallR,
                     color = AfternoteDesign.colors.error,
                 )

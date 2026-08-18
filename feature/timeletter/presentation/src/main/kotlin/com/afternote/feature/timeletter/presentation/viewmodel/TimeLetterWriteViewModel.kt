@@ -116,6 +116,10 @@ class TimeLetterWriteViewModel
             val state = _uiState.value
             if (state.isSaving || isCheckingRegisterLimit) return
 
+            if (state.recipientIds.isEmpty()) {
+                _uiState.update { it.copy(error = TimeLetterWriteError.RECIPIENT_REQUIRED) }
+                return
+            }
             if (state.sendAt == null) {
                 _uiState.update { it.copy(error = TimeLetterWriteError.SEND_DATE_REQUIRED) }
                 return
@@ -248,59 +252,62 @@ class TimeLetterWriteViewModel
         ) {
             val state = _uiState.value
             if (state.isSaving) return
-            if (status == TimeLetterStatus.DRAFT && state.recipientIds.isEmpty()) {
+            if (state.recipientIds.isEmpty()) {
                 _uiState.update { it.copy(error = TimeLetterWriteError.RECIPIENT_REQUIRED) }
                 return
             }
 
             viewModelScope.launch {
                 _uiState.update { it.copy(isSaving = true) }
-                val sendAt =
-                    state.sendAt?.let { date ->
-                        "${date}T${
-                            state.sendHour.toString().padStart(2, '0')
-                        }:${state.sendMinute.toString().padStart(2, '0')}:00"
-                    }
-                val saveResult =
-                    if (state.editingTimeLetterId == null) {
-                        val blocks = mapToBlockInputs(state.editorBlocks, textContents)
-                        createTimeLetterUseCase(
-                            title = title.ifBlank { null },
-                            blocks = blocks,
-                            sendAt = sendAt,
-                            deliveryMode = TimeLetterDeliveryMode.DATE,
-                            status = status,
-                            receiverIds = state.recipientIds,
-                        )
-                    } else {
-                        runCatchingCancellable {
-                            timeLetterRepository.updateTimeLetter(
-                                timeLetterId = state.editingTimeLetterId,
+                try {
+                    val sendAt =
+                        state.sendAt?.let { date ->
+                            "${date}T${
+                                state.sendHour.toString().padStart(2, '0')
+                            }:${state.sendMinute.toString().padStart(2, '0')}:00"
+                        }
+                    val saveResult =
+                        if (state.editingTimeLetterId == null) {
+                            val blocks = mapToBlockInputs(state.editorBlocks, textContents)
+                            createTimeLetterUseCase(
                                 title = title.ifBlank { null },
-                                blocks =
-                                    resolveTimeLetterBlocksUseCase(
-                                        mapToBlockInputs(state.editorBlocks, textContents),
-                                    ),
+                                blocks = blocks,
                                 sendAt = sendAt,
                                 deliveryMode = TimeLetterDeliveryMode.DATE,
                                 status = status,
+                                receiverIds = state.recipientIds,
                             )
-                        }
-                    }
-                saveResult
-                    .onSuccess {
-                        if (status == TimeLetterStatus.DRAFT) {
-                            loadDraftCount()
-                            _uiState.update { it.copy(savedAsDraft = true) }
                         } else {
-                            _uiState.update { it.copy(registered = true) }
+                            runCatchingCancellable {
+                                timeLetterRepository.updateTimeLetter(
+                                    timeLetterId = state.editingTimeLetterId,
+                                    title = title.ifBlank { null },
+                                    blocks =
+                                        resolveTimeLetterBlocksUseCase(
+                                            mapToBlockInputs(state.editorBlocks, textContents),
+                                        ),
+                                    sendAt = sendAt,
+                                    deliveryMode = TimeLetterDeliveryMode.DATE,
+                                    status = status,
+                                )
+                            }
                         }
-                    }.onFailure {
-                        _uiState.update {
-                            it.copy(error = TimeLetterWriteError.SAVE_FAILED)
+                    saveResult
+                        .onSuccess {
+                            if (status == TimeLetterStatus.DRAFT) {
+                                loadDraftCount()
+                                _uiState.update { it.copy(savedAsDraft = true) }
+                            } else {
+                                _uiState.update { it.copy(registered = true) }
+                            }
+                        }.onFailure {
+                            _uiState.update {
+                                it.copy(error = TimeLetterWriteError.SAVE_FAILED)
+                            }
                         }
-                    }
-                _uiState.update { it.copy(isSaving = false) }
+                } finally {
+                    _uiState.update { it.copy(isSaving = false) }
+                }
             }
         }
 

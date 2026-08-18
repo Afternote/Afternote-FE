@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.delivery.ConditionState
 import com.afternote.core.model.delivery.DeliveryConditionItem
@@ -43,7 +44,7 @@ class DeliveryConditionViewModel
         private fun loadDeliveryConditions() {
             viewModelScope.launch {
                 _uiState.update { it.copy(isLoading = true) }
-                runCatching { userRepository.getReceiverDeliveryConditions(receiverId) }
+                runCatchingCancellable { userRepository.getReceiverDeliveryConditions(receiverId) }
                     .onSuccess { response ->
                         val representative =
                             response.conditions.firstOrNull {
@@ -58,8 +59,8 @@ class DeliveryConditionViewModel
                                 conditions = response.conditions,
                             )
                         }
-                    }.onFailure { error ->
-                        _uiState.update { it.copy(isLoading = false, errorMessage = error.message) }
+                    }.onFailure {
+                        _uiState.update { it.copy(isLoading = false, error = DeliveryConditionError.LOAD_FAILED) }
                     }
             }
         }
@@ -107,13 +108,13 @@ class DeliveryConditionViewModel
 
             viewModelScope.launch {
                 _uiState.update { it.copy(isSaving = true) }
-                runCatching {
+                runCatchingCancellable {
                     userRepository.updateReceiverDeliveryConditions(receiverId, updatedConditions)
                 }.onSuccess { response ->
                     _uiState.update { it.copy(isSaving = false, conditions = response.conditions) }
                     _saveSuccess.send(Unit)
-                }.onFailure { error ->
-                    _uiState.update { it.copy(isSaving = false, errorMessage = error.message) }
+                }.onFailure {
+                    _uiState.update { it.copy(isSaving = false, error = DeliveryConditionError.SAVE_FAILED) }
                 }
             }
         }

@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -36,7 +37,7 @@ class ReceiverEditViewModel
 
         private fun loadReceiver() {
             viewModelScope.launch {
-                runCatching { userRepository.getReceiverDetail(receiverId) }
+                runCatchingCancellable { userRepository.getReceiverDetail(receiverId) }
                     .onSuccess { receiver ->
                         _uiState.update { it.copy(isLoading = false, receiver = receiver) }
                     }.onFailure {
@@ -59,7 +60,7 @@ class ReceiverEditViewModel
             _uiState.update { it.copy(isSaving = true, errorMessage = null) }
             viewModelScope.launch {
                 val receiverUpdateResult =
-                    runCatching {
+                    runCatchingCancellable {
                         userRepository.updateReceiver(
                             receiverId = receiverId,
                             name = name,
@@ -75,7 +76,7 @@ class ReceiverEditViewModel
                     return@launch
                 }
 
-                runCatching {
+                runCatchingCancellable {
                     userRepository.updateReceiverMessage(
                         receiverId = receiverId,
                         message = message,

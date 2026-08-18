@@ -69,6 +69,22 @@ class TimeLetterWriteViewModelTest {
         }
 
     @Test
+    fun `수신자 없는 정식 등록 - 조회와 생성 API를 호출하지 않고 필수 안내를 표시`() =
+        runTest {
+            val repository = FakeTimeLetterRepository()
+            val viewModel = viewModel(repository)
+            viewModel.setSendAt("2026-08-18")
+
+            viewModel.register(title = "제목", textContents = emptyMap())
+            advanceUntilIdle()
+
+            assertEquals(0, repository.listCallCount)
+            assertEquals(0, repository.createCallCount)
+            assertEquals(TimeLetterWriteError.RECIPIENT_REQUIRED, viewModel.uiState.value.error)
+            assertFalse(viewModel.uiState.value.registered)
+        }
+
+    @Test
     fun `임시저장 API 실패 - 성공 상태를 만들지 않고 안전한 일반 오류로 매핑`() =
         runTest {
             val repository = FakeTimeLetterRepository(createFailure = Exception("internal SQL details"))
@@ -88,6 +104,7 @@ class TimeLetterWriteViewModelTest {
         runTest {
             val repository = FakeTimeLetterRepository(listFailure = CancellationException("cancelled"))
             val viewModel = viewModel(repository)
+            viewModel.setRecipients(listOf(1L))
             viewModel.setSendAt("2026-08-16")
 
             viewModel.register(title = "제목", textContents = emptyMap())
@@ -96,6 +113,22 @@ class TimeLetterWriteViewModelTest {
             assertEquals(1, repository.listCallCount)
             assertNull(viewModel.uiState.value.error)
             assertFalse(viewModel.uiState.value.registered)
+        }
+
+    @Test
+    fun `저장 취소 - isSaving을 false로 복구하고 오류로 변환하지 않음`() =
+        runTest {
+            val repository = FakeTimeLetterRepository(createFailure = CancellationException("cancelled"))
+            val viewModel = viewModel(repository)
+            viewModel.setRecipients(listOf(1L))
+
+            viewModel.saveDraft(title = "제목", textContents = emptyMap())
+            advanceUntilIdle()
+
+            assertEquals(1, repository.createCallCount)
+            assertFalse(viewModel.uiState.value.isSaving)
+            assertNull(viewModel.uiState.value.error)
+            assertFalse(viewModel.uiState.value.savedAsDraft)
         }
 
     private fun viewModel(repository: FakeTimeLetterRepository): TimeLetterWriteViewModel {
