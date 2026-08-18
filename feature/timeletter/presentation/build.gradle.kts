@@ -20,6 +20,7 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.compose.wheel.picker)
     implementation(libs.coil.compose)
+    testImplementation(libs.coroutines.test)
 
     testImplementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.junit)
