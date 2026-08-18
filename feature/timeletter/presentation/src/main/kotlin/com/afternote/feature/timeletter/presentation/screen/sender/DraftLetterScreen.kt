@@ -180,9 +180,9 @@ private fun DraftLetterScreenPreview() {
                 drafts =
                     listOf(
                         TimeLetter(1L, "첫 번째 레터", "2026-12-25T00:00:00", null, TimeLetterStatus.DRAFT, emptyList(), listOf(1L)),
-                        TimeLetter(2L, "두 번째 레터", null, null, TimeLetterStatus.DRAFT, emptyList(), emptyList()),
+                        TimeLetter(2L, "두 번째 레터", null, null, TimeLetterStatus.DRAFT, emptyList(), listOf(2L)),
                     ),
-                receiverNameMap = mapOf(1L to "김지은"),
+                receiverNameMap = mapOf(1L to "김지은", 2L to "이현우"),
             ),
         onBackClick = {},
         onEditCompleteClick = {},

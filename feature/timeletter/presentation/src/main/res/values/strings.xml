@@ -22,4 +22,7 @@
     <string name="timeletter_draft_empty">임시 저장된 레터가 없습니다.</string>
     <string name="timeletter_draft_load_error">임시 저장된 레터를 불러올 수 없습니다.</string>
     <string name="timeletter_draft_delete_error">임시 저장된 레터를 삭제하지 못했습니다.</string>
+    <string name="timeletter_send_date_required">발송 날짜를 선택해주세요.</string>
+    <string name="timeletter_load_error">타임레터를 불러올 수 없습니다.</string>
+    <string name="timeletter_save_error">저장에 실패했어요. 다시 시도해주세요.</string>
 </resources>
