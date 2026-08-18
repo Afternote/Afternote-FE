@@ -11,7 +11,7 @@ data class DailyQuestion(
 
 data class TodayDailyQuestion(
     val questionId: Long,
-    /** 서비스 시작일 기준 몇 번째 질문인지 ("Day N" 표기용). */
+    /** 서비스 시작일 기준 몇 번째 질문인지 ("Day N" 표기용). 서버가 항상 채우는 값이다 (#789). */
     val day: Int,
     val content: String,
     val isAnswered: Boolean,
