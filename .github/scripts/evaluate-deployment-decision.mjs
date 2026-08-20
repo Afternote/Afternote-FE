@@ -5,8 +5,12 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
+const DEPLOYMENT_CONTROL_PATHS = [
+    /^\.github\/workflows\/(?:release-distribution|deployment-decision)\.ya?ml$/,
+    /^\.github\/scripts\/(?:collect-deployment-decision-context|evaluate-deployment-decision)\.mjs$/,
+    /^\.github\/scripts\/render-distribution-release-notes\.sh$/,
+];
 const HIGH_RISK_PATHS = [
-    /^\.github\/workflows\//,
     /(^|\/)(auth|login|onboarding|signup|signing|keystore)(\/|\.|$)/i,
     /(^|\/)(data|network|api)(\/|$)/i,
     /(^|\/)(build\.gradle(?:\.kts)?|settings\.gradle(?:\.kts)?|gradle\.properties)$/,
@@ -15,6 +19,7 @@ const HIGH_RISK_PATHS = [
 const HIGH_RISK_TEXT =
     /로그인|회원가입|인증|온보딩|데이터\s*(?:손실|삭제)|API\s*계약|서명|배포|release|signing|authentication|data[ -]?loss/i;
 const RUNTIME_NEUTRAL_PATHS = [
+    /^\.github\/(?:workflows|scripts)\//,
     /(^|\/)README(?:\.[^/]*)?$/i,
     /(^|\/)docs?\//i,
     /\.md$/i,
@@ -88,6 +93,10 @@ function isHighRiskFile(file) {
     return HIGH_RISK_PATHS.some((pattern) => pattern.test(file));
 }
 
+function isDeploymentControlFile(file) {
+    return DEPLOYMENT_CONTROL_PATHS.some((pattern) => pattern.test(file));
+}
+
 function isRuntimeNeutralFile(file) {
     return RUNTIME_NEUTRAL_PATHS.some((pattern) => pattern.test(file));
 }
@@ -108,7 +117,7 @@ export function evaluateDeploymentDecision(context, changedFiles) {
         return {
             decision: "hold",
             risk: "low",
-            reason: "대상 머지 커밋이 이미 성공한 develop QA 배포에 포함되어 추가 배포가 필요하지 않습니다.",
+            reason: "대상 머지 커밋이 이미 성공한 배포에 포함되어 추가 배포가 필요하지 않습니다.",
             includedIssues,
             qaPoints,
         };
@@ -118,15 +127,43 @@ export function evaluateDeploymentDecision(context, changedFiles) {
         return {
             decision: "deploy",
             risk: "normal",
-            reason: "성공한 develop QA 배포 기준점이 없어 현재 상태를 첫 QA 기준 빌드로 배포해야 합니다.",
+            reason: "성공한 배포 기준점이 없어 현재 상태를 첫 QA 기준 빌드로 배포해야 합니다.",
             includedIssues,
             qaPoints,
         };
     }
 
-    const highRiskFiles = changedFiles.filter(isHighRiskFile);
+    const deploymentControlFiles = changedFiles.filter(isDeploymentControlFile);
     const highRiskPullRequests = pullRequests.filter((pullRequest) =>
         HIGH_RISK_TEXT.test(`${pullRequest.title}\n${pullRequest.body ?? ""}`),
+    );
+    if (deploymentControlFiles.length > 0) {
+        const evidence = [
+            ...deploymentControlFiles.slice(0, 3),
+            ...highRiskPullRequests.slice(0, 3).map((pullRequest) => `PR #${pullRequest.number}`),
+        ];
+        return {
+            decision: "deploy",
+            risk: "high",
+            reason: `고위험 변경이 포함됐습니다: ${unique(evidence).join(", ")}. 다른 변경을 기다리지 않고 QA 배포합니다.`,
+            includedIssues,
+            qaPoints,
+        };
+    }
+
+    const runtimeNeutral = changedFiles.length > 0 && changedFiles.every(isRuntimeNeutralFile);
+    if (runtimeNeutral) {
+        return {
+            decision: "hold",
+            risk: "low",
+            reason: "문서·테스트·일반 CI 등 앱 런타임에 영향을 주지 않는 변경만 있어 다음 사용자 노출 변경과 함께 배포합니다.",
+            includedIssues,
+            qaPoints,
+        };
+    }
+
+    const highRiskFiles = changedFiles.filter(
+        (file) => isHighRiskFile(file) && !isRuntimeNeutralFile(file),
     );
     if (highRiskFiles.length > 0 || highRiskPullRequests.length > 0) {
         const evidence = [
@@ -194,17 +231,6 @@ export function evaluateDeploymentDecision(context, changedFiles) {
             decision: "deploy",
             risk: "normal",
             reason: `누적 PR ${pullRequests.length}건·영향 스코프 ${scopes.length}개로 더 쌓이면 회귀 원인 분리가 어려워집니다.`,
-            includedIssues,
-            qaPoints,
-        };
-    }
-
-    const runtimeNeutral = changedFiles.length > 0 && changedFiles.every(isRuntimeNeutralFile);
-    if (runtimeNeutral) {
-        return {
-            decision: "hold",
-            risk: "low",
-            reason: "문서·테스트 등 런타임에 영향을 주지 않는 변경만 있어 다음 사용자 노출 변경과 함께 배포합니다.",
             includedIssues,
             qaPoints,
         };
