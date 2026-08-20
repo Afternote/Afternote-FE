@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationException
 import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationKind
@@ -44,6 +45,7 @@ import com.afternote.feature.afternote.presentation.author.editor.state.withRece
 import com.afternote.feature.afternote.presentation.author.editor.state.withReceiverDeleted
 import com.afternote.feature.afternote.presentation.author.editor.state.withReceiversReplacedIfEmpty
 import com.afternote.feature.afternote.presentation.author.editor.state.withService
+import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -62,9 +64,6 @@ private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v1"
 
 /** 수정 진입 시 서버 원본 카테고리(API `categoryForApi`). 폼 스냅샷과 별도로 두어 프로세스 데스 후에도 유지한다. */
 private const val EDITOR_ORIGINAL_CATEGORY_FOR_API_KEY = "editor_original_category_for_api_v1"
-
-/** 타입 안전 [com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute.EditorRoute] 직렬화 인자명 (상세 [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel]과 동일). */
-private const val NAV_ARG_ITEM_ID = "itemId"
 
 private const val TAG = "AfternoteEditorViewModel"
 
@@ -201,6 +200,7 @@ class AfternoteEditorViewModel
         private val resolveMemorialMediaForSave: ResolveMemorialMediaForSaveUseCase,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
+        private val route = savedStateHandle.toRoute<AfternoteRoute.EditorRoute>()
         private val formSnapshotJson =
             Json {
                 ignoreUnknownKeys = true
