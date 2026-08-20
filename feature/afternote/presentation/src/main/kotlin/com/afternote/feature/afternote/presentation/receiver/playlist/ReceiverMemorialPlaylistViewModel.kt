@@ -48,7 +48,7 @@ class ReceiverMemorialPlaylistViewModel
         }
 
         private fun loadPlaylist(afternoteId: Long) {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            _uiState.value = ReceiverMemorialPlaylistUiState.Loading
             viewModelScope.launch {
                 receiverRepository
                     .getReceivedAfternoteDetail(afternoteId = afternoteId)
@@ -65,24 +65,19 @@ class ReceiverMemorialPlaylistViewModel
                                         albumImageUrl = song.coverUrl,
                                     )
                                 }.orEmpty()
-                        _uiState.update {
-                            it.copy(
+                        _uiState.value =
+                            ReceiverMemorialPlaylistUiState.Success(
                                 senderName = detail.senderName.orEmpty(),
                                 songs = songs,
                                 memorialVideoUrl = playlist?.memorialVideoUrl,
                                 memorialThumbnailUrl = playlist?.memorialThumbnailUrl,
-                                isLoading = false,
-                                errorMessage = null,
                             )
-                        }
                     }.onFailure { e ->
                         errorReporter.recordAfternoteFailure(AfternoteFailureStage.RECEIVED_PLAYLIST_LOAD, e)
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                errorMessage = e.message ?: "플레이리스트를 불러오는데 실패했습니다.",
+                        _uiState.value =
+                            ReceiverMemorialPlaylistUiState.Error(
+                                messageRes = R.string.receiver_memorial_playlist_load_error,
                             )
-                        }
                     }
             }
         }
