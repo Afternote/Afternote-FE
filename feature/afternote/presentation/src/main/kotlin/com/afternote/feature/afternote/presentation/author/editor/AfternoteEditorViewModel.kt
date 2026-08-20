@@ -288,7 +288,7 @@ class AfternoteEditorViewModel
             }
         }
 
-        private fun readEditItemId(): Long? = savedStateHandle.get<String>(NAV_ARG_ITEM_ID)?.toLongOrNull()
+        private fun readEditItemId(): Long? = route.itemId
 
         private fun readFormSnapshotOrDefault(): EditorFormState {
             val raw = savedStateHandle.get<String>(EDITOR_FORM_SNAPSHOT_KEY) ?: return EditorFormState()

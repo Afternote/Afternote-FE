@@ -12,7 +12,6 @@ import com.afternote.core.ui.Route
 import com.afternote.feature.afternote.presentation.AfternoteHostViewModel
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.AddSongViewModel
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.MemorialPlaylistEntry
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 
 /**
@@ -36,8 +35,6 @@ fun NavGraphBuilder.afternoteNavGraph(
         afternoteComposable<AfternoteRoute.AfternoteHomeRoute> {
             AfternoteHomeNavigation(
                 onNavigateToDetail = actions::navigateToAfternoteDetail,
-                onNavigateToGalleryDetail = actions::navigateToGalleryDetail,
-                onNavigateToMemorialDetail = actions::navigateToMemorialDetail,
                 onNavigateToNewEditor = actions::navigateToNewEditor,
                 onNavigateToSetting = actions::navigateToSetting,
             )
@@ -45,20 +42,8 @@ fun NavGraphBuilder.afternoteNavGraph(
 
         afternoteComposable<AfternoteRoute.DetailRoute> {
             AfternoteDetailNavigation(
-                backStackEntry = it,
                 onBack = actions::popBack,
-                onNavigateToEditor = { itemId ->
-                    actions.navigateToEditorForEdit(itemId, EditorCategory.SOCIAL)
-                },
-            )
-        }
-
-        afternoteComposable<AfternoteRoute.GalleryDetailRoute> { _ ->
-            AfternoteGalleryDetailNavigation(
-                onBack = actions::popBack,
-                onNavigateToEditor = { itemId ->
-                    actions.navigateToEditorForEdit(itemId, EditorCategory.GALLERY)
-                },
+                onNavigateToEditor = actions::navigateToEditorForEdit,
             )
         }
 
@@ -74,15 +59,6 @@ fun NavGraphBuilder.afternoteNavGraph(
                 onPopBackStack = actions::popBack,
                 onNavigateToMemorialPlaylist = actions::navigateToMemorialPlaylist,
                 onSaveSuccessNavigateHome = actions::popToAfternoteHome,
-            )
-        }
-
-        afternoteComposable<AfternoteRoute.MemorialDetailRoute> { _ ->
-            AfternoteMemorialDetailNavigation(
-                onBack = actions::popBack,
-                onNavigateToEditor = { itemId ->
-                    actions.navigateToEditorForEdit(itemId, EditorCategory.MEMORIAL)
-                },
             )
         }
 

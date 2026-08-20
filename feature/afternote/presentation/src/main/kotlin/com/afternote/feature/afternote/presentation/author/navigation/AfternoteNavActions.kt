@@ -17,16 +17,12 @@ interface AfternoteNavActions {
 
     fun popBack()
 
-    fun navigateToAfternoteDetail(itemId: String)
-
-    fun navigateToGalleryDetail(itemId: String)
-
-    fun navigateToMemorialDetail(itemId: String)
+    fun navigateToAfternoteDetail(itemId: Long)
 
     fun navigateToNewEditor(initialCategory: String?)
 
     fun navigateToEditorForEdit(
-        itemId: String,
+        itemId: Long,
         initialCategory: EditorCategory,
     )
 
