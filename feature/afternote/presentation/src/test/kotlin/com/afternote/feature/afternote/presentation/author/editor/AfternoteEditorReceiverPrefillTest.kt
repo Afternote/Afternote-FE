@@ -49,10 +49,9 @@ class AfternoteEditorReceiverPrefillTest {
     private fun detail(vararg receivers: DetailReceiver) =
         Detail(
             id = 1L,
-            category = "GALLERY_AND_FILES",
             title = "구글 포토",
             timestamps = DetailTimestamps(createdAt = "2026-08-02", updatedAt = "2026-08-02"),
-            type = AfternoteType.entries.first(),
+            type = AfternoteType.GALLERY_AND_FILES,
             credentials = null,
             receivers = receivers.toList(),
             processingMethods = emptyList(),

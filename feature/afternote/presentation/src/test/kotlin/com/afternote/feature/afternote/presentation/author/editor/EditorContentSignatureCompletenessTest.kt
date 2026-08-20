@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
 import androidx.compose.foundation.text.input.TextFieldState
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorUiHolder
@@ -140,7 +140,7 @@ class EditorContentSignatureCompletenessTest {
     fun `어느 카테고리를 골라도 입력이 없으면 지문이 같다`() {
         val state = newState()
         val signatures =
-            EditorCategory.entries.map { category ->
+            AfternoteType.entries.map { category ->
                 editorContentSignature(
                     EditorFormState(categoryForm = CategoryForm.pristineFor(category)),
                     state,

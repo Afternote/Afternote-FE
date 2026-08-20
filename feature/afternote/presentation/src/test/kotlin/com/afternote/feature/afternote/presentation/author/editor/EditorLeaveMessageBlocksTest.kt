@@ -1,9 +1,9 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
 import org.junit.Assert.assertEquals
@@ -65,7 +65,7 @@ class EditorLeaveMessageBlocksTest {
     fun `수정 페이로드도 같은 규칙으로 블록을 싣는다`() {
         val payload =
             AfternoteEditorFormMapper.buildUpdatePayload(
-                category = EditorCategory.SOCIAL,
+                category = AfternoteType.SOCIAL_NETWORK,
                 payload = payloadOf(EditorMessageTextBlock(title = "", body = "고쳐 쓴 말씀")),
                 selectedReceiverIds = emptyList(),
                 playlistSongs = emptyList(),
@@ -81,7 +81,7 @@ class EditorLeaveMessageBlocksTest {
     private fun createSocial(vararg blocks: EditorMessageTextBlock): List<LeaveMessageBlock>? {
         val input =
             AfternoteEditorFormMapper.buildCreateInput(
-                category = EditorCategory.SOCIAL,
+                category = AfternoteType.SOCIAL_NETWORK,
                 payload = payloadOf(*blocks),
                 selectedReceiverIds = emptyList(),
                 playlistSongs = emptyList(),
@@ -94,7 +94,7 @@ class EditorLeaveMessageBlocksTest {
 
     private fun validateSocial(vararg blocks: EditorMessageTextBlock): AfternoteValidationError? =
         AfternoteEditorValidator.validate(
-            category = EditorCategory.SOCIAL,
+            category = AfternoteType.SOCIAL_NETWORK,
             payload = payloadOf(*blocks),
             selectedReceiverIds = listOf(1L),
             playlistSongs = emptyList(),

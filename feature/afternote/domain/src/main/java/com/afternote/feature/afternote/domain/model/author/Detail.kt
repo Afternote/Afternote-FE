@@ -15,7 +15,6 @@ import com.afternote.feature.afternote.domain.model.author.playlist.MemorialDeta
  */
 data class Detail(
     val id: Long,
-    val category: String,
     val title: String,
     val timestamps: DetailTimestamps,
     val type: AfternoteType,

@@ -45,6 +45,6 @@ sealed interface AfternoteDetailDeleteResult {
     ) : AfternoteDetailDeleteResult
 
     data class Failed(
-        @param:StringRes val messageRes: Int? = null,
+        @param:StringRes val messageRes: Int,
     ) : AfternoteDetailDeleteResult
 }
