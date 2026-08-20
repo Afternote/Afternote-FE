@@ -7,8 +7,6 @@ import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.MindRecordCategory
 import com.afternote.core.model.delivery.DeliveryConditionItem
 import com.afternote.core.model.delivery.ReceiverDeliveryConditions
-import com.afternote.core.model.user.DeliveryCondition
-import com.afternote.core.model.user.DeliveryConditionType
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.model.user.ReceiverCreated
 import com.afternote.core.model.user.ReceiverDetail
@@ -405,14 +403,6 @@ private class FakeUserRepository : UserRepository {
     ): UserConnectedAccount = unexpected("linkConnectedAccount")
 
     override suspend fun unlinkConnectedAccount(provider: String): UserConnectedAccount = unexpected("unlinkConnectedAccount")
-
-    override suspend fun getDeliveryCondition(): DeliveryCondition = unexpected("getDeliveryCondition")
-
-    override suspend fun updateDeliveryCondition(
-        conditionType: DeliveryConditionType,
-        inactivityPeriodDays: Int?,
-        specificDate: String?,
-    ): DeliveryCondition = unexpected("updateDeliveryCondition")
 
     override suspend fun getReceiverDeliveryConditions(receiverId: Long): ReceiverDeliveryConditions =
         unexpected("getReceiverDeliveryConditions")
