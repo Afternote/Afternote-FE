@@ -20,18 +20,19 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.modifierextention.shimmerLoadingPlaceholder
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.account.AccountEditorContent
 import com.afternote.feature.afternote.presentation.author.editor.account.AccountSection
 import com.afternote.feature.afternote.presentation.author.editor.gallery.GalleryAndFileEditorContent
+import com.afternote.feature.afternote.presentation.author.editor.mapper.hasServiceSelection
 import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialEditorContent
 import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialEditorContentParams
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverSection
 import com.afternote.feature.afternote.presentation.author.editor.selection.DropdownMenuStyle
-import com.afternote.feature.afternote.presentation.author.editor.selection.SelectionDropdown
+import com.afternote.feature.afternote.presentation.author.editor.selection.EditorSelectionDropdown
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.CategoryForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
@@ -49,7 +50,7 @@ internal fun EditorContent(
     onPhotoAddClick: () -> Unit,
     onVideoAddClick: () -> Unit,
     onThumbnailBytesReady: (ByteArray?) -> Unit,
-    onThumbnailExtractionFailed: (Throwable) -> Unit = {},
+    onThumbnailExtractionFailed: (Throwable) -> Unit,
 ) {
     Column(
         modifier =
@@ -61,10 +62,11 @@ internal fun EditorContent(
     ) {
         Spacer(modifier = Modifier.height(8.dp))
 
-        SelectionDropdown(
+        EditorSelectionDropdown(
             label = stringResource(R.string.afternote_editor_label_category),
-            selectedValue = form.selectedCategory.toDropdownLabel(),
-            options = editorCategoryDropdownLabels(),
+            selectedValue = form.selectedCategory,
+            options = AfternoteType.entries,
+            optionLabel = { it.toDropdownLabel() },
             onValueSelected = state::onCategorySelected,
             expanded = state.categoryDropdownExpanded,
             onExpandedChange = state::onCategoryDropdownExpandedChange,
@@ -83,17 +85,18 @@ internal fun EditorContent(
         if (form.selectedCategory.hasServiceSelection) {
             Spacer(modifier = Modifier.height(20.dp))
 
-            SelectionDropdown(
+            EditorSelectionDropdown(
                 label = stringResource(R.string.afternote_editor_label_service_name),
                 selectedValue = form.selectedService.orEmpty(),
                 options = form.currentServiceOptions,
+                optionLabel = { it },
                 onValueSelected = state::onServiceSelected,
                 expanded = state.serviceDropdownExpanded,
                 onExpandedChange = state::onServiceDropdownExpandedChange,
                 placeholder =
                     stringResource(
                         R.string.afternote_editor_service_placeholder,
-                        form.selectedCategory.displayLabel,
+                        form.selectedCategory.toDropdownLabel(),
                     ),
                 menuStyle =
                     DropdownMenuStyle(
@@ -126,7 +129,7 @@ internal fun EditorContent(
  */
 @Composable
 private fun EditorPrefillSkeleton(
-    category: EditorCategory,
+    category: AfternoteType,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
@@ -139,17 +142,17 @@ private fun EditorPrefillSkeleton(
         }
 
         when (category) {
-            EditorCategory.MEMORIAL -> MemorialPrefillSkeleton()
+            AfternoteType.MEMORIAL -> MemorialPrefillSkeleton()
 
-            EditorCategory.GALLERY -> GalleryPrefillSkeleton()
+            AfternoteType.GALLERY_AND_FILES -> GalleryPrefillSkeleton()
 
             // BUSINESS 는 SOCIAL 과 같은 구조(계정 2필드 + 수신자 지정 + 처리 방법 + 메시지)라 skeleton 도 공유한다.
-            EditorCategory.SOCIAL, EditorCategory.BUSINESS -> AccountPrefillSkeleton()
+            AfternoteType.SOCIAL_NETWORK, AfternoteType.BUSINESS -> AccountPrefillSkeleton()
 
             // ESTATE 는 로드가 끝나도 채울 폼이 없는 "준비 중" placeholder 라(UnimplementedCategoryContent)
             // 로딩 동안 흉내 낼 뼈대도 없다 — 아무것도 그리지 않는다. 생성이 차단돼 수정 진입으로
             // 실제 도달할 일은 사실상 없지만, exhaustive when 이라 분기를 명시한다.
-            EditorCategory.ESTATE -> Unit
+            AfternoteType.ESTATE -> Unit
         }
     }
 }
@@ -234,7 +237,7 @@ internal fun CategoryContent(
     onThumbnailExtractionFailed: (Throwable) -> Unit = {},
 ) {
     when (form.selectedCategory) {
-        EditorCategory.MEMORIAL -> {
+        AfternoteType.MEMORIAL -> {
             MemorialEditorContent(
                 params =
                     MemorialEditorContentParams(
@@ -257,7 +260,7 @@ internal fun CategoryContent(
             )
         }
 
-        EditorCategory.GALLERY -> {
+        AfternoteType.GALLERY_AND_FILES -> {
             GalleryAndFileEditorContent(
                 editorMessages = state.editorMessages,
                 onMessageRegisterClick = {},
@@ -280,13 +283,13 @@ internal fun CategoryContent(
         }
 
         // ESTATE 는 디자인 미확정. 입력 자리를 비워 두고 placeholder 만 노출한다 (이슈 #195).
-        EditorCategory.ESTATE -> {
+        AfternoteType.ESTATE -> {
             UnimplementedCategoryContent()
         }
 
         // BUSINESS(시안 700:38735)는 SOCIAL 과 폼 구조가 동일(계정 정보* + 수신자 지정* + 처리 방법 리스트* + 남기실 말씀)해
         // AccountEditorContent 를 그대로 재사용한다 (이슈 #467).
-        EditorCategory.SOCIAL, EditorCategory.BUSINESS -> {
+        AfternoteType.SOCIAL_NETWORK, AfternoteType.BUSINESS -> {
             AccountEditorContent(
                 editorMessages = state.editorMessages,
                 onMessageRegisterClick = {},
@@ -322,13 +325,14 @@ private fun EditorContentSocialPreview() {
         val state = rememberAfternoteEditorState()
         EditorContent(
             state = state,
-            form = state.currentForm().copy(categoryForm = CategoryForm.pristineFor(EditorCategory.SOCIAL)),
+            form = state.currentForm().copy(categoryForm = CategoryForm.pristineFor(AfternoteType.SOCIAL_NETWORK)),
             liveSongs = emptyList(),
             onNavigateToMemorialPlaylist = {},
             onNavigateToSelectReceiver = {},
             onPhotoAddClick = {},
             onVideoAddClick = {},
             onThumbnailBytesReady = {},
+            onThumbnailExtractionFailed = {},
         )
     }
 }
@@ -340,13 +344,14 @@ private fun EditorContentBusinessPreview() {
         val state = rememberAfternoteEditorState()
         EditorContent(
             state = state,
-            form = state.currentForm().copy(categoryForm = CategoryForm.pristineFor(EditorCategory.BUSINESS)),
+            form = state.currentForm().copy(categoryForm = CategoryForm.pristineFor(AfternoteType.BUSINESS)),
             liveSongs = emptyList(),
             onNavigateToMemorialPlaylist = {},
             onNavigateToSelectReceiver = {},
             onPhotoAddClick = {},
             onVideoAddClick = {},
             onThumbnailBytesReady = {},
+            onThumbnailExtractionFailed = {},
         )
     }
 }
@@ -358,13 +363,14 @@ private fun EditorContentGalleryPreview() {
         val state = rememberAfternoteEditorState()
         EditorContent(
             state = state,
-            form = state.currentForm().copy(categoryForm = CategoryForm.pristineFor(EditorCategory.GALLERY)),
+            form = state.currentForm().copy(categoryForm = CategoryForm.pristineFor(AfternoteType.GALLERY_AND_FILES)),
             liveSongs = emptyList(),
             onNavigateToMemorialPlaylist = {},
             onNavigateToSelectReceiver = {},
             onPhotoAddClick = {},
             onVideoAddClick = {},
             onThumbnailBytesReady = {},
+            onThumbnailExtractionFailed = {},
         )
     }
 }
@@ -376,13 +382,14 @@ private fun EditorContentMemorialPreview() {
         val state = rememberAfternoteEditorState()
         EditorContent(
             state = state,
-            form = state.currentForm().copy(categoryForm = CategoryForm.pristineFor(EditorCategory.MEMORIAL)),
+            form = state.currentForm().copy(categoryForm = CategoryForm.pristineFor(AfternoteType.MEMORIAL)),
             liveSongs = emptyList(),
             onNavigateToMemorialPlaylist = {},
             onNavigateToSelectReceiver = {},
             onPhotoAddClick = {},
             onVideoAddClick = {},
             onThumbnailBytesReady = {},
+            onThumbnailExtractionFailed = {},
         )
     }
 }
