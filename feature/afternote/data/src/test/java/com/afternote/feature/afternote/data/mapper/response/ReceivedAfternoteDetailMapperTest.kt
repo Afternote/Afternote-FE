@@ -22,7 +22,7 @@ class ReceivedAfternoteDetailMapperTest {
             ReceivedAfternoteDetailDto(
                 id = 1L,
                 category = "MUSIC",
-                title = "추모",
+                serviceName = "추모",
                 senderName = "홍길동",
                 createdAt = "2025-11-26T14:30:00",
             ).toDomain()
