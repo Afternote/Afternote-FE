@@ -216,6 +216,9 @@ dependencies {
     implementation(projects.feature.timeletter.data)
     implementation(projects.feature.onboarding.data)
 
+    // HomeTabViewModel 경합 테스트 — 가상 시간으로 viewModelScope 요청 순서를 제어한다.
+    testImplementation(libs.coroutines.test)
+
     // Compose Preview Screenshot Testing (#330) — 1hyok 영역 (홈) 적용
     screenshotTestImplementation(libs.screenshot.validation.api)
     screenshotTestImplementation(libs.androidx.compose.ui.tooling)
