@@ -17,7 +17,6 @@ fun ReceivedAfternoteDetailDto.toDomain(): ReceivedAfternoteDetail =
         title = title,
         senderName = senderName,
         createdAt = createdAt?.let(::formatDateFromServer),
-        category = category,
         type = category?.let(::categoryToAfternoteType),
         processingMethods = processingMethods,
         leaveMessageBlocks = leaveMessage.toLeaveMessageBlocks(),

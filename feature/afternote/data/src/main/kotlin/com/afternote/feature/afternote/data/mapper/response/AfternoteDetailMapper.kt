@@ -19,7 +19,6 @@ import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedi
 fun AfternoteDetailDto.toDetailDomain(): Detail =
     Detail(
         id = afternoteId,
-        category = category,
         title = title,
         timestamps = toTimestamps(),
         type = categoryToAfternoteType(category),
