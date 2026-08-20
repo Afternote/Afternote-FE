@@ -76,9 +76,12 @@ class TokenReissuer
                 val newBundle = rotationResult.getOrThrow()
                 if (newBundle.accessToken.isEmpty()) {
                     expiryTracker.clear()
-                    return Outcome.UnexpectedFailure(
-                        IllegalStateException("Token rotation returned an empty access token"),
-                    )
+                    val failure =
+                        Outcome.UnexpectedFailure(
+                            IllegalStateException("Token rotation returned an empty access token"),
+                        )
+                    reportObservableFailure(failure)
+                    return failure
                 }
 
                 // 만료 정보가 없으면 이전 토큰의 deadline 을 남기지 않는다.
@@ -113,10 +116,20 @@ class TokenReissuer
             }
 
         private fun reportObservableFailure(failure: Outcome.Failure) {
-            if (failure !is Outcome.TransportFailure && failure !is Outcome.ServerFailure) return
+            val failureKind =
+                when (failure) {
+                    is Outcome.AuthenticationRejected -> return
+                    is Outcome.TransportFailure -> "transport"
+                    is Outcome.ServerFailure -> "server"
+                    is Outcome.UnexpectedFailure -> "unexpected"
+                }
             errorReporter.recordFailure(
                 throwable = failure.exception,
-                attributes = mapOf("auth_stage" to "token_reissue"),
+                attributes =
+                    mapOf(
+                        "auth_stage" to "token_reissue",
+                        "failure_kind" to failureKind,
+                    ),
             )
         }
     }

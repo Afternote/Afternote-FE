@@ -152,6 +152,7 @@ class TokenReissuerTest {
         assertEquals(0, repository.clearSessionCallCount)
         val (reported, attributes) = reporter.writtenFailures.single()
         assertEquals("token_reissue", attributes["auth_stage"])
+        assertEquals("transport", attributes["failure_kind"])
         assertEquals(SocketTimeoutException::class.java.name, attributes["error_type"])
         assertEquals(SocketTimeoutException::class.java.name, reported.message)
         assertTrue(secret !in reported.toString())
@@ -180,6 +181,7 @@ class TokenReissuerTest {
         assertSame(failure, (outcome as TokenReissuer.Outcome.ServerFailure).exception)
         val (_, attributes) = reporter.writtenFailures.single()
         assertEquals("token_reissue", attributes["auth_stage"])
+        assertEquals("server", attributes["failure_kind"])
         assertEquals(ApiException::class.java.name, attributes["error_type"])
     }
 
@@ -199,8 +201,37 @@ class TokenReissuerTest {
 
         assertTrue(outcome is TokenReissuer.Outcome.UnexpectedFailure)
         assertFalse(tracker.isExpiringSoon())
-        assertTrue(reporter.writtenFailures.isEmpty())
+        val (_, attributes) = reporter.writtenFailures.single()
+        assertEquals("token_reissue", attributes["auth_stage"])
+        assertEquals("unexpected", attributes["failure_kind"])
         assertEquals(0, repository.clearSessionCallCount)
+    }
+
+    @Test
+    fun `미분류 4xx 실패 - UnexpectedFailure 로 분류하고 non-fatal 기록`() {
+        val failure =
+            ApiException(
+                status = 400,
+                code = 1999,
+                serverMessage = "new server error",
+                message = "new server error",
+            )
+        val reporter = FakeErrorReporter()
+        val repository =
+            FakeAuthRepository(
+                accessToken = "old-token",
+                onRotateToken = { Result.failure(failure) },
+            )
+
+        val outcome = reissuer(repository, reporter).reissue(expectedAccessToken = "old-token")
+
+        assertTrue(outcome is TokenReissuer.Outcome.UnexpectedFailure)
+        assertSame(failure, (outcome as TokenReissuer.Outcome.UnexpectedFailure).exception)
+        val (reported, attributes) = reporter.writtenFailures.single()
+        assertEquals("unexpected", attributes["failure_kind"])
+        assertEquals(ApiException::class.java.name, reported.message)
+        assertTrue("new server error" !in reported.toString())
+        assertTrue("new server error" !in attributes.toString())
     }
 
     @Test
