@@ -27,7 +27,7 @@ class ReceivedAfternoteDetailMapperTest {
                 createdAt = "2025-11-26T14:30:00",
             ).toDomain()
 
-        assertEquals("추모", result.title)
+        assertEquals("추모", result.serviceName)
         assertEquals("홍길동", result.senderName)
         assertEquals("2025.11.26", result.createdAt)
         assertEquals(AfternoteType.MEMORIAL, result.type)

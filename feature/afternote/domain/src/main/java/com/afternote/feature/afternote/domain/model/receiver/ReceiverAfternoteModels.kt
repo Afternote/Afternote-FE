@@ -24,10 +24,9 @@ data class ReceivedExportBundle(
 )
 
 data class ReceivedAfternoteDetail(
-    val title: String? = null,
+    val serviceName: String? = null,
     val senderName: String? = null,
     val createdAt: String? = null,
-    val category: String? = null,
     val type: AfternoteType? = null,
     val processingMethods: List<String> = emptyList(),
     val leaveMessageBlocks: List<LeaveMessageBlock> = emptyList(),
