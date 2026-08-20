@@ -3,7 +3,6 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.result.runCatchingCancellable
-import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.Diary
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
@@ -56,14 +55,8 @@ class MemorySpaceViewModel
                 _uiState.value = MemorySpaceUiState.Loading
                 runCatchingCancellable { collectMemories() }
                     .onSuccess { memories -> _uiState.value = MemorySpaceUiState.Success(memories) }
-                    .onFailure { e ->
-                        _uiState.value =
-                            MemorySpaceUiState.Error(
-                                UiText.DynamicOrResource(
-                                    value = e.message,
-                                    fallbackResId = R.string.mindrecord_error_memory_space_failed,
-                                ),
-                            )
+                    .onFailure {
+                        _uiState.value = MemorySpaceUiState.Error(R.string.mindrecord_error_memory_space_failed)
                     }
             }
         }
