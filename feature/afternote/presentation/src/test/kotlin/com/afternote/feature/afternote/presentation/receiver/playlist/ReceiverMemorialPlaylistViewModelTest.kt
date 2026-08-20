@@ -53,6 +53,7 @@ class ReceiverMemorialPlaylistViewModelTest {
 
         val viewModel =
             viewModel(
+                afternoteId = 42L,
                 repository = repository,
                 errorReporter = errorReporter,
             )
@@ -76,11 +77,12 @@ class ReceiverMemorialPlaylistViewModelTest {
     }
 
     private fun viewModel(
+        afternoteId: Long,
         repository: ReceiverRepository,
         errorReporter: ErrorReporter = RecordingErrorReporter(),
     ): ReceiverMemorialPlaylistViewModel =
         ReceiverMemorialPlaylistViewModel(
-            savedStateHandle = SavedStateHandle(mapOf("afternoteId" to 42L)),
+            savedStateHandle = SavedStateHandle(mapOf("afternoteId" to afternoteId)),
             receiverRepository = repository,
             errorReporter = errorReporter,
         )

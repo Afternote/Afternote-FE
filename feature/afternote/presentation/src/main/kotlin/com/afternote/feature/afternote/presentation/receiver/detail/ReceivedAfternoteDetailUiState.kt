@@ -11,6 +11,6 @@ sealed interface ReceivedAfternoteDetailUiState {
     ) : ReceivedAfternoteDetailUiState
 
     data class Error(
-        @param:StringRes val messageRes: Int? = null,
+        @param:StringRes val messageRes: Int,
     ) : ReceivedAfternoteDetailUiState
 }

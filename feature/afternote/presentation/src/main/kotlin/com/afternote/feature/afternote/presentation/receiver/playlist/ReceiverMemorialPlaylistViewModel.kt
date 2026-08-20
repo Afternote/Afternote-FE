@@ -3,9 +3,11 @@ package com.afternote.feature.afternote.presentation.receiver.playlist
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceiverRoute
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
@@ -30,54 +32,19 @@ class ReceiverMemorialPlaylistViewModel
         private val receiverRepository: ReceiverRepository,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
-        private val _uiState = MutableStateFlow(ReceiverMemorialPlaylistUiState())
+        private val afternoteIdFromNav: Long =
+            savedStateHandle.toRoute<ReceiverRoute.MemorialPlaylistRoute>().afternoteId
+
+        private val _uiState =
+            MutableStateFlow<ReceiverMemorialPlaylistUiState>(ReceiverMemorialPlaylistUiState.Loading)
         val uiState: StateFlow<ReceiverMemorialPlaylistUiState> = _uiState.asStateFlow()
 
         init {
-            val afternoteId = (savedStateHandle["afternoteId"] as? String)?.toLongOrNull()
-            if (afternoteId != null) {
-                loadPlaylist(afternoteId)
-            } else {
-                resolveFirstAfternoteAndLoad()
-            }
+            loadPlaylist(afternoteIdFromNav)
         }
 
-        fun onEvent(event: ReceiverMemorialPlaylistEvent) {
-            when (event) {
-                ReceiverMemorialPlaylistEvent.ErrorConsumed -> clearError()
-            }
-        }
-
-        private fun clearError() {
-            _uiState.update { it.copy(errorMessage = null) }
-        }
-
-        private fun resolveFirstAfternoteAndLoad() {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            viewModelScope.launch {
-                receiverRepository
-                    .getReceivedAfterNotes()
-                    .onSuccess { result ->
-                        val firstId = result.items.firstOrNull()?.id
-                        if (firstId == null) {
-                            _uiState.update {
-                                it.copy(
-                                    isLoading = false,
-                                    errorMessage = "애프터노트 정보를 찾을 수 없습니다.",
-                                )
-                            }
-                        } else {
-                            loadPlaylist(firstId)
-                        }
-                    }.onFailure { e ->
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                errorMessage = e.message ?: "플레이리스트를 불러오는데 실패했습니다.",
-                            )
-                        }
-                    }
-            }
+        fun retry() {
+            loadPlaylist(afternoteIdFromNav)
         }
 
         private fun loadPlaylist(afternoteId: Long) {
