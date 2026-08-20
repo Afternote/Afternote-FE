@@ -34,7 +34,7 @@ import com.afternote.feature.afternote.presentation.author.editor.receiver.model
 import com.afternote.feature.afternote.presentation.author.editor.selection.DropdownMenuStyle
 import com.afternote.feature.afternote.presentation.author.editor.selection.EditorSelectionDropdown
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
-import com.afternote.feature.afternote.presentation.author.editor.state.CategoryForm
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
 
@@ -64,12 +64,12 @@ internal fun EditorContent(
 
         EditorSelectionDropdown(
             label = stringResource(R.string.afternote_editor_label_category),
-            selectedValue = form.selectedCategory,
+            selectedValue = form.selectedType,
             options = AfternoteType.entries,
             optionLabel = { it.toDropdownLabel() },
-            onValueSelected = state::onCategorySelected,
-            expanded = state.categoryDropdownExpanded,
-            onExpandedChange = state::onCategoryDropdownExpandedChange,
+            onValueSelected = state::onTypeSelected,
+            expanded = state.typeDropdownExpanded,
+            onExpandedChange = state::onTypeDropdownExpandedChange,
             menuStyle =
                 DropdownMenuStyle(
                     shadowElevation = 10.dp,
@@ -78,11 +78,11 @@ internal fun EditorContent(
         )
 
         if (isPrefillLoading) {
-            EditorPrefillSkeleton(category = form.selectedCategory)
+            EditorPrefillSkeleton(type = form.selectedType)
             return@Column
         }
 
-        if (form.selectedCategory.hasServiceSelection) {
+        if (form.selectedType.hasServiceSelection) {
             Spacer(modifier = Modifier.height(20.dp))
 
             EditorSelectionDropdown(
@@ -96,7 +96,7 @@ internal fun EditorContent(
                 placeholder =
                     stringResource(
                         R.string.afternote_editor_service_placeholder,
-                        form.selectedCategory.toDropdownLabel(),
+                        form.selectedType.toDropdownLabel(),
                     ),
                 menuStyle =
                     DropdownMenuStyle(
@@ -107,7 +107,7 @@ internal fun EditorContent(
         }
         Spacer(modifier = Modifier.height(32.dp))
 
-        CategoryContent(
+        AfternoteTypeContent(
             state = state,
             form = form,
             liveSongs = liveSongs,
@@ -129,19 +129,19 @@ internal fun EditorContent(
  */
 @Composable
 private fun EditorPrefillSkeleton(
-    category: AfternoteType,
+    type: AfternoteType,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Spacer(modifier = Modifier.height(20.dp))
 
-        if (category.hasServiceSelection) {
+        if (type.hasServiceSelection) {
             // 서비스명 드롭다운 자리.
             SkeletonBar(height = 56.dp)
             Spacer(modifier = Modifier.height(32.dp))
         }
 
-        when (category) {
+        when (type) {
             AfternoteType.MEMORIAL -> MemorialPrefillSkeleton()
 
             AfternoteType.GALLERY_AND_FILES -> GalleryPrefillSkeleton()
@@ -149,7 +149,7 @@ private fun EditorPrefillSkeleton(
             // BUSINESS 는 SOCIAL 과 같은 구조(계정 2필드 + 수신자 지정 + 처리 방법 + 메시지)라 skeleton 도 공유한다.
             AfternoteType.SOCIAL_NETWORK, AfternoteType.BUSINESS -> AccountPrefillSkeleton()
 
-            // ESTATE 는 로드가 끝나도 채울 폼이 없는 "준비 중" placeholder 라(UnimplementedCategoryContent)
+            // ESTATE 는 로드가 끝나도 채울 폼이 없는 "준비 중" placeholder 라(UnimplementedTypeContent)
             // 로딩 동안 흉내 낼 뼈대도 없다 — 아무것도 그리지 않는다. 생성이 차단돼 수정 진입으로
             // 실제 도달할 일은 사실상 없지만, exhaustive when 이라 분기를 명시한다.
             AfternoteType.ESTATE -> Unit
@@ -225,7 +225,7 @@ private fun SkeletonBar(
 }
 
 @Composable
-internal fun CategoryContent(
+internal fun AfternoteTypeContent(
     state: AfternoteEditorState,
     form: EditorFormState,
     liveSongs: List<Song>,
@@ -236,7 +236,7 @@ internal fun CategoryContent(
     onThumbnailBytesReady: (ByteArray?) -> Unit,
     onThumbnailExtractionFailed: (Throwable) -> Unit = {},
 ) {
-    when (form.selectedCategory) {
+    when (form.selectedType) {
         AfternoteType.MEMORIAL -> {
             MemorialEditorContent(
                 params =
@@ -284,7 +284,7 @@ internal fun CategoryContent(
 
         // ESTATE 는 디자인 미확정. 입력 자리를 비워 두고 placeholder 만 노출한다 (이슈 #195).
         AfternoteType.ESTATE -> {
-            UnimplementedCategoryContent()
+            UnimplementedTypeContent()
         }
 
         // BUSINESS(시안 700:38735)는 SOCIAL 과 폼 구조가 동일(계정 정보* + 수신자 지정* + 처리 방법 리스트* + 남기실 말씀)해
@@ -325,7 +325,7 @@ private fun EditorContentSocialPreview() {
         val state = rememberAfternoteEditorState()
         EditorContent(
             state = state,
-            form = state.currentForm().copy(categoryForm = CategoryForm.pristineFor(AfternoteType.SOCIAL_NETWORK)),
+            form = state.currentForm().copy(typeForm = AfternoteTypeForm.pristineFor(AfternoteType.SOCIAL_NETWORK)),
             liveSongs = emptyList(),
             onNavigateToMemorialPlaylist = {},
             onNavigateToSelectReceiver = {},
@@ -344,7 +344,7 @@ private fun EditorContentBusinessPreview() {
         val state = rememberAfternoteEditorState()
         EditorContent(
             state = state,
-            form = state.currentForm().copy(categoryForm = CategoryForm.pristineFor(AfternoteType.BUSINESS)),
+            form = state.currentForm().copy(typeForm = AfternoteTypeForm.pristineFor(AfternoteType.BUSINESS)),
             liveSongs = emptyList(),
             onNavigateToMemorialPlaylist = {},
             onNavigateToSelectReceiver = {},
@@ -363,7 +363,7 @@ private fun EditorContentGalleryPreview() {
         val state = rememberAfternoteEditorState()
         EditorContent(
             state = state,
-            form = state.currentForm().copy(categoryForm = CategoryForm.pristineFor(AfternoteType.GALLERY_AND_FILES)),
+            form = state.currentForm().copy(typeForm = AfternoteTypeForm.pristineFor(AfternoteType.GALLERY_AND_FILES)),
             liveSongs = emptyList(),
             onNavigateToMemorialPlaylist = {},
             onNavigateToSelectReceiver = {},
@@ -382,7 +382,7 @@ private fun EditorContentMemorialPreview() {
         val state = rememberAfternoteEditorState()
         EditorContent(
             state = state,
-            form = state.currentForm().copy(categoryForm = CategoryForm.pristineFor(AfternoteType.MEMORIAL)),
+            form = state.currentForm().copy(typeForm = AfternoteTypeForm.pristineFor(AfternoteType.MEMORIAL)),
             liveSongs = emptyList(),
             onNavigateToMemorialPlaylist = {},
             onNavigateToSelectReceiver = {},

@@ -65,7 +65,7 @@ class EditorLeaveMessageBlocksTest {
     fun `수정 페이로드도 같은 규칙으로 블록을 싣는다`() {
         val payload =
             AfternoteEditorFormMapper.buildUpdatePayload(
-                category = AfternoteType.SOCIAL_NETWORK,
+                type = AfternoteType.SOCIAL_NETWORK,
                 payload = payloadOf(EditorMessageTextBlock(title = "", body = "고쳐 쓴 말씀")),
                 selectedReceiverIds = emptyList(),
                 playlistSongs = emptyList(),
@@ -81,7 +81,7 @@ class EditorLeaveMessageBlocksTest {
     private fun createSocial(vararg blocks: EditorMessageTextBlock): List<LeaveMessageBlock>? {
         val input =
             AfternoteEditorFormMapper.buildCreateInput(
-                category = AfternoteType.SOCIAL_NETWORK,
+                type = AfternoteType.SOCIAL_NETWORK,
                 payload = payloadOf(*blocks),
                 selectedReceiverIds = emptyList(),
                 playlistSongs = emptyList(),
@@ -94,7 +94,7 @@ class EditorLeaveMessageBlocksTest {
 
     private fun validateSocial(vararg blocks: EditorMessageTextBlock): AfternoteValidationError? =
         AfternoteEditorValidator.validate(
-            category = AfternoteType.SOCIAL_NETWORK,
+            type = AfternoteType.SOCIAL_NETWORK,
             payload = payloadOf(*blocks),
             selectedReceiverIds = listOf(1L),
             playlistSongs = emptyList(),

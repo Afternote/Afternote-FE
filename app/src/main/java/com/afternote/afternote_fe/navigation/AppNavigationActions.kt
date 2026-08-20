@@ -392,18 +392,18 @@ fun rememberAfternoteNavActions(
                 appState.navController.navigate(AfternoteRoute.DetailRoute(itemId = itemId))
             }
 
-            override fun navigateToNewEditor(initialCategory: AfternoteType) {
-                appState.navController.navigate(AfternoteRoute.EditorRoute(initialCategory = initialCategory))
+            override fun navigateToNewEditor(initialType: AfternoteType) {
+                appState.navController.navigate(AfternoteRoute.EditorRoute(initialType = initialType))
             }
 
             override fun navigateToEditorForEdit(
                 itemId: Long,
-                initialCategory: AfternoteType,
+                initialType: AfternoteType,
             ) {
                 appState.navController.navigate(
                     AfternoteRoute.EditorRoute(
                         itemId = itemId,
-                        initialCategory = initialCategory,
+                        initialType = initialType,
                     ),
                 )
             }

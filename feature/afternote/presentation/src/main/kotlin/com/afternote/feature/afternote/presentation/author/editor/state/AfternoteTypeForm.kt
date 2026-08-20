@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.editor.state
 
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 
@@ -11,13 +11,13 @@ import com.afternote.feature.afternote.presentation.author.editor.processing.mod
  * 상속(`sealed class EditorFormState`)이 아니라 합성인 이유는 추상 타입에 `copy` 가 없어서다 —
  * 이탈 가드 지문의 공용 필드 중립화를 하위 타입마다 손으로 재작성하게 되고, 그 순간 "필드 추가 자동 포함" 성질을 잃는다.
  */
-sealed interface CategoryForm {
-    val category: EditorCategory
+sealed interface AfternoteTypeForm {
+    val type: AfternoteType
 
     /** 이탈 가드 지문에 실을 조각. 사용자가 이 카테고리에 실제로 넣은 값이 없으면 `null`. */
     fun enteredContentOrNull(): String?
 
-    sealed interface WithServiceAndProcessingMethods : CategoryForm {
+    sealed interface WithServiceAndProcessingMethods : AfternoteTypeForm {
         val selectedService: String?
         val processingMethods: List<ProcessingMethodItem>
 
@@ -30,7 +30,7 @@ sealed interface CategoryForm {
         override val selectedService: String? = null,
         override val processingMethods: List<ProcessingMethodItem> = emptyList(),
     ) : WithServiceAndProcessingMethods {
-        override val category = EditorCategory.SOCIAL
+        override val type = AfternoteType.SOCIAL_NETWORK
 
         override fun withService(service: String?) = copy(selectedService = service)
 
@@ -47,7 +47,7 @@ sealed interface CategoryForm {
         override val selectedService: String? = null,
         override val processingMethods: List<ProcessingMethodItem> = emptyList(),
     ) : WithServiceAndProcessingMethods {
-        override val category = EditorCategory.BUSINESS
+        override val type = AfternoteType.BUSINESS
 
         override fun withService(service: String?) = copy(selectedService = service)
 
@@ -64,7 +64,7 @@ sealed interface CategoryForm {
         override val selectedService: String? = null,
         override val processingMethods: List<ProcessingMethodItem> = emptyList(),
     ) : WithServiceAndProcessingMethods {
-        override val category = EditorCategory.GALLERY
+        override val type = AfternoteType.GALLERY_AND_FILES
 
         override fun withService(service: String?) = copy(selectedService = service)
 
@@ -83,8 +83,8 @@ sealed interface CategoryForm {
         val thumbnailUrl: String? = null,
         val photoUrl: String? = null,
         val playlistSongs: List<Song> = emptyList(),
-    ) : CategoryForm {
-        override val category = EditorCategory.MEMORIAL
+    ) : AfternoteTypeForm {
+        override val type = AfternoteType.MEMORIAL
 
         fun displayPhotoUri(): String? = pickedPhotoUri ?: photoUrl
 
@@ -97,38 +97,38 @@ sealed interface CategoryForm {
     }
 
     /** 전용 입력이 0개인 "준비 중" 카테고리 (이슈 #195). 지문 중립 원소로도 쓰인다. */
-    data object Estate : CategoryForm {
-        override val category = EditorCategory.ESTATE
+    data object Estate : AfternoteTypeForm {
+        override val type = AfternoteType.ESTATE
 
         override fun enteredContentOrNull(): String? = null
     }
 
     companion object {
         /** 카테고리 전환의 유일한 생성 경로 — 항상 입력이 비어 있는 하위 타입을 만든다. */
-        fun pristineFor(category: EditorCategory): CategoryForm =
-            when (category) {
-                EditorCategory.SOCIAL -> Social()
-                EditorCategory.BUSINESS -> Business()
-                EditorCategory.GALLERY -> Gallery()
-                EditorCategory.MEMORIAL -> Memorial()
-                EditorCategory.ESTATE -> Estate
+        fun pristineFor(type: AfternoteType): AfternoteTypeForm =
+            when (type) {
+                AfternoteType.SOCIAL_NETWORK -> Social()
+                AfternoteType.BUSINESS -> Business()
+                AfternoteType.GALLERY_AND_FILES -> Gallery()
+                AfternoteType.MEMORIAL -> Memorial()
+                AfternoteType.ESTATE -> Estate
             }
 
-        fun fromPrefill(prefill: EditorFormPrefill): CategoryForm =
-            when (prefill.category) {
-                EditorCategory.SOCIAL -> {
+        fun fromPrefill(prefill: EditorFormPrefill): AfternoteTypeForm =
+            when (prefill.type) {
+                AfternoteType.SOCIAL_NETWORK -> {
                     Social(selectedService = prefill.serviceName, processingMethods = prefill.processingMethods)
                 }
 
-                EditorCategory.BUSINESS -> {
+                AfternoteType.BUSINESS -> {
                     Business(selectedService = prefill.serviceName, processingMethods = prefill.processingMethods)
                 }
 
-                EditorCategory.GALLERY -> {
+                AfternoteType.GALLERY_AND_FILES -> {
                     Gallery(selectedService = prefill.serviceName, processingMethods = prefill.processingMethods)
                 }
 
-                EditorCategory.MEMORIAL -> {
+                AfternoteType.MEMORIAL -> {
                     Memorial(
                         videoUrl = prefill.memorialVideoUrl,
                         thumbnailUrl = prefill.memorialThumbnailUrl,
@@ -137,7 +137,7 @@ sealed interface CategoryForm {
                     )
                 }
 
-                EditorCategory.ESTATE -> {
+                AfternoteType.ESTATE -> {
                     Estate
                 }
             }

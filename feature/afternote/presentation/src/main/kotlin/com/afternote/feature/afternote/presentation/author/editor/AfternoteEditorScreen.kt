@@ -36,7 +36,7 @@ import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
-import com.afternote.feature.afternote.presentation.author.editor.state.CategoryForm
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
 import kotlinx.coroutines.FlowPreview
@@ -292,11 +292,11 @@ internal fun editorContentSignature(
             // 남기실 말씀은 debounce 전 라이브 입력(state.editorMessages)으로 판정하므로 스냅샷은 제외.
             leaveMessageBlocks = emptyList(),
             // 카테고리 전용 입력은 아래에서 따로 낸다 — 전용 필드가 0개인 ESTATE 를 중립 원소로 쓴다.
-            categoryForm = CategoryForm.Estate,
+            typeForm = AfternoteTypeForm.Estate,
         )
     return listOf(
         comparableForm.toString(),
-        form.categoryForm.enteredContentOrNull() ?: NO_ENTERED_CONTENT,
+        form.typeForm.enteredContentOrNull() ?: NO_ENTERED_CONTENT,
         state.idState.text,
         state.passwordState.text,
         state.editorMessages.map { "${it.titleState.text}\u0001${it.contentState.text}" },

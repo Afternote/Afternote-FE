@@ -37,7 +37,7 @@ class AfternoteEditorUiHolder(
     var activeDialog by mutableStateOf<DialogType?>(null)
         private set
 
-    var categoryDropdownExpanded by mutableStateOf(false)
+    var typeDropdownExpanded by mutableStateOf(false)
         private set
 
     var serviceDropdownExpanded by mutableStateOf(false)
@@ -62,8 +62,8 @@ class AfternoteEditorUiHolder(
         customServiceNameState.edit { replace(0, length, "") }
     }
 
-    fun onCategoryDropdownExpandedChange(expanded: Boolean) {
-        categoryDropdownExpanded = expanded
+    fun onTypeDropdownExpandedChange(expanded: Boolean) {
+        typeDropdownExpanded = expanded
     }
 
     fun onServiceDropdownExpandedChange(expanded: Boolean) {

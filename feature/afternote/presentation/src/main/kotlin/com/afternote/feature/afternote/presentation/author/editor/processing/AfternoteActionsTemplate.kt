@@ -15,8 +15,8 @@ import com.afternote.feature.afternote.presentation.author.editor.processing.Aft
  */
 object AfternoteActionsTemplate {
     @StringRes
-    fun defaultsFor(category: AfternoteType): List<Int> =
-        when (category) {
+    fun defaultsFor(type: AfternoteType): List<Int> =
+        when (type) {
             AfternoteType.SOCIAL_NETWORK -> {
                 listOf(
                     R.string.afternote_editor_actions_social_remove_post,

@@ -8,10 +8,10 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 
@@ -34,7 +34,7 @@ private const val TAG = "AfternoteEditorState"
 class AfternoteEditorState(
     private val ui: AfternoteEditorUiHolder,
     private val getCurrentForm: () -> EditorFormState,
-    private val setCategory: (EditorCategory) -> Unit,
+    private val setType: (AfternoteType) -> Unit,
     private val setService: (String) -> Unit,
     private val addReceiverIfAbsent: (receiverId: String, name: String, label: String) -> Unit,
     private val applyPrefill: (EditorFormPrefill) -> Unit,
@@ -60,25 +60,17 @@ class AfternoteEditorState(
     val customServiceNameState: TextFieldState get() = ui.customServiceNameState
 
     val activeDialog get() = ui.activeDialog
-    val categoryDropdownExpanded get() = ui.categoryDropdownExpanded
+    val typeDropdownExpanded get() = ui.typeDropdownExpanded
     val serviceDropdownExpanded get() = ui.serviceDropdownExpanded
 
     /** 콜백·payload 조립 등 일회성 read 용 (Compose 표시는 화면이 collect 한 `uiState.form` 사용). */
     fun currentForm(): EditorFormState = getCurrentForm()
 
-    fun onCategoryDropdownExpandedChange(expanded: Boolean) = ui.onCategoryDropdownExpandedChange(expanded)
+    fun onTypeDropdownExpandedChange(expanded: Boolean) = ui.onTypeDropdownExpandedChange(expanded)
 
     fun onServiceDropdownExpandedChange(expanded: Boolean) = ui.onServiceDropdownExpandedChange(expanded)
 
-    /** 드롭다운 UI에서 [categoryDisplayLabel] 문자열로 카테고리를 선택한다. */
-    fun onCategorySelected(categoryDisplayLabel: String) {
-        setCategory(EditorCategory.fromDisplayLabel(categoryDisplayLabel))
-    }
-
-    /** 네비게이션 인자([EditorCategory.name])로 카테고리를 선택한다. */
-    fun selectCategoryByNavKey(navKey: String) {
-        setCategory(EditorCategory.fromNavKey(navKey))
-    }
+    fun onTypeSelected(type: AfternoteType) = setType(type)
 
     fun onServiceSelected(service: String) {
         if (getCurrentForm().isCustomAddOption(service)) {
@@ -143,7 +135,7 @@ class AfternoteEditorState(
         Log.d(
             TAG,
             "applyFormPrefill: itemId=${prefill.loadedItemId}, serviceName=${prefill.serviceName}, " +
-                "category=${prefill.category}, " +
+                "type=${prefill.type}, " +
                 "PMs=${prefill.processingMethods.size}",
         )
         applyPrefill(prefill)
@@ -171,7 +163,7 @@ private fun List<EditorMessage>.toTextBlocks(): List<EditorMessageTextBlock> =
 @Composable
 fun rememberAfternoteEditorState(
     getCurrentForm: () -> EditorFormState,
-    setCategory: (EditorCategory) -> Unit,
+    setType: (AfternoteType) -> Unit,
     setService: (String) -> Unit,
     setMemorialPhoto: (String?) -> Unit,
     setMemorialVideo: (String?) -> Unit,
@@ -201,7 +193,7 @@ fun rememberAfternoteEditorState(
         AfternoteEditorState(
             ui = ui,
             getCurrentForm = getCurrentForm,
-            setCategory = setCategory,
+            setType = setType,
             setService = setService,
             setMemorialPhoto = setMemorialPhoto,
             setMemorialVideo = setMemorialVideo,
@@ -230,7 +222,7 @@ fun rememberAfternoteEditorState(): AfternoteEditorState {
         { block -> previewForm.value = block(previewForm.value) }
     return rememberAfternoteEditorState(
         getCurrentForm = { previewForm.value },
-        setCategory = { category -> mutate { it.withCategory(category) } },
+        setType = { type -> mutate { it.withType(type) } },
         setService = { service -> mutate { it.withService(service) } },
         setMemorialPhoto = { uri -> mutate { it.withMemorialPhoto(uri) } },
         setMemorialVideo = { url -> mutate { it.withMemorialVideo(url) } },
