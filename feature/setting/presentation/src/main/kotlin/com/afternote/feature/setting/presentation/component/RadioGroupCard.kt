@@ -64,8 +64,18 @@ fun RadioGroupCard(
         Column(verticalArrangement = spacedBy(4.dp)) {
             Text(
                 text = item.title,
-                color = AfternoteDesign.colors.gray9,
-                style = AfternoteDesign.typography.primaryButton,
+                color =
+                    if (selected) {
+                        AfternoteDesign.colors.gray9
+                    } else {
+                        AfternoteDesign.colors.gray8
+                    },
+                style =
+                    if (selected) {
+                        AfternoteDesign.typography.primaryButton
+                    } else {
+                        AfternoteDesign.typography.bodyBase
+                    },
             )
             Text(
                 text = item.description,

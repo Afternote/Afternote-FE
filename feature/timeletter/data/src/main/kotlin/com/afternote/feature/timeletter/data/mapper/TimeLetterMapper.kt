@@ -3,6 +3,7 @@ package com.afternote.feature.timeletter.data.mapper
 import com.afternote.feature.timeletter.data.dto.TimeLetterBlockDto
 import com.afternote.feature.timeletter.data.dto.TimeLetterBlockRequestDto
 import com.afternote.feature.timeletter.data.dto.TimeLetterBlockTypeDto
+import com.afternote.feature.timeletter.data.dto.TimeLetterDeliveryModeDto
 import com.afternote.feature.timeletter.data.dto.TimeLetterDto
 import com.afternote.feature.timeletter.data.dto.TimeLetterListDto
 import com.afternote.feature.timeletter.data.dto.TimeLetterStatusDto
@@ -10,6 +11,7 @@ import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlockType
+import com.afternote.feature.timeletter.domain.model.TimeLetterDeliveryMode
 import com.afternote.feature.timeletter.domain.model.TimeLetterList
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 
@@ -25,6 +27,12 @@ fun TimeLetterStatus.toDto(): TimeLetterStatusDto =
         TimeLetterStatus.DRAFT -> TimeLetterStatusDto.DRAFT
         TimeLetterStatus.SCHEDULED -> TimeLetterStatusDto.SCHEDULED
         TimeLetterStatus.SENT -> TimeLetterStatusDto.SENT
+    }
+
+fun TimeLetterDeliveryMode.toDto(): TimeLetterDeliveryModeDto =
+    when (this) {
+        TimeLetterDeliveryMode.DATE -> TimeLetterDeliveryModeDto.DATE
+        TimeLetterDeliveryMode.POST_DEATH -> TimeLetterDeliveryModeDto.POST_DEATH
     }
 
 fun TimeLetterBlockTypeDto.toDomain(): TimeLetterBlockType =
