@@ -1,10 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
-import android.net.Uri
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,10 +29,9 @@ import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
-import com.afternote.feature.afternote.presentation.author.editor.state.CategoryForm
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
 import kotlinx.coroutines.FlowPreview
@@ -57,8 +52,7 @@ private const val EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE_MS = 1_000L
  * - 처리 방법 리스트 (체크박스)
  * - 남기실 말씀 (멀티라인 텍스트 필드; Process Death 대비 [snapshotFlow] + debounce로 폼 동기화)
  *
- * 추모 곡 목록은 [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs] SSOT의 스냅샷을
- * [liveSongs]로 전달받아 표시한다 (Compose 상태 홀더에 직접 의존하지 않는다).
+ * 추모 곡 목록은 [EditorFormState]의 추모 전용 폼에 동기화된 스냅샷으로 표시한다.
  */
 @OptIn(FlowPreview::class)
 @Composable
@@ -66,15 +60,11 @@ fun AfternoteEditorScreen(
     form: EditorFormState,
     onBackClick: () -> Unit,
     onRegisterClick: () -> Unit,
-    onNavigateToMemorialPlaylist: () -> Unit,
-    onNavigateToSelectReceiver: () -> Unit,
-    onThumbnailBytesReady: (ByteArray?) -> Unit,
-    onThumbnailExtractionFailed: (Throwable) -> Unit,
     onThumbnailUploadErrorConsumed: () -> Unit,
     onValidationErrorConsumed: () -> Unit,
+    content: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     state: AfternoteEditorState = rememberAfternoteEditorState(),
-    liveSongs: List<Song> = emptyList(),
     saveError: String? = null,
     thumbnailUploadFailed: Boolean = false,
     isPrefillLoading: Boolean = false,
@@ -150,19 +140,6 @@ fun AfternoteEditorScreen(
         }
     }
 
-    LaunchedEffect(liveSongs) {
-        state.setMemorialPlaylistSongs(liveSongs)
-    }
-
-    val memorialPhotoPickerLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
-            state.setMemorialPhoto(uri?.toString())
-        }
-    val memorialVideoPickerLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
-            state.setMemorialVideo(uri?.toString())
-        }
-
     // 작성 도중 이탈 가드: 진입 시점 스냅샷 대비 변경이 있으면 뒤로가기 시 이탈 확인 팝업을 띄운다.
     // 입력이 debounce 로 휘발성 폼 상태에만 반영되어 pop 시 소실되기 때문. '내용 존재'가 아니라 '변경' 기준인
     // 이유는 수정 모드(prefill)에서 무변경 이탈에도 매번 경고하게 되어서다. 스냅샷은 프리필 적용 완료
@@ -224,26 +201,7 @@ fun AfternoteEditorScreen(
                     .padding(paddingValues)
                     .addFocusCleaner(focusManager),
         ) {
-            EditorContent(
-                state = state,
-                form = form,
-                liveSongs = liveSongs,
-                isPrefillLoading = isPrefillLoading,
-                onNavigateToMemorialPlaylist = onNavigateToMemorialPlaylist,
-                onNavigateToSelectReceiver = onNavigateToSelectReceiver,
-                onPhotoAddClick = {
-                    memorialPhotoPickerLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
-                    )
-                },
-                onVideoAddClick = {
-                    memorialVideoPickerLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly),
-                    )
-                },
-                onThumbnailBytesReady = onThumbnailBytesReady,
-                onThumbnailExtractionFailed = onThumbnailExtractionFailed,
-            )
+            content()
 
             AfternoteEditorDialogs(state = state)
 
@@ -286,17 +244,16 @@ internal fun editorContentSignature(
 ): String {
     val comparableForm =
         form.copy(
-            // 식별자·자동 파생값 — 사용자 편집이 아니므로 판정 제외.
-            loadedItemId = null,
+            // 자동 파생값 — 사용자 편집이 아니므로 판정 제외.
             leaveMessageBlocksRestoreGeneration = 0L,
             // 남기실 말씀은 debounce 전 라이브 입력(state.editorMessages)으로 판정하므로 스냅샷은 제외.
             leaveMessageBlocks = emptyList(),
             // 카테고리 전용 입력은 아래에서 따로 낸다 — 전용 필드가 0개인 ESTATE 를 중립 원소로 쓴다.
-            categoryForm = CategoryForm.Estate,
+            typeForm = AfternoteTypeForm.Estate,
         )
     return listOf(
         comparableForm.toString(),
-        form.categoryForm.enteredContentOrNull() ?: NO_ENTERED_CONTENT,
+        form.typeForm.enteredContentOrNull() ?: NO_ENTERED_CONTENT,
         state.idState.text,
         state.passwordState.text,
         state.editorMessages.map { "${it.titleState.text}\u0001${it.contentState.text}" },

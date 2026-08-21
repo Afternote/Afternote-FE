@@ -9,7 +9,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
-import androidx.navigation.toRoute
+import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorBody
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorScreen
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
@@ -20,7 +20,6 @@ import com.afternote.feature.afternote.presentation.author.editor.model.EditorCo
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorUiState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
-import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.author.navigation.model.SELECTED_RECEIVER_ID_KEY
 
 @StringRes
@@ -40,8 +39,6 @@ internal fun tryApplyReceiverSelectionFromSavedState(
 internal fun buildOnRegisterClick(
     editViewModel: AfternoteEditorViewModel,
     state: AfternoteEditorState,
-    route: AfternoteRoute.EditorRoute,
-    liveSongs: List<Song>,
 ): () -> Unit =
     {
         state.setLeaveMessageBlocks(
@@ -65,11 +62,8 @@ internal fun buildOnRegisterClick(
                         .toString(),
             )
         editViewModel.saveAfternote(
-            editingId = route.itemId,
-            category = form.selectedCategory,
             payload = payload,
             selectedReceiverIds = form.afternoteEditReceivers.mapNotNull { it.id.toLongOrNull() },
-            playlistSongs = liveSongs,
             memorialMedia =
                 SaveAfternoteMemorialMedia(
                     memorialVideoUrl = form.memorialVideoUrl,
@@ -81,9 +75,9 @@ internal fun buildOnRegisterClick(
     }
 
 /**
- * 작성자 에디터 플로우: type-safe [AfternoteRoute.EditorRoute] + 단방향 이벤트.
+ * 작성자 에디터 화면: type-safe editor flow + 단방향 이벤트.
  *
- * 홈의 `visibleItems` 스냅샷은 에디터에 전달하지 않는다. 식별은 라우트의 `itemId`·`initialCategory` 정도로 최소화한다.
+ * 홈의 `visibleItems` 스냅샷은 에디터에 전달하지 않는다. 식별은 라우트의 `itemId`·`initialType` 정도로 최소화한다.
  *
  * **수정 진입 데이터 로드:** 상세 화면과 같이 [AfternoteEditorViewModel]의 `init`에서
  * [androidx.lifecycle.SavedStateHandle]의 `itemId`만 보고 Repository `getDetail`을 호출한다 (Compose `LaunchedEffect` 위임 없음).
@@ -94,18 +88,17 @@ internal fun AfternoteEditorNavigation(
     liveSongs: List<Song>,
     onReplaceSongs: (List<Song>) -> Unit,
     onClearSongs: () -> Unit,
+    onNavigateToMemorialPlaylist: () -> Unit,
     onNavigateToSelectReceiver: () -> Unit,
     onPopBackStack: () -> Unit,
-    onNavigateToMemorialPlaylist: () -> Unit,
     onSaveSuccessNavigateHome: () -> Unit,
 ) {
     val editViewModel = hiltViewModel<AfternoteEditorViewModel>(backStackEntry)
-    val route = backStackEntry.toRoute<AfternoteRoute.EditorRoute>()
     val uiState by editViewModel.uiState.collectAsStateWithLifecycle()
     val state =
         rememberAfternoteEditorState(
             getCurrentForm = editViewModel::currentForm,
-            setCategory = editViewModel::setCategory,
+            setType = editViewModel::setType,
             setService = editViewModel::setService,
             setMemorialPhoto = editViewModel::setMemorialPhoto,
             setMemorialVideo = editViewModel::setMemorialVideo,
@@ -122,15 +115,19 @@ internal fun AfternoteEditorNavigation(
         )
 
     LaunchedEffect(Unit) {
-        if (route.itemId == null) {
+        if (!editViewModel.isEditing) {
             onClearSongs()
             state.setMemorialPlaylistSongs(emptyList())
         }
+        editViewModel.refreshAuthorReceivers()
     }
-    LaunchedEffect(Unit) { editViewModel.refreshAuthorReceivers() }
 
-    LaunchedEffect(uiState.authorReceivers, route.itemId) {
-        if (route.itemId == null) {
+    LaunchedEffect(liveSongs) {
+        state.setMemorialPlaylistSongs(liveSongs)
+    }
+
+    LaunchedEffect(uiState.authorReceivers, editViewModel.isEditing) {
+        if (!editViewModel.isEditing) {
             state.replaceReceiversIfEmpty(uiState.authorReceivers)
         }
     }
@@ -141,12 +138,6 @@ internal fun AfternoteEditorNavigation(
             editViewModel,
             state,
         )
-    }
-
-    LaunchedEffect(route.initialCategory, route.itemId) {
-        if (route.initialCategory != null) {
-            state.selectCategoryByNavKey(route.initialCategory)
-        }
     }
 
     LaunchedEffect(uiState.pendingSaveSuccessId) {
@@ -173,28 +164,32 @@ internal fun AfternoteEditorNavigation(
         }
     }
 
-    val saveError: String? = editorSaveErrorMessageRes(uiState)?.let { stringResource(it) }
+    val saveError = editorSaveErrorMessageRes(uiState)?.let { stringResource(it) }
 
     val onRegisterClick =
-        remember(editViewModel, state, route, liveSongs) {
+        remember(editViewModel, state) {
             buildOnRegisterClick(
                 editViewModel = editViewModel,
                 state = state,
-                route = route,
-                liveSongs = liveSongs,
             )
         }
     AfternoteEditorScreen(
         form = uiState.form,
         onBackClick = onPopBackStack,
         onRegisterClick = onRegisterClick,
-        onNavigateToMemorialPlaylist = onNavigateToMemorialPlaylist,
-        onNavigateToSelectReceiver = onNavigateToSelectReceiver,
-        onThumbnailBytesReady = editViewModel::uploadMemorialThumbnail,
-        onThumbnailExtractionFailed = editViewModel::onMemorialThumbnailExtractionFailed,
         onThumbnailUploadErrorConsumed = editViewModel::onThumbnailUploadErrorConsumed,
         onValidationErrorConsumed = editViewModel::onValidationErrorConsumed,
-        liveSongs = liveSongs,
+        content = {
+            AfternoteEditorBody(
+                state = state,
+                form = uiState.form,
+                onNavigateToMemorialPlaylist = onNavigateToMemorialPlaylist,
+                onNavigateToSelectReceiver = onNavigateToSelectReceiver,
+                onThumbnailBytesReady = editViewModel::uploadMemorialThumbnail,
+                onThumbnailExtractionFailed = editViewModel::onMemorialThumbnailExtractionFailed,
+                isPrefillLoading = uiState.isPrefillLoading,
+            )
+        },
         state = state,
         saveError = saveError,
         thumbnailUploadFailed = uiState.thumbnailUploadFailed,

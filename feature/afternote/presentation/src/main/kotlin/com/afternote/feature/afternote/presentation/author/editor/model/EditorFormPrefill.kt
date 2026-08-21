@@ -12,7 +12,6 @@ import com.afternote.feature.afternote.presentation.author.editor.receiver.model
  * 분기·enum 해석·메시지 파싱은 여기 이전 단계에서 끝난다.
  */
 data class EditorFormPrefill(
-    val loadedItemId: String,
     val content: EditorContentPrefill,
     /** 서버 상세 응답의 공통 `leaveMessage` 필드. 지원 타입과 무관하게 수정 시 보존한다. */
     val leaveMessageBlocks: List<EditorMessageTextBlock>,
@@ -23,17 +22,6 @@ data class EditorFormPrefill(
     val receivers: List<AfternoteEditorReceiver>,
 ) {
     val type: AfternoteType get() = content.type
-
-    /** 기존 에디터 폼이 사용하는 종류 값. EditorCategory 제거 단계에서 함께 사라진다. */
-    val category: EditorCategory
-        get() =
-            when (type) {
-                AfternoteType.SOCIAL_NETWORK -> EditorCategory.SOCIAL
-                AfternoteType.BUSINESS -> EditorCategory.BUSINESS
-                AfternoteType.GALLERY_AND_FILES -> EditorCategory.GALLERY
-                AfternoteType.ESTATE -> EditorCategory.ESTATE
-                AfternoteType.MEMORIAL -> EditorCategory.MEMORIAL
-            }
 }
 
 /** 수정할 애프터노트 종류에 실제로 존재하는 입력만 담는다. */

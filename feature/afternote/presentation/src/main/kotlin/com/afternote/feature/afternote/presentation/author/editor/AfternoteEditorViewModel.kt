@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationException
 import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationKind
 import com.afternote.feature.afternote.domain.model.author.AuthorReceiverEntry
@@ -20,18 +21,16 @@ import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.mapper.toAfternoteEditorReceivers
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorUiState
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationException
-import com.afternote.feature.afternote.presentation.author.editor.state.CategoryForm
 import com.afternote.feature.afternote.presentation.author.editor.state.DEFAULT_EDITOR_MESSAGE_BLOCKS
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
-import com.afternote.feature.afternote.presentation.author.editor.state.withCategory
 import com.afternote.feature.afternote.presentation.author.editor.state.withLeaveMessageBlocks
 import com.afternote.feature.afternote.presentation.author.editor.state.withMemorialPhoto
 import com.afternote.feature.afternote.presentation.author.editor.state.withMemorialPlaylistSongs
@@ -45,6 +44,7 @@ import com.afternote.feature.afternote.presentation.author.editor.state.withRece
 import com.afternote.feature.afternote.presentation.author.editor.state.withReceiverDeleted
 import com.afternote.feature.afternote.presentation.author.editor.state.withReceiversReplacedIfEmpty
 import com.afternote.feature.afternote.presentation.author.editor.state.withService
+import com.afternote.feature.afternote.presentation.author.editor.state.withType
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
@@ -60,10 +60,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
-private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v1"
-
-/** 수정 진입 시 서버 원본 카테고리(API `categoryForApi`). 폼 스냅샷과 별도로 두어 프로세스 데스 후에도 유지한다. */
-private const val EDITOR_ORIGINAL_CATEGORY_FOR_API_KEY = "editor_original_category_for_api_v1"
+private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v2"
 
 private const val TAG = "AfternoteEditorViewModel"
 
@@ -92,8 +89,7 @@ private data class MessageBlockSnap(
  */
 @Serializable
 private data class EditorFormSnapshot(
-    val loadedItemId: String? = null,
-    val categoryName: String = "SOCIAL",
+    val type: AfternoteType = AfternoteType.SOCIAL_NETWORK,
     val selectedService: String = "",
     val receivers: List<ReceiverSnap> = emptyList(),
     val processingMethods: List<ProcessingMethodSnap> = emptyList(),
@@ -105,8 +101,6 @@ private data class EditorFormSnapshot(
     val editorMessages: List<MessageBlockSnap> = emptyList(),
 ) {
     fun toEditorFormState(restoreGeneration: Long): EditorFormState {
-        val category =
-            runCatching { EditorCategory.valueOf(categoryName) }.getOrElse { EditorCategory.SOCIAL }
         val blocks: List<EditorMessageTextBlock> =
             if (editorMessages.isEmpty()) {
                 DEFAULT_EDITOR_MESSAGE_BLOCKS
@@ -114,35 +108,34 @@ private data class EditorFormSnapshot(
                 editorMessages.map { EditorMessageTextBlock(title = it.title, body = it.body) }
             }
         return EditorFormState(
-            loadedItemId = loadedItemId,
             afternoteEditReceivers =
                 receivers.map { AfternoteEditorReceiver(id = it.id, name = it.name, label = it.label) },
             leaveMessageBlocks = blocks,
             leaveMessageBlocksRestoreGeneration = restoreGeneration,
-            categoryForm = toCategoryForm(category),
+            typeForm = toTypeForm(type),
         )
     }
 
     /** 다른 카테고리 칸에 값이 남아 있어도 복원 단계에서 버려진다. */
-    private fun toCategoryForm(category: EditorCategory): CategoryForm {
+    private fun toTypeForm(type: AfternoteType): AfternoteTypeForm {
         // 스냅샷의 빈 문자열은 미선택(null)로 복원 — process death 후에도 임의 기본값을 확정하지 않는다 (이슈 #468).
         val service = selectedService.ifBlank { null }
         val methodItems = processingMethods.map { ProcessingMethodItem(it.localId, it.text) }
-        return when (category) {
-            EditorCategory.SOCIAL -> {
-                CategoryForm.Social(service, methodItems)
+        return when (type) {
+            AfternoteType.SOCIAL_NETWORK -> {
+                AfternoteTypeForm.Social(service, methodItems)
             }
 
-            EditorCategory.BUSINESS -> {
-                CategoryForm.Business(service, methodItems)
+            AfternoteType.BUSINESS -> {
+                AfternoteTypeForm.Business(service, methodItems)
             }
 
-            EditorCategory.GALLERY -> {
-                CategoryForm.Gallery(service, methodItems)
+            AfternoteType.GALLERY_AND_FILES -> {
+                AfternoteTypeForm.Gallery(service, methodItems)
             }
 
-            EditorCategory.MEMORIAL -> {
-                CategoryForm.Memorial(
+            AfternoteType.MEMORIAL -> {
+                AfternoteTypeForm.Memorial(
                     pickedPhotoUri = pickedMemorialPhotoUri,
                     videoUrl = memorialVideoUrl,
                     thumbnailUrl = memorialThumbnailUrl,
@@ -151,8 +144,8 @@ private data class EditorFormSnapshot(
                 )
             }
 
-            EditorCategory.ESTATE -> {
-                CategoryForm.Estate
+            AfternoteType.ESTATE -> {
+                AfternoteTypeForm.Estate
             }
         }
     }
@@ -160,8 +153,7 @@ private data class EditorFormSnapshot(
     companion object {
         fun from(form: EditorFormState): EditorFormSnapshot =
             EditorFormSnapshot(
-                loadedItemId = form.loadedItemId,
-                categoryName = form.selectedCategory.name,
+                type = form.selectedType,
                 selectedService = form.selectedService.orEmpty(),
                 receivers =
                     form.afternoteEditReceivers.map {
@@ -182,9 +174,9 @@ private data class EditorFormSnapshot(
 /**
  * 애프터노트 생성/수정 ViewModel.
  *
- * **SSOT:** 폼은 [internalState] 안의 [EditorFormState] 다. 추억 플레이리스트 곡 목록만 그래프 스코프
- * [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs] 가 정본이라,
- * 그쪽과 동기화된 뒤 스냅샷에 포함된다.
+ * **SSOT:** 폼은 [internalState] 안의 [EditorFormState]다. 추억 플레이리스트 곡 목록은 그래프 스코프
+ * [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs]가 정본이며,
+ * 에디터 진입 중 폼 스냅샷과 동기화한다.
  *
  * **경계:** Compose UI 객체(`TextFieldState`·`SnapshotStateList`·파사드)를 들지 않고 Retrofit 타입도 알지 않는다 —
  * 저장 API 의 HTTP·에러 바디 해석은 [AfternoteRepository] 구현이 도메인 예외로 변환한다.
@@ -211,6 +203,7 @@ class AfternoteEditorViewModel
             MutableStateFlow(
                 InternalState(
                     form = readFormSnapshotOrDefault(),
+                    originalType = route.initialType.takeIf { route.itemId != null },
                     isPrefillLoading = readEditItemId() != null,
                 ),
             )
@@ -227,6 +220,8 @@ class AfternoteEditorViewModel
         /** 파사드/페이로드 빌더 등이 콜백 시점에 최신 폼 스냅샷을 읽기 위한 접근자. */
         fun currentForm(): EditorFormState = internalState.value.form
 
+        val isEditing: Boolean get() = route.itemId != null
+
         /**
          * 폼 SSOT 갱신의 유일한 통로. SavedState 스냅샷 직렬화도 함께 수행한다.
          * 어떤 필드를 어떻게 바꿀지는 `EditorFormMutations.kt` 의 변환 규칙이 정한다.
@@ -236,7 +231,7 @@ class AfternoteEditorViewModel
             persistFormSnapshot(internalState.value.form)
         }
 
-        fun setCategory(category: EditorCategory) = mutateForm { it.withCategory(category) }
+        fun setType(type: AfternoteType) = mutateForm { it.withType(type) }
 
         fun setService(service: String) = mutateForm { it.withService(service) }
 
@@ -280,23 +275,19 @@ class AfternoteEditorViewModel
                         internalState.update { it.copy(authorReceivers = mapped) }
                     }
             }
-            val editItemId = readEditItemId()
-            if (editItemId == null) {
-                savedStateHandle.remove<String>(EDITOR_ORIGINAL_CATEGORY_FOR_API_KEY)
-            } else {
-                loadExistingAfternoteForEdit(editItemId)
-            }
+            readEditItemId()?.let(::loadExistingAfternoteForEdit)
         }
 
         private fun readEditItemId(): Long? = route.itemId
 
         private fun readFormSnapshotOrDefault(): EditorFormState {
-            val raw = savedStateHandle.get<String>(EDITOR_FORM_SNAPSHOT_KEY) ?: return EditorFormState()
+            val defaultForm = EditorFormState().withType(route.initialType)
+            val raw = savedStateHandle.get<String>(EDITOR_FORM_SNAPSHOT_KEY) ?: return defaultForm
             return runCatching {
                 formSnapshotJson
                     .decodeFromString(EditorFormSnapshot.serializer(), raw)
                     .toEditorFormState(restoreGeneration = System.nanoTime())
-            }.getOrElse { EditorFormState() }
+            }.getOrElse { defaultForm }
         }
 
         /** [EditorFormSnapshot] 직렬화. 실패 시 무시한다(용량 초과 등은 [EditorFormSnapshot] KDoc 참고). */
@@ -340,30 +331,31 @@ class AfternoteEditorViewModel
         }
 
         fun saveAfternote(
-            editingId: Long?,
-            category: EditorCategory,
             payload: RegisterAfternotePayload,
             selectedReceiverIds: List<Long>,
-            playlistSongs: List<Song>,
             memorialMedia: SaveAfternoteMemorialMedia,
         ) {
-            if (internalState.value.isSaving) return
+            val editorState = internalState.value
+            if (editorState.isSaving) return
+
+            val form = editorState.form
+            val editingId = readEditItemId()
+            val type = form.selectedType
+            val playlistSongs = form.memorialPlaylistSongs
 
             val validationError =
                 AfternoteEditorValidator.validate(
-                    category = category,
+                    form = form,
                     payload = payload,
                     selectedReceiverIds = selectedReceiverIds,
-                    playlistSongs = playlistSongs,
                 )
             if (validationError != null) {
                 internalState.update { it.copy(validationError = validationError) }
                 return
             }
 
-            val originalCategoryForApi = readOriginalCategoryForApiFromSavedState()
-            val categoryForApi =
-                if (editingId != null) (originalCategoryForApi ?: category) else category
+            val typeForSave =
+                if (editingId != null) (editorState.originalType ?: type) else type
 
             viewModelScope.launch {
                 internalState.update {
@@ -371,7 +363,7 @@ class AfternoteEditorViewModel
                 }
                 buildSaveCommand(
                     editingId = editingId,
-                    categoryForApi = categoryForApi,
+                    typeForSave = typeForSave,
                     payload = payload,
                     selectedReceiverIds = selectedReceiverIds,
                     playlistSongs = playlistSongs,
@@ -437,7 +429,7 @@ class AfternoteEditorViewModel
 
         private suspend fun buildSaveCommand(
             editingId: Long?,
-            categoryForApi: EditorCategory,
+            typeForSave: AfternoteType,
             payload: RegisterAfternotePayload,
             selectedReceiverIds: List<Long>,
             playlistSongs: List<Song>,
@@ -457,7 +449,7 @@ class AfternoteEditorViewModel
                 if (editingId != null) {
                     val updatePayload =
                         AfternoteEditorFormMapper.buildUpdatePayload(
-                            category = categoryForApi,
+                            type = typeForSave,
                             payload = payload,
                             selectedReceiverIds = selectedReceiverIds,
                             playlistSongs = playlistSongs,
@@ -472,7 +464,7 @@ class AfternoteEditorViewModel
                 } else {
                     val createInput =
                         AfternoteEditorFormMapper.buildCreateInput(
-                            category = categoryForApi,
+                            type = typeForSave,
                             payload = payload,
                             selectedReceiverIds = selectedReceiverIds,
                             playlistSongs = playlistSongs,
@@ -491,12 +483,16 @@ class AfternoteEditorViewModel
                     .getDetail(id = afternoteId)
                     .onSuccess { detail ->
                         val prefill = AfternoteEditorFormMapper.buildEditorFormPrefill(detail)
-                        savedStateHandle[EDITOR_ORIGINAL_CATEGORY_FOR_API_KEY] = prefill.category.name
                         // UI 레이어 파사드가 TextFieldState·SnapshotStateList 등 UI 상태를 갱신하도록 위임.
                         // skeleton 종료는 UI 가 prefill 적용을 마친 뒤 [onPrefillConsumed] 로 통보한다
                         // (uiState 갱신 시점에 prefill 도착했어도 UI 가 form·TextFieldState 에 반영하기 전이라
                         //  여기서 끄면 skeleton 사라짐 → 빈 폼 → prefill 깜빡임 발생).
-                        internalState.update { it.copy(pendingPrefill = prefill) }
+                        internalState.update {
+                            it.copy(
+                                originalType = prefill.type,
+                                pendingPrefill = prefill,
+                            )
+                        }
                     }.onFailure { e ->
                         Log.e(TAG, "loadExistingAfternoteForEdit: id=$afternoteId failed", e)
                         errorReporter.recordAfternoteFailure(AfternoteFailureStage.PREFILL_LOAD, e)
@@ -557,11 +553,6 @@ class AfternoteEditorViewModel
 
         fun getReceiverById(id: Long): AuthorReceiverEntry? = authorReceiverRepository.currentReceivers().find { it.receiverId == id }
 
-        private fun readOriginalCategoryForApiFromSavedState(): EditorCategory? =
-            savedStateHandle
-                .get<String>(EDITOR_ORIGINAL_CATEGORY_FOR_API_KEY)
-                ?.let { name -> runCatching { EditorCategory.valueOf(name) }.getOrNull() }
-
         // region Internal state shaping
 
         /**
@@ -570,6 +561,7 @@ class AfternoteEditorViewModel
          */
         private data class InternalState(
             val form: EditorFormState = EditorFormState(),
+            val originalType: AfternoteType? = null,
             val authorReceivers: List<AfternoteEditorReceiver> = emptyList(),
             val isSaving: Boolean = false,
             val isPrefillLoading: Boolean = false,

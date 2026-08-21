@@ -22,8 +22,7 @@ enum class DialogType {
  * 에디터 **순수 UI** 상태: 탭·다이얼로그·드롭다운·텍스트 필드·멀티 메시지 입력 UI.
  * 프로세스가 죽어도 복원되지 않아도 되는 휘발성 상태를 둔다.
  *
- * 추억 플레이리스트 곡 목록은 [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs] SSOT가 보유하며,
- * 본 UI 상태는 곡 목록을 직접 들고 있지 않는다.
+ * 추억 플레이리스트 곡 목록은 에디터 폼 SSOT가 보유하며, 본 UI 상태는 직접 들고 있지 않는다.
  */
 @Stable
 class AfternoteEditorUiHolder(
@@ -37,7 +36,7 @@ class AfternoteEditorUiHolder(
     var activeDialog by mutableStateOf<DialogType?>(null)
         private set
 
-    var categoryDropdownExpanded by mutableStateOf(false)
+    var typeDropdownExpanded by mutableStateOf(false)
         private set
 
     var serviceDropdownExpanded by mutableStateOf(false)
@@ -62,8 +61,8 @@ class AfternoteEditorUiHolder(
         customServiceNameState.edit { replace(0, length, "") }
     }
 
-    fun onCategoryDropdownExpandedChange(expanded: Boolean) {
-        categoryDropdownExpanded = expanded
+    fun onTypeDropdownExpandedChange(expanded: Boolean) {
+        typeDropdownExpanded = expanded
     }
 
     fun onServiceDropdownExpandedChange(expanded: Boolean) {

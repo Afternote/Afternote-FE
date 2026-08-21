@@ -1,7 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
-import com.afternote.feature.afternote.domain.model.author.ProcessingMethod
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import java.time.LocalDate
@@ -15,6 +14,8 @@ import java.time.format.DateTimeFormatter
  * 호출자가 facade에서 텍스트를 추출해 넘긴다. 단위 테스트에서 facade 목 없이 바로 검증 가능하다.
  */
 object SaveAfternotePayloadBuilder {
+    /** MEMORIAL은 서비스명 입력이 없으므로 서버 title에 화면의 고정 카테고리명을 사용한다. */
+    private const val MEMORIAL_DEFAULT_TITLE = "추억 노트"
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
 
     /**
@@ -29,14 +30,11 @@ object SaveAfternotePayloadBuilder {
         password: String,
         date: LocalDate = LocalDate.now(),
     ): RegisterAfternotePayload {
-        val methods =
-            form.processingMethods.map {
-                ProcessingMethod(it.localId.toString(), it.text)
-            }
+        val methods = form.processingMethods.map { it.text }
         return RegisterAfternotePayload(
             serviceName =
-                if (form.selectedCategory == EditorCategory.MEMORIAL) {
-                    EditorCategory.MEMORIAL.displayLabel
+                if (form.selectedType == AfternoteType.MEMORIAL) {
+                    MEMORIAL_DEFAULT_TITLE
                 } else {
                     // 미선택(null)이면 빈 문자열 → Validator 의 TITLE_REQUIRED 가 등록을 차단한다.
                     form.selectedService.orEmpty()

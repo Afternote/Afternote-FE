@@ -1,11 +1,11 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
 import androidx.compose.foundation.text.input.TextFieldState
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorUiHolder
-import com.afternote.feature.afternote.presentation.author.editor.state.CategoryForm
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -19,7 +19,7 @@ import org.junit.Test
  * 입력해 보고 지문이 반응하는지 검사한다. 홀더에 입력 상태가 새로 생기면 이 테스트가 자동으로
  * 그 필드를 집어 들므로, 지문에 반영하거나 [dialogTransientStates] 에 사유와 함께 올리는 결정이
  * 강제된다. 폼 쪽은 공용 필드가 통째 직렬화라 필드 추가가 자동 포함이고, 카테고리 축은
- * [CategoryForm.pristineFor] 의 exhaustive `when` 이 컴파일 단계에서 누락을 잡는다 — 양쪽에 카나리만 둔다.
+ * [AfternoteTypeForm.pristineFor] 의 exhaustive `when` 이 컴파일 단계에서 누락을 잡는다 — 양쪽에 카나리만 둔다.
  */
 class EditorContentSignatureCompletenessTest {
     /**
@@ -40,7 +40,7 @@ class EditorContentSignatureCompletenessTest {
         AfternoteEditorState(
             ui = ui,
             getCurrentForm = { EditorFormState() },
-            setCategory = {},
+            setType = {},
             setService = {},
             setMemorialPhoto = {},
             setMemorialVideo = {},
@@ -115,10 +115,10 @@ class EditorContentSignatureCompletenessTest {
     @Test
     fun `카테고리 전용 입력 변경이 지문에 반영된다 - 같은 카테고리끼리 비교`() {
         val state = newState()
-        val before = editorContentSignature(EditorFormState(categoryForm = CategoryForm.Memorial()), state)
+        val before = editorContentSignature(EditorFormState(typeForm = AfternoteTypeForm.Memorial()), state)
         val after =
             editorContentSignature(
-                EditorFormState(categoryForm = CategoryForm.Memorial(pickedPhotoUri = "content://photo")),
+                EditorFormState(typeForm = AfternoteTypeForm.Memorial(pickedPhotoUri = "content://photo")),
                 state,
             )
         assertNotEquals(before, after)
@@ -127,10 +127,10 @@ class EditorContentSignatureCompletenessTest {
     @Test
     fun `서비스 선택이 지문에 반영된다 - 미선택(null)과 구분`() {
         val state = newState()
-        val before = editorContentSignature(EditorFormState(categoryForm = CategoryForm.Social()), state)
+        val before = editorContentSignature(EditorFormState(typeForm = AfternoteTypeForm.Social()), state)
         val after =
             editorContentSignature(
-                EditorFormState(categoryForm = CategoryForm.Social(selectedService = "인스타그램")),
+                EditorFormState(typeForm = AfternoteTypeForm.Social(selectedService = "인스타그램")),
                 state,
             )
         assertNotEquals(before, after)
@@ -140,9 +140,9 @@ class EditorContentSignatureCompletenessTest {
     fun `어느 카테고리를 골라도 입력이 없으면 지문이 같다`() {
         val state = newState()
         val signatures =
-            EditorCategory.entries.map { category ->
+            AfternoteType.entries.map { type ->
                 editorContentSignature(
-                    EditorFormState(categoryForm = CategoryForm.pristineFor(category)),
+                    EditorFormState(typeForm = AfternoteTypeForm.pristineFor(type)),
                     state,
                 )
             }
@@ -158,29 +158,29 @@ class EditorContentSignatureCompletenessTest {
         val state = newState()
         val filled =
             editorContentSignature(
-                EditorFormState(categoryForm = CategoryForm.Social(selectedService = "인스타그램")),
+                EditorFormState(typeForm = AfternoteTypeForm.Social(selectedService = "인스타그램")),
                 state,
             )
-        val switched = editorContentSignature(EditorFormState(categoryForm = CategoryForm.Gallery()), state)
+        val switched = editorContentSignature(EditorFormState(typeForm = AfternoteTypeForm.Gallery()), state)
         assertNotEquals(filled, switched)
     }
 
     @Test
     fun `자동 파생 썸네일은 지문에서 제외되고 영상 자체는 반영된다`() {
         val state = newState()
-        val pristine = editorContentSignature(EditorFormState(categoryForm = CategoryForm.Memorial()), state)
+        val pristine = editorContentSignature(EditorFormState(typeForm = AfternoteTypeForm.Memorial()), state)
         assertEquals(
             "썸네일은 영상에서 파생된 값이라 사용자 입력이 아니다",
             pristine,
             editorContentSignature(
-                EditorFormState(categoryForm = CategoryForm.Memorial(thumbnailUrl = "data:image/png;base64,x")),
+                EditorFormState(typeForm = AfternoteTypeForm.Memorial(thumbnailUrl = "data:image/png;base64,x")),
                 state,
             ),
         )
         assertNotEquals(
             pristine,
             editorContentSignature(
-                EditorFormState(categoryForm = CategoryForm.Memorial(videoUrl = "content://video")),
+                EditorFormState(typeForm = AfternoteTypeForm.Memorial(videoUrl = "content://video")),
                 state,
             ),
         )

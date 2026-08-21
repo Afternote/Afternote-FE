@@ -1,8 +1,8 @@
 package com.afternote.feature.afternote.presentation.author.editor.state
 
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
@@ -14,24 +14,24 @@ import com.afternote.feature.afternote.presentation.author.editor.receiver.model
 internal fun normalizeEditorMessageBlocks(blocks: List<EditorMessageTextBlock>): List<EditorMessageTextBlock> =
     blocks.ifEmpty { DEFAULT_EDITOR_MESSAGE_BLOCKS }
 
-private inline fun EditorFormState.mapMemorial(block: (CategoryForm.Memorial) -> CategoryForm.Memorial): EditorFormState {
-    val memorial = categoryForm as? CategoryForm.Memorial ?: return this
-    return copy(categoryForm = block(memorial))
+private inline fun EditorFormState.mapMemorial(block: (AfternoteTypeForm.Memorial) -> AfternoteTypeForm.Memorial): EditorFormState {
+    val memorial = typeForm as? AfternoteTypeForm.Memorial ?: return this
+    return copy(typeForm = block(memorial))
 }
 
 private inline fun EditorFormState.mapServiceForm(
-    block: (CategoryForm.WithServiceAndProcessingMethods) -> CategoryForm.WithServiceAndProcessingMethods,
+    block: (AfternoteTypeForm.WithServiceAndProcessingMethods) -> AfternoteTypeForm.WithServiceAndProcessingMethods,
 ): EditorFormState {
-    val serviceForm = categoryForm as? CategoryForm.WithServiceAndProcessingMethods ?: return this
-    return copy(categoryForm = block(serviceForm))
+    val serviceForm = typeForm as? AfternoteTypeForm.WithServiceAndProcessingMethods ?: return this
+    return copy(typeForm = block(serviceForm))
 }
 
 /**
  * 같은 카테고리를 다시 고르면 아무것도 하지 않는다. 드롭다운 재선택뿐 아니라 프로세스 데스 복원 후
- * `LaunchedEffect(route.initialCategory)` 재발화가 이 경로를 타므로, 가드가 없으면 복원된 입력이 지워진다.
+ * `LaunchedEffect(route.initialType)` 재발화가 이 경로를 타므로, 가드가 없으면 복원된 입력이 지워진다.
  */
-internal fun EditorFormState.withCategory(category: EditorCategory): EditorFormState =
-    if (categoryForm.category == category) this else copy(categoryForm = CategoryForm.pristineFor(category))
+internal fun EditorFormState.withType(type: AfternoteType): EditorFormState =
+    if (typeForm.type == type) this else copy(typeForm = AfternoteTypeForm.pristineFor(type))
 
 internal fun EditorFormState.withService(service: String): EditorFormState = mapServiceForm { it.withService(service) }
 
@@ -45,9 +45,9 @@ internal fun EditorFormState.withMemorialThumbnail(dataUrl: String?): EditorForm
 internal fun EditorFormState.withMemorialPlaylistSongs(songs: List<Song>): EditorFormState = mapMemorial { it.copy(playlistSongs = songs) }
 
 /**
- * 목록에 이미 있는 수치 id 중 최대값 + 1.
+ * 목록에 이미 있는 로컬 ID 중 최대값 + 1.
  *
- * `size + 1` 은 중간 항목을 지운 뒤 추가할 때 남은 id 와 겹친다 — 겹치면 삭제·수정이 두 항목에 함께 걸린다.
+ * `size + 1` 은 중간 항목을 지운 뒤 추가할 때 남은 ID와 겹친다 — 겹치면 삭제·수정이 두 항목에 함께 걸린다.
  */
 private fun nextLocalId(existing: List<Int>): Int = (existing.maxOrNull() ?: 0) + 1
 
@@ -76,10 +76,9 @@ internal fun EditorFormState.withLeaveMessageBlocks(blocks: List<EditorMessageTe
 
 internal fun EditorFormState.withPrefillApplied(prefill: EditorFormPrefill): EditorFormState =
     copy(
-        loadedItemId = prefill.loadedItemId,
         afternoteEditReceivers = prefill.receivers,
         leaveMessageBlocks = normalizeEditorMessageBlocks(prefill.leaveMessageBlocks),
-        categoryForm = CategoryForm.fromPrefill(prefill),
+        typeForm = AfternoteTypeForm.fromPrefill(prefill.content),
     )
 
 internal fun EditorFormState.withProcessingMethodAdded(text: String): EditorFormState =

@@ -9,11 +9,9 @@ import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.navigation
 import com.afternote.core.ui.Route
-import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.AfternoteHostViewModel
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.AddSongViewModel
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.MemorialPlaylistEntry
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 
 /**
@@ -45,9 +43,7 @@ fun NavGraphBuilder.afternoteNavGraph(
         afternoteComposable<AfternoteRoute.DetailRoute> {
             AfternoteDetailNavigation(
                 onNavigateBack = actions::popBack,
-                onNavigateToEditor = { itemId, type ->
-                    actions.navigateToEditorForEdit(itemId, type.toEditorCategory())
-                },
+                onNavigateToEditor = actions::navigateToEditorForEdit,
             )
         }
 
@@ -99,15 +95,6 @@ fun NavGraphBuilder.afternoteNavGraph(
         }
     }
 }
-
-private fun AfternoteType.toEditorCategory(): EditorCategory =
-    when (this) {
-        AfternoteType.SOCIAL_NETWORK -> EditorCategory.SOCIAL
-        AfternoteType.BUSINESS -> EditorCategory.BUSINESS
-        AfternoteType.GALLERY_AND_FILES -> EditorCategory.GALLERY
-        AfternoteType.ESTATE -> EditorCategory.ESTATE
-        AfternoteType.MEMORIAL -> EditorCategory.MEMORIAL
-    }
 
 /**
  * navigation graph scope에 묶인 [AfternoteHostViewModel]을 가져옵니다.

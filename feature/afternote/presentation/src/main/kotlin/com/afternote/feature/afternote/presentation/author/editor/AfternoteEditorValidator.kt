@@ -1,9 +1,10 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
+import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 
 /**
  * 애프터노트 저장 전 필수 필드 검증.
@@ -12,14 +13,14 @@ import com.afternote.feature.afternote.presentation.author.editor.state.Afternot
  */
 internal object AfternoteEditorValidator {
     fun validate(
-        category: EditorCategory,
+        form: EditorFormState,
         payload: RegisterAfternotePayload,
         selectedReceiverIds: List<Long>,
-        playlistSongs: List<Song>,
     ): AfternoteValidationError? {
+        val type = form.selectedType
         // 미구현 placeholder 카테고리는 입력 상태와 무관하게 저장 불가 — 개별 필드 검증(수신자·서비스명)보다 먼저 차단해
         // "서비스명을 선택하라" 류의 그릴 수도 없는 필드에 대한 안내가 나가지 않게 한다.
-        if (category == EditorCategory.ESTATE) {
+        if (type == AfternoteType.ESTATE) {
             return AfternoteValidationError.UNIMPLEMENTED_CATEGORY
         }
         if (selectedReceiverIds.isEmpty()) {
@@ -32,17 +33,17 @@ internal object AfternoteEditorValidator {
         if (payload.messageBlocks.any { it.title.isNotBlank() && it.body.isBlank() }) {
             return AfternoteValidationError.LEAVE_MESSAGE_BODY_REQUIRED
         }
-        return when (category) {
+        return when (type) {
             // BUSINESS 는 시안(700:38735) 필수 표기(계정 정보*, 처리 방법 리스트*)가 SOCIAL 과 동일해 같은 규칙을 쓴다.
-            EditorCategory.SOCIAL, EditorCategory.BUSINESS -> validateAccount(payload)
+            AfternoteType.SOCIAL_NETWORK, AfternoteType.BUSINESS -> validateAccount(payload)
 
-            EditorCategory.GALLERY -> validateGallery(payload)
+            AfternoteType.GALLERY_AND_FILES -> validateGallery(payload)
 
-            EditorCategory.MEMORIAL -> validateMemorial(playlistSongs)
+            AfternoteType.MEMORIAL -> validateMemorial(form.memorialPlaylistSongs)
 
             // ESTATE 는 디자인 확정 전 placeholder 만 노출. UI 자체에서 입력이 막혀 있지만
             // 안전망으로 Validator 에서도 저장을 차단한다.
-            EditorCategory.ESTATE -> AfternoteValidationError.UNIMPLEMENTED_CATEGORY
+            AfternoteType.ESTATE -> AfternoteValidationError.UNIMPLEMENTED_CATEGORY
         }
     }
 
