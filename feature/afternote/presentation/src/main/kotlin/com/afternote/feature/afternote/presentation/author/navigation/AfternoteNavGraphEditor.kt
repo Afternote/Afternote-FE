@@ -16,6 +16,7 @@ import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteM
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternotePayloadBuilder
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorContentPrefill
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorUiState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
@@ -164,7 +165,9 @@ internal fun AfternoteEditorNavigation(
     val pendingPrefill = uiState.pendingPrefill
     LaunchedEffect(pendingPrefill) {
         if (pendingPrefill != null) {
-            onReplaceSongs(pendingPrefill.memorialPlaylistSongs)
+            onReplaceSongs(
+                (pendingPrefill.content as? EditorContentPrefill.Memorial)?.playlistSongs.orEmpty(),
+            )
             state.applyFormPrefill(pendingPrefill)
             editViewModel.onPrefillConsumed()
         }

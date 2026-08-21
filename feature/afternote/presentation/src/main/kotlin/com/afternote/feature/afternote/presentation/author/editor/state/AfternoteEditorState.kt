@@ -12,6 +12,8 @@ import com.afternote.feature.afternote.presentation.author.editor.memorial.playl
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorContentPrefill
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorCredentialsPrefill
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 
@@ -142,13 +144,22 @@ class AfternoteEditorState(
     fun applyFormPrefill(prefill: EditorFormPrefill) {
         Log.d(
             TAG,
-            "applyFormPrefill: itemId=${prefill.loadedItemId}, serviceName=${prefill.serviceName}, " +
-                "category=${prefill.category}, " +
-                "PMs=${prefill.processingMethods.size}",
+            "applyFormPrefill: itemId=${prefill.loadedItemId}, type=${prefill.type}",
         )
         applyPrefill(prefill)
-        ui.idState.edit { replace(0, length, prefill.accountId) }
-        ui.passwordState.edit { replace(0, length, prefill.password) }
+        val credentials: EditorCredentialsPrefill? =
+            when (val content = prefill.content) {
+                is EditorContentPrefill.SocialNetwork -> content.credentials
+
+                is EditorContentPrefill.Business -> content.credentials
+
+                is EditorContentPrefill.Gallery,
+                is EditorContentPrefill.Memorial,
+                EditorContentPrefill.Estate,
+                -> null
+            }
+        ui.idState.edit { replace(0, length, credentials?.id.orEmpty()) }
+        ui.passwordState.edit { replace(0, length, credentials?.password.orEmpty()) }
         syncEditorMessagesFromForm(prefill.leaveMessageBlocks)
     }
 }
