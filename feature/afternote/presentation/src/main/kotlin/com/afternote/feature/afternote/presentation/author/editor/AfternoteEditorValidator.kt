@@ -1,9 +1,9 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
 import com.afternote.feature.afternote.domain.AfternoteType
-import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
+import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 
 /**
  * 애프터노트 저장 전 필수 필드 검증.
@@ -12,11 +12,11 @@ import com.afternote.feature.afternote.presentation.author.editor.state.Afternot
  */
 internal object AfternoteEditorValidator {
     fun validate(
-        type: AfternoteType,
+        form: EditorFormState,
         payload: RegisterAfternotePayload,
         selectedReceiverIds: List<Long>,
-        playlistSongs: List<Song>,
     ): AfternoteValidationError? {
+        val type = form.selectedType
         // 미구현 placeholder 카테고리는 입력 상태와 무관하게 저장 불가 — 개별 필드 검증(수신자·서비스명)보다 먼저 차단해
         // "서비스명을 선택하라" 류의 그릴 수도 없는 필드에 대한 안내가 나가지 않게 한다.
         if (type == AfternoteType.ESTATE) {

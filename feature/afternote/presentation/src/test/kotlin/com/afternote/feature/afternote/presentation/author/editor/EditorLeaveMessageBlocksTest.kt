@@ -5,7 +5,9 @@ import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
+import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Test
@@ -111,10 +113,9 @@ class EditorLeaveMessageBlocksTest {
 
     private fun validateSocial(vararg blocks: EditorMessageTextBlock): AfternoteValidationError? =
         AfternoteEditorValidator.validate(
-            type = AfternoteType.SOCIAL_NETWORK,
+            form = EditorFormState(typeForm = AfternoteTypeForm.Social()),
             payload = payloadOf(*blocks),
             selectedReceiverIds = listOf(1L),
-            playlistSongs = emptyList(),
         )
 
     private fun payloadOf(vararg blocks: EditorMessageTextBlock) =
