@@ -31,7 +31,7 @@ android {
 
     defaultConfig {
         applicationId = "com.afternote.afternote_fe"
-        versionCode = 1
+        versionCode = resolveAfternoteVersionCode(System.getenv(AFTERNOTE_VERSION_CODE_ENV))
         versionName = "1.0"
 
         manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] = kakaoKey
