@@ -7,12 +7,12 @@ import com.afternote.feature.afternote.presentation.author.editor.receiver.model
 
 /**
  * 비동기 검증 실패 시 발생하는 예외 (예: API를 통한 GALLERY 수신자 확인 등).
- * [AfternoteEditorSaveError.Validation]으로 변환해 [AfternoteValidationError.messageResId] 기반 UI 메시지를 표시합니다.
+ * [AfternoteEditorError.Validation]으로 변환해 [AfternoteValidationError.messageResId] 기반 UI 메시지를 표시합니다.
  *
  * [message]는 로깅·Crashlytics 등에서 원인 파악용으로 [validationError] 이름을 담습니다.
  *
  * 현재 이 예외를 던지는 곳은 없다 — 저장 전 로컬 검증은 `AfternoteEditorValidator` 결과를
- * [AfternoteEditorUiState.saveError]에 바로 넣고 반환하는 경로를 쓴다. 서버가 거절한 검증(수신자 필수 등)은
+ * [AfternoteEditorUiState.error]에 바로 넣고 반환하는 경로를 쓴다. 서버가 거절한 검증(수신자 필수 등)은
  * domain 의 `AfternoteAuthoringValidationException` 이 맡는다.
  */
 class AfternoteValidationException(
@@ -49,23 +49,23 @@ enum class AfternoteValidationError(
 }
 
 /**
- * 에디터 저장 과정에서 UI가 소비할 단일 오류 상태.
+ * 에디터에서 UI가 소비할 단일 오류 상태.
  *
- * nullable [AfternoteEditorUiState.saveError]의 `null`은 오류가 없는 정상 상태이고, 값이 있을 때만
+ * nullable [AfternoteEditorUiState.error]의 `null`은 오류가 없는 정상 상태이고, 값이 있을 때만
  * 오류 종류에 맞는 안내를 노출한다. 화면 표현은 디자인 확정 전까지 기존 Snackbar를 유지한다.
  */
-sealed interface AfternoteEditorSaveError {
+sealed interface AfternoteEditorError {
     data class Validation(
         val reason: AfternoteValidationError,
-    ) : AfternoteEditorSaveError
+    ) : AfternoteEditorError
 
-    data object Network : AfternoteEditorSaveError
+    data object Network : AfternoteEditorError
 
-    data object Server : AfternoteEditorSaveError
+    data object Server : AfternoteEditorError
 
     data class Upload(
         val target: Target,
-    ) : AfternoteEditorSaveError {
+    ) : AfternoteEditorError {
         enum class Target {
             /** 영상 선택 직후 생성한 썸네일 업로드. */
             THUMBNAIL,
@@ -82,7 +82,7 @@ sealed interface AfternoteEditorSaveError {
  * 일회성 신호(`pending*`)를 Channel 이 아니라 상태로 둔 건 configuration change·process death 뒤
  * 재구독에서도 마지막 신호가 살아남아야 해서다. non-null 이면 UI 가 처리 후 `on*Consumed()` 로 되돌린다.
  *
- * 저장 오류는 [saveError] 한 필드에서 종류까지 보존한다. 5xx 본문에 내부 SQL 이 섞여 올 수 있으므로
+ * 에디터 오류는 [error] 한 필드에서 종류까지 보존한다. 5xx 본문에 내부 SQL 이 섞여 올 수 있으므로
  * 서버 raw 메시지는 상태에 싣지 않고, UI가 오류 종류를 안전한 로컬 문구로 변환한다.
  */
 data class AfternoteEditorUiState(
@@ -96,7 +96,7 @@ data class AfternoteEditorUiState(
      */
     val isPrefillLoading: Boolean = false,
     val savedId: Long? = null,
-    val saveError: AfternoteEditorSaveError? = null,
+    val error: AfternoteEditorError? = null,
     /** 저장 성공 신호 — UI 가 nav 후 `onSaveSuccessConsumed` 로 reset. */
     val pendingSaveSuccessId: Long? = null,
     /** 추모 영상 썸네일 업로드 완료 신호 — UI 파사드가 form 에 url 적용 후 `onThumbnailUploadedConsumed` 로 reset. */

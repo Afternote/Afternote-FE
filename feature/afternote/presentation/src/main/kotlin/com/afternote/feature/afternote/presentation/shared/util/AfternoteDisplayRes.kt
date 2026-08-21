@@ -31,8 +31,12 @@ fun typeLabelResFor(type: AfternoteType?): Int =
 
 /** Icon drawable res for an [AfternoteType]. */
 fun getIconResForType(type: AfternoteType): Int =
-    AfternoteService.fromTypeKeyOrNull(type.name)?.iconResId
-        ?: R.drawable.feature_afternote_img_logo
+    when (type) {
+        AfternoteType.SOCIAL_NETWORK -> R.drawable.feature_afternote_ic_social_pattern
+        AfternoteType.GALLERY_AND_FILES -> R.drawable.feature_afternote_ic_gallery_pattern
+        AfternoteType.MEMORIAL -> R.drawable.feature_afternote_ic_memorial_guideline
+        AfternoteType.BUSINESS, AfternoteType.ESTATE -> R.drawable.feature_afternote_img_logo
+    }
 
 /**
  * Icon drawable res for a service title shown on a card.
