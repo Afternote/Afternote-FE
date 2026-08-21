@@ -2,7 +2,7 @@ package com.afternote.feature.afternote.presentation.author.editor.state
 
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorContentPrefill
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 
 /**
@@ -114,30 +114,30 @@ sealed interface AfternoteTypeForm {
                 AfternoteType.ESTATE -> Estate
             }
 
-        fun fromPrefill(prefill: EditorFormPrefill): AfternoteTypeForm =
-            when (prefill.type) {
-                AfternoteType.SOCIAL_NETWORK -> {
-                    Social(selectedService = prefill.serviceName, processingMethods = prefill.processingMethods)
+        fun fromPrefill(content: EditorContentPrefill): AfternoteTypeForm =
+            when (content) {
+                is EditorContentPrefill.SocialNetwork -> {
+                    Social(selectedService = content.serviceName, processingMethods = content.processingMethods)
                 }
 
-                AfternoteType.BUSINESS -> {
-                    Business(selectedService = prefill.serviceName, processingMethods = prefill.processingMethods)
+                is EditorContentPrefill.Business -> {
+                    Business(selectedService = content.serviceName, processingMethods = content.processingMethods)
                 }
 
-                AfternoteType.GALLERY_AND_FILES -> {
-                    Gallery(selectedService = prefill.serviceName, processingMethods = prefill.processingMethods)
+                is EditorContentPrefill.Gallery -> {
+                    Gallery(selectedService = content.serviceName, processingMethods = content.processingMethods)
                 }
 
-                AfternoteType.MEMORIAL -> {
+                is EditorContentPrefill.Memorial -> {
                     Memorial(
-                        videoUrl = prefill.memorialVideoUrl,
-                        thumbnailUrl = prefill.memorialThumbnailUrl,
-                        photoUrl = prefill.memorialPhotoUrl,
-                        playlistSongs = prefill.memorialPlaylistSongs,
+                        videoUrl = content.videoUrl,
+                        thumbnailUrl = content.thumbnailUrl,
+                        photoUrl = content.photoUrl,
+                        playlistSongs = content.playlistSongs,
                     )
                 }
 
-                AfternoteType.ESTATE -> {
+                EditorContentPrefill.Estate -> {
                     Estate
                 }
             }
