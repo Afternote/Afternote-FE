@@ -24,7 +24,7 @@ internal fun Detail.toReceiverUiModels(): List<ReceiverUiModel> =
 
 internal fun Detail.toGalleryDetailContent(content: DetailContent.Gallery): GalleryDetailContent =
     GalleryDetailContent(
-        serviceName = title,
+        serviceName = serviceName,
         finalWriteDate = finalWriteDate,
         afternoteEditReceivers = toReceiverUiModels(),
         processingMethods = content.processingMethods,
@@ -37,7 +37,7 @@ internal fun Detail.toAccountDetailContent(
     processingMethods: List<String>,
 ): AccountDetailContent =
     AccountDetailContent(
-        serviceName = title,
+        serviceName = serviceName,
         type = type,
         accountId = credentials.id,
         password = credentials.password,

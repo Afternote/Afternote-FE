@@ -22,7 +22,7 @@ fun AfternoteDetailDto.toDetailDomain(): Detail {
     val afternoteType = categoryToAfternoteType(type)
     return Detail(
         id = afternoteId,
-        title = title,
+        serviceName = title,
         timestamps = toTimestamps(),
         receivers = receivers.toDomain(),
         leaveMessageBlocks = leaveMessage.toLeaveMessageBlocks(),

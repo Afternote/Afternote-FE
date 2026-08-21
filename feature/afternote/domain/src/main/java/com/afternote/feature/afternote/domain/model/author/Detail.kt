@@ -12,7 +12,7 @@ import com.afternote.feature.afternote.domain.model.author.playlist.MemorialDeta
  */
 data class Detail(
     val id: Long,
-    val title: String,
+    val serviceName: String,
     val timestamps: DetailTimestamps,
     val receivers: List<DetailReceiver>,
     val leaveMessageBlocks: List<LeaveMessageBlock>,
