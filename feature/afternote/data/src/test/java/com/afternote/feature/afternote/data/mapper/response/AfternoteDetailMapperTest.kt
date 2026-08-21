@@ -7,16 +7,17 @@ import com.afternote.feature.afternote.data.dto.AfternoteMemorialVideoDto
 import com.afternote.feature.afternote.data.dto.AfternotePlaylistDto
 import com.afternote.feature.afternote.data.dto.AfternoteSongDto
 import com.afternote.feature.afternote.domain.AfternoteType
+import com.afternote.feature.afternote.domain.model.author.DetailContent
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
  * [AfternoteDetailDto.toDetailDomain] 회귀 가드 (작성자 상세).
- * 핵심 경계: receivers null→emptyList, receiver 필드 null→"", processingMethods null→emptyList,
- * memorialVideo null→video/thumbnail null,
- * credentials·memorial nullable 매핑.
+ * 핵심 경계: 공통 필드와 타입별 [DetailContent] 분리, receivers null→emptyList,
+ * receiver 필드 null→"", processingMethods null→emptyList, memorialVideo null→video/thumbnail null.
  */
 class AfternoteDetailMapperTest {
     @Test
@@ -29,11 +30,11 @@ class AfternoteDetailMapperTest {
             ).toDetailDomain()
 
         assertEquals(1L, result.id)
-        assertEquals(AfternoteType.SOCIAL_NETWORK, result.type)
+        val content = result.content as DetailContent.Account
+        assertEquals(AfternoteType.SOCIAL_NETWORK, content.type)
         assertTrue(result.receivers.isEmpty())
-        assertNull(result.credentials)
-        assertNull(result.memorial)
-        assertTrue(result.processingMethods.isEmpty())
+        assertNull(content.credentials)
+        assertTrue(content.processingMethods.isEmpty())
     }
 
     @Test
@@ -62,6 +63,7 @@ class AfternoteDetailMapperTest {
             ).toDetailDomain()
 
         val receiver = result.receivers.single()
+        assertTrue(result.content is DetailContent.Gallery)
         assertEquals(5L, receiver.receiverId)
         assertEquals("", receiver.name)
         assertEquals("", receiver.relation)
@@ -99,8 +101,9 @@ class AfternoteDetailMapperTest {
                 credentials = AfternoteCredentialsDto(id = "user", password = "pw"),
             ).toDetailDomain()
 
-        assertEquals("user", result.credentials!!.id)
-        assertEquals("pw", result.credentials!!.password)
+        val credentials = (result.content as DetailContent.Account).credentials!!
+        assertEquals("user", credentials.id)
+        assertEquals("pw", credentials.password)
     }
 
     @Test
@@ -118,14 +121,15 @@ class AfternoteDetailMapperTest {
                     ),
             ).toDetailDomain()
 
-        val media = result.memorial!!.media
+        val memorial = (result.content as DetailContent.Memorial).memorial
+        val media = memorial.media
         assertEquals("memorial.jpg", media.photoUrl)
         assertEquals("v.mp4", media.videoUrl)
         assertEquals("t.jpg", media.thumbnailUrl)
-        assertEquals(1, result.memorial!!.songs.size)
+        assertEquals(1, memorial.songs.size)
         assertEquals(
             3L,
-            result.memorial!!
+            memorial
                 .songs
                 .single()
                 .id,
@@ -142,8 +146,41 @@ class AfternoteDetailMapperTest {
                 memorial = AfternotePlaylistDto(memorialVideo = null),
             ).toDetailDomain()
 
-        val media = result.memorial!!.media
+        val media = (result.content as DetailContent.Memorial).memorial.media
         assertNull(media.videoUrl)
         assertNull(media.thumbnailUrl)
+    }
+
+    @Test
+    fun `toDetailDomain - playlist 타입에 playlist가 없으면 오류`() {
+        val exception =
+            assertThrows(IllegalArgumentException::class.java) {
+                AfternoteDetailDto(
+                    afternoteId = 1L,
+                    category = "PLAYLIST",
+                    title = "t",
+                ).toDetailDomain()
+            }
+
+        assertEquals("playlist is required for MEMORIAL detail", exception.message)
+    }
+
+    @Test
+    fun `toDetailDomain - business와 estate도 각각 배타적인 content로 매핑`() {
+        val business =
+            AfternoteDetailDto(
+                afternoteId = 1L,
+                category = "BUSINESS",
+                title = "회사 계정",
+            ).toDetailDomain()
+        val estate =
+            AfternoteDetailDto(
+                afternoteId = 2L,
+                category = "ESTATE",
+                title = "부동산",
+            ).toDetailDomain()
+
+        assertEquals(AfternoteType.BUSINESS, (business.content as DetailContent.Account).type)
+        assertEquals(DetailContent.Estate, estate.content)
     }
 }

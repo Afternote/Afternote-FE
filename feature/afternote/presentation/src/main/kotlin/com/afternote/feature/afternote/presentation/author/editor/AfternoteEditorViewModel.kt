@@ -62,9 +62,6 @@ import javax.inject.Inject
 
 private const val EDITOR_FORM_SNAPSHOT_KEY = "editor_form_snapshot_v2"
 
-/** 수정 진입 시 원본 종류. 폼 스냅샷과 별도로 두어 프로세스 데스 후에도 유지한다. */
-private const val EDITOR_ORIGINAL_TYPE_KEY = "editor_original_type_for_api_v1"
-
 private const val TAG = "AfternoteEditorViewModel"
 
 @Serializable
@@ -209,6 +206,7 @@ class AfternoteEditorViewModel
             MutableStateFlow(
                 InternalState(
                     form = readFormSnapshotOrDefault(),
+                    originalType = route.initialType.takeIf { route.itemId != null },
                     isPrefillLoading = readEditItemId() != null,
                 ),
             )
@@ -278,12 +276,7 @@ class AfternoteEditorViewModel
                         internalState.update { it.copy(authorReceivers = mapped) }
                     }
             }
-            val editItemId = readEditItemId()
-            if (editItemId == null) {
-                savedStateHandle.remove<String>(EDITOR_ORIGINAL_CATEGORY_FOR_API_KEY)
-            } else {
-                loadExistingAfternoteForEdit(editItemId)
-            }
+            readEditItemId()?.let(::loadExistingAfternoteForEdit)
         }
 
         private fun readEditItemId(): Long? = route.itemId
@@ -359,9 +352,8 @@ class AfternoteEditorViewModel
                 return
             }
 
-            val originalType = readOriginalTypeFromSavedState()
             val typeForSave =
-                if (editingId != null) (originalType ?: type) else type
+                if (editingId != null) (internalState.value.originalType ?: type) else type
 
             viewModelScope.launch {
                 internalState.update {
@@ -489,12 +481,16 @@ class AfternoteEditorViewModel
                     .getDetail(id = afternoteId)
                     .onSuccess { detail ->
                         val prefill = AfternoteEditorFormMapper.buildEditorFormPrefill(detail)
-                        savedStateHandle[EDITOR_ORIGINAL_CATEGORY_FOR_API_KEY] = prefill.category.name
                         // UI 레이어 파사드가 TextFieldState·SnapshotStateList 등 UI 상태를 갱신하도록 위임.
                         // skeleton 종료는 UI 가 prefill 적용을 마친 뒤 [onPrefillConsumed] 로 통보한다
                         // (uiState 갱신 시점에 prefill 도착했어도 UI 가 form·TextFieldState 에 반영하기 전이라
                         //  여기서 끄면 skeleton 사라짐 → 빈 폼 → prefill 깜빡임 발생).
-                        internalState.update { it.copy(pendingPrefill = prefill) }
+                        internalState.update {
+                            it.copy(
+                                originalType = prefill.type,
+                                pendingPrefill = prefill,
+                            )
+                        }
                     }.onFailure { e ->
                         Log.e(TAG, "loadExistingAfternoteForEdit: id=$afternoteId failed", e)
                         errorReporter.recordAfternoteFailure(AfternoteFailureStage.PREFILL_LOAD, e)
@@ -555,11 +551,6 @@ class AfternoteEditorViewModel
 
         fun getReceiverById(id: Long): AuthorReceiverEntry? = authorReceiverRepository.currentReceivers().find { it.receiverId == id }
 
-        private fun readOriginalCategoryForApiFromSavedState(): EditorCategory? =
-            savedStateHandle
-                .get<String>(EDITOR_ORIGINAL_CATEGORY_FOR_API_KEY)
-                ?.let { name -> runCatching { EditorCategory.valueOf(name) }.getOrNull() }
-
         // region Internal state shaping
 
         /**
@@ -568,6 +559,7 @@ class AfternoteEditorViewModel
          */
         private data class InternalState(
             val form: EditorFormState = EditorFormState(),
+            val originalType: AfternoteType? = null,
             val authorReceivers: List<AfternoteEditorReceiver> = emptyList(),
             val isSaving: Boolean = false,
             val isPrefillLoading: Boolean = false,

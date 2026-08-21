@@ -23,11 +23,11 @@ import com.afternote.feature.afternote.presentation.R
 @Composable
 fun AfternoteHomeEntry(
     navigateToDetail: (Long) -> Unit,
-    navigateToAdd: (AfternoteType?) -> Unit,
+    navigateToAdd: (AfternoteType) -> Unit,
     onSettingClick: () -> Unit,
     viewModel: AfternoteHomeViewModel = hiltViewModel(),
 ) {
-    val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
+    val selectedType by viewModel.selectedType.collectAsStateWithLifecycle()
     val items = viewModel.pagedAfternotes.collectAsLazyPagingItems()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -41,9 +41,9 @@ fun AfternoteHomeEntry(
 
     AfternoteHomeScreen(
         items = items,
-        selectedCategory = selectedCategory,
+        selectedType = selectedType,
         snackbarHostState = snackbarHostState,
-        onCategorySelected = viewModel::selectTab,
+        onTypeSelected = viewModel::selectTab,
         onListItemClick = { id, type ->
             when (type) {
                 AfternoteType.SOCIAL_NETWORK,
@@ -56,7 +56,7 @@ fun AfternoteHomeEntry(
                 AfternoteType.ESTATE -> Unit
             }
         },
-        onFabClick = { navigateToAdd(selectedCategory) },
+        onFabClick = { navigateToAdd(selectedType ?: AfternoteType.SOCIAL_NETWORK) },
         onSettingClick = onSettingClick,
     )
 }
