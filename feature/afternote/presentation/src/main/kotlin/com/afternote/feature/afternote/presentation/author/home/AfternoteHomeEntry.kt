@@ -29,7 +29,7 @@ fun AfternoteHomeEntry(
     onSettingClick: () -> Unit,
     viewModel: AfternoteHomeViewModel = hiltViewModel(),
 ) {
-    val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
+    val selectedType by viewModel.selectedType.collectAsStateWithLifecycle()
     val items = viewModel.pagedAfternotes.collectAsLazyPagingItems()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -43,9 +43,9 @@ fun AfternoteHomeEntry(
 
     AfternoteHomeScreen(
         items = items,
-        selectedCategory = selectedCategory,
+        selectedType = selectedType,
         snackbarHostState = snackbarHostState,
-        onCategorySelected = viewModel::selectTab,
+        onTypeSelected = viewModel::selectTab,
         onListItemClick = { id, type ->
             when (type) {
                 AfternoteType.GALLERY_AND_FILES -> navigateToGalleryDetail(id)
@@ -59,7 +59,7 @@ fun AfternoteHomeEntry(
                 AfternoteType.ESTATE -> Unit
             }
         },
-        onFabClick = { navigateToAdd(selectedCategory) },
+        onFabClick = { navigateToAdd(selectedType) },
         onSettingClick = onSettingClick,
     )
 }

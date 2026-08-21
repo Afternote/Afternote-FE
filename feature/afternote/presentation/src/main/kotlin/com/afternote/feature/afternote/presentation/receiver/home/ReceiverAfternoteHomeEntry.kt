@@ -24,8 +24,8 @@ fun ReceiverAfternoteHomeEntry(
 
     AfternoteHomeScreen(
         items = items,
-        selectedCategory = selectedTab,
-        onCategorySelected = viewModel::selectTab,
+        selectedType = selectedTab,
+        onTypeSelected = viewModel::selectTab,
         onListItemClick = { id, _ -> navigateToDetail(id) },
         modifier = modifier,
     )

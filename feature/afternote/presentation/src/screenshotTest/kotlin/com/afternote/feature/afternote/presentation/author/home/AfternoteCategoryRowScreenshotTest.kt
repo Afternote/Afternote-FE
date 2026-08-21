@@ -10,7 +10,7 @@ import com.android.tools.screenshot.PreviewTest
 @Composable
 internal fun afternoteCategoryRowAllScreenshot() {
     AfternoteTheme {
-        AfternoteCategoryRow(
+        AfternoteTypeFilterRow(
             onTabSelected = {},
             selectedTab = null,
         )

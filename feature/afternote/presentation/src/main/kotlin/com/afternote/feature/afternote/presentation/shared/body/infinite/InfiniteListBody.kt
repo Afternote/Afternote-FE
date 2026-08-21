@@ -22,8 +22,8 @@ import kotlinx.coroutines.flow.flowOf
 @Composable
 fun InfiniteListBody(
     items: LazyPagingItems<ListItemUiModel>,
-    selectedCategory: AfternoteType?,
-    onCategorySelected: (AfternoteType?) -> Unit,
+    selectedType: AfternoteType?,
+    onTypeSelected: (AfternoteType?) -> Unit,
     onListItemClick: (id: Long, type: AfternoteType) -> Unit,
     modifier: Modifier = Modifier,
     nextStepText: String = "",
@@ -40,8 +40,8 @@ fun InfiniteListBody(
         )
         AfternoteListContent(
             items = items,
-            selectedCategory = selectedCategory,
-            onCategorySelected = onCategorySelected,
+            selectedType = selectedType,
+            onTypeSelected = onTypeSelected,
             onListItemClick = onListItemClick,
         )
     }
@@ -84,8 +84,8 @@ private fun InfiniteListBodyPreview() {
                 "가족들의 '주거래 은행' 정보를\n" +
                     "입력하신 건 확인하셨나요?",
             items = items,
-            selectedCategory = null,
-            onCategorySelected = {},
+            selectedType = null,
+            onTypeSelected = {},
             onListItemClick = { _, _ -> },
         )
     }
