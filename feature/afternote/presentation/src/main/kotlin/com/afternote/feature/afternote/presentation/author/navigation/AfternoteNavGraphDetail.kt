@@ -228,7 +228,7 @@ internal fun ObserveDeleteResult(
 
 @Composable
 internal fun AfternoteDetailNavigation(
-    onBack: () -> Unit,
+    onNavigateBack: () -> Unit,
     onNavigateToEditor: (itemId: Long, type: AfternoteType) -> Unit,
     viewModel: AfternoteDetailViewModel = hiltViewModel(),
 ) {
@@ -238,7 +238,7 @@ internal fun AfternoteDetailNavigation(
     ObserveDeleteResult(
         deleteResult = (uiState as? AfternoteDetailUiState.Success)?.deleteResult,
         onConsumed = viewModel::onDeleteResultConsumed,
-        onDeleteSucceeded = onBack,
+        onDeleteSucceeded = onNavigateBack,
         onDeleteFailed = rememberDeleteFailedHandler(snackbarHostState),
     )
 
@@ -250,7 +250,7 @@ internal fun AfternoteDetailNavigation(
         is AfternoteDetailUiState.Error -> {
             DetailLoadErrorContent(
                 messageRes = state.messageRes,
-                onBackClick = onBack,
+                onBackClick = onNavigateBack,
             )
         }
 
@@ -258,7 +258,7 @@ internal fun AfternoteDetailNavigation(
             AfternoteDetailSuccessContent(
                 state = state,
                 snackbarHostState = snackbarHostState,
-                onBack = onBack,
+                onBackClick = onNavigateBack,
                 onNavigateToEditor = onNavigateToEditor,
                 onDeleteConfirm = viewModel::deleteAfternote,
             )
@@ -270,17 +270,29 @@ internal fun AfternoteDetailNavigation(
 private fun AfternoteDetailSuccessContent(
     state: AfternoteDetailUiState.Success,
     snackbarHostState: SnackbarHostState,
-    onBack: () -> Unit,
+    onBackClick: () -> Unit,
     onNavigateToEditor: (itemId: Long, type: AfternoteType) -> Unit,
     onDeleteConfirm: (itemId: Long) -> Unit,
 ) {
     Box {
         when (val model = state.contentUiModel) {
-            is DetailContentUiModel.Account -> {
+            is DetailContentUiModel.SocialNetwork -> {
                 AccountDetailScreen(
                     content = model.content,
                     snackbarHostState = snackbarHostState,
-                    onBackClick = onBack,
+                    onBackClick = onBackClick,
+                    onEditClick = {
+                        onNavigateToEditor(state.detailId, model.type)
+                    },
+                    onDeleteConfirm = { onDeleteConfirm(state.detailId) },
+                )
+            }
+
+            is DetailContentUiModel.Business -> {
+                AccountDetailScreen(
+                    content = model.content,
+                    snackbarHostState = snackbarHostState,
+                    onBackClick = onBackClick,
                     onEditClick = {
                         onNavigateToEditor(state.detailId, model.type)
                     },
@@ -292,7 +304,7 @@ private fun AfternoteDetailSuccessContent(
                 GalleryDetailScreen(
                     content = model.content,
                     snackbarHostState = snackbarHostState,
-                    onBackClick = onBack,
+                    onBackClick = onBackClick,
                     onEditClick = {
                         onNavigateToEditor(state.detailId, model.type)
                     },
@@ -304,7 +316,7 @@ private fun AfternoteDetailSuccessContent(
                 MemorialDetailScreen(
                     content = model.content,
                     snackbarHostState = snackbarHostState,
-                    onBackClick = onBack,
+                    onBackClick = onBackClick,
                     onEditClick = {
                         onNavigateToEditor(state.detailId, model.type)
                     },
@@ -313,7 +325,7 @@ private fun AfternoteDetailSuccessContent(
             }
 
             DetailContentUiModel.Unimplemented -> {
-                DesignPendingDetailContent(onBackClick = onBack)
+                DesignPendingDetailContent(onBackClick = onBackClick)
             }
         }
 

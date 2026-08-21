@@ -42,7 +42,7 @@ fun NavGraphBuilder.afternoteNavGraph(
 
         afternoteComposable<AfternoteRoute.DetailRoute> {
             AfternoteDetailNavigation(
-                onBack = actions::popBack,
+                onNavigateBack = actions::popBack,
                 onNavigateToEditor = actions::navigateToEditorForEdit,
             )
         }

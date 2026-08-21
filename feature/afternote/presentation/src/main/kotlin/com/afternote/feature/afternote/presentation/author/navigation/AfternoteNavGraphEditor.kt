@@ -16,6 +16,7 @@ import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteM
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternotePayloadBuilder
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorContentPrefill
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorUiState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
@@ -64,8 +65,8 @@ internal fun buildOnRegisterClick(
                         .toString(),
             )
         editViewModel.saveAfternote(
-            editingId = route.itemId?.toLongOrNull(),
-            category = form.selectedCategory,
+            editingId = route.itemId,
+            type = form.selectedType,
             payload = payload,
             selectedReceiverIds = form.afternoteEditReceivers.mapNotNull { it.id.toLongOrNull() },
             playlistSongs = liveSongs,
@@ -82,7 +83,7 @@ internal fun buildOnRegisterClick(
 /**
  * 작성자 에디터 플로우: type-safe [AfternoteRoute.EditorRoute] + 단방향 이벤트.
  *
- * 홈의 `visibleItems` 스냅샷은 에디터에 전달하지 않는다. 식별은 라우트의 `itemId`·`initialCategory` 정도로 최소화한다.
+ * 홈의 `visibleItems` 스냅샷은 에디터에 전달하지 않는다. 식별은 라우트의 `itemId`·`initialType` 정도로 최소화한다.
  *
  * **수정 진입 데이터 로드:** 상세 화면과 같이 [AfternoteEditorViewModel]의 `init`에서
  * [androidx.lifecycle.SavedStateHandle]의 `itemId`만 보고 Repository `getDetail`을 호출한다 (Compose `LaunchedEffect` 위임 없음).
@@ -104,7 +105,7 @@ internal fun AfternoteEditorNavigation(
     val state =
         rememberAfternoteEditorState(
             getCurrentForm = editViewModel::currentForm,
-            setCategory = editViewModel::setCategory,
+            setType = editViewModel::setType,
             setService = editViewModel::setService,
             setMemorialPhoto = editViewModel::setMemorialPhoto,
             setMemorialVideo = editViewModel::setMemorialVideo,
@@ -142,10 +143,8 @@ internal fun AfternoteEditorNavigation(
         )
     }
 
-    LaunchedEffect(route.initialCategory, route.itemId) {
-        if (route.initialCategory != null) {
-            state.selectCategoryByNavKey(route.initialCategory)
-        }
+    LaunchedEffect(route.initialType, route.itemId) {
+        state.onTypeSelected(route.initialType)
     }
 
     LaunchedEffect(uiState.pendingSaveSuccessId) {
