@@ -168,7 +168,7 @@ fun NavGraphBuilder.receiverNavGraph(
                     DetailLoadErrorContent(
                         messageRes = state.messageRes,
                         onBackClick = actions::popBack,
-                        onRetryClick = if (state.canRetry) playlistViewModel::retry else null,
+                        onRetryClick = playlistViewModel::retry,
                     )
                 }
 

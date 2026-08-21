@@ -12,7 +12,7 @@ import org.junit.Test
  */
 class AfternoteListItemDtoToDomainTest {
     @Test
-    fun `toDomain - 필드 매핑 + id Long을 String으로`() {
+    fun `toDomain - 필드와 Long id를 그대로 매핑`() {
         val result =
             AfternoteListItemDto(
                 afternoteId = 7L,
@@ -21,7 +21,7 @@ class AfternoteListItemDtoToDomainTest {
                 createdAt = "2025-11-26T14:30:00",
             ).toDomain()
 
-        assertEquals("7", result.id)
+        assertEquals(7L, result.id)
         assertEquals("은행 계정", result.serviceName)
         assertEquals("2025.11.26", result.date)
         assertEquals(AfternoteType.SOCIAL_NETWORK, result.type)
@@ -52,7 +52,7 @@ class AfternoteListItemDtoToDomainTest {
     @Test
     fun `toDomainList - 각 항목을 순서대로 매핑`() {
         val list = listOf(item(afternoteId = 1L), item(afternoteId = 2L)).toDomainList()
-        assertEquals(listOf("1", "2"), list.map { it.id })
+        assertEquals(listOf(1L, 2L), list.map { it.id })
     }
 
     private fun item(

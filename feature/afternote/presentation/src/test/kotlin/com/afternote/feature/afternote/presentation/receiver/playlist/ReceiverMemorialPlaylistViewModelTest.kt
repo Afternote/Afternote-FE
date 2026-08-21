@@ -23,9 +23,14 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import java.io.IOException
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35])
 class ReceiverMemorialPlaylistViewModelTest {
     @Before
     fun setUp() {
@@ -35,23 +40,6 @@ class ReceiverMemorialPlaylistViewModelTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
-    }
-
-    @Test
-    fun `잘못된 ID는 목록 첫 항목으로 대체하지 않고 오류로 노출한다`() {
-        val repository = FakeReceiverRepository()
-
-        val viewModel = viewModel(afternoteId = "not-a-number", repository = repository)
-
-        assertEquals(
-            ReceiverMemorialPlaylistUiState.Error(
-                messageRes = R.string.receiver_memorial_playlist_invalid_id,
-                canRetry = false,
-            ),
-            viewModel.uiState.value,
-        )
-        assertEquals(0, repository.listRequestCount)
-        assertTrue(repository.requestedDetailIds.isEmpty())
     }
 
     @Test
@@ -65,7 +53,7 @@ class ReceiverMemorialPlaylistViewModelTest {
 
         val viewModel =
             viewModel(
-                afternoteId = "42",
+                afternoteId = 42L,
                 repository = repository,
                 errorReporter = errorReporter,
             )
@@ -73,23 +61,23 @@ class ReceiverMemorialPlaylistViewModelTest {
         assertEquals(
             ReceiverMemorialPlaylistUiState.Error(
                 messageRes = R.string.receiver_memorial_playlist_load_error,
-                canRetry = true,
             ),
             viewModel.uiState.value,
         )
         assertEquals(listOf(42L), repository.requestedDetailIds)
-        assertEquals(1, errorReporter.throwables.size)
-        assertEquals(IOException::class.java.name, errorReporter.throwables.single().message)
-        assertTrue(errorReporter.throwables.none { it.message?.contains("sensitive") == true })
+        assertEquals(0, repository.listRequestCount)
+        assertEquals(1, errorReporter.reportedErrors.size)
+        assertEquals(IOException::class.java.name, errorReporter.reportedErrors.single().message)
+        assertTrue(errorReporter.reportedErrors.none { it.message?.contains("sensitive") == true })
 
         viewModel.retry()
 
         assertEquals(listOf(42L, 42L), repository.requestedDetailIds)
-        assertEquals(2, errorReporter.throwables.size)
+        assertEquals(2, errorReporter.reportedErrors.size)
     }
 
     private fun viewModel(
-        afternoteId: String,
+        afternoteId: Long,
         repository: ReceiverRepository,
         errorReporter: ErrorReporter = RecordingErrorReporter(),
     ): ReceiverMemorialPlaylistViewModel =
@@ -101,13 +89,13 @@ class ReceiverMemorialPlaylistViewModelTest {
 }
 
 private class RecordingErrorReporter : ErrorReporter {
-    val throwables = mutableListOf<Throwable>()
+    val reportedErrors = mutableListOf<Throwable>()
 
     override fun writeFailure(
         throwable: Throwable,
         attributes: Map<String, String>,
     ) {
-        throwables += throwable
+        reportedErrors += throwable
     }
 }
 

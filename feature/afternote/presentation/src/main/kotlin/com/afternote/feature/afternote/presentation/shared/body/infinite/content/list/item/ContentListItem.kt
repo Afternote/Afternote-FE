@@ -98,7 +98,7 @@ private fun AfternoteListItemPreview() {
         AfternoteListItem(
             uiModel =
                 ListItemUiModel(
-                    id = "1",
+                    id = 1L,
                     serviceName = "인스타그램",
                     date = "2023.11.24",
                     iconResId = R.drawable.feature_afternote_img_insta_pattern,

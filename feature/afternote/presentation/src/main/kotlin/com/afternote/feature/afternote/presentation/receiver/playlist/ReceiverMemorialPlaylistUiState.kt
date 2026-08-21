@@ -15,6 +15,5 @@ sealed interface ReceiverMemorialPlaylistUiState {
 
     data class Error(
         @param:StringRes val messageRes: Int,
-        val canRetry: Boolean,
     ) : ReceiverMemorialPlaylistUiState
 }
