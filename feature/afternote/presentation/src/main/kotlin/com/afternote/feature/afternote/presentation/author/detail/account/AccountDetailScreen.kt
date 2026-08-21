@@ -210,7 +210,6 @@ private fun AccountSection(
 private val PreviewAccountInstaContent =
     AccountDetailContent(
         serviceName = "인스타그램",
-        userName = "서영",
         accountId = "qwerty123",
         password = "qwerty123",
         processingMethods = listOf("게시물 내리기", "추모 게시물 올리기", "추모 계정으로 전환하기"),

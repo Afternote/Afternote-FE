@@ -20,7 +20,6 @@ sealed interface AfternoteDetailUiState {
 
     data class Success(
         val detailId: Long,
-        val authorDisplayName: String = "",
         val isDeleting: Boolean = false,
         val contentUiModel: DetailContentUiModel,
         /** 삭제 결과 신호 — UI 가 LaunchedEffect 로 소비 후 [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel.onDeleteResultConsumed] 로 reset. */
