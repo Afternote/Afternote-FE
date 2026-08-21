@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # docker buildx + gha cache 로 Dockerfile.screenshot 빌드.
       # 동일 이미지에서 baseline 생성·검증을 수행해 anti-aliasing/font/scale 등 host 환경 차이 root fix.
@@ -36,16 +36,14 @@ jobs:
       - name: Set up CI-only app configuration
         uses: ./.github/actions/setup-ci-config
 
-      # Gradle home cache 디렉토리 (컨테이너 마운트용)
-      - name: Restore Gradle cache
-        uses: actions/cache@v4
+      # setup-gradle의 공개 MIT cache provider로 host Gradle home을 복원한 뒤
+      # 컨테이너 /root/.gradle로 마운트한다. PR은 cache poisoning 방지를 위해 읽기 전용이다.
+      - name: Set up Gradle and validate wrapper
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties', 'gradle/libs.versions.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+          cache-provider: basic
+          cache-read-only: true
+          validate-wrappers: true
 
       - name: Run validateScreenshotTest in container
         run: |
