@@ -51,6 +51,7 @@ firebaseAppDistribution = "5.2.1"
 firebaseCrashlytics = "3.0.7"
 firebaseBom = "34.16.0"
 konsist = "0.17.3"
+kover = "0.9.9"
 
 [libraries]
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
@@ -137,3 +138,4 @@ compose-screenshot = { id = "com.android.compose.screenshot", version.ref = "scr
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 firebase-app-distribution = { id = "com.google.firebase.appdistribution", version.ref = "firebaseAppDistribution" }
 firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlytics" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
