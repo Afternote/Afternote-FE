@@ -174,9 +174,8 @@ private data class EditorFormSnapshot(
 /**
  * 애프터노트 생성/수정 ViewModel.
  *
- * **SSOT:** 폼은 [internalState] 안의 [EditorFormState]다. 추억 플레이리스트 곡 목록은 그래프 스코프
- * [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs]가 정본이며,
- * 에디터 진입 중 폼 스냅샷과 동기화한다.
+ * **SSOT:** 에디터 flow 전체의 폼은 [internalState] 안의 [EditorFormState]다.
+ * 추억 플레이리스트 화면과 곡 추가 화면도 같은 flow-scoped ViewModel을 사용한다.
  *
  * **경계:** Compose UI 객체(`TextFieldState`·`SnapshotStateList`·파사드)를 들지 않고 Retrofit 타입도 알지 않는다 —
  * 저장 API 의 HTTP·에러 바디 해석은 [AfternoteRepository] 구현이 도메인 예외로 변환한다.
@@ -192,7 +191,7 @@ class AfternoteEditorViewModel
         private val resolveMemorialMediaForSave: ResolveMemorialMediaForSaveUseCase,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
-        private val route = savedStateHandle.toRoute<AfternoteRoute.EditorRoute>()
+        private val route = savedStateHandle.toRoute<AfternoteRoute.EditorFlowRoute>()
         private val formSnapshotJson =
             Json {
                 ignoreUnknownKeys = true
@@ -241,7 +240,25 @@ class AfternoteEditorViewModel
 
         fun setMemorialThumbnail(dataUrl: String?) = mutateForm { it.withMemorialThumbnail(dataUrl) }
 
-        fun setMemorialPlaylistSongs(songs: List<Song>) = mutateForm { it.withMemorialPlaylistSongs(songs) }
+        fun addMemorialPlaylistSongs(songs: List<Song>) {
+            if (songs.isEmpty()) return
+            mutateForm { form ->
+                form.withMemorialPlaylistSongs(form.memorialPlaylistSongs + songs)
+            }
+        }
+
+        fun removeMemorialPlaylistSongs(selectionKeys: Set<String>) {
+            if (selectionKeys.isEmpty()) return
+            mutateForm { form ->
+                form.withMemorialPlaylistSongs(
+                    form.memorialPlaylistSongs.filterNot { it.selectionKey in selectionKeys },
+                )
+            }
+        }
+
+        fun clearMemorialPlaylistSongs() {
+            mutateForm { it.withMemorialPlaylistSongs(emptyList()) }
+        }
 
         fun deleteReceiver(receiverId: String) = mutateForm { it.withReceiverDeleted(receiverId) }
 

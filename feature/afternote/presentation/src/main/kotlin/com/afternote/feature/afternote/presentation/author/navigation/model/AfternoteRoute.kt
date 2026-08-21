@@ -12,11 +12,16 @@ sealed interface AfternoteRoute {
         val itemId: Long,
     ) : AfternoteRoute
 
+    /** Editor·MemorialPlaylist·AddSong이 공유하는 flow 범위와 생성/수정 인자. */
     @Serializable
-    data class EditorRoute(
+    data class EditorFlowRoute(
         val itemId: Long? = null,
         val initialType: AfternoteType,
     ) : AfternoteRoute
+
+    /** [EditorFlowRoute]의 시작 화면. flow 인자는 부모 route가 소유한다. */
+    @Serializable
+    data object EditorRoute : AfternoteRoute
 
     @Serializable
     data object AddSongRoute : AfternoteRoute

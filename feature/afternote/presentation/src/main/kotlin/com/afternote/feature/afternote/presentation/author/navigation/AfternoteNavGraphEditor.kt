@@ -6,7 +6,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.res.stringResource
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorBody
@@ -14,9 +13,7 @@ import com.afternote.feature.afternote.presentation.author.editor.AfternoteEdito
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternotePayloadBuilder
-import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorContentPrefill
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorUiState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
@@ -85,15 +82,12 @@ internal fun buildOnRegisterClick(
 @Composable
 internal fun AfternoteEditorNavigation(
     backStackEntry: NavBackStackEntry,
-    liveSongs: List<Song>,
-    onReplaceSongs: (List<Song>) -> Unit,
-    onClearSongs: () -> Unit,
+    editViewModel: AfternoteEditorViewModel,
     onNavigateToMemorialPlaylist: () -> Unit,
     onNavigateToSelectReceiver: () -> Unit,
     onPopBackStack: () -> Unit,
     onSaveSuccessNavigateHome: () -> Unit,
 ) {
-    val editViewModel = hiltViewModel<AfternoteEditorViewModel>(backStackEntry)
     val uiState by editViewModel.uiState.collectAsStateWithLifecycle()
     val state =
         rememberAfternoteEditorState(
@@ -105,7 +99,6 @@ internal fun AfternoteEditorNavigation(
             addReceiverIfAbsent = editViewModel::addReceiverIfAbsent,
             applyPrefill = editViewModel::applyPrefill,
             setMemorialThumbnail = editViewModel::setMemorialThumbnail,
-            setMemorialPlaylistSongs = editViewModel::setMemorialPlaylistSongs,
             deleteReceiver = editViewModel::deleteReceiver,
             replaceReceiversIfEmpty = editViewModel::replaceReceiversIfEmpty,
             setLeaveMessageBlocks = editViewModel::setLeaveMessageBlocks,
@@ -114,17 +107,7 @@ internal fun AfternoteEditorNavigation(
             editProcessingMethod = editViewModel::editProcessingMethod,
         )
 
-    LaunchedEffect(Unit) {
-        if (!editViewModel.isEditing) {
-            onClearSongs()
-            state.setMemorialPlaylistSongs(emptyList())
-        }
-        editViewModel.refreshAuthorReceivers()
-    }
-
-    LaunchedEffect(liveSongs) {
-        state.setMemorialPlaylistSongs(liveSongs)
-    }
+    LaunchedEffect(Unit) { editViewModel.refreshAuthorReceivers() }
 
     LaunchedEffect(uiState.authorReceivers, editViewModel.isEditing) {
         if (!editViewModel.isEditing) {
@@ -156,9 +139,6 @@ internal fun AfternoteEditorNavigation(
     val pendingPrefill = uiState.pendingPrefill
     LaunchedEffect(pendingPrefill) {
         if (pendingPrefill != null) {
-            onReplaceSongs(
-                (pendingPrefill.content as? EditorContentPrefill.Memorial)?.playlistSongs.orEmpty(),
-            )
             state.applyFormPrefill(pendingPrefill)
             editViewModel.onPrefillConsumed()
         }

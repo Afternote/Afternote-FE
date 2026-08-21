@@ -9,7 +9,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.afternote.feature.afternote.domain.AfternoteType
-import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorContentPrefill
@@ -43,8 +42,6 @@ class AfternoteEditorState(
     val setMemorialVideo: (String?) -> Unit,
     /** 추모 영상 썸네일 추출 완료 — 폼에 그대로 반영한다. */
     val setMemorialThumbnail: (String?) -> Unit,
-    /** 그래프 스코프 플레이리스트 SSOT를 폼 스냅샷에 동기화한다. */
-    val setMemorialPlaylistSongs: (List<Song>) -> Unit,
     val deleteReceiver: (receiverId: String) -> Unit,
     val replaceReceiversIfEmpty: (List<AfternoteEditorReceiver>) -> Unit,
     /** 타이핑 디바운스 후 폼(및 스냅샷)에만 반영; [EditorFormState.leaveMessageBlocksRestoreGeneration]은 건드리지 않는다. */
@@ -130,7 +127,7 @@ class AfternoteEditorState(
     /**
      * ViewModel이 [EditorFormPrefill]을 적용할 때 호출. 종류별 필드는 [EditorFormState]로,
      * 공통 메시지와 계정 종류에만 존재하는 계정 텍스트를 UI에 반영.
-     * 추모 곡 목록은 호출자가 그래프 스코프 플레이리스트와 함께 동기화한다.
+     * 추모 곡 목록도 같은 flow-scoped 폼에 함께 반영한다.
      */
     fun applyFormPrefill(prefill: EditorFormPrefill) {
         Log.d(
@@ -180,7 +177,6 @@ fun rememberAfternoteEditorState(
     addReceiverIfAbsent: (receiverId: String, name: String, label: String) -> Unit,
     applyPrefill: (EditorFormPrefill) -> Unit,
     setMemorialThumbnail: (String?) -> Unit,
-    setMemorialPlaylistSongs: (List<Song>) -> Unit,
     deleteReceiver: (receiverId: String) -> Unit,
     replaceReceiversIfEmpty: (List<AfternoteEditorReceiver>) -> Unit,
     setLeaveMessageBlocks: (List<EditorMessageTextBlock>) -> Unit,
@@ -210,7 +206,6 @@ fun rememberAfternoteEditorState(
             addReceiverIfAbsent = addReceiverIfAbsent,
             applyPrefill = applyPrefill,
             setMemorialThumbnail = setMemorialThumbnail,
-            setMemorialPlaylistSongs = setMemorialPlaylistSongs,
             deleteReceiver = deleteReceiver,
             replaceReceiversIfEmpty = replaceReceiversIfEmpty,
             setLeaveMessageBlocks = setLeaveMessageBlocks,
@@ -241,7 +236,6 @@ fun rememberAfternoteEditorState(): AfternoteEditorState {
         },
         applyPrefill = { prefill -> mutate { it.withPrefillApplied(prefill) } },
         setMemorialThumbnail = { dataUrl -> mutate { it.withMemorialThumbnail(dataUrl) } },
-        setMemorialPlaylistSongs = { songs -> mutate { it.withMemorialPlaylistSongs(songs) } },
         deleteReceiver = { receiverId -> mutate { it.withReceiverDeleted(receiverId) } },
         replaceReceiversIfEmpty = { receivers -> mutate { it.withReceiversReplacedIfEmpty(receivers) } },
         setLeaveMessageBlocks = { blocks -> mutate { it.withLeaveMessageBlocks(blocks) } },

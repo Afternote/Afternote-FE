@@ -10,6 +10,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.navigation
 import com.afternote.core.ui.Route
 import com.afternote.feature.afternote.presentation.AfternoteHostViewModel
+import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.AddSongViewModel
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.MemorialPlaylistEntry
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
@@ -18,8 +19,8 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.Afte
  * Afternote 피처의 네비게이션 그래프.
  *
  * 앱 모듈의 NavHost에 직접 연결되며, [Route.Afternote]를 graph route로 사용합니다.
- * [AfternoteHostViewModel]은 그래프 스코프에서 추억 플레이리스트 곡 목록 SSOT만 보유하며,
- * Compose UI 객체(TextFieldState·SnapshotStateList·UI 파사드)는 보유하지 않습니다.
+ * 에디터·추억 플레이리스트·곡 추가 화면은 [AfternoteRoute.EditorFlowRoute] 중첩 그래프에 묶여
+ * 같은 [AfternoteEditorViewModel]의 폼을 공유합니다.
  *
  * 네비게이션 호출은 [AfternoteNavActions]로만 전달합니다. 작성자 표시명 등 UI 데이터는
  * 그래프 인자가 아니라 각 화면 ViewModel이 Repository로 조회한다.
@@ -28,6 +29,8 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.Afte
 fun NavGraphBuilder.afternoteNavGraph(
     /** [Route.Afternote] 그래프 엔트리 — 그래프 스코프 Host ViewModel 바인딩에 사용 */
     graphScopedParentEntry: () -> NavBackStackEntry,
+    /** [AfternoteRoute.EditorFlowRoute] 엔트리 — 에디터 하위 세 화면이 동일한 폼 ViewModel을 공유한다. */
+    editorFlowParentEntry: () -> NavBackStackEntry,
     /** 루트 NavHost에서 주입하는 네비게이션 명령(화면 이동은 여기로만 캡슐화). */
     actions: AfternoteNavActions,
 ) {
@@ -47,31 +50,42 @@ fun NavGraphBuilder.afternoteNavGraph(
             )
         }
 
-        afternoteComposable<AfternoteRoute.EditorRoute> { backStackEntry ->
-            val hostViewModel = graphScopedHostViewModel(graphScopedParentEntry)
-            val liveSongs by hostViewModel.playlistSongs.collectAsStateWithLifecycle()
-            AfternoteEditorNavigation(
-                backStackEntry = backStackEntry,
-                liveSongs = liveSongs,
-                onReplaceSongs = hostViewModel::replaceSongs,
-                onClearSongs = hostViewModel::clearAllSongs,
-                onNavigateToSelectReceiver = {}, // TODO: 수신인 선택 화면 라우팅 연결
-                onPopBackStack = actions::popBack,
-                onNavigateToMemorialPlaylist = actions::navigateToMemorialPlaylist,
-                onSaveSuccessNavigateHome = actions::popToAfternoteHome,
-            )
-        }
+        navigation<AfternoteRoute.EditorFlowRoute>(
+            startDestination = AfternoteRoute.EditorRoute,
+        ) {
+            afternoteComposable<AfternoteRoute.EditorRoute> { backStackEntry ->
+                val editorViewModel = backStackEntry.editorFlowViewModel(editorFlowParentEntry)
+                AfternoteEditorNavigation(
+                    backStackEntry = backStackEntry,
+                    editViewModel = editorViewModel,
+                    onNavigateToMemorialPlaylist = actions::navigateToMemorialPlaylist,
+                    onNavigateToSelectReceiver = {}, // TODO: 수신인 선택 화면 라우팅 연결
+                    onPopBackStack = actions::popBack,
+                    onSaveSuccessNavigateHome = actions::popToAfternoteHome,
+                )
+            }
 
-        afternoteComposable<AfternoteRoute.MemorialPlaylistRoute> {
-            val hostViewModel = graphScopedHostViewModel(graphScopedParentEntry)
-            val liveSongs by hostViewModel.playlistSongs.collectAsStateWithLifecycle()
-            MemorialPlaylistEntry(
-                songs = liveSongs,
-                onBackClick = actions::popBack,
-                onNavigateToAddSongScreen = actions::navigateToAddSong,
-                onClearAllSongs = hostViewModel::clearAllSongs,
-                onRemoveSongs = hostViewModel::removeSongs,
-            )
+            afternoteComposable<AfternoteRoute.MemorialPlaylistRoute> { backStackEntry ->
+                val editorViewModel = backStackEntry.editorFlowViewModel(editorFlowParentEntry)
+                val editorUiState by editorViewModel.uiState.collectAsStateWithLifecycle()
+                MemorialPlaylistEntry(
+                    songs = editorUiState.form.memorialPlaylistSongs,
+                    onBackClick = actions::popBack,
+                    onNavigateToAddSongScreen = actions::navigateToAddSong,
+                    onClearAllSongs = editorViewModel::clearMemorialPlaylistSongs,
+                    onRemoveSongs = editorViewModel::removeMemorialPlaylistSongs,
+                )
+            }
+
+            afternoteComposable<AfternoteRoute.AddSongRoute> { backStackEntry ->
+                val editorViewModel = backStackEntry.editorFlowViewModel(editorFlowParentEntry)
+                val addSongViewModel: AddSongViewModel = hiltViewModel()
+                AfternoteAddSongNavigation(
+                    onPopBackStack = actions::popBack,
+                    onSongsAdded = editorViewModel::addMemorialPlaylistSongs,
+                    viewModel = addSongViewModel,
+                )
+            }
         }
 
         afternoteComposable<AfternoteRoute.FingerprintLoginRoute> {
@@ -83,17 +97,14 @@ fun NavGraphBuilder.afternoteNavGraph(
                 onShowError = actions::onFingerprintAuthFailed,
             )
         }
-
-        afternoteComposable<AfternoteRoute.AddSongRoute> {
-            val hostViewModel = graphScopedHostViewModel(graphScopedParentEntry)
-            val addSongViewModel: AddSongViewModel = hiltViewModel()
-            AfternoteAddSongNavigation(
-                onPopBackStack = actions::popBack,
-                onSongsAdded = hostViewModel::addSongs,
-                viewModel = addSongViewModel,
-            )
-        }
     }
+}
+
+/** 에디터 하위 destination이 [AfternoteRoute.EditorFlowRoute] 범위의 폼 ViewModel을 공유하도록 한다. */
+@Composable
+private fun NavBackStackEntry.editorFlowViewModel(editorFlowParentEntry: () -> NavBackStackEntry): AfternoteEditorViewModel {
+    val parentEntry = remember(this) { editorFlowParentEntry() }
+    return hiltViewModel(parentEntry)
 }
 
 /**

@@ -47,7 +47,6 @@ class EditorContentSignatureCompletenessTest {
             addReceiverIfAbsent = { _, _, _ -> },
             applyPrefill = {},
             setMemorialThumbnail = {},
-            setMemorialPlaylistSongs = {},
             deleteReceiver = {},
             replaceReceiversIfEmpty = {},
             setLeaveMessageBlocks = {},
