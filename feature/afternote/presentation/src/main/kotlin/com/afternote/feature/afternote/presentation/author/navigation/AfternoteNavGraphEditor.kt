@@ -8,19 +8,38 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
+import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorBody
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorScreen
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternotePayloadBuilder
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
-import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorUiState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.navigation.model.SELECTED_RECEIVER_ID_KEY
 
 @StringRes
-internal fun editorSaveErrorMessageRes(uiState: AfternoteEditorUiState): Int? = uiState.validationError?.messageResId ?: uiState.errorRes
+internal fun AfternoteEditorError.messageResId(): Int =
+    when (this) {
+        is AfternoteEditorError.Validation -> {
+            reason.messageResId
+        }
+
+        AfternoteEditorError.Network,
+        AfternoteEditorError.Server,
+        -> {
+            R.string.afternote_editor_save_failed_generic
+        }
+
+        is AfternoteEditorError.Upload -> {
+            when (target) {
+                AfternoteEditorError.Upload.Target.THUMBNAIL -> R.string.afternote_editor_thumbnail_upload_failed
+                AfternoteEditorError.Upload.Target.SAVE_MEDIA -> R.string.afternote_editor_save_failed_generic
+            }
+        }
+    }
 
 internal fun tryApplyReceiverSelectionFromSavedState(
     backStackEntry: NavBackStackEntry,
@@ -144,7 +163,7 @@ internal fun AfternoteEditorNavigation(
         }
     }
 
-    val saveError = editorSaveErrorMessageRes(uiState)?.let { stringResource(it) }
+    val snackbarMessage = uiState.error?.let { stringResource(it.messageResId()) }
 
     val onRegisterClick =
         remember(editViewModel, state) {
@@ -157,8 +176,8 @@ internal fun AfternoteEditorNavigation(
         form = uiState.form,
         onBackClick = onPopBackStack,
         onRegisterClick = onRegisterClick,
-        onThumbnailUploadErrorConsumed = editViewModel::onThumbnailUploadErrorConsumed,
-        onValidationErrorConsumed = editViewModel::onValidationErrorConsumed,
+        snackbarMessage = snackbarMessage,
+        onSnackbarMessageConsumed = editViewModel::onErrorConsumed,
         content = {
             AfternoteEditorBody(
                 state = state,
@@ -171,8 +190,6 @@ internal fun AfternoteEditorNavigation(
             )
         },
         state = state,
-        saveError = saveError,
-        thumbnailUploadFailed = uiState.thumbnailUploadFailed,
         isPrefillLoading = uiState.isPrefillLoading,
     )
 }

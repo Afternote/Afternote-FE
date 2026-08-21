@@ -1,7 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
 import com.afternote.feature.afternote.domain.AfternoteType
-import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
@@ -21,7 +20,7 @@ internal object AfternoteEditorValidator {
         // 미구현 placeholder 카테고리는 입력 상태와 무관하게 저장 불가 — 개별 필드 검증(수신자·서비스명)보다 먼저 차단해
         // "서비스명을 선택하라" 류의 그릴 수도 없는 필드에 대한 안내가 나가지 않게 한다.
         if (type == AfternoteType.ESTATE) {
-            return AfternoteValidationError.UNIMPLEMENTED_CATEGORY
+            return AfternoteValidationError.UNIMPLEMENTED_TYPE
         }
         if (selectedReceiverIds.isEmpty()) {
             return AfternoteValidationError.RECEIVERS_REQUIRED
@@ -34,16 +33,16 @@ internal object AfternoteEditorValidator {
             return AfternoteValidationError.LEAVE_MESSAGE_BODY_REQUIRED
         }
         return when (type) {
-            // BUSINESS 는 시안(700:38735) 필수 표기(계정 정보*, 처리 방법 리스트*)가 SOCIAL 과 동일해 같은 규칙을 쓴다.
+            // BUSINESS 는 시안(700:38735)의 필수 항목(계정 정보·처리 방법)이 SOCIAL 과 동일해 같은 규칙을 쓴다.
             AfternoteType.SOCIAL_NETWORK, AfternoteType.BUSINESS -> validateAccount(payload)
 
-            AfternoteType.GALLERY_AND_FILES -> validateGallery(payload)
+            AfternoteType.GALLERY_AND_FILES -> validateProcessingMethods(payload)
 
-            AfternoteType.MEMORIAL -> validateMemorial(form.memorialPlaylistSongs)
+            AfternoteType.MEMORIAL -> null
 
             // ESTATE 는 디자인 확정 전 placeholder 만 노출. UI 자체에서 입력이 막혀 있지만
             // 안전망으로 Validator 에서도 저장을 차단한다.
-            AfternoteType.ESTATE -> AfternoteValidationError.UNIMPLEMENTED_CATEGORY
+            AfternoteType.ESTATE -> AfternoteValidationError.UNIMPLEMENTED_TYPE
         }
     }
 
@@ -51,22 +50,12 @@ internal object AfternoteEditorValidator {
         if (payload.accountId.isBlank() || payload.password.isBlank()) {
             return AfternoteValidationError.ACCOUNT_CREDENTIALS_REQUIRED
         }
-        if (payload.processingMethods.isEmpty()) {
-            return AfternoteValidationError.ACTIONS_REQUIRED
-        }
-        return null
+        return validateProcessingMethods(payload)
     }
 
-    private fun validateGallery(payload: RegisterAfternotePayload): AfternoteValidationError? {
+    private fun validateProcessingMethods(payload: RegisterAfternotePayload): AfternoteValidationError? {
         if (payload.processingMethods.isEmpty()) {
             return AfternoteValidationError.ACTIONS_REQUIRED
-        }
-        return null
-    }
-
-    private fun validateMemorial(playlistSongs: List<Song>): AfternoteValidationError? {
-        if (playlistSongs.isEmpty()) {
-            return AfternoteValidationError.PLAYLIST_SONGS_REQUIRED
         }
         return null
     }
