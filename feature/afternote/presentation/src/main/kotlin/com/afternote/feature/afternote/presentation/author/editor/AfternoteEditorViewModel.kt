@@ -27,7 +27,7 @@ import com.afternote.feature.afternote.presentation.author.editor.model.EditorFo
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
-import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorSaveError
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorUiState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
@@ -337,9 +337,9 @@ class AfternoteEditorViewModel
                         errorReporter.recordAfternoteFailure(AfternoteFailureStage.MEMORIAL_THUMBNAIL_UPLOAD, e)
                         internalState.update {
                             it.copy(
-                                saveError =
-                                    AfternoteEditorSaveError.Upload(
-                                        AfternoteEditorSaveError.Upload.Target.THUMBNAIL,
+                                error =
+                                    AfternoteEditorError.Upload(
+                                        AfternoteEditorError.Upload.Target.THUMBNAIL,
                                     ),
                             )
                         }
@@ -378,7 +378,7 @@ class AfternoteEditorViewModel
                 )
             if (validationError != null) {
                 internalState.update {
-                    it.copy(saveError = AfternoteEditorSaveError.Validation(validationError))
+                    it.copy(error = AfternoteEditorError.Validation(validationError))
                 }
                 return
             }
@@ -388,7 +388,7 @@ class AfternoteEditorViewModel
 
             viewModelScope.launch {
                 internalState.update {
-                    it.copy(isSaving = true, saveError = null)
+                    it.copy(isSaving = true, error = null)
                 }
                 buildSaveCommand(
                     editingId = editingId,
@@ -540,18 +540,18 @@ class AfternoteEditorViewModel
         }
 
         private fun handleSaveFailure(e: Throwable) {
-            val saveError = e.toAfternoteEditorSaveError()
+            val editorError = e.toAfternoteEditorError()
             // 필수 필드 검증에 걸린 실패(수신자 미선택 등)는 사용자가 채우면 풀리는 정상 경로라 기록하지 않는다 —
             // 보관 한도(최근 8건) 를 사용자 오류가 차지하면 실제 등록 장애가 밀려난다.
             // 여기 걸리는 건 검증 외 실패 전부다 — 그중 5xx 본문엔 내부 SQL 이 섞여 오므로 예외 타입만 남긴다.
-            if (saveError !is AfternoteEditorSaveError.Validation) {
+            if (editorError !is AfternoteEditorError.Validation) {
                 Log.e(TAG, "handleSaveFailure: ${e.javaClass.name}")
                 errorReporter.recordAfternoteFailure(AfternoteFailureStage.SAVE, e)
             }
             internalState.update {
                 it.copy(
                     isSaving = false,
-                    saveError = saveError,
+                    error = editorError,
                 )
             }
         }
@@ -571,7 +571,7 @@ class AfternoteEditorViewModel
             val isSaving: Boolean = false,
             val isPrefillLoading: Boolean = false,
             val savedId: Long? = null,
-            val saveError: AfternoteEditorSaveError? = null,
+            val error: AfternoteEditorError? = null,
             val pendingSaveSuccessId: Long? = null,
             val pendingThumbnailUrl: String? = null,
             val pendingPrefill: EditorFormPrefill? = null,
@@ -584,7 +584,7 @@ class AfternoteEditorViewModel
                 isSaving = isSaving,
                 isPrefillLoading = isPrefillLoading,
                 savedId = savedId,
-                saveError = saveError,
+                error = error,
                 pendingSaveSuccessId = pendingSaveSuccessId,
                 pendingThumbnailUrl = pendingThumbnailUrl,
                 pendingPrefill = pendingPrefill,
@@ -598,36 +598,36 @@ class AfternoteEditorViewModel
             internalState.update { it.copy(pendingThumbnailUrl = null) }
         }
 
-        fun onSaveErrorConsumed() {
-            internalState.update { it.copy(saveError = null) }
+        fun onErrorConsumed() {
+            internalState.update { it.copy(error = null) }
         }
 
         // endregion
     }
 
-internal fun Throwable.toAfternoteEditorSaveError(): AfternoteEditorSaveError =
+internal fun Throwable.toAfternoteEditorError(): AfternoteEditorError =
     when (this) {
         is AfternoteAuthoringValidationException -> {
             val reason =
                 when (kind) {
                     AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED -> AfternoteValidationError.RECEIVERS_REQUIRED
                 }
-            AfternoteEditorSaveError.Validation(reason)
+            AfternoteEditorError.Validation(reason)
         }
 
         is AfternoteValidationException -> {
-            AfternoteEditorSaveError.Validation(validationError)
+            AfternoteEditorError.Validation(validationError)
         }
 
         is NetworkUnavailableException -> {
-            AfternoteEditorSaveError.Network
+            AfternoteEditorError.Network
         }
 
         is MemorialPhotoSaveException, is MemorialVideoSaveException -> {
-            AfternoteEditorSaveError.Upload(AfternoteEditorSaveError.Upload.Target.SAVE_MEDIA)
+            AfternoteEditorError.Upload(AfternoteEditorError.Upload.Target.SAVE_MEDIA)
         }
 
         else -> {
-            AfternoteEditorSaveError.Server
+            AfternoteEditorError.Server
         }
     }

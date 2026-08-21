@@ -15,28 +15,28 @@ import com.afternote.feature.afternote.presentation.author.editor.AfternoteEdito
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternotePayloadBuilder
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
-import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorSaveError
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.navigation.model.SELECTED_RECEIVER_ID_KEY
 
 @StringRes
-internal fun AfternoteEditorSaveError.messageResId(): Int =
+internal fun AfternoteEditorError.messageResId(): Int =
     when (this) {
-        is AfternoteEditorSaveError.Validation -> {
+        is AfternoteEditorError.Validation -> {
             reason.messageResId
         }
 
-        AfternoteEditorSaveError.Network,
-        AfternoteEditorSaveError.Server,
+        AfternoteEditorError.Network,
+        AfternoteEditorError.Server,
         -> {
             R.string.afternote_editor_save_failed_generic
         }
 
-        is AfternoteEditorSaveError.Upload -> {
+        is AfternoteEditorError.Upload -> {
             when (target) {
-                AfternoteEditorSaveError.Upload.Target.THUMBNAIL -> R.string.afternote_editor_thumbnail_upload_failed
-                AfternoteEditorSaveError.Upload.Target.SAVE_MEDIA -> R.string.afternote_editor_save_failed_generic
+                AfternoteEditorError.Upload.Target.THUMBNAIL -> R.string.afternote_editor_thumbnail_upload_failed
+                AfternoteEditorError.Upload.Target.SAVE_MEDIA -> R.string.afternote_editor_save_failed_generic
             }
         }
     }
