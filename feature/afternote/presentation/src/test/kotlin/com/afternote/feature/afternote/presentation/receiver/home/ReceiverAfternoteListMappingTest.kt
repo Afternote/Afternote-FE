@@ -16,7 +16,7 @@ import org.junit.Test
 class ReceiverAfternoteListMappingTest {
     private fun listItem(
         serviceName: String,
-        type: AfternoteType? = AfternoteType.SOCIAL_NETWORK,
+        type: AfternoteType = AfternoteType.SOCIAL_NETWORK,
     ) = AfterNoteListItem(
         id = 5,
         serviceName = serviceName,
@@ -43,14 +43,6 @@ class ReceiverAfternoteListMappingTest {
                 uiModel.serviceName,
             )
         }
-    }
-
-    @Test
-    fun `종류를 모르는 응답도 서비스명은 그대로 보여준다`() {
-        val uiModel = listItem(serviceName = "갤러리", type = null).toUiModel()
-
-        assertEquals("갤러리", uiModel.serviceName)
-        assertEquals(AfternoteType.SOCIAL_NETWORK, uiModel.type)
     }
 
     @Test

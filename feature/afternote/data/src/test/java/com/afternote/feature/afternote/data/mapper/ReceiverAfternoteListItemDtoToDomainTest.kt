@@ -9,7 +9,7 @@ import org.junit.Test
 /**
  * [ReceivedAfternoteDto.toDomain] / [toReceiverDomainList] 회귀 가드.
  * 수신자 목록 DTO→[com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem] 매핑.
- * 서버 카테고리를 [AfternoteType] 으로 바꾸는 규칙과 null 가드(category·createdAt)를 검증한다.
+ * 서버 카테고리를 [AfternoteType] 으로 바꾸는 규칙과 createdAt null 가드를 검증한다.
  */
 class ReceiverAfternoteListItemDtoToDomainTest {
     @Test
@@ -42,8 +42,8 @@ class ReceiverAfternoteListItemDtoToDomainTest {
     }
 
     @Test
-    fun `toDomain - type null이면 type null`() {
-        assertNull(resp(type = null).toDomain().type)
+    fun `toDomain - 대응하지 않는 type은 SOCIAL_NETWORK 기본값`() {
+        assertEquals(AfternoteType.SOCIAL_NETWORK, resp(type = "UNKNOWN").toDomain().type)
     }
 
     @Test
@@ -60,7 +60,7 @@ class ReceiverAfternoteListItemDtoToDomainTest {
     private fun resp(
         id: Long = 1L,
         title: String = "t",
-        type: String? = "SOCIAL",
+        type: String = "SOCIAL",
         createdAt: String? = "2025-01-01T00:00:00",
     ) = ReceivedAfternoteDto(
         id = id,

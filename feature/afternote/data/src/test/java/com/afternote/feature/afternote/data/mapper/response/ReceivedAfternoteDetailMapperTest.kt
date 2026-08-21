@@ -12,7 +12,7 @@ import org.junit.Test
 
 /**
  * [ReceivedAfternoteDetailDto.toDomain] 회귀 가드 (수신자 상세).
- * 경계: createdAt null→null·있으면 포맷, type null→type null, playlist·credentials nullable 매핑,
+ * 경계: createdAt null→null·있으면 포맷, 필수 type 매핑, playlist·credentials nullable 매핑,
  * memorialVideo의 video/thumbnail 추출.
  */
 class ReceivedAfternoteDetailMapperTest {
@@ -34,18 +34,13 @@ class ReceivedAfternoteDetailMapperTest {
     }
 
     @Test
-    fun `toDomain - type null이면 type null`() {
-        assertNull(ReceivedAfternoteDetailDto(id = 1L, type = null).toDomain().type)
-    }
-
-    @Test
     fun `toDomain - createdAt null이면 createdAt null`() {
-        assertNull(ReceivedAfternoteDetailDto(id = 1L, createdAt = null).toDomain().createdAt)
+        assertNull(ReceivedAfternoteDetailDto(id = 1L, type = "SOCIAL", createdAt = null).toDomain().createdAt)
     }
 
     @Test
     fun `toDomain - playlist null이면 null`() {
-        assertNull(ReceivedAfternoteDetailDto(id = 1L, playlist = null).toDomain().playlist)
+        assertNull(ReceivedAfternoteDetailDto(id = 1L, type = "GALLERY", playlist = null).toDomain().playlist)
     }
 
     @Test
@@ -53,6 +48,7 @@ class ReceivedAfternoteDetailMapperTest {
         val result =
             ReceivedAfternoteDetailDto(
                 id = 1L,
+                type = "PLAYLIST",
                 playlist =
                     ReceivedPlaylistDto(
                         atmosphere = "차분",
@@ -73,6 +69,7 @@ class ReceivedAfternoteDetailMapperTest {
         val result =
             ReceivedAfternoteDetailDto(
                 id = 1L,
+                type = "SOCIAL",
                 credentials = ReceivedCredentialsDto(id = "u", password = "p"),
             ).toDomain()
 
