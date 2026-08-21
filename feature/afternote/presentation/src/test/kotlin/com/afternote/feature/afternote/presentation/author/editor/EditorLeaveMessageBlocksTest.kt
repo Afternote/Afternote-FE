@@ -78,6 +78,23 @@ class EditorLeaveMessageBlocksTest {
         )
     }
 
+    @Test
+    fun `메모리얼 수정도 기존 남기실 말씀을 다시 싣는다`() {
+        val payload =
+            AfternoteEditorFormMapper.buildUpdatePayload(
+                type = AfternoteType.MEMORIAL,
+                payload = payloadOf(EditorMessageTextBlock(title = "가족에게", body = "잘 지내")),
+                selectedReceiverIds = emptyList(),
+                playlistSongs = emptyList(),
+                memorialMedia = MemorialMediaUrls(),
+            )
+
+        assertEquals(
+            listOf(LeaveMessageBlock(title = "가족에게", body = "잘 지내")),
+            payload.leaveMessageBlocks,
+        )
+    }
+
     private fun createSocial(vararg blocks: EditorMessageTextBlock): List<LeaveMessageBlock>? {
         val input =
             AfternoteEditorFormMapper.buildCreateInput(

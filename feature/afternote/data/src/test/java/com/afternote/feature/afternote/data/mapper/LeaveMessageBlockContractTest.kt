@@ -8,7 +8,6 @@ import com.afternote.feature.afternote.data.dto.ReceivedAfternoteListDto
 import com.afternote.feature.afternote.data.mapper.response.toDetailDomain
 import com.afternote.feature.afternote.data.mapper.response.toDomain
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
-import com.afternote.feature.afternote.domain.model.author.DetailContent
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -51,7 +50,7 @@ class LeaveMessageBlockContractTest {
                 LeaveMessageBlock(title = "가족에게", body = "잘 부탁해"),
                 LeaveMessageBlock(title = null, body = "제목 없는 블록"),
             ),
-            (detail.content as DetailContent.SocialNetwork).leaveMessageBlocks,
+            detail.leaveMessageBlocks,
         )
     }
 
@@ -66,7 +65,7 @@ class LeaveMessageBlockContractTest {
 
         assertEquals(
             listOf(LeaveMessageBlock(title = "", body = "재현용 남기실 말씀")),
-            (detail.content as DetailContent.SocialNetwork).leaveMessageBlocks,
+            detail.leaveMessageBlocks,
         )
     }
 
@@ -78,7 +77,7 @@ class LeaveMessageBlockContractTest {
                     """{"afternoteId":1,"category":"SOCIAL","title":"t","credentials":{"id":"qa","password":"qa"},"leaveMessage":null}""",
                 ).toDetailDomain()
 
-        assertTrue((detail.content as DetailContent.SocialNetwork).leaveMessageBlocks.isEmpty())
+        assertTrue(detail.leaveMessageBlocks.isEmpty())
     }
 
     /** 수신 목록은 응답에 `leaveMessage` 가 실려, 블록이 있는 항목 하나만 섞여도 목록 전체가 실패했다. */

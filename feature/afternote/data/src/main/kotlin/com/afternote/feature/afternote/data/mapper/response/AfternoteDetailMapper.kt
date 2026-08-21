@@ -25,6 +25,7 @@ fun AfternoteDetailDto.toDetailDomain(): Detail {
         title = title,
         timestamps = toTimestamps(),
         receivers = receivers.toDomain(),
+        leaveMessageBlocks = leaveMessage.toLeaveMessageBlocks(),
         content = toDetailContent(afternoteType),
     )
 }
@@ -35,7 +36,6 @@ private fun AfternoteDetailDto.toDetailContent(type: AfternoteType): DetailConte
             DetailContent.SocialNetwork(
                 credentials = toPublishedCredentials(),
                 processingMethods = processingMethods.orEmpty(),
-                leaveMessageBlocks = leaveMessage.toLeaveMessageBlocks(),
             )
         }
 
@@ -43,14 +43,12 @@ private fun AfternoteDetailDto.toDetailContent(type: AfternoteType): DetailConte
             DetailContent.Business(
                 credentials = toPublishedCredentials(),
                 processingMethods = processingMethods.orEmpty(),
-                leaveMessageBlocks = leaveMessage.toLeaveMessageBlocks(),
             )
         }
 
         AfternoteType.GALLERY_AND_FILES -> {
             DetailContent.Gallery(
                 processingMethods = processingMethods.orEmpty(),
-                leaveMessageBlocks = leaveMessage.toLeaveMessageBlocks(),
             )
         }
 

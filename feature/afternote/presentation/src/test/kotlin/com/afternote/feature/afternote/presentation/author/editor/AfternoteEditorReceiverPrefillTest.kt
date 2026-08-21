@@ -52,10 +52,10 @@ class AfternoteEditorReceiverPrefillTest {
             title = "구글 포토",
             timestamps = DetailTimestamps(createdAt = "2026-08-02", updatedAt = "2026-08-02"),
             receivers = receivers.toList(),
+            leaveMessageBlocks = emptyList(),
             content =
                 DetailContent.Gallery(
                     processingMethods = emptyList(),
-                    leaveMessageBlocks = emptyList(),
                 ),
         )
 }

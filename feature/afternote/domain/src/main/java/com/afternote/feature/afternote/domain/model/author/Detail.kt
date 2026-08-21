@@ -15,6 +15,7 @@ data class Detail(
     val title: String,
     val timestamps: DetailTimestamps,
     val receivers: List<DetailReceiver>,
+    val leaveMessageBlocks: List<LeaveMessageBlock>,
     val content: DetailContent,
 )
 
@@ -24,7 +25,6 @@ sealed interface DetailContent {
     data class SocialNetwork(
         val credentials: DetailCredentials,
         val processingMethods: List<String>,
-        val leaveMessageBlocks: List<LeaveMessageBlock>,
     ) : DetailContent {
         override val type: AfternoteType = AfternoteType.SOCIAL_NETWORK
     }
@@ -32,14 +32,12 @@ sealed interface DetailContent {
     data class Business(
         val credentials: DetailCredentials,
         val processingMethods: List<String>,
-        val leaveMessageBlocks: List<LeaveMessageBlock>,
     ) : DetailContent {
         override val type: AfternoteType = AfternoteType.BUSINESS
     }
 
     data class Gallery(
         val processingMethods: List<String>,
-        val leaveMessageBlocks: List<LeaveMessageBlock>,
     ) : DetailContent {
         override val type: AfternoteType = AfternoteType.GALLERY_AND_FILES
     }

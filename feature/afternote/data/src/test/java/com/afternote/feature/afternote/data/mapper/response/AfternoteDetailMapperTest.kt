@@ -6,7 +6,9 @@ import com.afternote.feature.afternote.data.dto.AfternoteDetailReceiverDto
 import com.afternote.feature.afternote.data.dto.AfternoteMemorialVideoDto
 import com.afternote.feature.afternote.data.dto.AfternotePlaylistDto
 import com.afternote.feature.afternote.data.dto.AfternoteSongDto
+import com.afternote.feature.afternote.data.dto.LeaveMessageBlockDto
 import com.afternote.feature.afternote.domain.AfternoteType
+import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -177,6 +179,23 @@ class AfternoteDetailMapperTest {
                 .songs
                 .single()
                 .id,
+        )
+    }
+
+    @Test
+    fun `toDetailDomain - playlist의 공통 leaveMessage도 보존한다`() {
+        val result =
+            AfternoteDetailDto(
+                afternoteId = 1L,
+                type = "PLAYLIST",
+                title = "t",
+                leaveMessage = listOf(LeaveMessageBlockDto(title = "가족에게", body = "잘 지내")),
+                memorial = AfternotePlaylistDto(),
+            ).toDetailDomain()
+
+        assertEquals(
+            listOf(LeaveMessageBlock(title = "가족에게", body = "잘 지내")),
+            result.leaveMessageBlocks,
         )
     }
 

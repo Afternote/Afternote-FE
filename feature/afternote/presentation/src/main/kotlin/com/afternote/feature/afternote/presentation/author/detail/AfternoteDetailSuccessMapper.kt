@@ -2,7 +2,6 @@ package com.afternote.feature.afternote.presentation.author.detail
 
 import com.afternote.core.model.AlbumCover
 import com.afternote.feature.afternote.domain.AfternoteType
-import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailCredentials
@@ -29,14 +28,13 @@ internal fun Detail.toGalleryDetailContent(content: DetailContent.Gallery): Gall
         finalWriteDate = finalWriteDate,
         afternoteEditReceivers = toReceiverUiModels(),
         processingMethods = content.processingMethods,
-        messageBlocks = content.leaveMessageBlocks.toMessageBlockUiModels(),
+        messageBlocks = leaveMessageBlocks.toMessageBlockUiModels(),
     )
 
 internal fun Detail.toAccountDetailContent(
     type: AfternoteType,
     credentials: DetailCredentials,
     processingMethods: List<String>,
-    leaveMessageBlocks: List<LeaveMessageBlock>,
 ): AccountDetailContent =
     AccountDetailContent(
         serviceName = title,
@@ -121,7 +119,6 @@ internal fun Detail.toDetailContentUiModel(authorDisplayName: String): DetailCon
                     type = content.type,
                     credentials = content.credentials,
                     processingMethods = content.processingMethods,
-                    leaveMessageBlocks = content.leaveMessageBlocks,
                 ),
             )
         }
@@ -133,7 +130,6 @@ internal fun Detail.toDetailContentUiModel(authorDisplayName: String): DetailCon
                     type = content.type,
                     credentials = content.credentials,
                     processingMethods = content.processingMethods,
-                    leaveMessageBlocks = content.leaveMessageBlocks,
                 ),
             )
         }
