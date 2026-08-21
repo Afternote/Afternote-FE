@@ -1,6 +1,7 @@
 name: Unit Test
 
 # 모든 PR 에서 unit test 실행:
+#   - validate-pr-qa-metadata.mjs : PR 구조화 QA 원천 누락·generic 문구 차단.
 #   - node --test .github/scripts/*.test.mjs : 배포 판단 스크립트 회귀 가드.
 #   - ./gradlew testDebugUnitTest : Android 모듈 debug unit test
 #   - :konsist:test : 순수 JVM 모듈(testDebugUnitTest 미보유)이라 별도 명시. 레이어 의존 아키텍처 가드.
@@ -22,6 +23,9 @@ jobs:
     steps:
       - name: Clone repo
         uses: actions/checkout@v4
+
+      - name: Validate structured QA metadata
+        run: node .github/scripts/validate-pr-qa-metadata.mjs "$GITHUB_EVENT_PATH"
 
       - name: Run deployment script tests
         run: node --test .github/scripts/*.test.mjs

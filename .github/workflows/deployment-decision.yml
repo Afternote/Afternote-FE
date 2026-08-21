@@ -16,15 +16,19 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  actions: read
   contents: read
-  issues: write
-  pull-requests: write
 
 jobs:
-  evaluate:
+  prepare:
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      issues: read
+      pull-requests: read
+    outputs:
+      audit_eligible: ${{ steps.prepare-audit.outputs.audit_eligible }}
     steps:
       - name: Clone merged revision
         uses: actions/checkout@v4
@@ -43,16 +47,154 @@ jobs:
       - name: Evaluate deployment boundary
         env:
           DEPLOYMENT_CONTEXT_PATH: ${{ runner.temp }}/afternote-deployment-decision/context.json
-          DEPLOYMENT_DECISION_PATH: ${{ runner.temp }}/afternote-deployment-decision/decision.json
+          DEPLOYMENT_DECISION_PATH: ${{ runner.temp }}/afternote-deployment-decision/boundary.json
         run: |
           node .github/scripts/evaluate-deployment-decision.mjs \
             "$DEPLOYMENT_CONTEXT_PATH" \
             "$DEPLOYMENT_DECISION_PATH"
 
+      - name: Prepare canonical AI audit input
+        id: prepare-audit
+        env:
+          DEPLOYMENT_CONTEXT_PATH: ${{ runner.temp }}/afternote-deployment-decision/context.json
+          DEPLOYMENT_DECISION_PATH: ${{ runner.temp }}/afternote-deployment-decision/boundary.json
+          QA_AUDIT_INPUT_PATH: ${{ runner.temp }}/afternote-deployment-decision/audit-input.json
+          QA_AUDIT_PROMPT_PATH: ${{ runner.temp }}/afternote-deployment-decision/audit-prompt.txt
+        run: |
+          node .github/scripts/qa-semantic-audit.mjs prepare \
+            "$DEPLOYMENT_CONTEXT_PATH" \
+            "$DEPLOYMENT_DECISION_PATH" \
+            "$QA_AUDIT_INPUT_PATH" \
+            "$QA_AUDIT_PROMPT_PATH"
+
+      - name: Preserve deterministic decision evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-semantic-audit-input
+          path: ${{ runner.temp }}/afternote-deployment-decision
+          if-no-files-found: error
+          retention-days: 7
+
+  semantic-audit:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Clone merged revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha || 'develop' }}
+          persist-credentials: false
+
+      - name: Load deterministic decision evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: qa-semantic-audit-input
+          path: ${{ runner.temp }}/afternote-deployment-decision
+
+      - name: Detect personal Copilot token
+        id: personal-token
+        env:
+          COPILOT_PERSONAL_TOKEN: ${{ secrets.COPILOT_PERSONAL_TOKEN }}
+        run: |
+          if [ -n "$COPILOT_PERSONAL_TOKEN" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Node 22 for Copilot CLI
+        if: needs.prepare.outputs.audit_eligible == 'true' && steps.personal-token.outputs.available == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      - name: Install pinned Copilot CLI
+        id: install-copilot
+        if: needs.prepare.outputs.audit_eligible == 'true' && steps.personal-token.outputs.available == 'true'
+        continue-on-error: true
+        run: npm install --global @github/copilot@1.0.80
+
+      # PR·이슈 본문은 untrusted input이다. 사용자 소유 fine-grained PAT는 이 step에만
+      # 주입하고 모든 도구를 거부한다. 모델 응답도 다음 step의 strict validator가
+      # 원천 ID 그룹·우선순위 외 필드를 거부하므로 QA 행동·기대 결과를 바꿀 수 없다.
+      - name: Audit QA source semantics
+        id: copilot-audit
+        if: needs.prepare.outputs.audit_eligible == 'true' && steps.personal-token.outputs.available == 'true' && steps.install-copilot.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 5
+        working-directory: ${{ runner.temp }}
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_PERSONAL_TOKEN }}
+          COPILOT_HOME: ${{ runner.temp }}/copilot-home
+          COPILOT_MODEL: ${{ vars.QA_SEMANTIC_AUDIT_MODEL }}
+          QA_AUDIT_PROMPT_PATH: ${{ runner.temp }}/afternote-deployment-decision/audit-prompt.txt
+          QA_AUDIT_RESPONSE_PATH: ${{ runner.temp }}/afternote-deployment-decision/audit-response.txt
+        run: |
+          model_args=()
+          if [ -n "$COPILOT_MODEL" ]; then
+            model_args=(--model "$COPILOT_MODEL")
+          fi
+          copilot -s \
+            --no-ask-user \
+            --no-auto-update \
+            --no-custom-instructions \
+            --no-remote \
+            --no-remote-export \
+            --disable-builtin-mcps \
+            --deny-tool='shell,write,read,url,memory' \
+            --max-ai-credits=1 \
+            --secret-env-vars=COPILOT_GITHUB_TOKEN \
+            "${model_args[@]}" \
+            < "$QA_AUDIT_PROMPT_PATH" \
+            > "$QA_AUDIT_RESPONSE_PATH"
+
+      - name: Validate and finalize audit result
+        env:
+          DEPLOYMENT_DECISION_PATH: ${{ runner.temp }}/afternote-deployment-decision/boundary.json
+          QA_AUDIT_INPUT_PATH: ${{ runner.temp }}/afternote-deployment-decision/audit-input.json
+          QA_AUDIT_RESPONSE_PATH: ${{ runner.temp }}/afternote-deployment-decision/audit-response.txt
+          FINAL_DECISION_PATH: ${{ runner.temp }}/afternote-deployment-decision/final-decision.json
+          QA_AI_CHANNEL_STATUS: token=${{ steps.personal-token.outputs.available }};install=${{ steps.install-copilot.outcome }};request=${{ steps.copilot-audit.outcome }}
+          QA_SEMANTIC_AUDIT_MODEL: ${{ vars.QA_SEMANTIC_AUDIT_MODEL }}
+        run: |
+          node .github/scripts/qa-semantic-audit.mjs finalize \
+            "$DEPLOYMENT_DECISION_PATH" \
+            "$QA_AUDIT_INPUT_PATH" \
+            "$QA_AUDIT_RESPONSE_PATH" \
+            "$FINAL_DECISION_PATH"
+
+      - name: Preserve final QA audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-deployment-decision
+          path: ${{ runner.temp }}/afternote-deployment-decision/final-decision.json
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: [prepare, semantic-audit]
+    if: ${{ always() && needs.prepare.result == 'success' && needs.semantic-audit.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Load final QA audit
+        uses: actions/download-artifact@v4
+        with:
+          name: qa-deployment-decision
+          path: ${{ runner.temp }}/afternote-deployment-decision
+
       - name: Publish decision on the merged PR
         uses: actions/github-script@v7
         env:
-          DEPLOYMENT_DECISION_PATH: ${{ runner.temp }}/afternote-deployment-decision/decision.json
+          DEPLOYMENT_DECISION_PATH: ${{ runner.temp }}/afternote-deployment-decision/final-decision.json
           TARGET_PR_NUMBER: ${{ github.event.pull_request.number || inputs.pull_request_number }}
         with:
           github-token: ${{ github.token }}
@@ -60,23 +202,82 @@ jobs:
             const fs = require('node:fs');
             const marker = '<!-- qa-distribution-decision -->';
             const result = JSON.parse(fs.readFileSync(process.env.DEPLOYMENT_DECISION_PATH, 'utf8'));
-            const clean = (value) => String(value).replaceAll('@', '@\u200b');
-            const title = result.decision === 'deploy' ? '🚀 QA 배포 권장' : '⏸️ QA 배포 보류';
-            const issues = result.includedIssues.map((number) => `#${number}`).join(', ');
-            const qaPoints = result.qaPoints.map((point) => `- ${clean(point)}`).join('\n');
+            const audit = result.qaAudit || { status: 'human_review_required' };
+            const clean = (value) => String(value ?? '')
+              .replace(/\s+/g, ' ')
+              .replaceAll('&', '&amp;')
+              .replaceAll('<', '&lt;')
+              .replaceAll('>', '&gt;')
+              .replaceAll('@', '@\u200b')
+              .trim();
+            const title = audit.status === 'human_review_required'
+              ? '🧑‍🔍 QA 사람 검토 필요'
+              : result.decision === 'deploy'
+                ? '🚀 QA 배포 권장'
+                : '⏸️ QA 배포 보류';
+            const issues = (result.includedIssues || []).map((number) => `#${number}`).join(', ');
             const body = [
               marker,
               `## ${title}`,
               '',
               `- 위험도: \`${result.risk}\``,
+              `- 의미 감사: \`${audit.status}\``,
               `- 포함 이슈: ${issues || '연결 이슈 없음'}`,
               `- 판단 근거: ${clean(result.reason)}`,
+            ];
+
+            body.push('', '### QA 시나리오');
+            if (audit.status === 'ready') {
+              for (const scenario of result.qaScenarios || []) {
+                const scenarioIssues = (scenario.issueNumbers || []).map((number) => `#${number}`).join(', ');
+                body.push(
+                  '',
+                  `#### ${clean(scenario.priority)} ${scenarioIssues || `PR ${scenario.pullRequestNumbers.map((number) => `#${number}`).join(', ')}`}`,
+                  `- 사전조건: ${clean(scenario.precondition)}`,
+                  `- 행동: ${clean(scenario.action)}`,
+                  `- 기대 결과: ${clean(scenario.expected)}`,
+                  `- 실패 위험: ${clean(scenario.risk)}`,
+                  `- 근거: ${scenario.evidence.map((item) => `${clean(item.ref)} (${clean(item.assertion)})`).join(', ')}`,
+                );
+                if (scenario.mergeReason) {
+                  body.push(`- 병합 근거: ${clean(scenario.mergeReason)}`);
+                }
+              }
+            } else if (audit.status === 'not_required') {
+              body.push(`- ${clean(audit.reason || '이미 배포된 대상이어서 추가 QA가 필요하지 않습니다.')}`);
+            } else {
+              body.push('- generic QA 문구를 만들지 않았습니다. 아래 오류를 해결하고 사람이 QA 원천을 검토해야 합니다.');
+              for (const error of audit.errors || []) {
+                body.push(`  - ${clean(error)}`);
+              }
+            }
+
+            body.push('', '### 앱 QA 제외');
+            if ((audit.exclusions || []).length === 0) {
+              body.push('- 없음');
+            } else {
+              for (const exclusion of audit.exclusions) {
+                const excludedIssues = exclusion.issueNumbers.map((number) => `#${number}`).join(', ');
+                body.push(
+                  `- PR #${exclusion.pullRequestNumber}${excludedIssues ? ` (${excludedIssues})` : ''}: ${clean(exclusion.reason)} — ${exclusion.evidence.map((item) => clean(item.ref)).join(', ')}`,
+                );
+              }
+            }
+
+            body.push('', '### 검증 공백');
+            if ((audit.coverageGaps || []).length === 0) {
+              body.push('- 없음');
+            } else {
+              for (const gap of audit.coverageGaps) {
+                body.push(`- ${gap.sourceIds.map(clean).join(', ')}: ${clean(gap.gap)} (권장: ${clean(gap.recommendedVerification)})`);
+              }
+            }
+
+            body.push(
               '',
-              '### QA 포인트',
-              qaPoints,
-              '',
-              '> 이 판단은 배포를 자동 실행하지 않습니다. `deploy`일 때 Release Distribution을 수동 실행하세요.',
-            ].join('\n');
+              '> 이 워크플로는 Firebase 배포를 자동 실행하지 않습니다. `human_review_required`에서는 QA 시나리오를 임의 생성하거나 배포를 권장하지 않습니다.',
+            );
+            const commentBody = body.join('\n');
 
             const issueNumber = Number(process.env.TARGET_PR_NUMBER);
             const comments = await github.paginate(github.rest.issues.listComments, {
@@ -91,14 +292,14 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 comment_id: existing.id,
-                body,
+                body: commentBody,
               });
             } else {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issueNumber,
-                body,
+                body: commentBody,
               });
             }
-            await core.summary.addRaw(body).write();
+            await core.summary.addRaw(commentBody).write();

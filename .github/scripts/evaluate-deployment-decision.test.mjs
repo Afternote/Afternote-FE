@@ -3,8 +3,23 @@ import test from "node:test";
 
 import {
     evaluateDeploymentDecision,
-    extractQaPoints,
 } from "./evaluate-deployment-decision.mjs";
+
+function qaBody(label = "목록 저장") {
+    return `## QA 메타데이터
+\`\`\`json
+{
+  "scope": "app-runtime",
+  "precondition": "로그인하고 테스트 데이터가 준비된 상태",
+  "action": "${label} 동작을 수행한다",
+  "expected": "변경한 데이터가 화면에 즉시 반영된다",
+  "risk": "저장 결과를 확인할 수 없다",
+  "evidence": [
+    { "kind": "issue", "ref": "#726", "assertion": "재현 조건과 기대 결과를 정의한다" }
+  ]
+}
+\`\`\``;
+}
 
 function context(overrides = {}) {
     const issue = { number: 726, title: "배포 판단", body: "", labels: [] };
@@ -85,6 +100,7 @@ test("deploys a user-visible bug fix", () => {
     );
     assert.equal(result.decision, "deploy");
     assert.match(result.reason, /결함 수정/);
+    assert.deepEqual(result.qaPoints, []);
 });
 
 test("holds documentation-only changes", () => {
@@ -115,9 +131,25 @@ test("deploys when three issues accumulate", () => {
     assert.match(result.reason, /독립 이슈 3건/);
 });
 
-test("reads explicit QA points from a PR body", () => {
-    assert.deepEqual(
-        extractQaPoints("## QA 포인트\n- 저장 후 목록에 표시되는지 확인\n- 재진입 시 값이 유지되는지 확인\n\n## 기타\n- 제외"),
-        ["저장 후 목록에 표시되는지 확인", "재진입 시 값이 유지되는지 확인"],
+test("never creates a generic QA fallback", () => {
+    const result = evaluateDeploymentDecision(context(), ["feature/home/HomeScreen.kt"]);
+
+    assert.deepEqual(result.qaPoints, []);
+    assert.doesNotMatch(JSON.stringify(result), /관련 동작을 재현/);
+});
+
+test("uses validated structured QA sources for the accumulation boundary", () => {
+    const pendingPullRequests = Array.from({ length: 6 }, (_, index) => ({
+        number: 820 + index,
+        title: "refactor(home): 상태 정리",
+        body: qaBody(`목록 항목 ${index + 1} 저장`),
+        closingIssues: [{ number: 726, title: "배포 판단", body: "", labels: [] }],
+    }));
+    const result = evaluateDeploymentDecision(
+        context({ pendingPullRequests }),
+        ["feature/home/HomeState.kt"],
     );
+
+    assert.equal(result.decision, "deploy");
+    assert.match(result.reason, /구조화된 QA 원천이 6개/);
 });

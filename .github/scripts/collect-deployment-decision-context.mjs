@@ -8,6 +8,7 @@ import { pathToFileURL } from "node:url";
 const MAX_PULL_REQUEST_PAGES = 10;
 const MAX_PULL_REQUESTS = 50;
 const MAX_ISSUES_PER_PULL_REQUEST = 20;
+const MAX_FILE_PAGES_PER_PULL_REQUEST = 30;
 const MAX_BODY_LENGTH = 8_000;
 
 function truncate(value, limit = MAX_BODY_LENGTH) {
@@ -124,7 +125,7 @@ function normalizeIssue(issue) {
     };
 }
 
-function normalizePullRequest(pullRequest, issues) {
+function normalizePullRequest(pullRequest, issues, changedFiles = []) {
     return {
         number: pullRequest.number,
         title: pullRequest.title,
@@ -135,6 +136,7 @@ function normalizePullRequest(pullRequest, issues) {
         author: pullRequest.user?.login,
         labels: (pullRequest.labels ?? []).map((label) => label.name),
         closingIssues: issues.map(normalizeIssue),
+        changedFiles,
     };
 }
 
@@ -153,6 +155,24 @@ async function requestJson(url, token, options = {}) {
         throw new Error(`${options.method ?? "GET"} ${url} failed (${response.status}): ${body}`);
     }
     return response.json();
+}
+
+async function loadPullRequestChangedFiles(apiUrl, repository, pullRequestNumber, token) {
+    const changedFiles = [];
+    for (let page = 1; page <= MAX_FILE_PAGES_PER_PULL_REQUEST; page += 1) {
+        const query = new URLSearchParams({ per_page: "100", page: String(page) });
+        const files = await requestJson(
+            `${apiUrl}/repos/${repository}/pulls/${pullRequestNumber}/files?${query.toString()}`,
+            token,
+        );
+        changedFiles.push(...files.map((file) => file.filename));
+        if (files.length < 100) {
+            return [...new Set(changedFiles)];
+        }
+    }
+    throw new Error(
+        `PR #${pullRequestNumber} has more than ${MAX_FILE_PAGES_PER_PULL_REQUEST * 100} changed files; refusing a truncated audit input`,
+    );
 }
 
 async function listClosedDevelopPullRequests(apiUrl, repository, token) {
@@ -378,16 +398,38 @@ async function main() {
 
     const normalizedPullRequests = [];
     for (const pullRequest of selectedPullRequests) {
-        const issues = await loadClosingIssues(graphqlUrl, repository, pullRequest, token);
-        normalizedPullRequests.push(normalizePullRequest(pullRequest, issues));
+        const [issues, changedFiles] = await Promise.all([
+            loadClosingIssues(graphqlUrl, repository, pullRequest, token),
+            loadPullRequestChangedFiles(apiUrl, repository, pullRequest.number, token),
+        ]);
+        normalizedPullRequests.push(normalizePullRequest(pullRequest, issues, changedFiles));
+    }
+
+    let normalizedTargetPullRequest = normalizedPullRequests.find(
+        (pullRequest) => pullRequest.number === targetPullRequest.number,
+    );
+    if (!normalizedTargetPullRequest) {
+        const [issues, changedFiles] = await Promise.all([
+            loadClosingIssues(graphqlUrl, repository, targetPullRequest, token),
+            covered
+                ? Promise.resolve([])
+                : loadPullRequestChangedFiles(
+                      apiUrl,
+                      repository,
+                      targetPullRequest.number,
+                      token,
+                  ),
+        ]);
+        normalizedTargetPullRequest = normalizePullRequest(
+            targetPullRequest,
+            issues,
+            changedFiles,
+        );
     }
 
     const decisionContext = {
         repository,
-        targetPullRequest: normalizePullRequest(
-            targetPullRequest,
-            await loadClosingIssues(graphqlUrl, repository, targetPullRequest, token),
-        ),
+        targetPullRequest: normalizedTargetPullRequest,
         targetCoveredBySuccessfulDistribution: covered,
         baselineDistribution: relevantDistribution
             ? {

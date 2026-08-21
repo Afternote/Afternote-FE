@@ -111,16 +111,60 @@ keytool -exportcert -alias afternote-debug-shared -keystore ~/afternote-debug-sh
 
 ### 머지별 자동 판단
 
-`develop` 대상 PR이 머지되면 [`deployment-decision.yml`](.github/workflows/deployment-decision.yml)이 마지막 성공 QA 배포 이후의 누적 PR·연결 이슈·실제 diff를 읽는다. 고위험 경로, 버그·기능 PR, 누적 이슈 수, 명시 QA 포인트 수, 영향 스코프 수를 위 기준으로 판정해 `QA 배포 권장` 또는 `QA 배포 보류`, 포함 이슈, QA 포인트를 머지된 PR에 코멘트한다. 판단만 자동화하며 APK 업로드는 실행하지 않는다.
+`develop` 대상 PR이 머지되면 [`deployment-decision.yml`](.github/workflows/deployment-decision.yml)이 마지막 성공 QA 배포 이후의 누적 PR·연결 이슈·실제 diff를 읽는다. 고위험 경로, 버그·기능 PR, 누적 이슈 수, 구조화 QA 원천 수, 영향 스코프 수를 판정한 뒤 의미 감사를 거쳐 `QA 배포 권장`·`QA 배포 보류`·`QA 사람 검토 필요`와 실행 가능한 시나리오를 머지된 PR에 코멘트한다. 판단만 자동화하며 APK 업로드는 실행하지 않는다.
 
-별도 API나 유료 AI를 호출하지 않으며 기존 GitHub Actions 실행량만 사용한다. Actions의 **Evaluate QA Distribution Candidate**에서 이미 머지된 PR 번호를 입력해 같은 규칙으로 수동 재검증할 수도 있다.
+의미 감사는 PR 메타데이터를 정본으로 사용한다. Copilot은 원천 ID의 병합과 P0-P3 우선순위만 결정하며 사전조건·행동·기대 결과·위험·근거·제외 사유는 다시 쓰지 못한다. 응답이 원천을 누락하거나 허용되지 않은 필드를 만들면 결과를 폐기한다. 구조화 입력 누락, 개인 Copilot token 누락, 호출 실패, 근거 부족은 generic 문구로 대체하지 않고 `human_review_required`로 남긴다.
+
+개인 Copilot 좌석을 쓰려면 개인 계정 소유의 fine-grained PAT에 Account permission `Copilot Requests`를 부여하고 Actions repository secret `COPILOT_PERSONAL_TOKEN`으로 등록한다. classic PAT는 지원하지 않는다. workflow에는 조직 과금용 `copilot-requests: write` 권한을 두지 않으며, 개인 좌석의 AI credits를 사용한다. 한 감사 실행은 최대 1 AI credit로 제한한다. PAT는 모델 호출 step에만 주입되고 Copilot의 shell·read·write·URL·memory 도구와 built-in MCP는 모두 거부된다. Copilot에는 미배포 PR의 구조화 QA 메타데이터, 연결 이슈 제목·본문, 변경 파일 경로만 전송하며 secret 값은 입력·응답·로그에 넣지 않는다. 자세한 인증·과금 방식은 [GitHub Copilot CLI Actions 문서](https://docs.github.com/en/copilot/how-tos/copilot-cli/automate-copilot-cli/automate-with-actions)를 따른다. 모델을 고정해야 하면 repository variable `QA_SEMANTIC_AUDIT_MODEL`을 설정하고, 비어 있으면 개인 좌석의 기본 모델을 사용한다.
+
+Actions의 **Evaluate QA Distribution Candidate**에서 이미 머지된 PR 번호를 입력해 같은 규칙으로 수동 재검증할 수도 있다.
+
+### PR별 구조화 QA 원천
+
+모든 PR은 `QA Metadata` 섹션의 JSON 객체를 채운다. `app-runtime`·`release-only`는 `precondition`·`action`·`expected`·`risk`·`evidence`가 필요하다. `ci-only`·`covered-by-ci`는 빈 QA 문구 대신 `exclusionReason`과 동일 입력·경계·관찰 결과를 적은 `ci` 또는 `test` evidence가 필요하다. 누락과 `#123 관련 동작을 재현...` 형태의 generic 문구는 Unit Test workflow에서 실패한다.
+
+```json
+{
+  "scope": "app-runtime",
+  "precondition": "삭제할 애프터노트가 목록에 있는 로그인 상태",
+  "action": "삭제 확인에서 확인을 눌러 DELETE 요청을 보낸다",
+  "expected": "성공 시 목록에서 제거되고 실패 시 기존 항목과 오류 안내가 유지된다",
+  "risk": "실패한 삭제가 성공처럼 보이거나 기존 항목이 유실될 수 있다",
+  "evidence": [
+    {
+      "kind": "issue",
+      "ref": "#550",
+      "assertion": "삭제 성공·실패의 관찰 결과를 정의한다"
+    }
+  ]
+}
+```
+
+앱 QA 제외 원천은 다음처럼 같은 경계를 검증하는 CI 근거를 구조화한다.
+
+```json
+{
+  "scope": "ci-only",
+  "exclusionReason": "GitHub Actions 제어 변경으로 APK 사용자 흐름이 존재하지 않는다",
+  "evidence": [
+    {
+      "kind": "ci",
+      "ref": "Unit Test / Run deployment script tests",
+      "assertion": "같은 스크립트 입력과 종료 상태를 CI에서 검증한다",
+      "input": "배포 판단 context fixture",
+      "boundary": "구조화 메타데이터 파싱부터 최종 JSON 검증까지",
+      "observation": "node test가 제외·병합·generic 0건을 단언한다"
+    }
+  ]
+}
+```
 
 ### QA 배포 — `develop` → Firebase App Distribution (수동, 기본 경로)
 
 GitHub Actions의 **Release Distribution**에서 `Run workflow`를 누르고 ref를 `develop`으로 선택한 뒤 다음 값을 입력한다.
 
 - `issue_numbers`: 포함된 이슈 번호. 예: `#716, #723`
-- `qa_points`: 확인할 동작과 기대 결과. 여러 건은 세미콜론(`;`)으로 구분
+- `qa_points`: 확인할 동작과 기대 결과. 여러 건은 세미콜론(`;`)으로 구분. generic fallback 문구는 거부된다.
 
 워크플로가 위 입력을 릴리스 노트로 만들어 APK를 빌드하고 Firebase App Distribution의 `afternote` 그룹에 배포한다.
 

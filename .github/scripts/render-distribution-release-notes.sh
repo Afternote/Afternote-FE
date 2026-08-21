@@ -125,6 +125,11 @@ if [[ -z "$normalized_qa_points" ]]; then
     exit 1
 fi
 
+if printf '%s\n' "$normalized_qa_points" | grep -Eiq '#[0-9]+[[:space:]]*관련 동작을 재현하고 수정 후 기대 결과가 충족되는지 확인|PR[[:space:]]*#[0-9]+의 변경 흐름을 실행하고 기존 동작이 회귀하지 않는지 확인'; then
+    printf '::error::QA 포인트에 사전조건·행동·기대 결과가 없는 generic fallback 문구를 사용할 수 없습니다.\n' >&2
+    exit 1
+fi
+
 source_ref="${SOURCE_REF:-unknown}"
 source_ref="${source_ref#refs/heads/}"
 source_sha="${SOURCE_SHA:-unknown}"
