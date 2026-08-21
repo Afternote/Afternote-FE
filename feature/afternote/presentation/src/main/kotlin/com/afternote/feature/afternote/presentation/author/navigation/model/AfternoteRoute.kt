@@ -1,5 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.navigation.model
 
+import com.afternote.feature.afternote.domain.AfternoteType
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 sealed interface AfternoteRoute {
@@ -8,9 +10,10 @@ sealed interface AfternoteRoute {
 
     @Serializable
     data class DetailRoute(
-        val itemId: String = "",
+        val itemId: Long,
     ) : AfternoteRoute
 
+    /** Editor·MemorialPlaylist·AddSong이 공유하는 flow 범위와 생성/수정 인자. */
     @Serializable
     data class GalleryDetailRoute(
         val itemId: String = "",

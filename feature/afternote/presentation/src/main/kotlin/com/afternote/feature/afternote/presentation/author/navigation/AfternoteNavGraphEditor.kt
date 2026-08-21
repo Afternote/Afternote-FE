@@ -163,7 +163,7 @@ internal fun AfternoteEditorNavigation(
         }
     }
 
-    val saveError: String? = editorSaveErrorMessageRes(uiState)?.let { stringResource(it) }
+    val snackbarMessage = uiState.error?.let { stringResource(it.messageResId()) }
 
     val onRegisterClick =
         remember(editViewModel, state) {
@@ -176,16 +176,20 @@ internal fun AfternoteEditorNavigation(
         form = uiState.form,
         onBackClick = onPopBackStack,
         onRegisterClick = onRegisterClick,
-        onNavigateToMemorialPlaylist = onNavigateToMemorialPlaylist,
-        onNavigateToSelectReceiver = onNavigateToSelectReceiver,
-        onThumbnailBytesReady = editViewModel::uploadMemorialThumbnail,
-        onThumbnailExtractionFailed = editViewModel::onMemorialThumbnailExtractionFailed,
-        onThumbnailUploadErrorConsumed = editViewModel::onThumbnailUploadErrorConsumed,
-        onValidationErrorConsumed = editViewModel::onValidationErrorConsumed,
-        liveSongs = liveSongs,
+        snackbarMessage = snackbarMessage,
+        onSnackbarMessageConsumed = editViewModel::onErrorConsumed,
+        content = {
+            AfternoteEditorBody(
+                state = state,
+                form = uiState.form,
+                onNavigateToMemorialPlaylist = onNavigateToMemorialPlaylist,
+                onNavigateToSelectReceiver = onNavigateToSelectReceiver,
+                onThumbnailBytesReady = editViewModel::uploadMemorialThumbnail,
+                onThumbnailExtractionFailed = editViewModel::onMemorialThumbnailExtractionFailed,
+                isPrefillLoading = uiState.isPrefillLoading,
+            )
+        },
         state = state,
-        saveError = saveError,
-        thumbnailUploadFailed = uiState.thumbnailUploadFailed,
         isPrefillLoading = uiState.isPrefillLoading,
     )
 }
