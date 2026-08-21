@@ -174,9 +174,8 @@ private data class EditorFormSnapshot(
 /**
  * 애프터노트 생성/수정 ViewModel.
  *
- * **SSOT:** 폼은 [internalState] 안의 [EditorFormState] 다. 추억 플레이리스트 곡 목록만 그래프 스코프
- * [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs] 가 정본이라,
- * 그쪽과 동기화된 뒤 스냅샷에 포함된다.
+ * **SSOT:** 에디터 flow 전체의 폼은 [internalState] 안의 [EditorFormState]다.
+ * 추억 플레이리스트 화면과 곡 추가 화면도 같은 flow-scoped ViewModel을 사용한다.
  *
  * **경계:** Compose UI 객체(`TextFieldState`·`SnapshotStateList`·파사드)를 들지 않고 Retrofit 타입도 알지 않는다 —
  * 저장 API 의 HTTP·에러 바디 해석은 [AfternoteRepository] 구현이 도메인 예외로 변환한다.
@@ -192,7 +191,7 @@ class AfternoteEditorViewModel
         private val resolveMemorialMediaForSave: ResolveMemorialMediaForSaveUseCase,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
-        private val route = savedStateHandle.toRoute<AfternoteRoute.EditorRoute>()
+        private val route = savedStateHandle.toRoute<AfternoteRoute.EditorFlowRoute>()
         private val formSnapshotJson =
             Json {
                 ignoreUnknownKeys = true
@@ -220,6 +219,8 @@ class AfternoteEditorViewModel
         /** 파사드/페이로드 빌더 등이 콜백 시점에 최신 폼 스냅샷을 읽기 위한 접근자. */
         fun currentForm(): EditorFormState = internalState.value.form
 
+        val isEditing: Boolean get() = route.itemId != null
+
         /**
          * 폼 SSOT 갱신의 유일한 통로. SavedState 스냅샷 직렬화도 함께 수행한다.
          * 어떤 필드를 어떻게 바꿀지는 `EditorFormMutations.kt` 의 변환 규칙이 정한다.
@@ -239,7 +240,25 @@ class AfternoteEditorViewModel
 
         fun setMemorialThumbnail(dataUrl: String?) = mutateForm { it.withMemorialThumbnail(dataUrl) }
 
-        fun setMemorialPlaylistSongs(songs: List<Song>) = mutateForm { it.withMemorialPlaylistSongs(songs) }
+        fun addMemorialPlaylistSongs(songs: List<Song>) {
+            if (songs.isEmpty()) return
+            mutateForm { form ->
+                form.withMemorialPlaylistSongs(form.memorialPlaylistSongs + songs)
+            }
+        }
+
+        fun removeMemorialPlaylistSongs(selectionKeys: Set<String>) {
+            if (selectionKeys.isEmpty()) return
+            mutateForm { form ->
+                form.withMemorialPlaylistSongs(
+                    form.memorialPlaylistSongs.filterNot { it.selectionKey in selectionKeys },
+                )
+            }
+        }
+
+        fun clearMemorialPlaylistSongs() {
+            mutateForm { it.withMemorialPlaylistSongs(emptyList()) }
+        }
 
         fun deleteReceiver(receiverId: String) = mutateForm { it.withReceiverDeleted(receiverId) }
 
@@ -279,12 +298,13 @@ class AfternoteEditorViewModel
         private fun readEditItemId(): Long? = route.itemId
 
         private fun readFormSnapshotOrDefault(): EditorFormState {
-            val raw = savedStateHandle.get<String>(EDITOR_FORM_SNAPSHOT_KEY) ?: return EditorFormState()
+            val defaultForm = EditorFormState().withType(route.initialType)
+            val raw = savedStateHandle.get<String>(EDITOR_FORM_SNAPSHOT_KEY) ?: return defaultForm
             return runCatching {
                 formSnapshotJson
                     .decodeFromString(EditorFormSnapshot.serializer(), raw)
                     .toEditorFormState(restoreGeneration = System.nanoTime())
-            }.getOrElse { EditorFormState() }
+            }.getOrElse { defaultForm }
         }
 
         /** [EditorFormSnapshot] 직렬화. 실패 시 무시한다(용량 초과 등은 [EditorFormSnapshot] KDoc 참고). */
@@ -328,21 +348,23 @@ class AfternoteEditorViewModel
         }
 
         fun saveAfternote(
-            editingId: Long?,
-            type: AfternoteType,
             payload: RegisterAfternotePayload,
             selectedReceiverIds: List<Long>,
-            playlistSongs: List<Song>,
             memorialMedia: SaveAfternoteMemorialMedia,
         ) {
-            if (internalState.value.isSaving) return
+            val editorState = internalState.value
+            if (editorState.isSaving) return
+
+            val form = editorState.form
+            val editingId = readEditItemId()
+            val type = form.selectedType
+            val playlistSongs = form.memorialPlaylistSongs
 
             val validationError =
                 AfternoteEditorValidator.validate(
-                    type = type,
+                    form = form,
                     payload = payload,
                     selectedReceiverIds = selectedReceiverIds,
-                    playlistSongs = playlistSongs,
                 )
             if (validationError != null) {
                 internalState.update { it.copy(validationError = validationError) }
@@ -350,7 +372,7 @@ class AfternoteEditorViewModel
             }
 
             val typeForSave =
-                if (editingId != null) (internalState.value.originalType ?: type) else type
+                if (editingId != null) (editorState.originalType ?: type) else type
 
             viewModelScope.launch {
                 internalState.update {

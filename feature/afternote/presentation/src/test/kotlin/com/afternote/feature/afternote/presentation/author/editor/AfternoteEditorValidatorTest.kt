@@ -1,6 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
-import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
@@ -17,37 +16,46 @@ class AfternoteEditorValidatorTest {
         )
 
     @Test
-    fun `추모 폼에 곡이 없으면 저장을 막는다`() {
+    fun `계정형 폼은 ID와 비밀번호가 모두 필요하다`() {
         val error =
             AfternoteEditorValidator.validate(
-                form = EditorFormState(typeForm = AfternoteTypeForm.Memorial()),
+                form = EditorFormState(typeForm = AfternoteTypeForm.Social()),
+                payload = payload.copy(processingMethods = listOf("계정 삭제")),
+                selectedReceiverIds = listOf(1L),
+            )
+
+        assertEquals(AfternoteValidationError.ACCOUNT_CREDENTIALS_REQUIRED, error)
+    }
+
+    @Test
+    fun `계정형 폼은 처리 방법이 한 개 이상 필요하다`() {
+        val error =
+            AfternoteEditorValidator.validate(
+                form = EditorFormState(typeForm = AfternoteTypeForm.Social()),
+                payload = payload.copy(accountId = "account", password = "password"),
+                selectedReceiverIds = listOf(1L),
+            )
+
+        assertEquals(AfternoteValidationError.ACTIONS_REQUIRED, error)
+    }
+
+    @Test
+    fun `갤러리 폼은 처리 방법이 한 개 이상 필요하다`() {
+        val error =
+            AfternoteEditorValidator.validate(
+                form = EditorFormState(typeForm = AfternoteTypeForm.Gallery()),
                 payload = payload,
                 selectedReceiverIds = listOf(1L),
             )
 
-        assertEquals(AfternoteValidationError.PLAYLIST_SONGS_REQUIRED, error)
+        assertEquals(AfternoteValidationError.ACTIONS_REQUIRED, error)
     }
 
     @Test
-    fun `추모 폼의 곡을 저장 검증 정본으로 사용한다`() {
-        val form =
-            EditorFormState(
-                typeForm =
-                    AfternoteTypeForm.Memorial(
-                        playlistSongs =
-                            listOf(
-                                Song(
-                                    selectionKey = "search:1",
-                                    title = "노래",
-                                    artist = "가수",
-                                ),
-                            ),
-                    ),
-            )
-
+    fun `추모 폼은 플레이리스트가 비어 있어도 저장할 수 있다`() {
         val error =
             AfternoteEditorValidator.validate(
-                form = form,
+                form = EditorFormState(typeForm = AfternoteTypeForm.Memorial()),
                 payload = payload,
                 selectedReceiverIds = listOf(1L),
             )

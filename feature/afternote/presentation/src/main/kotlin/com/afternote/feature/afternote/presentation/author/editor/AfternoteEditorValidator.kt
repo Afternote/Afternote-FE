@@ -33,12 +33,12 @@ internal object AfternoteEditorValidator {
             return AfternoteValidationError.LEAVE_MESSAGE_BODY_REQUIRED
         }
         return when (type) {
-            // BUSINESS 는 시안(700:38735) 필수 표기(계정 정보*, 처리 방법 리스트*)가 SOCIAL 과 동일해 같은 규칙을 쓴다.
+            // BUSINESS 는 시안(700:38735)의 필수 항목(계정 정보·처리 방법)이 SOCIAL 과 동일해 같은 규칙을 쓴다.
             AfternoteType.SOCIAL_NETWORK, AfternoteType.BUSINESS -> validateAccount(payload)
 
-            AfternoteType.GALLERY_AND_FILES -> validateGallery(payload)
+            AfternoteType.GALLERY_AND_FILES -> validateProcessingMethods(payload)
 
-            AfternoteType.MEMORIAL -> validateMemorial(playlistSongs)
+            AfternoteType.MEMORIAL -> null
 
             // ESTATE 는 디자인 확정 전 placeholder 만 노출. UI 자체에서 입력이 막혀 있지만
             // 안전망으로 Validator 에서도 저장을 차단한다.
@@ -50,22 +50,12 @@ internal object AfternoteEditorValidator {
         if (payload.accountId.isBlank() || payload.password.isBlank()) {
             return AfternoteValidationError.ACCOUNT_CREDENTIALS_REQUIRED
         }
-        if (payload.processingMethods.isEmpty()) {
-            return AfternoteValidationError.ACTIONS_REQUIRED
-        }
-        return null
+        return validateProcessingMethods(payload)
     }
 
-    private fun validateGallery(payload: RegisterAfternotePayload): AfternoteValidationError? {
+    private fun validateProcessingMethods(payload: RegisterAfternotePayload): AfternoteValidationError? {
         if (payload.processingMethods.isEmpty()) {
             return AfternoteValidationError.ACTIONS_REQUIRED
-        }
-        return null
-    }
-
-    private fun validateMemorial(playlistSongs: List<Song>): AfternoteValidationError? {
-        if (playlistSongs.isEmpty()) {
-            return AfternoteValidationError.PLAYLIST_SONGS_REQUIRED
         }
         return null
     }
