@@ -15,13 +15,31 @@ import com.afternote.feature.afternote.presentation.author.editor.AfternoteEdito
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternotePayloadBuilder
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorSaveError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
-import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorUiState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.navigation.model.SELECTED_RECEIVER_ID_KEY
 
 @StringRes
-internal fun editorSaveErrorMessageRes(uiState: AfternoteEditorUiState): Int? = uiState.validationError?.messageResId ?: uiState.errorRes
+internal fun AfternoteEditorSaveError.messageResId(): Int =
+    when (this) {
+        is AfternoteEditorSaveError.Validation -> {
+            reason.messageResId
+        }
+
+        AfternoteEditorSaveError.Network,
+        AfternoteEditorSaveError.Server,
+        -> {
+            R.string.afternote_editor_save_failed_generic
+        }
+
+        is AfternoteEditorSaveError.Upload -> {
+            when (target) {
+                AfternoteEditorSaveError.Upload.Target.THUMBNAIL -> R.string.afternote_editor_thumbnail_upload_failed
+                AfternoteEditorSaveError.Upload.Target.SAVE_MEDIA -> R.string.afternote_editor_save_failed_generic
+            }
+        }
+    }
 
 internal fun tryApplyReceiverSelectionFromSavedState(
     backStackEntry: NavBackStackEntry,
@@ -148,12 +166,10 @@ internal fun AfternoteEditorNavigation(
     val saveError: String? = editorSaveErrorMessageRes(uiState)?.let { stringResource(it) }
 
     val onRegisterClick =
-        remember(editViewModel, state, route, liveSongs) {
+        remember(editViewModel, state) {
             buildOnRegisterClick(
                 editViewModel = editViewModel,
                 state = state,
-                route = route,
-                liveSongs = liveSongs,
             )
         }
     AfternoteEditorScreen(
