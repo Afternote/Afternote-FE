@@ -392,16 +392,6 @@ fun rememberAfternoteNavActions(
                 appState.navController.navigate(AfternoteRoute.DetailRoute(itemId = itemId))
             }
 
-            override fun navigateToGalleryDetail(itemId: Long) {
-                appState.navController.navigate(AfternoteRoute.GalleryDetailRoute(itemId = itemId))
-            }
-
-            override fun navigateToMemorialDetail(itemId: Long) {
-                appState.navController.navigate(
-                    AfternoteRoute.MemorialDetailRoute(itemId = itemId),
-                )
-            }
-
             override fun navigateToNewEditor(initialCategory: String?) {
                 appState.navController.navigate(AfternoteRoute.EditorRoute(initialCategory = initialCategory))
             }

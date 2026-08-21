@@ -12,11 +12,6 @@ sealed interface AfternoteRoute {
     ) : AfternoteRoute
 
     @Serializable
-    data class GalleryDetailRoute(
-        val itemId: Long,
-    ) : AfternoteRoute
-
-    @Serializable
     data class EditorRoute(
         val itemId: Long? = null,
         val initialCategory: String? = null,
@@ -30,9 +25,4 @@ sealed interface AfternoteRoute {
 
     @Serializable
     data object MemorialPlaylistRoute : AfternoteRoute
-
-    @Serializable
-    data class MemorialDetailRoute(
-        val itemId: Long,
-    ) : AfternoteRoute
 }

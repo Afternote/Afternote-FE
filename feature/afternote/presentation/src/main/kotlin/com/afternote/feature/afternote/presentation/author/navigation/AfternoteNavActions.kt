@@ -19,10 +19,6 @@ interface AfternoteNavActions {
 
     fun navigateToAfternoteDetail(itemId: Long)
 
-    fun navigateToGalleryDetail(itemId: Long)
-
-    fun navigateToMemorialDetail(itemId: Long)
-
     fun navigateToNewEditor(initialCategory: String?)
 
     fun navigateToEditorForEdit(
