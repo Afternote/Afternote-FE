@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">afternote-fe</string>
+    <string name="app_name">Afternote</string>
     <string name="fcm_notification_channel_id" translatable="false">afternote_fcm</string>
     <string name="fcm_notification_channel_name">애프터노트 알림</string>
     <string name="fcm_notification_fallback_title" translatable="false">AFTERNOTE</string>
