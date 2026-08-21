@@ -13,7 +13,7 @@ import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 
 fun AfternoteUpdatePayload.toRequest() =
     AfternoteUpdateRequestDto(
-        category = type.toAuthoringServerCategory(),
+        type = type.toAuthoringServerCategory(),
         title = title,
         processingMethods = processingMethods,
         leaveMessage = leaveMessageBlocks.toDto(),
@@ -39,7 +39,7 @@ private fun AfternoteType.toAuthoringServerCategory(): String =
 
 fun CreateAccountPayload.toSocialRequest() =
     AfternoteCreateAccountRequestDto(
-        category = "SOCIAL",
+        type = "SOCIAL",
         title = title,
         processingMethods = processingMethods,
         leaveMessage = leaveMessageBlocks.toDto(),
@@ -47,10 +47,10 @@ fun CreateAccountPayload.toSocialRequest() =
         receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
     )
 
-/** BUSINESS 생성 요청. [toSocialRequest] 와 동일 필드 조립이며 category 만 "BUSINESS" 로 실린다. */
+/** BUSINESS 생성 요청. [toSocialRequest] 와 동일 필드 조립이며 wire `category`만 "BUSINESS" 로 실린다. */
 fun CreateAccountPayload.toBusinessRequest() =
     AfternoteCreateAccountRequestDto(
-        category = "BUSINESS",
+        type = "BUSINESS",
         title = title,
         processingMethods = processingMethods,
         leaveMessage = leaveMessageBlocks.toDto(),
@@ -60,7 +60,7 @@ fun CreateAccountPayload.toBusinessRequest() =
 
 fun CreateGalleryPayload.toRequest() =
     AfternoteCreateGalleryRequestDto(
-        category = "GALLERY",
+        type = "GALLERY",
         title = title,
         processingMethods = processingMethods,
         leaveMessage = leaveMessageBlocks.toDto(),
@@ -69,7 +69,7 @@ fun CreateGalleryPayload.toRequest() =
 
 fun CreateMemorialPayload.toRequest() =
     AfternoteCreatePlaylistRequestDto(
-        category = "PLAYLIST",
+        type = "PLAYLIST",
         title = title,
         memorial = memorial.toDto(),
         receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },

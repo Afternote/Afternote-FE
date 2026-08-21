@@ -29,7 +29,7 @@ interface AfternoteApiService {
         @Path("afternoteId") afternoteId: Long,
     ): BaseResponse<AfternoteDetailDto>
 
-    /** SOCIAL·BUSINESS 공용 생성 — 두 카테고리는 바디 스키마가 동일해 [AfternoteCreateAccountRequestDto.category] 로만 구분된다. */
+    /** SOCIAL·BUSINESS 공용 생성 — 두 카테고리는 바디 스키마가 동일해 [AfternoteCreateAccountRequestDto.type]으로만 구분된다. */
     @POST("afternotes")
     suspend fun createAfternoteAccount(
         @Body request: AfternoteCreateAccountRequestDto,

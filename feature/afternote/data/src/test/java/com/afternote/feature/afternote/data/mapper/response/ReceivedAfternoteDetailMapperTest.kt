@@ -12,7 +12,7 @@ import org.junit.Test
 
 /**
  * [ReceivedAfternoteDetailDto.toDomain] 회귀 가드 (수신자 상세).
- * 경계: createdAt null→null·있으면 포맷, category null→type null, playlist·credentials nullable 매핑,
+ * 경계: createdAt null→null·있으면 포맷, type null→type null, playlist·credentials nullable 매핑,
  * memorialVideo의 video/thumbnail 추출.
  */
 class ReceivedAfternoteDetailMapperTest {
@@ -21,7 +21,7 @@ class ReceivedAfternoteDetailMapperTest {
         val result =
             ReceivedAfternoteDetailDto(
                 id = 1L,
-                category = "MUSIC",
+                type = "MUSIC",
                 serviceName = "추모",
                 senderName = "홍길동",
                 createdAt = "2025-11-26T14:30:00",
@@ -34,8 +34,8 @@ class ReceivedAfternoteDetailMapperTest {
     }
 
     @Test
-    fun `toDomain - category null이면 type null`() {
-        assertNull(ReceivedAfternoteDetailDto(id = 1L, category = null).toDomain().type)
+    fun `toDomain - type null이면 type null`() {
+        assertNull(ReceivedAfternoteDetailDto(id = 1L, type = null).toDomain().type)
     }
 
     @Test

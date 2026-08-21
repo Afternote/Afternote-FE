@@ -51,7 +51,7 @@ class LeaveMessageBlockContractTest {
                 LeaveMessageBlock(title = "가족에게", body = "잘 부탁해"),
                 LeaveMessageBlock(title = null, body = "제목 없는 블록"),
             ),
-            (detail.content as DetailContent.Account).leaveMessageBlocks,
+            (detail.content as DetailContent.SocialNetwork).leaveMessageBlocks,
         )
     }
 
@@ -61,12 +61,12 @@ class LeaveMessageBlockContractTest {
         val detail =
             json
                 .decodeFromString<AfternoteDetailDto>(
-                    """{"afternoteId":11,"category":"SOCIAL","title":"t","leaveMessage":[{"title":"","body":"재현용 남기실 말씀"}]}""",
+                    """{"afternoteId":11,"category":"SOCIAL","title":"t","credentials":{"id":"qa","password":"qa"},"leaveMessage":[{"title":"","body":"재현용 남기실 말씀"}]}""",
                 ).toDetailDomain()
 
         assertEquals(
             listOf(LeaveMessageBlock(title = "", body = "재현용 남기실 말씀")),
-            (detail.content as DetailContent.Account).leaveMessageBlocks,
+            (detail.content as DetailContent.SocialNetwork).leaveMessageBlocks,
         )
     }
 
@@ -75,10 +75,10 @@ class LeaveMessageBlockContractTest {
         val detail =
             json
                 .decodeFromString<AfternoteDetailDto>(
-                    """{"afternoteId":1,"category":"SOCIAL","title":"t","leaveMessage":null}""",
+                    """{"afternoteId":1,"category":"SOCIAL","title":"t","credentials":{"id":"qa","password":"qa"},"leaveMessage":null}""",
                 ).toDetailDomain()
 
-        assertTrue((detail.content as DetailContent.Account).leaveMessageBlocks.isEmpty())
+        assertTrue((detail.content as DetailContent.SocialNetwork).leaveMessageBlocks.isEmpty())
     }
 
     /** 수신 목록은 응답에 `leaveMessage` 가 실려, 블록이 있는 항목 하나만 섞여도 목록 전체가 실패했다. */
@@ -128,7 +128,7 @@ class LeaveMessageBlockContractTest {
     fun `요청 직렬화 - 블록 배열로 나간다`() {
         val request =
             AfternoteCreateAccountRequestDto(
-                category = "SOCIAL",
+                type = "SOCIAL",
                 title = "인스타그램",
                 processingMethods = listOf("게시물 내리기"),
                 leaveMessage =
@@ -138,6 +138,8 @@ class LeaveMessageBlockContractTest {
 
         val encoded = json.encodeToString(AfternoteCreateAccountRequestDto.serializer(), request)
 
+        assertTrue(encoded.contains("\"category\":\"SOCIAL\""))
+        assertTrue(!encoded.contains("\"type\""))
         assertTrue(encoded.contains(""""leaveMessage":[{"title":"가족에게","body":"잘 부탁해"}]"""))
     }
 

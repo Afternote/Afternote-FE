@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
-import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.Detail
+import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailReceiver
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
 import org.junit.Assert.assertEquals
@@ -51,11 +51,11 @@ class AfternoteEditorReceiverPrefillTest {
             id = 1L,
             title = "구글 포토",
             timestamps = DetailTimestamps(createdAt = "2026-08-02", updatedAt = "2026-08-02"),
-            type = AfternoteType.GALLERY_AND_FILES,
-            credentials = null,
             receivers = receivers.toList(),
-            processingMethods = emptyList(),
-            leaveMessageBlocks = emptyList(),
-            memorial = null,
+            content =
+                DetailContent.Gallery(
+                    processingMethods = emptyList(),
+                    leaveMessageBlocks = emptyList(),
+                ),
         )
 }

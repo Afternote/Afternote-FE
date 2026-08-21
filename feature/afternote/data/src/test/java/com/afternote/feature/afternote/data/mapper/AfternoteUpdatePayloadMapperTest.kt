@@ -18,7 +18,7 @@ class AfternoteUpdatePayloadMapperTest {
             )
 
         expectedByType.forEach { (type, expected) ->
-            assertEquals(expected, AfternoteUpdatePayload(type = type, title = "title").toRequest().category)
+            assertEquals(expected, AfternoteUpdatePayload(type = type, title = "title").toRequest().type)
         }
     }
 

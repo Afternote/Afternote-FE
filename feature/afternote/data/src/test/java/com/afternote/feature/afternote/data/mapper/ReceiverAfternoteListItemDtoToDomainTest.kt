@@ -18,7 +18,7 @@ class ReceiverAfternoteListItemDtoToDomainTest {
             ReceivedAfternoteDto(
                 id = 9L,
                 title = "사진첩",
-                category = "GALLERY",
+                type = "GALLERY",
                 createdAt = "2025-11-26T14:30:00",
             ).toDomain()
 
@@ -30,20 +30,20 @@ class ReceiverAfternoteListItemDtoToDomainTest {
 
     @Test
     fun `toDomain - 변환은 대소문자 무시 + MUSIC PLAYLIST는 MEMORIAL`() {
-        assertEquals(AfternoteType.SOCIAL_NETWORK, resp(category = "social").toDomain().type)
-        assertEquals(AfternoteType.MEMORIAL, resp(category = "PLAYLIST").toDomain().type)
-        assertEquals(AfternoteType.MEMORIAL, resp(category = "music").toDomain().type)
+        assertEquals(AfternoteType.SOCIAL_NETWORK, resp(type = "social").toDomain().type)
+        assertEquals(AfternoteType.MEMORIAL, resp(type = "PLAYLIST").toDomain().type)
+        assertEquals(AfternoteType.MEMORIAL, resp(type = "music").toDomain().type)
     }
 
     @Test
     fun `toDomain - 작성 미지원 category 도 알려진 도메인 type으로 보존`() {
-        assertEquals(AfternoteType.ESTATE, resp(category = "ESTATE").toDomain().type)
-        assertEquals(AfternoteType.BUSINESS, resp(category = "BUSINESS").toDomain().type)
+        assertEquals(AfternoteType.ESTATE, resp(type = "ESTATE").toDomain().type)
+        assertEquals(AfternoteType.BUSINESS, resp(type = "BUSINESS").toDomain().type)
     }
 
     @Test
-    fun `toDomain - category null이면 type null`() {
-        assertNull(resp(category = null).toDomain().type)
+    fun `toDomain - type null이면 type null`() {
+        assertNull(resp(type = null).toDomain().type)
     }
 
     @Test
@@ -60,12 +60,12 @@ class ReceiverAfternoteListItemDtoToDomainTest {
     private fun resp(
         id: Long = 1L,
         title: String = "t",
-        category: String? = "SOCIAL",
+        type: String? = "SOCIAL",
         createdAt: String? = "2025-01-01T00:00:00",
     ) = ReceivedAfternoteDto(
         id = id,
         title = title,
-        category = category,
+        type = type,
         createdAt = createdAt,
     )
 }
