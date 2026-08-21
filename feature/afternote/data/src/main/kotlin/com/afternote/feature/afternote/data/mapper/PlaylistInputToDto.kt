@@ -14,7 +14,6 @@ fun MemorialWritePayload.toDto() =
 
 fun MemorialSongPayload.toDto() =
     AfternoteSongDto(
-        id = id,
         title = title,
         artist = artist,
         coverUrl = coverUrl,

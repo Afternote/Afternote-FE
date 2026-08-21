@@ -107,7 +107,6 @@ private fun AfternoteDetailReceiverDto.toDomain(): DetailReceiver? =
 
 private fun AfternoteSongDto.toDomain() =
     DetailSong(
-        id = id,
         title = title,
         artist = artist,
         coverUrl = coverUrl,
