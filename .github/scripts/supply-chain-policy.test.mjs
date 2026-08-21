@@ -12,8 +12,24 @@ async function workflows() {
   );
 }
 
+function requiresGradleSetup(source) {
+  return source.includes('./gradlew') || /uses:\s*gradle\/actions\/setup-gradle@/.test(source);
+}
+
+test('recognizes direct and script-delegated Gradle workflows', () => {
+  assert.equal(requiresGradleSetup('run: ./gradlew test'), true);
+  assert.equal(
+    requiresGradleSetup('uses: gradle/actions/setup-gradle@v4\nrun: bash scripts/build.sh'),
+    true,
+  );
+  assert.equal(
+    requiresGradleSetup('uses: gradle/actions/dependency-submission@0123456789abcdef'),
+    false,
+  );
+});
+
 test('every workflow that runs the Gradle wrapper uses the pinned setup-gradle action', async () => {
-  const gradleWorkflows = (await workflows()).filter(([, source]) => source.includes('./gradlew'));
+  const gradleWorkflows = (await workflows()).filter(([, source]) => requiresGradleSetup(source));
   assert.ok(gradleWorkflows.length > 0);
 
   for (const [name, source] of gradleWorkflows) {
@@ -30,7 +46,7 @@ test('every workflow that runs the Gradle wrapper uses the pinned setup-gradle a
 test('Gradle caching has a single owner in every workflow', async () => {
   for (const [name, source] of await workflows()) {
     assert.doesNotMatch(source, /^\s+cache:\s*['"]?gradle['"]?\s*$/m, `${name} uses setup-java caching`);
-    if (source.includes('./gradlew')) {
+    if (requiresGradleSetup(source)) {
       assert.doesNotMatch(source, /uses:\s*actions\/cache@/, `${name} uses a competing Gradle cache`);
     }
   }
