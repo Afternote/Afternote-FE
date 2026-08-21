@@ -1,4 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor.processing
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -14,46 +15,46 @@ import com.afternote.feature.afternote.presentation.author.editor.processing.mod
 @Stable
 class ProcessingMethodListState(
     initialShowTextField: Boolean = false,
-    initialExpandedItemId: String? = null,
+    initialExpandedLocalId: Int? = null,
 ) {
     var showTextField by mutableStateOf(initialShowTextField)
         private set
 
-    var editingItemId by mutableStateOf<String?>(null)
+    var editingLocalId by mutableStateOf<Int?>(null)
         private set
 
-    val expandedStates = mutableStateMapOf<String, Boolean>()
+    val expandedStates = mutableStateMapOf<Int, Boolean>()
 
     /** Stored from constructor for use when [initializeExpandedStates] is called with null. */
-    private val defaultExpandedItemId: String? = initialExpandedItemId
+    private val defaultExpandedLocalId: Int? = initialExpandedLocalId
 
     /**
      * 현재 [items]에 맞춰 expanded 맵을 동기화한다.
      *
-     * - 목록에서 사라진 id의 expanded 항목은 제거한다.
+     * - 목록에서 사라진 로컬 ID의 expanded 항목은 제거한다.
      * - 편집 중이던 행이 목록에서 제거되면 편집 모드를 해제한다.
-     * - **이미 존재하는 id**의 expanded 값은 덮어쓰지 않는다(열림/드롭다운 상태 보존).
-     * - **새로 나타난 id**만 [initialExpandedItemId]·[defaultExpandedItemId] 기준으로 시드한다.
+     * - **이미 존재하는 로컬 ID**의 expanded 값은 덮어쓰지 않는다(열림/드롭다운 상태 보존).
+     * - **새로 나타난 로컬 ID**만 [initialExpandedLocalId]·[defaultExpandedLocalId] 기준으로 시드한다.
      */
     fun initializeExpandedStates(
         items: List<ProcessingMethodItem>,
-        initialExpandedItemId: String?,
+        initialExpandedLocalId: Int?,
     ) {
-        val itemIds = items.mapTo(mutableSetOf()) { it.id }
-        expandedStates.keys.toList().forEach { id ->
-            if (id !in itemIds) {
-                expandedStates.remove(id)
+        val localIds = items.mapTo(mutableSetOf()) { it.localId }
+        expandedStates.keys.toList().forEach { localId ->
+            if (localId !in localIds) {
+                expandedStates.remove(localId)
             }
         }
-        val editing = editingItemId
-        if (editing != null && editing !in itemIds) {
-            editingItemId = null
+        val editing = editingLocalId
+        if (editing != null && editing !in localIds) {
+            editingLocalId = null
         }
 
-        val expandedId = initialExpandedItemId ?: defaultExpandedItemId
+        val expandedLocalId = initialExpandedLocalId ?: defaultExpandedLocalId
         items.forEach { item ->
-            if (!expandedStates.containsKey(item.id)) {
-                expandedStates[item.id] = expandedId == item.id
+            if (!expandedStates.containsKey(item.localId)) {
+                expandedStates[item.localId] = expandedLocalId == item.localId
             }
         }
     }
@@ -65,25 +66,29 @@ class ProcessingMethodListState(
         showTextField = !showTextField
     }
 
+    fun hideTextField() {
+        showTextField = false
+    }
+
     /**
      * 아이템 expanded 상태 토글
      */
-    fun toggleItemExpanded(itemId: String) {
-        expandedStates[itemId] = !(expandedStates[itemId] ?: false)
+    fun toggleItemExpanded(localId: Int) {
+        expandedStates[localId] = !(expandedStates[localId] ?: false)
     }
 
     /**
      * 아이템 인라인 편집 모드 시작
      */
-    fun startEditing(itemId: String) {
-        editingItemId = itemId
+    fun startEditing(localId: Int) {
+        editingLocalId = localId
     }
 
     /**
      * 아이템 인라인 편집 모드 종료
      */
     fun stopEditing() {
-        editingItemId = null
+        editingLocalId = null
     }
 }
 

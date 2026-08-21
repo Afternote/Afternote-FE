@@ -33,11 +33,11 @@ fun AccountEditorContent(
     editorMessages: List<EditorMessage>,
     accountSection: AccountSection,
     recipientSection: AfternoteEditorReceiverSection,
+    processingMethodSection: ProcessingMethodSection,
     modifier: Modifier = Modifier,
     onMessageRegisterClick: (EditorMessage) -> Unit = {},
     onMessageDeleteClick: (EditorMessage) -> Unit = {},
     onMessageAddClick: () -> Unit = {},
-    processingMethodSection: ProcessingMethodSection = ProcessingMethodSection(),
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -116,6 +116,13 @@ private fun AccountEditorContentPreview() {
                             listOf(
                                 AfternoteEditorReceiver(id = "1", name = "홍길동", label = "가족"),
                             ),
+                    ),
+                processingMethodSection =
+                    ProcessingMethodSection(
+                        items = emptyList(),
+                        onItemDeleteClick = {},
+                        onItemAdded = {},
+                        onItemEdited = { _, _ -> },
                     ),
             )
         }

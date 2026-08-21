@@ -31,7 +31,7 @@ object SaveAfternotePayloadBuilder {
     ): RegisterAfternotePayload {
         val methods =
             form.processingMethods.map {
-                ProcessingMethod(it.id, it.text)
+                ProcessingMethod(it.localId.toString(), it.text)
             }
         return RegisterAfternotePayload(
             serviceName =

@@ -76,7 +76,7 @@ private data class ReceiverSnap(
 
 @Serializable
 private data class ProcessingMethodSnap(
-    val id: String,
+    val localId: Int,
     val text: String,
 )
 
@@ -127,7 +127,7 @@ private data class EditorFormSnapshot(
     private fun toCategoryForm(category: EditorCategory): CategoryForm {
         // 스냅샷의 빈 문자열은 미선택(null)로 복원 — process death 후에도 임의 기본값을 확정하지 않는다 (이슈 #468).
         val service = selectedService.ifBlank { null }
-        val methodItems = processingMethods.map { ProcessingMethodItem(it.id, it.text) }
+        val methodItems = processingMethods.map { ProcessingMethodItem(it.localId, it.text) }
         return when (category) {
             EditorCategory.SOCIAL -> {
                 CategoryForm.Social(service, methodItems)
@@ -167,7 +167,7 @@ private data class EditorFormSnapshot(
                     form.afternoteEditReceivers.map {
                         ReceiverSnap(id = it.id, name = it.name, label = it.label)
                     },
-                processingMethods = form.processingMethods.map { ProcessingMethodSnap(it.id, it.text) },
+                processingMethods = form.processingMethods.map { ProcessingMethodSnap(it.localId, it.text) },
                 pickedMemorialPhotoUri = form.pickedMemorialPhotoUri,
                 memorialVideoUrl = form.memorialVideoUrl,
                 memorialThumbnailUrl = form.memorialThumbnailUrl,
@@ -264,12 +264,12 @@ class AfternoteEditorViewModel
 
         fun addProcessingMethod(text: String) = mutateForm { it.withProcessingMethodAdded(text) }
 
-        fun deleteProcessingMethod(itemId: String) = mutateForm { it.withProcessingMethodDeleted(itemId) }
+        fun deleteProcessingMethod(localId: Int) = mutateForm { it.withProcessingMethodDeleted(localId) }
 
         fun editProcessingMethod(
-            itemId: String,
+            localId: Int,
             newText: String,
-        ) = mutateForm { it.withProcessingMethodEdited(itemId = itemId, newText = newText) }
+        ) = mutateForm { it.withProcessingMethodEdited(localId = localId, newText = newText) }
 
         init {
             viewModelScope.launch {
