@@ -22,7 +22,7 @@ import com.afternote.feature.afternote.presentation.author.navigation.DetailLoad
  */
 @Composable
 fun ReceivedAfternoteDetailRoute(
-    onBack: () -> Unit,
+    onNavigateBack: () -> Unit,
     onNavigateToPlaylist: (afternoteId: Long) -> Unit,
     viewModel: ReceivedAfternoteDetailViewModel = hiltViewModel(),
 ) {
@@ -36,7 +36,7 @@ fun ReceivedAfternoteDetailRoute(
         is ReceivedAfternoteDetailUiState.Error -> {
             DetailLoadErrorContent(
                 messageRes = state.messageRes,
-                onBackClick = onBack,
+                onBackClick = onNavigateBack,
                 onRetryClick = viewModel::retry,
             )
         }
@@ -46,14 +46,14 @@ fun ReceivedAfternoteDetailRoute(
                 is ReceivedDetailContentUiModel.SocialNetwork -> {
                     SocialNetworkReceivedDetailScreen(
                         content = model.content,
-                        onBackClick = onBack,
+                        onBackClick = onNavigateBack,
                     )
                 }
 
                 is ReceivedDetailContentUiModel.Gallery -> {
                     GalleryReceivedDetailScreen(
                         content = model.content,
-                        onBackClick = onBack,
+                        onBackClick = onNavigateBack,
                     )
                 }
 
@@ -66,14 +66,12 @@ fun ReceivedAfternoteDetailRoute(
                         memorialVideoUrl = model.content.memorialVideoUrl,
                         memorialThumbnailUrl = model.content.memorialThumbnailUrl,
                         onNavigateToPlaylist = { onNavigateToPlaylist(state.detailId) },
-                        onBackClick = onBack,
+                        onBackClick = onNavigateBack,
                     )
                 }
 
-                ReceivedDetailContentUiModel.Unimplemented,
-                ReceivedDetailContentUiModel.Unknown,
-                -> {
-                    DesignPendingDetailContent(onBackClick = onBack)
+                ReceivedDetailContentUiModel.Unimplemented -> {
+                    DesignPendingDetailContent(onBackClick = onNavigateBack)
                 }
             }
         }

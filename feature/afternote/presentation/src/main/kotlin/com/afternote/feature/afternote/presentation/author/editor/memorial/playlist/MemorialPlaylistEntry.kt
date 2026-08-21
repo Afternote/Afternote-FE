@@ -75,7 +75,7 @@ fun MemorialPlaylistEntry(
     val displaySongs =
         songs.map { s ->
             PlaylistSongDisplay(
-                id = s.id,
+                selectionKey = s.id,
                 title = s.title,
                 artist = s.artist,
                 albumImageUrl = s.albumCoverUrl,
@@ -102,7 +102,7 @@ fun MemorialPlaylistEntry(
                 header = {
                     MemorialPlaylistListHeader(songCount = displaySongs.size)
                 },
-                initialSelectedSongIds = initialSelectedSongIds,
+                initialSelectedSongKeys = initialSelectedSongIds,
                 actionLabel = stringResource(R.string.afternote_editor_playlist_delete_all),
                 onAction = { onClearAllSongs() },
                 secondaryActionLabel = stringResource(R.string.afternote_editor_playlist_delete_selected),

@@ -49,9 +49,8 @@ private fun ReceivedAfternoteDetail.toReceivedMemorialDetailContent(): ReceivedM
         senderName = senderName.orEmpty(),
         messageBlocks = leaveMessageBlocks.toMessageBlockUiModels(),
         albumCovers =
-            songs.mapIndexed { index, song ->
+            songs.map { song ->
                 AlbumCover(
-                    id = index.toString(),
                     imageUrl = song.coverUrl,
                     title = song.title,
                 )

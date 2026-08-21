@@ -59,7 +59,6 @@ internal fun Detail.toMemorialDetailContent(
         albumCovers =
             content.memorial.songs.map { s ->
                 AlbumCover(
-                    id = (s.id ?: 0L).toString(),
                     imageUrl = s.coverUrl,
                     title = s.title,
                 )

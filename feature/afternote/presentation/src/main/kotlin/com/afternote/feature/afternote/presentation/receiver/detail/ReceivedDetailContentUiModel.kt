@@ -26,9 +26,6 @@ sealed interface ReceivedDetailContentUiModel {
 
     /** BUSINESS·ESTATE 등 디자인 확정 전 placeholder. */
     data object Unimplemented : ReceivedDetailContentUiModel
-
-    /** 서버가 알 수 없는 category 를 내려준 경우. */
-    data object Unknown : ReceivedDetailContentUiModel
 }
 
 @Immutable
