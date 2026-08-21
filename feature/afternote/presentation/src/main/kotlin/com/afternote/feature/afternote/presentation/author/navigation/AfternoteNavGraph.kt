@@ -11,6 +11,7 @@ import androidx.navigation.navigation
 import com.afternote.core.ui.Route
 import com.afternote.feature.afternote.presentation.AfternoteHostViewModel
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.AddSongViewModel
+import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.MemorialEditorPlaylistBinding
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.MemorialPlaylistEntry
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 
@@ -57,7 +58,6 @@ fun NavGraphBuilder.afternoteNavGraph(
                 onClearSongs = hostViewModel::clearAllSongs,
                 onNavigateToSelectReceiver = {}, // TODO: 수신인 선택 화면 라우팅 연결
                 onPopBackStack = actions::popBack,
-                onNavigateToMemorialPlaylist = actions::navigateToMemorialPlaylist,
                 onSaveSuccessNavigateHome = actions::popToAfternoteHome,
             )
         }

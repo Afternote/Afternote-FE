@@ -1,5 +1,9 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -28,7 +32,6 @@ import com.afternote.feature.afternote.presentation.author.editor.gallery.Galler
 import com.afternote.feature.afternote.presentation.author.editor.mapper.hasServiceSelection
 import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialEditorContent
 import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialEditorContentParams
-import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverSection
 import com.afternote.feature.afternote.presentation.author.editor.selection.DropdownMenuStyle
@@ -42,15 +45,9 @@ import com.afternote.feature.afternote.presentation.author.editor.state.remember
 internal fun EditorContent(
     state: AfternoteEditorState,
     form: EditorFormState,
-    liveSongs: List<Song>,
+    typeContent: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     isPrefillLoading: Boolean = false,
-    onNavigateToMemorialPlaylist: () -> Unit,
-    onNavigateToSelectReceiver: () -> Unit,
-    onPhotoAddClick: () -> Unit,
-    onVideoAddClick: () -> Unit,
-    onThumbnailBytesReady: (ByteArray?) -> Unit,
-    onThumbnailExtractionFailed: (Throwable) -> Unit,
 ) {
     Column(
         modifier =
@@ -107,18 +104,56 @@ internal fun EditorContent(
         }
         Spacer(modifier = Modifier.height(32.dp))
 
-        AfternoteTypeContent(
-            state = state,
-            form = form,
-            liveSongs = liveSongs,
-            onNavigateToMemorialPlaylist = onNavigateToMemorialPlaylist,
-            onNavigateToSelectReceiver = onNavigateToSelectReceiver,
-            onPhotoAddClick = onPhotoAddClick,
-            onVideoAddClick = onVideoAddClick,
-            onThumbnailBytesReady = onThumbnailBytesReady,
-            onThumbnailExtractionFailed = onThumbnailExtractionFailed,
-        )
+        typeContent()
     }
+}
+
+@Composable
+internal fun AfternoteEditorBody(
+    state: AfternoteEditorState,
+    form: EditorFormState,
+    onNavigateToMemorialPlaylist: () -> Unit,
+    onNavigateToSelectReceiver: () -> Unit,
+    onThumbnailBytesReady: (ByteArray?) -> Unit,
+    onThumbnailExtractionFailed: (Throwable) -> Unit,
+    modifier: Modifier = Modifier,
+    isPrefillLoading: Boolean = false,
+) {
+    val memorialPhotoPickerLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
+            state.setMemorialPhoto(uri?.toString())
+        }
+    val memorialVideoPickerLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
+            state.setMemorialVideo(uri?.toString())
+        }
+
+    EditorContent(
+        state = state,
+        form = form,
+        typeContent = {
+            AfternoteTypeContent(
+                state = state,
+                form = form,
+                onNavigateToMemorialPlaylist = onNavigateToMemorialPlaylist,
+                onNavigateToSelectReceiver = onNavigateToSelectReceiver,
+                onPhotoAddClick = {
+                    memorialPhotoPickerLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                    )
+                },
+                onVideoAddClick = {
+                    memorialVideoPickerLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly),
+                    )
+                },
+                onThumbnailBytesReady = onThumbnailBytesReady,
+                onThumbnailExtractionFailed = onThumbnailExtractionFailed,
+            )
+        },
+        modifier = modifier,
+        isPrefillLoading = isPrefillLoading,
+    )
 }
 
 /**
@@ -228,7 +263,6 @@ private fun SkeletonBar(
 internal fun AfternoteTypeContent(
     state: AfternoteEditorState,
     form: EditorFormState,
-    liveSongs: List<Song>,
     onNavigateToMemorialPlaylist: () -> Unit,
     onNavigateToSelectReceiver: () -> Unit,
     onPhotoAddClick: () -> Unit,
@@ -242,7 +276,7 @@ internal fun AfternoteTypeContent(
                 params =
                     MemorialEditorContentParams(
                         displayMemorialPhotoUri = form.displayMemorialPhotoUri(),
-                        playlistAlbumCovers = form.displayAlbumCovers(liveSongs),
+                        playlistAlbumCovers = form.displayAlbumCovers(),
                         memorialVideoUrl = form.memorialVideoUrl,
                         memorialThumbnailUrl = form.memorialThumbnailUrl,
                         recipientSection =
@@ -323,14 +357,11 @@ internal fun AfternoteTypeContent(
 private fun EditorContentSocialPreview() {
     AfternoteTheme {
         val state = rememberAfternoteEditorState()
-        EditorContent(
+        AfternoteEditorBody(
             state = state,
             form = state.currentForm().copy(typeForm = AfternoteTypeForm.pristineFor(AfternoteType.SOCIAL_NETWORK)),
-            liveSongs = emptyList(),
             onNavigateToMemorialPlaylist = {},
             onNavigateToSelectReceiver = {},
-            onPhotoAddClick = {},
-            onVideoAddClick = {},
             onThumbnailBytesReady = {},
             onThumbnailExtractionFailed = {},
         )
@@ -342,14 +373,11 @@ private fun EditorContentSocialPreview() {
 private fun EditorContentBusinessPreview() {
     AfternoteTheme {
         val state = rememberAfternoteEditorState()
-        EditorContent(
+        AfternoteEditorBody(
             state = state,
             form = state.currentForm().copy(typeForm = AfternoteTypeForm.pristineFor(AfternoteType.BUSINESS)),
-            liveSongs = emptyList(),
             onNavigateToMemorialPlaylist = {},
             onNavigateToSelectReceiver = {},
-            onPhotoAddClick = {},
-            onVideoAddClick = {},
             onThumbnailBytesReady = {},
             onThumbnailExtractionFailed = {},
         )
@@ -361,14 +389,11 @@ private fun EditorContentBusinessPreview() {
 private fun EditorContentGalleryPreview() {
     AfternoteTheme {
         val state = rememberAfternoteEditorState()
-        EditorContent(
+        AfternoteEditorBody(
             state = state,
             form = state.currentForm().copy(typeForm = AfternoteTypeForm.pristineFor(AfternoteType.GALLERY_AND_FILES)),
-            liveSongs = emptyList(),
             onNavigateToMemorialPlaylist = {},
             onNavigateToSelectReceiver = {},
-            onPhotoAddClick = {},
-            onVideoAddClick = {},
             onThumbnailBytesReady = {},
             onThumbnailExtractionFailed = {},
         )
@@ -380,14 +405,11 @@ private fun EditorContentGalleryPreview() {
 private fun EditorContentMemorialPreview() {
     AfternoteTheme {
         val state = rememberAfternoteEditorState()
-        EditorContent(
+        AfternoteEditorBody(
             state = state,
             form = state.currentForm().copy(typeForm = AfternoteTypeForm.pristineFor(AfternoteType.MEMORIAL)),
-            liveSongs = emptyList(),
             onNavigateToMemorialPlaylist = {},
             onNavigateToSelectReceiver = {},
-            onPhotoAddClick = {},
-            onVideoAddClick = {},
             onThumbnailBytesReady = {},
             onThumbnailExtractionFailed = {},
         )

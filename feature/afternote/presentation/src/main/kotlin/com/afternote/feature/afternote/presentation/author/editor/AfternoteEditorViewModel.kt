@@ -596,8 +596,8 @@ class AfternoteEditorViewModel
             internalState.update { it.copy(thumbnailUploadFailed = false) }
         }
 
-        fun onValidationErrorConsumed() {
-            internalState.update { it.copy(validationError = null) }
+        fun onSaveErrorConsumed() {
+            internalState.update { it.copy(validationError = null, errorRes = null) }
         }
 
         // endregion
