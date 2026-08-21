@@ -60,7 +60,7 @@ class LeaveMessageBlockContractTest {
         val detail =
             json
                 .decodeFromString<AfternoteDetailDto>(
-                    """{"afternoteId":11,"category":"SOCIAL","title":"t","leaveMessage":[{"title":"","body":"재현용 남기실 말씀"}]}""",
+                    """{"afternoteId":11,"category":"SOCIAL","title":"t","credentials":{"id":"qa","password":"qa"},"leaveMessage":[{"title":"","body":"재현용 남기실 말씀"}]}""",
                 ).toDetailDomain()
 
         assertEquals(
@@ -74,7 +74,7 @@ class LeaveMessageBlockContractTest {
         val detail =
             json
                 .decodeFromString<AfternoteDetailDto>(
-                    """{"afternoteId":1,"category":"SOCIAL","title":"t","leaveMessage":null}""",
+                    """{"afternoteId":1,"category":"SOCIAL","title":"t","credentials":{"id":"qa","password":"qa"},"leaveMessage":null}""",
                 ).toDetailDomain()
 
         assertTrue(detail.leaveMessageBlocks.isEmpty())
@@ -127,7 +127,7 @@ class LeaveMessageBlockContractTest {
     fun `요청 직렬화 - 블록 배열로 나간다`() {
         val request =
             AfternoteCreateAccountRequestDto(
-                category = "SOCIAL",
+                type = "SOCIAL",
                 title = "인스타그램",
                 processingMethods = listOf("게시물 내리기"),
                 leaveMessage =
@@ -137,6 +137,8 @@ class LeaveMessageBlockContractTest {
 
         val encoded = json.encodeToString(AfternoteCreateAccountRequestDto.serializer(), request)
 
+        assertTrue(encoded.contains("\"category\":\"SOCIAL\""))
+        assertTrue(!encoded.contains("\"type\""))
         assertTrue(encoded.contains(""""leaveMessage":[{"title":"가족에게","body":"잘 부탁해"}]"""))
     }
 

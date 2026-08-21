@@ -58,14 +58,11 @@ class ReceiverAfternoteHomeViewModel
     }
 
 /** 카드 주 텍스트는 발신자가 고른 서비스명이다 — 종류는 아이콘과 필터 탭이 담는다. */
-internal fun AfterNoteListItem.toUiModel(): ListItemUiModel {
-    // 서버가 종류를 안 줬거나 모르는 값이면 표시할 것이 없어 소셜네트워크로 떨어진다.
-    val resolvedType = type ?: AfternoteType.SOCIAL_NETWORK
-    return ListItemUiModel(
+internal fun AfterNoteListItem.toUiModel(): ListItemUiModel =
+    ListItemUiModel(
         id = id,
         serviceName = serviceName,
         date = lastUpdatedAt.orEmpty(),
-        iconResId = getIconResForService(serviceName, resolvedType),
-        type = resolvedType,
+        iconResId = getIconResForService(serviceName, type),
+        type = type,
     )
-}

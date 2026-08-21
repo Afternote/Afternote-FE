@@ -23,15 +23,11 @@ internal fun ReceivedAfternoteDetail.toReceivedDetailContentUiModel(): ReceivedD
         AfternoteType.BUSINESS, AfternoteType.ESTATE -> {
             ReceivedDetailContentUiModel.Unimplemented
         }
-
-        null -> {
-            ReceivedDetailContentUiModel.Unknown
-        }
     }
 
 private fun ReceivedAfternoteDetail.toReceivedSocialNetworkDetailContent(): ReceivedSocialNetworkDetailContent =
     ReceivedSocialNetworkDetailContent(
-        serviceName = title.orEmpty(),
+        serviceName = serviceName.orEmpty(),
         accountId = credentials?.id.orEmpty(),
         password = credentials?.password.orEmpty(),
         processingMethods = processingMethods,
@@ -41,7 +37,7 @@ private fun ReceivedAfternoteDetail.toReceivedSocialNetworkDetailContent(): Rece
 
 private fun ReceivedAfternoteDetail.toReceivedGalleryDetailContent(): ReceivedGalleryDetailContent =
     ReceivedGalleryDetailContent(
-        serviceName = title.orEmpty(),
+        serviceName = serviceName.orEmpty(),
         finalWriteDate = createdAt.orEmpty(),
         processingMethods = processingMethods,
         messageBlocks = leaveMessageBlocks.toMessageBlockUiModels(),

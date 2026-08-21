@@ -17,7 +17,7 @@ class AfternoteListItemDtoToDomainTest {
             AfternoteListItemDto(
                 afternoteId = 7L,
                 title = "은행 계정",
-                category = "SOCIAL",
+                type = "SOCIAL",
                 createdAt = "2025-11-26T14:30:00",
             ).toDomain()
 
@@ -29,14 +29,14 @@ class AfternoteListItemDtoToDomainTest {
 
     @Test
     fun `toDomain - category 매핑은 대소문자 무시 + MUSIC PLAYLIST는 MEMORIAL`() {
-        assertEquals(AfternoteType.MEMORIAL, item(category = "music").toDomain().type)
-        assertEquals(AfternoteType.MEMORIAL, item(category = "PLAYLIST").toDomain().type)
-        assertEquals(AfternoteType.GALLERY_AND_FILES, item(category = "gallery").toDomain().type)
+        assertEquals(AfternoteType.MEMORIAL, item(type = "music").toDomain().type)
+        assertEquals(AfternoteType.MEMORIAL, item(type = "PLAYLIST").toDomain().type)
+        assertEquals(AfternoteType.GALLERY_AND_FILES, item(type = "gallery").toDomain().type)
     }
 
     @Test
     fun `toDomain - 알 수 없는 category는 SOCIAL_NETWORK 기본값`() {
-        assertEquals(AfternoteType.SOCIAL_NETWORK, item(category = "???").toDomain().type)
+        assertEquals(AfternoteType.SOCIAL_NETWORK, item(type = "???").toDomain().type)
     }
 
     @Test
@@ -58,12 +58,12 @@ class AfternoteListItemDtoToDomainTest {
     private fun item(
         afternoteId: Long = 1L,
         title: String = "t",
-        category: String = "SOCIAL",
+        type: String = "SOCIAL",
         createdAt: String = "2025-01-01T00:00:00",
     ) = AfternoteListItemDto(
         afternoteId = afternoteId,
         title = title,
-        category = category,
+        type = type,
         createdAt = createdAt,
     )
 }

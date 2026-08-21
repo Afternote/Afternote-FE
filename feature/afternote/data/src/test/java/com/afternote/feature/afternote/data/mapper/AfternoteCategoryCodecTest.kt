@@ -57,9 +57,13 @@ class AfternoteCategoryCodecTest {
     }
 
     @Test
+    fun `outbound 미지원 종류도 응답에서는 도메인 타입으로 보존한다`() {
+        assertEquals(AfternoteType.BUSINESS, afternoteTypeFromServerCategory("BUSINESS"))
+        assertEquals(AfternoteType.ESTATE, afternoteTypeFromServerCategory("ESTATE"))
+    }
+
+    @Test
     fun `대응이 없는 서버 값은 null 을 준다`() {
-        assertNull(afternoteTypeFromServerCategory("BUSINESS"))
-        assertNull(afternoteTypeFromServerCategory("ESTATE"))
         assertNull(afternoteTypeFromServerCategory(""))
     }
 

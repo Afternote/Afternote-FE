@@ -14,11 +14,10 @@ import com.afternote.feature.afternote.domain.model.receiver.ReceivedPlaylistSon
 
 fun ReceivedAfternoteDetailDto.toDomain(): ReceivedAfternoteDetail =
     ReceivedAfternoteDetail(
-        title = title,
+        serviceName = serviceName,
         senderName = senderName,
         createdAt = createdAt?.let(::formatDateFromServer),
-        category = category,
-        type = category?.let(::categoryToAfternoteType),
+        type = categoryToAfternoteType(type),
         processingMethods = processingMethods,
         leaveMessageBlocks = leaveMessage.toLeaveMessageBlocks(),
         playlist = playlist?.toDomain(),

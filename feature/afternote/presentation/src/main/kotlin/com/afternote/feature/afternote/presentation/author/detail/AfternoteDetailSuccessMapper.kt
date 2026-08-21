@@ -3,6 +3,8 @@ package com.afternote.feature.afternote.presentation.author.detail
 import com.afternote.core.model.AlbumCover
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.Detail
+import com.afternote.feature.afternote.domain.model.author.DetailContent
+import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailContent
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 import com.afternote.feature.afternote.presentation.shared.model.toMessageBlockUiModels
@@ -20,46 +22,51 @@ internal fun Detail.toReceiverUiModels(): List<ReceiverUiModel> =
         )
     }
 
-internal fun Detail.toGalleryDetailContent(authorDisplayName: String): GalleryDetailContent =
+internal fun Detail.toGalleryDetailContent(content: DetailContent.Gallery): GalleryDetailContent =
     GalleryDetailContent(
-        serviceName = title,
-        userName = authorDisplayName,
+        serviceName = serviceName,
         finalWriteDate = finalWriteDate,
         afternoteEditReceivers = toReceiverUiModels(),
-        processingMethods = processingMethods,
+        processingMethods = content.processingMethods,
         messageBlocks = leaveMessageBlocks.toMessageBlockUiModels(),
     )
 
-internal fun Detail.toAccountDetailContent(authorDisplayName: String): AccountDetailContent =
+internal fun Detail.toAccountDetailContent(
+    type: AfternoteType,
+    credentials: DetailCredentials,
+    processingMethods: List<String>,
+): AccountDetailContent =
     AccountDetailContent(
-        serviceName = title,
+        serviceName = serviceName,
         type = type,
-        userName = authorDisplayName,
-        accountId = credentials?.id ?: "",
-        password = credentials?.password ?: "",
+        accountId = credentials.id,
+        password = credentials.password,
         processingMethods = processingMethods,
         messageBlocks = leaveMessageBlocks.toMessageBlockUiModels(),
         finalWriteDate = finalWriteDate,
         afternoteEditReceivers = toReceiverUiModels(),
     )
 
-internal fun Detail.toMemorialDetailContent(authorDisplayName: String): MemorialDetailContent =
+internal fun Detail.toMemorialDetailContent(
+    content: DetailContent.Memorial,
+    authorDisplayName: String,
+): MemorialDetailContent =
     MemorialDetailContent(
         userName = authorDisplayName,
         finalWriteDate = finalWriteDate,
-        profileImageUri = memorial?.media?.photoUrl,
+        profileImageUri = content.memorial.media.photoUrl,
         afternoteEditReceivers = toReceiverUiModels(),
         albumCovers =
-            memorial?.songs?.map { s ->
+            content.memorial.songs.map { s ->
                 AlbumCover(
                     id = (s.id ?: 0L).toString(),
                     imageUrl = s.coverUrl,
                     title = s.title,
                 )
-            } ?: emptyList(),
-        songCount = memorial?.songs?.size ?: 0,
-        memorialVideoUrl = memorial?.media?.videoUrl,
-        memorialThumbnailUrl = memorial?.media?.thumbnailUrl,
+            },
+        songCount = content.memorial.songs.size,
+        memorialVideoUrl = content.memorial.media.videoUrl,
+        memorialThumbnailUrl = content.memorial.media.thumbnailUrl,
     )
 
 /**
@@ -68,40 +75,71 @@ internal fun Detail.toMemorialDetailContent(authorDisplayName: String): Memorial
  * [AfternoteDetailUiState.Success] 에서 참조되므로 모듈 공개(public)로 둔다.
  */
 sealed interface DetailContentUiModel {
+    val type: AfternoteType
+
     data class Gallery(
         val content: GalleryDetailContent,
-    ) : DetailContentUiModel
+    ) : DetailContentUiModel {
+        override val type: AfternoteType = AfternoteType.GALLERY_AND_FILES
+    }
 
-    /** 계정 기반 상세(SOCIAL·BUSINESS 공용) — 두 카테고리는 상세 데이터 구성이 동일하다 (이슈 #467). */
-    data class Account(
+    data class SocialNetwork(
         val content: AccountDetailContent,
-    ) : DetailContentUiModel
+    ) : DetailContentUiModel {
+        override val type: AfternoteType = AfternoteType.SOCIAL_NETWORK
+    }
+
+    data class Business(
+        val content: AccountDetailContent,
+    ) : DetailContentUiModel {
+        override val type: AfternoteType = AfternoteType.BUSINESS
+    }
 
     data class Memorial(
         val content: MemorialDetailContent,
-    ) : DetailContentUiModel
+    ) : DetailContentUiModel {
+        override val type: AfternoteType = AfternoteType.MEMORIAL
+    }
 
     /** ESTATE 등 디자인 확정 전 placeholder. */
-    data object Unimplemented : DetailContentUiModel
+    data object Unimplemented : DetailContentUiModel {
+        override val type: AfternoteType = AfternoteType.ESTATE
+    }
 }
 
 internal fun Detail.toDetailContentUiModel(authorDisplayName: String): DetailContentUiModel =
-    when (type) {
-        AfternoteType.GALLERY_AND_FILES -> {
-            DetailContentUiModel.Gallery(toGalleryDetailContent(authorDisplayName))
+    when (val content = content) {
+        is DetailContent.Gallery -> {
+            DetailContentUiModel.Gallery(toGalleryDetailContent(content))
         }
 
-        // BUSINESS 는 데이터 구성이 SOCIAL 과 동일(계정 정보·처리 방법·남긴 말씀)해 계정 상세 UI 모델을 공유한다 (이슈 #467).
-        AfternoteType.SOCIAL_NETWORK, AfternoteType.BUSINESS -> {
-            DetailContentUiModel.Account(toAccountDetailContent(authorDisplayName))
+        is DetailContent.SocialNetwork -> {
+            DetailContentUiModel.SocialNetwork(
+                toAccountDetailContent(
+                    type = content.type,
+                    credentials = content.credentials,
+                    processingMethods = content.processingMethods,
+                ),
+            )
         }
 
-        AfternoteType.MEMORIAL -> {
-            DetailContentUiModel.Memorial(toMemorialDetailContent(authorDisplayName))
+        // BUSINESS 는 타입을 구분하되 현재 화면 구성이 SOCIAL 과 같아 표시 데이터와 화면 컴포넌트만 공유한다 (이슈 #467).
+        is DetailContent.Business -> {
+            DetailContentUiModel.Business(
+                toAccountDetailContent(
+                    type = content.type,
+                    credentials = content.credentials,
+                    processingMethods = content.processingMethods,
+                ),
+            )
+        }
+
+        is DetailContent.Memorial -> {
+            DetailContentUiModel.Memorial(toMemorialDetailContent(content, authorDisplayName))
         }
 
         // ESTATE 는 디자인 확정 전 placeholder. 백엔드도 미지원이라 일반적으로 도달하지 않음.
-        AfternoteType.ESTATE -> {
+        DetailContent.Estate -> {
             DetailContentUiModel.Unimplemented
         }
     }
