@@ -9,6 +9,8 @@ import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
+import com.afternote.feature.afternote.domain.model.author.DetailContent
+import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
@@ -16,6 +18,8 @@ import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorFormMapper.buildUpdatePayload
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorContentPrefill
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorCredentialsPrefill
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
@@ -31,40 +35,10 @@ import com.afternote.feature.afternote.presentation.author.editor.receiver.model
  * `playlistSongs: List<Song>`으로 받는다 (Compose 상태 홀더에 직접 의존하지 않는다).
  */
 internal object AfternoteEditorFormMapper {
-    fun buildEditorFormPrefill(detail: Detail): EditorFormPrefill {
-        val processingMethodItems =
-            detail.processingMethods.mapIndexed { index, text ->
-                ProcessingMethodItem(
-                    id = (index + 1).toString(),
-                    text = text,
-                )
-            }
-        val type = detail.type
-        val memorialSongs: List<Song> =
-            if (type == AfternoteType.MEMORIAL) {
-                detail.memorial?.songs?.mapIndexed { index, s ->
-                    Song(
-                        id = (s.id ?: index.toLong()).toString(),
-                        title = s.title,
-                        artist = s.artist,
-                        albumCoverUrl = s.coverUrl,
-                    )
-                } ?: emptyList()
-            } else {
-                emptyList()
-            }
-        return EditorFormPrefill(
-            loadedItemId = detail.id.toString(),
-            serviceName = detail.title,
-            type = type,
-            accountId = detail.credentials?.id.orEmpty(),
-            password = detail.credentials?.password.orEmpty(),
+    fun buildEditorFormPrefill(detail: Detail): EditorFormPrefill =
+        EditorFormPrefill(
+            content = detail.content.toEditorContentPrefill(serviceName = detail.serviceName),
             leaveMessageBlocks = detail.leaveMessageBlocks.map(LeaveMessageBlock::toEditorBlock),
-            processingMethods = processingMethodItems,
-            memorialVideoUrl = detail.memorial?.media?.videoUrl,
-            memorialThumbnailUrl = detail.memorial?.media?.thumbnailUrl,
-            memorialPhotoUrl = detail.memorial?.media?.photoUrl,
-            memorialPlaylistSongs = memorialSongs,
             receivers =
                 detail.receivers.map { receiver ->
                     AfternoteEditorReceiver(
@@ -74,7 +48,67 @@ internal object AfternoteEditorFormMapper {
                     )
                 },
         )
-    }
+
+    private fun DetailContent.toEditorContentPrefill(serviceName: String): EditorContentPrefill =
+        when (this) {
+            is DetailContent.SocialNetwork -> {
+                EditorContentPrefill.SocialNetwork(
+                    serviceName = serviceName,
+                    credentials = credentials.toEditorCredentialsPrefill(),
+                    processingMethods = processingMethods.toProcessingMethodItems(),
+                )
+            }
+
+            is DetailContent.Business -> {
+                EditorContentPrefill.Business(
+                    serviceName = serviceName,
+                    credentials = credentials.toEditorCredentialsPrefill(),
+                    processingMethods = processingMethods.toProcessingMethodItems(),
+                )
+            }
+
+            is DetailContent.Gallery -> {
+                EditorContentPrefill.Gallery(
+                    serviceName = serviceName,
+                    processingMethods = processingMethods.toProcessingMethodItems(),
+                )
+            }
+
+            is DetailContent.Memorial -> {
+                EditorContentPrefill.Memorial(
+                    videoUrl = memorial.media.videoUrl,
+                    thumbnailUrl = memorial.media.thumbnailUrl,
+                    photoUrl = memorial.media.photoUrl,
+                    playlistSongs =
+                        memorial.songs.mapIndexed { index, song ->
+                            Song(
+                                selectionKey = "detail:$index",
+                                title = song.title,
+                                artist = song.artist,
+                                albumCoverUrl = song.coverUrl,
+                            )
+                        },
+                )
+            }
+
+            DetailContent.Estate -> {
+                EditorContentPrefill.Estate
+            }
+        }
+
+    private fun DetailCredentials.toEditorCredentialsPrefill() =
+        EditorCredentialsPrefill(
+            id = id,
+            password = password,
+        )
+
+    private fun List<String>.toProcessingMethodItems(): List<ProcessingMethodItem> =
+        mapIndexed { index, text ->
+            ProcessingMethodItem(
+                localId = index + 1,
+                text = text,
+            )
+        }
 
     fun buildMemorialWritePayload(
         playlistSongs: List<Song>,
@@ -85,7 +119,6 @@ internal object AfternoteEditorFormMapper {
         val songs =
             playlistSongs.map { song ->
                 MemorialSongPayload(
-                    id = song.id.toLongOrNull(),
                     title = song.title,
                     artist = song.artist,
                     coverUrl = song.albumCoverUrl,
@@ -114,7 +147,7 @@ internal object AfternoteEditorFormMapper {
         memorialThumbnailUrl: String?,
         memorialPhotoUrl: String?,
     ): CreateAfternoteInput {
-        val processingMethods = payload.processingMethods.map { it.text }
+        val processingMethods = payload.processingMethods
         val leaveMessageBlocks = payload.messageBlocks.toLeaveMessageBlocks()
 
         return when (type) {
@@ -198,6 +231,7 @@ internal object AfternoteEditorFormMapper {
                 AfternoteUpdatePayload(
                     type = AfternoteType.MEMORIAL,
                     title = payload.serviceName,
+                    leaveMessageBlocks = payload.messageBlocks.toLeaveMessageBlocks(),
                     memorial =
                         buildMemorialWritePayload(
                             playlistSongs = playlistSongs,
@@ -228,7 +262,7 @@ internal object AfternoteEditorFormMapper {
         payload: RegisterAfternotePayload,
         selectedReceiverIds: List<Long>,
     ): AfternoteUpdatePayload {
-        val processingMethods = payload.processingMethods.map { it.text }
+        val processingMethods = payload.processingMethods
         val hasCredentials = type == AfternoteType.SOCIAL_NETWORK || type == AfternoteType.BUSINESS
         val credentials =
             if (hasCredentials) {

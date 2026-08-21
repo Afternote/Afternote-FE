@@ -12,6 +12,8 @@ import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorContentPrefill
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorCredentialsPrefill
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 
@@ -50,8 +52,8 @@ class AfternoteEditorState(
     /** 타이핑 디바운스 후 폼(및 스냅샷)에만 반영; [EditorFormState.leaveMessageBlocksRestoreGeneration]은 건드리지 않는다. */
     val setLeaveMessageBlocks: (List<EditorMessageTextBlock>) -> Unit,
     val addProcessingMethod: (text: String) -> Unit,
-    val deleteProcessingMethod: (itemId: String) -> Unit,
-    val editProcessingMethod: (itemId: String, newText: String) -> Unit,
+    val deleteProcessingMethod: (localId: Int) -> Unit,
+    val editProcessingMethod: (localId: Int, newText: String) -> Unit,
 ) {
     val editorMessages: SnapshotStateList<EditorMessage> get() = ui.editorMessages
 
@@ -128,19 +130,29 @@ class AfternoteEditorState(
     }
 
     /**
-     * ViewModel이 [EditorFormPrefill]을 적용할 때 호출. 비즈니스 필드는 [EditorFormState]로, 메시지·계정 텍스트는 UI에 반영.
+     * ViewModel이 [EditorFormPrefill]을 적용할 때 호출. 종류별 필드는 [EditorFormState]로,
+     * 공통 메시지와 계정 종류에만 존재하는 계정 텍스트를 UI에 반영.
      * 추모 곡 목록은 host VM이 SSOT이므로 본 메서드는 곡 목록을 폼 스냅샷에만 채우고, 호스트 동기화는 호출자가 수행한다.
      */
     fun applyFormPrefill(prefill: EditorFormPrefill) {
         Log.d(
             TAG,
-            "applyFormPrefill: itemId=${prefill.loadedItemId}, serviceName=${prefill.serviceName}, " +
-                "type=${prefill.type}, " +
-                "PMs=${prefill.processingMethods.size}",
+            "applyFormPrefill: type=${prefill.type}",
         )
         applyPrefill(prefill)
-        ui.idState.edit { replace(0, length, prefill.accountId) }
-        ui.passwordState.edit { replace(0, length, prefill.password) }
+        val credentials: EditorCredentialsPrefill? =
+            when (val content = prefill.content) {
+                is EditorContentPrefill.SocialNetwork -> content.credentials
+
+                is EditorContentPrefill.Business -> content.credentials
+
+                is EditorContentPrefill.Gallery,
+                is EditorContentPrefill.Memorial,
+                EditorContentPrefill.Estate,
+                -> null
+            }
+        ui.idState.edit { replace(0, length, credentials?.id.orEmpty()) }
+        ui.passwordState.edit { replace(0, length, credentials?.password.orEmpty()) }
         syncEditorMessagesFromForm(prefill.leaveMessageBlocks)
     }
 }
@@ -175,8 +187,8 @@ fun rememberAfternoteEditorState(
     replaceReceiversIfEmpty: (List<AfternoteEditorReceiver>) -> Unit,
     setLeaveMessageBlocks: (List<EditorMessageTextBlock>) -> Unit,
     addProcessingMethod: (text: String) -> Unit,
-    deleteProcessingMethod: (itemId: String) -> Unit,
-    editProcessingMethod: (itemId: String, newText: String) -> Unit,
+    deleteProcessingMethod: (localId: Int) -> Unit,
+    editProcessingMethod: (localId: Int, newText: String) -> Unit,
 ): AfternoteEditorState {
     val idState = rememberTextFieldState()
     val passwordState = rememberTextFieldState()
@@ -236,9 +248,9 @@ fun rememberAfternoteEditorState(): AfternoteEditorState {
         replaceReceiversIfEmpty = { receivers -> mutate { it.withReceiversReplacedIfEmpty(receivers) } },
         setLeaveMessageBlocks = { blocks -> mutate { it.withLeaveMessageBlocks(blocks) } },
         addProcessingMethod = { text -> mutate { it.withProcessingMethodAdded(text) } },
-        deleteProcessingMethod = { itemId -> mutate { it.withProcessingMethodDeleted(itemId) } },
-        editProcessingMethod = { itemId, newText ->
-            mutate { it.withProcessingMethodEdited(itemId = itemId, newText = newText) }
+        deleteProcessingMethod = { localId -> mutate { it.withProcessingMethodDeleted(localId) } },
+        editProcessingMethod = { localId, newText ->
+            mutate { it.withProcessingMethodEdited(localId = localId, newText = newText) }
         },
     )
 }

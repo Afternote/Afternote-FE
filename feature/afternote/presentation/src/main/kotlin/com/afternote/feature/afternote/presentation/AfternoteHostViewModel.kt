@@ -56,9 +56,9 @@ class AfternoteHostViewModel
             _playlistSongs.update { prev -> prev + songs }
         }
 
-        fun removeSongs(ids: Set<String>) {
-            if (ids.isEmpty()) return
-            _playlistSongs.update { prev -> prev.filterNot { it.id in ids } }
+        fun removeSongs(selectionKeys: Set<String>) {
+            if (selectionKeys.isEmpty()) return
+            _playlistSongs.update { prev -> prev.filterNot { it.selectionKey in selectionKeys } }
         }
 
         fun clearAllSongs() {

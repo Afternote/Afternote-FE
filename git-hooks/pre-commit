@@ -2,21 +2,31 @@
 # Afternote-FE: pre-commit hook.
 # Install once: ./gradlew installGitHooks
 #
-# Staged 파일만 ktlint 로 검사·포맷한다. CI 의 ScaCap/action-ktlint 가 사용하는
-# ktlint 1.8.0 standalone binary 를 동일하게 호출하므로 검사 범위·결과가 CI 와
-# 일치 (PR diff 라인 ≒ staged 라인).
+# Git index 의 staged 스냅샷만 ktlint 로 검사한다. CI 의 ScaCap/action-ktlint 가
+# 사용하는 ktlint 1.8.0 standalone binary 를 동일하게 호출하므로 검사 범위·결과가
+# 일치한다. Working tree 를 포맷하거나 다시 stage 하지 않아 같은 파일의 일부만
+# 커밋하는 경우에도 unstaged 변경을 검사·포함하지 않는다.
 #
-# Gradle 의 ktlintFormat / ktlintCheck task 는 의도적으로 호출하지 않는다 —
-# 프로젝트 전체를 대상으로 돌면서 CI 가 안 잡던 옛 위반들까지 working tree 로
-# 끌어내는 부작용이 있어 폐기.
+# 자동 포맷은 의도적으로 수행하지 않는다. 훅에서 전체 파일을 포맷한 뒤 git add 하면
+# 같은 파일의 unstaged hunk 까지 커밋에 포함될 수 있기 때문이다.
 
 set -e
 
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT" || exit 1
 
-STAGED_KT=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(kt|kts)$' || true)
-[ -z "$STAGED_KT" ] && exit 0
+TEMP_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/afternote-ktlint.XXXXXX")
+SNAPSHOT_DIR="$TEMP_ROOT/index"
+STAGED_LIST="$TEMP_ROOT/staged-kotlin-files"
+cleanup() {
+    rm -rf -- "$TEMP_ROOT"
+}
+trap cleanup EXIT
+trap 'exit 1' HUP INT TERM
+
+# NUL 구분 목록으로 공백과 개행을 포함한 파일명도 그대로 처리한다.
+git diff --cached --name-only -z --diff-filter=ACMR -- '*.kt' '*.kts' > "$STAGED_LIST"
+[ -s "$STAGED_LIST" ] || exit 0
 
 # CI(ScaCap/action-ktlint)에 핀된 버전과 일치. libs.versions.toml 의 `ktlint = "1.8.0"`.
 KTLINT_VERSION="1.8.0"
@@ -32,23 +42,17 @@ if [ ! -x "$KTLINT" ]; then
     chmod +x "$KTLINT"
 fi
 
-echo "Running ktlint --format on staged files..."
-# `tr '\n' '\0'` + `xargs -0` — 파일 경로에 공백이 들어있어도 안전 (default xargs 의 whitespace split
-# 회피). git checkout 경로가 `~/Documents/My Projects/...` 같은 케이스 + git 파일명 자체 공백 모두 대응.
-echo "$STAGED_KT" | tr '\n' '\0' | xargs -0 "$KTLINT" --format --relative
+mkdir "$SNAPSHOT_DIR"
+git checkout-index --all --prefix="$SNAPSHOT_DIR/"
 
-# 자동 포맷된 staged 파일만 re-stage (다른 modified 파일은 끌어들이지 않음)
-echo "$STAGED_KT" | while IFS= read -r f; do
-    [ -n "$f" ] || continue
-    [ -f "$f" ] || continue
-    git add -- "$f"
-done
-
-echo "Running ktlint check on staged files..."
-if ! echo "$STAGED_KT" | tr '\n' '\0' | xargs -0 "$KTLINT" --relative; then
+echo "Running ktlint check on staged snapshot..."
+if ! (
+    cd "$SNAPSHOT_DIR" || exit 1
+    xargs -0 "$KTLINT" --relative -- < "$STAGED_LIST"
+); then
     echo ""
-    echo "✗ ktlint 위반이 남았습니다 (자동 fix 못한 케이스 — 예: trailing-comma, multiline-expression)."
-    echo "  → 위 출력의 파일·라인을 수동 수정 후 'git add' + 재커밋."
-    echo "  → 방금 자동 fix 로 stage 된 변경분은 working tree 에 그대로 남아있습니다."
+    echo "✗ 커밋할 스냅샷에 ktlint 위반이 있습니다."
+    echo "  → working tree 의 해당 파일을 수정한 뒤 필요한 hunk 만 다시 stage 하세요."
+    echo "  → 훅은 working tree 와 staging area 를 변경하지 않았습니다."
     exit 1
 fi

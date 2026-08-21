@@ -286,8 +286,7 @@ internal fun editorContentSignature(
 ): String {
     val comparableForm =
         form.copy(
-            // 식별자·자동 파생값 — 사용자 편집이 아니므로 판정 제외.
-            loadedItemId = null,
+            // 자동 파생값 — 사용자 편집이 아니므로 판정 제외.
             leaveMessageBlocksRestoreGeneration = 0L,
             // 남기실 말씀은 debounce 전 라이브 입력(state.editorMessages)으로 판정하므로 스냅샷은 제외.
             leaveMessageBlocks = emptyList(),
