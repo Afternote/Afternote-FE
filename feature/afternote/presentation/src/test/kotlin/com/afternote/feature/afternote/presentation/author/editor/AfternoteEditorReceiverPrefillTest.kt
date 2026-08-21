@@ -49,7 +49,7 @@ class AfternoteEditorReceiverPrefillTest {
     private fun detail(vararg receivers: DetailReceiver) =
         Detail(
             id = 1L,
-            title = "구글 포토",
+            serviceName = "구글 포토",
             timestamps = DetailTimestamps(createdAt = "2026-08-02", updatedAt = "2026-08-02"),
             receivers = receivers.toList(),
             leaveMessageBlocks = emptyList(),

@@ -5,9 +5,11 @@ import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
+import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialDetail
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
+import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorContentPrefill
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -18,7 +20,7 @@ class AfternoteEditorFormPrefillTest {
         val prefill =
             AfternoteEditorFormMapper.buildEditorFormPrefill(
                 detail(
-                    title = "인스타그램",
+                    serviceName = "인스타그램",
                     leaveMessageBlocks = listOf(LeaveMessageBlock(title = null, body = "부탁해")),
                     content =
                         DetailContent.SocialNetwork(
@@ -41,7 +43,7 @@ class AfternoteEditorFormPrefillTest {
         val prefill =
             AfternoteEditorFormMapper.buildEditorFormPrefill(
                 detail(
-                    title = "구글 포토",
+                    serviceName = "구글 포토",
                     leaveMessageBlocks = listOf(LeaveMessageBlock(title = "사진", body = "보관해 줘")),
                     content =
                         DetailContent.Gallery(
@@ -61,7 +63,7 @@ class AfternoteEditorFormPrefillTest {
         val prefill =
             AfternoteEditorFormMapper.buildEditorFormPrefill(
                 detail(
-                    title = "추억 노트",
+                    serviceName = "추억 노트",
                     leaveMessageBlocks = listOf(LeaveMessageBlock(title = "가족에게", body = "잘 지내")),
                     content =
                         DetailContent.Memorial(
@@ -70,7 +72,6 @@ class AfternoteEditorFormPrefillTest {
                                     songs =
                                         listOf(
                                             DetailSong(
-                                                id = 7L,
                                                 title = "노래",
                                                 artist = "가수",
                                                 coverUrl = "cover",
@@ -91,17 +92,53 @@ class AfternoteEditorFormPrefillTest {
         assertEquals("photo", content.photoUrl)
         assertEquals("video", content.videoUrl)
         assertEquals("thumbnail", content.thumbnailUrl)
-        assertEquals("7", content.playlistSongs.single().id)
+        assertEquals("detail:0", content.playlistSongs.single().selectionKey)
         assertEquals("잘 지내", prefill.leaveMessageBlocks.single().body)
     }
 
+    @Test
+    fun `메모리얼 저장은 UI 선택 키를 도메인 입력에 포함하지 않는다`() {
+        val payload =
+            AfternoteEditorFormMapper.buildMemorialWritePayload(
+                playlistSongs =
+                    listOf(
+                        Song(
+                            selectionKey = "detail:0",
+                            title = "기존 노래",
+                            artist = "가수",
+                        ),
+                        Song(
+                            selectionKey = "search:가수|검색한 노래|0",
+                            title = "검색한 노래",
+                            artist = "가수",
+                        ),
+                    ),
+            )
+
+        assertEquals(
+            listOf(
+                MemorialSongPayload(
+                    title = "기존 노래",
+                    artist = "가수",
+                    coverUrl = null,
+                ),
+                MemorialSongPayload(
+                    title = "검색한 노래",
+                    artist = "가수",
+                    coverUrl = null,
+                ),
+            ),
+            payload.songs,
+        )
+    }
+
     private fun detail(
-        title: String,
+        serviceName: String,
         leaveMessageBlocks: List<LeaveMessageBlock>,
         content: DetailContent,
     ) = Detail(
         id = 1L,
-        title = title,
+        serviceName = serviceName,
         timestamps = DetailTimestamps(createdAt = "2026-08-21", updatedAt = "2026-08-21"),
         receivers = emptyList(),
         leaveMessageBlocks = leaveMessageBlocks,
