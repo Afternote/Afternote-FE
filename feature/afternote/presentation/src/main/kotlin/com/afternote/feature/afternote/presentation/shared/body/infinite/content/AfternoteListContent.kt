@@ -17,7 +17,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.home.AfternoteCategoryRow
+import com.afternote.feature.afternote.presentation.author.home.AfternoteTypeFilterRow
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.AfternoteList
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
 import kotlinx.coroutines.flow.flowOf
@@ -25,17 +25,17 @@ import kotlinx.coroutines.flow.flowOf
 @Composable
 fun AfternoteListContent(
     items: LazyPagingItems<ListItemUiModel>,
-    selectedCategory: AfternoteType?,
-    onCategorySelected: (AfternoteType?) -> Unit,
+    selectedType: AfternoteType?,
+    onTypeSelected: (AfternoteType?) -> Unit,
     onListItemClick: (id: Long, type: AfternoteType) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier.fillMaxSize(),
     ) {
-        AfternoteCategoryRow(
-            onTabSelected = onCategorySelected,
-            selectedTab = selectedCategory,
+        AfternoteTypeFilterRow(
+            onTabSelected = onTypeSelected,
+            selectedTab = selectedType,
         )
         if (items.itemCount == 0) {
             // 카테고리 필터 결과 0건 — 카테고리 행은 유지한 채 안내 문구만 표시한다.
@@ -88,8 +88,8 @@ private fun AfternoteListContentPreview() {
             ).collectAsLazyPagingItems()
         AfternoteListContent(
             items = items,
-            selectedCategory = AfternoteType.SOCIAL_NETWORK,
-            onCategorySelected = {},
+            selectedType = AfternoteType.SOCIAL_NETWORK,
+            onTypeSelected = {},
             onListItemClick = { _, _ -> },
         )
     }
@@ -103,8 +103,8 @@ private fun AfternoteListContentFilteredEmptyPreview() {
             flowOf(PagingData.empty<ListItemUiModel>()).collectAsLazyPagingItems()
         AfternoteListContent(
             items = items,
-            selectedCategory = AfternoteType.SOCIAL_NETWORK,
-            onCategorySelected = {},
+            selectedType = AfternoteType.SOCIAL_NETWORK,
+            onTypeSelected = {},
             onListItemClick = { _, _ -> },
         )
     }

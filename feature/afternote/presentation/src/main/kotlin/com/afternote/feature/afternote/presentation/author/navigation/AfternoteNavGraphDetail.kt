@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -30,17 +31,20 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavBackStackEntry
-import androidx.navigation.toRoute
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailDeleteResult
-import com.afternote.feature.afternote.presentation.author.detail.GalleryDetailRoute
-import com.afternote.feature.afternote.presentation.author.detail.MemorialDetailRoute
-import com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailRoute
-import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
+import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailUiState
+import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel
+import com.afternote.feature.afternote.presentation.author.detail.DetailContentUiModel
+import com.afternote.feature.afternote.presentation.author.detail.GalleryDetailScreen
+import com.afternote.feature.afternote.presentation.author.detail.MemorialDetailScreen
+import com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailScreen
 import kotlinx.coroutines.launch
 
 @Composable
@@ -82,7 +86,7 @@ internal fun DesignPendingDetailContent(onBackClick: () -> Unit) {
  * 예외 원문은 받지 않는다 — 서버 5xx 본문·역직렬화 예외 메시지에 내부 SQL·응답 원문 발췌가 섞여 오기 때문.
  *
  * 표시 방식 통일(#446) 결론이 나오면 이 컴포저블의 본문 표현만 교체한다 — Route 의 Error 분기 배선은 유지.
- * [DesignPendingDetailContent] 는 진짜 미디자인 폴백(blank itemId·contentUiModel 타입 불일치)용으로 별도 유지.
+ * [DesignPendingDetailContent] 는 ESTATE 등 아직 구현되지 않은 상세 타입의 폴백으로만 유지한다.
  *
  * @param messageRes 앱에 박힌 문자열 리소스 ID(`R.string.*`). `@StringRes` 는 이 Int 가 임의 정수가 아니라
  *   string 리소스 id 임을 Lint 에 알리는 표식이며, [stringResource] 로 실제 텍스트로 변환한다.
@@ -159,8 +163,7 @@ internal fun DeleteInProgressOverlay() {
 /**
  * 삭제 실패 메시지를 [snackbarHostState] Snackbar 로 표출하는 [ObserveDeleteResult] 용 `onDeleteFailed` 핸들러.
  *
- * [AfternoteDetailDeleteResult.Failed] 계약대로 `messageRes` 만 표시한다
- * (없으면 [R.string.afternote_detail_delete_failed] 폴백).
+ * [AfternoteDetailDeleteResult.Failed] 계약대로 `messageRes` 만 표시한다.
  *
  * [ObserveDeleteResult] 는 `onDeleteFailed` 직후 `onConsumed` 로 deleteResult 를 null 로 reset 하고,
  * 그 상태 변화가 [LaunchedEffect] 를 재시작시켜 이전 effect 코루틴을 취소한다.
@@ -174,12 +177,12 @@ internal fun DeleteInProgressOverlay() {
  * 특히 `resources`(LocalResources)는 로케일·구성 변경 시 교체되므로 빠지면 옛 로케일 문자열을 조회하게 된다.
  */
 @Composable
-internal fun rememberDeleteFailedHandler(snackbarHostState: SnackbarHostState): (messageRes: Int?) -> Unit {
+internal fun rememberDeleteFailedHandler(snackbarHostState: SnackbarHostState): (messageRes: Int) -> Unit {
     val resources = LocalResources.current
     val scope = rememberCoroutineScope()
     return remember(snackbarHostState, resources, scope) {
         { messageRes ->
-            val message = resources.getString(messageRes ?: R.string.afternote_detail_delete_failed)
+            val message = resources.getString(messageRes)
             scope.launch {
                 snackbarHostState.showSnackbar(message = message)
             }
@@ -204,7 +207,7 @@ internal fun ObserveDeleteResult(
     deleteResult: AfternoteDetailDeleteResult?,
     onConsumed: () -> Unit,
     onDeleteSucceeded: () -> Unit,
-    onDeleteFailed: (messageRes: Int?) -> Unit,
+    onDeleteFailed: (messageRes: Int) -> Unit,
 ) {
     LaunchedEffect(deleteResult) {
         when (deleteResult) {
@@ -225,26 +228,111 @@ internal fun ObserveDeleteResult(
 
 @Composable
 internal fun AfternoteDetailNavigation(
-    backStackEntry: NavBackStackEntry,
-    onBack: () -> Unit,
-    onNavigateToEditor: (itemId: Long) -> Unit,
+    onNavigateBack: () -> Unit,
+    onNavigateToEditor: (itemId: Long, type: AfternoteType) -> Unit,
+    viewModel: AfternoteDetailViewModel = hiltViewModel(),
 ) {
-    backStackEntry.toRoute<AfternoteRoute.DetailRoute>()
-    AccountDetailRoute(
-        onBack = onBack,
-        onNavigateToEditor = onNavigateToEditor,
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    ObserveDeleteResult(
+        deleteResult = (uiState as? AfternoteDetailUiState.Success)?.deleteResult,
+        onConsumed = viewModel::onDeleteResultConsumed,
+        onDeleteSucceeded = onNavigateBack,
+        onDeleteFailed = rememberDeleteFailedHandler(snackbarHostState),
     )
+
+    when (val state = uiState) {
+        AfternoteDetailUiState.Loading -> {
+            DetailLoadingContent()
+        }
+
+        is AfternoteDetailUiState.Error -> {
+            DetailLoadErrorContent(
+                messageRes = state.messageRes,
+                onBackClick = onNavigateBack,
+            )
+        }
+
+        is AfternoteDetailUiState.Success -> {
+            AfternoteDetailSuccessContent(
+                state = state,
+                snackbarHostState = snackbarHostState,
+                onBackClick = onNavigateBack,
+                onNavigateToEditor = onNavigateToEditor,
+                onDeleteConfirm = viewModel::deleteAfternote,
+            )
+        }
+    }
 }
 
 @Composable
-internal fun AfternoteGalleryDetailNavigation(
-    onBack: () -> Unit,
-    onNavigateToEditor: (itemId: Long) -> Unit,
+private fun AfternoteDetailSuccessContent(
+    state: AfternoteDetailUiState.Success,
+    snackbarHostState: SnackbarHostState,
+    onBackClick: () -> Unit,
+    onNavigateToEditor: (itemId: Long, type: AfternoteType) -> Unit,
+    onDeleteConfirm: (itemId: Long) -> Unit,
 ) {
-    GalleryDetailRoute(
-        onBack = onBack,
-        onNavigateToEditor = onNavigateToEditor,
-    )
+    Box {
+        when (val model = state.contentUiModel) {
+            is DetailContentUiModel.SocialNetwork -> {
+                AccountDetailScreen(
+                    content = model.content,
+                    snackbarHostState = snackbarHostState,
+                    onBackClick = onBackClick,
+                    onEditClick = {
+                        onNavigateToEditor(state.detailId, model.type)
+                    },
+                    onDeleteConfirm = { onDeleteConfirm(state.detailId) },
+                )
+            }
+
+            is DetailContentUiModel.Business -> {
+                AccountDetailScreen(
+                    content = model.content,
+                    snackbarHostState = snackbarHostState,
+                    onBackClick = onBackClick,
+                    onEditClick = {
+                        onNavigateToEditor(state.detailId, model.type)
+                    },
+                    onDeleteConfirm = { onDeleteConfirm(state.detailId) },
+                )
+            }
+
+            is DetailContentUiModel.Gallery -> {
+                GalleryDetailScreen(
+                    content = model.content,
+                    snackbarHostState = snackbarHostState,
+                    onBackClick = onBackClick,
+                    onEditClick = {
+                        onNavigateToEditor(state.detailId, model.type)
+                    },
+                    onDeleteConfirm = { onDeleteConfirm(state.detailId) },
+                )
+            }
+
+            is DetailContentUiModel.Memorial -> {
+                MemorialDetailScreen(
+                    content = model.content,
+                    snackbarHostState = snackbarHostState,
+                    onBackClick = onBackClick,
+                    onEditClick = {
+                        onNavigateToEditor(state.detailId, model.type)
+                    },
+                    onDeleteConfirm = { onDeleteConfirm(state.detailId) },
+                )
+            }
+
+            DetailContentUiModel.Unimplemented -> {
+                DesignPendingDetailContent(onBackClick = onBackClick)
+            }
+        }
+
+        if (state.isDeleting) {
+            DeleteInProgressOverlay()
+        }
+    }
 }
 
 @Preview(showBackground = true)
@@ -253,17 +341,6 @@ private fun DeleteInProgressOverlayPreview() {
     AfternoteTheme {
         DeleteInProgressOverlay()
     }
-}
-
-@Composable
-internal fun AfternoteMemorialDetailNavigation(
-    onBack: () -> Unit,
-    onNavigateToEditor: (itemId: Long) -> Unit,
-) {
-    MemorialDetailRoute(
-        onBack = onBack,
-        onNavigateToEditor = onNavigateToEditor,
-    )
 }
 
 @Preview(showBackground = true)

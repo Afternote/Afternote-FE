@@ -9,7 +9,7 @@ import com.afternote.feature.afternote.presentation.shared.model.AfternoteServic
  * 종류 필터 탭 순서. `null` 은 "전체" 탭이다.
  * 비즈니스·재산 처리는 목록 조회 미지원(Afternote-BE#110, #491)이라 빠져 있다.
  */
-val CATEGORY_FILTER_TABS: List<AfternoteType?> =
+val TYPE_FILTER_TABS: List<AfternoteType?> =
     listOf(
         null,
         AfternoteType.SOCIAL_NETWORK,
@@ -19,7 +19,7 @@ val CATEGORY_FILTER_TABS: List<AfternoteType?> =
 
 /** 종류 탭 라벨. `null` 은 "전체" 탭이다. */
 @StringRes
-fun categoryLabelResFor(type: AfternoteType?): Int =
+fun typeLabelResFor(type: AfternoteType?): Int =
     when (type) {
         null -> R.string.afternote_category_all
         AfternoteType.SOCIAL_NETWORK -> R.string.afternote_category_social_network
@@ -31,8 +31,12 @@ fun categoryLabelResFor(type: AfternoteType?): Int =
 
 /** Icon drawable res for an [AfternoteType]. */
 fun getIconResForType(type: AfternoteType): Int =
-    AfternoteService.fromTypeKeyOrNull(type.name)?.iconResId
-        ?: R.drawable.feature_afternote_img_logo
+    when (type) {
+        AfternoteType.SOCIAL_NETWORK -> R.drawable.feature_afternote_ic_social_pattern
+        AfternoteType.GALLERY_AND_FILES -> R.drawable.feature_afternote_ic_gallery_pattern
+        AfternoteType.MEMORIAL -> R.drawable.feature_afternote_ic_memorial_guideline
+        AfternoteType.BUSINESS, AfternoteType.ESTATE -> R.drawable.feature_afternote_img_logo
+    }
 
 /**
  * Icon drawable res for a service title shown on a card.

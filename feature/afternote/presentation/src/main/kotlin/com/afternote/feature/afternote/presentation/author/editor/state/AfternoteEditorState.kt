@@ -8,10 +8,11 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
+import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorContentPrefill
+import com.afternote.feature.afternote.presentation.author.editor.model.EditorCredentialsPrefill
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 
@@ -27,14 +28,12 @@ private const val TAG = "AfternoteEditorState"
  * *"pass only the information it needs as a parameter"*). 그중 UI 로직이 붙지 않는 것은 콜백을 그대로 공개한다.
  *
  * 콜백 메서드들은 [getCurrentForm] 으로 최신 폼 스냅샷을 읽는다 (stale closure 회피).
- * 추모 곡 목록은 [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs] 가 SSOT 이므로
- * 본 파사드는 곡 목록을 직접 보유·참조하지 않는다.
  */
 @Stable
 class AfternoteEditorState(
     private val ui: AfternoteEditorUiHolder,
     private val getCurrentForm: () -> EditorFormState,
-    private val setCategory: (EditorCategory) -> Unit,
+    private val setType: (AfternoteType) -> Unit,
     private val setService: (String) -> Unit,
     private val addReceiverIfAbsent: (receiverId: String, name: String, label: String) -> Unit,
     private val applyPrefill: (EditorFormPrefill) -> Unit,
@@ -43,8 +42,6 @@ class AfternoteEditorState(
     val setMemorialVideo: (String?) -> Unit,
     /** 추모 영상 썸네일 추출 완료 — 폼에 그대로 반영한다. */
     val setMemorialThumbnail: (String?) -> Unit,
-    /** 호스트 SSOT의 곡 목록을 폼 스냅샷에 반영한다 (SavedStateHandle JSON에 포함하기 위함). */
-    val setMemorialPlaylistSongs: (List<Song>) -> Unit,
     val deleteReceiver: (receiverId: String) -> Unit,
     val replaceReceiversIfEmpty: (List<AfternoteEditorReceiver>) -> Unit,
     /** 타이핑 디바운스 후 폼(및 스냅샷)에만 반영; [EditorFormState.leaveMessageBlocksRestoreGeneration]은 건드리지 않는다. */
@@ -60,25 +57,17 @@ class AfternoteEditorState(
     val customServiceNameState: TextFieldState get() = ui.customServiceNameState
 
     val activeDialog get() = ui.activeDialog
-    val categoryDropdownExpanded get() = ui.categoryDropdownExpanded
+    val typeDropdownExpanded get() = ui.typeDropdownExpanded
     val serviceDropdownExpanded get() = ui.serviceDropdownExpanded
 
     /** 콜백·payload 조립 등 일회성 read 용 (Compose 표시는 화면이 collect 한 `uiState.form` 사용). */
     fun currentForm(): EditorFormState = getCurrentForm()
 
-    fun onCategoryDropdownExpandedChange(expanded: Boolean) = ui.onCategoryDropdownExpandedChange(expanded)
+    fun onTypeDropdownExpandedChange(expanded: Boolean) = ui.onTypeDropdownExpandedChange(expanded)
 
     fun onServiceDropdownExpandedChange(expanded: Boolean) = ui.onServiceDropdownExpandedChange(expanded)
 
-    /** 드롭다운 UI에서 [categoryDisplayLabel] 문자열로 카테고리를 선택한다. */
-    fun onCategorySelected(categoryDisplayLabel: String) {
-        setCategory(EditorCategory.fromDisplayLabel(categoryDisplayLabel))
-    }
-
-    /** 네비게이션 인자([EditorCategory.name])로 카테고리를 선택한다. */
-    fun selectCategoryByNavKey(navKey: String) {
-        setCategory(EditorCategory.fromNavKey(navKey))
-    }
+    fun onTypeSelected(type: AfternoteType) = setType(type)
 
     fun onServiceSelected(service: String) {
         if (getCurrentForm().isCustomAddOption(service)) {
@@ -136,19 +125,29 @@ class AfternoteEditorState(
     }
 
     /**
-     * ViewModel이 [EditorFormPrefill]을 적용할 때 호출. 비즈니스 필드는 [EditorFormState]로, 메시지·계정 텍스트는 UI에 반영.
-     * 추모 곡 목록은 host VM이 SSOT이므로 본 메서드는 곡 목록을 폼 스냅샷에만 채우고, 호스트 동기화는 호출자가 수행한다.
+     * ViewModel이 [EditorFormPrefill]을 적용할 때 호출. 종류별 필드는 [EditorFormState]로,
+     * 공통 메시지와 계정 종류에만 존재하는 계정 텍스트를 UI에 반영.
+     * 추모 곡 목록도 같은 flow-scoped 폼에 함께 반영한다.
      */
     fun applyFormPrefill(prefill: EditorFormPrefill) {
         Log.d(
             TAG,
-            "applyFormPrefill: itemId=${prefill.loadedItemId}, serviceName=${prefill.serviceName}, " +
-                "category=${prefill.category}, " +
-                "PMs=${prefill.processingMethods.size}",
+            "applyFormPrefill: type=${prefill.type}",
         )
         applyPrefill(prefill)
-        ui.idState.edit { replace(0, length, prefill.accountId) }
-        ui.passwordState.edit { replace(0, length, prefill.password) }
+        val credentials: EditorCredentialsPrefill? =
+            when (val content = prefill.content) {
+                is EditorContentPrefill.SocialNetwork -> content.credentials
+
+                is EditorContentPrefill.Business -> content.credentials
+
+                is EditorContentPrefill.Gallery,
+                is EditorContentPrefill.Memorial,
+                EditorContentPrefill.Estate,
+                -> null
+            }
+        ui.idState.edit { replace(0, length, credentials?.id.orEmpty()) }
+        ui.passwordState.edit { replace(0, length, credentials?.password.orEmpty()) }
         syncEditorMessagesFromForm(prefill.leaveMessageBlocks)
     }
 }
@@ -171,14 +170,13 @@ private fun List<EditorMessage>.toTextBlocks(): List<EditorMessageTextBlock> =
 @Composable
 fun rememberAfternoteEditorState(
     getCurrentForm: () -> EditorFormState,
-    setCategory: (EditorCategory) -> Unit,
+    setType: (AfternoteType) -> Unit,
     setService: (String) -> Unit,
     setMemorialPhoto: (String?) -> Unit,
     setMemorialVideo: (String?) -> Unit,
     addReceiverIfAbsent: (receiverId: String, name: String, label: String) -> Unit,
     applyPrefill: (EditorFormPrefill) -> Unit,
     setMemorialThumbnail: (String?) -> Unit,
-    setMemorialPlaylistSongs: (List<Song>) -> Unit,
     deleteReceiver: (receiverId: String) -> Unit,
     replaceReceiversIfEmpty: (List<AfternoteEditorReceiver>) -> Unit,
     setLeaveMessageBlocks: (List<EditorMessageTextBlock>) -> Unit,
@@ -201,14 +199,13 @@ fun rememberAfternoteEditorState(
         AfternoteEditorState(
             ui = ui,
             getCurrentForm = getCurrentForm,
-            setCategory = setCategory,
+            setType = setType,
             setService = setService,
             setMemorialPhoto = setMemorialPhoto,
             setMemorialVideo = setMemorialVideo,
             addReceiverIfAbsent = addReceiverIfAbsent,
             applyPrefill = applyPrefill,
             setMemorialThumbnail = setMemorialThumbnail,
-            setMemorialPlaylistSongs = setMemorialPlaylistSongs,
             deleteReceiver = deleteReceiver,
             replaceReceiversIfEmpty = replaceReceiversIfEmpty,
             setLeaveMessageBlocks = setLeaveMessageBlocks,
@@ -230,7 +227,7 @@ fun rememberAfternoteEditorState(): AfternoteEditorState {
         { block -> previewForm.value = block(previewForm.value) }
     return rememberAfternoteEditorState(
         getCurrentForm = { previewForm.value },
-        setCategory = { category -> mutate { it.withCategory(category) } },
+        setType = { type -> mutate { it.withType(type) } },
         setService = { service -> mutate { it.withService(service) } },
         setMemorialPhoto = { uri -> mutate { it.withMemorialPhoto(uri) } },
         setMemorialVideo = { url -> mutate { it.withMemorialVideo(url) } },
@@ -239,12 +236,11 @@ fun rememberAfternoteEditorState(): AfternoteEditorState {
         },
         applyPrefill = { prefill -> mutate { it.withPrefillApplied(prefill) } },
         setMemorialThumbnail = { dataUrl -> mutate { it.withMemorialThumbnail(dataUrl) } },
-        setMemorialPlaylistSongs = { songs -> mutate { it.withMemorialPlaylistSongs(songs) } },
         deleteReceiver = { receiverId -> mutate { it.withReceiverDeleted(receiverId) } },
         replaceReceiversIfEmpty = { receivers -> mutate { it.withReceiversReplacedIfEmpty(receivers) } },
         setLeaveMessageBlocks = { blocks -> mutate { it.withLeaveMessageBlocks(blocks) } },
         addProcessingMethod = { text -> mutate { it.withProcessingMethodAdded(text) } },
-        deleteProcessingMethod = { itemId -> mutate { it.withProcessingMethodDeleted(itemId) } },
+        deleteProcessingMethod = { localId -> mutate { it.withProcessingMethodDeleted(localId) } },
         editProcessingMethod = { localId, newText ->
             mutate { it.withProcessingMethodEdited(localId = localId, newText = newText) }
         },
