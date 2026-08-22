@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -61,60 +62,75 @@ fun CustomerCenterScreen(
         },
         containerColor = AfternoteDesign.colors.gray1,
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             modifier =
                 Modifier
                     .fillMaxSize()
                     .padding(innerPadding),
         ) {
-            BusinessHoursCard(
-                modifier =
-                    Modifier
-                        .padding(horizontal = 20.dp)
-                        .padding(top = 12.dp, bottom = 16.dp),
-            )
-
-            CustomerCenterSectionTitle(text = stringResource(R.string.customer_center_inquiry_channel))
-            CustomerCenterMenuItem(
-                title = stringResource(R.string.customer_center_phone_inquiry),
-                description = stringResource(R.string.customer_center_phone_number),
-                onClick = onPhoneInquiryClick,
-            )
-            CustomerCenterMenuItem(
-                title = stringResource(R.string.customer_center_one_to_one_inquiry),
-                description = stringResource(R.string.customer_center_one_to_one_description),
-                onClick = onOneToOneInquiryClick,
-                enabled = false,
-            )
-            CustomerCenterMenuItem(
-                title = stringResource(R.string.customer_center_email_inquiry),
-                description = stringResource(R.string.customer_center_email_address),
-                onClick = {
-                    onEmailInquiryClick()
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar(emailCopiedMessage)
-                    }
-                },
-            )
-
-            CustomerCenterSectionTitle(text = stringResource(R.string.customer_center_recipient_section))
-            CustomerCenterMenuItem(
-                title = stringResource(R.string.customer_center_recipient_inquiry),
-                onClick = onRecipientInquiryClick,
-                enabled = false,
-            )
-            CustomerCenterMenuItem(
-                title = stringResource(R.string.customer_center_faq),
-                onClick = onFaqClick,
-                enabled = false,
-            )
-
-            Text(
-                text = stringResource(R.string.customer_center_device_info_notice),
-                style = AfternoteDesign.typography.captionLargeR,
-                color = AfternoteDesign.colors.gray5,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp),
-            )
+            item {
+                BusinessHoursCard(
+                    modifier =
+                        Modifier
+                            .padding(horizontal = 20.dp)
+                            .padding(top = 12.dp, bottom = 16.dp),
+                )
+            }
+            item {
+                CustomerCenterSectionTitle(text = stringResource(R.string.customer_center_inquiry_channel))
+            }
+            item {
+                CustomerCenterMenuItem(
+                    title = stringResource(R.string.customer_center_phone_inquiry),
+                    description = stringResource(R.string.customer_center_phone_number),
+                    onClick = onPhoneInquiryClick,
+                )
+            }
+            item {
+                CustomerCenterMenuItem(
+                    title = stringResource(R.string.customer_center_one_to_one_inquiry),
+                    description = stringResource(R.string.customer_center_one_to_one_description),
+                    onClick = onOneToOneInquiryClick,
+                    enabled = false,
+                )
+            }
+            item {
+                CustomerCenterMenuItem(
+                    title = stringResource(R.string.customer_center_email_inquiry),
+                    description = stringResource(R.string.customer_center_email_address),
+                    onClick = {
+                        onEmailInquiryClick()
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar(emailCopiedMessage)
+                        }
+                    },
+                )
+            }
+            item {
+                CustomerCenterSectionTitle(text = stringResource(R.string.customer_center_recipient_section))
+            }
+            item {
+                CustomerCenterMenuItem(
+                    title = stringResource(R.string.customer_center_recipient_inquiry),
+                    onClick = onRecipientInquiryClick,
+                    enabled = false,
+                )
+            }
+            item {
+                CustomerCenterMenuItem(
+                    title = stringResource(R.string.customer_center_faq),
+                    onClick = onFaqClick,
+                    enabled = false,
+                )
+            }
+            item {
+                Text(
+                    text = stringResource(R.string.customer_center_device_info_notice),
+                    style = AfternoteDesign.typography.captionLargeR,
+                    color = AfternoteDesign.colors.gray5,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp),
+                )
+            }
         }
     }
 }
