@@ -5,15 +5,18 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.network.model.requireData
+import com.afternote.feature.afternote.data.dto.toReceivedRecordBox
 import com.afternote.feature.afternote.data.local.ReceiverAuthCodeDataSource
 import com.afternote.feature.afternote.data.mapper.response.toDomain
 import com.afternote.feature.afternote.data.paging.ReceiverAfternotePagingSource
 import com.afternote.feature.afternote.data.service.ReceiverAfternoteApiService
+import com.afternote.feature.afternote.data.service.ReceiverAuthApiService
 import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem
 import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResult
 import com.afternote.feature.afternote.domain.model.receiver.LoadCountResult
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedExportBundle
+import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordBox
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
 import com.afternote.feature.receiver.domain.model.SenderMessageInfo
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
@@ -34,6 +37,7 @@ class ReceiverRepositoryImpl
     constructor(
         private val authCodeDataSource: ReceiverAuthCodeDataSource,
         private val api: ReceiverAfternoteApiService,
+        private val receiverAuthApi: ReceiverAuthApiService,
         private val receiverAuthRepository: ReceiverAuthRepository,
     ) : ReceiverRepository {
         override val authCodeFlow: Flow<String?> = authCodeDataSource.savedCodeFlow
@@ -47,6 +51,15 @@ class ReceiverRepositoryImpl
         override suspend fun clearAuthCode() {
             authCodeDataSource.clearCode()
         }
+
+        override suspend fun getReceivedRecordBoxes(): Result<List<ReceivedRecordBox>> =
+            runCatchingCancellable {
+                receiverAuthApi
+                    .getReceivedRecordBoxes()
+                    .requireData()
+                    .recordBoxes
+                    .map { it.toReceivedRecordBox() }
+            }
 
         override fun getPagedReceivedAfternotes(): Flow<PagingData<AfterNoteListItem>> =
             Pager(

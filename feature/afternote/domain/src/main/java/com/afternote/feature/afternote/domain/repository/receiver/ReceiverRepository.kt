@@ -6,6 +6,7 @@ import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResul
 import com.afternote.feature.afternote.domain.model.receiver.LoadCountResult
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedExportBundle
+import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordBox
 import com.afternote.feature.receiver.domain.model.SenderMessageInfo
 import kotlinx.coroutines.flow.Flow
 
@@ -27,6 +28,9 @@ interface ReceiverRepository {
 
     /** 로그아웃·계정 전환·초기화 시 저장 코드를 제거합니다. */
     suspend fun clearAuthCode()
+
+    /** 현재 접근 코드와 같은 이메일에 등록된 받은 기록함 목록을 서버에서 조회합니다. */
+    suspend fun getReceivedRecordBoxes(): Result<List<ReceivedRecordBox>>
 
     /**
      * 수신 애프터노트 스트림. 서버는 페이지네이션 미지원이므로 단일 페이지로 받지만,

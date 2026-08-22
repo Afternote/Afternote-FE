@@ -5,8 +5,8 @@ import androidx.compose.runtime.Immutable
 /**
  * 발신자 상세(designs 11·12) UI 상태.
  *
- * 카드 별칭은 SenderRegistry, 신원(실명) 은 `verify(authCode)` 응답, 신청·승인 일시는
- * `getDeliveryVerificationStatus()` 응답을 결합해 정보 박스 4 행 + CTA 분기 데이터를 만든다.
+ * 서버-backed 카드는 `record-boxes` 응답의 발신자명·열람 상태·신청/승인 일시를 사용한다.
+ * 마스터 키 입력 전 임시 카드는 SenderRegistry의 사용자 별칭을 사용한다.
  */
 sealed interface SenderDetailUiState {
     data object Loading : SenderDetailUiState
@@ -16,8 +16,9 @@ sealed interface SenderDetailUiState {
      *
      * @property displayName 헤더에 노출할 발신자 표시명. `verify` 응답의 실명이 있으면 그것을, 없으면 사용자 별칭.
      * @property verification 열람 신청 상태 → 정보 박스 "상태" 행 + 하단 CTA 분기.
-     * @property requestedAt 신청일(yyyy.MM.dd.) — `getDeliveryVerificationStatus().createdAt` 포맷팅 결과. null 이면 "신청 기록이 없습니다".
-     * @property approvedAt 승인일(yyyy.MM.dd.) — APPROVED 상태일 때만 채워짐. null 이면 "승인 기록이 없습니다".
+     * @property requestedAt 신청일(yyyy.MM.dd.) — 서버 기록함의 `requestedAt` 또는 상태 조회 시각 포맷팅 결과.
+     *                            null 이면 "신청 기록이 없습니다".
+     * @property approvedAt 승인일(yyyy.MM.dd.) — 서버 기록함이 내려준 승인 시각. null 이면 "승인 기록이 없습니다".
      */
     @Immutable
     data class Success(

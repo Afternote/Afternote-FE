@@ -3,6 +3,7 @@ package com.afternote.feature.afternote.data.service
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.feature.afternote.data.dto.DeliveryVerificationDto
 import com.afternote.feature.afternote.data.dto.DeliveryVerificationRequestDto
+import com.afternote.feature.afternote.data.dto.ReceivedRecordBoxListDto
 import com.afternote.feature.afternote.data.dto.ReceiverAuthCodeEmailSendRequestDto
 import com.afternote.feature.afternote.data.dto.ReceiverAuthPresignedUrlDto
 import com.afternote.feature.afternote.data.dto.ReceiverAuthPresignedUrlRequestDto
@@ -53,6 +54,10 @@ interface ReceiverAuthApiService {
 
     @GET("receiver-auth/delivery-verification/status")
     suspend fun getDeliveryVerificationStatus(): BaseResponse<DeliveryVerificationDto>
+
+    /** 저장된 `X-Auth-Code`와 같은 이메일에 등록된 모든 받은 기록함을 조회한다. */
+    @GET("receiver-auth/record-boxes")
+    suspend fun getReceivedRecordBoxes(): BaseResponse<ReceivedRecordBoxListDto>
 
     @GET("receiver-auth/message")
     suspend fun getSenderMessage(): BaseResponse<ReceiverMessageDto>

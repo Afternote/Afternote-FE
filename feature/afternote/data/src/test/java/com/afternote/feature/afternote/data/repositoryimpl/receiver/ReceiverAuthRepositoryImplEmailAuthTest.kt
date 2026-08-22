@@ -4,6 +4,7 @@ import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.feature.afternote.data.dto.DeliveryVerificationDto
 import com.afternote.feature.afternote.data.dto.DeliveryVerificationRequestDto
+import com.afternote.feature.afternote.data.dto.ReceivedRecordBoxListDto
 import com.afternote.feature.afternote.data.dto.ReceiverAuthCodeEmailSendRequestDto
 import com.afternote.feature.afternote.data.dto.ReceiverAuthPresignedUrlDto
 import com.afternote.feature.afternote.data.dto.ReceiverAuthPresignedUrlRequestDto
@@ -168,6 +169,8 @@ private class FakeReceiverAuthApiService(
         error("unused")
 
     override suspend fun getDeliveryVerificationStatus(): BaseResponse<DeliveryVerificationDto> = error("unused")
+
+    override suspend fun getReceivedRecordBoxes(): BaseResponse<ReceivedRecordBoxListDto> = error("unused")
 
     override suspend fun getSenderMessage(): BaseResponse<ReceiverMessageDto> = error("unused")
 }

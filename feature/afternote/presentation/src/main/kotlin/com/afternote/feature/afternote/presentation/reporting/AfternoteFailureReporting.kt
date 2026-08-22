@@ -68,6 +68,9 @@ enum class AfternoteFailureStage(
     /** 발신자 상세의 열람 인증 상태 조회. */
     SENDER_STATUS_LOAD("sender_status_load"),
 
+    /** 받은 기록함 서버 목록 조회. */
+    RECEIVED_RECORD_BOXES_LOAD("received_record_boxes_load"),
+
     /** 모든 기록 내려받기 — 서버에서 묶음을 받아오는 단계. */
     RECEIVED_EXPORT_DOWNLOAD("received_export_download"),
 
