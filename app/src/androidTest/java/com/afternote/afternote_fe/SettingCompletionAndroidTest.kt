@@ -43,12 +43,15 @@ import com.afternote.core.network.dto.delivery.ReceiverDeliveryConditionUpdateRe
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.core.network.service.UserApiService
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsViewModel
 import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionError
 import com.afternote.feature.setting.presentation.viewmodel.DeliveryConditionViewModel
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditEvent
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditUiState
 import com.afternote.feature.setting.presentation.viewmodel.ProfileEditViewModel
 import com.afternote.feature.setting.presentation.viewmodel.PushNotificationViewModel
+import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditEvent
+import com.afternote.feature.setting.presentation.viewmodel.ReceiverEditViewModel
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterEvent
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterViewModel
 import com.afternote.feature.setting.presentation.viewmodel.SettingUiState
@@ -115,6 +118,7 @@ class SettingCompletionAndroidTest {
         val repository = CompletionUserRepository()
         val newsletterGate = repository.enqueuePushUpdate()
         val mindRecordGate = repository.enqueuePushUpdate()
+        val afterNoteGate = repository.enqueuePushUpdate()
         val viewModel =
             PushNotificationViewModel(
                 context = ApplicationProvider.getApplicationContext(),
@@ -164,6 +168,100 @@ class SettingCompletionAndroidTest {
 
         assertTrue(viewModel.uiState.value.isMindRecordOn)
         assertFalse(viewModel.uiState.value.isNewsletterOn)
+
+        composeRule.runOnIdle {
+            viewModel.onAfternoteToggle(false)
+            viewModel.onSmsChecked(true)
+            viewModel.onEmailChecked(true)
+            viewModel.onPushChecked(true)
+        }
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            repository.pushUpdateCalls.size == 3
+        }
+
+        assertFalse(viewModel.uiState.value.isAfternoteOn)
+        assertTrue(viewModel.uiState.value.isSmsChecked)
+        assertTrue(viewModel.uiState.value.isEmailChecked)
+        assertTrue(viewModel.uiState.value.isPushChecked)
+        assertEquals(
+            CompletionPushUpdateCall(timeLetter = null, mindRecord = null, afterNote = false),
+            repository.pushUpdateCalls.last(),
+        )
+
+        afterNoteGate.complete(
+            Result.success(COMPLETION_DEFAULT_PUSH_SETTING.copy(timeLetter = false, afterNote = false)),
+        )
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            repository.completedPushUpdates == 3
+        }
+
+        assertFalse(viewModel.uiState.value.isAfternoteOn)
+        assertEquals(3, repository.pushUpdateCalls.size)
+    }
+
+    @Test
+    fun connectedAccounts_linkThenUnlink_appliesExactPayloadAndServerState() {
+        setHarnessContent()
+        val repository = CompletionUserRepository()
+        val linkGate = repository.enqueueConnectedLink()
+        val unlinkGate = repository.enqueueConnectedUnlink()
+        val viewModel = ConnectedAccountsViewModel(repository)
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            !viewModel.uiState.value.isLoading
+        }
+
+        composeRule.runOnIdle {
+            viewModel.link(provider = "google", accessToken = "google-access-token")
+        }
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            repository.connectedLinkCalls.size == 1
+        }
+        assertEquals(
+            listOf(CompletionConnectedLinkCall("google", "google-access-token")),
+            repository.connectedLinkCalls,
+        )
+
+        linkGate.complete(
+            Result.success(
+                completionConnectedAccounts(
+                    google = true,
+                    googleEmail = "linked@afternote.local",
+                ),
+            ),
+        )
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            viewModel.uiState.value.accounts
+                .first { it.provider == "google" }
+                .isConnected
+        }
+        assertEquals(
+            "linked@afternote.local",
+            viewModel.uiState.value.accounts
+                .first { it.provider == "google" }
+                .email,
+        )
+
+        composeRule.runOnIdle {
+            viewModel.onToggle(provider = "google", enabled = false)
+        }
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            repository.connectedUnlinkCalls.size == 1
+        }
+        assertEquals(listOf("google"), repository.connectedUnlinkCalls)
+
+        unlinkGate.complete(Result.success(completionConnectedAccounts()))
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            !viewModel.uiState.value.accounts
+                .first { it.provider == "google" }
+                .isConnected
+        }
+
+        assertEquals(
+            null,
+            viewModel.uiState.value.accounts
+                .first { it.provider == "google" }
+                .email,
+        )
     }
 
     @Test
@@ -222,6 +320,101 @@ class SettingCompletionAndroidTest {
         retryGate.complete(Result.success(ReceiverCreated(receiverId = RECEIVER_ID, authCode = "AUTH-77")))
 
         assertEquals(ReceiverRegisterEvent.RegisterSuccess, awaitEvent(viewModel.events))
+    }
+
+    @Test
+    fun receiverEdit_serialFailurePartialFailureThenRetry_sendsExactPayloadOncePerAttempt() {
+        setHarnessContent()
+        val repository = CompletionUserRepository()
+        val firstBasicGate = repository.enqueueReceiverUpdate()
+        val retryBasicGate = repository.enqueueReceiverUpdate()
+        val retryMessageGate = repository.enqueueReceiverMessageUpdate()
+        val finalBasicGate = repository.enqueueReceiverUpdate()
+        val finalMessageGate = repository.enqueueReceiverMessageUpdate()
+        val viewModel =
+            ReceiverEditViewModel(
+                savedStateHandle = SavedStateHandle(mapOf("receiverId" to RECEIVER_ID)),
+                userRepository = repository,
+            )
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            viewModel.uiState.value.receiver == COMPLETION_DEFAULT_RECEIVER_DETAIL
+        }
+        val expectedBasicCall =
+            CompletionReceiverEditCall(
+                receiverId = RECEIVER_ID,
+                name = "수정 이름",
+                phone = "01099998888",
+                relation = "가족",
+                email = "updated@afternote.local",
+            )
+        val expectedMessageCall =
+            CompletionReceiverMessageCall(
+                receiverId = RECEIVER_ID,
+                message = "수정한 마지막 인사말",
+            )
+        val update: () -> Unit = {
+            viewModel.update(
+                name = expectedBasicCall.name,
+                relation = expectedBasicCall.relation,
+                phone = expectedBasicCall.phone,
+                email = expectedBasicCall.email,
+                message = expectedMessageCall.message,
+            )
+        }
+
+        composeRule.runOnIdle {
+            update()
+            update()
+        }
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            repository.receiverUpdateCalls.size == 1
+        }
+        assertTrue(viewModel.uiState.value.isSaving)
+        assertEquals(listOf(expectedBasicCall), repository.receiverUpdateCalls)
+        assertTrue(repository.receiverMessageCalls.isEmpty())
+
+        firstBasicGate.complete(Result.failure(IllegalStateException("basic update failed")))
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            viewModel.uiState.value.errorMessage == "수신자 수정에 실패했습니다."
+        }
+        assertFalse(viewModel.uiState.value.isSaving)
+        assertTrue(repository.receiverMessageCalls.isEmpty())
+
+        composeRule.runOnIdle(update)
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            repository.receiverUpdateCalls.size == 2
+        }
+        retryBasicGate.complete(Result.success(completionUpdatedReceiver(expectedBasicCall)))
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            repository.receiverMessageCalls.size == 1
+        }
+        retryMessageGate.complete(Result.failure(IllegalStateException("message update failed")))
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            viewModel.uiState.value.errorMessage ==
+                "기본 정보는 수정됐지만 마지막 인사말 수정에 실패했습니다."
+        }
+        assertEquals(listOf(expectedMessageCall), repository.receiverMessageCalls)
+
+        composeRule.runOnIdle(update)
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            repository.receiverUpdateCalls.size == 3
+        }
+        finalBasicGate.complete(Result.success(completionUpdatedReceiver(expectedBasicCall)))
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            repository.receiverMessageCalls.size == 2
+        }
+        finalMessageGate.complete(Result.success(Unit))
+
+        assertEquals(ReceiverEditEvent.EditSuccess, awaitEvent(viewModel.events))
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            !viewModel.uiState.value.isSaving
+        }
+        assertEquals(
+            listOf(expectedBasicCall, expectedBasicCall, expectedBasicCall),
+            repository.receiverUpdateCalls,
+        )
+        assertEquals(listOf(expectedMessageCall, expectedMessageCall), repository.receiverMessageCalls)
+        assertEquals(null, viewModel.uiState.value.errorMessage)
     }
 
     @Test
@@ -382,6 +575,24 @@ private data class CompletionReceiverRegistrationCall(
     val message: String?,
 )
 
+private data class CompletionConnectedLinkCall(
+    val provider: String,
+    val accessToken: String,
+)
+
+private data class CompletionReceiverEditCall(
+    val receiverId: Long,
+    val name: String,
+    val phone: String,
+    val relation: String,
+    val email: String,
+)
+
+private data class CompletionReceiverMessageCall(
+    val receiverId: Long,
+    val message: String,
+)
+
 private data class CompletionDeliveryUpdateCall(
     val receiverId: Long,
     val conditions: List<DeliveryConditionItem>,
@@ -400,6 +611,44 @@ private val COMPLETION_DEFAULT_PUSH_SETTING =
         timeLetter = true,
         mindRecord = true,
         afterNote = true,
+    )
+
+private val COMPLETION_DEFAULT_RECEIVER_DETAIL =
+    ReceiverDetail(
+        receiverId = 77L,
+        name = "기존 수신자",
+        relation = "가족",
+        phone = "01011112222",
+        email = "before@afternote.local",
+        dailyQuestionCount = 1,
+        timeLetterCount = 2,
+        afterNoteCount = 3,
+        message = "기존 마지막 인사말",
+        authCode = "AUTH-77",
+    )
+
+private fun completionConnectedAccounts(
+    google: Boolean = false,
+    googleEmail: String? = null,
+) = UserConnectedAccount(
+    local = true,
+    google = google,
+    naver = false,
+    kakao = false,
+    apple = false,
+    localEmail = COMPLETION_DEFAULT_USER.email,
+    googleEmail = googleEmail,
+    naverEmail = null,
+    kakaoEmail = null,
+    appleEmail = null,
+)
+
+private fun completionUpdatedReceiver(call: CompletionReceiverEditCall) =
+    Receiver(
+        receiverId = call.receiverId,
+        name = call.name,
+        relation = call.relation,
+        authCode = "AUTH-77",
     )
 
 private fun completionDefaultDeliveryConditions() =
@@ -428,12 +677,20 @@ private class CompletionUserRepository : UserRepository {
     private val profileUpdateGates = ArrayDeque<CompletableDeferred<Result<User>>>()
     private val pushUpdateGates = ArrayDeque<CompletableDeferred<Result<UserPushSetting>>>()
     private val receiverCreateGates = ArrayDeque<CompletableDeferred<Result<ReceiverCreated>>>()
+    private val receiverUpdateGates = ArrayDeque<CompletableDeferred<Result<Receiver>>>()
+    private val receiverMessageGates = ArrayDeque<CompletableDeferred<Result<Unit>>>()
     private val deliveryUpdateGates = ArrayDeque<CompletableDeferred<Result<ReceiverDeliveryConditions>>>()
+    private val connectedLinkGates = ArrayDeque<CompletableDeferred<Result<UserConnectedAccount>>>()
+    private val connectedUnlinkGates = ArrayDeque<CompletableDeferred<Result<UserConnectedAccount>>>()
 
     private val recordedProfileUpdates = mutableListOf<CompletionProfileUpdateCall>()
     private val recordedPushUpdates = mutableListOf<CompletionPushUpdateCall>()
     private val recordedReceiverCreates = mutableListOf<CompletionReceiverRegistrationCall>()
+    private val recordedReceiverUpdates = mutableListOf<CompletionReceiverEditCall>()
+    private val recordedReceiverMessages = mutableListOf<CompletionReceiverMessageCall>()
     private val recordedDeliveryUpdates = mutableListOf<CompletionDeliveryUpdateCall>()
+    private val recordedConnectedLinks = mutableListOf<CompletionConnectedLinkCall>()
+    private val recordedConnectedUnlinks = mutableListOf<String>()
     private var pushUpdateCompletions = 0
 
     override val receiverListFlow: Flow<List<Receiver>> = flowOf(emptyList())
@@ -453,8 +710,20 @@ private class CompletionUserRepository : UserRepository {
     val receiverCreateCalls: List<CompletionReceiverRegistrationCall>
         get() = synchronized(this) { recordedReceiverCreates.toList() }
 
+    val receiverUpdateCalls: List<CompletionReceiverEditCall>
+        get() = synchronized(this) { recordedReceiverUpdates.toList() }
+
+    val receiverMessageCalls: List<CompletionReceiverMessageCall>
+        get() = synchronized(this) { recordedReceiverMessages.toList() }
+
     val deliveryUpdateCalls: List<CompletionDeliveryUpdateCall>
         get() = synchronized(this) { recordedDeliveryUpdates.toList() }
+
+    val connectedLinkCalls: List<CompletionConnectedLinkCall>
+        get() = synchronized(this) { recordedConnectedLinks.toList() }
+
+    val connectedUnlinkCalls: List<String>
+        get() = synchronized(this) { recordedConnectedUnlinks.toList() }
 
     fun enqueueProfileUpdate(): CompletableDeferred<Result<User>> =
         CompletableDeferred<Result<User>>().also { gate ->
@@ -471,9 +740,29 @@ private class CompletionUserRepository : UserRepository {
             synchronized(this) { receiverCreateGates.addLast(gate) }
         }
 
+    fun enqueueReceiverUpdate(): CompletableDeferred<Result<Receiver>> =
+        CompletableDeferred<Result<Receiver>>().also { gate ->
+            synchronized(this) { receiverUpdateGates.addLast(gate) }
+        }
+
+    fun enqueueReceiverMessageUpdate(): CompletableDeferred<Result<Unit>> =
+        CompletableDeferred<Result<Unit>>().also { gate ->
+            synchronized(this) { receiverMessageGates.addLast(gate) }
+        }
+
     fun enqueueDeliveryUpdate(): CompletableDeferred<Result<ReceiverDeliveryConditions>> =
         CompletableDeferred<Result<ReceiverDeliveryConditions>>().also { gate ->
             synchronized(this) { deliveryUpdateGates.addLast(gate) }
+        }
+
+    fun enqueueConnectedLink(): CompletableDeferred<Result<UserConnectedAccount>> =
+        CompletableDeferred<Result<UserConnectedAccount>>().also { gate ->
+            synchronized(this) { connectedLinkGates.addLast(gate) }
+        }
+
+    fun enqueueConnectedUnlink(): CompletableDeferred<Result<UserConnectedAccount>> =
+        CompletableDeferred<Result<UserConnectedAccount>>().also { gate ->
+            synchronized(this) { connectedUnlinkGates.addLast(gate) }
         }
 
     override suspend fun getMyProfile(): User = COMPLETION_DEFAULT_USER
@@ -544,7 +833,10 @@ private class CompletionUserRepository : UserRepository {
 
     override suspend fun getReceivers(): List<Receiver> = completionUnexpected("getReceivers")
 
-    override suspend fun getReceiverDetail(receiverId: Long): ReceiverDetail = completionUnexpected("getReceiverDetail")
+    override suspend fun getReceiverDetail(receiverId: Long): ReceiverDetail {
+        assertEquals(COMPLETION_DEFAULT_RECEIVER_DETAIL.receiverId, receiverId)
+        return COMPLETION_DEFAULT_RECEIVER_DETAIL
+    }
 
     override suspend fun updateReceiver(
         receiverId: Long,
@@ -552,25 +844,53 @@ private class CompletionUserRepository : UserRepository {
         phone: String,
         relation: String,
         email: String,
-    ): Receiver = completionUnexpected("updateReceiver")
+    ): Receiver {
+        val gate =
+            synchronized(this) {
+                recordedReceiverUpdates += CompletionReceiverEditCall(receiverId, name, phone, relation, email)
+                receiverUpdateGates.pollFirst() ?: error("updateReceiver gate was not prepared")
+            }
+        return gate.await().getOrThrow()
+    }
 
     override suspend fun updateReceiverMessage(
         receiverId: Long,
         message: String,
-    ) = completionUnexpected<Unit>("updateReceiverMessage")
+    ) {
+        val gate =
+            synchronized(this) {
+                recordedReceiverMessages += CompletionReceiverMessageCall(receiverId, message)
+                receiverMessageGates.pollFirst() ?: error("updateReceiverMessage gate was not prepared")
+            }
+        gate.await().getOrThrow()
+    }
 
     override suspend fun deleteAccount() = completionUnexpected<Unit>("deleteAccount")
 
     override suspend fun logActivity() = completionUnexpected<Unit>("logActivity")
 
-    override suspend fun getConnectedAccounts(): UserConnectedAccount = completionUnexpected("getConnectedAccounts")
+    override suspend fun getConnectedAccounts(): UserConnectedAccount = completionConnectedAccounts()
 
     override suspend fun linkConnectedAccount(
         provider: String,
         accessToken: String,
-    ): UserConnectedAccount = completionUnexpected("linkConnectedAccount")
+    ): UserConnectedAccount {
+        val gate =
+            synchronized(this) {
+                recordedConnectedLinks += CompletionConnectedLinkCall(provider, accessToken)
+                connectedLinkGates.pollFirst() ?: error("linkConnectedAccount gate was not prepared")
+            }
+        return gate.await().getOrThrow()
+    }
 
-    override suspend fun unlinkConnectedAccount(provider: String): UserConnectedAccount = completionUnexpected("unlinkConnectedAccount")
+    override suspend fun unlinkConnectedAccount(provider: String): UserConnectedAccount {
+        val gate =
+            synchronized(this) {
+                recordedConnectedUnlinks += provider
+                connectedUnlinkGates.pollFirst() ?: error("unlinkConnectedAccount gate was not prepared")
+            }
+        return gate.await().getOrThrow()
+    }
 }
 
 private class CompletionCallLedger {

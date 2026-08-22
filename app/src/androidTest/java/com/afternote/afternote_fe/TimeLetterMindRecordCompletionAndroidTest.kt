@@ -5,6 +5,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
@@ -15,6 +18,7 @@ import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -33,6 +37,10 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
+import com.afternote.feature.mindrecord.domain.model.Diary
+import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
+import com.afternote.feature.mindrecord.domain.model.DiaryList
+import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
@@ -40,15 +48,26 @@ import com.afternote.feature.mindrecord.domain.model.WeeklyReportDailyQuestion
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDay
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportEmotion
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
+import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
+import com.afternote.feature.mindrecord.presentation.screen.memoryspace.MemorySpaceScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestionAnswerListScreen
+import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestionWriteScreen
+import com.afternote.feature.mindrecord.presentation.screen.sender.DiaryWriteScreen
+import com.afternote.feature.mindrecord.presentation.screen.sender.DraftListScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.WeeklyReportScreen
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListViewModel
+import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionWriteViewModel
+import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryWriteViewModel
+import com.afternote.feature.mindrecord.presentation.viewmodel.DraftListViewModel
+import com.afternote.feature.mindrecord.presentation.viewmodel.MemorySpaceViewModel
+import com.afternote.feature.mindrecord.presentation.viewmodel.SubmitState
 import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportViewModel
 import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetter
+import com.afternote.feature.timeletter.domain.model.TimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlockType
 import com.afternote.feature.timeletter.domain.model.TimeLetterDeliveryMode
 import com.afternote.feature.timeletter.domain.model.TimeLetterList
@@ -57,9 +76,16 @@ import com.afternote.feature.timeletter.domain.repository.FileMetadataRepository
 import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
 import com.afternote.feature.timeletter.domain.usecase.CreateTimeLetterUseCase
 import com.afternote.feature.timeletter.domain.usecase.ResolveTimeLetterBlocksUseCase
+import com.afternote.feature.timeletter.presentation.screen.sender.RecipientListScreen
+import com.afternote.feature.timeletter.presentation.screen.sender.TimeLetterDetailScreen
 import com.afternote.feature.timeletter.presentation.screen.sender.TimeLetterWriteScreen
+import com.afternote.feature.timeletter.presentation.screen.sender.TimeletterScreen
+import com.afternote.feature.timeletter.presentation.viewmodel.RecipientListViewModel
+import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterDetailUiState
+import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterDetailViewModel
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteError
 import com.afternote.feature.timeletter.presentation.viewmodel.TimeLetterWriteViewModel
+import com.afternote.feature.timeletter.presentation.viewmodel.TimeletterViewModel
 import kotlinx.coroutines.CompletableDeferred
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -67,6 +93,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.time.LocalDate
+import java.time.YearMonth
 
 /** #838/#839에서 기존 production Screen/ViewModel로 표현 가능한 미검증 완료 경계. */
 @RunWith(AndroidJUnit4::class)
@@ -177,6 +204,129 @@ class TimeLetterMindRecordCompletionAndroidTest {
     }
 
     @Test
+    fun timeLetterRecipientSelector_roundTripPreservesTitleTextAndExactReceiverId() {
+        val repository = CompletionTimeLetterRepository()
+        val userRepository = FakeUserRepository(receivers = listOf(testReceiver()))
+        val writeViewModel = timeLetterWriteViewModel(repository, userRepository)
+        val recipientViewModel = RecipientListViewModel(userRepository)
+        var showRecipient by mutableStateOf(false)
+
+        composeRule.setContent {
+            AfternoteTheme {
+                if (showRecipient) {
+                    RecipientListScreen(
+                        onBackClick = { showRecipient = false },
+                        onConfirmClick = { recipients ->
+                            writeViewModel.setRecipients(recipients.map { it.receiverId })
+                            showRecipient = false
+                        },
+                        viewModel = recipientViewModel,
+                    )
+                } else {
+                    val uiState by writeViewModel.uiState.collectAsStateWithLifecycle()
+                    TimeLetterWriteScreen(
+                        uiState = uiState,
+                        onRecipientClick = { title, textContents ->
+                            writeViewModel.updateDraftContent(title, textContents)
+                            showRecipient = true
+                        },
+                        onTitleChanged = writeViewModel::updateDraftTitle,
+                        onTextContentChanged = writeViewModel::updateDraftTextContent,
+                    )
+                }
+            }
+        }
+
+        composeRule.onAllNodes(hasSetTextAction())[0].performTextInput("왕복 보존 제목")
+        composeRule.onAllNodes(hasSetTextAction())[1].performTextInput("왕복 보존 본문")
+        composeRule.onNodeWithText("수신자를 선택해주세요").performClick()
+        composeRule.onNodeWithText("수신인 목록").assertIsDisplayed()
+        composeRule.onNodeWithText("김수신").assertIsDisplayed()
+        composeRule.onAllNodes(checkboxMatcher)[0].performClick()
+        composeRule.onNodeWithText("수신자 선택 완료하기").performClick()
+
+        composeRule.waitUntil(timeoutMillis = TIMEOUT) {
+            !showRecipient && writeViewModel.uiState.value.recipientIds == listOf(7L)
+        }
+        val restored = writeViewModel.uiState.value
+        assertEquals("왕복 보존 제목", restored.draftTitle)
+        assertEquals("왕복 보존 본문", restored.draftTextContents[0L])
+        assertEquals(listOf(7L), restored.recipientIds)
+        assertEquals(listOf("김수신"), restored.recipientNames)
+        composeRule.onNodeWithText("왕복 보존 제목").assertIsDisplayed()
+        composeRule.onNodeWithText("왕복 보존 본문").assertIsDisplayed()
+        composeRule.onNodeWithText("김수신 님에게").assertIsDisplayed()
+        assertTrue(repository.createCalls.isEmpty())
+    }
+
+    @Test
+    fun timeLetterSenderDetail_routeIdLoadingFailureRetryAndSuccess_areConnected() {
+        val firstLoad = CompletableDeferred<Result<TimeLetter>>()
+        val detailLetter = completionDetailLetter()
+        val repository =
+            CompletionTimeLetterRepository(
+                nextDetailGate = firstLoad,
+                registeredLetters = TimeLetterList(listOf(detailLetter), 1),
+            )
+        repository.detailResults.addLast(Result.success(completionDetailLetter()))
+        val userRepository = FakeUserRepository(receivers = listOf(testReceiver()))
+        val listViewModel = TimeletterViewModel(repository, userRepository)
+        var detailViewModel by mutableStateOf<TimeLetterDetailViewModel?>(null)
+
+        composeRule.setContent {
+            val activeDetailViewModel = detailViewModel
+            AfternoteTheme {
+                if (activeDetailViewModel == null) {
+                    TimeletterScreen(
+                        viewModel = listViewModel,
+                        onLetterClick = { timeLetterId ->
+                            detailViewModel =
+                                TimeLetterDetailViewModel(
+                                    timeLetterRepository = repository,
+                                    userRepository = userRepository,
+                                    savedStateHandle = SavedStateHandle(mapOf("timeLetterId" to timeLetterId)),
+                                )
+                        },
+                    )
+                } else {
+                    TimeLetterDetailScreen(onBackClick = {}, viewModel = activeDetailViewModel)
+                }
+            }
+        }
+
+        composeRule.onNode(hasText("상세 route 편지") and hasClickAction()).performClick()
+        composeRule.waitUntil(timeoutMillis = TIMEOUT) { repository.detailIds == listOf(509L) }
+        assertEquals(TimeLetterDetailUiState.Loading, detailViewModel?.uiState?.value)
+        composeRule
+            .onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate))
+            .assertIsDisplayed()
+
+        composeRule.runOnIdle {
+            firstLoad.complete(Result.failure(IllegalStateException("sender detail offline")))
+        }
+        composeRule.waitUntil(timeoutMillis = TIMEOUT) {
+            detailViewModel?.uiState?.value == TimeLetterDetailUiState.Error
+        }
+        composeRule.onNodeWithText("타임레터를 불러올 수 없습니다.").assertIsDisplayed()
+        composeRule.onNodeWithText("다시 시도").performClick()
+
+        composeRule.waitUntil(timeoutMillis = TIMEOUT) {
+            detailViewModel?.uiState?.value is TimeLetterDetailUiState.Success
+        }
+        composeRule.onNodeWithText("상세 route 편지").assertIsDisplayed()
+        composeRule.onNodeWithText("수신인  김수신").assertIsDisplayed()
+        composeRule.onNodeWithText("발송 예정일  2026.10.09.").assertIsDisplayed()
+        composeRule.onNodeWithText("상세에서 복구된 본문").assertIsDisplayed()
+        composeRule.onNode(hasScrollToIndexAction()).performScrollToIndex(2)
+        composeRule
+            .onNodeWithText("🔗 https://afternote.test/detail")
+            .assertIsDisplayed()
+        assertEquals(listOf(509L, 509L), repository.detailIds)
+        assertEquals(1, repository.registeredListCalls)
+        assertEquals(3, userRepository.getReceiversCalls)
+    }
+
+    @Test
     fun mindRecordHome_dailyQuestionLoadingEmptyAndErrorRetrySuccess_areRendered() {
         val emptyGate = CompletableDeferred<Result<List<DailyQuestion>>>()
         val emptyRepository = CompletionDailyQuestionRepository(nextListGate = emptyGate)
@@ -227,6 +377,188 @@ class TimeLetterMindRecordCompletionAndroidTest {
         composeRule.onNodeWithText("노출되면 안 되는 임시답변").assertDoesNotExist()
         assertEquals(2, retryRepository.listCalls)
         assertEquals(2, retryRepository.todayCalls)
+    }
+
+    @Test
+    fun dailyQuestionWrite_successRefreshesExistingListWithCreatedAnswer() {
+        val repository = CompletionDailyQuestionRepository()
+        val listViewModel = DailyQuestionListViewModel(repository)
+        var writeViewModel by mutableStateOf<DailyQuestionWriteViewModel?>(null)
+        var submitSuccessCalls = 0
+
+        composeRule.setContent {
+            val activeWriteViewModel = writeViewModel
+            AfternoteTheme {
+                if (activeWriteViewModel == null) {
+                    DailyQuestionAnswerListScreen(viewModel = listViewModel)
+                } else {
+                    DailyQuestionWriteScreen(
+                        viewModel = activeWriteViewModel,
+                        onSubmitSuccess = {
+                            submitSuccessCalls += 1
+                            writeViewModel = null
+                            listViewModel.refreshOnReturn()
+                        },
+                    )
+                }
+            }
+        }
+
+        composeRule.waitUntil(timeoutMillis = TIMEOUT) {
+            (listViewModel.uiState.value as? DailyQuestionListUiState.Success)?.answers?.isEmpty() == true
+        }
+        composeRule.onNodeWithText("아직 등록된 답변이 없어요.").assertIsDisplayed()
+
+        composeRule.runOnIdle {
+            writeViewModel =
+                DailyQuestionWriteViewModel(
+                    repository = repository,
+                    photoUploadRepository = CompletionPhotoUploadRepository,
+                )
+        }
+        composeRule.waitUntil(timeoutMillis = TIMEOUT) {
+            writeViewModel?.uiState?.value?.isQuestionLoading == false
+        }
+        composeRule.runOnIdle {
+            requireNotNull(writeViewModel).onAnswerChanged("작성 후 목록에 반영될 답변")
+        }
+        composeRule.onNodeWithText("오늘의 테스트 질문").assertIsDisplayed()
+        composeRule.onNode(hasText("저장") and hasClickAction()).performClick()
+
+        composeRule.waitUntil(timeoutMillis = TIMEOUT) {
+            submitSuccessCalls == 1 &&
+                (listViewModel.uiState.value as? DailyQuestionListUiState.Success)?.answers?.size == 1
+        }
+        composeRule.onNodeWithText("오늘의 테스트 질문").assertIsDisplayed()
+        composeRule.onNodeWithText("작성 후 목록에 반영될 답변").assertIsDisplayed()
+        assertEquals(1, repository.createCalls.size)
+        assertEquals(71L, repository.createCalls.single().questionId)
+        assertEquals(false, repository.createCalls.single().isDraft)
+        assertEquals(2, repository.listCalls)
+        assertEquals(3, repository.todayCalls)
+    }
+
+    @Test
+    fun diaryDraftRow_routesIdAndMonthThenPrefillsAndPublishesWithPatch() {
+        val currentMonth = YearMonth.now()
+        val draftDate = currentMonth.atDay(12)
+        val repository =
+            CompletionDiaryRepository(
+                drafts =
+                    mutableListOf(
+                        Diary(
+                            diaryId = 612L,
+                            title = "이어 쓸 일기",
+                            content = "<p>임시 본문</p>",
+                            date = draftDate.toString(),
+                            createdAt = draftDate.toString(),
+                            todayMood = TodayMood.SOSO,
+                            imageUrl = "https://afternote.test/draft.jpg",
+                            isDraft = true,
+                        ),
+                    ),
+            )
+        val draftListViewModel =
+            DraftListViewModel(
+                diaryRepository = repository,
+                dailyQuestionRepository = CompletionDailyQuestionRepository(),
+            )
+        var routedArguments: Pair<Long, String>? = null
+        var writeViewModel by mutableStateOf<DiaryWriteViewModel?>(null)
+        var submitSuccessCalls = 0
+
+        composeRule.setContent {
+            val activeWriteViewModel = writeViewModel
+            AfternoteTheme {
+                if (activeWriteViewModel == null) {
+                    DraftListScreen(
+                        viewModel = draftListViewModel,
+                        onDiaryDraftClick = { draftId, draftYearMonth ->
+                            routedArguments = draftId to draftYearMonth
+                            writeViewModel =
+                                DiaryWriteViewModel(
+                                    savedStateHandle =
+                                        SavedStateHandle(
+                                            mapOf(
+                                                "draftId" to draftId,
+                                                "draftYearMonth" to draftYearMonth,
+                                            ),
+                                        ),
+                                    repository = repository,
+                                    photoUploadRepository = CompletionPhotoUploadRepository,
+                                    userRepository = FakeUserRepository(),
+                                )
+                        },
+                    )
+                } else {
+                    DiaryWriteScreen(
+                        viewModel = activeWriteViewModel,
+                        onSubmitSuccess = { submitSuccessCalls += 1 },
+                    )
+                }
+            }
+        }
+
+        composeRule.onNode(hasText("이어 쓸 일기") and hasClickAction()).performClick()
+        composeRule.waitUntil(timeoutMillis = TIMEOUT) {
+            writeViewModel?.uiState?.value?.draftLoaded == true
+        }
+        assertEquals(612L to currentMonth.toString(), routedArguments)
+        val loaded = requireNotNull(writeViewModel).uiState.value
+        assertEquals("이어 쓸 일기", loaded.title)
+        assertEquals("<p>임시 본문</p>", loaded.content)
+        assertEquals(TodayMood.SOSO, loaded.mood)
+        assertEquals(draftDate, loaded.date)
+        assertEquals("https://afternote.test/draft.jpg", loaded.imageUrl)
+        composeRule.onNodeWithText("이어 쓸 일기").assertIsDisplayed()
+
+        composeRule.runOnIdle {
+            requireNotNull(writeViewModel).onTitleChanged("완성한 일기")
+            requireNotNull(writeViewModel).onContentChanged("<p>완성한 본문</p>")
+        }
+        composeRule.onNode(hasText("등록") and hasClickAction()).performClick()
+        composeRule.waitUntil(timeoutMillis = TIMEOUT) { submitSuccessCalls == 1 }
+
+        val update = repository.updateCalls.single()
+        assertEquals(612L, update.first)
+        assertEquals("완성한 일기", update.second.title)
+        assertEquals("<p>완성한 본문</p>", update.second.content)
+        assertEquals(false, update.second.isDraft)
+        assertEquals(TodayMood.SOSO, update.second.todayMood)
+        assertEquals(draftDate.toString(), update.second.date)
+        assertEquals("https://afternote.test/draft.jpg", update.second.imageUrl)
+        assertTrue(repository.createCalls.isEmpty())
+        assertEquals(2, repository.listCalls.size)
+        assertTrue(repository.listCalls.all { it == currentMonth.toString() to true })
+    }
+
+    @Test
+    fun memorySpace_supportedSuccess_opensAndClosesDetailThenNavigatesBack() {
+        val viewModel = MemorySpaceViewModel()
+        var backCalls = 0
+
+        composeRule.setContent {
+            AfternoteTheme {
+                MemorySpaceScreen(
+                    viewModel = viewModel,
+                    onBackClick = { backCalls += 1 },
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("MEMORY SPACE").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("기억 1").performClick()
+        composeRule
+            .onNodeWithText("이 순간은 나에게 특별한 의미가 있었습니다.", substring = true)
+            .assertIsDisplayed()
+        composeRule.onNodeWithText("#평온").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("닫기").performClick()
+        composeRule
+            .onNodeWithText("이 순간은 나에게 특별한 의미가 있었습니다.", substring = true)
+            .assertDoesNotExist()
+
+        composeRule.onNodeWithText("돌아가기").performClick()
+        composeRule.runOnIdle { assertEquals(1, backCalls) }
     }
 
     @Test
@@ -312,6 +644,8 @@ class TimeLetterMindRecordCompletionAndroidTest {
 
     private companion object {
         const val TIMEOUT = 5_000L
+
+        val checkboxMatcher = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox)
     }
 }
 
@@ -324,21 +658,29 @@ private data class CompletionTimeLetterCreateCall(
     val receiverIds: List<Long>,
 )
 
-private class CompletionTimeLetterRepository : TimeLetterRepository {
+private class CompletionTimeLetterRepository(
+    var nextDetailGate: CompletableDeferred<Result<TimeLetter>>? = null,
+    var registeredLetters: TimeLetterList = TimeLetterList(emptyList(), 0),
+) : TimeLetterRepository {
     val allowCreate = CompletableDeferred<Unit>()
     val createCalls = mutableListOf<CompletionTimeLetterCreateCall>()
+    val detailResults = ArrayDeque<Result<TimeLetter>>()
+    val detailIds = mutableListOf<Long>()
     var registeredListCalls = 0
         private set
 
     override suspend fun getTimeLetters(): TimeLetterList {
         registeredListCalls += 1
-        return TimeLetterList(emptyList(), 0)
+        return registeredLetters
     }
 
     override suspend fun getTemporaryTimeLetters(): TimeLetterList = TimeLetterList(emptyList(), 0)
 
     override suspend fun getTimeLetter(timeLetterId: Long): TimeLetter {
-        error("Unexpected time-letter detail load: $timeLetterId")
+        detailIds += timeLetterId
+        val gate = nextDetailGate
+        nextDetailGate = null
+        return (gate?.await() ?: requireNotNull(detailResults.removeFirstOrNull())).getOrThrow()
     }
 
     override suspend fun createTimeLetter(
@@ -397,6 +739,10 @@ private class CompletionDailyQuestionRepository(
     var nextListGate: CompletableDeferred<Result<List<DailyQuestion>>>? = null,
 ) : DailyQuestionRepository {
     val listResults = ArrayDeque<Result<List<DailyQuestion>>>()
+    val storedAnswers = mutableListOf<DailyQuestion>()
+    val createCalls = mutableListOf<DailyQuestionCreatePayload>()
+    val updateCalls = mutableListOf<Pair<Long, DailyQuestionUpdatePayload>>()
+    var today = TodayDailyQuestion(71L, 71, "오늘의 테스트 질문", false)
     var listCalls = 0
         private set
     var todayCalls = 0
@@ -409,24 +755,107 @@ private class CompletionDailyQuestionRepository(
         listCalls += 1
         val gate = nextListGate
         nextListGate = null
-        return gate?.await() ?: listResults.removeFirstOrNull() ?: Result.success(emptyList())
+        return gate?.await() ?: listResults.removeFirstOrNull() ?: Result.success(storedAnswers.toList())
     }
 
     override suspend fun getToday(): Result<TodayDailyQuestion> {
         todayCalls += 1
-        return Result.success(TodayDailyQuestion(71L, 71, "오늘의 테스트 질문", false))
+        return Result.success(today)
     }
 
     override suspend fun create(payload: DailyQuestionCreatePayload): Result<Unit> {
-        error("Unexpected daily-question create: $payload")
+        createCalls += payload
+        storedAnswers +=
+            DailyQuestion(
+                dailyQuestionId = 800L + createCalls.size,
+                title = today.content,
+                content = payload.content,
+                createdAt = "2026-08-22",
+                imageUrl = payload.imageUrl,
+                isDraft = payload.isDraft,
+            )
+        today = today.copy(isAnswered = !payload.isDraft, isDraft = payload.isDraft)
+        return Result.success(Unit)
     }
 
     override suspend fun update(
         id: Long,
         payload: DailyQuestionUpdatePayload,
-    ): Result<Unit> = error("Unexpected daily-question update: $id")
+    ): Result<Unit> {
+        updateCalls += id to payload
+        storedAnswers.replaceAll { answer ->
+            if (answer.dailyQuestionId == id) {
+                answer.copy(
+                    content = payload.content ?: answer.content,
+                    imageUrl = payload.imageUrl ?: answer.imageUrl,
+                    isDraft = payload.isDraft ?: answer.isDraft,
+                )
+            } else {
+                answer
+            }
+        }
+        return Result.success(Unit)
+    }
 
-    override suspend fun delete(id: Long): Result<Unit> = error("Unexpected daily-question delete: $id")
+    override suspend fun delete(id: Long): Result<Unit> {
+        storedAnswers.removeAll { it.dailyQuestionId == id }
+        return Result.success(Unit)
+    }
+}
+
+private class CompletionDiaryRepository(
+    val drafts: MutableList<Diary>,
+) : DiaryRepository {
+    val listCalls = mutableListOf<Pair<String, Boolean?>>()
+    val createCalls = mutableListOf<DiaryCreatePayload>()
+    val updateCalls = mutableListOf<Pair<Long, DiaryUpdatePayload>>()
+
+    override suspend fun getList(
+        yearMonth: String,
+        draftOnly: Boolean?,
+    ): Result<DiaryList> {
+        listCalls += yearMonth to draftOnly
+        val matching = drafts.filter { draftOnly == null || it.isDraft == draftOnly }
+        return Result.success(
+            DiaryList(
+                diaries = matching,
+                monthDiaryCount = matching.size,
+                weeklyDominantMood = matching.firstOrNull()?.todayMood,
+            ),
+        )
+    }
+
+    override suspend fun create(payload: DiaryCreatePayload): Result<Unit> {
+        createCalls += payload
+        return Result.success(Unit)
+    }
+
+    override suspend fun update(
+        id: Long,
+        payload: DiaryUpdatePayload,
+    ): Result<Unit> {
+        updateCalls += id to payload
+        drafts.replaceAll { diary ->
+            if (diary.diaryId == id) {
+                diary.copy(
+                    title = payload.title,
+                    content = payload.content,
+                    date = payload.date,
+                    todayMood = payload.todayMood,
+                    imageUrl = payload.imageUrl,
+                    isDraft = payload.isDraft,
+                )
+            } else {
+                diary
+            }
+        }
+        return Result.success(Unit)
+    }
+
+    override suspend fun delete(id: Long): Result<Unit> {
+        drafts.removeAll { it.diaryId == id }
+        return Result.success(Unit)
+    }
 }
 
 private class CompletionWeeklyReportRepository : WeeklyReportRepository {
@@ -450,6 +879,35 @@ private fun dailyQuestion(
         content = "답변 $id",
         createdAt = "2026-08-20",
         isDraft = isDraft,
+    )
+
+private fun completionDetailLetter(): TimeLetter =
+    TimeLetter(
+        id = 509L,
+        title = "상세 route 편지",
+        sendAt = "2026-10-09T09:40:00",
+        deliveredAt = null,
+        status = TimeLetterStatus.SCHEDULED,
+        blocks =
+            listOf(
+                TimeLetterBlock(
+                    id = 5091L,
+                    blockType = TimeLetterBlockType.TEXT,
+                    blockOrder = 1,
+                    textContent = "상세에서 복구된 본문",
+                    url = null,
+                    mimeType = null,
+                ),
+                TimeLetterBlock(
+                    id = 5092L,
+                    blockType = TimeLetterBlockType.LINK,
+                    blockOrder = 2,
+                    textContent = null,
+                    url = "https://afternote.test/detail",
+                    mimeType = null,
+                ),
+            ),
+        receiverIds = listOf(7L),
     )
 
 private fun emptyWeeklyReport(): WeeklyReport =

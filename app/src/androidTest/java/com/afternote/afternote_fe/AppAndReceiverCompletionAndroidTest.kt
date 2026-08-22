@@ -1,8 +1,13 @@
 package com.afternote.afternote_fe
 
+import androidx.compose.material3.Text
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasSetTextAction
@@ -18,9 +23,17 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.waitUntilAtLeastOneExists
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.navigation
 import androidx.paging.PagingData
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.afternote.afternote_fe.navigation.AppState
+import com.afternote.afternote_fe.navigation.rememberAfternoteAppState
+import com.afternote.afternote_fe.navigation.rememberHomeTabActions
+import com.afternote.afternote_fe.navigation.rememberReceiverNavActions
+import com.afternote.afternote_fe.screen.HomeTabActions
 import com.afternote.afternote_fe.screen.receiver.ReceiverHomeActions
 import com.afternote.afternote_fe.screen.receiver.ReceiverHomeEvent
 import com.afternote.afternote_fe.screen.receiver.ReceiverHomeScreen
@@ -31,8 +44,11 @@ import com.afternote.afternote_fe.test.FakeAuthRepository
 import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.InvalidLoginCredentialsException
+import com.afternote.core.domain.repository.UserProfileRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
+import com.afternote.core.model.MindRecordCategory
 import com.afternote.core.model.Session
+import com.afternote.core.ui.Route
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.error.ReceiverEmailAuthException
@@ -46,11 +62,14 @@ import com.afternote.feature.afternote.domain.model.receiver.ReceivedPlaylistDet
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedPlaylistSong
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
 import com.afternote.feature.afternote.presentation.receiver.deliveryverification.DocumentSlot
+import com.afternote.feature.afternote.presentation.receiver.deliveryverification.DocumentUploadScreen
 import com.afternote.feature.afternote.presentation.receiver.deliveryverification.DocumentUploadViewModel
 import com.afternote.feature.afternote.presentation.receiver.deliveryverification.IdentityVerificationEmailScreen
 import com.afternote.feature.afternote.presentation.receiver.deliveryverification.IdentityVerificationViewModel
 import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailRoute
 import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailViewModel
+import com.afternote.feature.afternote.presentation.receiver.navigation.ReceiverNavActions
+import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceiverRoute
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
 import com.afternote.feature.receiver.domain.model.ReceiverAuthPresignedUrl
@@ -66,6 +85,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -74,6 +94,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import javax.inject.Inject
+import com.afternote.core.ui.R as CoreUiR
 import com.afternote.feature.afternote.presentation.R as AfternoteFeatureR
 import com.afternote.feature.onboarding.presentation.R as OnboardingR
 
@@ -86,6 +107,9 @@ class AppAndReceiverCompletionAndroidTest {
 
     @Inject
     lateinit var errorReporter: ErrorReporter
+
+    @Inject
+    lateinit var userProfileRepository: UserProfileRepository
 
     private val fakeAuth get() = authRepository as FakeAuthRepository
     private val fakeErrorReporter get() = errorReporter as FakeErrorReporter
@@ -144,6 +168,23 @@ class AppAndReceiverCompletionAndroidTest {
         composeRule.waitUntilAtLeastOneExists(hasText(greeting), timeoutMillis = 10_000)
         composeRule.onNodeWithText(greeting).assertIsDisplayed()
 
+        runBlocking { userProfileRepository.savePasskeyRegistered(true) }
+        val noteTabLabel = context.getString(CoreUiR.string.core_ui_nav_item_note)
+        composeRule
+            .onNode(
+                hasText(noteTabLabel) and
+                    SemanticsMatcher.expectValue(SemanticsProperties.Selected, false),
+            ).performClick()
+        val fingerprintTitle =
+            context.getString(AfternoteFeatureR.string.feature_afternote_fingerprint_login_title)
+        composeRule.waitUntilAtLeastOneExists(hasText(fingerprintTitle), timeoutMillis = 5_000)
+        composeRule.onNodeWithText(fingerprintTitle).assertIsDisplayed()
+        composeRule
+            .onNode(
+                hasText(noteTabLabel) and
+                    SemanticsMatcher.expectValue(SemanticsProperties.Selected, true),
+            ).assertIsSelected()
+
         assertEquals(
             listOf(
                 "receiver@afternote.local" to "wrong-password",
@@ -153,6 +194,21 @@ class AppAndReceiverCompletionAndroidTest {
         )
         assertEquals(1, fakeAuth.saveSessionCalls)
         assertTrue(fakeErrorReporter.failures.isEmpty())
+    }
+
+    @Test
+    fun welcomeCheckRecords_opensActualReceivedRecordsStartDestination() {
+        composeRule
+            .onNodeWithText(context.getString(OnboardingR.string.welcome_check_records))
+            .assertIsDisplayed()
+            .performClick()
+
+        composeRule
+            .onNodeWithText(context.getString(AfternoteFeatureR.string.receiver_records_box_title))
+            .assertIsDisplayed()
+        composeRule
+            .onNodeWithText(context.getString(AfternoteFeatureR.string.receiver_records_box_empty))
+            .assertIsDisplayed()
     }
 }
 
@@ -387,6 +443,167 @@ class ReceiverRuntimeCompletionAndroidTest {
     }
 
     @Test
+    fun documentSlot_replaceFailureKeepsPreviousThenSuccessReflectsReplacement() {
+        val uploadRepository = CompletionDocumentUploadRepository()
+        uploadRepository.results.addLast(Result.success("https://cdn.example.test/original.pdf"))
+        uploadRepository.results.addLast(Result.failure(IllegalStateException("replacement failed")))
+        uploadRepository.results.addLast(Result.success("https://cdn.example.test/replacement.pdf"))
+        val viewModel =
+            DocumentUploadViewModel(
+                uploadRepository,
+                CompletionReceiverAuthRepository(),
+                FakeErrorReporter(),
+            )
+        composeRule.setContent {
+            AfternoteTheme {
+                DocumentUploadScreen(
+                    onBackClick = {},
+                    onSubmitted = {},
+                    viewModel = viewModel,
+                )
+            }
+        }
+
+        composeRule.runOnIdle {
+            viewModel.uploadDocument(
+                DocumentSlot.DeathCertificate,
+                byteArrayOf(1),
+                "pdf",
+                "원본 사망진단서.pdf",
+            )
+        }
+        composeRule.onNodeWithText("원본 사망진단서.pdf").assertIsDisplayed()
+
+        composeRule.runOnIdle {
+            viewModel.uploadDocument(
+                DocumentSlot.DeathCertificate,
+                byteArrayOf(2),
+                "pdf",
+                "실패한 교체본.pdf",
+            )
+        }
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            !viewModel.uiState.value.deathCertificate.isUploading
+        }
+        composeRule.onNodeWithText("원본 사망진단서.pdf").assertIsDisplayed()
+        assertEquals(
+            "https://cdn.example.test/original.pdf",
+            viewModel.uiState.value.deathCertificate.fileUrl,
+        )
+
+        composeRule.runOnIdle {
+            viewModel.consumeError()
+            viewModel.uploadDocument(
+                DocumentSlot.DeathCertificate,
+                byteArrayOf(3),
+                "pdf",
+                "교체 사망진단서.pdf",
+            )
+        }
+        composeRule.onNodeWithText("교체 사망진단서.pdf").assertIsDisplayed()
+        composeRule.onNodeWithText("원본 사망진단서.pdf").assertDoesNotExist()
+        assertEquals(
+            "https://cdn.example.test/replacement.pdf",
+            viewModel.uiState.value.deathCertificate.fileUrl,
+        )
+        assertEquals(3, uploadRepository.calls)
+    }
+
+    @Test
+    fun receiverVerificationActions_removeConsumedStepsAndCompletionReturnsToRecords() {
+        var actions: ReceiverNavActions? = null
+        composeRule.setContent {
+            val appState = rememberAfternoteAppState()
+            val receiverActions = rememberReceiverNavActions(appState)
+            SideEffect { actions = receiverActions }
+            AfternoteTheme {
+                NavHost(
+                    navController = appState.navController,
+                    startDestination = ReceiverRoute.ReceivedRecordsRoute,
+                ) {
+                    composable<ReceiverRoute.ReceivedRecordsRoute> { Text("records") }
+                    composable<ReceiverRoute.SenderDetailRoute> { Text("sender detail") }
+                    navigation<ReceiverRoute.DeliveryVerificationFlowRoute>(
+                        startDestination = ReceiverRoute.IdentityVerificationIntroRoute,
+                    ) {
+                        composable<ReceiverRoute.IdentityVerificationIntroRoute> { Text("identity intro") }
+                        composable<ReceiverRoute.IdentityVerificationEmailRoute> { Text("identity email") }
+                        composable<ReceiverRoute.MasterKeyRoute> { Text("master key") }
+                        composable<ReceiverRoute.DocumentUploadRoute> { Text("documents") }
+                        composable<ReceiverRoute.DeliveryVerificationCompleteRoute> { Text("complete") }
+                    }
+                }
+            }
+        }
+        composeRule.onNodeWithText("records").assertIsDisplayed()
+
+        val receiverActions = checkNotNull(actions)
+        composeRule.runOnIdle { receiverActions.navigateToSenderDetail("sender-7") }
+        composeRule.onNodeWithText("sender detail").assertIsDisplayed()
+        composeRule.runOnIdle { receiverActions.navigateToDeliveryVerificationFlow("sender-7") }
+        composeRule.onNodeWithText("identity intro").assertIsDisplayed()
+        composeRule.runOnIdle { receiverActions.navigateToIdentityVerificationEmail() }
+        composeRule.onNodeWithText("identity email").assertIsDisplayed()
+        composeRule.runOnIdle { receiverActions.proceedToMasterKey() }
+        composeRule.onNodeWithText("master key").assertIsDisplayed()
+        composeRule.runOnIdle { receiverActions.popBack() }
+        composeRule.onNodeWithText("sender detail").assertIsDisplayed()
+        composeRule.onNodeWithText("identity email").assertDoesNotExist()
+
+        composeRule.runOnIdle { receiverActions.navigateToDeliveryVerificationFlow("sender-7") }
+        composeRule.runOnIdle { receiverActions.navigateToIdentityVerificationEmail() }
+        composeRule.runOnIdle { receiverActions.proceedToMasterKey() }
+        composeRule.runOnIdle { receiverActions.proceedToDocumentUpload() }
+        composeRule.onNodeWithText("documents").assertIsDisplayed()
+        composeRule.runOnIdle { receiverActions.proceedToDeliveryVerificationComplete() }
+        composeRule.onNodeWithText("complete").assertIsDisplayed()
+        composeRule.runOnIdle { receiverActions.popToReceivedRecords() }
+
+        composeRule.onNodeWithText("records").assertIsDisplayed()
+        composeRule.onNodeWithText("complete").assertDoesNotExist()
+        composeRule.onNodeWithText("sender detail").assertDoesNotExist()
+    }
+
+    @Test
+    fun homeActions_routeImplementedEntryPointsToExactDestinations() {
+        var actions: HomeTabActions? = null
+        var appState: AppState? = null
+        composeRule.setContent {
+            val currentAppState = rememberAfternoteAppState()
+            val homeActions = rememberHomeTabActions(currentAppState, onRetryLoad = {})
+            SideEffect {
+                appState = currentAppState
+                actions = homeActions
+            }
+            AfternoteTheme {
+                NavHost(
+                    navController = currentAppState.navController,
+                    startDestination = Route.Home,
+                ) {
+                    composable<Route.Home> { Text("home route") }
+                    composable<Route.Afternote> { Text("afternote route") }
+                    composable<Route.MindRecord> { Text("mind record route") }
+                    composable<Route.MemorySpace> { Text("memory space route") }
+                    composable<Route.Setting> { Text("setting route") }
+                }
+            }
+        }
+        composeRule.onNodeWithText("home route").assertIsDisplayed()
+
+        val homeActions = checkNotNull(actions)
+        composeRule.runOnIdle { homeActions.onNextStepClick() }
+        composeRule.onNodeWithText("afternote route").assertIsDisplayed()
+        composeRule.runOnIdle { homeActions.onRecordCategoryClick(MindRecordCategory.DIARY) }
+        composeRule.onNodeWithText("mind record route").assertIsDisplayed()
+
+        composeRule.runOnIdle { checkNotNull(appState).navController.popBackStack() }
+        composeRule.runOnIdle { homeActions.onMemoriesSectionClick() }
+        composeRule.onNodeWithText("memory space route").assertIsDisplayed()
+        composeRule.runOnIdle { homeActions.onSettingClick() }
+        composeRule.onNodeWithText("setting route").assertIsDisplayed()
+    }
+
+    @Test
     fun receivedGalleryDetail_routesGalleryContractInsteadOfSocialCredentials() {
         val repository = CompletionReceiverRepository()
         repository.detailResults.addLast(
@@ -582,6 +799,7 @@ private class CompletionIdentityVerificationRepository : IdentityVerificationRep
 }
 
 private class CompletionDocumentUploadRepository : ReceiverDeliveryDocumentUploadRepository {
+    val results = ArrayDeque<Result<String>>()
     var calls = 0
 
     override suspend fun upload(
@@ -589,7 +807,8 @@ private class CompletionDocumentUploadRepository : ReceiverDeliveryDocumentUploa
         extension: String,
     ): Result<String> {
         calls += 1
-        return Result.success("https://cdn.example.test/death.pdf")
+        return results.removeFirstOrNull()
+            ?: Result.success("https://cdn.example.test/death.pdf")
     }
 }
 

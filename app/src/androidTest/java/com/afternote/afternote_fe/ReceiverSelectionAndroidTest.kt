@@ -88,6 +88,39 @@ class ReceiverSelectionAndroidTest {
         assertEquals(0, callbackCount)
     }
 
+    @Test
+    fun selectingSameReceiverTwice_disablesConfirmationAndDoesNotEmitResult() {
+        var callbackCount = 0
+        setReceiverContent { callbackCount += 1 }
+
+        composeRule.onAllNodes(checkboxMatcher).run {
+            assertCountEquals(3)
+            get(0).performClick()
+            get(0).performClick()
+        }
+        composeRule
+            .onNodeWithText("수신자 선택 완료하기")
+            .assertIsNotEnabled()
+
+        assertEquals(0, callbackCount)
+    }
+
+    @Test
+    fun selectionHiddenBySearch_isRetainedAndConfirmsExactOriginalReceiver() {
+        var confirmed: ReceiverListItem? = null
+        setReceiverContent { confirmed = it }
+
+        composeRule.onAllNodes(checkboxMatcher).run {
+            assertCountEquals(3)
+            get(1).performClick()
+        }
+        composeRule.onNodeWithText("이름으로 검색하기").performTextInput("김")
+        composeRule.onNodeWithText("박친구").assertDoesNotExist()
+        composeRule.onNodeWithText("수신자 선택 완료하기").performClick()
+
+        assertEquals(receivers[1], confirmed)
+    }
+
     private fun setReceiverContent(onConfirm: (ReceiverListItem) -> Unit) {
         composeRule.setContent {
             AfternoteTheme {
