@@ -60,7 +60,12 @@ fun ReceiverHomeScreen(
     Scaffold(
         modifier = modifier,
         containerColor = Color.Transparent,
-        topBar = { HomeTopBar(onSettingClick = actions.onSettingClick) },
+        topBar = {
+            HomeTopBar(
+                showProfileIcon = false,
+                onSettingClick = actions.onSettingClick,
+            )
+        },
     ) { innerPadding ->
         when (uiState) {
             ReceiverHomeUiState.Loading -> { }
