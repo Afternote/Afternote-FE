@@ -55,6 +55,12 @@ class MasterKeyViewModel
         ) {
             val trimmed = authCode.trim()
             if (trimmed.isEmpty() || _uiState.value.isSubmitting) return
+            if (!MASTER_KEY_UUID_REGEX.matches(trimmed)) {
+                _uiState.update {
+                    it.copy(error = ErrorPayload.Res(R.string.receiver_verify_master_key_invalid_format))
+                }
+                return
+            }
 
             _uiState.update { it.copy(isSubmitting = true, error = null) }
             viewModelScope.launch {
@@ -84,5 +90,10 @@ class MasterKeyViewModel
 
         fun onVerifiedConsumed() {
             _uiState.update { it.copy(isVerified = false) }
+        }
+
+        private companion object {
+            val MASTER_KEY_UUID_REGEX =
+                Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
         }
     }
