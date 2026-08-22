@@ -16,7 +16,7 @@
     <string name="home_record_now">지금 애프터노트에 기록하기</string>
     <string name="home_read_past_record">그날의 기록 다시 읽기</string>
     <string name="song_search_label">노래 검색</string>
-    <string name="song_search_placeholder">노래 제목 또는 가수명</string>
+    <string name="song_search_placeholder">노래 검색하기</string>
     <string name="add_button">추가하기</string>
 
     <string name="content_description_back">뒤로가기</string>
@@ -119,6 +119,8 @@
     <string name="afternote_editor_label_messages">남기실 말씀</string>
     <string name="afternote_editor_label_category">종류</string>
     <string name="afternote_editor_label_service_name">서비스명</string>
+    <string name="afternote_editor_account_id_placeholder">아이디를 입력해 주세요.</string>
+    <string name="afternote_editor_account_password_placeholder">비밀번호를 입력해 주세요.</string>
     <!-- 서비스명 미선택 placeholder — %1$s 는 [EditorCategory.displayLabel] (시안 700:36383: "소셜네트워크 선택하기") -->
     <string name="afternote_editor_service_placeholder">%1$s 선택하기</string>
 
@@ -127,7 +129,8 @@
     <string name="afternote_editor_message_action_register">등록</string>
     <string name="afternote_editor_message_action_delete">삭제</string>
     <string name="afternote_editor_message_add_content_description">남기실 말씀 추가</string>
-    <string name="afternote_editor_message_text_field_placeholder">입력해 주세요</string>
+    <string name="afternote_editor_message_title_placeholder">제목을 입력해 주세요.</string>
+    <string name="afternote_editor_message_text_field_placeholder">내용을 입력해 주세요.</string>
 
     <!-- 받은 기록함 (수신자 흐름) — 발신자 카드 리스트 -->
     <string name="receiver_records_box_title">받은 기록함</string>
