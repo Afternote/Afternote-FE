@@ -42,11 +42,11 @@ class ReceivedRecordsViewModelTest {
 
     @Test
     fun `저장된 접근 코드 없음 - 이전 목록을 제거하고 서버는 호출하지 않음`() {
-        val registry = SenderRegistry()
-        registry.replaceRecordBoxes(listOf(recordBoxEntry(recordBoxId = 1L)))
+        val store = ReceivedRecordStore()
+        store.replaceRecordBoxes(listOf(recordBoxEntry(recordBoxId = 1L)))
         val repository = FakeReceiverRepository(initialAuthCode = null)
 
-        val viewModel = ReceivedRecordsViewModel(registry, repository, RecordingErrorReporter())
+        val viewModel = ReceivedRecordsViewModel(store, repository, RecordingErrorReporter())
 
         assertTrue(
             viewModel.uiState.value.senders
@@ -59,8 +59,8 @@ class ReceivedRecordsViewModelTest {
 
     @Test
     fun `접근 코드 있음 - 이전 받은 기록함을 조회 결과로 완전히 교체`() {
-        val registry = SenderRegistry()
-        registry.replaceRecordBoxes(listOf(recordBoxEntry(recordBoxId = 1L)))
+        val store = ReceivedRecordStore()
+        store.replaceRecordBoxes(listOf(recordBoxEntry(recordBoxId = 1L)))
         val receivedRecordBox = recordBox(recordBoxId = 18L)
         val repository =
             FakeReceiverRepository(
@@ -68,7 +68,7 @@ class ReceivedRecordsViewModelTest {
                 initialResult = Result.success(listOf(receivedRecordBox)),
             )
 
-        val viewModel = ReceivedRecordsViewModel(registry, repository, RecordingErrorReporter())
+        val viewModel = ReceivedRecordsViewModel(store, repository, RecordingErrorReporter())
 
         val senders = viewModel.uiState.value.senders
         val entry = senders.single()
@@ -88,14 +88,14 @@ class ReceivedRecordsViewModelTest {
 
     @Test
     fun `목록 실패 후 재시도 - 오류를 기록하고 성공 시 받은 기록함으로 복구`() {
-        val registry = SenderRegistry()
+        val store = ReceivedRecordStore()
         val repository =
             FakeReceiverRepository(
                 initialAuthCode = "master-key",
                 initialResult = Result.failure(IllegalStateException("secret")),
             )
         val reporter = RecordingErrorReporter()
-        val viewModel = ReceivedRecordsViewModel(registry, repository, reporter)
+        val viewModel = ReceivedRecordsViewModel(store, repository, reporter)
 
         assertTrue(viewModel.uiState.value.hasLoadError)
         assertEquals("received_record_boxes_load", reporter.attributes.single()["afternote_stage"])
@@ -113,14 +113,40 @@ class ReceivedRecordsViewModelTest {
     }
 
     @Test
+    fun `중복 recordBoxId 응답 - 계약 오류를 기록하고 목록을 노출하지 않음`() {
+        val store = ReceivedRecordStore()
+        val repository =
+            FakeReceiverRepository(
+                initialAuthCode = "master-key",
+                initialResult =
+                    Result.success(
+                        listOf(
+                            recordBox(recordBoxId = 18L),
+                            recordBox(recordBoxId = 18L),
+                        ),
+                    ),
+            )
+        val reporter = RecordingErrorReporter()
+
+        val viewModel = ReceivedRecordsViewModel(store, repository, reporter)
+
+        assertTrue(
+            viewModel.uiState.value.senders
+                .isEmpty(),
+        )
+        assertTrue(viewModel.uiState.value.hasLoadError)
+        assertEquals("received_record_boxes_load", reporter.attributes.single()["afternote_stage"])
+    }
+
+    @Test
     fun `접근 코드 제거 - 이전 수신자의 받은 기록함 항목은 즉시 제거`() {
-        val registry = SenderRegistry()
+        val store = ReceivedRecordStore()
         val repository =
             FakeReceiverRepository(
                 initialAuthCode = "master-key",
                 initialResult = Result.success(listOf(recordBox())),
             )
-        val viewModel = ReceivedRecordsViewModel(registry, repository, RecordingErrorReporter())
+        val viewModel = ReceivedRecordsViewModel(store, repository, RecordingErrorReporter())
         assertEquals(1, viewModel.uiState.value.senders.size)
 
         repository.authCode.value = null
