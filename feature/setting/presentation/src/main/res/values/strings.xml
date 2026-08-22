@@ -79,6 +79,8 @@
     <string name="settings_account_withdraw">회원 탈퇴</string>
 
     <!-- Connected Accounts Screen -->
+    <string name="kakao_account_link_failed">카카오 계정 연결에 실패했습니다.</string>
+    <string name="google_account_link_failed">Google 계정 연결에 실패했습니다.</string>
     <string name="connected_accounts_title">연결된 계정</string>
     <string name="sns_login_section_title">SNS 계정 연결</string>
     <string name="sns_login_section_desc">자주 사용하는 소셜 계정을 연결하고,\n빠르게 로그인 할 수 있습니다.</string>
@@ -130,31 +132,26 @@
     <string name="passkey_list_header">패스키 목록</string>
 
 
-    <string name="delivery_method_section_title">정보 전달 방법</string>
-
-    <string name="delivery_method_auto_title">자동 전달</string>
-    <string name="delivery_method_auto_description">설정된 조건 충족 시, 별도의 요청 없이 지정한 수신자에게 자동으로 전달됩니다.</string>
-
-    <string name="delivery_method_recipient_approval_title">수신자 승인 후 전달</string>
-    <string name="delivery_method_recipient_approval_description">수신자의 요청과 확인 절차를 거친 후, 안전하게 정보가 전달됩니다.</string>
-
     <!-- 정보 처리 방법 섹션 -->
     <string name="processing_method_section_title">정보 처리 방법</string>
 
     <string name="processing_method_inactive_title">일정 기간 앱 미사용 시</string>
     <string name="processing_method_inactive_description">1년 이상의 기간 동안 앱 사용이 없을 경우 전달 조건이 자동으로 충족됩니다.</string>
 
-    <string name="processing_method_specific_date_title">특정 날짜에 전달</string>
-    <string name="processing_method_specific_date_description">미리 정한 날짜에 맞추어 정보가 자동으로 전달됩니다.</string>
-
     <string name="processing_method_recipient_request_title">수신자 요청 이후</string>
     <string name="processing_method_recipient_request_description">수신자의 요청이 접수된 후, 확인 절차를 거쳐 전달이 진행됩니다.</string>
 
-    <!-- 마지막 인삿말 섹션 -->
-    <string name="farewell_message_section_title">마지막 인삿말</string>
-    <string name="farewell_message_hint">마지막 인삿말을 입력해주세요</string>
+    <!-- 마지막 인사말 수정 섹션 -->
+    <string name="last_greeting_edit_section_title">마지막 인사말 수정하기</string>
 
-    <!-- 하단 안내 문구 -->
-    <string name="after_delivery_notice_1">해당 정보는 지정된 조건이 충족 시에만 전달됩니다.</string>
-    <string name="after_delivery_notice_2">예기치 않은 상황에서도 설정된 방식에 따라 안전하게 전달됩니다.</string>
+    <!-- 사후 전달 조건 안내 -->
+    <string name="after_delivery_notice_condition">• 해당 정보는 지정된 조건이 충족 시에만 전달됩니다.</string>
+    <string name="after_delivery_notice_safety">• 예기치 않은 상황에서도 설정된 방식에 따라 안전하게 전달됩니다.</string>
+
+    <string name="delivery_condition_save">저장</string>
+    <string name="delivery_condition_load_error">전달 조건을 불러오지 못했습니다.</string>
+    <string name="delivery_condition_save_error">전달 조건을 저장하지 못했습니다.</string>
+    <string name="receiver_last_greeting_label">마지막 인사말</string>
+    <string name="receiver_last_greeting_placeholder">마지막 인사말을 입력해주세요</string>
+    <string name="receiver_custom_relation_placeholder">관계를 직접 입력해주세요</string>
 </resources>

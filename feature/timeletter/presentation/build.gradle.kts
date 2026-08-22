@@ -21,10 +21,10 @@ dependencies {
     implementation(libs.compose.wheel.picker)
     implementation(libs.coil.compose)
     testImplementation(libs.coroutines.test)
+    testImplementation(libs.robolectric)
 
     testImplementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.junit)
-    testImplementation(libs.robolectric)
     testImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
