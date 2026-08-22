@@ -3,6 +3,9 @@ package com.afternote.feature.afternote.presentation.receiver.recordsbox
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordStatus
+import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordVerification
+import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordViewStatus
 import com.android.tools.screenshot.PreviewTest
 
 @PreviewTest
@@ -13,7 +16,6 @@ internal fun receivedRecordsScreenEmptyScreenshot() {
         ReceivedRecordsScreenContent(
             senders = emptyList(),
             onBackClick = {},
-            onAddSenderClick = {},
             onSenderClick = {},
         )
     }
@@ -27,14 +29,25 @@ internal fun receivedRecordsScreenFilledScreenshot() {
         ReceivedRecordsScreenContent(
             senders =
                 listOf(
-                    SenderEntry.Pending(id = "1", name = "김혜성"),
-                    SenderEntry.Pending(id = "2", name = "김혜성"),
-                    SenderEntry.Pending(id = "3", name = "김혜성"),
-                    SenderEntry.Pending(id = "4", name = "김혜성"),
+                    screenshotRecordItem(receiverId = 1L),
+                    screenshotRecordItem(receiverId = 2L),
+                    screenshotRecordItem(receiverId = 3L),
+                    screenshotRecordItem(receiverId = 4L),
                 ),
             onBackClick = {},
-            onAddSenderClick = {},
             onSenderClick = {},
         )
     }
 }
+
+private fun screenshotRecordItem(receiverId: Long): ReceivedRecordItem =
+    ReceivedRecordItem(
+        receiverId = receiverId,
+        accessCode = "screenshot-key-$receiverId",
+        senderName = "김혜성",
+        receiverName = "김지은",
+        relation = "DAUGHTER",
+        recordStatus = ReceivedRecordStatus.Stored,
+        viewStatus = ReceivedRecordViewStatus.Requestable,
+        verification = ReceivedRecordVerification.NotRequested,
+    )

@@ -499,10 +499,6 @@ fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions =
                 )
             }
 
-            override fun navigateToSenderRegistration() {
-                appState.navController.navigate(ReceiverRoute.SenderRegistrationRoute)
-            }
-
             override fun navigateToSenderDetail(senderId: String) {
                 appState.navController.navigate(
                     ReceiverRoute.SenderDetailRoute(senderId = senderId),

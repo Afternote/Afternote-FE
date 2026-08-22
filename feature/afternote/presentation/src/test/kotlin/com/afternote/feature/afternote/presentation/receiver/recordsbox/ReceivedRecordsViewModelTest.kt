@@ -41,24 +41,26 @@ class ReceivedRecordsViewModelTest {
     }
 
     @Test
-    fun `저장된 접근 코드 없음 - 임시 카드만 유지하고 서버는 호출하지 않음`() {
+    fun `저장된 접근 코드 없음 - 이전 목록을 제거하고 서버는 호출하지 않음`() {
         val registry = SenderRegistry()
-        val pending = registry.register("엄마")
+        registry.replaceRecordBoxes(listOf(recordBoxEntry(receiverId = 1L)))
         val repository = FakeReceiverRepository(initialAuthCode = null)
 
         val viewModel = ReceivedRecordsViewModel(registry, repository, RecordingErrorReporter())
 
-        assertEquals(listOf(pending), viewModel.uiState.value.senders)
+        assertTrue(
+            viewModel.uiState.value.senders
+                .isEmpty(),
+        )
         assertFalse(viewModel.uiState.value.isLoading)
         assertFalse(viewModel.uiState.value.hasLoadError)
         assertEquals(0, repository.recordBoxesCallCount)
     }
 
     @Test
-    fun `접근 코드 있음 - 이전 받은 기록함과 미인증 로컬 항목을 조회 결과로 완전히 교체`() {
+    fun `접근 코드 있음 - 이전 받은 기록함을 조회 결과로 완전히 교체`() {
         val registry = SenderRegistry()
         registry.replaceRecordBoxes(listOf(recordBoxEntry(receiverId = 1L)))
-        registry.register("이전 사용자의 미인증 카드")
         val receivedRecordBox = recordBox(receiverId = 18L)
         val repository =
             FakeReceiverRepository(
@@ -69,10 +71,10 @@ class ReceivedRecordsViewModelTest {
         val viewModel = ReceivedRecordsViewModel(registry, repository, RecordingErrorReporter())
 
         val senders = viewModel.uiState.value.senders
-        val entry = senders.single() as SenderEntry.RecordBox
-        assertEquals(listOf("record-box:18"), senders.map(SenderEntry::id))
+        val entry = senders.single()
+        assertEquals(listOf("record-box:18"), senders.map(ReceivedRecordItem::id))
         assertEquals("김혜성", entry.name)
-        assertEquals("record-key-18", entry.authCode)
+        assertEquals("record-key-18", entry.accessCode)
         assertEquals(ReceivedRecordStatus.Stored, entry.recordStatus)
         assertEquals(ReceivedRecordViewStatus.Viewable, entry.viewStatus)
         assertEquals(
@@ -104,7 +106,7 @@ class ReceivedRecordsViewModelTest {
         assertEquals(
             listOf("record-box:20"),
             viewModel.uiState.value.senders
-                .map(SenderEntry::id),
+                .map(ReceivedRecordItem::id),
         )
         assertFalse(viewModel.uiState.value.hasLoadError)
         assertEquals(2, repository.recordBoxesCallCount)
@@ -200,10 +202,10 @@ private fun recordBox(receiverId: Long = 18L): ReceivedRecordBox =
             ),
     )
 
-private fun recordBoxEntry(receiverId: Long): SenderEntry.RecordBox =
-    SenderEntry.RecordBox(
+private fun recordBoxEntry(receiverId: Long): ReceivedRecordItem =
+    ReceivedRecordItem(
         receiverId = receiverId,
-        authCode = "old-key",
+        accessCode = "old-key",
         senderName = "old",
         receiverName = "old-receiver",
         relation = "OTHER",

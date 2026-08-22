@@ -23,19 +23,11 @@ sealed interface ReceiverRoute {
     data object ReceivedRecordsRoute : ReceiverRoute
 
     /**
-     * 발신자 등록(15·16) — 받은 기록함의 FAB 에서 진입. 사용자가 발신자에게 부여하는 별칭(라벨) 입력.
-     *
-     * 백엔드 *발신자 라벨 등록 API* 가 미확정이라 1단계는 클라 로컬 stub registry 에만 보관한다.
-     */
-    @Serializable
-    data object SenderRegistrationRoute : ReceiverRoute
-
-    /**
      * 발신자 상세(11·12) — 카드 클릭 진입. 열람 신청 상태에 따라 3가지 표시:
      * 신청 기록 없음(열람 불가) / PENDING(승인 대기) / APPROVED(열람 가능).
      *
-     * `senderId` 는 [com.afternote.feature.afternote.presentation.receiver.recordsbox.SenderRegistry]
-     * 의 로컬 식별자 (typed-safe routes 규약: SavedStateHandle 키 `senderId` 와 일치).
+     * `senderId` 는 서버 `receiverId`로 만든 받은 기록함 항목 식별자다
+     * (typed-safe routes 규약: SavedStateHandle 키 `senderId` 와 일치).
      */
     @Serializable
     data class SenderDetailRoute(

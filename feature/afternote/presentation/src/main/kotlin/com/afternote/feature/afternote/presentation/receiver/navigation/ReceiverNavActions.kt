@@ -20,9 +20,6 @@ interface ReceiverNavActions {
     /** 추억 상세의 "추억 플레이리스트" 카드 → 추억 플레이리스트 화면 진입 (#274). */
     fun navigateToMemorialPlaylist(afternoteId: String)
 
-    /** 받은 기록함의 FAB → 발신자 등록 화면(이슈 #215, 디자인 15·16) 진입. */
-    fun navigateToSenderRegistration()
-
     /** 받은 기록함 카드 클릭 → 발신자 상세(11·12) 진입. */
     fun navigateToSenderDetail(senderId: String)
 

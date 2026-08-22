@@ -3,7 +3,7 @@ package com.afternote.feature.afternote.presentation.receiver.senderdetail
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordStatus
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordVerification
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordViewStatus
-import com.afternote.feature.afternote.presentation.receiver.recordsbox.SenderEntry
+import com.afternote.feature.afternote.presentation.receiver.recordsbox.ReceivedRecordItem
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -98,10 +98,10 @@ class SenderDetailRecordBoxMappingTest {
 private fun recordBoxEntry(
     viewStatus: ReceivedRecordViewStatus,
     verification: ReceivedRecordVerification,
-): SenderEntry.RecordBox =
-    SenderEntry.RecordBox(
+): ReceivedRecordItem =
+    ReceivedRecordItem(
         receiverId = 18L,
-        authCode = "record-key",
+        accessCode = "record-key",
         senderName = "김혜성",
         receiverName = "김지은",
         relation = "DAUGHTER",
