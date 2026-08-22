@@ -29,7 +29,6 @@ import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
@@ -70,8 +69,8 @@ fun AfternoteEditorScreen(
     val focusManager = LocalFocusManager.current
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // 화면 재진입 시 폼 SSOT의 leaveMessageBlocks를 휘발성 SnapshotStateList<EditorMessage>에 한 번 동기화한다.
-    // (TextFieldState는 rememberSaveable로 복원되지만 EditorMessage SnapshotStateList는 비저장 상태라 폼에서 재구성한다.)
+    // 화면 재진입 시 폼 SSOT의 leaveMessageBlocks를 휘발성 SnapshotStateList<LeaveMessageEditorItem>에 한 번 동기화한다.
+    // (TextFieldState는 rememberSaveable로 복원되지만 LeaveMessageEditorItem 목록은 비저장 상태라 폼에서 재구성한다.)
     LaunchedEffect(state) {
         state.syncEditorMessagesFromForm(form.leaveMessageBlocks)
     }
@@ -86,14 +85,8 @@ fun AfternoteEditorScreen(
     // 스냅샷으로 변환하고, 1s 디바운스로 묶어 폼 SSOT 에 반영한다. key=size 라 블록 추가/삭제 시
     // 재시작해 새 블록 상태도 관찰에 편입. 디바운스 창 안의 이탈 손실은 아래 DisposableEffect 가 맡는다.
     LaunchedEffect(state.editorMessages.size) {
-        snapshotFlow {
-            state.editorMessages.map { msg ->
-                EditorMessageTextBlock(
-                    title = msg.titleState.text.toString(),
-                    body = msg.contentState.text.toString(),
-                )
-            }
-        }.debounce(EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE_MS.milliseconds)
+        snapshotFlow { state.currentEditorMessageBlocks() }
+            .debounce(EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE_MS.milliseconds)
             .collect { blocks ->
                 state.setLeaveMessageBlocks(blocks)
             }
@@ -102,14 +95,7 @@ fun AfternoteEditorScreen(
     // 화면 이탈 시 디바운스 윈도우(1s) 안의 미반영 타이핑이 폼 SSOT에 도달하지 못하는 손실을 방지한다.
     DisposableEffect(state) {
         onDispose {
-            val blocks =
-                state.editorMessages.map { msg ->
-                    EditorMessageTextBlock(
-                        title = msg.titleState.text.toString(),
-                        body = msg.contentState.text.toString(),
-                    )
-                }
-            state.setLeaveMessageBlocks(blocks)
+            state.setLeaveMessageBlocks(state.currentEditorMessageBlocks())
         }
     }
 
@@ -243,6 +229,8 @@ internal fun editorContentSignature(
         form.typeForm.enteredContentOrNull() ?: NO_ENTERED_CONTENT,
         state.idState.text,
         state.passwordState.text,
-        state.editorMessages.map { "${it.titleState.text}\u0001${it.contentState.text}" },
+        state.editorMessages.map {
+            "${it.titleState.text}\u0001${it.contentState.text}\u0001${it.isRegistered}"
+        },
     ).joinToString("\u0002")
 }

@@ -9,7 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
+import com.afternote.feature.afternote.presentation.author.editor.message.LeaveMessageEditorItem
 
 /**
  * 다이얼로그 타입 (순수 UI).
@@ -30,8 +30,8 @@ class AfternoteEditorUiHolder(
     val passwordState: TextFieldState,
     val customServiceNameState: TextFieldState,
 ) {
-    val editorMessages: SnapshotStateList<EditorMessage> =
-        mutableStateListOf(EditorMessage())
+    val editorMessages: SnapshotStateList<LeaveMessageEditorItem> =
+        mutableStateListOf(LeaveMessageEditorItem())
 
     var activeDialog by mutableStateOf<DialogType?>(null)
         private set

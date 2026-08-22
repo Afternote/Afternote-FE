@@ -297,7 +297,7 @@ internal fun AfternoteTypeContent(
         AfternoteType.GALLERY_AND_FILES -> {
             GalleryAndFileEditorContent(
                 editorMessages = state.editorMessages,
-                onMessageRegisterClick = {},
+                onMessageRegisterClick = state::registerEditorMessage,
                 onMessageDeleteClick = state::removeEditorMessage,
                 onMessageAddClick = state::addEditorMessage,
                 recipientSection =
@@ -326,7 +326,7 @@ internal fun AfternoteTypeContent(
         AfternoteType.SOCIAL_NETWORK, AfternoteType.BUSINESS -> {
             AccountEditorContent(
                 editorMessages = state.editorMessages,
-                onMessageRegisterClick = {},
+                onMessageRegisterClick = state::registerEditorMessage,
                 onMessageDeleteClick = state::removeEditorMessage,
                 onMessageAddClick = state::addEditorMessage,
                 accountSection =

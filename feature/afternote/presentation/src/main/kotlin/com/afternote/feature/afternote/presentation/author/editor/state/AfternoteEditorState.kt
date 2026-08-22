@@ -111,7 +111,15 @@ class AfternoteEditorState(
         val normalized = normalizeEditorMessageBlocks(blocks)
         ui.editorMessages.clear()
         for (b in normalized) {
-            val msg = EditorMessage()
+            val msg =
+                LeaveMessageEditorItem(
+                    initialState =
+                        if (b.isRegistered) {
+                            LeaveMessageEditorItemState.REGISTERED_COLLAPSED
+                        } else {
+                            LeaveMessageEditorItemState.EDITING
+                        },
+                )
             msg.titleState.edit { replace(0, length, b.title) }
             msg.contentState.edit { replace(0, length, b.body) }
             ui.editorMessages.add(msg)

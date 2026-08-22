@@ -288,6 +288,7 @@ private fun LeaveMessageBlock.toEditorBlock(): EditorMessageTextBlock =
     EditorMessageTextBlock(
         title = title.orEmpty(),
         body = body,
+        isRegistered = true,
     )
 
 /**

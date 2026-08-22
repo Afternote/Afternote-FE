@@ -14,7 +14,6 @@ import com.afternote.feature.afternote.presentation.author.editor.AfternoteEdito
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternotePayloadBuilder
-import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
@@ -58,12 +57,7 @@ internal fun buildOnRegisterClick(
 ): () -> Unit =
     {
         state.setLeaveMessageBlocks(
-            state.editorMessages.map { msg ->
-                EditorMessageTextBlock(
-                    title = msg.titleState.text.toString(),
-                    body = msg.contentState.text.toString(),
-                )
-            },
+            state.currentEditorMessageBlocks(),
         )
         // 폼 스냅샷은 한 번만 읽는다 — 필드마다 다시 읽으면 조립 도중 갱신이 끼어 서로 다른 시점의 값이 섞인다.
         val form = state.currentForm()
