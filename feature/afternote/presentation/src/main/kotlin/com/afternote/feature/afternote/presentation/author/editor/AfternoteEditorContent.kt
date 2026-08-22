@@ -31,7 +31,6 @@ import com.afternote.feature.afternote.presentation.author.editor.account.Accoun
 import com.afternote.feature.afternote.presentation.author.editor.gallery.GalleryAndFileEditorContent
 import com.afternote.feature.afternote.presentation.author.editor.mapper.hasServiceSelection
 import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialEditorContent
-import com.afternote.feature.afternote.presentation.author.editor.memorial.MemorialEditorContentParams
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverSection
 import com.afternote.feature.afternote.presentation.author.editor.selection.DropdownMenuStyle
@@ -273,24 +272,21 @@ internal fun AfternoteTypeContent(
     when (form.selectedType) {
         AfternoteType.MEMORIAL -> {
             MemorialEditorContent(
-                params =
-                    MemorialEditorContentParams(
-                        displayMemorialPhotoUri = form.displayMemorialPhotoUri(),
-                        playlistAlbumCovers = form.displayAlbumCovers(),
-                        memorialVideoUrl = form.memorialVideoUrl,
-                        memorialThumbnailUrl = form.memorialThumbnailUrl,
-                        recipientSection =
-                            AfternoteEditorReceiverSection(
-                                afternoteEditReceivers = form.afternoteEditReceivers,
-                                onAddClick = onNavigateToSelectReceiver,
-                                onItemDeleteClick = state.deleteReceiver,
-                            ),
-                        onSongAddClick = onNavigateToMemorialPlaylist,
-                        onPhotoAddClick = onPhotoAddClick,
-                        onVideoAddClick = onVideoAddClick,
-                        onThumbnailBytesReady = onThumbnailBytesReady,
-                        onThumbnailExtractionFailed = onThumbnailExtractionFailed,
+                displayMemorialPhotoUri = form.displayMemorialPhotoUri(),
+                playlistAlbumCovers = form.displayAlbumCovers(),
+                memorialVideoUrl = form.memorialVideoUrl,
+                memorialThumbnailUrl = form.memorialThumbnailUrl,
+                recipientSection =
+                    AfternoteEditorReceiverSection(
+                        afternoteEditReceivers = form.afternoteEditReceivers,
+                        onAddClick = onNavigateToSelectReceiver,
+                        onItemDeleteClick = state.deleteReceiver,
                     ),
+                onSongAddClick = onNavigateToMemorialPlaylist,
+                onPhotoAddClick = onPhotoAddClick,
+                onVideoAddClick = onVideoAddClick,
+                onThumbnailBytesReady = onThumbnailBytesReady,
+                onThumbnailExtractionFailed = onThumbnailExtractionFailed,
             )
         }
 
