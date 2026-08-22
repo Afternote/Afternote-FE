@@ -28,6 +28,11 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 @HiltViewModel
@@ -290,9 +295,11 @@ class TimeLetterWriteViewModel
                 try {
                     val sendAt =
                         state.sendAt?.let { date ->
-                            "${date}T${
-                                state.sendHour.toString().padStart(2, '0')
-                            }:${state.sendMinute.toString().padStart(2, '0')}:00"
+                            formatSendAt(
+                                date = date,
+                                hour = state.sendHour,
+                                minute = state.sendMinute,
+                            )
                         }
                     val saveResult =
                         if (state.editingTimeLetterId == null) {
@@ -530,3 +537,14 @@ class TimeLetterWriteViewModel
             const val FREE_PLAN_REGISTER_LIMIT = 3
         }
     }
+
+internal fun formatSendAt(
+    date: String,
+    hour: Int,
+    minute: Int,
+    zoneId: ZoneId = ZoneId.systemDefault(),
+): String =
+    LocalDateTime
+        .of(LocalDate.parse(date), LocalTime.of(hour, minute))
+        .atZone(zoneId)
+        .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)

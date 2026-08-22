@@ -39,6 +39,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.time.ZoneId
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -54,6 +55,19 @@ class TimeLetterWriteViewModelTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+    }
+
+    @Test
+    fun `예약 발송 시각은 UTC 오프셋을 포함한다`() {
+        assertEquals(
+            "2026-08-29T19:30:00+09:00",
+            formatSendAt(
+                date = "2026-08-29",
+                hour = 19,
+                minute = 30,
+                zoneId = ZoneId.of("Asia/Seoul"),
+            ),
+        )
     }
 
     @Test
