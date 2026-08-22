@@ -33,12 +33,12 @@ internal fun editorMessageSectionRegisteredCollapsedScreenshot() {
         val messages =
             remember {
                 listOf(
-                    EditorMessage(
+                    LeaveMessageEditorItem(
                         titleState = TextFieldState("남긴말1"),
                         contentState = TextFieldState("전하고 싶은 이야기를 적어둔 내용입니다."),
                         initialRegistered = true,
                     ),
-                    EditorMessage(),
+                    LeaveMessageEditorItem(),
                 )
             }
         EditorMessageSection(
@@ -59,7 +59,7 @@ internal fun editorMessageSectionRegisteredExpandedScreenshot() {
         val messages =
             remember {
                 listOf(
-                    EditorMessage(
+                    LeaveMessageEditorItem(
                         titleState = TextFieldState("남긴말1"),
                         contentState =
                             TextFieldState(
@@ -68,7 +68,7 @@ internal fun editorMessageSectionRegisteredExpandedScreenshot() {
                         initialRegistered = true,
                         initialExpanded = true,
                     ),
-                    EditorMessage(),
+                    LeaveMessageEditorItem(),
                 )
             }
         EditorMessageSection(

@@ -7,7 +7,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class EditorMessageStateTest {
+class LeaveMessageEditorItemTest {
     @Test
     fun `본문 없는 말씀은 등록되지 않는다`() {
         val holder = editorUiHolder()
@@ -65,12 +65,12 @@ class EditorMessageStateTest {
 
     @Test
     fun `등록된 말씀만 펼치고 접을 수 있다`() {
-        val message = EditorMessage(contentState = TextFieldState("전하고 싶은 말"))
+        val message = LeaveMessageEditorItem(contentState = TextFieldState("전하고 싶은 말"))
 
         message.toggleExpanded()
         assertFalse(message.isExpanded)
 
-        assertTrue(message.register())
+        assertTrue(message.tryRegister())
         message.toggleExpanded()
         assertTrue(message.isExpanded)
         message.toggleExpanded()
