@@ -1,5 +1,6 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.domain.repository.PhotoUploadRepository
@@ -71,6 +72,12 @@ class DailyQuestionWriteViewModel
          * 이어쓸 본문은 today 응답에 없어 이 목록 조회가 필요하다. 반면 `draftId` 확보만을 위한
          * 조회는 두지 않는다 — 서버가 같은 `questionId` 에 대해 upsert 라 `draftId` 가 null 인 채로
          * POST 가 다시 나가도 레코드는 갱신될 뿐 중복 생성되지 않는다.
+         *
+         * **이미 입력된 값은 덮지 않는다.** [submit] 이 `questionId` 부재를 만나면 조회를 다시
+         * 걸기 때문에, 화면 진입뿐 아니라 사용자가 답변을 다 쓰고 이미지를 고른 뒤에도 이 경로가
+         * 돈다. 무조건 덮으면 그 순간 방금 넣은 답변·이미지가 서버 임시저장본으로 교체된다.
+         * 화면 값이 비어 있을 때만 draft 로 채우고, `draftId` 는 화면 입력과 겹치지 않아 항상 채운다
+         * (없으면 재제출이 POST 로 나가 이어쓰기가 안 된다).
          */
         private suspend fun resumeDraft() {
             val draft =
@@ -82,8 +89,8 @@ class DailyQuestionWriteViewModel
             _uiState.update {
                 it.copy(
                     draftId = draft.dailyQuestionId,
-                    answer = draft.content,
-                    imageUrl = draft.imageUrl ?: it.imageUrl,
+                    answer = if (it.answer.isBlank()) draft.content else it.answer,
+                    imageUrl = it.imageUrl ?: draft.imageUrl,
                 )
             }
         }
@@ -103,10 +110,31 @@ class DailyQuestionWriteViewModel
                     _uiState.update { if (it.imageUrl == null) it.copy(imageUrl = url) else it }
                 }.getOrNull()
 
+        /**
+         * 저장(`isDraft=false`) / 임시저장(`isDraft=true`).
+         *
+         * 중단할 때는 반드시 사유를 [SubmitState.Failed] 로 남긴다. 종전에는 `questionId` 가
+         * null 이면 조용히 return 해, 오늘 질문 조회가 실패한 상태에서 저장·임시저장 둘 다
+         * 요청 0건·화면 무변화로 고장처럼 보였다 (#565).
+         */
         fun submit(isDraft: Boolean = false) {
             val state = _uiState.value
-            val questionId = state.questionId ?: return
-            if (!state.canSubmit) return
+            if (state.submitState == SubmitState.InProgress) return
+
+            if (state.answer.isBlank()) {
+                failSubmit(R.string.mindrecord_error_daily_question_answer_required)
+                return
+            }
+
+            val questionId = state.questionId
+            if (questionId == null) {
+                // 오늘 질문이 없으면 서버가 답변을 어디에 붙일지 알 수 없어 요청 자체가 불가능하다.
+                // 사유를 알리고 조회를 다시 걸어 사용자가 재시도할 수 있게 한다.
+                failSubmit(R.string.mindrecord_error_daily_question_missing)
+                // 이미 조회 중이면 그대로 둔다 — 연타로 같은 요청을 겹쳐 쌓지 않는다.
+                if (!state.isQuestionLoading) loadTodayQuestion()
+                return
+            }
 
             viewModelScope.launch {
                 _uiState.update { it.copy(submitState = SubmitState.InProgress) }
@@ -154,5 +182,13 @@ class DailyQuestionWriteViewModel
 
         fun consumeSubmitResult() {
             _uiState.update { it.copy(submitState = SubmitState.Idle) }
+        }
+
+        private fun failSubmit(
+            @StringRes messageResId: Int,
+        ) {
+            _uiState.update {
+                it.copy(submitState = SubmitState.Failed(UiText.Resource(messageResId)))
+            }
         }
     }

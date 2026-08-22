@@ -44,6 +44,7 @@ import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.ProcessingMethodsSection
 import com.afternote.feature.afternote.presentation.shared.detail.ReceiversCard
 import com.afternote.feature.afternote.presentation.shared.model.AfternoteServiceDisplay
+import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiModel
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 
 /**
@@ -115,7 +116,7 @@ data class GalleryDetailContent(
     val finalWriteDate: String = "",
     val afternoteEditReceivers: List<ReceiverUiModel> = emptyList(),
     val processingMethods: List<String> = emptyList(),
-    val message: String = "",
+    val messageBlocks: List<MessageBlockUiModel> = emptyList(),
 )
 
 /**
@@ -213,7 +214,7 @@ private fun GalleryDetailScrollContent(
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             ReceiversCard(receivers = content.afternoteEditReceivers)
             ProcessingMethodsSection(methods = content.processingMethods)
-            MessageSection(message = content.message)
+            MessageSection(blocks = content.messageBlocks)
         }
     }
 }

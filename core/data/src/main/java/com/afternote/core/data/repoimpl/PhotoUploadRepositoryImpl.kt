@@ -57,13 +57,7 @@ private fun resolveExtension(mime: String?): String {
         ?.takeIf { it in ALLOWED_EXTENSIONS }
         ?.let { return it }
     val fromMime = MimeTypeMap.getSingleton().getExtensionFromMimeType(mime)
-    val resolved =
-        if (fromMime != null && fromMime in ALLOWED_EXTENSIONS) {
-            fromMime
-        } else {
-            fromMime
-        }
-    return resolved?.takeIf { it in ALLOWED_EXTENSIONS } ?: DEFAULT_EXTENSION
+    return fromMime?.takeIf { it in ALLOWED_EXTENSIONS } ?: DEFAULT_EXTENSION
 }
 
 class PhotoUploadRepositoryImpl

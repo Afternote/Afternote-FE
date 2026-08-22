@@ -50,6 +50,7 @@ import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.button.AfternoteButton
 import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.modifierextention.addFocusCleaner
+import com.afternote.core.ui.popup.NetworkErrorPopup
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
@@ -67,10 +68,14 @@ fun LoginScreen(
     onFindAccountClick: () -> Unit,
     onKakaoLoginClick: () -> Unit,
     onGoogleLoginClick: () -> Unit,
+    onRetryLogin: () -> Unit,
+    onNetworkErrorDismiss: () -> Unit,
     onBackClick: () -> Unit,
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     isLoading: Boolean = false,
+    hasCredentialError: Boolean = false,
+    showNetworkErrorPopup: Boolean = false,
 ) {
     val focusManager = LocalFocusManager.current
     val emailState = rememberTextFieldState(initialEmail)
@@ -139,21 +144,33 @@ fun LoginScreen(
                     imeAction = ImeAction.Next,
                 )
 
-                // 비밀번호 입력 필드
-                AfternoteTextField(
-                    state = passwordState,
-                    modifier =
-                        Modifier.semantics { contentType = ContentType.Password },
-                    placeholder = stringResource(R.string.login_password_label),
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done,
-                    onImeAction = {
-                        if (!isLoading) {
-                            focusManager.clearFocus()
-                            onLoginClick()
-                        }
-                    },
-                )
+                // 비밀번호 필드와 인라인 안내(시안 3628:23437)를 6dp 로 묶는다 — 바깥 8dp 와 달라
+                // 별도 Column. 문구 스타일은 아이디 찾기 인라인(FindIdScreen)과 동일 토큰.
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    AfternoteTextField(
+                        state = passwordState,
+                        modifier =
+                            Modifier.semantics { contentType = ContentType.Password },
+                        placeholder = stringResource(R.string.login_password_label),
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done,
+                        onImeAction = {
+                            if (!isLoading) {
+                                focusManager.clearFocus()
+                                onLoginClick()
+                            }
+                        },
+                        isError = hasCredentialError,
+                    )
+
+                    if (hasCredentialError) {
+                        Text(
+                            text = stringResource(R.string.login_invalid_credentials),
+                            style = AfternoteDesign.typography.captionLargeB,
+                            color = AfternoteDesign.colors.error,
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -175,6 +192,13 @@ fun LoginScreen(
                 isLoading = isLoading,
             )
         }
+    }
+
+    if (showNetworkErrorPopup) {
+        NetworkErrorPopup(
+            onRetry = onRetryLogin,
+            onDismiss = onNetworkErrorDismiss,
+        )
     }
 }
 
@@ -306,6 +330,8 @@ private fun LoginScreenPreview() {
             onFindAccountClick = {},
             onKakaoLoginClick = {},
             onGoogleLoginClick = {},
+            onRetryLogin = {},
+            onNetworkErrorDismiss = {},
             onBackClick = {},
             snackbarHostState = remember { SnackbarHostState() },
         )

@@ -42,7 +42,7 @@ class TimeLetterDebugMockNetworkInterceptor
                         TimeLetterMockFixtures.MOCK_CREATE_JSON
                     }
 
-                    path == "/api/v1/time-letters/delete" && method == "POST" -> {
+                    path == "/api/v1/time-letters" && method == "DELETE" -> {
                         TimeLetterMockFixtures.MOCK_DELETE_JSON
                     }
 

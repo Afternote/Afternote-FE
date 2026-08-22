@@ -15,7 +15,6 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.home.HomeHeaderSection
-import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.AfternoteListContent
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
 import kotlinx.coroutines.flow.flowOf
@@ -23,8 +22,8 @@ import kotlinx.coroutines.flow.flowOf
 @Composable
 fun InfiniteListBody(
     items: LazyPagingItems<ListItemUiModel>,
-    selectedCategory: AfternoteCategory,
-    onCategorySelected: (AfternoteCategory) -> Unit,
+    selectedCategory: AfternoteType?,
+    onCategorySelected: (AfternoteType?) -> Unit,
     onListItemClick: (id: String, type: AfternoteType) -> Unit,
     modifier: Modifier = Modifier,
     nextStepText: String = "",
@@ -85,7 +84,7 @@ private fun InfiniteListBodyPreview() {
                 "가족들의 '주거래 은행' 정보를\n" +
                     "입력하신 건 확인하셨나요?",
             items = items,
-            selectedCategory = AfternoteCategory.ALL,
+            selectedCategory = null,
             onCategorySelected = {},
             onListItemClick = { _, _ -> },
         )

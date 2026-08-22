@@ -1,6 +1,5 @@
 package com.afternote.feature.afternote.presentation.author.editor.state
 
-import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -14,110 +13,80 @@ import com.afternote.feature.afternote.presentation.author.editor.message.Editor
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
-import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 
 private const val TAG = "AfternoteEditorState"
 
-private fun normalizeEditorMessageBlocks(blocks: List<EditorMessageTextBlock>): List<EditorMessageTextBlock> =
-    blocks.ifEmpty { DEFAULT_EDITOR_MESSAGE_BLOCKS }
-
 /**
- * 에디터 화면용 **안정적인 파사드**: ViewModel의 단일 [AfternoteEditorUiHolder] SSOT 안의
- * 폼 스냅샷([getCurrentForm])과 폼 갱신 인텐트([updateForm])를 받아 UI 측 [TextFieldState]·이펙트와 결합한다.
- * 컴포지션 스코프 내에서만 생성되며, 그래프 스코프 ViewModel에 캐싱하지 않는다.
+ * 에디터 화면용 **안정적인 파사드**: ViewModel의 폼 스냅샷([getCurrentForm])과 폼 갱신 인텐트 콜백을 받아
+ * UI 측 [TextFieldState]·이펙트와 결합한다. 컴포지션 스코프 내에서만 생성되며, 그래프 스코프 ViewModel에 캐싱하지 않는다.
  *
- * 화면은 ViewModel의 단일 `uiState` 만 collect 하고 그 안의 `form` 을 렌더링에 쓰며,
- * 본 파사드의 콜백 메서드들은 [getCurrentForm] 으로 최신 폼 스냅샷을 읽는다 (콜백은 stale closure 회피).
+ * 폼을 임의로 변환하는 통로(`(EditorFormState) -> EditorFormState` 람다)는 받지 않는다 — 어떤 필드를 어떻게
+ * 바꿀지는 데이터 소유자가 정하고, 파사드는 무슨 일이 일어났는지만 개별 콜백으로 통보한다
+ * ([State holders](https://developer.android.com/topic/architecture/ui-layer/stateholders) 의
+ * *"pass only the information it needs as a parameter"*). 그중 UI 로직이 붙지 않는 것은 콜백을 그대로 공개한다.
  *
+ * 콜백 메서드들은 [getCurrentForm] 으로 최신 폼 스냅샷을 읽는다 (stale closure 회피).
  * 추모 곡 목록은 [com.afternote.feature.afternote.presentation.AfternoteHostViewModel.playlistSongs] 가 SSOT 이므로
- * 본 파사드는 곡 목록을 직접 보유·참조하지 않으며, 곡 변경은 host VM 인텐트로 처리한다.
+ * 본 파사드는 곡 목록을 직접 보유·참조하지 않는다.
  */
 @Stable
 class AfternoteEditorState(
-    val ui: AfternoteEditorUiHolder,
+    private val ui: AfternoteEditorUiHolder,
     private val getCurrentForm: () -> EditorFormState,
-    private val updateForm: ((EditorFormState) -> EditorFormState) -> Unit,
+    private val setCategory: (EditorCategory) -> Unit,
+    private val setService: (String) -> Unit,
+    private val addReceiverIfAbsent: (receiverId: String, name: String, label: String) -> Unit,
+    private val applyPrefill: (EditorFormPrefill) -> Unit,
+    /** 영정 사진·추모 영상 picker 결과 (`Uri?.toString()`). */
+    val setMemorialPhoto: (String?) -> Unit,
+    val setMemorialVideo: (String?) -> Unit,
+    /** 추모 영상 썸네일 추출 완료 — 폼에 그대로 반영한다. */
+    val setMemorialThumbnail: (String?) -> Unit,
+    /** 호스트 SSOT의 곡 목록을 폼 스냅샷에 반영한다 (SavedStateHandle JSON에 포함하기 위함). */
+    val setMemorialPlaylistSongs: (List<Song>) -> Unit,
+    val deleteReceiver: (receiverId: String) -> Unit,
+    val replaceReceiversIfEmpty: (List<AfternoteEditorReceiver>) -> Unit,
+    /** 타이핑 디바운스 후 폼(및 스냅샷)에만 반영; [EditorFormState.leaveMessageBlocksRestoreGeneration]은 건드리지 않는다. */
+    val setLeaveMessageBlocks: (List<EditorMessageTextBlock>) -> Unit,
+    val addProcessingMethod: (text: String) -> Unit,
+    val deleteProcessingMethod: (itemId: String) -> Unit,
+    val editProcessingMethod: (itemId: String, newText: String) -> Unit,
 ) {
     val editorMessages: SnapshotStateList<EditorMessage> get() = ui.editorMessages
 
     val idState: TextFieldState get() = ui.idState
     val passwordState: TextFieldState get() = ui.passwordState
-    val afternoteEditReceiverNameState: TextFieldState get() = ui.afternoteEditReceiverNameState
-    val phoneNumberState: TextFieldState get() = ui.phoneNumberState
     val customServiceNameState: TextFieldState get() = ui.customServiceNameState
 
     val activeDialog get() = ui.activeDialog
-    val relationshipSelectedValue get() = ui.relationshipSelectedValue
     val categoryDropdownExpanded get() = ui.categoryDropdownExpanded
     val serviceDropdownExpanded get() = ui.serviceDropdownExpanded
 
     /** 콜백·payload 조립 등 일회성 read 용 (Compose 표시는 화면이 collect 한 `uiState.form` 사용). */
     fun currentForm(): EditorFormState = getCurrentForm()
 
-    val selectedCategory get() = getCurrentForm().selectedCategory
-    val memorialVideoUrl get() = getCurrentForm().memorialVideoUrl
-    val memorialThumbnailUrl get() = getCurrentForm().memorialThumbnailUrl
-    val memorialPhotoUrl get() = getCurrentForm().memorialPhotoUrl
-    val pickedMemorialPhotoUri get() = getCurrentForm().pickedMemorialPhotoUri
-    val afternoteEditReceivers get() = getCurrentForm().afternoteEditReceivers
-
     fun onCategoryDropdownExpandedChange(expanded: Boolean) = ui.onCategoryDropdownExpandedChange(expanded)
 
     fun onServiceDropdownExpandedChange(expanded: Boolean) = ui.onServiceDropdownExpandedChange(expanded)
 
-    /** 호스트 SSOT의 곡 목록을 폼 스냅샷으로 동기화한다 (SavedStateHandle JSON에 포함하기 위함). */
-    fun syncMemorialPlaylistSongs(songs: List<Song>) {
-        updateForm { it.copy(memorialPlaylistSongs = songs) }
-    }
-
-    /** 신규 작성 진입 시 폼에 남은 추억 플레이리스트 스냅샷을 비운다 (호스트 SSOT clear는 호출부에서). */
-    fun resetMemorialPlaylistFormSnapshot() {
-        updateForm { it.copy(memorialPlaylistSongs = emptyList()) }
-    }
-
     /** 드롭다운 UI에서 [categoryDisplayLabel] 문자열로 카테고리를 선택한다. */
     fun onCategorySelected(categoryDisplayLabel: String) {
-        selectCategory(EditorCategory.fromDisplayLabel(categoryDisplayLabel))
+        setCategory(EditorCategory.fromDisplayLabel(categoryDisplayLabel))
     }
 
     /** 네비게이션 인자([EditorCategory.name])로 카테고리를 선택한다. */
     fun selectCategoryByNavKey(navKey: String) {
-        selectCategory(EditorCategory.fromNavKey(navKey))
-    }
-
-    private fun selectCategory(category: EditorCategory) {
-        updateForm {
-            it.copy(
-                selectedCategory = category,
-                // 카테고리 전환 시 서비스명은 항상 미선택으로 리셋 — 임의 기본값 확정 방지 (이슈 #468).
-                selectedService = null,
-                processingMethods = emptyList(),
-            )
-        }
+        setCategory(EditorCategory.fromNavKey(navKey))
     }
 
     fun onServiceSelected(service: String) {
         if (getCurrentForm().isCustomAddOption(service)) {
             ui.showCustomServiceDialog()
         } else {
-            updateForm { it.copy(selectedService = service) }
+            setService(service)
         }
     }
-
-    fun onMemorialPhotoSelected(uri: Uri?) {
-        updateForm { it.copy(pickedMemorialPhotoUri = uri?.toString()) }
-    }
-
-    fun onFuneralVideoSelected(uri: Uri?) {
-        updateForm { it.copy(memorialVideoUrl = uri?.toString(), memorialThumbnailUrl = null) }
-    }
-
-    fun onFuneralThumbnailDataUrlReady(dataUrl: String?) {
-        updateForm { it.copy(memorialThumbnailUrl = dataUrl) }
-    }
-
-    fun showAddAfternoteEditorReceiverDialog() = ui.showAddAfternoteEditorReceiverDialog()
 
     fun dismissDialog() = ui.dismissDialog()
 
@@ -127,92 +96,35 @@ class AfternoteEditorState(
                 .toString()
                 .trim()
         if (serviceName.isEmpty()) return
-        updateForm { it.copy(selectedService = serviceName) }
+        setService(serviceName)
         dismissDialog()
     }
 
-    fun onAddAfternoteEditorReceiver() {
-        val name =
-            ui.afternoteEditReceiverNameState.text
-                .toString()
-                .trim()
-        if (name.isEmpty()) return
-        updateForm { prev ->
-            val next =
-                AfternoteEditorReceiver(
-                    id = (prev.afternoteEditReceivers.size + 1).toString(),
-                    name = name,
-                    label = ui.relationshipSelectedValue,
-                )
-            prev.copy(afternoteEditReceivers = prev.afternoteEditReceivers + next)
-        }
-        dismissDialog()
-    }
-
-    fun onRelationshipSelected(relationship: String) = ui.onRelationshipSelected(relationship)
-
-    fun onAfternoteEditorReceiverDelete(afternoteEditReceiverId: String) {
-        updateForm { prev ->
-            prev.copy(
-                afternoteEditReceivers =
-                    prev.afternoteEditReceivers.filter { it.id != afternoteEditReceiverId },
-            )
-        }
-    }
-
-    fun addReceiverFromSelection(
+    fun addReceiverById(
         receiverId: Long,
         name: String,
         relation: String,
     ) {
-        updateForm { prev ->
-            if (prev.afternoteEditReceivers.any { it.id == receiverId.toString() }) return@updateForm prev
-            val newReceiver =
-                AfternoteEditorReceiver(
-                    id = receiverId.toString(),
-                    name = name,
-                    label = relation,
-                )
-            prev.copy(afternoteEditReceivers = prev.afternoteEditReceivers + newReceiver)
-        }
+        addReceiverIfAbsent(receiverId.toString(), name, relation)
     }
 
-    fun replaceReceiversIfEmpty(receivers: List<AfternoteEditorReceiver>) {
-        if (receivers.isEmpty()) return
-        updateForm { prev ->
-            if (prev.afternoteEditReceivers.isNotEmpty()) return@updateForm prev
-            prev.copy(afternoteEditReceivers = receivers)
-        }
-    }
-
+    /**
+     * 추가·삭제 모두 UI 목록 전체를 폼에 덮어쓴다. 폼은 디바운스로 갱신돼 UI 보다 오래됐을 수 있어,
+     * 폼 기준으로 증분 반영하면 마지막 디바운스 이전 입력이 밀려난다.
+     */
     fun addEditorMessage() {
         ui.addEditorMessage()
-        updateForm { prev ->
-            prev.copy(
-                leaveMessageBlocks = prev.leaveMessageBlocks + EditorMessageTextBlock(title = "", body = ""),
-            )
-        }
+        setLeaveMessageBlocks(ui.editorMessages.toTextBlocks())
     }
 
     fun removeEditorMessage(message: EditorMessage) {
         if (ui.editorMessages.size <= 1) return
         ui.removeEditorMessage(message)
-        updateForm { prev ->
-            prev.copy(
-                leaveMessageBlocks =
-                    normalizeEditorMessageBlocks(
-                        ui.editorMessages.map { m ->
-                            EditorMessageTextBlock(
-                                title = m.titleState.text.toString(),
-                                body = m.contentState.text.toString(),
-                            )
-                        },
-                    ),
-            )
-        }
+        setLeaveMessageBlocks(ui.editorMessages.toTextBlocks())
     }
 
-    private fun applyMessageBlocks(blocks: List<EditorMessageTextBlock>) {
+    /** SavedState·프리필·재진입 등 폼 SSOT → TextField 목록 반영. */
+    fun syncEditorMessagesFromForm(blocks: List<EditorMessageTextBlock>) {
         val normalized = normalizeEditorMessageBlocks(blocks)
         ui.editorMessages.clear()
         for (b in normalized) {
@@ -221,16 +133,6 @@ class AfternoteEditorState(
             msg.contentState.edit { replace(0, length, b.body) }
             ui.editorMessages.add(msg)
         }
-    }
-
-    /** SavedState·프리필·재진입 등 폼 SSOT → TextField 목록 반영. */
-    fun syncEditorMessagesFromForm(blocks: List<EditorMessageTextBlock>) {
-        applyMessageBlocks(blocks)
-    }
-
-    /** 타이핑 디바운스 후 폼(및 스냅샷)에만 반영; [EditorFormState.leaveMessageBlocksRestoreGeneration]은 건드리지 않는다. */
-    fun persistEditorMessagesFromTyping(blocks: List<EditorMessageTextBlock>) {
-        updateForm { it.copy(leaveMessageBlocks = normalizeEditorMessageBlocks(blocks)) }
     }
 
     /**
@@ -244,82 +146,54 @@ class AfternoteEditorState(
                 "category=${prefill.category}, " +
                 "PMs=${prefill.processingMethods.size}",
         )
-        val prefillBlocks = normalizeEditorMessageBlocks(prefill.leaveMessageBlocks)
-        updateForm { prev ->
-            prev.copy(
-                loadedItemId = prefill.loadedItemId,
-                selectedCategory = prefill.category,
-                selectedService = prefill.serviceName,
-                processingMethods = prefill.processingMethods,
-                memorialVideoUrl = prefill.memorialVideoUrl,
-                memorialThumbnailUrl = prefill.memorialThumbnailUrl,
-                memorialPhotoUrl = prefill.memorialPhotoUrl,
-                memorialPlaylistSongs = prefill.memorialPlaylistSongs,
-                afternoteEditReceivers = prefill.receivers,
-                leaveMessageBlocks = prefillBlocks,
-            )
-        }
+        applyPrefill(prefill)
         ui.idState.edit { replace(0, length, prefill.accountId) }
         ui.passwordState.edit { replace(0, length, prefill.password) }
-        applyMessageBlocks(prefillBlocks)
-    }
-
-    fun addProcessingMethod(text: String) {
-        updateForm { prev ->
-            val newItem =
-                ProcessingMethodItem(
-                    id = (prev.processingMethods.size + 1).toString(),
-                    text = text,
-                )
-            prev.copy(processingMethods = prev.processingMethods + newItem)
-        }
-    }
-
-    fun deleteProcessingMethod(itemId: String) {
-        updateForm { prev ->
-            prev.copy(processingMethods = prev.processingMethods.filter { it.id != itemId })
-        }
-    }
-
-    fun editProcessingMethod(
-        itemId: String,
-        newText: String,
-    ) {
-        updateForm { prev ->
-            prev.copy(
-                processingMethods =
-                    prev.processingMethods.map { item ->
-                        if (item.id == itemId) item.copy(text = newText) else item
-                    },
-            )
-        }
+        syncEditorMessagesFromForm(prefill.leaveMessageBlocks)
     }
 }
+
+private fun List<EditorMessage>.toTextBlocks(): List<EditorMessageTextBlock> =
+    map { m ->
+        EditorMessageTextBlock(
+            title = m.titleState.text.toString(),
+            body = m.contentState.text.toString(),
+        )
+    }
 
 /**
  * 프로덕션용 팩토리.
  *
- * ViewModel의 폼 SSOT 스냅샷을 [getCurrentForm] 클로저로, `updateForm` 인텐트를 [updateForm] 으로 받아
+ * ViewModel의 폼 SSOT 스냅샷을 [getCurrentForm] 클로저로, 폼 갱신 인텐트를 개별 콜백으로 받아
  * UI 레이어가 소유한 [TextFieldState]와 [AfternoteEditorUiHolder]를 결합한 파사드를 만든다. ViewModel은
  * Compose UI 상태를 들지 않으므로, 이 팩토리는 반드시 Composable 스코프에서 호출되어야 한다.
  */
 @Composable
 fun rememberAfternoteEditorState(
     getCurrentForm: () -> EditorFormState,
-    updateForm: ((EditorFormState) -> EditorFormState) -> Unit,
+    setCategory: (EditorCategory) -> Unit,
+    setService: (String) -> Unit,
+    setMemorialPhoto: (String?) -> Unit,
+    setMemorialVideo: (String?) -> Unit,
+    addReceiverIfAbsent: (receiverId: String, name: String, label: String) -> Unit,
+    applyPrefill: (EditorFormPrefill) -> Unit,
+    setMemorialThumbnail: (String?) -> Unit,
+    setMemorialPlaylistSongs: (List<Song>) -> Unit,
+    deleteReceiver: (receiverId: String) -> Unit,
+    replaceReceiversIfEmpty: (List<AfternoteEditorReceiver>) -> Unit,
+    setLeaveMessageBlocks: (List<EditorMessageTextBlock>) -> Unit,
+    addProcessingMethod: (text: String) -> Unit,
+    deleteProcessingMethod: (itemId: String) -> Unit,
+    editProcessingMethod: (itemId: String, newText: String) -> Unit,
 ): AfternoteEditorState {
     val idState = rememberTextFieldState()
     val passwordState = rememberTextFieldState()
-    val afternoteEditReceiverNameState = rememberTextFieldState()
-    val phoneNumberState = rememberTextFieldState()
     val customServiceNameState = rememberTextFieldState()
 
     val ui =
         rememberAfternoteEditorUiHolder(
             idState = idState,
             passwordState = passwordState,
-            afternoteEditReceiverNameState = afternoteEditReceiverNameState,
-            phoneNumberState = phoneNumberState,
             customServiceNameState = customServiceNameState,
         )
 
@@ -327,19 +201,52 @@ fun rememberAfternoteEditorState(
         AfternoteEditorState(
             ui = ui,
             getCurrentForm = getCurrentForm,
-            updateForm = updateForm,
+            setCategory = setCategory,
+            setService = setService,
+            setMemorialPhoto = setMemorialPhoto,
+            setMemorialVideo = setMemorialVideo,
+            addReceiverIfAbsent = addReceiverIfAbsent,
+            applyPrefill = applyPrefill,
+            setMemorialThumbnail = setMemorialThumbnail,
+            setMemorialPlaylistSongs = setMemorialPlaylistSongs,
+            deleteReceiver = deleteReceiver,
+            replaceReceiversIfEmpty = replaceReceiversIfEmpty,
+            setLeaveMessageBlocks = setLeaveMessageBlocks,
+            addProcessingMethod = addProcessingMethod,
+            deleteProcessingMethod = deleteProcessingMethod,
+            editProcessingMethod = editProcessingMethod,
         )
     }
 }
 
 /**
- * Compose Preview·로컬 UI 테스트 전용. 내부 [androidx.compose.runtime.MutableState]로 자체 폼 SSOT를 만든다.
+ * Compose Preview·로컬 UI 테스트 전용. 내부 [androidx.compose.runtime.MutableState]로 자체 폼 SSOT를 만들고
+ * 프로덕션 ViewModel과 같은 `EditorFormMutations.kt` 의 변환 규칙으로 갱신한다.
  */
 @Composable
 fun rememberAfternoteEditorState(): AfternoteEditorState {
     val previewForm = remember { mutableStateOf(EditorFormState()) }
+    val mutate: ((EditorFormState) -> EditorFormState) -> Unit =
+        { block -> previewForm.value = block(previewForm.value) }
     return rememberAfternoteEditorState(
         getCurrentForm = { previewForm.value },
-        updateForm = { block -> previewForm.value = block(previewForm.value) },
+        setCategory = { category -> mutate { it.withCategory(category) } },
+        setService = { service -> mutate { it.withService(service) } },
+        setMemorialPhoto = { uri -> mutate { it.withMemorialPhoto(uri) } },
+        setMemorialVideo = { url -> mutate { it.withMemorialVideo(url) } },
+        addReceiverIfAbsent = { receiverId, name, label ->
+            mutate { it.withReceiverAddedIfAbsent(receiverId = receiverId, name = name, label = label) }
+        },
+        applyPrefill = { prefill -> mutate { it.withPrefillApplied(prefill) } },
+        setMemorialThumbnail = { dataUrl -> mutate { it.withMemorialThumbnail(dataUrl) } },
+        setMemorialPlaylistSongs = { songs -> mutate { it.withMemorialPlaylistSongs(songs) } },
+        deleteReceiver = { receiverId -> mutate { it.withReceiverDeleted(receiverId) } },
+        replaceReceiversIfEmpty = { receivers -> mutate { it.withReceiversReplacedIfEmpty(receivers) } },
+        setLeaveMessageBlocks = { blocks -> mutate { it.withLeaveMessageBlocks(blocks) } },
+        addProcessingMethod = { text -> mutate { it.withProcessingMethodAdded(text) } },
+        deleteProcessingMethod = { itemId -> mutate { it.withProcessingMethodDeleted(itemId) } },
+        editProcessingMethod = { itemId, newText ->
+            mutate { it.withProcessingMethodEdited(itemId = itemId, newText = newText) }
+        },
     )
 }

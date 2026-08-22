@@ -35,3 +35,20 @@ internal fun detailLoadErrorContentDefaultFallbackScreenshot() {
         )
     }
 }
+
+/**
+ * onRetryClick 이 있는 경로 — 재시도 버튼이 문구 아래 그려지는지 확인한다.
+ * 위 두 케이스는 `onRetryClick` 기본값(null)이라 버튼이 없는 상태를 고정한다.
+ */
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+internal fun detailLoadErrorContentRetryScreenshot() {
+    AfternoteTheme {
+        DetailLoadErrorContent(
+            messageRes = null,
+            onBackClick = {},
+            onRetryClick = {},
+        )
+    }
+}

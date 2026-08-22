@@ -89,6 +89,33 @@ class TimeLetterWriteViewModel
             }
         }
 
+        fun updateDraftTitle(title: String) {
+            _uiState.update { state -> state.copy(draftTitle = title) }
+        }
+
+        fun updateDraftContent(
+            title: String,
+            textContents: Map<Long, String>,
+        ) {
+            _uiState.update { state ->
+                state.copy(
+                    draftTitle = title,
+                    draftTextContents = state.draftTextContents + textContents,
+                )
+            }
+        }
+
+        fun updateDraftTextContent(
+            blockId: Long,
+            content: String,
+        ) {
+            _uiState.update { state ->
+                state.copy(
+                    draftTextContents = state.draftTextContents + (blockId to content),
+                )
+            }
+        }
+
         fun setSendAt(sendAt: String) {
             _uiState.update { it.copy(sendAt = sendAt) }
         }
@@ -444,8 +471,8 @@ class TimeLetterWriteViewModel
                         it.copy(
                             editingTimeLetterId = letter.id,
                             isLoadingEditingLetter = false,
-                            initialTitle = letter.title.orEmpty(),
-                            initialTextContents =
+                            draftTitle = letter.title.orEmpty(),
+                            draftTextContents =
                                 letter.blocks
                                     .filter { block -> block.blockType == TimeLetterBlockType.TEXT }
                                     .associate { block -> block.id to (block.textContent ?: "") },

@@ -14,11 +14,27 @@ data class WeeklyReportDto(
     @SerialName("emotions") val emotions: List<WeeklyReportEmotionDto> = emptyList(),
 )
 
+/**
+ * `week[]` 의 한 원소 (OpenAPI `WeekRecordItem` 실측, 2026-08-15).
+ *
+ * 기록 종류는 `isDiary` 불리언이 아니라 **`type` 문자열**로 온다.
+ * ```
+ * WeekRecordItem  required: [day, diaryId, type]
+ *   type  string  enum=[DIARY, DAILY_QUESTION, DEEP_THOUGHT]
+ * ```
+ * 종전 DTO 는 존재하지 않는 `isDiary` 키를 읽어 항상 기본값 `false` 가 됐고, 그래서 모든
+ * 일기가 non-diary 로 접혀 캘린더 점과 기록일수에서 빠졌다.
+ *
+ * 세 필드는 명세가 required 로 선언한 값이라 기본값을 두지 않는다 — 빠지면 실패해야
+ * 계약 누락이 드러난다. 다만 [type] 은 `enum` 대신 `String` 으로 받는다. 서버가 종류를
+ * 하나 더 추가해도(현재 3종) 그 주 전체가 죽지 않고 매퍼에서 "일기 아님" 으로 접히면
+ * 되기 때문이다 — 값 집합은 닫혀 있지 않지만 키의 존재는 계약이다.
+ */
 @Serializable
 data class WeeklyReportDayDto(
-    @SerialName("diaryId") val diaryId: Long = 0L,
-    @SerialName("day") val day: Int = 0,
-    @SerialName("isDiary") val isDiary: Boolean = false,
+    @SerialName("diaryId") val diaryId: Long,
+    @SerialName("day") val day: Int,
+    @SerialName("type") val type: String,
     @SerialName("emotion") val emotion: TodayMoodDto? = null,
 )
 
