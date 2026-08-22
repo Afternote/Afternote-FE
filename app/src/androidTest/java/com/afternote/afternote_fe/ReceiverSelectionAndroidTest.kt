@@ -6,6 +6,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -57,6 +58,7 @@ class ReceiverSelectionAndroidTest {
 
         assertEquals(7L, confirmed?.receiverId)
         assertEquals("김수신", confirmed?.name)
+        assertEquals("가족", confirmed?.relation)
     }
 
     @Test
@@ -79,7 +81,9 @@ class ReceiverSelectionAndroidTest {
         var callbackCount = 0
         setReceiverContent { callbackCount += 1 }
 
-        composeRule.onNodeWithText("수신자 선택 완료하기").performClick()
+        composeRule
+            .onNodeWithText("수신자 선택 완료하기")
+            .assertIsNotEnabled()
 
         assertEquals(0, callbackCount)
     }
