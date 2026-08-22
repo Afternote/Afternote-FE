@@ -87,3 +87,7 @@ fun rememberCountLine(
         withStyle(SpanStyle(color = AfternoteDesign.colors.b1)) { append(prefix) }
         append(suffix)
     }
+
+/** 조회 실패를 정상 0건과 구분하는 중립 문구. */
+@Composable
+fun unavailableCountLine(): AnnotatedString = AnnotatedString(stringResource(R.string.receiver_home_section_count_unavailable))
