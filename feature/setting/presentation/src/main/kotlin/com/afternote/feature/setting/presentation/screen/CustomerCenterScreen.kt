@@ -84,6 +84,7 @@ fun CustomerCenterScreen(
                 title = stringResource(R.string.customer_center_one_to_one_inquiry),
                 description = stringResource(R.string.customer_center_one_to_one_description),
                 onClick = onOneToOneInquiryClick,
+                enabled = false,
             )
             CustomerCenterMenuItem(
                 title = stringResource(R.string.customer_center_email_inquiry),
@@ -100,10 +101,12 @@ fun CustomerCenterScreen(
             CustomerCenterMenuItem(
                 title = stringResource(R.string.customer_center_recipient_inquiry),
                 onClick = onRecipientInquiryClick,
+                enabled = false,
             )
             CustomerCenterMenuItem(
                 title = stringResource(R.string.customer_center_faq),
                 onClick = onFaqClick,
+                enabled = false,
             )
 
             Text(
@@ -183,13 +186,14 @@ private fun CustomerCenterMenuItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     description: String? = null,
+    enabled: Boolean = true,
 ) {
     Column(
         modifier =
             modifier
                 .fillMaxWidth()
                 .background(AfternoteDesign.colors.white)
-                .clickable(onClick = onClick),
+                .clickable(enabled = enabled, onClick = onClick),
     ) {
         Row(
             modifier =
