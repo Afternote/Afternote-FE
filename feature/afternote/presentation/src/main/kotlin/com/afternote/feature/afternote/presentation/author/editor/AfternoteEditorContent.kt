@@ -231,6 +231,9 @@ private fun MemorialPrefillSkeleton() {
     // 추억 플레이리스트.
     SkeletonBar(height = 96.dp)
     Spacer(modifier = Modifier.height(20.dp))
+    // 남기실 말씀.
+    SkeletonBar(height = 140.dp)
+    Spacer(modifier = Modifier.height(20.dp))
     // 마지막 인사 (라디오 + custom text).
     SkeletonBar(height = 140.dp)
 }
@@ -276,6 +279,10 @@ internal fun AfternoteTypeContent(
                 playlistAlbumCovers = form.displayAlbumCovers(),
                 memorialVideoUrl = form.memorialVideoUrl,
                 memorialThumbnailUrl = form.memorialThumbnailUrl,
+                editorMessages = state.editorMessages,
+                onMessageRegisterClick = state::registerEditorMessage,
+                onMessageDeleteClick = state::removeEditorMessage,
+                onMessageAddClick = state::addEditorMessage,
                 recipientSection =
                     AfternoteEditorReceiverSection(
                         afternoteEditReceivers = form.afternoteEditReceivers,

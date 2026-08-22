@@ -175,6 +175,7 @@ internal object AfternoteEditorFormMapper {
                     CreateMemorialPayload(
                         title = payload.serviceName,
                         memorial = memorialPayload,
+                        leaveMessageBlocks = leaveMessageBlocks,
                         receiverIds = selectedReceiverIds,
                     ),
                 )

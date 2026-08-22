@@ -1,11 +1,14 @@
 package com.afternote.feature.afternote.presentation.author.editor.memorial
 
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.model.AlbumCover
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
+import com.afternote.feature.afternote.presentation.author.editor.message.LeaveMessageEditorItem
 import com.afternote.feature.afternote.presentation.author.editor.receiver.RecipientDesignationSection
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverSection
@@ -23,11 +26,15 @@ fun MemorialEditorContent(
     memorialVideoUrl: String?,
     // null = 썸네일 추출 전/실패. 기본값은 두지 않는다 — 호출자가 "없음"을 명시적으로 선언해야 한다.
     memorialThumbnailUrl: String?,
+    editorMessages: List<LeaveMessageEditorItem>,
     // 섹션·콜백엔 기본값을 두지 않는다 — no-op 디폴트가 미배선을 은폐한 전례(#466·#777) 재발 방지.
     recipientSection: AfternoteEditorReceiverSection,
     onSongAddClick: () -> Unit,
     onPhotoAddClick: () -> Unit,
     onVideoAddClick: () -> Unit,
+    onMessageRegisterClick: (LeaveMessageEditorItem) -> Unit,
+    onMessageDeleteClick: (LeaveMessageEditorItem) -> Unit,
+    onMessageAddClick: () -> Unit,
     onThumbnailBytesReady: (ByteArray?) -> Unit,
     onThumbnailExtractionFailed: (Throwable) -> Unit,
     modifier: Modifier = Modifier,
@@ -49,6 +56,14 @@ fun MemorialEditorContent(
         },
         modifier = modifier,
         sectionSpacing = 32.dp,
+        messageContent = {
+            EditorMessageSection(
+                messages = editorMessages,
+                onRegisterClick = onMessageRegisterClick,
+                onDeleteClick = onMessageDeleteClick,
+                onAddClick = onMessageAddClick,
+            )
+        },
         recipientContent = {
             RecipientDesignationSection(section = recipientSection)
         },
@@ -73,6 +88,13 @@ private fun MemorialEditorContentPreview() {
             playlistAlbumCovers = emptyList(),
             memorialVideoUrl = null,
             memorialThumbnailUrl = null,
+            editorMessages =
+                listOf(
+                    LeaveMessageEditorItem(
+                        titleState = rememberTextFieldState("가족들에게"),
+                        contentState = rememberTextFieldState("항상 고마워요."),
+                    ),
+                ),
             recipientSection =
                 AfternoteEditorReceiverSection(
                     afternoteEditReceivers =
@@ -83,6 +105,9 @@ private fun MemorialEditorContentPreview() {
             onSongAddClick = {},
             onPhotoAddClick = {},
             onVideoAddClick = {},
+            onMessageRegisterClick = {},
+            onMessageDeleteClick = {},
+            onMessageAddClick = {},
             onThumbnailBytesReady = {},
             onThumbnailExtractionFailed = {},
         )

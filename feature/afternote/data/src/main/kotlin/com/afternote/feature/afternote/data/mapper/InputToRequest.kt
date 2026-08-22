@@ -72,5 +72,6 @@ fun CreateMemorialPayload.toRequest() =
         type = "PLAYLIST",
         title = title,
         memorial = memorial.toDto(),
+        leaveMessage = leaveMessageBlocks.toDto(),
         receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
     )

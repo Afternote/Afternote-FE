@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.data.mapper
 
 import com.afternote.feature.afternote.data.dto.AfternoteCreateAccountRequestDto
+import com.afternote.feature.afternote.data.dto.AfternoteCreatePlaylistRequestDto
 import com.afternote.feature.afternote.data.dto.AfternoteDetailDto
 import com.afternote.feature.afternote.data.dto.LeaveMessageBlockDto
 import com.afternote.feature.afternote.data.dto.ReceivedAfternoteDetailDto
@@ -8,6 +9,8 @@ import com.afternote.feature.afternote.data.dto.ReceivedAfternoteListDto
 import com.afternote.feature.afternote.data.mapper.response.toDetailDomain
 import com.afternote.feature.afternote.data.mapper.response.toDomain
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
+import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
+import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -145,5 +148,21 @@ class LeaveMessageBlockContractTest {
     @Test
     fun `요청 직렬화 - 블록이 없으면 필드를 싣지 않는다`() {
         assertNull(emptyList<LeaveMessageBlock>().toDto())
+    }
+
+    /** PLAYLIST 생성 요청만 `leaveMessage` 가 빠져 입력이 조용히 버려지던 회귀 가드 (이슈 #678). */
+    @Test
+    fun `요청 직렬화 - PLAYLIST 생성도 남기실 말씀 블록을 싣는다`() {
+        val request =
+            CreateMemorialPayload(
+                title = "추억 노트",
+                memorial = MemorialWritePayload(),
+                leaveMessageBlocks = listOf(LeaveMessageBlock(title = "가족에게", body = "노래 들으며 기억해줘")),
+            ).toRequest()
+
+        val encoded = json.encodeToString(AfternoteCreatePlaylistRequestDto.serializer(), request)
+
+        assertTrue(encoded.contains("\"category\":\"PLAYLIST\""))
+        assertTrue(encoded.contains(""""leaveMessage":[{"title":"가족에게","body":"노래 들으며 기억해줘"}]"""))
     }
 }

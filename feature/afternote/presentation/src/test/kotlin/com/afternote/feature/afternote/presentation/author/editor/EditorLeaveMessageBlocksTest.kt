@@ -102,6 +102,26 @@ class EditorLeaveMessageBlocksTest {
         )
     }
 
+    /** 생성 payload 에 `leaveMessageBlocks` 가 없어 입력이 조용히 버려지던 회귀 가드 (이슈 #678). */
+    @Test
+    fun `메모리얼 생성도 남기실 말씀을 싣는다`() {
+        val input =
+            AfternoteEditorFormMapper.buildCreateInput(
+                type = AfternoteType.MEMORIAL,
+                payload = payloadOf(EditorMessageTextBlock(title = "가족에게", body = "잘 지내")),
+                selectedReceiverIds = emptyList(),
+                playlistSongs = emptyList(),
+                memorialVideoUrl = null,
+                memorialThumbnailUrl = null,
+                memorialPhotoUrl = null,
+            )
+
+        assertEquals(
+            listOf(LeaveMessageBlock(title = "가족에게", body = "잘 지내")),
+            (input as CreateAfternoteInput.Memorial).payload.leaveMessageBlocks,
+        )
+    }
+
     @Test
     fun `메모리얼 수정도 기존 남기실 말씀을 다시 싣는다`() {
         val payload =
