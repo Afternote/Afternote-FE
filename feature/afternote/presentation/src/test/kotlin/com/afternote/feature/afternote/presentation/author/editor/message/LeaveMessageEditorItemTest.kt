@@ -12,8 +12,13 @@ import org.junit.Test
 
 class LeaveMessageEditorItemTest {
     @Test
+    fun `초기 상태에는 빈 입력 항목을 자동으로 만들지 않는다`() {
+        assertTrue(editorState().editorMessages.isEmpty())
+    }
+
+    @Test
     fun `본문 없는 말씀은 등록되지 않는다`() {
-        val state = editorState()
+        val state = editorStateWithMessage()
         val message = state.editorMessages.single()
         message.titleState.edit { replace(0, length, "제목만") }
 
@@ -25,7 +30,7 @@ class LeaveMessageEditorItemTest {
 
     @Test
     fun `말씀을 등록해도 빈 입력 항목을 자동으로 추가하지 않는다`() {
-        val state = editorState()
+        val state = editorStateWithMessage()
         val message = state.editorMessages.single()
         message.contentState.edit { replace(0, length, "전하고 싶은 말") }
 
@@ -41,11 +46,11 @@ class LeaveMessageEditorItemTest {
 
         state.addEditorMessage()
 
-        assertEquals(2, state.editorMessages.size)
-        assertEquals(LeaveMessageEditorItemState.EDITING, state.editorMessages.last().state)
+        assertEquals(1, state.editorMessages.size)
+        assertEquals(LeaveMessageEditorItemState.EDITING, state.editorMessages.single().state)
         assertTrue(
             state.editorMessages
-                .last()
+                .single()
                 .contentState.text
                 .isEmpty(),
         )
@@ -53,7 +58,7 @@ class LeaveMessageEditorItemTest {
 
     @Test
     fun `빈 입력 항목을 삭제해 등록된 말씀만 남아도 새 항목을 만들지 않는다`() {
-        val state = editorState()
+        val state = editorStateWithMessage()
         val registered = state.editorMessages.single()
         registered.contentState.edit { replace(0, length, "전하고 싶은 말") }
         state.registerEditorMessage(registered)
@@ -64,6 +69,24 @@ class LeaveMessageEditorItemTest {
 
         assertEquals(1, state.editorMessages.size)
         assertEquals(LeaveMessageEditorItemState.REGISTERED_COLLAPSED, state.editorMessages.single().state)
+    }
+
+    @Test
+    fun `마지막 입력 항목을 삭제하면 빈 목록이 된다`() {
+        val state = editorStateWithMessage()
+
+        state.removeEditorMessage(state.editorMessages.single())
+
+        assertTrue(state.editorMessages.isEmpty())
+    }
+
+    @Test
+    fun `빈 프리필은 빈 목록을 유지한다`() {
+        val state = editorStateWithMessage()
+
+        state.replaceEditorMessages(emptyList())
+
+        assertTrue(state.editorMessages.isEmpty())
     }
 
     @Test
@@ -146,4 +169,6 @@ class LeaveMessageEditorItemTest {
             deleteProcessingMethod = {},
             editProcessingMethod = { _, _ -> },
         )
+
+    private fun editorStateWithMessage() = editorState().apply { addEditorMessage() }
 }

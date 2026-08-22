@@ -49,8 +49,7 @@ class AfternoteEditorState(
     val addProcessingMethod: (text: String) -> Unit,
     val deleteProcessingMethod: (localId: Int) -> Unit,
     val editProcessingMethod: (localId: Int, newText: String) -> Unit,
-    val editorMessages: SnapshotStateList<LeaveMessageEditorItem> =
-        mutableStateListOf(LeaveMessageEditorItem()),
+    val editorMessages: SnapshotStateList<LeaveMessageEditorItem> = mutableStateListOf(),
 ) {
     var isCustomServiceDialogVisible by mutableStateOf(false)
         private set
@@ -114,30 +113,16 @@ class AfternoteEditorState(
     }
 
     fun removeEditorMessage(message: LeaveMessageEditorItem) {
-        if (editorMessages.size <= 1) return
         editorMessages.removeAll { it.id == message.id }
     }
 
     /** 저장 요청에 사용할 일반 값 목록을 현재 입력 상태에서 만든다. */
     fun currentEditorMessageBlocks(): List<EditorMessageTextBlock> = editorMessages.toTextBlocks()
 
-    /** 프리필처럼 화면 밖에서 받은 값으로 남기실 말씀 목록을 교체한다. */
+    /** 프리필 값으로 남기실 말씀 목록을 교체한다. */
     internal fun replaceEditorMessages(blocks: List<EditorMessageTextBlock>) {
         editorMessages.clear()
-        for (b in normalized) {
-            val msg =
-                LeaveMessageEditorItem(
-                    initialState =
-                        if (b.isRegistered) {
-                            LeaveMessageEditorItemState.REGISTERED_COLLAPSED
-                        } else {
-                            LeaveMessageEditorItemState.EDITING
-                        },
-                )
-            msg.titleState.edit { replace(0, length, b.title) }
-            msg.contentState.edit { replace(0, length, b.body) }
-            editorMessages.add(msg)
-        }
+        editorMessages.addAll(blocks.toLeaveMessageEditorItems())
     }
 
     /** 프리필을 폼에 적용하고 계정 정보와 남기실 말씀 입력 상태를 동기화한다. */
@@ -173,6 +158,76 @@ private fun List<LeaveMessageEditorItem>.toTextBlocks(): List<EditorMessageTextB
         )
     }
 
+private fun List<EditorMessageTextBlock>.toLeaveMessageEditorItems(): List<LeaveMessageEditorItem> =
+    map { block ->
+        createLeaveMessageEditorItem(
+            title = block.title,
+            body = block.body,
+            isRegistered = block.isRegistered,
+        )
+    }
+
+private fun createLeaveMessageEditorItem(
+    title: String,
+    body: String,
+    isRegistered: Boolean,
+): LeaveMessageEditorItem =
+    LeaveMessageEditorItem(
+        titleState = TextFieldState(title),
+        contentState = TextFieldState(body),
+        initialState =
+            if (isRegistered) {
+                LeaveMessageEditorItemState.REGISTERED_COLLAPSED
+            } else {
+                LeaveMessageEditorItemState.EDITING
+            },
+    )
+
+private const val SAVED_EDITOR_MESSAGE_PROPERTY_COUNT = 3
+private const val SAVED_EDITOR_MESSAGE_REGISTERED = "registered"
+private const val SAVED_EDITOR_MESSAGE_EDITING = "editing"
+
+/**
+ * 남기실 말씀의 텍스트와 등록 여부를 화면 재생성 및 프로세스 복원에 보존한다.
+ * 본문 펼침 여부는 일시적인 화면 상태라 등록 항목은 접힌 상태로 복원한다.
+ */
+internal val editorMessagesSaver: Saver<SnapshotStateList<LeaveMessageEditorItem>, Any> =
+    listSaver(
+        save = { messages ->
+            messages.flatMap { message ->
+                listOf(
+                    message.titleState.text.toString(),
+                    message.contentState.text.toString(),
+                    if (message.isRegistered) {
+                        SAVED_EDITOR_MESSAGE_REGISTERED
+                    } else {
+                        SAVED_EDITOR_MESSAGE_EDITING
+                    },
+                )
+            }
+        },
+        restore = { saved ->
+            if (saved.size % SAVED_EDITOR_MESSAGE_PROPERTY_COUNT != 0) return@listSaver null
+            val messages =
+                saved.chunked(SAVED_EDITOR_MESSAGE_PROPERTY_COUNT).map { values ->
+                    val isRegistered =
+                        when (values[2]) {
+                            SAVED_EDITOR_MESSAGE_REGISTERED -> true
+                            SAVED_EDITOR_MESSAGE_EDITING -> false
+                            else -> return@listSaver null
+                        }
+                    createLeaveMessageEditorItem(
+                        title = values[0],
+                        body = values[1],
+                        isRegistered = isRegistered,
+                    )
+                }
+            mutableStateListOf<LeaveMessageEditorItem>().apply {
+                addAll(messages)
+            }
+        },
+    )
+
 /** ViewModel의 폼과 Compose 입력 상태를 연결하는 [AfternoteEditorState]를 생성한다. */
 @Composable
 fun rememberAfternoteEditorState(
@@ -193,6 +248,10 @@ fun rememberAfternoteEditorState(
     val idState = rememberTextFieldState()
     val passwordState = rememberTextFieldState()
     val customServiceNameState = rememberTextFieldState()
+    val editorMessages =
+        rememberSaveable(saver = editorMessagesSaver) {
+            mutableStateListOf()
+        }
 
     return remember(idState, passwordState, customServiceNameState, editorMessages) {
         AfternoteEditorState(

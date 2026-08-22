@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -75,13 +74,16 @@ fun EditorMessageSection(
 
         messages.forEachIndexed { index, message ->
             key(message.id) {
-                EditorMessageItem(
-                    message = message,
-                    showDeleteButton = index > 0,
-                    onRegisterClick = { onRegisterClick(message) },
-                    onDeleteClick = { onDeleteClick(message) },
-                    focusManager = focusManager,
-                )
+                if (message.isRegistered) {
+                    RegisteredEditorMessageItem(message = message)
+                } else {
+                    EditorMessageItem(
+                        message = message,
+                        onRegisterClick = { onRegisterClick(message) },
+                        onDeleteClick = { onDeleteClick(message) },
+                        focusManager = focusManager,
+                    )
+                }
 
                 if (index < messages.lastIndex) {
                     Spacer(modifier = Modifier.height(8.dp))
@@ -102,10 +104,65 @@ fun EditorMessageSection(
     }
 }
 
+/** 내부 등록을 마친 말씀을 입력 라벨·액션 없이 보여주는 읽기 전용 블록. */
+@Composable
+private fun RegisteredEditorMessageItem(
+    message: LeaveMessageEditorItem,
+    modifier: Modifier = Modifier,
+) {
+    val toggleDescription =
+        stringResource(
+            if (message.isBodyVisible) {
+                R.string.afternote_editor_message_registered_collapse_content_description
+            } else {
+                R.string.afternote_editor_message_registered_expand_content_description
+            },
+        )
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(4.dp))
+                    .clickable(role = Role.Button, onClick = message::toggleBodyVisibility)
+                    .semantics {
+                        contentDescription = toggleDescription
+                    },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = message.titleState.text.toString(),
+                style = AfternoteDesign.typography.textField,
+                color = AfternoteDesign.colors.gray9,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(
+                painter = painterResource(R.drawable.feature_afternote_ic_dropdown_vector),
+                contentDescription = null,
+                tint = AfternoteDesign.colors.gray8,
+                modifier = Modifier.rotate(if (message.isBodyVisible) 180f else 0f),
+            )
+        }
+
+        if (message.isBodyVisible) {
+            Text(
+                text = message.contentState.text.toString(),
+                style = AfternoteDesign.typography.bodySmallR,
+                color = AfternoteDesign.colors.gray7,
+            )
+        }
+    }
+}
+
 @Composable
 private fun EditorMessageItem(
     message: LeaveMessageEditorItem,
-    showDeleteButton: Boolean,
     onRegisterClick: () -> Unit,
     onDeleteClick: () -> Unit,
     focusManager: FocusManager,
@@ -141,21 +198,19 @@ private fun EditorMessageItem(
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (showDeleteButton) {
-                Text(
-                    text = stringResource(R.string.afternote_editor_message_action_delete),
-                    style = AfternoteDesign.typography.bodySmallB,
-                    color = AfternoteDesign.colors.gray6,
-                    modifier =
-                        Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .clickable(role = Role.Button) {
-                                focusManager.clearFocus()
-                                onDeleteClick()
-                            }.padding(horizontal = 8.dp, vertical = 8.dp),
-                )
-                Spacer(Modifier.width(8.dp))
-            }
+            Text(
+                text = stringResource(R.string.afternote_editor_message_action_delete),
+                style = AfternoteDesign.typography.bodySmallB,
+                color = AfternoteDesign.colors.gray6,
+                modifier =
+                    Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .clickable(role = Role.Button) {
+                            focusManager.clearFocus()
+                            onDeleteClick()
+                        }.padding(horizontal = 8.dp, vertical = 8.dp),
+            )
+            Spacer(Modifier.width(8.dp))
 
             Text(
                 text = stringResource(R.string.afternote_editor_message_action_register),
@@ -229,7 +284,11 @@ private fun EditorMessageSectionPreview() {
                 listOf(
                     LeaveMessageEditorItem(
                         titleState = rememberTextFieldState("남긴말1"),
-                        contentState = rememberTextFieldState(),
+                        contentState =
+                            rememberTextFieldState(
+                                "언젠가 이 글을 읽을 당신에게 남기고 싶은 말입니다.\n늘 행복하길 바랍니다.",
+                            ),
+                        initialState = LeaveMessageEditorItemState.REGISTERED_EXPANDED,
                     ),
                     LeaveMessageEditorItem(
                         titleState = rememberTextFieldState(),

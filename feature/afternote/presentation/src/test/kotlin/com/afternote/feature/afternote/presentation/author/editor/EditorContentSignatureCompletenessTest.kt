@@ -81,6 +81,7 @@ class EditorContentSignatureCompletenessTest {
     fun `메시지 블록 타이핑이 지문에 반영된다`() {
         val state = newState()
         val form = EditorFormState()
+        state.addEditorMessage()
         val before = editorContentSignature(form, state)
         state.editorMessages
             .first()
