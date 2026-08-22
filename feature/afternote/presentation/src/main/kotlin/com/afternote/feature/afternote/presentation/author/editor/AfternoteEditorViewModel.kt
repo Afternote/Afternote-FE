@@ -31,7 +31,6 @@ import com.afternote.feature.afternote.presentation.author.editor.state.Afternot
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorUiState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
-import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationException
 import com.afternote.feature.afternote.presentation.author.editor.state.DEFAULT_EDITOR_MESSAGE_BLOCKS
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.author.editor.state.withLeaveMessageBlocks
@@ -613,10 +612,6 @@ internal fun Throwable.toAfternoteEditorError(): AfternoteEditorError =
                     AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED -> AfternoteValidationError.RECEIVERS_REQUIRED
                 }
             AfternoteEditorError.Validation(reason)
-        }
-
-        is AfternoteValidationException -> {
-            AfternoteEditorError.Validation(validationError)
         }
 
         is NetworkUnavailableException -> {
