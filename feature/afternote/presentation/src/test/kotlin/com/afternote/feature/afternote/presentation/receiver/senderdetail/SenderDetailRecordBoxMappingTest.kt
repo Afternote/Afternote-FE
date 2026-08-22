@@ -77,13 +77,11 @@ private fun serverEntry(
     verificationStatus: DeliveryVerificationStatus?,
     requestedAt: String? = null,
     approvedAt: String? = null,
-): SenderEntry =
-    SenderEntry(
-        id = "record-box:18",
-        name = "별칭",
+): SenderEntry.Server =
+    SenderEntry.Server(
         receiverId = 18L,
         authCode = "record-key",
-        realSenderName = "김혜성",
+        senderName = "김혜성",
         receiverName = "김지은",
         relation = "DAUGHTER",
         recordStatus = ReceivedRecordStatus.Stored,

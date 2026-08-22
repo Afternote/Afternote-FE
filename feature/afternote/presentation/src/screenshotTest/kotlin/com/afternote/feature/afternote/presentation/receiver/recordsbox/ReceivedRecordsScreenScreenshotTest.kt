@@ -27,10 +27,10 @@ internal fun receivedRecordsScreenFilledScreenshot() {
         ReceivedRecordsScreenContent(
             senders =
                 listOf(
-                    SenderEntry(id = "1", name = "김혜성"),
-                    SenderEntry(id = "2", name = "김혜성"),
-                    SenderEntry(id = "3", name = "김혜성"),
-                    SenderEntry(id = "4", name = "김혜성"),
+                    SenderEntry.Pending(id = "1", name = "김혜성"),
+                    SenderEntry.Pending(id = "2", name = "김혜성"),
+                    SenderEntry.Pending(id = "3", name = "김혜성"),
+                    SenderEntry.Pending(id = "4", name = "김혜성"),
                 ),
             onBackClick = {},
             onAddSenderClick = {},

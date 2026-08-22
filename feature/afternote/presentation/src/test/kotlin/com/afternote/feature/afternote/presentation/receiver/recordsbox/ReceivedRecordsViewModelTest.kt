@@ -57,7 +57,7 @@ class ReceivedRecordsViewModelTest {
     @Test
     fun `접근 코드 있음 - 이전 서버 카드와 미인증 로컬 카드를 서버 목록으로 완전히 교체`() {
         val registry = SenderRegistry()
-        registry.replaceServerEntries(listOf(serverEntry(id = "stale", receiverId = 1L)))
+        registry.replaceServerEntries(listOf(serverEntry(receiverId = 1L)))
         registry.register("이전 사용자의 미인증 카드")
         val recordBox = recordBox(receiverId = 18L)
         val repository = FakeReceiverRepository(initialAuthCode = "master-key", initialResult = Result.success(listOf(recordBox)))
@@ -65,12 +65,13 @@ class ReceivedRecordsViewModelTest {
         val viewModel = ReceivedRecordsViewModel(registry, repository, RecordingErrorReporter())
 
         val senders = viewModel.uiState.value.senders
+        val server = senders.single() as SenderEntry.Server
         assertEquals(listOf("record-box:18"), senders.map(SenderEntry::id))
-        assertEquals("김혜성", senders.first().name)
-        assertEquals("record-key-18", senders.first().authCode)
-        assertEquals(ReceivedRecordStatus.Stored, senders.first().recordStatus)
-        assertEquals(ReceivedRecordViewStatus.Viewable, senders.first().viewStatus)
-        assertEquals("2026-07-30T04:25:42", senders.first().approvedAt)
+        assertEquals("김혜성", server.name)
+        assertEquals("record-key-18", server.authCode)
+        assertEquals(ReceivedRecordStatus.Stored, server.recordStatus)
+        assertEquals(ReceivedRecordViewStatus.Viewable, server.viewStatus)
+        assertEquals("2026-07-30T04:25:42", server.approvedAt)
         assertFalse(viewModel.uiState.value.isLoading)
         assertFalse(viewModel.uiState.value.hasLoadError)
         assertEquals(1, repository.recordBoxesCallCount)
@@ -190,13 +191,16 @@ private fun recordBox(receiverId: Long = 18L): ReceivedRecordBox =
         approvedAt = "2026-07-30T04:25:42",
     )
 
-private fun serverEntry(
-    id: String,
-    receiverId: Long,
-): SenderEntry =
-    SenderEntry(
-        id = id,
-        name = "old",
+private fun serverEntry(receiverId: Long): SenderEntry.Server =
+    SenderEntry.Server(
         receiverId = receiverId,
+        authCode = "old-key",
+        senderName = "old",
+        receiverName = "old-receiver",
+        relation = "OTHER",
         recordStatus = ReceivedRecordStatus.Stored,
+        viewStatus = ReceivedRecordViewStatus.Requestable,
+        verificationStatus = null,
+        requestedAt = null,
+        approvedAt = null,
     )

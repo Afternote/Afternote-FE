@@ -45,9 +45,9 @@ sealed interface ReceiverRoute {
     /**
      * 열람 신청 흐름 — 본인 확인(2·3·4) + 마스터 키(5) + 서류 업로드(6·7·8) + 완료(9) 의 *nested graph 진입점*.
      *
-     * 흐름 전체 동안 유지되는 `senderId` 는 본 라우트에만 보유 — 자식 라우트들은 parent backStackEntry 의
-     * [com.afternote.feature.afternote.presentation.receiver.deliveryverification.DeliveryVerificationFlowViewModel]
-     * 에서 receive. 자식 라우트에서 senderId 를 nav arg 로 중복 박지 않는다.
+     * 시작 카드의 `senderId` 는 본 graph route 에만 두어 어느 상세 화면에서 시작한 흐름인지 식별한다.
+     * 실제 API 컨텍스트는 마스터 키 검증 성공 시 저장되는 접근 코드가 담당하며, 자식 라우트에
+     * `senderId` 를 중복 전달하지 않는다.
      *
      * 발신자 상세 "열람 신청하기" 진입점.
      */
@@ -58,7 +58,6 @@ sealed interface ReceiverRoute {
 
     /**
      * 본인 확인 안내 화면(design 2). 흐름 진입 시 본인 확인 캐시가 없으면 본 라우트로.
-     * senderId 는 부모 [DeliveryVerificationFlowRoute] 에서 받는다.
      */
     @Serializable
     data object IdentityVerificationIntroRoute : ReceiverRoute
@@ -75,7 +74,8 @@ sealed interface ReceiverRoute {
     /**
      * 열람 신청 1단계: 마스터 키 입력(5).
      *
-     * `verify(authCode)` 응답 성공 시 ReceiverIdentity 를 (부모 라우트의) senderId 카드에 결합하고 다음 단계로.
+     * `verify(authCode)` 성공 시 접근 코드를 저장하고 다음 단계로 이동한다. 받은 기록함은 저장된 코드로
+     * 서버 `record-boxes` 목록을 다시 불러온다.
      */
     @Serializable
     data object MasterKeyRoute : ReceiverRoute

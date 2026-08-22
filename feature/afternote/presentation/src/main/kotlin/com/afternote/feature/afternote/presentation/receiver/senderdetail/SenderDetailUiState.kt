@@ -14,10 +14,10 @@ sealed interface SenderDetailUiState {
     /**
      * 정상 로드 완료.
      *
-     * @property displayName 헤더에 노출할 발신자 표시명. `verify` 응답의 실명이 있으면 그것을, 없으면 사용자 별칭.
+     * @property displayName 서버 카드의 발신자명 또는 마스터 키 입력 전 로컬 카드의 사용자 별칭.
      * @property verification 열람 신청 상태 → 정보 박스 "상태" 행 + 하단 CTA 분기.
-     * @property requestedAt 신청일(yyyy.MM.dd.) — 서버 기록함의 `requestedAt` 또는 상태 조회 시각 포맷팅 결과.
-     *                            null 이면 "신청 기록이 없습니다".
+     * @property requestedAt 신청일(yyyy.MM.dd.) — 서버 기록함의 `requestedAt` 포맷팅 결과.
+     *                            null이면 "신청 기록이 없습니다".
      * @property approvedAt 승인일(yyyy.MM.dd.) — 서버 기록함이 내려준 승인 시각. null 이면 "승인 기록이 없습니다".
      */
     @Immutable
@@ -31,12 +31,6 @@ sealed interface SenderDetailUiState {
     ) : SenderDetailUiState
 
     data object SenderNotFound : SenderDetailUiState
-
-    /** 카드 별칭은 알지만 상태 조회 자체가 실패한 경우 — 정보 박스를 비워 둔 채 에러만 표시. */
-    @Immutable
-    data class StatusLoadFailed(
-        val displayName: String,
-    ) : SenderDetailUiState
 }
 
 sealed interface SenderVerificationState {
