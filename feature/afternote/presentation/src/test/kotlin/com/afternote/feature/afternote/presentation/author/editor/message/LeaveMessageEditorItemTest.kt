@@ -1,8 +1,11 @@
 package com.afternote.feature.afternote.presentation.author.editor.message
 
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.saveable.SaverScope
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
+import com.afternote.feature.afternote.presentation.author.editor.state.editorMessagesSaver
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -67,7 +70,7 @@ class LeaveMessageEditorItemTest {
     fun `등록된 말씀을 복원해도 빈 입력 항목을 자동으로 추가하지 않는다`() {
         val state = editorState()
 
-        state.syncEditorMessagesFromForm(
+        state.replaceEditorMessages(
             listOf(
                 EditorMessageTextBlock(
                     title = "가족에게",
@@ -79,6 +82,34 @@ class LeaveMessageEditorItemTest {
 
         assertEquals(1, state.editorMessages.size)
         assertEquals(LeaveMessageEditorItemState.REGISTERED_COLLAPSED, state.editorMessages.single().state)
+    }
+
+    @Test
+    fun `목록 Saver는 입력과 등록 여부를 복원하고 펼침 상태는 접는다`() {
+        val editing =
+            LeaveMessageEditorItem(
+                titleState = TextFieldState("작성 중"),
+                contentState = TextFieldState("초안"),
+            )
+        val registered =
+            LeaveMessageEditorItem(
+                titleState = TextFieldState("가족에게"),
+                contentState = TextFieldState("전하고 싶은 말"),
+            )
+        assertTrue(registered.tryRegister())
+        registered.toggleBodyVisibility()
+        val messages = mutableStateListOf(editing, registered)
+
+        val saved = editorMessagesSaver.run { SaverScope { true }.save(messages) }
+        val restored = requireNotNull(editorMessagesSaver.restore(requireNotNull(saved)))
+
+        assertEquals(2, restored.size)
+        assertEquals("작성 중", restored[0].titleState.text.toString())
+        assertEquals("초안", restored[0].contentState.text.toString())
+        assertEquals(LeaveMessageEditorItemState.EDITING, restored[0].state)
+        assertEquals("가족에게", restored[1].titleState.text.toString())
+        assertEquals("전하고 싶은 말", restored[1].contentState.text.toString())
+        assertEquals(LeaveMessageEditorItemState.REGISTERED_COLLAPSED, restored[1].state)
     }
 
     @Test
@@ -111,7 +142,6 @@ class LeaveMessageEditorItemTest {
             setMemorialThumbnail = {},
             deleteReceiver = {},
             replaceReceiversIfEmpty = {},
-            setLeaveMessageBlocks = {},
             addProcessingMethod = {},
             deleteProcessingMethod = {},
             editProcessingMethod = { _, _ -> },

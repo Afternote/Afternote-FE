@@ -56,14 +56,12 @@ internal fun buildOnRegisterClick(
     state: AfternoteEditorState,
 ): () -> Unit =
     {
-        state.setLeaveMessageBlocks(
-            state.currentEditorMessageBlocks(),
-        )
         // 폼 스냅샷은 한 번만 읽는다 — 필드마다 다시 읽으면 조립 도중 갱신이 끼어 서로 다른 시점의 값이 섞인다.
         val form = state.currentForm()
         val payload =
             SaveAfternotePayloadBuilder.build(
                 form = form,
+                messageBlocks = state.currentEditorMessageBlocks(),
                 accountId =
                     state.idState.text
                         .toString(),
@@ -114,7 +112,6 @@ internal fun AfternoteEditorNavigation(
             setMemorialThumbnail = editViewModel::setMemorialThumbnail,
             deleteReceiver = editViewModel::deleteReceiver,
             replaceReceiversIfEmpty = editViewModel::replaceReceiversIfEmpty,
-            setLeaveMessageBlocks = editViewModel::setLeaveMessageBlocks,
             addProcessingMethod = editViewModel::addProcessingMethod,
             deleteProcessingMethod = editViewModel::deleteProcessingMethod,
             editProcessingMethod = editViewModel::editProcessingMethod,

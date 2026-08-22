@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
 import com.afternote.feature.afternote.domain.AfternoteType
+import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import java.time.LocalDate
@@ -20,12 +21,14 @@ object SaveAfternotePayloadBuilder {
 
     /**
      * @param form 폼 SSOT 스냅샷
+     * @param messageBlocks 현재 남기실 말씀 입력에서 만든 저장용 값
      * @param accountId 작성자 계정 ID (UI [androidx.compose.foundation.text.input.TextFieldState] 에서 추출)
      * @param password 작성자 계정 비밀번호 (UI 텍스트에서 추출)
      * @param date 저장 날짜. 기본값 [LocalDate.now] — 테스트에선 결정적 값 주입 가능.
      */
     fun build(
         form: EditorFormState,
+        messageBlocks: List<EditorMessageTextBlock>,
         accountId: String,
         password: String,
         date: LocalDate = LocalDate.now(),
@@ -42,7 +45,7 @@ object SaveAfternotePayloadBuilder {
             date = date.format(dateFormatter),
             accountId = accountId,
             password = password,
-            messageBlocks = form.leaveMessageBlocks,
+            messageBlocks = messageBlocks,
             processingMethods = methods,
         )
     }

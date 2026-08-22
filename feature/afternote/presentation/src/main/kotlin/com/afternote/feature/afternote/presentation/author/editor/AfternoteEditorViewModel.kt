@@ -22,7 +22,6 @@ import com.afternote.feature.afternote.domain.usecase.editor.MemorialVideoSaveEx
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
 import com.afternote.feature.afternote.presentation.author.editor.mapper.toAfternoteEditorReceivers
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
-import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
@@ -32,9 +31,7 @@ import com.afternote.feature.afternote.presentation.author.editor.state.Afternot
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationException
-import com.afternote.feature.afternote.presentation.author.editor.state.DEFAULT_EDITOR_MESSAGE_BLOCKS
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
-import com.afternote.feature.afternote.presentation.author.editor.state.withLeaveMessageBlocks
 import com.afternote.feature.afternote.presentation.author.editor.state.withMemorialPhoto
 import com.afternote.feature.afternote.presentation.author.editor.state.withMemorialPlaylistSongs
 import com.afternote.feature.afternote.presentation.author.editor.state.withMemorialThumbnail
@@ -80,13 +77,6 @@ private data class ProcessingMethodSnap(
     val text: String,
 )
 
-@Serializable
-private data class MessageBlockSnap(
-    val title: String = "",
-    val body: String = "",
-    val isRegistered: Boolean = false,
-)
-
 /**
  * [SavedStateHandle]에 JSON으로 넣는 폼 스냅샷. 번들 전체 크기는 대략 500KB~1MB를 넘기지 않도록 설계해야 하며,
  * 그렇지 않으면 [android.os.TransactionTooLargeException]이 날 수 있다. 큰 Base64/data URL은 폼에 넣지 말고 URL·URI 문자열만 저장한다.
@@ -102,29 +92,13 @@ private data class EditorFormSnapshot(
     val memorialThumbnailUrl: String? = null,
     val memorialPhotoUrl: String? = null,
     val memorialPlaylistSongs: List<Song> = emptyList(),
-    val editorMessages: List<MessageBlockSnap> = emptyList(),
 ) {
-    fun toEditorFormState(restoreGeneration: Long): EditorFormState {
-        val blocks: List<EditorMessageTextBlock> =
-            if (editorMessages.isEmpty()) {
-                DEFAULT_EDITOR_MESSAGE_BLOCKS
-            } else {
-                editorMessages.map {
-                    EditorMessageTextBlock(
-                        title = it.title,
-                        body = it.body,
-                        isRegistered = it.isRegistered,
-                    )
-                }
-            }
-        return EditorFormState(
+    fun toEditorFormState(): EditorFormState =
+        EditorFormState(
             afternoteEditReceivers =
                 receivers.map { AfternoteEditorReceiver(id = it.id, name = it.name, label = it.label) },
-            leaveMessageBlocks = blocks,
-            leaveMessageBlocksRestoreGeneration = restoreGeneration,
             typeForm = toTypeForm(type),
         )
-    }
 
     /** 다른 카테고리 칸에 값이 남아 있어도 복원 단계에서 버려진다. */
     private fun toTypeForm(type: AfternoteType): AfternoteTypeForm {
@@ -175,14 +149,6 @@ private data class EditorFormSnapshot(
                 memorialThumbnailUrl = form.memorialThumbnailUrl,
                 memorialPhotoUrl = form.memorialPhotoUrl,
                 memorialPlaylistSongs = form.memorialPlaylistSongs,
-                editorMessages =
-                    form.leaveMessageBlocks.map {
-                        MessageBlockSnap(
-                            title = it.title,
-                            body = it.body,
-                            isRegistered = it.isRegistered,
-                        )
-                    },
             )
     }
 }
@@ -190,8 +156,9 @@ private data class EditorFormSnapshot(
 /**
  * 애프터노트 생성/수정 ViewModel.
  *
- * **SSOT:** 에디터 flow 전체의 폼은 [internalState] 안의 [EditorFormState]다.
- * 추억 플레이리스트 화면과 곡 추가 화면도 같은 flow-scoped ViewModel을 사용한다.
+ * **SSOT:** 일반 폼은 [internalState]의 [EditorFormState], Compose 텍스트 입력은
+ * [com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState]가 소유한다.
+ * 추억 플레이리스트 화면과 곡 추가 화면은 같은 flow-scoped ViewModel의 폼을 사용한다.
  *
  * **경계:** Compose UI 객체(`TextFieldState`·`SnapshotStateList`·파사드)를 들지 않고 Retrofit 타입도 알지 않는다 —
  * 저장 API 의 HTTP·에러 바디 해석은 [AfternoteRepository] 구현이 도메인 예외로 변환한다.
@@ -286,8 +253,6 @@ class AfternoteEditorViewModel
 
         fun replaceReceiversIfEmpty(receivers: List<AfternoteEditorReceiver>) = mutateForm { it.withReceiversReplacedIfEmpty(receivers) }
 
-        fun setLeaveMessageBlocks(blocks: List<EditorMessageTextBlock>) = mutateForm { it.withLeaveMessageBlocks(blocks) }
-
         fun applyPrefill(prefill: EditorFormPrefill) = mutateForm { it.withPrefillApplied(prefill) }
 
         fun addProcessingMethod(text: String) = mutateForm { it.withProcessingMethodAdded(text) }
@@ -319,7 +284,7 @@ class AfternoteEditorViewModel
             return runCatching {
                 formSnapshotJson
                     .decodeFromString(EditorFormSnapshot.serializer(), raw)
-                    .toEditorFormState(restoreGeneration = System.nanoTime())
+                    .toEditorFormState()
             }.getOrElse { defaultForm }
         }
 

@@ -2,7 +2,6 @@ package com.afternote.feature.afternote.presentation.author.editor.state
 
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
-import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodItem
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
@@ -11,9 +10,6 @@ import com.afternote.feature.afternote.presentation.author.editor.receiver.model
  * 폼 갱신 규칙을 담은 순수 변환 함수 모음. SSOT 소유자(ViewModel)와 Preview 용 자체 SSOT가
  * 같은 규칙을 공유하기 위한 자리다 — 파사드는 이 함수들을 직접 호출하지 않고 소유자 콜백을 거친다.
  */
-internal fun normalizeEditorMessageBlocks(blocks: List<EditorMessageTextBlock>): List<EditorMessageTextBlock> =
-    blocks.ifEmpty { DEFAULT_EDITOR_MESSAGE_BLOCKS }
-
 private inline fun EditorFormState.mapMemorial(block: (AfternoteTypeForm.Memorial) -> AfternoteTypeForm.Memorial): EditorFormState {
     val memorial = typeForm as? AfternoteTypeForm.Memorial ?: return this
     return copy(typeForm = block(memorial))
@@ -71,13 +67,9 @@ internal fun EditorFormState.withReceiversReplacedIfEmpty(receivers: List<Aftern
     return copy(afternoteEditReceivers = receivers)
 }
 
-internal fun EditorFormState.withLeaveMessageBlocks(blocks: List<EditorMessageTextBlock>): EditorFormState =
-    copy(leaveMessageBlocks = normalizeEditorMessageBlocks(blocks))
-
 internal fun EditorFormState.withPrefillApplied(prefill: EditorFormPrefill): EditorFormState =
     copy(
         afternoteEditReceivers = prefill.receivers,
-        leaveMessageBlocks = normalizeEditorMessageBlocks(prefill.leaveMessageBlocks),
         typeForm = AfternoteTypeForm.fromPrefill(prefill.content),
     )
 

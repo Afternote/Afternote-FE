@@ -10,7 +10,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -18,7 +17,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
@@ -34,11 +32,6 @@ import com.afternote.feature.afternote.presentation.author.editor.state.Afternot
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.debounce
-import kotlin.time.Duration.Companion.milliseconds
-
-private const val EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE_MS = 1_000L
 
 /**
  * 애프터노트 수정/작성 화면
@@ -50,11 +43,10 @@ private const val EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE_MS = 1_000L
  * - 계정 정보 입력 (아이디, 비밀번호)
  * - 계정 처리 방법 선택 (라디오 버튼)
  * - 처리 방법 리스트 (체크박스)
- * - 남기실 말씀 (멀티라인 텍스트 필드; Process Death 대비 [snapshotFlow] + debounce로 폼 동기화)
+ * - 남기실 말씀 (동적 텍스트 입력 목록)
  *
  * 추모 곡 목록은 [EditorFormState]의 추모 전용 폼에 동기화된 스냅샷으로 표시한다.
  */
-@OptIn(FlowPreview::class)
 @Composable
 fun AfternoteEditorScreen(
     form: EditorFormState,
@@ -69,36 +61,6 @@ fun AfternoteEditorScreen(
 ) {
     val focusManager = LocalFocusManager.current
     val snackbarHostState = remember { SnackbarHostState() }
-
-    // 화면 재진입 시 폼 SSOT의 leaveMessageBlocks를 휘발성 SnapshotStateList<LeaveMessageEditorItem>에 한 번 동기화한다.
-    // (TextFieldState는 rememberSaveable로 복원되지만 LeaveMessageEditorItem 목록은 비저장 상태라 폼에서 재구성한다.)
-    LaunchedEffect(state) {
-        state.syncEditorMessagesFromForm(form.leaveMessageBlocks)
-    }
-
-    LaunchedEffect(form.leaveMessageBlocksRestoreGeneration) {
-        if (form.leaveMessageBlocksRestoreGeneration != 0L) {
-            state.syncEditorMessagesFromForm(form.leaveMessageBlocks)
-        }
-    }
-
-    // 타이핑 자동 저장: 각 블록의 TextFieldState(UI 소유)를 snapshotFlow 로 관찰해 순수 문자열
-    // 스냅샷으로 변환하고, 1s 디바운스로 묶어 폼 SSOT 에 반영한다. key=size 라 블록 추가/삭제 시
-    // 재시작해 새 블록 상태도 관찰에 편입. 디바운스 창 안의 이탈 손실은 아래 DisposableEffect 가 맡는다.
-    LaunchedEffect(state.editorMessages.size) {
-        snapshotFlow { state.currentEditorMessageBlocks() }
-            .debounce(EDITOR_MESSAGES_SNAPSHOT_DEBOUNCE_MS.milliseconds)
-            .collect { blocks ->
-                state.setLeaveMessageBlocks(blocks)
-            }
-    }
-
-    // 화면 이탈 시 디바운스 윈도우(1s) 안의 미반영 타이핑이 폼 SSOT에 도달하지 못하는 손실을 방지한다.
-    DisposableEffect(state) {
-        onDispose {
-            state.setLeaveMessageBlocks(state.currentEditorMessageBlocks())
-        }
-    }
 
     LaunchedEffect(snackbarMessage) {
         snackbarMessage?.let { message ->
@@ -115,8 +77,8 @@ fun AfternoteEditorScreen(
     }
 
     // 작성 도중 이탈 가드: 진입 시점 스냅샷 대비 변경이 있으면 뒤로가기 시 이탈 확인 팝업을 띄운다.
-    // 입력이 debounce 로 휘발성 폼 상태에만 반영되어 pop 시 소실되기 때문. '내용 존재'가 아니라 '변경' 기준인
-    // 이유는 수정 모드(prefill)에서 무변경 이탈에도 매번 경고하게 되어서다. 스냅샷은 프리필 적용 완료
+    // '내용 존재'가 아니라 '변경' 기준인 이유는 수정 모드(prefill)에서 무변경 이탈에도 매번 경고하게
+    // 되어서다. 스냅샷은 프리필 적용 완료
     // (isPrefillLoading=false 전환) 후 1회 캡처하고, 하위 화면 왕복·프로세스 복원에도 유지되도록 saveable 로 둔다.
     var showExitConfirm by rememberSaveable { mutableStateOf(false) }
     var baselineContentSignature by rememberSaveable { mutableStateOf<String?>(null) }
@@ -224,10 +186,6 @@ internal fun editorContentSignature(
 ): String {
     val comparableForm =
         form.copy(
-            // 자동 파생값 — 사용자 편집이 아니므로 판정 제외.
-            leaveMessageBlocksRestoreGeneration = 0L,
-            // 남기실 말씀은 debounce 전 라이브 입력(state.editorMessages)으로 판정하므로 스냅샷은 제외.
-            leaveMessageBlocks = emptyList(),
             // 카테고리 전용 입력은 아래에서 따로 낸다 — 전용 필드가 0개인 ESTATE 를 중립 원소로 쓴다.
             typeForm = AfternoteTypeForm.Estate,
         )

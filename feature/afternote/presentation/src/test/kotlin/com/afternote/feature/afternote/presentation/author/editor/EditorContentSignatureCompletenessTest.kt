@@ -43,7 +43,6 @@ class EditorContentSignatureCompletenessTest {
             setMemorialThumbnail = {},
             deleteReceiver = {},
             replaceReceiversIfEmpty = {},
-            setLeaveMessageBlocks = {},
             addProcessingMethod = {},
             deleteProcessingMethod = {},
             editProcessingMethod = { _, _ -> },

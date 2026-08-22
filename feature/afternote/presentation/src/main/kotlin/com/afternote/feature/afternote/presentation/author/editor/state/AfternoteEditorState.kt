@@ -9,6 +9,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.afternote.feature.afternote.domain.AfternoteType
@@ -43,14 +46,12 @@ class AfternoteEditorState(
     val setMemorialThumbnail: (String?) -> Unit,
     val deleteReceiver: (receiverId: String) -> Unit,
     val replaceReceiversIfEmpty: (List<AfternoteEditorReceiver>) -> Unit,
-    /** 남기실 말씀 입력값을 폼에 반영하되 복원 세대는 변경하지 않는다. */
-    val setLeaveMessageBlocks: (List<EditorMessageTextBlock>) -> Unit,
     val addProcessingMethod: (text: String) -> Unit,
     val deleteProcessingMethod: (localId: Int) -> Unit,
     val editProcessingMethod: (localId: Int, newText: String) -> Unit,
+    val editorMessages: SnapshotStateList<LeaveMessageEditorItem> =
+        mutableStateListOf(LeaveMessageEditorItem()),
 ) {
-    val editorMessages: SnapshotStateList<LeaveMessageEditorItem> get() = ui.editorMessages
-
     var isCustomServiceDialogVisible by mutableStateOf(false)
         private set
 
@@ -81,7 +82,10 @@ class AfternoteEditorState(
         }
     }
 
-    fun dismissDialog() = ui.dismissDialog()
+    fun dismissCustomServiceDialog() {
+        isCustomServiceDialogVisible = false
+        customServiceNameState.edit { replace(0, length, "") }
+    }
 
     fun onAddCustomService() {
         val serviceName =
@@ -90,7 +94,7 @@ class AfternoteEditorState(
                 .trim()
         if (serviceName.isEmpty()) return
         setService(serviceName)
-        dismissDialog()
+        dismissCustomServiceDialog()
     }
 
     fun addReceiverById(
@@ -101,30 +105,24 @@ class AfternoteEditorState(
         addReceiverIfAbsent(receiverId.toString(), name, relation)
     }
 
-    // 폼은 입력 디바운스로 UI보다 늦을 수 있으므로 목록 변경 후 현재 UI 목록 전체를 반영한다.
     fun addEditorMessage() {
         editorMessages.add(LeaveMessageEditorItem())
-        setLeaveMessageBlocks(currentEditorMessageBlocks())
     }
 
     fun registerEditorMessage(message: LeaveMessageEditorItem) {
-        if (ui.registerEditorMessage(message)) {
-            setLeaveMessageBlocks(currentEditorMessageBlocks())
-        }
+        message.tryRegister()
     }
 
     fun removeEditorMessage(message: LeaveMessageEditorItem) {
         if (editorMessages.size <= 1) return
         editorMessages.removeAll { it.id == message.id }
-        setLeaveMessageBlocks(currentEditorMessageBlocks())
     }
 
-    /** 현재 남기실 말씀 UI 목록을 폼에 반영할 값으로 변환한다. */
+    /** 저장 요청에 사용할 일반 값 목록을 현재 입력 상태에서 만든다. */
     fun currentEditorMessageBlocks(): List<EditorMessageTextBlock> = editorMessages.toTextBlocks()
 
-    /** 폼의 남기실 말씀을 입력 상태로 복원한다. */
-    fun syncEditorMessagesFromForm(blocks: List<EditorMessageTextBlock>) {
-        val normalized = normalizeEditorMessageBlocks(blocks)
+    /** 프리필처럼 화면 밖에서 받은 값으로 남기실 말씀 목록을 교체한다. */
+    internal fun replaceEditorMessages(blocks: List<EditorMessageTextBlock>) {
         editorMessages.clear()
         for (b in normalized) {
             val msg =
@@ -162,7 +160,7 @@ class AfternoteEditorState(
             }
         idState.edit { replace(0, length, credentials?.id.orEmpty()) }
         passwordState.edit { replace(0, length, credentials?.password.orEmpty()) }
-        syncEditorMessagesFromForm(prefill.leaveMessageBlocks)
+        replaceEditorMessages(prefill.leaveMessageBlocks)
     }
 }
 
@@ -188,7 +186,6 @@ fun rememberAfternoteEditorState(
     setMemorialThumbnail: (String?) -> Unit,
     deleteReceiver: (receiverId: String) -> Unit,
     replaceReceiversIfEmpty: (List<AfternoteEditorReceiver>) -> Unit,
-    setLeaveMessageBlocks: (List<EditorMessageTextBlock>) -> Unit,
     addProcessingMethod: (text: String) -> Unit,
     deleteProcessingMethod: (localId: Int) -> Unit,
     editProcessingMethod: (localId: Int, newText: String) -> Unit,
@@ -197,7 +194,7 @@ fun rememberAfternoteEditorState(
     val passwordState = rememberTextFieldState()
     val customServiceNameState = rememberTextFieldState()
 
-    return remember(idState, passwordState, customServiceNameState) {
+    return remember(idState, passwordState, customServiceNameState, editorMessages) {
         AfternoteEditorState(
             idState = idState,
             passwordState = passwordState,
@@ -212,10 +209,10 @@ fun rememberAfternoteEditorState(
             setMemorialThumbnail = setMemorialThumbnail,
             deleteReceiver = deleteReceiver,
             replaceReceiversIfEmpty = replaceReceiversIfEmpty,
-            setLeaveMessageBlocks = setLeaveMessageBlocks,
             addProcessingMethod = addProcessingMethod,
             deleteProcessingMethod = deleteProcessingMethod,
             editProcessingMethod = editProcessingMethod,
+            editorMessages = editorMessages,
         )
     }
 }
@@ -239,7 +236,6 @@ fun rememberAfternoteEditorState(): AfternoteEditorState {
         setMemorialThumbnail = { dataUrl -> mutate { it.withMemorialThumbnail(dataUrl) } },
         deleteReceiver = { receiverId -> mutate { it.withReceiverDeleted(receiverId) } },
         replaceReceiversIfEmpty = { receivers -> mutate { it.withReceiversReplacedIfEmpty(receivers) } },
-        setLeaveMessageBlocks = { blocks -> mutate { it.withLeaveMessageBlocks(blocks) } },
         addProcessingMethod = { text -> mutate { it.withProcessingMethodAdded(text) } },
         deleteProcessingMethod = { localId -> mutate { it.withProcessingMethodDeleted(localId) } },
         editProcessingMethod = { localId, newText ->

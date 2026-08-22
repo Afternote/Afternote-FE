@@ -20,6 +20,21 @@ import org.junit.Test
  */
 class EditorLeaveMessageBlocksTest {
     @Test
+    fun `저장 빌더는 별도로 받은 현재 말씀을 payload에 싣는다`() {
+        val blocks = listOf(EditorMessageTextBlock(title = "가족에게", body = "잘 부탁해"))
+
+        val payload =
+            SaveAfternotePayloadBuilder.build(
+                form = EditorFormState(typeForm = AfternoteTypeForm.Social(selectedService = "인스타그램")),
+                messageBlocks = blocks,
+                accountId = "account",
+                password = "password",
+            )
+
+        assertEquals(blocks, payload.messageBlocks)
+    }
+
+    @Test
     fun `아무것도 안 쓴 빈 칸은 전송에서 제외된다`() {
         val blocks =
             createSocial(
