@@ -1,7 +1,9 @@
 package com.afternote.feature.afternote.presentation.receiver.recordsbox
 
 import androidx.compose.runtime.Immutable
-import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
+import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordStatus
+import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordVerification
+import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordViewStatus
 
 /**
  * 받은 기록함 카드 한 줄의 표시 데이터.

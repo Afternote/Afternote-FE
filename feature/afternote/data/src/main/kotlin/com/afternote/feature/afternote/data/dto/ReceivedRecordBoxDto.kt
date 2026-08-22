@@ -109,4 +109,4 @@ internal enum class VerificationContractViolation {
 
 internal class ReceivedRecordBoxContractException(
     val violation: VerificationContractViolation,
-) : IllegalStateException("Invalid received record verification contract: $violation")
+) : RuntimeException("Invalid received record verification contract: $violation")

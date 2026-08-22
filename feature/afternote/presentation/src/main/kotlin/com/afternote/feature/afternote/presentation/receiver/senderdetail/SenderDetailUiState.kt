@@ -14,7 +14,7 @@ sealed interface SenderDetailUiState {
     /**
      * 정상 로드 완료.
      *
-     * @property displayName 서버 카드의 발신자명 또는 마스터 키 입력 전 로컬 카드의 사용자 별칭.
+     * @property displayName 받은 기록함의 발신자명 또는 마스터 키 입력 전 로컬 항목의 사용자 별칭.
      * @property verification 열람 신청 상태 → 정보 박스 "상태" 행 + 하단 CTA 분기.
      * @property requestedAt 신청일(yyyy.MM.dd.) — 서버 기록함의 `requestedAt` 포맷팅 결과.
      *                            null이면 "신청 기록이 없습니다".
