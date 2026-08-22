@@ -23,7 +23,6 @@ import com.afternote.feature.afternote.presentation.receiver.navigation.model.Re
 import com.afternote.feature.afternote.presentation.receiver.playlist.MemorialPlaylistScreen
 import com.afternote.feature.afternote.presentation.receiver.playlist.ReceiverMemorialPlaylistViewModel
 import com.afternote.feature.afternote.presentation.receiver.recordsbox.ReceivedRecordsScreen
-import com.afternote.feature.afternote.presentation.receiver.recordsbox.SenderRegistrationScreen
 import com.afternote.feature.afternote.presentation.receiver.senderdetail.SenderDetailScreen
 
 /**
@@ -43,23 +42,15 @@ fun NavGraphBuilder.receiverNavGraph(
         receiverComposable<ReceiverRoute.ReceivedRecordsRoute> {
             ReceivedRecordsScreen(
                 onBackClick = actions::popBack,
-                onAddSenderClick = actions::navigateToSenderRegistration,
-                onSenderClick = { sender -> actions.navigateToSenderDetail(sender.id) },
-            )
-        }
-
-        receiverComposable<ReceiverRoute.SenderRegistrationRoute> {
-            SenderRegistrationScreen(
-                onBackClick = actions::popBack,
-                onRegistered = actions::popBack,
+                onSenderClick = { sender -> actions.navigateToSenderDetail(sender.receiverId) },
             )
         }
 
         receiverComposable<ReceiverRoute.SenderDetailRoute> { backStackEntry ->
-            val senderId = backStackEntry.toRoute<ReceiverRoute.SenderDetailRoute>().senderId
+            val receiverId = backStackEntry.toRoute<ReceiverRoute.SenderDetailRoute>().receiverId
             SenderDetailScreen(
                 onBackClick = actions::popBack,
-                onRequestVerification = { actions.navigateToDeliveryVerificationFlow(senderId) },
+                onRequestVerification = { actions.navigateToDeliveryVerificationFlow(receiverId) },
                 onOpenReceiverHome = actions::navigateToReceiverHome,
             )
         }
