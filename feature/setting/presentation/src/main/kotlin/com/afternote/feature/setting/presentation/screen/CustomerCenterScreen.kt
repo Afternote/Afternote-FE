@@ -15,10 +15,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -28,6 +34,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.R
+import kotlinx.coroutines.launch
 
 @Composable
 fun CustomerCenterScreen(
@@ -39,8 +46,13 @@ fun CustomerCenterScreen(
     onFaqClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    val emailCopiedMessage = stringResource(R.string.customer_center_email_copied)
+
     Scaffold(
         modifier = modifier,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             DetailTopBar(
                 title = stringResource(R.string.customer_center_title),
@@ -76,7 +88,12 @@ fun CustomerCenterScreen(
             CustomerCenterMenuItem(
                 title = stringResource(R.string.customer_center_email_inquiry),
                 description = stringResource(R.string.customer_center_email_address),
-                onClick = onEmailInquiryClick,
+                onClick = {
+                    onEmailInquiryClick()
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(emailCopiedMessage)
+                    }
+                },
             )
 
             CustomerCenterSectionTitle(text = stringResource(R.string.customer_center_recipient_section))
@@ -106,7 +123,14 @@ private fun BusinessHoursCard(modifier: Modifier = Modifier) {
             modifier
                 .fillMaxWidth()
                 .background(
-                    color = AfternoteDesign.colors.gray2,
+                    brush =
+                        Brush.radialGradient(
+                            colorStops =
+                                arrayOf(
+                                    0.7f to Color(0xFFB7C4CD),
+                                    1f to Color(0xFFECF0F3),
+                                ),
+                        ),
                     shape = RoundedCornerShape(8.dp),
                 ).padding(horizontal = 20.dp, vertical = 18.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -191,7 +215,7 @@ private fun CustomerCenterMenuItem(
             }
             Spacer(modifier = Modifier.weight(1f))
             RightArrowIcon(
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(12.dp),
                 tint = AfternoteDesign.colors.gray7,
             )
         }

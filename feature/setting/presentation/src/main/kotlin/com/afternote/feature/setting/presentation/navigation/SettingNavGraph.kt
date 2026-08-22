@@ -1,7 +1,13 @@
 package com.afternote.feature.setting.presentation.navigation
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
@@ -10,6 +16,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import androidx.navigation.toRoute
 import com.afternote.core.ui.Route
+import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.PinSetupStep
 import com.afternote.feature.setting.presentation.screen.AppLockSetupScreen
 import com.afternote.feature.setting.presentation.screen.ConnectedAccountsScreen
@@ -190,14 +197,29 @@ fun NavGraphBuilder.settingNavGraph(
         }
 
         composable<SettingRoute.CustomerCenterRoute> {
+            val context = LocalContext.current
+            val phoneUri = context.getString(R.string.customer_center_phone_uri)
+            val emailAddress = context.getString(R.string.customer_center_email_address)
             CustomerCenterScreen(
                 onBackClick = actions::onCustomerCenterBack,
-                onPhoneInquiryClick = {},
+                onPhoneInquiryClick = { context.openDialer(phoneUri) },
                 onOneToOneInquiryClick = {},
-                onEmailInquiryClick = {},
+                onEmailInquiryClick = { context.copyToClipboard(emailAddress) },
                 onRecipientInquiryClick = {},
                 onFaqClick = {},
             )
         }
     }
+}
+
+private fun Context.openDialer(phoneUri: String) {
+    val intent = Intent(Intent.ACTION_DIAL, Uri.parse(phoneUri))
+    if (intent.resolveActivity(packageManager) != null) {
+        startActivity(intent)
+    }
+}
+
+private fun Context.copyToClipboard(text: String) {
+    val clipboardManager = getSystemService(ClipboardManager::class.java)
+    clipboardManager.setPrimaryClip(ClipData.newPlainText("email", text))
 }
