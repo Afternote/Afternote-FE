@@ -474,14 +474,13 @@ internal fun collectTextBlockContents(
 
 @Composable
 private fun TimeLetterWriteError.message(): String =
-    stringResource(
-        when (this) {
-            TimeLetterWriteError.SEND_DATE_REQUIRED -> R.string.timeletter_write_send_date_required
-            TimeLetterWriteError.LOAD_FAILED -> R.string.timeletter_write_load_failed
-            TimeLetterWriteError.RECIPIENT_REQUIRED -> R.string.timeletter_write_recipient_required
-            TimeLetterWriteError.SAVE_FAILED -> R.string.timeletter_write_save_failed
-        },
-    )
+    when (this) {
+        TimeLetterWriteError.SendDateRequired -> stringResource(R.string.timeletter_write_send_date_required)
+        TimeLetterWriteError.LoadFailed -> stringResource(R.string.timeletter_write_load_failed)
+        TimeLetterWriteError.RecipientRequired -> stringResource(R.string.timeletter_write_recipient_required)
+        TimeLetterWriteError.SaveFailed -> stringResource(R.string.timeletter_write_save_failed)
+        is TimeLetterWriteError.ServerRejection -> message
+    }
 
 @Composable
 private fun TextBlockItem(

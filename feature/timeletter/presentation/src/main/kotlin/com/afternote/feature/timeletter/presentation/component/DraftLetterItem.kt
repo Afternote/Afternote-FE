@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.button.AfternoteCircularCheckbox
@@ -33,10 +34,26 @@ fun DraftLetterItem(
     isSelected: Boolean = false,
     onToggle: () -> Unit = {},
 ) {
-    val receiverNames =
+    val resolvedReceiverNames =
         draft.receiverIds
-            .map(receiverNameMap::getValue)
-            .joinToString(", ")
+            .mapNotNull(receiverNameMap::get)
+    val receiverLabel =
+        when {
+            draft.receiverIds.isEmpty() -> {
+                stringResource(R.string.timeletter_draft_recipient_unspecified)
+            }
+
+            resolvedReceiverNames.size != draft.receiverIds.size -> {
+                stringResource(R.string.timeletter_draft_recipient_count, draft.receiverIds.size)
+            }
+
+            else -> {
+                stringResource(
+                    R.string.timeletter_draft_recipient_names,
+                    resolvedReceiverNames.joinToString(", "),
+                )
+            }
+        }
 
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
@@ -66,11 +83,14 @@ fun DraftLetterItem(
             ) {
                 Row(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = stringResource(R.string.timeletter_draft_recipient_names, receiverNames),
+                        text = receiverLabel,
+                        modifier = Modifier.weight(1f),
                         style = AfternoteDesign.typography.footnoteCaption,
                         color = AfternoteDesign.colors.gray6,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
-                    Spacer(modifier = Modifier.weight(1f))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text =
                             stringResource(

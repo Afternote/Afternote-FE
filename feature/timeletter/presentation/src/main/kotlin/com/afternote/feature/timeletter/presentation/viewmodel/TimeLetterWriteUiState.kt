@@ -26,11 +26,18 @@ data class TimeLetterWriteUiState(
     val showFreePlanLimitPopup: Boolean = false,
 )
 
-enum class TimeLetterWriteError {
-    SEND_DATE_REQUIRED,
-    LOAD_FAILED,
-    RECIPIENT_REQUIRED,
-    SAVE_FAILED,
+sealed interface TimeLetterWriteError {
+    data object SendDateRequired : TimeLetterWriteError
+
+    data object LoadFailed : TimeLetterWriteError
+
+    data object RecipientRequired : TimeLetterWriteError
+
+    data object SaveFailed : TimeLetterWriteError
+
+    data class ServerRejection(
+        val message: String,
+    ) : TimeLetterWriteError
 }
 
 sealed class EditorBlock {

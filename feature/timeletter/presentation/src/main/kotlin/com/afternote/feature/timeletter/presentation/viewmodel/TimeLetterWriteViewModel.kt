@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
+import com.afternote.feature.timeletter.domain.error.TimeLetterServerRejectionException
 import com.afternote.feature.timeletter.domain.model.BlockInput
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlockType
@@ -144,11 +145,11 @@ class TimeLetterWriteViewModel
             if (state.isSaving || isCheckingRegisterLimit) return
 
             if (state.recipientIds.isEmpty()) {
-                _uiState.update { it.copy(error = TimeLetterWriteError.RECIPIENT_REQUIRED) }
+                _uiState.update { it.copy(error = TimeLetterWriteError.RecipientRequired) }
                 return
             }
             if (state.sendAt == null) {
-                _uiState.update { it.copy(error = TimeLetterWriteError.SEND_DATE_REQUIRED) }
+                _uiState.update { it.copy(error = TimeLetterWriteError.SendDateRequired) }
                 return
             }
             isCheckingRegisterLimit = true
@@ -159,7 +160,7 @@ class TimeLetterWriteViewModel
                             runCatchingCancellable { timeLetterRepository.getTimeLetters().totalCount }
                                 .getOrElse {
                                     _uiState.update { current ->
-                                        current.copy(error = TimeLetterWriteError.LOAD_FAILED)
+                                        current.copy(error = TimeLetterWriteError.LoadFailed)
                                     }
                                     return@launch
                                 }
@@ -280,7 +281,7 @@ class TimeLetterWriteViewModel
             val state = _uiState.value
             if (state.isSaving) return
             if (state.recipientIds.isEmpty()) {
-                _uiState.update { it.copy(error = TimeLetterWriteError.RECIPIENT_REQUIRED) }
+                _uiState.update { it.copy(error = TimeLetterWriteError.RecipientRequired) }
                 return
             }
 
@@ -327,9 +328,16 @@ class TimeLetterWriteViewModel
                             } else {
                                 _uiState.update { it.copy(registered = true) }
                             }
-                        }.onFailure {
+                        }.onFailure { error ->
                             _uiState.update {
-                                it.copy(error = TimeLetterWriteError.SAVE_FAILED)
+                                it.copy(
+                                    error =
+                                        if (error is TimeLetterServerRejectionException) {
+                                            TimeLetterWriteError.ServerRejection(error.serverMessage)
+                                        } else {
+                                            TimeLetterWriteError.SaveFailed
+                                        },
+                                )
                             }
                         }
                 } finally {
@@ -379,7 +387,7 @@ class TimeLetterWriteViewModel
                     }
                 }.onFailure {
                     _uiState.update { it.copy(isLoadingEditingLetter = false) }
-                    _uiState.update { it.copy(error = TimeLetterWriteError.LOAD_FAILED) }
+                    _uiState.update { it.copy(error = TimeLetterWriteError.LoadFailed) }
                 }
         }
 

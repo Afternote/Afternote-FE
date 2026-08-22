@@ -36,11 +36,6 @@ class DraftLetterViewModel
                         userRepository
                             .getReceivers()
                             .associate { receiver -> receiver.receiverId to receiver.name }
-                    check(
-                        result.timeLetters.all { draft ->
-                            draft.receiverIds.isNotEmpty() && receiverNameMap.keys.containsAll(draft.receiverIds)
-                        },
-                    )
                     _uiState.value =
                         DraftLetterUiState.Success(
                             drafts = result.timeLetters,

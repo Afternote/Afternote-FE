@@ -66,7 +66,7 @@ class TimeLetterWriteViewModelTest {
             advanceUntilIdle()
 
             assertEquals(0, repository.createCallCount)
-            assertEquals(TimeLetterWriteError.RECIPIENT_REQUIRED, viewModel.uiState.value.error)
+            assertEquals(TimeLetterWriteError.RecipientRequired, viewModel.uiState.value.error)
             assertFalse(viewModel.uiState.value.savedAsDraft)
         }
 
@@ -82,7 +82,7 @@ class TimeLetterWriteViewModelTest {
 
             assertEquals(0, repository.listCallCount)
             assertEquals(0, repository.createCallCount)
-            assertEquals(TimeLetterWriteError.RECIPIENT_REQUIRED, viewModel.uiState.value.error)
+            assertEquals(TimeLetterWriteError.RecipientRequired, viewModel.uiState.value.error)
             assertFalse(viewModel.uiState.value.registered)
         }
 
@@ -97,7 +97,7 @@ class TimeLetterWriteViewModelTest {
             advanceUntilIdle()
 
             assertEquals(1, repository.createCallCount)
-            assertEquals(TimeLetterWriteError.SAVE_FAILED, viewModel.uiState.value.error)
+            assertEquals(TimeLetterWriteError.SaveFailed, viewModel.uiState.value.error)
             assertFalse(viewModel.uiState.value.savedAsDraft)
         }
 
