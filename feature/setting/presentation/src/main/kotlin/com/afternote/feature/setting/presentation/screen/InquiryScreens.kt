@@ -120,7 +120,7 @@ private fun InquiryListItem(
                     )
                 }
                 Spacer(Modifier.weight(1f))
-                Text(inquiry.date, style = AfternoteDesign.typography.footnoteCaption, color = AfternoteDesign.colors.gray7)
+                Text(inquiry.date, style = AfternoteDesign.typography.footnoteCaption, color = AfternoteDesign.colors.gray9)
             }
             Spacer(Modifier.height(12.dp))
             Text(inquiry.title, style = AfternoteDesign.typography.bodyBase, color = AfternoteDesign.colors.gray9)
@@ -149,7 +149,7 @@ fun InquiryDetailScreen(
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
             Column(Modifier.padding(horizontal = 20.dp, vertical = 24.dp)) {
-                Text(inquiry.date, style = AfternoteDesign.typography.footnoteCaption, color = AfternoteDesign.colors.gray6)
+                Text(inquiry.date, style = AfternoteDesign.typography.footnoteCaption, color = AfternoteDesign.colors.gray8)
                 Spacer(Modifier.height(10.dp))
                 Text(inquiry.title, style = AfternoteDesign.typography.h2, color = AfternoteDesign.colors.gray9)
             }
@@ -231,7 +231,12 @@ fun InquiryWriteScreen(
                 value = title,
                 onValueChange = { title = it },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text(stringResource(R.string.inquiry_text_field)) },
+                placeholder = {
+                    Text(
+                        text = stringResource(R.string.inquiry_title_text_field),
+                        color = AfternoteDesign.colors.gray4,
+                    )
+                },
                 singleLine = true,
                 shape = RoundedCornerShape(8.dp),
             )
@@ -241,7 +246,12 @@ fun InquiryWriteScreen(
                 value = content,
                 onValueChange = { content = it },
                 modifier = Modifier.fillMaxWidth().height(180.dp),
-                placeholder = { Text(stringResource(R.string.inquiry_text_field)) },
+                placeholder = {
+                    Text(
+                        text = stringResource(R.string.inquiry_content_text_field),
+                        color = AfternoteDesign.colors.gray4,
+                    )
+                },
                 shape = RoundedCornerShape(8.dp),
             )
             Spacer(Modifier.height(20.dp))

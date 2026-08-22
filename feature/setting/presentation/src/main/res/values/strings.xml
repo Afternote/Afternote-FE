@@ -31,8 +31,9 @@
     <string name="inquiry_type">문의 유형</string>
     <string name="inquiry_title">제목</string>
     <string name="inquiry_content">내용</string>
-    <string name="inquiry_text_field">Text Field</string>
-    <string name="inquiry_add_screenshot">스크린샷 추가하기 (%1$d/%2$d, 최대 3장)</string>
+    <string name="inquiry_title_text_field">제목을 입력해 주세요.</string>
+    <string name="inquiry_content_text_field">내용을 입력해 주세요.</string>
+    <string name="inquiry_add_screenshot">스크린샷 추가하기 (최대 3장)</string>
     <string name="inquiry_submit">문의 접수하기</string>
     <string name="settings_support_notice">공지사항</string>
     <string name="settings_notice_empty">등록된 공지사항이 없어요.</string>
