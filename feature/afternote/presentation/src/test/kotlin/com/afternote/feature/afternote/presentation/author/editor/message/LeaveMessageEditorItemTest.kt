@@ -15,7 +15,7 @@ class LeaveMessageEditorItemTest {
         message.titleState.edit { replace(0, length, "제목만") }
 
         assertFalse(holder.registerEditorMessage(message))
-        assertFalse(message.isRegistered)
+        assertEquals(LeaveMessageEditorItemState.EDITING, message.state)
         assertEquals(1, holder.editorMessages.size)
     }
 
@@ -26,9 +26,9 @@ class LeaveMessageEditorItemTest {
         message.contentState.edit { replace(0, length, "전하고 싶은 말") }
 
         assertTrue(holder.registerEditorMessage(message))
-        assertTrue(message.isRegistered)
+        assertEquals(LeaveMessageEditorItemState.REGISTERED_COLLAPSED, message.state)
         assertEquals(2, holder.editorMessages.size)
-        assertFalse(holder.editorMessages.last().isRegistered)
+        assertEquals(LeaveMessageEditorItemState.EDITING, holder.editorMessages.last().state)
         assertTrue(
             holder.editorMessages
                 .last()
@@ -59,22 +59,23 @@ class LeaveMessageEditorItemTest {
         holder.removeEditorMessage(editable)
 
         assertEquals(2, holder.editorMessages.size)
-        assertTrue(holder.editorMessages.first().isRegistered)
-        assertFalse(holder.editorMessages.last().isRegistered)
+        assertEquals(LeaveMessageEditorItemState.REGISTERED_COLLAPSED, holder.editorMessages.first().state)
+        assertEquals(LeaveMessageEditorItemState.EDITING, holder.editorMessages.last().state)
     }
 
     @Test
     fun `등록된 말씀만 펼치고 접을 수 있다`() {
         val message = LeaveMessageEditorItem(contentState = TextFieldState("전하고 싶은 말"))
 
-        message.toggleExpanded()
-        assertFalse(message.isExpanded)
+        message.toggleBodyVisibility()
+        assertEquals(LeaveMessageEditorItemState.EDITING, message.state)
 
         assertTrue(message.tryRegister())
-        message.toggleExpanded()
-        assertTrue(message.isExpanded)
-        message.toggleExpanded()
-        assertFalse(message.isExpanded)
+        assertEquals(LeaveMessageEditorItemState.REGISTERED_COLLAPSED, message.state)
+        message.toggleBodyVisibility()
+        assertEquals(LeaveMessageEditorItemState.REGISTERED_EXPANDED, message.state)
+        message.toggleBodyVisibility()
+        assertEquals(LeaveMessageEditorItemState.REGISTERED_COLLAPSED, message.state)
     }
 
     private fun editorUiHolder() =

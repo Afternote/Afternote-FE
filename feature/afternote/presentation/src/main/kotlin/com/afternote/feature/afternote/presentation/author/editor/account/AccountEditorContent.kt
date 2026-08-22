@@ -16,8 +16,8 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.EditorSectionLabel
-import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageSection
+import com.afternote.feature.afternote.presentation.author.editor.message.LeaveMessageEditorItem
 import com.afternote.feature.afternote.presentation.author.editor.processing.ProcessingMethodListSection
 import com.afternote.feature.afternote.presentation.author.editor.processing.model.ProcessingMethodSection
 import com.afternote.feature.afternote.presentation.author.editor.receiver.RecipientDesignationSection
@@ -30,14 +30,14 @@ import com.afternote.feature.afternote.presentation.author.editor.receiver.model
  */
 @Composable
 fun AccountEditorContent(
-    editorMessages: List<EditorMessage>,
+    editorMessages: List<LeaveMessageEditorItem>,
     accountSection: AccountSection,
     recipientSection: AfternoteEditorReceiverSection,
     processingMethodSection: ProcessingMethodSection,
     modifier: Modifier = Modifier,
-    onMessageRegisterClick: (EditorMessage) -> Unit = {},
-    onMessageDeleteClick: (EditorMessage) -> Unit = {},
-    onMessageAddClick: () -> Unit = {},
+    onMessageRegisterClick: (LeaveMessageEditorItem) -> Unit,
+    onMessageDeleteClick: (LeaveMessageEditorItem) -> Unit,
+    onMessageAddClick: () -> Unit,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -100,11 +100,14 @@ private fun AccountEditorContentPreview() {
             AccountEditorContent(
                 editorMessages =
                     listOf(
-                        EditorMessage(
+                        LeaveMessageEditorItem(
                             titleState = rememberTextFieldState("남긴말1"),
                         ),
-                        EditorMessage(),
+                        LeaveMessageEditorItem(),
                     ),
+                onMessageRegisterClick = {},
+                onMessageDeleteClick = {},
+                onMessageAddClick = {},
                 accountSection =
                     AccountSection(
                         idState = rememberTextFieldState(),

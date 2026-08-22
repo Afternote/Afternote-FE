@@ -9,8 +9,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.afternote.feature.afternote.domain.AfternoteType
-import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessage
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
+import com.afternote.feature.afternote.presentation.author.editor.message.LeaveMessageEditorItem
+import com.afternote.feature.afternote.presentation.author.editor.message.LeaveMessageEditorItemState
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorContentPrefill
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCredentialsPrefill
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
@@ -19,15 +20,10 @@ import com.afternote.feature.afternote.presentation.author.editor.receiver.model
 private const val TAG = "AfternoteEditorState"
 
 /**
- * 에디터 화면용 **안정적인 파사드**: ViewModel의 폼 스냅샷([getCurrentForm])과 폼 갱신 인텐트 콜백을 받아
- * UI 측 [TextFieldState]·이펙트와 결합한다. 컴포지션 스코프 내에서만 생성되며, 그래프 스코프 ViewModel에 캐싱하지 않는다.
+ * ViewModel이 소유한 [EditorFormState]와 Compose가 소유한 입력·일시적 UI 상태를 연결한다.
  *
- * 폼을 임의로 변환하는 통로(`(EditorFormState) -> EditorFormState` 람다)는 받지 않는다 — 어떤 필드를 어떻게
- * 바꿀지는 데이터 소유자가 정하고, 파사드는 무슨 일이 일어났는지만 개별 콜백으로 통보한다
- * ([State holders](https://developer.android.com/topic/architecture/ui-layer/stateholders) 의
- * *"pass only the information it needs as a parameter"*). 그중 UI 로직이 붙지 않는 것은 콜백을 그대로 공개한다.
- *
- * 콜백 메서드들은 [getCurrentForm] 으로 최신 폼 스냅샷을 읽는다 (stale closure 회피).
+ * 이벤트 처리 시 [getCurrentForm]으로 최신 폼을 읽는다. 이 상태는 컴포지션 안에서 생성하며
+ * ViewModel에 저장하지 않는다.
  */
 @Stable
 class AfternoteEditorState(
@@ -37,20 +33,18 @@ class AfternoteEditorState(
     private val setService: (String) -> Unit,
     private val addReceiverIfAbsent: (receiverId: String, name: String, label: String) -> Unit,
     private val applyPrefill: (EditorFormPrefill) -> Unit,
-    /** 영정 사진·추모 영상 picker 결과 (`Uri?.toString()`). */
     val setMemorialPhoto: (String?) -> Unit,
     val setMemorialVideo: (String?) -> Unit,
-    /** 추모 영상 썸네일 추출 완료 — 폼에 그대로 반영한다. */
     val setMemorialThumbnail: (String?) -> Unit,
     val deleteReceiver: (receiverId: String) -> Unit,
     val replaceReceiversIfEmpty: (List<AfternoteEditorReceiver>) -> Unit,
-    /** 타이핑 디바운스 후 폼(및 스냅샷)에만 반영; [EditorFormState.leaveMessageBlocksRestoreGeneration]은 건드리지 않는다. */
+    /** 남기실 말씀 입력값을 폼에 반영하되 복원 세대는 변경하지 않는다. */
     val setLeaveMessageBlocks: (List<EditorMessageTextBlock>) -> Unit,
     val addProcessingMethod: (text: String) -> Unit,
     val deleteProcessingMethod: (localId: Int) -> Unit,
     val editProcessingMethod: (localId: Int, newText: String) -> Unit,
 ) {
-    val editorMessages: SnapshotStateList<EditorMessage> get() = ui.editorMessages
+    val editorMessages: SnapshotStateList<LeaveMessageEditorItem> get() = ui.editorMessages
 
     val idState: TextFieldState get() = ui.idState
     val passwordState: TextFieldState get() = ui.passwordState
@@ -60,7 +54,7 @@ class AfternoteEditorState(
     val typeDropdownExpanded get() = ui.typeDropdownExpanded
     val serviceDropdownExpanded get() = ui.serviceDropdownExpanded
 
-    /** 콜백·payload 조립 등 일회성 read 용 (Compose 표시는 화면이 collect 한 `uiState.form` 사용). */
+    /** 이벤트 처리에 사용할 최신 폼. 화면 표시는 수집된 `uiState.form`을 사용한다. */
     fun currentForm(): EditorFormState = getCurrentForm()
 
     fun onTypeDropdownExpandedChange(expanded: Boolean) = ui.onTypeDropdownExpandedChange(expanded)
@@ -97,22 +91,22 @@ class AfternoteEditorState(
         addReceiverIfAbsent(receiverId.toString(), name, relation)
     }
 
-    /**
-     * 추가·삭제 모두 UI 목록 전체를 폼에 덮어쓴다. 폼은 디바운스로 갱신돼 UI 보다 오래됐을 수 있어,
-     * 폼 기준으로 증분 반영하면 마지막 디바운스 이전 입력이 밀려난다.
-     */
+    // 폼은 입력 디바운스로 UI보다 늦을 수 있으므로 목록 변경 후 현재 UI 목록 전체를 반영한다.
     fun addEditorMessage() {
         ui.addEditorMessage()
-        setLeaveMessageBlocks(ui.editorMessages.toTextBlocks())
+        setLeaveMessageBlocks(currentEditorMessageBlocks())
     }
 
     fun removeEditorMessage(message: EditorMessage) {
         if (ui.editorMessages.size <= 1) return
         ui.removeEditorMessage(message)
-        setLeaveMessageBlocks(ui.editorMessages.toTextBlocks())
+        setLeaveMessageBlocks(currentEditorMessageBlocks())
     }
 
-    /** SavedState·프리필·재진입 등 폼 SSOT → TextField 목록 반영. */
+    /** 현재 남기실 말씀 UI 목록을 폼에 반영할 값으로 변환한다. */
+    fun currentEditorMessageBlocks(): List<EditorMessageTextBlock> = ui.editorMessages.toTextBlocks()
+
+    /** 폼의 남기실 말씀을 입력 상태로 복원하고, 편집 가능한 빈 항목을 하나 보장한다. */
     fun syncEditorMessagesFromForm(blocks: List<EditorMessageTextBlock>) {
         val normalized = normalizeEditorMessageBlocks(blocks)
         ui.editorMessages.clear()
@@ -124,11 +118,7 @@ class AfternoteEditorState(
         }
     }
 
-    /**
-     * ViewModel이 [EditorFormPrefill]을 적용할 때 호출. 종류별 필드는 [EditorFormState]로,
-     * 공통 메시지와 계정 종류에만 존재하는 계정 텍스트를 UI에 반영.
-     * 추모 곡 목록도 같은 flow-scoped 폼에 함께 반영한다.
-     */
+    /** 프리필을 폼에 적용하고 계정 정보와 남기실 말씀 입력 상태를 동기화한다. */
     fun applyFormPrefill(prefill: EditorFormPrefill) {
         Log.d(
             TAG,
@@ -152,21 +142,16 @@ class AfternoteEditorState(
     }
 }
 
-private fun List<EditorMessage>.toTextBlocks(): List<EditorMessageTextBlock> =
+private fun List<LeaveMessageEditorItem>.toTextBlocks(): List<EditorMessageTextBlock> =
     map { m ->
         EditorMessageTextBlock(
             title = m.titleState.text.toString(),
             body = m.contentState.text.toString(),
+            isRegistered = m.isRegistered,
         )
     }
 
-/**
- * 프로덕션용 팩토리.
- *
- * ViewModel의 폼 SSOT 스냅샷을 [getCurrentForm] 클로저로, 폼 갱신 인텐트를 개별 콜백으로 받아
- * UI 레이어가 소유한 [TextFieldState]와 [AfternoteEditorUiHolder]를 결합한 파사드를 만든다. ViewModel은
- * Compose UI 상태를 들지 않으므로, 이 팩토리는 반드시 Composable 스코프에서 호출되어야 한다.
- */
+/** ViewModel의 폼과 Compose 입력 상태를 연결하는 [AfternoteEditorState]를 생성한다. */
 @Composable
 fun rememberAfternoteEditorState(
     getCurrentForm: () -> EditorFormState,
@@ -216,10 +201,7 @@ fun rememberAfternoteEditorState(
     }
 }
 
-/**
- * Compose Preview·로컬 UI 테스트 전용. 내부 [androidx.compose.runtime.MutableState]로 자체 폼 SSOT를 만들고
- * 프로덕션 ViewModel과 같은 `EditorFormMutations.kt` 의 변환 규칙으로 갱신한다.
- */
+/** Preview와 UI 테스트에서 사용할 로컬 폼 상태를 생성한다. */
 @Composable
 fun rememberAfternoteEditorState(): AfternoteEditorState {
     val previewForm = remember { mutableStateOf(EditorFormState()) }

@@ -36,7 +36,7 @@ internal fun editorMessageSectionRegisteredCollapsedScreenshot() {
                     LeaveMessageEditorItem(
                         titleState = TextFieldState("남긴말1"),
                         contentState = TextFieldState("전하고 싶은 이야기를 적어둔 내용입니다."),
-                        initialRegistered = true,
+                        initialState = LeaveMessageEditorItemState.REGISTERED_COLLAPSED,
                     ),
                     LeaveMessageEditorItem(),
                 )
@@ -65,8 +65,7 @@ internal fun editorMessageSectionRegisteredExpandedScreenshot() {
                             TextFieldState(
                                 "전하고 싶은 이야기를 적어둔 내용입니다.\n두 번째 줄까지 펼쳐서 보여줍니다.",
                             ),
-                        initialRegistered = true,
-                        initialExpanded = true,
+                        initialState = LeaveMessageEditorItemState.REGISTERED_EXPANDED,
                     ),
                     LeaveMessageEditorItem(),
                 )
