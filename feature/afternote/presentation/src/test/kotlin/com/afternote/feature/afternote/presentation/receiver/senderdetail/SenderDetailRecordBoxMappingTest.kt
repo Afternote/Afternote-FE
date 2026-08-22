@@ -12,7 +12,7 @@ class SenderDetailRecordBoxMappingTest {
     @Test
     fun `열람 가능 - 승인 상태와 서버 신청 승인일을 표시`() {
         val entry =
-            serverEntry(
+            recordBoxEntry(
                 viewStatus = ReceivedRecordViewStatus.Viewable,
                 verification =
                     ReceivedRecordVerification.Approved(
@@ -31,7 +31,7 @@ class SenderDetailRecordBoxMappingTest {
     @Test
     fun `열람 대기 - 인증 상태가 불일치해도 재신청 대신 대기 상태 유지`() {
         val state =
-            serverEntry(
+            recordBoxEntry(
                 viewStatus = ReceivedRecordViewStatus.Pending,
                 verification = ReceivedRecordVerification.Rejected("2026-07-29T16:58:36"),
             ).toRecordBoxSuccessState()
@@ -43,7 +43,7 @@ class SenderDetailRecordBoxMappingTest {
     @Test
     fun `열람 신청 가능이고 최근 인증 거절 - 거절 상태 표시`() {
         val state =
-            serverEntry(
+            recordBoxEntry(
                 viewStatus = ReceivedRecordViewStatus.Requestable,
                 verification = ReceivedRecordVerification.Rejected("2026-07-29T16:58:36"),
             ).toRecordBoxSuccessState()
@@ -54,7 +54,7 @@ class SenderDetailRecordBoxMappingTest {
     @Test
     fun `열람 신청 가능인데 승인 값만 남은 불일치 - 열람 가능으로 오판하지 않음`() {
         val state =
-            serverEntry(
+            recordBoxEntry(
                 viewStatus = ReceivedRecordViewStatus.Requestable,
                 verification =
                     ReceivedRecordVerification.Approved(
@@ -69,7 +69,7 @@ class SenderDetailRecordBoxMappingTest {
     @Test
     fun `알 수 없는 열람 상태와 승인 값 - 열람 가능으로 오판하지 않음`() {
         val state =
-            serverEntry(
+            recordBoxEntry(
                 viewStatus = ReceivedRecordViewStatus.Unknown,
                 verification =
                     ReceivedRecordVerification.Approved(
@@ -80,13 +80,26 @@ class SenderDetailRecordBoxMappingTest {
 
         assertEquals(SenderVerificationState.NotRequested, state.verification)
     }
+
+    @Test
+    fun `미지원 인증 상태 - 열람 가능으로 오판하지 않음`() {
+        val state =
+            recordBoxEntry(
+                viewStatus = ReceivedRecordViewStatus.Requestable,
+                verification = ReceivedRecordVerification.Unknown,
+            ).toRecordBoxSuccessState()
+
+        assertEquals(SenderVerificationState.NotRequested, state.verification)
+        assertNull(state.requestedAt)
+        assertNull(state.approvedAt)
+    }
 }
 
-private fun serverEntry(
+private fun recordBoxEntry(
     viewStatus: ReceivedRecordViewStatus,
     verification: ReceivedRecordVerification,
-): SenderEntry.Server =
-    SenderEntry.Server(
+): SenderEntry.RecordBox =
+    SenderEntry.RecordBox(
         receiverId = 18L,
         authCode = "record-key",
         senderName = "김혜성",

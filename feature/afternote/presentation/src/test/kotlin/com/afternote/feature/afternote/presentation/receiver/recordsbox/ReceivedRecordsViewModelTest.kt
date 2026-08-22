@@ -55,25 +55,29 @@ class ReceivedRecordsViewModelTest {
     }
 
     @Test
-    fun `접근 코드 있음 - 이전 서버 카드와 미인증 로컬 카드를 서버 목록으로 완전히 교체`() {
+    fun `접근 코드 있음 - 이전 받은 기록함과 미인증 로컬 항목을 조회 결과로 완전히 교체`() {
         val registry = SenderRegistry()
-        registry.replaceServerEntries(listOf(serverEntry(receiverId = 1L)))
+        registry.replaceRecordBoxes(listOf(recordBoxEntry(receiverId = 1L)))
         registry.register("이전 사용자의 미인증 카드")
-        val recordBox = recordBox(receiverId = 18L)
-        val repository = FakeReceiverRepository(initialAuthCode = "master-key", initialResult = Result.success(listOf(recordBox)))
+        val receivedRecordBox = recordBox(receiverId = 18L)
+        val repository =
+            FakeReceiverRepository(
+                initialAuthCode = "master-key",
+                initialResult = Result.success(listOf(receivedRecordBox)),
+            )
 
         val viewModel = ReceivedRecordsViewModel(registry, repository, RecordingErrorReporter())
 
         val senders = viewModel.uiState.value.senders
-        val server = senders.single() as SenderEntry.Server
+        val entry = senders.single() as SenderEntry.RecordBox
         assertEquals(listOf("record-box:18"), senders.map(SenderEntry::id))
-        assertEquals("김혜성", server.name)
-        assertEquals("record-key-18", server.authCode)
-        assertEquals(ReceivedRecordStatus.Stored, server.recordStatus)
-        assertEquals(ReceivedRecordViewStatus.Viewable, server.viewStatus)
+        assertEquals("김혜성", entry.name)
+        assertEquals("record-key-18", entry.authCode)
+        assertEquals(ReceivedRecordStatus.Stored, entry.recordStatus)
+        assertEquals(ReceivedRecordViewStatus.Viewable, entry.viewStatus)
         assertEquals(
             "2026-07-30T04:25:42",
-            (server.verification as ReceivedRecordVerification.Approved).approvedAt,
+            (entry.verification as ReceivedRecordVerification.Approved).approvedAt,
         )
         assertFalse(viewModel.uiState.value.isLoading)
         assertFalse(viewModel.uiState.value.hasLoadError)
@@ -81,7 +85,7 @@ class ReceivedRecordsViewModelTest {
     }
 
     @Test
-    fun `목록 실패 후 재시도 - 오류를 기록하고 성공 시 서버 카드로 복구`() {
+    fun `목록 실패 후 재시도 - 오류를 기록하고 성공 시 받은 기록함으로 복구`() {
         val registry = SenderRegistry()
         val repository =
             FakeReceiverRepository(
@@ -107,7 +111,7 @@ class ReceivedRecordsViewModelTest {
     }
 
     @Test
-    fun `접근 코드 제거 - 이전 수신자의 서버 카드는 즉시 제거`() {
+    fun `접근 코드 제거 - 이전 수신자의 받은 기록함 항목은 즉시 제거`() {
         val registry = SenderRegistry()
         val repository =
             FakeReceiverRepository(
@@ -196,8 +200,8 @@ private fun recordBox(receiverId: Long = 18L): ReceivedRecordBox =
             ),
     )
 
-private fun serverEntry(receiverId: Long): SenderEntry.Server =
-    SenderEntry.Server(
+private fun recordBoxEntry(receiverId: Long): SenderEntry.RecordBox =
+    SenderEntry.RecordBox(
         receiverId = receiverId,
         authCode = "old-key",
         senderName = "old",

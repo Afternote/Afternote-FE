@@ -58,11 +58,55 @@ private fun mapVerification(
     status: String?,
     requestedAt: String?,
     approvedAt: String?,
-): ReceivedRecordVerification =
-    when {
-        raw == null -> null
-        raw.equals("PENDING", ignoreCase = true) -> DeliveryVerificationStatus.PENDING
-        raw.equals("APPROVED", ignoreCase = true) -> DeliveryVerificationStatus.APPROVED
-        raw.equals("REJECTED", ignoreCase = true) -> DeliveryVerificationStatus.REJECTED
-        else -> DeliveryVerificationStatus.UNKNOWN
+): ReceivedRecordVerification {
+    if (status == null) {
+        if (requestedAt != null || approvedAt != null) {
+            throw ReceivedRecordBoxContractException(VerificationContractViolation.NOT_REQUESTED_WITH_DATES)
+        }
+        return ReceivedRecordVerification.NotRequested
     }
+
+    return when {
+        status.equals("PENDING", ignoreCase = true) &&
+            !requestedAt.isNullOrBlank() && approvedAt == null -> {
+            ReceivedRecordVerification.Pending(requestedAt)
+        }
+
+        status.equals("PENDING", ignoreCase = true) -> {
+            throw ReceivedRecordBoxContractException(VerificationContractViolation.PENDING_DATE_MISMATCH)
+        }
+
+        status.equals("REJECTED", ignoreCase = true) &&
+            !requestedAt.isNullOrBlank() && approvedAt == null -> {
+            ReceivedRecordVerification.Rejected(requestedAt)
+        }
+
+        status.equals("REJECTED", ignoreCase = true) -> {
+            throw ReceivedRecordBoxContractException(VerificationContractViolation.REJECTED_DATE_MISMATCH)
+        }
+
+        status.equals("APPROVED", ignoreCase = true) &&
+            !requestedAt.isNullOrBlank() && !approvedAt.isNullOrBlank() -> {
+            ReceivedRecordVerification.Approved(requestedAt, approvedAt)
+        }
+
+        status.equals("APPROVED", ignoreCase = true) -> {
+            throw ReceivedRecordBoxContractException(VerificationContractViolation.APPROVED_DATE_MISMATCH)
+        }
+
+        else -> {
+            ReceivedRecordVerification.Unknown
+        }
+    }
+}
+
+internal enum class VerificationContractViolation {
+    NOT_REQUESTED_WITH_DATES,
+    PENDING_DATE_MISMATCH,
+    REJECTED_DATE_MISMATCH,
+    APPROVED_DATE_MISMATCH,
+}
+
+internal class ReceivedRecordBoxContractException(
+    val violation: VerificationContractViolation,
+) : IllegalStateException("Invalid received record verification contract: $violation")

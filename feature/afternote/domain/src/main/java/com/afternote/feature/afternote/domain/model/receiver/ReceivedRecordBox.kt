@@ -29,7 +29,7 @@ sealed interface ReceivedRecordVerification {
         val approvedAt: String,
     ) : ReceivedRecordVerification
 
-    /** 알 수 없는 상태 값이나 서버 계약과 맞지 않는 날짜 조합. */
+    /** 앱이 아직 지원하지 않는 서버 인증 상태. */
     data object Unknown : ReceivedRecordVerification
 }
 

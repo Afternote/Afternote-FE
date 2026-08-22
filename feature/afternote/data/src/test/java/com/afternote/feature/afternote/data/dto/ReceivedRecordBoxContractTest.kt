@@ -7,6 +7,7 @@ import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordVerif
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordViewStatus
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 /**
@@ -82,19 +83,48 @@ class ReceivedRecordBoxContractTest {
     }
 
     @Test
-    fun `계약과 맞지 않는 인증 필드 조합 - Unknown으로 정규화`() {
-        assertEquals(
-            ReceivedRecordVerification.Unknown,
-            mapVerification(status = "APPROVED", requestedAt = "2026-07-29T16:58:36"),
-        )
-        assertEquals(
-            ReceivedRecordVerification.Unknown,
-            mapVerification(status = null, requestedAt = "2026-07-29T16:58:36"),
-        )
+    fun `미지원 인증 상태 - Unknown으로 정규화`() {
         assertEquals(
             ReceivedRecordVerification.Unknown,
             mapVerification(status = "FUTURE", requestedAt = "2026-07-29T16:58:36"),
         )
+    }
+
+    @Test
+    fun `알려진 인증 상태의 잘못된 날짜 조합 - 계약 위반으로 실패`() {
+        assertContractViolation(
+            expected = VerificationContractViolation.NOT_REQUESTED_WITH_DATES,
+            status = null,
+            requestedAt = "2026-07-29T16:58:36",
+        )
+        assertContractViolation(
+            expected = VerificationContractViolation.PENDING_DATE_MISMATCH,
+            status = "PENDING",
+        )
+        assertContractViolation(
+            expected = VerificationContractViolation.REJECTED_DATE_MISMATCH,
+            status = "REJECTED",
+            requestedAt = "2026-07-29T16:58:36",
+            approvedAt = "2026-07-30T04:25:42",
+        )
+        assertContractViolation(
+            expected = VerificationContractViolation.APPROVED_DATE_MISMATCH,
+            status = "APPROVED",
+            requestedAt = "2026-07-29T16:58:36",
+        )
+    }
+
+    private fun assertContractViolation(
+        expected: VerificationContractViolation,
+        status: String?,
+        requestedAt: String? = null,
+        approvedAt: String? = null,
+    ) {
+        val exception =
+            assertThrows(ReceivedRecordBoxContractException::class.java) {
+                mapVerification(status, requestedAt, approvedAt)
+            }
+        assertEquals(expected, exception.violation)
     }
 
     private fun mapVerification(
