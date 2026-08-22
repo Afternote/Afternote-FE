@@ -97,7 +97,13 @@ class AfternoteEditorState(
         setLeaveMessageBlocks(currentEditorMessageBlocks())
     }
 
-    fun removeEditorMessage(message: EditorMessage) {
+    fun registerEditorMessage(message: LeaveMessageEditorItem) {
+        if (ui.registerEditorMessage(message)) {
+            setLeaveMessageBlocks(currentEditorMessageBlocks())
+        }
+    }
+
+    fun removeEditorMessage(message: LeaveMessageEditorItem) {
         if (ui.editorMessages.size <= 1) return
         ui.removeEditorMessage(message)
         setLeaveMessageBlocks(currentEditorMessageBlocks())
@@ -124,6 +130,7 @@ class AfternoteEditorState(
             msg.contentState.edit { replace(0, length, b.body) }
             ui.editorMessages.add(msg)
         }
+        ui.ensureEditableMessage()
     }
 
     /** 프리필을 폼에 적용하고 계정 정보와 남기실 말씀 입력 상태를 동기화한다. */
