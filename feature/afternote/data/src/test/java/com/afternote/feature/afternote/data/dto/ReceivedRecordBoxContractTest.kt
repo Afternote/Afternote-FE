@@ -36,7 +36,7 @@ class ReceivedRecordBoxContractTest {
                 .single()
                 .toReceivedRecordBox()
 
-        assertEquals(18L, result.receiverId)
+        assertEquals(18L, result.recordBoxId)
         assertEquals("bd22c849-0000-4000-8000-000000000000", result.accessCode)
         assertEquals("김혜성", result.senderName)
         assertEquals("김지은", result.receiverName)

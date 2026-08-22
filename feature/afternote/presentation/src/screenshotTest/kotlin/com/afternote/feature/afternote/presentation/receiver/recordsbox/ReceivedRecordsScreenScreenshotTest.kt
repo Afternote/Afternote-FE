@@ -29,10 +29,10 @@ internal fun receivedRecordsScreenFilledScreenshot() {
         ReceivedRecordsScreenContent(
             senders =
                 listOf(
-                    screenshotRecordItem(receiverId = 1L),
-                    screenshotRecordItem(receiverId = 2L),
-                    screenshotRecordItem(receiverId = 3L),
-                    screenshotRecordItem(receiverId = 4L),
+                    screenshotRecordItem(recordBoxId = 1L),
+                    screenshotRecordItem(recordBoxId = 2L),
+                    screenshotRecordItem(recordBoxId = 3L),
+                    screenshotRecordItem(recordBoxId = 4L),
                 ),
             onBackClick = {},
             onSenderClick = {},
@@ -40,10 +40,10 @@ internal fun receivedRecordsScreenFilledScreenshot() {
     }
 }
 
-private fun screenshotRecordItem(receiverId: Long): ReceivedRecordItem =
+private fun screenshotRecordItem(recordBoxId: Long): ReceivedRecordItem =
     ReceivedRecordItem(
-        receiverId = receiverId,
-        accessCode = "screenshot-key-$receiverId",
+        recordBoxId = recordBoxId,
+        accessCode = "screenshot-key-$recordBoxId",
         senderName = "김혜성",
         receiverName = "김지은",
         relation = "DAUGHTER",

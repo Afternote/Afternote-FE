@@ -1,8 +1,12 @@
 package com.afternote.feature.afternote.domain.model.receiver
 
-/** 서버가 소유하는 받은 기록함 한 건. wire 문자열 변환은 data mapper가 담당한다. */
+/**
+ * 서버가 구성한 받은 기록함 한 건. wire 문자열 변환은 data mapper가 담당한다.
+ *
+ * [recordBoxId]는 받은 기록함 항목을 지정하는 불투명 식별자이며, 서버 내부 엔티티 의미를 노출하지 않는다.
+ */
 data class ReceivedRecordBox(
-    val receiverId: Long,
+    val recordBoxId: Long,
     val accessCode: String,
     val senderName: String,
     val receiverName: String,

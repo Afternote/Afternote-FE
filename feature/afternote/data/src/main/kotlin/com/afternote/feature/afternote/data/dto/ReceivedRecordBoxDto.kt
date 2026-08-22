@@ -28,7 +28,7 @@ data class ReceivedRecordBoxDto(
 
 fun ReceivedRecordBoxDto.toReceivedRecordBox(): ReceivedRecordBox =
     ReceivedRecordBox(
-        receiverId = receiverId,
+        recordBoxId = receiverId,
         accessCode = accessCode,
         senderName = senderName,
         receiverName = receiverName,

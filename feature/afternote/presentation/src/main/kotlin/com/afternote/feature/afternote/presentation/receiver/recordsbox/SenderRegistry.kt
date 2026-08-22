@@ -1,22 +1,15 @@
 package com.afternote.feature.afternote.presentation.receiver.recordsbox
 
-import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
-import com.afternote.feature.receiver.domain.model.ReceiverIdentity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * 받은 기록함의 발신자 카드 in-memory stub registry (이슈 #215).
+ * 받은 기록함 화면 전환 사이에서 서버 항목 스냅샷을 공유하는 in-memory store.
  *
- * 백엔드의 *발신자 라벨 등록 / 발신자 리스트 조회* API 가 미확정이라, 발신자 등록·조회·캐시를
- * 일단 프로세스 메모리에 보관한다. 앱 재시작 시 사라지는 한계가 있으나 디자인 흐름 확인에는 충분.
- *
- * 백엔드 API 가 확정되면 본 클래스를 [com.afternote.feature.afternote.domain] 레이어의
- * Repository 구현으로 대체한다.
+ * 목록 원본은 `receiver-auth/record-boxes` 응답이며, 저장된 접근 코드로 [ReceivedRecordsViewModel]이
+ * 다시 채운다.
  *
  * `@Singleton` 으로 두어 ViewModel 간 동일 인스턴스를 공유한다 (Hilt 기본 SingletonComponent).
  */

@@ -100,7 +100,7 @@ private fun recordBoxEntry(
     verification: ReceivedRecordVerification,
 ): ReceivedRecordItem =
     ReceivedRecordItem(
-        receiverId = 18L,
+        recordBoxId = 18L,
         accessCode = "record-key",
         senderName = "김혜성",
         receiverName = "김지은",

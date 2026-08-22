@@ -499,17 +499,15 @@ fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions =
                 )
             }
 
-            override fun navigateToSenderDetail(receiverId: Long) {
+            override fun navigateToSenderDetail(recordBoxId: Long) {
                 appState.navController.navigate(
-                    ReceiverRoute.SenderDetailRoute(receiverId = receiverId),
+                    ReceiverRoute.SenderDetailRoute(recordBoxId = recordBoxId),
                 )
             }
 
-            override fun navigateToDeliveryVerificationFlow(receiverId: Long) {
+            override fun navigateToDeliveryVerificationFlow() {
                 // nested 열람 신청 흐름 그래프 진입. 본인 확인 캐시 분기는 IntroRoute 의 LaunchedEffect 가 처리.
-                appState.navController.navigate(
-                    ReceiverRoute.DeliveryVerificationFlowRoute(receiverId = receiverId),
-                )
+                appState.navController.navigate(ReceiverRoute.DeliveryVerificationFlowRoute)
             }
 
             override fun navigateToIdentityVerificationEmail() {
