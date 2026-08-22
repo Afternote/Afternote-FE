@@ -5,8 +5,11 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
@@ -27,7 +30,9 @@ private const val TAG = "AfternoteEditorState"
  */
 @Stable
 class AfternoteEditorState(
-    private val ui: AfternoteEditorUiHolder,
+    val idState: TextFieldState,
+    val passwordState: TextFieldState,
+    val customServiceNameState: TextFieldState,
     private val getCurrentForm: () -> EditorFormState,
     private val setType: (AfternoteType) -> Unit,
     private val setService: (String) -> Unit,
@@ -46,26 +51,31 @@ class AfternoteEditorState(
 ) {
     val editorMessages: SnapshotStateList<LeaveMessageEditorItem> get() = ui.editorMessages
 
-    val idState: TextFieldState get() = ui.idState
-    val passwordState: TextFieldState get() = ui.passwordState
-    val customServiceNameState: TextFieldState get() = ui.customServiceNameState
+    var isCustomServiceDialogVisible by mutableStateOf(false)
+        private set
 
-    val activeDialog get() = ui.activeDialog
-    val typeDropdownExpanded get() = ui.typeDropdownExpanded
-    val serviceDropdownExpanded get() = ui.serviceDropdownExpanded
+    var typeDropdownExpanded by mutableStateOf(false)
+        private set
+
+    var serviceDropdownExpanded by mutableStateOf(false)
+        private set
 
     /** 이벤트 처리에 사용할 최신 폼. 화면 표시는 수집된 `uiState.form`을 사용한다. */
     fun currentForm(): EditorFormState = getCurrentForm()
 
-    fun onTypeDropdownExpandedChange(expanded: Boolean) = ui.onTypeDropdownExpandedChange(expanded)
+    fun onTypeDropdownExpandedChange(expanded: Boolean) {
+        typeDropdownExpanded = expanded
+    }
 
-    fun onServiceDropdownExpandedChange(expanded: Boolean) = ui.onServiceDropdownExpandedChange(expanded)
+    fun onServiceDropdownExpandedChange(expanded: Boolean) {
+        serviceDropdownExpanded = expanded
+    }
 
     fun onTypeSelected(type: AfternoteType) = setType(type)
 
     fun onServiceSelected(service: String) {
         if (getCurrentForm().isCustomAddOption(service)) {
-            ui.showCustomServiceDialog()
+            isCustomServiceDialogVisible = true
         } else {
             setService(service)
         }
@@ -75,7 +85,7 @@ class AfternoteEditorState(
 
     fun onAddCustomService() {
         val serviceName =
-            ui.customServiceNameState.text
+            customServiceNameState.text
                 .toString()
                 .trim()
         if (serviceName.isEmpty()) return
@@ -93,7 +103,7 @@ class AfternoteEditorState(
 
     // 폼은 입력 디바운스로 UI보다 늦을 수 있으므로 목록 변경 후 현재 UI 목록 전체를 반영한다.
     fun addEditorMessage() {
-        ui.addEditorMessage()
+        editorMessages.add(LeaveMessageEditorItem())
         setLeaveMessageBlocks(currentEditorMessageBlocks())
     }
 
@@ -104,18 +114,18 @@ class AfternoteEditorState(
     }
 
     fun removeEditorMessage(message: LeaveMessageEditorItem) {
-        if (ui.editorMessages.size <= 1) return
-        ui.removeEditorMessage(message)
+        if (editorMessages.size <= 1) return
+        editorMessages.removeAll { it.id == message.id }
         setLeaveMessageBlocks(currentEditorMessageBlocks())
     }
 
     /** 현재 남기실 말씀 UI 목록을 폼에 반영할 값으로 변환한다. */
-    fun currentEditorMessageBlocks(): List<EditorMessageTextBlock> = ui.editorMessages.toTextBlocks()
+    fun currentEditorMessageBlocks(): List<EditorMessageTextBlock> = editorMessages.toTextBlocks()
 
-    /** 폼의 남기실 말씀을 입력 상태로 복원하고, 편집 가능한 빈 항목을 하나 보장한다. */
+    /** 폼의 남기실 말씀을 입력 상태로 복원한다. */
     fun syncEditorMessagesFromForm(blocks: List<EditorMessageTextBlock>) {
         val normalized = normalizeEditorMessageBlocks(blocks)
-        ui.editorMessages.clear()
+        editorMessages.clear()
         for (b in normalized) {
             val msg =
                 LeaveMessageEditorItem(
@@ -128,9 +138,8 @@ class AfternoteEditorState(
                 )
             msg.titleState.edit { replace(0, length, b.title) }
             msg.contentState.edit { replace(0, length, b.body) }
-            ui.editorMessages.add(msg)
+            editorMessages.add(msg)
         }
-        ui.ensureEditableMessage()
     }
 
     /** 프리필을 폼에 적용하고 계정 정보와 남기실 말씀 입력 상태를 동기화한다. */
@@ -151,8 +160,8 @@ class AfternoteEditorState(
                 EditorContentPrefill.Estate,
                 -> null
             }
-        ui.idState.edit { replace(0, length, credentials?.id.orEmpty()) }
-        ui.passwordState.edit { replace(0, length, credentials?.password.orEmpty()) }
+        idState.edit { replace(0, length, credentials?.id.orEmpty()) }
+        passwordState.edit { replace(0, length, credentials?.password.orEmpty()) }
         syncEditorMessagesFromForm(prefill.leaveMessageBlocks)
     }
 }
@@ -188,16 +197,11 @@ fun rememberAfternoteEditorState(
     val passwordState = rememberTextFieldState()
     val customServiceNameState = rememberTextFieldState()
 
-    val ui =
-        rememberAfternoteEditorUiHolder(
+    return remember(idState, passwordState, customServiceNameState) {
+        AfternoteEditorState(
             idState = idState,
             passwordState = passwordState,
             customServiceNameState = customServiceNameState,
-        )
-
-    return remember(ui) {
-        AfternoteEditorState(
-            ui = ui,
             getCurrentForm = getCurrentForm,
             setType = setType,
             setService = setService,

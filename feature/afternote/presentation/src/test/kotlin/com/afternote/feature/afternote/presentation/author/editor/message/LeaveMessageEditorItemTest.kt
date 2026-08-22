@@ -1,36 +1,47 @@
 package com.afternote.feature.afternote.presentation.author.editor.message
 
 import androidx.compose.foundation.text.input.TextFieldState
-import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorUiHolder
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
+import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LeaveMessageEditorItemTest {
     @Test
     fun `본문 없는 말씀은 등록되지 않는다`() {
-        val holder = editorUiHolder()
-        val message = holder.editorMessages.single()
+        val state = editorState()
+        val message = state.editorMessages.single()
         message.titleState.edit { replace(0, length, "제목만") }
 
-        assertFalse(holder.registerEditorMessage(message))
+        state.registerEditorMessage(message)
+
         assertEquals(LeaveMessageEditorItemState.EDITING, message.state)
-        assertEquals(1, holder.editorMessages.size)
+        assertEquals(1, state.editorMessages.size)
     }
 
     @Test
-    fun `마지막 편집 블록을 등록하면 새 빈 입력 블록을 남긴다`() {
-        val holder = editorUiHolder()
-        val message = holder.editorMessages.single()
+    fun `말씀을 등록해도 빈 입력 항목을 자동으로 추가하지 않는다`() {
+        val state = editorState()
+        val message = state.editorMessages.single()
         message.contentState.edit { replace(0, length, "전하고 싶은 말") }
 
-        assertTrue(holder.registerEditorMessage(message))
+        state.registerEditorMessage(message)
+
         assertEquals(LeaveMessageEditorItemState.REGISTERED_COLLAPSED, message.state)
-        assertEquals(2, holder.editorMessages.size)
-        assertEquals(LeaveMessageEditorItemState.EDITING, holder.editorMessages.last().state)
+        assertEquals(1, state.editorMessages.size)
+    }
+
+    @Test
+    fun `추가 버튼을 눌렀을 때만 새 빈 입력 항목을 추가한다`() {
+        val state = editorState()
+
+        state.addEditorMessage()
+
+        assertEquals(2, state.editorMessages.size)
+        assertEquals(LeaveMessageEditorItemState.EDITING, state.editorMessages.last().state)
         assertTrue(
-            holder.editorMessages
+            state.editorMessages
                 .last()
                 .contentState.text
                 .isEmpty(),
@@ -38,29 +49,36 @@ class LeaveMessageEditorItemTest {
     }
 
     @Test
-    fun `다른 편집 블록이 있으면 등록 시 빈 블록을 중복 추가하지 않는다`() {
-        val holder = editorUiHolder()
-        holder.addEditorMessage()
-        val message = holder.editorMessages.first()
-        message.contentState.edit { replace(0, length, "전하고 싶은 말") }
+    fun `빈 입력 항목을 삭제해 등록된 말씀만 남아도 새 항목을 만들지 않는다`() {
+        val state = editorState()
+        val registered = state.editorMessages.single()
+        registered.contentState.edit { replace(0, length, "전하고 싶은 말") }
+        state.registerEditorMessage(registered)
+        state.addEditorMessage()
+        val editable = state.editorMessages.last()
 
-        assertTrue(holder.registerEditorMessage(message))
-        assertEquals(2, holder.editorMessages.size)
+        state.removeEditorMessage(editable)
+
+        assertEquals(1, state.editorMessages.size)
+        assertEquals(LeaveMessageEditorItemState.REGISTERED_COLLAPSED, state.editorMessages.single().state)
     }
 
     @Test
-    fun `등록된 말씀만 남도록 삭제해도 빈 입력 블록을 다시 보장한다`() {
-        val holder = editorUiHolder()
-        val registered = holder.editorMessages.single()
-        registered.contentState.edit { replace(0, length, "전하고 싶은 말") }
-        holder.registerEditorMessage(registered)
-        val editable = holder.editorMessages.last()
+    fun `등록된 말씀을 복원해도 빈 입력 항목을 자동으로 추가하지 않는다`() {
+        val state = editorState()
 
-        holder.removeEditorMessage(editable)
+        state.syncEditorMessagesFromForm(
+            listOf(
+                EditorMessageTextBlock(
+                    title = "가족에게",
+                    body = "전하고 싶은 말",
+                    isRegistered = true,
+                ),
+            ),
+        )
 
-        assertEquals(2, holder.editorMessages.size)
-        assertEquals(LeaveMessageEditorItemState.REGISTERED_COLLAPSED, holder.editorMessages.first().state)
-        assertEquals(LeaveMessageEditorItemState.EDITING, holder.editorMessages.last().state)
+        assertEquals(1, state.editorMessages.size)
+        assertEquals(LeaveMessageEditorItemState.REGISTERED_COLLAPSED, state.editorMessages.single().state)
     }
 
     @Test
@@ -78,10 +96,24 @@ class LeaveMessageEditorItemTest {
         assertEquals(LeaveMessageEditorItemState.REGISTERED_COLLAPSED, message.state)
     }
 
-    private fun editorUiHolder() =
-        AfternoteEditorUiHolder(
+    private fun editorState() =
+        AfternoteEditorState(
             idState = TextFieldState(),
             passwordState = TextFieldState(),
             customServiceNameState = TextFieldState(),
+            getCurrentForm = { EditorFormState() },
+            setType = {},
+            setService = {},
+            setMemorialPhoto = {},
+            setMemorialVideo = {},
+            addReceiverIfAbsent = { _, _, _ -> },
+            applyPrefill = {},
+            setMemorialThumbnail = {},
+            deleteReceiver = {},
+            replaceReceiversIfEmpty = {},
+            setLeaveMessageBlocks = {},
+            addProcessingMethod = {},
+            deleteProcessingMethod = {},
+            editProcessingMethod = { _, _ -> },
         )
 }

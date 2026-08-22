@@ -29,6 +29,7 @@ import com.afternote.core.ui.popup.PopupType
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.author.editor.processing.CustomServiceDialog
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteTypeForm
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
@@ -176,7 +177,13 @@ fun AfternoteEditorScreen(
         ) {
             content()
 
-            AfternoteEditorDialogs(state = state)
+            if (state.isCustomServiceDialogVisible) {
+                CustomServiceDialog(
+                    serviceNameState = state.customServiceNameState,
+                    onDismiss = state::dismissCustomServiceDialog,
+                    onAddClick = state::onAddCustomService,
+                )
+            }
 
             if (showExitConfirm) {
                 Popup(
