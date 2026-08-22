@@ -174,7 +174,6 @@ private const val MAX_AFTERNOTE_ICONS = 4
 
 private fun ReceiverMindRecords.toHomeSummary(): MindRecordSummary =
     MindRecordSummary(
-        totalCount = dailyQuestions.size + diaries.size,
         dailyQuestionCount = dailyQuestions.size,
         diaryCount = diaries.size,
     )

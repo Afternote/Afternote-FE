@@ -38,10 +38,12 @@ data class SenderMessage(
 
 @Immutable
 data class MindRecordSummary(
-    val totalCount: Int,
     val dailyQuestionCount: Int,
     val diaryCount: Int,
-)
+) {
+    val totalCount: Int
+        get() = dailyQuestionCount + diaryCount
+}
 
 @Immutable
 data class AfternoteSourceIcon(

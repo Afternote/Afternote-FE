@@ -43,7 +43,6 @@ internal fun receiverHomeScreenSuccessScreenshot() {
                         ),
                     mindRecord =
                         MindRecordSummary(
-                            totalCount = 24,
                             dailyQuestionCount = 10,
                             diaryCount = 8,
                         ),

@@ -74,7 +74,6 @@ private fun MindRecordSectionPreview() {
         MindRecordSection(
             summary =
                 MindRecordSummary(
-                    totalCount = 150,
                     dailyQuestionCount = 18,
                     diaryCount = 18,
                 ),
