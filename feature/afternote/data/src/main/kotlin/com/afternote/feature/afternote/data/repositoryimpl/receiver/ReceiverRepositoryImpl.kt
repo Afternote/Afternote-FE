@@ -12,7 +12,6 @@ import com.afternote.feature.afternote.data.paging.ReceiverAfternotePagingSource
 import com.afternote.feature.afternote.data.service.ReceiverAfternoteApiService
 import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem
 import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResult
-import com.afternote.feature.afternote.domain.model.receiver.LoadCountResult
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedExportBundle
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
@@ -75,10 +74,6 @@ class ReceiverRepositoryImpl
         override suspend fun downloadReceivedExport(): Result<ReceivedExportBundle> = Result.success(ReceivedExportBundle())
 
         override suspend fun saveReceivedExportToFile(bundle: ReceivedExportBundle): Result<Unit> = Result.success(Unit)
-
-        override suspend fun loadMindRecordsCount(): Result<LoadCountResult> = Result.success(LoadCountResult(0))
-
-        override suspend fun loadTimeLettersCount(): Result<LoadCountResult> = Result.success(LoadCountResult(0))
 
         // sender 메시지 조회는 receiver-auth 영역 → ReceiverAuthRepository 가 책임.
         // 본 Repository 는 위임만 — 같은 API 호출이 두 곳에 중복되지 않게 (Multiple levels of repositories).

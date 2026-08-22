@@ -3,7 +3,6 @@ package com.afternote.afternote_fe.screen.receiver
 import com.afternote.afternote_fe.screen.receiver.model.ReceiverHomeUiState
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResult
-import com.afternote.feature.afternote.domain.model.receiver.LoadCountResult
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedExportBundle
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
@@ -182,10 +181,6 @@ private class FakeReceiverRepository : ReceiverRepository {
     override suspend fun downloadReceivedExport(): Result<ReceivedExportBundle> = unexpected("downloadReceivedExport")
 
     override suspend fun saveReceivedExportToFile(bundle: ReceivedExportBundle): Result<Unit> = unexpected("saveReceivedExportToFile")
-
-    override suspend fun loadMindRecordsCount(): Result<LoadCountResult> = unexpected("legacy loadMindRecordsCount")
-
-    override suspend fun loadTimeLettersCount(): Result<LoadCountResult> = unexpected("legacy loadTimeLettersCount")
 
     override suspend fun loadSenderMessage(): Result<SenderMessageInfo?> = message
 }
