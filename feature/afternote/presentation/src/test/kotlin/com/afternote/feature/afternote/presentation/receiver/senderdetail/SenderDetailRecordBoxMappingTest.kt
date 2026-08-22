@@ -1,22 +1,24 @@
 package com.afternote.feature.afternote.presentation.receiver.senderdetail
 
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordStatus
+import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordVerification
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordViewStatus
 import com.afternote.feature.afternote.presentation.receiver.recordsbox.SenderEntry
-import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
 class SenderDetailRecordBoxMappingTest {
     @Test
-    fun `열람 가능 - 인증 상태와 무관하게 승인 상태와 서버 신청 승인일을 표시`() {
+    fun `열람 가능 - 승인 상태와 서버 신청 승인일을 표시`() {
         val entry =
             serverEntry(
                 viewStatus = ReceivedRecordViewStatus.Viewable,
-                verificationStatus = null,
-                requestedAt = "2026-07-29T16:58:36",
-                approvedAt = "2026-07-30T04:25:42",
+                verification =
+                    ReceivedRecordVerification.Approved(
+                        requestedAt = "2026-07-29T16:58:36",
+                        approvedAt = "2026-07-30T04:25:42",
+                    ),
             )
 
         val state = entry.toRecordBoxSuccessState()
@@ -31,7 +33,7 @@ class SenderDetailRecordBoxMappingTest {
         val state =
             serverEntry(
                 viewStatus = ReceivedRecordViewStatus.Pending,
-                verificationStatus = DeliveryVerificationStatus.REJECTED,
+                verification = ReceivedRecordVerification.Rejected("2026-07-29T16:58:36"),
             ).toRecordBoxSuccessState()
 
         assertEquals(SenderVerificationState.Pending, state.verification)
@@ -43,7 +45,7 @@ class SenderDetailRecordBoxMappingTest {
         val state =
             serverEntry(
                 viewStatus = ReceivedRecordViewStatus.Requestable,
-                verificationStatus = DeliveryVerificationStatus.REJECTED,
+                verification = ReceivedRecordVerification.Rejected("2026-07-29T16:58:36"),
             ).toRecordBoxSuccessState()
 
         assertEquals(SenderVerificationState.Rejected, state.verification)
@@ -54,7 +56,11 @@ class SenderDetailRecordBoxMappingTest {
         val state =
             serverEntry(
                 viewStatus = ReceivedRecordViewStatus.Requestable,
-                verificationStatus = DeliveryVerificationStatus.APPROVED,
+                verification =
+                    ReceivedRecordVerification.Approved(
+                        requestedAt = "2026-07-29T16:58:36",
+                        approvedAt = "2026-07-30T04:25:42",
+                    ),
             ).toRecordBoxSuccessState()
 
         assertEquals(SenderVerificationState.NotRequested, state.verification)
@@ -65,7 +71,11 @@ class SenderDetailRecordBoxMappingTest {
         val state =
             serverEntry(
                 viewStatus = ReceivedRecordViewStatus.Unknown,
-                verificationStatus = DeliveryVerificationStatus.APPROVED,
+                verification =
+                    ReceivedRecordVerification.Approved(
+                        requestedAt = "2026-07-29T16:58:36",
+                        approvedAt = "2026-07-30T04:25:42",
+                    ),
             ).toRecordBoxSuccessState()
 
         assertEquals(SenderVerificationState.NotRequested, state.verification)
@@ -74,9 +84,7 @@ class SenderDetailRecordBoxMappingTest {
 
 private fun serverEntry(
     viewStatus: ReceivedRecordViewStatus,
-    verificationStatus: DeliveryVerificationStatus?,
-    requestedAt: String? = null,
-    approvedAt: String? = null,
+    verification: ReceivedRecordVerification,
 ): SenderEntry.Server =
     SenderEntry.Server(
         receiverId = 18L,
@@ -86,7 +94,5 @@ private fun serverEntry(
         relation = "DAUGHTER",
         recordStatus = ReceivedRecordStatus.Stored,
         viewStatus = viewStatus,
-        verificationStatus = verificationStatus,
-        requestedAt = requestedAt,
-        approvedAt = approvedAt,
+        verification = verification,
     )

@@ -1,7 +1,5 @@
 package com.afternote.feature.afternote.domain.model.receiver
 
-import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
-
 /** 서버가 소유하는 받은 기록함 한 건. wire 문자열 변환은 data mapper가 담당한다. */
 data class ReceivedRecordBox(
     val receiverId: Long,
@@ -11,10 +9,29 @@ data class ReceivedRecordBox(
     val relation: String,
     val recordStatus: ReceivedRecordStatus,
     val viewStatus: ReceivedRecordViewStatus,
-    val verificationStatus: DeliveryVerificationStatus?,
-    val requestedAt: String?,
-    val approvedAt: String?,
+    val verification: ReceivedRecordVerification,
 )
+
+/** 받은 기록함의 열람 인증 상태. data mapper가 wire의 nullable 조합을 검증해 이 타입으로 정규화한다. */
+sealed interface ReceivedRecordVerification {
+    data object NotRequested : ReceivedRecordVerification
+
+    data class Pending(
+        val requestedAt: String,
+    ) : ReceivedRecordVerification
+
+    data class Rejected(
+        val requestedAt: String,
+    ) : ReceivedRecordVerification
+
+    data class Approved(
+        val requestedAt: String,
+        val approvedAt: String,
+    ) : ReceivedRecordVerification
+
+    /** 알 수 없는 상태 값이나 서버 계약과 맞지 않는 날짜 조합. */
+    data object Unknown : ReceivedRecordVerification
+}
 
 enum class ReceivedRecordStatus {
     Stored,

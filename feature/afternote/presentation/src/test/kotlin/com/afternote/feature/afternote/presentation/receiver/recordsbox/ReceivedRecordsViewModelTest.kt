@@ -9,9 +9,9 @@ import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDe
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedExportBundle
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordBox
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordStatus
+import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordVerification
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordViewStatus
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
-import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
 import com.afternote.feature.receiver.domain.model.SenderMessageInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -71,7 +71,10 @@ class ReceivedRecordsViewModelTest {
         assertEquals("record-key-18", server.authCode)
         assertEquals(ReceivedRecordStatus.Stored, server.recordStatus)
         assertEquals(ReceivedRecordViewStatus.Viewable, server.viewStatus)
-        assertEquals("2026-07-30T04:25:42", server.approvedAt)
+        assertEquals(
+            "2026-07-30T04:25:42",
+            (server.verification as ReceivedRecordVerification.Approved).approvedAt,
+        )
         assertFalse(viewModel.uiState.value.isLoading)
         assertFalse(viewModel.uiState.value.hasLoadError)
         assertEquals(1, repository.recordBoxesCallCount)
@@ -186,9 +189,11 @@ private fun recordBox(receiverId: Long = 18L): ReceivedRecordBox =
         relation = "DAUGHTER",
         recordStatus = ReceivedRecordStatus.Stored,
         viewStatus = ReceivedRecordViewStatus.Viewable,
-        verificationStatus = DeliveryVerificationStatus.APPROVED,
-        requestedAt = "2026-07-29T16:58:36",
-        approvedAt = "2026-07-30T04:25:42",
+        verification =
+            ReceivedRecordVerification.Approved(
+                requestedAt = "2026-07-29T16:58:36",
+                approvedAt = "2026-07-30T04:25:42",
+            ),
     )
 
 private fun serverEntry(receiverId: Long): SenderEntry.Server =
@@ -200,7 +205,5 @@ private fun serverEntry(receiverId: Long): SenderEntry.Server =
         relation = "OTHER",
         recordStatus = ReceivedRecordStatus.Stored,
         viewStatus = ReceivedRecordViewStatus.Requestable,
-        verificationStatus = null,
-        requestedAt = null,
-        approvedAt = null,
+        verification = ReceivedRecordVerification.NotRequested,
     )

@@ -2,8 +2,8 @@ package com.afternote.feature.afternote.data.dto
 
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordBox
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordStatus
+import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordVerification
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordViewStatus
-import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -35,9 +35,7 @@ fun ReceivedRecordBoxDto.toReceivedRecordBox(): ReceivedRecordBox =
         relation = relation,
         recordStatus = mapRecordStatus(recordStatus),
         viewStatus = mapViewStatus(viewStatus),
-        verificationStatus = mapVerificationStatus(verificationStatus),
-        requestedAt = requestedAt,
-        approvedAt = approvedAt,
+        verification = mapVerification(verificationStatus, requestedAt, approvedAt),
     )
 
 private fun mapRecordStatus(raw: String): ReceivedRecordStatus =
@@ -56,7 +54,11 @@ private fun mapViewStatus(raw: String): ReceivedRecordViewStatus =
         else -> ReceivedRecordViewStatus.Unknown
     }
 
-private fun mapVerificationStatus(raw: String?): DeliveryVerificationStatus? =
+private fun mapVerification(
+    status: String?,
+    requestedAt: String?,
+    approvedAt: String?,
+): ReceivedRecordVerification =
     when {
         raw == null -> null
         raw.equals("PENDING", ignoreCase = true) -> DeliveryVerificationStatus.PENDING

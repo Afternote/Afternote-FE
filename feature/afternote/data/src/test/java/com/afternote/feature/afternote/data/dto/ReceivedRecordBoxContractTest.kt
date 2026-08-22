@@ -3,11 +3,10 @@ package com.afternote.feature.afternote.data.dto
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.core.network.model.requireData
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordStatus
+import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordVerification
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedRecordViewStatus
-import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Test
 
 /**
@@ -43,13 +42,17 @@ class ReceivedRecordBoxContractTest {
         assertEquals("DAUGHTER", result.relation)
         assertEquals(ReceivedRecordStatus.Stored, result.recordStatus)
         assertEquals(ReceivedRecordViewStatus.Viewable, result.viewStatus)
-        assertEquals(DeliveryVerificationStatus.APPROVED, result.verificationStatus)
-        assertEquals("2026-07-29T16:58:36", result.requestedAt)
-        assertEquals("2026-07-30T04:25:42", result.approvedAt)
+        assertEquals(
+            ReceivedRecordVerification.Approved(
+                requestedAt = "2026-07-29T16:58:36",
+                approvedAt = "2026-07-30T04:25:42",
+            ),
+            result.verification,
+        )
     }
 
     @Test
-    fun `미래 enum 값과 nullable 인증 필드 - 디코드 실패 없이 안전한 상태로 매핑됨`() {
+    fun `미래 enum 값과 미신청 인증 필드 - 디코드 실패 없이 안전한 상태로 매핑됨`() {
         val payload =
             """{"status":200,"code":200,"message":"성공","data":{"recordBoxes":[{"receiverId":19,"accessCode":"bd22c849-0000-4000-8000-000000000001","senderName":"새 발신자","receiverName":"새 수신자","relation":"OTHER","recordStatus":"ARCHIVED","viewStatus":"LOCKED","verificationStatus":null,"requestedAt":null,"approvedAt":null}]}}"""
 
@@ -63,8 +66,52 @@ class ReceivedRecordBoxContractTest {
 
         assertEquals(ReceivedRecordStatus.Unknown, result.recordStatus)
         assertEquals(ReceivedRecordViewStatus.Unknown, result.viewStatus)
-        assertNull(result.verificationStatus)
-        assertNull(result.requestedAt)
-        assertNull(result.approvedAt)
+        assertEquals(ReceivedRecordVerification.NotRequested, result.verification)
     }
+
+    @Test
+    fun `대기와 거절 상태 - 신청일을 필수값으로 정규화`() {
+        assertEquals(
+            ReceivedRecordVerification.Pending("2026-07-29T16:58:36"),
+            mapVerification(status = "PENDING", requestedAt = "2026-07-29T16:58:36"),
+        )
+        assertEquals(
+            ReceivedRecordVerification.Rejected("2026-07-29T16:58:36"),
+            mapVerification(status = "REJECTED", requestedAt = "2026-07-29T16:58:36"),
+        )
+    }
+
+    @Test
+    fun `계약과 맞지 않는 인증 필드 조합 - Unknown으로 정규화`() {
+        assertEquals(
+            ReceivedRecordVerification.Unknown,
+            mapVerification(status = "APPROVED", requestedAt = "2026-07-29T16:58:36"),
+        )
+        assertEquals(
+            ReceivedRecordVerification.Unknown,
+            mapVerification(status = null, requestedAt = "2026-07-29T16:58:36"),
+        )
+        assertEquals(
+            ReceivedRecordVerification.Unknown,
+            mapVerification(status = "FUTURE", requestedAt = "2026-07-29T16:58:36"),
+        )
+    }
+
+    private fun mapVerification(
+        status: String?,
+        requestedAt: String? = null,
+        approvedAt: String? = null,
+    ): ReceivedRecordVerification =
+        ReceivedRecordBoxDto(
+            receiverId = 18L,
+            accessCode = "record-key",
+            senderName = "김혜성",
+            receiverName = "김지은",
+            relation = "DAUGHTER",
+            recordStatus = "STORED",
+            viewStatus = "REQUESTABLE",
+            verificationStatus = status,
+            requestedAt = requestedAt,
+            approvedAt = approvedAt,
+        ).toReceivedRecordBox().verification
 }
