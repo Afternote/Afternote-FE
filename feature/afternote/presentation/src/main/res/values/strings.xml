@@ -128,6 +128,8 @@
     <string name="afternote_editor_message_action_delete">삭제</string>
     <string name="afternote_editor_message_add_content_description">남기실 말씀 추가</string>
     <string name="afternote_editor_message_text_field_placeholder">입력해 주세요</string>
+    <string name="afternote_editor_message_registered_expand_content_description">등록된 말씀 펼치기</string>
+    <string name="afternote_editor_message_registered_collapse_content_description">등록된 말씀 접기</string>
 
     <!-- 받은 기록함 (수신자 흐름) — 발신자 카드 리스트 -->
     <string name="receiver_records_box_title">받은 기록함</string>

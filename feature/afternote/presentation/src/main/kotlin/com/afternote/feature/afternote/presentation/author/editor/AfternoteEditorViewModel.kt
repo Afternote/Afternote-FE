@@ -84,6 +84,7 @@ private data class ProcessingMethodSnap(
 private data class MessageBlockSnap(
     val title: String = "",
     val body: String = "",
+    val isRegistered: Boolean = false,
 )
 
 /**
@@ -108,7 +109,13 @@ private data class EditorFormSnapshot(
             if (editorMessages.isEmpty()) {
                 DEFAULT_EDITOR_MESSAGE_BLOCKS
             } else {
-                editorMessages.map { EditorMessageTextBlock(title = it.title, body = it.body) }
+                editorMessages.map {
+                    EditorMessageTextBlock(
+                        title = it.title,
+                        body = it.body,
+                        isRegistered = it.isRegistered,
+                    )
+                }
             }
         return EditorFormState(
             afternoteEditReceivers =
@@ -169,7 +176,13 @@ private data class EditorFormSnapshot(
                 memorialPhotoUrl = form.memorialPhotoUrl,
                 memorialPlaylistSongs = form.memorialPlaylistSongs,
                 editorMessages =
-                    form.leaveMessageBlocks.map { MessageBlockSnap(title = it.title, body = it.body) },
+                    form.leaveMessageBlocks.map {
+                        MessageBlockSnap(
+                            title = it.title,
+                            body = it.body,
+                            isRegistered = it.isRegistered,
+                        )
+                    },
             )
     }
 }

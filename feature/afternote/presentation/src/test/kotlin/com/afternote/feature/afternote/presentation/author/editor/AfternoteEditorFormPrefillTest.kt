@@ -12,6 +12,7 @@ import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedi
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorContentPrefill
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AfternoteEditorFormPrefillTest {
@@ -35,6 +36,7 @@ class AfternoteEditorFormPrefillTest {
         assertEquals("account", content.credentials.id)
         assertEquals("password", content.credentials.password)
         assertEquals("부탁해", prefill.leaveMessageBlocks.single().body)
+        assertTrue(prefill.leaveMessageBlocks.single().isRegistered)
         assertEquals("계정 삭제", content.processingMethods.single().text)
     }
 

@@ -68,7 +68,14 @@ class EditorLeaveMessageBlocksTest {
         val payload =
             AfternoteEditorFormMapper.buildUpdatePayload(
                 type = AfternoteType.SOCIAL_NETWORK,
-                payload = payloadOf(EditorMessageTextBlock(title = "", body = "고쳐 쓴 말씀")),
+                payload =
+                    payloadOf(
+                        EditorMessageTextBlock(
+                            title = "",
+                            body = "고쳐 쓴 말씀",
+                            isRegistered = true,
+                        ),
+                    ),
                 selectedReceiverIds = emptyList(),
                 playlistSongs = emptyList(),
                 memorialMedia = MemorialMediaUrls(),
