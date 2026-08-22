@@ -7,6 +7,7 @@ import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.network.model.requireData
 import com.afternote.feature.afternote.data.local.ReceiverAuthCodeDataSource
 import com.afternote.feature.afternote.data.mapper.response.toDomain
+import com.afternote.feature.afternote.data.mapper.toDomainResult
 import com.afternote.feature.afternote.data.paging.ReceiverAfternotePagingSource
 import com.afternote.feature.afternote.data.service.ReceiverAfternoteApiService
 import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem
@@ -26,7 +27,8 @@ private const val PAGE_SIZE = 50
 
 /**
  * 인증 코드는 [ReceiverAuthCodeDataSource]에서 읽고·쓰고·지우며, REST 요청에는 ReceiverAuthInterceptor가
- * `X-Auth-Code` 헤더를 자동 부착한다. 미연동 항목은 폴백 값을 반환한다.
+ * `X-Auth-Code` 헤더를 자동 부착한다. 아직 별도 기능 repository로 이관되지 않은 export 항목은
+ * 폴백 값을 반환한다.
  */
 @Singleton
 class ReceiverRepositoryImpl
@@ -55,12 +57,12 @@ class ReceiverRepositoryImpl
             ).flow
 
         override suspend fun getReceivedAfterNotes(): Result<AfterNotesListResult> =
-            Result.success(
-                AfterNotesListResult(
-                    items = emptyList(),
-                    totalCount = 0,
-                ),
-            )
+            runCatchingCancellable {
+                api
+                    .getReceiverAfternotes()
+                    .requireData()
+                    .toDomainResult()
+            }
 
         override suspend fun getReceivedAfternoteDetail(afternoteId: Long): Result<ReceivedAfternoteDetail> =
             runCatchingCancellable {

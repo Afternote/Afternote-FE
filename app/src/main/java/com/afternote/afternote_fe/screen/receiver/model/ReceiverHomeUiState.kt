@@ -15,9 +15,12 @@ sealed interface ReceiverHomeUiState {
     data class Success(
         val senderName: String,
         val senderMessage: SenderMessage?,
-        val mindRecord: MindRecordSummary,
-        val timeLetterTotalCount: Int,
-        val afternoteTotalCount: Int,
+        /** null은 조회 실패, 0은 정상 조회된 빈 목록이다. */
+        val mindRecord: MindRecordSummary?,
+        /** null은 조회 실패, 0은 정상 조회된 빈 목록이다. */
+        val timeLetterTotalCount: Int?,
+        /** null은 조회 실패, 0은 정상 조회된 빈 목록이다. */
+        val afternoteTotalCount: Int?,
         val afternoteIcons: List<AfternoteSourceIcon>,
         val download: ReceiverDownloadState = ReceiverDownloadState.Idle,
     ) : ReceiverHomeUiState
