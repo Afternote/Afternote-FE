@@ -81,6 +81,23 @@ class MasterKeyViewModelTest {
         assertEquals(null, viewModel.uiState.value.error)
     }
 
+    @Test
+    fun `대문자 마스터 키는 소문자로 정규화해 검증하고 저장한다`() {
+        val authRepository = RecordingReceiverAuthRepository()
+        val receiverRepository = RecordingReceiverRepository()
+        val senderRegistry = SenderRegistry()
+        val sender = senderRegistry.register("별칭")
+        val viewModel = viewModel(authRepository, receiverRepository, senderRegistry)
+
+        viewModel.submit(senderId = sender.id, authCode = "123E4567-E89B-12D3-A456-426614174000")
+
+        val normalized = "123e4567-e89b-12d3-a456-426614174000"
+        assertEquals(listOf(normalized), authRepository.verifiedMasterKeys)
+        assertEquals(listOf(normalized), receiverRepository.savedAuthCodes)
+        assertTrue(viewModel.uiState.value.isVerified)
+        assertEquals(null, viewModel.uiState.value.error)
+    }
+
     private fun viewModel(
         authRepository: RecordingReceiverAuthRepository,
         receiverRepository: RecordingReceiverRepository,
