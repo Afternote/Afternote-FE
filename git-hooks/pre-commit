@@ -32,23 +32,60 @@ if [ ! -x "$KTLINT" ]; then
     chmod +x "$KTLINT"
 fi
 
-echo "Running ktlint --format on staged files..."
-# `tr '\n' '\0'` + `xargs -0` — 파일 경로에 공백이 들어있어도 안전 (default xargs 의 whitespace split
-# 회피). git checkout 경로가 `~/Documents/My Projects/...` 같은 케이스 + git 파일명 자체 공백 모두 대응.
-echo "$STAGED_KT" | tr '\n' '\0' | xargs -0 "$KTLINT" --format --relative
+FULLY_STAGED=$(
+    echo "$STAGED_KT" | while IFS= read -r f; do
+        [ -n "$f" ] || continue
+        if git diff --quiet -- "$f"; then
+            printf '%s\n' "$f"
+        fi
+        :
+    done
+)
+PARTIALLY_STAGED=$(
+    echo "$STAGED_KT" | while IFS= read -r f; do
+        [ -n "$f" ] || continue
+        if ! git diff --quiet -- "$f"; then
+            printf '%s\n' "$f"
+        fi
+        :
+    done
+)
 
-# 자동 포맷된 staged 파일만 re-stage (다른 modified 파일은 끌어들이지 않음)
-echo "$STAGED_KT" | while IFS= read -r f; do
-    [ -n "$f" ] || continue
-    [ -f "$f" ] || continue
-    git add -- "$f"
-done
+if [ -n "$FULLY_STAGED" ]; then
+    echo "Running ktlint --format on fully staged files..."
+    # 전체가 staged 된 파일만 포맷 후 다시 stage 한다. 부분 staged 파일을 git add 하면
+    # 사용자가 제외한 hunk 까지 커밋에 포함되므로 아래 staged-content 검사 경로로 분리한다.
+    printf '%s\n' "$FULLY_STAGED" | tr '\n' '\0' | xargs -0 "$KTLINT" --format --relative
+    printf '%s\n' "$FULLY_STAGED" | while IFS= read -r f; do
+        [ -n "$f" ] || continue
+        [ -f "$f" ] || continue
+        git add -- "$f"
+    done
+fi
 
-echo "Running ktlint check on staged files..."
-if ! echo "$STAGED_KT" | tr '\n' '\0' | xargs -0 "$KTLINT" --relative; then
+FAILED=0
+
+if [ -n "$FULLY_STAGED" ]; then
+    echo "Running ktlint check on fully staged files..."
+    if ! printf '%s\n' "$FULLY_STAGED" | tr '\n' '\0' | xargs -0 "$KTLINT" --relative; then
+        FAILED=1
+    fi
+fi
+
+if [ -n "$PARTIALLY_STAGED" ]; then
+    echo "Running ktlint check on partially staged content..."
+    if ! printf '%s\n' "$PARTIALLY_STAGED" | while IFS= read -r f; do
+        [ -n "$f" ] || continue
+        git show ":$f" | "$KTLINT" --stdin --stdin-path="$f" --relative || exit 1
+    done; then
+        FAILED=1
+    fi
+fi
+
+if [ "$FAILED" -ne 0 ]; then
     echo ""
-    echo "✗ ktlint 위반이 남았습니다 (자동 fix 못한 케이스 — 예: trailing-comma, multiline-expression)."
-    echo "  → 위 출력의 파일·라인을 수동 수정 후 'git add' + 재커밋."
-    echo "  → 방금 자동 fix 로 stage 된 변경분은 working tree 에 그대로 남아있습니다."
+    echo "✗ ktlint 위반이 남았습니다."
+    echo "  → 부분 staged 파일은 선택하지 않은 변경을 보호하기 위해 자동 포맷하지 않습니다."
+    echo "  → 위 출력의 파일·라인을 수동 수정한 뒤 필요한 hunk 만 다시 선택해 커밋하세요."
     exit 1
 fi

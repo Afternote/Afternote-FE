@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.data.mapper
 
 import com.afternote.feature.afternote.data.dto.ReceivedAfternoteDto
+import com.afternote.feature.afternote.data.dto.ReceivedAfternoteListDto
 import com.afternote.feature.afternote.domain.AfternoteType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -23,7 +24,7 @@ class ReceiverAfternoteListItemDtoToDomainTest {
             ).toDomain()
 
         assertEquals(9L, result.id)
-        assertEquals("사진첩", result.title)
+        assertEquals("사진첩", result.serviceName)
         assertEquals(AfternoteType.GALLERY_AND_FILES, result.type)
         assertEquals("2025.11.26", result.lastUpdatedAt)
     }
@@ -57,9 +58,21 @@ class ReceiverAfternoteListItemDtoToDomainTest {
         assertEquals(listOf(1L, 2L), list.map { it.id })
     }
 
+    @Test
+    fun `toDomainResult - 서버 totalCount와 목록을 함께 보존`() {
+        val result =
+            ReceivedAfternoteListDto(
+                afternotes = listOf(resp(id = 3L), resp(id = 4L)),
+                totalCount = 7,
+            ).toDomainResult()
+
+        assertEquals(7, result.totalCount)
+        assertEquals(listOf(3L, 4L), result.items.map { it.id })
+    }
+
     private fun resp(
         id: Long = 1L,
-        title: String? = "t",
+        title: String = "t",
         category: String? = "SOCIAL",
         createdAt: String? = "2025-01-01T00:00:00",
     ) = ReceivedAfternoteDto(

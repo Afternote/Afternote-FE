@@ -2,8 +2,10 @@ package com.afternote.feature.timeletter.domain.usecase
 
 import com.afternote.feature.timeletter.domain.model.BlockInput
 import com.afternote.feature.timeletter.domain.model.TimeLetter
+import com.afternote.feature.timeletter.domain.model.TimeLetterDeliveryMode
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
+import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 
 class CreateTimeLetterUseCase
@@ -16,17 +18,25 @@ class CreateTimeLetterUseCase
             title: String?,
             blocks: List<BlockInput>,
             sendAt: String?,
+            deliveryMode: TimeLetterDeliveryMode,
             status: TimeLetterStatus,
-            receiverIds: List<Long>?,
+            receiverIds: List<Long>,
         ): Result<TimeLetter> =
-            runCatching {
+            try {
                 val newBlocks = resolveTimeLetterBlocksUseCase(blocks)
-                timeLetterRepository.createTimeLetter(
-                    title = title,
-                    blocks = newBlocks,
-                    sendAt = sendAt,
-                    status = status,
-                    receiverIds = receiverIds,
+                Result.success(
+                    timeLetterRepository.createTimeLetter(
+                        title = title,
+                        blocks = newBlocks,
+                        sendAt = sendAt,
+                        deliveryMode = deliveryMode,
+                        status = status,
+                        receiverIds = receiverIds,
+                    ),
                 )
+            } catch (cancellationException: CancellationException) {
+                throw cancellationException
+            } catch (error: Throwable) {
+                Result.failure(error)
             }
     }

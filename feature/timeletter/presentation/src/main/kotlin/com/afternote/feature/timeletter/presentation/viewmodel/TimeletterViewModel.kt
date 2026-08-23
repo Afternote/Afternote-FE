@@ -2,6 +2,7 @@ package com.afternote.feature.timeletter.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.timeletter.domain.model.TimeLetterList
 import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
@@ -35,6 +36,7 @@ class TimeletterViewModel
         private fun applyFilter() {
             val letters = allLetters ?: return
             val filterIds = selectedFilterReceiverIds
+            val currentState = _uiState.value as? TimeletterUiState.Success
             val filteredLetters =
                 if (filterIds.isEmpty()) {
                     letters
@@ -50,6 +52,8 @@ class TimeletterViewModel
                     letters = filteredLetters,
                     receiverNameMap = receiverNameMap,
                     selectedFilterReceiverIds = filterIds,
+                    isDeleting = currentState?.isDeleting ?: false,
+                    showDeleteFailure = currentState?.showDeleteFailure ?: false,
                 )
         }
 
@@ -70,29 +74,43 @@ class TimeletterViewModel
                         allLetters = letters
                         applyFilter()
                     }.onFailure {
-                        _uiState.value = TimeletterUiState.Error("타임레터를 불러올 수 없습니다.")
+                        _uiState.value = TimeletterUiState.Error
                     }
             }
         }
 
         fun deleteTimeLetter(timeLetterId: Long) {
+            val stateBeforeDelete = _uiState.value as? TimeletterUiState.Success ?: return
+            if (stateBeforeDelete.isDeleting) return
+            _uiState.value =
+                stateBeforeDelete.copy(
+                    isDeleting = true,
+                    showDeleteFailure = false,
+                )
+
             viewModelScope.launch {
-                runCatching { timeLetterRepository.deleteTimeLetters(listOf(timeLetterId)) }
-                    .onSuccess { load() }
-                    .onFailure {
-                        val currentState = _uiState.value
-                        if (currentState is TimeletterUiState.Success) {
-                            _uiState.value =
-                                currentState.copy(errorMessage = "타임레터를 삭제할 수 없습니다.")
+                runCatchingCancellable { timeLetterRepository.deleteTimeLetters(listOf(timeLetterId)) }
+                    .onSuccess {
+                        val latestState = _uiState.value
+                        if (latestState is TimeletterUiState.Success) {
+                            _uiState.value = latestState.copy(isDeleting = false)
                         }
+                        load()
+                    }.onFailure {
+                        val latestSuccess = _uiState.value as? TimeletterUiState.Success
+                        _uiState.value =
+                            (latestSuccess ?: stateBeforeDelete).copy(
+                                isDeleting = false,
+                                showDeleteFailure = true,
+                            )
                     }
             }
         }
 
-        fun consumeErrorMessage() {
+        fun consumeDeleteFailure() {
             val currentState = _uiState.value
             if (currentState is TimeletterUiState.Success) {
-                _uiState.value = currentState.copy(errorMessage = null)
+                _uiState.value = currentState.copy(showDeleteFailure = false)
             }
         }
     }

@@ -124,8 +124,9 @@ class DraftListViewModel
                         }
 
                     val diaryItems =
-                        draftDiariesDeferred.await().map { diary ->
-                            val ui = diary.toUi()
+                        // 날짜를 못 정한 항목은 toUi() 가 null 을 돌린다 — 정렬 키가 없어 뺀다.
+                        draftDiariesDeferred.await().mapNotNull { diary ->
+                            val ui = diary.toUi() ?: return@mapNotNull null
                             DraftItem(
                                 id = ui.id,
                                 category = DraftCategory.Diary,

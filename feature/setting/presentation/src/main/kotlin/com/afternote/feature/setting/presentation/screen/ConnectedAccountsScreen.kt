@@ -29,9 +29,11 @@ import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.setting.presentation.BuildConfig
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.SocialAccountRow
+import com.afternote.feature.setting.presentation.social.KakaoAuthResult
 import com.afternote.feature.setting.presentation.social.UserCancelledAuthException
 import com.afternote.feature.setting.presentation.social.requestGoogleIdToken
 import com.afternote.feature.setting.presentation.social.requestKakaoAccessToken
+import com.afternote.feature.setting.presentation.social.toKakaoAuthResult
 import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsEvent
 import com.afternote.feature.setting.presentation.viewmodel.ConnectedAccountsViewModel
 
@@ -45,6 +47,8 @@ fun ConnectedAccountsScreen(
     val context = LocalContext.current
     val credentialManager = remember(context) { CredentialManager.create(context) }
     val snackbarHostState = remember { SnackbarHostState() }
+    val kakaoAccountLinkFailedMessage = stringResource(R.string.kakao_account_link_failed)
+    val googleAccountLinkFailedMessage = stringResource(R.string.google_account_link_failed)
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -57,14 +61,22 @@ fun ConnectedAccountsScreen(
                     when (event.provider) {
                         "kakao" -> {
                             val activity = context.findActivity<Activity>()
-                            if (activity != null) {
-                                requestKakaoAccessToken(activity)
-                                    .onSuccess { token -> viewModel.link("kakao", token) }
-                                    .onFailure { e ->
-                                        if (e !is UserCancelledAuthException) {
-                                            viewModel.link("kakao", "") // error state 전달용 빈 호출 방지 — 아래 TODO로 대체 가능
-                                        }
-                                    }
+                            val authResult =
+                                activity
+                                    ?.let { requestKakaoAccessToken(it).toKakaoAuthResult() }
+                                    ?: KakaoAuthResult.Failure
+                            when (authResult) {
+                                is KakaoAuthResult.Success -> {
+                                    viewModel.link("kakao", authResult.accessToken)
+                                }
+
+                                KakaoAuthResult.Cancelled -> {}
+
+                                KakaoAuthResult.Failure -> {
+                                    snackbarHostState.showSnackbar(
+                                        kakaoAccountLinkFailedMessage,
+                                    )
+                                }
                             }
                         }
 
@@ -76,7 +88,9 @@ fun ConnectedAccountsScreen(
                             ).onSuccess { token -> viewModel.link("google", token) }
                                 .onFailure { e ->
                                     if (e !is UserCancelledAuthException) {
-                                        viewModel.notifyLinkError("Google 계정 연결에 실패했습니다.")
+                                        viewModel.notifyLinkError(
+                                            googleAccountLinkFailedMessage,
+                                        )
                                     }
                                 }
                         }

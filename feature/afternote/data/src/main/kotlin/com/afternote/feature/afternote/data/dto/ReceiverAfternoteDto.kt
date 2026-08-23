@@ -12,7 +12,7 @@ data class ReceivedAfternoteListDto(
 @Serializable
 data class ReceivedAfternoteDto(
     @SerialName("id") val id: Long,
-    @SerialName("title") val title: String? = null,
+    @SerialName("title") val title: String,
     @SerialName("category") val category: String? = null,
     @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
     @SerialName("senderId") val senderId: Long? = null,
