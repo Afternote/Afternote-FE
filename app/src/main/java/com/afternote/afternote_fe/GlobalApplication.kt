@@ -4,6 +4,7 @@ import android.app.Application
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
+import com.afternote.afternote_fe.messaging.FcmNotificationChannel
 import com.afternote.core.network.di.CoilImageLoaderEntryPoint
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.android.HiltAndroidApp
@@ -20,6 +21,7 @@ class GlobalApplication :
 
     override fun onCreate() {
         super.onCreate()
-        // 초기화 로직은 전부 core:startup의 App Startup Initializer로 둔다.
+        FcmNotificationChannel.create(this)
+        // 공통 초기화는 core:startup에 두고, app 전용 Firebase 채널만 여기서 생성한다.
     }
 }

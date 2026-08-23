@@ -4,12 +4,16 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -25,6 +29,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.toRoute
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -81,11 +86,14 @@ internal fun DesignPendingDetailContent(onBackClick: () -> Unit) {
  *
  * @param messageRes 앱에 박힌 문자열 리소스 ID(`R.string.*`). `@StringRes` 는 이 Int 가 임의 정수가 아니라
  *   string 리소스 id 임을 Lint 에 알리는 표식이며, [stringResource] 로 실제 텍스트로 변환한다.
+ * @param onRetryClick 재조회 진입점. `null` 이면 재시도 버튼을 그리지 않는다 — 잘못된 항목 ID 처럼
+ *   같은 요청을 다시 보내도 결과가 달라지지 않는 실패에 쓴다.
  */
 @Composable
 internal fun DetailLoadErrorContent(
     @StringRes messageRes: Int?,
     onBackClick: () -> Unit,
+    onRetryClick: (() -> Unit)? = null,
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -101,7 +109,19 @@ internal fun DetailLoadErrorContent(
                     .padding(paddingValues),
             contentAlignment = Alignment.Center,
         ) {
-            Text(text = stringResource(messageRes ?: R.string.afternote_detail_load_error))
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(text = stringResource(messageRes ?: R.string.afternote_detail_load_error))
+                if (onRetryClick != null) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    TextButton(onClick = onRetryClick) {
+                        Text(
+                            text = stringResource(R.string.afternote_detail_retry),
+                            style = AfternoteDesign.typography.captionLargeB,
+                            color = AfternoteDesign.colors.gray9,
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -207,23 +227,19 @@ internal fun ObserveDeleteResult(
 internal fun AfternoteDetailNavigation(
     backStackEntry: NavBackStackEntry,
     onBack: () -> Unit,
-    onNavigateToEditor: (itemId: String) -> Unit,
+    onNavigateToEditor: (itemId: Long) -> Unit,
 ) {
-    val route = backStackEntry.toRoute<AfternoteRoute.DetailRoute>()
-    if (route.itemId.isBlank()) {
-        DesignPendingDetailContent(onBackClick = onBack)
-    } else {
-        AccountDetailRoute(
-            onBack = onBack,
-            onNavigateToEditor = onNavigateToEditor,
-        )
-    }
+    backStackEntry.toRoute<AfternoteRoute.DetailRoute>()
+    AccountDetailRoute(
+        onBack = onBack,
+        onNavigateToEditor = onNavigateToEditor,
+    )
 }
 
 @Composable
 internal fun AfternoteGalleryDetailNavigation(
     onBack: () -> Unit,
-    onNavigateToEditor: (itemId: String) -> Unit,
+    onNavigateToEditor: (itemId: Long) -> Unit,
 ) {
     GalleryDetailRoute(
         onBack = onBack,
@@ -242,7 +258,7 @@ private fun DeleteInProgressOverlayPreview() {
 @Composable
 internal fun AfternoteMemorialDetailNavigation(
     onBack: () -> Unit,
-    onNavigateToEditor: (itemId: String) -> Unit,
+    onNavigateToEditor: (itemId: Long) -> Unit,
 ) {
     MemorialDetailRoute(
         onBack = onBack,

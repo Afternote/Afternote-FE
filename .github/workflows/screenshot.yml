@@ -1,8 +1,9 @@
 name: Compose Preview Screenshot Test
 
+# base 필터를 두지 않는다 — base 변경(feat/* → develop)은 pull_request 기본 activity type 에
+# 없어 재트리거되지 않으므로, 필터가 있으면 스택 PR 이 검증을 한 번도 거치지 않고 머지된다.
 on:
   pull_request:
-    branches: [main, develop]
 
 permissions:
   contents: read
@@ -14,16 +15,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # docker buildx + gha cache 로 Dockerfile.screenshot 빌드.
       # 동일 이미지에서 baseline 생성·검증을 수행해 anti-aliasing/font/scale 등 host 환경 차이 root fix.
       # Dockerfile 변경 없으면 cache 재사용 — 분당 단위 추가 비용.
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build screenshot image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile.screenshot
@@ -32,51 +33,17 @@ jobs:
           cache-from: type=gha,scope=screenshot
           cache-to: type=gha,scope=screenshot,mode=max
 
-      # :app 모듈은 google-services plugin 활성화 — processDebugGoogleServices 가 google-services.json 요구.
-      # CI 환경엔 실 키 없으므로 stub JSON 생성 (Firebase 호출 안 함, plugin 통과 목적).
-      # 실 분석/배포는 Firebase App Distribution 워크플로 (#298 영역) 에서 별도 secret 으로 처리.
-      - name: Create stub google-services.json (CI only)
-        run: |
-          cat > app/google-services.json <<'EOF'
-          {
-            "project_info": {
-              "project_number": "000000000000",
-              "project_id": "afternote-ci-stub",
-              "storage_bucket": "afternote-ci-stub.appspot.com"
-            },
-            "client": [
-              {
-                "client_info": {
-                  "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
-                  "android_client_info": {
-                    "package_name": "com.afternote.afternote_fe"
-                  }
-                },
-                "oauth_client": [],
-                "api_key": [
-                  { "current_key": "AIzaSyDfake_ci_only_no_real_value_xxxxxxxxxxx" }
-                ],
-                "services": {
-                  "appinvite_service": {
-                    "other_platform_oauth_client": []
-                  }
-                }
-              }
-            ],
-            "configuration_version": "1"
-          }
-          EOF
+      - name: Set up CI-only app configuration
+        uses: ./.github/actions/setup-ci-config
 
-      # Gradle home cache 디렉토리 (컨테이너 마운트용)
-      - name: Restore Gradle cache
-        uses: actions/cache@v4
+      # setup-gradle 의 공개 MIT cache provider 로 host 의 Gradle home 을 복원한 뒤
+      # 컨테이너 /root/.gradle 로 마운트한다. PR 은 cache poisoning 방지를 위해 읽기 전용이다.
+      - name: Set up Gradle and validate wrapper
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties', 'gradle/libs.versions.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+          cache-provider: basic
+          cache-read-only: true
+          validate-wrappers: true
 
       - name: Run validateScreenshotTest in container
         run: |
@@ -92,9 +59,6 @@ jobs:
                       :feature:onboarding:presentation:validateScreenshotTest \
                       :feature:afternote:presentation:validateScreenshotTest \
                       --parallel
-        env:
-          KAKAO_NATIVE_APP_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
-          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
 
       # 컨테이너가 root 로 gradle 을 실행해 workspace · ~/.gradle 산출물이 root 소유가 된다.
       # job 종료 시 'Post Restore Gradle cache'(캐시 저장)의 hashFiles/tar 가 runner 권한이라
@@ -106,7 +70,7 @@ jobs:
       # 실패 시 diff/rendered 이미지를 artifact 로 업로드 — 본인이 다운로드해 시각 차이 확인 가능
       - name: Upload screenshot diff on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: screenshot-test-results
           path: |
@@ -120,7 +84,7 @@ jobs:
       # 같은 PR 의 재실행에서는 기존 코멘트를 update (marker 로 중복 누적 방지).
       - name: Comment artifact URL on PR (failure)
         if: failure() && github.event_name == 'pull_request'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const marker = '<!-- screenshot-fail-bot -->';

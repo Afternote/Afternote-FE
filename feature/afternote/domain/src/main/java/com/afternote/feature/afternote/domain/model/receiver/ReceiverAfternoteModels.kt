@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.domain.model.receiver
 
 import com.afternote.feature.afternote.domain.AfternoteType
+import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 
 data class AfterNotesListResult(
     val items: List<AfterNoteListItem>,
@@ -9,13 +10,9 @@ data class AfterNotesListResult(
 
 data class AfterNoteListItem(
     val id: Long,
-    val title: String?,
-    val sourceType: String?,
+    val serviceName: String,
+    val type: AfternoteType?,
     val lastUpdatedAt: String?,
-)
-
-data class LoadCountResult(
-    val totalCount: Int,
 )
 
 data class ReceivedExportBundle(
@@ -29,7 +26,7 @@ data class ReceivedAfternoteDetail(
     val category: String? = null,
     val type: AfternoteType? = null,
     val processingMethods: List<String> = emptyList(),
-    val leaveMessage: String? = null,
+    val leaveMessageBlocks: List<LeaveMessageBlock> = emptyList(),
     val playlist: ReceivedPlaylistDetail? = null,
     val credentials: ReceivedAccountCredentials? = null,
 )

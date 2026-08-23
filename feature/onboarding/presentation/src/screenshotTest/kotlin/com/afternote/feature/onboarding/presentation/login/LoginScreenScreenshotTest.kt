@@ -27,9 +27,38 @@ internal fun loginScreenInitialScreenshot() {
             onFindAccountClick = {},
             onKakaoLoginClick = {},
             onGoogleLoginClick = {},
+            onRetryLogin = {},
+            onNetworkErrorDismiss = {},
             onBackClick = {},
             snackbarHostState = remember { SnackbarHostState() },
             isLoading = false,
+        )
+    }
+}
+
+/**
+ * 자격 거절 상태 — 비밀번호 필드 error 보더 + 6dp 아래 인라인 안내 (시안 `3628:23437`).
+ */
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+internal fun loginScreenCredentialErrorScreenshot() {
+    AfternoteTheme {
+        LoginScreen(
+            initialEmail = "user@example.com",
+            initialPassword = "wrong-password",
+            onEmailChange = {},
+            onPasswordChange = {},
+            onLoginClick = {},
+            onSignUpClick = {},
+            onFindAccountClick = {},
+            onKakaoLoginClick = {},
+            onGoogleLoginClick = {},
+            onRetryLogin = {},
+            onNetworkErrorDismiss = {},
+            onBackClick = {},
+            snackbarHostState = remember { SnackbarHostState() },
+            hasCredentialError = true,
         )
     }
 }

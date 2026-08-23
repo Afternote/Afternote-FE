@@ -2,6 +2,7 @@ package com.afternote.feature.afternote.presentation.author.detail.account
 
 import androidx.compose.runtime.Immutable
 import com.afternote.feature.afternote.domain.AfternoteType
+import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiModel
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 
 /**
@@ -18,7 +19,7 @@ data class AccountDetailContent(
     val accountId: String = "",
     val password: String = "",
     val processingMethods: List<String> = emptyList(),
-    val message: String = "",
+    val messageBlocks: List<MessageBlockUiModel> = emptyList(),
     val finalWriteDate: String = "",
     val afternoteEditReceivers: List<ReceiverUiModel> = emptyList(),
 )

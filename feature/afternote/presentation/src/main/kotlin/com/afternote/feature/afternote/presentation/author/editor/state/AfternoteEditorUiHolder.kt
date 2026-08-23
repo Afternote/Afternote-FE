@@ -15,7 +15,6 @@ import com.afternote.feature.afternote.presentation.author.editor.message.Editor
  * 다이얼로그 타입 (순수 UI).
  */
 enum class DialogType {
-    ADD_AFTERNOTE_EDIT_RECEIVER,
     CUSTOM_SERVICE,
 }
 
@@ -30,15 +29,10 @@ enum class DialogType {
 class AfternoteEditorUiHolder(
     val idState: TextFieldState,
     val passwordState: TextFieldState,
-    val afternoteEditReceiverNameState: TextFieldState,
-    val phoneNumberState: TextFieldState,
     val customServiceNameState: TextFieldState,
 ) {
     val editorMessages: SnapshotStateList<EditorMessage> =
         mutableStateListOf(EditorMessage())
-
-    var relationshipSelectedValue by mutableStateOf("친구")
-        private set
 
     var activeDialog by mutableStateOf<DialogType?>(null)
         private set
@@ -59,24 +53,13 @@ class AfternoteEditorUiHolder(
         }
     }
 
-    fun showAddAfternoteEditorReceiverDialog() {
-        activeDialog = DialogType.ADD_AFTERNOTE_EDIT_RECEIVER
-    }
-
     fun showCustomServiceDialog() {
         activeDialog = DialogType.CUSTOM_SERVICE
     }
 
     fun dismissDialog() {
         activeDialog = null
-        afternoteEditReceiverNameState.edit { replace(0, length, "") }
-        phoneNumberState.edit { replace(0, length, "") }
         customServiceNameState.edit { replace(0, length, "") }
-        relationshipSelectedValue = "친구"
-    }
-
-    fun onRelationshipSelected(relationship: String) {
-        relationshipSelectedValue = relationship
     }
 
     fun onCategoryDropdownExpandedChange(expanded: Boolean) {
@@ -92,22 +75,16 @@ class AfternoteEditorUiHolder(
 fun rememberAfternoteEditorUiHolder(
     idState: TextFieldState,
     passwordState: TextFieldState,
-    afternoteEditReceiverNameState: TextFieldState,
-    phoneNumberState: TextFieldState,
     customServiceNameState: TextFieldState,
 ): AfternoteEditorUiHolder =
     remember(
         idState,
         passwordState,
-        afternoteEditReceiverNameState,
-        phoneNumberState,
         customServiceNameState,
     ) {
         AfternoteEditorUiHolder(
             idState = idState,
             passwordState = passwordState,
-            afternoteEditReceiverNameState = afternoteEditReceiverNameState,
-            phoneNumberState = phoneNumberState,
             customServiceNameState = customServiceNameState,
         )
     }

@@ -6,10 +6,12 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.timeletter.domain.model.BlockInput
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlockType
+import com.afternote.feature.timeletter.domain.model.TimeLetterDeliveryMode
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.domain.repository.FileMetadataRepository
 import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
@@ -55,7 +57,7 @@ class TimeLetterWriteViewModel
         init {
             viewModelScope.launch {
                 receiverNameMap =
-                    runCatching { userRepository.getReceivers() }
+                    runCatchingCancellable { userRepository.getReceivers() }
                         .getOrElse { emptyList() }
                         .associate { it.receiverId to it.name }
                 editingTimeLetterId?.let { loadEditingTimeLetter(it) }
@@ -77,6 +79,33 @@ class TimeLetterWriteViewModel
                 state.copy(
                     recipientIds = ids,
                     recipientNames = ids.mapNotNull { receiverNameMap[it] },
+                )
+            }
+        }
+
+        fun updateDraftTitle(title: String) {
+            _uiState.update { state -> state.copy(draftTitle = title) }
+        }
+
+        fun updateDraftContent(
+            title: String,
+            textContents: Map<Long, String>,
+        ) {
+            _uiState.update { state ->
+                state.copy(
+                    draftTitle = title,
+                    draftTextContents = state.draftTextContents + textContents,
+                )
+            }
+        }
+
+        fun updateDraftTextContent(
+            blockId: Long,
+            content: String,
+        ) {
+            _uiState.update { state ->
+                state.copy(
+                    draftTextContents = state.draftTextContents + (blockId to content),
                 )
             }
         }
@@ -114,8 +143,12 @@ class TimeLetterWriteViewModel
             val state = _uiState.value
             if (state.isSaving || isCheckingRegisterLimit) return
 
+            if (state.recipientIds.isEmpty()) {
+                _uiState.update { it.copy(error = TimeLetterWriteError.RECIPIENT_REQUIRED) }
+                return
+            }
             if (state.sendAt == null) {
-                _uiState.update { it.copy(errorMessage = "발송 날짜를 선택해주세요.") }
+                _uiState.update { it.copy(error = TimeLetterWriteError.SEND_DATE_REQUIRED) }
                 return
             }
             isCheckingRegisterLimit = true
@@ -123,10 +156,10 @@ class TimeLetterWriteViewModel
                 try {
                     if (state.editingTimeLetterId == null) {
                         val registeredCount =
-                            runCatching { timeLetterRepository.getTimeLetters().totalCount }
+                            runCatchingCancellable { timeLetterRepository.getTimeLetters().totalCount }
                                 .getOrElse {
                                     _uiState.update { current ->
-                                        current.copy(errorMessage = "타임레터를 불러올 수 없습니다.")
+                                        current.copy(error = TimeLetterWriteError.LOAD_FAILED)
                                     }
                                     return@launch
                                 }
@@ -145,7 +178,7 @@ class TimeLetterWriteViewModel
         }
 
         fun clearError() {
-            _uiState.update { it.copy(errorMessage = null) }
+            _uiState.update { it.copy(error = null) }
         }
 
         fun onSavedAsDraftShown() {
@@ -246,56 +279,67 @@ class TimeLetterWriteViewModel
         ) {
             val state = _uiState.value
             if (state.isSaving) return
+            if (state.recipientIds.isEmpty()) {
+                _uiState.update { it.copy(error = TimeLetterWriteError.RECIPIENT_REQUIRED) }
+                return
+            }
 
             viewModelScope.launch {
                 _uiState.update { it.copy(isSaving = true) }
-                val sendAt =
-                    state.sendAt?.let { date ->
-                        "${date}T${
-                            state.sendHour.toString().padStart(2, '0')
-                        }:${state.sendMinute.toString().padStart(2, '0')}:00"
-                    }
-                val saveResult =
-                    if (state.editingTimeLetterId == null) {
-                        val blocks = mapToBlockInputs(state.editorBlocks, textContents)
-                        createTimeLetterUseCase(
-                            title = title.ifBlank { null },
-                            blocks = blocks,
-                            sendAt = sendAt,
-                            status = status,
-                            receiverIds = state.recipientIds.ifEmpty { null },
-                        )
-                    } else {
-                        runCatching {
-                            timeLetterRepository.updateTimeLetter(
-                                timeLetterId = state.editingTimeLetterId,
+                try {
+                    val sendAt =
+                        state.sendAt?.let { date ->
+                            "${date}T${
+                                state.sendHour.toString().padStart(2, '0')
+                            }:${state.sendMinute.toString().padStart(2, '0')}:00"
+                        }
+                    val saveResult =
+                        if (state.editingTimeLetterId == null) {
+                            val blocks = mapToBlockInputs(state.editorBlocks, textContents)
+                            createTimeLetterUseCase(
                                 title = title.ifBlank { null },
-                                blocks =
-                                    resolveTimeLetterBlocksUseCase(
-                                        mapToBlockInputs(state.editorBlocks, textContents),
-                                    ),
+                                blocks = blocks,
                                 sendAt = sendAt,
+                                deliveryMode = TimeLetterDeliveryMode.DATE,
                                 status = status,
+                                receiverIds = state.recipientIds,
                             )
-                        }
-                    }
-                saveResult
-                    .onSuccess {
-                        if (status == TimeLetterStatus.DRAFT) {
-                            loadDraftCount()
-                            _uiState.update { it.copy(savedAsDraft = true) }
                         } else {
-                            _uiState.update { it.copy(registered = true) }
+                            runCatchingCancellable {
+                                timeLetterRepository.updateTimeLetter(
+                                    timeLetterId = state.editingTimeLetterId,
+                                    title = title.ifBlank { null },
+                                    blocks =
+                                        resolveTimeLetterBlocksUseCase(
+                                            mapToBlockInputs(state.editorBlocks, textContents),
+                                        ),
+                                    sendAt = sendAt,
+                                    deliveryMode = TimeLetterDeliveryMode.DATE,
+                                    status = status,
+                                )
+                            }
                         }
-                    }.onFailure {
-                        _uiState.update { it.copy(errorMessage = "저장에 실패했어요. 다시 시도해주세요.") }
-                    }
-                _uiState.update { it.copy(isSaving = false) }
+                    saveResult
+                        .onSuccess {
+                            if (status == TimeLetterStatus.DRAFT) {
+                                loadDraftCount()
+                                _uiState.update { it.copy(savedAsDraft = true) }
+                            } else {
+                                _uiState.update { it.copy(registered = true) }
+                            }
+                        }.onFailure {
+                            _uiState.update {
+                                it.copy(error = TimeLetterWriteError.SAVE_FAILED)
+                            }
+                        }
+                } finally {
+                    _uiState.update { it.copy(isSaving = false) }
+                }
             }
         }
 
         private suspend fun loadEditingTimeLetter(timeLetterId: Long) {
-            runCatching { timeLetterRepository.getTimeLetter(timeLetterId) }
+            runCatchingCancellable { timeLetterRepository.getTimeLetter(timeLetterId) }
                 .onSuccess { letter ->
                     val editorBlocks = letter.toEditorBlocks()
                     val sendAtDate = letter.sendAt?.take(10)
@@ -317,8 +361,8 @@ class TimeLetterWriteViewModel
                         it.copy(
                             editingTimeLetterId = letter.id,
                             isLoadingEditingLetter = false,
-                            initialTitle = letter.title.orEmpty(),
-                            initialTextContents =
+                            draftTitle = letter.title.orEmpty(),
+                            draftTextContents =
                                 letter.blocks
                                     .filter { block -> block.blockType == TimeLetterBlockType.TEXT }
                                     .associate { block -> block.id to (block.textContent ?: "") },
@@ -335,7 +379,7 @@ class TimeLetterWriteViewModel
                     }
                 }.onFailure {
                     _uiState.update { it.copy(isLoadingEditingLetter = false) }
-                    _uiState.update { it.copy(errorMessage = "타임레터를 불러올 수 없습니다.") }
+                    _uiState.update { it.copy(error = TimeLetterWriteError.LOAD_FAILED) }
                 }
         }
 
@@ -467,7 +511,7 @@ class TimeLetterWriteViewModel
 
         private fun loadDraftCount() {
             viewModelScope.launch {
-                runCatching { timeLetterRepository.getTemporaryTimeLetters() }
+                runCatchingCancellable { timeLetterRepository.getTemporaryTimeLetters() }
                     .onSuccess { result ->
                         _uiState.update { it.copy(draftCount = result.totalCount) }
                     }

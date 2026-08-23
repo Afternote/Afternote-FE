@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.data.repositoryimpl.receiver
 
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.network.model.ApiException
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
@@ -25,10 +26,11 @@ import javax.inject.Singleton
 /**
  * `receiver-auth` 계열 endpoint 의 [ReceiverAuthRepository] 구현.
  *
- * 에러 처리 구조 — 일부 메서드는 try/catch 가 runCatching *안에* 포개져 있다:
+ * 에러 처리 구조 — 일부 메서드는 try/catch 가 [runCatchingCancellable] *안에* 포개져 있다:
  * 안쪽 catch 가 [ApiException](인프라 타입)을 도메인 예외로 바꿔 던지면(exception translation),
- * 그 새 예외는 자기를 만든 try 로 되돌아가지 않고 바깥 runCatching 이 잡아
+ * 그 새 예외는 자기를 만든 try 로 되돌아가지 않고 바깥 [runCatchingCancellable] 이 잡아
  * `Result.failure(도메인 예외)` 로 반환된다 — 호출자에게 예외가 throw 되어 나가는 일은 없다.
+ * 안쪽 catch 는 [ApiException] 만 받으므로 취소는 여기 걸리지 않고 바깥 래퍼가 그대로 되던진다.
  */
 @Singleton
 class ReceiverAuthRepositoryImpl
@@ -37,7 +39,7 @@ class ReceiverAuthRepositoryImpl
         private val api: ReceiverAuthApiService,
     ) : ReceiverAuthRepository {
         override suspend fun verifyMasterKey(authCode: String): Result<ReceiverIdentity> =
-            runCatching {
+            runCatchingCancellable {
                 try {
                     api.verifyMasterKey(ReceiverAuthVerifyRequestDto(authCode)).requireData().toDomain()
                 } catch (e: ApiException) {
@@ -46,7 +48,7 @@ class ReceiverAuthRepositoryImpl
             }
 
         override suspend fun sendEmailAuthCode(email: String): Result<Unit> =
-            runCatching {
+            runCatchingCancellable {
                 try {
                     api.sendEmailAuthCode(ReceiverAuthCodeEmailSendRequestDto(email)).requireStatus()
                 } catch (e: ApiException) {
@@ -58,7 +60,7 @@ class ReceiverAuthRepositoryImpl
             email: String,
             authCode: String,
         ): Result<ReceiverEmailAuthResult> =
-            runCatching {
+            runCatchingCancellable {
                 try {
                     api
                         .verifyEmailAuthCode(
@@ -71,7 +73,7 @@ class ReceiverAuthRepositoryImpl
             }
 
         override suspend fun getPresignedUrl(extension: String): Result<ReceiverAuthPresignedUrl> =
-            runCatching {
+            runCatchingCancellable {
                 api.getPresignedUrl(ReceiverAuthPresignedUrlRequestDto(extension)).requireData().toDomain()
             }
 
@@ -79,7 +81,7 @@ class ReceiverAuthRepositoryImpl
             deathCertificateUrl: String?,
             familyRelationCertificateUrl: String?,
         ): Result<DeliveryVerification> =
-            runCatching {
+            runCatchingCancellable {
                 try {
                     api
                         .submitDeliveryVerification(
@@ -99,12 +101,12 @@ class ReceiverAuthRepositoryImpl
             }
 
         override suspend fun getDeliveryVerificationStatus(): Result<DeliveryVerification> =
-            runCatching {
+            runCatchingCancellable {
                 api.getDeliveryVerificationStatus().requireData().toDomain()
             }
 
         override suspend fun getSenderMessage(): Result<SenderMessageInfo> =
-            runCatching {
+            runCatchingCancellable {
                 api.getSenderMessage().requireData().toDomain()
             }
     }

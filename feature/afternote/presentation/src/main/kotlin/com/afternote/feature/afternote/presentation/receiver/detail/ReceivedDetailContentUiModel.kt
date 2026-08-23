@@ -2,6 +2,7 @@ package com.afternote.feature.afternote.presentation.receiver.detail
 
 import androidx.compose.runtime.Immutable
 import com.afternote.core.model.AlbumCover
+import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiModel
 
 /**
  * 카테고리별 수신 상세 UI 모델.
@@ -36,7 +37,7 @@ data class ReceivedSocialNetworkDetailContent(
     val accountId: String = "",
     val password: String = "",
     val processingMethods: List<String> = emptyList(),
-    val message: String = "",
+    val messageBlocks: List<MessageBlockUiModel> = emptyList(),
     val finalWriteDate: String = "",
 )
 
@@ -45,7 +46,7 @@ data class ReceivedGalleryDetailContent(
     val serviceName: String = "",
     val finalWriteDate: String = "",
     val processingMethods: List<String> = emptyList(),
-    val message: String = "",
+    val messageBlocks: List<MessageBlockUiModel> = emptyList(),
 )
 
 /**
@@ -62,7 +63,7 @@ data class ReceivedGalleryDetailContent(
 @Immutable
 data class ReceivedMemorialDetailContent(
     val senderName: String = "",
-    val leaveMessage: String = "",
+    val messageBlocks: List<MessageBlockUiModel> = emptyList(),
     val albumCovers: List<AlbumCover> = emptyList(),
     val songCount: Int = 0,
     val memorialVideoUrl: String? = null,

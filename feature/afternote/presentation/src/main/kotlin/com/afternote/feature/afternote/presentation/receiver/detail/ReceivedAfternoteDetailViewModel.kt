@@ -1,11 +1,14 @@
 package com.afternote.feature.afternote.presentation.receiver.detail
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceiverRoute
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -37,8 +40,8 @@ class ReceivedAfternoteDetailViewModel
         private val receiverRepository: ReceiverRepository,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
-        private val afternoteIdFromNav: Long? =
-            savedStateHandle.get<String>(NAV_ARG_AFTERNOTE_ID)?.toLongOrNull()
+        private val afternoteIdFromNav: Long =
+            savedStateHandle.toRoute<ReceiverRoute.AfternoteDetailRoute>().afternoteId
 
         private val internalState = MutableStateFlow(InternalState())
 
@@ -52,16 +55,11 @@ class ReceivedAfternoteDetailViewModel
                 )
 
         init {
-            val id = afternoteIdFromNav
-            if (id != null) {
-                loadDetail(id)
-            } else {
-                internalState.update {
-                    it.copy(
-                        loadPhase = LoadPhase.Failed(messageRes = R.string.afternote_detail_invalid_id),
-                    )
-                }
-            }
+            loadDetail(afternoteIdFromNav)
+        }
+
+        fun retry() {
+            loadDetail(afternoteIdFromNav)
         }
 
         private fun loadDetail(afternoteId: Long) {
@@ -87,10 +85,6 @@ class ReceivedAfternoteDetailViewModel
             }
         }
 
-        private companion object {
-            private const val NAV_ARG_AFTERNOTE_ID = "afternoteId"
-        }
-
         private data class InternalState(
             val loadPhase: LoadPhase = LoadPhase.Loading,
             val detailId: Long = 0L,
@@ -104,7 +98,7 @@ class ReceivedAfternoteDetailViewModel
             ) : LoadPhase
 
             data class Failed(
-                val messageRes: Int? = null,
+                @param:StringRes val messageRes: Int,
             ) : LoadPhase
         }
 

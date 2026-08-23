@@ -150,7 +150,14 @@ class DiaryListViewModel
 
                 is LoadPhase.Loaded -> {
                     DiaryListUiState.Success(
-                        diaries = phase.list.diaries.map { it.toUi() },
+                        // 임시저장은 캘린더 목록에 섞지 않는다. 서버는 `draftOnly` 를 생략하면
+                        // 그 달 전체(임시저장 포함)를 내려주므로 여기서 걸러야 한다 — 같은 모듈의
+                        // DailyQuestionListViewModel·ReceiverMindRecordViewModel 과 같은 규칙이다.
+                        // 날짜를 못 정한 항목은 toUi() 가 null 을 돌려 함께 빠진다.
+                        diaries =
+                            phase.list.diaries
+                                .filterNot { it.isDraft }
+                                .mapNotNull { it.toUi() },
                         yearMonth = yearMonth,
                         monthDiaryCount = phase.list.monthDiaryCount,
                         weeklyDominantMood = phase.list.weeklyDominantMood,

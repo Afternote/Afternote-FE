@@ -74,10 +74,16 @@ data class DocumentUploadUiState(
     /** 제출 성공 신호 — UI 가 LaunchedEffect 로 완료 화면 이동 후 [DocumentUploadViewModel.onSubmittedConsumed] 로 reset. */
     val isSubmitted: Boolean = false,
 ) {
-    /** 두 서류 중 하나 이상 업로드되면 제출 가능 — 서버도 최소 1개만 요구한다 (이슈 #380). */
+    /**
+     * 두 서류 중 하나 이상 업로드되면 제출 가능 — 서버도 최소 1개만 요구한다 (이슈 #380).
+     * 단 어느 슬롯이든 업로드 진행 중이면 잠근다 — 이미 성공한 URL 만 실려 진행 중 파일이
+     * 신청에서 조용히 빠지는 것 방지 (#711).
+     */
     val canSubmit: Boolean
         get() =
             !isSubmitting &&
+                !deathCertificate.isUploading &&
+                !familyRelationCertificate.isUploading &&
                 (deathCertificate.fileUrl != null || familyRelationCertificate.fileUrl != null)
 }
 

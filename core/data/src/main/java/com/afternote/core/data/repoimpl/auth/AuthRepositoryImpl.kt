@@ -3,8 +3,9 @@ package com.afternote.core.data.repoimpl.auth
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.data.mapper.auth.AuthMapper
 import com.afternote.core.datastore.TokenDataSource
-import com.afternote.core.domain.error.LoginRejectedException
+import com.afternote.core.domain.error.InvalidLoginCredentialsException
 import com.afternote.core.domain.error.NetworkUnavailableException
+import com.afternote.core.domain.error.SocialLoginRejectedException
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.model.Session
 import com.afternote.core.model.TokenBundle
@@ -115,6 +116,9 @@ class AuthRepositoryImpl
                         ?: error("리프레시 토큰이 존재하지 않습니다.")
                 val response = tokenApiService.reissue(ReissueRequestDto(refreshToken))
                 val tokenBundleResult = AuthMapper.toRotateTokenResult(response.requireData())
+                check(tokenBundleResult.accessToken.isNotEmpty()) {
+                    "Token rotation returned an empty access token"
+                }
                 updateTokens(
                     accessToken = tokenBundleResult.accessToken,
                     refreshToken = tokenBundleResult.refreshToken,
@@ -152,35 +156,38 @@ class AuthRepositoryImpl
         }
     }
 
-/**
- * 서버 문구를 그대로 표시해도 되는 로그인 거절 사유. BE `ErrorCode.java`(release) 대조로
- * `AuthService.login()`(1201·1202)·`socialLogin()`(1208·1209)이 실제로 던지는 것만 담았다.
- *
- * 대역 판정(4xx 통과)으로 바꾸지 말 것 — [ApiException.code] 는 HTTP 상태가 아니라 본문의
- * 비즈니스 코드고, BE 에는 5xx 에 붙는 코드도 있다(1904).
- *
- * 1603 SOCIAL_CREDENTIALS_REQUIRED 는 제외 — 문구가 에디터용이라 로그인 맥락에서 뜻이 통하지 않는다.
- */
-private val DISPLAYABLE_LOGIN_REJECTION_CODES = setOf(1201, 1202, 1208, 1209)
+// BE `ErrorCode.java` 대조 — `AuthService.login()`·`socialLogin()` 이 실제로 던지는 거절만 담았다.
+// 대역 판정(4xx 통과)으로 바꾸지 말 것: [ApiException.code] 는 HTTP 상태가 아니라 본문의
+// 비즈니스 코드고, BE 에는 5xx 에 붙는 코드도 있다(1904).
+private const val CODE_USER_NOT_FOUND = 1201
+private const val CODE_PASSWORD_MISMATCH = 1202
+private const val CODE_SOCIAL_LOGIN_FAILED = 1208
+private const val CODE_UNSUPPORTED_SOCIAL_LOGIN = 1209
 
 /**
- * 사유가 확인된 실패만 도메인 타입으로 치환하고 나머지는 그대로 둔다 — 소비처가 일반 문구로
- * 내려앉아 5xx 본문(내부 SQL 실측 #511)·역직렬화 원문이 화면에 닿지 않게 하는 것이 목적이다.
+ * 로그인 실패를 도메인 예외로 옮긴다 — 가르는 신호는 서버 봉투의 `code` 뿐이고 `message` 는
+ * 옮기지 않는다(BE#92 — 사용자 노출용이라는 규정이 없어 계약이 아니다). 사유가 확인된 실패만
+ * 치환하고 나머지는 그대로 두어, 소비처가 일반 문구로 내려앉는다(5xx 본문 실측 #511).
  *
- * [ApiException] 을 먼저 거르는 이유 — IOException 서브클래스라(인터셉터 throw 를 OkHttp 가 원형
- * 전파하게 하려는 설계) 순서를 바꾸면 서버 응답 실패가 전송 실패로 잡힌다.
- *
- * 취소는 여기서 다시 보지 않는다 — 호출부가 전부 [runCatchingCancellable] 이라 `CancellationException`
- * 이 [Result] 에 담긴 채로 도달하지 않는다. 재던지기를 남기면 도달 불가능한 갈래가 된다.
+ * [ApiException] 을 먼저 거르는 이유 — IOException 서브클래스라 순서를 바꾸면 서버 응답 실패가
+ * 전송 실패로 잡힌다. 취소는 다시 보지 않는다 — 호출부가 전부 [runCatchingCancellable] 이라
+ * `CancellationException` 이 [Result] 에 담긴 채로 도달하지 않는다.
  */
 private fun <T> Result<T>.mapLoginFailure(): Result<T> =
     when (val exception = exceptionOrNull()) {
         is ApiException -> {
-            val displayMessage = exception.serverMessage?.takeUnless { it.isBlank() }
-            if (exception.code in DISPLAYABLE_LOGIN_REJECTION_CODES && displayMessage != null) {
-                Result.failure(LoginRejectedException(displayMessage, exception))
-            } else {
-                this
+            when (exception.code) {
+                CODE_USER_NOT_FOUND, CODE_PASSWORD_MISMATCH -> {
+                    Result.failure(InvalidLoginCredentialsException(exception))
+                }
+
+                CODE_SOCIAL_LOGIN_FAILED, CODE_UNSUPPORTED_SOCIAL_LOGIN -> {
+                    Result.failure(SocialLoginRejectedException(exception))
+                }
+
+                else -> {
+                    this
+                }
             }
         }
 

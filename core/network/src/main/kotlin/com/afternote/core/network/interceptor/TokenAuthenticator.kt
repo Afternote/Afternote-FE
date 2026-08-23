@@ -8,6 +8,7 @@ import okhttp3.Authenticator
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.Route
+import java.io.IOException
 import javax.inject.Inject
 
 class TokenAuthenticator
@@ -55,14 +56,24 @@ class TokenAuthenticator
                     }
                 }
 
-                TokenReissuer.Outcome.Failed -> {
-                    Log.e("TokenAuthenticator", "❌ 리이슈 실패: 세션 만료. 로그아웃 처리 진행")
+                is TokenReissuer.Outcome.AuthenticationRejected -> {
+                    Log.e("TokenAuthenticator", "❌ 리이슈 인증 거절: 세션 만료 처리")
                     runBlocking { authRepository.get().clearSession() }
                     null
+                }
+
+                is TokenReissuer.Outcome.Failure -> {
+                    Log.e("TokenAuthenticator", "❌ 리이슈 일시 실패: 세션 유지, 요청 중단")
+                    throw TokenReissueFailureException(outcome.exception)
                 }
             }
         }
     }
+
+/** 재발급의 기술 원문을 UI 에 노출하지 않고 현재 요청만 실패시키는 예외. */
+internal class TokenReissueFailureException(
+    cause: Throwable,
+) : IOException(null, cause)
 
 /** 액세스 토큰만 갈아 끼운 재시도용 요청 사본 (OkHttp 공식 recipes 의 인증 예제 형태). */
 private fun Request.withBearer(accessToken: String) =
