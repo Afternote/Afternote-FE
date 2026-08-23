@@ -11,6 +11,15 @@ dependencies {
     compileOnly("org.jetbrains.kotlin:kotlin-serialization:${libs.versions.kotlin.get()}")
     testImplementation(libs.junit)
     testImplementation(gradleTestKit())
+
+    // 루트 build.gradle.kts 의 bouncycastle 하한은 별도 빌드인 여기까지 미치지 않는다 — 같은 근거(#921).
+    constraints {
+        listOf("bcprov-jdk18on", "bcpkix-jdk18on", "bcutil-jdk18on").forEach { artifact ->
+            implementation("org.bouncycastle:$artifact:${libs.versions.bouncycastle.get()}") {
+                because("GHSA-574f-3g2m-x479 등 1.84 미만 취약 — #921")
+            }
+        }
+    }
 }
 
 tasks.withType<Test>().configureEach {
