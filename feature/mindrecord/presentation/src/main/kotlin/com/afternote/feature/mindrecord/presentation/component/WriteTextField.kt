@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -25,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
@@ -40,6 +42,8 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.TextStyleState
 import com.afternote.feature.mindrecord.presentation.model.TextStyleType
+import com.afternote.feature.mindrecord.presentation.util.mediaDisplayName
+import com.afternote.feature.mindrecord.presentation.util.toUploadedFileKey
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
 import com.mohamedrejeb.richeditor.ui.BasicRichTextEditor
 import kotlinx.coroutines.launch
@@ -61,12 +65,25 @@ fun WriteTextField(
     onDraftCountClick: () -> Unit = {},
     draftCount: Int = 0,
     /**
-     * 갤러리에서 고른 이미지를 서버에 업로드하고 영구 URL 을 반환하는 업로더
-     * (`POST /files/presigned-url` → S3 PUT). null 이면 업로드 없이 로컬 URI 를 그대로 삽입한다.
-     * 업로드 실패(반환값 null) 시 이미지는 본문에 삽입되지 않는다.
+     * 갤러리에서 고른 이미지를 서버에 업로드하고 URL 을 반환하는 업로더
+     * (`POST /files/presigned-url` → S3 PUT). 업로드 실패(반환값 null) 시 본문에 삽입하지 않는다.
+     *
+     * **null 을 넘기지 않는다.** 업로더가 없으면 로컬 `content://` URI 가 본문과 저장 데이터에
+     * 그대로 들어가는데, 그 주소는 다른 기기·수신자에게 아무 의미가 없다 (#731).
      */
     onImagePicked: (suspend (uriString: String) -> String?)? = null,
+    /**
+     * 음성·파일 첨부용 업로더. [onImagePicked] 와 같은 경로를 쓰지만 삽입 형태가 다르다 —
+     * 이미지는 `<img>`, 나머지는 파일명을 텍스트로 하는 `<a href>` 다 (#731).
+     */
+    onMediaPicked: (suspend (uriString: String) -> String?)? = null,
 ) {
+    val context = LocalContext.current
+    // 업로드 실패를 조용히 삼키지 않는다 — 종전에는 실패하면 아무 일도 일어나지 않았다 (#731).
+    var mediaError by remember { mutableStateOf<String?>(null) }
+    // 이번 작성에서 붙인 첨부. 에디터가 `<img>` 를 그리지 못해 사진이 대체 문자로만 보이므로,
+    // 무엇을 붙였는지 여기서 이름으로 확인한다 (#731).
+    val attachments = remember { mutableStateListOf<String>() }
     val state = rememberRichTextState()
     val scope = rememberCoroutineScope()
 
@@ -102,42 +119,63 @@ fun WriteTextField(
         runCatching { editorFocusRequester.requestFocus() }
     }
 
-    // 선택된 미디어 URI 를 HTML 태그로 감싸 에디터에 append. compose-richeditor 의 setHtml 이
-    // <img>·<a href> 같은 표준 태그를 파싱해 rich span 으로 변환한다.
-    // 음성/파일은 업로드 미지원 (raw content:// URI 를 그대로 href 로 사용).
-    fun appendMediaToEditor(
+    /**
+     * 고른 미디어를 업로드한 뒤에만 본문에 넣는다.
+     *
+     * 업로더가 없거나 업로드가 실패하면 **아무것도 넣지 않고** 사유를 남긴다. 종전에는
+     * 로컬 `content://` URI 를 그대로 `href` 와 링크 텍스트로 써서, 다른 기기에서 해석할 수
+     * 없는 주소가 사용자 본문과 저장 데이터에 남았다 (#731).
+     *
+     * 이미지는 `<img>`, 음성·파일은 **파일명을 텍스트로 하는** `<a href>` 로 넣는다. 종전에는
+     * 링크 텍스트까지 `content://…` 라 무엇을 첨부했는지 알아볼 수 없었다.
+     */
+    fun attachMedia(
         uri: Uri?,
         asImage: Boolean,
     ) {
         if (uri == null) return
-        val html =
-            if (asImage) "<img src=\"$uri\" />" else "<a href=\"$uri\">$uri</a>"
-        keepEditorFocus { state.setHtml(state.toHtml() + html) }
+        val uploader = if (asImage) onImagePicked else onMediaPicked
+        if (uploader == null) {
+            mediaError = context.getString(R.string.mindrecord_write_media_upload_unavailable)
+            return
+        }
+        val displayName = context.mediaDisplayName(uri)
+        scope.launch {
+            mediaError = null
+            val uploadedUrl = uploader(uri.toString())
+            if (uploadedUrl == null) {
+                mediaError = context.getString(R.string.mindrecord_write_media_upload_failed, displayName)
+                return@launch
+            }
+            // 본문에 넣는 값은 업로드 URL 이 아니라 **fileKey** 다. 서버가 본문의 미디어
+            // 참조를 훑어 staging → permanent 로 옮기고 전체 URL 로 재작성하는데, 전체 URL 을
+            // 넣으면 그 앞에 호스트를 한 번 더 붙여 접근 불가한 주소가 저장된다 (#549·#731).
+            // `img src` 와 `a href` 에 같은 규칙이 적용되는 것을 실서버로 확인했다.
+            val fileKey = uploadedUrl.toUploadedFileKey()
+            val html =
+                if (asImage) {
+                    // 크기를 비워 두면 직렬화 때 width="0" height="0" 이 붙어 어디서도 보이지 않는다.
+                    "<img src=\"$fileKey\" alt=\"$displayName\" width=\"$MEDIA_IMAGE_WIDTH_PX\" " +
+                        "height=\"$MEDIA_IMAGE_HEIGHT_PX\" />"
+                } else {
+                    "<a href=\"$fileKey\">$displayName</a>"
+                }
+            keepEditorFocus { state.setHtml(state.toHtml() + html) }
+            attachments += displayName
+        }
     }
 
     val imageLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-            if (uri == null) return@rememberLauncherForActivityResult
-            val uploader = onImagePicked
-            if (uploader == null) {
-                appendMediaToEditor(uri, asImage = true)
-            } else {
-                // 업로드 완료 후 영구 URL 로 삽입 — 로컬 URI 는 다른 기기/수신자에게 렌더되지 않는다.
-                scope.launch {
-                    val uploadedUrl = uploader(uri.toString())
-                    if (uploadedUrl != null) {
-                        keepEditorFocus { state.setHtml(state.toHtml() + "<img src=\"$uploadedUrl\" />") }
-                    }
-                }
-            }
+            attachMedia(uri, asImage = true)
         }
     val voiceLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-            appendMediaToEditor(uri, asImage = false)
+            attachMedia(uri, asImage = false)
         }
     val fileLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-            appendMediaToEditor(uri, asImage = false)
+            attachMedia(uri, asImage = false)
         }
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -157,6 +195,19 @@ fun WriteTextField(
                         .focusRequester(editorFocusRequester)
                         .padding(16.dp),
             )
+            if (attachments.isNotEmpty()) {
+                AttachmentSummary(
+                    names = attachments,
+                    modifier = Modifier.align(Alignment.BottomStart).padding(16.dp),
+                )
+            }
+            mediaError?.let { message ->
+                Text(
+                    text = message,
+                    color = AfternoteDesign.colors.gray6,
+                    modifier = Modifier.align(Alignment.BottomStart).padding(16.dp),
+                )
+            }
             if (state.annotatedString.text.isEmpty()) {
                 Text(
                     text = stringResource(R.string.mindrecord_write_field_placeholder),
@@ -281,4 +332,29 @@ private fun WriteTextFieldPreview() {
     AfternoteTheme {
         WriteTextField()
     }
+}
+
+/** 에디터 본문 이미지의 기본 표시 크기(px). 비워 두면 직렬화 때 `width="0"` 이 붙는다 (#731). */
+private const val MEDIA_IMAGE_WIDTH_PX = 320
+
+private const val MEDIA_IMAGE_HEIGHT_PX = 240
+
+/**
+ * 이번 작성에서 붙인 첨부 목록.
+ *
+ * compose-richeditor 1.0.0 의 HTML 파서는 `<img>` 를 다루지 않아, 본문에 사진을 넣어도
+ * 에디터에는 자리 문자만 보인다 (AAR 어느 클래스에도 `img` 상수가 없다). 저장되는
+ * 본문에는 정상적으로 들어가지만 작성 중에는 확인할 방법이 없어, 무엇을 붙였는지
+ * 이름으로라도 보여 준다 (#731).
+ */
+@Composable
+private fun AttachmentSummary(
+    names: List<String>,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = stringResource(R.string.mindrecord_write_media_attached, names.joinToString(", ")),
+        color = AfternoteDesign.colors.gray6,
+        modifier = modifier,
+    )
 }

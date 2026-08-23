@@ -7,6 +7,8 @@ plugins {
 android {
     namespace = "com.afternote.feature.mindrecord.presentation"
     resourcePrefix = "mindrecord_"
+
+    testOptions.unitTests.isIncludeAndroidResources = true
 }
 
 dependencies {
@@ -19,4 +21,8 @@ dependencies {
     implementation(libs.compose.rich.editor)
 
     testImplementation(libs.coroutines.test)
+
+    // 첨부 파일명 해석은 ContentResolver 를 타므로 Robolectric 으로 검증한다 (#731).
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core.ktx)
 }

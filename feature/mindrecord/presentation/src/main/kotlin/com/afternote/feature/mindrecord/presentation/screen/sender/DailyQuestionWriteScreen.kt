@@ -123,6 +123,7 @@ fun DailyQuestionWriteScreen(
                 onSaveDraftClick = { viewModel.submit(isDraft = true) },
                 onDraftCountClick = onDraftListClick,
                 onImagePicked = viewModel::uploadImage,
+                onMediaPicked = viewModel::uploadImage,
             )
         }
     }
