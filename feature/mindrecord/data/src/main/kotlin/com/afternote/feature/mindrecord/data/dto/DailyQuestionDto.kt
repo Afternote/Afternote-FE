@@ -63,3 +63,19 @@ data class TodayDailyQuestionDto(
     @JsonNames("draft")
     val isDraft: Boolean = false,
 )
+
+/**
+ * 생성·수정 응답 (`DailyQuestionAnswerResponse` 실측, 2026-08-23).
+ *
+ * 종전에는 `BaseResponse<Unit>` 으로 받아 방금 만든 답변의 식별자를 버렸다. 그러면 저장
+ * 직후 그 레코드를 가리키려고 목록을 다시 조회해 추측으로 찾아야 한다 (#573).
+ *
+ * `userDailyQuestionId`("내 답변")와 요청의 `questionId`("질문")는 의미가 다르다.
+ * 관찰된 값이 같더라도 섞어 쓰면 안 된다.
+ */
+@Serializable
+data class DailyQuestionAnswerResponseDto(
+    @SerialName("userDailyQuestionId") val userDailyQuestionId: Long,
+    @SerialName("content") val content: String = "",
+    @SerialName("isDraft") val isDraft: Boolean = false,
+)

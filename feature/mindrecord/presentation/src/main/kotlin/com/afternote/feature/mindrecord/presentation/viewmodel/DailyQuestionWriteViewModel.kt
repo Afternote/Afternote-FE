@@ -162,8 +162,17 @@ class DailyQuestionWriteViewModel
                         )
                     }
                 result
-                    .onSuccess {
-                        _uiState.update { it.copy(submitState = SubmitState.Succeeded) }
+                    .onSuccess { savedId ->
+                        _uiState.update {
+                            it.copy(
+                                submitState = SubmitState.Succeeded,
+                                // 서버가 돌려준 "내 답변" 식별자를 그대로 든다 (#573).
+                                // 임시저장 뒤 이어서 저장하면 목록을 다시 뒤지지 않고 이 값으로 PATCH 한다 —
+                                // 종전에는 응답을 버려 `resumeDraft()` 가 목록을 재조회해 첫 draft 를
+                                // 추측으로 골랐다.
+                                draftId = if (isDraft) savedId else null,
+                            )
+                        }
                     }.onFailure { e ->
                         _uiState.update {
                             it.copy(
