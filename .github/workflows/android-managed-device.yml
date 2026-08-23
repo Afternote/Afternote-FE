@@ -1,0 +1,99 @@
+name: Android Managed Device Test
+
+# PR 필수 검증으로 올리기 전 안정화 단계다. 수동 실행과 정기 실행의 최근 3회가 연속
+# 성공했는지는 별도 gate 이슈에서 판단하며, 실패를 감추는 job/test 재시도는 두지 않는다.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 18 * * 2,5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-managed-device-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  managed-device:
+    name: Pixel 2 API 30 androidTest
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v7
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle and validate wrapper
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          cache-provider: basic
+          cache-read-only: true
+          validate-wrappers: true
+
+      - name: Enable KVM access
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0660", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # processDebugGoogleServices 용 형식 유효 stub. 실제 Firebase·OAuth·Kakao 값은 쓰지 않는다.
+      # 정적 검증 전체의 설정 공통화는 후속 #842에서 별도 PR로 다룬다.
+      - name: Create CI-only app configuration
+        run: |
+          cat > app/google-services.json <<'EOF'
+          {
+            "project_info": {
+              "project_number": "000000000000",
+              "project_id": "afternote-managed-device-ci",
+              "storage_bucket": "afternote-managed-device-ci.invalid"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+                  "android_client_info": {
+                    "package_name": "com.afternote.afternote_fe"
+                  }
+                },
+                "oauth_client": [],
+                "api_key": [
+                  { "current_key": "managed_device_ci_placeholder_not_a_real_key" }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": []
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          EOF
+
+      - name: Run managed-device androidTest
+        env:
+          KAKAO_NATIVE_APP_KEY: managed_device_ci_kakao_placeholder
+          GOOGLE_WEB_CLIENT_ID: managed-device-ci.apps.invalid
+        run: |
+          ./gradlew pixel2Api30DebugAndroidTest \
+            -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect \
+            --stacktrace
+
+      - name: Upload androidTest reports and failure evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-managed-device-results-${{ github.run_attempt }}
+          if-no-files-found: warn
+          retention-days: 7
+          path: |
+            app/build/reports/androidTests/managedDevice/
+            app/build/outputs/androidTest-results/managedDevice/
+            app/build/outputs/managed_device_android_test_additional_output/
