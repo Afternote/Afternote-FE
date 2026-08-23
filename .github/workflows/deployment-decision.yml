@@ -31,7 +31,7 @@ jobs:
       audit_eligible: ${{ steps.prepare-audit.outputs.audit_eligible }}
     steps:
       - name: Clone merged revision
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha || 'develop' }}
           fetch-depth: 0
@@ -192,7 +192,7 @@ jobs:
           path: ${{ runner.temp }}/afternote-deployment-decision
 
       - name: Publish decision on the merged PR
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           DEPLOYMENT_DECISION_PATH: ${{ runner.temp }}/afternote-deployment-decision/final-decision.json
           TARGET_PR_NUMBER: ${{ github.event.pull_request.number || inputs.pull_request_number }}

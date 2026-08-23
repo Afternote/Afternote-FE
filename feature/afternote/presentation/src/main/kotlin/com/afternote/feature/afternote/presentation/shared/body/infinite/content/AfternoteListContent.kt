@@ -27,7 +27,7 @@ fun AfternoteListContent(
     items: LazyPagingItems<ListItemUiModel>,
     selectedCategory: AfternoteType?,
     onCategorySelected: (AfternoteType?) -> Unit,
-    onListItemClick: (id: String, type: AfternoteType) -> Unit,
+    onListItemClick: (id: Long, type: AfternoteType) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -70,14 +70,14 @@ private fun AfternoteListContentPreview() {
                 PagingData.from(
                     listOf(
                         ListItemUiModel(
-                            id = "1",
+                            id = 1L,
                             serviceName = "추억 노트",
                             date = "2025.12.01",
                             iconResId = R.drawable.feature_afternote_img_logo,
                             type = AfternoteType.MEMORIAL,
                         ),
                         ListItemUiModel(
-                            id = "2",
+                            id = 2L,
                             serviceName = "인스타그램",
                             date = "2025.11.26",
                             iconResId = R.drawable.feature_afternote_img_logo,

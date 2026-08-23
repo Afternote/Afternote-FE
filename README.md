@@ -195,9 +195,13 @@ CI 가 사용하는 GitHub Secrets (Settings → Secrets and variables → Actio
 | `RELEASE_KEY_ALIAS` | key alias (`afternote-release`) |
 | `RELEASE_KEY_PASSWORD` | key 비밀번호 |
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | App Distribution Admin 권한 부여된 service account JSON 원문 |
-| `KAKAO_NATIVE_APP_KEY` · `GOOGLE_WEB_CLIENT_ID` · `GOOGLE_SERVICES_JSON_B64` | `local.properties` 키 (`lint.yml` 과 공유) |
+| `KAKAO_NATIVE_APP_KEY` · `GOOGLE_WEB_CLIENT_ID` · `GOOGLE_SERVICES_JSON_B64` | 배포 APK용 실서비스 앱 설정 (`release-distribution.yml` 전용) |
 
 > base64 인코딩: `base64 -i ~/afternote-release.jks | pbcopy` (macOS)
+
+PR 검증용 lint·unit-test·screenshot은 repository secret 대신
+`.github/actions/setup-ci-config`가 만드는 결정적 CI 전용 placeholder를 사용한다. 이 fixture는
+배포에 사용할 수 없으며, `release-distribution.yml`은 계속 승인된 환경의 위 secret만 사용한다.
 
 ### 로컬 — 1hyok 머신 (fallback / 긴급 시)
 
@@ -258,20 +262,6 @@ docker run --rm -v "$PWD":/workspace -w /workspace afternote-screenshot:latest \
 ## 호스트 직접 실행은 더 이상 권장하지 않음
 
 `./gradlew :<module>:updateScreenshotTest` 를 host 에서 직접 실행하면 macOS / Linux / JDK 마이너 버전 / 폰트 캐시 차이로 CI 와 baseline 이 어긋난다. docker 환경 통일이 root fix.
-
-# 🤖 (옵션) Claude Code 워크플로 참고
-
-`docs/claude/` 에 **1hyok** 이 본 repo 에서 [Claude Code](https://claude.com/claude-code) 를 쓰면서 누적한 hook · `CLAUDE.md` 샘플 · 메모리 템플릿이 있다. **강제 아니고 참고용**.
-
-본인 Claude Code 워크플로에 도입하고 싶으면:
-
-```bash
-./scripts/install-claude-hooks.sh
-```
-
-→ `docs/claude/hooks/*.sh` 를 자기 `.claude/hooks/` 로 symlink (기존 파일 있으면 skip — 덮어쓰기 0). hook 등록·`CLAUDE.md` 일부 가져가기·메모리 도입 등 자세한 가이드는 [`docs/claude/README.md`](docs/claude/README.md) 참고.
-
-본인 `.claude/` 는 `.gitignore` 그대로라 본 폴더와 무관 — 어느 쪽도 다른 쪽을 강제하지 않는다.
 
 # 💻 코딩 컨벤션
 

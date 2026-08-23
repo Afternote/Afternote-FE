@@ -227,23 +227,19 @@ internal fun ObserveDeleteResult(
 internal fun AfternoteDetailNavigation(
     backStackEntry: NavBackStackEntry,
     onBack: () -> Unit,
-    onNavigateToEditor: (itemId: String) -> Unit,
+    onNavigateToEditor: (itemId: Long) -> Unit,
 ) {
-    val route = backStackEntry.toRoute<AfternoteRoute.DetailRoute>()
-    if (route.itemId.isBlank()) {
-        DesignPendingDetailContent(onBackClick = onBack)
-    } else {
-        AccountDetailRoute(
-            onBack = onBack,
-            onNavigateToEditor = onNavigateToEditor,
-        )
-    }
+    backStackEntry.toRoute<AfternoteRoute.DetailRoute>()
+    AccountDetailRoute(
+        onBack = onBack,
+        onNavigateToEditor = onNavigateToEditor,
+    )
 }
 
 @Composable
 internal fun AfternoteGalleryDetailNavigation(
     onBack: () -> Unit,
-    onNavigateToEditor: (itemId: String) -> Unit,
+    onNavigateToEditor: (itemId: Long) -> Unit,
 ) {
     GalleryDetailRoute(
         onBack = onBack,
@@ -262,7 +258,7 @@ private fun DeleteInProgressOverlayPreview() {
 @Composable
 internal fun AfternoteMemorialDetailNavigation(
     onBack: () -> Unit,
-    onNavigateToEditor: (itemId: String) -> Unit,
+    onNavigateToEditor: (itemId: Long) -> Unit,
 ) {
     MemorialDetailRoute(
         onBack = onBack,

@@ -3,7 +3,6 @@ package com.afternote.feature.afternote.domain.repository.receiver
 import androidx.paging.PagingData
 import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem
 import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResult
-import com.afternote.feature.afternote.domain.model.receiver.LoadCountResult
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedExportBundle
 import com.afternote.feature.receiver.domain.model.SenderMessageInfo
@@ -41,10 +40,6 @@ interface ReceiverRepository {
     suspend fun downloadReceivedExport(): Result<ReceivedExportBundle>
 
     suspend fun saveReceivedExportToFile(bundle: ReceivedExportBundle): Result<Unit>
-
-    suspend fun loadMindRecordsCount(): Result<LoadCountResult>
-
-    suspend fun loadTimeLettersCount(): Result<LoadCountResult>
 
     suspend fun loadSenderMessage(): Result<SenderMessageInfo?>
 }

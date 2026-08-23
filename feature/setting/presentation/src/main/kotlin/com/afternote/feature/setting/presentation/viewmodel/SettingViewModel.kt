@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -21,6 +22,16 @@ sealed interface SettingUiState {
     data class Error(
         val message: String,
     ) : SettingUiState
+}
+
+sealed interface WithdrawUiState {
+    data object Idle : WithdrawUiState
+
+    data object Loading : WithdrawUiState
+
+    data object Success : WithdrawUiState
+
+    data object Error : WithdrawUiState
 }
 
 /**
@@ -71,13 +82,28 @@ class SettingViewModel
             }
         }
 
-        private val _withdrawCompleted = MutableStateFlow(false)
-        val withdrawCompleted = _withdrawCompleted.asStateFlow()
+        private val _withdrawUiState = MutableStateFlow<WithdrawUiState>(WithdrawUiState.Idle)
+        val withdrawUiState = _withdrawUiState.asStateFlow()
 
         fun deleteAccount() {
+            if (_withdrawUiState.value == WithdrawUiState.Loading) return
+            _withdrawUiState.value = WithdrawUiState.Loading
+
             viewModelScope.launch {
-                runCatching { userRepository.deleteAccount() }
-                    .onSuccess { _withdrawCompleted.value = true }
+                try {
+                    userRepository.deleteAccount()
+                    _withdrawUiState.value = WithdrawUiState.Success
+                } catch (exception: CancellationException) {
+                    throw exception
+                } catch (_: Exception) {
+                    _withdrawUiState.value = WithdrawUiState.Error
+                }
+            }
+        }
+
+        fun dismissWithdrawError() {
+            if (_withdrawUiState.value == WithdrawUiState.Error) {
+                _withdrawUiState.value = WithdrawUiState.Idle
             }
         }
     }
