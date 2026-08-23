@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.ui.UiText
+import com.afternote.feature.mindrecord.domain.model.EmotionAnalysisStatus
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDailyQuestion
@@ -21,6 +22,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -61,6 +64,17 @@ class WeeklyReportViewModel
         }
 
         fun selectWeek(monday: LocalDate) = load(monday)
+
+        /**
+         * 감정 분석 실패 상태에서 사용자가 누르는 재시도.
+         *
+         * FE 가 할 수 있는 것은 **재조회**뿐이다 — 서버 측 재분석 트리거는 Afternote-BE#117
+         * 소관이다. 보고 있던 주를 그대로 다시 불러 상태를 갱신한다 (#725).
+         */
+        fun retryEmotionAnalysis() {
+            val current = (internalState.value.loadPhase as? LoadPhase.Loaded)?.monday ?: return
+            load(current, showsLoading = false, keepsStateOnFailure = true)
+        }
 
         /**
          * 탭 전환·작성 화면 복귀 등 사용자가 요청하지 않은 자동 갱신.
@@ -109,6 +123,7 @@ class WeeklyReportViewModel
                             internalState.update {
                                 it.copy(loadPhase = LoadPhase.Loaded(monday, report, profile.name))
                             }
+                            awaitEmotionAnalysis(monday, report.emotionAnalysis.status)
                         }.onFailure { e ->
                             internalState.update { current ->
                                 if (keepsStateOnFailure && current.loadPhase is LoadPhase.Loaded) {
@@ -127,6 +142,43 @@ class WeeklyReportViewModel
                             }
                         }
                 }
+        }
+
+        /**
+         * 감정 분석이 끝나기를 화면에 머무른 채 기다린다.
+         *
+         * 분석은 저장 직후 비동기로 돌고 완료 신호를 주는 채널이 없어서, 탭에 머무르는 동안
+         * 결과가 반영되려면 제한된 재조회가 필요하다 (#725). 무한 폴링은 하지 않는다 —
+         * [EMOTION_ANALYSIS_POLL_ATTEMPTS] 회만 시도하고, 그 뒤에는 화면 이탈·복귀
+         * ([refreshOnReturn])나 사용자의 재시도에 맡긴다.
+         *
+         * 이 로직은 [load] 의 코루틴 안에서 돈다. 사용자가 다른 주를 고르면 그 `loadJob`
+         * 취소가 이 대기까지 함께 끊는다.
+         */
+        private suspend fun awaitEmotionAnalysis(
+            monday: LocalDate,
+            initialStatus: EmotionAnalysisStatus,
+        ) {
+            var status = initialStatus
+            repeat(EMOTION_ANALYSIS_POLL_ATTEMPTS) {
+                if (status != EmotionAnalysisStatus.PENDING) return
+                delay(EMOTION_ANALYSIS_POLL_INTERVAL_MILLIS)
+                val report =
+                    repository
+                        .getWeeklyReport(date = monday.format(API_DATE_FORMATTER))
+                        .getOrNull() ?: return
+                currentCoroutineContext().ensureActive()
+                status = report.emotionAnalysis.status
+                internalState.update { current ->
+                    val phase = current.loadPhase
+                    // 그 사이 다른 주로 옮겨갔으면 덮어쓰지 않는다.
+                    if (phase is LoadPhase.Loaded && phase.monday == monday) {
+                        current.copy(loadPhase = phase.copy(report = report))
+                    } else {
+                        current
+                    }
+                }
+            }
         }
 
         private fun buildWeekOptions(
@@ -220,6 +272,7 @@ class WeeklyReportViewModel
                         report.dailyQuestionAmount to MindRecordCategoryUi.DailyQuestion,
                         report.diaryAmount to MindRecordCategoryUi.Diary,
                     ),
+                emotionAnalysisStatus = report.emotionAnalysis.status,
                 weekDays = mapWeekDays(monday, report.week),
                 emotionKeywords = mapEmotionKeywords(report.emotions),
                 summaryText = report.summaryText,
@@ -229,6 +282,11 @@ class WeeklyReportViewModel
 
         companion object {
             private const val WEEK_OPTION_COUNT = 5
+
+            // 분석 완료 신호를 주는 채널이 없어 재조회로 기다린다. 8초 × 8회 ≈ 1분 —
+            // 그 뒤에는 화면 이탈·복귀나 사용자의 재시도에 맡긴다 (#725).
+            private const val EMOTION_ANALYSIS_POLL_ATTEMPTS = 8
+            private const val EMOTION_ANALYSIS_POLL_INTERVAL_MILLIS = 8_000L
 
             private val API_DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
             private val RANGE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd.")

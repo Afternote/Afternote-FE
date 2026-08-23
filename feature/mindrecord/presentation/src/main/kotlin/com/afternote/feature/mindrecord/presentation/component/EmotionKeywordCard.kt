@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,6 +27,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.domain.model.EmotionAnalysisStatus
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.EmotionKeyword
 
@@ -40,15 +42,24 @@ import com.afternote.feature.mindrecord.presentation.model.EmotionKeyword
  * - 2건: 가족(96) / 감사(72)
  * - 1건: 가족(96)
  * - 0건: 빈 96dp 검은 원에 "0" 만 표시 + 별도 안내 메시지(호출부 책임)
+ *
+ * **"0" 은 분석이 정상 종료됐을 때만 찍는다.** `emotions` 는 분석 성공분만 담기므로 빈
+ * 목록 하나로는 "실제로 0건" 과 "아직 분석 중" 과 "분석 실패" 가 구분되지 않는다.
+ * 대기·실패 상태에서 0 을 찍으면 키워드가 없다고 확정해 버린다 (#725).
  */
 @Composable
 fun EmotionKeywordCard(
     keywords: List<EmotionKeyword>,
     descriptionText: String,
+    analysisStatus: EmotionAnalysisStatus,
     modifier: Modifier = Modifier,
     title: String = stringResource(R.string.mindrecord_emotion_card_title),
+    onRetry: (() -> Unit)? = null,
 ) {
     val capped = keywords.take(MAX_KEYWORDS)
+    val confirmsEmptyCount =
+        analysisStatus == EmotionAnalysisStatus.COMPLETED ||
+            analysisStatus == EmotionAnalysisStatus.NOTHING_TO_ANALYZE
 
     OutlinedCard(
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -74,7 +85,7 @@ fun EmotionKeywordCard(
                         .height(BUBBLE_AREA_HEIGHT),
             ) {
                 if (capped.isEmpty()) {
-                    EmptyBubble()
+                    if (confirmsEmptyCount) EmptyBubble() else PendingBubble()
                 } else {
                     val slots = slotsFor(capped.size)
                     capped.forEachIndexed { index, keyword ->
@@ -88,6 +99,16 @@ fun EmotionKeywordCard(
                 style = AfternoteDesign.typography.bodySmallB,
                 color = AfternoteDesign.colors.gray9,
             )
+
+            if (analysisStatus == EmotionAnalysisStatus.FAILED && onRetry != null) {
+                TextButton(onClick = onRetry) {
+                    Text(
+                        text = stringResource(R.string.mindrecord_emotion_card_retry),
+                        style = AfternoteDesign.typography.bodySmallB,
+                        color = AfternoteDesign.colors.gray9,
+                    )
+                }
+            }
         }
     }
 }
@@ -124,6 +145,23 @@ private fun Bubble(
             )
         }
     }
+}
+
+/**
+ * 분석이 끝나지 않았을 때의 자리 표시. [EmptyBubble] 과 크기·위치는 같지만 **"0" 을 찍지
+ * 않는다** — 키워드가 없다고 확정하는 표시이기 때문이다 (#725).
+ */
+@Composable
+private fun PendingBubble() {
+    val slot = EMPTY_SLOT
+    Box(
+        modifier =
+            Modifier
+                .offset(x = slot.offsetX, y = slot.offsetY)
+                .size(slot.size)
+                .clip(CircleShape)
+                .background(slot.color.copy(alpha = 0.3f)),
+    )
 }
 
 @Composable
@@ -218,6 +256,7 @@ private fun EmotionKeywordCardPreview4() {
                     EmotionKeyword("그리움", 8),
                 ),
             descriptionText = "이번 주 박서연 님의 기록에서는 '가족'을 위한 '감사'의 마음이 엿보입니다.",
+            analysisStatus = EmotionAnalysisStatus.COMPLETED,
         )
     }
 }
@@ -229,6 +268,7 @@ private fun EmotionKeywordCardPreview1() {
         EmotionKeywordCard(
             keywords = listOf(EmotionKeyword("가족", 8)),
             descriptionText = "이번 주 박서연 님의 기록에서는 '가족'의 마음이 엿보입니다.",
+            analysisStatus = EmotionAnalysisStatus.COMPLETED,
         )
     }
 }
@@ -240,6 +280,32 @@ private fun EmotionKeywordCardPreview0() {
         EmotionKeywordCard(
             keywords = emptyList(),
             descriptionText = "이번 주 박서연 님의 기록에서는 키워드가 나오지 않았어요.",
+            analysisStatus = EmotionAnalysisStatus.COMPLETED,
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFF5F5F5, widthDp = 360, name = "분석 대기")
+@Composable
+private fun EmotionKeywordCardPreviewPending() {
+    AfternoteTheme {
+        EmotionKeywordCard(
+            keywords = emptyList(),
+            descriptionText = "기록을 분석하고 있어요. 잠시 뒤 이 자리에 키워드가 채워집니다.",
+            analysisStatus = EmotionAnalysisStatus.PENDING,
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFF5F5F5, widthDp = 360, name = "분석 실패")
+@Composable
+private fun EmotionKeywordCardPreviewFailed() {
+    AfternoteTheme {
+        EmotionKeywordCard(
+            keywords = emptyList(),
+            descriptionText = "감정 분석에 실패했어요. 다시 시도해 주세요.",
+            analysisStatus = EmotionAnalysisStatus.FAILED,
+            onRetry = {},
         )
     }
 }

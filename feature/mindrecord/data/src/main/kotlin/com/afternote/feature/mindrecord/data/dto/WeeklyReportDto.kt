@@ -12,6 +12,28 @@ data class WeeklyReportDto(
     // 서버 JSON 키가 kebab-case (`daily-question`).
     @SerialName("daily-question") val dailyQuestions: List<WeeklyReportDailyQuestionDto> = emptyList(),
     @SerialName("emotions") val emotions: List<WeeklyReportEmotionDto> = emptyList(),
+    // 기본값을 두지 않는다 — 이 필드가 없으면 "분석 대기" 와 "분석할 것이 없음" 이 다시
+    // 구분 불가능해져 이 이슈가 고치려는 상태 소실이 그대로 재현된다 (#725).
+    @SerialName("emotionAnalysis") val emotionAnalysis: EmotionAnalysisSummaryDto,
+)
+
+/**
+ * 그 주 감정 분석 진행 상태 (OpenAPI `EmotionAnalysisSummary`).
+ *
+ * `emotions` 는 **분석 성공분만** 담기므로, 빈 배열 하나로는 "분석이 끝났는데 키워드가
+ * 없음" 과 "아직 분석 중" 과 "분석이 실패함" 이 구분되지 않는다. 그 셋을 가르는 값이
+ * 여기 있다 (#725).
+ */
+@Serializable
+data class EmotionAnalysisSummaryDto(
+    // 분석 대상 기록 수.
+    @SerialName("total") val total: Int,
+    // 분석 성공 수.
+    @SerialName("succeeded") val succeeded: Int,
+    // 분석 대기/재시도 중 수.
+    @SerialName("pending") val pending: Int,
+    // 분석 실패(재시도 소진) 수.
+    @SerialName("failed") val failed: Int,
 )
 
 /**

@@ -95,6 +95,13 @@
     <string name="mindrecord_emotion_card_title">나의 감정 키워드</string>
     <string name="mindrecord_emotion_card_default_description">이번 주 박서연 님의 기록에서는\n\'가족\'을 위한 \'감사\'의 마음이 엿보입니다.</string>
     <string name="mindrecord_emotion_card_empty_description">이번 주 %1$s 님의 기록에서는 키워드가 나오지 않았어요.</string>
+    <!-- 감정 분석이 아직 끝나지 않았을 때. 키워드 0건으로 확정하지 않는다 (#725). -->
+    <string name="mindrecord_emotion_card_pending_description">기록을 분석하고 있어요. 잠시 뒤 이 자리에 키워드가 채워집니다.</string>
+    <!-- 재시도까지 소진해 아무것도 분석하지 못했을 때 (#725). -->
+    <string name="mindrecord_emotion_card_failed_description">감정 분석에 실패했어요. 다시 시도해 주세요.</string>
+    <string name="mindrecord_emotion_card_retry">다시 시도</string>
+    <!-- 분석이 끝나기 전 서버가 내려주는 일반 문구를 개인화된 요약처럼 보이지 않게 감싼다 (#725). -->
+    <string name="mindrecord_weekly_report_summary_pending">분석 중 임시 안내예요. 분석이 끝나면 이번 주 요약으로 바뀝니다.</string>
 
     <!-- Empty state -->
     <string name="mindrecord_empty_state_title">아직 등록된 답변이 없어요.</string>

@@ -26,6 +26,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.mindrecord.domain.model.EmotionAnalysisStatus
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionListCard
 import com.afternote.feature.mindrecord.presentation.component.EmotionKeywordCard
@@ -54,6 +55,7 @@ fun WeeklyReportScreen(
             WeeklyReportContent(
                 state = state,
                 onWeekSelect = viewModel::selectWeek,
+                onEmotionAnalysisRetry = viewModel::retryEmotionAnalysis,
                 modifier = modifier,
             )
         }
@@ -64,6 +66,7 @@ fun WeeklyReportScreen(
 private fun WeeklyReportContent(
     state: WeeklyReportUiState.Success,
     onWeekSelect: (java.time.LocalDate) -> Unit,
+    onEmotionAnalysisRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // Figma 노드 852:11543 — main 컨테이너의 섹션 간 gap=32, 시작 pt=8, 끝 pb=200.
@@ -103,12 +106,9 @@ private fun WeeklyReportContent(
                 SectionHeader(title = "TOP KEYWORDS")
                 EmotionKeywordCard(
                     keywords = state.emotionKeywords,
-                    descriptionText =
-                        if (state.emotionKeywords.isEmpty()) {
-                            stringResource(R.string.mindrecord_emotion_card_empty_description, state.userName)
-                        } else {
-                            state.summaryText
-                        },
+                    descriptionText = emotionCardDescription(state),
+                    analysisStatus = state.emotionAnalysisStatus,
+                    onRetry = onEmotionAnalysisRetry,
                 )
             }
         }
@@ -191,6 +191,34 @@ private fun ErrorBox(
     }
 }
 
+/**
+ * 감정 카드 본문 문구.
+ *
+ * 키워드가 없을 때 무엇을 적을지는 **분석 상태**가 정한다. 종전에는 빈 목록이면 무조건
+ * "키워드가 나오지 않았어요" 를 적어, 분석 대기·실패까지 정상 빈 상태로 확정했다 (#725).
+ *
+ * 키워드가 있으면 서버 요약을 그대로 쓴다 — 분석이 끝난 뒤에만 도달하는 자리다.
+ */
+@Composable
+private fun emotionCardDescription(state: WeeklyReportUiState.Success): String =
+    when {
+        state.emotionKeywords.isNotEmpty() -> {
+            state.summaryText
+        }
+
+        state.emotionAnalysisStatus == EmotionAnalysisStatus.PENDING -> {
+            stringResource(R.string.mindrecord_emotion_card_pending_description)
+        }
+
+        state.emotionAnalysisStatus == EmotionAnalysisStatus.FAILED -> {
+            stringResource(R.string.mindrecord_emotion_card_failed_description)
+        }
+
+        else -> {
+            stringResource(R.string.mindrecord_emotion_card_empty_description, state.userName)
+        }
+    }
+
 @Preview(showBackground = true)
 @Composable
 private fun WeeklyReportScreenPreview() {
@@ -206,10 +234,12 @@ private fun WeeklyReportScreenPreview() {
                     counts = emptyList(),
                     weekDays = emptyList(),
                     emotionKeywords = emptyList(),
+                    emotionAnalysisStatus = EmotionAnalysisStatus.COMPLETED,
                     summaryText = "이번 주는 차분히 마음을 정리한 한 주였어요.",
                     dailyQuestions = emptyList(),
                 ),
             onWeekSelect = {},
+            onEmotionAnalysisRetry = {},
         )
     }
 }

@@ -7,7 +7,49 @@ data class WeeklyReport(
     val week: List<WeeklyReportDay>,
     val dailyQuestions: List<WeeklyReportDailyQuestion>,
     val emotions: List<WeeklyReportEmotion>,
+    val emotionAnalysis: EmotionAnalysis,
 )
+
+/**
+ * 그 주 감정 분석 진행 상태.
+ *
+ * [WeeklyReport.emotions] 는 **분석 성공분만** 담기므로 빈 목록 하나로는 아래 셋을
+ * 구분할 수 없다. 그 판단을 [status] 한 곳에 모아 둔다 (#725).
+ */
+data class EmotionAnalysis(
+    val total: Int,
+    val succeeded: Int,
+    val pending: Int,
+    val failed: Int,
+) {
+    val status: EmotionAnalysisStatus
+        get() =
+            when {
+                total == 0 -> EmotionAnalysisStatus.NOTHING_TO_ANALYZE
+
+                pending > 0 -> EmotionAnalysisStatus.PENDING
+
+                // 일부만 실패했어도 성공분이 있으면 그 키워드를 보여주는 편이 낫다.
+                // 아무것도 건지지 못한 경우만 실패로 본다.
+                succeeded == 0 && failed > 0 -> EmotionAnalysisStatus.FAILED
+
+                else -> EmotionAnalysisStatus.COMPLETED
+            }
+}
+
+enum class EmotionAnalysisStatus {
+    /** 그 주에 분석할 기록 자체가 없다 — 키워드 0건이 정상이다. */
+    NOTHING_TO_ANALYZE,
+
+    /** 아직 분석 중이다 — 키워드 0건을 확정하면 안 된다. */
+    PENDING,
+
+    /** 재시도까지 소진해 아무것도 분석하지 못했다 — 재조회 경로가 필요하다. */
+    FAILED,
+
+    /** 분석이 끝났다. 키워드가 0건이면 실제로 0건인 것이다. */
+    COMPLETED,
+}
 
 data class WeeklyReportDay(
     val diaryId: Long,

@@ -36,7 +36,9 @@ class WeeklyReportContractTest {
     private fun decodeWeek(weekJson: String): List<WeeklyReportDayDto> {
         val body =
             """
-            { "status": 200, "code": 200, "data": { "week": $weekJson } }
+            { "status": 200, "code": 200, "data": {
+              "week": $weekJson,
+              "emotionAnalysis": { "total": 1, "succeeded": 1, "pending": 0, "failed": 0 } } }
             """.trimIndent()
         return json
             .decodeFromString(BaseResponse.serializer(WeeklyReportDto.serializer()), body)
@@ -103,7 +105,11 @@ class WeeklyReportContractTest {
 
     @Test
     fun `week 키가 없으면 빈 목록으로 접힌다`() {
-        val body = """{ "status": 200, "code": 200, "data": { "summaryText": "" } }"""
+        val body =
+            """
+            { "status": 200, "code": 200, "data": { "summaryText": "",
+              "emotionAnalysis": { "total": 0, "succeeded": 0, "pending": 0, "failed": 0 } } }
+            """.trimIndent()
 
         val decoded = json.decodeFromString(BaseResponse.serializer(WeeklyReportDto.serializer()), body)
 
