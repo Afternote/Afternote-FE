@@ -1,8 +1,10 @@
 name: Evaluate QA Distribution Candidate
 
+# pull_request 트리거를 쓰지 않는다 — pull_request 워크플로는 GITHUB_TOKEN 외 secret을 참조할 수
+# 없다는 #842 불변식과 COPILOT_PERSONAL_TOKEN 주입이 충돌한다. 대신 develop push(=PR 머지 결과)에서
+# 병합 커밋 SHA로 머지 PR을 복원해 같은 판단을 수행한다.
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches: [develop]
   workflow_dispatch:
     inputs:
@@ -12,15 +14,56 @@ on:
         type: number
 
 concurrency:
-  group: qa-distribution-decision-${{ github.event.pull_request.base.ref || 'develop' }}
+  group: qa-distribution-decision-develop
   cancel-in-progress: false
 
 permissions:
   contents: read
 
 jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      eligible: ${{ steps.resolve.outputs.eligible }}
+      pr_number: ${{ steps.resolve.outputs.pr_number }}
+    steps:
+      # push 이벤트에는 PR 컨텍스트가 없다. merge_commit_sha가 pushed SHA와 일치하는
+      # develop 대상 PR만 인정하고, 머지 PR이 없는 직접 push는 판단 대상에서 제외한다.
+      - name: Resolve merged pull request
+        id: resolve
+        uses: actions/github-script@v9
+        env:
+          DISPATCH_PR_NUMBER: ${{ inputs.pull_request_number }}
+        with:
+          script: |
+            if (context.eventName === 'workflow_dispatch') {
+              core.setOutput('eligible', 'true');
+              core.setOutput('pr_number', process.env.DISPATCH_PR_NUMBER);
+              return;
+            }
+            const { data: pulls } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+            });
+            const merged = pulls.find(
+              (pull) => pull.merge_commit_sha === context.sha && pull.base.ref === 'develop',
+            );
+            if (!merged) {
+              core.notice(`push ${context.sha}에 대응하는 develop 머지 PR이 없어 배포 판단을 건너뜁니다.`);
+              core.setOutput('eligible', 'false');
+              core.setOutput('pr_number', '');
+              return;
+            }
+            core.setOutput('eligible', 'true');
+            core.setOutput('pr_number', String(merged.number));
+
   prepare:
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    needs: resolve
+    if: needs.resolve.outputs.eligible == 'true'
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -33,14 +76,14 @@ jobs:
       - name: Clone merged revision
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.pull_request.merge_commit_sha || 'develop' }}
+          ref: ${{ github.event_name == 'push' && github.sha || 'develop' }}
           fetch-depth: 0
           persist-credentials: false
 
       - name: Collect pending deployment context
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          TARGET_PR_NUMBER: ${{ github.event.pull_request.number || inputs.pull_request_number }}
+          TARGET_PR_NUMBER: ${{ needs.resolve.outputs.pr_number }}
           DEPLOYMENT_CONTEXT_PATH: ${{ runner.temp }}/afternote-deployment-decision/context.json
         run: node .github/scripts/collect-deployment-decision-context.mjs
 
@@ -84,9 +127,9 @@ jobs:
       contents: read
     steps:
       - name: Clone merged revision
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.pull_request.merge_commit_sha || 'develop' }}
+          ref: ${{ github.event_name == 'push' && github.sha || 'develop' }}
           persist-credentials: false
 
       - name: Load deterministic decision evidence
@@ -176,7 +219,7 @@ jobs:
           retention-days: 7
 
   publish:
-    needs: [prepare, semantic-audit]
+    needs: [resolve, prepare, semantic-audit]
     if: ${{ always() && needs.prepare.result == 'success' && needs.semantic-audit.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
@@ -195,7 +238,7 @@ jobs:
         uses: actions/github-script@v9
         env:
           DEPLOYMENT_DECISION_PATH: ${{ runner.temp }}/afternote-deployment-decision/final-decision.json
-          TARGET_PR_NUMBER: ${{ github.event.pull_request.number || inputs.pull_request_number }}
+          TARGET_PR_NUMBER: ${{ needs.resolve.outputs.pr_number }}
         with:
           github-token: ${{ github.token }}
           script: |

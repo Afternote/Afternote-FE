@@ -111,7 +111,7 @@ keytool -exportcert -alias afternote-debug-shared -keystore ~/afternote-debug-sh
 
 ### 머지별 자동 판단
 
-`develop` 대상 PR이 머지되면 [`deployment-decision.yml`](.github/workflows/deployment-decision.yml)이 마지막 성공 QA 배포 이후의 누적 PR·연결 이슈·실제 diff를 읽는다. 고위험 경로, 버그·기능 PR, 누적 이슈 수, 구조화 QA 원천 수, 영향 스코프 수를 판정한 뒤 의미 감사를 거쳐 `QA 배포 권장`·`QA 배포 보류`·`QA 사람 검토 필요`와 실행 가능한 시나리오를 머지된 PR에 코멘트한다. 판단만 자동화하며 APK 업로드는 실행하지 않는다.
+`develop` 대상 PR이 머지되면 [`deployment-decision.yml`](.github/workflows/deployment-decision.yml)이 develop push의 병합 커밋에서 머지 PR을 복원한 뒤, 마지막 성공 QA 배포 이후의 누적 PR·연결 이슈·실제 diff를 읽는다. pull_request 트리거 workflow는 `GITHUB_TOKEN` 외 secret을 참조할 수 없으므로(#842) push 트리거를 사용하며, 머지 PR이 없는 직접 push는 판단을 건너뛴다. 고위험 경로, 버그·기능 PR, 누적 이슈 수, 구조화 QA 원천 수, 영향 스코프 수를 판정한 뒤 의미 감사를 거쳐 `QA 배포 권장`·`QA 배포 보류`·`QA 사람 검토 필요`와 실행 가능한 시나리오를 머지된 PR에 코멘트한다. 판단만 자동화하며 APK 업로드는 실행하지 않는다.
 
 의미 감사는 PR 메타데이터를 정본으로 사용한다. Copilot은 원천 ID의 병합과 P0-P3 우선순위만 결정하며 사전조건·행동·기대 결과·위험·근거·제외 사유는 다시 쓰지 못한다. 응답이 원천을 누락하거나 허용되지 않은 필드를 만들면 결과를 폐기한다. 구조화 입력 누락, 개인 Copilot token 누락, 호출 실패, 근거 부족은 generic 문구로 대체하지 않고 `human_review_required`로 남긴다.
 

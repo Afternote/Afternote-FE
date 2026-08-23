@@ -358,6 +358,12 @@ test("workflow uses a personal Copilot secret and runs all strict regression tes
 
     assert.match(workflow, /COPILOT_GITHUB_TOKEN:\s*\$\{\{ secrets\.COPILOT_PERSONAL_TOKEN \}\}/);
     assert.doesNotMatch(workflow, /copilot-requests:\s*write/);
+    // #842 불변식: pull_request 워크플로는 GITHUB_TOKEN 외 secret을 참조할 수 없다.
+    // 이 워크플로는 secret이 필요하므로 push 트리거에서 병합 커밋으로 머지 PR을 복원한다.
+    assert.doesNotMatch(workflow, /^\s*pull_request\s*:/m);
+    assert.match(workflow, /^on:\n  push:\n    branches: \[develop\]/m);
+    assert.match(workflow, /listPullRequestsAssociatedWithCommit/);
+    assert.match(workflow, /TARGET_PR_NUMBER: \$\{\{ needs\.resolve\.outputs\.pr_number \}\}/);
     assert.match(workflow, /--deny-tool='shell,write,read,url,memory'/);
     assert.match(workflow, /--disable-builtin-mcps/);
     assert.match(workflow, /--max-ai-credits=1/);
