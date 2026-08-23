@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <application
-            android:icon="@mipmap/ic_launcher_dev"
-            android:roundIcon="@mipmap/ic_launcher_dev"
-            tools:replace="android:icon,android:roundIcon">
+    <application>
         <!--
           디버그 빌드에서는 크래시·오류 수집을 끕니다.
           non-fatal 계측(#536) 이후 로그인 실패가 전부 기록되는데, 개발 중 실패(백엔드 미기동,
@@ -18,9 +14,7 @@
         <activity
                 android:name="com.afternote.afternote_fe.debug.DebugSettingsActivity"
                 android:exported="true"
-                android:icon="@mipmap/ic_launcher_dev"
                 android:label="Afternote DEV"
-                android:roundIcon="@mipmap/ic_launcher_dev"
                 android:taskAffinity=".devsettings"
                 android:excludeFromRecents="true"
                 android:theme="@style/Theme.Afternotefe.Main" />

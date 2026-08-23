@@ -7,9 +7,9 @@ import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeEnt
 
 @Composable
 internal fun AfternoteHomeNavigation(
-    onNavigateToDetail: (itemId: String) -> Unit,
-    onNavigateToGalleryDetail: (itemId: String) -> Unit,
-    onNavigateToMemorialDetail: (itemId: String) -> Unit,
+    onNavigateToDetail: (itemId: Long) -> Unit,
+    onNavigateToGalleryDetail: (itemId: Long) -> Unit,
+    onNavigateToMemorialDetail: (itemId: Long) -> Unit,
     onNavigateToNewEditor: (initialCategory: String?) -> Unit,
     onNavigateToSetting: () -> Unit,
 ) {
