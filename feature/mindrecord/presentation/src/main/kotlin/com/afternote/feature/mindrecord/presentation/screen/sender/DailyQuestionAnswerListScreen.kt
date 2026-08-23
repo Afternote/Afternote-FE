@@ -27,6 +27,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionListCard
 import com.afternote.feature.mindrecord.presentation.component.MindRecordEmptyState
+import com.afternote.feature.mindrecord.presentation.component.MindRecordErrorBox
 import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListUiState
@@ -47,10 +48,24 @@ fun DailyQuestionAnswerListScreen(
         }
 
         is DailyQuestionListUiState.Error -> {
-            ErrorBox(message = state.message.asString(), modifier = modifier)
+            MindRecordErrorBox(
+                message = state.message.asString(),
+                onRetry = viewModel::retry,
+                modifier = modifier,
+            )
         }
 
         is DailyQuestionListUiState.Success -> {
+            // 삭제 실패 안내 — 항목이 남은 채 아무 말이 없으면 고장처럼 보인다 (#716).
+            val deleteError = state.deleteError?.asString()
+            if (deleteError != null) {
+                Text(
+                    text = deleteError,
+                    color = AfternoteDesign.colors.error,
+                    style = AfternoteDesign.typography.captionLargeR,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                )
+            }
             DailyQuestionListContent(
                 modifier = modifier,
                 isListView = isListView,
@@ -110,16 +125,6 @@ private fun DailyQuestionListContent(
 private fun LoadingBox(modifier: Modifier = Modifier) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         CircularProgressIndicator()
-    }
-}
-
-@Composable
-private fun ErrorBox(
-    message: String,
-    modifier: Modifier = Modifier,
-) {
-    Box(modifier = modifier.fillMaxSize().padding(20.dp), contentAlignment = Alignment.Center) {
-        Text(text = message, color = AfternoteDesign.colors.gray9)
     }
 }
 

@@ -71,14 +71,28 @@ class DiaryListViewModel
             )
         }
 
+        /** 조회 실패 화면의 재시도 — 로딩을 보여도 잃을 것이 없다(보고 있던 것이 오류 문구뿐). */
+        fun retry() = load(yearMonth = internalState.value.yearMonth)
+
+        fun consumeDeleteError() {
+            internalState.update { it.copy(deleteError = null) }
+        }
+
         fun delete(id: Long) {
             viewModelScope.launch {
-                repository.delete(id).onSuccess {
-                    // 삭제는 사용자가 요청했지만 뒤따르는 재조회는 아니다. 로딩을 방출하면
-                    // 목록이 통째 교체되며 LazyColumn 스크롤이 맨 위로 돌아간다.
-                    // 다만 재조회가 실패하면 삭제한 항목이 그대로 남아 보이므로 에러는 드러낸다.
-                    load(internalState.value.yearMonth, showsLoading = false)
-                }
+                repository
+                    .delete(id)
+                    .onSuccess {
+                        // 삭제는 사용자가 요청했지만 뒤따르는 재조회는 아니다. 로딩을 방출하면
+                        // 목록이 통째 교체되며 LazyColumn 스크롤이 맨 위로 돌아간다.
+                        // 다만 재조회가 실패하면 삭제한 항목이 그대로 남아 보이므로 에러는 드러낸다.
+                        load(internalState.value.yearMonth, showsLoading = false)
+                    }.onFailure {
+                        // 실패를 무시하면 항목이 그대로 남은 채 아무 안내도 없어 고장처럼 보인다 (#716).
+                        internalState.update {
+                            it.copy(deleteError = UiText.Resource(R.string.mindrecord_error_delete_failed))
+                        }
+                    }
             }
         }
 
@@ -111,10 +125,7 @@ class DiaryListViewModel
                                     current.copy(
                                         loadPhase =
                                             LoadPhase.Failed(
-                                                UiText.DynamicOrResource(
-                                                    value = e.message,
-                                                    fallbackResId = R.string.mindrecord_error_diary_list_failed,
-                                                ),
+                                                UiText.Resource(R.string.mindrecord_error_diary_list_failed),
                                             ),
                                     )
                                 }
@@ -128,6 +139,7 @@ class DiaryListViewModel
             // 로딩으로 콘텐츠가 교체될 때 함께 폐기된다.
             val yearMonth: YearMonth = YearMonth.now(),
             val loadPhase: LoadPhase = LoadPhase.Loading,
+            val deleteError: UiText? = null,
         )
 
         private sealed interface LoadPhase {
@@ -161,6 +173,7 @@ class DiaryListViewModel
                         yearMonth = yearMonth,
                         monthDiaryCount = phase.list.monthDiaryCount,
                         weeklyDominantMood = phase.list.weeklyDominantMood,
+                        deleteError = deleteError,
                     )
                 }
 

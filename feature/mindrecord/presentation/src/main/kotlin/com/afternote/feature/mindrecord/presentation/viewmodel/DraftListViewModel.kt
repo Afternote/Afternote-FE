@@ -42,7 +42,8 @@ class DraftListViewModel
             load()
         }
 
-        fun refresh() = load()
+        /** 조회 실패 화면의 재시도 — 로딩을 보여도 잃을 것이 없다(보고 있던 것이 오류 문구뿐). */
+        fun retry() = load()
 
         /** 선택 삭제 — 삭제 후 목록을 다시 불러오고 완료 토스트 노출 플래그를 세운다. */
         fun delete(items: List<DraftItem>) {

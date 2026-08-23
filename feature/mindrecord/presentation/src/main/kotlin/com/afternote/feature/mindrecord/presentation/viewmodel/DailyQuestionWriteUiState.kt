@@ -14,6 +14,10 @@ data class DailyQuestionWriteUiState(
     val isQuestionLoading: Boolean = true,
     val questionLoadError: UiText? = null,
     val submitState: SubmitState = SubmitState.Idle,
+    /** 이미지 업로드 진행 중 — 끝나기 전에 저장하면 이미지 없이 기록이 먼저 올라간다 (#716). */
+    val isUploadingImage: Boolean = false,
+    /** 이미지 업로드 실패 안내. 조용히 null 로 흡수하지 않는다 (#716). */
+    val imageUploadError: UiText? = null,
 ) {
     /**
      * `questionId` 유무는 여기서 보지 않는다. 조건에 넣으면 오늘 질문 조회가 실패했을 때
@@ -21,7 +25,11 @@ data class DailyQuestionWriteUiState(
      * 이 눌린 시점에 사유를 알리고 조회를 재시도한다.
      */
     val canSubmit: Boolean
-        get() = answer.isNotBlank() && !isQuestionLoading && submitState != SubmitState.InProgress
+        get() =
+            answer.isNotBlank() &&
+                !isQuestionLoading &&
+                submitState != SubmitState.InProgress &&
+                !isUploadingImage
 }
 
 sealed interface SubmitState {

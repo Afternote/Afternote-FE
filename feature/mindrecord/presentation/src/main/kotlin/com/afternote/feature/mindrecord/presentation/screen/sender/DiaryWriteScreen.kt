@@ -257,6 +257,43 @@ fun DiaryWriteScreen(
                 )
             }
 
+            // 저장·업로드 진행 상태를 알린다 — 종전에는 액션만 잠기고 표시가 없어
+            // 사용자가 무반응으로 인식했다 (#716).
+            val progressText =
+                when {
+                    uiState.submitState is SubmitState.InProgress -> {
+                        stringResource(MindRecordR.string.mindrecord_write_saving)
+                    }
+
+                    uiState.isUploadingImage -> {
+                        stringResource(MindRecordR.string.mindrecord_write_uploading_image)
+                    }
+
+                    uiState.isDraftLoading -> {
+                        stringResource(MindRecordR.string.mindrecord_write_loading_draft)
+                    }
+
+                    else -> {
+                        null
+                    }
+                }
+            if (progressText != null) {
+                Text(
+                    text = progressText,
+                    color = AfternoteDesign.colors.gray6,
+                    style = AfternoteDesign.typography.captionLargeR,
+                )
+            }
+
+            val uploadError = uiState.imageUploadError?.asString()
+            if (uploadError != null) {
+                Text(
+                    text = uploadError,
+                    color = AfternoteDesign.colors.error,
+                    style = AfternoteDesign.typography.captionLargeR,
+                )
+            }
+
             // draft 프리필은 비동기 완료 — draftLoaded 전환 시 에디터를 재생성해 content 를 다시 시드한다.
             key(uiState.draftLoaded) {
                 WriteTextField(

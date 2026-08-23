@@ -29,6 +29,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionListCard
 import com.afternote.feature.mindrecord.presentation.component.EmotionKeywordCard
+import com.afternote.feature.mindrecord.presentation.component.MindRecordErrorBox
 import com.afternote.feature.mindrecord.presentation.component.WeeklyMoodCalendar
 import com.afternote.feature.mindrecord.presentation.component.WeeklyReportReviewCard
 import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportUiState
@@ -47,7 +48,11 @@ fun WeeklyReportScreen(
         }
 
         is WeeklyReportUiState.Error -> {
-            ErrorBox(message = state.message.asString(), modifier = modifier)
+            MindRecordErrorBox(
+                message = state.message.asString(),
+                onRetry = viewModel::retry,
+                modifier = modifier,
+            )
         }
 
         is WeeklyReportUiState.Success -> {
@@ -178,16 +183,6 @@ private fun SectionHeader(title: String) {
 private fun LoadingBox(modifier: Modifier = Modifier) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         CircularProgressIndicator()
-    }
-}
-
-@Composable
-private fun ErrorBox(
-    message: String,
-    modifier: Modifier = Modifier,
-) {
-    Box(modifier = modifier.fillMaxSize().padding(20.dp), contentAlignment = Alignment.Center) {
-        Text(text = message, color = AfternoteDesign.colors.gray9)
     }
 }
 

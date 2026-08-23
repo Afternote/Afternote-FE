@@ -56,10 +56,25 @@ class DailyQuestionListViewModel
             load(showsLoading = false, keepsStateOnFailure = true)
         }
 
+        /** 조회 실패 화면의 재시도 — 로딩을 보여도 잃을 것이 없다(보고 있던 것이 오류 문구뿐). */
+        fun retry() = load()
+
         fun delete(id: Long) {
             viewModelScope.launch {
-                repository.delete(id).onSuccess { load() }
+                repository
+                    .delete(id)
+                    .onSuccess { load() }
+                    // 실패를 무시하면 항목이 그대로 남은 채 아무 안내도 없어 고장처럼 보인다 (#716).
+                    .onFailure {
+                        internalState.update {
+                            it.copy(deleteError = UiText.Resource(R.string.mindrecord_error_delete_failed))
+                        }
+                    }
             }
+        }
+
+        fun consumeDeleteError() {
+            internalState.update { it.copy(deleteError = null) }
         }
 
         private fun load(
@@ -86,10 +101,7 @@ class DailyQuestionListViewModel
                     // today 만 성공했을 때 "답변 0개" 로 보여 실패가 화면에서 사라진다.
                     if (listResult.isFailure) {
                         val message =
-                            UiText.DynamicOrResource(
-                                value = listResult.exceptionOrNull()?.message,
-                                fallbackResId = R.string.mindrecord_error_daily_question_list_failed,
-                            )
+                            UiText.Resource(R.string.mindrecord_error_daily_question_list_failed)
                         internalState.update { current ->
                             if (keepsStateOnFailure && current.loadPhase is LoadPhase.Loaded) {
                                 current
@@ -105,6 +117,7 @@ class DailyQuestionListViewModel
 
         private data class InternalState(
             val loadPhase: LoadPhase = LoadPhase.Loading,
+            val deleteError: UiText? = null,
         )
 
         private sealed interface LoadPhase {
@@ -137,6 +150,7 @@ class DailyQuestionListViewModel
                                 )
                             },
                         answers = phase.answers.map { it.toUi() },
+                        deleteError = deleteError,
                     )
                 }
 

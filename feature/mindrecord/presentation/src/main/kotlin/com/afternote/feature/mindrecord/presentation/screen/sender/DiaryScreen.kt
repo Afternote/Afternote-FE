@@ -34,6 +34,7 @@ import com.afternote.feature.mindrecord.presentation.component.DiaryCard
 import com.afternote.feature.mindrecord.presentation.component.DiaryComponent
 import com.afternote.feature.mindrecord.presentation.component.DiaryReportCard
 import com.afternote.feature.mindrecord.presentation.component.MindRecordEmptyState
+import com.afternote.feature.mindrecord.presentation.component.MindRecordErrorBox
 import com.afternote.feature.mindrecord.presentation.mapper.toEmoji
 import com.afternote.feature.mindrecord.presentation.model.DailyDiary
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
@@ -58,10 +59,24 @@ fun DiaryScreen(
         }
 
         is DiaryListUiState.Error -> {
-            ErrorBox(message = state.message.asString(), modifier = modifier)
+            MindRecordErrorBox(
+                message = state.message.asString(),
+                onRetry = viewModel::retry,
+                modifier = modifier,
+            )
         }
 
         is DiaryListUiState.Success -> {
+            // 삭제 실패 안내 — 항목이 남은 채 아무 말이 없으면 고장처럼 보인다 (#716).
+            val deleteError = state.deleteError?.asString()
+            if (deleteError != null) {
+                Text(
+                    text = deleteError,
+                    color = AfternoteDesign.colors.error,
+                    style = AfternoteDesign.typography.captionLargeR,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                )
+            }
             DiaryListContent(
                 modifier = modifier,
                 isListView = isListView,
@@ -174,16 +189,6 @@ private fun DiaryListContent(
 private fun LoadingBox(modifier: Modifier = Modifier) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         CircularProgressIndicator()
-    }
-}
-
-@Composable
-private fun ErrorBox(
-    message: String,
-    modifier: Modifier = Modifier,
-) {
-    Box(modifier = modifier.fillMaxSize().padding(20.dp), contentAlignment = Alignment.Center) {
-        Text(text = message, color = AfternoteDesign.colors.gray9)
     }
 }
 

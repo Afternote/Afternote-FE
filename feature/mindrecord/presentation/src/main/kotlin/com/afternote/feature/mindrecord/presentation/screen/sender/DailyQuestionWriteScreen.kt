@@ -116,6 +116,41 @@ fun DailyQuestionWriteScreen(
                 )
             }
 
+            // 저장·업로드 진행 상태를 알린다 — 종전에는 액션만 잠기고 표시가 없어
+            // 사용자가 무반응으로 인식했다 (#716).
+            val progressText =
+                when {
+                    uiState.submitState is SubmitState.InProgress -> {
+                        stringResource(R.string.mindrecord_write_saving)
+                    }
+
+                    uiState.isUploadingImage -> {
+                        stringResource(R.string.mindrecord_write_uploading_image)
+                    }
+
+                    else -> {
+                        null
+                    }
+                }
+            if (progressText != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = progressText,
+                    color = AfternoteDesign.colors.gray6,
+                    style = AfternoteDesign.typography.captionLargeR,
+                )
+            }
+
+            val uploadError = uiState.imageUploadError?.asString()
+            if (uploadError != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = uploadError,
+                    color = AfternoteDesign.colors.error,
+                    style = AfternoteDesign.typography.captionLargeR,
+                )
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
             WriteTextField(
                 value = uiState.answer,

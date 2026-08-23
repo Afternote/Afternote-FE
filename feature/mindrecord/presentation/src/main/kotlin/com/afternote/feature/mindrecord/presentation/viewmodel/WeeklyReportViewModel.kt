@@ -77,6 +77,15 @@ class WeeklyReportViewModel
             load(current, showsLoading = false, keepsStateOnFailure = true)
         }
 
+        /** 조회 실패 화면의 재시도 — 로딩을 보여도 잃을 것이 없다(보고 있던 것이 오류 문구뿐). */
+        fun retry() {
+            // 실패 상태에서는 Loaded 가 없다 — 마지막으로 보던 주가 없으면 최신 주로 되돌린다.
+            val monday =
+                (internalState.value.loadPhase as? LoadPhase.Loaded)?.monday
+                    ?: weekOptions.first().monday
+            load(monday)
+        }
+
         private fun load(
             monday: LocalDate,
             showsLoading: Boolean = true,
@@ -117,10 +126,7 @@ class WeeklyReportViewModel
                                     current.copy(
                                         loadPhase =
                                             LoadPhase.Failed(
-                                                UiText.DynamicOrResource(
-                                                    value = e.message,
-                                                    fallbackResId = R.string.mindrecord_error_weekly_report_failed,
-                                                ),
+                                                UiText.Resource(R.string.mindrecord_error_weekly_report_failed),
                                             ),
                                     )
                                 }
