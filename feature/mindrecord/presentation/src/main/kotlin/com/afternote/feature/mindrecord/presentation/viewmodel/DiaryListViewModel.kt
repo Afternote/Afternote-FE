@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DiaryList
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
+import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.mapper.toUi
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,6 +26,7 @@ class DiaryListViewModel
     @Inject
     constructor(
         private val repository: DiaryRepository,
+        private val changeTracker: MindRecordChangeTracker,
     ) : ViewModel() {
         private val internalState = MutableStateFlow(InternalState())
         private var loadJob: Job? = null
@@ -59,17 +61,26 @@ class DiaryListViewModel
          * - 실패해도 보고 있던 화면을 유지한다.
          * - 보고 있던 월을 그대로 다시 조회한다. 6월을 보는 중에 7월 데이터를 받으면 안 된다.
          */
+
+        /**
+         * 탭 전환·`ON_RESUME` 등 사용자가 요청하지 않은 자동 갱신.
+         *
+         * **데이터가 바뀌었을 때만 다시 부른다** (#736). 진행 중인 로드는 종전대로 Job 으로
+         * 막는다 — 컴포지션 쪽 플래그가 아니라 VM 이 들고 있는 값으로 판단해야 프로세스
+         * 사망 후 복원에서도 중복이 나지 않는다.
+         */
         fun refreshOnReturn() {
-            // 진입 직후의 ON_RESUME 은 init 로드와 겹친다 — 진행 중이면 건너뛴다.
-            // 컴포지션 쪽 플래그가 아니라 VM 이 들고 있는 Job 으로 판단해야
-            // 프로세스 사망 후 복원(VM 재생성 + 플래그 복원)에서도 중복이 나지 않는다.
             if (loadJob?.isActive == true) return
+            if (loadedVersion != null && loadedVersion == changeTracker.version) return
             load(
                 yearMonth = internalState.value.yearMonth,
                 showsLoading = false,
                 keepsStateOnFailure = true,
             )
         }
+
+        /** 마지막으로 성공한 조회 시점의 데이터 버전. 아직 성공한 적이 없으면 null. */
+        private var loadedVersion: Long? = null
 
         fun delete(id: Long) {
             viewModelScope.launch {
@@ -102,6 +113,7 @@ class DiaryListViewModel
                     ensureActive()
                     listResult
                         .onSuccess { result ->
+                            loadedVersion = changeTracker.version
                             internalState.update { it.copy(loadPhase = LoadPhase.Loaded(result)) }
                         }.onFailure { e ->
                             internalState.update { current ->

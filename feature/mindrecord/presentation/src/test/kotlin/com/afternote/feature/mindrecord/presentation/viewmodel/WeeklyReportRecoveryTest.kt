@@ -5,6 +5,7 @@ import com.afternote.core.model.user.User
 import com.afternote.feature.mindrecord.domain.model.EmotionAnalysis
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
+import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
@@ -36,6 +37,7 @@ import java.time.LocalDate
 @OptIn(ExperimentalCoroutinesApi::class)
 class WeeklyReportRecoveryTest {
     private val dispatcher = StandardTestDispatcher()
+    private val changeTracker = MindRecordChangeTracker()
     private val thisMonday: LocalDate = LocalDate.now().with(DayOfWeek.MONDAY)
     private val lastMonday: LocalDate = thisMonday.minusWeeks(1)
 
@@ -140,7 +142,7 @@ class WeeklyReportRecoveryTest {
         )
 
     private fun TestScope.start(repository: WeeklyReportRepository): WeeklyReportViewModel {
-        val viewModel = WeeklyReportViewModel(repository, userRepository())
+        val viewModel = WeeklyReportViewModel(repository, userRepository(), changeTracker)
         backgroundScope.launch(dispatcher) { viewModel.uiState.collect { } }
         advanceUntilIdle()
         return viewModel

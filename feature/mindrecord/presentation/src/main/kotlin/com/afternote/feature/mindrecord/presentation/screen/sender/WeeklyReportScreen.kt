@@ -23,6 +23,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -42,6 +44,15 @@ fun WeeklyReportScreen(
     viewModel: WeeklyReportViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // 갱신을 이 화면이 직접 건다. HomeScreen 이 VM 을 호이스팅해 대신 걸어 주면, 탭에
+    // 들어가지 않아도 VM 이 만들어져 `init` 조회가 미리 나간다 (#736).
+    //
+    // 탭에 들어온 첫 순간은 `init` 이 이미 조회 중이라 이 호출이 Job 가드에 걸리고,
+    // 다시 들어올 때는 데이터가 바뀌었을 때만 실제 요청이 나간다.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refreshOnReturn()
+    }
 
     when (val state = uiState) {
         WeeklyReportUiState.Loading -> {

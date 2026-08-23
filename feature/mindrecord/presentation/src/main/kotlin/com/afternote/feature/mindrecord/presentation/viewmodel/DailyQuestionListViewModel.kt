@@ -6,6 +6,7 @@ import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
+import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.mapper.toUi
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,6 +26,7 @@ class DailyQuestionListViewModel
     @Inject
     constructor(
         private val repository: DailyQuestionRepository,
+        private val changeTracker: MindRecordChangeTracker,
     ) : ViewModel() {
         private val internalState = MutableStateFlow(InternalState())
         private var loadJob: Job? = null
@@ -48,13 +50,25 @@ class DailyQuestionListViewModel
          * 화면이 살아 있는 채로 발화하므로 로딩을 방출하지 않고(콘텐츠가 통째 교체되면
          * 캘린더 월과 스크롤 위치가 함께 폐기된다) 실패해도 보고 있던 화면을 유지한다.
          */
+
+        /**
+         * 탭 전환·`ON_RESUME` 등 사용자가 요청하지 않은 자동 갱신.
+         *
+         * **데이터가 바뀌었을 때만 다시 부른다** (#736). 종전에는 돌아오기만 하면 무조건
+         * 재조회해, 화면 off/on 이나 진입 직후의 `ON_RESUME` 까지 같은 요청을 한 번 더
+         * 내보냈다 — 마음의 기록 첫 진입 한 번에 요청이 7건 나간 원인 중 하나다.
+         *
+         * 진행 중인 로드는 종전대로 Job 으로 막는다. 컴포지션 쪽 플래그가 아니라 VM 이
+         * 들고 있는 값으로 판단해야 프로세스 사망 후 복원에서도 중복이 나지 않는다.
+         */
         fun refreshOnReturn() {
-            // 진입 직후의 ON_RESUME 은 init 로드와 겹친다 — 진행 중이면 건너뛴다.
-            // 컴포지션 쪽 플래그가 아니라 VM 이 들고 있는 Job 으로 판단해야
-            // 프로세스 사망 후 복원(VM 재생성 + 플래그 복원)에서도 중복이 나지 않는다.
             if (loadJob?.isActive == true) return
+            if (loadedVersion != null && loadedVersion == changeTracker.version) return
             load(showsLoading = false, keepsStateOnFailure = true)
         }
+
+        /** 마지막으로 성공한 조회 시점의 데이터 버전. 아직 성공한 적이 없으면 null. */
+        private var loadedVersion: Long? = null
 
         fun delete(id: Long) {
             viewModelScope.launch {
@@ -98,6 +112,9 @@ class DailyQuestionListViewModel
                             }
                         }
                     } else {
+                        // 조회를 시작한 시점이 아니라 **끝난 시점**의 버전을 기록한다.
+                        // 조회 도중 들어온 변경을 놓치지 않기 위해서다.
+                        loadedVersion = changeTracker.version
                         internalState.update { it.copy(loadPhase = LoadPhase.Loaded(today, list)) }
                     }
                 }

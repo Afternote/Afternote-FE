@@ -9,12 +9,14 @@ import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DiaryList
 import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
+import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 import javax.inject.Inject
 
 class DiaryRepositoryImpl
     @Inject
     constructor(
         private val api: DiaryApiService,
+        private val changeTracker: MindRecordChangeTracker,
     ) : DiaryRepository {
         override suspend fun getList(
             yearMonth: String,
@@ -30,7 +32,7 @@ class DiaryRepositoryImpl
         override suspend fun create(payload: DiaryCreatePayload): Result<Unit> =
             runCatching {
                 api.createDiary(payload.toRequest()).requireStatus()
-            }
+            }.onSuccess { changeTracker.notifyChanged() }
 
         override suspend fun update(
             id: Long,
@@ -38,10 +40,10 @@ class DiaryRepositoryImpl
         ): Result<Unit> =
             runCatching {
                 api.updateDiary(diaryId = id, request = payload.toRequest()).requireStatus()
-            }
+            }.onSuccess { changeTracker.notifyChanged() }
 
         override suspend fun delete(id: Long): Result<Unit> =
             runCatching {
                 api.deleteDiary(diaryId = id).requireStatus()
-            }
+            }.onSuccess { changeTracker.notifyChanged() }
     }

@@ -11,6 +11,7 @@ import com.afternote.feature.mindrecord.domain.model.WeeklyReportDailyQuestion
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDay
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportEmotion
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
+import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
 import com.afternote.feature.mindrecord.presentation.model.DayBackground
@@ -43,11 +44,15 @@ class WeeklyReportViewModel
     constructor(
         private val repository: WeeklyReportRepository,
         private val userRepository: UserRepository,
+        private val changeTracker: MindRecordChangeTracker,
     ) : ViewModel() {
         private val weekOptions: List<WeekOption> =
             buildWeekOptions(today = LocalDate.now(), count = WEEK_OPTION_COUNT)
 
         private val internalState = MutableStateFlow(InternalState())
+
+        /** 마지막으로 성공한 조회 시점의 데이터 버전 (#736). */
+        private var loadedVersion: Long? = null
         private var loadJob: Job? = null
 
         val uiState: StateFlow<WeeklyReportUiState> =
@@ -101,6 +106,10 @@ class WeeklyReportViewModel
         fun refreshOnReturn() {
             // 진입 직후의 ON_RESUME 은 init 로드와 겹친다 — 진행 중이면 건너뛴다.
             if (loadJob?.isActive == true) return
+            // 성공해서 보고 있는 화면이라면, 데이터가 바뀌었을 때만 다시 부른다 (#736).
+            // 실패 상태는 이 가드에 걸리지 않는다 — 실패한 주차를 다시 시도해야 한다 (#723).
+            val phase = internalState.value.loadPhase
+            if (phase is LoadPhase.Loaded && loadedVersion == changeTracker.version) return
             // 실패 상태면 **실패한 주**를 다시 시도한다. 이번 주로 되돌아가면 사용자가
             // 보려던 주차가 유실돼, 나갔다 들어와도 복구되지 않는다 (#723).
             val current =
@@ -143,6 +152,7 @@ class WeeklyReportViewModel
                     ensureActive()
                     result
                         .onSuccess { (report, profile) ->
+                            loadedVersion = changeTracker.version
                             internalState.update {
                                 it.copy(loadPhase = LoadPhase.Loaded(monday, report, profile.name))
                             }
