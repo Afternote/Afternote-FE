@@ -5,6 +5,10 @@ name: Unit Test
 #   - :koverXmlReportCi / :koverHtmlReportCi : Android debug + 순수 JVM 테스트와 aggregate coverage
 #   - :konsist:test : 순수 JVM 모듈(testDebugUnitTest 미보유)이라 별도 명시. 레이어 의존 아키텍처 가드.
 #   - :build-logic:test : included build 라 루트 태스크에 안 묶여 별도 명시. release 키 가드(TestKit) 회귀 가드.
+#   - :app:compileDebugAndroidTestKotlin : androidTest 실행은 정기 워크플로(android-managed-device.yml)
+#     뿐이라 PR 단계엔 androidTest 컴파일 검증이 없었다. 그 공백으로 #861/#867 androidTest 배치가
+#     develop 의 시그니처 변경(#868)과 조합 컴파일이 깨진 채 머지됨 — 실행은 못 해도 컴파일은 여기서 잡는다.
+#     androidTest 소스셋은 :app 에만 있다.
 # lint.yml 과 setup 이 거의 동일하지만 분리 — lint 실패가 test 결과를 가리지 않도록 fail-fast 독립.
 
 # base 필터를 두지 않는다 — base 변경(feat/* → develop)은 pull_request 기본 activity type 에
@@ -52,7 +56,7 @@ jobs:
         uses: ./.github/actions/setup-ci-config
 
       - name: Run unit tests and aggregate Kover reports
-        run: ./gradlew :koverXmlReportCi :koverHtmlReportCi :konsist:test :build-logic:test --continue --parallel
+        run: ./gradlew :koverXmlReportCi :koverHtmlReportCi :konsist:test :build-logic:test :app:compileDebugAndroidTestKotlin --continue --parallel
 
       - name: Upload Kover coverage reports
         id: kover-artifact
