@@ -51,6 +51,8 @@ fun HomeScreen(
     // 프리페치가 되므로 트레이드오프를 받아들인다.
     weeklyReportViewModel: WeeklyReportViewModel = hiltViewModel(),
     onWriteClick: (MindRecordCategoryUi) -> Unit = {},
+    onEditDailyQuestion: (Long) -> Unit = {},
+    onEditDiary: (Long) -> Unit = {},
 ) {
     // Figma 2757:16116 — 마음의 기록 탭은 데일리 질문 / 일기 / 주간리포트 3개
     val categories =
@@ -172,9 +174,23 @@ fun HomeScreen(
 
             HorizontalPager(state = pagerState) { _ ->
                 when (selectedCategory) {
-                    MindRecordCategoryUi.DailyQuestion -> DailyQuestionAnswerListScreen(isListView = isListView)
-                    MindRecordCategoryUi.Diary -> DiaryScreen(isListView = isListView)
-                    else -> WeeklyReportScreen()
+                    MindRecordCategoryUi.DailyQuestion -> {
+                        DailyQuestionAnswerListScreen(
+                            isListView = isListView,
+                            onEditClick = onEditDailyQuestion,
+                        )
+                    }
+
+                    MindRecordCategoryUi.Diary -> {
+                        DiaryScreen(
+                            isListView = isListView,
+                            onEditClick = onEditDiary,
+                        )
+                    }
+
+                    else -> {
+                        WeeklyReportScreen()
+                    }
                 }
             }
         }

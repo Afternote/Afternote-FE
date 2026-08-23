@@ -101,7 +101,7 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
             }
 
             override fun onWriteDailyQuestion() {
-                navController.navigate(MindRecordRoute.DailyQuestionWriteRoute)
+                navController.navigate(MindRecordRoute.DailyQuestionWriteRoute())
             }
 
             override fun onWriteDiary() {
@@ -124,12 +124,30 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
                 navController.popBackStack()
             }
 
+            override fun onEditDailyQuestion(answerId: Long) {
+                navController.navigate(MindRecordRoute.DailyQuestionWriteRoute(answerId = answerId))
+            }
+
+            override fun onEditDiary(
+                diaryId: Long,
+                yearMonth: String,
+            ) {
+                navController.navigate(
+                    MindRecordRoute.DiaryWriteRoute(
+                        recordId = diaryId,
+                        yearMonth = yearMonth,
+                        // 정식 기록이라 draft 목록이 아닌 전체 목록에서 찾는다 (#582).
+                        isDraft = false,
+                    ),
+                )
+            }
+
             override fun onEditDiaryDraft(
                 draftId: Long,
                 draftYearMonth: String,
             ) {
                 navController.navigate(
-                    MindRecordRoute.DiaryWriteRoute(draftId = draftId, draftYearMonth = draftYearMonth),
+                    MindRecordRoute.DiaryWriteRoute(recordId = draftId, yearMonth = draftYearMonth),
                 )
             }
         }

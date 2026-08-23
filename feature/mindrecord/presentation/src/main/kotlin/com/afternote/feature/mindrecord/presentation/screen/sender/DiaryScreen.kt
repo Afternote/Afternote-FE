@@ -48,6 +48,7 @@ private val PreviewYearMonth = YearMonth.of(2026, 7)
 fun DiaryScreen(
     modifier: Modifier = Modifier,
     isListView: Boolean = true,
+    onEditClick: (Long) -> Unit = {},
     viewModel: DiaryListViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -69,6 +70,7 @@ fun DiaryScreen(
                 yearMonth = state.yearMonth,
                 monthDiaryCount = state.monthDiaryCount,
                 weeklyMoodEmoji = state.weeklyDominantMood?.toEmoji(),
+                onEdit = onEditClick,
                 onDelete = viewModel::delete,
                 onYearMonthChanged = viewModel::selectYearMonth,
             )
@@ -87,6 +89,7 @@ private fun DiaryListContent(
     modifier: Modifier = Modifier,
     monthDiaryCount: Int = 0,
     weeklyMoodEmoji: String? = null,
+    onEdit: (Long) -> Unit = {},
     onDelete: (Long) -> Unit = {},
     onYearMonthChanged: (YearMonth) -> Unit = {},
 ) {
@@ -139,6 +142,7 @@ private fun DiaryListContent(
 
             items(diaries, key = { it.id }) { diary ->
                 DiaryComponent(
+                    onEdit = { onEdit(diary.id) },
                     diary = diary,
                     modifier = Modifier.padding(vertical = 8.dp),
                     onDelete = { onDelete(diary.id) },
@@ -162,6 +166,7 @@ private fun DiaryListContent(
             }
             gridItems(diaries, key = { it.id }) { diary ->
                 DiaryCard(
+                    onEdit = { onEdit(diary.id) },
                     diary = diary,
                     onDelete = { onDelete(diary.id) },
                 )

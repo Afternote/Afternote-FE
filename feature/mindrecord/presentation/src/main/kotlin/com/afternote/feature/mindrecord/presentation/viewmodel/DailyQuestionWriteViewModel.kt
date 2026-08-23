@@ -1,13 +1,16 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.presentation.R
+import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,14 +24,56 @@ import javax.inject.Inject
 class DailyQuestionWriteViewModel
     @Inject
     constructor(
+        savedStateHandle: SavedStateHandle,
         private val repository: DailyQuestionRepository,
         private val photoUploadRepository: PhotoUploadRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(DailyQuestionWriteUiState())
         val uiState: StateFlow<DailyQuestionWriteUiState> = _uiState.asStateFlow()
 
+        /** 수정 대상 답변 ID. 목록의 "수정하기" 로 들어오면 채워진다 (#582). */
+        private val editingAnswerId: Long? =
+            savedStateHandle.toRoute<MindRecordRoute.DailyQuestionWriteRoute>().answerId
+
         init {
-            loadTodayQuestion()
+            if (editingAnswerId != null) loadAnswer(editingAnswerId) else loadTodayQuestion()
+        }
+
+        /**
+         * 정식 답변을 프리필한다 (#582).
+         *
+         * 오늘 질문을 다시 묻지 않는다 — 수정 대상은 이미 특정된 레코드이고, 저장은
+         * `PATCH /daily-questions/{id}` 로 나간다. `questionId` 도 그래서 필요 없다.
+         */
+        private fun loadAnswer(answerId: Long) {
+            viewModelScope.launch {
+                _uiState.update { it.copy(isQuestionLoading = true, questionLoadError = null) }
+                repository
+                    .getList()
+                    .mapCatching { list -> list.first { it.dailyQuestionId == answerId } }
+                    .onSuccess { answer ->
+                        _uiState.update {
+                            it.copy(
+                                draftId = answer.dailyQuestionId,
+                                questionContent = answer.title,
+                                answer = answer.content,
+                                isQuestionLoading = false,
+                                contentLoaded = true,
+                            )
+                        }
+                    }.onFailure { e ->
+                        _uiState.update {
+                            it.copy(
+                                isQuestionLoading = false,
+                                questionLoadError =
+                                    UiText.DynamicOrResource(
+                                        value = e.message,
+                                        fallbackResId = R.string.mindrecord_error_daily_question_today_failed,
+                                    ),
+                            )
+                        }
+                    }
+            }
         }
 
         private fun loadTodayQuestion() {
@@ -105,8 +150,11 @@ class DailyQuestionWriteViewModel
 
         fun submit(isDraft: Boolean = false) {
             val state = _uiState.value
-            val questionId = state.questionId ?: return
             if (!state.canSubmit) return
+            // 수정 모드에는 오늘 질문을 부르지 않으므로 questionId 가 없다. PATCH 는
+            // 대상 레코드 ID 만 있으면 되고, 명세에도 questionId 가 없다 (#582).
+            // canSubmit 이 이미 둘 중 하나는 있음을 보장한다.
+            val questionId = state.questionId
 
             viewModelScope.launch {
                 _uiState.update { it.copy(submitState = SubmitState.InProgress) }
@@ -128,7 +176,7 @@ class DailyQuestionWriteViewModel
                             DailyQuestionCreatePayload(
                                 content = state.answer,
                                 isDraft = isDraft,
-                                questionId = questionId,
+                                questionId = requireNotNull(questionId),
                                 imageUrl = state.imageUrl,
                             ),
                         )

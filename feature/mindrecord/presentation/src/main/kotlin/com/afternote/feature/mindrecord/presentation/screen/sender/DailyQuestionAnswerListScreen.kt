@@ -26,6 +26,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionListCard
+import com.afternote.feature.mindrecord.presentation.component.DeleteConfirmDialog
 import com.afternote.feature.mindrecord.presentation.component.MindRecordEmptyState
 import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
@@ -37,9 +38,21 @@ import java.time.YearMonth
 fun DailyQuestionAnswerListScreen(
     modifier: Modifier = Modifier,
     isListView: Boolean = true,
+    onEditClick: (Long) -> Unit = {},
     viewModel: DailyQuestionListViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var pendingDeleteId by remember { mutableStateOf<Long?>(null) }
+
+    pendingDeleteId?.let { id ->
+        DeleteConfirmDialog(
+            onConfirm = {
+                pendingDeleteId = null
+                viewModel.delete(id)
+            },
+            onDismiss = { pendingDeleteId = null },
+        )
+    }
 
     when (val state = uiState) {
         DailyQuestionListUiState.Loading -> {
@@ -55,7 +68,9 @@ fun DailyQuestionAnswerListScreen(
                 modifier = modifier,
                 isListView = isListView,
                 answers = state.answers,
-                onDelete = viewModel::delete,
+                onEdit = onEditClick,
+                // 삭제는 되돌릴 수 없다 — 종전에는 메뉴를 누르는 즉시 실행됐다 (#582).
+                onDelete = { pendingDeleteId = it },
             )
         }
     }
@@ -66,6 +81,7 @@ private fun DailyQuestionListContent(
     isListView: Boolean,
     answers: List<DailyQuestion>,
     modifier: Modifier = Modifier,
+    onEdit: (Long) -> Unit = {},
     onDelete: (Long) -> Unit = {},
 ) {
     var yearMonth by remember { mutableStateOf(YearMonth.now()) }
@@ -101,7 +117,11 @@ private fun DailyQuestionListContent(
         }
         // Figma 2757:16116 — 리스트 형은 답변 카드만 나열
         items(answers, key = { it.id }) { answer ->
-            DailyQuestionListCard(answer = answer, onDelete = { onDelete(answer.id) })
+            DailyQuestionListCard(
+                answer = answer,
+                onEdit = { onEdit(answer.id) },
+                onDelete = { onDelete(answer.id) },
+            )
         }
     }
 }

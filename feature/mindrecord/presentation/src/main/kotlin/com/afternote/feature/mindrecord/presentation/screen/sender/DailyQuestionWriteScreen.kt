@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -117,13 +118,16 @@ fun DailyQuestionWriteScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            WriteTextField(
-                value = uiState.answer,
-                onValueChange = viewModel::onAnswerChanged,
-                onSaveDraftClick = { viewModel.submit(isDraft = true) },
-                onDraftCountClick = onDraftListClick,
-                onImagePicked = viewModel::uploadImage,
-            )
+            // 프리필이 비동기로 끝나므로 에디터를 다시 만들어 본문을 다시 시드한다 (#582).
+            key(uiState.contentLoaded) {
+                WriteTextField(
+                    value = uiState.answer,
+                    onValueChange = viewModel::onAnswerChanged,
+                    onSaveDraftClick = { viewModel.submit(isDraft = true) },
+                    onDraftCountClick = onDraftListClick,
+                    onImagePicked = viewModel::uploadImage,
+                )
+            }
         }
     }
 }
