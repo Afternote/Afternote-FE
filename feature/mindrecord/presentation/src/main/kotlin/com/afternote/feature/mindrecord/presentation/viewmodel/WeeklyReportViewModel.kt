@@ -255,7 +255,10 @@ class WeeklyReportViewModel
 
         private fun LoadPhase.Loaded.toSuccessUiState(): WeeklyReportUiState.Success {
             val sunday = monday.plusDays(WEEK_LENGTH - 1L)
-            val dailyQuestionDates = report.dailyQuestions.mapNotNull { parseLocalDateOrNull(it.date) }
+            // 주간 범위 방어를 **한 번만** 한다. 종전에는 집계만 범위를 걸고 HISTORY 는
+            // 전량을 렌더해, 같은 화면에 범위가 적용된 수치와 적용되지 않은 목록이
+            // 함께 있었다 (#547).
+            val dailyQuestionsInWeek = report.dailyQuestions.filter { it.date in monday..sunday }
             return WeeklyReportUiState.Success(
                 selectedMonday = monday,
                 weekOptions = weekOptions,
@@ -265,7 +268,7 @@ class WeeklyReportViewModel
                     countRecordedDays(
                         monday = monday,
                         week = report.week,
-                        dailyQuestionDates = dailyQuestionDates,
+                        dailyQuestionDates = dailyQuestionsInWeek.map { it.date },
                     ),
                 counts =
                     listOf(
@@ -276,7 +279,7 @@ class WeeklyReportViewModel
                 weekDays = mapWeekDays(monday, report.week),
                 emotionKeywords = mapEmotionKeywords(report.emotions),
                 summaryText = report.summaryText,
-                dailyQuestions = report.dailyQuestions.map { it.toUi() },
+                dailyQuestions = dailyQuestionsInWeek.map { it.toUi() },
             )
         }
 
@@ -311,25 +314,10 @@ class WeeklyReportViewModel
             private fun WeeklyReportDailyQuestion.toUi(): DailyQuestion =
                 DailyQuestion(
                     title = title,
-                    date = parseLocalDate(date),
+                    date = date,
                     content = content,
                 )
 
             // 서버는 "yyyy.MM.dd 요일" 또는 ISO 포맷으로 내려옴 — 둘 다 허용.
-            private val DATE_FORMATTERS: List<DateTimeFormatter> =
-                listOf(
-                    DateTimeFormatter.ofPattern("yyyy.MM.dd"),
-                    DateTimeFormatter.ISO_DATE,
-                )
-
-            private fun parseLocalDate(raw: String): LocalDate = parseLocalDateOrNull(raw) ?: LocalDate.now()
-
-            private fun parseLocalDateOrNull(raw: String): LocalDate? {
-                val datePart = raw.substringBefore(' ').trim()
-                for (formatter in DATE_FORMATTERS) {
-                    runCatching { return LocalDate.parse(datePart, formatter) }
-                }
-                return null
-            }
         }
     }

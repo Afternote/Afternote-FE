@@ -1,5 +1,6 @@
 package com.afternote.feature.mindrecord.data.mapper
 
+import android.util.Log
 import com.afternote.feature.mindrecord.data.dto.EmotionAnalysisSummaryDto
 import com.afternote.feature.mindrecord.data.dto.WeeklyReportDailyQuestionDto
 import com.afternote.feature.mindrecord.data.dto.WeeklyReportDayDto
@@ -17,7 +18,9 @@ fun WeeklyReportDto.toDomain(): WeeklyReport =
         diaryAmount = diaryAmount,
         summaryText = summaryText,
         week = week.map { it.toDomain() },
-        dailyQuestions = dailyQuestions.map { it.toDomain() },
+        // 날짜를 해석하지 못한 항목은 여기서 뺀다. 종전에는 집계 경로가 버리고 표시 경로가
+        // `LocalDate.now()` 로 메워, 같은 목록을 두고 한쪽은 제외·한쪽은 왜곡이었다 (#547).
+        dailyQuestions = dailyQuestions.mapNotNull { it.toDomainOrNull() },
         emotions = emotions.map { it.toDomain() },
         emotionAnalysis = emotionAnalysis.toDomain(),
     )
@@ -39,12 +42,26 @@ fun WeeklyReportDayDto.toDomain(): WeeklyReportDay =
         emotion = emotion?.toDomain(),
     )
 
-fun WeeklyReportDailyQuestionDto.toDomain(): WeeklyReportDailyQuestion =
-    WeeklyReportDailyQuestion(
+/**
+ * 날짜를 해석하지 못하면 null 을 돌려 목록에서 제외한다.
+ *
+ * 오늘로 메우지 않는다 — 그러면 파싱 못 한 기록이 **오늘 작성한 것처럼** HISTORY 카드에
+ * 앉아 필드 이상을 감춘다. 로그도 에러 표시도 없는 조용한 오표시였다 (#547).
+ */
+fun WeeklyReportDailyQuestionDto.toDomainOrNull(): WeeklyReportDailyQuestion? {
+    val parsedDate =
+        parseServerDateOrNull(date) ?: run {
+            Log.w(TAG, "주간리포트 데일리질문 날짜를 해석하지 못해 목록에서 제외한다: raw=$date")
+            return null
+        }
+    return WeeklyReportDailyQuestion(
         title = title,
         content = content,
-        date = date,
+        date = parsedDate,
     )
+}
+
+private const val TAG = "WeeklyReportMapper"
 
 fun EmotionAnalysisSummaryDto.toDomain(): EmotionAnalysis =
     EmotionAnalysis(
