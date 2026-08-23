@@ -20,8 +20,7 @@ enum class HomeFailureStage(
     /**
      * 수신자 홈 로드 — 일부 요청만 실패한 경우.
      *
-     * 화면은 실패한 항목을 0·빈 값으로 채우고 정상 진행하므로 사용자에게도, 콘솔에도 아무 신호가
-     * 남지 않는 게 원래 동작이었다.
+     * 화면은 성공한 섹션을 유지하고 실패한 기록 섹션은 조회 실패로 구분해 표시한다.
      */
     RECEIVER_HOME_PARTIAL_LOAD("receiver_home_partial_load"),
 

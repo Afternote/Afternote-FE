@@ -21,7 +21,7 @@ import com.afternote.core.ui.R as CoreUiR
  */
 @Composable
 fun MindRecordSection(
-    summary: MindRecordSummary,
+    summary: MindRecordSummary?,
     onGoClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -31,13 +31,18 @@ fun MindRecordSection(
         title = stringResource(R.string.receiver_home_mindrecord_section_title),
         description = stringResource(R.string.receiver_home_mindrecord_section_desc),
         countLine =
-            rememberCountLine(
-                prefix = "${summary.totalCount}개 ",
-                suffix = "마음의 기록이 있습니다.",
-            ),
+            if (summary == null) {
+                unavailableCountLine()
+            } else {
+                rememberCountLine(
+                    prefix = "${summary.totalCount}개 ",
+                    suffix = "마음의 기록이 있습니다.",
+                )
+            },
         buttonText = stringResource(R.string.receiver_home_mindrecord_section_button),
         onButtonClick = onGoClick,
         middleContent = {
+            if (summary == null) return@HomeSectionCard
             Spacer(modifier = Modifier.height(16.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -69,7 +74,6 @@ private fun MindRecordSectionPreview() {
         MindRecordSection(
             summary =
                 MindRecordSummary(
-                    totalCount = 150,
                     dailyQuestionCount = 18,
                     diaryCount = 18,
                 ),

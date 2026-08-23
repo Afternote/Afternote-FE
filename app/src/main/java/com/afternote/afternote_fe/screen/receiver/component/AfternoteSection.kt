@@ -38,7 +38,7 @@ private val ICON_SIZE = 32.dp
  */
 @Composable
 fun AfternoteSection(
-    totalCount: Int,
+    totalCount: Int?,
     icons: List<AfternoteSourceIcon>,
     onGoClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -48,13 +48,18 @@ fun AfternoteSection(
         title = stringResource(R.string.receiver_home_afternote_section_title),
         description = stringResource(R.string.receiver_home_afternote_section_desc),
         countLine =
-            rememberCountLine(
-                prefix = "${totalCount}개",
-                suffix = "의 애프터노트가 있습니다.",
-            ),
+            if (totalCount == null) {
+                unavailableCountLine()
+            } else {
+                rememberCountLine(
+                    prefix = "${totalCount}개",
+                    suffix = "의 애프터노트가 있습니다.",
+                )
+            },
         buttonText = stringResource(R.string.receiver_home_afternote_section_button),
         onButtonClick = onGoClick,
         middleContent = {
+            if (totalCount == null) return@HomeSectionCard
             if (icons.isEmpty() && totalCount <= 0) return@HomeSectionCard
             Spacer(modifier = Modifier.height(16.dp))
             AfternoteSourceIconRow(
