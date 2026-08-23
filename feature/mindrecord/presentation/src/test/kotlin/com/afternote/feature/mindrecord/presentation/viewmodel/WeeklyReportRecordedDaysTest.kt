@@ -90,7 +90,10 @@ class WeeklyReportRecordedDaysTest {
     }
 
     @Test
-    fun `isDiary 가 false 인 원소는 일기 기록일로 세지 않는다`() {
+    fun `깊은 생각만 있는 날도 기록일로 센다`() {
+        // #590 회귀 — 실서버 대조(2026-08-23)에서 깊은 생각 1건만 있는 날은
+        // week=[{type:DEEP_THOUGHT}], daily-question=[] 로 온다. 종전처럼 isDiary 로 거르면
+        // 어디에서도 복구되지 않아 기록이 있는데도 "0일" 이 됐다.
         val monday = LocalDate.of(2026, 7, 27)
 
         val recordedDays =
@@ -100,7 +103,47 @@ class WeeklyReportRecordedDaysTest {
                 dailyQuestionDates = emptyList(),
             )
 
-        assertEquals(0, recordedDays)
+        assertEquals(1, recordedDays)
+    }
+
+    @Test
+    fun `일기가 아닌 기록도 종류를 가리지 않고 날짜 단위로 센다`() {
+        // 문구가 세는 것은 "일기를 쓴 날" 이 아니라 "마음을 기록한 날" 이다.
+        val monday = LocalDate.of(2026, 7, 27)
+
+        val recordedDays =
+            countRecordedDays(
+                monday = monday,
+                week = listOf(diaryDay(day = 28, isDiary = false), diaryDay(day = 30)),
+                dailyQuestionDates = emptyList(),
+            )
+
+        assertEquals(2, recordedDays)
+    }
+
+    @Test
+    fun `week 의 비일기 기록과 같은 날 데일리질문은 1일로 접힌다`() {
+        // 두 출처가 같은 날을 가리키면 중복 제거된다 — 종류를 안 가려도 이중 계산은 없다.
+        val monday = LocalDate.of(2026, 7, 27)
+
+        val recordedDays =
+            countRecordedDays(
+                monday = monday,
+                week = listOf(diaryDay(day = 28, isDiary = false)),
+                dailyQuestionDates = listOf(LocalDate.of(2026, 7, 28)),
+            )
+
+        assertEquals(1, recordedDays)
+    }
+
+    @Test
+    fun `종류를 가리지 않아도 달력 점은 여전히 일기만 찍는다`() {
+        // isDiary 는 집계에서 빠졌을 뿐 표시 규칙에는 그대로 남는다.
+        val monday = LocalDate.of(2026, 7, 27)
+
+        val byDate = aggregateWeekRecordsByDate(monday, listOf(diaryDay(day = 28, isDiary = false)))
+
+        assertEquals(false, byDate.getValue(LocalDate.of(2026, 7, 28)).isDiary)
     }
 
     @Test
