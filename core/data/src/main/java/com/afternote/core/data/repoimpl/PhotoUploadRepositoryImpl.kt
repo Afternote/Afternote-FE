@@ -62,7 +62,7 @@ private fun resolveExtension(mime: String?): String {
     return resolved?.takeIf { it in ALLOWED_EXTENSIONS } ?: DEFAULT_EXTENSION
 }
 
-class PhotoUploadRepositoryImpl
+internal class PhotoUploadRepositoryImpl
     @Inject
     constructor(
         @param:ApplicationContext private val context: Context,

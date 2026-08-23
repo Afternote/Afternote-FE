@@ -23,7 +23,7 @@ import javax.inject.Named
 /** MIME 타입에서 확장자를 못 뽑았을 때 폴백. 대부분의 안드로이드 영상이 mp4 라 합리적 디폴트. */
 private const val DEFAULT_VIDEO_EXTENSION = "mp4"
 
-class VideoUploadRepositoryImpl
+internal class VideoUploadRepositoryImpl
     @Inject
     constructor(
         @param:ApplicationContext private val context: Context,

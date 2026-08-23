@@ -212,7 +212,7 @@ dependencies {
     implementation(projects.core.ui)
     implementation(projects.core.model)
     implementation(projects.core.startup)
-    implementation(projects.core.di)
+    implementation(projects.core.data)
     implementation(projects.core.domain)
 
     // Feature — presentation
