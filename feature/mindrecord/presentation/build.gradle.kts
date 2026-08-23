@@ -6,6 +6,8 @@ plugins {
 
 android {
     namespace = "com.afternote.feature.mindrecord.presentation"
+
+    testOptions.unitTests.isIncludeAndroidResources = true
     resourcePrefix = "mindrecord_"
 }
 
@@ -19,4 +21,7 @@ dependencies {
     implementation(libs.compose.rich.editor)
 
     testImplementation(libs.coroutines.test)
+
+    // 매퍼가 android.util.Log 를 타 JVM 단위 테스트로는 돌지 않는다 (#751).
+    testImplementation(libs.robolectric)
 }

@@ -136,7 +136,8 @@ class DailyQuestionListViewModel
                                     isAnswered = it.isAnswered,
                                 )
                             },
-                        answers = phase.answers.map { it.toUi() },
+                        // 날짜를 못 정한 항목은 toUi() 가 null 을 돌린다 — 정렬 키가 없어 카드로 만들지 않는다 (#751).
+                        answers = phase.answers.mapNotNull { it.toUi() },
                     )
                 }
 
