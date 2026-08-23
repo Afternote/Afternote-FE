@@ -16,8 +16,8 @@ if (localPropertiesFile.exists()) {
     localPropertiesFile.inputStream().use { localProperties.load(it) }
 }
 
-// 카카오 OAuth redirect(`kakao{KEY}://oauth`) 핸들러 등록용.
-// SDK 런타임 초기화 키는 `core:startup`의 BuildConfig.KAKAO_NATIVE_APP_KEY 사용.
+// OAuth redirect(`kakao{KEY}://oauth`) 핸들러 등록용 manifestPlaceholder 와 SDK 런타임 초기화용
+// BuildConfig 가 같은 값을 쓴다 — 주입 지점이 둘이어도 키는 여기서 한 번만 읽는다.
 val kakaoKey = socialLoginKey("KAKAO_NATIVE_APP_KEY")
 
 android {
@@ -38,6 +38,7 @@ android {
         testInstrumentationRunnerArguments["clearPackageData"] = "true"
 
         manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] = kakaoKey
+        buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoKey\"")
     }
 
     testOptions {
@@ -193,6 +194,11 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.core.splashscreen)
 
+    // App Startup — 기동 초기화는 app 매니페스트에 등록한 Initializer 로 실행한다.
+    implementation(libs.androidx.startup.runtime)
+    // DailyNotificationInitializer 가 WorkManagerInitializer 를 선행 의존으로 지정한다.
+    implementation(libs.androidx.work.runtime.ktx)
+
     // 카카오 OAuth redirect Activity(`com.kakao.sdk.auth.AuthCodeHandlerActivity`)를
     // app 매니페스트에서 직접 참조하므로 컴파일 classpath에 노출 필요.
     implementation(libs.kakao.sdk.auth)
@@ -211,7 +217,6 @@ dependencies {
     implementation(projects.core.network)
     implementation(projects.core.ui)
     implementation(projects.core.model)
-    implementation(projects.core.startup)
     implementation(projects.core.di)
     implementation(projects.core.domain)
 
