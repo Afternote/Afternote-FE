@@ -36,13 +36,10 @@ dependencies {
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
 
-    // ViewModel 코루틴 테스트 — runTest 로 viewModelScope 를 제어한다.
+    // ViewModel 코루틴 테스트 — runTest 와 Main 디스패처 치환으로 viewModelScope 를 제어한다.
     testImplementation(libs.coroutines.test)
 
     // Compose Preview Screenshot Testing (#330)
     screenshotTestImplementation(libs.screenshot.validation.api)
     screenshotTestImplementation(libs.androidx.compose.ui.tooling)
-
-    // LoginViewModel 계약 단위 테스트 — Main 디스패처 치환용 (PR #647 리뷰 반영)
-    testImplementation(libs.coroutines.test)
 }
