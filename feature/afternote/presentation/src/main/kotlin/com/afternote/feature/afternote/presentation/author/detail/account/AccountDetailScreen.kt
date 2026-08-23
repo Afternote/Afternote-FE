@@ -121,7 +121,7 @@ internal fun AccountDetailRoute(
 }
 
 /**
- * 소셜 네트워크 애프터노트 상세 화면.
+ * 소셜 네트워크·비즈니스 애프터노트 공용 상세 화면.
  */
 @Composable
 fun AccountDetailScreen(
@@ -218,7 +218,7 @@ private fun AccountDetailScrollContent(
 }
 
 /**
- * 소셜 네트워크 상세 전용 ACCOUNT(아이디·비밀번호) 섹션.
+ * 소셜 네트워크·비즈니스 상세 공용 ACCOUNT(아이디·비밀번호) 섹션.
  *
  * 섹션 뼈대는 공용 [DetailSection], 행 레이아웃은 [DetailInfoRow] 를 쓰고,
  * 비밀번호 표시 토글 상태·동작만 이 블록에 둔다.
