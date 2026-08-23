@@ -21,8 +21,4 @@ class UserProfileRepositoryImpl
         override suspend fun saveUserName(name: String) {
             dataSource.saveUserName(name)
         }
-
-        override suspend fun clear() {
-            dataSource.clear()
-        }
     }

@@ -112,8 +112,6 @@ private class FakeReceiverRepository(
 
     override suspend fun saveAuthCode(code: String) = Unit
 
-    override suspend fun clearAuthCode() = Unit
-
     override fun getPagedReceivedAfternotes(): Flow<PagingData<AfterNoteListItem>> = emptyFlow()
 
     override suspend fun getReceivedAfterNotes(): Result<AfterNotesListResult> {

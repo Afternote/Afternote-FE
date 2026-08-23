@@ -166,10 +166,6 @@ private class RecordingReceiverRepository : ReceiverRepository {
         storedAuthCode.value = code
     }
 
-    override suspend fun clearAuthCode() {
-        storedAuthCode.value = null
-    }
-
     override fun getPagedReceivedAfternotes(): Flow<PagingData<AfterNoteListItem>> = flowOf(PagingData.empty())
 
     override suspend fun getReceivedAfterNotes(): Result<AfterNotesListResult> = error("호출되면 안 됨")

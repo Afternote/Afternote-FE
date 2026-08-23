@@ -484,8 +484,6 @@ private class FakeUserProfileRepository : UserProfileRepository {
     override suspend fun saveUserName(name: String) {
         savedUserNames += name
     }
-
-    override suspend fun clear() = unexpected("clear")
 }
 
 private class RecordingErrorReporter : ErrorReporter {
