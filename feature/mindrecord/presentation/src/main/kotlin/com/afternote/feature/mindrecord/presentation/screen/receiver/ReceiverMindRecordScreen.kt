@@ -60,7 +60,10 @@ fun ReceiverMindRecordScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var filterSheetVisible by remember { mutableStateOf(false) }
 
-    Scaffold(modifier = modifier) { paddingValues ->
+    Scaffold(
+        modifier = modifier,
+        containerColor = Color.Transparent,
+    ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {
             when (val state = uiState) {
                 ReceiverMindRecordUiState.Loading -> {

@@ -131,6 +131,7 @@ fun HomeScreen(
                 )
             }
         },
+        containerColor = Color.Transparent,
     ) { paddingValues ->
         Column(
             modifier =
