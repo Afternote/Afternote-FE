@@ -34,7 +34,24 @@ android {
         versionCode = resolveAfternoteVersionCode(System.getenv(AFTERNOTE_VERSION_CODE_ENV))
         versionName = "1.0"
 
+        testInstrumentationRunner = "com.afternote.afternote_fe.test.AfternoteTestRunner"
+        testInstrumentationRunnerArguments["clearPackageData"] = "true"
+
         manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] = kakaoKey
+    }
+
+    testOptions {
+        animationsDisabled = true
+        execution = "ANDROIDX_TEST_ORCHESTRATOR"
+        managedDevices {
+            localDevices {
+                create("pixel2Api30") {
+                    device = "Pixel 2"
+                    apiLevel = 30
+                    systemImageSource = "aosp"
+                }
+            }
+        }
     }
 
     signingConfigs {
@@ -219,6 +236,23 @@ dependencies {
 
     // HomeTabViewModel 경합 테스트 — 가상 시간으로 viewModelScope 요청 순서를 제어한다.
     testImplementation(libs.coroutines.test)
+
+    // Managed-device androidTest — 실제 서버·OAuth 대신 Hilt fake를 주입하고 Compose semantics를 검증한다.
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.test.core.ktx)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.navigation.testing)
+    androidTestImplementation(libs.androidx.paging.runtime)
+    androidTestImplementation(libs.hilt.android.testing)
+    androidTestImplementation(libs.coroutines.test)
+    androidTestImplementation(projects.core.data)
+    androidTestImplementation(projects.feature.afternote.domain)
+    androidTestImplementation(projects.feature.receiver.domain)
+    androidTestImplementation(projects.feature.timeletter.domain)
+    kspAndroidTest(libs.hilt.compiler)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
+    androidTestUtil(libs.androidx.test.orchestrator)
 
     // Compose Preview Screenshot Testing (#330) — 1hyok 영역 (홈) 적용
     screenshotTestImplementation(libs.screenshot.validation.api)
