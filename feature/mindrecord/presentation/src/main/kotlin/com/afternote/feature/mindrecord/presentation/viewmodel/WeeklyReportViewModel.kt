@@ -66,6 +66,22 @@ class WeeklyReportViewModel
         fun selectWeek(monday: LocalDate) = load(monday)
 
         /**
+         * 실패한 주차를 그대로 다시 조회한다 (#723).
+         *
+         * 실패 상태에서도 화면에 남은 재시도 수단이다. 실패 이력이 없으면 보고 있던 주를
+         * 다시 부른다.
+         */
+        fun retry() {
+            val target =
+                when (val phase = internalState.value.loadPhase) {
+                    is LoadPhase.Failed -> phase.monday
+                    is LoadPhase.Loaded -> phase.monday
+                    LoadPhase.Loading -> return
+                }
+            load(target)
+        }
+
+        /**
          * 감정 분석 실패 상태에서 사용자가 누르는 재시도.
          *
          * FE 가 할 수 있는 것은 **재조회**뿐이다 — 서버 측 재분석 트리거는 Afternote-BE#117
@@ -85,9 +101,14 @@ class WeeklyReportViewModel
         fun refreshOnReturn() {
             // 진입 직후의 ON_RESUME 은 init 로드와 겹친다 — 진행 중이면 건너뛴다.
             if (loadJob?.isActive == true) return
+            // 실패 상태면 **실패한 주**를 다시 시도한다. 이번 주로 되돌아가면 사용자가
+            // 보려던 주차가 유실돼, 나갔다 들어와도 복구되지 않는다 (#723).
             val current =
-                (internalState.value.loadPhase as? LoadPhase.Loaded)?.monday
-                    ?: weekOptions.first().monday
+                when (val phase = internalState.value.loadPhase) {
+                    is LoadPhase.Loaded -> phase.monday
+                    is LoadPhase.Failed -> phase.monday
+                    LoadPhase.Loading -> weekOptions.first().monday
+                }
             load(current, showsLoading = false, keepsStateOnFailure = true)
         }
 
@@ -99,6 +120,8 @@ class WeeklyReportViewModel
             loadJob?.cancel()
             loadJob =
                 viewModelScope.launch {
+                    // 실패했을 때 되돌아갈 화면을 **로딩으로 덮기 전에** 잡아 둔다 (#723).
+                    val previousLoaded = internalState.value.loadPhase.lastLoadedOrNull()
                     if (showsLoading) {
                         internalState.update { it.copy(loadPhase = LoadPhase.Loading) }
                     }
@@ -132,10 +155,13 @@ class WeeklyReportViewModel
                                     current.copy(
                                         loadPhase =
                                             LoadPhase.Failed(
-                                                UiText.DynamicOrResource(
-                                                    value = e.message,
-                                                    fallbackResId = R.string.mindrecord_error_weekly_report_failed,
-                                                ),
+                                                message =
+                                                    UiText.DynamicOrResource(
+                                                        value = e.message,
+                                                        fallbackResId = R.string.mindrecord_error_weekly_report_failed,
+                                                    ),
+                                                monday = monday,
+                                                previous = previousLoaded,
                                             ),
                                     )
                                 }
@@ -241,16 +267,56 @@ class WeeklyReportViewModel
                 val userName: String,
             ) : LoadPhase
 
+            /**
+             * 조회 실패.
+             *
+             * [monday] 는 **사용자가 고른 주**다. 이 값이 없으면 재진입 자동 갱신이 이번 주로
+             * 되돌아가, 실패한 주를 다시 시도할 방법이 사라진다 (#723).
+             *
+             * [previous] 는 직전에 성공했던 화면이다. 남겨 두면 실패해도 리포트와 주차 선택
+             * UI 를 유지할 수 있다 — 종전에는 화면 전체가 오류 문구 하나로 바뀌어, 재시도도
+             * 다른 주차로 이동도 불가능했다.
+             */
             data class Failed(
                 val message: UiText,
+                val monday: LocalDate,
+                val previous: Loaded?,
             ) : LoadPhase
         }
 
+        /** 실패 상태에 보존해 둔 직전 성공 화면(없으면 null). */
+        private fun LoadPhase.lastLoadedOrNull(): LoadPhase.Loaded? =
+            when (this) {
+                is LoadPhase.Loaded -> this
+                is LoadPhase.Failed -> previous
+                LoadPhase.Loading -> null
+            }
+
         private fun InternalState.toUiState(): WeeklyReportUiState =
             when (val phase = loadPhase) {
-                LoadPhase.Loading -> WeeklyReportUiState.Loading
-                is LoadPhase.Failed -> WeeklyReportUiState.Error(phase.message)
-                is LoadPhase.Loaded -> phase.toSuccessUiState()
+                LoadPhase.Loading -> {
+                    WeeklyReportUiState.Loading
+                }
+
+                is LoadPhase.Loaded -> {
+                    phase.toSuccessUiState()
+                }
+
+                is LoadPhase.Failed -> {
+                    // 직전에 보던 리포트가 있으면 그 화면을 유지하고 실패는 배너로 알린다.
+                    // 화면 전체를 오류로 바꾸면 주차 선택 UI 까지 사라져 복구 수단이 없어진다.
+                    phase.previous?.toSuccessUiState()?.copy(
+                        loadFailure =
+                            WeeklyReportUiState.LoadFailure(
+                                message = phase.message,
+                                failedWeekLabel = phase.monday,
+                            ),
+                    ) ?: WeeklyReportUiState.Error(
+                        message = phase.message,
+                        weekOptions = weekOptions,
+                        failedMonday = phase.monday,
+                    )
+                }
             }
 
         private fun LoadPhase.Loaded.toSuccessUiState(): WeeklyReportUiState.Success {
