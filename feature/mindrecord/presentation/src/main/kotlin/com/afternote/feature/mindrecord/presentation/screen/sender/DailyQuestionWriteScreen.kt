@@ -122,6 +122,7 @@ fun DailyQuestionWriteScreen(
                 onValueChange = viewModel::onAnswerChanged,
                 onSaveDraftClick = { viewModel.submit(isDraft = true) },
                 onDraftCountClick = onDraftListClick,
+                draftCount = uiState.draftCount,
                 onImagePicked = viewModel::uploadImage,
             )
         }
