@@ -17,9 +17,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 
 /**
  * 이어쓰기가 임시저장 본문을 싣는지 고정한다 (#923).
@@ -28,11 +25,9 @@ import org.robolectric.annotation.Config
  * 비어 있지 않다고 나와 draft 본문이 실리지 않고, 그대로 저장하면 기존 내용이 빈 값으로
  * 덮인다 — 되돌릴 수 없는 유실이다.
  *
- * `htmlToPlainText()` 가 Android `HtmlCompat` 를 타므로 Robolectric 으로 돌린다.
+ * 판정은 Android 에 의존하지 않는 `isHtmlBlank()` 가 맡으므로 순수 JVM 에서 돈다.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-@RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35])
 class DailyQuestionResumeDraftTest {
     @Before
     fun setUp() {

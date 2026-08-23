@@ -6,8 +6,6 @@ plugins {
 
 android {
     namespace = "com.afternote.feature.mindrecord.presentation"
-
-    testOptions.unitTests.isIncludeAndroidResources = true
     resourcePrefix = "mindrecord_"
 }
 
@@ -21,7 +19,4 @@ dependencies {
     implementation(libs.compose.rich.editor)
 
     testImplementation(libs.coroutines.test)
-
-    // 이어쓰기 판정이 HtmlCompat 를 타 JVM 단위 테스트로는 돌지 않는다 (#923).
-    testImplementation(libs.robolectric)
 }
