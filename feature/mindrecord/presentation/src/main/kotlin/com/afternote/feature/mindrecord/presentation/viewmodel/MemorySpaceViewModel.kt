@@ -26,7 +26,7 @@ class MemorySpaceViewModel
                 listOf(
                     MemoryItem(
                         id = 1,
-                        imageUrl = "https://mock.image/1",
+                        imageUrl = "https://picsum.photos/id/1015/400/600",
                         title = "기억 1",
                         date = "2024.11.11",
                         content =
@@ -36,7 +36,7 @@ class MemorySpaceViewModel
                     ),
                     MemoryItem(
                         id = 2,
-                        imageUrl = "https://mock.image/2",
+                        imageUrl = "https://picsum.photos/id/1016/400/600",
                         title = "기억 2",
                         date = "2024.11.12",
                         content = "두 번째 기억 내용.",
@@ -44,7 +44,7 @@ class MemorySpaceViewModel
                     ),
                     MemoryItem(
                         id = 3,
-                        imageUrl = "https://mock.image/3",
+                        imageUrl = "https://picsum.photos/id/1018/400/600",
                         title = "기억 3",
                         date = "2024.11.13",
                         content = "세 번째 기억 내용.",
@@ -52,7 +52,7 @@ class MemorySpaceViewModel
                     ),
                     MemoryItem(
                         id = 4,
-                        imageUrl = "https://mock.image/4",
+                        imageUrl = "https://picsum.photos/id/1025/400/600",
                         title = "기억 4",
                         date = "2024.11.14",
                         content = "네 번째 기억 내용.",
