@@ -2,6 +2,7 @@ package com.afternote.feature.mindrecord.presentation.screen.sender
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -25,12 +26,14 @@ import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
+import com.afternote.feature.mindrecord.presentation.component.DailyQuestionBanner
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionListCard
 import com.afternote.feature.mindrecord.presentation.component.MindRecordEmptyState
 import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListViewModel
+import com.afternote.feature.mindrecord.presentation.viewmodel.TodayQuestionUi
 import java.time.YearMonth
 
 @Composable
@@ -54,6 +57,7 @@ fun DailyQuestionAnswerListScreen(
             DailyQuestionListContent(
                 modifier = modifier,
                 isListView = isListView,
+                todayQuestion = state.todayQuestion,
                 answers = state.answers,
                 onDelete = viewModel::delete,
             )
@@ -66,13 +70,27 @@ private fun DailyQuestionListContent(
     isListView: Boolean,
     answers: List<DailyQuestion>,
     modifier: Modifier = Modifier,
+    todayQuestion: TodayQuestionUi? = null,
     onDelete: (Long) -> Unit = {},
 ) {
     var yearMonth by remember { mutableStateOf(YearMonth.now()) }
     val onYearMonthChanged: (YearMonth) -> Unit = { yearMonth = it }
+    var questionExpanded by remember { mutableStateOf(true) }
 
+    // 답변이 0건이어도 오늘의 추천 질문은 보여야 한다 — 종전에는 빈 상태가 화면 전체를
+    // 대체해 이 영역까지 함께 사라졌다 (#592).
     if (isListView && answers.isEmpty()) {
-        MindRecordEmptyState(modifier = modifier)
+        Column(
+            modifier = modifier,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            TodayRecommendedQuestion(
+                todayQuestion = todayQuestion,
+                expanded = questionExpanded,
+                onToggle = { questionExpanded = !questionExpanded },
+            )
+            MindRecordEmptyState()
+        }
         return
     }
 
@@ -80,6 +98,15 @@ private fun DailyQuestionListContent(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        // Figma 2671:15631 — 답변 목록 위의 "오늘의 추천 질문" 영역.
+        item {
+            TodayRecommendedQuestion(
+                todayQuestion = todayQuestion,
+                expanded = questionExpanded,
+                onToggle = { questionExpanded = !questionExpanded },
+            )
+        }
+
         // Figma 2671:16704 — 캘린더 형은 캘린더 아래에 카드 리스트가 바로 이어짐 (gap 24)
         if (!isListView) {
             val answeredDays =
@@ -145,4 +172,26 @@ private fun DailyQuestionAnswerListScreenPreviewTrue() {
             answers = emptyList(),
         )
     }
+}
+
+/**
+ * 목록 상단의 "오늘의 추천 질문".
+ *
+ * 조회가 실패하면 `todayQuestion` 이 `null` 이라 영역을 그리지 않는다 — 목록 자체는
+ * 정상이므로 보조 영역 하나 때문에 화면을 오류로 바꾸지 않는다. 실패를 어떻게 알릴지는
+ * 시안이 정의하지 않아 표현을 새로 만들지 않았다 (#592).
+ */
+@Composable
+private fun TodayRecommendedQuestion(
+    todayQuestion: TodayQuestionUi?,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+) {
+    if (todayQuestion == null) return
+    DailyQuestionBanner(
+        questionText = todayQuestion.content,
+        expanded = expanded,
+        onToggle = onToggle,
+        dayNumber = todayQuestion.day,
+    )
 }

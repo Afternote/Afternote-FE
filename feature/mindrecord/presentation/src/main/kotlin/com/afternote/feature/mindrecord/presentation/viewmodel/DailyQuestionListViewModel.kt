@@ -132,6 +132,7 @@ class DailyQuestionListViewModel
                             phase.today?.let {
                                 TodayQuestionUi(
                                     questionId = it.questionId,
+                                    day = it.day,
                                     content = it.content,
                                     isAnswered = it.isAnswered,
                                 )
