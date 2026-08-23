@@ -1,4 +1,4 @@
-package com.afternote.feature.afternote.data.dto
+package com.afternote.feature.receiver.data.dto
 
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals

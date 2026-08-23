@@ -8,6 +8,7 @@ import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.receiver.data.dto.ReceivedAfternoteDetailDto
 import com.afternote.feature.receiver.data.dto.ReceivedAfternoteListDto
 import com.afternote.feature.receiver.data.mapper.response.toDomain
+import com.afternote.feature.receiver.data.mapper.toReceiverDomainList
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

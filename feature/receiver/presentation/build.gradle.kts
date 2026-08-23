@@ -34,6 +34,7 @@ dependencies {
     implementation(libs.androidx.paging.compose)
 
     testImplementation(libs.coroutines.test)
+    testImplementation(libs.robolectric)
 
     screenshotTestImplementation(libs.screenshot.validation.api)
     screenshotTestImplementation(libs.androidx.compose.ui.tooling)
