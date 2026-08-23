@@ -626,7 +626,7 @@ private fun authorDetail(): Detail =
         id = 73L,
         category = "SOCIAL",
         title = "Instagram",
-        timestamps = DetailTimestamps(createdAt = "2026.08.20", updatedAt = "2026.08.22"),
+        timestamps = DetailTimestamps(updatedAt = "2026.08.22"),
         type = AfternoteType.SOCIAL_NETWORK,
         credentials = DetailCredentials(id = "old@example.test", password = "old-password"),
         receivers =

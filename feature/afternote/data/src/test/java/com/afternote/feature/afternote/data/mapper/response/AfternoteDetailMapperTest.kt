@@ -23,6 +23,8 @@ class AfternoteDetailMapperTest {
     fun `toDetailDomain - 최소 응답은 nullable이 비거나 null`() {
         val result =
             AfternoteDetailDto(
+                isDraft = false,
+                receivers = emptyList(),
                 afternoteId = 1L,
                 category = "SOCIAL",
                 title = "t",
@@ -37,17 +39,17 @@ class AfternoteDetailMapperTest {
     }
 
     @Test
-    fun `toDetailDomain - timestamps 포맷`() {
+    fun `toDetailDomain - updatedAt 포맷`() {
         val result =
             AfternoteDetailDto(
+                isDraft = false,
+                receivers = emptyList(),
                 afternoteId = 1L,
                 category = "SOCIAL",
                 title = "t",
-                createdAt = "2025-11-26T14:30:00",
                 updatedAt = "2025-12-01T09:00:00",
             ).toDetailDomain()
 
-        assertEquals("2025.11.26", result.timestamps.createdAt)
         assertEquals("2025.12.01", result.timestamps.updatedAt)
     }
 
@@ -55,6 +57,7 @@ class AfternoteDetailMapperTest {
     fun `toDetailDomain - receiver의 null 필드는 빈 문자열`() {
         val result =
             AfternoteDetailDto(
+                isDraft = false,
                 afternoteId = 1L,
                 category = "GALLERY",
                 title = "t",
@@ -65,17 +68,16 @@ class AfternoteDetailMapperTest {
         assertEquals(5L, receiver.receiverId)
         assertEquals("", receiver.name)
         assertEquals("", receiver.relation)
-        assertEquals("", receiver.phone)
     }
 
     /**
-     * DTO 는 방어적으로 receiverId 가 nullable 이지만 서버 스펙상 필수다(상세 응답 `ReceiverRequest` 는
-     * 이 필드 하나뿐). 도메인은 non-null 이므로 경계인 이 매퍼가 걸러야 한다.
+     * DTO 는 방어적으로 receiverId 가 nullable 이지만 도메인은 non-null 이므로, 경계인 이 매퍼가 걸러야 한다.
      */
     @Test
     fun `toDetailDomain - receiverId 없는 항목은 도메인으로 올리지 않는다`() {
         val result =
             AfternoteDetailDto(
+                isDraft = false,
                 afternoteId = 1L,
                 category = "GALLERY",
                 title = "t",
@@ -93,6 +95,8 @@ class AfternoteDetailMapperTest {
     fun `toDetailDomain - credentials 매핑`() {
         val result =
             AfternoteDetailDto(
+                isDraft = false,
+                receivers = emptyList(),
                 afternoteId = 1L,
                 category = "SOCIAL",
                 title = "t",
@@ -107,6 +111,8 @@ class AfternoteDetailMapperTest {
     fun `toDetailDomain - playlist 미디어·곡 매핑`() {
         val result =
             AfternoteDetailDto(
+                isDraft = false,
+                receivers = emptyList(),
                 afternoteId = 1L,
                 category = "PLAYLIST",
                 title = "t",
@@ -136,6 +142,8 @@ class AfternoteDetailMapperTest {
     fun `toDetailDomain - memorialVideo null이면 video thumbnail null`() {
         val result =
             AfternoteDetailDto(
+                isDraft = false,
+                receivers = emptyList(),
                 afternoteId = 1L,
                 category = "PLAYLIST",
                 title = "t",

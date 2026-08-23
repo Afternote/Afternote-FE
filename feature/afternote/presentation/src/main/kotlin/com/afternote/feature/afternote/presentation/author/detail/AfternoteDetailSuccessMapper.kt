@@ -9,7 +9,7 @@ import com.afternote.feature.afternote.presentation.shared.model.toMessageBlockU
 
 /** 상세 화면에 쓰는 "최종 작성일": 갱신일이 있으면 그것, 공백이면 생성일. */
 private val Detail.finalWriteDate: String
-    get() = timestamps.updatedAt.ifBlank { timestamps.createdAt }
+    get() = timestamps.updatedAt
 
 internal fun Detail.toReceiverUiModels(): List<ReceiverUiModel> =
     receivers.map { r ->

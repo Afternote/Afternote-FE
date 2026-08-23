@@ -32,11 +32,10 @@ fun AfternoteDetailDto.toDetailDomain(): Detail =
 
 // DTO 는 방어적으로 receiverId 가 nullable 이지만 서버 스펙상 필수 필드다 — 없는 항목은
 // 도메인으로 올리지 않는다(식별자 없는 수신자는 저장·수정 어디에도 쓸 수 없다).
-private fun List<AfternoteDetailReceiverDto>?.toDomain() = this?.mapNotNull { it.toDomain() }.orEmpty()
+private fun List<AfternoteDetailReceiverDto>.toDomain() = mapNotNull { it.toDomain() }
 
 private fun AfternoteDetailDto.toTimestamps(): DetailTimestamps =
     DetailTimestamps(
-        createdAt = formatDateFromServer(createdAt),
         updatedAt = formatDateFromServer(updatedAt),
     )
 
@@ -63,7 +62,6 @@ private fun AfternoteDetailReceiverDto.toDomain(): DetailReceiver? =
             receiverId = id,
             name = name ?: "",
             relation = relation ?: "",
-            phone = phone ?: "",
         )
     }
 
