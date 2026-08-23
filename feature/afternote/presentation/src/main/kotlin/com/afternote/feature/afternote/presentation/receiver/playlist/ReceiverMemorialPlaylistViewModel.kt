@@ -3,9 +3,11 @@ package com.afternote.feature.afternote.presentation.receiver.playlist
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceiverRoute
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
@@ -30,26 +32,19 @@ class ReceiverMemorialPlaylistViewModel
         private val receiverRepository: ReceiverRepository,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
-        private val afternoteIdFromNav = (savedStateHandle["afternoteId"] as? String)?.toLongOrNull()
+        private val afternoteIdFromNav: Long =
+            savedStateHandle.toRoute<ReceiverRoute.MemorialPlaylistRoute>().afternoteId
 
         private val _uiState =
             MutableStateFlow<ReceiverMemorialPlaylistUiState>(ReceiverMemorialPlaylistUiState.Loading)
         val uiState: StateFlow<ReceiverMemorialPlaylistUiState> = _uiState.asStateFlow()
 
         init {
-            if (afternoteIdFromNav != null) {
-                loadPlaylist(afternoteIdFromNav)
-            } else {
-                _uiState.value =
-                    ReceiverMemorialPlaylistUiState.Error(
-                        messageRes = R.string.receiver_memorial_playlist_invalid_id,
-                        canRetry = false,
-                    )
-            }
+            loadPlaylist(afternoteIdFromNav)
         }
 
         fun retry() {
-            afternoteIdFromNav?.let(::loadPlaylist)
+            loadPlaylist(afternoteIdFromNav)
         }
 
         private fun loadPlaylist(afternoteId: Long) {
@@ -82,7 +77,6 @@ class ReceiverMemorialPlaylistViewModel
                         _uiState.value =
                             ReceiverMemorialPlaylistUiState.Error(
                                 messageRes = R.string.receiver_memorial_playlist_load_error,
-                                canRetry = true,
                             )
                     }
             }

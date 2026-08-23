@@ -28,6 +28,7 @@ class ReceiverAfternoteListMappingTest {
     fun `카드 주 텍스트는 서버가 준 서비스명이다`() {
         val uiModel = listItem(serviceName = "인스타그램").toUiModel()
 
+        assertEquals(5L, uiModel.id)
         assertEquals("인스타그램", uiModel.serviceName)
     }
 

@@ -9,7 +9,7 @@ import com.afternote.feature.afternote.domain.model.author.ListItem
 
 fun AfternoteListItemDto.toDomain() =
     ListItem(
-        id = afternoteId.toString(),
+        id = afternoteId,
         serviceName = title,
         date = formatDateFromServer(createdAt),
         type = categoryToAfternoteType(category),

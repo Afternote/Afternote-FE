@@ -402,15 +402,15 @@ fun rememberAfternoteNavActions(
                 appState.navController.popBackStack()
             }
 
-            override fun navigateToAfternoteDetail(itemId: String) {
+            override fun navigateToAfternoteDetail(itemId: Long) {
                 appState.navController.navigate(AfternoteRoute.DetailRoute(itemId = itemId))
             }
 
-            override fun navigateToGalleryDetail(itemId: String) {
+            override fun navigateToGalleryDetail(itemId: Long) {
                 appState.navController.navigate(AfternoteRoute.GalleryDetailRoute(itemId = itemId))
             }
 
-            override fun navigateToMemorialDetail(itemId: String) {
+            override fun navigateToMemorialDetail(itemId: Long) {
                 appState.navController.navigate(
                     AfternoteRoute.MemorialDetailRoute(itemId = itemId),
                 )
@@ -421,7 +421,7 @@ fun rememberAfternoteNavActions(
             }
 
             override fun navigateToEditorForEdit(
-                itemId: String,
+                itemId: Long,
                 initialCategory: EditorCategory,
             ) {
                 appState.navController.navigate(
@@ -487,13 +487,13 @@ fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions =
                 appState.navController.navigate(ReceiverRoute.AfternoteListRoute)
             }
 
-            override fun navigateToReceivedAfternoteDetail(afternoteId: String) {
+            override fun navigateToReceivedAfternoteDetail(afternoteId: Long) {
                 appState.navController.navigate(
                     ReceiverRoute.AfternoteDetailRoute(afternoteId = afternoteId),
                 )
             }
 
-            override fun navigateToMemorialPlaylist(afternoteId: String) {
+            override fun navigateToMemorialPlaylist(afternoteId: Long) {
                 appState.navController.navigate(
                     ReceiverRoute.MemorialPlaylistRoute(afternoteId = afternoteId),
                 )

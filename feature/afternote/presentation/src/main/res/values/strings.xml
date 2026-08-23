@@ -49,6 +49,7 @@
     <string name="receiver_afternote_item_outlook">outlook</string>
     <string name="receiver_memorial_video_no_app">영상을 재생할 수 있는 앱이 없습니다.</string>
     <string name="receiver_memorial_playlist_screen_title">%1$s님의 플레이리스트</string>
+    <string name="receiver_memorial_playlist_load_error">플레이리스트를 불러오지 못했습니다.</string>
 
     <string name="receiver_sender_record_title">故 %1$s님이 남기신 기록</string>
     <string name="receiver_afternote_section_count">%1$d개의 애프터노트가 있습니다.</string>
@@ -233,8 +234,6 @@
     <string name="afternote_detail_extra_receivers_label">추가 수신자</string>
     <string name="afternote_detail_invalid_id">잘못된 항목 ID입니다.</string>
     <string name="afternote_detail_load_error">상세 정보를 불러오지 못했습니다.</string>
-    <string name="receiver_memorial_playlist_invalid_id">잘못된 플레이리스트 ID입니다.</string>
-    <string name="receiver_memorial_playlist_load_error">플레이리스트를 불러오지 못했습니다.</string>
     <string name="afternote_detail_retry">다시 시도하기</string>
     <string name="afternote_detail_delete_failed">삭제에 실패했습니다.</string>
     <string name="afternote_detail_deleting">삭제 중</string>
