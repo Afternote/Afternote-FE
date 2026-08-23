@@ -53,39 +53,57 @@ class DraftListViewModel
                 _uiState.update {
                     if (it is DraftListUiState.Success) it.copy(isDeleting = true) else it
                 }
-                coroutineScope {
-                    items
-                        .map { item ->
-                            async {
-                                when (item.category) {
-                                    DraftCategory.Diary -> diaryRepository.delete(item.id)
+                // 항목별 결과를 항목과 짝지어 받는다 — 무엇이 실패했는지 알아야 다시 선택해 줄 수 있다.
+                val results =
+                    coroutineScope {
+                        items
+                            .map { item -> async { item to deleteOne(item) } }
+                            .awaitAll()
+                    }
+                val failed = results.filter { (_, result) -> result.isFailure }.map { (item, _) -> item }
 
-                                    DraftCategory.DailyQuestion -> dailyQuestionRepository.delete(item.id)
-
-                                    // All 은 필터 라벨용 — 실제 항목 카테고리로는 등장하지 않는다.
-                                    DraftCategory.All -> Result.success(Unit)
-                                }
-                            }
-                        }.awaitAll()
-                }
                 val refreshed = collectDrafts()
                 _uiState.value =
                     if (refreshed != null) {
-                        DraftListUiState.Success(items = refreshed, deleteCompleted = true)
+                        // 실패했지만 재조회에서도 사라진 항목은 알리지 않는다 — 이미 없는 것을 지우려다
+                        // 404 가 난 경우가 여기다. 사용자가 원한 결과는 이뤄졌고, 남아 있지도 않은 항목을
+                        // 다시 선택해 주면 "목록은 비었는데 1개 선택" 같은 상태가 된다.
+                        val remainingKeys = refreshed.mapTo(mutableSetOf()) { it.category to it.id }
+                        val actionableFailures = failed.filter { (it.category to it.id) in remainingKeys }
+
+                        DraftListUiState.Success(
+                            items = refreshed,
+                            deleteOutcome =
+                                if (actionableFailures.isEmpty()) {
+                                    DraftDeleteOutcome.AllDeleted
+                                } else {
+                                    DraftDeleteOutcome.SomeFailed(actionableFailures)
+                                },
+                        )
                     } else {
                         DraftListUiState.Error(UiText.Resource(R.string.mindrecord_error_generic))
                     }
             }
         }
 
+        private suspend fun deleteOne(item: DraftItem): Result<Unit> =
+            when (item.category) {
+                DraftCategory.Diary -> diaryRepository.delete(item.id)
+
+                DraftCategory.DailyQuestion -> dailyQuestionRepository.delete(item.id)
+
+                // All 은 필터 라벨용 — 실제 항목 카테고리로는 등장하지 않는다.
+                DraftCategory.All -> Result.success(Unit)
+            }
+
         fun deleteAll() {
             val current = _uiState.value as? DraftListUiState.Success ?: return
             delete(current.items)
         }
 
-        fun consumeDeleteCompleted() {
+        fun consumeDeleteOutcome() {
             _uiState.update {
-                if (it is DraftListUiState.Success) it.copy(deleteCompleted = false) else it
+                if (it is DraftListUiState.Success) it.copy(deleteOutcome = null) else it
             }
         }
 

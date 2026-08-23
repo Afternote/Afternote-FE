@@ -119,6 +119,8 @@
     <string name="mindrecord_draft_list_delete_all">전체 삭제</string>
     <string name="mindrecord_draft_list_delete_selected">선택 삭제</string>
     <string name="mindrecord_draft_list_deleted_toast">임시 저장된 기록이 삭제 되었습니다</string>
+    <!-- %1$d = 삭제하지 못한 항목 수 -->
+    <string name="mindrecord_draft_list_delete_failed_toast">%1$d개를 삭제하지 못했어요. 다시 시도해 주세요.</string>
     <string name="mindrecord_draft_list_empty">임시 저장된 항목이 없습니다.</string>
 
     <!-- Keyboard toolbar -->
