@@ -25,17 +25,28 @@ test("WIF canary is manual, protected, and branch-restricted", () => {
 
 test("WIF credentials are issued only after the release APK build", () => {
   const buildIndex = canaryWorkflow.indexOf("./gradlew assembleRelease");
+  const attestationIndex = canaryWorkflow.indexOf(
+    "actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6",
+  );
   const authIndex = canaryWorkflow.indexOf(
     "google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093",
+  );
+  const finalDigestCheckIndex = canaryWorkflow.indexOf(
+    'assert "$RELEASE_APK_PATH" "$EXPECTED_SHA256"',
   );
   const uploadIndex = canaryWorkflow.indexOf("appDistributionUploadRelease");
 
   assert.notEqual(buildIndex, -1);
+  assert.notEqual(attestationIndex, -1);
   assert.notEqual(authIndex, -1);
+  assert.notEqual(finalDigestCheckIndex, -1);
   assert.notEqual(uploadIndex, -1);
-  assert.ok(buildIndex < authIndex);
-  assert.ok(authIndex < uploadIndex);
+  assert.ok(buildIndex < attestationIndex);
+  assert.ok(attestationIndex < authIndex);
+  assert.ok(authIndex < finalDigestCheckIndex);
+  assert.ok(finalDigestCheckIndex < uploadIndex);
   assert.match(canaryWorkflow, /id-token: write/);
+  assert.match(canaryWorkflow, /attestations: write/);
 });
 
 test("WIF canary never publishes the signed APK as an Actions artifact", () => {
