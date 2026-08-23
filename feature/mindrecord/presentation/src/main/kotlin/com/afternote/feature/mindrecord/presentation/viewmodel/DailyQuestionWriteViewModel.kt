@@ -9,6 +9,7 @@ import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.presentation.R
+import com.afternote.feature.mindrecord.presentation.util.htmlToPlainText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -80,17 +81,27 @@ class DailyQuestionWriteViewModel
          * (없으면 재제출이 POST 로 나가 이어쓰기가 안 된다).
          */
         private suspend fun resumeDraft() {
+            _uiState.update { it.copy(isResumingDraft = true) }
             val draft =
                 repository
                     .getList(date = LocalDate.now().toString(), draftOnly = true)
                     .getOrNull()
                     ?.firstOrNull { it.isDraft }
-                    ?: return
+                    ?: run {
+                        _uiState.update { it.copy(isResumingDraft = false) }
+                        return
+                    }
             _uiState.update {
                 it.copy(
                     draftId = draft.dailyQuestionId,
-                    answer = if (it.answer.isBlank()) draft.content else it.answer,
+                    // 빈 에디터는 `<p></p>` 를 내보내므로 `isBlank()` 로는 "비어 있음" 을 판정할 수
+                    // 없다. 태그를 걷어 낸 본문으로 판단해야 사용자가 아무것도 안 쓴 상태에서
+                    // 이어쓸 내용이 실린다 (#923).
+                    answer = if (it.answer.htmlToPlainText().isBlank()) draft.content else it.answer,
                     imageUrl = it.imageUrl ?: draft.imageUrl,
+                    isResumingDraft = false,
+                    // 화면이 이 전환을 보고 에디터를 재생성해 본문을 다시 싣는다 (#923).
+                    draftLoaded = true,
                 )
             }
         }

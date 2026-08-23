@@ -9,10 +9,19 @@ data class DailyQuestionWriteUiState(
     val questionContent: String = "",
     /** 오늘 이미 임시저장된 답변 레코드 ID — null 이 아니면 제출 시 POST 대신 PATCH 로 전환한다. */
     val draftId: Long? = null,
+    /**
+     * 이어쓸 임시저장 본문이 도착했는지.
+     *
+     * 에디터가 외부 값을 초기 시드로만 받으므로, 화면이 이 플래그로 에디터를 재생성해 본문을
+     * 다시 싣는다. 일기 화면의 `draftLoaded` 와 같은 역할이다 (#923).
+     */
+    val draftLoaded: Boolean = false,
     val answer: String = "",
     val imageUrl: String? = null,
     val isQuestionLoading: Boolean = true,
     val questionLoadError: UiText? = null,
+    /** 이어쓸 임시저장 본문을 불러오는 중 (#923). */
+    val isResumingDraft: Boolean = false,
     val submitState: SubmitState = SubmitState.Idle,
 ) {
     /**
