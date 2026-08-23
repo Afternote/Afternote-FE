@@ -2,7 +2,7 @@ name: Unit Test
 
 # 모든 PR 에서 unit test 실행:
 #   - node --test .github/scripts/*.test.mjs : 배포 판단 스크립트 회귀 가드.
-#   - ./gradlew testDebugUnitTest : Android 모듈 debug unit test
+#   - :koverXmlReportCi / :koverHtmlReportCi : Android debug + 순수 JVM 테스트와 aggregate coverage
 #   - :konsist:test : 순수 JVM 모듈(testDebugUnitTest 미보유)이라 별도 명시. 레이어 의존 아키텍처 가드.
 #   - :build-logic:test : included build 라 루트 태스크에 안 묶여 별도 명시. release 키 가드(TestKit) 회귀 가드.
 # lint.yml 과 setup 이 거의 동일하지만 분리 — lint 실패가 test 결과를 가리지 않도록 fail-fast 독립.
@@ -23,6 +23,15 @@ jobs:
       - name: Clone repo
         uses: actions/checkout@v7
 
+      - name: Fetch pull request history for changed-module coverage
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          git fetch --no-tags --prune --unshallow origin \
+            "+refs/heads/${BASE_REF}:refs/remotes/origin/kover-base" \
+            "+refs/pull/${PR_NUMBER}/head:refs/remotes/origin/kover-head"
+
       - name: Run deployment script tests
         run: node --test .github/scripts/*.test.mjs
 
@@ -42,8 +51,24 @@ jobs:
       - name: Set up CI-only app configuration
         uses: ./.github/actions/setup-ci-config
 
-      - name: Run unit tests
-        run: ./gradlew testDebugUnitTest :konsist:test :build-logic:test --continue --parallel
+      - name: Run unit tests and aggregate Kover reports
+        run: ./gradlew :koverXmlReportCi :koverHtmlReportCi :konsist:test :build-logic:test --continue --parallel
+
+      - name: Upload Kover coverage reports
+        id: kover-artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kover-jvm-coverage
+          path: build/reports/kover/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Summarize changed-module coverage
+        env:
+          KOVER_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          KOVER_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          KOVER_ARTIFACT_URL: ${{ steps.kover-artifact.outputs.artifact-url }}
+        run: node .github/scripts/render-kover-summary.mjs
 
       # 실패한 테스트의 HTML/XML 리포트를 PR artifact 로 보존 — CI 로그에서 stack trace 추적이 빠름.
       - name: Upload test reports on failure
