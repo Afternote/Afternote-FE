@@ -64,8 +64,10 @@ class MemorySpaceViewModel
         /**
          * 두 출처를 병렬 조회해 최신순 카드로 만든다.
          *
-         * 한쪽이 실패해도 나머지로 화면을 채운다 — 카드 4장짜리 장식 화면을 부분 실패로
-         * 통째 비우면 잃는 것이 더 크다. **전부** 실패했을 때만 에러로 올린다.
+         * 부분 실패는 카드가 한 장이라도 채워졌을 때만 삼킨다 — 카드 4장짜리 장식
+         * 화면을 한 출처의 실패로 통째 비우면 잃는 것이 더 크다. 반면 **합친 결과가
+         * 비었는데 실패한 출처가 있으면** 그 실패를 올린다 — 실패한 쪽에 기록이 있었을 수
+         * 있어 0건으로 확정해 버리면 ‘아직 담긴 기록이 없어요’ 로 오인하고 재시도 경로까지 사라진다.
          */
         private suspend fun collectMemories(): List<MemoryItem> =
             coroutineScope {
@@ -78,10 +80,6 @@ class MemorySpaceViewModel
                 val diaryResults = diaryDeferred.awaitAll()
                 val questionResult = questionDeferred.await()
 
-                if (diaryResults.all { it.isFailure } && questionResult.isFailure) {
-                    questionResult.getOrThrow()
-                }
-
                 val diaries =
                     diaryResults
                         .mapNotNull { it.getOrNull() }
@@ -93,10 +91,20 @@ class MemorySpaceViewModel
                         .filterNot { it.isDraft }
                 val questions = questionResult.getOrNull().orEmpty()
 
-                (diaries.mapNotNull { it.toDatedMemory() } + questions.map { it.toDatedMemory() })
-                    .sortedByDescending { it.date }
-                    .take(MEMORY_CARD_LIMIT)
-                    .map { it.item }
+                val memories =
+                    (diaries.mapNotNull { it.toDatedMemory() } + questions.map { it.toDatedMemory() })
+                        .sortedByDescending { it.date }
+                        .take(MEMORY_CARD_LIMIT)
+                        .map { it.item }
+
+                if (memories.isEmpty()) {
+                    val failure =
+                        diaryResults.firstNotNullOfOrNull { it.exceptionOrNull() }
+                            ?: questionResult.exceptionOrNull()
+                    if (failure != null) throw failure
+                }
+
+                memories
             }
 
         private fun recentMonths(): List<YearMonth> {
