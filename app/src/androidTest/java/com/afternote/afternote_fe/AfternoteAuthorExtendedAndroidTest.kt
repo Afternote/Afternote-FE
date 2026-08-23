@@ -120,9 +120,9 @@ class AfternoteAuthorExtendedAndroidTest {
             Pager(PagingConfig(pageSize = 20)) { pagingSource }.flow
         repository.listFlows[AfternoteType.SOCIAL_NETWORK] = flowOf(PagingData.empty())
         val viewModel = AfternoteHomeViewModel(repository)
-        val accountRoutes = mutableListOf<String>()
-        val galleryRoutes = mutableListOf<String>()
-        val memorialRoutes = mutableListOf<String>()
+        val accountRoutes = mutableListOf<Long>()
+        val galleryRoutes = mutableListOf<Long>()
+        val memorialRoutes = mutableListOf<Long>()
         val addRoutes = mutableListOf<AfternoteType?>()
 
         composeRule.setContent {
@@ -157,9 +157,9 @@ class AfternoteAuthorExtendedAndroidTest {
             .onNodeWithContentDescription("추억 노트")
             .performScrollTo()
             .performClick()
-        assertEquals(listOf("101"), accountRoutes)
-        assertEquals(listOf("102"), galleryRoutes)
-        assertEquals(listOf("103"), memorialRoutes)
+        assertEquals(listOf(101L), accountRoutes)
+        assertEquals(listOf(102L), galleryRoutes)
+        assertEquals(listOf(103L), memorialRoutes)
 
         composeRule.onNodeWithText("소셜네트워크").performClick()
         composeRule.waitUntil(timeoutMillis = 5_000) {
@@ -539,7 +539,7 @@ private fun detailViewModel(
     itemId: Long,
 ): AfternoteDetailViewModel =
     AfternoteDetailViewModel(
-        savedStateHandle = SavedStateHandle(mapOf("itemId" to itemId.toString())),
+        savedStateHandle = SavedStateHandle(mapOf("itemId" to itemId)),
         afternoteRepository = repository,
         userRepository = FakeUserRepository(),
         errorReporter = FakeErrorReporter(),
@@ -550,7 +550,7 @@ private fun editorViewModel(
     itemId: Long,
 ): AfternoteEditorViewModel =
     AfternoteEditorViewModel(
-        savedStateHandle = SavedStateHandle(mapOf("itemId" to itemId.toString())),
+        savedStateHandle = SavedStateHandle(mapOf("itemId" to itemId)),
         authorReceiverRepository = ExtendedAuthorReceiverRepository(),
         afternoteRepository = repository,
         memorialThumbnailUploadRepository =
@@ -602,19 +602,19 @@ private fun editorViewModel(
 private fun authorListItems(): List<ListItem> =
     listOf(
         ListItem(
-            id = "101",
+            id = 101L,
             serviceName = "Instagram",
             date = "2026.08.22",
             type = AfternoteType.SOCIAL_NETWORK,
         ),
         ListItem(
-            id = "102",
+            id = 102L,
             serviceName = "Google Drive",
             date = "2026.08.22",
             type = AfternoteType.GALLERY_AND_FILES,
         ),
         ListItem(
-            id = "103",
+            id = 103L,
             serviceName = "추억 노트",
             date = "2026.08.22",
             type = AfternoteType.MEMORIAL,

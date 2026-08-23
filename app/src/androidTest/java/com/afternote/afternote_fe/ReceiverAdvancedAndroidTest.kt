@@ -28,7 +28,6 @@ import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem
 import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResult
-import com.afternote.feature.afternote.domain.model.receiver.LoadCountResult
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAccountCredentials
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedExportBundle
@@ -158,15 +157,17 @@ class ReceiverAdvancedAndroidTest {
             .assertIsDisplayed()
         val nextButton = hasText("다음") and hasClickAction()
         composeRule.onNode(nextButton).assertIsNotEnabled()
-        composeRule.onNode(hasSetTextAction()).performTextInput("  MASTER-KEY-73  ")
+        // 마스터 키는 UUID 형식만 통과하고 소문자로 정규화된다(#887) — 공백·대문자 입력으로 함께 검증.
+        composeRule.onNode(hasSetTextAction()).performTextInput("  3F2504E0-4F89-11D3-9A0C-0305E82C3301  ")
         composeRule.onNode(nextButton).assertIsEnabled().performClick()
         composeRule.waitUntil(timeoutMillis = 5_000) { verifiedTransitions == 1 }
 
+        val normalizedMasterKey = "3f2504e0-4f89-11d3-9a0c-0305e82c3301"
         val attached = checkNotNull(senderRegistry.findById(sender.id))
-        assertEquals(listOf("MASTER-KEY-73"), authRepository.verifiedMasterKeys)
-        assertEquals(listOf("MASTER-KEY-73"), receiverRepository.savedAuthCodes)
-        assertEquals("MASTER-KEY-73", receiverRepository.authCode.value)
-        assertEquals("MASTER-KEY-73", attached.authCode)
+        assertEquals(listOf(normalizedMasterKey), authRepository.verifiedMasterKeys)
+        assertEquals(listOf(normalizedMasterKey), receiverRepository.savedAuthCodes)
+        assertEquals(normalizedMasterKey, receiverRepository.authCode.value)
+        assertEquals(normalizedMasterKey, attached.authCode)
         assertEquals("이발신", attached.realSenderName)
         assertEquals("가족", attached.relation)
         assertEquals(1, verifiedTransitions)
@@ -179,7 +180,7 @@ class ReceiverAdvancedAndroidTest {
         repository.detailResults.addLast(Result.success(receivedSocialDetail()))
         val viewModel =
             ReceivedAfternoteDetailViewModel(
-                savedStateHandle = SavedStateHandle(mapOf("afternoteId" to "91")),
+                savedStateHandle = SavedStateHandle(mapOf("afternoteId" to 91L)),
                 receiverRepository = repository,
                 errorReporter = FakeErrorReporter(),
             )
@@ -188,6 +189,7 @@ class ReceiverAdvancedAndroidTest {
             AfternoteTheme {
                 ReceivedAfternoteDetailRoute(
                     onBack = {},
+                    onNavigateToPlaylist = {},
                     viewModel = viewModel,
                 )
             }
@@ -318,10 +320,6 @@ private class AdvancedReceiverRepository : ReceiverRepository {
         savedBundles += bundle
         return saveResults.removeFirst()
     }
-
-    override suspend fun loadMindRecordsCount(): Result<LoadCountResult> = Result.success(LoadCountResult(totalCount = 0))
-
-    override suspend fun loadTimeLettersCount(): Result<LoadCountResult> = Result.success(LoadCountResult(totalCount = 0))
 
     override suspend fun loadSenderMessage(): Result<SenderMessageInfo?> = Result.success(null)
 }
