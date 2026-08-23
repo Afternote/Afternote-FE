@@ -8,5 +8,6 @@ android {
 
 dependencies {
     implementation(projects.feature.mindrecord.domain)
+    implementation(projects.core.common)
     implementation(projects.core.network)
 }
