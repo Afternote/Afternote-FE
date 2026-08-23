@@ -55,7 +55,6 @@ import com.afternote.feature.afternote.domain.error.ReceiverEmailAuthException
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem
 import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResult
-import com.afternote.feature.afternote.domain.model.receiver.LoadCountResult
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedExportBundle
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedPlaylistDetail
@@ -70,6 +69,8 @@ import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfte
 import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailViewModel
 import com.afternote.feature.afternote.presentation.receiver.navigation.ReceiverNavActions
 import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceiverRoute
+import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
+import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
 import com.afternote.feature.receiver.domain.model.ReceiverAuthPresignedUrl
@@ -79,6 +80,9 @@ import com.afternote.feature.receiver.domain.model.SenderMessageInfo
 import com.afternote.feature.receiver.domain.repository.IdentityVerificationRepository
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import com.afternote.feature.receiver.domain.repository.ReceiverDeliveryDocumentUploadRepository
+import com.afternote.feature.timeletter.domain.model.ReceivedTimeLetter
+import com.afternote.feature.timeletter.domain.model.ReceivedTimeLetterList
+import com.afternote.feature.timeletter.domain.repository.ReceiverTimeLetterRepository
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import kotlinx.coroutines.CompletableDeferred
@@ -231,7 +235,13 @@ class ReceiverRuntimeCompletionAndroidTest {
         val allFailureAttempt = repository.enqueueHomeAttempt()
         val partialAttempt = repository.enqueueHomeAttempt()
         val reporter = FakeErrorReporter()
-        val viewModel = ReceiverHomeViewModel(repository, reporter)
+        val viewModel =
+            ReceiverHomeViewModel(
+                receiverRepository = repository,
+                mindRecordReceiverRepository = repository.mindRecordReceiverRepository,
+                receiverTimeLetterRepository = repository.receiverTimeLetterRepository,
+                errorReporter = reporter,
+            )
 
         composeRule.setContent {
             val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
@@ -281,7 +291,7 @@ class ReceiverRuntimeCompletionAndroidTest {
                     ),
                 ),
             mindRecords = Result.failure(IllegalStateException("mind records unavailable")),
-            timeLetters = Result.success(LoadCountResult(totalCount = 8)),
+            timeLetters = Result.success(ReceivedTimeLetterList(timeLetters = emptyList(), totalCount = 8)),
             senderMessage =
                 Result.success(
                     SenderMessageInfo(
@@ -296,8 +306,9 @@ class ReceiverRuntimeCompletionAndroidTest {
             .onNodeWithText(context.getString(R.string.receiver_home_sender_record_title, "이발신"))
             .assertIsDisplayed()
         composeRule.onNodeWithText("언제나 응원할게").assertIsDisplayed()
+        // 마음의 기록 실패 섹션은 가짜 0 대신 조회 실패 문구로 구분된다.
         composeRule
-            .onNodeWithText("0개 마음의 기록이 있습니다.")
+            .onNodeWithText(context.getString(R.string.receiver_home_section_count_unavailable))
             .assertIsDisplayed()
         composeRule
             .onNodeWithText("2개의 애프터노트가 있습니다.")
@@ -629,7 +640,7 @@ class ReceiverRuntimeCompletionAndroidTest {
 
         composeRule.setContent {
             AfternoteTheme {
-                ReceivedAfternoteDetailRoute(onBack = {}, viewModel = viewModel)
+                ReceivedAfternoteDetailRoute(onBack = {}, onNavigateToPlaylist = {}, viewModel = viewModel)
             }
         }
 
@@ -668,7 +679,7 @@ class ReceiverRuntimeCompletionAndroidTest {
                 receiverRepository = repository,
                 errorReporter = FakeErrorReporter(),
             )
-        val playlistRoutes = mutableListOf<String>()
+        val playlistRoutes = mutableListOf<Long>()
 
         composeRule.setContent {
             AfternoteTheme {
@@ -689,21 +700,21 @@ class ReceiverRuntimeCompletionAndroidTest {
             .onNode(hasText("추억 플레이리스트") and hasClickAction())
             .performClick()
 
-        assertEquals(listOf("303"), playlistRoutes)
+        assertEquals(listOf(303L), playlistRoutes)
         assertEquals(listOf(303L), repository.detailIds)
     }
 }
 
 private data class PendingHomeAttempt(
     val afterNotes: CompletableDeferred<Result<AfterNotesListResult>>,
-    val mindRecords: CompletableDeferred<Result<LoadCountResult>>,
-    val timeLetters: CompletableDeferred<Result<LoadCountResult>>,
+    val mindRecords: CompletableDeferred<Result<ReceiverMindRecords>>,
+    val timeLetters: CompletableDeferred<Result<ReceivedTimeLetterList>>,
     val senderMessage: CompletableDeferred<Result<SenderMessageInfo?>>,
 ) {
     fun complete(
         afterNotes: Result<AfterNotesListResult>,
-        mindRecords: Result<LoadCountResult>,
-        timeLetters: Result<LoadCountResult>,
+        mindRecords: Result<ReceiverMindRecords>,
+        timeLetters: Result<ReceivedTimeLetterList>,
         senderMessage: Result<SenderMessageInfo?>,
     ) {
         this.afterNotes.complete(afterNotes)
@@ -718,8 +729,8 @@ private class CompletionReceiverRepository : ReceiverRepository {
     override val authCodeFlow: Flow<String?> = authCode
 
     private val afterNoteHomeResults = ArrayDeque<CompletableDeferred<Result<AfterNotesListResult>>>()
-    private val mindRecordHomeResults = ArrayDeque<CompletableDeferred<Result<LoadCountResult>>>()
-    private val timeLetterHomeResults = ArrayDeque<CompletableDeferred<Result<LoadCountResult>>>()
+    private val mindRecordHomeResults = ArrayDeque<CompletableDeferred<Result<ReceiverMindRecords>>>()
+    private val timeLetterHomeResults = ArrayDeque<CompletableDeferred<Result<ReceivedTimeLetterList>>>()
     private val senderMessageHomeResults = ArrayDeque<CompletableDeferred<Result<SenderMessageInfo?>>>()
 
     val detailResults = ArrayDeque<Result<ReceivedAfternoteDetail>>()
@@ -771,20 +782,31 @@ private class CompletionReceiverRepository : ReceiverRepository {
         error("unexpected saveReceivedExportToFile")
     }
 
-    override suspend fun loadMindRecordsCount(): Result<LoadCountResult> {
-        homeCallCounts[1] += 1
-        return mindRecordHomeResults.removeFirst().await()
-    }
-
-    override suspend fun loadTimeLettersCount(): Result<LoadCountResult> {
-        homeCallCounts[2] += 1
-        return timeLetterHomeResults.removeFirst().await()
-    }
-
     override suspend fun loadSenderMessage(): Result<SenderMessageInfo?> {
         homeCallCounts[3] += 1
         return senderMessageHomeResults.removeFirst().await()
     }
+
+    /** 홈의 마음의 기록 카운트 — 옛 loadMindRecordsCount 가 분리돼 나간 현행 repository 자리. */
+    val mindRecordReceiverRepository =
+        object : MindRecordReceiverRepository {
+            override suspend fun getAll(): Result<ReceiverMindRecords> {
+                homeCallCounts[1] += 1
+                return mindRecordHomeResults.removeFirst().await()
+            }
+        }
+
+    /** 홈의 타임레터 카운트 — 현행 인터페이스는 Result 대신 예외로 실패를 알린다. */
+    val receiverTimeLetterRepository =
+        object : ReceiverTimeLetterRepository {
+            override suspend fun getReceivedTimeLetters(): ReceivedTimeLetterList {
+                homeCallCounts[2] += 1
+                return timeLetterHomeResults.removeFirst().await().getOrThrow()
+            }
+
+            override suspend fun getReceivedTimeLetterDetail(timeLetterReceiverId: Long): ReceivedTimeLetter =
+                error("unexpected getReceivedTimeLetterDetail")
+        }
 }
 
 private class CompletionIdentityVerificationRepository : IdentityVerificationRepository {

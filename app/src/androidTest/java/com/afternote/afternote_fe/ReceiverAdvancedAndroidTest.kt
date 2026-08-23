@@ -28,7 +28,6 @@ import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem
 import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResult
-import com.afternote.feature.afternote.domain.model.receiver.LoadCountResult
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAccountCredentials
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedExportBundle
@@ -188,6 +187,7 @@ class ReceiverAdvancedAndroidTest {
             AfternoteTheme {
                 ReceivedAfternoteDetailRoute(
                     onBack = {},
+                    onNavigateToPlaylist = {},
                     viewModel = viewModel,
                 )
             }
@@ -318,10 +318,6 @@ private class AdvancedReceiverRepository : ReceiverRepository {
         savedBundles += bundle
         return saveResults.removeFirst()
     }
-
-    override suspend fun loadMindRecordsCount(): Result<LoadCountResult> = Result.success(LoadCountResult(totalCount = 0))
-
-    override suspend fun loadTimeLettersCount(): Result<LoadCountResult> = Result.success(LoadCountResult(totalCount = 0))
 
     override suspend fun loadSenderMessage(): Result<SenderMessageInfo?> = Result.success(null)
 }

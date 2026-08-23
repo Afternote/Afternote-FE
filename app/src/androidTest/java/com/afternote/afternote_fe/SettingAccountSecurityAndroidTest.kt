@@ -46,6 +46,7 @@ import com.afternote.feature.setting.presentation.viewmodel.ProfileEditViewModel
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterViewModel
 import com.afternote.feature.setting.presentation.viewmodel.SettingUiState
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
+import com.afternote.feature.setting.presentation.viewmodel.WithdrawUiState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -316,7 +317,7 @@ class SettingAccountSecurityAndroidTest {
     }
 
     @Test
-    fun withdrawFailure_requiresFinalConfirmationAndKeepsSession() {
+    fun withdrawFailure_showsFailurePopupAndKeepsSession() {
         val authRepository = SettingContractAuthRepository()
         val userRepository =
             SettingContractUserRepository().apply {
@@ -341,15 +342,12 @@ class SettingAccountSecurityAndroidTest {
 
         composeRule.onNodeWithText("탈퇴하겠습니다").performTextInput("탈퇴하겠습니다")
         composeRule.onNodeWithText("탈퇴하기").performClick()
-        composeRule.onNodeWithText("회원 탈퇴가 완료되었습니다.\n애프터노트를 이용해 주셔서 감사합니다.").assertIsDisplayed()
-        assertEquals(0, userRepository.deleteAccountCalls)
-
-        composeRule.onNodeWithText("확인하기").performClick()
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             userRepository.deleteAccountCalls == 1
         }
+        composeRule.onNodeWithText("회원 탈퇴에 실패했습니다. 잠시 후 다시 시도해 주세요.").assertIsDisplayed()
 
-        assertFalse(viewModel.withdrawCompleted.value)
+        assertEquals(WithdrawUiState.Error, viewModel.withdrawUiState.value)
         assertEquals(0, successCalls)
         assertEquals(0, authRepository.clearSessionCalls)
         assertTrue(runBlocking { authRepository.isLoggedIn.first() })
