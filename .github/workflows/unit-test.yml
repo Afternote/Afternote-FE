@@ -21,17 +21,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Run deployment script tests
         run: node --test .github/scripts/*.test.mjs
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '21'
-          cache: 'gradle'
+
+      - name: Set up Gradle and validate wrapper
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          cache-provider: basic
+          cache-read-only: true
+          validate-wrappers: true
 
       # fail-fast — secret 누락 시 Gradle 까지 가지 않고 즉시 실패.
       # secret 값은 echo 하지 않음 (env 로만 받아서 길이 검사). 누락 키 이름은 안전.
@@ -67,7 +73,7 @@ jobs:
       # 실패한 테스트의 HTML/XML 리포트를 PR artifact 로 보존 — CI 로그에서 stack trace 추적이 빠름.
       - name: Upload test reports on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: unit-test-reports
           path: |

@@ -4,7 +4,6 @@ import androidx.paging.PagingData
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem
 import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResult
-import com.afternote.feature.afternote.domain.model.receiver.LoadCountResult
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedExportBundle
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
@@ -79,6 +78,23 @@ class MasterKeyViewModelTest {
         assertEquals("발신자", senderRegistry.findById(sender.id)?.realSenderName)
         assertTrue(viewModel.uiState.value.isVerified)
         assertFalse(viewModel.uiState.value.isSubmitting)
+        assertEquals(null, viewModel.uiState.value.error)
+    }
+
+    @Test
+    fun `대문자 마스터 키는 소문자로 정규화해 검증하고 저장한다`() {
+        val authRepository = RecordingReceiverAuthRepository()
+        val receiverRepository = RecordingReceiverRepository()
+        val senderRegistry = SenderRegistry()
+        val sender = senderRegistry.register("별칭")
+        val viewModel = viewModel(authRepository, receiverRepository, senderRegistry)
+
+        viewModel.submit(senderId = sender.id, authCode = "123E4567-E89B-12D3-A456-426614174000")
+
+        val normalized = "123e4567-e89b-12d3-a456-426614174000"
+        assertEquals(listOf(normalized), authRepository.verifiedMasterKeys)
+        assertEquals(listOf(normalized), receiverRepository.savedAuthCodes)
+        assertTrue(viewModel.uiState.value.isVerified)
         assertEquals(null, viewModel.uiState.value.error)
     }
 
@@ -163,10 +179,6 @@ private class RecordingReceiverRepository : ReceiverRepository {
     override suspend fun downloadReceivedExport(): Result<ReceivedExportBundle> = error("호출되면 안 됨")
 
     override suspend fun saveReceivedExportToFile(bundle: ReceivedExportBundle): Result<Unit> = error("호출되면 안 됨")
-
-    override suspend fun loadMindRecordsCount(): Result<LoadCountResult> = error("호출되면 안 됨")
-
-    override suspend fun loadTimeLettersCount(): Result<LoadCountResult> = error("호출되면 안 됨")
 
     override suspend fun loadSenderMessage(): Result<SenderMessageInfo?> = error("호출되면 안 됨")
 }
