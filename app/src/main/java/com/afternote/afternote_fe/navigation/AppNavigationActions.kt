@@ -344,7 +344,9 @@ fun rememberHomeTabActions(
             }
 
             override fun onAnswerClick() {
-                // TODO: 데일리 질문 답변 화면 Route 추가 후 연결
+                // 카드 문구가 "데일리질문 답변하기" 라 답변 작성 화면으로 보낸다.
+                // 기록 탭의 작성 진입(`MindRecordNavActions.onWriteDailyQuestion`)과 같은 목적지다.
+                appState.navController.navigate(MindRecordRoute.DailyQuestionWriteRoute)
             }
 
             override fun onNextStepClick() {
