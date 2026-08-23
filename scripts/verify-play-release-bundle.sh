@@ -45,11 +45,17 @@ for required_entry in "${required_entries[@]}"; do
 done
 
 export LC_ALL=C
-if ! verification_output="$(jarsigner -verify "${bundle_path}" 2>&1)"; then
+# jarsigner는 unsigned entry가 섞여 있어도 "jar verified."와 exit 0을 내므로 -strict로 경고를 exit code에 승격시킨다.
+# -strict exit code는 경고 비트의 합이다. 자가서명 upload key는 인증서 체인 그룹(4)을 항상 세우므로 0·4만 허용하고,
+# unsigned entry(16)·서명 검증 실패(1) 등 나머지 비트는 실패로 처리한다.
+strict_status=0
+verification_output="$(jarsigner -verify -strict "${bundle_path}" 2>&1)" || strict_status=$?
+if [[ "${strict_status}" -ne 0 && "${strict_status}" -ne 4 ]]; then
     printf '%s\n' "${verification_output}" >&2
+    echo "AAB JAR 서명 검증이 실패했습니다(jarsigner -strict exit ${strict_status})." >&2
     exit 1
 fi
-if [[ "${verification_output}" != *"jar verified."* ]]; then
+if [[ "${verification_output}" != *"jar verified"* ]]; then
     printf '%s\n' "${verification_output}" >&2
     echo "AAB JAR 서명을 확인하지 못했습니다." >&2
     exit 1
