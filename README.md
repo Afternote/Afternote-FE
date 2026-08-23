@@ -215,20 +215,6 @@ docker run --rm -v "$PWD":/workspace -w /workspace afternote-screenshot:latest \
 
 `./gradlew :<module>:updateScreenshotTest` 를 host 에서 직접 실행하면 macOS / Linux / JDK 마이너 버전 / 폰트 캐시 차이로 CI 와 baseline 이 어긋난다. docker 환경 통일이 root fix.
 
-# 🤖 (옵션) Claude Code 워크플로 참고
-
-`docs/claude/` 에 **1hyok** 이 본 repo 에서 [Claude Code](https://claude.com/claude-code) 를 쓰면서 누적한 hook · `CLAUDE.md` 샘플 · 메모리 템플릿이 있다. **강제 아니고 참고용**.
-
-본인 Claude Code 워크플로에 도입하고 싶으면:
-
-```bash
-./scripts/install-claude-hooks.sh
-```
-
-→ `docs/claude/hooks/*.sh` 를 자기 `.claude/hooks/` 로 symlink (기존 파일 있으면 skip — 덮어쓰기 0). hook 등록·`CLAUDE.md` 일부 가져가기·메모리 도입 등 자세한 가이드는 [`docs/claude/README.md`](docs/claude/README.md) 참고.
-
-본인 `.claude/` 는 `.gitignore` 그대로라 본 폴더와 무관 — 어느 쪽도 다른 쪽을 강제하지 않는다.
-
 # 💻 코딩 컨벤션
 
 > **네이밍 컨벤션**

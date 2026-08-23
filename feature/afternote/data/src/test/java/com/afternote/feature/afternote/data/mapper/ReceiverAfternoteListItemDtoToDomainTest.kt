@@ -1,6 +1,7 @@
 package com.afternote.feature.afternote.data.mapper
 
 import com.afternote.feature.afternote.data.dto.ReceivedAfternoteDto
+import com.afternote.feature.afternote.data.dto.ReceivedAfternoteListDto
 import com.afternote.feature.afternote.domain.AfternoteType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -55,6 +56,18 @@ class ReceiverAfternoteListItemDtoToDomainTest {
     fun `toReceiverDomainList - 각 항목을 순서대로 매핑`() {
         val list = listOf(resp(id = 1L), resp(id = 2L)).toReceiverDomainList()
         assertEquals(listOf(1L, 2L), list.map { it.id })
+    }
+
+    @Test
+    fun `toDomainResult - 서버 totalCount와 목록을 함께 보존`() {
+        val result =
+            ReceivedAfternoteListDto(
+                afternotes = listOf(resp(id = 3L), resp(id = 4L)),
+                totalCount = 7,
+            ).toDomainResult()
+
+        assertEquals(7, result.totalCount)
+        assertEquals(listOf(3L, 4L), result.items.map { it.id })
     }
 
     private fun resp(

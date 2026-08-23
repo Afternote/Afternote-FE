@@ -3,18 +3,6 @@ package com.afternote.core.network.dto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-@Serializable
-enum class DeliveryConditionTypeDto {
-    @SerialName("NONE")
-    NONE,
-
-    @SerialName("INACTIVITY")
-    INACTIVITY,
-
-    @SerialName("SPECIFIC_DATE")
-    SPECIFIC_DATE,
-}
-
 // ========================================
 // Request
 // ========================================
@@ -58,13 +46,6 @@ data class UserUpdatePushSettingRequestDto(
 @Serializable
 data class SocialAccountLinkRequestDto(
     @SerialName("accessToken") val accessToken: String,
-)
-
-@Serializable
-data class DeliveryConditionRequestDto(
-    @SerialName("conditionType") val conditionType: DeliveryConditionTypeDto,
-    @SerialName("inactivityPeriodDays") val inactivityPeriodDays: Int? = null,
-    @SerialName("specificDate") val specificDate: String? = null,
 )
 
 // ========================================
@@ -135,15 +116,6 @@ data class UserConnectedAccountDto(
     @SerialName("naverEmail") val naverEmail: String? = null,
     @SerialName("kakaoEmail") val kakaoEmail: String? = null,
     @SerialName("appleEmail") val appleEmail: String? = null,
-)
-
-@Serializable
-data class DeliveryConditionDto(
-    @SerialName("conditionType") val conditionType: DeliveryConditionTypeDto,
-    @SerialName("inactivityPeriodDays") val inactivityPeriodDays: Int? = null,
-    @SerialName("specificDate") val specificDate: String? = null,
-    @SerialName("conditionFulfilled") val conditionFulfilled: Boolean,
-    @SerialName("conditionMet") val conditionMet: Boolean,
 )
 
 // --- GET/POST/DELETE /users/connected-accounts (소셜 계정 연동) ---

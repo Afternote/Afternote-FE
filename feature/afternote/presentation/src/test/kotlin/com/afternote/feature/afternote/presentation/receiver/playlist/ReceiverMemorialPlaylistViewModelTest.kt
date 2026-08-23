@@ -5,7 +5,6 @@ import androidx.paging.PagingData
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem
 import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResult
-import com.afternote.feature.afternote.domain.model.receiver.LoadCountResult
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedExportBundle
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
@@ -130,10 +129,6 @@ private class FakeReceiverRepository(
     override suspend fun downloadReceivedExport(): Result<ReceivedExportBundle> = unexpectedCall()
 
     override suspend fun saveReceivedExportToFile(bundle: ReceivedExportBundle): Result<Unit> = unexpectedCall()
-
-    override suspend fun loadMindRecordsCount(): Result<LoadCountResult> = unexpectedCall()
-
-    override suspend fun loadTimeLettersCount(): Result<LoadCountResult> = unexpectedCall()
 
     override suspend fun loadSenderMessage(): Result<SenderMessageInfo?> = unexpectedCall()
 

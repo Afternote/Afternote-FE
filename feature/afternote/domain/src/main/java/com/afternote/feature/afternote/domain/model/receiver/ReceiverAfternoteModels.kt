@@ -15,10 +15,6 @@ data class AfterNoteListItem(
     val lastUpdatedAt: String?,
 )
 
-data class LoadCountResult(
-    val totalCount: Int,
-)
-
 data class ReceivedExportBundle(
     val payloadJson: String = "{}",
 )

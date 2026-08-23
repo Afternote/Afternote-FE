@@ -224,7 +224,6 @@ private fun ReceiverHomeScreenPreview() {
                         ),
                     mindRecord =
                         MindRecordSummary(
-                            totalCount = 150,
                             dailyQuestionCount = 18,
                             diaryCount = 18,
                         ),
