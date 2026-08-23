@@ -98,12 +98,11 @@ class DraftListDeleteTest {
         assertTrue(state.items.isEmpty())
     }
 
-    private fun viewModel(dailyQuestionRepository: DailyQuestionRepository): DraftListViewModel {
-        return DraftListViewModel(
+    private fun viewModel(dailyQuestionRepository: DailyQuestionRepository): DraftListViewModel =
+        DraftListViewModel(
             diaryRepository = EmptyDiaryDraftRepository,
             dailyQuestionRepository = dailyQuestionRepository,
         )
-    }
 
     private fun dailyQuestion(id: Long) =
         DailyQuestion(
