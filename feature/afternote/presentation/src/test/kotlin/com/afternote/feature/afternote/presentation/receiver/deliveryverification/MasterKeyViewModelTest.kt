@@ -4,7 +4,6 @@ import androidx.paging.PagingData
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem
 import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResult
-import com.afternote.feature.afternote.domain.model.receiver.LoadCountResult
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
 import com.afternote.feature.afternote.domain.model.receiver.ReceivedExportBundle
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
@@ -163,10 +162,6 @@ private class RecordingReceiverRepository : ReceiverRepository {
     override suspend fun downloadReceivedExport(): Result<ReceivedExportBundle> = error("호출되면 안 됨")
 
     override suspend fun saveReceivedExportToFile(bundle: ReceivedExportBundle): Result<Unit> = error("호출되면 안 됨")
-
-    override suspend fun loadMindRecordsCount(): Result<LoadCountResult> = error("호출되면 안 됨")
-
-    override suspend fun loadTimeLettersCount(): Result<LoadCountResult> = error("호출되면 안 됨")
 
     override suspend fun loadSenderMessage(): Result<SenderMessageInfo?> = error("호출되면 안 됨")
 }
