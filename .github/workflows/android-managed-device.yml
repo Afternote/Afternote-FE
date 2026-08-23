@@ -43,44 +43,10 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      # processDebugGoogleServices 용 형식 유효 stub. 실제 Firebase·OAuth·Kakao 값은 쓰지 않는다.
-      # 정적 검증 전체의 설정 공통화는 후속 #842에서 별도 PR로 다룬다.
-      - name: Create CI-only app configuration
-        run: |
-          cat > app/google-services.json <<'EOF'
-          {
-            "project_info": {
-              "project_number": "000000000000",
-              "project_id": "afternote-managed-device-ci",
-              "storage_bucket": "afternote-managed-device-ci.invalid"
-            },
-            "client": [
-              {
-                "client_info": {
-                  "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
-                  "android_client_info": {
-                    "package_name": "com.afternote.afternote_fe"
-                  }
-                },
-                "oauth_client": [],
-                "api_key": [
-                  { "current_key": "managed_device_ci_placeholder_not_a_real_key" }
-                ],
-                "services": {
-                  "appinvite_service": {
-                    "other_platform_oauth_client": []
-                  }
-                }
-              }
-            ],
-            "configuration_version": "1"
-          }
-          EOF
+      - name: Set up CI-only app configuration
+        uses: ./.github/actions/setup-ci-config
 
       - name: Run managed-device androidTest
-        env:
-          KAKAO_NATIVE_APP_KEY: managed_device_ci_kakao_placeholder
-          GOOGLE_WEB_CLIENT_ID: managed-device-ci.apps.invalid
         run: |
           ./gradlew pixel2Api30DebugAndroidTest \
             -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect \
