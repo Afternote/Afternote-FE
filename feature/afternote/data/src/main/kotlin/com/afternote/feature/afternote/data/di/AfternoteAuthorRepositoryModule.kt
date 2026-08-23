@@ -1,13 +1,11 @@
 package com.afternote.feature.afternote.data.di
 
 import com.afternote.feature.afternote.data.repositoryimpl.author.AfternoteRepositoryImpl
-import com.afternote.feature.afternote.data.repositoryimpl.author.AuthorReceiverRepositoryImpl
 import com.afternote.feature.afternote.data.repositoryimpl.author.MemorialPhotoUploadRepositoryImpl
 import com.afternote.feature.afternote.data.repositoryimpl.author.MemorialThumbnailUploadRepositoryImpl
 import com.afternote.feature.afternote.data.repositoryimpl.author.MemorialVideoUploadRepositoryImpl
 import com.afternote.feature.afternote.data.repositoryimpl.author.MusicSearchRepositoryImpl
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
-import com.afternote.feature.afternote.domain.repository.author.AuthorReceiverRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialPhotoUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialVideoUploadRepository
@@ -25,11 +23,6 @@ interface AfternoteAuthorRepositoryModule {
     @Binds
     @Singleton
     fun bindAfternoteRepository(impl: AfternoteRepositoryImpl): AfternoteRepository
-
-    @Suppress("unused")
-    @Binds
-    @Singleton
-    fun bindAuthorReceiverRepository(impl: AuthorReceiverRepositoryImpl): AuthorReceiverRepository
 
     @Suppress("unused")
     @Binds

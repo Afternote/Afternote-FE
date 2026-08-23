@@ -21,6 +21,15 @@ enum class AfternoteFailureStage(
     /** 수정 진입 시 기존 애프터노트 로드 — 여기서 깨지면 빈 폼으로 덮어쓸 위험이 있다. */
     PREFILL_LOAD("prefill_load"),
 
+    /**
+     * 신규 작성 진입 시 작성자가 등록한 수신자 목록 조회.
+     *
+     * 실패해도 화면에는 수신자 자리가 비어 보일 뿐이라 계측하지 않으면 흔적이 남지 않는다.
+     * 수신자는 저장 필수값(서버 코드 475)이므로, 여기서 조용히 실패하면 사용자는 원인을 알 수 없는
+     * 검증 오류만 만나게 된다.
+     */
+    AUTHOR_RECEIVER_LOAD("author_receiver_load"),
+
     MEMORIAL_THUMBNAIL_UPLOAD("memorial_thumbnail_upload"),
 
     /**

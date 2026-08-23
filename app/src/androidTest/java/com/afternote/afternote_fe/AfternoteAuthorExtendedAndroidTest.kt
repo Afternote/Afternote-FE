@@ -46,7 +46,6 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
-import com.afternote.feature.afternote.domain.model.author.AuthorReceiverEntry
 import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
@@ -58,7 +57,6 @@ import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.model.author.ProcessingMethod
 import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
-import com.afternote.feature.afternote.domain.repository.author.AuthorReceiverRepository
 import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.domain.repository.author.MemorialPhotoUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
@@ -83,7 +81,6 @@ import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeEnt
 import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeViewModel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import org.junit.Assert.assertEquals
@@ -518,22 +515,6 @@ private class AdvancedAfternoteRepository(
     }
 }
 
-private class ExtendedAuthorReceiverRepository : AuthorReceiverRepository {
-    private val receivers = MutableStateFlow(listOf(AuthorReceiverEntry(7L, "김수신", "가족")))
-
-    override fun currentAuthorUserId(): Long = 1L
-
-    override fun observeReceivers(): Flow<List<AuthorReceiverEntry>> = receivers
-
-    override fun currentReceivers(): List<AuthorReceiverEntry> = receivers.value
-
-    override suspend fun refreshReceivers(): Result<Unit> = Result.success(Unit)
-
-    override suspend fun clearReceivers() {
-        receivers.value = emptyList()
-    }
-}
-
 private fun detailViewModel(
     repository: AdvancedAfternoteRepository,
     itemId: Long,
@@ -551,7 +532,7 @@ private fun editorViewModel(
 ): AfternoteEditorViewModel =
     AfternoteEditorViewModel(
         savedStateHandle = SavedStateHandle(mapOf("itemId" to itemId.toString())),
-        authorReceiverRepository = ExtendedAuthorReceiverRepository(),
+        userRepository = FakeUserRepository(),
         afternoteRepository = repository,
         memorialThumbnailUploadRepository =
             MemorialThumbnailUploadRepository {
