@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,28 +28,40 @@ class MemoriesCardViewModel
         private val _uiState = MutableStateFlow(MemoriesCardUiState())
         val uiState: StateFlow<MemoriesCardUiState> = _uiState.asStateFlow()
 
+        private var loadJob: Job? = null
+
         init {
             load()
         }
 
         /** 홈 복귀·기록 저장 후 최신 기록을 다시 집는다. */
-        fun refreshOnReturn() = load()
+        fun refreshOnReturn() {
+            // 진입 직후의 ON_RESUME 은 init 로드와 겹친다 — 진행 중이면 건너뛴다.
+            // 컴포지션 쪽 플래그가 아니라 VM 이 들고 있는 Job 으로 판단해야
+            // 프로세스 사망 후 복원(VM 재생성 + 플래그 복원)에서도 중복이 나지 않는다.
+            // `DiaryListViewModel.refreshOnReturn` 과 같은 규칙이다.
+            if (loadJob?.isActive == true) return
+            load()
+        }
 
         private fun load() {
-            viewModelScope.launch {
-                repository
-                    .getList()
-                    .onSuccess { questions ->
-                        // 첫 건이 곧 최신이다 — `GET /api/v1/daily-questions` 가 명세에서
-                        // "특정 날짜 혹은 전체 답변 목록을 최신순으로 조회합니다" 로 정렬을 계약한다.
-                        // 같은 API 가 `draftOnly` 생략 시 제출 완료분만 주지만, 파라미터를 무시하는
-                        // 서버를 만나도 초안이 카드에 오르지 않도록 `!isDraft` 재확인은 남겨둔다.
-                        val latest = questions.firstOrNull { !it.isDraft }
-                        _uiState.update {
-                            it.copy(question = latest?.title, answer = latest?.content)
+            // 앞선 요청이 늦게 도착해 최신 상태를 덮지 않도록 진행 중이던 것은 버린다.
+            loadJob?.cancel()
+            loadJob =
+                viewModelScope.launch {
+                    repository
+                        .getList()
+                        .onSuccess { questions ->
+                            // 첫 건이 곧 최신이다 — `GET /api/v1/daily-questions` 가 명세에서
+                            // "특정 날짜 혹은 전체 답변 목록을 최신순으로 조회합니다" 로 정렬을 계약한다.
+                            // 같은 API 가 `draftOnly` 생략 시 제출 완료분만 주지만, 파라미터를 무시하는
+                            // 서버를 만나도 초안이 카드에 오르지 않도록 `!isDraft` 재확인은 남겨둔다.
+                            val latest = questions.firstOrNull { !it.isDraft }
+                            _uiState.update {
+                                it.copy(question = latest?.title, answer = latest?.content)
+                            }
                         }
-                    }
-            }
+                }
         }
     }
 
