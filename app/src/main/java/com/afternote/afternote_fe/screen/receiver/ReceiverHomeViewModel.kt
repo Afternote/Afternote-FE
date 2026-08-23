@@ -11,10 +11,13 @@ import com.afternote.afternote_fe.screen.receiver.model.ReceiverDownloadState
 import com.afternote.afternote_fe.screen.receiver.model.ReceiverHomeUiState
 import com.afternote.afternote_fe.screen.receiver.model.SenderMessage
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem
-import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResult
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
 import com.afternote.feature.afternote.presentation.shared.util.getIconResForType
+import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
+import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
+import com.afternote.feature.timeletter.domain.repository.ReceiverTimeLetterRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -36,6 +39,8 @@ class ReceiverHomeViewModel
     @Inject
     constructor(
         private val receiverRepository: ReceiverRepository,
+        private val mindRecordReceiverRepository: MindRecordReceiverRepository,
+        private val receiverTimeLetterRepository: ReceiverTimeLetterRepository,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<ReceiverHomeUiState>(ReceiverHomeUiState.Loading)
@@ -60,8 +65,13 @@ class ReceiverHomeViewModel
             viewModelScope.launch {
                 coroutineScope {
                     val afternotes = async { receiverRepository.getReceivedAfterNotes() }
-                    val mindRecords = async { receiverRepository.loadMindRecordsCount() }
-                    val timeLetters = async { receiverRepository.loadTimeLettersCount() }
+                    val mindRecords = async { mindRecordReceiverRepository.getAll() }
+                    val timeLetters =
+                        async {
+                            runCatchingCancellable {
+                                receiverTimeLetterRepository.getReceivedTimeLetters()
+                            }
+                        }
                     val message = async { receiverRepository.loadSenderMessage() }
                     val afternotesRes = afternotes.await()
                     val mindRecordsRes = mindRecords.await()
@@ -96,10 +106,9 @@ class ReceiverHomeViewModel
                         )
                     }
 
-                    val afternotesResult =
-                        afternotesRes.getOrNull() ?: AfterNotesListResult(items = emptyList(), totalCount = 0)
-                    val mindRecordsCount = mindRecordsRes.getOrNull()?.totalCount ?: 0
-                    val timeLettersCount = timeLettersRes.getOrNull()?.totalCount ?: 0
+                    val afternotesResult = afternotesRes.getOrNull()
+                    val mindRecordsSummary = mindRecordsRes.getOrNull()?.toHomeSummary()
+                    val timeLettersCount = timeLettersRes.getOrNull()?.totalCount
                     val senderMessageInfo = messageRes.getOrNull()
                     // senderName / senderMessage 둘 다 blank 가드 — sender 가 이름·메시지 미입력 케이스 대응.
                     // ".orEmpty()" 만으로는 공백("  ") 통과해 "故 님이 남기신 기록" / "님의 한 마디" UI 깨짐.
@@ -118,15 +127,10 @@ class ReceiverHomeViewModel
                                     // ?. 를 붙이면 "여기서 null 일 수 있다" 는 거짓 신호가 되어 생략.
                                     SenderMessage(date = senderMessageInfo.createdAt.orEmpty(), body = it)
                                 },
-                            mindRecord =
-                                MindRecordSummary(
-                                    totalCount = mindRecordsCount,
-                                    dailyQuestionCount = 0,
-                                    diaryCount = 0,
-                                ),
+                            mindRecord = mindRecordsSummary,
                             timeLetterTotalCount = timeLettersCount,
-                            afternoteTotalCount = afternotesResult.totalCount,
-                            afternoteIcons = afternotesResult.items.toAfternoteIcons(),
+                            afternoteTotalCount = afternotesResult?.totalCount,
+                            afternoteIcons = afternotesResult?.items.orEmpty().toAfternoteIcons(),
                         )
                 }
             }
@@ -167,6 +171,12 @@ class ReceiverHomeViewModel
 private const val HOME_REQUEST_COUNT = 4
 
 private const val MAX_AFTERNOTE_ICONS = 4
+
+private fun ReceiverMindRecords.toHomeSummary(): MindRecordSummary =
+    MindRecordSummary(
+        dailyQuestionCount = dailyQuestions.size,
+        diaryCount = diaries.size,
+    )
 
 private fun List<AfterNoteListItem>.toAfternoteIcons(): List<AfternoteSourceIcon> =
     asSequence()

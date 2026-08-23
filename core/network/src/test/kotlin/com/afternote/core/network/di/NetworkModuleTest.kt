@@ -1,10 +1,25 @@
 package com.afternote.core.network.di
 
+import com.afternote.core.network.interceptor.ApiErrorInterceptor
 import okhttp3.logging.HttpLoggingInterceptor
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertSame
 import org.junit.Test
 
 class NetworkModuleTest {
+    @Test
+    fun `재발급 클라이언트 - API 오류 본문 변환 인터셉터를 가장 바깥에 배치`() {
+        val apiErrorInterceptor = ApiErrorInterceptor(NetworkModule.provideJson())
+
+        val client =
+            NetworkModule.provideRefreshOkHttpClient(
+                loggingInterceptor = HttpLoggingInterceptor(),
+                apiErrorInterceptor = apiErrorInterceptor,
+            )
+
+        assertSame(apiErrorInterceptor, client.interceptors.first())
+    }
+
     @Test
     fun `S3 업로드 클라이언트 - 전체 호출은 10분 안에 종료`() {
         val client = NetworkModule.provideS3UploadOkHttpClient(HttpLoggingInterceptor())

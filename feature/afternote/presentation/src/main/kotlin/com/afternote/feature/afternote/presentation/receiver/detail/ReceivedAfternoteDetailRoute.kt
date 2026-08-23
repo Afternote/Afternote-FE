@@ -23,7 +23,7 @@ import com.afternote.feature.afternote.presentation.author.navigation.DetailLoad
 @Composable
 fun ReceivedAfternoteDetailRoute(
     onBack: () -> Unit,
-    onNavigateToPlaylist: (afternoteId: String) -> Unit = {},
+    onNavigateToPlaylist: (afternoteId: Long) -> Unit,
     viewModel: ReceivedAfternoteDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -37,7 +37,7 @@ fun ReceivedAfternoteDetailRoute(
             DetailLoadErrorContent(
                 messageRes = state.messageRes,
                 onBackClick = onBack,
-                onRetryClick = if (state.canRetry) viewModel::retry else null,
+                onRetryClick = viewModel::retry,
             )
         }
 
@@ -65,7 +65,7 @@ fun ReceivedAfternoteDetailRoute(
                         songCount = model.content.songCount,
                         memorialVideoUrl = model.content.memorialVideoUrl,
                         memorialThumbnailUrl = model.content.memorialThumbnailUrl,
-                        onNavigateToPlaylist = { onNavigateToPlaylist(state.detailId.toString()) },
+                        onNavigateToPlaylist = { onNavigateToPlaylist(state.detailId) },
                         onBackClick = onBack,
                     )
                 }

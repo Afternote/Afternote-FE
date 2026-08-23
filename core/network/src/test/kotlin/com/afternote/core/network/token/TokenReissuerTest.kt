@@ -2,10 +2,17 @@ package com.afternote.core.network.token
 
 import com.afternote.core.model.TokenBundle
 import com.afternote.core.network.FakeAuthRepository
+import com.afternote.core.network.FakeErrorReporter
+import com.afternote.core.network.model.ApiException
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import retrofit2.HttpException
+import java.net.SocketTimeoutException
+import retrofit2.Response as RetrofitResponse
 
 /**
  * [TokenReissuer] 단일 비행 계약 회귀 가드 (#408).
@@ -17,10 +24,17 @@ class TokenReissuerTest {
     private var nowElapsedMillis = 0L
     private val tracker = AccessTokenExpiryTracker { nowElapsedMillis }
 
+    private fun reissuer(
+        repository: FakeAuthRepository,
+        reporter: FakeErrorReporter = FakeErrorReporter(),
+    ) = TokenReissuer({ repository }, tracker, reporter)
+
+    private fun httpFailure(status: Int): HttpException = HttpException(RetrofitResponse.error<Unit>(status, "".toResponseBody()))
+
     @Test
     fun `저장 토큰이 관찰 토큰과 다름 - 회전 생략하고 갱신된 토큰 반환`() {
         val repository = FakeAuthRepository(accessToken = "refreshed-by-other-path")
-        val coordinator = TokenReissuer({ repository }, tracker)
+        val coordinator = reissuer(repository)
 
         val outcome = coordinator.reissue(expectedAccessToken = "old-token")
 
@@ -43,7 +57,7 @@ class TokenReissuerTest {
                     )
                 },
             )
-        val coordinator = TokenReissuer({ repository }, tracker)
+        val coordinator = reissuer(repository)
 
         val outcome = coordinator.reissue(expectedAccessToken = "old-token")
 
@@ -65,7 +79,7 @@ class TokenReissuerTest {
                     Result.success(TokenBundle(accessToken = "fresh-token", refreshToken = "r"))
                 },
             )
-        val coordinator = TokenReissuer({ repository }, tracker)
+        val coordinator = reissuer(repository)
 
         val outcome = coordinator.reissue(expectedAccessToken = "old-token")
 
@@ -76,21 +90,148 @@ class TokenReissuerTest {
     }
 
     @Test
-    fun `회전 실패 - Failed 반환, deadline 폐기 (재시도 폭주 방지)`() {
-        tracker.record(expiresInSeconds = 30)
+    fun `refresh 인증 거절 401 403 - 원인 보존하고 리포팅 제외`() {
+        listOf(401, 403).forEach { status ->
+            val failure = httpFailure(status)
+            val reporter = FakeErrorReporter()
+            val repository =
+                FakeAuthRepository(
+                    accessToken = "old-token",
+                    onRotateToken = { Result.failure(failure) },
+                )
+
+            val outcome = reissuer(repository, reporter).reissue(expectedAccessToken = "old-token")
+
+            assertTrue(outcome is TokenReissuer.Outcome.AuthenticationRejected)
+            assertSame(failure, (outcome as TokenReissuer.Outcome.AuthenticationRejected).exception)
+            assertTrue(reporter.writtenFailures.isEmpty())
+        }
+    }
+
+    @Test
+    fun `refresh 무효 400 code 1107 - 인증 거절로 분류하고 리포팅 제외`() {
+        val failure =
+            ApiException(
+                status = 400,
+                code = 1107,
+                serverMessage = "유효하지 않은 리프레시 토큰",
+                message = "유효하지 않은 리프레시 토큰",
+            )
+        val reporter = FakeErrorReporter()
         val repository =
             FakeAuthRepository(
                 accessToken = "old-token",
-                onRotateToken = { Result.failure(IllegalStateException("리프레시 만료")) },
+                onRotateToken = { Result.failure(failure) },
             )
-        val coordinator = TokenReissuer({ repository }, tracker)
+
+        val outcome = reissuer(repository, reporter).reissue(expectedAccessToken = "old-token")
+
+        assertTrue(outcome is TokenReissuer.Outcome.AuthenticationRejected)
+        assertSame(failure, (outcome as TokenReissuer.Outcome.AuthenticationRejected).exception)
+        assertTrue(reporter.writtenFailures.isEmpty())
+    }
+
+    @Test
+    fun `transport 실패 - 원인 보존, deadline 폐기, 비민감 non-fatal 기록`() {
+        tracker.record(expiresInSeconds = 30)
+        val secret = "refresh-token-secret"
+        val failure = SocketTimeoutException("timeout while sending $secret")
+        val reporter = FakeErrorReporter()
+        val repository =
+            FakeAuthRepository(
+                accessToken = "old-token",
+                onRotateToken = { Result.failure(failure) },
+            )
+        val coordinator = reissuer(repository, reporter)
 
         val outcome = coordinator.reissue(expectedAccessToken = "old-token")
 
-        assertTrue(outcome is TokenReissuer.Outcome.Failed)
+        assertTrue(outcome is TokenReissuer.Outcome.TransportFailure)
+        assertSame(failure, (outcome as TokenReissuer.Outcome.TransportFailure).exception)
         assertFalse(tracker.isExpiringSoon())
-        // 후처리는 호출자 몫 — 코디네이터가 임의로 세션을 지우지 않는다 (Fake 의 clearSession error 가드)
         assertEquals(0, repository.clearSessionCallCount)
+        val (reported, attributes) = reporter.writtenFailures.single()
+        assertEquals("token_reissue", attributes["auth_stage"])
+        assertEquals("transport", attributes["failure_kind"])
+        assertEquals(SocketTimeoutException::class.java.name, attributes["error_type"])
+        assertEquals(SocketTimeoutException::class.java.name, reported.message)
+        assertTrue(secret !in reported.toString())
+        assertTrue(secret !in attributes.toString())
+    }
+
+    @Test
+    fun `5xx 실패 - 원인 보존하고 non-fatal 1건 기록`() {
+        val failure =
+            ApiException(
+                status = 503,
+                code = 503,
+                serverMessage = null,
+                message = "temporary server failure",
+            )
+        val reporter = FakeErrorReporter()
+        val repository =
+            FakeAuthRepository(
+                accessToken = "old-token",
+                onRotateToken = { Result.failure(failure) },
+            )
+
+        val outcome = reissuer(repository, reporter).reissue(expectedAccessToken = "old-token")
+
+        assertTrue(outcome is TokenReissuer.Outcome.ServerFailure)
+        assertSame(failure, (outcome as TokenReissuer.Outcome.ServerFailure).exception)
+        val (_, attributes) = reporter.writtenFailures.single()
+        assertEquals("token_reissue", attributes["auth_stage"])
+        assertEquals("server", attributes["failure_kind"])
+        assertEquals(ApiException::class.java.name, attributes["error_type"])
+    }
+
+    @Test
+    fun `회전 성공했지만 액세스 토큰이 빈 값 - UnexpectedFailure 반환`() {
+        tracker.record(expiresInSeconds = 30)
+        val reporter = FakeErrorReporter()
+        val repository =
+            FakeAuthRepository(
+                accessToken = "old-token",
+                onRotateToken = {
+                    Result.success(TokenBundle(accessToken = "", refreshToken = "refresh-token"))
+                },
+            )
+
+        val outcome = reissuer(repository, reporter).reissue(expectedAccessToken = "old-token")
+
+        assertTrue(outcome is TokenReissuer.Outcome.UnexpectedFailure)
+        assertFalse(tracker.isExpiringSoon())
+        val (_, attributes) = reporter.writtenFailures.single()
+        assertEquals("token_reissue", attributes["auth_stage"])
+        assertEquals("unexpected", attributes["failure_kind"])
+        assertEquals(0, repository.clearSessionCallCount)
+    }
+
+    @Test
+    fun `미분류 4xx 실패 - UnexpectedFailure 로 분류하고 non-fatal 기록`() {
+        val failure =
+            ApiException(
+                status = 400,
+                code = 1999,
+                serverMessage = "new server error",
+                message = "new server error",
+            )
+        val reporter = FakeErrorReporter()
+        val repository =
+            FakeAuthRepository(
+                accessToken = "old-token",
+                onRotateToken = { Result.failure(failure) },
+            )
+
+        val outcome = reissuer(repository, reporter).reissue(expectedAccessToken = "old-token")
+
+        assertTrue(outcome is TokenReissuer.Outcome.UnexpectedFailure)
+        assertSame(failure, (outcome as TokenReissuer.Outcome.UnexpectedFailure).exception)
+        val (reported, attributes) = reporter.writtenFailures.single()
+        assertEquals("unexpected", attributes["failure_kind"])
+        assertEquals(ApiException::class.java.name, reported.message)
+        assertTrue("new server error" !in reported.toString())
+        assertTrue("new server error" !in attributes.toString())
     }
 
     @Test
@@ -100,11 +241,11 @@ class TokenReissuerTest {
                 accessToken = null,
                 onRotateToken = { Result.failure(IllegalStateException("리프레시 토큰이 존재하지 않습니다.")) },
             )
-        val coordinator = TokenReissuer({ repository }, tracker)
+        val coordinator = reissuer(repository)
 
         val outcome = coordinator.reissue(expectedAccessToken = "old-token")
 
         assertEquals(1, repository.rotateCallCount)
-        assertTrue(outcome is TokenReissuer.Outcome.Failed)
+        assertTrue(outcome is TokenReissuer.Outcome.UnexpectedFailure)
     }
 }
