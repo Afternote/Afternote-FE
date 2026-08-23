@@ -1,11 +1,14 @@
 package com.afternote.feature.afternote.presentation.receiver.detail
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceiverRoute
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -37,8 +40,8 @@ class ReceivedAfternoteDetailViewModel
         private val receiverRepository: ReceiverRepository,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
-        private val afternoteIdFromNav: Long? =
-            savedStateHandle.get<String>(NAV_ARG_AFTERNOTE_ID)?.toLongOrNull()
+        private val afternoteIdFromNav: Long =
+            savedStateHandle.toRoute<ReceiverRoute.AfternoteDetailRoute>().afternoteId
 
         private val internalState = MutableStateFlow(InternalState())
 
@@ -52,28 +55,11 @@ class ReceivedAfternoteDetailViewModel
                 )
 
         init {
-            val id = afternoteIdFromNav
-            if (id != null) {
-                loadDetail(id)
-            } else {
-                internalState.update {
-                    it.copy(
-                        loadPhase =
-                            LoadPhase.Failed(
-                                messageRes = R.string.afternote_detail_invalid_id,
-                                canRetry = false,
-                            ),
-                    )
-                }
-            }
+            loadDetail(afternoteIdFromNav)
         }
 
-        /**
-         * 조회 실패 화면의 재시도 진입점. 상세 ID 가 없는 실패는 재요청해도 결과가 같으므로 무시한다
-         * (그 상태의 [ReceivedAfternoteDetailUiState.Error.canRetry] 는 `false` 라 화면에도 버튼이 없다).
-         */
         fun retry() {
-            loadDetail(afternoteIdFromNav ?: return)
+            loadDetail(afternoteIdFromNav)
         }
 
         private fun loadDetail(afternoteId: Long) {
@@ -92,16 +78,11 @@ class ReceivedAfternoteDetailViewModel
                                 loadPhase =
                                     LoadPhase.Failed(
                                         messageRes = R.string.afternote_detail_load_error,
-                                        canRetry = true,
                                     ),
                             )
                         }
                     }
             }
-        }
-
-        private companion object {
-            private const val NAV_ARG_AFTERNOTE_ID = "afternoteId"
         }
 
         private data class InternalState(
@@ -117,8 +98,7 @@ class ReceivedAfternoteDetailViewModel
             ) : LoadPhase
 
             data class Failed(
-                val messageRes: Int? = null,
-                val canRetry: Boolean = false,
+                @param:StringRes val messageRes: Int,
             ) : LoadPhase
         }
 
@@ -138,7 +118,6 @@ class ReceivedAfternoteDetailViewModel
                 is LoadPhase.Failed -> {
                     ReceivedAfternoteDetailUiState.Error(
                         messageRes = phase.messageRes,
-                        canRetry = phase.canRetry,
                     )
                 }
             }

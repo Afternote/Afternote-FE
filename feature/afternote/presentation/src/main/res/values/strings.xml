@@ -49,6 +49,7 @@
     <string name="receiver_afternote_item_outlook">outlook</string>
     <string name="receiver_memorial_video_no_app">영상을 재생할 수 있는 앱이 없습니다.</string>
     <string name="receiver_memorial_playlist_screen_title">%1$s님의 플레이리스트</string>
+    <string name="receiver_memorial_playlist_load_error">플레이리스트를 불러오지 못했습니다.</string>
 
     <string name="receiver_sender_record_title">故 %1$s님이 남기신 기록</string>
     <string name="receiver_afternote_section_count">%1$d개의 애프터노트가 있습니다.</string>
@@ -179,6 +180,7 @@
     <string name="receiver_verify_master_key_title">마스터 키 입력</string>
     <string name="receiver_verify_master_key_description">전달 받은 마스터 키를 입력해 주세요.</string>
     <string name="receiver_verify_master_key_placeholder">마스터 키 입력</string>
+    <string name="receiver_verify_master_key_invalid_format">마스터 키 형식이 올바르지 않습니다. 전달받은 마스터 키를 다시 확인해 주세요.</string>
     <string name="receiver_verify_error_network">네트워크 연결을 확인해주세요.</string>
     <string name="receiver_verify_error_unknown">마스터 키 검증에 실패했습니다.</string>
     <string name="receiver_verify_complete_confirm">확인</string>

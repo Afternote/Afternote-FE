@@ -36,7 +36,7 @@ fun AfternoteHomeScreen(
     items: LazyPagingItems<ListItemUiModel>,
     selectedCategory: AfternoteType?,
     onCategorySelected: (AfternoteType?) -> Unit,
-    onListItemClick: (id: String, type: AfternoteType) -> Unit,
+    onListItemClick: (id: Long, type: AfternoteType) -> Unit,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     onFabClick: (() -> Unit)? = null,
@@ -112,14 +112,14 @@ private fun AfternoteHomeScreenPreview() {
                 PagingData.from(
                     listOf(
                         ListItemUiModel(
-                            id = "1",
+                            id = 1L,
                             serviceName = "인스타그램",
                             date = "2023.11.24",
                             iconResId = R.drawable.feature_afternote_img_insta_pattern,
                             type = AfternoteType.SOCIAL_NETWORK,
                         ),
                         ListItemUiModel(
-                            id = "2",
+                            id = 2L,
                             serviceName = "페이스북",
                             date = "2023.11.25",
                             iconResId = R.drawable.feature_afternote_img_insta_pattern,

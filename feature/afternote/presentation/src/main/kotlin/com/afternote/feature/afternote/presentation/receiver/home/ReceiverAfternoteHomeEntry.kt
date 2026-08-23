@@ -15,7 +15,7 @@ import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeScr
  */
 @Composable
 fun ReceiverAfternoteHomeEntry(
-    navigateToDetail: (String) -> Unit,
+    navigateToDetail: (Long) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ReceiverAfternoteHomeViewModel = hiltViewModel(),
 ) {
