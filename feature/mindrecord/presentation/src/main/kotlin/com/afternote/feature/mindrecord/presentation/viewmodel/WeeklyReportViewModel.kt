@@ -161,9 +161,13 @@ class WeeklyReportViewModel
                     dayOfWeek = date.dayOfWeek,
                     content =
                         when {
-                            emoji != null && isDiary -> DayContent.EmojiWithDot(emoji)
+                            // 이모지와 점은 배타적이다 (#749). 감정을 고른 날은 이모지만 그린다 —
+                            // 종전에는 `emoji != null && isDiary` 가 먼저 걸려, 일기를 쓰고 감정까지
+                            // 고른 가장 흔한 경우에 점이 함께 붙었다.
                             emoji != null -> DayContent.EmojiOnly(emoji)
+
                             isDiary -> DayContent.NumberWithDot(date.dayOfMonth)
+
                             else -> DayContent.NumberOnly(date.dayOfMonth)
                         },
                     background =
