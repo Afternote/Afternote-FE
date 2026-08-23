@@ -7,6 +7,6 @@ runs:
     - name: Generate CI-only app configuration
       shell: bash
       run: >-
-        node "${{ github.action_path }}/../../scripts/create-ci-config.mjs"
+        node "$GITHUB_WORKSPACE/.github/scripts/create-ci-config.mjs"
         --workspace "$GITHUB_WORKSPACE"
         --github-env "$GITHUB_ENV"
