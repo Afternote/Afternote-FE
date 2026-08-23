@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # docker buildx + gha cache 로 Dockerfile.screenshot 빌드.
       # 동일 이미지에서 baseline 생성·검증을 수행해 anti-aliasing/font/scale 등 host 환경 차이 root fix.
