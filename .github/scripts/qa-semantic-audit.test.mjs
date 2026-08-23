@@ -10,7 +10,10 @@ import {
     isGenericQaText,
     validateQaAuditPlan,
 } from "./qa-semantic-audit.mjs";
-import { validatePullRequestEvent } from "./validate-pr-qa-metadata.mjs";
+import {
+    QA_METADATA_GATE_CUTOFF,
+    validatePullRequestEvent,
+} from "./validate-pr-qa-metadata.mjs";
 
 function qaBody(metadata) {
     return `## QA 메타데이터
@@ -216,6 +219,49 @@ test("validates pull request events with the same parser used by the audit", () 
 
     assert.equal(result.valid, true);
     assert.equal(result.metadata.scope, "ci-only");
+});
+
+const beforeCutoff = new Date(Date.parse(QA_METADATA_GATE_CUTOFF) - 1_000).toISOString();
+const afterCutoff = new Date(Date.parse(QA_METADATA_GATE_CUTOFF) + 1_000).toISOString();
+
+test("grandfathers pull requests created before the gate cutoff when the section is absent", () => {
+    const result = validatePullRequestEvent({
+        pull_request: { number: 741, created_at: beforeCutoff, body: "## 작업 내용\n설명만 있다." },
+    });
+
+    assert.equal(result.grandfathered, true);
+    assert.equal(result.valid, true);
+    assert.deepEqual(result.errors, []);
+});
+
+test("still validates grandfathered pull requests once they add the section", () => {
+    const metadata = exclusionMetadata(809);
+    metadata.scope = "invalid-scope";
+    const result = validatePullRequestEvent({
+        pull_request: { number: 741, created_at: beforeCutoff, body: qaBody(metadata) },
+    });
+
+    assert.equal(result.grandfathered, false);
+    assert.equal(result.valid, false);
+});
+
+test("enforces the section for pull requests created after the cutoff", () => {
+    const result = validatePullRequestEvent({
+        pull_request: { number: 999, created_at: afterCutoff, body: "## 작업 내용\n섹션 없음." },
+    });
+
+    assert.equal(result.grandfathered, false);
+    assert.equal(result.valid, false);
+    assert.match(result.errors.join("\n"), /섹션이 없습니다/);
+});
+
+test("enforces the section when created_at is missing", () => {
+    const result = validatePullRequestEvent({
+        pull_request: { number: 999, body: "## 작업 내용\n섹션 없음." },
+    });
+
+    assert.equal(result.grandfathered, false);
+    assert.equal(result.valid, false);
 });
 
 test("PR #802 fixture produces exact issues, exclusions, merge, and actionable deletion QA", () => {

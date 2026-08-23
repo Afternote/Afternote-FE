@@ -105,6 +105,10 @@ function qaMetadataSection(body) {
     return section.join("\n").replace(/<!--[\s\S]*?-->/g, "");
 }
 
+export function hasQaMetadataSection(body) {
+    return Boolean(qaMetadataSection(body).trim());
+}
+
 export function extractQaMetadata(body) {
     const section = qaMetadataSection(body);
     if (!section.trim()) {
