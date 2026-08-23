@@ -9,6 +9,7 @@ import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.presentation.R
+import com.afternote.feature.mindrecord.presentation.util.toUploadedFileKey
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -90,25 +91,43 @@ class DailyQuestionWriteViewModel
                 it.copy(
                     draftId = draft.dailyQuestionId,
                     answer = if (it.answer.isBlank()) draft.content else it.answer,
-                    imageUrl = it.imageUrl ?: draft.imageUrl,
                 )
             }
         }
+
+        /** 이번 작성 중 업로드한 이미지의 원본 URL. 제출 시 fileKey 로 바꿀 대상이다 (#549). */
+        private val uploadedImageUrls = mutableSetOf<String>()
 
         fun onAnswerChanged(text: String) {
             _uiState.update { it.copy(answer = text) }
         }
 
         /**
-         * 에디터에서 고른 이미지를 presigned URL 로 업로드하고 영구 URL 을 반환한다 (실패 시 null).
-         * 첫 업로드 이미지는 등록 payload 의 `imageUrl` (목록 카드 썸네일) 로도 쓴다.
+         * 에디터에서 고른 이미지를 업로드하고 **미리보기에 쓸 URL** 을 반환한다 (실패 시 null).
+         *
+         * 반환한 URL 은 에디터가 본문 HTML 에 `<img src>` 로 삽입한다 — 그것이 서버에
+         * 이미지가 남는 유일한 경로다. 종전에는 이 URL 을 등록 payload 의 `imageUrl` 로도
+         * 실어 보냈지만, 그 필드는 계약에 없어 서버가 통째로 무시했다 (#549).
+         *
+         * 다만 **저장 시 나가는 값은 이 URL 이 아니다.** 서버는 본문의 `img src` 에서 fileKey
+         * 를 기대하므로, 여기서 받은 URL 을 [uploadedImageUrls] 에 기억해 뒀다가 제출 직전에
+         * 키 형태로 바꾼다 ([toWireContent]). 미리보기는 전체 URL 이라야 뜬다.
          */
         suspend fun uploadImage(uriString: String): String? =
             photoUploadRepository
                 .upload(uriString = uriString, directory = MIND_RECORD_UPLOAD_DIRECTORY)
-                .onSuccess { url ->
-                    _uiState.update { if (it.imageUrl == null) it.copy(imageUrl = url) else it }
-                }.getOrNull()
+                .onSuccess { url -> uploadedImageUrls += url }
+                .getOrNull()
+
+        /**
+         * 제출 직전, **이번 작성 중 업로드한** 이미지의 `src` 만 fileKey 로 바꾼다.
+         *
+         * 이미 저장돼 본문에 들어 있는 영구 URL 은 건드리지 않는다 — 서버가 그대로 통과시키고
+         * (실측 확인), 키로 바꾸면 이미 옮겨진 파일을 다시 옮기려다 실패한다. 그래서 경로
+         * 패턴으로 훑지 않고 이번에 받은 URL 만 정확히 치환한다.
+         */
+        private fun String.toWireContent(): String =
+            uploadedImageUrls.fold(this) { content, url -> content.replace(url, url.toUploadedFileKey()) }
 
         /**
          * 저장(`isDraft=false`) / 임시저장(`isDraft=true`).
@@ -145,19 +164,17 @@ class DailyQuestionWriteViewModel
                             id = state.draftId,
                             payload =
                                 DailyQuestionUpdatePayload(
-                                    content = state.answer,
+                                    content = state.answer.toWireContent(),
                                     isDraft = isDraft,
                                     questionId = questionId,
-                                    imageUrl = state.imageUrl,
                                 ),
                         )
                     } else {
                         repository.create(
                             DailyQuestionCreatePayload(
-                                content = state.answer,
+                                content = state.answer.toWireContent(),
                                 isDraft = isDraft,
                                 questionId = questionId,
-                                imageUrl = state.imageUrl,
                             ),
                         )
                     }
