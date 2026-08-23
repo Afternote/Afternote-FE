@@ -7,7 +7,7 @@ fun ReceivedAfternoteDto.toDomain(): AfterNoteListItem =
     AfterNoteListItem(
         id = id,
         serviceName = title,
-        type = categoryToAfternoteType(type),
+        type = categoryToAfternoteType(category),
         lastUpdatedAt = createdAt?.let { formatDateFromServer(it) },
     )
 

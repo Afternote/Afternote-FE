@@ -18,7 +18,7 @@ import org.junit.Test
 
 /**
  * [AfternoteDetailDto.toDetailDomain] 회귀 가드 (작성자 상세).
- * 핵심 경계: 공통 필드와 타입별 [DetailContent] 분리, 발행된 계정 상세의 credentials 필수 계약,
+ * 핵심 경계: 공통 필드와 타입별 [DetailContent] 분리, 부분·부재 credentials 의 빈 값 강등,
  * receivers null→emptyList, receiver 필드 null→"", processingMethods null→emptyList,
  * memorialVideo null→video/thumbnail null.
  */
@@ -28,7 +28,7 @@ class AfternoteDetailMapperTest {
         val result =
             AfternoteDetailDto(
                 afternoteId = 1L,
-                type = "GALLERY",
+                category = "GALLERY",
                 title = "t",
             ).toDetailDomain()
 
@@ -44,7 +44,7 @@ class AfternoteDetailMapperTest {
         val result =
             AfternoteDetailDto(
                 afternoteId = 1L,
-                type = "GALLERY",
+                category = "GALLERY",
                 title = "t",
                 createdAt = "2025-11-26T14:30:00",
                 updatedAt = "2025-12-01T09:00:00",
@@ -59,7 +59,7 @@ class AfternoteDetailMapperTest {
         val result =
             AfternoteDetailDto(
                 afternoteId = 1L,
-                type = "GALLERY",
+                category = "GALLERY",
                 title = "t",
                 receivers = listOf(AfternoteDetailReceiverDto(receiverId = 5L)),
             ).toDetailDomain()
@@ -81,7 +81,7 @@ class AfternoteDetailMapperTest {
         val result =
             AfternoteDetailDto(
                 afternoteId = 1L,
-                type = "GALLERY",
+                category = "GALLERY",
                 title = "t",
                 receivers =
                     listOf(
@@ -98,7 +98,7 @@ class AfternoteDetailMapperTest {
         val result =
             AfternoteDetailDto(
                 afternoteId = 1L,
-                type = "SOCIAL",
+                category = "SOCIAL",
                 title = "t",
                 credentials = AfternoteCredentialsDto(id = "user", password = "pw"),
             ).toDetailDomain()
@@ -108,48 +108,52 @@ class AfternoteDetailMapperTest {
         assertEquals("pw", credentials.password)
     }
 
+    /**
+     * BE 상세 조립은 id·password 중 하나만 있어도 credentials 를 만들고(OR), 수정 검증은 발행 상태에서도
+     * 두 값을 강제하지 않는다 — 매퍼가 던지면 그 상세가 영영 안 열리므로 없는 값은 빈 문자열로 낮춘다.
+     */
     @Test
-    fun `toDetailDomain - 발행 계정 상세에 credentials가 없으면 오류`() {
-        val exception =
-            assertThrows(IllegalArgumentException::class.java) {
-                AfternoteDetailDto(
-                    afternoteId = 1L,
-                    type = "SOCIAL",
-                    title = "t",
-                ).toDetailDomain()
-            }
+    fun `toDetailDomain - credentials가 아예 없으면 빈 값으로 낮춘다`() {
+        val result =
+            AfternoteDetailDto(
+                afternoteId = 1L,
+                category = "SOCIAL",
+                title = "t",
+            ).toDetailDomain()
 
-        assertEquals("credentials is required for published account detail", exception.message)
+        val credentials = (result.content as DetailContent.SocialNetwork).credentials
+        assertEquals("", credentials.id)
+        assertEquals("", credentials.password)
     }
 
     @Test
-    fun `toDetailDomain - 발행 계정 상세에 credentials id가 없으면 오류`() {
-        val exception =
-            assertThrows(IllegalArgumentException::class.java) {
-                AfternoteDetailDto(
-                    afternoteId = 1L,
-                    type = "SOCIAL",
-                    title = "t",
-                    credentials = AfternoteCredentialsDto(id = null, password = "pw"),
-                ).toDetailDomain()
-            }
+    fun `toDetailDomain - credentials id만 없으면 id를 빈 값으로 낮춘다`() {
+        val result =
+            AfternoteDetailDto(
+                afternoteId = 1L,
+                category = "SOCIAL",
+                title = "t",
+                credentials = AfternoteCredentialsDto(id = null, password = "pw"),
+            ).toDetailDomain()
 
-        assertEquals("credentials.id is required for published account detail", exception.message)
+        val credentials = (result.content as DetailContent.SocialNetwork).credentials
+        assertEquals("", credentials.id)
+        assertEquals("pw", credentials.password)
     }
 
     @Test
-    fun `toDetailDomain - 발행 계정 상세에 credentials password가 없으면 오류`() {
-        val exception =
-            assertThrows(IllegalArgumentException::class.java) {
-                AfternoteDetailDto(
-                    afternoteId = 1L,
-                    type = "SOCIAL",
-                    title = "t",
-                    credentials = AfternoteCredentialsDto(id = "user", password = null),
-                ).toDetailDomain()
-            }
+    fun `toDetailDomain - credentials password만 없으면 password를 빈 값으로 낮춘다`() {
+        val result =
+            AfternoteDetailDto(
+                afternoteId = 1L,
+                category = "SOCIAL",
+                title = "t",
+                credentials = AfternoteCredentialsDto(id = "user", password = null),
+            ).toDetailDomain()
 
-        assertEquals("credentials.password is required for published account detail", exception.message)
+        val credentials = (result.content as DetailContent.SocialNetwork).credentials
+        assertEquals("user", credentials.id)
+        assertEquals("", credentials.password)
     }
 
     @Test
@@ -157,7 +161,7 @@ class AfternoteDetailMapperTest {
         val result =
             AfternoteDetailDto(
                 afternoteId = 1L,
-                type = "PLAYLIST",
+                category = "PLAYLIST",
                 title = "t",
                 memorial =
                     AfternotePlaylistDto(
@@ -187,7 +191,7 @@ class AfternoteDetailMapperTest {
         val result =
             AfternoteDetailDto(
                 afternoteId = 1L,
-                type = "PLAYLIST",
+                category = "PLAYLIST",
                 title = "t",
                 leaveMessage = listOf(LeaveMessageBlockDto(title = "가족에게", body = "잘 지내")),
                 memorial = AfternotePlaylistDto(),
@@ -204,7 +208,7 @@ class AfternoteDetailMapperTest {
         val result =
             AfternoteDetailDto(
                 afternoteId = 1L,
-                type = "PLAYLIST",
+                category = "PLAYLIST",
                 title = "t",
                 memorial = AfternotePlaylistDto(memorialVideo = null),
             ).toDetailDomain()
@@ -220,7 +224,7 @@ class AfternoteDetailMapperTest {
             assertThrows(IllegalArgumentException::class.java) {
                 AfternoteDetailDto(
                     afternoteId = 1L,
-                    type = "PLAYLIST",
+                    category = "PLAYLIST",
                     title = "t",
                 ).toDetailDomain()
             }
@@ -233,14 +237,14 @@ class AfternoteDetailMapperTest {
         val business =
             AfternoteDetailDto(
                 afternoteId = 1L,
-                type = "BUSINESS",
+                category = "BUSINESS",
                 title = "회사 계정",
                 credentials = AfternoteCredentialsDto(id = "user", password = "pw"),
             ).toDetailDomain()
         val estate =
             AfternoteDetailDto(
                 afternoteId = 2L,
-                type = "ESTATE",
+                category = "ESTATE",
                 title = "부동산",
             ).toDetailDomain()
 

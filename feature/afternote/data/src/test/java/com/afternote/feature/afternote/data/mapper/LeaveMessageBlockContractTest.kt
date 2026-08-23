@@ -127,7 +127,7 @@ class LeaveMessageBlockContractTest {
     fun `요청 직렬화 - 블록 배열로 나간다`() {
         val request =
             AfternoteCreateAccountRequestDto(
-                type = "SOCIAL",
+                category = "SOCIAL",
                 title = "인스타그램",
                 processingMethods = listOf("게시물 내리기"),
                 leaveMessage =
