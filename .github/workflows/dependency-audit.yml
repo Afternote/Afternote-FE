@@ -38,7 +38,12 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-          cache: 'gradle'
+
+      - name: Set up Gradle and validate wrapper
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          cache-provider: basic
+          validate-wrappers: true
 
       - name: Verify required secrets are set
         env:
