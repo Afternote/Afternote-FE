@@ -90,16 +90,48 @@ class WeeklyReportRecordedDaysTest {
     }
 
     @Test
-    fun `깊은 생각만 있는 날도 기록일로 센다`() {
-        // #590 회귀 — 실서버 대조(2026-08-23)에서 깊은 생각 1건만 있는 날은
-        // week=[{type:DEEP_THOUGHT}], daily-question=[] 로 온다. 종전처럼 isDiary 로 거르면
-        // 어디에서도 복구되지 않아 기록이 있는데도 "0일" 이 됐다.
+    fun `일기가 아닌 기록도 기록일로 센다`() {
+        // #590 회귀 — week[] 는 일기 외 종류도 싣는다. isDiary 로 거르면 그 날이 사라진다.
         val monday = LocalDate.of(2026, 7, 27)
 
         val recordedDays =
             countRecordedDays(
                 monday = monday,
                 week = listOf(diaryDay(day = 28, isDiary = false)),
+                dailyQuestionDates = emptyList(),
+            )
+
+        assertEquals(1, recordedDays)
+    }
+
+    @Test
+    fun `깊은 생각만 있는 날은 세지 않는다`() {
+        // 기획에서 제거된 기능이라 서버가 week[] 에 계속 실어 보내도 앱은 없는 것으로 다룬다.
+        val monday = LocalDate.of(2026, 7, 27)
+
+        val recordedDays =
+            countRecordedDays(
+                monday = monday,
+                week = listOf(diaryDay(day = 28, isDiary = false, countsAsRecord = false)),
+                dailyQuestionDates = emptyList(),
+            )
+
+        assertEquals(0, recordedDays)
+    }
+
+    @Test
+    fun `같은 날에 깊은 생각과 일기가 함께 있으면 센다`() {
+        // 제외 대상은 "깊은 생각뿐인 날" 이지 그 날짜 자체가 아니다.
+        val monday = LocalDate.of(2026, 7, 27)
+
+        val recordedDays =
+            countRecordedDays(
+                monday = monday,
+                week =
+                    listOf(
+                        diaryDay(day = 28, isDiary = false, countsAsRecord = false),
+                        diaryDay(day = 28),
+                    ),
                 dailyQuestionDates = emptyList(),
             )
 
@@ -178,8 +210,8 @@ class WeeklyReportRecordedDaysTest {
         val monday = LocalDate.of(2026, 7, 27)
         val week =
             listOf(
-                WeeklyReportDay(diaryId = 1, day = 28, isDiary = false, emotion = null),
-                WeeklyReportDay(diaryId = 2, day = 28, isDiary = true, emotion = TodayMood.SAD),
+                WeeklyReportDay(diaryId = 1, day = 28, isDiary = false, countsAsRecord = true, emotion = null),
+                WeeklyReportDay(diaryId = 2, day = 28, isDiary = true, countsAsRecord = true, emotion = TodayMood.SAD),
             )
 
         val byDate = aggregateWeekRecordsByDate(monday, week)
@@ -195,8 +227,8 @@ class WeeklyReportRecordedDaysTest {
         // 명세에 week[] 순서 의미도 같은 날짜 복수 원소의 병합 규칙도 없다 (Afternote-BE#131).
         // 순서에 의존하면 서버가 정렬만 바꿔도 화면 이모지가 바뀐다 — diaryId 최대값으로 고정한다.
         val monday = LocalDate.of(2026, 7, 27)
-        val older = WeeklyReportDay(diaryId = 1, day = 28, isDiary = true, emotion = TodayMood.HAPPY)
-        val newer = WeeklyReportDay(diaryId = 2, day = 28, isDiary = true, emotion = TodayMood.SAD)
+        val older = WeeklyReportDay(diaryId = 1, day = 28, isDiary = true, countsAsRecord = true, emotion = TodayMood.HAPPY)
+        val newer = WeeklyReportDay(diaryId = 2, day = 28, isDiary = true, countsAsRecord = true, emotion = TodayMood.SAD)
 
         val ascending = aggregateWeekRecordsByDate(monday, listOf(older, newer))
         val descending = aggregateWeekRecordsByDate(monday, listOf(newer, older))
@@ -210,8 +242,8 @@ class WeeklyReportRecordedDaysTest {
         val monday = LocalDate.of(2026, 7, 27)
         val week =
             listOf(
-                WeeklyReportDay(diaryId = 9, day = 28, isDiary = true, emotion = null),
-                WeeklyReportDay(diaryId = 1, day = 28, isDiary = false, emotion = TodayMood.HAPPY),
+                WeeklyReportDay(diaryId = 9, day = 28, isDiary = true, countsAsRecord = true, emotion = null),
+                WeeklyReportDay(diaryId = 1, day = 28, isDiary = false, countsAsRecord = true, emotion = TodayMood.HAPPY),
             )
 
         val byDate = aggregateWeekRecordsByDate(monday, week)
@@ -231,11 +263,13 @@ class WeeklyReportRecordedDaysTest {
     private fun diaryDay(
         day: Int,
         isDiary: Boolean = true,
+        countsAsRecord: Boolean = true,
     ): WeeklyReportDay =
         WeeklyReportDay(
             diaryId = day.toLong(),
             day = day,
             isDiary = isDiary,
+            countsAsRecord = countsAsRecord,
             emotion = TodayMood.HAPPY,
         )
 }
