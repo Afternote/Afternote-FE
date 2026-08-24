@@ -22,6 +22,6 @@ class GlobalApplication :
     override fun onCreate() {
         super.onCreate()
         FcmNotificationChannel.create(this)
-        // 공통 초기화는 core:startup에 두고, app 전용 Firebase 채널만 여기서 생성한다.
+        // 기동 초기화는 startup 패키지의 Initializer 에 두고, Firebase 채널만 여기서 생성한다.
     }
 }

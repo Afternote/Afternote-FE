@@ -1,6 +1,37 @@
 import kotlinx.kover.gradle.plugin.dsl.KoverProjectExtension
 import org.gradle.kotlin.dsl.configure
 
+// AGP 9.2.1·Firebase App Distribution 5.3.0 이 buildscript classpath 로 끌어오는 전이 의존성 중
+// 보안 권고 영향권인 것들의 하한(#921·#975~#985). 루트 classpath 는 plugins 블록 처리 시점에
+// 리졸브가 끝나 아래 본문 훅으로는 늦고, buildscript 블록에서는 버전 카탈로그 accessor 를 쓸 수 없다
+// — libs.versions.toml 의 같은 이름 버전과 값을 맞춰 유지할 것.
+buildscript {
+    dependencies {
+        constraints {
+            listOf("bcprov-jdk18on", "bcpkix-jdk18on", "bcutil-jdk18on").forEach { artifact ->
+                add("classpath", "org.bouncycastle:$artifact:1.84") {
+                    because("GHSA-574f-3g2m-x479 등 1.84 미만 취약 — #921")
+                }
+            }
+            add("classpath", "org.apache.commons:commons-lang3:3.18.0") {
+                because("GHSA-j288-q9x7-2f5v — 3.18.0 미만 취약 — #981")
+            }
+            add("classpath", "org.bitbucket.b_c:jose4j:0.9.6") {
+                because("GHSA-3677-xxcr-wjqv — 0.9.6 미만 취약 — #982")
+            }
+            add("classpath", "org.jdom:jdom2:2.0.6.1") {
+                because("GHSA-2363-cqg2-863c — 2.0.6.1 미만 취약 — #985")
+            }
+        }
+        // netty 는 grpc-netty 가 끌어오는 모듈이 10개가 넘고 서로 같은 버전이어야 해 BOM 으로 정렬한다
+        // (GHSA-558v-64gr-wgg4 등 33건, #975~#980). 이 BOM 을 아래 본문의 allprojects 하한에 함께 걸면
+        // AGP 의 android-reverse-meta-data usage 가 platform 변형을 못 찾아 리졸브가 깨진다. netty 는
+        // 루트 buildscript classpath 에만 있고(전 프로젝트 실측 53건 전부 여기) 산출물·테스트 클래스패스에는
+        // 없으므로 여기서만 건다.
+        add("classpath", platform("io.netty:netty-bom:4.1.137.Final"))
+    }
+}
+
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 plugins {
     alias(libs.plugins.kover)
@@ -14,6 +45,73 @@ plugins {
     alias(libs.plugins.google.services) apply false
     alias(libs.plugins.firebase.app.distribution) apply false
     alias(libs.plugins.firebase.crashlytics) apply false
+}
+
+// 빌드·테스트 클래스패스의 보안 하한(#921·#975~#985). 상류가 취약 버전을 물고 있고 상류 최신판도
+// 아직 패치 버전 미만이라 constraint 로 올린다 — Robolectric 4.15.1(bcprov 1.80)·AGP 9.2.1(bcprov
+// 1.79·commons-lang3 3.16.0·jose4j 0.9.5·jdom2 2.0.6)·Firebase App Distribution 5.3.0(netty
+// 4.1.110.Final). androidLintTool 처럼 AGP 가 뒤늦게 만드는 configuration 까지 잡도록 configureEach
+// 로 걸고, require 시맨틱이라 상류가 하한 이상을 선언하게 되면 그쪽이 이긴다. 여기 목록은 전부 빌드
+// 도구 경유라 APK 산출물에는 없다(releaseRuntimeClasspath 0건 실측). build-logic 은 별도 빌드라
+// build-logic/build.gradle.kts 가 같은 하한을 선언한다.
+data class SecurityFloor(
+    val module: String,
+    val version: String,
+    val because: String,
+)
+
+val securityFloors =
+    listOf("bcprov-jdk18on", "bcpkix-jdk18on", "bcutil-jdk18on").map { artifact ->
+        SecurityFloor(
+            module = "org.bouncycastle:$artifact",
+            version = libs.versions.bouncycastle.get(),
+            because = "GHSA-574f-3g2m-x479 등 1.84 미만 취약 — #921",
+        )
+    } +
+        listOf(
+            SecurityFloor(
+                module = "org.apache.commons:commons-lang3",
+                version = libs.versions.commonsLang3.get(),
+                because = "GHSA-j288-q9x7-2f5v — 3.18.0 미만 취약 — #981",
+            ),
+            SecurityFloor(
+                module = "org.bitbucket.b_c:jose4j",
+                version = libs.versions.jose4j.get(),
+                because = "GHSA-3677-xxcr-wjqv — 0.9.6 미만 취약 — #982",
+            ),
+            SecurityFloor(
+                module = "org.jdom:jdom2",
+                version = libs.versions.jdom2.get(),
+                because = "GHSA-2363-cqg2-863c — 2.0.6.1 미만 취약 — #985",
+            ),
+        )
+
+fun Project.securityFloorConstraintSet() =
+    securityFloors.map { floor ->
+        dependencies.constraints.create("${floor.module}:${floor.version}") {
+            because(floor.because)
+        }
+    }
+
+allprojects {
+    // Gradle 9 는 declarable 이 아닌 configuration(compileClasspath 등)에 constraint 선언을 금지한다.
+    // 전용 declarable configuration 에 담아 모든 resolvable configuration 이 extend 하게 한다.
+    val floor =
+        configurations.create("securityFloors") {
+            isCanBeResolved = false
+            isCanBeConsumed = false
+            securityFloorConstraintSet().forEach { dependencyConstraints.add(it) }
+        }
+    configurations.configureEach {
+        if (name != floor.name && isCanBeResolved) extendsFrom(floor)
+    }
+}
+// buildscript 컨테이너에는 configuration 을 추가할 수 없어 declarable 인 classpath 에 constraint 를
+// 직접 단다. 루트 자신의 classpath 는 최상단 buildscript 블록이 담당한다(여기 시점엔 리졸브 완료라 불가).
+subprojects {
+    buildscript.configurations.named("classpath") {
+        securityFloorConstraintSet().forEach { dependencyConstraints.add(it) }
+    }
 }
 
 val coverageProjects =

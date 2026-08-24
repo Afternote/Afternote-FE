@@ -18,7 +18,7 @@ fun DiaryListItemDto.toDomain(): Diary =
         content = content,
         date = date,
         createdAt = createdAt,
-        todayMood = todayMood?.toDomain(),
+        todayMood = todayMood.toDomain(),
         imageUrl = imageUrl,
         isDraft = isDraft,
     )
