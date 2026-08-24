@@ -2,7 +2,7 @@ package com.afternote.feature.afternote.data.mapper
 
 import com.afternote.feature.afternote.domain.AfternoteType
 
-internal fun formatDateFromServer(serverDateTime: String): String =
+fun formatDateFromServer(serverDateTime: String): String =
     try {
         // Server returns "2025-11-26T14:30:00" -> display "2025.11.26"
         val datePart = serverDateTime.substringBefore('T')
@@ -16,5 +16,4 @@ internal fun formatDateFromServer(serverDateTime: String): String =
  *
  * 값 표는 [afternoteTypeFromServerCategory] 가 정본이다 — 여기에 다시 적으면 갈라진다.
  */
-internal fun categoryToAfternoteType(category: String): AfternoteType =
-    afternoteTypeFromServerCategory(category) ?: AfternoteType.SOCIAL_NETWORK
+fun categoryToAfternoteType(category: String): AfternoteType = afternoteTypeFromServerCategory(category) ?: AfternoteType.SOCIAL_NETWORK

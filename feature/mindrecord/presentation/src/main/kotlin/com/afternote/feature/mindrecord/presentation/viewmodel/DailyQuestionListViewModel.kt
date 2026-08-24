@@ -75,8 +75,9 @@ class DailyQuestionListViewModel
 
                     val today = repository.getToday().getOrNull()
                     val listResult = repository.getList()
-                    // repository 가 runCatching 으로 감싸 CancellationException 까지 실패로 바꿔 돌려준다.
                     // 새 로드가 이 Job 을 취소했다면 상태는 그쪽이 결정하므로 여기서 멈춘다.
+                    // repository 는 `runCatchingCancellable` 로 취소를 다시 던지므로 대개 여기 오기 전에
+                    // 빠져나가지만, 조회가 끝난 뒤 취소가 들어온 경우를 위해 남겨 둔다.
                     ensureActive()
                     // 서버는 draftOnly 없이 조회하면 임시저장을 제외해 내려주지만, 파라미터를 무시하는
                     // 서버를 만나도 임시저장이 답변 목록에 새지 않도록 한 겹 더 거른다.
