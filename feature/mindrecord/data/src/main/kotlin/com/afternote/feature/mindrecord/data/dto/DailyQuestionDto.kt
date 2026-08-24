@@ -90,6 +90,6 @@ data class TodayDailyQuestionDto(
 @Serializable
 data class DailyQuestionAnswerResponseDto(
     @SerialName("userDailyQuestionId") val userDailyQuestionId: Long,
-    @SerialName("content") val content: String,
-    @SerialName("isDraft") val isDraft: Boolean,
+    @SerialName("content") val content: String = "",
+    @SerialName("isDraft") val isDraft: Boolean = false,
 )

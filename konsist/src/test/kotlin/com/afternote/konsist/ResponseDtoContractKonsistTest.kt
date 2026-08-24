@@ -100,6 +100,16 @@ class ResponseDtoContractKonsistTest {
         /** 아웃바운드. `receivers = emptyList()`("미선택 = 빈 배열 전송") 같은 의도된 기본값이라 제외. */
         const val REQUEST_DTO = "Request"
 
+        /**
+         * #789 — mindrecord (2건). #933 이 26건을 해소한 뒤 #573 이 머지되며 남은 잔여다.
+         * BE `DailyQuestionAnswerResponse` record 에 두 키가 다 있어 서버는 항상 보낸다.
+         */
+        private val MINDRECORD =
+            setOf(
+                "DailyQuestionAnswerResponseDto.content",
+                "DailyQuestionAnswerResponseDto.isDraft",
+            )
+
         /** #957 — afternote (11건). `AfternoteDetailDto.createdAt` 은 #676 에서 해소(BE 응답에 없는 필드라 삭제). */
         private val AFTERNOTE =
             setOf(
@@ -119,6 +129,6 @@ class ResponseDtoContractKonsistTest {
         /** #790 — timeletter (1건) */
         private val TIMELETTER = setOf("ReceivedTimeLetterDto.blocks")
 
-        val KNOWN_COERCING_DEFAULTS = AFTERNOTE + TIMELETTER
+        val KNOWN_COERCING_DEFAULTS = MINDRECORD + AFTERNOTE + TIMELETTER
     }
 }
