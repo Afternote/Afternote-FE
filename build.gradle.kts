@@ -24,10 +24,10 @@ buildscript {
             }
         }
         // netty 는 grpc-netty 가 끌어오는 모듈이 10개가 넘고 서로 같은 버전이어야 해 BOM 으로 정렬한다
-        // (GHSA-558v-64gr-wgg4 등 33건, #975~#980). 이 BOM 을 아래 본문의 allprojects 하한에 함께 걸면
-        // AGP 의 android-reverse-meta-data usage 가 platform 변형을 못 찾아 리졸브가 깨진다. netty 는
-        // 루트 buildscript classpath 에만 있고(전 프로젝트 실측 53건 전부 여기) 산출물·테스트 클래스패스에는
-        // 없으므로 여기서만 건다.
+        // (GHSA-558v-64gr-wgg4 등 33건, #975~#980). 이 BOM 을 아래 본문의 allprojects 하한에 platform()
+        // 으로 함께 걸면 AGP 의 android-reverse-meta-data usage 가 platform 변형을 못 찾아 리졸브가 깨진다.
+        // 그래서 루트 classpath 는 이 BOM 이 맡고, AGP 가 만드는 UTP 설정 경유분은 아래 securityFloors 의
+        // 평범한 constraint 가 맡는다(#1058).
         add("classpath", platform("io.netty:netty-bom:4.1.137.Final"))
     }
 }
@@ -47,13 +47,13 @@ plugins {
     alias(libs.plugins.firebase.crashlytics) apply false
 }
 
-// 빌드·테스트 클래스패스의 보안 하한(#921·#975~#985). 상류가 취약 버전을 물고 있고 상류 최신판도
+// 빌드·테스트 클래스패스의 보안 하한(#921·#975~#985·#1058). 상류가 취약 버전을 물고 있고 상류 최신판도
 // 아직 패치 버전 미만이라 constraint 로 올린다 — Robolectric 4.15.1(bcprov 1.80)·AGP 9.2.1(bcprov
-// 1.79·commons-lang3 3.16.0·jose4j 0.9.5·jdom2 2.0.6)·Firebase App Distribution 5.3.0(netty
-// 4.1.110.Final). androidLintTool 처럼 AGP 가 뒤늦게 만드는 configuration 까지 잡도록 configureEach
-// 로 걸고, require 시맨틱이라 상류가 하한 이상을 선언하게 되면 그쪽이 이긴다. 여기 목록은 전부 빌드
-// 도구 경유라 APK 산출물에는 없다(releaseRuntimeClasspath 0건 실측). build-logic 은 별도 빌드라
-// build-logic/build.gradle.kts 가 같은 하한을 선언한다.
+// 1.79·commons-lang3 3.16.0·jose4j 0.9.5·jdom2 2.0.6)·AGP UTP 설정(netty — unified-test-platform-core
+// 가 4.1.93, -host-emulator-control 이 4.1.110). androidLintTool·UTP 처럼 AGP 가 뒤늦게 만드는
+// configuration 까지 잡도록 configureEach 로 걸고, require 시맨틱이라 상류가 하한 이상을 선언하게 되면
+// 그쪽이 이긴다. 여기 목록은 전부 빌드 도구 경유라 APK 산출물에는 없다(releaseRuntimeClasspath 0건
+// 실측). build-logic 은 별도 빌드라 build-logic/build.gradle.kts 가 같은 하한을 선언한다.
 data class SecurityFloor(
     val module: String,
     val version: String,
@@ -68,6 +68,25 @@ val securityFloors =
             because = "GHSA-574f-3g2m-x479 등 1.84 미만 취약 — #921",
         )
     } +
+        listOf(
+            "netty-buffer",
+            "netty-codec",
+            "netty-codec-http",
+            "netty-codec-http2",
+            "netty-codec-socks",
+            "netty-common",
+            "netty-handler",
+            "netty-handler-proxy",
+            "netty-resolver",
+            "netty-transport",
+            "netty-transport-native-unix-common",
+        ).map { artifact ->
+            SecurityFloor(
+                module = "io.netty:$artifact",
+                version = libs.versions.netty.get(),
+                because = "GHSA-558v-64gr-wgg4 등 33건 — AGP UTP 경유 4.1.110·4.1.93 잔존 — #1058",
+            )
+        } +
         listOf(
             SecurityFloor(
                 module = "org.apache.commons:commons-lang3",
