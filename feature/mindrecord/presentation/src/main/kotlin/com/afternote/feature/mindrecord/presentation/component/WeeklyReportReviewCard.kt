@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
@@ -121,13 +122,18 @@ fun WeeklyReportReviewCard(
                     )
                 }
 
+                // 시안(node 700-35071)의 열린 메뉴는 항목 5개 높이에서 잘리고 오른쪽에 세로
+                // 스크롤 표시가 있다 — 가시 항목 수보다 선택지가 많다는 표현이다. DropdownMenu
+                // 의 내용은 이미 세로 스크롤이라, 높이만 묶으면 나머지가 스크롤로 넘어간다 (#729).
                 DropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
                     containerColor = Color.White,
+                    modifier = Modifier.heightIn(max = WeekMenuMaxHeight),
                 ) {
                     weekOptions.forEach { option ->
                         DropdownMenuItem(
+                            modifier = Modifier.height(WeekMenuItemHeight),
                             text = {
                                 Text(
                                     text = weekLabel(option.monday),
@@ -182,6 +188,19 @@ fun WeeklyReportReviewCard(
         }
     }
 }
+
+/**
+ * 주차 메뉴 한 항목의 높이. Material3 `DropdownMenuItem` 의 기본 최소 높이와 같은 값을
+ * 고정으로 못 박아, 가시 항목 수([WeekMenuMaxHeight])가 항목 내용에 따라 흔들리지 않게 한다.
+ */
+private val WeekMenuItemHeight = 48.dp
+
+/**
+ * 열린 메뉴의 최대 높이 = 항목 5개 + `DropdownMenu` 내용의 위아래 여백(각 8dp).
+ *
+ * 선택지가 5개를 넘으면 여기서 잘리고 나머지는 세로 스크롤로 넘어간다 (#729).
+ */
+private val WeekMenuMaxHeight = WeekMenuItemHeight * 5 + 16.dp
 
 @Composable
 private fun weekLabel(monday: LocalDate): String =

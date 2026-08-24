@@ -169,8 +169,6 @@ private class FakeReceiverRepository : ReceiverRepository {
 
     override suspend fun saveAuthCode(code: String) = unexpected("saveAuthCode")
 
-    override suspend fun clearAuthCode() = unexpected("clearAuthCode")
-
     override fun getPagedReceivedAfternotes() = unexpected("getPagedReceivedAfternotes")
 
     override suspend fun getReceivedAfterNotes(): Result<AfterNotesListResult> = afterNotes
