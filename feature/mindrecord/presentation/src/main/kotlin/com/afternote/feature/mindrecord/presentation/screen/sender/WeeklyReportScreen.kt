@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -48,7 +49,14 @@ fun WeeklyReportScreen(
         }
 
         is WeeklyReportUiState.Error -> {
-            ErrorBox(message = state.message.asString(), modifier = modifier)
+            // 보여 줄 리포트가 없어도 주차 선택과 재시도는 남긴다 — 둘 다 없으면 이 화면에서
+            // 빠져나갈 방법이 없다 (#723).
+            WeeklyReportErrorContent(
+                state = state,
+                onWeekSelect = viewModel::selectWeek,
+                onRetry = viewModel::retry,
+                modifier = modifier,
+            )
         }
 
         is WeeklyReportUiState.Success -> {
@@ -56,6 +64,7 @@ fun WeeklyReportScreen(
                 state = state,
                 onWeekSelect = viewModel::selectWeek,
                 onEmotionAnalysisRetry = viewModel::retryEmotionAnalysis,
+                onRetry = viewModel::retry,
                 modifier = modifier,
             )
         }
@@ -67,6 +76,7 @@ private fun WeeklyReportContent(
     state: WeeklyReportUiState.Success,
     onWeekSelect: (java.time.LocalDate) -> Unit,
     onEmotionAnalysisRetry: () -> Unit,
+    onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // Figma 노드 852:11543 — main 컨테이너의 섹션 간 gap=32, 시작 pt=8, 끝 pb=200.
@@ -76,6 +86,15 @@ private fun WeeklyReportContent(
         contentPadding = PaddingValues(top = 8.dp, bottom = 200.dp),
         verticalArrangement = Arrangement.spacedBy(32.dp),
     ) {
+        state.loadFailure?.let { failure ->
+            item {
+                WeekLoadFailureBanner(
+                    failure = failure,
+                    onRetry = onRetry,
+                )
+            }
+        }
+
         item {
             WeeklyReportReviewCard(
                 selectedMonday = state.selectedMonday,
@@ -192,6 +211,82 @@ private fun ErrorBox(
 }
 
 /**
+ * 조회에 실패했지만 직전 리포트가 남아 있을 때의 배너 (#723).
+ *
+ * 어느 주차를 못 불렀는지 밝히고 재시도 수단을 준다. 화면 아래에는 직전에 성공한
+ * 리포트가 그대로 남아 있어 다른 주차로 옮길 수도 있다.
+ */
+@Composable
+private fun WeekLoadFailureBanner(
+    failure: WeeklyReportUiState.LoadFailure,
+    onRetry: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text =
+                stringResource(
+                    R.string.mindrecord_weekly_report_load_failed,
+                    failure.failedWeekLabel.monthValue,
+                    (failure.failedWeekLabel.dayOfMonth - 1) / 7 + 1,
+                ),
+            style = AfternoteDesign.typography.bodySmallB,
+            color = AfternoteDesign.colors.gray9,
+        )
+        Text(
+            text = failure.message.asString(),
+            style = AfternoteDesign.typography.captionLargeR,
+            color = AfternoteDesign.colors.gray6,
+        )
+        TextButton(onClick = onRetry) {
+            Text(
+                text = stringResource(R.string.mindrecord_weekly_report_retry),
+                style = AfternoteDesign.typography.bodySmallB,
+                color = AfternoteDesign.colors.gray9,
+            )
+        }
+    }
+}
+
+/**
+ * 보여 줄 리포트가 하나도 없는 실패 화면 (#723).
+ *
+ * 오류 문구만 렌더하면 주차 선택 UI 까지 사라져 이 상태에서 빠져나갈 수 없다.
+ * 주차 드롭다운과 재시도를 함께 남긴다.
+ */
+@Composable
+private fun WeeklyReportErrorContent(
+    state: WeeklyReportUiState.Error,
+    onWeekSelect: (java.time.LocalDate) -> Unit,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.padding(top = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        WeeklyReportReviewCard(
+            selectedMonday = state.failedMonday,
+            weekOptions = state.weekOptions,
+            onWeekSelect = onWeekSelect,
+            dateRange = "",
+            counts = emptyList(),
+        )
+        Text(
+            text = state.message.asString(),
+            style = AfternoteDesign.typography.captionLargeR,
+            color = AfternoteDesign.colors.gray6,
+        )
+        TextButton(onClick = onRetry) {
+            Text(
+                text = stringResource(R.string.mindrecord_weekly_report_retry),
+                style = AfternoteDesign.typography.bodySmallB,
+                color = AfternoteDesign.colors.gray9,
+            )
+        }
+    }
+}
+
+/**
  * 감정 카드 본문 문구.
  *
  * 키워드가 없을 때 무엇을 적을지는 **분석 상태**가 정한다. 종전에는 빈 목록이면 무조건
@@ -240,6 +335,7 @@ private fun WeeklyReportScreenPreview() {
                 ),
             onWeekSelect = {},
             onEmotionAnalysisRetry = {},
+            onRetry = {},
         )
     }
 }
