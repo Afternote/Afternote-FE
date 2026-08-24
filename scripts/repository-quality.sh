@@ -100,6 +100,36 @@ if [ "$shell_script_count" -eq 0 ]; then
     quality_failed=1
 fi
 
+# Firebase App Distribution 업로드 경로 2종은 같은 앱에 올린다. concurrency group 이 갈리면
+# 두 러너가 동시에 업로드해 어느 빌드가 테스터에게 남을지 완료 순서로 갈린다. 주석만으로는
+# 한쪽만 고치는 재발을 막지 못하므로 group 문자열 동일성을 기계로 강제한다 (#995).
+upload_workflow_files=()
+
+for upload_workflow_candidate in \
+    .github/workflows/release-distribution.yml \
+    .github/workflows/firebase-wif-canary.yml; do
+    if [ -f "$upload_workflow_candidate" ]; then
+        upload_workflow_files+=("$upload_workflow_candidate")
+    fi
+done
+
+if [ "${#upload_workflow_files[@]}" -gt 0 ]; then
+    upload_group_count=$(
+        for upload_workflow_file in "${upload_workflow_files[@]}"; do
+            awk '
+                /^concurrency:/ { inside = 1; next }
+                inside && /^  group:/ { print $2; exit }
+                inside && /^[^[:space:]]/ { exit }
+            ' "$upload_workflow_file"
+        done | sort -u | wc -l
+    )
+
+    if [ "$upload_group_count" -ne 1 ]; then
+        echo "Repository Quality: Firebase App Distribution upload workflows disagree on concurrency group" >&2
+        quality_failed=1
+    fi
+fi
+
 merge_marker_output=$(git grep -nI -E \
     '^(<<<<<<<|=======|>>>>>>>)( |$)' \
     -- \
