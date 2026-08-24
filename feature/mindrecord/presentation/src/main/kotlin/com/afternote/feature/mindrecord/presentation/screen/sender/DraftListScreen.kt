@@ -82,6 +82,16 @@ fun DraftListScreen(
         viewModel.refreshOnReturn()
     }
 
+    // 갱신으로 사라진 항목의 키가 선택에 남으면 "총 N개 선택" 이 과대 표시되고, 선택
+    // 삭제가 빈 목록으로 나간다. 선택은 화면 remember 라 갱신에도 살아남는다 (리뷰 지적).
+    val visibleKeys = (uiState as? DraftListUiState.Success)?.items?.map { it.key() }?.toSet()
+    LaunchedEffect(visibleKeys) {
+        if (visibleKeys != null) {
+            selectedKeys = selectedKeys intersect visibleKeys
+            if (selectedKeys.isEmpty()) selectionMode = false
+        }
+    }
+
     val deleteCompleted = (uiState as? DraftListUiState.Success)?.deleteCompleted == true
     LaunchedEffect(deleteCompleted) {
         if (deleteCompleted) {

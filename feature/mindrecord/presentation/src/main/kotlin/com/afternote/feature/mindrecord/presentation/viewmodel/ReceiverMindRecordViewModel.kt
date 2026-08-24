@@ -71,11 +71,19 @@ class ReceiverMindRecordViewModel
                         .getAll()
                         .onSuccess { records ->
                             rawRecords.value = records
+                            // 보고 있던 필터·정렬을 승계한다. 새 Success 를 기본값으로 만들면
+                            // 재진입 갱신이 성공할 때마다 정렬·기간 필터가 조용히 초기화된다 —
+                            // 종전에는 load() 가 init·재시도에서만 돌아 이 경로가 없었고,
+                            // 이 PR 의 refreshOnReturn() 이 그 경로를 처음 만든다 (리뷰 지적).
+                            val currentFilter =
+                                (_uiState.value as? ReceiverMindRecordUiState.Success)?.filter
+                                    ?: ReceiverMindRecordFilter()
                             _uiState.value =
                                 ReceiverMindRecordUiState
                                     .Success(
                                         dailyQuestions = emptyList(),
                                         diaries = emptyList(),
+                                        filter = currentFilter,
                                     ).withDerived()
                         }.onFailure { e ->
                             // 재진입 갱신 실패는 보고 있던 화면을 유지한다.
