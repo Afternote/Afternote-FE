@@ -17,7 +17,6 @@ internal fun mindRecordSectionScreenshot() {
         MindRecordSection(
             summary =
                 MindRecordSummary(
-                    totalCount = 24,
                     dailyQuestionCount = 10,
                     diaryCount = 8,
                 ),

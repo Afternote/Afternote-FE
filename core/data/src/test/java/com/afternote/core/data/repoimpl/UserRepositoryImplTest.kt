@@ -4,8 +4,6 @@ import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.model.Session
 import com.afternote.core.model.TokenBundle
 import com.afternote.core.model.user.Receiver
-import com.afternote.core.network.dto.DeliveryConditionDto
-import com.afternote.core.network.dto.DeliveryConditionRequestDto
 import com.afternote.core.network.dto.ReceiverDetailDto
 import com.afternote.core.network.dto.ReceiverListDto
 import com.afternote.core.network.dto.SocialAccountLinkRequestDto
@@ -234,11 +232,6 @@ private class FakeUserApiService(
     ): BaseResponse<UserConnectedAccountDto> = TODO("이 테스트 미사용")
 
     override suspend fun unlinkConnectedAccount(provider: String): BaseResponse<UserConnectedAccountDto> = TODO("이 테스트 미사용")
-
-    override suspend fun getDeliveryCondition(): BaseResponse<DeliveryConditionDto> = TODO("이 테스트 미사용")
-
-    override suspend fun updateDeliveryCondition(request: DeliveryConditionRequestDto): BaseResponse<DeliveryConditionDto> =
-        TODO("이 테스트 미사용")
 
     override suspend fun getReceiverDeliveryConditions(receiverId: Long): BaseResponse<ReceiverDeliveryConditionDto> = TODO("이 테스트 미사용")
 
