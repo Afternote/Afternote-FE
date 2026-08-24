@@ -75,7 +75,6 @@ import com.afternote.feature.afternote.presentation.author.editor.AfternoteEdito
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternotePayloadBuilder
-import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
@@ -336,7 +335,6 @@ private fun AuthorEditorForUpdate(
             setMemorialThumbnail = viewModel::setMemorialThumbnail,
             deleteReceiver = viewModel::deleteReceiver,
             replaceReceiversIfEmpty = viewModel::replaceReceiversIfEmpty,
-            setLeaveMessageBlocks = viewModel::setLeaveMessageBlocks,
             addProcessingMethod = viewModel::addProcessingMethod,
             deleteProcessingMethod = viewModel::deleteProcessingMethod,
             editProcessingMethod = viewModel::editProcessingMethod,
@@ -355,18 +353,11 @@ private fun AuthorEditorForUpdate(
         form = uiState.form,
         onBackClick = {},
         onRegisterClick = {
-            state.setLeaveMessageBlocks(
-                state.editorMessages.map { message ->
-                    EditorMessageTextBlock(
-                        title = message.titleState.text.toString(),
-                        body = message.contentState.text.toString(),
-                    )
-                },
-            )
             val form = state.currentForm()
             val payload =
                 SaveAfternotePayloadBuilder.build(
                     form = form,
+                    messageBlocks = state.currentEditorMessageBlocks(),
                     accountId = state.idState.text.toString(),
                     password = state.passwordState.text.toString(),
                     date = LocalDate.of(2026, 8, 22),

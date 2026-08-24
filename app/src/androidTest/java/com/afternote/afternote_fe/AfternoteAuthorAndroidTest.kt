@@ -120,7 +120,7 @@ class AfternoteAuthorAndroidTest {
     }
 
     @Test
-    fun savedState_recreatesCategoryReceiverAndMessageForm() {
+    fun savedState_recreatesTypeReceiverAndProcessingForm() {
         val handle = SavedStateHandle()
         val first = viewModel(FakeAfternoteRepository(), handle)
         composeRule.setContent { AfternoteTheme {} }
@@ -129,9 +129,6 @@ class AfternoteAuthorAndroidTest {
             first.setService("Google Photos")
             first.addReceiverIfAbsent("7", "김수신", "가족")
             first.addProcessingMethod("전체 파일 전달")
-            first.setLeaveMessageBlocks(
-                listOf(EditorMessageTextBlock(title = "사진", body = "함께 봐 줘")),
-            )
         }
 
         val restored = viewModel(FakeAfternoteRepository(), handle).currentForm()
@@ -140,7 +137,6 @@ class AfternoteAuthorAndroidTest {
         assertEquals("Google Photos", restored.selectedService)
         assertEquals("7", restored.afternoteEditReceivers.single().id)
         assertEquals("전체 파일 전달", restored.processingMethods.single().text)
-        assertEquals("함께 봐 줘", restored.leaveMessageBlocks.single().body)
     }
 
     private fun validSocialPayload() =
