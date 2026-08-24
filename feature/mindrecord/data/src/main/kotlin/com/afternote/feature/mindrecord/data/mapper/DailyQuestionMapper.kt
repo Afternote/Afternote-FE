@@ -17,6 +17,7 @@ fun DailyQuestionListItemDto.toDomain(): DailyQuestion =
         createdAt = createdAt,
         imageUrl = imageUrl,
         isDraft = isDraft,
+        receiverNames = receivers.map { it.name },
     )
 
 fun TodayDailyQuestionDto.toDomain(): TodayDailyQuestion =

@@ -80,3 +80,53 @@ fun String.escapeHtml(): String =
             }
         }
     }
+
+/**
+ * 상세 화면 본문 블록 (#759).
+ *
+ * 시안은 본문을 «문단 → 이미지 → 문단» 처럼 **섞어서** 보여준다. 본문은 HTML 조각이고
+ * 이미지는 그 안의 `img` 태그이므로, 태그를 기준으로 잘라 순서대로 그린다.
+ */
+sealed interface RecordContentBlock {
+    data class Text(
+        val text: String,
+    ) : RecordContentBlock
+
+    data class Image(
+        val url: String,
+    ) : RecordContentBlock
+}
+
+/**
+ * 본문 HTML 을 [RecordContentBlock] 목록으로 자른다.
+ *
+ * 리치 에디터가 `<img>` 를 렌더하지 못해(#731) 에디터를 그대로 재사용할 수 없다. 대신
+ * 이미지 태그를 경계로 잘라 텍스트는 태그를 벗겨 그리고 이미지는 따로 그린다.
+ *
+ * 빈 텍스트 조각은 버린다 — 이미지 앞뒤의 빈 문단이 그대로 빈 줄이 되면 안 된다.
+ */
+fun String.toRecordContentBlocks(): List<RecordContentBlock> {
+    val blocks = mutableListOf<RecordContentBlock>()
+    var cursor = 0
+    HTML_IMG_TAG.findAll(this).forEach { match ->
+        appendTextBlock(blocks, substring(cursor, match.range.first))
+        match.groupValues[1]
+            .trim()
+            .takeIf { it.isNotEmpty() }
+            ?.let { blocks += RecordContentBlock.Image(it) }
+        cursor = match.range.last + 1
+    }
+    appendTextBlock(blocks, substring(cursor))
+    return blocks
+}
+
+private fun appendTextBlock(
+    blocks: MutableList<RecordContentBlock>,
+    rawHtml: String,
+) {
+    if (rawHtml.isHtmlBlank()) return
+    val text = rawHtml.htmlToPlainText()
+    if (text.isNotBlank()) blocks += RecordContentBlock.Text(text)
+}
+
+private val HTML_IMG_TAG = Regex("""<img\b[^>]*?\bsrc\s*=\s*["']([^"']*)["'][^>]*>""", RegexOption.IGNORE_CASE)
