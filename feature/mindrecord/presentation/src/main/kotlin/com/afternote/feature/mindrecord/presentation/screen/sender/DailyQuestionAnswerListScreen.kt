@@ -78,7 +78,23 @@ private fun DailyQuestionListContent(
 ) {
     var yearMonth by remember { mutableStateOf(YearMonth.now()) }
     val onYearMonthChanged: (YearMonth) -> Unit = { yearMonth = it }
+    // 월이 바뀌면 그 달의 선택은 무효다.
+    var selectedDay by remember(yearMonth) { mutableStateOf<Int?>(null) }
 
+    // 캘린더 형에서는 **선택한 월** 기준으로 카드도 함께 좁힌다. 종전에는 캘린더 점만
+    // 필터하고 카드는 전체 기간을 그대로 렌더해, 8월 캘린더가 "0개의 답변 완료" 인데
+    // 아래에 7월 답변이 남아 있었다 (#724).
+    val monthAnswers =
+        if (isListView) {
+            answers
+        } else {
+            answers.filter { it.date.year == yearMonth.year && it.date.monthValue == yearMonth.monthValue }
+        }
+    val visibleAnswers =
+        selectedDay?.let { day -> monthAnswers.filter { it.date.dayOfMonth == day } } ?: monthAnswers
+
+    // 리스트 형에서 전체가 비었을 때만 캘린더 없이 빈 상태를 보여준다. 캘린더 형에서는
+    // 빈 상태가 캘린더를 대체하면 월 이동 수단이 사라진다 (#724).
     if (isListView && answers.isEmpty()) {
         MindRecordEmptyState(modifier = modifier)
         return
@@ -90,11 +106,7 @@ private fun DailyQuestionListContent(
     ) {
         // Figma 2671:16704 — 캘린더 형은 캘린더 아래에 카드 리스트가 바로 이어짐 (gap 24)
         if (!isListView) {
-            val answeredDays =
-                answers
-                    .filter { it.date.year == yearMonth.year && it.date.monthValue == yearMonth.monthValue }
-                    .map { it.date.dayOfMonth }
-                    .toSet()
+            val answeredDays = monthAnswers.map { it.date.dayOfMonth }.toSet()
             item {
                 DailyCalendar(
                     year = yearMonth.year,
@@ -103,12 +115,19 @@ private fun DailyQuestionListContent(
                     onPrevMonth = { onYearMonthChanged(yearMonth.minusMonths(1)) },
                     onNextMonth = { onYearMonthChanged(yearMonth.plusMonths(1)) },
                     answeredDays = answeredDays,
+                    selectedDay = selectedDay,
+                    // 같은 날을 다시 누르면 선택을 푼다 — 그 달 전체로 돌아올 수단이 필요하다.
+                    onDayClick = { day -> selectedDay = if (selectedDay == day) null else day },
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
         // Figma 2757:16116 — 리스트 형은 답변 카드만 나열
-        items(answers, key = { it.id }) { answer ->
+        if (visibleAnswers.isEmpty()) {
+            item { MindRecordEmptyState() }
+        }
+
+        items(visibleAnswers, key = { it.id }) { answer ->
             DailyQuestionListCard(answer = answer, onDelete = { onDelete(answer.id) })
         }
     }

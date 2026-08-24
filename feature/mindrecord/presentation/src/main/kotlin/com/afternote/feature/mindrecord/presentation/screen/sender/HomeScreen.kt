@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
@@ -55,9 +56,19 @@ fun HomeScreen(
             )
         }
 
-    var isListView by remember { mutableStateOf(true) }
     var selectedIndex by remember { mutableIntStateOf(0) }
     val selectedCategory = categories[selectedIndex]
+
+    // 탭마다 따로 기억한다. 종전에는 한 값을 두 탭이 공유했는데 의미가 서로 반대였다 —
+    // 데일리질문은 false 를 캘린더로, 일기는 같은 false 를 2열 그리드로 썼다. 그래서 탭을
+    // 오가면 아이콘은 그대로인데 표시가 뒤바뀐 것처럼 보였다 (#724).
+    var dailyQuestionListView by rememberSaveable { mutableStateOf(true) }
+    var diaryListView by rememberSaveable { mutableStateOf(true) }
+    val isListView =
+        when (selectedCategory) {
+            MindRecordCategoryUi.DailyQuestion -> dailyQuestionListView
+            else -> diaryListView
+        }
 
     val pagerState = rememberPagerState { categories.size }
     LaunchedEffect(selectedIndex) {
@@ -89,7 +100,12 @@ fun HomeScreen(
                             isListView = isListView,
                             image1 = R.drawable.core_ui_list,
                             image2 = R.drawable.core_ui_calendar,
-                            onViewChange = { isListView = it },
+                            onViewChange = { listView ->
+                                when (selectedCategory) {
+                                    MindRecordCategoryUi.DailyQuestion -> dailyQuestionListView = listView
+                                    else -> diaryListView = listView
+                                }
+                            },
                         )
                     }
                 },
@@ -143,9 +159,17 @@ fun HomeScreen(
 
             HorizontalPager(state = pagerState) { _ ->
                 when (selectedCategory) {
-                    MindRecordCategoryUi.DailyQuestion -> DailyQuestionAnswerListScreen(isListView = isListView)
-                    MindRecordCategoryUi.Diary -> DiaryScreen(isListView = isListView)
-                    else -> WeeklyReportScreen()
+                    MindRecordCategoryUi.DailyQuestion -> {
+                        DailyQuestionAnswerListScreen(isListView = dailyQuestionListView)
+                    }
+
+                    MindRecordCategoryUi.Diary -> {
+                        DiaryScreen(isListView = diaryListView)
+                    }
+
+                    else -> {
+                        WeeklyReportScreen()
+                    }
                 }
             }
         }
