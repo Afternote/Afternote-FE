@@ -194,6 +194,13 @@
     <!-- 주차 조회 실패 뒤에도 화면 안에서 복구할 수 있게 남기는 문구 (#723) -->
     <string name="mindrecord_weekly_report_load_failed">%1$d월 %2$d주차 리포트를 불러오지 못했어요.</string>
     <string name="mindrecord_weekly_report_retry">다시 시도</string>
+    <string name="mindrecord_error_retry">다시 시도</string>
+    <string name="mindrecord_error_image_upload_failed">이미지를 올리지 못했어요. 다시 시도해 주세요.</string>
+    <string name="mindrecord_write_saving">저장하는 중이에요…</string>
+    <string name="mindrecord_write_uploading_image">이미지를 올리는 중이에요…</string>
+    <string name="mindrecord_write_loading_draft">임시저장한 내용을 불러오는 중이에요…</string>
+    <string name="mindrecord_error_image_uploading">이미지를 올리는 중이에요. 잠시 뒤 저장해 주세요.</string>
+    <string name="mindrecord_error_delete_failed">삭제하지 못했어요. 다시 시도해 주세요.</string>
     <!-- 수신자 열람 실패 (#614) — 서버 원문 대신 도메인 문구 -->
     <string name="mindrecord_receiver_delivery_not_ready">아직 열람할 수 있는 기록이 없어요.\n작성자가 전달 시점을 정하면 이곳에서 볼 수 있어요.</string>
     <string name="mindrecord_receiver_load_failed">마음의 기록을 불러오지 못했어요.</string>

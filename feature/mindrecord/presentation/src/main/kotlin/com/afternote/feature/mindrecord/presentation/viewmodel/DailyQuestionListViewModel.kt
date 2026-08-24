@@ -63,9 +63,25 @@ class DailyQuestionListViewModel
             load(showsLoading = false, keepsStateOnFailure = true)
         }
 
+        /** 조회 실패 화면의 재시도 — 로딩을 보여도 잃을 것이 없다(보고 있던 것이 오류 문구뿐). */
+        fun retry() = load()
+
         fun delete(id: Long) {
             viewModelScope.launch {
-                repository.delete(id).onSuccess { load() }
+                repository
+                    .delete(id)
+                    .onSuccess {
+                        // 지난 실패 문구를 함께 걷는다. 남겨 두면 «항목은 사라졌는데 실패
+                        // 안내는 그대로» 인 화면이 VM 수명 내내 유지된다 (리뷰 지적).
+                        internalState.update { it.copy(deleteError = null) }
+                        load()
+                    }
+                    // 실패를 무시하면 항목이 그대로 남은 채 아무 안내도 없어 고장처럼 보인다 (#716).
+                    .onFailure {
+                        internalState.update {
+                            it.copy(deleteError = UiText.Resource(R.string.mindrecord_error_delete_failed))
+                        }
+                    }
             }
         }
 
@@ -94,10 +110,7 @@ class DailyQuestionListViewModel
                     // today 만 성공했을 때 "답변 0개" 로 보여 실패가 화면에서 사라진다.
                     if (listResult.isFailure) {
                         val message =
-                            UiText.DynamicOrResource(
-                                value = listResult.exceptionOrNull()?.message,
-                                fallbackResId = R.string.mindrecord_error_daily_question_list_failed,
-                            )
+                            UiText.Resource(R.string.mindrecord_error_daily_question_list_failed)
                         internalState.update { current ->
                             if (keepsStateOnFailure && current.loadPhase is LoadPhase.Loaded) {
                                 current
@@ -109,13 +122,19 @@ class DailyQuestionListViewModel
                         // 조회를 시작한 시점이 아니라 **끝난 시점**의 버전을 기록한다.
                         // 조회 도중 들어온 변경을 놓치지 않기 위해서다.
                         loadedVersion = changeTracker.version
-                        internalState.update { it.copy(loadPhase = LoadPhase.Loaded(today, list)) }
+                        internalState.update {
+                            // 목록을 새로 받아 왔으면 옛 삭제 실패 안내도 걷는다. 남겨 두면
+                            // «새로 받아 왔는데 실패 안내는 그대로» 가 되어 #716 이 고치려는
+                            // «고장처럼 보인다» 와 같은 성질이 된다 (리뷰 지적).
+                            it.copy(loadPhase = LoadPhase.Loaded(today, list), deleteError = null)
+                        }
                     }
                 }
         }
 
         private data class InternalState(
             val loadPhase: LoadPhase = LoadPhase.Loading,
+            val deleteError: UiText? = null,
         )
 
         private sealed interface LoadPhase {
@@ -150,6 +169,7 @@ class DailyQuestionListViewModel
                             },
                         // 날짜를 못 정한 항목은 toUi() 가 null 을 돌린다 — 정렬 키가 없어 카드로 만들지 않는다 (#751).
                         answers = phase.answers.mapNotNull { it.toUi() },
+                        deleteError = deleteError,
                     )
                 }
 
