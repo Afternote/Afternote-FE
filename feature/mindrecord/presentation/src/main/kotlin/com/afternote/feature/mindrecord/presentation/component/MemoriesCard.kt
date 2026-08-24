@@ -26,6 +26,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.icon.RightArrowIcon
@@ -33,8 +34,29 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R
 
+/**
+ * 홈 탭 MEMORIES 카드.
+ *
+ * 시안(홈_수신자지정완료 57:8186)의 질문·답변은 **예시값**이라 문자열 리소스에 그대로 넣어
+ * 두면 기록이 0건인 사용자에게도 남의 답변처럼 보인다 (#559). 실제 기록을 받아 표시한다.
+ *
+ * **0건 상태는 아직 시안에 없다** (Figma 카드 노드 `109:15028` 에 해당 변형 없음).
+ * 임의 문구를 넣으면 미확정 상태가 제품 동작으로 굳으므로, 표시할 기록이 없으면
+ * 질문·답변 줄을 아예 그리지 않는다. 디자인 확정 시 이 자리에 변형을 붙이면 된다.
+ *
+ * @param question 최근 기록의 제목(데일리질문이면 질문 원문). null 이면 표시할 기록이 없다.
+ * @param answer 그 기록의 본문 미리보기.
+ * @param onReadAgainClick "그날의 기록 다시 읽기" 목적지. **아직 확정되지 않았다** — Figma 의
+ *   이 버튼에 프로토타입 연결이 없고 #559 에도 확정 답변이 없어, 기본값은 아무 데도 보내지
+ *   않는다. 목적지가 정해지면 호출부에서 이 인자만 채우면 된다.
+ */
 @Composable
-fun MemoriesCard(modifier: Modifier = Modifier) {
+fun MemoriesCard(
+    modifier: Modifier = Modifier,
+    question: String? = null,
+    answer: String? = null,
+    onReadAgainClick: () -> Unit = {},
+) {
     val cardShape = RoundedCornerShape(8.dp)
     val buttonShape = RoundedCornerShape(20.dp)
 
@@ -74,19 +96,29 @@ fun MemoriesCard(modifier: Modifier = Modifier) {
                     .fillMaxWidth()
                     .padding(16.dp),
         ) {
-            Text(
-                text = stringResource(R.string.mindrecord_memories_card_question),
-                style = AfternoteDesign.typography.bodySmallR,
-                color = AfternoteDesign.colors.gray8,
-            )
-            Spacer(Modifier.height(1.dp))
-            Text(
-                text = stringResource(R.string.mindrecord_memories_card_answer),
-                style = AfternoteDesign.typography.captionLargeR,
-                color = AfternoteDesign.colors.gray6,
-            )
+            if (question != null) {
+                Text(
+                    text = question,
+                    style = AfternoteDesign.typography.bodySmallR,
+                    color = AfternoteDesign.colors.gray8,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            if (answer != null) {
+                Spacer(Modifier.height(1.dp))
+                Text(
+                    text = answer,
+                    style = AfternoteDesign.typography.captionLargeR,
+                    color = AfternoteDesign.colors.gray6,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            if (question != null || answer != null) {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
             Row(
                 modifier =
@@ -94,7 +126,7 @@ fun MemoriesCard(modifier: Modifier = Modifier) {
                         .border(width = 1.dp, color = AfternoteDesign.colors.gray3, shape = buttonShape)
                         .clip(buttonShape)
                         .background(color = AfternoteDesign.colors.gray2)
-                        .clickable(role = Role.Button, onClick = {})
+                        .clickable(role = Role.Button, onClick = onReadAgainClick)
                         .padding(horizontal = 17.dp, vertical = 9.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -115,9 +147,21 @@ fun MemoriesCard(modifier: Modifier = Modifier) {
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "기록 있음")
 @Composable
 private fun MemoriesCardPreview() {
+    AfternoteTheme {
+        MemoriesCard(
+            question = "내 인생에서 가장 소중했던 순간은?",
+            answer = "아이가 태어났을 때...",
+        )
+    }
+}
+
+/** 기록 0건 — 시안에 변형이 없어 질문·답변 줄 없이 이미지와 버튼만 남는다 (#559). */
+@Preview(showBackground = true, name = "기록 0건")
+@Composable
+private fun MemoriesCardEmptyPreview() {
     AfternoteTheme {
         MemoriesCard()
     }

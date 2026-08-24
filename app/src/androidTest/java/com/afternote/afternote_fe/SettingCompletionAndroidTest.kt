@@ -56,6 +56,7 @@ import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterEven
 import com.afternote.feature.setting.presentation.viewmodel.ReceiverRegisterViewModel
 import com.afternote.feature.setting.presentation.viewmodel.SettingUiState
 import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
+import com.afternote.feature.setting.presentation.viewmodel.WithdrawUiState
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -514,9 +515,9 @@ class SettingCompletionAndroidTest {
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             userApi.completedDeleteCalls == 1
         }
-        composeRule.waitForIdle()
-
-        assertFalse(viewModel.withdrawCompleted.value)
+        composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
+            viewModel.withdrawUiState.value == WithdrawUiState.Error
+        }
         assertEquals(0, authRepository.clearSessionCalls)
         assertTrue(runBlocking { authRepository.isLoggedIn.first() })
 
@@ -528,7 +529,7 @@ class SettingCompletionAndroidTest {
 
         retryGate.complete(BaseResponse(status = 200, code = 200))
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            viewModel.withdrawCompleted.value
+            viewModel.withdrawUiState.value == WithdrawUiState.Success
         }
 
         assertEquals(2, userApi.completedDeleteCalls)

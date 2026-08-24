@@ -45,10 +45,6 @@ class ReceiverRepositoryImpl
             authCodeDataSource.saveCode(code)
         }
 
-        override suspend fun clearAuthCode() {
-            authCodeDataSource.clearCode()
-        }
-
         override fun getPagedReceivedAfternotes(): Flow<PagingData<AfterNoteListItem>> =
             Pager(
                 config = PagingConfig(pageSize = PAGE_SIZE),

@@ -2,6 +2,12 @@ package com.afternote.feature.mindrecord.presentation.model
 
 import java.time.DayOfWeek
 
+/**
+ * 주간 캘린더 한 칸의 표현.
+ *
+ * 이모지와 점은 **배타적**이다 — 디자이너 정의(2026-04-06)가 "이모티콘 설정 시 이모티콘을,
+ * 미설정한 것들은 점으로" 이고, 시안 캘린더에도 둘이 함께 있는 칸이 없다 (#749).
+ */
 sealed class DayContent {
     data class NumberOnly(
         val day: Int,
@@ -10,10 +16,6 @@ sealed class DayContent {
     data class NumberWithDot(
         val day: Int,
     ) : DayContent() // 숫자 + 하단 점
-
-    data class EmojiWithDot(
-        val emoji: String,
-    ) : DayContent() // 이모지 + 하단 점
 
     data class EmojiOnly(
         val emoji: String,

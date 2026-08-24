@@ -80,15 +80,8 @@ internal class PhotoUploadRepositoryImpl
                 val extension = resolveExtension(mime)
                 android.util.Log.d("PhotoUpload", "mime=$mime → extension=$extension")
 
-                val presigned =
-                    imageApi
-                        .getPresignedUrl(
-                            PresignedUrlRequestDto(
-                                directory = directory,
-                                extension = extension,
-                            ),
-                        ).requireData()
-
+                // presigned 요청에 파일 크기가 필수라, 임시 파일을 **먼저** 만들어 크기를
+                // 확정한 뒤 요청한다. 순서가 뒤집히면 크기를 모른 채 요청이 나가 400 이 된다 (#950).
                 val tempFile =
                     withContext(ioDispatcher) {
                         val file = File.createTempFile("photo_upload_", ".$extension", context.cacheDir)
@@ -96,6 +89,21 @@ internal class PhotoUploadRepositoryImpl
                             file.outputStream().use { output -> input.copyTo(output) }
                         } ?: throw IllegalStateException("Could not read image from URI")
                         file
+                    }
+
+                val presigned =
+                    try {
+                        imageApi
+                            .getPresignedUrl(
+                                PresignedUrlRequestDto(
+                                    directory = directory,
+                                    extension = extension,
+                                    contentLength = tempFile.length(),
+                                ),
+                            ).requireData()
+                    } catch (e: Throwable) {
+                        tempFile.delete()
+                        throw e
                     }
 
                 try {
