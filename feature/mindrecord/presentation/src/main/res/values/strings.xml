@@ -68,7 +68,11 @@
     <string name="mindrecord_calendar_day_label_thu">목</string>
     <string name="mindrecord_calendar_day_label_fri">금</string>
     <string name="mindrecord_calendar_day_label_sat">토</string>
-    <string name="mindrecord_calendar_send_date_title">발송 날짜</string>
+    <!--
+      "발송" 이 아니라 "기록" 이다 — 이 날짜는 과거 일기를 몰아 쓰기 위한 기록 날짜이지
+      발송 시점이 아니다. 시안이 2026-08-05 에 "기록 날짜" 로 수정됐다 (#760).
+    -->
+    <string name="mindrecord_calendar_record_date_title">기록 날짜</string>
 
     <!-- Daily question -->
     <string name="mindrecord_daily_question_default_thanks">오늘 하루, \n누구에게 가장 고마웠나요?</string>
