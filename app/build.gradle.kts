@@ -7,7 +7,6 @@ plugins {
     alias(libs.plugins.google.services)
     alias(libs.plugins.firebase.app.distribution)
     alias(libs.plugins.firebase.crashlytics)
-    alias(libs.plugins.compose.screenshot)
 }
 
 val localProperties = Properties()
@@ -16,14 +15,12 @@ if (localPropertiesFile.exists()) {
     localPropertiesFile.inputStream().use { localProperties.load(it) }
 }
 
-// 카카오 OAuth redirect(`kakao{KEY}://oauth`) 핸들러 등록용.
-// SDK 런타임 초기화 키는 `core:startup`의 BuildConfig.KAKAO_NATIVE_APP_KEY 사용.
+// OAuth redirect(`kakao{KEY}://oauth`) 핸들러 등록용 manifestPlaceholder 와 SDK 런타임 초기화용
+// BuildConfig 가 같은 값을 쓴다 — 주입 지점이 둘이어도 키는 여기서 한 번만 읽는다.
 val kakaoKey = socialLoginKey("KAKAO_NATIVE_APP_KEY")
 
 android {
     namespace = "com.afternote.afternote_fe"
-
-    experimentalProperties["android.experimental.enableScreenshotTest"] = true
 
     buildFeatures {
         buildConfig = true
@@ -38,6 +35,7 @@ android {
         testInstrumentationRunnerArguments["clearPackageData"] = "true"
 
         manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] = kakaoKey
+        buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"$kakaoKey\"")
     }
 
     testOptions {
@@ -181,17 +179,15 @@ android {
     }
 }
 
-configurations.configureEach {
-    if (name == "debugScreenshotTestCompileClasspath") {
-        // Keep the renderer from loading firebase-datatransport R classes from two different versions.
-        exclude(group = "com.google.firebase", module = "firebase-datatransport")
-    }
-}
-
 dependencies {
     implementation(libs.coil.compose)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.core.splashscreen)
+
+    // App Startup — 기동 초기화는 app 매니페스트에 등록한 Initializer 로 실행한다.
+    implementation(libs.androidx.startup.runtime)
+    // DailyNotificationInitializer 가 WorkManagerInitializer 를 선행 의존으로 지정한다.
+    implementation(libs.androidx.work.runtime.ktx)
 
     // 카카오 OAuth redirect Activity(`com.kakao.sdk.auth.AuthCodeHandlerActivity`)를
     // app 매니페스트에서 직접 참조하므로 컴파일 classpath에 노출 필요.
@@ -211,31 +207,24 @@ dependencies {
     implementation(projects.core.network)
     implementation(projects.core.ui)
     implementation(projects.core.model)
-    implementation(projects.core.startup)
-    implementation(projects.core.di)
+    implementation(projects.core.data)
     implementation(projects.core.domain)
 
     // Feature — presentation
     implementation(projects.feature.afternote.presentation)
+    implementation(projects.feature.home.presentation)
     implementation(projects.feature.mindrecord.presentation)
+    implementation(projects.feature.receiver.presentation)
     implementation(projects.feature.timeletter.presentation)
     implementation(projects.feature.onboarding.presentation)
     implementation(projects.feature.setting.presentation)
 
-    // Feature — domain (발신자·수신자 홈이 각 기능 Repository를 app 계층에서 조합)
-    implementation(projects.feature.mindrecord.domain)
-    implementation(projects.feature.afternote.domain)
-    implementation(projects.feature.receiver.domain)
-    implementation(projects.feature.timeletter.domain)
-
     // Feature — data (Hilt @Module / 바인딩이 루트 그래프에 포함되도록 app이 classpath에 둔다)
     implementation(projects.feature.afternote.data)
+    implementation(projects.feature.receiver.data)
     implementation(projects.feature.mindrecord.data)
     implementation(projects.feature.timeletter.data)
     implementation(projects.feature.onboarding.data)
-
-    // HomeTabViewModel 경합 테스트 — 가상 시간으로 viewModelScope 요청 순서를 제어한다.
-    testImplementation(libs.coroutines.test)
 
     // Managed-device androidTest — 실제 서버·OAuth 대신 Hilt fake를 주입하고 Compose semantics를 검증한다.
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -248,13 +237,10 @@ dependencies {
     androidTestImplementation(libs.coroutines.test)
     androidTestImplementation(projects.core.data)
     androidTestImplementation(projects.feature.afternote.domain)
+    androidTestImplementation(projects.feature.mindrecord.domain)
     androidTestImplementation(projects.feature.receiver.domain)
     androidTestImplementation(projects.feature.timeletter.domain)
     kspAndroidTest(libs.hilt.compiler)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     androidTestUtil(libs.androidx.test.orchestrator)
-
-    // Compose Preview Screenshot Testing (#330) — 1hyok 영역 (홈) 적용
-    screenshotTestImplementation(libs.screenshot.validation.api)
-    screenshotTestImplementation(libs.androidx.compose.ui.tooling)
 }

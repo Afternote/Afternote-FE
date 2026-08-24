@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.presentation.reporting
 
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.feature.afternote.domain.error.ReceiverServerRejectionException
+import com.afternote.feature.receiver.domain.error.ReceiverServerRejectionException
 
 /**
  * 애프터노트 흐름에서 실패가 발생한 지점.
@@ -20,6 +20,15 @@ enum class AfternoteFailureStage(
 
     /** 수정 진입 시 기존 애프터노트 로드 — 여기서 깨지면 빈 폼으로 덮어쓸 위험이 있다. */
     PREFILL_LOAD("prefill_load"),
+
+    /**
+     * 신규 작성 진입 시 작성자가 등록한 수신자 목록 조회.
+     *
+     * 실패해도 화면에는 수신자 자리가 비어 보일 뿐이라 계측하지 않으면 흔적이 남지 않는다.
+     * 수신자는 저장 필수값(서버 코드 475)이므로, 여기서 조용히 실패하면 사용자는 원인을 알 수 없는
+     * 검증 오류만 만나게 된다.
+     */
+    AUTHOR_RECEIVER_LOAD("author_receiver_load"),
 
     MEMORIAL_THUMBNAIL_UPLOAD("memorial_thumbnail_upload"),
 
@@ -68,11 +77,10 @@ enum class AfternoteFailureStage(
     /** 발신자 상세의 열람 인증 상태 조회. */
     SENDER_STATUS_LOAD("sender_status_load"),
 
-    /** 모든 기록 내려받기 — 서버에서 묶음을 받아오는 단계. */
-    RECEIVED_EXPORT_DOWNLOAD("received_export_download"),
-
-    /** 모든 기록 내려받기 — 받아온 묶음을 기기에 저장하는 단계. */
-    RECEIVED_EXPORT_SAVE("received_export_save"),
+    // RECEIVED_EXPORT_DOWNLOAD·RECEIVED_EXPORT_SAVE 는 수신자 흐름 이전(#615)과 함께
+    // feature:receiver 의 ReceiverFailureStage(`receiver_stage` 키)로 이동 — home_stage 와의
+    // 이중 기록(#546 참고)이 그 키로 수렴된다. 위 수신자 단계들(RECEIVED_*·RECEIVER_* 등)의
+    // 이동은 열람 실패 처리 통일(#611·#614 계열)과 함께 별도 판단.
 }
 
 /**
