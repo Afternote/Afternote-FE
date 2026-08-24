@@ -27,6 +27,8 @@ data class DiaryWriteUiState(
     val submitState: SubmitState = SubmitState.Idle,
     /** 이어쓰기(기존 draft PATCH) 진입인지. 신규 작성이면 덮어쓸 기존 내용이 없다. */
     val isEditingDraft: Boolean = false,
+    /** 툴바 "임시저장 N" 표시값. `null` 은 아직 모름(조회 중·실패) (#769). */
+    val draftCount: Int? = null,
 ) {
     val canSubmit: Boolean
         get() =

@@ -1,7 +1,9 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.TodayMood
@@ -29,7 +31,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
@@ -42,7 +43,7 @@ class WeeklyReportViewModel
         private val userRepository: UserRepository,
     ) : ViewModel() {
         private val weekOptions: List<WeekOption> =
-            buildWeekOptions(today = LocalDate.now(), count = WEEK_OPTION_COUNT)
+            buildWeekOptions(today = LocalDate.now())
 
         private val internalState = MutableStateFlow(InternalState())
         private var loadJob: Job? = null
@@ -98,7 +99,7 @@ class WeeklyReportViewModel
                         internalState.update { it.copy(loadPhase = LoadPhase.Loading) }
                     }
                     val result =
-                        runCatching {
+                        runCatchingCancellable {
                             coroutineScope {
                                 val reportDeferred =
                                     async {
@@ -110,8 +111,9 @@ class WeeklyReportViewModel
                                 reportDeferred.await() to profileDeferred.await()
                             }
                         }
-                    // runCatching 이 CancellationException 까지 실패로 잡는다.
                     // 새 로드가 이 Job 을 취소했다면 상태는 그쪽이 결정하므로 여기서 멈춘다.
+                    // `runCatchingCancellable` 이 취소를 다시 던지므로 위에서 이미 빠져나가지만,
+                    // `await()` 사이에 취소가 들어온 경우를 위해 남겨 둔다.
                     ensureActive()
                     result
                         .onSuccess { (report, profile) ->
@@ -133,16 +135,6 @@ class WeeklyReportViewModel
                             }
                         }
                 }
-        }
-
-        private fun buildWeekOptions(
-            today: LocalDate,
-            count: Int,
-        ): List<WeekOption> {
-            val thisMonday = today.with(DayOfWeek.MONDAY)
-            return (0 until count).map { weeksAgo ->
-                WeekOption(monday = thisMonday.minusWeeks(weeksAgo.toLong()))
-            }
         }
 
         /**
@@ -167,9 +159,13 @@ class WeeklyReportViewModel
                     dayOfWeek = date.dayOfWeek,
                     content =
                         when {
-                            emoji != null && isDiary -> DayContent.EmojiWithDot(emoji)
+                            // 이모지와 점은 배타적이다 (#749). 감정을 고른 날은 이모지만 그린다 —
+                            // 종전에는 `emoji != null && isDiary` 가 먼저 걸려, 일기를 쓰고 감정까지
+                            // 고른 가장 흔한 경우에 점이 함께 붙었다.
                             emoji != null -> DayContent.EmojiOnly(emoji)
+
                             isDiary -> DayContent.NumberWithDot(date.dayOfMonth)
+
                             else -> DayContent.NumberOnly(date.dayOfMonth)
                         },
                     background =
@@ -229,13 +225,11 @@ class WeeklyReportViewModel
                 weekDays = mapWeekDays(monday, report.week),
                 emotionKeywords = mapEmotionKeywords(report.emotions),
                 summaryText = report.summaryText,
-                dailyQuestions = report.dailyQuestions.map { it.toUi() },
+                dailyQuestions = report.dailyQuestions.mapNotNull { it.toUi() },
             )
         }
 
         companion object {
-            private const val WEEK_OPTION_COUNT = 5
-
             private val API_DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
             private val RANGE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd.")
 
@@ -248,6 +242,8 @@ class WeeklyReportViewModel
 
             // 카드 측에서 키워드 개수(0~4)에 따라 슬롯(size·offset·color)을 결정하므로,
             // 여기선 percentage 내림차순으로 정렬해 최대 4건만 잘라 키워드·카운트만 노출한다.
+            private const val TAG = "WeeklyReportViewModel"
+
             private const val MAX_EMOTION_KEYWORDS = 4
 
             private fun mapEmotionKeywords(emotions: List<WeeklyReportEmotion>): List<EmotionKeyword> =
@@ -256,12 +252,24 @@ class WeeklyReportViewModel
                     .take(MAX_EMOTION_KEYWORDS)
                     .map { EmotionKeyword(keyword = it.keyword, count = it.percentage) }
 
-            private fun WeeklyReportDailyQuestion.toUi(): DailyQuestion =
-                DailyQuestion(
+            /**
+             * 날짜를 못 정하면 `null` 을 돌린다 — 호출부가 그 항목을 목록에서 뺀다.
+             *
+             * 오늘 날짜로 메우면 지난 주 답변이 오늘로 표시되고 실패 신호가 남지 않는다 (#751).
+             * 서버 명세에 `date` 형식이 정의돼 있지 않아 언제든 어긋날 수 있다.
+             */
+            private fun WeeklyReportDailyQuestion.toUi(): DailyQuestion? {
+                val resolvedDate =
+                    parseLocalDateOrNull(date) ?: run {
+                        Log.w(TAG, "주간리포트 데일리질문 날짜를 해석하지 못해 목록에서 제외한다: raw=$date")
+                        return null
+                    }
+                return DailyQuestion(
                     title = title,
-                    date = parseLocalDate(date),
+                    date = resolvedDate,
                     content = content,
                 )
+            }
 
             // 서버는 "yyyy.MM.dd 요일" 또는 ISO 포맷으로 내려옴 — 둘 다 허용.
             private val DATE_FORMATTERS: List<DateTimeFormatter> =
@@ -269,8 +277,6 @@ class WeeklyReportViewModel
                     DateTimeFormatter.ofPattern("yyyy.MM.dd"),
                     DateTimeFormatter.ISO_DATE,
                 )
-
-            private fun parseLocalDate(raw: String): LocalDate = parseLocalDateOrNull(raw) ?: LocalDate.now()
 
             private fun parseLocalDateOrNull(raw: String): LocalDate? {
                 val datePart = raw.substringBefore(' ').trim()

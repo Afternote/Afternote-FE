@@ -39,15 +39,7 @@ class VideoUploadRepositoryImpl
                 val uri = uriString.toUri()
                 val extension = videoExtensionFromUri(uri)
 
-                val presigned =
-                    imageApi
-                        .getPresignedUrl(
-                            PresignedUrlRequestDto(
-                                directory = directory,
-                                extension = extension,
-                            ),
-                        ).requireData()
-
+                // presigned 요청에 파일 크기가 필수라 임시 파일을 먼저 만든다 (#950).
                 val tempFile =
                     withContext(ioDispatcher) {
                         val file = File.createTempFile("video_upload_", ".$extension", context.cacheDir)
@@ -55,6 +47,21 @@ class VideoUploadRepositoryImpl
                             file.outputStream().use { output -> input.copyTo(output) }
                         } ?: throw IllegalStateException("Could not read video from URI")
                         file
+                    }
+
+                val presigned =
+                    try {
+                        imageApi
+                            .getPresignedUrl(
+                                PresignedUrlRequestDto(
+                                    directory = directory,
+                                    extension = extension,
+                                    contentLength = tempFile.length(),
+                                ),
+                            ).requireData()
+                    } catch (e: Throwable) {
+                        tempFile.delete()
+                        throw e
                     }
 
                 try {

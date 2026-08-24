@@ -20,6 +20,8 @@ sealed interface DailyQuestionListUiState {
 
 data class TodayQuestionUi(
     val questionId: Long,
+    /** "Day N" 배너 표기용 — 서비스 시작일 기준 몇 번째 질문인지. */
+    val day: Int,
     val content: String,
     val isAnswered: Boolean,
 )

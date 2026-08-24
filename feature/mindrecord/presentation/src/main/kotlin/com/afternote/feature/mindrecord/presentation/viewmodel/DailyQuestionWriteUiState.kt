@@ -18,6 +18,8 @@ data class DailyQuestionWriteUiState(
     val isUploadingImage: Boolean = false,
     /** 이미지 업로드 실패 안내. 조용히 null 로 흡수하지 않는다 (#716). */
     val imageUploadError: UiText? = null,
+    /** 툴바 "임시저장 N" 표시값. `null` 은 아직 모름(조회 중·실패) (#769). */
+    val draftCount: Int? = null,
 ) {
     /**
      * `questionId` 유무는 여기서 보지 않는다. 조건에 넣으면 오늘 질문 조회가 실패했을 때

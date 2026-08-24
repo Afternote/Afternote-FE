@@ -4,8 +4,12 @@ import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
+import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
+import com.afternote.feature.mindrecord.domain.model.DiaryList
+import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
+import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -82,6 +86,12 @@ class MindRecordFailureRecoveryTest {
                 DailyQuestionWriteViewModel(
                     repository = repository,
                     photoUploadRepository = PhotoUploadRepository { _, _ -> uploadGate.await() },
+                    // 툴바 카운트는 이 테스트의 관심사가 아니다 — 빈 목록으로 고정한다 (#769).
+                    draftLoader =
+                        MindRecordDraftLoader(
+                            diaryRepository = EmptyDiaryRepository,
+                            dailyQuestionRepository = repository,
+                        ),
                 )
             advanceUntilIdle()
 
@@ -118,12 +128,12 @@ private class FlakyDeleteRepository : DailyQuestionRepository {
             TodayDailyQuestion(questionId = 1L, day = 1, content = "질문", isAnswered = false, isDraft = false),
         )
 
-    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Unit> = Result.success(Unit)
+    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> = Result.success(1L)
 
     override suspend fun update(
         id: Long,
         payload: DailyQuestionUpdatePayload,
-    ): Result<Unit> = Result.success(Unit)
+    ): Result<Long> = Result.success(1L)
 
     override suspend fun delete(id: Long): Result<Unit> =
         if (succeedsNext) Result.success(Unit) else Result.failure(IllegalStateException("삭제 실패"))
@@ -144,15 +154,32 @@ private class NeverSubmittingRepository : DailyQuestionRepository {
             TodayDailyQuestion(questionId = 1L, day = 1, content = "질문", isAnswered = false, isDraft = false),
         )
 
-    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Unit> {
+    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> {
         createCalls++
-        return Result.success(Unit)
+        return Result.success(1L)
     }
 
     override suspend fun update(
         id: Long,
         payload: DailyQuestionUpdatePayload,
-    ): Result<Unit> = Result.success(Unit)
+    ): Result<Long> = Result.success(1L)
 
     override suspend fun delete(id: Long): Result<Unit> = Result.success(Unit)
+}
+
+/** 임시저장 카운트 조회만 받아 주는 빈 일기 저장소. */
+private object EmptyDiaryRepository : DiaryRepository {
+    override suspend fun getList(
+        yearMonth: String,
+        draftOnly: Boolean?,
+    ): Result<DiaryList> = Result.success(DiaryList(diaries = emptyList(), monthDiaryCount = 0, weeklyDominantMood = null))
+
+    override suspend fun create(payload: DiaryCreatePayload): Result<Unit> = error("호출되면 안 됨")
+
+    override suspend fun update(
+        id: Long,
+        payload: DiaryUpdatePayload,
+    ): Result<Unit> = error("호출되면 안 됨")
+
+    override suspend fun delete(id: Long): Result<Unit> = error("호출되면 안 됨")
 }
