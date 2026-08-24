@@ -10,6 +10,7 @@ import com.afternote.feature.timeletter.data.mapper.toDomain
 import com.afternote.feature.timeletter.data.mapper.toDto
 import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetter
+import com.afternote.feature.timeletter.domain.model.TimeLetterDeliveryMode
 import com.afternote.feature.timeletter.domain.model.TimeLetterList
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
@@ -42,17 +43,19 @@ class TimeLetterRepositoryImpl
             title: String?,
             blocks: List<NewTimeLetterBlock>,
             sendAt: String?,
+            deliveryMode: TimeLetterDeliveryMode,
             status: TimeLetterStatus,
-            receiverIds: List<Long>?,
+            receiverIds: List<Long>,
         ): TimeLetter =
             timeLetterApiService
                 .createTimeLetter(
                     TimeLetterCreateRequestDto(
                         title = title,
                         sendAt = sendAt,
+                        deliveryMode = deliveryMode.toDto(),
                         status = status.toDto(),
                         blocks = blocks.map { it.toDto() },
-                        receiverIds = receiverIds ?: emptyList(),
+                        receiverIds = receiverIds,
                     ),
                 ).requireData()
                 .toDomain()
@@ -62,6 +65,7 @@ class TimeLetterRepositoryImpl
             title: String?,
             blocks: List<NewTimeLetterBlock>,
             sendAt: String?,
+            deliveryMode: TimeLetterDeliveryMode?,
             status: TimeLetterStatus?,
         ): TimeLetter =
             timeLetterApiService
@@ -71,6 +75,7 @@ class TimeLetterRepositoryImpl
                         TimeLetterUpdateRequestDto(
                             title = title,
                             sendAt = sendAt,
+                            deliveryMode = deliveryMode?.toDto(),
                             status = status?.toDto(),
                             blocks = blocks.map { it.toDto() },
                         ),

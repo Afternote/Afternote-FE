@@ -1,5 +1,6 @@
 package com.afternote.feature.mindrecord.data.repositoryimpl
 
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.network.model.requireData
 import com.afternote.feature.mindrecord.data.api.MindRecordReceiverApiService
 import com.afternote.feature.mindrecord.data.mapper.toDomain
@@ -15,7 +16,7 @@ class MindRecordReceiverRepositoryImpl
         private val api: MindRecordReceiverApiService,
     ) : MindRecordReceiverRepository {
         override suspend fun getAll(): Result<ReceiverMindRecords> =
-            runCatching {
+            runCatchingCancellable {
                 coroutineScope {
                     val dailyQuestionsDeferred = async { api.getReceiverDailyQuestions().requireData() }
                     val diariesDeferred = async { api.getReceiverDiaries().requireData() }

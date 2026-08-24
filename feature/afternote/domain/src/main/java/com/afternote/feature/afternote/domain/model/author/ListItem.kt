@@ -11,7 +11,7 @@ import com.afternote.feature.afternote.domain.AfternoteType
  * @param type 서비스 타입 (필터링용)
  */
 data class ListItem(
-    val id: String,
+    val id: Long,
     val serviceName: String,
     val date: String,
     val type: AfternoteType,

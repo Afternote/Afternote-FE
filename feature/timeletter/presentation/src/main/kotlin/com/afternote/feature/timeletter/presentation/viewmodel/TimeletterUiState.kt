@@ -9,10 +9,9 @@ sealed interface TimeletterUiState {
         val letters: TimeLetterList,
         val receiverNameMap: Map<Long, String>,
         val selectedFilterReceiverIds: Set<Long> = emptySet(),
-        val errorMessage: String? = null,
+        val isDeleting: Boolean = false,
+        val showDeleteFailure: Boolean = false,
     ) : TimeletterUiState
 
-    data class Error(
-        val message: String,
-    ) : TimeletterUiState
+    data object Error : TimeletterUiState
 }

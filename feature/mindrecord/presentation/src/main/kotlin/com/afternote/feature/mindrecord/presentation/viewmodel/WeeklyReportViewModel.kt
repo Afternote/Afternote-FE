@@ -2,6 +2,7 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.TodayMood
@@ -89,7 +90,7 @@ class WeeklyReportViewModel
                         internalState.update { it.copy(loadPhase = LoadPhase.Loading) }
                     }
                     val result =
-                        runCatching {
+                        runCatchingCancellable {
                             coroutineScope {
                                 val reportDeferred =
                                     async {
@@ -101,8 +102,9 @@ class WeeklyReportViewModel
                                 reportDeferred.await() to profileDeferred.await()
                             }
                         }
-                    // runCatching 이 CancellationException 까지 실패로 잡는다.
                     // 새 로드가 이 Job 을 취소했다면 상태는 그쪽이 결정하므로 여기서 멈춘다.
+                    // `runCatchingCancellable` 이 취소를 다시 던지므로 위에서 이미 빠져나가지만,
+                    // `await()` 사이에 취소가 들어온 경우를 위해 남겨 둔다.
                     ensureActive()
                     result
                         .onSuccess { (report, profile) ->
@@ -139,33 +141,46 @@ class WeeklyReportViewModel
             }
         }
 
+        /**
+         * 월~일 7칸을 만든다.
+         *
+         * `week[]` 는 기록이 있는 날만 담겨 오는 sparse 배열이라 index 를 요일 오프셋으로
+         * 쓰면 안 된다 — 일자(`day`)로 매칭한다 ([aggregateWeekRecordsByDate], #563). 칸에 찍는 날짜는
+         * 언제나 달력이 계산한 [LocalDate.dayOfMonth] 다. 서버 원소의 `day` 를 그대로 쓰면
+         * 매칭이 어긋난 순간 같은 날짜가 두 칸에 나온다.
+         */
         private fun mapWeekDays(
             monday: LocalDate,
             week: List<WeeklyReportDay>,
-        ): List<DayItem> =
-            List(WEEK_LENGTH) { index ->
+        ): List<DayItem> {
+            val recordByDate = aggregateWeekRecordsByDate(monday, week)
+            return List(WEEK_LENGTH) { index ->
                 val date = monday.plusDays(index.toLong())
-                val apiDay = week.getOrNull(index)
-                val dayOfMonth = apiDay?.day ?: date.dayOfMonth
-                val isDiary = apiDay?.isDiary == true
-                val emoji = apiDay?.emotion?.toEmoji()
+                val record = recordByDate[date]
+                val isDiary = record?.isDiary == true
+                val emoji = record?.emotion?.toEmoji()
                 DayItem(
                     dayOfWeek = date.dayOfWeek,
                     content =
                         when {
-                            emoji != null && isDiary -> DayContent.EmojiWithDot(emoji)
+                            // 이모지와 점은 배타적이다 (#749). 감정을 고른 날은 이모지만 그린다 —
+                            // 종전에는 `emoji != null && isDiary` 가 먼저 걸려, 일기를 쓰고 감정까지
+                            // 고른 가장 흔한 경우에 점이 함께 붙었다.
                             emoji != null -> DayContent.EmojiOnly(emoji)
-                            isDiary -> DayContent.NumberWithDot(dayOfMonth)
-                            else -> DayContent.NumberOnly(dayOfMonth)
+
+                            isDiary -> DayContent.NumberWithDot(date.dayOfMonth)
+
+                            else -> DayContent.NumberOnly(date.dayOfMonth)
                         },
                     background =
-                        when (apiDay?.emotion) {
+                        when (record?.emotion) {
                             TodayMood.HAPPY -> DayBackground.Green
                             TodayMood.SAD -> DayBackground.Pink
                             else -> DayBackground.None
                         },
                 )
             }
+        }
 
         private data class InternalState(
             val loadPhase: LoadPhase = LoadPhase.Loading,
