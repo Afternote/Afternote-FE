@@ -4,13 +4,14 @@ import com.afternote.feature.afternote.data.dto.AfternoteCreateAccountRequestDto
 import com.afternote.feature.afternote.data.dto.AfternoteCreatePlaylistRequestDto
 import com.afternote.feature.afternote.data.dto.AfternoteDetailDto
 import com.afternote.feature.afternote.data.dto.LeaveMessageBlockDto
-import com.afternote.feature.afternote.data.dto.ReceivedAfternoteDetailDto
-import com.afternote.feature.afternote.data.dto.ReceivedAfternoteListDto
 import com.afternote.feature.afternote.data.mapper.response.toDetailDomain
-import com.afternote.feature.afternote.data.mapper.response.toDomain
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
+import com.afternote.feature.receiver.data.dto.ReceivedAfternoteDetailDto
+import com.afternote.feature.receiver.data.dto.ReceivedAfternoteListDto
+import com.afternote.feature.receiver.data.mapper.response.toDomain
+import com.afternote.feature.receiver.data.mapper.toReceiverDomainList
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -130,7 +131,7 @@ class LeaveMessageBlockContractTest {
     fun `요청 직렬화 - 블록 배열로 나간다`() {
         val request =
             AfternoteCreateAccountRequestDto(
-                type = "SOCIAL",
+                category = "SOCIAL",
                 title = "인스타그램",
                 processingMethods = listOf("게시물 내리기"),
                 leaveMessage =

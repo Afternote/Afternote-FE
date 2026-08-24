@@ -1,5 +1,6 @@
 package com.afternote.feature.mindrecord.data.repositoryimpl
 
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
 import com.afternote.feature.mindrecord.data.api.DailyQuestionApiService
@@ -21,7 +22,7 @@ class DailyQuestionRepositoryImpl
             date: String?,
             draftOnly: Boolean?,
         ): Result<List<DailyQuestion>> =
-            runCatching {
+            runCatchingCancellable {
                 api
                     .getDailyQuestions(date = date, draftOnly = draftOnly)
                     .requireData()
@@ -29,12 +30,12 @@ class DailyQuestionRepositoryImpl
             }
 
         override suspend fun getToday(): Result<TodayDailyQuestion> =
-            runCatching {
+            runCatchingCancellable {
                 api.getTodayDailyQuestion().requireData().toDomain()
             }
 
         override suspend fun create(payload: DailyQuestionCreatePayload): Result<Unit> =
-            runCatching {
+            runCatchingCancellable {
                 api.createDailyQuestion(payload.toRequest()).requireStatus()
             }
 
@@ -42,14 +43,14 @@ class DailyQuestionRepositoryImpl
             id: Long,
             payload: DailyQuestionUpdatePayload,
         ): Result<Unit> =
-            runCatching {
+            runCatchingCancellable {
                 api
                     .updateDailyQuestion(userDailyQuestionId = id, request = payload.toRequest())
                     .requireStatus()
             }
 
         override suspend fun delete(id: Long): Result<Unit> =
-            runCatching {
+            runCatchingCancellable {
                 api.deleteDailyQuestion(userDailyQuestionId = id).requireStatus()
             }
     }
