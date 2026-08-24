@@ -24,7 +24,6 @@ import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.ListItem
-import com.afternote.feature.afternote.domain.model.author.ProcessingMethod
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.domain.repository.author.MediaKind
@@ -34,7 +33,6 @@ import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMedi
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
 import kotlinx.coroutines.flow.Flow
@@ -68,12 +66,10 @@ class AfternoteAuthorAndroidTest {
         }
 
         composeRule.runOnIdle {
+            viewModel.setType(AfternoteType.SOCIAL_NETWORK)
             viewModel.saveAfternote(
-                editingId = null,
-                category = EditorCategory.SOCIAL,
                 payload = validSocialPayload(),
                 selectedReceiverIds = emptyList(),
-                playlistSongs = emptyList(),
                 memorialMedia = SaveAfternoteMemorialMedia(),
             )
         }
@@ -96,27 +92,15 @@ class AfternoteAuthorAndroidTest {
         val payload = validSocialPayload()
 
         composeRule.runOnIdle {
-            viewModel.saveAfternote(
-                null,
-                EditorCategory.SOCIAL,
-                payload,
-                listOf(7L),
-                emptyList(),
-                SaveAfternoteMemorialMedia(),
-            )
+            viewModel.setType(AfternoteType.SOCIAL_NETWORK)
+            viewModel.saveAfternote(payload, listOf(7L), SaveAfternoteMemorialMedia())
         }
         composeRule.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.errorRes != null }
         assertNull(viewModel.uiState.value.savedId)
 
         composeRule.runOnIdle {
-            viewModel.saveAfternote(
-                null,
-                EditorCategory.SOCIAL,
-                payload,
-                listOf(7L),
-                emptyList(),
-                SaveAfternoteMemorialMedia(),
-            )
+            viewModel.setType(AfternoteType.SOCIAL_NETWORK)
+            viewModel.saveAfternote(payload, listOf(7L), SaveAfternoteMemorialMedia())
         }
         composeRule.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.savedId == 42L }
 
@@ -135,7 +119,7 @@ class AfternoteAuthorAndroidTest {
         val first = viewModel(FakeAfternoteRepository(), handle)
         composeRule.setContent { AfternoteTheme {} }
         composeRule.runOnIdle {
-            first.setCategory(EditorCategory.GALLERY)
+            first.setType(AfternoteType.GALLERY_AND_FILES)
             first.setService("Google Photos")
             first.addReceiverIfAbsent("7", "김수신", "가족")
             first.addProcessingMethod("전체 파일 전달")
@@ -146,7 +130,7 @@ class AfternoteAuthorAndroidTest {
 
         val restored = viewModel(FakeAfternoteRepository(), handle).currentForm()
 
-        assertEquals(EditorCategory.GALLERY, restored.selectedCategory)
+        assertEquals(AfternoteType.GALLERY_AND_FILES, restored.selectedType)
         assertEquals("Google Photos", restored.selectedService)
         assertEquals("7", restored.afternoteEditReceivers.single().id)
         assertEquals("전체 파일 전달", restored.processingMethods.single().text)
@@ -160,7 +144,7 @@ class AfternoteAuthorAndroidTest {
             accountId = "author@example.test",
             password = "password-1234",
             messageBlocks = listOf(EditorMessageTextBlock("마지막 말", "고마웠어")),
-            processingMethods = listOf(ProcessingMethod("delete", "계정 삭제")),
+            processingMethods = listOf("계정 삭제"),
         )
 
     private fun viewModel(

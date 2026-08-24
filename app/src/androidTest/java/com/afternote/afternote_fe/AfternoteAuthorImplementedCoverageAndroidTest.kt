@@ -26,7 +26,6 @@ import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.model.author.MemorialSongPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialVideoPayload
 import com.afternote.feature.afternote.domain.model.author.MemorialWritePayload
-import com.afternote.feature.afternote.domain.model.author.ProcessingMethod
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.domain.repository.author.MediaKind
@@ -37,7 +36,6 @@ import com.afternote.feature.afternote.presentation.author.editor.AfternoteEdito
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
 import com.afternote.feature.afternote.presentation.author.editor.memorial.playlist.Song
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -64,9 +62,8 @@ class AfternoteAuthorImplementedCoverageAndroidTest {
         collectSaveState(viewModel)
 
         composeRule.runOnIdle {
+            viewModel.setType(AfternoteType.GALLERY_AND_FILES)
             viewModel.saveAfternote(
-                editingId = null,
-                category = EditorCategory.GALLERY,
                 payload =
                     RegisterAfternotePayload(
                         serviceName = "Google Drive",
@@ -76,10 +73,9 @@ class AfternoteAuthorImplementedCoverageAndroidTest {
                                 EditorMessageTextBlock(" 사진 ", " 여행 사진을 보관해 줘 "),
                                 EditorMessageTextBlock("", ""),
                             ),
-                        processingMethods = listOf(ProcessingMethod("copy", "가족에게 폴더 전달")),
+                        processingMethods = listOf("가족에게 폴더 전달"),
                     ),
                 selectedReceiverIds = listOf(7L, 8L),
-                playlistSongs = emptyList(),
                 memorialMedia = SaveAfternoteMemorialMedia(),
             )
         }
@@ -107,9 +103,8 @@ class AfternoteAuthorImplementedCoverageAndroidTest {
         collectSaveState(viewModel)
 
         composeRule.runOnIdle {
+            viewModel.setType(AfternoteType.BUSINESS)
             viewModel.saveAfternote(
-                editingId = null,
-                category = EditorCategory.BUSINESS,
                 payload =
                     RegisterAfternotePayload(
                         serviceName = "회사 그룹웨어",
@@ -117,10 +112,9 @@ class AfternoteAuthorImplementedCoverageAndroidTest {
                         accountId = "employee@example.test",
                         password = "business-password",
                         messageBlocks = listOf(EditorMessageTextBlock("인수인계", "팀장에게 전달해 줘")),
-                        processingMethods = listOf(ProcessingMethod("handover", "계정 인계")),
+                        processingMethods = listOf("계정 인계"),
                     ),
                 selectedReceiverIds = listOf(8L),
-                playlistSongs = emptyList(),
                 memorialMedia = SaveAfternoteMemorialMedia(),
             )
         }
@@ -166,16 +160,15 @@ class AfternoteAuthorImplementedCoverageAndroidTest {
             )
 
         composeRule.runOnIdle {
+            viewModel.setType(AfternoteType.MEMORIAL)
+            viewModel.addMemorialPlaylistSongs(songs)
             viewModel.saveAfternote(
-                editingId = null,
-                category = EditorCategory.MEMORIAL,
                 payload =
                     RegisterAfternotePayload(
-                        serviceName = EditorCategory.MEMORIAL.displayLabel,
+                        serviceName = "추억 노트",
                         date = "2026.08.22",
                     ),
                 selectedReceiverIds = listOf(7L),
-                playlistSongs = songs,
                 memorialMedia =
                     SaveAfternoteMemorialMedia(
                         memorialVideoUrl = "content://videos/farewell",
@@ -237,17 +230,17 @@ class AfternoteAuthorImplementedCoverageAndroidTest {
         composeRule.setContent { AfternoteTheme {} }
 
         composeRule.runOnIdle {
-            first.setCategory(EditorCategory.MEMORIAL)
+            first.setType(AfternoteType.MEMORIAL)
             first.setMemorialVideo("content://videos/farewell")
             first.setMemorialPhoto("content://photos/portrait")
             first.setMemorialThumbnail("https://cdn.test/thumbnail.jpg")
-            first.setMemorialPlaylistSongs(
+            first.addMemorialPlaylistSongs(
                 listOf(Song("91", "첫 번째 노래", "가수 A", "https://cdn.test/cover.jpg")),
             )
         }
 
         val restored = implementedCoverageViewModel(ImplementedCoverageAfternoteRepository(), handle).currentForm()
-        assertEquals(EditorCategory.MEMORIAL, restored.selectedCategory)
+        assertEquals(AfternoteType.MEMORIAL, restored.selectedType)
         assertEquals("content://videos/farewell", restored.memorialVideoUrl)
         assertEquals("content://photos/portrait", restored.pickedMemorialPhotoUri)
         assertEquals("https://cdn.test/thumbnail.jpg", restored.memorialThumbnailUrl)
