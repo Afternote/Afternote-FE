@@ -136,6 +136,7 @@ fun HomeScreen(
                 )
             }
         },
+        containerColor = Color.Transparent,
     ) { paddingValues ->
         Column(
             modifier =
@@ -145,6 +146,8 @@ fun HomeScreen(
         ) {
             PrimaryScrollableTabRow(
                 selectedTabIndex = selectedIndex,
+                // 지정하지 않으면 M3 baseline surface(#FEF7FF)가 나와 시안 배경(#FAFAFA)과 어긋난다.
+                containerColor = Color.Transparent,
                 edgePadding = 0.dp,
                 divider = {},
                 indicator = {

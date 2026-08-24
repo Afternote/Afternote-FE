@@ -22,9 +22,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.modifierextention.shimmerLoadingPlaceholder
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.domain.model.EmotionAnalysisStatus
@@ -85,7 +88,18 @@ fun EmotionKeywordCard(
                         .height(BUBBLE_AREA_HEIGHT),
             ) {
                 if (capped.isEmpty()) {
-                    if (confirmsEmptyCount) EmptyBubble() else PendingBubble()
+                    when {
+                        // 분석이 끝났고 실제로 0건 — "0" 을 찍어 확정한다.
+                        confirmsEmptyCount -> EmptyBubble()
+
+                        // 실패는 대기와 같은 그림이면 안 된다. 종전에는 둘 다 PendingBubble 로
+                        // 떨어져 시각적으로 구분되지 않았고 TalkBack 은 아무것도 읽지 않았다.
+                        analysisStatus == EmotionAnalysisStatus.FAILED -> FailedBubble()
+
+                        analysisStatus == EmotionAnalysisStatus.UNKNOWN -> UnknownBubble()
+
+                        else -> PendingBubble()
+                    }
                 } else {
                     val slots = slotsFor(capped.size)
                     capped.forEachIndexed { index, keyword ->
@@ -148,22 +162,36 @@ private fun Bubble(
 }
 
 /**
- * 분석이 끝나지 않았을 때의 자리 표시. [EmptyBubble] 과 크기·위치는 같지만 **"0" 을 찍지
- * 않는다** — 키워드가 없다고 확정하는 표시이기 때문이다 (#725).
+ * 분석이 끝나지 않았을 때의 자리 표시. 아직 값이 오는 중이라는 것을 shimmer 로 알리고
+ * **"0" 을 찍지 않는다** — 그건 키워드가 없다고 확정하는 표시다 (#725).
  */
 @Composable
 private fun PendingBubble() {
-    val slot = EMPTY_SLOT
-    Box(
-        modifier =
-            Modifier
-                .offset(x = slot.offsetX, y = slot.offsetY)
-                .size(slot.size)
-                .clip(CircleShape)
-                .background(slot.color.copy(alpha = 0.3f)),
+    PlaceholderBubble(
+        contentDescription = stringResource(R.string.mindrecord_emotion_card_pending_bubble_label),
+        isLoading = true,
     )
 }
 
+/** 분석이 실패했을 때의 자리 표시. 대기와 같은 그림이면 두 상태가 구분되지 않는다. */
+@Composable
+private fun FailedBubble() {
+    PlaceholderBubble(
+        contentDescription = stringResource(R.string.mindrecord_emotion_card_failed_bubble_label),
+        isLoading = false,
+    )
+}
+
+/** 서버가 진행 상태를 주지 않았을 때. 실패도 대기도 아니므로 그 둘과 문구를 달리한다. */
+@Composable
+private fun UnknownBubble() {
+    PlaceholderBubble(
+        contentDescription = stringResource(R.string.mindrecord_emotion_card_unknown_bubble_label),
+        isLoading = false,
+    )
+}
+
+/** 분석이 끝났고 실제로 키워드가 0건. 이때만 "0" 을 찍어 확정한다. */
 @Composable
 private fun EmptyBubble() {
     val slot = EMPTY_SLOT
@@ -182,6 +210,28 @@ private fun EmptyBubble() {
             color = Color.White,
         )
     }
+}
+
+/**
+ * 값이 아직/영영 없을 때의 빈 버블. 빈 `Box` 만 두면 TalkBack 이 아무것도 읽지 않아
+ * 화면에 무슨 일이 있는지 알 수 없다.
+ */
+@Composable
+private fun PlaceholderBubble(
+    contentDescription: String,
+    isLoading: Boolean,
+) {
+    val slot = EMPTY_SLOT
+    Box(
+        modifier =
+            Modifier
+                .offset(x = slot.offsetX, y = slot.offsetY)
+                .size(slot.size)
+                .clip(CircleShape)
+                .background(slot.color.copy(alpha = 0.3f))
+                .then(if (isLoading) Modifier.shimmerLoadingPlaceholder() else Modifier)
+                .semantics { this.contentDescription = contentDescription },
+    )
 }
 
 // ── Slot ──────────────────────────────────────────────────────────────────────
