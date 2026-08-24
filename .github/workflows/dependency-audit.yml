@@ -29,36 +29,29 @@ jobs:
       REPORT_DIR: build/reports/dependency-audit
     steps:
       - name: Clone default branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '21'
-          cache: 'gradle'
 
-      - name: Verify required secrets are set
-        env:
-          KAKAO_NATIVE_APP_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
-          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
-          GOOGLE_SERVICES_JSON_B64: ${{ secrets.GOOGLE_SERVICES_JSON_B64 }}
-        run: |
-          missing=""
-          [ -z "$KAKAO_NATIVE_APP_KEY" ] && missing="$missing KAKAO_NATIVE_APP_KEY"
-          [ -z "$GOOGLE_WEB_CLIENT_ID" ] && missing="$missing GOOGLE_WEB_CLIENT_ID"
-          [ -z "$GOOGLE_SERVICES_JSON_B64" ] && missing="$missing GOOGLE_SERVICES_JSON_B64"
-          if [ -n "$missing" ]; then
-            echo "::error::필수 secret 누락:$missing — Settings → Secrets and variables → Actions 에 등록"
-            exit 1
-          fi
+      - name: Set up Gradle and validate wrapper
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          cache-provider: basic
+          validate-wrappers: true
 
-      - name: Decode google-services.json
-        env:
-          GOOGLE_SERVICES_JSON_B64: ${{ secrets.GOOGLE_SERVICES_JSON_B64 }}
-        run: echo "$GOOGLE_SERVICES_JSON_B64" | base64 -d > app/google-services.json
+      - name: Set up release build configuration
+        uses: ./.github/actions/setup-release-config
+        with:
+          require: KAKAO_NATIVE_APP_KEY GOOGLE_WEB_CLIENT_ID GOOGLE_SERVICES_JSON_B64
+          kakao-native-app-key: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
+          google-web-client-id: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+          google-services-json-b64: ${{ secrets.GOOGLE_SERVICES_JSON_B64 }}
 
       - name: Run dependency audit script tests
         run: node --test .github/scripts/*.test.mjs
@@ -131,7 +124,7 @@ jobs:
 
       - name: Upload machine-readable audit evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android-dependency-audit
           path: ${{ env.REPORT_DIR }}
@@ -140,3 +133,7 @@ jobs:
       - name: Fail when current compatibility gate failed
         if: steps.compatibility.outcome == 'failure'
         run: exit 1
+
+      - name: Remove release build configuration
+        if: always()
+        uses: ./.github/actions/cleanup-release-config
