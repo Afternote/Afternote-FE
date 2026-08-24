@@ -14,6 +14,7 @@ import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.mapper.toUi
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
+import com.afternote.feature.mindrecord.presentation.util.toWireContent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -88,14 +89,22 @@ class DiaryWriteViewModel
             }
         }
 
+        /** 이번 작성 중 업로드한 이미지의 원본 URL. 제출 시 fileKey 로 바꿀 대상이다 (#1016). */
+        private val uploadedImageUrls = mutableSetOf<String>()
+
         /**
-         * 에디터에서 고른 이미지를 presigned URL 로 업로드하고 영구 URL 을 반환한다 (실패 시 null).
-         * 첫 업로드 이미지는 등록 payload 의 `imageUrl` (목록 카드 썸네일) 로도 쓴다.
+         * 에디터에서 고른 이미지를 presigned URL 로 업로드하고 **미리보기에 쓸 URL** 을 반환한다
+         * (실패 시 null). 첫 업로드 이미지는 등록 payload 의 `imageUrl` (목록 카드 썸네일) 로도 쓴다.
+         *
+         * 저장 시 본문에 나가는 값은 이 URL 이 아니다 — 서버는 `img src` 에서 fileKey 를 기대하고
+         * 전체 URL 을 받으면 호스트를 한 번 더 붙여 403 이 된다. 그래서 받은 URL 을 기억해 두고
+         * 제출 직전에 키로 바꾼다 ([toWireContent]). 미리보기는 전체 URL 이라야 뜬다 (#1016).
          */
         suspend fun uploadImage(uriString: String): String? =
             photoUploadRepository
                 .upload(uriString = uriString, directory = MIND_RECORD_UPLOAD_DIRECTORY)
                 .onSuccess { url ->
+                    uploadedImageUrls += url
                     _uiState.update { if (it.imageUrl == null) it.copy(imageUrl = url) else it }
                 }.getOrNull()
 
@@ -113,7 +122,7 @@ class DiaryWriteViewModel
                             payload =
                                 DiaryUpdatePayload(
                                     title = state.title,
-                                    content = state.content,
+                                    content = state.content.toWireContent(uploadedImageUrls),
                                     isDraft = isDraft,
                                     todayMood = mood,
                                     date = state.date.toString(),
@@ -124,7 +133,7 @@ class DiaryWriteViewModel
                         repository.create(
                             DiaryCreatePayload(
                                 title = state.title,
-                                content = state.content,
+                                content = state.content.toWireContent(uploadedImageUrls),
                                 isDraft = isDraft,
                                 todayMood = mood,
                                 imageUrl = state.imageUrl,
@@ -134,6 +143,8 @@ class DiaryWriteViewModel
                     }
                 result
                     .onSuccess {
+                        // 서버가 permanent 로 옮겼으니 이 URL 들은 더 이상 치환 대상이 아니다.
+                        uploadedImageUrls.clear()
                         _uiState.update { it.copy(submitState = SubmitState.Succeeded) }
                         // 임시저장이 하나 늘었으니 툴바 숫자도 따라가야 한다 (#769).
                         if (isDraft) loadDraftCount()
