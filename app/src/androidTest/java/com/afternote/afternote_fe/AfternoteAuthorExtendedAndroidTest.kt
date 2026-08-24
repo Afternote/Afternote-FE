@@ -221,7 +221,7 @@ class AfternoteAuthorExtendedAndroidTest {
             .onNode(hasSetTextAction() and hasText("old@example.test"))
             .performTextReplacement("edited@example.test")
         composeRule.runOnIdle {
-            checkNotNull(editorViewModel).editProcessingMethod("1", "계정 보존")
+            checkNotNull(editorViewModel).editProcessingMethod(1, "계정 보존")
         }
         composeRule.onNodeWithText("계정 보존").performScrollTo().assertIsDisplayed()
         val topBarRegister =
