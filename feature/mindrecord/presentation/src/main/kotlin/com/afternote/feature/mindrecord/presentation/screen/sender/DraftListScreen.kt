@@ -30,11 +30,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.asString
 import com.afternote.core.ui.button.AfternoteCircularCheckbox
@@ -44,6 +47,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.mindrecord.presentation.util.htmlToPlainText
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftCategory
+import com.afternote.feature.mindrecord.presentation.viewmodel.DraftDeleteOutcome
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftItem
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftListViewModel
@@ -71,13 +75,46 @@ fun DraftListScreen(
     var selectionMode by remember { mutableStateOf(false) }
     var selectedKeys by remember { mutableStateOf(setOf<String>()) }
 
-    val deleteCompleted = (uiState as? DraftListUiState.Success)?.deleteCompleted == true
-    LaunchedEffect(deleteCompleted) {
-        if (deleteCompleted) {
-            selectedKeys = emptySet()
-            selectionMode = false
-            delay(DELETED_TOAST_DURATION_MS)
-            viewModel.consumeDeleteCompleted()
+    // 화면을 떠났다 돌아오면 다시 조회한다 — 작성·삭제하고 복귀했을 때 목록이 낡은 채로
+    // 남지 않게 한다. 마인드레코드 홈이 쓰는 결선과 같다 (#702).
+    //
+    // ON_RESUME 은 화면 off/on·홈 버튼 복귀에서도 발화하므로 로딩을 방출하지 않는
+    // `refreshOnReturn()` 을 쓴다. 최초 진입의 중복 호출은 VM 이 진행 중인 Job 으로 막는다.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refreshOnReturn()
+    }
+
+    // 갱신으로 사라진 항목의 키가 선택에 남으면 "총 N개 선택" 이 과대 표시되고, 선택
+    // 삭제가 빈 목록으로 나간다. 선택은 화면 remember 라 갱신에도 살아남는다 (리뷰 지적).
+    val visibleKeys = (uiState as? DraftListUiState.Success)?.items?.map { it.key() }?.toSet()
+    LaunchedEffect(visibleKeys) {
+        if (visibleKeys != null) {
+            selectedKeys = selectedKeys intersect visibleKeys
+            if (selectedKeys.isEmpty()) selectionMode = false
+        }
+    }
+
+    val deleteOutcome = (uiState as? DraftListUiState.Success)?.deleteOutcome
+    LaunchedEffect(deleteOutcome) {
+        when (deleteOutcome) {
+            null -> {
+                Unit
+            }
+
+            DraftDeleteOutcome.AllDeleted -> {
+                selectedKeys = emptySet()
+                selectionMode = false
+                delay(DELETED_TOAST_DURATION_MS)
+                viewModel.consumeDeleteOutcome()
+            }
+
+            is DraftDeleteOutcome.SomeFailed -> {
+                // 실패한 항목만 다시 선택된 상태로 남겨 그대로 재시도할 수 있게 한다.
+                selectedKeys = deleteOutcome.failedItems.mapTo(mutableSetOf()) { it.key() }
+                selectionMode = true
+                delay(DELETED_TOAST_DURATION_MS)
+                viewModel.consumeDeleteOutcome()
+            }
         }
     }
 
@@ -115,6 +152,7 @@ fun DraftListScreen(
             )
         },
         modifier = modifier,
+        containerColor = Color.Transparent,
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {
             when (val state = uiState) {
@@ -140,6 +178,7 @@ fun DraftListScreen(
                                 if (key in selectedKeys) selectedKeys - key else selectedKeys + key
                         },
                         onDeleteAll = viewModel::deleteAll,
+                        isDeleteSelectedEnabled = selectedKeys.isNotEmpty(),
                         onDeleteSelected = {
                             viewModel.delete(state.items.filter { it.key() in selectedKeys })
                         },
@@ -152,13 +191,31 @@ fun DraftListScreen(
                     )
 
                     // Figma 2372:25211 — 삭제 완료 토스트
-                    if (state.deleteCompleted) {
-                        DeletedToast(
-                            modifier =
-                                Modifier
-                                    .align(Alignment.TopCenter)
-                                    .padding(horizontal = 20.dp, vertical = 12.dp),
-                        )
+                    when (val outcome = state.deleteOutcome) {
+                        null -> {
+                            Unit
+                        }
+
+                        DraftDeleteOutcome.AllDeleted -> {
+                            DeletedToast(
+                                modifier =
+                                    Modifier
+                                        .align(Alignment.TopCenter)
+                                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                            )
+                        }
+
+                        // 완료 토스트와 같은 자리에 실패를 알린다 — 지워지지 않은 항목이 목록에
+                        // 남아 있는데 "삭제되었습니다" 가 뜨면 사용자는 지워진 줄 안다.
+                        is DraftDeleteOutcome.SomeFailed -> {
+                            DraftDeleteFailedToast(
+                                failedCount = outcome.failedItems.size,
+                                modifier =
+                                    Modifier
+                                        .align(Alignment.TopCenter)
+                                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -175,6 +232,7 @@ private fun SuccessContent(
     onDeleteAll: () -> Unit,
     onDeleteSelected: () -> Unit,
     onItemClick: (DraftItem) -> Unit,
+    isDeleteSelectedEnabled: Boolean = true,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
@@ -217,6 +275,7 @@ private fun SuccessContent(
             DeleteActionBar(
                 onDeleteAll = onDeleteAll,
                 onDeleteSelected = onDeleteSelected,
+                isDeleteSelectedEnabled = isDeleteSelectedEnabled,
                 modifier =
                     Modifier
                         .align(Alignment.BottomCenter)
@@ -291,6 +350,8 @@ private fun DeleteActionBar(
     onDeleteAll: () -> Unit,
     onDeleteSelected: () -> Unit,
     modifier: Modifier = Modifier,
+    /** 0개 선택 상태에서는 빈 목록으로 삭제를 부르지 않도록 막는다 (#442). */
+    isDeleteSelectedEnabled: Boolean = true,
 ) {
     Row(
         modifier =
@@ -323,14 +384,17 @@ private fun DeleteActionBar(
             modifier =
                 Modifier
                     .weight(1f)
-                    .clickable(role = Role.Button, onClick = onDeleteSelected)
-                    .padding(vertical = 12.dp),
+                    .clickable(
+                        role = Role.Button,
+                        enabled = isDeleteSelectedEnabled,
+                        onClick = onDeleteSelected,
+                    ).padding(vertical = 12.dp),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = stringResource(MindRecordR.string.mindrecord_draft_list_delete_selected),
                 style = AfternoteDesign.typography.bodySmallB,
-                color = AfternoteDesign.colors.white,
+                color = if (isDeleteSelectedEnabled) AfternoteDesign.colors.white else AfternoteDesign.colors.gray6,
             )
         }
     }
@@ -349,6 +413,38 @@ private fun DeletedToast(modifier: Modifier = Modifier) {
     ) {
         Text(
             text = stringResource(MindRecordR.string.mindrecord_draft_list_deleted_toast),
+            style = AfternoteDesign.typography.bodySmallR,
+            color = AfternoteDesign.colors.white,
+        )
+    }
+}
+
+/**
+ * 삭제 실패 안내.
+ *
+ * 완료 토스트와 같은 자리·같은 모양을 쓰되 문구만 다르다 — 실패 표시 시안이 따로 없어
+ * 새 표현을 만들지 않았다. 확정되면 이 컴포저블만 교체하면 된다.
+ */
+@Composable
+private fun DraftDeleteFailedToast(
+    failedCount: Int,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(AfternoteDesign.colors.gray9)
+                .padding(vertical = 18.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text =
+                stringResource(
+                    MindRecordR.string.mindrecord_draft_list_delete_failed_toast,
+                    failedCount,
+                ),
             style = AfternoteDesign.typography.bodySmallR,
             color = AfternoteDesign.colors.white,
         )

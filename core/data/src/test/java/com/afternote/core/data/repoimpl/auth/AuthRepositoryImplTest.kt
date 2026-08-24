@@ -3,6 +3,8 @@ package com.afternote.core.data.repoimpl.auth
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
+import com.afternote.core.datastore.LocalStoreRegistry
+import com.afternote.core.datastore.StoreScope
 import com.afternote.core.datastore.TokenDataSource
 import com.afternote.core.domain.error.InvalidLoginCredentialsException
 import com.afternote.core.domain.error.NetworkUnavailableException
@@ -38,14 +40,25 @@ import kotlin.coroutines.cancellation.CancellationException
  *
  * 계약 — 발급(로그인) 응답의 `expiresIn` 은 기록하고, 생략(null)이면 이전 토큰 기준 stale
  * deadline 이 새 세션에 적용되지 않게 비우며(`TokenReissuer` 회전 경로와 같은 규칙),
- * 세션 종료(`logout`/`clearSession`)는 로컬 토큰과 deadline 을 함께 정리한다.
+ * 세션 종료(`logout`/`clearSession`)는 SESSION 스코프 저장소 일괄 정리(#912)와 deadline
+ * 정리를 함께 수행한다.
  *
  * [AccessTokenExpiryTracker] 는 실물 사용 — 시계(SystemClock)는 `isReturnDefaultValues` 로
  * 0 에 고정되므로, 잔여 30초 기록 = 임박 true / 비움 = false 로 상태를 관찰한다 (임계 60초).
  */
 class AuthRepositoryImplTest {
     private val tracker = AccessTokenExpiryTracker()
-    private val tokenDataSource = TokenDataSource(InMemoryPreferencesDataStore())
+    private val tokenStore = InMemoryPreferencesDataStore()
+    private val tokenDataSource = TokenDataSource(tokenStore)
+
+    // 실제 레지스트리처럼 SESSION 정리가 토큰 저장소를 비우게 흉내 낸다 — 그래야 아래
+    // 토큰 잔존·서버 호출 순서(정리가 먼저면 refresh 가 없어 서버 호출 불가) 단언이 유효하다.
+    private val localStoreRegistry =
+        FakeLocalStoreRegistry(
+            onClearScope = { scope ->
+                if (scope == StoreScope.SESSION) tokenStore.updateData { emptyPreferences() }
+            },
+        )
 
     private fun repository(
         authApiService: AuthApiService = FakeAuthApiService(),
@@ -55,6 +68,7 @@ class AuthRepositoryImplTest {
         authApiService = authApiService,
         tokenApiService = tokenApiService,
         expiryTracker = tracker,
+        localStoreRegistry = localStoreRegistry,
     )
 
     @Test
@@ -105,7 +119,7 @@ class AuthRepositoryImplTest {
     }
 
     @Test
-    fun `logout - 저장돼 있던 refresh 로 서버 호출 후 로컬 토큰·deadline 정리`() {
+    fun `logout - 저장돼 있던 refresh 로 서버 호출 후 SESSION 스코프·deadline 정리`() {
         runBlocking { tokenDataSource.saveTokens(accessToken = "access", refreshToken = "stored-refresh") }
         tracker.record(expiresInSeconds = 30)
         val authApiService = FakeAuthApiService()
@@ -113,13 +127,15 @@ class AuthRepositoryImplTest {
         val result = runBlocking { repository(authApiService).logout() }
 
         assertTrue(result.isSuccess)
+        // 정리가 서버 호출보다 먼저였다면 refresh 가 이미 없어 이 요청 자체가 못 나간다 (순서 가드).
         assertEquals(listOf(LogoutRequestDto("stored-refresh")), authApiService.logoutRequests)
+        assertEquals(listOf(StoreScope.SESSION), localStoreRegistry.clearedScopes)
         assertNull(runBlocking { tokenDataSource.getRefreshToken() })
         assertFalse(tracker.isExpiringSoon())
     }
 
     @Test
-    fun `logout - 서버 호출 실패해도 (best-effort) 토큰·deadline 정리는 진행`() {
+    fun `logout - 서버 호출 실패해도 (best-effort) SESSION 스코프·deadline 정리는 진행`() {
         runBlocking { tokenDataSource.saveTokens(accessToken = "access", refreshToken = "stored-refresh") }
         tracker.record(expiresInSeconds = 30)
         val authApiService =
@@ -130,18 +146,20 @@ class AuthRepositoryImplTest {
         val result = runBlocking { repository(authApiService).logout() }
 
         assertTrue(result.isSuccess)
+        assertEquals(listOf(StoreScope.SESSION), localStoreRegistry.clearedScopes)
         assertNull(runBlocking { tokenDataSource.getRefreshToken() })
         assertFalse(tracker.isExpiringSoon())
     }
 
     @Test
-    fun `clearSession - 로컬 토큰·deadline 함께 정리`() {
+    fun `clearSession - SESSION 스코프·deadline 함께 정리 (탈퇴 경로도 이 메서드를 쓴다)`() {
         runBlocking { tokenDataSource.saveTokens(accessToken = "access", refreshToken = "refresh") }
         tracker.record(expiresInSeconds = 30)
 
         val result = runBlocking { repository().clearSession() }
 
         assertTrue(result.isSuccess)
+        assertEquals(listOf(StoreScope.SESSION), localStoreRegistry.clearedScopes)
         assertNull(runBlocking { tokenDataSource.getAccessToken() })
         assertFalse(tracker.isExpiringSoon())
     }
@@ -329,6 +347,23 @@ private class FakeTokenApiService(
     },
 ) : TokenApiService {
     override suspend fun reissue(body: ReissueRequestDto): BaseResponse<ReissueDto> = onReissue(body)
+}
+
+/** [LocalStoreRegistry] 테스트 대역 — clearScope 호출을 기록하고, 주입된 동작으로 실제 정리를 흉내 낸다. */
+private class FakeLocalStoreRegistry(
+    private val onClearScope: suspend (StoreScope) -> Unit = {},
+) : LocalStoreRegistry {
+    val clearedScopes = mutableListOf<StoreScope>()
+
+    override fun store(
+        name: String,
+        scope: StoreScope,
+    ): DataStore<Preferences> = error("store 는 이 테스트에서 호출되면 안 됨")
+
+    override suspend fun clearScope(scope: StoreScope) {
+        clearedScopes += scope
+        onClearScope(scope)
+    }
 }
 
 /** 단위 테스트용 in-memory `DataStore<Preferences>` — 디스크 없이 [TokenDataSource] 실물을 구동한다. */
