@@ -21,6 +21,7 @@ dependencies {
 
     // HomeTabViewModel 경합 테스트 — 가상 시간으로 viewModelScope 요청 순서를 제어한다.
     testImplementation(libs.coroutines.test)
+    testImplementation(testFixtures(projects.feature.mindrecord.domain))
 
     screenshotTestImplementation(libs.screenshot.validation.api)
     screenshotTestImplementation(libs.androidx.compose.ui.tooling)

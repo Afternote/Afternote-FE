@@ -25,15 +25,15 @@ import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.MindRecordSummary
 import com.afternote.feature.mindrecord.domain.model.MindRecordType
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
-import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDailyQuestion
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDay
-import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
+import com.afternote.feature.mindrecord.domain.testing.unexpectedCall
 import com.afternote.feature.mindrecord.presentation.model.DayBackground
 import com.afternote.feature.mindrecord.presentation.model.DayContent
 import com.afternote.feature.mindrecord.presentation.screen.receiver.ReceiverMindRecordScreen
@@ -138,8 +138,12 @@ class MindRecordLifecycleAndroidTest {
                     )
             }
         val dailyQuestionRepository =
-            PrivateDailyQuestionRepository(
-                questions =
+            FakeDailyQuestionRepository(
+                // 이 시나리오는 임시저장 목록의 조회·삭제만 태운다.
+                onGetToday = { unexpectedCall("DailyQuestionRepository.getToday") },
+                onCreate = { unexpectedCall("DailyQuestionRepository.create") },
+                onUpdate = { _, _ -> unexpectedCall("DailyQuestionRepository.update") },
+                initialAnswers =
                     listOf(
                         DailyQuestion(
                             dailyQuestionId = 202L,
@@ -176,7 +180,7 @@ class MindRecordLifecycleAndroidTest {
             .assertIsDisplayed()
         composeRule.onNodeWithText("질문 임시저장").assertDoesNotExist()
         composeRule.onNodeWithText("일기 임시저장").assertIsDisplayed()
-        assertEquals(listOf(202L), dailyQuestionRepository.deleteCalls)
+        assertEquals(listOf(202L), dailyQuestionRepository.deletedIds)
         assertTrue(diaryRepository.deleteCalls.isEmpty())
 
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
@@ -186,9 +190,9 @@ class MindRecordLifecycleAndroidTest {
         composeRule.onNodeWithText("전체 삭제").performClick()
         composeRule.onNodeWithText("임시 저장된 항목이 없습니다.").assertIsDisplayed()
         assertEquals(listOf(201L), diaryRepository.deleteCalls)
-        assertEquals(listOf(202L), dailyQuestionRepository.deleteCalls)
+        assertEquals(listOf(202L), dailyQuestionRepository.deletedIds)
         assertEquals(3, diaryRepository.listCalls.size)
-        assertEquals(3, dailyQuestionRepository.listCalls.size)
+        assertEquals(3, dailyQuestionRepository.listQueries.size)
         assertTrue((viewModel.uiState.value as DraftListUiState.Success).items.isEmpty())
     }
 
@@ -361,42 +365,6 @@ private class PrivateDiaryRepository : DiaryRepository {
             val remaining = list.diaries.filterNot { it.diaryId == id }
             list.copy(diaries = remaining, monthDiaryCount = remaining.size)
         }
-        return Result.success(Unit)
-    }
-}
-
-private data class PrivateDailyQuestionQuery(
-    val date: String?,
-    val draftOnly: Boolean?,
-)
-
-private class PrivateDailyQuestionRepository(
-    questions: List<DailyQuestion>,
-) : DailyQuestionRepository {
-    private var questions = questions
-    val listCalls = mutableListOf<PrivateDailyQuestionQuery>()
-    val deleteCalls = mutableListOf<Long>()
-
-    override suspend fun getList(
-        date: String?,
-        draftOnly: Boolean?,
-    ): Result<List<DailyQuestion>> {
-        listCalls += PrivateDailyQuestionQuery(date, draftOnly)
-        return Result.success(questions)
-    }
-
-    override suspend fun getToday(): Result<TodayDailyQuestion> = error("Unexpected today question load")
-
-    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> = error("Unexpected question create")
-
-    override suspend fun update(
-        id: Long,
-        payload: DailyQuestionUpdatePayload,
-    ): Result<Long> = error("Unexpected question update")
-
-    override suspend fun delete(id: Long): Result<Unit> {
-        deleteCalls += id
-        questions = questions.filterNot { it.dailyQuestionId == id }
         return Result.success(Unit)
     }
 }

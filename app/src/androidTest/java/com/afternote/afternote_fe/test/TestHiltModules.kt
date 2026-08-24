@@ -13,6 +13,7 @@ import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepositor
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.components.SingletonComponent

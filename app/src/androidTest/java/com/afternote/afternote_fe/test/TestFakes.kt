@@ -15,13 +15,9 @@ import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.model.user.UserPushSetting
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
-import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
-import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DiaryList
 import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
-import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
-import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -255,38 +251,6 @@ class FakeDiaryRepository(
     }
 
     override suspend fun delete(id: Long): Result<Unit> = Result.success(Unit)
-}
-
-class FakeDailyQuestionRepository(
-    var todayResult: Result<TodayDailyQuestion> =
-        Result.success(TodayDailyQuestion(1L, 1, "오늘의 질문", false)),
-) : DailyQuestionRepository {
-    val createdPayloads = mutableListOf<DailyQuestionCreatePayload>()
-    val createResults = ArrayDeque<Result<Long>>()
-
-    override suspend fun getList(
-        date: String?,
-        draftOnly: Boolean?,
-    ): Result<List<DailyQuestion>> = Result.success(emptyList())
-
-    override suspend fun getToday(): Result<TodayDailyQuestion> = todayResult
-
-    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> {
-        createdPayloads += payload
-        return createResults.removeFirstOrNull() ?: Result.success(CREATED_DAILY_QUESTION_ID)
-    }
-
-    override suspend fun update(
-        id: Long,
-        payload: DailyQuestionUpdatePayload,
-    ): Result<Long> = Result.success(id)
-
-    override suspend fun delete(id: Long): Result<Unit> = Result.success(Unit)
-
-    private companion object {
-        /** 서버가 돌려주는 `userDailyQuestionId` 자리 (#573). 값 자체에 의미는 없다. */
-        const val CREATED_DAILY_QUESTION_ID = 1L
-    }
 }
 
 class FakeErrorReporter : ErrorReporter {

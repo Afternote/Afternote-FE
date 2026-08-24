@@ -13,15 +13,12 @@ import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.model.user.UserPushSetting
 import com.afternote.feature.home.presentation.usecase.GetHomeSummaryUseCase
-import com.afternote.feature.mindrecord.domain.model.DailyQuestion
-import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
-import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DiaryList
 import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
-import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -271,13 +268,20 @@ private class Fixture {
 private class FakeHomeRepositories {
     val userRepository = FakeUserRepository()
     val diaryRepository = FakeDiaryRepository()
-    val dailyQuestionRepository = FakeDailyQuestionRepository()
+
+    /** 완료 시점을 테스트가 쥐고 있어야 병렬 조회의 경합 순서를 만들 수 있다. */
+    private val questionResults = ArrayDeque<CompletableDeferred<Result<TodayDailyQuestion>>>()
+
+    val dailyQuestionRepository =
+        FakeDailyQuestionRepository.strict().apply {
+            onGetToday = { questionResults.takeNext("DailyQuestionRepository.getToday").await() }
+        }
 
     fun enqueueRequest(): PendingHomeRequest =
         PendingHomeRequest().also { request ->
             userRepository.enqueue(request.profile, request.receivers)
             diaryRepository.enqueue(request.diary)
-            dailyQuestionRepository.enqueue(request.question)
+            questionResults.addLast(request.question)
         }
 }
 
@@ -439,36 +443,6 @@ private class FakeDiaryRepository : DiaryRepository {
     ): Result<Unit> = unexpected("DiaryRepository.update")
 
     override suspend fun delete(id: Long): Result<Unit> = unexpected("DiaryRepository.delete")
-}
-
-private class FakeDailyQuestionRepository : DailyQuestionRepository {
-    private val results = ArrayDeque<CompletableDeferred<Result<TodayDailyQuestion>>>()
-
-    var getTodayCalls: Int = 0
-        private set
-
-    fun enqueue(result: CompletableDeferred<Result<TodayDailyQuestion>>) {
-        results.addLast(result)
-    }
-
-    override suspend fun getToday(): Result<TodayDailyQuestion> {
-        getTodayCalls++
-        return results.takeNext("DailyQuestionRepository.getToday").await()
-    }
-
-    override suspend fun getList(
-        date: String?,
-        draftOnly: Boolean?,
-    ): Result<List<DailyQuestion>> = unexpected("DailyQuestionRepository.getList")
-
-    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> = unexpected("DailyQuestionRepository.create")
-
-    override suspend fun update(
-        id: Long,
-        payload: DailyQuestionUpdatePayload,
-    ): Result<Long> = unexpected("DailyQuestionRepository.update")
-
-    override suspend fun delete(id: Long): Result<Unit> = unexpected("DailyQuestionRepository.delete")
 }
 
 private class FakeUserProfileRepository : UserProfileRepository {
