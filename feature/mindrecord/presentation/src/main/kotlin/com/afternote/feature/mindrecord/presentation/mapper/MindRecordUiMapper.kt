@@ -59,7 +59,7 @@ fun Diary.toUi(): DailyDiary? {
         title = title,
         date = resolvedDate,
         content = content,
-        emotion = todayMood?.toEmoji(),
+        emotion = todayMood.toEmoji(),
         imageUrl = imageUrl,
     )
 }
