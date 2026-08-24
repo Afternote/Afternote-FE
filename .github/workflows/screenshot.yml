@@ -5,6 +5,10 @@ name: Compose Preview Screenshot Test
 on:
   pull_request:
 
+concurrency:
+  group: screenshot-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   pull-requests: write
@@ -59,7 +63,7 @@ jobs:
                       :feature:receiver:presentation:validateScreenshotTest \
                       :feature:onboarding:presentation:validateScreenshotTest \
                       :feature:afternote:presentation:validateScreenshotTest \
-                      --parallel
+                      --parallel --build-cache
 
       # 컨테이너가 root 로 gradle 을 실행해 workspace · ~/.gradle 산출물이 root 소유가 된다.
       # job 종료 시 'Post Restore Gradle cache'(캐시 저장)의 hashFiles/tar 가 runner 권한이라
