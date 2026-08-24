@@ -10,7 +10,7 @@ import org.junit.Test
 /**
  * [ReceivedAfternoteDto.toDomain] / [toReceiverDomainList] 회귀 가드.
  * 수신자 목록 DTO→[com.afternote.feature.receiver.domain.model.AfterNoteListItem] 매핑.
- * 서버 카테고리를 [AfternoteType] 으로 바꾸는 규칙과 null 가드(category·createdAt)를 검증한다.
+ * 서버 카테고리를 [AfternoteType] 으로 바꾸는 규칙과 createdAt null 가드를 검증한다.
  */
 class ReceiverAfternoteListItemDtoToDomainTest {
     @Test
