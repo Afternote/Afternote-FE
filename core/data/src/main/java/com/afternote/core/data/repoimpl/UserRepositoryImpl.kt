@@ -3,20 +3,16 @@ package com.afternote.core.data.repoimpl
 import android.util.Log
 import com.afternote.core.data.mapper.delivery.toRequestDto
 import com.afternote.core.data.mapper.user.toDomain
-import com.afternote.core.data.mapper.user.toDto
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.model.delivery.DeliveryConditionItem
 import com.afternote.core.model.delivery.ReceiverDeliveryConditions
-import com.afternote.core.model.user.DeliveryCondition
-import com.afternote.core.model.user.DeliveryConditionType
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.model.user.ReceiverCreated
 import com.afternote.core.model.user.ReceiverDetail
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.model.user.UserPushSetting
-import com.afternote.core.network.dto.DeliveryConditionRequestDto
 import com.afternote.core.network.dto.SocialAccountLinkRequestDto
 import com.afternote.core.network.dto.UserCreateReceiverRequestDto
 import com.afternote.core.network.dto.UserPatchReceiverRequestDto
@@ -201,27 +197,6 @@ class UserRepositoryImpl
             userApiService
                 .unlinkConnectedAccount(provider)
                 .requireData()
-                .toDomain()
-
-        override suspend fun getDeliveryCondition(): DeliveryCondition =
-            userApiService
-                .getDeliveryCondition()
-                .requireData()
-                .toDomain()
-
-        override suspend fun updateDeliveryCondition(
-            conditionType: DeliveryConditionType,
-            inactivityPeriodDays: Int?,
-            specificDate: String?,
-        ): DeliveryCondition =
-            userApiService
-                .updateDeliveryCondition(
-                    DeliveryConditionRequestDto(
-                        conditionType = conditionType.toDto(),
-                        inactivityPeriodDays = inactivityPeriodDays,
-                        specificDate = specificDate,
-                    ),
-                ).requireData()
                 .toDomain()
 
         override suspend fun getReceiverDeliveryConditions(receiverId: Long): ReceiverDeliveryConditions =

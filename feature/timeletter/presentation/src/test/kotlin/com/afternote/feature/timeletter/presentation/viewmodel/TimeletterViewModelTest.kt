@@ -3,6 +3,7 @@ package com.afternote.feature.timeletter.presentation.viewmodel
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetter
+import com.afternote.feature.timeletter.domain.model.TimeLetterDeliveryMode
 import com.afternote.feature.timeletter.domain.model.TimeLetterList
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
@@ -169,8 +170,9 @@ class TimeletterViewModelTest {
                 title: String?,
                 blocks: List<NewTimeLetterBlock>,
                 sendAt: String?,
+                deliveryMode: TimeLetterDeliveryMode,
                 status: TimeLetterStatus,
-                receiverIds: List<Long>?,
+                receiverIds: List<Long>,
             ): TimeLetter = error("Unexpected call")
 
             override suspend fun updateTimeLetter(
@@ -178,6 +180,7 @@ class TimeletterViewModelTest {
                 title: String?,
                 blocks: List<NewTimeLetterBlock>,
                 sendAt: String?,
+                deliveryMode: TimeLetterDeliveryMode?,
                 status: TimeLetterStatus?,
             ): TimeLetter = error("Unexpected call")
 

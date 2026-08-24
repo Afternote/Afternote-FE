@@ -1,5 +1,6 @@
 package com.afternote.core.network
 
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.model.Session
 import com.afternote.core.model.TokenBundle
@@ -62,4 +63,15 @@ internal class FakeAuthRepository(
     override suspend fun googleLogin(idToken: String): Result<Session.SocialSession> = error("not used")
 
     override suspend fun logout(): Result<Unit> = error("not used")
+}
+
+internal class FakeErrorReporter : ErrorReporter {
+    val writtenFailures = mutableListOf<Pair<Throwable, Map<String, String>>>()
+
+    override fun writeFailure(
+        throwable: Throwable,
+        attributes: Map<String, String>,
+    ) {
+        writtenFailures += throwable to attributes
+    }
 }

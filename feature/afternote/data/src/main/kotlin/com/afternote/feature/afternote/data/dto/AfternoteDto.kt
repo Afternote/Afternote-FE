@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class AfternoteCreateGalleryRequestDto(
-    @EncodeDefault @SerialName("category") val type: String = "GALLERY",
+    @EncodeDefault @SerialName("category") val category: String = "GALLERY",
     @SerialName("title") val title: String,
     @SerialName("actions") val processingMethods: List<String>,
     @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
@@ -18,16 +18,16 @@ data class AfternoteCreateGalleryRequestDto(
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 data class AfternoteCreatePlaylistRequestDto(
-    @EncodeDefault @SerialName("category") val type: String = "PLAYLIST",
+    @EncodeDefault @SerialName("category") val category: String = "PLAYLIST",
     @SerialName("title") val title: String,
     @SerialName("playlist") val memorial: AfternotePlaylistDto,
     @SerialName("receivers") val receivers: List<AfternoteReceiverRefDto> = emptyList(),
 )
 
-/** SOCIAL·BUSINESS 공용 생성 요청 — 두 카테고리는 바디 스키마가 동일해 [type] 값으로만 구분된다. */
+/** SOCIAL·BUSINESS 공용 생성 요청 — 두 카테고리는 바디 스키마가 동일해 [category] 값으로만 구분된다. */
 @Serializable
 data class AfternoteCreateAccountRequestDto(
-    @SerialName("category") val type: String,
+    @SerialName("category") val category: String,
     @SerialName("title") val title: String,
     @SerialName("actions") val processingMethods: List<String>,
     @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
@@ -37,7 +37,7 @@ data class AfternoteCreateAccountRequestDto(
 
 @Serializable
 data class AfternoteUpdateRequestDto(
-    @SerialName("category") val type: String,
+    @SerialName("category") val category: String,
     @SerialName("title") val title: String,
     @SerialName("actions") val processingMethods: List<String>? = null,
     @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
@@ -49,7 +49,7 @@ data class AfternoteUpdateRequestDto(
 @Serializable
 data class AfternoteDetailDto(
     @SerialName("afternoteId") val afternoteId: Long,
-    @SerialName("category") val type: String,
+    @SerialName("category") val category: String,
     @SerialName("title") val title: String,
     @SerialName("createdAt") val createdAt: String = "",
     @SerialName("updatedAt") val updatedAt: String = "",
@@ -93,7 +93,7 @@ data class AfternoteDetailReceiverDto(
 data class AfternoteListItemDto(
     @SerialName("afternoteId") val afternoteId: Long,
     @SerialName("title") val title: String,
-    @SerialName("category") val type: String,
+    @SerialName("category") val category: String,
     @SerialName("createdAt") val createdAt: String,
 )
 

@@ -1,6 +1,5 @@
 package com.afternote.feature.afternote.data.mapper.response
 
-import com.afternote.feature.afternote.data.dto.AfternoteCredentialsDto
 import com.afternote.feature.afternote.data.dto.AfternoteDetailDto
 import com.afternote.feature.afternote.data.dto.AfternoteDetailReceiverDto
 import com.afternote.feature.afternote.data.dto.AfternotePlaylistDto
@@ -19,7 +18,7 @@ import com.afternote.feature.afternote.domain.model.author.playlist.MemorialDeta
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 
 fun AfternoteDetailDto.toDetailDomain(): Detail {
-    val afternoteType = categoryToAfternoteType(type)
+    val afternoteType = categoryToAfternoteType(category)
     return Detail(
         id = afternoteId,
         serviceName = title,
@@ -63,10 +62,14 @@ private fun AfternoteDetailDto.toDetailContent(type: AfternoteType): DetailConte
         }
     }
 
+// BE 상세 조립은 id·password 중 하나만 있어도 credentials 를 만들고(OR), 수정 검증은 발행 상태에서도
+// 두 값을 강제하지 않는다 — 여기서 던지면 그 상세가 영영 안 열리므로 없는 값은 빈 문자열로 낮춘다.
+// 두 값 모두 null 이면 credentials 객체 자체가 생략된다.
 private fun AfternoteDetailDto.toPublishedCredentials() =
-    requireNotNull(credentials) {
-        "credentials is required for published account detail"
-    }.toDomain()
+    DetailCredentials(
+        id = credentials?.id.orEmpty(),
+        password = credentials?.password.orEmpty(),
+    )
 
 // DTO 는 방어적으로 receiverId 가 nullable 이지만 서버 스펙상 필수 필드다 — 없는 항목은
 // 도메인으로 올리지 않는다(식별자 없는 수신자는 저장·수정 어디에도 쓸 수 없다).
@@ -76,12 +79,6 @@ private fun AfternoteDetailDto.toTimestamps(): DetailTimestamps =
     DetailTimestamps(
         createdAt = formatDateFromServer(createdAt),
         updatedAt = formatDateFromServer(updatedAt),
-    )
-
-private fun AfternoteCredentialsDto.toDomain() =
-    DetailCredentials(
-        id = requireNotNull(id) { "credentials.id is required for published account detail" },
-        password = requireNotNull(password) { "credentials.password is required for published account detail" },
     )
 
 private fun AfternotePlaylistDto.toDomain() =
