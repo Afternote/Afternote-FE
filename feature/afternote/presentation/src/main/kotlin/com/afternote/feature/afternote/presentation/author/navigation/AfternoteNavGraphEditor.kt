@@ -30,7 +30,7 @@ internal fun tryApplyReceiverSelectionFromSavedState(
     val id = backStackEntry.savedStateHandle[SELECTED_RECEIVER_ID_KEY] as? Long ?: return
     backStackEntry.savedStateHandle.remove<Long>(SELECTED_RECEIVER_ID_KEY)
     val receiver = viewModel.getReceiverById(id) ?: return
-    state.addReceiverById(receiver.receiverId, receiver.name, receiver.relation)
+    state.addReceiverById(id, receiver.name, receiver.label)
 }
 
 internal fun buildOnRegisterClick(
