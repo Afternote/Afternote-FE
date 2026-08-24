@@ -119,10 +119,46 @@ fun DailyQuestionWriteScreen(
                 )
             }
 
+            // 저장·업로드 진행 상태를 알린다 — 종전에는 액션만 잠기고 표시가 없어
+            // 사용자가 무반응으로 인식했다 (#716).
+            val progressText =
+                when {
+                    uiState.submitState is SubmitState.InProgress -> {
+                        stringResource(R.string.mindrecord_write_saving)
+                    }
+
+                    uiState.isUploadingImage -> {
+                        stringResource(R.string.mindrecord_write_uploading_image)
+                    }
+
+                    else -> {
+                        null
+                    }
+                }
+            if (progressText != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = progressText,
+                    color = AfternoteDesign.colors.gray6,
+                    style = AfternoteDesign.typography.captionLargeR,
+                )
+            }
+
+            val uploadError = uiState.imageUploadError?.asString()
+            if (uploadError != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = uploadError,
+                    color = AfternoteDesign.colors.error,
+                    style = AfternoteDesign.typography.captionLargeR,
+                )
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
-            // 프리필은 둘 다 비동기로 끝난다 — WriteTextField 는 value 를 초기 시드로만 받으므로
-            // 어느 쪽이 도착하든 에디터를 재생성해 본문을 다시 싣는다 (#582 수정 · #923 이어쓰기).
-            key(uiState.contentLoaded, uiState.draftLoaded) {
+            // 프리필(이어쓰기·수정)이 비동기로 끝나므로 에디터를 다시 만들어 본문을 다시
+            // 시드한다 — WriteTextField 는 value 를 초기 시드로만 받는다 (#923·#582).
+            // 두 경로가 같은 재시드를 요구하므로 키 하나로 묶는다.
+            key(uiState.draftLoaded, uiState.contentLoaded) {
                 WriteTextField(
                     value = uiState.answer,
                     onValueChange = viewModel::onAnswerChanged,

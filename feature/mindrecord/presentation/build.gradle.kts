@@ -33,7 +33,14 @@ dependencies {
     // 매퍼가 android.util.Log 를 타 JVM 단위 테스트로는 돌지 않는다 (#751).
     // 부분 성공에서 어떤 문구가 나가는지도 컴포지션을 태워야 확인된다 (#725).
     // 수신자 기록 본문 시트도 JVM 에서 실제로 렌더해 확인한다 (#618).
+    // 카드 미리보기의 대체 문자 제거도 HtmlCompat 파싱 결과라 실제 파서로 확인한다 (#549).
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    implementation(libs.compose.rich.editor)
+
+    testImplementation(libs.coroutines.test)
+
+    // 라우트 인자 해석이 Bundle 을 타므로 실제 Android 구현이 필요하다 (#582).
+    testImplementation(libs.robolectric)
 }

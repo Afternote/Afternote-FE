@@ -70,6 +70,7 @@ class DailyQuestionResumeDraftTest {
         val state =
             DailyQuestionWriteUiState(
                 answer = "무언가",
+                questionId = 1L,
                 isQuestionLoading = false,
                 isResumingDraft = true,
             )
@@ -80,9 +81,12 @@ class DailyQuestionResumeDraftTest {
     @Test
     fun `불러오기가 끝나면 저장이 다시 열린다`() {
         // 차단만 걸고 복귀를 빠뜨리면 저장이 영구히 잠긴다.
+        // #582 로 canSubmit 이 «questionId 또는 draftId 중 하나» 도 요구한다 — 수정 모드는
+        // 오늘 질문을 부르지 않아 questionId 가 없기 때문이다. 신규 작성 상태를 재현한다.
         val state =
             DailyQuestionWriteUiState(
                 answer = "무언가",
+                questionId = 1L,
                 isQuestionLoading = false,
                 isResumingDraft = false,
             )
