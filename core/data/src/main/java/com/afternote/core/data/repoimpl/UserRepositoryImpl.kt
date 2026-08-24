@@ -3,20 +3,16 @@ package com.afternote.core.data.repoimpl
 import android.util.Log
 import com.afternote.core.data.mapper.delivery.toRequestDto
 import com.afternote.core.data.mapper.user.toDomain
-import com.afternote.core.data.mapper.user.toDto
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.model.delivery.DeliveryConditionItem
 import com.afternote.core.model.delivery.ReceiverDeliveryConditions
-import com.afternote.core.model.user.DeliveryCondition
-import com.afternote.core.model.user.DeliveryConditionType
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.model.user.ReceiverCreated
 import com.afternote.core.model.user.ReceiverDetail
 import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.model.user.UserPushSetting
-import com.afternote.core.network.dto.DeliveryConditionRequestDto
 import com.afternote.core.network.dto.SocialAccountLinkRequestDto
 import com.afternote.core.network.dto.UserCreateReceiverRequestDto
 import com.afternote.core.network.dto.UserPatchReceiverRequestDto
@@ -29,35 +25,29 @@ import com.afternote.core.network.model.requireStatus
 import com.afternote.core.network.service.UserApiService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 import com.afternote.core.data.mapper.delivery.toDomain as toDeliveryConditionsDomain
 
+// `app` 의 androidTest(SettingCompletionAndroidTest)가 Hilt 를 우회해 이 구현을 직접 조립하므로
+// 형제 구현체들과 달리 `internal` 로 닫지 못한다. 닫으려면 그 테스트의 페이크 기반 개조가 선행돼야 한다 (#930).
 class UserRepositoryImpl
     @Inject
     constructor(
         private val userApiService: UserApiService,
         private val authRepository: AuthRepository,
     ) : UserRepository {
-        private val receiverCache = MutableStateFlow<List<Receiver>?>(null)
+        private val receiverRefreshRevision = MutableStateFlow(0L)
 
         override val receiverListFlow: Flow<List<Receiver>> =
-            flow {
-                if (receiverCache.value == null) {
-                    receiverCache.value =
-                        userApiService.getReceivers().requireData().map { it.toDomain() }
-                }
-                emitAll(receiverCache.filterNotNull())
-            }
+            receiverRefreshRevision.map { getReceivers() }
 
         override suspend fun getReceivers(): List<Receiver> =
-            receiverCache.value ?: userApiService
+            userApiService
                 .getReceivers()
                 .requireData()
                 .map { it.toDomain() }
-                .also { receiverCache.value = it }
 
         override suspend fun createReceiver(
             name: String,
@@ -78,7 +68,7 @@ class UserRepositoryImpl
                         ),
                     ).requireData()
                     .toDomain()
-            receiverCache.value = userApiService.getReceivers().requireData().map { it.toDomain() }
+            receiverRefreshRevision.update { it + 1 }
             return result
         }
 
@@ -209,27 +199,6 @@ class UserRepositoryImpl
             userApiService
                 .unlinkConnectedAccount(provider)
                 .requireData()
-                .toDomain()
-
-        override suspend fun getDeliveryCondition(): DeliveryCondition =
-            userApiService
-                .getDeliveryCondition()
-                .requireData()
-                .toDomain()
-
-        override suspend fun updateDeliveryCondition(
-            conditionType: DeliveryConditionType,
-            inactivityPeriodDays: Int?,
-            specificDate: String?,
-        ): DeliveryCondition =
-            userApiService
-                .updateDeliveryCondition(
-                    DeliveryConditionRequestDto(
-                        conditionType = conditionType.toDto(),
-                        inactivityPeriodDays = inactivityPeriodDays,
-                        specificDate = specificDate,
-                    ),
-                ).requireData()
                 .toDomain()
 
         override suspend fun getReceiverDeliveryConditions(receiverId: Long): ReceiverDeliveryConditions =

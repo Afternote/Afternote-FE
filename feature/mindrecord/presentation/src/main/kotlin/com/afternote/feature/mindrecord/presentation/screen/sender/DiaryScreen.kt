@@ -48,7 +48,11 @@ private val PreviewYearMonth = YearMonth.of(2026, 7)
 fun DiaryScreen(
     modifier: Modifier = Modifier,
     isListView: Boolean = true,
-    onEditClick: (Long) -> Unit = {},
+    /**
+     * «수정하기» — 기록 ID 와 **보고 있는 달**. 달을 빼면 프리필이 이번 달 목록에서 그
+     * 기록을 찾다 실패하고, 빈 화면에서 저장하면 원본을 덮어쓸 수 있다 (#582 리뷰).
+     */
+    onEditClick: (Long, YearMonth) -> Unit = { _, _ -> },
     viewModel: DiaryListViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -79,7 +83,7 @@ fun DiaryScreen(
 }
 
 @Composable
-private fun DiaryListContent(
+internal fun DiaryListContent(
     isListView: Boolean,
     diaries: List<DailyDiary>,
     // 조회 중인 월은 VM 이 들고 있다 — 자동 갱신이 같은 월을 다시 조회해야 하고,
@@ -89,7 +93,8 @@ private fun DiaryListContent(
     modifier: Modifier = Modifier,
     monthDiaryCount: Int = 0,
     weeklyMoodEmoji: String? = null,
-    onEdit: (Long) -> Unit = {},
+    /** «수정하기» — 기록 ID 와 이 화면이 보고 있는 달. 달은 여기서만 알 수 있다. */
+    onEdit: (Long, YearMonth) -> Unit = { _, _ -> },
     onDelete: (Long) -> Unit = {},
     onYearMonthChanged: (YearMonth) -> Unit = {},
 ) {
@@ -142,7 +147,7 @@ private fun DiaryListContent(
 
             items(diaries, key = { it.id }) { diary ->
                 DiaryComponent(
-                    onEdit = { onEdit(diary.id) },
+                    onEdit = { onEdit(diary.id, yearMonth) },
                     diary = diary,
                     modifier = Modifier.padding(vertical = 8.dp),
                     onDelete = { onDelete(diary.id) },
@@ -166,7 +171,7 @@ private fun DiaryListContent(
             }
             gridItems(diaries, key = { it.id }) { diary ->
                 DiaryCard(
-                    onEdit = { onEdit(diary.id) },
+                    onEdit = { onEdit(diary.id, yearMonth) },
                     diary = diary,
                     onDelete = { onDelete(diary.id) },
                 )

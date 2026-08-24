@@ -5,20 +5,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.navigation.NavController
-import com.afternote.afternote_fe.screen.HomeTabActions
-import com.afternote.afternote_fe.screen.receiver.ReceiverHomeActions
 import com.afternote.core.model.MindRecordCategory
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavActions
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
-import com.afternote.feature.afternote.presentation.receiver.navigation.ReceiverNavActions
-import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceiverRoute
+import com.afternote.feature.home.presentation.HomeTabActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavActions
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingRoute
+import com.afternote.feature.receiver.presentation.home.ReceiverHomeActions
+import com.afternote.feature.receiver.presentation.navigation.ReceiverNavActions
+import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
 import com.afternote.feature.setting.presentation.navigation.SettingNavActions
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterNavActions
@@ -97,6 +97,10 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
     remember(navController) {
         object : MindRecordNavActions {
             override fun onMemorySpaceBack() {
+                navController.popBackStack()
+            }
+
+            override fun onReceiverMindRecordBack() {
                 navController.popBackStack()
             }
 
@@ -270,7 +274,13 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
             }
 
             override fun onNavigateToRecipientList() {
-                appState.navController.navigate(SettingRoute.RecipientListRoute)
+                appState.navController.navigate(SettingRoute.RecipientListRoute())
+            }
+
+            override fun onNavigateToRecipientListForDeliveryConditions() {
+                appState.navController.navigate(
+                    SettingRoute.RecipientListRoute(selectForDeliveryConditions = true),
+                )
             }
 
             override fun onRecipientListBack() {
@@ -285,8 +295,16 @@ fun rememberSettingNavActions(appState: AppState): SettingNavActions =
                 appState.navController.popBackStack()
             }
 
-            override fun onNavigateToAfterDelivery() {
-                appState.navController.navigate(SettingRoute.AfterDeliveryRoute)
+            override fun onNavigateToRecipientEdit(receiverId: Long) {
+                appState.navController.navigate(SettingRoute.RecipientEditRoute(receiverId))
+            }
+
+            override fun onRecipientEditBack() {
+                appState.navController.popBackStack()
+            }
+
+            override fun onNavigateToAfterDelivery(receiverId: Long) {
+                appState.navController.navigate(SettingRoute.AfterDeliveryRoute(receiverId))
             }
 
             override fun onAfterDeliveryBack() {
@@ -344,11 +362,18 @@ fun rememberHomeTabActions(
     return remember(appState) {
         object : HomeTabActions {
             override fun onRecipientChipClick() {
-                // TODO: 수신인 지정 화면 Route 추가 후 연결
+                // 이 칩은 «수신인 지정 미완료» 일 때만 눌린다. 그 판정이 곧 «등록된 수신자가
+                // 0명» 이라(홈 요약이 getReceivers() 결과로 정한다) 목록으로 보내면 빈 화면이
+                // 나오고 사용자는 다시 등록 화면을 찾아야 한다. 상태를 해소하는 화면으로 보낸다.
+                //
+                // 목적지가 등록인지 목록인지는 기획 확정 전이다 (#506) — docs/qa/assumptions.md 참고.
+                appState.navController.navigate(SettingRoute.RecipientRegisterRoute)
             }
 
             override fun onAnswerClick() {
-                // TODO: 데일리 질문 답변 화면 Route 추가 후 연결
+                // 카드 문구가 "데일리질문 답변하기" 라 답변 작성 화면으로 보낸다.
+                // 기록 탭의 작성 진입(`MindRecordNavActions.onWriteDailyQuestion`)과 같은 목적지다.
+                appState.navController.navigate(MindRecordRoute.DailyQuestionWriteRoute)
             }
 
             override fun onNextStepClick() {
@@ -406,15 +431,15 @@ fun rememberAfternoteNavActions(
                 appState.navController.popBackStack()
             }
 
-            override fun navigateToAfternoteDetail(itemId: String) {
+            override fun navigateToAfternoteDetail(itemId: Long) {
                 appState.navController.navigate(AfternoteRoute.DetailRoute(itemId = itemId))
             }
 
-            override fun navigateToGalleryDetail(itemId: String) {
+            override fun navigateToGalleryDetail(itemId: Long) {
                 appState.navController.navigate(AfternoteRoute.GalleryDetailRoute(itemId = itemId))
             }
 
-            override fun navigateToMemorialDetail(itemId: String) {
+            override fun navigateToMemorialDetail(itemId: Long) {
                 appState.navController.navigate(
                     AfternoteRoute.MemorialDetailRoute(itemId = itemId),
                 )
@@ -425,7 +450,7 @@ fun rememberAfternoteNavActions(
             }
 
             override fun navigateToEditorForEdit(
-                itemId: String,
+                itemId: Long,
                 initialCategory: EditorCategory,
             ) {
                 appState.navController.navigate(
@@ -491,13 +516,13 @@ fun rememberReceiverNavActions(appState: AppState): ReceiverNavActions =
                 appState.navController.navigate(ReceiverRoute.AfternoteListRoute)
             }
 
-            override fun navigateToReceivedAfternoteDetail(afternoteId: String) {
+            override fun navigateToReceivedAfternoteDetail(afternoteId: Long) {
                 appState.navController.navigate(
                     ReceiverRoute.AfternoteDetailRoute(afternoteId = afternoteId),
                 )
             }
 
-            override fun navigateToMemorialPlaylist(afternoteId: String) {
+            override fun navigateToMemorialPlaylist(afternoteId: Long) {
                 appState.navController.navigate(
                     ReceiverRoute.MemorialPlaylistRoute(afternoteId = afternoteId),
                 )

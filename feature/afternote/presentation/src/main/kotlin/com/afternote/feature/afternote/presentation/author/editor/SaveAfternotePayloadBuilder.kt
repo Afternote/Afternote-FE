@@ -1,7 +1,6 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
 import com.afternote.feature.afternote.domain.model.author.ProcessingMethod
-import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessagesCodec
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.state.EditorFormState
@@ -10,7 +9,7 @@ import java.time.format.DateTimeFormatter
 
 /**
  * 신규 생성·수정 저장 공통으로 서버에 보낼 [RegisterAfternotePayload] 조립.
- * 날짜·메시지 직렬화 등은 State Holder가 아닌 여기서 처리한다.
+ * 날짜 포맷 등은 State Holder가 아닌 여기서 처리한다.
  *
  * Compose runtime(`TextFieldState` 등) 에 의존하지 않도록 모든 입력은 평범한 값으로 받는다 —
  * 호출자가 facade에서 텍스트를 추출해 넘긴다. 단위 테스트에서 facade 목 없이 바로 검증 가능하다.
@@ -34,9 +33,6 @@ object SaveAfternotePayloadBuilder {
             form.processingMethods.map {
                 ProcessingMethod(it.id, it.text)
             }
-        val fullMessage =
-            EditorMessagesCodec.serializeBlocksToPersisted(form.leaveMessageBlocks)
-
         return RegisterAfternotePayload(
             serviceName =
                 if (form.selectedCategory == EditorCategory.MEMORIAL) {
@@ -48,7 +44,7 @@ object SaveAfternotePayloadBuilder {
             date = date.format(dateFormatter),
             accountId = accountId,
             password = password,
-            message = fullMessage,
+            messageBlocks = form.leaveMessageBlocks,
             processingMethods = methods,
         )
     }

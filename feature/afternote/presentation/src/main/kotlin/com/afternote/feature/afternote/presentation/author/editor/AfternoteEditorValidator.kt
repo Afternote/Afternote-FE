@@ -28,6 +28,10 @@ internal object AfternoteEditorValidator {
         if (payload.serviceName.trim().isEmpty()) {
             return AfternoteValidationError.TITLE_REQUIRED
         }
+        // 아무것도 안 쓴 빈 칸은 저장 시 버려지지만, 제목만 채운 블록은 서버가 400 으로 거절한다.
+        if (payload.messageBlocks.any { it.title.isNotBlank() && it.body.isBlank() }) {
+            return AfternoteValidationError.LEAVE_MESSAGE_BODY_REQUIRED
+        }
         return when (category) {
             // BUSINESS 는 시안(700:38735) 필수 표기(계정 정보*, 처리 방법 리스트*)가 SOCIAL 과 동일해 같은 규칙을 쓴다.
             EditorCategory.SOCIAL, EditorCategory.BUSINESS -> validateAccount(payload)

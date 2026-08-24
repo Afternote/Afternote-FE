@@ -38,6 +38,7 @@ import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionList
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportViewModel
 import kotlinx.coroutines.flow.drop
+import java.time.YearMonth
 import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 
 @Composable
@@ -52,7 +53,7 @@ fun HomeScreen(
     weeklyReportViewModel: WeeklyReportViewModel = hiltViewModel(),
     onWriteClick: (MindRecordCategoryUi) -> Unit = {},
     onEditDailyQuestion: (Long) -> Unit = {},
-    onEditDiary: (Long) -> Unit = {},
+    onEditDiary: (Long, YearMonth) -> Unit = { _, _ -> },
 ) {
     // Figma 2757:16116 — 마음의 기록 탭은 데일리 질문 / 일기 / 주간리포트 3개
     val categories =
@@ -133,6 +134,7 @@ fun HomeScreen(
                 )
             }
         },
+        containerColor = Color.Transparent,
     ) { paddingValues ->
         Column(
             modifier =
@@ -142,6 +144,8 @@ fun HomeScreen(
         ) {
             PrimaryScrollableTabRow(
                 selectedTabIndex = selectedIndex,
+                // 지정하지 않으면 M3 baseline surface(#FEF7FF)가 나와 시안 배경(#FAFAFA)과 어긋난다.
+                containerColor = Color.Transparent,
                 edgePadding = 0.dp,
                 divider = {},
                 indicator = {
