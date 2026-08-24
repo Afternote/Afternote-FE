@@ -48,7 +48,7 @@ import com.afternote.feature.afternote.presentation.author.detail.account.Accoun
 import kotlinx.coroutines.launch
 
 @Composable
-internal fun DetailLoadingContent() {
+fun DetailLoadingContent() {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
@@ -58,7 +58,7 @@ internal fun DetailLoadingContent() {
 }
 
 @Composable
-internal fun DesignPendingDetailContent(onBackClick: () -> Unit) {
+fun DesignPendingDetailContent(onBackClick: () -> Unit) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = Color.Transparent,
@@ -94,7 +94,7 @@ internal fun DesignPendingDetailContent(onBackClick: () -> Unit) {
  *   같은 요청을 다시 보내도 결과가 달라지지 않는 실패에 쓴다.
  */
 @Composable
-internal fun DetailLoadErrorContent(
+fun DetailLoadErrorContent(
     @StringRes messageRes: Int?,
     onBackClick: () -> Unit,
     onRetryClick: (() -> Unit)? = null,

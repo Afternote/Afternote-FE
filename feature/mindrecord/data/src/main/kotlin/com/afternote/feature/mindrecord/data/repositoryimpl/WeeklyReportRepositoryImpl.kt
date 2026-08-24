@@ -1,5 +1,6 @@
 package com.afternote.feature.mindrecord.data.repositoryimpl
 
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.network.model.requireData
 import com.afternote.feature.mindrecord.data.api.WeeklyReportApiService
 import com.afternote.feature.mindrecord.data.mapper.toDomain
@@ -13,7 +14,7 @@ class WeeklyReportRepositoryImpl
         private val api: WeeklyReportApiService,
     ) : WeeklyReportRepository {
         override suspend fun getWeeklyReport(date: String): Result<WeeklyReport> =
-            runCatching {
+            runCatchingCancellable {
                 api.getWeeklyReport(date = date).requireData().toDomain()
             }
     }

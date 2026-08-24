@@ -78,10 +78,14 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
     @Provides
     @Singleton
     @Named("RefreshClient")
-    fun provideRefreshOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient =
+    fun provideRefreshOkHttpClient(
+        loggingInterceptor: HttpLoggingInterceptor,
+        apiErrorInterceptor: ApiErrorInterceptor,
+    ): OkHttpClient =
         OkHttpClient
             .Builder() // 이제부터 인터셉터를 담을게
             .withApiTimeouts()
+            .addInterceptor(apiErrorInterceptor)
             .addInterceptor(loggingInterceptor)
             .build() // 인터셉터 다 담았어
 
