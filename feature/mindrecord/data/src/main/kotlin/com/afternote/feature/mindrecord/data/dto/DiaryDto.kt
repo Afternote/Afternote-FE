@@ -79,6 +79,16 @@ data class DiaryListItemDto(
     @SerialName("isDraft")
     @JsonNames("draft")
     val isDraft: Boolean = false,
+    // 상세 화면이 "수신인 OOO" 로 보여준다. 서버가 늘 함께 내려주는데 종전에는 선언하지
+    // 않아 버려졌다 (#759).
+    @SerialName("receivers") val receivers: List<MindRecordReceiverDto> = emptyList(),
+)
+
+/** 기록에 지정된 수신자 요약 (OpenAPI `MindRecordReceiverSummaryResponse`). */
+@Serializable
+data class MindRecordReceiverDto(
+    @SerialName("receiverId") val receiverId: Long,
+    @SerialName("name") val name: String,
 )
 
 // `/diary` 응답의 `data` 는 객체 — `diaries` 외에 조회 대상 달의 비-임시 다이어리 수

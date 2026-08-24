@@ -22,6 +22,13 @@ interface MindRecordNavActions {
 
     fun onDraftListBack()
 
+    /** 목록 항목 탭 — 저장된 기록 본문을 여는 상세 화면 (#759). */
+    fun onOpenRecordDetail(
+        recordId: Long,
+        isDiary: Boolean,
+        yearMonth: String?,
+    )
+
     /** 임시저장 목록에서 일기 draft 를 탭 — 일기 작성 화면을 이어쓰기 모드로 연다. */
     fun onEditDiaryDraft(
         draftId: Long,
