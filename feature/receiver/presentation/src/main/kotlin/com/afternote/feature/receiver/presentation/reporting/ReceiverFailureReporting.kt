@@ -10,8 +10,10 @@ import com.afternote.core.common.reporting.ErrorReporter
  *
  * 흐름마다 전용 enum 과 `<흐름>_stage` 키를 따로 둔다 — 키를 합치면 콘솔에서 한 키에 서로 다른
  * 값 목록이 섞인다. 아래 단계들은 수신자 홈이 app 에 있던 시절 `home_stage` 키로 기록되던 것을
- * 화면 이전(#546)과 함께 이 키로 옮긴 것이다. reportingName 은 그대로라 단계별 식별은 유지되고,
- * 키 축 추이만 새로 시작한다(#544 도입 직후라 손실 구간은 며칠 분).
+ * 화면 이전(#546)과 함께 이 키로 옮긴 것이다. 내려받기 두 단계는 afternote 쪽 요약 화면이
+ * `afternote_stage` 키로도 기록하던 것을 #615 이전과 함께 여기로 수렴시켰다(이중 기록 해소).
+ * reportingName 은 그대로라 단계별 식별은 유지되고, 키 축 추이만 새로 시작한다(#544 도입
+ * 직후라 손실 구간은 며칠 분).
  */
 enum class ReceiverFailureStage(
     val reportingName: String,

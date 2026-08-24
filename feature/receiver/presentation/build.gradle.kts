@@ -1,6 +1,7 @@
 plugins {
     id("afternote.android.library.compose")
     id("afternote.android.hilt")
+    kotlin("plugin.serialization")
     alias(libs.plugins.compose.screenshot)
 }
 
@@ -27,8 +28,13 @@ dependencies {
     implementation(libs.hilt.navigation)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.coil.compose)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.androidx.paging.runtime)
+    implementation(libs.androidx.paging.compose)
 
     testImplementation(libs.coroutines.test)
+    testImplementation(libs.robolectric)
 
     screenshotTestImplementation(libs.screenshot.validation.api)
     screenshotTestImplementation(libs.androidx.compose.ui.tooling)
