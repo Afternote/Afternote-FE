@@ -227,11 +227,6 @@ class FakeUserProfileRepository : UserProfileRepository {
     override suspend fun saveUserName(name: String) {
         cachedUserName = name
     }
-
-    override suspend fun clear() {
-        cachedUserName = null
-        passkeyRegistered.value = false
-    }
 }
 
 class FakeDiaryRepository(
