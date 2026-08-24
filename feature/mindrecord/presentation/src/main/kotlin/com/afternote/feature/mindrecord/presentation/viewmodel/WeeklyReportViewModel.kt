@@ -93,8 +93,11 @@ class WeeklyReportViewModel
          * 소관이다. 보고 있던 주를 그대로 다시 불러 상태를 갱신한다 (#725).
          */
         fun retryEmotionAnalysis() {
-            val current = (internalState.value.loadPhase as? LoadPhase.Loaded)?.monday ?: return
-            load(current, showsLoading = false, keepsStateOnFailure = true)
+            // 재조회 정책(로딩·실패 유지·중복 가드)이 한 곳에만 있도록 위임한다.
+            // 다만 이쪽은 **사용자가 누른** 갱신이라 진행 표시를 낸다 — BE#117 전까지는
+            // 재조회가 같은 FAILED 를 돌려주는 것이 기본 경로이고, 그러면 데이터가 같아
+            // StateFlow 가 방출조차 하지 않아 눌러도 픽셀이 안 바뀐다.
+            refreshOnReturn(showsLoading = true)
         }
 
         /**
@@ -103,7 +106,7 @@ class WeeklyReportViewModel
          * 화면이 살아 있는 채로 발화하므로 로딩을 방출하지 않고, 실패해도 보고 있던
          * 화면을 유지한다. 보고 있던 주를 그대로 다시 조회한다.
          */
-        fun refreshOnReturn() {
+        fun refreshOnReturn(showsLoading: Boolean = false) {
             // 진입 직후의 ON_RESUME 은 init 로드와 겹친다 — 진행 중이면 건너뛴다.
             if (loadJob?.isActive == true) return
             // 성공해서 보고 있는 화면이라면, 데이터가 바뀌었을 때만 다시 부른다 (#736).
@@ -113,12 +116,13 @@ class WeeklyReportViewModel
             // 실패 상태면 **실패한 주**를 다시 시도한다. 이번 주로 되돌아가면 사용자가
             // 보려던 주차가 유실돼, 나갔다 들어와도 복구되지 않는다 (#723).
             val current =
+                // 실패한 주도 기억해 둔다 — 재시도가 최신 주로 되돌아가면 보던 주를 잃는다 (#723).
                 when (val phase = internalState.value.loadPhase) {
                     is LoadPhase.Loaded -> phase.monday
                     is LoadPhase.Failed -> phase.monday
                     LoadPhase.Loading -> weekOptions.first().monday
                 }
-            load(current, showsLoading = false, keepsStateOnFailure = true)
+            load(current, showsLoading = showsLoading, keepsStateOnFailure = true)
         }
 
         private fun load(
@@ -156,7 +160,7 @@ class WeeklyReportViewModel
                             internalState.update {
                                 it.copy(loadPhase = LoadPhase.Loaded(monday, report, profile.name))
                             }
-                            awaitEmotionAnalysis(monday, report.emotionAnalysis.status)
+                            awaitEmotionAnalysis(monday, report.analysisStatus)
                         }.onFailure { e ->
                             internalState.update { current ->
                                 if (keepsStateOnFailure && current.loadPhase is LoadPhase.Loaded) {
@@ -195,6 +199,10 @@ class WeeklyReportViewModel
             monday: LocalDate,
             initialStatus: EmotionAnalysisStatus,
         ) {
+            // 폴링 근거는 "저장 직후 비동기 분석" 이라 이번 주에만 성립한다. 지난 주를
+            // 골라 보는 동안 8초마다 조회가 나갈 이유가 없다.
+            if (monday != LocalDate.now().with(DayOfWeek.MONDAY)) return
+
             var status = initialStatus
             repeat(EMOTION_ANALYSIS_POLL_ATTEMPTS) {
                 if (status != EmotionAnalysisStatus.PENDING) return
@@ -202,9 +210,13 @@ class WeeklyReportViewModel
                 val report =
                     repository
                         .getWeeklyReport(date = monday.format(API_DATE_FORMATTER))
-                        .getOrNull() ?: return
+                        .getOrNull()
                 currentCoroutineContext().ensureActive()
-                status = report.emotionAnalysis.status
+                // 한 번 실패했다고 남은 시도를 전부 버리지 않는다 — PENDING 화면에는
+                // 재시도 수단이 없어(카드는 FAILED 전용) 화면에 머무는 동안 복구할 길이
+                // 사라진다. 이번 시도만 소모하고 다음 간격을 기다린다.
+                if (report == null) return@repeat
+                status = report.analysisStatus
                 internalState.update { current ->
                     val phase = current.loadPhase
                     // 그 사이 다른 주로 옮겨갔으면 덮어쓰지 않는다.
@@ -351,7 +363,7 @@ class WeeklyReportViewModel
                         report.dailyQuestionAmount to MindRecordCategoryUi.DailyQuestion,
                         report.diaryAmount to MindRecordCategoryUi.Diary,
                     ),
-                emotionAnalysisStatus = report.emotionAnalysis.status,
+                emotionAnalysisStatus = report.analysisStatus,
                 weekDays = mapWeekDays(monday, report.week),
                 emotionKeywords = mapEmotionKeywords(report.emotions),
                 summaryText = report.summaryText,
@@ -397,3 +409,7 @@ class WeeklyReportViewModel
             // 서버는 "yyyy.MM.dd 요일" 또는 ISO 포맷으로 내려옴 — 둘 다 허용.
         }
     }
+
+/** 서버가 진행 상태를 주지 않았으면 «모른다» — 0 건으로 확정하지 않는다 (#725). */
+private val WeeklyReport.analysisStatus: EmotionAnalysisStatus
+    get() = emotionAnalysis?.status ?: EmotionAnalysisStatus.UNKNOWN

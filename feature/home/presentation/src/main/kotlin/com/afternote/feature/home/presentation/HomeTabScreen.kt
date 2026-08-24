@@ -64,6 +64,8 @@ sealed interface HomeTabUiState {
         val isRefreshing: Boolean = false,
         /** 오늘의 질문 본문. 조회 실패 시 null — 카드가 중립 문구를 표시한다. */
         val todayQuestionContent: String? = null,
+        /** 이번 주 기록 수. 조회 실패 시 null — 그리드가 «–» 를 표시한다 (#562). */
+        val weeklyRecordCount: Int? = null,
     ) : HomeTabUiState {
         override val showsRefreshIndicator: Boolean get() = isRefreshing
     }
@@ -148,6 +150,8 @@ fun HomeTabScreen(
                         todayDateText = todayDateText,
                         todayQuestionContent = null,
                         isQuestionLoading = true,
+                        // 조회 전이다 — 0 을 넣으면 «이번 주 기록 없음» 을 확정한다 (#562).
+                        weeklyRecordCount = null,
                         actions = actions,
                     )
                 }
@@ -161,6 +165,7 @@ fun HomeTabScreen(
                         todayDateText = todayDateText,
                         todayQuestionContent = uiState.todayQuestionContent,
                         isQuestionLoading = false,
+                        weeklyRecordCount = uiState.weeklyRecordCount,
                         actions = actions,
                     )
                 }
@@ -204,6 +209,8 @@ private fun HomeTabScrollContent(
     todayDateText: String,
     todayQuestionContent: String?,
     isQuestionLoading: Boolean,
+    /** null 이면 아직 모름 — 그리드가 «–» 를 그린다 (#562). */
+    weeklyRecordCount: Int?,
     actions: HomeTabActions,
 ) {
     LazyColumn(
@@ -283,6 +290,7 @@ private fun HomeTabScrollContent(
 
         item {
             WeeklySummaryGrid(
+                recordedCount = weeklyRecordCount,
                 onImageClick = actions::onWeeklyImageClick,
                 onCountCardClick = actions::onWeeklyCountClick,
             )

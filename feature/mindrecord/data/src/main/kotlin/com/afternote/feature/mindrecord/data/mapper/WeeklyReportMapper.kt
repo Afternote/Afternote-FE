@@ -22,7 +22,7 @@ fun WeeklyReportDto.toDomain(): WeeklyReport =
         // `LocalDate.now()` 로 메워, 같은 목록을 두고 한쪽은 제외·한쪽은 왜곡이었다 (#547).
         dailyQuestions = dailyQuestions.mapNotNull { it.toDomainOrNull() },
         emotions = emotions.map { it.toDomain() },
-        emotionAnalysis = emotionAnalysis.toDomain(),
+        emotionAnalysis = emotionAnalysis?.toDomain(),
     )
 
 /** `week[].type` 중 일기를 뜻하는 값. 나머지(`DAILY_QUESTION`·`DEEP_THOUGHT`·미래 종류)는 일기가 아니다. */

@@ -5,6 +5,8 @@ plugins {
 }
 
 android {
+    testOptions.unitTests.isIncludeAndroidResources = true
+
     namespace = "com.afternote.feature.home.presentation"
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
 }
@@ -21,6 +23,11 @@ dependencies {
 
     // HomeTabViewModel 경합 테스트 — 가상 시간으로 viewModelScope 요청 순서를 제어한다.
     testImplementation(libs.coroutines.test)
+
+    // 자리표시자가 화면에 도달하는지는 실제로 그려 봐야 확인된다 (#562).
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     screenshotTestImplementation(libs.screenshot.validation.api)
     screenshotTestImplementation(libs.androidx.compose.ui.tooling)

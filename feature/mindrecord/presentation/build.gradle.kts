@@ -23,6 +23,7 @@ dependencies {
     testImplementation(libs.coroutines.test)
 
     // 캘린더 날짜 셀 상호작용을 JVM 에서 실제로 눌러 확인한다 (#724).
+    // 부분 성공에서 어떤 문구가 나가는지도 컴포지션을 태워야 확인된다 (#725).
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.test.manifest)

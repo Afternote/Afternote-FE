@@ -1,12 +1,13 @@
 package com.afternote.feature.mindrecord.data.dto
 
+import com.afternote.core.network.di.NetworkModule
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.feature.mindrecord.data.mapper.toDomain
 import com.afternote.feature.mindrecord.domain.model.EmotionAnalysisStatus
-import kotlinx.serialization.MissingFieldException
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertThrows
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 /**
@@ -16,16 +17,14 @@ import org.junit.Test
  * 없음" 과 "아직 분석 중" 과 "분석 실패" 가 구분되지 않는다. 그 셋을 가르는 값이
  * `emotionAnalysis` 라, 이 필드가 소실되면 이슈가 고치려는 오표시가 그대로 재현된다.
  *
- * Json 설정은 `NetworkModule.provideJson` 과 동일 (ignoreUnknownKeys + coerceInputValues).
+ * Json 은 프로덕션 설정을 **복제하지 않고 그대로 가져다 쓴다** — 복제하면 앱 설정이
+ * 바뀔 때 이 테스트만 조용히 어긋난다.
  */
+@OptIn(ExperimentalSerializationApi::class)
 class EmotionAnalysisContractTest {
-    private val json =
-        Json {
-            ignoreUnknownKeys = true
-            coerceInputValues = true
-        }
+    private val json = NetworkModule.provideJson()
 
-    private fun decodeStatus(analysisJson: String): EmotionAnalysisStatus {
+    private fun decodeStatus(analysisJson: String): EmotionAnalysisStatus? {
         val body =
             """
             { "status": 200, "code": 200, "data": {
@@ -37,7 +36,7 @@ class EmotionAnalysisContractTest {
             .data!!
             .toDomain()
             .emotionAnalysis
-            .status
+            ?.status
     }
 
     @Test
@@ -87,16 +86,43 @@ class EmotionAnalysisContractTest {
     }
 
     @Test
-    fun `emotionAnalysis 키가 빠지면 기본값으로 성공하지 않고 실패한다`() {
-        // 기본값을 두면 "분석 대기" 가 다시 "분석할 것 없음" 으로 접혀 이 이슈가 재현된다.
+    fun `emotionAnalysis 키가 빠져도 0 건으로 접히지 않는다`() {
+        // 보정형 기본값을 두면 "분석 대기" 가 "분석할 것 없음" 으로 접혀 이 이슈가 재현된다.
+        // 그렇다고 필수로 두면 이 필드 하나에 주간리포트 탭 전체가 오류 화면이 되므로,
+        // null 로 받아 «모른다» 로 옮긴다 — 확정하지 않는다는 목적은 그대로다.
         val body =
             """
             { "status": 200, "code": 200,
               "data": { "week": [], "emotions": [], "summaryText": "" } }
             """.trimIndent()
 
-        assertThrows(MissingFieldException::class.java) {
-            json.decodeFromString(BaseResponse.serializer(WeeklyReportDto.serializer()), body)
-        }
+        val report =
+            json
+                .decodeFromString(BaseResponse.serializer(WeeklyReportDto.serializer()), body)
+                .data!!
+                .toDomain()
+
+        assertNull(report.emotionAnalysis)
+    }
+
+    @Test
+    fun `나머지 필드가 성해도 감정 분석만 빠지면 화면 전체가 실패하지 않는다`() {
+        // 필수로 두던 시절에는 여기서 MissingFieldException 이 나 탭 전체가 ErrorBox 였고,
+        // UiText.DynamicOrResource 가 e.message 를 우선해 영문 예외 원문까지 노출됐다.
+        val body =
+            """
+            { "status": 200, "code": 200, "data": {
+              "week": [], "emotions": [], "summaryText": "이번 주 요약",
+              "dailyQuestionAmount": 2, "diaryAmount": 1 } }
+            """.trimIndent()
+
+        val report =
+            json
+                .decodeFromString(BaseResponse.serializer(WeeklyReportDto.serializer()), body)
+                .data!!
+                .toDomain()
+
+        assertEquals("이번 주 요약", report.summaryText)
+        assertEquals(2, report.dailyQuestionAmount)
     }
 }

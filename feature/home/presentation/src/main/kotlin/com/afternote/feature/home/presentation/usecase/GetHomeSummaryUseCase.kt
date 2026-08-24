@@ -5,6 +5,7 @@ import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.HomeSummary
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
+import com.afternote.feature.mindrecord.domain.usecase.GetWeeklyRecordCountUseCase
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import java.time.YearMonth
@@ -28,6 +29,7 @@ class GetHomeSummaryUseCase
         private val userRepository: UserRepository,
         private val diaryRepository: DiaryRepository,
         private val dailyQuestionRepository: DailyQuestionRepository,
+        private val getWeeklyRecordCount: GetWeeklyRecordCountUseCase,
     ) {
         suspend operator fun invoke(): Result<HomeSummary> =
             runCatchingCancellable {
@@ -39,17 +41,21 @@ class GetHomeSummaryUseCase
                     // 결과적으로 카운트는 "이번 달 작성된 일기 수" 의미가 됨.
                     val diaryDeferred = async { diaryRepository.getList(yearMonth = thisMonth) }
                     val todayQuestionDeferred = async { dailyQuestionRepository.getToday() }
+                    val weeklyCountDeferred = async { getWeeklyRecordCount() }
 
                     val profile = profileDeferred.await()
                     val receivers = receiversDeferred.await()
                     val diaryCount = diaryDeferred.await().getOrNull()?.monthDiaryCount ?: 0
                     val todayQuestionContent = todayQuestionDeferred.await().getOrNull()?.content
+                    // 실패를 0 으로 접지 않는다 — «기록이 없음» 과 «못 불러옴» 은 다르다 (#562).
+                    val weeklyRecordCount = weeklyCountDeferred.await().getOrNull()
 
                     HomeSummary(
                         userName = profile.name,
                         isRecipientDesignated = receivers.isNotEmpty(),
                         diaryCategoryCount = diaryCount,
                         todayQuestionContent = todayQuestionContent,
+                        weeklyRecordCount = weeklyRecordCount,
                     )
                 }
             }

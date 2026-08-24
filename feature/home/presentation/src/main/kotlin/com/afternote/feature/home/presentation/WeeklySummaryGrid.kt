@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -31,11 +32,17 @@ import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.home.presentation.R as HomeR
 
 @Composable
 fun WeeklySummaryGrid(
     modifier: Modifier = Modifier,
-    recordedCount: Int = 0,
+    /**
+     * 이번 주 기록 수. **null 은 «아직 모름»** — 0 으로 접으면 조회 실패가 «기록 없음» 으로
+     * 확정된다 (#562). 종전에는 기본값이 자리표시자 7 이었고 호출부가 값을 넘기지 않아
+     * 실제 0건인 주에도 7 이 그려졌다.
+     */
+    recordedCount: Int? = null,
     onImageClick: () -> Unit = {},
     onCountCardClick: () -> Unit = {},
 ) {
@@ -110,7 +117,9 @@ fun WeeklySummaryGrid(
                         )
                         Spacer(modifier = Modifier.weight(1f))
                         Text(
-                            text = recordedCount.toString(),
+                            text =
+                                recordedCount?.toString()
+                                    ?: stringResource(HomeR.string.home_tab_weekly_count_unavailable),
                             style =
                                 AfternoteDesign.typography.inter.copy(
                                     fontSize = 24.sp,
