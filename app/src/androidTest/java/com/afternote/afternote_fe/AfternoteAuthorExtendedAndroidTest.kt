@@ -58,11 +58,9 @@ import com.afternote.feature.afternote.domain.model.author.ProcessingMethod
 import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.domain.repository.author.MediaInput
-import com.afternote.feature.afternote.domain.repository.author.MemorialPhotoUploadRepository
+import com.afternote.feature.afternote.domain.repository.author.MediaKind
+import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
-import com.afternote.feature.afternote.domain.repository.author.MemorialVideoUploadRepository
-import com.afternote.feature.afternote.domain.repository.author.PhotoUploadOutcome
-import com.afternote.feature.afternote.domain.repository.author.VideoUploadOutcome
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailDeleteResult
@@ -90,6 +88,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.time.LocalDate
 import java.util.concurrent.atomic.AtomicInteger
+import com.afternote.feature.afternote.presentation.R as AfternoteFeatureR
 
 @RunWith(AndroidJUnit4::class)
 class AfternoteAuthorExtendedAndroidTest {
@@ -117,9 +116,9 @@ class AfternoteAuthorExtendedAndroidTest {
             Pager(PagingConfig(pageSize = 20)) { pagingSource }.flow
         repository.listFlows[AfternoteType.SOCIAL_NETWORK] = flowOf(PagingData.empty())
         val viewModel = AfternoteHomeViewModel(repository)
-        val accountRoutes = mutableListOf<String>()
-        val galleryRoutes = mutableListOf<String>()
-        val memorialRoutes = mutableListOf<String>()
+        val accountRoutes = mutableListOf<Long>()
+        val galleryRoutes = mutableListOf<Long>()
+        val memorialRoutes = mutableListOf<Long>()
         val addRoutes = mutableListOf<AfternoteType?>()
 
         composeRule.setContent {
@@ -154,9 +153,9 @@ class AfternoteAuthorExtendedAndroidTest {
             .onNodeWithContentDescription("추억 노트")
             .performScrollTo()
             .performClick()
-        assertEquals(listOf("101"), accountRoutes)
-        assertEquals(listOf("102"), galleryRoutes)
-        assertEquals(listOf("103"), memorialRoutes)
+        assertEquals(listOf(101L), accountRoutes)
+        assertEquals(listOf(102L), galleryRoutes)
+        assertEquals(listOf(103L), memorialRoutes)
 
         composeRule.onNodeWithText("소셜네트워크").performClick()
         composeRule.waitUntil(timeoutMillis = 5_000) {
@@ -410,7 +409,7 @@ private fun AuthorDetailForDelete(
             is AfternoteDetailDeleteResult.Failed -> {
                 val message =
                     resources.getString(
-                        result.messageRes ?: R.string.afternote_detail_delete_failed,
+                        result.messageRes ?: AfternoteFeatureR.string.afternote_detail_delete_failed,
                     )
                 scope.launch { snackbarHostState.showSnackbar(message) }
                 viewModel.onDeleteResultConsumed()
@@ -520,7 +519,7 @@ private fun detailViewModel(
     itemId: Long,
 ): AfternoteDetailViewModel =
     AfternoteDetailViewModel(
-        savedStateHandle = SavedStateHandle(mapOf("itemId" to itemId.toString())),
+        savedStateHandle = SavedStateHandle(mapOf("itemId" to itemId)),
         afternoteRepository = repository,
         userRepository = FakeUserRepository(),
         errorReporter = FakeErrorReporter(),
@@ -531,7 +530,7 @@ private fun editorViewModel(
     itemId: Long,
 ): AfternoteEditorViewModel =
     AfternoteEditorViewModel(
-        savedStateHandle = SavedStateHandle(mapOf("itemId" to itemId.toString())),
+        savedStateHandle = SavedStateHandle(mapOf("itemId" to itemId)),
         userRepository = FakeUserRepository(),
         afternoteRepository = repository,
         memorialThumbnailUploadRepository =
@@ -540,38 +539,23 @@ private fun editorViewModel(
             },
         resolveMemorialMediaForSave =
             ResolveMemorialMediaForSaveUseCase(
-                memorialVideoUploadRepository =
-                    MemorialVideoUploadRepository { input ->
+                memorialMediaUploadRepository =
+                    MemorialMediaUploadRepository { input, kind ->
                         Result.success(
                             when (input) {
                                 MediaInput.None -> {
-                                    VideoUploadOutcome.Empty
+                                    null
                                 }
 
                                 is MediaInput.Local -> {
-                                    VideoUploadOutcome.FreshlyUploaded("https://cdn.test/video.mp4")
+                                    when (kind) {
+                                        MediaKind.VIDEO -> "https://cdn.test/video.mp4"
+                                        MediaKind.PHOTO -> "https://cdn.test/photo.jpg"
+                                    }
                                 }
 
                                 is MediaInput.Remote -> {
-                                    VideoUploadOutcome.Existing(input.url)
-                                }
-                            },
-                        )
-                    },
-                memorialPhotoUploadRepository =
-                    MemorialPhotoUploadRepository { input ->
-                        Result.success(
-                            when (input) {
-                                MediaInput.None -> {
-                                    PhotoUploadOutcome.Empty
-                                }
-
-                                is MediaInput.Local -> {
-                                    PhotoUploadOutcome.FreshlyUploaded("https://cdn.test/photo.jpg")
-                                }
-
-                                is MediaInput.Remote -> {
-                                    PhotoUploadOutcome.Existing(input.url)
+                                    input.url
                                 }
                             },
                         )
@@ -583,19 +567,19 @@ private fun editorViewModel(
 private fun authorListItems(): List<ListItem> =
     listOf(
         ListItem(
-            id = "101",
+            id = 101L,
             serviceName = "Instagram",
             date = "2026.08.22",
             type = AfternoteType.SOCIAL_NETWORK,
         ),
         ListItem(
-            id = "102",
+            id = 102L,
             serviceName = "Google Drive",
             date = "2026.08.22",
             type = AfternoteType.GALLERY_AND_FILES,
         ),
         ListItem(
-            id = "103",
+            id = 103L,
             serviceName = "추억 노트",
             date = "2026.08.22",
             type = AfternoteType.MEMORIAL,
