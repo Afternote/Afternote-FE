@@ -31,6 +31,7 @@ import org.junit.runner.RunWith
 import java.io.IOException
 import javax.inject.Inject
 import com.afternote.core.ui.R as CoreUiR
+import com.afternote.feature.home.presentation.R as HomeR
 import com.afternote.feature.onboarding.presentation.R as OnboardingR
 
 @HiltAndroidTest
@@ -100,7 +101,7 @@ class AppOnboardingCanaryTest {
             .onNodeWithText(context.getString(CoreUiR.string.core_ui_network_error_retry))
             .performClick()
 
-        val greeting = context.getString(R.string.home_tab_greeting, "테스트 사용자")
+        val greeting = context.getString(HomeR.string.home_tab_greeting, "테스트 사용자")
         composeRule.waitUntilAtLeastOneExists(hasText(greeting), timeoutMillis = 10_000)
         composeRule.onNodeWithText(greeting).assertIsDisplayed()
         listOf(

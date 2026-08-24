@@ -1,8 +1,8 @@
 package com.afternote.feature.afternote.presentation.reporting
 
-import com.afternote.feature.afternote.domain.error.ReceiverDeliveryVerificationException
-import com.afternote.feature.afternote.domain.error.ReceiverEmailAuthException
-import com.afternote.feature.afternote.domain.error.ReceiverMasterKeyException
+import com.afternote.feature.receiver.domain.error.ReceiverDeliveryVerificationException
+import com.afternote.feature.receiver.domain.error.ReceiverEmailAuthException
+import com.afternote.feature.receiver.domain.error.ReceiverMasterKeyException
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
