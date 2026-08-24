@@ -33,12 +33,6 @@ import com.afternote.afternote_fe.navigation.AppState
 import com.afternote.afternote_fe.navigation.rememberAfternoteAppState
 import com.afternote.afternote_fe.navigation.rememberHomeTabActions
 import com.afternote.afternote_fe.navigation.rememberReceiverNavActions
-import com.afternote.afternote_fe.screen.HomeTabActions
-import com.afternote.afternote_fe.screen.receiver.ReceiverHomeActions
-import com.afternote.afternote_fe.screen.receiver.ReceiverHomeEvent
-import com.afternote.afternote_fe.screen.receiver.ReceiverHomeScreen
-import com.afternote.afternote_fe.screen.receiver.ReceiverHomeViewModel
-import com.afternote.afternote_fe.screen.receiver.model.ReceiverHomeUiState
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeAuthRepository
 import com.afternote.afternote_fe.test.FakeErrorReporter
@@ -51,27 +45,18 @@ import com.afternote.core.model.Session
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
-import com.afternote.feature.afternote.domain.error.ReceiverEmailAuthException
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
-import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem
-import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResult
-import com.afternote.feature.afternote.domain.model.receiver.LoadCountResult
-import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
-import com.afternote.feature.afternote.domain.model.receiver.ReceivedExportBundle
-import com.afternote.feature.afternote.domain.model.receiver.ReceivedPlaylistDetail
-import com.afternote.feature.afternote.domain.model.receiver.ReceivedPlaylistSong
-import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
-import com.afternote.feature.afternote.presentation.receiver.deliveryverification.DocumentSlot
-import com.afternote.feature.afternote.presentation.receiver.deliveryverification.DocumentUploadScreen
-import com.afternote.feature.afternote.presentation.receiver.deliveryverification.DocumentUploadViewModel
-import com.afternote.feature.afternote.presentation.receiver.deliveryverification.IdentityVerificationEmailScreen
-import com.afternote.feature.afternote.presentation.receiver.deliveryverification.IdentityVerificationViewModel
-import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailRoute
-import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailViewModel
-import com.afternote.feature.afternote.presentation.receiver.navigation.ReceiverNavActions
-import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceiverRoute
+import com.afternote.feature.home.presentation.HomeTabActions
+import com.afternote.feature.receiver.domain.error.ReceiverEmailAuthException
+import com.afternote.feature.receiver.domain.model.AfterNoteListItem
+import com.afternote.feature.receiver.domain.model.AfterNotesListResult
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
+import com.afternote.feature.receiver.domain.model.LoadCountResult
+import com.afternote.feature.receiver.domain.model.ReceivedAfternoteDetail
+import com.afternote.feature.receiver.domain.model.ReceivedExportBundle
+import com.afternote.feature.receiver.domain.model.ReceivedPlaylistDetail
+import com.afternote.feature.receiver.domain.model.ReceivedPlaylistSong
 import com.afternote.feature.receiver.domain.model.ReceiverAuthPresignedUrl
 import com.afternote.feature.receiver.domain.model.ReceiverEmailAuthResult
 import com.afternote.feature.receiver.domain.model.ReceiverIdentity
@@ -79,6 +64,21 @@ import com.afternote.feature.receiver.domain.model.SenderMessageInfo
 import com.afternote.feature.receiver.domain.repository.IdentityVerificationRepository
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import com.afternote.feature.receiver.domain.repository.ReceiverDeliveryDocumentUploadRepository
+import com.afternote.feature.receiver.domain.repository.ReceiverRepository
+import com.afternote.feature.receiver.presentation.deliveryverification.DocumentSlot
+import com.afternote.feature.receiver.presentation.deliveryverification.DocumentUploadScreen
+import com.afternote.feature.receiver.presentation.deliveryverification.DocumentUploadViewModel
+import com.afternote.feature.receiver.presentation.deliveryverification.IdentityVerificationEmailScreen
+import com.afternote.feature.receiver.presentation.deliveryverification.IdentityVerificationViewModel
+import com.afternote.feature.receiver.presentation.detail.ReceivedAfternoteDetailRoute
+import com.afternote.feature.receiver.presentation.detail.ReceivedAfternoteDetailViewModel
+import com.afternote.feature.receiver.presentation.home.ReceiverHomeActions
+import com.afternote.feature.receiver.presentation.home.ReceiverHomeEvent
+import com.afternote.feature.receiver.presentation.home.ReceiverHomeScreen
+import com.afternote.feature.receiver.presentation.home.ReceiverHomeViewModel
+import com.afternote.feature.receiver.presentation.home.model.ReceiverHomeUiState
+import com.afternote.feature.receiver.presentation.navigation.ReceiverNavActions
+import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import kotlinx.coroutines.CompletableDeferred
@@ -96,7 +96,9 @@ import org.junit.runner.RunWith
 import javax.inject.Inject
 import com.afternote.core.ui.R as CoreUiR
 import com.afternote.feature.afternote.presentation.R as AfternoteFeatureR
+import com.afternote.feature.home.presentation.R as HomeR
 import com.afternote.feature.onboarding.presentation.R as OnboardingR
+import com.afternote.feature.receiver.presentation.R as ReceiverR
 
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
@@ -164,7 +166,7 @@ class AppAndReceiverCompletionAndroidTest {
             .performTextReplacement("correct-password")
         composeRule.onNode(loginButton).performClick()
 
-        val greeting = context.getString(R.string.home_tab_greeting, "테스트 사용자")
+        val greeting = context.getString(HomeR.string.home_tab_greeting, "테스트 사용자")
         composeRule.waitUntilAtLeastOneExists(hasText(greeting), timeoutMillis = 10_000)
         composeRule.onNodeWithText(greeting).assertIsDisplayed()
 
@@ -257,10 +259,10 @@ class ReceiverRuntimeCompletionAndroidTest {
             senderMessage = Result.failure(offline),
         )
         composeRule
-            .onNodeWithText(context.getString(R.string.home_tab_error_message))
+            .onNodeWithText(context.getString(ReceiverR.string.receiver_home_error_message))
             .assertIsDisplayed()
         composeRule
-            .onNodeWithText(context.getString(R.string.home_tab_retry))
+            .onNodeWithText(context.getString(ReceiverR.string.receiver_home_retry))
             .performClick()
 
         composeRule.waitUntil(timeoutMillis = 5_000) { repository.homeCallCounts.all { it == 2 } }
@@ -293,7 +295,7 @@ class ReceiverRuntimeCompletionAndroidTest {
         )
 
         composeRule
-            .onNodeWithText(context.getString(R.string.receiver_home_sender_record_title, "이발신"))
+            .onNodeWithText(context.getString(ReceiverR.string.receiver_home_sender_record_title, "이발신"))
             .assertIsDisplayed()
         composeRule.onNodeWithText("언제나 응원할게").assertIsDisplayed()
         composeRule
