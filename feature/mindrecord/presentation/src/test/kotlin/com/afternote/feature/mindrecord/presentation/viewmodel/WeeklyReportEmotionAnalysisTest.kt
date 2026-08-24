@@ -172,6 +172,7 @@ class WeeklyReportEmotionAnalysisTest {
     ) = WeeklyReport(
         dailyQuestionAmount = 0,
         diaryAmount = if (total > 0) 1 else 0,
+        deepThoughtAmount = 0,
         summaryText = "이번 주 기록을 바탕으로 인사이트를 준비 중이에요.",
         week = emptyList(),
         dailyQuestions = emptyList(),

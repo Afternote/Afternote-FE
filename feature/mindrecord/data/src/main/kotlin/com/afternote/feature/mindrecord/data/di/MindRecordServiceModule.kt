@@ -1,6 +1,7 @@
 package com.afternote.feature.mindrecord.data.di
 
 import com.afternote.feature.mindrecord.data.api.DailyQuestionApiService
+import com.afternote.feature.mindrecord.data.api.DeepThoughtApiService
 import com.afternote.feature.mindrecord.data.api.DiaryApiService
 import com.afternote.feature.mindrecord.data.api.MindRecordReceiverApiService
 import com.afternote.feature.mindrecord.data.api.WeeklyReportApiService
@@ -28,6 +29,10 @@ object MindRecordServiceModule {
     @Provides
     @Singleton
     fun provideDiaryApiService(retrofit: Retrofit): DiaryApiService = retrofit.create<DiaryApiService>()
+
+    @Provides
+    @Singleton
+    fun provideDeepThoughtApiService(retrofit: Retrofit): DeepThoughtApiService = retrofit.create<DeepThoughtApiService>()
 
     @Provides
     @Singleton

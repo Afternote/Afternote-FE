@@ -5,12 +5,17 @@ import java.time.LocalDate
 data class WeeklyReport(
     val dailyQuestionAmount: Int,
     val diaryAmount: Int,
+    val deepThoughtAmount: Int,
     val summaryText: String,
     val week: List<WeeklyReportDay>,
     val dailyQuestions: List<WeeklyReportDailyQuestion>,
     val emotions: List<WeeklyReportEmotion>,
     val emotionAnalysis: EmotionAnalysis,
-)
+) {
+    /** 이번 주 기록 수 — 세 종류의 합. 홈 `WeeklySummaryGrid` 의 THIS WEEK 카드 값 (#207). */
+    val totalRecordAmount: Int
+        get() = dailyQuestionAmount + diaryAmount + deepThoughtAmount
+}
 
 /**
  * 그 주 감정 분석 진행 상태.
