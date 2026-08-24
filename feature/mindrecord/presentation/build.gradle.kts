@@ -19,7 +19,12 @@ dependencies {
     implementation(projects.core.ui)
     implementation(projects.core.model)
     implementation(libs.coil.compose)
-    implementation(libs.compose.rich.editor)
+    // 쓰는 건 BasicRichTextEditor(foundation 계열)뿐인데, richeditor 가 딸려 보내는 Compose
+    // Multiplatform material3 1.11.0-alpha07 이 androidx material3 를 BOM 판 1.4.0 대신
+    // 1.5.0-alpha17(alpha)로 끌어올린다(#973). 쓰지 않는 material3 갈래를 끊어 BOM 을 정본으로 되돌린다.
+    implementation(libs.compose.rich.editor) {
+        exclude(group = "org.jetbrains.compose.material3", module = "material3")
+    }
 
     testImplementation(libs.coroutines.test)
 
