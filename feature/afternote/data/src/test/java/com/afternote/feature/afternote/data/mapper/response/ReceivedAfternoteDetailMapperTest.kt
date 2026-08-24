@@ -21,7 +21,7 @@ class ReceivedAfternoteDetailMapperTest {
         val result =
             ReceivedAfternoteDetailDto(
                 id = 1L,
-                type = "MUSIC",
+                category = "MUSIC",
                 serviceName = "추모",
                 senderName = "홍길동",
                 createdAt = "2025-11-26T14:30:00",
@@ -35,12 +35,12 @@ class ReceivedAfternoteDetailMapperTest {
 
     @Test
     fun `toDomain - createdAt null이면 createdAt null`() {
-        assertNull(ReceivedAfternoteDetailDto(id = 1L, type = "SOCIAL", createdAt = null).toDomain().createdAt)
+        assertNull(ReceivedAfternoteDetailDto(id = 1L, category = "SOCIAL", createdAt = null).toDomain().createdAt)
     }
 
     @Test
     fun `toDomain - playlist null이면 null`() {
-        assertNull(ReceivedAfternoteDetailDto(id = 1L, type = "GALLERY", playlist = null).toDomain().playlist)
+        assertNull(ReceivedAfternoteDetailDto(id = 1L, category = "GALLERY", playlist = null).toDomain().playlist)
     }
 
     @Test
@@ -48,7 +48,7 @@ class ReceivedAfternoteDetailMapperTest {
         val result =
             ReceivedAfternoteDetailDto(
                 id = 1L,
-                type = "PLAYLIST",
+                category = "PLAYLIST",
                 playlist =
                     ReceivedPlaylistDto(
                         atmosphere = "차분",
@@ -69,7 +69,7 @@ class ReceivedAfternoteDetailMapperTest {
         val result =
             ReceivedAfternoteDetailDto(
                 id = 1L,
-                type = "SOCIAL",
+                category = "SOCIAL",
                 credentials = ReceivedCredentialsDto(id = "u", password = "p"),
             ).toDomain()
 
