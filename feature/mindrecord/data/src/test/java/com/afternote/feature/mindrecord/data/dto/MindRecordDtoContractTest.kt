@@ -57,7 +57,7 @@ class MindRecordDtoContractTest {
         val decoded = json.decodeFromString(BaseResponse.serializer(ListSerializerOf), body)
 
         // imageUrl 은 계약에 없어 DTO 에서 걷었다 — 썸네일은 본문 img 태그에서 뽑는다 (#549).
-        assertEquals("질문", decoded.data!!.single().title)
+        assertEquals("t", decoded.data!!.single().title)
     }
 
     // ---------- 수신자 목록 ----------
