@@ -12,6 +12,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -75,6 +76,7 @@ import com.afternote.feature.afternote.presentation.author.editor.AfternoteEdito
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternotePayloadBuilder
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeEntry
@@ -375,8 +377,9 @@ private fun AuthorEditorForUpdate(
                 memorialMedia = SaveAfternoteMemorialMedia(),
             )
         },
-        onThumbnailUploadErrorConsumed = viewModel::onThumbnailUploadErrorConsumed,
-        onValidationErrorConsumed = viewModel::onValidationErrorConsumed,
+        snackbarMessage =
+            (uiState.error as? AfternoteEditorError.Validation)?.let { stringResource(it.reason.messageResId) },
+        onSnackbarMessageConsumed = viewModel::onErrorConsumed,
         content = {
             AfternoteEditorBody(
                 state = state,

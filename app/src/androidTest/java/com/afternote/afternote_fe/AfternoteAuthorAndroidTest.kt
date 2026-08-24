@@ -34,6 +34,7 @@ import com.afternote.feature.afternote.presentation.author.editor.AfternoteEdito
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -61,7 +62,9 @@ class AfternoteAuthorAndroidTest {
         composeRule.setContent {
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
             AfternoteTheme {
-                uiState.validationError?.let { Text(stringResource(it.messageResId)) }
+                (uiState.error as? AfternoteEditorError.Validation)?.let {
+                    Text(stringResource(it.reason.messageResId))
+                }
             }
         }
 
@@ -76,7 +79,10 @@ class AfternoteAuthorAndroidTest {
 
         composeRule.onNodeWithText("수신자를 한 명 이상 선택해 주세요.").assertIsDisplayed()
         assertEquals(0, repository.createSocialPayloads.size)
-        assertEquals(AfternoteValidationError.RECEIVERS_REQUIRED, viewModel.uiState.value.validationError)
+        assertEquals(
+            AfternoteEditorError.Validation(AfternoteValidationError.RECEIVERS_REQUIRED),
+            viewModel.uiState.value.error,
+        )
     }
 
     @Test
@@ -95,7 +101,7 @@ class AfternoteAuthorAndroidTest {
             viewModel.setType(AfternoteType.SOCIAL_NETWORK)
             viewModel.saveAfternote(payload, listOf(7L), SaveAfternoteMemorialMedia())
         }
-        composeRule.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.errorRes != null }
+        composeRule.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.error != null }
         assertNull(viewModel.uiState.value.savedId)
 
         composeRule.runOnIdle {
