@@ -156,7 +156,7 @@ fun HomeScreen(
                                 matchContentSize = false,
                             ),
                         width = 80.dp,
-                        color = Color(0xFF1F1F1F),
+                        color = AfternoteDesign.colors.gray9,
                     )
                 },
             ) {

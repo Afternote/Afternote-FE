@@ -170,7 +170,6 @@
     <string name="mindrecord_toolbar_align_left_cd">왼쪽 정렬</string>
     <string name="mindrecord_toolbar_align_center_cd">가운데 정렬</string>
     <string name="mindrecord_toolbar_align_right_cd">오른쪽 정렬</string>
-    <string name="mindrecord_toolbar_close_cd">닫기</string>
     <string name="mindrecord_toolbar_draft_count">임시저장 %d</string>
     <string name="mindrecord_toolbar_draft_label">임시저장</string>
     <string name="mindrecord_toolbar_text_settings">텍스트 설정</string>
@@ -184,7 +183,6 @@
     <string name="mindrecord_write_field_character_count">%d 글자</string>
 
     <!-- Tags / common -->
-    <string name="mindrecord_back_cd">뒤로가기</string>
     <string name="mindrecord_more_cd">더보기</string>
 
     <!-- VM/Domain error messages -->
