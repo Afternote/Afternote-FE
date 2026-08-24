@@ -21,8 +21,10 @@ on:
         default: false
         type: boolean
 
+# release-distribution.yml 과 같은 group — 업로드 대상 Firebase 앱이 하나다. 한쪽만 바꾸면
+# 두 러너가 같은 앱에 동시 업로드한다 (#995).
 concurrency:
-  group: firebase-wif-canary
+  group: firebase-app-distribution-upload
   cancel-in-progress: false
 
 permissions:

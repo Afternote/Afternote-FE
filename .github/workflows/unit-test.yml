@@ -15,6 +15,10 @@ name: Unit Test
 on:
   pull_request:
 
+concurrency:
+  group: unit-test-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -38,7 +42,7 @@ jobs:
       - name: Run deployment script tests
         run: node --test .github/scripts/*.test.mjs
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
@@ -55,7 +59,7 @@ jobs:
         uses: ./.github/actions/setup-ci-config
 
       - name: Run unit tests, androidTest compile guard, and aggregate Kover reports
-        run: ./gradlew :koverXmlReportCi :koverHtmlReportCi :konsist:test :build-logic:test :app:compileDebugAndroidTestKotlin --continue --parallel
+        run: ./gradlew :koverXmlReportCi :koverHtmlReportCi :konsist:test :build-logic:test :app:compileDebugAndroidTestKotlin --continue --parallel --build-cache
 
       - name: Upload Kover coverage reports
         id: kover-artifact
