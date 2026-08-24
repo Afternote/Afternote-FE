@@ -2,16 +2,9 @@ package com.afternote.afternote_fe.test
 
 import com.afternote.afternote_fe.reporting.ErrorReportingModule
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.data.repoimpl.PhotoUploadRepositoryImpl
-import com.afternote.core.data.repoimpl.UserProfileRepositoryImpl
-import com.afternote.core.data.repoimpl.VideoUploadRepositoryImpl
-import com.afternote.core.data.repoimpl.account.AccountRepositoryImpl
-import com.afternote.core.di.CoreRepositoryModule
-import com.afternote.core.domain.repository.PhotoUploadRepository
+import com.afternote.core.data.di.CoreUserRepositoryModule
 import com.afternote.core.domain.repository.UserProfileRepository
 import com.afternote.core.domain.repository.UserRepository
-import com.afternote.core.domain.repository.VideoUploadRepository
-import com.afternote.core.domain.repository.account.AccountRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.feature.mindrecord.data.di.MindRecordRepositoryModule
 import com.afternote.feature.mindrecord.data.repositoryimpl.MindRecordReceiverRepositoryImpl
@@ -29,9 +22,9 @@ import javax.inject.Singleton
 @Module
 @TestInstallIn(
     components = [SingletonComponent::class],
-    replaces = [CoreRepositoryModule::class],
+    replaces = [CoreUserRepositoryModule::class],
 )
-object TestCoreRepositoryModule {
+object TestCoreUserRepositoryModule {
     @Provides
     @Singleton
     fun provideAuthRepository(): AuthRepository = FakeAuthRepository(loggedIn = false)
@@ -43,18 +36,6 @@ object TestCoreRepositoryModule {
     @Provides
     @Singleton
     fun provideUserProfileRepository(): UserProfileRepository = FakeUserProfileRepository()
-
-    @Provides
-    @Singleton
-    fun provideAccountRepository(impl: AccountRepositoryImpl): AccountRepository = impl
-
-    @Provides
-    @Singleton
-    fun providePhotoUploadRepository(impl: PhotoUploadRepositoryImpl): PhotoUploadRepository = impl
-
-    @Provides
-    @Singleton
-    fun provideVideoUploadRepository(impl: VideoUploadRepositoryImpl): VideoUploadRepository = impl
 }
 
 @Module
