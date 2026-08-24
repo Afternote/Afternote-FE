@@ -82,14 +82,27 @@ fun DiaryWriteScreen(
                 title = stringResource(MindRecordR.string.mindrecord_diary_write_title),
                 onBackClick = onBackClick,
                 actions = {
+                    // 완성되지 않아도 **누를 수는 있게** 둔다. 비활성이면 submit() 이 아예
+                    // 돌지 않아 무엇이 빠졌는지 알릴 자리가 없다 — 회색 버튼만으로는 고장과
+                    // 구분되지 않는다 (#722). 색은 종전대로 미완성일 때 흐리게 둔다.
                     Button(
                         onClick = { viewModel.submit() },
-                        enabled = uiState.canSubmit,
+                        enabled = uiState.submitState != SubmitState.InProgress,
                         shape = RoundedCornerShape(6.dp),
                         colors =
                             ButtonDefaults.buttonColors(
-                                containerColor = AfternoteDesign.colors.gray9,
-                                contentColor = AfternoteDesign.colors.white,
+                                containerColor =
+                                    if (uiState.canSubmit) {
+                                        AfternoteDesign.colors.gray9
+                                    } else {
+                                        AfternoteDesign.colors.gray2
+                                    },
+                                contentColor =
+                                    if (uiState.canSubmit) {
+                                        AfternoteDesign.colors.white
+                                    } else {
+                                        AfternoteDesign.colors.gray6
+                                    },
                                 disabledContainerColor = AfternoteDesign.colors.gray2,
                                 disabledContentColor = AfternoteDesign.colors.gray6,
                             ),
