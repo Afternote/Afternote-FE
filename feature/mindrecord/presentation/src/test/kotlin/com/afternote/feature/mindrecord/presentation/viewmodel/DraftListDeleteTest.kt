@@ -100,6 +100,12 @@ class DraftListDeleteTest {
 
     private fun viewModel(dailyQuestionRepository: DailyQuestionRepository): DraftListViewModel =
         DraftListViewModel(
+            // #769 가 목록 조회를 loader 로 뽑아낸 뒤 생성자가 3개로 늘었다.
+            loader =
+                MindRecordDraftLoader(
+                    diaryRepository = EmptyDiaryDraftRepository,
+                    dailyQuestionRepository = dailyQuestionRepository,
+                ),
             diaryRepository = EmptyDiaryDraftRepository,
             dailyQuestionRepository = dailyQuestionRepository,
         )
