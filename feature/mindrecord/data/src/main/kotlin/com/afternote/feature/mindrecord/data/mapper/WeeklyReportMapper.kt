@@ -1,9 +1,11 @@
 package com.afternote.feature.mindrecord.data.mapper
 
+import com.afternote.feature.mindrecord.data.dto.EmotionAnalysisSummaryDto
 import com.afternote.feature.mindrecord.data.dto.WeeklyReportDailyQuestionDto
 import com.afternote.feature.mindrecord.data.dto.WeeklyReportDayDto
 import com.afternote.feature.mindrecord.data.dto.WeeklyReportDto
 import com.afternote.feature.mindrecord.data.dto.WeeklyReportEmotionDto
+import com.afternote.feature.mindrecord.domain.model.EmotionAnalysis
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDailyQuestion
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDay
@@ -17,10 +19,19 @@ fun WeeklyReportDto.toDomain(): WeeklyReport =
         week = week.map { it.toDomain() },
         dailyQuestions = dailyQuestions.map { it.toDomain() },
         emotions = emotions.map { it.toDomain() },
+        emotionAnalysis = emotionAnalysis?.toDomain(),
     )
 
 /** `week[].type` 중 일기를 뜻하는 값. 나머지(`DAILY_QUESTION`·`DEEP_THOUGHT`·미래 종류)는 일기가 아니다. */
 private const val WEEK_RECORD_TYPE_DIARY = "DIARY"
+
+/**
+ * 기록일수에서 제외할 종류.
+ *
+ * 깊은 생각은 기획에서 제거됐다. 서버는 `week[]` 에 계속 실어 보내지만 앱은 이 기능을
+ * 없는 것으로 다루므로 기록일수에도 세지 않는다 (#590).
+ */
+private val WEEK_RECORD_TYPES_NOT_COUNTED = setOf("DEEP_THOUGHT")
 
 /**
  * 와이어의 `type` 문자열을 도메인 의미(`isDiary`)로 접는다.
@@ -33,6 +44,7 @@ fun WeeklyReportDayDto.toDomain(): WeeklyReportDay =
         diaryId = diaryId,
         day = day,
         isDiary = type.equals(WEEK_RECORD_TYPE_DIARY, ignoreCase = true),
+        countsAsRecord = WEEK_RECORD_TYPES_NOT_COUNTED.none { it.equals(type, ignoreCase = true) },
         emotion = emotion?.toDomain(),
     )
 
@@ -41,6 +53,14 @@ fun WeeklyReportDailyQuestionDto.toDomain(): WeeklyReportDailyQuestion =
         title = title,
         content = content,
         date = date,
+    )
+
+fun EmotionAnalysisSummaryDto.toDomain(): EmotionAnalysis =
+    EmotionAnalysis(
+        total = total,
+        succeeded = succeeded,
+        pending = pending,
+        failed = failed,
     )
 
 fun WeeklyReportEmotionDto.toDomain(): WeeklyReportEmotion =

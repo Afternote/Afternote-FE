@@ -49,10 +49,4 @@ class ReceiverAuthCodeDataSource
                 }
             }
         }
-
-        suspend fun clearCode() {
-            dataStore.edit { preferences ->
-                preferences.remove(ReceiverAuthCodeKeys.AUTH_CODE)
-            }
-        }
     }

@@ -4,11 +4,15 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { hasQaMetadataSection, inspectQaMetadata } from "./qa-semantic-audit.mjs";
+import { hasQaMetadataSection, inspectQaMetadata } from "./qa-metadata.mjs";
 
 // 게이트 도입 전에 생성된 PR은 리베이스로 이 워크플로를 받아도 소급 차단하지 않는다.
 // 섹션을 채워 넣은 순간부터는 생성 시각과 무관하게 검증한다.
-export const QA_METADATA_GATE_CUTOFF = "2026-08-24T00:00:00Z";
+//
+// 이 값은 게이트가 develop 에 들어가는 날보다 뒤여야 한다. 앞서면 그 사이에 열린 PR 들이
+// 본문을 고치기 전까지 리베이스하는 순간 막힌다 — 8/24 로 두는 동안 열린 PR 22건이 그 상태였다.
+// 머지가 이 날짜를 넘기면 넘긴 만큼 다시 민다.
+export const QA_METADATA_GATE_CUTOFF = "2026-08-26T00:00:00Z";
 
 function isGrandfathered(pullRequest) {
     const createdAt = Date.parse(pullRequest?.created_at ?? "");

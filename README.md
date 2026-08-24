@@ -109,15 +109,15 @@ keytool -exportcert -alias afternote-debug-shared -keystore ~/afternote-debug-sh
 - 수정 결과를 테스터가 확인해야 하는 결함이 머지되면, 묶음 크기와 관계없이 확인 가능한 빌드를 배포한다.
 - 현재 묶음의 모든 QA 포인트가 통과한 뒤 `develop`을 `main`으로 승격한다.
 
-### 머지별 자동 판단
+### 릴리스 PR 범위 자동 산출
 
-`develop` 대상 PR이 머지되면 [`deployment-decision.yml`](.github/workflows/deployment-decision.yml)이 develop push의 병합 커밋에서 머지 PR을 복원한 뒤, 마지막 성공 QA 배포 이후의 누적 PR·연결 이슈·실제 diff를 읽는다. pull_request 트리거 workflow는 `GITHUB_TOKEN` 외 secret을 참조할 수 없으므로(#842) push 트리거를 사용하며, 머지 PR이 없는 직접 push는 판단을 건너뛴다. 고위험 경로, 버그·기능 PR, 누적 이슈 수, 구조화 QA 원천 수, 영향 스코프 수를 판정한 뒤 의미 감사를 거쳐 `QA 배포 권장`·`QA 배포 보류`·`QA 사람 검토 필요`와 실행 가능한 시나리오를 머지된 PR에 코멘트한다. 판단만 자동화하며 APK 업로드는 실행하지 않는다.
+배포 시점은 위 기준에 따라 사람이 정한다 — `develop` → `main` 릴리스 PR을 여는 것이 곧 배포 결정이다.
 
-의미 감사는 PR 메타데이터를 정본으로 사용한다. Copilot은 원천 ID의 병합과 P0-P3 우선순위만 결정하며 사전조건·행동·기대 결과·위험·근거·제외 사유는 다시 쓰지 못한다. 응답이 원천을 누락하거나 허용되지 않은 필드를 만들면 결과를 폐기한다. 구조화 입력 누락, 개인 Copilot token 누락, 호출 실패, 근거 부족은 generic 문구로 대체하지 않고 `human_review_required`로 남긴다.
+릴리스 PR이 열리거나 head가 갱신되면 [`release-scope.yml`](.github/workflows/release-scope.yml)이 마지막 성공 배포 이후 `develop`에 머지된 PR과 그 연결 이슈를 모아 PR 본문의 `## 포함 이슈`를 채운다. head가 움직일 때마다 다시 채우므로 머지 직전에 목록을 손으로 대조할 필요가 없다.
 
-개인 Copilot 좌석을 쓰려면 개인 계정 소유의 fine-grained PAT에 Account permission `Copilot Requests`를 부여하고 Actions repository secret `COPILOT_PERSONAL_TOKEN`으로 등록한다. classic PAT는 지원하지 않는다. workflow에는 조직 과금용 `copilot-requests: write` 권한을 두지 않으며, 개인 좌석의 AI credits를 사용한다. 한 감사 실행은 최대 1 AI credit로 제한한다. PAT는 모델 호출 step에만 주입되고 Copilot의 shell·read·write·URL·memory 도구와 built-in MCP는 모두 거부된다. Copilot에는 미배포 PR의 구조화 QA 메타데이터, 연결 이슈 제목·본문, 변경 파일 경로만 전송하며 secret 값은 입력·응답·로그에 넣지 않는다. 자세한 인증·과금 방식은 [GitHub Copilot CLI Actions 문서](https://docs.github.com/en/copilot/how-tos/copilot-cli/automate-copilot-cli/automate-with-actions)를 따른다. 모델을 고정해야 하면 repository variable `QA_SEMANTIC_AUDIT_MODEL`을 설정하고, 비어 있으면 개인 좌석의 기본 모델을 사용한다.
+`## QA 포인트`는 비어 있을 때만 구성 PR 본문에서 모은 초안으로 채우고, 사람이 쓴 문장이 있으면 건드리지 않는다. 두 섹션은 main push 시 그대로 릴리스 노트가 되므로 배포 전에 테스터가 실행할 문장으로 다듬는다.
 
-Actions의 **Evaluate QA Distribution Candidate**에서 이미 머지된 PR 번호를 입력해 같은 규칙으로 수동 재검증할 수도 있다.
+별도 API나 유료 AI를 호출하지 않으며 기존 GitHub Actions 실행량만 사용한다. Actions의 **Collect Release Scope**에서 릴리스 PR 번호를 입력해 다시 산출할 수도 있다.
 
 ### PR별 구조화 QA 원천
 
