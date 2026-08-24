@@ -12,9 +12,13 @@
 
     <!-- MemorySpace 화면 -->
     <string name="mindrecord_memory_space_title">MEMORY SPACE</string>
-    <string name="mindrecord_memory_space_subtitle">마우스를 움직여 공간을 탐색하세요</string>
+    <string name="mindrecord_memory_space_subtitle">화면을 드래그해 공간을 둘러보세요</string>
     <string name="mindrecord_memory_space_back">돌아가기</string>
     <string name="mindrecord_read_again">그날의 기록 다시 읽기</string>
+    <string name="mindrecord_memory_space_loading">기록을 불러오는 중이에요…</string>
+    <string name="mindrecord_memory_space_empty">아직 담긴 기록이 없어요.\n일기나 데일리 질문을 남기면 이곳에 쌓입니다.</string>
+    <string name="mindrecord_error_memory_space_failed">기록을 불러오지 못했습니다.</string>
+    <string name="mindrecord_memory_space_retry">다시 시도하기</string>
 
     <!-- Common action labels -->
     <string name="mindrecord_action_register">등록</string>
@@ -104,9 +108,11 @@
     <string name="mindrecord_diary_empty_state_title">아직 등록된 일기가 없어요.</string>
     <string name="mindrecord_diary_empty_state_description">일기를 작성해 나의 매일을 기록해 보아요.</string>
 
-    <!-- Memories card sample question/answer -->
-    <string name="mindrecord_memories_card_question">\"내 인생에서 가장 소중했던 순간은?\"</string>
-    <string name="mindrecord_memories_card_answer">- 아이가 태어났을 때...</string>
+    <!--
+      Memories card. 질문·답변은 사용자의 실제 기록으로 채운다 (MemoriesCardViewModel).
+      0건 상태 문구는 두지 않는다 — 시안(Figma 109:15028)에 해당 변형이 없어 임의 문구를
+      넣으면 미확정 상태가 제품 동작으로 굳는다. 확정되면 여기에 추가한다 (#559).
+    -->
 
     <!-- Draft list screen -->
     <string name="mindrecord_draft_list_title">임시 저장된 기록</string>
