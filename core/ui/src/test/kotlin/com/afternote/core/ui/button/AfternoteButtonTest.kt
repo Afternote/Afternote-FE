@@ -126,6 +126,48 @@ class AfternoteButtonTest {
     }
 
     @Test
+    fun `보조 라벨을 비활성하면 눌리지 않는다`() {
+        // 선택 0개에서 «선택 삭제» 를 막는 자리 (#442). 자체 구현에는 있던 상태라
+        // 정본이 담지 않으면 수렴이 그 방어를 지운다.
+        var secondaryClicked = false
+        composeRule.setContent {
+            AfternoteTheme {
+                AfternoteButton(
+                    text = "전체 삭제",
+                    onClick = {},
+                    type = AfternoteButtonType.Variant5,
+                    secondaryText = "선택 삭제",
+                    onSecondaryClick = { secondaryClicked = true },
+                    isSecondaryEnabled = false,
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("선택 삭제").performClick()
+        composeRule.runOnIdle { assertFalse(secondaryClicked) }
+    }
+
+    @Test
+    fun `주 라벨은 보조가 비활성이어도 눌린다`() {
+        var primaryClicked = false
+        composeRule.setContent {
+            AfternoteTheme {
+                AfternoteButton(
+                    text = "전체 삭제",
+                    onClick = { primaryClicked = true },
+                    type = AfternoteButtonType.Variant5,
+                    secondaryText = "선택 삭제",
+                    onSecondaryClick = {},
+                    isSecondaryEnabled = false,
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("전체 삭제").performClick()
+        composeRule.runOnIdle { assertTrue(primaryClicked) }
+    }
+
+    @Test
     fun `dual-action 좌우 절반이 접근성 트리에 버튼으로 잡힌다`() {
         // 절반씩 독립 클릭인데 Role.Button 이 없으면 스크린리더가 눌 수 있는 요소로 읽지
         // 않는다. mindrecord 자체 구현에는 있고 core 에는 없던 결함이다 (#634).
