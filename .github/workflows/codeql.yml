@@ -49,12 +49,16 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      # 읽기 전용이다 — push 에서도 쓰지 않는다. 이 job 은 --build-cache 를 쓸 수 없어
+      # (아래 주석) build-cache-1 이 빈 Gradle User Home 을 저장하게 되는데, Actions 캐시는
+      # 같은 키를 덮어쓰지 못하므로 그것이 먼저 저장되면 build-cache-warm.yml 이 채운
+      # 캐시가 올라갈 자리를 잃는다. develop push 의 캐시 writer 는 그 워크플로 하나다 (#996).
       - name: Set up Gradle and validate wrapper
         if: matrix.build_mode == 'manual'
         uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         with:
           cache-provider: basic
-          cache-read-only: ${{ github.event_name == 'pull_request' }}
+          cache-read-only: true
           validate-wrappers: true
 
       - name: Set up CI-only app configuration
