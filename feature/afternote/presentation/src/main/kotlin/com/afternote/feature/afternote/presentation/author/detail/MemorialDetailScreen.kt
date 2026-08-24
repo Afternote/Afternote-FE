@@ -42,8 +42,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.afternote.core.model.AlbumCover
 import com.afternote.core.ui.ProfileImage
@@ -53,76 +51,11 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.author.navigation.DeleteInProgressOverlay
-import com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent
-import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadErrorContent
-import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadingContent
-import com.afternote.feature.afternote.presentation.author.navigation.ObserveDeleteResult
-import com.afternote.feature.afternote.presentation.author.navigation.rememberDeleteFailedHandler
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.ReceiversCard
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
-
-/**
- * 추억 노트 상세 Stateful Route.
- *
- * [com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailRoute]·[GalleryDetailRoute] 와 동일한 VM·UiState·삭제 이펙트 패턴을 따르며,
- * 성공 시 [AfternoteDetailUiState.Success.contentUiModel] 이 추억 노트가 아니면 폴백한다.
- */
-@Composable
-internal fun MemorialDetailRoute(
-    onBack: () -> Unit,
-    onNavigateToEditor: (itemId: Long) -> Unit,
-    viewModel: AfternoteDetailViewModel = hiltViewModel(),
-) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    ObserveDeleteResult(
-        deleteResult = (uiState as? AfternoteDetailUiState.Success)?.deleteResult,
-        onConsumed = viewModel::onDeleteResultConsumed,
-        onDeleteSucceeded = onBack,
-        onDeleteFailed = rememberDeleteFailedHandler(snackbarHostState),
-    )
-
-    when (val state = uiState) {
-        AfternoteDetailUiState.Loading -> {
-            DetailLoadingContent()
-        }
-
-        is AfternoteDetailUiState.Error -> {
-            DetailLoadErrorContent(
-                messageRes = state.messageRes,
-                onBackClick = onBack,
-            )
-        }
-
-        is AfternoteDetailUiState.Success -> {
-            when (val model = state.contentUiModel) {
-                is DetailContentUiModel.Memorial -> {
-                    Box {
-                        MemorialDetailScreen(
-                            content = model.content,
-                            snackbarHostState = snackbarHostState,
-                            onBackClick = onBack,
-                            onEditClick = { onNavigateToEditor(state.detailId) },
-                            onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
-                        )
-                        if (state.isDeleting) {
-                            DeleteInProgressOverlay()
-                        }
-                    }
-                }
-
-                else -> {
-                    DesignPendingDetailContent(onBackClick = onBack)
-                }
-            }
-        }
-    }
-}
 
 /**
  * 추억 노트 상세 표시 데이터.

@@ -246,7 +246,6 @@
     <string name="afternote_validation_actions_required">처리 방법을 한 가지 이상 추가해 주세요.</string>
     <string name="afternote_validation_gallery_receivers_required">수신자를 한 명 이상 등록해 주세요. 설정에서 수신자를 등록해 주세요.</string>
     <string name="afternote_validation_receivers_required">수신자를 한 명 이상 선택해 주세요.</string>
-    <string name="afternote_validation_playlist_songs_required">플레이리스트에 노래를 한 곡 이상 추가해 주세요.</string>
     <string name="afternote_validation_leave_message_body_required">남기실 말씀의 내용을 입력해 주세요.</string>
     <string name="afternote_default_playlist_song_title">추억 플레이리스트 곡</string>
 

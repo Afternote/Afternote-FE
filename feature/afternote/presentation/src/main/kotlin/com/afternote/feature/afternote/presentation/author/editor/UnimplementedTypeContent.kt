@@ -28,7 +28,7 @@ import com.afternote.feature.afternote.presentation.R
  * (BUSINESS 는 시안 700:38735 확정으로 소셜 폼을 재사용하도록 개통 — 이슈 #467)
  */
 @Composable
-internal fun UnimplementedCategoryContent(modifier: Modifier = Modifier) {
+internal fun UnimplementedTypeContent(modifier: Modifier = Modifier) {
     Box(
         modifier =
             modifier
@@ -59,8 +59,8 @@ internal fun UnimplementedCategoryContent(modifier: Modifier = Modifier) {
 
 @Preview(showBackground = true)
 @Composable
-private fun UnimplementedCategoryContentPreview() {
+private fun UnimplementedTypeContentPreview() {
     AfternoteTheme {
-        UnimplementedCategoryContent()
+        UnimplementedTypeContent()
     }
 }
