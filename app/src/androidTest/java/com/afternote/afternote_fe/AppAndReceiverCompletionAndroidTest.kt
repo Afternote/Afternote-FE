@@ -637,10 +637,9 @@ class ReceiverRuntimeCompletionAndroidTest {
         repository.detailResults.addLast(
             Result.success(
                 ReceivedAfternoteDetail(
-                    title = "Google Drive",
+                    serviceName = "Google Drive",
                     senderName = "이발신",
                     createdAt = "2026.08.22",
-                    category = "GALLERY",
                     type = AfternoteType.GALLERY_AND_FILES,
                     processingMethods = listOf("가족에게 폴더 전달"),
                     leaveMessageBlocks =
@@ -673,9 +672,8 @@ class ReceiverRuntimeCompletionAndroidTest {
         repository.detailResults.addLast(
             Result.success(
                 ReceivedAfternoteDetail(
-                    title = "추억 노트",
+                    serviceName = "추억 노트",
                     senderName = "이발신",
-                    category = "PLAYLIST",
                     type = AfternoteType.MEMORIAL,
                     leaveMessageBlocks =
                         listOf(LeaveMessageBlock(title = "마지막 말", body = "이 노래들을 기억해 줘")),

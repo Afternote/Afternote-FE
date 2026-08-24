@@ -351,10 +351,9 @@ private class AdvancedReceiverAuthRepository : ReceiverAuthRepository {
 
 private fun receivedSocialDetail(): ReceivedAfternoteDetail =
     ReceivedAfternoteDetail(
-        title = "Instagram",
+        serviceName = "Instagram",
         senderName = "이발신",
         createdAt = "2026.08.22",
-        category = "SOCIAL",
         type = AfternoteType.SOCIAL_NETWORK,
         processingMethods = listOf("계정 삭제"),
         leaveMessageBlocks =
