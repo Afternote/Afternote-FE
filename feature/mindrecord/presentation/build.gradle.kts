@@ -6,6 +6,8 @@ plugins {
 
 android {
     namespace = "com.afternote.feature.mindrecord.presentation"
+
+    testOptions.unitTests.isIncludeAndroidResources = true
     resourcePrefix = "mindrecord_"
 }
 
@@ -19,4 +21,7 @@ dependencies {
     implementation(libs.compose.rich.editor)
 
     testImplementation(libs.coroutines.test)
+
+    // 컴파일된 리소스로 문구를 검증한다 — aapt2 의 앞뒤 공백 제거는 소스 XML 만 봐서는 잡히지 않는다 (#732).
+    testImplementation(libs.robolectric)
 }
