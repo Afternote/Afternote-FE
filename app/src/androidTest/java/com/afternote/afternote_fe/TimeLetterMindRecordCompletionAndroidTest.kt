@@ -338,7 +338,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
 
         composeRule.setContent {
             AfternoteTheme {
-                DailyQuestionAnswerListScreen(viewModel = activeViewModel)
+                DailyQuestionAnswerListScreen(viewModel = activeViewModel, onItemClick = { _, _ -> })
             }
         }
 
@@ -394,7 +394,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
             val activeWriteViewModel = writeViewModel
             AfternoteTheme {
                 if (activeWriteViewModel == null) {
-                    DailyQuestionAnswerListScreen(viewModel = listViewModel)
+                    DailyQuestionAnswerListScreen(viewModel = listViewModel, onItemClick = { _, _ -> })
                 } else {
                     DailyQuestionWriteScreen(
                         viewModel = activeWriteViewModel,

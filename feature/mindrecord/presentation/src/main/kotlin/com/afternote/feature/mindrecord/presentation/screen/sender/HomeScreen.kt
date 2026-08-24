@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -39,12 +40,16 @@ import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionList
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportViewModel
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.launch
+import java.time.YearMonth
 import com.afternote.feature.mindrecord.presentation.R as MindRecordR
 
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
     onWriteClick: (MindRecordCategoryUi) -> Unit = {},
+    // 목록 항목 탭 → 상세(열람) 화면. (기록 ID, 일기 여부, 목록이 보고 있던 달) (#759).
+    onRecordClick: (Long, Boolean, YearMonth) -> Unit = { _, _, _ -> },
 ) {
     // Figma 2757:16116 — 마음의 기록 탭은 데일리 질문 / 일기 / 주간리포트 3개
     val categories =
@@ -56,8 +61,16 @@ fun HomeScreen(
             )
         }
 
-    var selectedIndex by remember { mutableIntStateOf(0) }
+    // 선택 상태의 단일 출처는 pager 다. 종전에는 selectedIndex 로 애니메이션을 시작하면서
+    // pagerState.currentPage 를 다시 selectedIndex 에 기록해, 0↔2 전환 중 거쳐 가는 1번
+    // 페이지가 선택값을 덮어써 가운데 탭(일기)에 멈췄다 (#722).
+    //
+    // 탭 클릭은 pager 에게 "거기로 가라" 고만 말하고, 화면이 읽는 값은 pager 의
+    // settledPage 하나뿐이다 — 스크롤 도중의 중간 페이지가 선택으로 굳지 않는다.
+    val pagerState = rememberPagerState { categories.size }
+    val selectedIndex = pagerState.settledPage
     val selectedCategory = categories[selectedIndex]
+    val scope = rememberCoroutineScope()
 
     // 탭마다 따로 기억한다. 종전에는 한 값을 두 탭이 공유했는데 의미가 서로 반대였다 —
     // 데일리질문은 false 를 캘린더로, 일기는 같은 false 를 2열 그리드로 썼다. 그래서 탭을
@@ -69,14 +82,6 @@ fun HomeScreen(
             MindRecordCategoryUi.DailyQuestion -> dailyQuestionListView
             else -> diaryListView
         }
-
-    val pagerState = rememberPagerState { categories.size }
-    LaunchedEffect(selectedIndex) {
-        pagerState.animateScrollToPage(selectedIndex)
-    }
-    LaunchedEffect(pagerState.currentPage) {
-        selectedIndex = pagerState.currentPage
-    }
 
     // 탭 VM 은 **여기서 만들지 않는다.** 호이스팅하면 선택하지 않은 탭의 `init` 조회까지
     // 진입 즉시 나간다 — 마음의 기록 첫 진입 한 번에 요청이 7건 나간 가장 큰 원인이었다.
@@ -147,7 +152,11 @@ fun HomeScreen(
                 categories.forEachIndexed { index, category ->
                     Tab(
                         selected = selectedIndex == index,
-                        onClick = { selectedIndex = index },
+                        // scrollToPage 는 중간 페이지를 거치지 않는다. animate 로 넘기면
+                        // 0 → 2 이동이 1번을 지나며 그 화면이 컴포즈되고, hiltViewModel() 이
+                        // VM 을 만들며 init 조회가 나간다 — 바로 아래 단(#736)이 «열지도 않은
+                        // 탭의 조회를 없앤다» 로 줄여 둔 요청이 탭 이동마다 되살아난다.
+                        onClick = { scope.launch { pagerState.scrollToPage(index) } },
                         text = {
                             Text(
                                 text = stringResource(category.titleRes),
@@ -160,14 +169,22 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            HorizontalPager(state = pagerState) { _ ->
-                when (selectedCategory) {
+            // page 인자를 실제로 쓴다 — 종전에는 무시하고 전역 selectedCategory 만 렌더해
+            // 스와이프 중에도 같은 화면이 보였다 (#722).
+            HorizontalPager(state = pagerState) { page ->
+                when (categories[page]) {
                     MindRecordCategoryUi.DailyQuestion -> {
-                        DailyQuestionAnswerListScreen(isListView = dailyQuestionListView)
+                        DailyQuestionAnswerListScreen(
+                            isListView = dailyQuestionListView,
+                            onItemClick = { id, yearMonth -> onRecordClick(id, false, yearMonth) },
+                        )
                     }
 
                     MindRecordCategoryUi.Diary -> {
-                        DiaryScreen(isListView = diaryListView)
+                        DiaryScreen(
+                            isListView = diaryListView,
+                            onItemClick = { id, yearMonth -> onRecordClick(id, true, yearMonth) },
+                        )
                     }
 
                     else -> {

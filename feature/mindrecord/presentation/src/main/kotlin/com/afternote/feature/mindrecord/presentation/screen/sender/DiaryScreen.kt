@@ -52,8 +52,15 @@ import androidx.compose.foundation.lazy.staggeredgrid.items as gridItems
 
 private val PreviewYearMonth = YearMonth.of(2026, 7)
 
+/**
+ * @param onItemClick 카드를 눌렀을 때 상세로 보낼 기록 ID 와 **보고 있는 달**. 달을 함께
+ *   싣지 않으면 상세가 이번 달 목록에서 그 기록을 찾다 실패한다 — 목록은 달을 바꿀 수
+ *   있으므로 지난달 기록이 통째로 열리지 않는다 (#759 리뷰). 기본값을 두지 않는다 —
+ *   기본값이 있으면 호출부에서 빠뜨려도 컴파일이 되고, 카드가 눌리지 않는 채로 나간다 (#759).
+ */
 @Composable
 fun DiaryScreen(
+    onItemClick: (Long, YearMonth) -> Unit,
     modifier: Modifier = Modifier,
     isListView: Boolean = true,
     viewModel: DiaryListViewModel = hiltViewModel(),
@@ -100,6 +107,7 @@ fun DiaryScreen(
                     yearMonth = state.yearMonth,
                     monthDiaryCount = state.monthDiaryCount,
                     weeklyMoodEmoji = state.weeklyDominantMood?.toEmoji(),
+                    onItemClick = onItemClick,
                     onDelete = viewModel::delete,
                     onYearMonthChanged = viewModel::selectYearMonth,
                 )
@@ -109,7 +117,7 @@ fun DiaryScreen(
 }
 
 @Composable
-private fun DiaryListContent(
+internal fun DiaryListContent(
     isListView: Boolean,
     diaries: List<DailyDiary>,
     // 조회 중인 월은 VM 이 들고 있다 — 자동 갱신이 같은 월을 다시 조회해야 하고,
@@ -119,6 +127,7 @@ private fun DiaryListContent(
     modifier: Modifier = Modifier,
     monthDiaryCount: Int = 0,
     weeklyMoodEmoji: String? = null,
+    onItemClick: (Long, YearMonth) -> Unit = { _, _ -> },
     onDelete: (Long) -> Unit = {},
     onYearMonthChanged: (YearMonth) -> Unit = {},
 ) {
@@ -176,6 +185,7 @@ private fun DiaryListContent(
             items(visibleDiaries, key = { it.id }) { diary ->
                 DiaryComponent(
                     diary = diary,
+                    onClick = { onItemClick(diary.id, yearMonth) },
                     modifier = Modifier.padding(vertical = 8.dp),
                     onDelete = { onDelete(diary.id) },
                 )
@@ -199,6 +209,7 @@ private fun DiaryListContent(
             gridItems(diaries, key = { it.id }) { diary ->
                 DiaryCard(
                     diary = diary,
+                    onClick = { onItemClick(diary.id, yearMonth) },
                     onDelete = { onDelete(diary.id) },
                 )
             }

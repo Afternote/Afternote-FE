@@ -191,7 +191,9 @@ class DailyQuestionWriteViewModel
                 return
             }
 
-            if (state.answer.isBlank()) {
+            // 화면상 본문이 비어 있으면 저장 요청도 화면 이탈도 막는다. 직렬화된 HTML 에
+            // isBlank() 를 걸면 `<p></p>` 가 통과해 빈 답변이 저장됐다 (#722).
+            if (state.answer.isHtmlBlank()) {
                 failSubmit(R.string.mindrecord_error_daily_question_answer_required)
                 return
             }
