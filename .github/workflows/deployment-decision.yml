@@ -75,7 +75,7 @@ jobs:
               '### QA 포인트',
               qaPoints,
               '',
-              '> 이 판단은 배포를 자동 실행하지 않습니다. `deploy`일 때 Release Distribution을 수동 실행하세요.',
+              '> 이 판단은 배포를 자동 실행하지 않습니다. `deploy`일 때 develop → main 릴리스 PR을 올리세요 — 머지되면 Release Distribution이 자동으로 실행됩니다.',
             ].join('\n');
 
             const issueNumber = Number(process.env.TARGET_PR_NUMBER);
