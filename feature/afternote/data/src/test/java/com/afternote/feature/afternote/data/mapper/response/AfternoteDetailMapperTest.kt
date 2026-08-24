@@ -108,10 +108,6 @@ class AfternoteDetailMapperTest {
         assertEquals("pw", credentials.password)
     }
 
-    /**
-     * BE 상세 조립은 id·password 중 하나만 있어도 credentials 를 만들고(OR), 수정 검증은 발행 상태에서도
-     * 두 값을 강제하지 않는다 — 매퍼가 던지면 그 상세가 영영 안 열리므로 없는 값은 빈 문자열로 낮춘다.
-     */
     @Test
     fun `toDetailDomain - credentials가 아예 없으면 빈 값으로 낮춘다`() {
         val result =

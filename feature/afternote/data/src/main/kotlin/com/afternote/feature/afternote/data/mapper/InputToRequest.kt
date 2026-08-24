@@ -22,12 +22,7 @@ fun AfternoteUpdatePayload.toRequest() =
         memorial = memorial?.toDto(),
     )
 
-/**
- * 작성 API의 `category` wire 값. 화면·domain은 [AfternoteType]만 다루고 문자열 변환은 data 경계에서 끝낸다.
- *
- * BUSINESS는 현재 작성 요청 경로가 이미 사용하는 값이다. ESTATE는 저장 미지원이라 이 경계에 도달하면
- * 호출자 버그로 처리한다.
- */
+/** 문자열 변환은 data 경계에서 끝낸다 — 화면·domain 은 [AfternoteType] 만 다룬다. */
 private fun AfternoteType.toAuthoringServerCategory(): String =
     when (this) {
         AfternoteType.SOCIAL_NETWORK -> "SOCIAL"
@@ -47,7 +42,6 @@ fun CreateAccountPayload.toSocialRequest() =
         receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
     )
 
-/** BUSINESS 생성 요청. [toSocialRequest] 와 동일 필드 조립이며 wire `category`만 "BUSINESS" 로 실린다. */
 fun CreateAccountPayload.toBusinessRequest() =
     AfternoteCreateAccountRequestDto(
         category = "BUSINESS",
