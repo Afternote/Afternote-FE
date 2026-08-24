@@ -8,3 +8,4 @@ build/
 .git/
 .idea/
 *.iml
+gha-creds-*.json

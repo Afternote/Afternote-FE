@@ -33,7 +33,7 @@ import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDis
 
 // region ── PlaylistSongList (list-level composable) ──
 
-internal fun filterSongsByQuery(
+fun filterSongsByQuery(
     songs: List<PlaylistSongDisplay>,
     searchQuery: String,
 ): List<PlaylistSongDisplay> {
@@ -129,7 +129,7 @@ private fun rememberSongSearchFieldState(
  * view-only(수신자 열람)·selectable(노래 추가)이 주입한다. 관리 모드는 대신 "총 N곡" 헤더를 주입한다.
  */
 @Composable
-internal fun SongSearchSection(
+fun SongSearchSection(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
 ) {
