@@ -52,6 +52,8 @@ private val DateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd")
 fun DiaryCard(
     diary: DailyDiary,
     modifier: Modifier = Modifier,
+    /** 카드 전체 탭 — 저장된 기록 본문을 여는 상세 화면으로 간다 (#759). */
+    onClick: () -> Unit = {},
     onEdit: () -> Unit = {},
     onDelete: () -> Unit = {},
 ) {
@@ -66,7 +68,8 @@ fun DiaryCard(
         modifier =
             modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(6.dp)),
+                .clip(RoundedCornerShape(6.dp))
+                .clickable(role = Role.Button, onClick = onClick),
     ) {
         Column {
             if (diary.imageUrl != null) {

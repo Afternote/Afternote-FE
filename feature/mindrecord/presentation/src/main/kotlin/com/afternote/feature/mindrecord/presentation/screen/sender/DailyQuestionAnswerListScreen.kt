@@ -35,8 +35,13 @@ import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionList
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListViewModel
 import java.time.YearMonth
 
+/**
+ * @param onItemClick 카드를 눌렀을 때 상세로 보낼 기록 ID. **기본값을 두지 않는다** —
+ *   기본값이 있으면 호출부에서 빠뜨려도 컴파일이 되고, 카드가 눌리지 않는 채로 나간다 (#759).
+ */
 @Composable
 fun DailyQuestionAnswerListScreen(
+    onItemClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
     isListView: Boolean = true,
     viewModel: DailyQuestionListViewModel = hiltViewModel(),
@@ -63,6 +68,7 @@ fun DailyQuestionAnswerListScreen(
                 modifier = modifier,
                 isListView = isListView,
                 answers = state.answers,
+                onItemClick = onItemClick,
                 onDelete = viewModel::delete,
             )
         }
@@ -74,6 +80,7 @@ private fun DailyQuestionListContent(
     isListView: Boolean,
     answers: List<DailyQuestion>,
     modifier: Modifier = Modifier,
+    onItemClick: (Long) -> Unit = {},
     onDelete: (Long) -> Unit = {},
 ) {
     var yearMonth by remember { mutableStateOf(YearMonth.now()) }
@@ -128,7 +135,11 @@ private fun DailyQuestionListContent(
         }
 
         items(visibleAnswers, key = { it.id }) { answer ->
-            DailyQuestionListCard(answer = answer, onDelete = { onDelete(answer.id) })
+            DailyQuestionListCard(
+                answer = answer,
+                onClick = { onItemClick(answer.id) },
+                onDelete = { onDelete(answer.id) },
+            )
         }
     }
 }

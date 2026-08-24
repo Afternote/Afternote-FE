@@ -49,8 +49,13 @@ import androidx.compose.foundation.lazy.staggeredgrid.items as gridItems
 
 private val PreviewYearMonth = YearMonth.of(2026, 7)
 
+/**
+ * @param onItemClick 카드를 눌렀을 때 상세로 보낼 기록 ID. **기본값을 두지 않는다** —
+ *   기본값이 있으면 호출부에서 빠뜨려도 컴파일이 되고, 카드가 눌리지 않는 채로 나간다 (#759).
+ */
 @Composable
 fun DiaryScreen(
+    onItemClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
     isListView: Boolean = true,
     viewModel: DiaryListViewModel = hiltViewModel(),
@@ -80,6 +85,7 @@ fun DiaryScreen(
                 yearMonth = state.yearMonth,
                 monthDiaryCount = state.monthDiaryCount,
                 weeklyMoodEmoji = state.weeklyDominantMood?.toEmoji(),
+                onItemClick = onItemClick,
                 onDelete = viewModel::delete,
                 onYearMonthChanged = viewModel::selectYearMonth,
             )
@@ -98,6 +104,7 @@ private fun DiaryListContent(
     modifier: Modifier = Modifier,
     monthDiaryCount: Int = 0,
     weeklyMoodEmoji: String? = null,
+    onItemClick: (Long) -> Unit = {},
     onDelete: (Long) -> Unit = {},
     onYearMonthChanged: (YearMonth) -> Unit = {},
 ) {
@@ -163,6 +170,7 @@ private fun DiaryListContent(
             items(visibleDiaries, key = { it.id }) { diary ->
                 DiaryComponent(
                     diary = diary,
+                    onClick = { onItemClick(diary.id) },
                     modifier = Modifier.padding(vertical = 8.dp),
                     onDelete = { onDelete(diary.id) },
                 )
@@ -186,6 +194,7 @@ private fun DiaryListContent(
             gridItems(diaries, key = { it.id }) { diary ->
                 DiaryCard(
                     diary = diary,
+                    onClick = { onItemClick(diary.id) },
                     onDelete = { onDelete(diary.id) },
                 )
             }

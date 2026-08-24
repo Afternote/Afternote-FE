@@ -2,6 +2,7 @@ package com.afternote.feature.mindrecord.presentation.navigation
 
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import com.afternote.core.ui.Route
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.screen.memoryspace.MemorySpaceScreen
@@ -10,6 +11,8 @@ import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestion
 import com.afternote.feature.mindrecord.presentation.screen.sender.DiaryWriteScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DraftListScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.HomeScreen
+import com.afternote.feature.mindrecord.presentation.screen.sender.RecordDetailScreen
+import java.time.YearMonth
 
 /**
  * 마인드레코드 피처의 루트 [NavHost] 등록 묶음.
@@ -20,6 +23,13 @@ import com.afternote.feature.mindrecord.presentation.screen.sender.HomeScreen
 fun NavGraphBuilder.mindRecordNavGraph(actions: MindRecordNavActions) {
     composable<Route.MindRecord> {
         HomeScreen(
+            onRecordClick = { recordId, isDiary ->
+                actions.onOpenRecordDetail(
+                    recordId = recordId,
+                    isDiary = isDiary,
+                    yearMonth = YearMonth.now().toString(),
+                )
+            },
             onWriteClick = { category ->
                 when (category) {
                     MindRecordCategoryUi.DailyQuestion -> actions.onWriteDailyQuestion()
@@ -47,6 +57,12 @@ fun NavGraphBuilder.mindRecordNavGraph(actions: MindRecordNavActions) {
             onSubmitSuccess = actions::onWriteSubmitSuccess,
             onBackClick = actions::onWriteBack,
             onDraftListClick = actions::onNavigateToDraftList,
+        )
+    }
+    composable<MindRecordRoute.RecordDetailRoute> { entry ->
+        RecordDetailScreen(
+            isDiary = entry.toRoute<MindRecordRoute.RecordDetailRoute>().isDiary,
+            onBackClick = actions::onWriteBack,
         )
     }
     composable<MindRecordRoute.DraftListRoute> {
