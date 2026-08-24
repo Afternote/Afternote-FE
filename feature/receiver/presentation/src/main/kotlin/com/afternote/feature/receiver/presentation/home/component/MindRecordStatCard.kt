@@ -20,11 +20,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.receiver.presentation.R
 import com.afternote.core.ui.R as CoreUiR
 
 /**
@@ -35,7 +37,8 @@ fun MindRecordStatCard(
     iconResId: Int,
     label: String,
     totalLabel: String,
-    count: Int,
+    /** 조회 실패·미상이면 null — 카드를 숨기지 않고 개수 자리만 대시로 둔다 (#952). */
+    count: Int?,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -81,7 +84,7 @@ fun MindRecordStatCard(
         )
         Spacer(modifier = Modifier.height(2.dp))
         Text(
-            text = count.toString(),
+            text = count?.toString() ?: stringResource(R.string.receiver_home_section_count_unavailable),
             style = AfternoteDesign.typography.h3,
             color = AfternoteDesign.colors.gray9,
         )

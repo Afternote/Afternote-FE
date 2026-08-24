@@ -29,7 +29,7 @@ import com.afternote.feature.mindrecord.presentation.model.memoryspace.MemoryIte
 @Composable
 fun MemorySpaceCardField(
     memories: List<MemoryItem>,
-    onMemoryClick: (Int) -> Unit,
+    onMemoryClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var touchPosition by remember { mutableStateOf<Offset?>(null) }
@@ -149,10 +149,10 @@ private fun MemorySpaceCardFieldPreview() {
         MemorySpaceCardField(
             memories =
                 listOf(
-                    MemoryItem(1, "https://picsum.photos/400/600?random=1", "기억 1", "2024.11.11", "내용 1", listOf("태그1")),
-                    MemoryItem(2, "https://picsum.photos/400/600?random=2", "기억 2", "2024.11.12", "내용 2", listOf("태그2")),
-                    MemoryItem(3, "https://picsum.photos/400/600?random=3", "기억 3", "2024.11.13", "내용 3", listOf("태그3")),
-                    MemoryItem(4, "https://picsum.photos/400/600?random=4", "기억 4", "2024.11.14", "내용 4", listOf("태그4")),
+                    MemoryItem(1L, "https://picsum.photos/400/600?random=1", "기억 1", "2024.11.11", "내용 1", listOf("태그1")),
+                    MemoryItem(2L, "https://picsum.photos/400/600?random=2", "기억 2", "2024.11.12", "내용 2", listOf("태그2")),
+                    MemoryItem(3L, "https://picsum.photos/400/600?random=3", "기억 3", "2024.11.13", "내용 3", listOf("태그3")),
+                    MemoryItem(4L, "https://picsum.photos/400/600?random=4", "기억 4", "2024.11.14", "내용 4", listOf("태그4")),
                 ),
             onMemoryClick = {},
         )

@@ -66,7 +66,7 @@ fun WriteTextField(
     onValueChange: ((String) -> Unit)? = null,
     onSaveDraftClick: () -> Unit = {},
     onDraftCountClick: () -> Unit = {},
-    draftCount: Int = 0,
+    draftCount: Int? = null,
     /**
      * 갤러리에서 고른 이미지를 서버에 업로드하고 URL 을 반환하는 업로더
      * (`POST /files/presigned-url` → S3 PUT). 업로드 실패(반환값 null) 시 본문에 삽입하지 않는다.

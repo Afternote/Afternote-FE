@@ -3,6 +3,9 @@ package com.afternote.feature.mindrecord.presentation.util
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 /**
  * 본문 HTML 에서 목록 카드 썸네일을 뽑는 규칙 (#549).
@@ -78,5 +81,48 @@ class HtmlImageSrcTest {
         val url = "https://cdn.example.net/some/other/layout/b.png"
 
         assertEquals("some/other/layout/b.png", url.toUploadedFileKey())
+    }
+
+    @Test
+    fun `스킴이 없는 값은 첫 경로 세그먼트를 잃지 않는다`() {
+        // substringAfter("://") 는 구분자가 없으면 원문을 그대로 돌려주고, 이어지는
+        // substringAfter('/') 가 mindrecords 를 떼 버린다 — 조용히 틀린 키가 나간다.
+        assertEquals(
+            "mindrecords/staging/13/a.png",
+            "mindrecords/staging/13/a.png".toUploadedFileKey(),
+        )
+    }
+}
+
+/**
+ * 목록 카드 미리보기에 대체 문자가 새지 않는지 (#549 리뷰 지적).
+ *
+ * `HtmlCompat.fromHtml` 은 ImageGetter 없이 파싱하면 `img` 자리에 U+FFFC(OBJECT
+ * REPLACEMENT CHARACTER)를 남긴다. 본문에 `img` 를 정식으로 넣기 시작하면서 드러나는
+ * 자리라, 카드 미리보기 둘째 줄이 통째로 `￼` 가 된다. 공백이 아니라 `trim()` 으로는
+ * 지워지지 않는다.
+ *
+ * `HtmlCompat` 을 타서 Robolectric 이 필요하다.
+ */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35])
+class HtmlPlainTextTest {
+    @Test
+    fun `본문 뒤 이미지는 미리보기에 대체 문자를 남기지 않는다`() {
+        val html = "<p>본문</p><p><img src=\"https://cdn.example.com/a.png\" /></p>"
+
+        assertEquals("본문", html.htmlToPlainText())
+    }
+
+    @Test
+    fun `이미지만 있는 본문은 미리보기가 비어 있다`() {
+        assertEquals("", "<img src=\"https://cdn.example.com/a.png\" />".htmlToPlainText())
+    }
+
+    @Test
+    fun `글과 이미지가 섞여 있어도 글만 남는다`() {
+        val html = "<p>앞</p><img src=\"https://cdn.example.com/a.png\" /><p>뒤</p>"
+
+        assertEquals(false, html.htmlToPlainText().contains('￼'))
     }
 }
