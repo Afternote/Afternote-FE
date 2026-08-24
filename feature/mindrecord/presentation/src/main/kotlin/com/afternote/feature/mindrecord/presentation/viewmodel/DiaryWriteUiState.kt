@@ -21,6 +21,8 @@ data class DiaryWriteUiState(
     val draftLoaded: Boolean = false,
     val draftLoadError: UiText? = null,
     val submitState: SubmitState = SubmitState.Idle,
+    /** 툴바 "임시저장 N" 표시값. `null` 은 아직 모름(조회 중·실패) (#769). */
+    val draftCount: Int? = null,
 ) {
     val canSubmit: Boolean
         get() =

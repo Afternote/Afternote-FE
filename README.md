@@ -151,9 +151,13 @@ CI 가 사용하는 GitHub Secrets (Settings → Secrets and variables → Actio
 | `RELEASE_KEY_ALIAS` | key alias (`afternote-release`) |
 | `RELEASE_KEY_PASSWORD` | key 비밀번호 |
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | App Distribution Admin 권한 부여된 service account JSON 원문 |
-| `KAKAO_NATIVE_APP_KEY` · `GOOGLE_WEB_CLIENT_ID` · `GOOGLE_SERVICES_JSON_B64` | `local.properties` 키 (`lint.yml` 과 공유) |
+| `KAKAO_NATIVE_APP_KEY` · `GOOGLE_WEB_CLIENT_ID` · `GOOGLE_SERVICES_JSON_B64` | 배포 APK용 실서비스 앱 설정 (`release-distribution.yml` 전용) |
 
 > base64 인코딩: `base64 -i ~/afternote-release.jks | pbcopy` (macOS)
+
+PR 검증용 lint·unit-test·screenshot은 repository secret 대신
+`.github/actions/setup-ci-config`가 만드는 결정적 CI 전용 placeholder를 사용한다. 이 fixture는
+배포에 사용할 수 없으며, `release-distribution.yml`은 계속 승인된 환경의 위 secret만 사용한다.
 
 ### 로컬 — 1hyok 머신 (fallback / 긴급 시)
 

@@ -14,6 +14,8 @@ data class DailyQuestionWriteUiState(
     val isQuestionLoading: Boolean = true,
     val questionLoadError: UiText? = null,
     val submitState: SubmitState = SubmitState.Idle,
+    /** 툴바 "임시저장 N" 표시값. `null` 은 아직 모름(조회 중·실패) (#769). */
+    val draftCount: Int? = null,
 ) {
     /**
      * `questionId` 유무는 여기서 보지 않는다. 조건에 넣으면 오늘 질문 조회가 실패했을 때
