@@ -7,6 +7,8 @@ plugins {
 android {
     namespace = "com.afternote.feature.mindrecord.presentation"
     resourcePrefix = "mindrecord_"
+
+    testOptions.unitTests.isIncludeAndroidResources = true
 }
 
 dependencies {
@@ -19,4 +21,9 @@ dependencies {
     implementation(libs.compose.rich.editor)
 
     testImplementation(libs.coroutines.test)
+
+    // 캘린더 날짜 셀 상호작용을 JVM 에서 실제로 눌러 확인한다 (#724).
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
