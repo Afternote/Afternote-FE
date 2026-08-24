@@ -88,6 +88,19 @@ fun rememberCountLine(
         append(suffix)
     }
 
-/** 조회 실패를 정상 0건과 구분하는 중립 문구. */
+/**
+ * 조회 실패·미상일 때의 개수 자리 표기 — 정상 0건과 구분되는 값이면서 **문장 구조는
+ * 그대로**다 (#952).
+ *
+ * 종전에는 문장을 통째로 "기록 수를 불러오지 못했습니다." 로 갈아 끼워 섹션 높이와 줄
+ * 구성이 바뀌었다. 시안 확정값(4309:19394)은 레이아웃 유지 + 숫자 자리만 대시다.
+ */
 @Composable
-fun unavailableCountLine(): AnnotatedString = AnnotatedString(stringResource(R.string.receiver_home_section_count_unavailable))
+fun unavailableCountLine(
+    suffix: String,
+    countUnitSpacing: String = " ",
+): AnnotatedString =
+    rememberCountLine(
+        prefix = "${stringResource(R.string.receiver_home_section_count_unavailable)}개$countUnitSpacing",
+        suffix = suffix,
+    )

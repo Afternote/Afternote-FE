@@ -22,7 +22,7 @@ fun TimeLetterSection(
         description = stringResource(R.string.receiver_home_timeletter_section_desc),
         countLine =
             if (totalCount == null) {
-                unavailableCountLine()
+                unavailableCountLine(suffix = "라이프 이벤트 레터가 있습니다.")
             } else {
                 rememberCountLine(
                     prefix = "${totalCount}개 ",

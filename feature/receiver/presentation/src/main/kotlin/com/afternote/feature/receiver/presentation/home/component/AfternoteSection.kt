@@ -49,7 +49,7 @@ fun AfternoteSection(
         description = stringResource(R.string.receiver_home_afternote_section_desc),
         countLine =
             if (totalCount == null) {
-                unavailableCountLine()
+                unavailableCountLine(suffix = "의 애프터노트가 있습니다.", countUnitSpacing = "")
             } else {
                 rememberCountLine(
                     prefix = "${totalCount}개",
