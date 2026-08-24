@@ -134,8 +134,9 @@ class DraftListViewModel
                             )
                         }
                     val dailyQuestionItems =
-                        drafts.dailyQuestions.map { question ->
-                            val ui = question.toUi()
+                        // 날짜를 못 정한 항목은 toUi() 가 null 을 돌린다 — 정렬 키가 없어 뺀다 (#751).
+                        drafts.dailyQuestions.mapNotNull { question ->
+                            val ui = question.toUi() ?: return@mapNotNull null
                             DraftItem(
                                 id = ui.id,
                                 category = DraftCategory.DailyQuestion,

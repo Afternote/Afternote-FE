@@ -92,7 +92,7 @@ class MemorySpaceViewModel
                 val questions = questionResult.getOrNull().orEmpty()
 
                 val memories =
-                    (diaries.mapNotNull { it.toDatedMemory() } + questions.map { it.toDatedMemory() })
+                    (diaries.mapNotNull { it.toDatedMemory() } + questions.mapNotNull { it.toDatedMemory() })
                         .sortedByDescending { it.date }
                         .take(MEMORY_CARD_LIMIT)
                         .map { it.item }
@@ -135,8 +135,9 @@ class MemorySpaceViewModel
             )
         }
 
-        private fun DailyQuestion.toDatedMemory(): DatedMemory {
-            val ui = toUi()
+        /** 날짜를 못 정한 데일리질문도 같다 — 정렬 키가 없어 카드로 만들지 않는다 (#751). */
+        private fun DailyQuestion.toDatedMemory(): DatedMemory? {
+            val ui = toUi() ?: return null
             return DatedMemory(
                 date = ui.date,
                 item =
