@@ -78,10 +78,10 @@ class DiaryWriteViewModel
         }
 
         /**
-         * 에디터에서 고른 이미지를 presigned URL 로 업로드하고 영구 URL 을 반환한다 (실패 시 null).
+         * 에디터에서 고른 **미디어**(사진·음성·파일)를 presigned URL 로 업로드하고 영구 URL 을 반환한다 (실패 시 null).
          * 첫 업로드 이미지는 등록 payload 의 `imageUrl` (목록 카드 썸네일) 로도 쓴다.
          */
-        suspend fun uploadImage(uriString: String): String? =
+        suspend fun uploadMedia(uriString: String): String? =
             photoUploadRepository
                 .upload(uriString = uriString, directory = MIND_RECORD_UPLOAD_DIRECTORY)
                 .onSuccess { url ->

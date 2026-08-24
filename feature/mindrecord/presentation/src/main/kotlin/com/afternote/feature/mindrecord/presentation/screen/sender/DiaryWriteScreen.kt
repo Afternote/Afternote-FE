@@ -264,8 +264,8 @@ fun DiaryWriteScreen(
                     onValueChange = viewModel::onContentChanged,
                     onSaveDraftClick = { viewModel.submit(isDraft = true) },
                     onDraftCountClick = onDraftListClick,
-                    onImagePicked = viewModel::uploadImage,
-                    onMediaPicked = viewModel::uploadImage,
+                    onImagePicked = viewModel::uploadMedia,
+                    onMediaPicked = viewModel::uploadMedia,
                 )
             }
         }

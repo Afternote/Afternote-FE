@@ -3,7 +3,9 @@ package com.afternote.feature.mindrecord.presentation.component
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -43,6 +45,7 @@ import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.TextStyleState
 import com.afternote.feature.mindrecord.presentation.model.TextStyleType
 import com.afternote.feature.mindrecord.presentation.util.mediaDisplayName
+import com.afternote.feature.mindrecord.presentation.util.mediaImageSize
 import com.afternote.feature.mindrecord.presentation.util.toUploadedFileKey
 import com.mohamedrejeb.richeditor.model.rememberRichTextState
 import com.mohamedrejeb.richeditor.ui.BasicRichTextEditor
@@ -80,7 +83,9 @@ fun WriteTextField(
 ) {
     val context = LocalContext.current
     // 업로드 실패를 조용히 삼키지 않는다 — 종전에는 실패하면 아무 일도 일어나지 않았다 (#731).
-    var mediaError by remember { mutableStateOf<String?>(null) }
+    // 문자열이 아니라 리소스 ID 로 든다. LocalContext.current.getString 은 Compose 가
+    // 리소스 변경(로케일·설정)에 재구성으로 반응하지 못하는 경로라 lint 가 막는다 (#731 리뷰).
+    var mediaError by remember { mutableStateOf<MediaErrorMessage?>(null) }
     // 이번 작성에서 붙인 첨부. 에디터가 `<img>` 를 그리지 못해 사진이 대체 문자로만 보이므로,
     // 무엇을 붙였는지 여기서 이름으로 확인한다 (#731).
     val attachments = remember { mutableStateListOf<String>() }
@@ -136,7 +141,7 @@ fun WriteTextField(
         if (uri == null) return
         val uploader = if (asImage) onImagePicked else onMediaPicked
         if (uploader == null) {
-            mediaError = context.getString(R.string.mindrecord_write_media_upload_unavailable)
+            mediaError = MediaErrorMessage(R.string.mindrecord_write_media_upload_unavailable)
             return
         }
         val displayName = context.mediaDisplayName(uri)
@@ -144,7 +149,7 @@ fun WriteTextField(
             mediaError = null
             val uploadedUrl = uploader(uri.toString())
             if (uploadedUrl == null) {
-                mediaError = context.getString(R.string.mindrecord_write_media_upload_failed, displayName)
+                mediaError = MediaErrorMessage(R.string.mindrecord_write_media_upload_failed, displayName)
                 return@launch
             }
             // 본문에 넣는 값은 업로드 URL 이 아니라 **fileKey** 다. 서버가 본문의 미디어
@@ -154,9 +159,12 @@ fun WriteTextField(
             val fileKey = uploadedUrl.toUploadedFileKey()
             val html =
                 if (asImage) {
-                    // 크기를 비워 두면 직렬화 때 width="0" height="0" 이 붙어 어디서도 보이지 않는다.
-                    "<img src=\"$fileKey\" alt=\"$displayName\" width=\"$MEDIA_IMAGE_WIDTH_PX\" " +
-                        "height=\"$MEDIA_IMAGE_HEIGHT_PX\" />"
+                    // 크기를 비워 두면 직렬화 때 width="0" height="0" 이 붙어 어디서도 보이지
+                    // 않는다. 다만 고정값을 박으면 세로 사진이 본문에 4:3 으로 박제되므로
+                    // 원본 비율로 높이를 계산한다 (#731 리뷰).
+                    val (imageWidth, imageHeight) = context.mediaImageSize(uri, MEDIA_IMAGE_WIDTH_PX)
+                    "<img src=\"$fileKey\" alt=\"$displayName\" width=\"$imageWidth\" " +
+                        "height=\"$imageHeight\" />"
                 } else {
                     "<a href=\"$fileKey\">$displayName</a>"
                 }
@@ -195,18 +203,24 @@ fun WriteTextField(
                         .focusRequester(editorFocusRequester)
                         .padding(16.dp),
             )
-            if (attachments.isNotEmpty()) {
-                AttachmentSummary(
-                    names = attachments,
+            // 첨부 목록과 오류 문구는 같은 자리를 두고 다투면 안 된다 — 종전에는 정렬·패딩이
+            // 같아 둘 다 표시되는 순간 정확히 겹쳐 그려졌다. 한 번이라도 첨부에 성공한 뒤의
+            // 실패는 전부 그 상태였다 (#731 리뷰).
+            if (attachments.isNotEmpty() || mediaError != null) {
+                Column(
                     modifier = Modifier.align(Alignment.BottomStart).padding(16.dp),
-                )
-            }
-            mediaError?.let { message ->
-                Text(
-                    text = message,
-                    color = AfternoteDesign.colors.gray6,
-                    modifier = Modifier.align(Alignment.BottomStart).padding(16.dp),
-                )
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    if (attachments.isNotEmpty()) {
+                        AttachmentSummary(names = attachments)
+                    }
+                    mediaError?.let { message ->
+                        Text(
+                            text = message.resolve(),
+                            color = AfternoteDesign.colors.gray6,
+                        )
+                    }
+                }
             }
             if (state.annotatedString.text.isEmpty()) {
                 Text(
@@ -334,10 +348,8 @@ private fun WriteTextFieldPreview() {
     }
 }
 
-/** 에디터 본문 이미지의 기본 표시 크기(px). 비워 두면 직렬화 때 `width="0"` 이 붙는다 (#731). */
+/** 에디터 본문 이미지의 가로 기준 크기(px). 높이는 원본 비율로 계산한다 (#731). */
 private const val MEDIA_IMAGE_WIDTH_PX = 320
-
-private const val MEDIA_IMAGE_HEIGHT_PX = 240
 
 /**
  * 이번 작성에서 붙인 첨부 목록.
@@ -357,4 +369,18 @@ private fun AttachmentSummary(
         color = AfternoteDesign.colors.gray6,
         modifier = modifier,
     )
+}
+
+/**
+ * 첨부 실패 안내 — **표시 시점에** 문자열로 푼다.
+ *
+ * `Context.getString` 을 상태에 담으면 로케일·설정이 바뀌어도 문구가 따라가지 않고,
+ * Compose lint(`LocalContextGetResourceValueCall`)도 그 경로를 막는다 (#731 리뷰).
+ */
+private data class MediaErrorMessage(
+    @param:StringRes val resId: Int,
+    val formatArg: String? = null,
+) {
+    @Composable
+    fun resolve(): String = formatArg?.let { stringResource(resId, it) } ?: stringResource(resId)
 }
