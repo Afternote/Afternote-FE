@@ -5,6 +5,10 @@ name: Static Analysis (Reviewdog)
 on:
   pull_request:
 
+concurrency:
+  group: static-analysis-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   pull-requests: write
@@ -44,8 +48,9 @@ jobs:
 
       # Reviewdog 의 diff 필터는 삭제로 새로 발생한 파일 단위 위반을 놓칠 수 있다.
       # Gradle 검사는 변경 라인과 무관하게 저장소 전체의 ktlint 규칙을 강제한다.
+      # --build-cache 는 CI 한정 — gradle.properties 의 org.gradle.caching=false 로컬 기본값은 그대로다 (#996).
       - name: Run full Ktlint check
-        run: ./gradlew ktlintCheck --continue --parallel
+        run: ./gradlew ktlintCheck --continue --parallel --build-cache
 
   android-lint:
     name: Check Project Issues (Android Lint)
@@ -54,7 +59,7 @@ jobs:
       - name: Clone repo
         uses: actions/checkout@v7
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
@@ -67,36 +72,11 @@ jobs:
           cache-read-only: true
           validate-wrappers: true
 
-      # fail-fast — secret 누락 시 Gradle 까지 가지 않고 즉시 실패
-      # secret 값은 echo 하지 않음 (env 로만 받아서 길이 검사). 누락 키 이름은 안전.
-      - name: Verify required secrets are set
-        env:
-          KAKAO_NATIVE_APP_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
-          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
-          GOOGLE_SERVICES_JSON_B64: ${{ secrets.GOOGLE_SERVICES_JSON_B64 }}
-        run: |
-          missing=""
-          [ -z "$KAKAO_NATIVE_APP_KEY" ] && missing="$missing KAKAO_NATIVE_APP_KEY"
-          [ -z "$GOOGLE_WEB_CLIENT_ID" ] && missing="$missing GOOGLE_WEB_CLIENT_ID"
-          [ -z "$GOOGLE_SERVICES_JSON_B64" ] && missing="$missing GOOGLE_SERVICES_JSON_B64"
-          if [ -n "$missing" ]; then
-            echo "::error::필수 secret 누락:$missing — Settings → Secrets and variables → Actions 에 등록"
-            exit 1
-          fi
-
-      # google-services plugin 이 app/google-services.json 을 요구. 파일은 .gitignore 라
-      # CI 환경엔 없음. base64 인코딩된 secret 으로 받아서 decode.
-      - name: Decode google-services.json
-        env:
-          GOOGLE_SERVICES_JSON_B64: ${{ secrets.GOOGLE_SERVICES_JSON_B64 }}
-        run: |
-          echo "$GOOGLE_SERVICES_JSON_B64" | base64 -d > app/google-services.json
+      - name: Set up CI-only app configuration
+        uses: ./.github/actions/setup-ci-config
 
       - name: Run Android Lint
-        run: ./gradlew lintDebug --continue --parallel
-        env:
-          KAKAO_NATIVE_APP_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
-          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+        run: ./gradlew lintDebug --continue --parallel --build-cache
 
       # 모듈별 lint XML 을 한 파일로 합쳐 Reviewdog 가 :feature/* · :core/* 위반도
       # PR 인라인 코멘트로 띄우도록 한다. 이전엔 :app XML 한 개만 전달돼 다른 모듈 위반이
