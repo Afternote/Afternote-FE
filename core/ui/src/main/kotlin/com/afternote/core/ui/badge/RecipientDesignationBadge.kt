@@ -1,9 +1,17 @@
 package com.afternote.core.ui.badge
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.modifierextention.shimmerLoadingPlaceholder
@@ -45,15 +53,21 @@ fun RecipientDesignationBadge(
 ) {
     when (state) {
         RecipientDesignationBadgeState.Unknown -> {
-            // 문구 없이 자리만 잡는다 — 어느 쪽으로도 읽히지 않아야 한다.
-            CircularCheckboxOutlineChip(
-                label = stringResource(R.string.core_ui_recipient_designation_unknown),
-                borderColor = AfternoteDesign.colors.gray2,
-                backgroundColor = AfternoteDesign.colors.gray2,
-                checkboxState = CheckboxState.None,
-                showTrailingArrow = false,
-                onClick = null,
-                modifier = modifier.shimmerLoadingPlaceholder(),
+            // **콘텐츠를 그리지 않는다.** 칩에 shimmer 를 걸면 칩 내부의 불투명 배경이
+            // shimmer 를 덮어 정지된 회색 칩이 되고, 라벨은 그 위에 그대로 그려진다 —
+            // 「조회 전인데 확정된 무언가로 읽힘」이 문구만 바뀐 채 남는다.
+            //
+            // 같은 화면의 오늘의 질문·카테고리 카운트와 같은 형태로 자리만 잡고, 읽을
+            // 것은 semantics 로 준다.
+            val unknownDescription = stringResource(R.string.core_ui_recipient_designation_unknown)
+            Box(
+                modifier =
+                    modifier
+                        .width(UNKNOWN_BADGE_WIDTH)
+                        .height(UNKNOWN_BADGE_HEIGHT)
+                        .clip(RoundedCornerShape(20.dp))
+                        .shimmerLoadingPlaceholder()
+                        .semantics { contentDescription = unknownDescription },
             )
         }
 
@@ -100,3 +114,7 @@ private fun RecipientDesignationBadgeIncompletePreview() {
         )
     }
 }
+
+/** 확정 상태 칩과 같은 자리를 차지하도록 맞춘 크기 (`CircularCheckboxOutlineChip` 실측). */
+private val UNKNOWN_BADGE_WIDTH = 132.dp
+private val UNKNOWN_BADGE_HEIGHT = 36.dp

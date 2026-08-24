@@ -4,6 +4,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import com.afternote.core.ui.badge.RecipientDesignationBadge
 import com.afternote.core.ui.badge.RecipientDesignationBadgeState
@@ -48,11 +49,16 @@ class RecipientBadgeLoadingTest {
     }
 
     @Test
-    fun `조회 전 배지는 눌리지 않는다`() {
-        // 미결정 상태에서 CTA 를 노출하면 하지 않아도 될 행동을 유도한다.
+    fun `조회 전 배지는 눌리지 않고 문구도 그리지 않는다`() {
+        // 미결정 상태에서 CTA 를 노출하면 하지 않아도 될 행동을 유도한다. 문구 자체도
+        // 그리지 않는다 — 시안에 없는 안내가 홈 첫 화면에 뜨면 그것대로 확정된 무언가로
+        // 읽힌다. 읽을 것은 접근성으로만 준다.
         setUnknownBadge()
 
-        composeRule.onNodeWithText("수신인 지정 여부 확인 중").assertHasNoClickAction()
+        composeRule.onNodeWithText("수신인 지정 여부 확인 중").assertDoesNotExist()
+        composeRule
+            .onNodeWithContentDescription("수신인 지정 여부 확인 중")
+            .assertHasNoClickAction()
     }
 
     @Test
