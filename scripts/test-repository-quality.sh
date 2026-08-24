@@ -116,6 +116,40 @@ expect_fixture_failure \
     "$shell_repository" \
     'Repository Quality: bash syntax failed: invalid.sh'
 
+upload_group_repository=$(create_fixture_repository upload-concurrency-group)
+printf '%s\n' \
+    'name: Release Distribution Fixture' \
+    'on:' \
+    '  push:' \
+    '    branches: [main]' \
+    'concurrency:' \
+    '  group: release-distribution' \
+    'jobs:' \
+    '  distribute:' \
+    '    runs-on: ubuntu-latest' \
+    '    steps:' \
+    '      - run: echo "distribute"' \
+    > "${upload_group_repository}/.github/workflows/release-distribution.yml"
+printf '%s\n' \
+    'name: Firebase WIF Canary Fixture' \
+    'on:' \
+    '  workflow_dispatch:' \
+    'concurrency:' \
+    '  group: firebase-wif-canary' \
+    'jobs:' \
+    '  canary:' \
+    '    runs-on: ubuntu-latest' \
+    '    steps:' \
+    '      - run: echo "canary"' \
+    > "${upload_group_repository}/.github/workflows/firebase-wif-canary.yml"
+git -C "$upload_group_repository" add -- \
+    .github/workflows/release-distribution.yml \
+    .github/workflows/firebase-wif-canary.yml
+expect_fixture_failure \
+    upload-concurrency-group \
+    "$upload_group_repository" \
+    'Repository Quality: Firebase App Distribution upload workflows disagree on concurrency group'
+
 marker_repository=$(create_fixture_repository merge-marker)
 printf '%s\n' \
     '<<<<<<< HEAD' \
