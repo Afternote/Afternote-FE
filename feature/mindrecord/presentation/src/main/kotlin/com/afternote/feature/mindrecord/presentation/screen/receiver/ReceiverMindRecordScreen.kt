@@ -40,6 +40,7 @@ import com.afternote.feature.mindrecord.domain.model.MindRecordType
 import com.afternote.feature.mindrecord.presentation.component.ReceiverDiaryGridCard
 import com.afternote.feature.mindrecord.presentation.component.ReceiverMindRecordTopBar
 import com.afternote.feature.mindrecord.presentation.component.ReceiverRecordCard
+import com.afternote.feature.mindrecord.presentation.component.ReceiverRecordDetailSheet
 import com.afternote.feature.mindrecord.presentation.viewmodel.ReceiverMindRecordUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.ReceiverMindRecordViewModel
 import androidx.compose.foundation.lazy.grid.items as gridItems
@@ -59,6 +60,8 @@ fun ReceiverMindRecordScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var filterSheetVisible by remember { mutableStateOf(false) }
+    // 탭한 기록의 본문을 여는 시트. 목록 응답이 이미 본문을 갖고 있어 추가 조회가 없다 (#618).
+    var openedRecordId by remember { mutableStateOf<Long?>(null) }
 
     Scaffold(modifier = modifier) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {
@@ -75,11 +78,22 @@ fun ReceiverMindRecordScreen(
                     SuccessContent(
                         state = state,
                         onFilterClick = { filterSheetVisible = true },
-                        onRecordClick = onRecordClick,
+                        onRecordClick = { id ->
+                            openedRecordId = id
+                            onRecordClick(id)
+                        },
                     )
                 }
             }
         }
+    }
+
+    val openedRecord = findOpenedRecord(uiState, openedRecordId)
+    openedRecord?.let { record ->
+        ReceiverRecordDetailSheet(
+            record = record,
+            onDismiss = { openedRecordId = null },
+        )
     }
 
     if (filterSheetVisible && uiState is ReceiverMindRecordUiState.Success) {
@@ -241,4 +255,21 @@ private fun ReceiverMindRecordScreenPreview() {
             onRecordClick = {},
         )
     }
+}
+
+/**
+ * 탭한 기록을 화면이 들고 있는 목록에서 찾는다 (#618).
+ *
+ * 두 탭(데일리질문·일기)이 같은 시트를 쓰므로 양쪽을 함께 뒤진다. 목록 응답이 이미
+ * 본문을 갖고 있어 여기서 찾은 항목을 그대로 펼치면 되고, 추가 조회가 필요 없다.
+ *
+ * 필터·정렬로 목록에서 빠진 항목은 자연히 null 이 되어 시트가 닫힌다.
+ */
+internal fun findOpenedRecord(
+    uiState: ReceiverMindRecordUiState,
+    openedRecordId: Long?,
+): MindRecordSummary? {
+    if (openedRecordId == null) return null
+    val success = uiState as? ReceiverMindRecordUiState.Success ?: return null
+    return (success.dailyQuestions + success.diaries).firstOrNull { it.id == openedRecordId }
 }

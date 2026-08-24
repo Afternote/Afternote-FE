@@ -7,6 +7,8 @@ plugins {
 android {
     namespace = "com.afternote.feature.mindrecord.presentation"
     resourcePrefix = "mindrecord_"
+
+    testOptions.unitTests.isIncludeAndroidResources = true
 }
 
 dependencies {
@@ -17,4 +19,9 @@ dependencies {
     implementation(projects.core.model)
     implementation(libs.coil.compose)
     implementation(libs.compose.rich.editor)
+
+    // 수신자 기록 본문 시트를 JVM 에서 실제로 렌더해 확인한다 (#618).
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
