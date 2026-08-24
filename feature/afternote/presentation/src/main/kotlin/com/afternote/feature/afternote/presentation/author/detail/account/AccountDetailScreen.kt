@@ -29,12 +29,23 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailState
+import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailUiState
+import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel
+import com.afternote.feature.afternote.presentation.author.detail.DetailContentUiModel
 import com.afternote.feature.afternote.presentation.author.detail.rememberAfternoteDetailState
+import com.afternote.feature.afternote.presentation.author.navigation.DeleteInProgressOverlay
+import com.afternote.feature.afternote.presentation.author.navigation.DesignPendingDetailContent
+import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadErrorContent
+import com.afternote.feature.afternote.presentation.author.navigation.DetailLoadingContent
+import com.afternote.feature.afternote.presentation.author.navigation.ObserveDeleteResult
+import com.afternote.feature.afternote.presentation.author.navigation.rememberDeleteFailedHandler
 import com.afternote.feature.afternote.presentation.shared.detail.AfternoteDetailServiceHeader
 import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmDialog
 import com.afternote.feature.afternote.presentation.shared.detail.DetailInfoRow
@@ -47,7 +58,85 @@ import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiM
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 
 /**
- * 소셜 네트워크 애프터노트 상세 화면.
+ * 소셜 네트워크 상세 Stateful Route.
+ *
+ * Now in Android 가이드의 Route + Screen 분리 패턴을 따른다.
+ * - 상세/작성자/삭제 상태는 공용 [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel] 에서 관리한다
+ *   (상세 목적지마다 별도의 백스택 엔트리이므로 VM 인스턴스는 화면마다 갈리지만 클래스는 동일).
+ *   초기 상세 로드는 ViewModel 의 `init` 과 네비게이션 인자(`itemId`)로만 트리거한다.
+ * - UI 는 [AccountDetailScreen] (Stateless) 에 위임한다.
+ * - [com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailUiState.Success.contentUiModel] 이 소셜이 아니면 [DesignPendingDetailContent] 로 폴백한다.
+ */
+@Composable
+internal fun AccountDetailRoute(
+    onBack: () -> Unit,
+    onNavigateToEditor: (itemId: Long) -> Unit,
+    viewModel: AfternoteDetailViewModel = hiltViewModel(),
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    ObserveDeleteResult(
+        deleteResult = (uiState as? AfternoteDetailUiState.Success)?.deleteResult,
+        onConsumed = viewModel::onDeleteResultConsumed,
+        onDeleteSucceeded = onBack,
+        onDeleteFailed = rememberDeleteFailedHandler(snackbarHostState),
+    )
+
+    when (val state = uiState) {
+        AfternoteDetailUiState.Loading -> {
+            DetailLoadingContent()
+        }
+
+        is AfternoteDetailUiState.Error -> {
+            DetailLoadErrorContent(
+                messageRes = state.messageRes,
+                onBackClick = onBack,
+            )
+        }
+
+        is AfternoteDetailUiState.Success -> {
+            when (val model = state.contentUiModel) {
+                is DetailContentUiModel.SocialNetwork -> {
+                    Box {
+                        AccountDetailScreen(
+                            content = model.content,
+                            snackbarHostState = snackbarHostState,
+                            onBackClick = onBack,
+                            onEditClick = { onNavigateToEditor(state.detailId) },
+                            onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
+                        )
+                        if (state.isDeleting) {
+                            DeleteInProgressOverlay()
+                        }
+                    }
+                }
+
+                is DetailContentUiModel.Business -> {
+                    Box {
+                        AccountDetailScreen(
+                            content = model.content,
+                            snackbarHostState = snackbarHostState,
+                            onBackClick = onBack,
+                            onEditClick = { onNavigateToEditor(state.detailId) },
+                            onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
+                        )
+                        if (state.isDeleting) {
+                            DeleteInProgressOverlay()
+                        }
+                    }
+                }
+
+                else -> {
+                    DesignPendingDetailContent(onBackClick = onBack)
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 소셜 네트워크·비즈니스 애프터노트 공용 상세 화면.
  */
 @Composable
 fun AccountDetailScreen(
@@ -144,7 +233,7 @@ private fun AccountDetailScrollContent(
 }
 
 /**
- * 소셜 네트워크 상세 전용 ACCOUNT(아이디·비밀번호) 섹션.
+ * 소셜 네트워크·비즈니스 상세 공용 ACCOUNT(아이디·비밀번호) 섹션.
  *
  * 섹션 뼈대는 공용 [DetailSection], 행 레이아웃은 [DetailInfoRow] 를 쓰고,
  * 비밀번호 표시 토글 상태·동작만 이 블록에 둔다.
