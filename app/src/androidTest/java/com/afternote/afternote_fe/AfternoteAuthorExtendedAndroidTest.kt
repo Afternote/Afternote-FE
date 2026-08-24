@@ -60,11 +60,9 @@ import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.domain.repository.author.AuthorReceiverRepository
 import com.afternote.feature.afternote.domain.repository.author.MediaInput
-import com.afternote.feature.afternote.domain.repository.author.MemorialPhotoUploadRepository
+import com.afternote.feature.afternote.domain.repository.author.MediaKind
+import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
-import com.afternote.feature.afternote.domain.repository.author.MemorialVideoUploadRepository
-import com.afternote.feature.afternote.domain.repository.author.PhotoUploadOutcome
-import com.afternote.feature.afternote.domain.repository.author.VideoUploadOutcome
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailDeleteResult
@@ -559,38 +557,23 @@ private fun editorViewModel(
             },
         resolveMemorialMediaForSave =
             ResolveMemorialMediaForSaveUseCase(
-                memorialVideoUploadRepository =
-                    MemorialVideoUploadRepository { input ->
+                memorialMediaUploadRepository =
+                    MemorialMediaUploadRepository { input, kind ->
                         Result.success(
                             when (input) {
                                 MediaInput.None -> {
-                                    VideoUploadOutcome.Empty
+                                    null
                                 }
 
                                 is MediaInput.Local -> {
-                                    VideoUploadOutcome.FreshlyUploaded("https://cdn.test/video.mp4")
+                                    when (kind) {
+                                        MediaKind.VIDEO -> "https://cdn.test/video.mp4"
+                                        MediaKind.PHOTO -> "https://cdn.test/photo.jpg"
+                                    }
                                 }
 
                                 is MediaInput.Remote -> {
-                                    VideoUploadOutcome.Existing(input.url)
-                                }
-                            },
-                        )
-                    },
-                memorialPhotoUploadRepository =
-                    MemorialPhotoUploadRepository { input ->
-                        Result.success(
-                            when (input) {
-                                MediaInput.None -> {
-                                    PhotoUploadOutcome.Empty
-                                }
-
-                                is MediaInput.Local -> {
-                                    PhotoUploadOutcome.FreshlyUploaded("https://cdn.test/photo.jpg")
-                                }
-
-                                is MediaInput.Remote -> {
-                                    PhotoUploadOutcome.Existing(input.url)
+                                    input.url
                                 }
                             },
                         )
