@@ -19,6 +19,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,16 +30,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.core.ui.topbar.DetailTopBar
 import com.afternote.feature.mindrecord.domain.model.MindRecordSummary
 import com.afternote.feature.mindrecord.domain.model.MindRecordType
+import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.component.ReceiverDiaryGridCard
 import com.afternote.feature.mindrecord.presentation.component.ReceiverMindRecordTopBar
 import com.afternote.feature.mindrecord.presentation.component.ReceiverRecordCard
@@ -73,9 +79,17 @@ fun ReceiverMindRecordScreen(
         viewModel.refreshOnReturn()
     }
 
+    // 앱바가 없으면 이 화면은 막다른 곳이 된다 — 실패 시 화면에 남는 것이 오류 문구 하나뿐이라
+    // 시스템 백키 외에 빠져나갈 수단이 없었다 (#614).
     Scaffold(
         modifier = modifier,
         containerColor = Color.Transparent,
+        topBar = {
+            DetailTopBar(
+                title = stringResource(R.string.mindrecord_receiver_title),
+                onBackClick = onBackClick,
+            )
+        },
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {
             when (val state = uiState) {
@@ -84,7 +98,7 @@ fun ReceiverMindRecordScreen(
                 }
 
                 is ReceiverMindRecordUiState.Error -> {
-                    ErrorBox(message = state.message, onRetry = viewModel::refresh)
+                    ErrorBox(message = state.message.asString(), onRetry = viewModel::refresh)
                 }
 
                 is ReceiverMindRecordUiState.Success -> {
@@ -235,10 +249,24 @@ private fun ErrorBox(
     onRetry: () -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize().padding(20.dp), contentAlignment = Alignment.Center) {
-        Text(text = message, color = AfternoteDesign.colors.gray9)
-        // 재시도 트리거는 후속 PR. 현재는 라이프사이클 재진입으로 처리.
-        @Suppress("UNUSED_EXPRESSION")
-        onRetry
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = message,
+                color = AfternoteDesign.colors.gray9,
+                textAlign = TextAlign.Center,
+            )
+            // 종전에는 콜백을 받아 두고 쓰지 않아, 화면에 재시도 수단이 없었다 (#614).
+            TextButton(onClick = onRetry) {
+                Text(
+                    text = stringResource(R.string.mindrecord_receiver_retry),
+                    style = AfternoteDesign.typography.bodySmallB,
+                    color = AfternoteDesign.colors.gray9,
+                )
+            }
+        }
     }
 }
 
