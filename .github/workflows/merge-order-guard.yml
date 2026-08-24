@@ -1,9 +1,9 @@
 # PR 머지 순서 가드 (#660)
 #
 # GitHub 는 이슈 Relationships(blocked_by)를 표시만 하고 머지 버튼을 잠그지 않는다.
-# 이 워크플로는 PR 의 closing 이슈에 아직 열린 blocked_by 가 있거나, base 가
-# develop/main 이 아니면(스택 PR 미PATCH 상태) check 를 실패시킨다.
-# branch protection 에서 required check 로 지정하면 머지 버튼이 실제로 잠긴다.
+# 이 워크플로는 PR 의 closing 이슈에 아직 열린 blocked_by 가 있으면 check 를
+# 실패시킨다. branch protection 에서 required check 로 지정하면 머지 버튼이
+# 실제로 잠긴다. base 가 develop/main 이 아닌 스택 PR 은 경고로만 남긴다.
 name: merge-order-guard
 
 on:
@@ -21,7 +21,7 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - name: closing 이슈 blocked_by · base 검사
+      - name: closing 이슈 blocked_by 검사
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -32,12 +32,14 @@ jobs:
 
           fail=0
 
-          # 스택 PR 방호 — base 가 feat 브랜치면 그 브랜치로 머지돼 버린다.
+          # 스택 PR 안내 — base 가 부모 브랜치면 애초에 develop 로 머지되지 않고,
+          # 부모가 머지되면 GitHub 가 base 를 develop 로 이관하며 이 가드가 다시
+          # 돌아 blocked_by 를 검사한다. 실패로 올리면 스택 PR 이 수명 내내 X 로
+          # 남아 목록에서 진짜 CI 실패와 구분되지 않으므로 경고로만 남긴다.
           case "$BASE_REF" in
             develop|main) ;;
             *)
-              echo "::error::base 가 '$BASE_REF' — 스택 PR 은 base 를 develop 로 PATCH 한 뒤 머지할 것"
-              fail=1
+              echo "::warning::base 가 '$BASE_REF' — 스택 PR 은 base 를 develop 로 PATCH 한 뒤 머지할 것"
               ;;
           esac
 
