@@ -31,6 +31,7 @@ import com.afternote.feature.mindrecord.domain.model.EmotionAnalysisStatus
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionListCard
 import com.afternote.feature.mindrecord.presentation.component.EmotionKeywordCard
+import com.afternote.feature.mindrecord.presentation.component.MindRecordErrorBox
 import com.afternote.feature.mindrecord.presentation.component.WeeklyMoodCalendar
 import com.afternote.feature.mindrecord.presentation.component.WeeklyReportReviewCard
 import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportUiState
@@ -49,7 +50,11 @@ fun WeeklyReportScreen(
         }
 
         is WeeklyReportUiState.Error -> {
-            ErrorBox(message = state.message.asString(), modifier = modifier)
+            MindRecordErrorBox(
+                message = state.message.asString(),
+                onRetry = viewModel::retry,
+                modifier = modifier,
+            )
         }
 
         is WeeklyReportUiState.Success -> {
