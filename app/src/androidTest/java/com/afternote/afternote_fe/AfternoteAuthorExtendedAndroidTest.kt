@@ -600,7 +600,6 @@ private fun authorDetail(): Detail =
                     receiverId = 7L,
                     name = "김수신",
                     relation = "가족",
-                    phone = "",
                 ),
             ),
         processingMethods = listOf("계정 삭제"),
