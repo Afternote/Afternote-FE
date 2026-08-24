@@ -40,7 +40,8 @@ class WeeklyReportContractTest {
             """
             { "status": 200, "code": 200, "data": {
               "dailyQuestionAmount": 0, "diaryAmount": 0, "summaryText": "",
-              "daily-question": [], "emotions": [], "week": $weekJson } }
+              "daily-question": [], "emotions": [], "week": $weekJson,
+              "emotionAnalysis": { "total": 1, "succeeded": 1, "pending": 0, "failed": 0 } } }
             """.trimIndent()
         return json
             .decodeFromString(BaseResponse.serializer(WeeklyReportDto.serializer()), body)

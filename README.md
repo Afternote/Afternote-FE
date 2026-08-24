@@ -109,11 +109,15 @@ keytool -exportcert -alias afternote-debug-shared -keystore ~/afternote-debug-sh
 - 수정 결과를 테스터가 확인해야 하는 결함이 머지되면, 묶음 크기와 관계없이 확인 가능한 빌드를 배포한다.
 - 현재 묶음의 모든 QA 포인트가 통과한 뒤 `develop`을 `main`으로 승격한다.
 
-### 머지별 자동 판단
+### 릴리스 PR 범위 자동 산출
 
-`develop` 대상 PR이 머지되면 [`deployment-decision.yml`](.github/workflows/deployment-decision.yml)이 마지막 성공 QA 배포 이후의 누적 PR·연결 이슈·실제 diff를 읽는다. 고위험 경로, 버그·기능 PR, 누적 이슈 수, 명시 QA 포인트 수, 영향 스코프 수를 위 기준으로 판정해 `QA 배포 권장` 또는 `QA 배포 보류`, 포함 이슈, QA 포인트를 머지된 PR에 코멘트한다. 판단만 자동화하며 APK 업로드는 실행하지 않는다.
+배포 시점은 위 기준에 따라 사람이 정한다 — `develop` → `main` 릴리스 PR을 여는 것이 곧 배포 결정이다.
 
-별도 API나 유료 AI를 호출하지 않으며 기존 GitHub Actions 실행량만 사용한다. Actions의 **Evaluate QA Distribution Candidate**에서 이미 머지된 PR 번호를 입력해 같은 규칙으로 수동 재검증할 수도 있다.
+릴리스 PR이 열리거나 head가 갱신되면 [`release-scope.yml`](.github/workflows/release-scope.yml)이 마지막 성공 배포 이후 `develop`에 머지된 PR과 그 연결 이슈를 모아 PR 본문의 `## 포함 이슈`를 채운다. head가 움직일 때마다 다시 채우므로 머지 직전에 목록을 손으로 대조할 필요가 없다.
+
+`## QA 포인트`는 비어 있을 때만 구성 PR 본문에서 모은 초안으로 채우고, 사람이 쓴 문장이 있으면 건드리지 않는다. 두 섹션은 main push 시 그대로 릴리스 노트가 되므로 배포 전에 테스터가 실행할 문장으로 다듬는다.
+
+별도 API나 유료 AI를 호출하지 않으며 기존 GitHub Actions 실행량만 사용한다. Actions의 **Collect Release Scope**에서 릴리스 PR 번호를 입력해 다시 산출할 수도 있다.
 
 ### QA 배포 — `develop` → Firebase App Distribution (수동, 기본 경로)
 
