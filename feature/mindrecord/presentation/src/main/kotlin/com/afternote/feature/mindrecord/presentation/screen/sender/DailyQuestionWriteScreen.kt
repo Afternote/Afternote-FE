@@ -18,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -84,6 +85,7 @@ fun DailyQuestionWriteScreen(
             )
         },
         modifier = modifier,
+        containerColor = Color.Transparent,
     ) { paddingValues ->
         Column(
             modifier =
@@ -126,6 +128,7 @@ fun DailyQuestionWriteScreen(
                     onValueChange = viewModel::onAnswerChanged,
                     onSaveDraftClick = { viewModel.submit(isDraft = true) },
                     onDraftCountClick = onDraftListClick,
+                    draftCount = uiState.draftCount,
                     onImagePicked = viewModel::uploadImage,
                 )
             }

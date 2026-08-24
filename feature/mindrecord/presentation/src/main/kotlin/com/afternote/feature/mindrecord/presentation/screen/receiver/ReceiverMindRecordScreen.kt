@@ -32,6 +32,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -60,7 +62,19 @@ fun ReceiverMindRecordScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var filterSheetVisible by remember { mutableStateOf(false) }
 
-    Scaffold(modifier = modifier) { paddingValues ->
+    // 화면을 떠났다 돌아오면 다시 조회한다 — 작성·삭제하고 복귀했을 때 목록이 낡은 채로
+    // 남지 않게 한다. 마인드레코드 홈이 쓰는 결선과 같다 (#702).
+    //
+    // ON_RESUME 은 화면 off/on·홈 버튼 복귀에서도 발화하므로 로딩을 방출하지 않는
+    // `refreshOnReturn()` 을 쓴다. 최초 진입의 중복 호출은 VM 이 진행 중인 Job 으로 막는다.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refreshOnReturn()
+    }
+
+    Scaffold(
+        modifier = modifier,
+        containerColor = Color.Transparent,
+    ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {
             when (val state = uiState) {
                 ReceiverMindRecordUiState.Loading -> {
@@ -115,6 +129,8 @@ private fun SuccessContent(
         Spacer(modifier = Modifier.height(8.dp))
         PrimaryTabRow(
             selectedTabIndex = selectedIndex,
+            // 지정하지 않으면 M3 baseline surface(#FEF7FF)가 나와 시안 배경(#FAFAFA)과 어긋난다.
+            containerColor = Color.Transparent,
             divider = {},
             indicator = {
                 TabRowDefaults.PrimaryIndicator(

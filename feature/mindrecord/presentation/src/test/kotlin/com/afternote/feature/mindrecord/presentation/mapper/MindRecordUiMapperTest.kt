@@ -24,7 +24,7 @@ class MindRecordUiMapperTest {
 
     @Test
     fun `date 가 없으면 createdAt 으로 폴백한다`() {
-        val ui = diary(date = null, createdAt = "2026.03.25 수").toUi()
+        val ui = diary(date = "", createdAt = "2026.03.25 수").toUi()
 
         assertEquals(LocalDate.of(2026, 3, 25), ui?.date)
     }
@@ -32,15 +32,16 @@ class MindRecordUiMapperTest {
     @Test
     fun `ISO 날짜시각 createdAt 도 파싱된다`() {
         // Swagger DiaryResponse 예시가 `createdAt: "2026-03-25T20:13:42"` 형태다.
-        val ui = diary(date = null, createdAt = "2026-03-25T20:13:42").toUi()
+        val ui = diary(date = "", createdAt = "2026-03-25T20:13:42").toUi()
 
         assertEquals(LocalDate.of(2026, 3, 25), ui?.date)
     }
 
     @Test
     fun `두 날짜가 모두 없으면 오늘로 메우지 않고 항목을 뺀다`() {
-        // createdAt 은 이 PR 에서 기본값 ""를 얻었으므로 둘 다 비는 응답이 실제로 가능하다.
-        assertNull(diary(date = null, createdAt = "").toUi())
+        // #789 이후 두 필드 모두 계약이라 빈 응답은 파싱 단계에서 걸러지지만, 표시 단계가
+        // 여전히 날짜 없는 항목을 오늘로 메우지 않는다는 것은 그대로 고정해 둔다.
+        assertNull(diary(date = "", createdAt = "").toUi())
     }
 
     @Test
@@ -49,7 +50,7 @@ class MindRecordUiMapperTest {
     }
 
     private fun diary(
-        date: String?,
+        date: String,
         createdAt: String,
     ) = Diary(
         diaryId = 1L,
