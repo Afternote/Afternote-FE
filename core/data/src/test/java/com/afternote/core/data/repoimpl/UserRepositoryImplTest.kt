@@ -33,6 +33,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
+import java.net.UnknownHostException
 
 class UserRepositoryImplTest {
     private val calls = mutableListOf<String>()
@@ -143,6 +144,53 @@ class UserRepositoryImplTest {
         assertEquals("조회 1", first.single().name)
         assertEquals("조회 2", second.single().name)
         assertEquals(2, requestCount)
+    }
+
+    @Test
+    fun `receiverListFlow - 조회가 실패해도 예외로 새지 않고 빈 목록을 낸다`() {
+        val repository = repository(onGetReceivers = { throw UnknownHostException("Unable to resolve host") })
+
+        val emitted = runBlocking { repository.receiverListFlow.first() }
+
+        assertEquals(emptyList<Receiver>(), emitted)
+    }
+
+    @Test
+    fun `receiverListFlow - 세션 만료도 흐름을 끊지 않는다`() {
+        val repository =
+            repository(
+                onGetReceivers = {
+                    throw ApiException(
+                        status = 401,
+                        code = 401,
+                        serverMessage = "인증되지 않은 요청입니다.",
+                        message = "인증되지 않은 요청입니다.",
+                    )
+                },
+            )
+
+        val emitted = runBlocking { repository.receiverListFlow.first() }
+
+        assertEquals(emptyList<Receiver>(), emitted)
+    }
+
+    @Test
+    fun `receiverListFlow - 한 번 실패해도 다음 구독은 목록을 다시 조회한다`() {
+        var requestCount = 0
+        val repository =
+            repository(
+                onGetReceivers = {
+                    requestCount += 1
+                    if (requestCount == 1) throw UnknownHostException("Unable to resolve host")
+                    dataResponse(listOf(receiverDto("복구 후 목록")))
+                },
+            )
+
+        val failed = runBlocking { repository.receiverListFlow.first() }
+        val recovered = runBlocking { repository.receiverListFlow.first() }
+
+        assertEquals(emptyList<Receiver>(), failed)
+        assertEquals("복구 후 목록", recovered.single().name)
     }
 
     @Test

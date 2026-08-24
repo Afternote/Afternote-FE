@@ -1,6 +1,7 @@
 package com.afternote.core.data.repoimpl
 
 import android.util.Log
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.data.mapper.delivery.toRequestDto
 import com.afternote.core.data.mapper.user.toDomain
 import com.afternote.core.domain.repository.UserRepository
@@ -40,8 +41,14 @@ class UserRepositoryImpl
     ) : UserRepository {
         private val receiverRefreshRevision = MutableStateFlow(0L)
 
+        // 조회 실패를 예외로 흘리면 구독 중인 화면이 미처리 예외로 죽는다. 빈 목록으로 낮춰 흐름을 유지한다 —
+        // 화면의 오류 표시·재시도는 #714 범위다.
         override val receiverListFlow: Flow<List<Receiver>> =
-            receiverRefreshRevision.map { getReceivers() }
+            receiverRefreshRevision.map {
+                runCatchingCancellable { getReceivers() }
+                    .onFailure { Log.e("UserRepository", "수신인 목록 조회 실패: ${it.javaClass.name}") }
+                    .getOrDefault(emptyList())
+            }
 
         override suspend fun getReceivers(): List<Receiver> =
             userApiService
