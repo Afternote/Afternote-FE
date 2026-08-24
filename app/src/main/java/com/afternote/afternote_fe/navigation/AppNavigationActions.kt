@@ -5,20 +5,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.navigation.NavController
-import com.afternote.afternote_fe.screen.HomeTabActions
-import com.afternote.afternote_fe.screen.receiver.ReceiverHomeActions
 import com.afternote.core.model.MindRecordCategory
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavActions
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
-import com.afternote.feature.afternote.presentation.receiver.navigation.ReceiverNavActions
-import com.afternote.feature.afternote.presentation.receiver.navigation.model.ReceiverRoute
+import com.afternote.feature.home.presentation.HomeTabActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavActions
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingRoute
+import com.afternote.feature.receiver.presentation.home.ReceiverHomeActions
+import com.afternote.feature.receiver.presentation.navigation.ReceiverNavActions
+import com.afternote.feature.receiver.presentation.navigation.model.ReceiverRoute
 import com.afternote.feature.setting.presentation.navigation.SettingNavActions
 import com.afternote.feature.setting.presentation.navigation.SettingRoute
 import com.afternote.feature.timeletter.presentation.navigation.TimeLetterNavActions
@@ -344,7 +344,9 @@ fun rememberHomeTabActions(
             }
 
             override fun onAnswerClick() {
-                // TODO: 데일리 질문 답변 화면 Route 추가 후 연결
+                // 카드 문구가 "데일리질문 답변하기" 라 답변 작성 화면으로 보낸다.
+                // 기록 탭의 작성 진입(`MindRecordNavActions.onWriteDailyQuestion`)과 같은 목적지다.
+                appState.navController.navigate(MindRecordRoute.DailyQuestionWriteRoute)
             }
 
             override fun onNextStepClick() {

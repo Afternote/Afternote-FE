@@ -1,5 +1,6 @@
 package com.afternote.feature.mindrecord.data.repositoryimpl
 
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.network.model.requireData
 import com.afternote.core.network.model.requireStatus
 import com.afternote.feature.mindrecord.data.api.DiaryApiService
@@ -20,7 +21,7 @@ class DiaryRepositoryImpl
             yearMonth: String,
             draftOnly: Boolean?,
         ): Result<DiaryList> =
-            runCatching {
+            runCatchingCancellable {
                 api
                     .getDiaries(yearMonth = yearMonth, draftOnly = draftOnly)
                     .requireData()
@@ -28,7 +29,7 @@ class DiaryRepositoryImpl
             }
 
         override suspend fun create(payload: DiaryCreatePayload): Result<Unit> =
-            runCatching {
+            runCatchingCancellable {
                 api.createDiary(payload.toRequest()).requireStatus()
             }
 
@@ -36,12 +37,12 @@ class DiaryRepositoryImpl
             id: Long,
             payload: DiaryUpdatePayload,
         ): Result<Unit> =
-            runCatching {
+            runCatchingCancellable {
                 api.updateDiary(diaryId = id, request = payload.toRequest()).requireStatus()
             }
 
         override suspend fun delete(id: Long): Result<Unit> =
-            runCatching {
+            runCatchingCancellable {
                 api.deleteDiary(diaryId = id).requireStatus()
             }
     }
