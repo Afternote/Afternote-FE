@@ -23,7 +23,6 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.body.EmptyListBody
 import com.afternote.feature.afternote.presentation.shared.body.ErrorListBody
 import com.afternote.feature.afternote.presentation.shared.body.LoadingListBody
@@ -35,9 +34,9 @@ import kotlinx.coroutines.flow.flowOf
 @Composable
 fun AfternoteHomeScreen(
     items: LazyPagingItems<ListItemUiModel>,
-    selectedCategory: AfternoteCategory,
-    onCategorySelected: (AfternoteCategory) -> Unit,
-    onListItemClick: (id: String, type: AfternoteType) -> Unit,
+    selectedCategory: AfternoteType?,
+    onCategorySelected: (AfternoteType?) -> Unit,
+    onListItemClick: (id: Long, type: AfternoteType) -> Unit,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     onFabClick: (() -> Unit)? = null,
@@ -85,7 +84,7 @@ fun AfternoteHomeScreen(
                 }
 
                 // 카테고리 필터 0건도 이 경로에 남겨 카테고리 행을 유지한다(막다른 상태 방지).
-                items.itemCount > 0 || selectedCategory != AfternoteCategory.ALL -> {
+                items.itemCount > 0 || selectedCategory != null -> {
                     InfiniteListBody(
                         modifier = bodyModifier,
                         items = items,
@@ -113,14 +112,14 @@ private fun AfternoteHomeScreenPreview() {
                 PagingData.from(
                     listOf(
                         ListItemUiModel(
-                            id = "1",
+                            id = 1L,
                             serviceName = "인스타그램",
                             date = "2023.11.24",
                             iconResId = R.drawable.feature_afternote_img_insta_pattern,
                             type = AfternoteType.SOCIAL_NETWORK,
                         ),
                         ListItemUiModel(
-                            id = "2",
+                            id = 2L,
                             serviceName = "페이스북",
                             date = "2023.11.25",
                             iconResId = R.drawable.feature_afternote_img_insta_pattern,
@@ -131,7 +130,7 @@ private fun AfternoteHomeScreenPreview() {
             ).collectAsLazyPagingItems()
         AfternoteHomeScreen(
             items = items,
-            selectedCategory = AfternoteCategory.ALL,
+            selectedCategory = null,
             onCategorySelected = {},
             onListItemClick = { _, _ -> },
             onFabClick = {},
@@ -156,7 +155,7 @@ private fun AfternoteHomeScreenLoadingPreview() {
             ).collectAsLazyPagingItems()
         AfternoteHomeScreen(
             items = items,
-            selectedCategory = AfternoteCategory.ALL,
+            selectedCategory = null,
             onCategorySelected = {},
             onListItemClick = { _, _ -> },
             onFabClick = {},

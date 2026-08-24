@@ -15,7 +15,7 @@ fun AfternoteUpdatePayload.toRequest() =
         category = category,
         title = title,
         processingMethods = processingMethods,
-        leaveMessage = leaveMessage,
+        leaveMessage = leaveMessageBlocks.toDto(),
         credentials = credentials?.toDto(),
         receivers = receivers?.toDto(),
         memorial = memorial?.toDto(),
@@ -26,7 +26,7 @@ fun CreateAccountPayload.toSocialRequest() =
         category = "SOCIAL",
         title = title,
         processingMethods = processingMethods,
-        leaveMessage = leaveMessage,
+        leaveMessage = leaveMessageBlocks.toDto(),
         credentials = credentials?.toDto(),
         receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
     )
@@ -37,7 +37,7 @@ fun CreateAccountPayload.toBusinessRequest() =
         category = "BUSINESS",
         title = title,
         processingMethods = processingMethods,
-        leaveMessage = leaveMessage,
+        leaveMessage = leaveMessageBlocks.toDto(),
         credentials = credentials?.toDto(),
         receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
     )
@@ -47,7 +47,7 @@ fun CreateGalleryPayload.toRequest() =
         category = "GALLERY",
         title = title,
         processingMethods = processingMethods,
-        leaveMessage = leaveMessage,
+        leaveMessage = leaveMessageBlocks.toDto(),
         receivers = receiverIds.map { AfternoteReceiverRefDto(receiverId = it) },
     )
 

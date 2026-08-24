@@ -170,7 +170,10 @@ class DiaryWriteViewModel
                                 title = draft.title,
                                 content = draft.content,
                                 mood = draft.todayMood,
-                                date = draft.toUi().date,
+                                // 서버가 날짜를 주지 않은 임시저장이면 날짜 선택기의 현재 값을
+                                // 유지한다 — 표시용으로 오늘을 지어내는 것과 달리, 여기서는
+                                // 사용자가 등록 전에 직접 고르는 값이다.
+                                date = draft.toUi()?.date ?: it.date,
                                 imageUrl = draft.imageUrl,
                                 isDraftLoading = false,
                                 draftLoaded = true,

@@ -49,6 +49,12 @@ data class SignUpUiState(
     val profileImageUri: String? = null,
     /** 회원가입 + 자동 로그인 진행 중. */
     val isLoading: Boolean = false,
+    /**
+     * 회원가입 POST 가 이미 성공한 상태. 자동 로그인만 실패해 같은 화면에 남았을 때,
+     * 재제출이 가입을 다시 호출하지 않도록 가른다 — 다시 부르면 서버가 이메일 중복으로
+     * 거절해 복구 자체가 막힌다.
+     */
+    val isAccountCreated: Boolean = false,
     /** 회원가입 + 자동 로그인 성공. UI 가 홈으로 navigate 후 reset. */
     val isSignedUp: Boolean = false,
     /** Step 1 검증 통과 — 주민등록번호 단계로 이동. */

@@ -11,7 +11,7 @@ import com.afternote.feature.afternote.domain.AfternoteType
  */
 @Immutable
 data class ListItemUiModel(
-    val id: String,
+    val id: Long,
     val serviceName: String,
     val date: String,
     val iconResId: Int,

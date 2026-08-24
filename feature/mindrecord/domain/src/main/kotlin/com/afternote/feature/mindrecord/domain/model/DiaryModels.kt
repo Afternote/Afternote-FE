@@ -10,9 +10,13 @@ data class Diary(
     val diaryId: Long,
     val title: String,
     val content: String,
+    /** 사용자가 고른 일기 날짜. 서버가 주지 않으면 null 이라 [createdAt] 으로 폴백한다. */
+    val date: String?,
     val createdAt: String,
-    val todayMood: TodayMood,
+    /** 서버가 기분을 주지 않았거나 클라가 모르는 값이면 null — 목록 표시에서 이모지만 생략한다. */
+    val todayMood: TodayMood?,
     val imageUrl: String? = null,
+    val isDraft: Boolean = false,
 )
 
 data class DiaryList(
