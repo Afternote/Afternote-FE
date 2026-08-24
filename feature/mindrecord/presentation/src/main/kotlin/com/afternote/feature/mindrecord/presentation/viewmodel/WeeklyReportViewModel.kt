@@ -30,7 +30,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
@@ -43,7 +42,7 @@ class WeeklyReportViewModel
         private val userRepository: UserRepository,
     ) : ViewModel() {
         private val weekOptions: List<WeekOption> =
-            buildWeekOptions(today = LocalDate.now(), count = WEEK_OPTION_COUNT)
+            buildWeekOptions(today = LocalDate.now())
 
         private val internalState = MutableStateFlow(InternalState())
         private var loadJob: Job? = null
@@ -129,16 +128,6 @@ class WeeklyReportViewModel
                             }
                         }
                 }
-        }
-
-        private fun buildWeekOptions(
-            today: LocalDate,
-            count: Int,
-        ): List<WeekOption> {
-            val thisMonday = today.with(DayOfWeek.MONDAY)
-            return (0 until count).map { weeksAgo ->
-                WeekOption(monday = thisMonday.minusWeeks(weeksAgo.toLong()))
-            }
         }
 
         /**
@@ -234,8 +223,6 @@ class WeeklyReportViewModel
         }
 
         companion object {
-            private const val WEEK_OPTION_COUNT = 5
-
             private val API_DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
             private val RANGE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd.")
 
