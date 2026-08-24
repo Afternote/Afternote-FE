@@ -65,10 +65,7 @@ class DailyQuestionWriteViewModel
                             it.copy(
                                 isQuestionLoading = false,
                                 questionLoadError =
-                                    UiText.DynamicOrResource(
-                                        value = e.message,
-                                        fallbackResId = R.string.mindrecord_error_daily_question_today_failed,
-                                    ),
+                                    UiText.Resource(R.string.mindrecord_error_daily_question_today_failed),
                             )
                         }
                     }
@@ -139,11 +136,29 @@ class DailyQuestionWriteViewModel
          * 를 기대하므로, 여기서 받은 URL 을 [uploadedImageUrls] 에 기억해 뒀다가 제출 직전에
          * 키 형태로 바꾼다 ([toWireContent]). 미리보기는 전체 URL 이라야 뜬다.
          */
-        suspend fun uploadImage(uriString: String): String? =
-            photoUploadRepository
+        suspend fun uploadImage(uriString: String): String? {
+            _uiState.update { it.copy(isUploadingImage = true, imageUploadError = null) }
+            return photoUploadRepository
                 .upload(uriString = uriString, directory = MIND_RECORD_UPLOAD_DIRECTORY)
-                .onSuccess { url -> uploadedImageUrls += url }
-                .getOrNull()
+                .onSuccess { url ->
+                    // 계약에 imageUrl 이 없어 상태로 들지 않는다 — 본문 img 로 들어가고,
+                    // 제출 직전 fileKey 로 바뀔 수 있게 기억만 해 둔다 (#549).
+                    uploadedImageUrls += url
+                    _uiState.update { it.copy(isUploadingImage = false) }
+                }.onFailure {
+                    // null 로 흡수하면 사용자는 이미지가 붙은 줄 알고 저장한다 (#716).
+                    _uiState.update {
+                        it.copy(
+                            isUploadingImage = false,
+                            imageUploadError = UiText.Resource(R.string.mindrecord_error_image_upload_failed),
+                        )
+                    }
+                }.getOrNull()
+        }
+
+        fun consumeImageUploadError() {
+            _uiState.update { it.copy(imageUploadError = null) }
+        }
 
         /**
          * 제출 직전, **이번 작성 중 업로드한** 이미지의 `src` 만 fileKey 로 바꾼다.
@@ -169,6 +184,12 @@ class DailyQuestionWriteViewModel
             // 하단 툴바 임시저장은 `enabled` 없는 clickable 이라 canSubmit 을 우회한다.
             // 차단은 화면이 아니라 여기서 지킨다.
             if (state.isResumingDraft) return
+            // 업로드가 끝나기 전에 나가면 이미지 없는 기록이 저장된다 — 일기 화면은
+            // submit() 초입의 canSubmit 가드로 이미 막고 있다 (리뷰 지적).
+            if (state.isUploadingImage) {
+                failSubmit(R.string.mindrecord_error_image_uploading)
+                return
+            }
 
             if (state.answer.isBlank()) {
                 failSubmit(R.string.mindrecord_error_daily_question_answer_required)
@@ -231,10 +252,7 @@ class DailyQuestionWriteViewModel
                             it.copy(
                                 submitState =
                                     SubmitState.Failed(
-                                        UiText.DynamicOrResource(
-                                            value = e.message,
-                                            fallbackResId = R.string.mindrecord_error_daily_question_submit_failed,
-                                        ),
+                                        UiText.Resource(R.string.mindrecord_error_daily_question_submit_failed),
                                     ),
                             )
                         }
