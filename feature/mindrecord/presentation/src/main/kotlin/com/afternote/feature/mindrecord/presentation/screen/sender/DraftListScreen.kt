@@ -47,6 +47,7 @@ import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
+import com.afternote.feature.mindrecord.presentation.component.MindRecordErrorBox
 import com.afternote.feature.mindrecord.presentation.util.htmlToPlainText
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftCategory
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftDeleteOutcome
@@ -165,9 +166,10 @@ fun DraftListScreen(
                 }
 
                 is DraftListUiState.Error -> {
-                    Box(modifier = Modifier.fillMaxSize().padding(20.dp), contentAlignment = Alignment.Center) {
-                        Text(text = state.message.asString(), color = AfternoteDesign.colors.gray9)
-                    }
+                    MindRecordErrorBox(
+                        message = state.message.asString(),
+                        onRetry = viewModel::retry,
+                    )
                 }
 
                 is DraftListUiState.Success -> {
