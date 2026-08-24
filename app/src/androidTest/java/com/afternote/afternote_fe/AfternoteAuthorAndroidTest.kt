@@ -15,33 +15,27 @@ import androidx.paging.PagingData
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeErrorReporter
+import com.afternote.afternote_fe.test.FakeUserRepository
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
-import com.afternote.feature.afternote.domain.model.author.AuthorReceiverEntry
 import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.ListItem
-import com.afternote.feature.afternote.domain.model.author.ProcessingMethod
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
-import com.afternote.feature.afternote.domain.repository.author.AuthorReceiverRepository
 import com.afternote.feature.afternote.domain.repository.author.MediaInput
-import com.afternote.feature.afternote.domain.repository.author.MemorialPhotoUploadRepository
+import com.afternote.feature.afternote.domain.repository.author.MediaKind
+import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
-import com.afternote.feature.afternote.domain.repository.author.MemorialVideoUploadRepository
-import com.afternote.feature.afternote.domain.repository.author.PhotoUploadOutcome
-import com.afternote.feature.afternote.domain.repository.author.VideoUploadOutcome
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
-import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.editor.model.RegisterAfternotePayload
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -72,12 +66,10 @@ class AfternoteAuthorAndroidTest {
         }
 
         composeRule.runOnIdle {
+            viewModel.setType(AfternoteType.SOCIAL_NETWORK)
             viewModel.saveAfternote(
-                editingId = null,
-                category = EditorCategory.SOCIAL,
                 payload = validSocialPayload(),
                 selectedReceiverIds = emptyList(),
-                playlistSongs = emptyList(),
                 memorialMedia = SaveAfternoteMemorialMedia(),
             )
         }
@@ -100,27 +92,15 @@ class AfternoteAuthorAndroidTest {
         val payload = validSocialPayload()
 
         composeRule.runOnIdle {
-            viewModel.saveAfternote(
-                null,
-                EditorCategory.SOCIAL,
-                payload,
-                listOf(7L),
-                emptyList(),
-                SaveAfternoteMemorialMedia(),
-            )
+            viewModel.setType(AfternoteType.SOCIAL_NETWORK)
+            viewModel.saveAfternote(payload, listOf(7L), SaveAfternoteMemorialMedia())
         }
         composeRule.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.errorRes != null }
         assertNull(viewModel.uiState.value.savedId)
 
         composeRule.runOnIdle {
-            viewModel.saveAfternote(
-                null,
-                EditorCategory.SOCIAL,
-                payload,
-                listOf(7L),
-                emptyList(),
-                SaveAfternoteMemorialMedia(),
-            )
+            viewModel.setType(AfternoteType.SOCIAL_NETWORK)
+            viewModel.saveAfternote(payload, listOf(7L), SaveAfternoteMemorialMedia())
         }
         composeRule.waitUntil(timeoutMillis = 5_000) { viewModel.uiState.value.savedId == 42L }
 
@@ -139,7 +119,7 @@ class AfternoteAuthorAndroidTest {
         val first = viewModel(FakeAfternoteRepository(), handle)
         composeRule.setContent { AfternoteTheme {} }
         composeRule.runOnIdle {
-            first.setCategory(EditorCategory.GALLERY)
+            first.setType(AfternoteType.GALLERY_AND_FILES)
             first.setService("Google Photos")
             first.addReceiverIfAbsent("7", "김수신", "가족")
             first.addProcessingMethod("전체 파일 전달")
@@ -150,7 +130,7 @@ class AfternoteAuthorAndroidTest {
 
         val restored = viewModel(FakeAfternoteRepository(), handle).currentForm()
 
-        assertEquals(EditorCategory.GALLERY, restored.selectedCategory)
+        assertEquals(AfternoteType.GALLERY_AND_FILES, restored.selectedType)
         assertEquals("Google Photos", restored.selectedService)
         assertEquals("7", restored.afternoteEditReceivers.single().id)
         assertEquals("전체 파일 전달", restored.processingMethods.single().text)
@@ -164,7 +144,7 @@ class AfternoteAuthorAndroidTest {
             accountId = "author@example.test",
             password = "password-1234",
             messageBlocks = listOf(EditorMessageTextBlock("마지막 말", "고마웠어")),
-            processingMethods = listOf(ProcessingMethod("delete", "계정 삭제")),
+            processingMethods = listOf("계정 삭제"),
         )
 
     private fun viewModel(
@@ -173,50 +153,35 @@ class AfternoteAuthorAndroidTest {
     ): AfternoteEditorViewModel =
         AfternoteEditorViewModel(
             savedStateHandle = savedStateHandle,
-            authorReceiverRepository = FakeAuthorReceiverRepository(),
+            userRepository = FakeUserRepository(),
             afternoteRepository = repository,
             memorialThumbnailUploadRepository = MemorialThumbnailUploadRepository { Result.success("https://cdn.test/thumb.jpg") },
             resolveMemorialMediaForSave =
                 ResolveMemorialMediaForSaveUseCase(
-                    memorialVideoUploadRepository =
-                        MemorialVideoUploadRepository { input ->
+                    memorialMediaUploadRepository =
+                        MemorialMediaUploadRepository { input, kind ->
                             Result.success(
                                 when (input) {
-                                    MediaInput.None -> VideoUploadOutcome.Empty
-                                    is MediaInput.Local -> VideoUploadOutcome.FreshlyUploaded("https://cdn.test/video.mp4")
-                                    is MediaInput.Remote -> VideoUploadOutcome.Existing(input.url)
-                                },
-                            )
-                        },
-                    memorialPhotoUploadRepository =
-                        MemorialPhotoUploadRepository { input ->
-                            Result.success(
-                                when (input) {
-                                    MediaInput.None -> PhotoUploadOutcome.Empty
-                                    is MediaInput.Local -> PhotoUploadOutcome.FreshlyUploaded("https://cdn.test/photo.jpg")
-                                    is MediaInput.Remote -> PhotoUploadOutcome.Existing(input.url)
+                                    MediaInput.None -> {
+                                        null
+                                    }
+
+                                    is MediaInput.Local -> {
+                                        when (kind) {
+                                            MediaKind.VIDEO -> "https://cdn.test/video.mp4"
+                                            MediaKind.PHOTO -> "https://cdn.test/photo.jpg"
+                                        }
+                                    }
+
+                                    is MediaInput.Remote -> {
+                                        input.url
+                                    }
                                 },
                             )
                         },
                 ),
             errorReporter = FakeErrorReporter(),
         )
-}
-
-private class FakeAuthorReceiverRepository : AuthorReceiverRepository {
-    private val receivers = MutableStateFlow(listOf(AuthorReceiverEntry(7L, "김수신", "가족")))
-
-    override fun currentAuthorUserId(): Long = 1L
-
-    override fun observeReceivers(): Flow<List<AuthorReceiverEntry>> = receivers
-
-    override fun currentReceivers(): List<AuthorReceiverEntry> = receivers.value
-
-    override suspend fun refreshReceivers(): Result<Unit> = Result.success(Unit)
-
-    override suspend fun clearReceivers() {
-        receivers.value = emptyList()
-    }
 }
 
 private class FakeAfternoteRepository : AfternoteRepository {

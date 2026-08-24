@@ -50,8 +50,6 @@ fun AppNavigation(
     val showBottomBar = appState.shouldShowBottomBar(currentDestination)
     val currentTab = appState.getCurrentNavTab(currentDestination)
 
-    NavigationDebugLogger(navEntry, currentDestination, showBottomBar, currentTab)
-
     val onboardingNavActions = rememberOnboardingNavActions(appState.navController)
     val mindRecordNavActions = rememberMindRecordNavActions(appState.navController)
     val settingNavActions = rememberSettingNavActions(appState)
