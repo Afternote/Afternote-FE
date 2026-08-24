@@ -37,7 +37,6 @@ include(":core:di")
 include(":core:domain")
 include(":core:model")
 include(":core:network")
-include(":core:startup")
 include(":core:ui")
 
 // Feature Modules
