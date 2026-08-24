@@ -69,6 +69,7 @@ import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetai
 import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel
 import com.afternote.feature.afternote.presentation.author.detail.DetailContentUiModel
 import com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailScreen
+import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorBody
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorScreen
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
@@ -324,7 +325,7 @@ private fun AuthorEditorForUpdate(
     val state =
         rememberAfternoteEditorState(
             getCurrentForm = viewModel::currentForm,
-            setCategory = viewModel::setCategory,
+            setType = viewModel::setType,
             setService = viewModel::setService,
             setMemorialPhoto = viewModel::setMemorialPhoto,
             setMemorialVideo = viewModel::setMemorialVideo,
@@ -370,20 +371,24 @@ private fun AuthorEditorForUpdate(
                     date = LocalDate.of(2026, 8, 22),
                 )
             viewModel.saveAfternote(
-                editingId = itemId,
-                category = form.selectedCategory,
                 payload = payload,
                 selectedReceiverIds = form.afternoteEditReceivers.map { it.id.toLong() },
-                playlistSongs = emptyList(),
                 memorialMedia = SaveAfternoteMemorialMedia(),
             )
         },
-        onNavigateToMemorialPlaylist = {},
-        onNavigateToSelectReceiver = {},
-        onThumbnailBytesReady = {},
-        onThumbnailExtractionFailed = {},
         onThumbnailUploadErrorConsumed = viewModel::onThumbnailUploadErrorConsumed,
         onValidationErrorConsumed = viewModel::onValidationErrorConsumed,
+        content = {
+            AfternoteEditorBody(
+                state = state,
+                form = uiState.form,
+                onNavigateToMemorialPlaylist = {},
+                onNavigateToSelectReceiver = {},
+                onThumbnailBytesReady = {},
+                onThumbnailExtractionFailed = {},
+                isPrefillLoading = uiState.isPrefillLoading,
+            )
+        },
         state = state,
         isPrefillLoading = uiState.isPrefillLoading,
     )
