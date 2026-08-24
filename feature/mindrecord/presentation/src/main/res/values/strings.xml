@@ -183,4 +183,11 @@
     <string name="mindrecord_write_diary_missing_content">본문을 입력해 주세요.</string>
     <string name="mindrecord_write_diary_missing_mood">오늘의 기분을 골라 주세요.</string>
     <string name="mindrecord_write_draft_empty">임시저장할 내용이 없어요.</string>
+    <!-- 기록 상세 화면 (#759) -->
+    <string name="mindrecord_detail_receiver">수신인</string>
+    <string name="mindrecord_detail_mood">오늘의 기분</string>
+    <string name="mindrecord_detail_not_found">기록을 찾을 수 없어요. 목록에서 다시 열어 주세요.</string>
+    <string name="mindrecord_detail_load_failed">기록을 불러오지 못했어요.</string>
+    <string name="mindrecord_detail_title_daily_question">데일리 질문</string>
+    <string name="mindrecord_detail_title_diary">일기</string>
 </resources>

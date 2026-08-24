@@ -124,6 +124,20 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
                 navController.popBackStack()
             }
 
+            override fun onOpenRecordDetail(
+                recordId: Long,
+                isDiary: Boolean,
+                yearMonth: String?,
+            ) {
+                navController.navigate(
+                    MindRecordRoute.RecordDetailRoute(
+                        recordId = recordId,
+                        isDiary = isDiary,
+                        yearMonth = yearMonth,
+                    ),
+                )
+            }
+
             override fun onEditDiaryDraft(
                 draftId: Long,
                 draftYearMonth: String,
@@ -361,10 +375,6 @@ fun rememberHomeTabActions(
             }
 
             override fun onWeeklyCountClick() {
-                appState.navigateToBottomBarRoute(Route.MindRecord)
-            }
-
-            override fun onWeeklyRecentRecordClick() {
                 appState.navigateToBottomBarRoute(Route.MindRecord)
             }
 
