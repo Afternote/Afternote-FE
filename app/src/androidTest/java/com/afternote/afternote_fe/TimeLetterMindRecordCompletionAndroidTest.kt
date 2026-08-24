@@ -51,6 +51,7 @@ import com.afternote.feature.mindrecord.domain.model.WeeklyReportEmotion
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
+import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 import com.afternote.feature.mindrecord.presentation.screen.memoryspace.MemorySpaceScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestionAnswerListScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestionWriteScreen
@@ -333,7 +334,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
     fun mindRecordHome_dailyQuestionLoadingEmptyAndErrorRetrySuccess_areRendered() {
         val emptyGate = CompletableDeferred<Result<List<DailyQuestion>>>()
         val emptyRepository = CompletionDailyQuestionRepository(nextListGate = emptyGate)
-        var activeViewModel by mutableStateOf(DailyQuestionListViewModel(emptyRepository))
+        var activeViewModel by mutableStateOf(DailyQuestionListViewModel(emptyRepository, MindRecordChangeTracker()))
 
         composeRule.setContent {
             AfternoteTheme {
@@ -357,7 +358,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
             CompletionDailyQuestionRepository().apply {
                 listResults.addLast(Result.failure(IllegalStateException("home offline")))
             }
-        val retryViewModel = DailyQuestionListViewModel(retryRepository)
+        val retryViewModel = DailyQuestionListViewModel(retryRepository, MindRecordChangeTracker())
         composeRule.runOnIdle { activeViewModel = retryViewModel }
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
             retryViewModel.uiState.value is DailyQuestionListUiState.Error
@@ -385,7 +386,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
     @Test
     fun dailyQuestionWrite_successRefreshesExistingListWithCreatedAnswer() {
         val repository = CompletionDailyQuestionRepository()
-        val listViewModel = DailyQuestionListViewModel(repository)
+        val listViewModel = DailyQuestionListViewModel(repository, MindRecordChangeTracker())
         var writeViewModel by mutableStateOf<DailyQuestionWriteViewModel?>(null)
         var submitSuccessCalls = 0
 
@@ -601,7 +602,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
                 profile = User("주간 사용자", "weekly@afternote.local", null, null),
                 receivers = emptyList(),
             )
-        val viewModel = WeeklyReportViewModel(repository, userRepository)
+        val viewModel = WeeklyReportViewModel(repository, userRepository, MindRecordChangeTracker())
 
         composeRule.setContent {
             AfternoteTheme {

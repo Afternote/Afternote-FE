@@ -35,6 +35,7 @@ import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepositor
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
+import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 import com.afternote.feature.mindrecord.presentation.model.DayBackground
 import com.afternote.feature.mindrecord.presentation.model.DayContent
 import com.afternote.feature.mindrecord.presentation.screen.receiver.ReceiverMindRecordScreen
@@ -88,7 +89,7 @@ class MindRecordLifecycleAndroidTest {
                 lists[PrivateDiaryQuery(previousMonth.toString(), null)] =
                     DiaryList(listOf(previousPublished), 1, TodayMood.SOSO)
             }
-        val viewModel = DiaryListViewModel(repository)
+        val viewModel = DiaryListViewModel(repository, MindRecordChangeTracker())
 
         composeRule.setContent {
             AfternoteTheme {
@@ -198,7 +199,7 @@ class MindRecordLifecycleAndroidTest {
         val repository = PrivateWeeklyReportRepository()
         repository.results.addLast(Result.failure(IllegalStateException("weekly offline")))
         val userRepository = privateProfileRepository("테스트 사용자")
-        val viewModel = WeeklyReportViewModel(repository, userRepository)
+        val viewModel = WeeklyReportViewModel(repository, userRepository, MindRecordChangeTracker())
 
         composeRule.setContent {
             AfternoteTheme {
