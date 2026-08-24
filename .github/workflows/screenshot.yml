@@ -5,6 +5,10 @@ name: Compose Preview Screenshot Test
 on:
   pull_request:
 
+concurrency:
+  group: screenshot-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   pull-requests: write
@@ -55,10 +59,11 @@ jobs:
             -e GOOGLE_WEB_CLIENT_ID \
             afternote-screenshot:latest \
             ./gradlew :core:ui:validateScreenshotTest \
-                      :app:validateScreenshotTest \
+                      :feature:home:presentation:validateScreenshotTest \
+                      :feature:receiver:presentation:validateScreenshotTest \
                       :feature:onboarding:presentation:validateScreenshotTest \
                       :feature:afternote:presentation:validateScreenshotTest \
-                      --parallel
+                      --parallel --build-cache
 
       # 컨테이너가 root 로 gradle 을 실행해 workspace · ~/.gradle 산출물이 root 소유가 된다.
       # job 종료 시 'Post Restore Gradle cache'(캐시 저장)의 hashFiles/tar 가 runner 권한이라
@@ -75,7 +80,8 @@ jobs:
           name: screenshot-test-results
           path: |
             core/ui/build/outputs/screenshotTest-results/
-            app/build/outputs/screenshotTest-results/
+            feature/home/presentation/build/outputs/screenshotTest-results/
+            feature/receiver/presentation/build/outputs/screenshotTest-results/
             feature/onboarding/presentation/build/outputs/screenshotTest-results/
             feature/afternote/presentation/build/outputs/screenshotTest-results/
           retention-days: 7
@@ -98,7 +104,7 @@ jobs:
               '🔍 **확인 위치** (artifact zip 내부):',
               '- diff PNG: `preview/debug/diffs/...`',
               '- rendered PNG: `preview/debug/rendered/...` (CI 환경에서 새로 그린 결과)',
-              '- baseline PNG: repo `<module>/src/screenshotTestDebug/reference/...` (`:core:ui` · `:app` · `:feature:onboarding:presentation` · `:feature:afternote:presentation`)',
+              '- baseline PNG: repo `<module>/src/screenshotTestDebug/reference/...` (`:core:ui` · `:feature:home:presentation` · `:feature:receiver:presentation` · `:feature:onboarding:presentation` · `:feature:afternote:presentation`)',
               '',
               '📝 **조치 가이드**:',
               '- 의도된 시각 변경 → `docker build -t afternote-screenshot:latest -f Dockerfile.screenshot .` 후 `docker run --rm -v "$PWD":/workspace -w /workspace afternote-screenshot:latest ./gradlew :<module>:updateScreenshotTest` 로 baseline 갱신 + commit/push',
