@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { execFileSync } from "node:child_process";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -35,26 +36,80 @@ export function extractClosingIssueNumbers(body) {
     return [...numbers];
 }
 
-export function selectMergedPullRequests(pullRequests, since, until) {
-    const sinceTime = since ? Date.parse(since) : Number.NEGATIVE_INFINITY;
-    const untilTime = Date.parse(until);
-    if (Number.isNaN(untilTime)) {
-        throw new Error(`Invalid target merged_at: ${until}`);
+export function selectMergedPullRequestsByAncestry(
+    pullRequests,
+    baselineSha,
+    targetSha,
+    isAncestor,
+) {
+    if (!targetSha || typeof isAncestor !== "function") {
+        throw new Error("targetSha and isAncestor are required");
     }
-
     return pullRequests
         .filter((pullRequest) => {
-            if (!pullRequest.merged_at || pullRequest.base?.ref !== "develop") {
+            if (
+                !pullRequest.merged_at ||
+                !pullRequest.merge_commit_sha ||
+                pullRequest.base?.ref !== "develop"
+            ) {
                 return false;
             }
-            const mergedAt = Date.parse(pullRequest.merged_at);
-            return mergedAt > sinceTime && mergedAt <= untilTime;
+            if (!isAncestor(pullRequest.merge_commit_sha, targetSha)) {
+                return false;
+            }
+            return !baselineSha || !isAncestor(pullRequest.merge_commit_sha, baselineSha);
         })
         .sort((left, right) => Date.parse(left.merged_at) - Date.parse(right.merged_at));
 }
 
 export function isTargetCoveredByCompareStatus(status) {
     return status === "ahead" || status === "identical";
+}
+
+export function distributionRelationForCompareStatus(status) {
+    if (isTargetCoveredByCompareStatus(status)) {
+        return "covered";
+    }
+    return status === "behind" ? "baseline" : null;
+}
+
+function distributionRunTime(run) {
+    for (const value of [run.updated_at, run.run_started_at, run.created_at]) {
+        const timestamp = Date.parse(value ?? "");
+        if (!Number.isNaN(timestamp)) {
+            return timestamp;
+        }
+    }
+    return Number.NEGATIVE_INFINITY;
+}
+
+export function sortDistributionRuns(runs) {
+    return [...runs].sort(
+        (left, right) => distributionRunTime(right) - distributionRunTime(left),
+    );
+}
+
+export function sourceShaForDistributionRun(run, associatedPullRequests = []) {
+    if (!run?.head_sha) {
+        return null;
+    }
+    if (run.head_branch === "develop") {
+        return run.head_sha;
+    }
+    if (run.head_branch !== "main") {
+        return null;
+    }
+
+    const releasePullRequest = associatedPullRequests
+        .filter(
+            (pullRequest) =>
+                pullRequest.merged_at &&
+                pullRequest.base?.ref === "main" &&
+                pullRequest.head?.ref === "develop" &&
+                pullRequest.head?.sha,
+        )
+        .sort((left, right) => Date.parse(right.merged_at) - Date.parse(left.merged_at))[0];
+    return releasePullRequest?.head?.sha ?? null;
 }
 
 function normalizeIssue(issue) {
@@ -125,6 +180,13 @@ async function listClosedDevelopPullRequests(apiUrl, repository, token) {
     );
 }
 
+async function loadPullRequestsForCommit(apiUrl, repository, commitSha, token) {
+    return requestJson(
+        `${apiUrl}/repos/${repository}/commits/${commitSha}/pulls`,
+        token,
+    );
+}
+
 async function loadClosingIssues(graphqlUrl, repository, pullRequest, token) {
     const [owner, name] = repository.split("/");
     const query = `
@@ -175,15 +237,90 @@ async function loadClosingIssues(graphqlUrl, repository, pullRequest, token) {
     return fallbackIssues;
 }
 
-async function targetCoveredBySuccessfulRun(apiUrl, repository, targetSha, runSha, token) {
-    if (!runSha) {
-        return false;
+async function compareCommits(apiUrl, repository, baseSha, headSha, token) {
+    if (baseSha === headSha) {
+        return "identical";
     }
     const comparison = await requestJson(
-        `${apiUrl}/repos/${repository}/compare/${targetSha}...${runSha}`,
+        `${apiUrl}/repos/${repository}/compare/${baseSha}...${headSha}`,
         token,
     );
-    return isTargetCoveredByCompareStatus(comparison.status);
+    return comparison.status;
+}
+
+async function resolveDistributionSourceSha(apiUrl, repository, run, token) {
+    if (run.head_branch === "develop") {
+        return sourceShaForDistributionRun(run);
+    }
+    if (run.head_branch !== "main") {
+        return null;
+    }
+
+    const pullRequests = await loadPullRequestsForCommit(
+        apiUrl,
+        repository,
+        run.head_sha,
+        token,
+    );
+    const sourceSha = sourceShaForDistributionRun(run, pullRequests);
+    if (!sourceSha) {
+        throw new Error(
+            `Successful main distribution run ${run.id} has no merged develop -> main PR`,
+        );
+    }
+    return sourceSha;
+}
+
+async function findRelevantDistribution(apiUrl, repository, runs, targetSha, token) {
+    for (const run of sortDistributionRuns(runs)) {
+        const sourceSha = await resolveDistributionSourceSha(apiUrl, repository, run, token);
+        if (!sourceSha) {
+            continue;
+        }
+        const compareStatus = await compareCommits(
+            apiUrl,
+            repository,
+            targetSha,
+            sourceSha,
+            token,
+        );
+        const relation = distributionRelationForCompareStatus(compareStatus);
+        if (relation) {
+            return { run, sourceSha, relation };
+        }
+    }
+    return null;
+}
+
+function gitIsAncestor(ancestorSha, descendantSha) {
+    try {
+        execFileSync("git", ["merge-base", "--is-ancestor", ancestorSha, descendantSha], {
+            stdio: "ignore",
+        });
+        return true;
+    } catch (error) {
+        if (error?.status === 1) {
+            return false;
+        }
+        if (error?.status === 128 && !gitCommitExists(ancestorSha)) {
+            return false;
+        }
+        throw error;
+    }
+}
+
+function gitCommitExists(commitSha) {
+    try {
+        execFileSync("git", ["cat-file", "-e", `${commitSha}^{commit}`], {
+            stdio: "ignore",
+        });
+        return true;
+    } catch (error) {
+        if (error?.status === 1 || error?.status === 128) {
+            return false;
+        }
+        throw error;
+    }
 }
 
 async function main() {
@@ -206,49 +343,32 @@ async function main() {
     );
     assertMergedDevelopPullRequest(targetPullRequest);
 
-    const workflowRunsQuery = new URLSearchParams({
-        branch: "develop",
-        event: "workflow_dispatch",
-        status: "success",
-        per_page: "20",
-    });
+    const workflowRunsQuery = new URLSearchParams({ status: "success", per_page: "100" });
     const workflowRuns = await requestJson(
         `${apiUrl}/repos/${repository}/actions/workflows/release-distribution.yml/runs?${workflowRunsQuery.toString()}`,
         token,
     );
     const successfulRuns = workflowRuns.workflow_runs ?? [];
-    const latestSuccessfulRun = successfulRuns[0] ?? null;
-    const covered = latestSuccessfulRun
-        ? await targetCoveredBySuccessfulRun(
-              apiUrl,
-              repository,
-              targetPullRequest.merge_commit_sha,
-              latestSuccessfulRun.head_sha,
-              token,
-          )
-        : false;
-
-    let baselineRun = latestSuccessfulRun;
-    if (
-        baselineRun &&
-        !covered &&
-        Date.parse(baselineRun.run_started_at) > Date.parse(targetPullRequest.merged_at)
-    ) {
-        baselineRun =
-            successfulRuns.find(
-                (run) => Date.parse(run.run_started_at) <= Date.parse(targetPullRequest.merged_at),
-            ) ?? null;
-    }
+    const relevantDistribution = await findRelevantDistribution(
+        apiUrl,
+        repository,
+        successfulRuns,
+        targetPullRequest.merge_commit_sha,
+        token,
+    );
+    const covered = relevantDistribution?.relation === "covered";
+    const baselineSha = relevantDistribution?.sourceSha ?? null;
 
     const allPullRequests = covered
         ? []
         : await listClosedDevelopPullRequests(apiUrl, repository, token);
     const selectedPullRequests = covered
         ? []
-        : selectMergedPullRequests(
+        : selectMergedPullRequestsByAncestry(
               allPullRequests,
-              baselineRun?.run_started_at,
-              targetPullRequest.merged_at,
+              baselineSha,
+              targetPullRequest.merge_commit_sha,
+              gitIsAncestor,
           );
     if (selectedPullRequests.length > MAX_PULL_REQUESTS) {
         throw new Error(
@@ -269,12 +389,16 @@ async function main() {
             await loadClosingIssues(graphqlUrl, repository, targetPullRequest, token),
         ),
         targetCoveredBySuccessfulDistribution: covered,
-        baselineDistribution: baselineRun
+        baselineDistribution: relevantDistribution
             ? {
-                  id: baselineRun.id,
-                  headSha: baselineRun.head_sha,
-                  runStartedAt: baselineRun.run_started_at,
-                  url: baselineRun.html_url,
+                  id: relevantDistribution.run.id,
+                  headSha: relevantDistribution.sourceSha,
+                  runHeadSha: relevantDistribution.run.head_sha,
+                  event: relevantDistribution.run.event,
+                  headBranch: relevantDistribution.run.head_branch,
+                  runStartedAt: relevantDistribution.run.run_started_at,
+                  completedAt: relevantDistribution.run.updated_at,
+                  url: relevantDistribution.run.html_url,
               }
             : null,
         pendingPullRequests: normalizedPullRequests,
