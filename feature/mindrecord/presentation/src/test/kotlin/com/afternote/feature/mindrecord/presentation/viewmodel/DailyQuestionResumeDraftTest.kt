@@ -4,8 +4,12 @@ import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
+import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
+import com.afternote.feature.mindrecord.domain.model.DiaryList
+import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
+import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -102,6 +106,12 @@ class DailyQuestionResumeDraftTest {
             DailyQuestionWriteViewModel(
                 repository = repository,
                 photoUploadRepository = PhotoUploadRepository { _, _ -> Result.success("") },
+                // 툴바 카운트는 이 테스트의 관심사가 아니다 — 같은 저장소를 넘겨 0건으로 둔다 (#769).
+                draftLoader =
+                    MindRecordDraftLoader(
+                        diaryRepository = NoDiaryDraftsRepository,
+                        dailyQuestionRepository = repository,
+                    ),
             )
         viewModel.onAnswerChanged("<p></p>")
         repository.releaseDraft()
@@ -135,6 +145,12 @@ class DailyQuestionResumeDraftTest {
             DailyQuestionWriteViewModel(
                 repository = repository,
                 photoUploadRepository = PhotoUploadRepository { _, _ -> Result.success("") },
+                // 툴바 카운트는 이 테스트의 관심사가 아니다 — 같은 저장소를 넘겨 0건으로 둔다 (#769).
+                draftLoader =
+                    MindRecordDraftLoader(
+                        diaryRepository = NoDiaryDraftsRepository,
+                        dailyQuestionRepository = repository,
+                    ),
             )
         // 에디터가 컴포지션 직후 현재 HTML 을 되돌려 주는 것을 재현한다.
         viewModel.onAnswerChanged(currentAnswerFromEditor)
@@ -174,12 +190,12 @@ private class FakeResumeRepository(
         return Result.success(today)
     }
 
-    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Unit> = Result.success(Unit)
+    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> = Result.success(1L)
 
     override suspend fun update(
         id: Long,
         payload: DailyQuestionUpdatePayload,
-    ): Result<Unit> = Result.success(Unit)
+    ): Result<Long> = Result.success(1L)
 
     override suspend fun delete(id: Long): Result<Unit> = error("호출되면 안 됨")
 }
