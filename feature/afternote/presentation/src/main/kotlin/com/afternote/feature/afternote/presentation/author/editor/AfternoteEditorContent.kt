@@ -109,7 +109,7 @@ internal fun EditorContent(
 }
 
 @Composable
-internal fun AfternoteEditorBody(
+fun AfternoteEditorBody(
     state: AfternoteEditorState,
     form: EditorFormState,
     onNavigateToMemorialPlaylist: () -> Unit,

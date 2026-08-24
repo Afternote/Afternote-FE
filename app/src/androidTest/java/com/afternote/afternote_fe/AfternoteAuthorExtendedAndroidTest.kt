@@ -12,6 +12,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -46,11 +47,11 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.afternote.domain.model.author.AfternoteUpdatePayload
-import com.afternote.feature.afternote.domain.model.author.AuthorReceiverEntry
 import com.afternote.feature.afternote.domain.model.author.CreateAccountPayload
 import com.afternote.feature.afternote.domain.model.author.CreateGalleryPayload
 import com.afternote.feature.afternote.domain.model.author.CreateMemorialPayload
 import com.afternote.feature.afternote.domain.model.author.Detail
+import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.domain.model.author.DetailReceiver
 import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
@@ -58,13 +59,10 @@ import com.afternote.feature.afternote.domain.model.author.ListItem
 import com.afternote.feature.afternote.domain.model.author.ProcessingMethod
 import com.afternote.feature.afternote.domain.model.author.ReceiverRefPayload
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
-import com.afternote.feature.afternote.domain.repository.author.AuthorReceiverRepository
 import com.afternote.feature.afternote.domain.repository.author.MediaInput
-import com.afternote.feature.afternote.domain.repository.author.MemorialPhotoUploadRepository
+import com.afternote.feature.afternote.domain.repository.author.MediaKind
+import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
-import com.afternote.feature.afternote.domain.repository.author.MemorialVideoUploadRepository
-import com.afternote.feature.afternote.domain.repository.author.PhotoUploadOutcome
-import com.afternote.feature.afternote.domain.repository.author.VideoUploadOutcome
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailDeleteResult
@@ -72,18 +70,19 @@ import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetai
 import com.afternote.feature.afternote.presentation.author.detail.AfternoteDetailViewModel
 import com.afternote.feature.afternote.presentation.author.detail.DetailContentUiModel
 import com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailScreen
+import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorBody
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorScreen
 import com.afternote.feature.afternote.presentation.author.editor.AfternoteEditorViewModel
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternoteMemorialMedia
 import com.afternote.feature.afternote.presentation.author.editor.SaveAfternotePayloadBuilder
 import com.afternote.feature.afternote.presentation.author.editor.message.EditorMessageTextBlock
+import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.editor.state.rememberAfternoteEditorState
 import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeEntry
 import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeViewModel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import org.junit.Assert.assertEquals
@@ -93,6 +92,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.time.LocalDate
 import java.util.concurrent.atomic.AtomicInteger
+import com.afternote.feature.afternote.presentation.R as AfternoteFeatureR
 
 @RunWith(AndroidJUnit4::class)
 class AfternoteAuthorExtendedAndroidTest {
@@ -120,17 +120,13 @@ class AfternoteAuthorExtendedAndroidTest {
             Pager(PagingConfig(pageSize = 20)) { pagingSource }.flow
         repository.listFlows[AfternoteType.SOCIAL_NETWORK] = flowOf(PagingData.empty())
         val viewModel = AfternoteHomeViewModel(repository)
-        val accountRoutes = mutableListOf<String>()
-        val galleryRoutes = mutableListOf<String>()
-        val memorialRoutes = mutableListOf<String>()
+        val detailRoutes = mutableListOf<Long>()
         val addRoutes = mutableListOf<AfternoteType?>()
 
         composeRule.setContent {
             AfternoteTheme {
                 AfternoteHomeEntry(
-                    navigateToDetail = accountRoutes::add,
-                    navigateToGalleryDetail = galleryRoutes::add,
-                    navigateToMemorialDetail = memorialRoutes::add,
+                    navigateToDetail = detailRoutes::add,
                     navigateToAdd = addRoutes::add,
                     onSettingClick = {},
                     viewModel = viewModel,
@@ -157,9 +153,7 @@ class AfternoteAuthorExtendedAndroidTest {
             .onNodeWithContentDescription("추억 노트")
             .performScrollTo()
             .performClick()
-        assertEquals(listOf("101"), accountRoutes)
-        assertEquals(listOf("102"), galleryRoutes)
-        assertEquals(listOf("103"), memorialRoutes)
+        assertEquals(listOf(101L, 102L, 103L), detailRoutes)
 
         composeRule.onNodeWithText("소셜네트워크").performClick()
         composeRule.waitUntil(timeoutMillis = 5_000) {
@@ -224,7 +218,7 @@ class AfternoteAuthorExtendedAndroidTest {
             .onNode(hasSetTextAction() and hasText("old@example.test"))
             .performTextReplacement("edited@example.test")
         composeRule.runOnIdle {
-            checkNotNull(editorViewModel).editProcessingMethod("1", "계정 보존")
+            checkNotNull(editorViewModel).editProcessingMethod(1, "계정 보존")
         }
         composeRule.onNodeWithText("계정 보존").performScrollTo().assertIsDisplayed()
         val topBarRegister =
@@ -238,7 +232,7 @@ class AfternoteAuthorExtendedAndroidTest {
         composeRule.waitUntil(timeoutMillis = 5_000) { repository.updateCalls.size == 1 }
         val (updatedId, payload) = repository.updateCalls.single()
         assertEquals(73L, updatedId)
-        assertEquals("SOCIAL", payload.category)
+        assertEquals(AfternoteType.SOCIAL_NETWORK, payload.type)
         assertEquals("Instagram", payload.title)
         assertEquals(listOf("계정 보존"), payload.processingMethods)
         assertEquals(
@@ -313,7 +307,7 @@ private fun AuthorDetailForEdit(
         }
 
         is AfternoteDetailUiState.Success -> {
-            val account = state.contentUiModel as DetailContentUiModel.Account
+            val account = state.contentUiModel as DetailContentUiModel.SocialNetwork
             AccountDetailScreen(
                 onBackClick = {},
                 content = account.content,
@@ -333,14 +327,13 @@ private fun AuthorEditorForUpdate(
     val state =
         rememberAfternoteEditorState(
             getCurrentForm = viewModel::currentForm,
-            setCategory = viewModel::setCategory,
+            setType = viewModel::setType,
             setService = viewModel::setService,
             setMemorialPhoto = viewModel::setMemorialPhoto,
             setMemorialVideo = viewModel::setMemorialVideo,
             addReceiverIfAbsent = viewModel::addReceiverIfAbsent,
             applyPrefill = viewModel::applyPrefill,
             setMemorialThumbnail = viewModel::setMemorialThumbnail,
-            setMemorialPlaylistSongs = viewModel::setMemorialPlaylistSongs,
             deleteReceiver = viewModel::deleteReceiver,
             replaceReceiversIfEmpty = viewModel::replaceReceiversIfEmpty,
             setLeaveMessageBlocks = viewModel::setLeaveMessageBlocks,
@@ -379,20 +372,25 @@ private fun AuthorEditorForUpdate(
                     date = LocalDate.of(2026, 8, 22),
                 )
             viewModel.saveAfternote(
-                editingId = itemId,
-                category = form.selectedCategory,
                 payload = payload,
                 selectedReceiverIds = form.afternoteEditReceivers.map { it.id.toLong() },
-                playlistSongs = emptyList(),
                 memorialMedia = SaveAfternoteMemorialMedia(),
             )
         },
-        onNavigateToMemorialPlaylist = {},
-        onNavigateToSelectReceiver = {},
-        onThumbnailBytesReady = {},
-        onThumbnailExtractionFailed = {},
-        onThumbnailUploadErrorConsumed = viewModel::onThumbnailUploadErrorConsumed,
-        onValidationErrorConsumed = viewModel::onValidationErrorConsumed,
+        snackbarMessage =
+            (uiState.error as? AfternoteEditorError.Validation)?.let { stringResource(it.reason.messageResId) },
+        onSnackbarMessageConsumed = viewModel::onErrorConsumed,
+        content = {
+            AfternoteEditorBody(
+                state = state,
+                form = uiState.form,
+                onNavigateToMemorialPlaylist = {},
+                onNavigateToSelectReceiver = {},
+                onThumbnailBytesReady = {},
+                onThumbnailExtractionFailed = {},
+                isPrefillLoading = uiState.isPrefillLoading,
+            )
+        },
         state = state,
         isPrefillLoading = uiState.isPrefillLoading,
     )
@@ -413,7 +411,7 @@ private fun AuthorDetailForDelete(
             is AfternoteDetailDeleteResult.Failed -> {
                 val message =
                     resources.getString(
-                        result.messageRes ?: R.string.afternote_detail_delete_failed,
+                        result.messageRes ?: AfternoteFeatureR.string.afternote_detail_delete_failed,
                     )
                 scope.launch { snackbarHostState.showSnackbar(message) }
                 viewModel.onDeleteResultConsumed()
@@ -440,7 +438,7 @@ private fun AuthorDetailForDelete(
         }
 
         is AfternoteDetailUiState.Success -> {
-            val account = state.contentUiModel as DetailContentUiModel.Account
+            val account = state.contentUiModel as DetailContentUiModel.SocialNetwork
             AccountDetailScreen(
                 onBackClick = {},
                 content = account.content,
@@ -518,28 +516,12 @@ private class AdvancedAfternoteRepository(
     }
 }
 
-private class ExtendedAuthorReceiverRepository : AuthorReceiverRepository {
-    private val receivers = MutableStateFlow(listOf(AuthorReceiverEntry(7L, "김수신", "가족")))
-
-    override fun currentAuthorUserId(): Long = 1L
-
-    override fun observeReceivers(): Flow<List<AuthorReceiverEntry>> = receivers
-
-    override fun currentReceivers(): List<AuthorReceiverEntry> = receivers.value
-
-    override suspend fun refreshReceivers(): Result<Unit> = Result.success(Unit)
-
-    override suspend fun clearReceivers() {
-        receivers.value = emptyList()
-    }
-}
-
 private fun detailViewModel(
     repository: AdvancedAfternoteRepository,
     itemId: Long,
 ): AfternoteDetailViewModel =
     AfternoteDetailViewModel(
-        savedStateHandle = SavedStateHandle(mapOf("itemId" to itemId.toString())),
+        savedStateHandle = SavedStateHandle(mapOf("itemId" to itemId)),
         afternoteRepository = repository,
         userRepository = FakeUserRepository(),
         errorReporter = FakeErrorReporter(),
@@ -550,8 +532,8 @@ private fun editorViewModel(
     itemId: Long,
 ): AfternoteEditorViewModel =
     AfternoteEditorViewModel(
-        savedStateHandle = SavedStateHandle(mapOf("itemId" to itemId.toString())),
-        authorReceiverRepository = ExtendedAuthorReceiverRepository(),
+        savedStateHandle = SavedStateHandle(mapOf("itemId" to itemId)),
+        userRepository = FakeUserRepository(),
         afternoteRepository = repository,
         memorialThumbnailUploadRepository =
             MemorialThumbnailUploadRepository {
@@ -559,38 +541,23 @@ private fun editorViewModel(
             },
         resolveMemorialMediaForSave =
             ResolveMemorialMediaForSaveUseCase(
-                memorialVideoUploadRepository =
-                    MemorialVideoUploadRepository { input ->
+                memorialMediaUploadRepository =
+                    MemorialMediaUploadRepository { input, kind ->
                         Result.success(
                             when (input) {
                                 MediaInput.None -> {
-                                    VideoUploadOutcome.Empty
+                                    null
                                 }
 
                                 is MediaInput.Local -> {
-                                    VideoUploadOutcome.FreshlyUploaded("https://cdn.test/video.mp4")
+                                    when (kind) {
+                                        MediaKind.VIDEO -> "https://cdn.test/video.mp4"
+                                        MediaKind.PHOTO -> "https://cdn.test/photo.jpg"
+                                    }
                                 }
 
                                 is MediaInput.Remote -> {
-                                    VideoUploadOutcome.Existing(input.url)
-                                }
-                            },
-                        )
-                    },
-                memorialPhotoUploadRepository =
-                    MemorialPhotoUploadRepository { input ->
-                        Result.success(
-                            when (input) {
-                                MediaInput.None -> {
-                                    PhotoUploadOutcome.Empty
-                                }
-
-                                is MediaInput.Local -> {
-                                    PhotoUploadOutcome.FreshlyUploaded("https://cdn.test/photo.jpg")
-                                }
-
-                                is MediaInput.Remote -> {
-                                    PhotoUploadOutcome.Existing(input.url)
+                                    input.url
                                 }
                             },
                         )
@@ -602,19 +569,19 @@ private fun editorViewModel(
 private fun authorListItems(): List<ListItem> =
     listOf(
         ListItem(
-            id = "101",
+            id = 101L,
             serviceName = "Instagram",
             date = "2026.08.22",
             type = AfternoteType.SOCIAL_NETWORK,
         ),
         ListItem(
-            id = "102",
+            id = 102L,
             serviceName = "Google Drive",
             date = "2026.08.22",
             type = AfternoteType.GALLERY_AND_FILES,
         ),
         ListItem(
-            id = "103",
+            id = 103L,
             serviceName = "추억 노트",
             date = "2026.08.22",
             type = AfternoteType.MEMORIAL,
@@ -624,11 +591,8 @@ private fun authorListItems(): List<ListItem> =
 private fun authorDetail(): Detail =
     Detail(
         id = 73L,
-        category = "SOCIAL",
-        title = "Instagram",
+        serviceName = "Instagram",
         timestamps = DetailTimestamps(createdAt = "2026.08.20", updatedAt = "2026.08.22"),
-        type = AfternoteType.SOCIAL_NETWORK,
-        credentials = DetailCredentials(id = "old@example.test", password = "old-password"),
         receivers =
             listOf(
                 DetailReceiver(
@@ -638,8 +602,11 @@ private fun authorDetail(): Detail =
                     phone = "",
                 ),
             ),
-        processingMethods = listOf("계정 삭제"),
         leaveMessageBlocks =
             listOf(LeaveMessageBlock(title = "마지막 말", body = "기억해 줘")),
-        memorial = null,
+        content =
+            DetailContent.SocialNetwork(
+                credentials = DetailCredentials(id = "old@example.test", password = "old-password"),
+                processingMethods = listOf("계정 삭제"),
+            ),
     )
