@@ -180,6 +180,11 @@ class DailyQuestionWriteViewModel
                     }
                 result
                     .onSuccess {
+                        // 제출이 성공하면 staging 키는 이미 permanent 로 옮겨졌다. 남겨 두면
+                        // 같은 ViewModel 로 두 번 제출될 때(예: 임시저장 뒤 화면에 머무는 흐름)
+                        // 이미 옮겨진 파일을 다시 옮기려다 실패한다. 그 전제를 화면 구조가
+                        // 아니라 여기서 지킨다.
+                        uploadedImageUrls.clear()
                         _uiState.update { it.copy(submitState = SubmitState.Succeeded) }
                     }.onFailure { e ->
                         _uiState.update {

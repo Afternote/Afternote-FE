@@ -130,6 +130,8 @@ class DailyQuestionWriteViewModelTest {
     @Test
     fun `이어쓰기는 본문에 실린 이미지를 그대로 가져온다`() {
         // 이미지가 본문 안에 있으므로 이어쓰기가 본문만 복원하면 이미지도 따라온다.
+        // 여기서 고정하는 것은 ViewModel 단까지다 — 화면은 에디터가 외부 value 를 첫
+        // 컴포지션 1회만 시드해서 아직 성립하지 않는다 (#923 소관).
         val html = "<p>이어쓸 본문</p><img src=\"https://cdn/old.jpg\" />"
         val repository =
             FakeDailyQuestionRepository(

@@ -13,6 +13,10 @@ fun String.htmlToPlainText(): String =
     HtmlCompat
         .fromHtml(this, HtmlCompat.FROM_HTML_MODE_COMPACT)
         .toString()
+        // ImageGetter 없이 파싱하면 img 자리에 U+FFFC 가 남는다. 본문에 img 를 정식으로
+        // 넣기 시작하면(#549) 카드 미리보기 둘째 줄이 통째로 `￼` 가 된다 — 공백이 아니라
+        // trim() 으로는 안 지워진다.
+        .replace("\uFFFC", "")
         .trim()
 
 /**
@@ -54,5 +58,13 @@ private val HTML_IMG_SRC = Regex("""<img\b[^>]*?\bsrc\s*=\s*["']([^"']*)["']""",
  *
  * 스킴과 호스트만 떼면 fileKey 가 되므로 경로 규칙(`mindrecords/staging/...`)을 코드에
  * 박지 않는다 — 서버가 디렉터리 구조를 바꿔도 따라간다.
+ *
+ * 다만 이 방식은 `fileUrl == "<스킴>://<호스트>/" + fileKey` 를 가정한다. **권위 있는
+ * 출처는 presigned 응답의 `fileKey` 인데 `PhotoUploadRepository.upload()` 가 `fileUrl` 만
+ * 돌려주며 버린다** — CDN 이 경로 프리픽스나 쿼리스트링을 붙이면 조용히 틀린 키가 된다.
+ * 반환을 넓히는 것은 `core:data` 범위라 별건으로 둔다 (#1017).
  */
-fun String.toUploadedFileKey(): String = substringAfter("://").substringAfter('/')
+fun String.toUploadedFileKey(): String =
+    // 스킴이 없으면 substringAfter("://") 가 원문을 그대로 돌려주고, 이어지는
+    // substringAfter('/') 가 첫 경로 세그먼트를 잘라먹는다 — 조용히 틀린 키가 나간다.
+    if (contains("://")) substringAfter("://").substringAfter('/') else this

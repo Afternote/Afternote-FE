@@ -7,6 +7,8 @@ plugins {
 android {
     namespace = "com.afternote.feature.mindrecord.presentation"
     resourcePrefix = "mindrecord_"
+
+    testOptions.unitTests.isIncludeAndroidResources = true
 }
 
 dependencies {
@@ -19,4 +21,7 @@ dependencies {
     implementation(libs.compose.rich.editor)
 
     testImplementation(libs.coroutines.test)
+
+    // 카드 미리보기의 대체 문자 제거는 HtmlCompat 파싱 결과라 실제 파서로 확인한다 (#549).
+    testImplementation(libs.robolectric)
 }
