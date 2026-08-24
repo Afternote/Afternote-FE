@@ -18,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -84,6 +85,7 @@ fun DailyQuestionWriteScreen(
             )
         },
         modifier = modifier,
+        containerColor = Color.Transparent,
     ) { paddingValues ->
         Column(
             modifier =
@@ -118,13 +120,15 @@ fun DailyQuestionWriteScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            // 프리필이 비동기로 끝나므로 에디터를 다시 만들어 본문을 다시 시드한다 (#582).
-            key(uiState.contentLoaded) {
+            // 프리필은 둘 다 비동기로 끝난다 — WriteTextField 는 value 를 초기 시드로만 받으므로
+            // 어느 쪽이 도착하든 에디터를 재생성해 본문을 다시 싣는다 (#582 수정 · #923 이어쓰기).
+            key(uiState.contentLoaded, uiState.draftLoaded) {
                 WriteTextField(
                     value = uiState.answer,
                     onValueChange = viewModel::onAnswerChanged,
                     onSaveDraftClick = { viewModel.submit(isDraft = true) },
                     onDraftCountClick = onDraftListClick,
+                    draftCount = uiState.draftCount,
                     onImagePicked = viewModel::uploadImage,
                 )
             }

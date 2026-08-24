@@ -19,6 +19,4 @@ interface UserProfileRepository {
     suspend fun getCachedUserName(): String?
 
     suspend fun saveUserName(name: String)
-
-    suspend fun clear()
 }

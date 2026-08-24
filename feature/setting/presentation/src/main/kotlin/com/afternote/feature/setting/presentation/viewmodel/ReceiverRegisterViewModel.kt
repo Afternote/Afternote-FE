@@ -29,6 +29,7 @@ class ReceiverRegisterViewModel
             relation: String,
             phone: String?,
             email: String?,
+            message: String?,
         ) {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             viewModelScope.launch {
@@ -38,7 +39,7 @@ class ReceiverRegisterViewModel
                         relation = relation,
                         phone = phone?.takeIf { it.isNotBlank() },
                         email = email?.takeIf { it.isNotBlank() },
-                        message = null,
+                        message = message?.takeIf { it.isNotBlank() },
                     )
                 }.onSuccess {
                     _events.send(ReceiverRegisterEvent.RegisterSuccess)

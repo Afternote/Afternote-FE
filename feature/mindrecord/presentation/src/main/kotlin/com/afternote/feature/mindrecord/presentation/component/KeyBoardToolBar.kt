@@ -35,6 +35,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.TextStyleState
 import com.afternote.feature.mindrecord.presentation.model.TextStyleType
+import com.afternote.core.ui.R as CoreUiR
 
 @Composable
 fun BottomToolbar(
@@ -44,7 +45,8 @@ fun BottomToolbar(
     onLinkClick: () -> Unit = {},
     onSaveDraftClick: () -> Unit = {},
     onDraftCountClick: () -> Unit = {},
-    draftCount: Int = 0,
+    /** 임시저장 개수. `null` 은 아직 모름(조회 중·실패) — 0 으로 단정하지 않는다. */
+    draftCount: Int? = null,
 ) {
     Row(
         modifier =
@@ -101,7 +103,9 @@ fun BottomToolbar(
             )
             Spacer(modifier = Modifier.width(4.dp))
             Text(
-                text = draftCount.toString(),
+                // 조회 전·실패에 0 을 보이면 "임시저장이 없다" 는 틀린 사실을 말하게 된다.
+                // 진입점(탭 영역)은 유지해야 해서 숨기는 대신 임시저장 목록의 미지정 표기와 같은 '–' 를 쓴다.
+                text = draftCount?.toString() ?: UNKNOWN_DRAFT_COUNT,
                 style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray4,
                 modifier = Modifier.clickable(onClick = onDraftCountClick),
@@ -218,7 +222,7 @@ private fun CloseButton(onClick: () -> Unit) {
     ) {
         Icon(
             painter = painterResource(R.drawable.mindrecord_close),
-            contentDescription = stringResource(R.string.mindrecord_toolbar_close_cd),
+            contentDescription = stringResource(CoreUiR.string.core_ui_content_description_close),
             tint = AfternoteDesign.colors.gray9,
             modifier = Modifier.size(10.dp),
         )
@@ -457,3 +461,6 @@ private data class HeaderTypeItem(
     val label: String,
     val style: TextStyle,
 )
+
+/** 임시저장 개수를 아직 모를 때 자리 표시 — `DraftDateFormatter` 의 미지정 표기와 같은 문자다. */
+private const val UNKNOWN_DRAFT_COUNT = "\u2013"

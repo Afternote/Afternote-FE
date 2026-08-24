@@ -13,6 +13,13 @@ data class DailyQuestionWriteUiState(
      * 오늘의 임시저장 이어쓰기와 목록의 "수정하기" 가 같은 값을 쓴다 (#582).
      */
     val draftId: Long? = null,
+    /**
+     * 이어쓸 임시저장 본문이 도착했는지.
+     *
+     * 에디터가 외부 값을 초기 시드로만 받으므로, 화면이 이 플래그로 에디터를 재생성해 본문을
+     * 다시 싣는다. 일기 화면의 `draftLoaded` 와 같은 역할이다 (#923).
+     */
+    val draftLoaded: Boolean = false,
     val answer: String = "",
     /**
      * 본문이 서버에서 채워졌는지. 리치 에디터는 [answer] 를 **초기 시드로만** 읽으므로,
@@ -22,11 +29,27 @@ data class DailyQuestionWriteUiState(
     val imageUrl: String? = null,
     val isQuestionLoading: Boolean = true,
     val questionLoadError: UiText? = null,
+    /** 이어쓸 임시저장 본문을 불러오는 중 (#923). */
+    val isResumingDraft: Boolean = false,
     val submitState: SubmitState = SubmitState.Idle,
+    /** 툴바 "임시저장 N" 표시값. `null` 은 아직 모름(조회 중·실패) (#769). */
+    val draftCount: Int? = null,
 ) {
+    /**
+     * `questionId` 유무는 여기서 보지 않는다. 조건에 넣으면 오늘 질문 조회가 실패했을 때
+     * 저장 버튼이 그냥 죽어 있어 원인을 알 수 없다 (#565). 대신 [DailyQuestionWriteViewModel.submit]
+     * 이 눌린 시점에 사유를 알리고 조회를 재시도한다.
+     */
     val canSubmit: Boolean
-        // 수정 모드는 오늘 질문을 부르지 않아 questionId 가 없다 — 대상 레코드가 있으면 저장할 수 있다.
-        get() = (questionId != null || draftId != null) && answer.isNotBlank() && submitState != SubmitState.InProgress
+        get() =
+            answer.isNotBlank() &&
+                // 수정·이어쓰기 모드는 오늘 질문을 부르지 않아 questionId 가 없다 — 대상 레코드가
+                // 있으면 PATCH 로 나가므로 질문 조회를 기다릴 이유가 없다 (#582·#770).
+                (draftId != null || !isQuestionLoading) &&
+                // 이어쓸 본문이 도착하기 전에 저장하면 draftId 가 아직 null 이라 POST 로 나가고,
+                // 서버가 questionId upsert 라 기존 임시저장 본문이 덮인다 — #923 과 같은 유실이다.
+                !isResumingDraft &&
+                submitState != SubmitState.InProgress
 }
 
 sealed interface SubmitState {

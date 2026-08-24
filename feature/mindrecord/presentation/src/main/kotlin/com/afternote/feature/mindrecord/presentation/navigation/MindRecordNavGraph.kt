@@ -37,7 +37,8 @@ fun NavGraphBuilder.mindRecordNavGraph(actions: MindRecordNavActions) {
         MemorySpaceScreen(onBackClick = actions::onMemorySpaceBack)
     }
     composable<Route.ReceiverMindRecord> {
-        ReceiverMindRecordScreen()
+        // 앱바 뒤로가기를 실제로 붙인다 — 없으면 이 화면이 막다른 곳이 된다 (#614).
+        ReceiverMindRecordScreen(onBackClick = actions::onReceiverMindRecordBack)
     }
     composable<MindRecordRoute.DailyQuestionWriteRoute> {
         DailyQuestionWriteScreen(

@@ -1,6 +1,7 @@
 package com.afternote.feature.onboarding.presentation.login
 
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.domain.error.InvalidLoginCredentialsException
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.domain.usecase.auth.LoginUseCase
 import com.afternote.core.model.Session
@@ -146,5 +147,17 @@ class LoginViewModelReportingTest {
 
             assertTrue("취소는 리포팅 대상이 아니다", reporter.written.isEmpty())
             assertNull("취소를 실패 문구로 띄우면 안 된다", viewModel.uiState.value.errorMessage)
+        }
+
+    @Test
+    fun `자격 거절은 기록하지 않는다 - 비밀번호 오타는 장애가 아니다`() =
+        runTest(dispatcher) {
+            val reporter = FakeErrorReporter()
+            val viewModel = viewModelWith(InvalidLoginCredentialsException(RuntimeException("401")), reporter)
+
+            viewModel.loginWithEmail()
+            advanceUntilIdle()
+
+            assertTrue(reporter.written.isEmpty())
         }
 }

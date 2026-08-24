@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -38,7 +39,10 @@ fun MemorySpaceHeader(
         modifier =
             modifier
                 .fillMaxWidth()
-                // 여기서 주는 패딩이 '유일한' 상단 여백이 됩니다.
+                // 이 화면은 Scaffold 없이 전체 화면 Box 위에 직접 얹히므로 시스템 인셋이 적용되지
+                // 않는다. statusBarsPadding 을 빼면 "돌아가기" 가 상태바 아래로 들어가 터치가
+                // 상태바에 먹혀 실제로 눌리지 않는다 (#559) — 아래 24.dp 는 그 위에 얹는 여백이다.
+                .statusBarsPadding()
                 .padding(top = 24.dp, start = 24.dp),
         horizontalArrangement = Arrangement.spacedBy(13.dp),
     ) {

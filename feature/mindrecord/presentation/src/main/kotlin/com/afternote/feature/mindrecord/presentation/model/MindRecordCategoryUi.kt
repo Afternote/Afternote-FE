@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.afternote.core.model.MindRecordCategory
 import com.afternote.feature.mindrecord.presentation.R
+import com.afternote.core.ui.R as CoreUiR
 
 sealed class MindRecordCategoryUi(
     val category: MindRecordCategory,
@@ -40,7 +41,10 @@ sealed class MindRecordCategoryUi(
         category = MindRecordCategory.DIARY,
         titleRes = R.string.mindrecord_category_diary_title,
         descriptionRes = R.string.mindrecord_category_diary_description,
-        imageRes = R.drawable.mindrecord_diary,
+        // core 정본을 쓴다. 자체본은 pathData 가 문자 단위로 같고 strokeColor 와 반투명
+        // 처리만 달랐는데, 같은 모듈의 나머지 3곳이 이미 core 판을 그대로 쓰고 있어
+        // 한 아이콘이 두 출처로 갈려 있었다 (#634).
+        imageRes = CoreUiR.drawable.core_ui_ic_diary,
     ) {
         @Composable
         override fun DayIndicator(

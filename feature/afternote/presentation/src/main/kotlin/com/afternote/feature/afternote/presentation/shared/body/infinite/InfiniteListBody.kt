@@ -15,7 +15,6 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.home.HomeHeaderSection
-import com.afternote.feature.afternote.presentation.shared.AfternoteCategory
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.AfternoteListContent
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
 import kotlinx.coroutines.flow.flowOf
@@ -23,9 +22,9 @@ import kotlinx.coroutines.flow.flowOf
 @Composable
 fun InfiniteListBody(
     items: LazyPagingItems<ListItemUiModel>,
-    selectedCategory: AfternoteCategory,
-    onCategorySelected: (AfternoteCategory) -> Unit,
-    onListItemClick: (id: String, type: AfternoteType) -> Unit,
+    selectedCategory: AfternoteType?,
+    onCategorySelected: (AfternoteType?) -> Unit,
+    onListItemClick: (id: Long, type: AfternoteType) -> Unit,
     modifier: Modifier = Modifier,
     nextStepText: String = "",
     onNextStepClick: () -> Unit = {},
@@ -57,21 +56,21 @@ private fun InfiniteListBodyPreview() {
                 PagingData.from(
                     listOf(
                         ListItemUiModel(
-                            id = "1",
+                            id = 1L,
                             serviceName = "인스타그램",
                             date = "2023.11.24",
                             iconResId = R.drawable.feature_afternote_img_insta_pattern,
                             type = AfternoteType.SOCIAL_NETWORK,
                         ),
                         ListItemUiModel(
-                            id = "2",
+                            id = 2L,
                             serviceName = "페이스북",
                             date = "2023.11.25",
                             iconResId = R.drawable.feature_afternote_img_insta_pattern,
                             type = AfternoteType.SOCIAL_NETWORK,
                         ),
                         ListItemUiModel(
-                            id = "3",
+                            id = 3L,
                             serviceName = "갤러리",
                             date = "2023.11.26",
                             iconResId = R.drawable.feature_afternote_img_insta_pattern,
@@ -85,7 +84,7 @@ private fun InfiniteListBodyPreview() {
                 "가족들의 '주거래 은행' 정보를\n" +
                     "입력하신 건 확인하셨나요?",
             items = items,
-            selectedCategory = AfternoteCategory.ALL,
+            selectedCategory = null,
             onCategorySelected = {},
             onListItemClick = { _, _ -> },
         )

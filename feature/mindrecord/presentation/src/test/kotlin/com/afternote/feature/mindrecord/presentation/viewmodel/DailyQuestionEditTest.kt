@@ -150,6 +150,8 @@ class DailyQuestionEditTest {
             handle,
             repository,
             PhotoUploadRepository { _, _ -> error("업로드는 이 시나리오에서 호출되면 안 됨") },
+            // 툴바 카운트는 이 테스트의 관심사가 아니다 — 같은 저장소를 넘겨 0건으로 둔다 (#769).
+            noopDraftLoader(),
         )
     }
 
@@ -188,20 +190,22 @@ class DailyQuestionEditTest {
             )
         }
 
-        override suspend fun create(payload: DailyQuestionCreatePayload): Result<Unit> {
+        override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> {
             createCalls++
-            return Result.success(Unit)
+            return Result.success(CREATED_ID)
         }
 
         override suspend fun update(
             id: Long,
             payload: DailyQuestionUpdatePayload,
-        ): Result<Unit> {
+        ): Result<Long> {
             updatedIds += id
             updatedPayloads += payload
-            return Result.success(Unit)
+            return Result.success(id)
         }
 
         override suspend fun delete(id: Long): Result<Unit> = error("delete 는 이 시나리오에서 호출되면 안 됨")
     }
 }
+
+private const val CREATED_ID = 1L
