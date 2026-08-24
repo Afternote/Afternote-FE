@@ -26,31 +26,31 @@ import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
-import com.afternote.feature.afternote.domain.model.receiver.AfterNoteListItem
-import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResult
-import com.afternote.feature.afternote.domain.model.receiver.ReceivedAccountCredentials
-import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
-import com.afternote.feature.afternote.domain.model.receiver.ReceivedExportBundle
-import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
 import com.afternote.feature.afternote.presentation.R
-import com.afternote.feature.afternote.presentation.receiver.deliveryverification.MasterKeyScreen
-import com.afternote.feature.afternote.presentation.receiver.deliveryverification.MasterKeyViewModel
-import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailRoute
-import com.afternote.feature.afternote.presentation.receiver.detail.ReceivedAfternoteDetailViewModel
-import com.afternote.feature.afternote.presentation.receiver.recordsbox.ReceivedRecordsScreen
-import com.afternote.feature.afternote.presentation.receiver.recordsbox.ReceivedRecordsViewModel
-import com.afternote.feature.afternote.presentation.receiver.recordsbox.SenderRegistrationScreen
-import com.afternote.feature.afternote.presentation.receiver.recordsbox.SenderRegistrationViewModel
-import com.afternote.feature.afternote.presentation.receiver.recordsbox.SenderRegistry
-import com.afternote.feature.afternote.presentation.receiver.summary.ReceiverAfterNoteScreen
-import com.afternote.feature.afternote.presentation.receiver.summary.ReceiverDownloadAllEvent
-import com.afternote.feature.afternote.presentation.receiver.summary.ReceiverDownloadAllViewModel
+import com.afternote.feature.receiver.domain.model.AfterNoteListItem
+import com.afternote.feature.receiver.domain.model.AfterNotesListResult
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
+import com.afternote.feature.receiver.domain.model.ReceivedAccountCredentials
+import com.afternote.feature.receiver.domain.model.ReceivedAfternoteDetail
+import com.afternote.feature.receiver.domain.model.ReceivedExportBundle
 import com.afternote.feature.receiver.domain.model.ReceiverAuthPresignedUrl
 import com.afternote.feature.receiver.domain.model.ReceiverEmailAuthResult
 import com.afternote.feature.receiver.domain.model.ReceiverIdentity
 import com.afternote.feature.receiver.domain.model.SenderMessageInfo
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
+import com.afternote.feature.receiver.domain.repository.ReceiverRepository
+import com.afternote.feature.receiver.presentation.deliveryverification.MasterKeyScreen
+import com.afternote.feature.receiver.presentation.deliveryverification.MasterKeyViewModel
+import com.afternote.feature.receiver.presentation.detail.ReceivedAfternoteDetailRoute
+import com.afternote.feature.receiver.presentation.detail.ReceivedAfternoteDetailViewModel
+import com.afternote.feature.receiver.presentation.recordsbox.ReceivedRecordsScreen
+import com.afternote.feature.receiver.presentation.recordsbox.ReceivedRecordsViewModel
+import com.afternote.feature.receiver.presentation.recordsbox.SenderRegistrationScreen
+import com.afternote.feature.receiver.presentation.recordsbox.SenderRegistrationViewModel
+import com.afternote.feature.receiver.presentation.recordsbox.SenderRegistry
+import com.afternote.feature.receiver.presentation.summary.ReceiverAfterNoteScreen
+import com.afternote.feature.receiver.presentation.summary.ReceiverDownloadAllEvent
+import com.afternote.feature.receiver.presentation.summary.ReceiverDownloadAllViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
@@ -61,6 +61,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import com.afternote.feature.afternote.presentation.R as AfternoteFeatureR
 
 @RunWith(AndroidJUnit4::class)
 class ReceiverAdvancedAndroidTest {
@@ -236,14 +237,14 @@ class ReceiverAdvancedAndroidTest {
 
         confirmDownload()
         composeRule.waitUntil(timeoutMillis = 5_000) {
-            viewModel.uiState.value.errorMessageRes == R.string.receiver_download_all_failed
+            viewModel.uiState.value.errorMessageRes == AfternoteFeatureR.string.receiver_download_all_failed
         }
         assertEquals(1, repository.downloadCalls)
         assertEquals(0, repository.savedBundles.size)
 
         confirmDownload()
         composeRule.waitUntil(timeoutMillis = 5_000) {
-            viewModel.uiState.value.errorMessageRes == R.string.receiver_download_all_save_failed
+            viewModel.uiState.value.errorMessageRes == AfternoteFeatureR.string.receiver_download_all_save_failed
         }
         assertEquals(2, repository.downloadCalls)
         assertEquals(listOf(saveFailureBundle), repository.savedBundles)

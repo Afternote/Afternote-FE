@@ -93,6 +93,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.time.LocalDate
 import java.util.concurrent.atomic.AtomicInteger
+import com.afternote.feature.afternote.presentation.R as AfternoteFeatureR
 
 @RunWith(AndroidJUnit4::class)
 class AfternoteAuthorExtendedAndroidTest {
@@ -413,7 +414,7 @@ private fun AuthorDetailForDelete(
             is AfternoteDetailDeleteResult.Failed -> {
                 val message =
                     resources.getString(
-                        result.messageRes ?: R.string.afternote_detail_delete_failed,
+                        result.messageRes ?: AfternoteFeatureR.string.afternote_detail_delete_failed,
                     )
                 scope.launch { snackbarHostState.showSnackbar(message) }
                 viewModel.onDeleteResultConsumed()
