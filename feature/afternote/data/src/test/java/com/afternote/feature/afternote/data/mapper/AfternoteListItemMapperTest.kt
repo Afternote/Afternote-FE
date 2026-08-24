@@ -10,7 +10,7 @@ import org.junit.Test
  * 작성자 목록 DTO→[com.afternote.feature.afternote.domain.model.author.ListItem] 매핑 +
  * 공유 헬퍼([formatDateFromServer]·[categoryToAfternoteType])의 경계 동작을 toDomain 경유로 검증.
  */
-class AfternoteListItemDtoToDomainTest {
+class AfternoteListItemMapperTest {
     @Test
     fun `toDomain - 필드와 Long id를 그대로 매핑`() {
         val result =

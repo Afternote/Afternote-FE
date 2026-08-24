@@ -4,7 +4,6 @@ import com.afternote.feature.afternote.domain.AfternoteType
 
 /**
  * 서버 `category`(백엔드 `AfternoteCategoryType`) 값의 정본 — 도메인·화면은 [AfternoteType] 만 다룬다.
- * 서버가 정의하지 않은 종류(BUSINESS: Afternote-BE#110, ESTATE: #491)는 여기 없고, 보내면 400 이다.
  */
 private val serverCategoryByType: Map<AfternoteType, String> =
     mapOf(
@@ -23,3 +22,6 @@ fun afternoteTypeFromServerCategory(value: String): AfternoteType? {
     if (normalized == LEGACY_MEMORIAL_CATEGORY) return AfternoteType.MEMORIAL
     return serverCategoryByType.entries.firstOrNull { it.value == normalized }?.key
 }
+
+/** 서버 `category` → [AfternoteType]. 대응이 없으면 [AfternoteType.SOCIAL_NETWORK] 로 폴백한다. */
+fun categoryToAfternoteType(category: String): AfternoteType = afternoteTypeFromServerCategory(category) ?: AfternoteType.SOCIAL_NETWORK

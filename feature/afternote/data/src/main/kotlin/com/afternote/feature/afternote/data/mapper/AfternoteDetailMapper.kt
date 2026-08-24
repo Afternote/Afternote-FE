@@ -1,13 +1,10 @@
-package com.afternote.feature.afternote.data.mapper.response
+package com.afternote.feature.afternote.data.mapper
 
 import com.afternote.feature.afternote.data.dto.AfternoteCredentialsDto
 import com.afternote.feature.afternote.data.dto.AfternoteDetailDto
 import com.afternote.feature.afternote.data.dto.AfternoteDetailReceiverDto
 import com.afternote.feature.afternote.data.dto.AfternotePlaylistDto
 import com.afternote.feature.afternote.data.dto.AfternoteSongDto
-import com.afternote.feature.afternote.data.mapper.categoryToAfternoteType
-import com.afternote.feature.afternote.data.mapper.formatDateFromServer
-import com.afternote.feature.afternote.data.mapper.toLeaveMessageBlocks
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.domain.model.author.DetailReceiver
@@ -16,7 +13,7 @@ import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialDetail
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
 
-fun AfternoteDetailDto.toDetailDomain(): Detail =
+fun AfternoteDetailDto.toDomain(): Detail =
     Detail(
         id = afternoteId,
         category = category,
