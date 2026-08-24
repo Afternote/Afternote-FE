@@ -22,6 +22,7 @@ dependencies {
 
     testImplementation(libs.coroutines.test)
 
+    // 컴파일된 리소스로 문구를 검증한다 — aapt2 의 앞뒤 공백 제거는 소스 XML 만 봐서는 잡히지 않는다 (#732).
     // 매퍼가 android.util.Log 를 타 JVM 단위 테스트로는 돌지 않는다 (#751).
     testImplementation(libs.robolectric)
 }
