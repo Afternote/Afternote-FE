@@ -1,5 +1,26 @@
 # Afternote-FE
 
+애프터노트 안드로이드 앱 — Kotlin · Jetpack Compose · Hilt 멀티모듈.
+
+```
+app/          진입점 · 네비게이션 · androidTest
+core/         common · data · datastore · domain · model · network · ui
+feature/      afternote · mindrecord · onboarding · receiver · setting · timeletter
+              (각 data · domain · presentation) + home/presentation · timeletter/res
+konsist/      아키텍처 규칙 테스트
+```
+
+## 문서
+
+| 문서 | 내용 |
+|---|---|
+| [docs/release/distribution.md](docs/release/distribution.md) | 비개발자 APK 배포 (Firebase App Distribution) |
+| [docs/testing/screenshot.md](docs/testing/screenshot.md) | Compose Preview 스크린샷 baseline (docker) |
+| [docs/qa/status.md](docs/qa/status.md) | QA 현황 · 회차 기록 · 커버리지 |
+| [docs/qa/assumptions.md](docs/qa/assumptions.md) | 시안 · 명세에 없어 판단으로 정한 것 |
+
+---
+
 # 🚀 신규 팀원 빌드 셋업
 
 `local.properties` 는 `.gitignore` 에 등록되어 있어 **git 으로 받아지지 않는다**. clone 직후 다음 두 키를 루트 `local.properties` 에 직접 채워야 카카오·구글 로그인이 정상 동작한다. 추가로 아래 **공유 debug keystore** 섹션까지 마치면 카카오 키 해시를 본인 머신용으로 따로 등록할 필요가 없다.
@@ -57,252 +78,36 @@ debug 빌드는 기본적으로 머신마다 다른 `~/.android/debug.keystore` 
 keytool -exportcert -alias afternote-debug-shared -keystore ~/afternote-debug-shared.jks | openssl sha1 -binary | openssl base64
 ```
 
-# 📦 비개발자 APK 배포 (Firebase App Distribution)
+---
 
-디자이너·PM·QA·외부 베타테스터에게 release APK 를 자동 배포하는 흐름. Firebase 프로젝트 `afternote-android` + 테스터 그룹 `afternote` 사용.
+# 🧭 개발 규칙
 
-## 셋업 (1hyok 만 1회 — 신규 인계자도 동일)
+## 브랜치
 
-1. **Release keystore 생성** (분실 시 앱 업데이트 영구 불가 → 1Password / iCloud 등 2곳 이상 백업 필수)
+`<type>/<이슈번호>` 형식을 쓴다. 예: `fix/910`, `ci/1028`, `perf/996`
 
-    ```bash
-    keytool -genkeypair -v \
-      -keystore ~/afternote-release.jks \
-      -keyalg RSA -keysize 4096 -validity 10000 \
-      -alias afternote-release
-    ```
+`feat` · `fix` · `refactor` · `test` · `chore` · `docs` · `ci` · `build` · `perf` · `security` · `release`
 
-2. **`local.properties` 끝에 4개 키 추가** (signing config 가 읽음)
+## 커밋
 
-    ```properties
-    RELEASE_STORE_FILE=/Users/<you>/afternote-release.jks
-    RELEASE_STORE_PASSWORD=<keystore 비밀번호>
-    RELEASE_KEY_ALIAS=afternote-release
-    RELEASE_KEY_PASSWORD=<key 비밀번호>
-    ```
+Conventional Commits — `type(scope): 한글 설명`
 
-3. **`google-services.json` 배치** — Firebase Console → 프로젝트 설정 → 일반 → Android 앱 `com.afternote.afternote_fe` 카드에서 다운로드 → `app/google-services.json`
-
-4. **Firebase CLI 설치 + 인증** (자동 업로드용)
-
-    ```bash
-    npm install -g firebase-tools
-    firebase login
-    ```
-
-5. **콘솔에 신규 keystore SHA 등록** (배포 받은 사람의 카카오/구글 로그인 동작 위해)
-   - Release SHA-1 추출: `keytool -list -v -keystore ~/afternote-release.jks -alias afternote-release | grep SHA1`
-   - 카카오 키 해시 추출: `keytool -exportcert -alias afternote-release -keystore ~/afternote-release.jks | openssl sha1 -binary | openssl base64`
-   - **Kakao Developers** → 앱 → 플랫폼 키 → Android → 키 해시 추가
-   - **Firebase Console** → 프로젝트 설정 → Android 앱 → SHA 인증서 지문 추가
-
-## 배포 (매 회)
-
-모든 배포의 릴리스 노트에는 `포함 이슈`와 `QA 포인트`가 필요하다. 둘 중 하나라도 비어 있거나 포함 이슈에 `#123` 형식의 번호가 없으면 Firebase 업로드 전에 실패한다.
-
-### 배포 판단 기준
-
-배포 시점은 일 단위 주기가 아니라 `develop`에 머지된 변경 묶음의 크기와 위험도로 정한다.
-
-- 인증·온보딩·데이터 손실·API 계약·빌드/서명처럼 영향이 큰 변경은 다른 변경을 기다리지 않고 단독 배포한다.
-- 작은 변경은 하나의 QA 세션에서 회귀 원인을 구분할 수 있는 범위까지만 묶는다. 서로 다른 사용자 흐름을 한꺼번에 확인해야 하거나 함께 롤백하기 어려워지는 시점이 배포 경계다.
-- 수정 결과를 테스터가 확인해야 하는 결함이 머지되면, 묶음 크기와 관계없이 확인 가능한 빌드를 배포한다.
-- 현재 묶음의 모든 QA 포인트가 통과한 뒤 `develop`을 `main`으로 승격한다.
-
-### 릴리스 PR 범위 자동 산출
-
-배포 시점은 위 기준에 따라 사람이 정한다 — `develop` → `main` 릴리스 PR을 여는 것이 곧 배포 결정이다.
-
-릴리스 PR이 열리거나 head가 갱신되면 [`release-scope.yml`](.github/workflows/release-scope.yml)이 마지막 성공 배포 이후 `develop`에 머지된 PR과 그 연결 이슈를 모아 PR 본문의 `## 포함 이슈`를 채운다. head가 움직일 때마다 다시 채우므로 머지 직전에 목록을 손으로 대조할 필요가 없다.
-
-`## QA 포인트`는 비어 있을 때만 구성 PR 본문에서 모은 초안으로 채우고, 사람이 쓴 문장이 있으면 건드리지 않는다. 두 섹션은 main push 시 그대로 릴리스 노트가 되므로 배포 전에 테스터가 실행할 문장으로 다듬는다.
-
-별도 API나 유료 AI를 호출하지 않으며 기존 GitHub Actions 실행량만 사용한다. Actions의 **Collect Release Scope**에서 릴리스 PR 번호를 입력해 다시 산출할 수도 있다.
-
-### QA 배포 — `develop` → Firebase App Distribution (수동, 기본 경로)
-
-GitHub Actions의 **Release Distribution**에서 `Run workflow`를 누르고 ref를 `develop`으로 선택한 뒤 다음 값을 입력한다.
-
-- `issue_numbers`: 포함된 이슈 번호. 예: `#716, #723`
-- `qa_points`: 확인할 동작과 기대 결과. 여러 건은 세미콜론(`;`)으로 구분
-
-워크플로가 위 입력을 릴리스 노트로 만들어 APK를 빌드하고 Firebase App Distribution의 `afternote` 그룹에 배포한다.
-
-### 릴리스 후보 배포 — `main` → Firebase App Distribution (자동)
-
-여기서 릴리스 후보 배포는 검증할 `main` 빌드를 Firebase 테스터에게 전달하는 단계이며, Play Store 프로덕션 릴리스를 뜻하지 않는다.
-
-`develop` → `main` 릴리스 PR 본문에 다음 섹션을 채운다.
-
-```markdown
-## 포함 이슈
-- #716
-- #723
-
-## QA 포인트
-- 오프라인에서 오류 안내와 재시도 수단이 표시되는지 확인
-- 주차를 변경한 뒤 최신 리포트가 표시되는지 확인
+```
+fix(mindrecord): 주차 조회 실패 뒤에도 화면 안에서 복구할 수 있게 한다
+refactor(core): core:di 모듈 삭제 — 바인딩을 구현 옆으로 옮긴다
 ```
 
-PR이 `main`에 머지되면 워크플로가 두 섹션을 릴리스 노트로 사용한다. 연결된 PR이나 필수 섹션을 찾지 못하면 배포하지 않는다.
+## 코드 스타일
 
-CI 가 사용하는 GitHub Secrets (Settings → Secrets and variables → Actions):
+ktlint 가 강제한다. 커밋 전 `./gradlew ktlintFormat` 을 돌린다.
 
-| 키 | 용도 |
-|---|---|
-| `RELEASE_STORE_FILE_B64` | release keystore 파일 (`~/afternote-release.jks`) 의 base64 인코딩 |
-| `RELEASE_STORE_PASSWORD` | keystore 비밀번호 |
-| `RELEASE_KEY_ALIAS` | key alias (`afternote-release`) |
-| `RELEASE_KEY_PASSWORD` | key 비밀번호 |
-| `FIREBASE_SERVICE_ACCOUNT_JSON` | App Distribution Admin 권한 부여된 service account JSON 원문 |
-| `KAKAO_NATIVE_APP_KEY` · `GOOGLE_WEB_CLIENT_ID` · `GOOGLE_SERVICES_JSON_B64` | 배포 APK용 실서비스 앱 설정 (`release-distribution.yml` 전용) |
+## PR · 머지
 
-> base64 인코딩: `base64 -i ~/afternote-release.jks | pbcopy` (macOS)
+이슈 · PR 템플릿은 [`.github/`](.github/) 에 있다.
 
-PR 검증용 lint·unit-test·screenshot은 repository secret 대신
-`.github/actions/setup-ci-config`가 만드는 결정적 CI 전용 placeholder를 사용한다. 이 fixture는
-배포에 사용할 수 없으며, `release-distribution.yml`은 계속 승인된 환경의 위 secret만 사용한다.
+`develop` 머지 요건은 **승인 1건 + 필수 체크 8종**이다.
 
-### 로컬 — 1hyok 머신 (fallback / 긴급 시)
-
-```bash
-EVENT_NAME=workflow_dispatch \
-ISSUE_NUMBERS="#716, #723" \
-QA_POINTS="오프라인 오류 안내 확인;주차 변경 후 재시도 확인" \
-SOURCE_REF=develop \
-SOURCE_SHA="$(git rev-parse HEAD)" \
-bash .github/scripts/render-distribution-release-notes.sh /tmp/afternote-release-notes.txt
-
-./gradlew assembleRelease appDistributionUploadRelease \
-  --releaseNotesFile=/tmp/afternote-release-notes.txt
-```
-
-→ 동일하게 APK 빌드 + Firebase 업로드. CI 장애 시에만 사용한다.
-
-> 같은 `versionCode` 로 재업로드하면 기존 release 갱신. 새 release 만들려면 `app/build.gradle.kts` 의 `versionCode` 증가.
-
-## 테스터 관리
-
-- 추가/제거: Firebase Console → App Distribution → 테스터 및 그룹 → `afternote` 그룹 편집
-- 신규 테스터는 첫 초대 이메일에서 **App Tester** 앱 설치 안내를 받음 → 이후 빌드는 자동 알림
-
-# 📸 Compose Preview Screenshot Testing (docker baseline)
-
-`Compose Preview Screenshot Testing` 의 anti-aliasing / font hinting / scale 등 host 환경 의존 렌더링 차이로 CI rendered PNG 를 baseline 으로 교체하는 ping-pong 이 발생해 왔다 (PR [#302](https://github.com/Afternote/Afternote-FE/pull/302) / [#322](https://github.com/Afternote/Afternote-FE/pull/322)). 본 리포의 `Dockerfile.screenshot` + `.github/workflows/screenshot.yml` 의 container 단계가 baseline 생성·검증을 동일 환경에서 수행해 환경 차이 root fix.
-
-## 사전 준비
-
-- Docker Desktop 설치 (로컬 macOS · Linux 모두 동일)
-
-## 로컬 baseline 갱신 (의도된 시각 변경 시)
-
-```bash
-docker build -t afternote-screenshot:latest -f Dockerfile.screenshot .
-docker run --rm -v "$PWD":/workspace -w /workspace afternote-screenshot:latest \
-  ./gradlew :core:ui:updateScreenshotTest \
-            :app:updateScreenshotTest \
-            :feature:onboarding:presentation:updateScreenshotTest \
-            :feature:afternote:presentation:updateScreenshotTest
-```
-
-→ 변경된 PNG 가 각 모듈 `src/screenshotTestDebug/reference/...` 에 갱신. `git add` 후 commit.
-
-## 로컬 baseline 검증 (CI 실패 재현)
-
-```bash
-docker run --rm -v "$PWD":/workspace -w /workspace afternote-screenshot:latest \
-  ./gradlew :core:ui:validateScreenshotTest \
-            :app:validateScreenshotTest \
-            :feature:onboarding:presentation:validateScreenshotTest \
-            :feature:afternote:presentation:validateScreenshotTest
-```
-
-→ baseline 과 docker 환경에서 새로 그린 PNG 비교. 실패 시 `build/outputs/screenshotTest-results/preview/debug/diffs/` 에서 diff PNG 확인.
-
-## 호스트 직접 실행은 더 이상 권장하지 않음
-
-`./gradlew :<module>:updateScreenshotTest` 를 host 에서 직접 실행하면 macOS / Linux / JDK 마이너 버전 / 폰트 캐시 차이로 CI 와 baseline 이 어긋난다. docker 환경 통일이 root fix.
-
-# 💻 코딩 컨벤션
-
-> **네이밍 컨벤션**
->
-- 네이밍 항목 순서는 android-style-guide를 준수한다.
-- 단, Layout을 제외한 네이밍은 CamelCase를 사용한다.
-    - 예시) `android:id="@+id/tvPostNovelTitle"`
-    - 자세한 정보는 아래 링크를 참고하였다.
-
-[](https://github.com/PRNDcompany/android-style-guide/blob/main/Resource.md)
-
-- Coding Style은 객체지향 생활 체조 원칙을 준수한다.
-    - 자세한 정보는 아래 링크를 참고하였다.
-
-[[Java] 객체지향 생활 체조 원칙 9가지 (from 소트웍스 앤솔러지)](https://jamie95.tistory.com/99)
-
-# 🦥 깃 전략 및 컨벤션
-
-> **브랜치 전략**
->
-- GitHub Flow를 사용한다.
-    - 수시로 코드가 변하는 앱잼의 특성을 고려하였다.
-    - 브랜치 이름은 다음과 같이 언더바를 사용한다.
-        - 예시) `feat/post_novel`
-    - 자세한 정보는 아래 링크를 참고하였다.
-
-[[GIT] 📈 깃 브랜치 전략 정리 - Github Flow / Git Flow](https://inpa.tistory.com/entry/GIT-⚡️-github-flow-git-flow-📈-브랜치-전략)
-
-> **Commit 컨벤션**
->
-- 사용할 커밋 타입은 다음과 같다.
-    - 🍯 [FEAT] 새로운 기능 추가
-    - ♻️ [REFACTOR] 코드 리팩토링
-    - 🔨 [FIX] 버그 수정
-    - 🚧 [BUILD] 빌드 업무 수정, 패키지 매니저 수정
-- 커밋 메시지 예시는 다음과 같다.
-    - 예시) `feat: color system 구성`
-- 커밋 메시지는 한글로 작성하고, 이슈 번호는 별도로 표기하지 않는다.
-
-> **Issue 컨벤션**
->
-- 제목 예시는 다음과 같다.
-    - 예시) `feat: library view 구현`
-
-```kotlin
-## ⚔️ Kind (Required)    <!-- 이슈 종류를 선택해주세요 -->
-`FEATURE` `BUG`
-
-## 📜 Overview (Required)    <!-- 이슈에 대해 간략하게 설명해주세요 -->
-
-> **✔️ To do**    <!-- 진행할 작업에 대해 적어주세요 -->
-> - [ ] color system 구성 _(예시)_
-
-## 📍 Note (Optional) <!-- 특이사항을 적어주세요 -->
-```
-
-> **PR 컨벤션**
->
-- 제목 예시는 다음과 같다.
-    - 예시) `feat: bottomNavigation color system 적용`
-
-```kotlin
-## 📌𝘐𝘴𝘴𝘶𝘦𝘴
-- closed #
-
-## 📎𝘞𝘰𝘳𝘬 𝘋𝘦𝘴𝘤𝘳𝘪𝘱𝘵𝘪𝘰𝘯
-- 
-- 
-
-## 📷𝘚𝘤𝘳𝘦𝘦𝘯𝘴𝘩𝘰𝘵
-
-## 💬𝘛𝘰 𝘙𝘦𝘷𝘪𝘦𝘸𝘦𝘳𝘴
-```
-
-> **Code Review 컨벤션 및 추가정보**
->
-- Merge는 리뷰 인원 2명의 승인을 받는다.
-- 리뷰 인원으로 할당받은 사람은 12시간 이내에 코드리뷰를 완료한다.
-- RCA룰을 통해 Prefix를 적고, 코드 리뷰 반영의 우선순위를 표시한다.
-    - R (Request Changes) : 적극적으로 반영을 고려해주세요.
-    - C (Comment) : 웬만하면 반영해주세요.
-    - A (Approve) : 반영해도 좋고, 넘어가도 좋습니다. 사소한 의견입니다.
-        - 예시) `R: @Data 어노테이션 사용은 지양해야 할 것 같습니다. 참고자료 별첨합니다.`
+| 필수 체크 |
+|---|
+| `guard` · `Run Unit Tests` · `Check Code Quality (Ktlint)` · `Check Project Issues (Android Lint)` |
+| `Validate Compose Preview Screenshots` · `Repository Quality` · `Analyze (java-kotlin)` · `Analyze (actions)` |
