@@ -12,7 +12,7 @@ fun AfternoteListItemDto.toDomain() =
         id = afternoteId,
         serviceName = title,
         date = formatDateFromServer(createdAt),
-        type = categoryToAfternoteType(type),
+        type = categoryToAfternoteType(category),
     )
 
 fun List<AfternoteListItemDto>.toDomainList() = map { it.toDomain() }
