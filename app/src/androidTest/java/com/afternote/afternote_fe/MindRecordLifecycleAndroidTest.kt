@@ -93,7 +93,7 @@ class MindRecordLifecycleAndroidTest {
 
         composeRule.setContent {
             AfternoteTheme {
-                DiaryScreen(viewModel = viewModel)
+                DiaryScreen(viewModel = viewModel, onItemClick = { _, _ -> })
             }
         }
 
