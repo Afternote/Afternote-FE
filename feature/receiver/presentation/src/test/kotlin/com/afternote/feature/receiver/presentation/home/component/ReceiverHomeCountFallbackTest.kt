@@ -1,6 +1,7 @@
 package com.afternote.feature.receiver.presentation.home.component
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -45,8 +46,9 @@ class ReceiverHomeCountFallbackTest {
 
         composeRule.onNodeWithText("데일리 질문").assertIsDisplayed()
         composeRule.onNodeWithText("일기").assertIsDisplayed()
-        // 두 카드의 개수 자리가 모두 대시다.
-        composeRule.onAllNodesWithText("–")[1].assertIsDisplayed()
+        // 두 카드의 개수 자리가 «모두» 대시다 — 인덱스 하나만 보면 한 장만 대시로 남는
+        // 회귀를 놓치고, 노드 순서가 바뀌면 조용히 다른 것을 본다.
+        composeRule.onAllNodesWithText("–").assertCountEquals(2)
     }
 
     @Test

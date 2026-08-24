@@ -31,14 +31,10 @@ fun MindRecordSection(
         title = stringResource(R.string.receiver_home_mindrecord_section_title),
         description = stringResource(R.string.receiver_home_mindrecord_section_desc),
         countLine =
-            if (summary == null) {
-                unavailableCountLine(suffix = "마음의 기록이 있습니다.")
-            } else {
-                rememberCountLine(
-                    prefix = "${summary.totalCount}개 ",
-                    suffix = "마음의 기록이 있습니다.",
-                )
-            },
+            rememberCountLine(
+                prefix = "${countText(summary?.totalCount)}개 ",
+                suffix = "마음의 기록이 있습니다.",
+            ),
         buttonText = stringResource(R.string.receiver_home_mindrecord_section_button),
         onButtonClick = onGoClick,
         middleContent = {

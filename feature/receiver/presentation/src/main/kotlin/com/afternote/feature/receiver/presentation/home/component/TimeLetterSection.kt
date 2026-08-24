@@ -21,14 +21,10 @@ fun TimeLetterSection(
         title = stringResource(R.string.receiver_home_timeletter_section_title),
         description = stringResource(R.string.receiver_home_timeletter_section_desc),
         countLine =
-            if (totalCount == null) {
-                unavailableCountLine(suffix = "라이프 이벤트 레터가 있습니다.")
-            } else {
-                rememberCountLine(
-                    prefix = "${totalCount}개 ",
-                    suffix = "라이프 이벤트 레터가 있습니다.",
-                )
-            },
+            rememberCountLine(
+                prefix = "${countText(totalCount)}개 ",
+                suffix = "라이프 이벤트 레터가 있습니다.",
+            ),
         buttonText = stringResource(R.string.receiver_home_timeletter_section_button),
         onButtonClick = onGoClick,
     )
