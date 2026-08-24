@@ -21,6 +21,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      # base(develop)·head(PR) 스냅샷이 같은 correlator 라야 compare API 가 둘을 짝짓는다.
+      # job 이름을 따라 갈리면 develop base PR 에서 base 가 0 건으로 보여 그 PR 의 의존성
+      # 전량이 «신규 도입» 으로 계산되고, 기존 의존성의 취약점이 그 PR 탓으로 걸린다 (#1009).
+      GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR: afternote-gradle-dependency-graph
     steps:
       - name: Clone repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -48,6 +53,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      # base(develop)·head(PR) 스냅샷이 같은 correlator 라야 compare API 가 둘을 짝짓는다.
+      # job 이름을 따라 갈리면 develop base PR 에서 base 가 0 건으로 보여 그 PR 의 의존성
+      # 전량이 «신규 도입» 으로 계산되고, 기존 의존성의 취약점이 그 PR 탓으로 걸린다 (#1009).
+      GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR: afternote-gradle-dependency-graph
     steps:
       - name: Clone repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
