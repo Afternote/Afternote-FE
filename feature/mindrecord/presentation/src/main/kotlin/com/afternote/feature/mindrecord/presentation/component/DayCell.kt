@@ -43,8 +43,8 @@ fun DayCell(
     // 선택은 오늘보다 우선한다 — 오늘 칸을 골랐을 때도 "고른 칸" 임이 보여야 한다 (#724).
     val bgColor =
         when {
-            isSelected -> Color(0xFF1A1A1A)
-            model.state == DayState.TODAY -> Color(0xFF1A1A1A)
+            isSelected -> AfternoteDesign.colors.gray9
+            model.state == DayState.TODAY -> AfternoteDesign.colors.gray9
             else -> Color.Transparent
         }
     val textColor =

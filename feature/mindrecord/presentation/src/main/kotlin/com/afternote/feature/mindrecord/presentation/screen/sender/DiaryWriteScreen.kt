@@ -116,6 +116,7 @@ fun DiaryWriteScreen(
             )
         },
         modifier = modifier,
+        containerColor = Color.Transparent,
     ) { paddingValues ->
         Column(
             modifier =
@@ -277,6 +278,7 @@ fun DiaryWriteScreen(
                     onValueChange = viewModel::onContentChanged,
                     onSaveDraftClick = { viewModel.submit(isDraft = true) },
                     onDraftCountClick = onDraftListClick,
+                    draftCount = uiState.draftCount,
                     onImagePicked = viewModel::uploadImage,
                 )
             }

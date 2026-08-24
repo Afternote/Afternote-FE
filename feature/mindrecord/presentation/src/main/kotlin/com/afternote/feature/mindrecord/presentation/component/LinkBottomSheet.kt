@@ -14,11 +14,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,8 +29,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.afternote.core.ui.AfternoteTextField
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R
@@ -49,7 +51,8 @@ fun LinkBottomSheet(
     onConfirm: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var url by remember { mutableStateOf("") }
+    // core 정본이 `TextFieldState` 를 받는다. 상태 소유자가 이 로컬 하나뿐이라 국소 변경이다 (#634).
+    val urlState = rememberTextFieldState()
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -67,9 +70,8 @@ fun LinkBottomSheet(
         },
     ) {
         LinkSheetContent(
-            url = url,
-            onUrlChange = { url = it },
-            onConfirm = { onConfirm(url) },
+            urlState = urlState,
+            onConfirm = { onConfirm(urlState.text.toString()) },
             modifier = modifier,
         )
     }
@@ -77,11 +79,13 @@ fun LinkBottomSheet(
 
 @Composable
 private fun LinkSheetContent(
-    url: String,
-    onUrlChange: (String) -> Unit,
+    urlState: TextFieldState,
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // core 정본은 TextFieldState 를 들고 있다 — 입력값 판정은 그 상태에서 읽는다 (#634·#722).
+    val url = urlState.text.toString()
+
     Column(
         modifier =
             modifier
@@ -112,26 +116,12 @@ private fun LinkSheetContent(
             ConfirmPill(onClick = onConfirm, enabled = url.isSupportedLinkUrl())
         }
 
-        OutlinedTextField(
-            value = url,
-            onValueChange = onUrlChange,
-            singleLine = true,
-            placeholder = {
-                Text(
-                    text = stringResource(R.string.mindrecord_link_sheet_placeholder),
-                    style = AfternoteDesign.typography.bodyBase,
-                    color = AfternoteDesign.colors.gray4,
-                )
-            },
-            shape = RoundedCornerShape(8.dp),
-            colors =
-                TextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    focusedIndicatorColor = AfternoteDesign.colors.gray2,
-                    unfocusedIndicatorColor = AfternoteDesign.colors.gray2,
-                ),
-            isError = url.isNotBlank() && !url.isSupportedLinkUrl(),
+        // core 정본을 쓴다. 종전에는 흰 배경 + gray2 indicator + 8dp 코너를 M3 프리미티브로
+        // 다시 적었고, 레포 전체에서 M3 OutlinedTextField 를 쓰는 마지막 자리였다 (#634).
+        AfternoteTextField(
+            state = urlState,
+            placeholder = stringResource(R.string.mindrecord_link_sheet_placeholder),
+            keyboardType = KeyboardType.Uri,
             modifier = Modifier.fillMaxWidth(),
         )
 
@@ -175,8 +165,7 @@ private fun ConfirmPill(
 private fun LinkBottomSheetPreview() {
     AfternoteTheme {
         LinkSheetContent(
-            url = "",
-            onUrlChange = {},
+            urlState = rememberTextFieldState(),
             onConfirm = {},
         )
     }

@@ -41,6 +41,7 @@ import com.afternote.feature.mindrecord.domain.model.Diary
 import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DiaryList
 import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
+import com.afternote.feature.mindrecord.domain.model.EmotionAnalysis
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
@@ -61,7 +62,9 @@ import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionList
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionWriteViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryWriteViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftListViewModel
+import com.afternote.feature.mindrecord.presentation.viewmodel.MemorySpaceUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.MemorySpaceViewModel
+import com.afternote.feature.mindrecord.presentation.viewmodel.MindRecordDraftLoader
 import com.afternote.feature.mindrecord.presentation.viewmodel.SubmitState
 import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportViewModel
@@ -414,6 +417,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
                 DailyQuestionWriteViewModel(
                     repository = repository,
                     photoUploadRepository = CompletionPhotoUploadRepository,
+                    draftLoader = MindRecordDraftLoader(CompletionDiaryRepository(mutableListOf()), repository),
                 )
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
@@ -458,10 +462,12 @@ class TimeLetterMindRecordCompletionAndroidTest {
                         ),
                     ),
             )
+        val draftDailyQuestionRepository = CompletionDailyQuestionRepository()
         val draftListViewModel =
             DraftListViewModel(
+                loader = MindRecordDraftLoader(repository, draftDailyQuestionRepository),
                 diaryRepository = repository,
-                dailyQuestionRepository = CompletionDailyQuestionRepository(),
+                dailyQuestionRepository = draftDailyQuestionRepository,
             )
         var routedArguments: Pair<Long, String>? = null
         var writeViewModel by mutableStateOf<DiaryWriteViewModel?>(null)
@@ -487,6 +493,8 @@ class TimeLetterMindRecordCompletionAndroidTest {
                                     repository = repository,
                                     photoUploadRepository = CompletionPhotoUploadRepository,
                                     userRepository = FakeUserRepository(),
+                                    draftLoader =
+                                        MindRecordDraftLoader(repository, draftDailyQuestionRepository),
                                 )
                         },
                     )
@@ -534,7 +542,24 @@ class TimeLetterMindRecordCompletionAndroidTest {
 
     @Test
     fun memorySpace_supportedSuccess_opensAndClosesDetailThenNavigatesBack() {
-        val viewModel = MemorySpaceViewModel()
+        val memoryDate = LocalDate.now()
+        val diaryRepository =
+            CompletionDiaryRepository(
+                drafts =
+                    mutableListOf(
+                        Diary(
+                            diaryId = 501L,
+                            title = "추억이 된 하루",
+                            content = "이 순간은 나에게 특별한 의미가 있었습니다.",
+                            date = memoryDate.toString(),
+                            createdAt = memoryDate.toString(),
+                            todayMood = TodayMood.HAPPY,
+                            imageUrl = "https://afternote.test/memory.jpg",
+                            isDraft = false,
+                        ),
+                    ),
+            )
+        val viewModel = MemorySpaceViewModel(diaryRepository, CompletionDailyQuestionRepository())
         var backCalls = 0
 
         composeRule.setContent {
@@ -547,11 +572,15 @@ class TimeLetterMindRecordCompletionAndroidTest {
         }
 
         composeRule.onNodeWithText("MEMORY SPACE").assertIsDisplayed()
-        composeRule.onNodeWithContentDescription("기억 1").performClick()
+        composeRule.waitUntil(timeoutMillis = TIMEOUT) {
+            viewModel.uiState.value is MemorySpaceUiState.Success
+        }
+        composeRule.onNodeWithContentDescription("추억이 된 하루").performClick()
         composeRule
             .onNodeWithText("이 순간은 나에게 특별한 의미가 있었습니다.", substring = true)
             .assertIsDisplayed()
-        composeRule.onNodeWithText("#평온").assertIsDisplayed()
+        // 태그는 사용자가 고른 오늘의 기분 이모지다 — 종전 더미의 `#평온` 은 출처가 없었다 (#559).
+        composeRule.onNodeWithText("#😊").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("닫기").performClick()
         composeRule
             .onNodeWithText("이 순간은 나에게 특별한 의미가 있었습니다.", substring = true)
@@ -763,11 +792,12 @@ private class CompletionDailyQuestionRepository(
         return Result.success(today)
     }
 
-    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Unit> {
+    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> {
         createCalls += payload
+        val createdId = 800L + createCalls.size
         storedAnswers +=
             DailyQuestion(
-                dailyQuestionId = 800L + createCalls.size,
+                dailyQuestionId = createdId,
                 title = today.content,
                 content = payload.content,
                 createdAt = "2026-08-22",
@@ -775,13 +805,13 @@ private class CompletionDailyQuestionRepository(
                 isDraft = payload.isDraft,
             )
         today = today.copy(isAnswered = !payload.isDraft, isDraft = payload.isDraft)
-        return Result.success(Unit)
+        return Result.success(createdId)
     }
 
     override suspend fun update(
         id: Long,
         payload: DailyQuestionUpdatePayload,
-    ): Result<Unit> {
+    ): Result<Long> {
         updateCalls += id to payload
         storedAnswers.replaceAll { answer ->
             if (answer.dailyQuestionId == id) {
@@ -794,7 +824,7 @@ private class CompletionDailyQuestionRepository(
                 answer
             }
         }
-        return Result.success(Unit)
+        return Result.success(id)
     }
 
     override suspend fun delete(id: Long): Result<Unit> {
@@ -918,6 +948,8 @@ private fun emptyWeeklyReport(): WeeklyReport =
         week = emptyList(),
         dailyQuestions = emptyList(),
         emotions = emptyList(),
+        // 이 테스트들은 분석 상태를 보지 않는다 — 완료로 고정한다 (#725).
+        emotionAnalysis = EmotionAnalysis(total = 0, succeeded = 0, pending = 0, failed = 0),
     )
 
 private fun completeWeeklyReport(monday: LocalDate): WeeklyReport =
@@ -931,6 +963,7 @@ private fun completeWeeklyReport(monday: LocalDate): WeeklyReport =
                     diaryId = 91L,
                     day = monday.dayOfMonth,
                     isDiary = true,
+                    countsAsRecord = true,
                     emotion = TodayMood.HAPPY,
                 ),
             ),
@@ -939,7 +972,7 @@ private fun completeWeeklyReport(monday: LocalDate): WeeklyReport =
                 WeeklyReportDailyQuestion(
                     title = "화요일의 질문",
                     content = "화요일의 답변",
-                    date = monday.plusDays(1).toString(),
+                    date = monday.plusDays(1),
                 ),
             ),
         emotions =
@@ -947,4 +980,6 @@ private fun completeWeeklyReport(monday: LocalDate): WeeklyReport =
                 WeeklyReportEmotion(keyword = "가족", percentage = 25),
                 WeeklyReportEmotion(keyword = "감사", percentage = 75),
             ),
+        // 키워드가 나온 완료 상태 — 1건 분석해 1건 성공 (#725).
+        emotionAnalysis = EmotionAnalysis(total = 1, succeeded = 1, pending = 0, failed = 0),
     )

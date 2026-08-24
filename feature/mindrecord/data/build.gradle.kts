@@ -11,5 +11,11 @@ android {
 
 dependencies {
     implementation(projects.feature.mindrecord.domain)
+    // 취소를 다시 던지는 runCatchingCancellable — repository 가 CancellationException 을
+    // Result.failure 로 삼키지 않게 한다 (#670).
+    implementation(projects.core.common)
     implementation(projects.core.network)
+
+    // 취소 전파 회귀 테스트 — runTest 로 Job 취소 시점을 제어한다 (#670).
+    testImplementation(libs.coroutines.test)
 }
