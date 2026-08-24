@@ -44,7 +44,7 @@ import com.afternote.feature.afternote.presentation.author.navigation.model.Afte
 import kotlinx.coroutines.launch
 
 @Composable
-internal fun DetailLoadingContent() {
+fun DetailLoadingContent() {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
@@ -54,7 +54,7 @@ internal fun DetailLoadingContent() {
 }
 
 @Composable
-internal fun DesignPendingDetailContent(onBackClick: () -> Unit) {
+fun DesignPendingDetailContent(onBackClick: () -> Unit) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = Color.Transparent,
@@ -90,7 +90,7 @@ internal fun DesignPendingDetailContent(onBackClick: () -> Unit) {
  *   같은 요청을 다시 보내도 결과가 달라지지 않는 실패에 쓴다.
  */
 @Composable
-internal fun DetailLoadErrorContent(
+fun DetailLoadErrorContent(
     @StringRes messageRes: Int?,
     onBackClick: () -> Unit,
     onRetryClick: (() -> Unit)? = null,
@@ -227,23 +227,19 @@ internal fun ObserveDeleteResult(
 internal fun AfternoteDetailNavigation(
     backStackEntry: NavBackStackEntry,
     onBack: () -> Unit,
-    onNavigateToEditor: (itemId: String) -> Unit,
+    onNavigateToEditor: (itemId: Long) -> Unit,
 ) {
-    val route = backStackEntry.toRoute<AfternoteRoute.DetailRoute>()
-    if (route.itemId.isBlank()) {
-        DesignPendingDetailContent(onBackClick = onBack)
-    } else {
-        AccountDetailRoute(
-            onBack = onBack,
-            onNavigateToEditor = onNavigateToEditor,
-        )
-    }
+    backStackEntry.toRoute<AfternoteRoute.DetailRoute>()
+    AccountDetailRoute(
+        onBack = onBack,
+        onNavigateToEditor = onNavigateToEditor,
+    )
 }
 
 @Composable
 internal fun AfternoteGalleryDetailNavigation(
     onBack: () -> Unit,
-    onNavigateToEditor: (itemId: String) -> Unit,
+    onNavigateToEditor: (itemId: Long) -> Unit,
 ) {
     GalleryDetailRoute(
         onBack = onBack,
@@ -262,7 +258,7 @@ private fun DeleteInProgressOverlayPreview() {
 @Composable
 internal fun AfternoteMemorialDetailNavigation(
     onBack: () -> Unit,
-    onNavigateToEditor: (itemId: String) -> Unit,
+    onNavigateToEditor: (itemId: Long) -> Unit,
 ) {
     MemorialDetailRoute(
         onBack = onBack,
