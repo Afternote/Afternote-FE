@@ -3,11 +3,12 @@ package com.afternote.feature.afternote.data.mapper
 import com.afternote.feature.afternote.data.dto.AfternoteCreateAccountRequestDto
 import com.afternote.feature.afternote.data.dto.AfternoteDetailDto
 import com.afternote.feature.afternote.data.dto.LeaveMessageBlockDto
-import com.afternote.feature.afternote.data.dto.ReceivedAfternoteDetailDto
-import com.afternote.feature.afternote.data.dto.ReceivedAfternoteListDto
 import com.afternote.feature.afternote.data.mapper.response.toDetailDomain
-import com.afternote.feature.afternote.data.mapper.response.toDomain
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
+import com.afternote.feature.receiver.data.dto.ReceivedAfternoteDetailDto
+import com.afternote.feature.receiver.data.dto.ReceivedAfternoteListDto
+import com.afternote.feature.receiver.data.mapper.response.toDomain
+import com.afternote.feature.receiver.data.mapper.toReceiverDomainList
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
