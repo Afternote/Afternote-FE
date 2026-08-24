@@ -15,10 +15,6 @@ import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.model.user.UserPushSetting
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
-import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
-import com.afternote.feature.mindrecord.domain.model.DiaryList
-import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
-import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -223,34 +219,6 @@ class FakeUserProfileRepository : UserProfileRepository {
     override suspend fun saveUserName(name: String) {
         cachedUserName = name
     }
-}
-
-class FakeDiaryRepository(
-    var listResult: Result<DiaryList> = Result.success(DiaryList(emptyList(), 0, null)),
-) : DiaryRepository {
-    val createdPayloads = mutableListOf<DiaryCreatePayload>()
-    val updatedPayloads = mutableListOf<Pair<Long, DiaryUpdatePayload>>()
-    val createResults = ArrayDeque<Result<Unit>>()
-
-    override suspend fun getList(
-        yearMonth: String,
-        draftOnly: Boolean?,
-    ): Result<DiaryList> = listResult
-
-    override suspend fun create(payload: DiaryCreatePayload): Result<Unit> {
-        createdPayloads += payload
-        return createResults.removeFirstOrNull() ?: Result.success(Unit)
-    }
-
-    override suspend fun update(
-        id: Long,
-        payload: DiaryUpdatePayload,
-    ): Result<Unit> {
-        updatedPayloads += id to payload
-        return Result.success(Unit)
-    }
-
-    override suspend fun delete(id: Long): Result<Unit> = Result.success(Unit)
 }
 
 class FakeErrorReporter : ErrorReporter {

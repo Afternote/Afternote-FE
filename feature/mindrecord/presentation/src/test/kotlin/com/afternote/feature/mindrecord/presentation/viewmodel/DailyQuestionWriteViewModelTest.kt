@@ -2,12 +2,10 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
-import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DiaryList
-import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
-import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -174,25 +172,14 @@ private object NoopPhotoUploadRepository : PhotoUploadRepository {
 /** 툴바 카운트는 이 테스트의 관심사가 아니다 — 0건으로 고정한다 (#769). */
 private fun noopDraftLoader() =
     MindRecordDraftLoader(
-        diaryRepository = EmptyDraftDiaryRepository,
+        diaryRepository =
+            FakeDiaryRepository.strict().apply {
+                onGetList = { _, _ ->
+                    Result.success(DiaryList(diaries = emptyList(), monthDiaryCount = 0, weeklyDominantMood = null))
+                }
+            },
         dailyQuestionRepository =
             FakeDailyQuestionRepository.strict().apply {
                 onGetList = { _, _ -> Result.success(emptyList()) }
             },
     )
-
-private object EmptyDraftDiaryRepository : DiaryRepository {
-    override suspend fun getList(
-        yearMonth: String,
-        draftOnly: Boolean?,
-    ): Result<DiaryList> = Result.success(DiaryList(diaries = emptyList(), monthDiaryCount = 0, weeklyDominantMood = null))
-
-    override suspend fun create(payload: DiaryCreatePayload): Result<Unit> = error("호출되면 안 됨")
-
-    override suspend fun update(
-        id: Long,
-        payload: DiaryUpdatePayload,
-    ): Result<Unit> = error("호출되면 안 됨")
-
-    override suspend fun delete(id: Long): Result<Unit> = error("호출되면 안 됨")
-}

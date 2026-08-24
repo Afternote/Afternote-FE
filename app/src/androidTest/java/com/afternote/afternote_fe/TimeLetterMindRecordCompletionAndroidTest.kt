@@ -47,9 +47,9 @@ import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDailyQuestion
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDay
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportEmotion
-import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
-import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeWeeklyReportRepository
 import com.afternote.feature.mindrecord.presentation.screen.memoryspace.MemorySpaceScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestionAnswerListScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestionWriteScreen
@@ -429,7 +429,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
                 DailyQuestionWriteViewModel(
                     repository = repository,
                     photoUploadRepository = CompletionPhotoUploadRepository,
-                    draftLoader = MindRecordDraftLoader(CompletionDiaryRepository(mutableListOf()), repository),
+                    draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
                 )
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
@@ -459,9 +459,9 @@ class TimeLetterMindRecordCompletionAndroidTest {
         val currentMonth = YearMonth.now()
         val draftDate = currentMonth.atDay(12)
         val repository =
-            CompletionDiaryRepository(
-                drafts =
-                    mutableListOf(
+            FakeDiaryRepository(
+                initialDiaries =
+                    listOf(
                         Diary(
                             diaryId = 612L,
                             title = "이어 쓸 일기",
@@ -539,7 +539,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
         composeRule.onNode(hasText("등록") and hasClickAction()).performClick()
         composeRule.waitUntil(timeoutMillis = TIMEOUT) { submitSuccessCalls == 1 }
 
-        val update = repository.updateCalls.single()
+        val update = repository.updatedPayloads.single()
         assertEquals(612L, update.first)
         assertEquals("완성한 일기", update.second.title)
         assertEquals("<p>완성한 본문</p>", update.second.content)
@@ -547,18 +547,20 @@ class TimeLetterMindRecordCompletionAndroidTest {
         assertEquals(TodayMood.SOSO, update.second.todayMood)
         assertEquals(draftDate.toString(), update.second.date)
         assertEquals("https://afternote.test/draft.jpg", update.second.imageUrl)
-        assertTrue(repository.createCalls.isEmpty())
-        assertEquals(2, repository.listCalls.size)
-        assertTrue(repository.listCalls.all { it == currentMonth.toString() to true })
+        assertTrue(repository.createdPayloads.isEmpty())
+        assertEquals(2, repository.listQueries.size)
+        assertTrue(
+            repository.listQueries.all { it == FakeDiaryRepository.ListQuery(currentMonth.toString(), true) },
+        )
     }
 
     @Test
     fun memorySpace_supportedSuccess_opensAndClosesDetailThenNavigatesBack() {
         val memoryDate = LocalDate.now()
         val diaryRepository =
-            CompletionDiaryRepository(
-                drafts =
-                    mutableListOf(
+            FakeDiaryRepository(
+                initialDiaries =
+                    listOf(
                         Diary(
                             diaryId = 501L,
                             title = "추억이 된 하루",
@@ -605,7 +607,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
     @Test
     fun weeklyReport_errorRetryThenEmptyAndComplete_preservesRequestedWeekContract() {
         val repository =
-            CompletionWeeklyReportRepository().apply {
+            FakeWeeklyReportRepository().apply {
                 results.addLast(Result.failure(IllegalStateException("weekly offline")))
             }
         val userRepository =
@@ -778,71 +780,6 @@ private object CompletionFileMetadataRepository : FileMetadataRepository {
 
 /** 이 파일의 데일리질문 시나리오가 공유하는 "오늘의 질문". `questionId` 를 단언하는 곳이 있다. */
 private fun completionToday() = TodayDailyQuestion(71L, 71, "오늘의 테스트 질문", false)
-
-private class CompletionDiaryRepository(
-    val drafts: MutableList<Diary>,
-) : DiaryRepository {
-    val listCalls = mutableListOf<Pair<String, Boolean?>>()
-    val createCalls = mutableListOf<DiaryCreatePayload>()
-    val updateCalls = mutableListOf<Pair<Long, DiaryUpdatePayload>>()
-
-    override suspend fun getList(
-        yearMonth: String,
-        draftOnly: Boolean?,
-    ): Result<DiaryList> {
-        listCalls += yearMonth to draftOnly
-        val matching = drafts.filter { draftOnly == null || it.isDraft == draftOnly }
-        return Result.success(
-            DiaryList(
-                diaries = matching,
-                monthDiaryCount = matching.size,
-                weeklyDominantMood = matching.firstOrNull()?.todayMood,
-            ),
-        )
-    }
-
-    override suspend fun create(payload: DiaryCreatePayload): Result<Unit> {
-        createCalls += payload
-        return Result.success(Unit)
-    }
-
-    override suspend fun update(
-        id: Long,
-        payload: DiaryUpdatePayload,
-    ): Result<Unit> {
-        updateCalls += id to payload
-        drafts.replaceAll { diary ->
-            if (diary.diaryId == id) {
-                diary.copy(
-                    title = payload.title,
-                    content = payload.content,
-                    date = payload.date,
-                    todayMood = payload.todayMood,
-                    imageUrl = payload.imageUrl,
-                    isDraft = payload.isDraft,
-                )
-            } else {
-                diary
-            }
-        }
-        return Result.success(Unit)
-    }
-
-    override suspend fun delete(id: Long): Result<Unit> {
-        drafts.removeAll { it.diaryId == id }
-        return Result.success(Unit)
-    }
-}
-
-private class CompletionWeeklyReportRepository : WeeklyReportRepository {
-    val results = ArrayDeque<Result<WeeklyReport>>()
-    val requestedDates = mutableListOf<String>()
-
-    override suspend fun getWeeklyReport(date: String): Result<WeeklyReport> {
-        requestedDates += date
-        return requireNotNull(results.removeFirstOrNull()) { "Missing weekly response for $date" }
-    }
-}
 
 private fun dailyQuestion(
     id: Long,
