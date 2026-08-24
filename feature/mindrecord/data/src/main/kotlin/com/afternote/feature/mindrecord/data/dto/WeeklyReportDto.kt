@@ -7,9 +7,6 @@ import kotlinx.serialization.Serializable
 data class WeeklyReportDto(
     @SerialName("dailyQuestionAmount") val dailyQuestionAmount: Int = 0,
     @SerialName("diaryAmount") val diaryAmount: Int = 0,
-    // 서버가 함께 내려주는데 종전에는 선언하지 않아 버려졌다 — 홈의 "이번 주 기록 수" 는
-    // 세 종류의 합이라 이 값이 있어야 계산된다 (#207).
-    @SerialName("deepThoughtAmount") val deepThoughtAmount: Int = 0,
     @SerialName("summaryText") val summaryText: String = "",
     @SerialName("week") val week: List<WeeklyReportDayDto> = emptyList(),
     // 서버 JSON 키가 kebab-case (`daily-question`).

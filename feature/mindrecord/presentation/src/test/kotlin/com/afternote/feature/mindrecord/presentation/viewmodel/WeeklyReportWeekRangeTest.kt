@@ -106,7 +106,6 @@ class WeeklyReportWeekRangeTest {
         WeeklyReport(
             dailyQuestionAmount = dailyQuestions.size,
             diaryAmount = 0,
-            deepThoughtAmount = 0,
             summaryText = "",
             week = emptyList(),
             dailyQuestions = dailyQuestions,

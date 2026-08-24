@@ -90,8 +90,6 @@ interface HomeTabActions {
 
     fun onWeeklyCountClick()
 
-    fun onWeeklyRecentRecordClick()
-
     fun onMemoriesSectionClick()
 
     fun onSettingClick()
@@ -111,8 +109,6 @@ private object HomeTabActionsNoop : HomeTabActions {
     override fun onWeeklyImageClick() {}
 
     override fun onWeeklyCountClick() {}
-
-    override fun onWeeklyRecentRecordClick() {}
 
     override fun onMemoriesSectionClick() {}
 
@@ -290,7 +286,6 @@ private fun HomeTabScrollContent(
             WeeklySummaryGrid(
                 onImageClick = actions::onWeeklyImageClick,
                 onCountCardClick = actions::onWeeklyCountClick,
-                onRecentRecordClick = actions::onWeeklyRecentRecordClick,
             )
             Spacer(modifier = Modifier.height(40.dp))
         }

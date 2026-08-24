@@ -16,7 +16,6 @@ fun WeeklyReportDto.toDomain(): WeeklyReport =
     WeeklyReport(
         dailyQuestionAmount = dailyQuestionAmount,
         diaryAmount = diaryAmount,
-        deepThoughtAmount = deepThoughtAmount,
         summaryText = summaryText,
         week = week.map { it.toDomain() },
         // 날짜를 해석하지 못한 항목은 여기서 뺀다. 종전에는 집계 경로가 버리고 표시 경로가

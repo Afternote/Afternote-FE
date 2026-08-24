@@ -1,13 +1,10 @@
 package com.afternote.feature.mindrecord.domain.usecase
 
-import com.afternote.feature.mindrecord.domain.model.DeepThought
 import com.afternote.feature.mindrecord.domain.model.EmotionAnalysis
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
-import com.afternote.feature.mindrecord.domain.repository.DeepThoughtRepository
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
@@ -20,9 +17,9 @@ import java.time.LocalDate
  */
 class HomeSummaryUseCaseTest {
     @Test
-    fun `이번 주 기록 수는 세 종류의 합이다`() =
+    fun `이번 주 기록 수는 일기와 데일리질문의 합이다`() =
         runTest {
-            val repository = FakeWeeklyReportRepository(report(daily = 2, diary = 3, deep = 1))
+            val repository = FakeWeeklyReportRepository(report(daily = 2, diary = 4))
 
             val count = GetWeeklyRecordCountUseCase(repository)(today = LocalDate.of(2026, 8, 24))
 
@@ -51,53 +48,14 @@ class HomeSummaryUseCaseTest {
             assertTrue(count.isFailure)
         }
 
-    @Test
-    fun `최근 깊은 생각은 id 가 가장 큰 항목이다`() =
-        runTest {
-            // 목록 순서는 명세에 없다 — 서버 정렬이 바뀌어도 "최근" 이 흔들리지 않게 한다.
-            val repository =
-                FakeDeepThoughtRepository(
-                    listOf(
-                        DeepThought(id = 3, createdAt = "2026.08.22 토", title = "먼저 쓴 글"),
-                        DeepThought(id = 9, createdAt = "2026.08.24 월", title = "최근 글"),
-                        DeepThought(id = 7, createdAt = "2026.08.23 일", title = "중간 글"),
-                    ),
-                )
-
-            val recent = GetRecentDeepThoughtUseCase(repository)()
-
-            assertEquals(9L, recent.getOrNull()?.id)
-            assertEquals("최근 글", recent.getOrNull()?.title)
-        }
-
-    @Test
-    fun `한 건도 없으면 null 이다`() =
-        runTest {
-            val recent = GetRecentDeepThoughtUseCase(FakeDeepThoughtRepository(emptyList()))()
-
-            assertTrue(recent.isSuccess)
-            assertNull(recent.getOrNull())
-        }
-
-    @Test
-    fun `조회 실패는 빈 결과로 덮지 않는다`() =
-        runTest {
-            // 실패를 null 로 내리면 호출부가 "깊은 생각이 없다" 로 그려 실패가 사라진다.
-            val recent = GetRecentDeepThoughtUseCase(FakeDeepThoughtRepository(null))()
-
-            assertTrue(recent.isFailure)
-        }
-
     // ── 테스트 도구 ───────────────────────────────────────────────────────────
 
     private fun report(
         daily: Int = 0,
         diary: Int = 0,
-        deep: Int = 0,
     ) = WeeklyReport(
         dailyQuestionAmount = daily,
         diaryAmount = diary,
-        deepThoughtAmount = deep,
         summaryText = "",
         week = emptyList(),
         dailyQuestions = emptyList(),
@@ -114,12 +72,5 @@ class HomeSummaryUseCaseTest {
             requestedDate = date
             return report?.let { Result.success(it) } ?: Result.failure(IllegalStateException("timeout"))
         }
-    }
-
-    private class FakeDeepThoughtRepository(
-        private val list: List<DeepThought>?,
-    ) : DeepThoughtRepository {
-        override suspend fun getList(draftOnly: Boolean?): Result<List<DeepThought>> =
-            list?.let { Result.success(it) } ?: Result.failure(IllegalStateException("timeout"))
     }
 }

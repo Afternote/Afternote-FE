@@ -134,7 +134,6 @@ class WeeklyReportRecoveryTest {
         WeeklyReport(
             dailyQuestionAmount = 0,
             diaryAmount = diaryAmount,
-            deepThoughtAmount = 0,
             summaryText = "",
             week = emptyList(),
             dailyQuestions = emptyList(),

@@ -5,16 +5,20 @@ import java.time.LocalDate
 data class WeeklyReport(
     val dailyQuestionAmount: Int,
     val diaryAmount: Int,
-    val deepThoughtAmount: Int,
     val summaryText: String,
     val week: List<WeeklyReportDay>,
     val dailyQuestions: List<WeeklyReportDailyQuestion>,
     val emotions: List<WeeklyReportEmotion>,
     val emotionAnalysis: EmotionAnalysis,
 ) {
-    /** 이번 주 기록 수 — 세 종류의 합. 홈 `WeeklySummaryGrid` 의 THIS WEEK 카드 값 (#207). */
+    /**
+     * 이번 주 기록 수 — 홈 `WeeklySummaryGrid` 의 THIS WEEK 카드 값 (#207).
+     *
+     * 깊은 생각은 기획에서 제거된 기능이라 세지 않는다. 서버는 `deepThoughtAmount` 를
+     * 계속 내려주지만 DTO 에 선언하지 않아 그대로 무시된다.
+     */
     val totalRecordAmount: Int
-        get() = dailyQuestionAmount + diaryAmount + deepThoughtAmount
+        get() = dailyQuestionAmount + diaryAmount
 }
 
 /**

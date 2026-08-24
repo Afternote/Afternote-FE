@@ -364,10 +364,6 @@ fun rememberHomeTabActions(
                 appState.navigateToBottomBarRoute(Route.MindRecord)
             }
 
-            override fun onWeeklyRecentRecordClick() {
-                appState.navigateToBottomBarRoute(Route.MindRecord)
-            }
-
             override fun onMemoriesSectionClick() {
                 appState.navController.navigate(Route.MemorySpace)
             }

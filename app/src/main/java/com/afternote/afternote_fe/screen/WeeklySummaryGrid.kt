@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -34,12 +35,9 @@ import com.afternote.core.ui.theme.AfternoteTheme
 @Composable
 fun WeeklySummaryGrid(
     modifier: Modifier = Modifier,
-    recordedCount: Int = 7,
-    recentRecordDate: String = "26.02.01",
-    recentRecordTitle: String = "최근 기록 제목최근 기록 제목...",
+    recordedCount: Int = 0,
     onImageClick: () -> Unit = {},
     onCountCardClick: () -> Unit = {},
-    onRecentRecordClick: () -> Unit = {},
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val gap = 8.dp
@@ -76,14 +74,17 @@ fun WeeklySummaryGrid(
                 }
             }
 
-            // [우측] 작은 정사각형 카드 2개를 담은 컬럼
+            // [우측] 이번 주 기록 횟수 카드.
+            //
+            // 종전에는 이 자리에 작은 카드 2장(기록 횟수 / 최근 깊은생각)이 있었다. 깊은
+            // 생각이 기획에서 제거되면서 아래 카드가 사라져, 남은 한 장이 왼쪽 큰 카드와
+            // 같은 높이를 채운다 — 한 장만 남기고 아래를 비우면 그리드가 어긋난다.
             Column(
-                modifier = Modifier.height(largeSquareSize), // 왼쪽 큰 카드와 높이를 동일하게 맞춤
+                modifier = Modifier.height(largeSquareSize),
                 verticalArrangement = Arrangement.spacedBy(gap),
             ) {
-                // [우측 상단] 이번 주 기록 횟수 카드
                 Surface(
-                    modifier = Modifier.size(smallSquareSize),
+                    modifier = Modifier.width(smallSquareSize).height(largeSquareSize),
                     shape = RoundedCornerShape(6.dp),
                     border = BorderStroke(1.dp, AfternoteDesign.colors.gray2),
                     color = AfternoteDesign.colors.white,
@@ -118,43 +119,6 @@ fun WeeklySummaryGrid(
                                 ),
                             color = AfternoteDesign.colors.black,
                             modifier = Modifier.align(Alignment.End),
-                        )
-                    }
-                }
-
-                // [우측 하단] 최근 기록 카드
-                Surface(
-                    modifier = Modifier.size(smallSquareSize),
-                    shape = RoundedCornerShape(6.dp),
-                    color = AfternoteDesign.colors.gray8,
-                    onClick = onRecentRecordClick,
-                ) {
-                    Column(
-                        modifier =
-                            Modifier
-                                .padding(top = 17.dp, bottom = 12.dp)
-                                .padding(horizontal = 17.dp),
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.core_ui_ic_deep_thought_moon), // 프로젝트 리소스
-                            contentDescription = null,
-                            tint = AfternoteDesign.colors.white,
-                            modifier = Modifier.size(13.dp),
-                        )
-                        Spacer(modifier = Modifier.weight(1f))
-                        Text(
-                            text = recentRecordDate,
-                            style = AfternoteDesign.typography.mono,
-                            color = AfternoteDesign.colors.white,
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = recentRecordTitle,
-                            style =
-                                AfternoteDesign.typography.captionLargeR,
-                            color = AfternoteDesign.colors.white,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                 }
