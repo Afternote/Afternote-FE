@@ -3,11 +3,13 @@ package com.afternote.feature.afternote.presentation.author.detail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,7 +28,7 @@ import javax.inject.Inject
  * - 상세 조회: GET /api/afternotes/{id}
  * - 삭제: DELETE /api/afternotes/{id}
  * - 작성자 표시명: [UserRepository.getMyProfile] (네비게이션 인자로 전달하지 않음)
- * - 상세 ID: [SavedStateHandle]의 `itemId` (타입 안전 상세 라우트의 직렬화 인자명과 동일).
+ * - 상세 ID: [SavedStateHandle.toRoute]로 복원한 타입 안전 [AfternoteRoute.DetailRoute]에서 조회.
  *
  * 내부 [InternalState] (flat) 로 조회·작성자·삭제 진행 단계를 관리하고, public [uiState] 는
  * [AfternoteDetailUiState] 로 매핑해 Loading/Success/Error 3분기로 노출한다.
@@ -48,8 +50,8 @@ class AfternoteDetailViewModel
         private val userRepository: UserRepository,
         private val errorReporter: ErrorReporter,
     ) : ViewModel() {
-        private val afternoteIdFromNav: Long? =
-            savedStateHandle.get<String>(NAV_ARG_ITEM_ID)?.toLongOrNull()
+        private val afternoteIdFromNav: Long =
+            savedStateHandle.toRoute<AfternoteRoute.DetailRoute>().itemId
         private val internalState = MutableStateFlow(InternalState())
 
         val uiState: StateFlow<AfternoteDetailUiState> =
@@ -71,20 +73,7 @@ class AfternoteDetailViewModel
                         // authorDisplayName 이 빈 문자열로 남으면 TitleSection 이 이름 세그먼트를 생략해 렌더한다.
                     }
             }
-            val id = afternoteIdFromNav
-            if (id != null) {
-                loadDetail(id)
-            } else {
-                internalState.update {
-                    it.copy(
-                        loadPhase = LoadPhase.Failed(messageRes = R.string.afternote_detail_invalid_id),
-                    )
-                }
-            }
-        }
-
-        private companion object {
-            private const val NAV_ARG_ITEM_ID = "itemId"
+            loadDetail(afternoteIdFromNav)
         }
 
         // region Data Loading

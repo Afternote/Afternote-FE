@@ -45,6 +45,8 @@ include(":feature:afternote:data")
 include(":feature:afternote:domain")
 include(":feature:afternote:presentation")
 
+include(":feature:home:presentation")
+
 include(":feature:mindrecord:data")
 include(":feature:mindrecord:domain")
 include(":feature:mindrecord:presentation")

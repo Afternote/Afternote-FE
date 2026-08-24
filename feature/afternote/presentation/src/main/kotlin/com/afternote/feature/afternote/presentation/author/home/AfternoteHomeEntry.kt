@@ -22,9 +22,9 @@ import com.afternote.feature.afternote.presentation.R
  */
 @Composable
 fun AfternoteHomeEntry(
-    navigateToDetail: (String) -> Unit,
-    navigateToGalleryDetail: (String) -> Unit,
-    navigateToMemorialDetail: (String) -> Unit,
+    navigateToDetail: (Long) -> Unit,
+    navigateToGalleryDetail: (Long) -> Unit,
+    navigateToMemorialDetail: (Long) -> Unit,
     navigateToAdd: (AfternoteType?) -> Unit,
     onSettingClick: () -> Unit,
     viewModel: AfternoteHomeViewModel = hiltViewModel(),
