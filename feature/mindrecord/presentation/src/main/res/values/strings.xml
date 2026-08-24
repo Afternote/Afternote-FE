@@ -165,7 +165,6 @@
     <string name="mindrecord_toolbar_align_left_cd">왼쪽 정렬</string>
     <string name="mindrecord_toolbar_align_center_cd">가운데 정렬</string>
     <string name="mindrecord_toolbar_align_right_cd">오른쪽 정렬</string>
-    <string name="mindrecord_toolbar_close_cd">닫기</string>
     <string name="mindrecord_toolbar_draft_count">임시저장 %d</string>
     <string name="mindrecord_toolbar_draft_label">임시저장</string>
     <string name="mindrecord_toolbar_text_settings">텍스트 설정</string>
@@ -179,7 +178,6 @@
     <string name="mindrecord_write_field_character_count">%d 글자</string>
 
     <!-- Tags / common -->
-    <string name="mindrecord_back_cd">뒤로가기</string>
     <string name="mindrecord_more_cd">더보기</string>
 
     <!-- VM/Domain error messages -->
@@ -196,4 +194,9 @@
     <!-- 주차 조회 실패 뒤에도 화면 안에서 복구할 수 있게 남기는 문구 (#723) -->
     <string name="mindrecord_weekly_report_load_failed">%1$d월 %2$d주차 리포트를 불러오지 못했어요.</string>
     <string name="mindrecord_weekly_report_retry">다시 시도</string>
+    <!-- 수신자 열람 실패 (#614) — 서버 원문 대신 도메인 문구 -->
+    <string name="mindrecord_receiver_delivery_not_ready">아직 열람할 수 있는 기록이 없어요.\n작성자가 전달 시점을 정하면 이곳에서 볼 수 있어요.</string>
+    <string name="mindrecord_receiver_load_failed">마음의 기록을 불러오지 못했어요.</string>
+    <string name="mindrecord_receiver_retry">다시 시도</string>
+    <string name="mindrecord_receiver_title">마음의 기록</string>
 </resources>

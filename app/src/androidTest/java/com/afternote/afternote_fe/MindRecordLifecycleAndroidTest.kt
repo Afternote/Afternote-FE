@@ -236,8 +236,8 @@ class MindRecordLifecycleAndroidTest {
                         ),
                     dailyQuestions =
                         listOf(
-                            WeeklyReportDailyQuestion("같은 날 질문", "답변 A", wednesday.toString()),
-                            WeeklyReportDailyQuestion("다른 날 질문", "답변 B", friday.toString()),
+                            WeeklyReportDailyQuestion("같은 날 질문", "답변 A", wednesday),
+                            WeeklyReportDailyQuestion("다른 날 질문", "답변 B", friday),
                         ),
                     emotions = emptyList(),
                     // 이 테스트들은 분석 상태를 보지 않는다 — 완료로 고정한다 (#725).

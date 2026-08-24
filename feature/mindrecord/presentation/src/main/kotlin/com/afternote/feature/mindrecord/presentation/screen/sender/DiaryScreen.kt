@@ -25,6 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.AfternoteSectionHeader
 import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -123,17 +124,9 @@ private fun DiaryListContent(
             }
 
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = "DAILY ANSWER",
-                        style = AfternoteDesign.typography.mono,
-                        color = AfternoteDesign.colors.black.copy(alpha = 0.4f),
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(start = 12.dp))
-                }
+                // core 정본을 쓴다. 종전에는 같은 구조를 인라인으로 다시 적어, 색이
+                // black.copy(0.4f)·M3 baseline divider 로 토큰에서 벗어나 있었다 (#634).
+                AfternoteSectionHeader(title = "DAILY ANSWER")
                 Spacer(modifier = Modifier.height(10.dp))
             }
 
