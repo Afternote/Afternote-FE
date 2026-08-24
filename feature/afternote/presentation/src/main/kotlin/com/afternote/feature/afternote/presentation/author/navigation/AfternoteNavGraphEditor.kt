@@ -64,7 +64,7 @@ internal fun buildOnRegisterClick(
                         .toString(),
             )
         editViewModel.saveAfternote(
-            editingId = route.itemId?.toLongOrNull(),
+            editingId = route.itemId,
             category = form.selectedCategory,
             payload = payload,
             selectedReceiverIds = form.afternoteEditReceivers.mapNotNull { it.id.toLongOrNull() },

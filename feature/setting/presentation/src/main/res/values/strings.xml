@@ -92,6 +92,9 @@
     <string name="withdraw_confirm_prev_button">이전으로</string>
     <string name="withdraw_complete_message">회원 탈퇴가 완료되었습니다.\n애프터노트를 이용해 주셔서 감사합니다.</string>
     <string name="withdraw_complete_button">확인하기</string>
+    <string name="withdraw_failed_message">회원 탈퇴에 실패했습니다. 잠시 후 다시 시도해 주세요.</string>
+    <string name="withdraw_retry_button">재시도</string>
+    <string name="withdraw_close_button">닫기</string>
 
     <!-- 설정 - 회원 탈퇴 메뉴 -->
     <string name="settings_account_withdraw">회원 탈퇴</string>
