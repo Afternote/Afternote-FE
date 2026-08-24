@@ -47,13 +47,15 @@ class AuthRepositoryImplTest {
     private val tracker = AccessTokenExpiryTracker()
     private val tokenDataSource = TokenDataSource(InMemoryPreferencesDataStore())
 
-    private fun repository(authApiService: AuthApiService = FakeAuthApiService()) =
-        AuthRepositoryImpl(
-            tokenDataSource = tokenDataSource,
-            authApiService = authApiService,
-            tokenApiService = FakeTokenApiService(),
-            expiryTracker = tracker,
-        )
+    private fun repository(
+        authApiService: AuthApiService = FakeAuthApiService(),
+        tokenApiService: TokenApiService = FakeTokenApiService(),
+    ) = AuthRepositoryImpl(
+        tokenDataSource = tokenDataSource,
+        authApiService = authApiService,
+        tokenApiService = tokenApiService,
+        expiryTracker = tracker,
+    )
 
     @Test
     fun `defaultLogin - 발급 응답 expiresIn 을 deadline 으로 기록`() {
@@ -142,6 +144,24 @@ class AuthRepositoryImplTest {
         assertTrue(result.isSuccess)
         assertNull(runBlocking { tokenDataSource.getAccessToken() })
         assertFalse(tracker.isExpiringSoon())
+    }
+
+    @Test
+    fun `rotateToken - 빈 액세스 토큰 응답은 기존 토큰을 덮어쓰지 않고 실패`() {
+        runBlocking { tokenDataSource.saveTokens(accessToken = "old-access", refreshToken = "old-refresh") }
+        val repository =
+            repository(
+                tokenApiService =
+                    FakeTokenApiService {
+                        success(ReissueDto(accessToken = "", refreshToken = "new-refresh"))
+                    },
+            )
+
+        val result = runBlocking { repository.rotateToken() }
+
+        assertTrue(result.exceptionOrNull() is IllegalStateException)
+        assertEquals("old-access", runBlocking { tokenDataSource.getAccessToken() })
+        assertEquals("old-refresh", runBlocking { tokenDataSource.getRefreshToken() })
     }
 
     @Test
@@ -303,8 +323,12 @@ private class FakeAuthApiService(
     }
 }
 
-private class FakeTokenApiService : TokenApiService {
-    override suspend fun reissue(body: ReissueRequestDto): BaseResponse<ReissueDto> = error("reissue 는 이 시나리오에서 호출되면 안 됨")
+private class FakeTokenApiService(
+    private val onReissue: (ReissueRequestDto) -> BaseResponse<ReissueDto> = {
+        error("reissue 는 이 시나리오에서 호출되면 안 됨")
+    },
+) : TokenApiService {
+    override suspend fun reissue(body: ReissueRequestDto): BaseResponse<ReissueDto> = onReissue(body)
 }
 
 /** 단위 테스트용 in-memory `DataStore<Preferences>` — 디스크 없이 [TokenDataSource] 실물을 구동한다. */

@@ -22,6 +22,7 @@ import com.afternote.core.ui.R
 @Composable
 fun HomeTopBar(
     modifier: Modifier = Modifier,
+    showProfileIcon: Boolean = true,
     onSettingClick: () -> Unit = {},
 ) {
     TopAppBar(
@@ -42,13 +43,15 @@ fun HomeTopBar(
                     Modifier
                         .padding(end = 25.dp),
             ) {
-                Image(
-                    painter = painterResource(R.drawable.core_ui_user),
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                )
+                if (showProfileIcon) {
+                    Image(
+                        painter = painterResource(R.drawable.core_ui_user),
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
 
-                Spacer(modifier = Modifier.width(15.dp))
+                    Spacer(modifier = Modifier.width(15.dp))
+                }
 
                 Image(
                     painter = painterResource(R.drawable.core_ui_settings),

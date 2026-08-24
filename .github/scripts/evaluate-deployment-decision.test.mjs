@@ -45,6 +45,33 @@ test("deploys a high-risk release path change immediately", () => {
     assert.equal(result.risk, "high");
 });
 
+test("holds an unrelated CI workflow-only fix", () => {
+    const pendingPullRequest = {
+        number: 802,
+        title: "fix(ci): Review Assign 자동 assignee 제거",
+        body: "앱과 서버 동작 변경 없음",
+        closingIssues: [{ number: 801, title: "자동 assignee 제거", body: "", labels: ["bug"] }],
+    };
+    const result = evaluateDeploymentDecision(
+        context({ pendingPullRequests: [pendingPullRequest] }),
+        [".github/workflows/PRassign.yml"],
+    );
+
+    assert.equal(result.decision, "hold");
+    assert.equal(result.risk, "low");
+    assert.match(result.reason, /일반 CI/);
+});
+
+test("holds a data-layer test-only change", () => {
+    const result = evaluateDeploymentDecision(context(), [
+        "feature/afternote/data/src/test/java/ReceiverMapperTest.kt",
+    ]);
+
+    assert.equal(result.decision, "hold");
+    assert.equal(result.risk, "low");
+    assert.match(result.reason, /런타임/);
+});
+
 test("deploys a user-visible bug fix", () => {
     const pendingPullRequest = {
         number: 801,
