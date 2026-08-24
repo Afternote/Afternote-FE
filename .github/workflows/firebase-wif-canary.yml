@@ -91,55 +91,25 @@ jobs:
           cache-read-only: false
           validate-wrappers: true
 
-      # FIREBASE_SERVICE_ACCOUNT_JSON은 의도적으로 참조하지 않는다. 기존 production rollback
-      # 경로에는 남겨 두되, 이 canary의 인증 성공 여부에는 영향을 줄 수 없게 분리한다.
-      - name: Verify release build secrets are set
-        env:
-          GOOGLE_SERVICES_JSON_B64: ${{ secrets.GOOGLE_SERVICES_JSON_B64 }}
-          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
-          KAKAO_NATIVE_APP_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
-          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
-          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-          RELEASE_STORE_FILE_B64: ${{ secrets.RELEASE_STORE_FILE_B64 }}
-          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
-        run: |
-          missing=""
-          [ -z "$KAKAO_NATIVE_APP_KEY" ] && missing="$missing KAKAO_NATIVE_APP_KEY"
-          [ -z "$GOOGLE_WEB_CLIENT_ID" ] && missing="$missing GOOGLE_WEB_CLIENT_ID"
-          [ -z "$GOOGLE_SERVICES_JSON_B64" ] && missing="$missing GOOGLE_SERVICES_JSON_B64"
-          [ -z "$RELEASE_STORE_FILE_B64" ] && missing="$missing RELEASE_STORE_FILE_B64"
-          [ -z "$RELEASE_STORE_PASSWORD" ] && missing="$missing RELEASE_STORE_PASSWORD"
-          [ -z "$RELEASE_KEY_ALIAS" ] && missing="$missing RELEASE_KEY_ALIAS"
-          [ -z "$RELEASE_KEY_PASSWORD" ] && missing="$missing RELEASE_KEY_PASSWORD"
-          if [ -n "$missing" ]; then
-            echo "::error::필수 release build secret 누락:$missing"
-            exit 1
-          fi
-
-      - name: Decode release build files
-        env:
-          GOOGLE_SERVICES_JSON_B64: ${{ secrets.GOOGLE_SERVICES_JSON_B64 }}
-          RELEASE_STORE_FILE_B64: ${{ secrets.RELEASE_STORE_FILE_B64 }}
-        run: |
-          printf '%s' "$GOOGLE_SERVICES_JSON_B64" | base64 -d > app/google-services.json
-          printf '%s' "$RELEASE_STORE_FILE_B64" | base64 -d > "$RUNNER_TEMP/afternote-release.jks"
-
-      - name: Compose local.properties
-        env:
-          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
-          KAKAO_NATIVE_APP_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
-          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
-          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
-        run: |
-          {
-            echo "KAKAO_NATIVE_APP_KEY=$KAKAO_NATIVE_APP_KEY"
-            echo "GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID"
-            echo "RELEASE_STORE_FILE=$RUNNER_TEMP/afternote-release.jks"
-            echo "RELEASE_STORE_PASSWORD=$RELEASE_STORE_PASSWORD"
-            echo "RELEASE_KEY_ALIAS=$RELEASE_KEY_ALIAS"
-            echo "RELEASE_KEY_PASSWORD=$RELEASE_KEY_PASSWORD"
-          } > local.properties
+      # firebase-service-account-json 을 의도적으로 넘기지 않는다. 기존 production rollback
+      # 경로에는 secret 을 남겨 두되, 이 canary 의 인증 성공 여부에는 영향을 줄 수 없게 분리한다.
+      # require 에도 없으므로 그 secret 이 비어 있어도 canary 는 통과한다.
+      - name: Set up release build configuration
+        id: release_config
+        uses: ./.github/actions/setup-release-config
+        with:
+          require: >-
+            KAKAO_NATIVE_APP_KEY GOOGLE_WEB_CLIENT_ID GOOGLE_SERVICES_JSON_B64
+            RELEASE_STORE_FILE_B64 RELEASE_STORE_PASSWORD RELEASE_KEY_ALIAS
+            RELEASE_KEY_PASSWORD
+          kakao-native-app-key: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
+          google-web-client-id: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+          google-services-json-b64: ${{ secrets.GOOGLE_SERVICES_JSON_B64 }}
+          release-store-file-b64: ${{ secrets.RELEASE_STORE_FILE_B64 }}
+          release-store-password: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          release-key-alias: ${{ secrets.RELEASE_KEY_ALIAS }}
+          release-key-password: ${{ secrets.RELEASE_KEY_PASSWORD }}
+          compose-local-properties: 'true'
 
       # public 저장소이므로 signed APK를 Actions artifact로 게시하거나 job 사이에 전달하지 않는다.
       - name: Build signed release APK without Google credentials
@@ -234,7 +204,8 @@ jobs:
             echo "- run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Remove release build files
+      - name: Remove release build configuration
         if: always()
-        run: |
-          rm -f app/google-services.json local.properties "$RUNNER_TEMP/afternote-release.jks"
+        uses: ./.github/actions/cleanup-release-config
+        with:
+          keystore-path: ${{ steps.release_config.outputs.keystore-path }}
