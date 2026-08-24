@@ -16,6 +16,7 @@ import com.afternote.feature.afternote.domain.model.author.DetailTimestamps
 import com.afternote.feature.afternote.domain.model.author.playlist.DetailSong
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialDetail
 import com.afternote.feature.afternote.domain.model.author.playlist.MemorialMedia
+import kotlin.collections.mapNotNull
 
 fun AfternoteDetailDto.toDetailDomain(): Detail {
     val afternoteType = categoryToAfternoteType(category)
@@ -62,9 +63,7 @@ private fun AfternoteDetailDto.toDetailContent(type: AfternoteType): DetailConte
         }
     }
 
-// BE 상세 조립은 id·password 중 하나만 있어도 credentials 를 만들고(OR), 수정 검증은 발행 상태에서도
-// 두 값을 강제하지 않는다 — 여기서 던지면 그 상세가 영영 안 열리므로 없는 값은 빈 문자열로 낮춘다.
-// 두 값 모두 null 이면 credentials 객체 자체가 생략된다.
+// 던지면 그 상세가 영영 안 열리므로 빠진 값은 빈 문자열로 낮춘다.
 private fun AfternoteDetailDto.toPublishedCredentials() =
     DetailCredentials(
         id = credentials?.id.orEmpty(),
