@@ -1,0 +1,9 @@
+<resources>
+    <string name="home_tab_greeting">안녕하세요,\n%1$s님</string>
+    <string name="home_tab_tagline">오늘도 당신의 하루를 차분히 기록해보세요.</string>
+    <string name="home_tab_next_step_section_title">AFTER NOTE NEXT STEP</string>
+    <string name="home_tab_next_step_body">가족들의 \u2018주거래 은행\u2019 정보를\n입력하신 건 확인하셨나요?</string>
+    <string name="home_tab_next_step_cta">애프터노트 입력하러가기</string>
+    <string name="home_tab_error_message">정보를 불러오지 못했습니다.</string>
+    <string name="home_tab_retry">다시 시도</string>
+</resources>
