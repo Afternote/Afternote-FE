@@ -1,14 +1,14 @@
 package com.afternote.feature.receiver.presentation.home
 
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.feature.afternote.domain.model.receiver.AfterNotesListResult
-import com.afternote.feature.afternote.domain.model.receiver.ReceivedAfternoteDetail
-import com.afternote.feature.afternote.domain.model.receiver.ReceivedExportBundle
-import com.afternote.feature.afternote.domain.repository.receiver.ReceiverRepository
 import com.afternote.feature.mindrecord.domain.model.MindRecordType
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
+import com.afternote.feature.receiver.domain.model.AfterNotesListResult
+import com.afternote.feature.receiver.domain.model.ReceivedAfternoteDetail
+import com.afternote.feature.receiver.domain.model.ReceivedExportBundle
 import com.afternote.feature.receiver.domain.model.SenderMessageInfo
+import com.afternote.feature.receiver.domain.repository.ReceiverRepository
 import com.afternote.feature.receiver.presentation.home.model.ReceiverHomeUiState
 import com.afternote.feature.timeletter.domain.model.ReceivedTimeLetter
 import com.afternote.feature.timeletter.domain.model.ReceivedTimeLetterList
