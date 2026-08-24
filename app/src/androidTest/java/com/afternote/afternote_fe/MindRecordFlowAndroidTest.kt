@@ -14,6 +14,7 @@ import androidx.compose.ui.test.waitUntilAtLeastOneExists
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
+import com.afternote.afternote_fe.test.FakeDailyQuestionRepository
 import com.afternote.afternote_fe.test.FakeDiaryRepository
 import com.afternote.afternote_fe.test.FakeUserRepository
 import com.afternote.core.domain.repository.PhotoUploadRepository
@@ -22,6 +23,7 @@ import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.presentation.screen.sender.DiaryWriteScreen
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionWriteViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryWriteViewModel
+import com.afternote.feature.mindrecord.presentation.viewmodel.MindRecordDraftLoader
 import com.afternote.feature.mindrecord.presentation.viewmodel.SubmitState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -102,15 +104,14 @@ class MindRecordFlowAndroidTest {
 
     @Test
     fun dailyQuestion_failureThenRetry_keepsAnswerAndAvoidsDuplicateSuccess() {
-        val repository =
-            com.afternote.afternote_fe.test
-                .FakeDailyQuestionRepository()
+        val repository = FakeDailyQuestionRepository()
         repository.createResults.addLast(Result.failure(IllegalStateException("offline")))
-        repository.createResults.addLast(Result.success(Unit))
+        repository.createResults.addLast(Result.success(1L))
         val viewModel =
             DailyQuestionWriteViewModel(
                 repository = repository,
                 photoUploadRepository = PhotoUploadRepository { _, _ -> Result.success("https://cdn.test/question.jpg") },
+                draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
             )
         composeRule.setContent { AfternoteTheme {} }
         composeRule.waitUntil(timeoutMillis = 5_000) { !viewModel.uiState.value.isQuestionLoading }
@@ -150,5 +151,6 @@ class MindRecordFlowAndroidTest {
             repository = repository,
             photoUploadRepository = PhotoUploadRepository { _, _ -> Result.success("https://cdn.test/image.jpg") },
             userRepository = FakeUserRepository(),
+            draftLoader = MindRecordDraftLoader(repository, FakeDailyQuestionRepository()),
         )
 }

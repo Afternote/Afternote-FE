@@ -68,3 +68,34 @@ fun String.toUploadedFileKey(): String =
     // 스킴이 없으면 substringAfter("://") 가 원문을 그대로 돌려주고, 이어지는
     // substringAfter('/') 가 첫 경로 세그먼트를 잘라먹는다 — 조용히 틀린 키가 나간다.
     if (contains("://")) substringAfter("://").substringAfter('/') else this
+
+/**
+ * 태그만 있고 보이는 글자가 없으면 비었다고 본다.
+ *
+ * 리치 에디터는 아무것도 입력하지 않아도 `<p></p>` 를 내보내므로 `isBlank()` 로는 "화면이
+ * 비었는지" 를 판정할 수 없다. 그 값을 "사용자가 이미 썼다" 로 오해하면 이어쓸 임시저장
+ * 본문이 실리지 않고, 그대로 저장할 때 기존 내용이 덮인다 (#923).
+ *
+ * [htmlToPlainText] 와 달리 Android 에 의존하지 않는다 — ViewModel 판정에 쓰이므로 순수
+ * JVM 단위 테스트로 돌아야 한다.
+ */
+fun String.isHtmlBlank(): Boolean {
+    // 태그를 통째로 걷으면 이미지·링크처럼 **태그 자체가 내용인** 본문이 빈 것으로 접힌다.
+    // 사진만 첨부한 상태에서 이어쓰기가 도착하면 그 이미지가 draft 로 덮인다 (리뷰 지적).
+    if (HTML_MEDIA_TAG.containsMatchIn(this)) return false
+
+    return replace(HTML_TAG, "")
+        // 공백 엔티티만 공백으로, 나머지 엔티티는 **가시 문자 한 자**로 친다. 종전에는
+        // 전부 지워 `<p>&lt;</p>` 같은 본문이 빈 것으로 판정됐다.
+        .replace(HTML_ENTITY) { match -> if (match.value in HTML_SPACE_ENTITIES) " " else "\uFFFD" }
+        .isBlank()
+}
+
+private val HTML_TAG = Regex("<[^>]*>")
+private val HTML_ENTITY = Regex("&[a-zA-Z]+;|&#\\d+;")
+
+/** 태그 자체가 내용인 것들 — 걷어내면 «비었다» 로 뒤집힌다. */
+private val HTML_MEDIA_TAG = Regex("""<(img|video|audio|iframe|embed)\b""", RegexOption.IGNORE_CASE)
+
+/** 공백으로 렌더되는 엔티티. 나머지는 가시 문자로 본다. */
+private val HTML_SPACE_ENTITIES = setOf("&nbsp;", "&#160;", "&ensp;", "&emsp;", "&thinsp;")
