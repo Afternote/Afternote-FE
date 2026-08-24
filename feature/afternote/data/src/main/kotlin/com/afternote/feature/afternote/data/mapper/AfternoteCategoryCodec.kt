@@ -18,7 +18,7 @@ private const val LEGACY_MEMORIAL_CATEGORY = "MUSIC"
 
 internal fun AfternoteType.toServerCategory(): String? = serverCategoryByType[this]
 
-internal fun afternoteTypeFromServerCategory(value: String): AfternoteType? {
+fun afternoteTypeFromServerCategory(value: String): AfternoteType? {
     val normalized = value.uppercase()
     if (normalized == LEGACY_MEMORIAL_CATEGORY) return AfternoteType.MEMORIAL
     return serverCategoryByType.entries.firstOrNull { it.value == normalized }?.key
