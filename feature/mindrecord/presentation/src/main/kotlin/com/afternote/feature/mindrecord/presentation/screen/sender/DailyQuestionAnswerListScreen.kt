@@ -2,6 +2,7 @@ package com.afternote.feature.mindrecord.presentation.screen.sender
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -56,22 +57,26 @@ fun DailyQuestionAnswerListScreen(
         }
 
         is DailyQuestionListUiState.Success -> {
-            // 삭제 실패 안내 — 항목이 남은 채 아무 말이 없으면 고장처럼 보인다 (#716).
-            val deleteError = state.deleteError?.asString()
-            if (deleteError != null) {
-                Text(
-                    text = deleteError,
-                    color = AfternoteDesign.colors.error,
-                    style = AfternoteDesign.typography.captionLargeR,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+            // 배너와 리스트를 형제 루트 2개로 내보내면 안 된다 — 이 화면들의 유일한 호출부가
+            // HorizontalPager 페이지라, 다중 placeable 이 가로로 순차 배치돼 배너가 뜨는 순간
+            // 리스트가 배너 폭만큼 밀려 페이지 밖으로 잘린다 (리뷰 지적).
+            Column(modifier = modifier) {
+                // 삭제 실패 안내 — 항목이 남은 채 아무 말이 없으면 고장처럼 보인다 (#716).
+                val deleteError = state.deleteError?.asString()
+                if (deleteError != null) {
+                    Text(
+                        text = deleteError,
+                        color = AfternoteDesign.colors.error,
+                        style = AfternoteDesign.typography.captionLargeR,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                    )
+                }
+                DailyQuestionListContent(
+                    isListView = isListView,
+                    answers = state.answers,
+                    onDelete = viewModel::delete,
                 )
             }
-            DailyQuestionListContent(
-                modifier = modifier,
-                isListView = isListView,
-                answers = state.answers,
-                onDelete = viewModel::delete,
-            )
         }
     }
 }

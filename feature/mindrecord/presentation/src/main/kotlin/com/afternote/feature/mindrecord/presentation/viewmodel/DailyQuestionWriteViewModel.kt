@@ -135,6 +135,14 @@ class DailyQuestionWriteViewModel
             val state = _uiState.value
             if (state.submitState == SubmitState.InProgress) return
 
+            // 하단 툴바 임시저장은 `enabled` 없는 clickable 이라 canSubmit 을 우회한다.
+            // 업로드가 끝나기 전에 나가면 이미지 없는 기록이 저장된다 — 일기 화면은
+            // submit() 초입의 canSubmit 가드로 이미 막고 있다 (리뷰 지적).
+            if (state.isUploadingImage) {
+                failSubmit(R.string.mindrecord_error_image_uploading)
+                return
+            }
+
             if (state.answer.isBlank()) {
                 failSubmit(R.string.mindrecord_error_daily_question_answer_required)
                 return

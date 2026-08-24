@@ -63,7 +63,12 @@ class DailyQuestionListViewModel
             viewModelScope.launch {
                 repository
                     .delete(id)
-                    .onSuccess { load() }
+                    .onSuccess {
+                        // 지난 실패 문구를 함께 걷는다. 남겨 두면 «항목은 사라졌는데 실패
+                        // 안내는 그대로» 인 화면이 VM 수명 내내 유지된다 (리뷰 지적).
+                        internalState.update { it.copy(deleteError = null) }
+                        load()
+                    }
                     // 실패를 무시하면 항목이 그대로 남은 채 아무 안내도 없어 고장처럼 보인다 (#716).
                     .onFailure {
                         internalState.update {
@@ -71,10 +76,6 @@ class DailyQuestionListViewModel
                         }
                     }
             }
-        }
-
-        fun consumeDeleteError() {
-            internalState.update { it.copy(deleteError = null) }
         }
 
         private fun load(

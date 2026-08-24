@@ -74,15 +74,14 @@ class DiaryListViewModel
         /** 조회 실패 화면의 재시도 — 로딩을 보여도 잃을 것이 없다(보고 있던 것이 오류 문구뿐). */
         fun retry() = load(yearMonth = internalState.value.yearMonth)
 
-        fun consumeDeleteError() {
-            internalState.update { it.copy(deleteError = null) }
-        }
-
         fun delete(id: Long) {
             viewModelScope.launch {
                 repository
                     .delete(id)
                     .onSuccess {
+                        // 지난 실패 문구를 함께 걷는다. 남겨 두면 «항목은 사라졌는데 실패
+                        // 안내는 그대로» 인 화면이 VM 수명 내내 유지된다 (리뷰 지적).
+                        internalState.update { it.copy(deleteError = null) }
                         // 삭제는 사용자가 요청했지만 뒤따르는 재조회는 아니다. 로딩을 방출하면
                         // 목록이 통째 교체되며 LazyColumn 스크롤이 맨 위로 돌아간다.
                         // 다만 재조회가 실패하면 삭제한 항목이 그대로 남아 보이므로 에러는 드러낸다.

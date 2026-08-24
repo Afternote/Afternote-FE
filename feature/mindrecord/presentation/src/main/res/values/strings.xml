@@ -171,5 +171,6 @@
     <string name="mindrecord_write_saving">저장하는 중이에요…</string>
     <string name="mindrecord_write_uploading_image">이미지를 올리는 중이에요…</string>
     <string name="mindrecord_write_loading_draft">임시저장한 내용을 불러오는 중이에요…</string>
+    <string name="mindrecord_error_image_uploading">이미지를 올리는 중이에요. 잠시 뒤 저장해 주세요.</string>
     <string name="mindrecord_error_delete_failed">삭제하지 못했어요. 다시 시도해 주세요.</string>
 </resources>
