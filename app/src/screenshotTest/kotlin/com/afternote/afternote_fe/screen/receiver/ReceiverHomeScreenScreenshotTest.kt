@@ -10,9 +10,9 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.android.tools.screenshot.PreviewTest
 
 /**
- * [ReceiverHomeScreen] 의 시각 회귀 baseline — Loading + Success 두 케이스.
+ * [ReceiverHomeScreen] 의 시각 회귀 baseline — Loading + Success + 부분 실패 세 케이스.
  *
- * 의도된 시각 변경 시 `./gradlew :app:updateScreenshotTest` 로 갱신.
+ * 의도된 시각 변경 시 `./gradlew :app:updateDebugScreenshotTest` 로 갱신.
  */
 @PreviewTest
 @Preview(showBackground = true)
@@ -43,7 +43,6 @@ internal fun receiverHomeScreenSuccessScreenshot() {
                         ),
                     mindRecord =
                         MindRecordSummary(
-                            totalCount = 24,
                             dailyQuestionCount = 10,
                             diaryCount = 8,
                         ),
@@ -53,6 +52,27 @@ internal fun receiverHomeScreenSuccessScreenshot() {
                         listOf(
                             AfternoteSourceIcon(drawableResId = com.afternote.core.ui.R.drawable.core_ui_ic_tabler_search),
                         ),
+                ),
+            onEvent = {},
+            actions = ReceiverHomeActions.Noop,
+        )
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+internal fun receiverHomeScreenPartialFailureScreenshot() {
+    AfternoteTheme {
+        ReceiverHomeScreen(
+            uiState =
+                ReceiverHomeUiState.Success(
+                    senderName = "서연",
+                    senderMessage = null,
+                    mindRecord = null,
+                    timeLetterTotalCount = 3,
+                    afternoteTotalCount = null,
+                    afternoteIcons = emptyList(),
                 ),
             onEvent = {},
             actions = ReceiverHomeActions.Noop,
