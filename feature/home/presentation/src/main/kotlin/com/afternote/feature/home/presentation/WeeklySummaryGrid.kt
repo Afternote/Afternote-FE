@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -31,11 +32,21 @@ import androidx.compose.ui.unit.sp
 import com.afternote.core.ui.R
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.home.presentation.R as HomeR
 
 @Composable
 fun WeeklySummaryGrid(
     modifier: Modifier = Modifier,
-    recordedCount: Int = 0,
+    /**
+     * 이번 주 기록 수. **기본값을 두지 않는다** — 넘기지 않은 호출부가 컴파일에서 걸려야
+     * 이 자리가 잊히지 않는다 (#207 리뷰).
+     *
+     * 종전 기본값 `7` 은 명백한 목업이라 오히려 눈에 띄었는데, `0` 은 «이번 주에 아무것도
+     * 안 썼다» 는 **그럴듯한 거짓**이라 사용자가 그대로 믿는다.
+     *
+     * `null` 은 «아직 모름» 이라 숫자 대신 대시를 그린다. 0 은 확정값이라 그대로 그린다.
+     */
+    recordedCount: Int?,
     onImageClick: () -> Unit = {},
     onCountCardClick: () -> Unit = {},
 ) {
@@ -110,7 +121,9 @@ fun WeeklySummaryGrid(
                         )
                         Spacer(modifier = Modifier.weight(1f))
                         Text(
-                            text = recordedCount.toString(),
+                            text =
+                                recordedCount?.toString()
+                                    ?: stringResource(HomeR.string.home_tab_weekly_count_unavailable),
                             style =
                                 AfternoteDesign.typography.inter.copy(
                                     fontSize = 24.sp,
@@ -131,6 +144,6 @@ fun WeeklySummaryGrid(
 @Composable
 private fun WeeklySummaryGridPreview() {
     AfternoteTheme {
-        WeeklySummaryGrid()
+        WeeklySummaryGrid(recordedCount = 3)
     }
 }

@@ -167,7 +167,7 @@ class MindRecordRequestCountTest {
                 WeeklyReport(
                     dailyQuestionAmount = 0,
                     diaryAmount = 0,
-                            summaryText = "",
+                    summaryText = "",
                     week = emptyList(),
                     dailyQuestions = emptyList(),
                     emotions = emptyList(),

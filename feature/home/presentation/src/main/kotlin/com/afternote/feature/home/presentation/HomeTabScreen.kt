@@ -283,6 +283,9 @@ private fun HomeTabScrollContent(
 
         item {
             WeeklySummaryGrid(
+                // 값을 붙이는 것은 후속(#562)이다. 그때까지 0 을 그려 «이번 주에 아무것도
+                // 안 썼다» 로 읽히게 두지 않는다 — 미상은 미상으로 표시한다.
+                recordedCount = null,
                 onImageClick = actions::onWeeklyImageClick,
                 onCountCardClick = actions::onWeeklyCountClick,
             )
