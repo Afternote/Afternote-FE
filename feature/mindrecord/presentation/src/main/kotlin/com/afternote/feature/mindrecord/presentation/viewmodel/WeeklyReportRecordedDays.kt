@@ -31,6 +31,8 @@ internal fun resolveDateInWeekOrNull(
  */
 internal data class DailyRecordSummary(
     val isDiary: Boolean,
+    /** 그 날짜에 **기록일수로 셀 수 있는** 기록이 하나라도 있었는지 (#590). */
+    val countsAsRecord: Boolean,
     val emotion: TodayMood?,
 )
 
@@ -56,6 +58,7 @@ internal fun aggregateWeekRecordsByDate(
         .mapValues { (_, days) ->
             DailyRecordSummary(
                 isDiary = days.any { it.isDiary },
+                countsAsRecord = days.any { it.countsAsRecord },
                 emotion =
                     days
                         .filter { it.emotion != null }
@@ -65,10 +68,19 @@ internal fun aggregateWeekRecordsByDate(
         }
 
 /**
- * 기록일수 = 일기가 있는 날 + 주간 범위 내 데일리질문 답변 날짜의 합집합(중복 제거).
+ * 기록일수 = `week[]` 에 기록이 있는 날 + 주간 범위 내 데일리질문 답변 날짜의 합집합(중복 제거).
  *
  * 두 출처를 모두 `LocalDate` 로 복원한 뒤 합쳐야 같은 날의 일기·데일리질문이
  * `distinct()` 로 1일로 접힌다.
+ *
+ * **일기만 세지 않는다.** 종전에는 `isDiary` 인 날만 셌는데, `week[]` 는 일기 외에
+ * `DAILY_QUESTION` 원소도 싣는다 (실서버 대조 2026-08-23, #590). 문구가 세는 것은
+ * "일기를 쓴 날" 이 아니라 "마음을 기록한 날" 이다.
+ *
+ * 다만 **깊은 생각은 제외한다** — 기획에서 제거된 기능이라 서버가 계속 내려줘도 앱은
+ * 없는 것으로 다룬다. 그 판단은 매퍼가 [WeeklyReportDay.countsAsRecord] 로 접어 둔다.
+ *
+ * (`isDiary` 는 계속 달력 점 표시에만 쓴다 — [aggregateWeekRecordsByDate].)
  */
 internal fun countRecordedDays(
     monday: LocalDate,
@@ -76,10 +88,10 @@ internal fun countRecordedDays(
     dailyQuestionDates: List<LocalDate>,
 ): Int {
     val sunday = monday.plusDays(WEEK_LENGTH - 1L)
-    val diaryDates =
+    val recordDates =
         aggregateWeekRecordsByDate(monday, week)
-            .filterValues { it.isDiary }
+            .filterValues { it.countsAsRecord }
             .keys
     val questionDatesInWeek = dailyQuestionDates.filter { it in monday..sunday }
-    return (diaryDates + questionDatesInWeek).distinct().size
+    return (recordDates + questionDatesInWeek).distinct().size
 }

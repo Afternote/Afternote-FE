@@ -13,7 +13,7 @@ import org.junit.Test
  *
  * domain 패키지(`com.afternote..domain..`) 파일의 import 만 검사한다.
  * - 허용: `core:model`(`com.afternote.core.model.*`), 같은 domain 레이어(`com.afternote..domain..`; cross-domain 포함)
- * - 금지: data·presentation 레이어, 비-`core:model` 코어(network/ui/common/datastore/di/startup)
+ * - 금지: data·presentation 레이어, 비-`core:model` 코어(network/ui/common/datastore/di)
  *
  * 외부 빌드 그래프가 아니라 소스 import 를 스캔하므로, Gradle 사이클 탐지가 못 잡는
  * `domain → core:network` 같은 위반까지 막는다.
