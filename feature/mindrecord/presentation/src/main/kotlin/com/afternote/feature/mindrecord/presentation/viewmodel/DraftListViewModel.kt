@@ -8,6 +8,7 @@ import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.mapper.toUi
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -35,8 +36,23 @@ class DraftListViewModel
         private val _uiState = MutableStateFlow<DraftListUiState>(DraftListUiState.Loading)
         val uiState: StateFlow<DraftListUiState> = _uiState.asStateFlow()
 
+        private var loadJob: Job? = null
+
         init {
             load()
+        }
+
+        /**
+         * 화면 재진입 갱신.
+         *
+         * 로딩을 방출하지 않는다 — ON_RESUME 은 화면이 살아 있는 채로 발화하므로, 스피너로
+         * 갈아치우면 보고 있던 목록과 선택 상태가 사라진다. 실패해도 기존 목록을 유지한다.
+         * 마인드레코드 홈의 `refreshOnReturn` 과 같은 규칙이다.
+         */
+        fun refreshOnReturn() {
+            // 진입 직후의 ON_RESUME 은 init 로드와 겹친다 — 진행 중이면 건너뛴다.
+            if (loadJob?.isActive == true) return
+            load(showsLoading = false)
         }
 
         /** 조회 실패 화면의 재시도 — 로딩을 보여도 잃을 것이 없다(보고 있던 것이 오류 문구뿐). */
@@ -105,17 +121,23 @@ class DraftListViewModel
             }
         }
 
-        private fun load() {
-            viewModelScope.launch {
-                _uiState.value = DraftListUiState.Loading
-                val items = collectDrafts()
-                _uiState.value =
-                    if (items != null) {
-                        DraftListUiState.Success(items = items)
-                    } else {
-                        DraftListUiState.Error(UiText.Resource(R.string.mindrecord_error_generic))
-                    }
-            }
+        private fun load(showsLoading: Boolean = true) {
+            loadJob?.cancel()
+            loadJob =
+                viewModelScope.launch {
+                    if (showsLoading) _uiState.value = DraftListUiState.Loading
+                    val items = collectDrafts()
+                    _uiState.value =
+                        when {
+                            items != null -> DraftListUiState.Success(items = items)
+
+                            // 재진입 갱신이 실패하면 보고 있던 목록을 그대로 둔다 — 화면을 오류로
+                            // 갈아치우면 사용자가 하던 일(선택·스크롤)이 사라진다.
+                            !showsLoading -> _uiState.value
+
+                            else -> DraftListUiState.Error(UiText.Resource(R.string.mindrecord_error_generic))
+                        }
+                }
         }
 
         private suspend fun collectDrafts(): List<DraftItem>? =

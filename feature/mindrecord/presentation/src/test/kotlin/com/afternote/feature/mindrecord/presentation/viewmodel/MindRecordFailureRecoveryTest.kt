@@ -76,6 +76,32 @@ class MindRecordFailureRecoveryTest {
         }
 
     @Test
+    fun `목록을 새로 받아 오면 옛 삭제 실패 안내도 걷힌다`() =
+        runTest(dispatcher) {
+            // 리뷰가 스크린샷으로 실증한 경로 — 삭제 재시도가 아니라 **재조회 성공**이다.
+            // 기내모드 해제 → 탭 전환 → 목록 정상 재로드인데도 배너가 남아 있었다.
+            val repository = FlakyDeleteRepository()
+            val viewModel = DailyQuestionListViewModel(repository = repository)
+            backgroundScope.launch { viewModel.uiState.collect { } }
+            advanceUntilIdle()
+
+            viewModel.delete(1L)
+            advanceUntilIdle()
+            assertNotNull(
+                "실패는 드러나야 한다",
+                (viewModel.uiState.value as DailyQuestionListUiState.Success).deleteError,
+            )
+
+            viewModel.retry()
+            advanceUntilIdle()
+
+            assertNull(
+                "새로 받아 왔으면 옛 실패 문구는 남지 않는다",
+                (viewModel.uiState.value as DailyQuestionListUiState.Success).deleteError,
+            )
+        }
+
+    @Test
     fun `이미지를 올리는 중에는 임시저장도 나가지 않는다`() =
         runTest(dispatcher) {
             // 툴바 임시저장은 `enabled` 없는 clickable 이라 canSubmit 을 우회한다 — 그래서

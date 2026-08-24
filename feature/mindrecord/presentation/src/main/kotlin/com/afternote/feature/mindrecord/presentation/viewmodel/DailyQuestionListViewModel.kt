@@ -112,7 +112,12 @@ class DailyQuestionListViewModel
                             }
                         }
                     } else {
-                        internalState.update { it.copy(loadPhase = LoadPhase.Loaded(today, list)) }
+                        internalState.update {
+                            // 목록을 새로 받아 왔으면 옛 삭제 실패 안내도 걷는다. 남겨 두면
+                            // «새로 받아 왔는데 실패 안내는 그대로» 가 되어 #716 이 고치려는
+                            // «고장처럼 보인다» 와 같은 성질이 된다 (리뷰 지적).
+                            it.copy(loadPhase = LoadPhase.Loaded(today, list), deleteError = null)
+                        }
                     }
                 }
         }
