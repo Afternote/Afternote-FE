@@ -75,6 +75,7 @@ jobs:
           ./gradlew assembleDebug
           :feature:onboarding:domain:classes
           :feature:setting:domain:classes
+          --build-cache
           --no-configuration-cache
           --stacktrace
           --console=plain
