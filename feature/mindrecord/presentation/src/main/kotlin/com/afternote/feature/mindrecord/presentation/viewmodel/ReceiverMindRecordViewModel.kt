@@ -2,9 +2,12 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.ui.UiText
+import com.afternote.feature.mindrecord.domain.error.DeliveryNotReadyException
 import com.afternote.feature.mindrecord.domain.model.MindRecordSummary
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
+import com.afternote.feature.mindrecord.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -88,10 +91,9 @@ class ReceiverMindRecordViewModel
                         }.onFailure { e ->
                             // 재진입 갱신 실패는 보고 있던 화면을 유지한다.
                             if (showsLoading) {
+                                // 서버 원문을 화면 문구로 쓰지 않는다 — 타입에서 막는다 (#614).
                                 _uiState.value =
-                                    ReceiverMindRecordUiState.Error(
-                                        message = e.message ?: "마음의 기록을 불러오지 못했습니다.",
-                                    )
+                                    ReceiverMindRecordUiState.Error(message = e.toDomainMessage())
                             }
                         }
                 }
@@ -130,4 +132,17 @@ class ReceiverMindRecordViewModel
                     SortOrder.OLDEST -> sortedBy { it.recordDate }
                 }
         }
+    }
+
+/**
+ * 실패를 화면 문구로 바꾼다 (#614).
+ *
+ * 서버 에러 코드는 보지 않는다 — 그 판정은 data 계층(`mapReceiverFailure`)이 하고 여기는
+ * 도메인 예외 타입만 본다. 전달 조건 미충족은 수신자가 할 수 있는 일이 없는 상태라
+ * (발신자가 조건을 설정해야 풀린다) 원문 대신 무엇을 기다리는지 알려 준다.
+ */
+internal fun Throwable.toDomainMessage(): UiText =
+    when (this) {
+        is DeliveryNotReadyException -> UiText.Resource(R.string.mindrecord_receiver_delivery_not_ready)
+        else -> UiText.Resource(R.string.mindrecord_receiver_load_failed)
     }

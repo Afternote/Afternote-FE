@@ -17,7 +17,6 @@ data class DailyQuestionWriteUiState(
      */
     val draftLoaded: Boolean = false,
     val answer: String = "",
-    val imageUrl: String? = null,
     val isQuestionLoading: Boolean = true,
     val questionLoadError: UiText? = null,
     /** 이어쓸 임시저장 본문을 불러오는 중 (#923). */
