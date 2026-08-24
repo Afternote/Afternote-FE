@@ -117,17 +117,13 @@ class AfternoteAuthorExtendedAndroidTest {
             Pager(PagingConfig(pageSize = 20)) { pagingSource }.flow
         repository.listFlows[AfternoteType.SOCIAL_NETWORK] = flowOf(PagingData.empty())
         val viewModel = AfternoteHomeViewModel(repository)
-        val accountRoutes = mutableListOf<Long>()
-        val galleryRoutes = mutableListOf<Long>()
-        val memorialRoutes = mutableListOf<Long>()
+        val detailRoutes = mutableListOf<Long>()
         val addRoutes = mutableListOf<AfternoteType?>()
 
         composeRule.setContent {
             AfternoteTheme {
                 AfternoteHomeEntry(
-                    navigateToDetail = accountRoutes::add,
-                    navigateToGalleryDetail = galleryRoutes::add,
-                    navigateToMemorialDetail = memorialRoutes::add,
+                    navigateToDetail = detailRoutes::add,
                     navigateToAdd = addRoutes::add,
                     onSettingClick = {},
                     viewModel = viewModel,
@@ -154,9 +150,7 @@ class AfternoteAuthorExtendedAndroidTest {
             .onNodeWithContentDescription("추억 노트")
             .performScrollTo()
             .performClick()
-        assertEquals(listOf(101L), accountRoutes)
-        assertEquals(listOf(102L), galleryRoutes)
-        assertEquals(listOf(103L), memorialRoutes)
+        assertEquals(listOf(101L, 102L, 103L), detailRoutes)
 
         composeRule.onNodeWithText("소셜네트워크").performClick()
         composeRule.waitUntil(timeoutMillis = 5_000) {
