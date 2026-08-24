@@ -100,7 +100,8 @@ class DraftListDeleteTest {
 
     private fun viewModel(dailyQuestionRepository: DailyQuestionRepository): DraftListViewModel =
         DraftListViewModel(
-            // #769 가 목록 조회를 loader 로 뽑아낸 뒤 생성자가 3개로 늘었다.
+            // #769 가 목록 조회를 loader 로 뽑아낸 뒤 생성자가 3개로 늘었다. 같은 두
+            // 저장소를 넘겨 종전과 같은 조회 경로를 그대로 태운다.
             loader =
                 MindRecordDraftLoader(
                     diaryRepository = EmptyDiaryDraftRepository,
@@ -135,12 +136,12 @@ private class FakeDailyQuestionDraftRepository(
 
     override suspend fun getToday(): Result<TodayDailyQuestion> = error("호출되면 안 됨")
 
-    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Unit> = error("호출되면 안 됨")
+    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> = error("호출되면 안 됨")
 
     override suspend fun update(
         id: Long,
         payload: DailyQuestionUpdatePayload,
-    ): Result<Unit> = error("호출되면 안 됨")
+    ): Result<Long> = error("호출되면 안 됨")
 
     override suspend fun delete(id: Long): Result<Unit> {
         if (removesOnDelete) remaining.removeAll { it.dailyQuestionId == id }

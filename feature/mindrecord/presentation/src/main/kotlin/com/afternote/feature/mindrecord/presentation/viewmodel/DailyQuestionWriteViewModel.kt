@@ -9,6 +9,7 @@ import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.presentation.R
+import com.afternote.feature.mindrecord.presentation.util.isHtmlBlank
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -91,17 +92,31 @@ class DailyQuestionWriteViewModel
          * (없으면 재제출이 POST 로 나가 이어쓰기가 안 된다).
          */
         private suspend fun resumeDraft() {
+            _uiState.update { it.copy(isResumingDraft = true) }
             val draft =
                 repository
                     .getList(date = LocalDate.now().toString(), draftOnly = true)
                     .getOrNull()
                     ?.firstOrNull { it.isDraft }
-                    ?: return
+                    ?: run {
+                        _uiState.update { it.copy(isResumingDraft = false) }
+                        return
+                    }
             _uiState.update {
+                // 빈 에디터는 `<p></p>` 를 내보내므로 `isBlank()` 로는 "비어 있음" 을 판정할 수
+                // 없다. 태그를 걷어 낸 본문으로 판단해야 사용자가 아무것도 안 쓴 상태에서
+                // 이어쓸 내용이 실린다 (#923).
+                val appliesDraft = it.answer.isHtmlBlank()
                 it.copy(
                     draftId = draft.dailyQuestionId,
-                    answer = if (it.answer.isBlank()) draft.content else it.answer,
+                    answer = if (appliesDraft) draft.content else it.answer,
                     imageUrl = it.imageUrl ?: draft.imageUrl,
+                    isResumingDraft = false,
+                    // 화면이 이 전환을 보고 에디터를 재생성해 본문을 다시 싣는다 (#923).
+                    // **다시 실을 값이 있을 때만** 뒤집는다 — 사용자가 이미 쓴 내용을 보존한
+                    // 경우까지 재생성하면 커서·포커스·IME 조합만 리셋되고, 진행 중이던
+                    // 업로드가 끊길 수 있다 (리뷰 지적).
+                    draftLoaded = it.draftLoaded || appliesDraft,
                 )
             }
         }
@@ -131,6 +146,10 @@ class DailyQuestionWriteViewModel
         fun submit(isDraft: Boolean = false) {
             val state = _uiState.value
             if (state.submitState == SubmitState.InProgress) return
+
+            // 하단 툴바 임시저장은 `enabled` 없는 clickable 이라 canSubmit 을 우회한다.
+            // 차단은 화면이 아니라 여기서 지킨다.
+            if (state.isResumingDraft) return
 
             if (state.answer.isBlank()) {
                 failSubmit(R.string.mindrecord_error_daily_question_answer_required)
@@ -173,8 +192,17 @@ class DailyQuestionWriteViewModel
                         )
                     }
                 result
-                    .onSuccess {
-                        _uiState.update { it.copy(submitState = SubmitState.Succeeded) }
+                    .onSuccess { savedId ->
+                        _uiState.update {
+                            it.copy(
+                                submitState = SubmitState.Succeeded,
+                                // 서버가 돌려준 "내 답변" 식별자를 그대로 든다 (#573).
+                                // 임시저장 뒤 이어서 저장하면 목록을 다시 뒤지지 않고 이 값으로 PATCH 한다 —
+                                // 종전에는 응답을 버려 `resumeDraft()` 가 목록을 재조회해 첫 draft 를
+                                // 추측으로 골랐다.
+                                draftId = if (isDraft) savedId else null,
+                            )
+                        }
                         // 임시저장이 하나 늘었으니 툴바 숫자도 따라가야 한다 (#769).
                         if (isDraft) loadDraftCount()
                     }.onFailure { e ->

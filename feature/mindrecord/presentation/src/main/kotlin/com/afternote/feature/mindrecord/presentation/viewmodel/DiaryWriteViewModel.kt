@@ -128,7 +128,7 @@ class DiaryWriteViewModel
                                 isDraft = isDraft,
                                 todayMood = mood,
                                 imageUrl = state.imageUrl,
-                                receiverIds = state.selectedReceiverIds.toList().takeIf { it.isNotEmpty() },
+                                receiverIds = state.selectedReceiverIds.toList(),
                             ),
                         )
                     }

@@ -15,8 +15,7 @@ fun ReceiverDailyQuestionItemDto.toDomain(): MindRecordSummary =
         title = title,
         content = content,
         recordDate = createdAt.toIsoDate(),
-        // 데일리질문 수신자 응답은 isDraft 미노출 — 서버가 draft 를 전달 대상에서 제외한다고 가정.
-        isDraft = false,
+        isDraft = isDraft,
         createdAt = createdAt,
         imageUrl = imageUrl,
     )

@@ -181,15 +181,16 @@ private class FakeDailyQuestionRepository(
 
     override suspend fun getToday(): Result<TodayDailyQuestion> = onGetToday()
 
-    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Unit> {
+    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> {
         createCallCount += 1
-        return Result.success(Unit)
+        // 서버가 돌려주는 "내 답변" 식별자 (#573).
+        return Result.success(CREATED_ANSWER_ID)
     }
 
     override suspend fun update(
         id: Long,
         payload: DailyQuestionUpdatePayload,
-    ): Result<Unit> = error("update 는 이 시나리오에서 호출되면 안 됨")
+    ): Result<Long> = error("update 는 이 시나리오에서 호출되면 안 됨")
 
     override suspend fun delete(id: Long): Result<Unit> = error("delete 는 이 시나리오에서 호출되면 안 됨")
 }
@@ -200,6 +201,8 @@ private object NoopPhotoUploadRepository : PhotoUploadRepository {
         directory: String,
     ): Result<String> = error("upload 는 이 시나리오에서 호출되면 안 됨")
 }
+
+private const val CREATED_ANSWER_ID = 19L
 
 /** 툴바 카운트는 이 테스트의 관심사가 아니다 — 0건으로 고정한다 (#769). */
 private fun noopDraftLoader() =
@@ -232,12 +235,12 @@ private object EmptyDraftDailyQuestionRepository : DailyQuestionRepository {
 
     override suspend fun getToday(): Result<TodayDailyQuestion> = error("호출되면 안 됨")
 
-    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Unit> = error("호출되면 안 됨")
+    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> = error("호출되면 안 됨")
 
     override suspend fun update(
         id: Long,
         payload: DailyQuestionUpdatePayload,
-    ): Result<Unit> = error("호출되면 안 됨")
+    ): Result<Long> = error("호출되면 안 됨")
 
     override suspend fun delete(id: Long): Result<Unit> = error("호출되면 안 됨")
 }

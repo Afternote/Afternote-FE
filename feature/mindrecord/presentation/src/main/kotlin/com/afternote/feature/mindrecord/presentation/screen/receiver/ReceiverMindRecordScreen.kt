@@ -35,6 +35,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -67,6 +69,15 @@ fun ReceiverMindRecordScreen(
     var filterSheetVisible by remember { mutableStateOf(false) }
     // 탭한 기록의 본문을 여는 시트. 목록 응답이 이미 본문을 갖고 있어 추가 조회가 없다 (#618).
     var openedRecordId by remember { mutableStateOf<Long?>(null) }
+
+    // 화면을 떠났다 돌아오면 다시 조회한다 — 작성·삭제하고 복귀했을 때 목록이 낡은 채로
+    // 남지 않게 한다. 마인드레코드 홈이 쓰는 결선과 같다 (#702).
+    //
+    // ON_RESUME 은 화면 off/on·홈 버튼 복귀에서도 발화하므로 로딩을 방출하지 않는
+    // `refreshOnReturn()` 을 쓴다. 최초 진입의 중복 호출은 VM 이 진행 중인 Job 으로 막는다.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refreshOnReturn()
+    }
 
     // 앱바가 없으면 이 화면은 막다른 곳이 된다 — 실패 시 화면에 남는 것이 오류 문구 하나뿐이라
     // 시스템 백키 외에 빠져나갈 수단이 없었다 (#614).

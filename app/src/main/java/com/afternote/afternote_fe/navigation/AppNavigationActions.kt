@@ -344,7 +344,12 @@ fun rememberHomeTabActions(
     return remember(appState) {
         object : HomeTabActions {
             override fun onRecipientChipClick() {
-                // TODO: 수신인 지정 화면 Route 추가 후 연결
+                // 이 칩은 «수신인 지정 미완료» 일 때만 눌린다. 그 판정이 곧 «등록된 수신자가
+                // 0명» 이라(홈 요약이 getReceivers() 결과로 정한다) 목록으로 보내면 빈 화면이
+                // 나오고 사용자는 다시 등록 화면을 찾아야 한다. 상태를 해소하는 화면으로 보낸다.
+                //
+                // 목적지가 등록인지 목록인지는 기획 확정 전이다 (#506) — docs/qa/assumptions.md 참고.
+                appState.navController.navigate(SettingRoute.RecipientRegisterRoute)
             }
 
             override fun onAnswerClick() {
