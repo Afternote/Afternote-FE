@@ -30,6 +30,8 @@ import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 import com.afternote.core.data.mapper.delivery.toDomain as toDeliveryConditionsDomain
 
+// `app` 의 androidTest(SettingCompletionAndroidTest)가 Hilt 를 우회해 이 구현을 직접 조립하므로
+// 형제 구현체들과 달리 `internal` 로 닫지 못한다. 닫으려면 그 테스트의 페이크 기반 개조가 선행돼야 한다 (#930).
 class UserRepositoryImpl
     @Inject
     constructor(
