@@ -1,6 +1,7 @@
 package com.afternote.feature.timeletter.presentation.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
+import com.afternote.core.domain.model.UploadedFile
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.delivery.DeliveryConditionItem
@@ -197,7 +198,7 @@ private object FakePhotoUploadRepository : PhotoUploadRepository {
     override suspend fun upload(
         uriString: String,
         directory: String,
-    ): Result<String> = error("upload should not be called")
+    ): Result<UploadedFile> = error("upload should not be called")
 }
 
 private object FakeFileMetadataRepository : FileMetadataRepository {

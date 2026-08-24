@@ -1,5 +1,6 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
+import com.afternote.core.domain.model.UploadedFile
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
@@ -102,7 +103,9 @@ class DailyQuestionWriteViewModelTest {
         val viewModel =
             DailyQuestionWriteViewModel(
                 repository,
-                PhotoUploadRepository { _, _ -> Result.success("https://cdn/just-picked.jpg") },
+                PhotoUploadRepository { _, _ ->
+                    Result.success(UploadedFile(fileUrl = "https://cdn/just-picked.jpg", fileKey = "mindrecords/1/just-picked.jpg"))
+                },
                 noopDraftLoader(),
             )
 
@@ -199,7 +202,7 @@ private object NoopPhotoUploadRepository : PhotoUploadRepository {
     override suspend fun upload(
         uriString: String,
         directory: String,
-    ): Result<String> = error("upload 는 이 시나리오에서 호출되면 안 됨")
+    ): Result<UploadedFile> = error("upload 는 이 시나리오에서 호출되면 안 됨")
 }
 
 private const val CREATED_ANSWER_ID = 19L

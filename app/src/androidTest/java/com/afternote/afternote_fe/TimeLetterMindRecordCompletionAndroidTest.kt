@@ -31,6 +31,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeUserRepository
 import com.afternote.afternote_fe.test.testReceiver
+import com.afternote.core.domain.model.UploadedFile
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.model.user.User
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -755,7 +756,7 @@ private object CompletionPhotoUploadRepository : PhotoUploadRepository {
     override suspend fun upload(
         uriString: String,
         directory: String,
-    ): Result<String> = error("Unexpected upload: $uriString")
+    ): Result<UploadedFile> = error("Unexpected upload: $uriString")
 }
 
 private object CompletionFileMetadataRepository : FileMetadataRepository {

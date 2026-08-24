@@ -1,5 +1,6 @@
 package com.afternote.feature.timeletter.domain.usecase
 
+import com.afternote.core.domain.model.UploadedFile
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.feature.timeletter.domain.model.BlockInput
 import com.afternote.feature.timeletter.domain.model.TimeLetterBlockType
@@ -12,7 +13,9 @@ class ResolveTimeLetterBlocksUseCaseTest {
     @Test
     fun `local media is uploaded and uses remote url`() =
         runBlocking {
-            val repository = FakePhotoUploadRepository(Result.success("https://cdn/image.jpg"))
+            // 블록에 실리는 값이 fileUrl 인지 보려면 fileKey 는 URL 로 역산되지 않는 값이라야 한다.
+            val uploaded = UploadedFile(fileUrl = "https://cdn/image.jpg", fileKey = "timeletters/9/stored.jpg")
+            val repository = FakePhotoUploadRepository(Result.success(uploaded))
             val useCase = ResolveTimeLetterBlocksUseCase(repository)
 
             val blocks =
@@ -26,7 +29,7 @@ class ResolveTimeLetterBlocksUseCaseTest {
                     ),
                 )
 
-            assertEquals("https://cdn/image.jpg", blocks.single().url)
+            assertEquals("업로드가 준 fileUrl 이 그대로 블록에 실린다", "https://cdn/image.jpg", blocks.single().url)
             assertEquals("image/jpeg", blocks.single().mimeType)
             assertEquals(listOf("content://image/1" to "timeletters"), repository.uploads)
         }
@@ -34,7 +37,7 @@ class ResolveTimeLetterBlocksUseCaseTest {
     @Test
     fun `remote media is preserved without upload`() =
         runBlocking {
-            val repository = FakePhotoUploadRepository(Result.success("unused"))
+            val repository = FakePhotoUploadRepository(Result.success(UNUSED_UPLOAD))
             val useCase = ResolveTimeLetterBlocksUseCase(repository)
 
             val blocks =
@@ -55,7 +58,7 @@ class ResolveTimeLetterBlocksUseCaseTest {
     @Test
     fun `blank text is removed and block order remains contiguous`() =
         runBlocking {
-            val useCase = ResolveTimeLetterBlocksUseCase(FakePhotoUploadRepository(Result.success("unused")))
+            val useCase = ResolveTimeLetterBlocksUseCase(FakePhotoUploadRepository(Result.success(UNUSED_UPLOAD)))
 
             val blocks =
                 useCase(
@@ -73,7 +76,10 @@ class ResolveTimeLetterBlocksUseCaseTest {
     @Test
     fun `image audio and file local media are all uploaded`() =
         runBlocking {
-            val repository = FakePhotoUploadRepository(Result.success("https://cdn/uploaded"))
+            val repository =
+                FakePhotoUploadRepository(
+                    Result.success(UploadedFile(fileUrl = "https://cdn/uploaded", fileKey = "timeletters/9/uploaded")),
+                )
             val useCase = ResolveTimeLetterBlocksUseCase(repository)
 
             useCase(
@@ -108,7 +114,7 @@ class ResolveTimeLetterBlocksUseCaseTest {
 
     @Test
     fun `unsupported local media type is rejected before upload`() {
-        val repository = FakePhotoUploadRepository(Result.success("unused"))
+        val repository = FakePhotoUploadRepository(Result.success(UNUSED_UPLOAD))
         val useCase = ResolveTimeLetterBlocksUseCase(repository)
 
         val result =
@@ -127,16 +133,19 @@ class ResolveTimeLetterBlocksUseCaseTest {
     }
 
     private class FakePhotoUploadRepository(
-        private val result: Result<String>,
+        private val result: Result<UploadedFile>,
     ) : PhotoUploadRepository {
         val uploads = mutableListOf<Pair<String, String>>()
 
         override suspend fun upload(
             uriString: String,
             directory: String,
-        ): Result<String> {
+        ): Result<UploadedFile> {
             uploads += uriString to directory
             return result
         }
     }
 }
+
+/** 업로드가 일어나면 안 되는 시나리오용 — 값 자체엔 의미가 없다. */
+private val UNUSED_UPLOAD = UploadedFile(fileUrl = "unused", fileKey = "unused")

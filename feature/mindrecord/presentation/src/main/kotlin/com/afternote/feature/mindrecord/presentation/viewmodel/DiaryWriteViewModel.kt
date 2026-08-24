@@ -95,9 +95,10 @@ class DiaryWriteViewModel
         suspend fun uploadImage(uriString: String): String? =
             photoUploadRepository
                 .upload(uriString = uriString, directory = MIND_RECORD_UPLOAD_DIRECTORY)
-                .onSuccess { url ->
-                    _uiState.update { if (it.imageUrl == null) it.copy(imageUrl = url) else it }
+                .onSuccess { uploaded ->
+                    _uiState.update { if (it.imageUrl == null) it.copy(imageUrl = uploaded.fileUrl) else it }
                 }.getOrNull()
+                ?.fileUrl
 
         fun submit(isDraft: Boolean = false) {
             val state = _uiState.value

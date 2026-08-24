@@ -17,6 +17,7 @@ import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeDailyQuestionRepository
 import com.afternote.afternote_fe.test.FakeDiaryRepository
 import com.afternote.afternote_fe.test.FakeUserRepository
+import com.afternote.core.domain.model.UploadedFile
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.domain.model.TodayMood
@@ -110,7 +111,12 @@ class MindRecordFlowAndroidTest {
         val viewModel =
             DailyQuestionWriteViewModel(
                 repository = repository,
-                photoUploadRepository = PhotoUploadRepository { _, _ -> Result.success("https://cdn.test/question.jpg") },
+                photoUploadRepository =
+                    PhotoUploadRepository { _, _ ->
+                        Result.success(
+                            UploadedFile(fileUrl = "https://cdn.test/question.jpg", fileKey = "mindrecords/1/question.jpg"),
+                        )
+                    },
                 draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
             )
         composeRule.setContent { AfternoteTheme {} }
@@ -149,7 +155,10 @@ class MindRecordFlowAndroidTest {
                     ),
                 ),
             repository = repository,
-            photoUploadRepository = PhotoUploadRepository { _, _ -> Result.success("https://cdn.test/image.jpg") },
+            photoUploadRepository =
+                PhotoUploadRepository { _, _ ->
+                    Result.success(UploadedFile(fileUrl = "https://cdn.test/image.jpg", fileKey = "mindrecords/1/image.jpg"))
+                },
             userRepository = FakeUserRepository(),
             draftLoader = MindRecordDraftLoader(repository, FakeDailyQuestionRepository()),
         )

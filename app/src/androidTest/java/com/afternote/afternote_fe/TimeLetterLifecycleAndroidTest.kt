@@ -17,6 +17,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
+import com.afternote.core.domain.model.UploadedFile
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.user.Receiver
@@ -485,7 +486,7 @@ private object PrivatePhotoUploadRepository : PhotoUploadRepository {
     override suspend fun upload(
         uriString: String,
         directory: String,
-    ): Result<String> = error("Local upload is not expected")
+    ): Result<UploadedFile> = error("Local upload is not expected")
 }
 
 private object PrivateFileMetadataRepository : FileMetadataRepository {
