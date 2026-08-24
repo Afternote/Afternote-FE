@@ -290,6 +290,8 @@ private fun HomeTabScrollContent(
 
         item {
             WeeklySummaryGrid(
+                // base 가 비워 둔 자리(#207 리뷰)에 실값을 붙인다 — 조회 실패는 null 로 남아
+                // 대시로 그려진다 (#562).
                 recordedCount = weeklyRecordCount,
                 onImageClick = actions::onWeeklyImageClick,
                 onCountCardClick = actions::onWeeklyCountClick,

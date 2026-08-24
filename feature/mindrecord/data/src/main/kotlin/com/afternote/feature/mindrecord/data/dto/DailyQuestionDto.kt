@@ -41,6 +41,8 @@ data class DailyQuestionListItemDto(
     @SerialName("isDraft")
     @JsonNames("draft")
     val isDraft: Boolean = false,
+    // 상세 화면의 "수신인 OOO" 표시용 (#759).
+    @SerialName("receivers") val receivers: List<MindRecordReceiverDto> = emptyList(),
 )
 
 @Serializable

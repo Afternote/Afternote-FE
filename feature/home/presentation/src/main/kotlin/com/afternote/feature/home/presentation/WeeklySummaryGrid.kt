@@ -38,11 +38,15 @@ import com.afternote.feature.home.presentation.R as HomeR
 fun WeeklySummaryGrid(
     modifier: Modifier = Modifier,
     /**
-     * 이번 주 기록 수. **null 은 «아직 모름»** — 0 으로 접으면 조회 실패가 «기록 없음» 으로
-     * 확정된다 (#562). 종전에는 기본값이 자리표시자 7 이었고 호출부가 값을 넘기지 않아
-     * 실제 0건인 주에도 7 이 그려졌다.
+     * 이번 주 기록 수. **기본값을 두지 않는다** — 넘기지 않은 호출부가 컴파일에서 걸려야
+     * 이 자리가 잊히지 않는다 (#207 리뷰).
+     *
+     * 종전 기본값 `7` 은 명백한 목업이라 오히려 눈에 띄었는데, `0` 은 «이번 주에 아무것도
+     * 안 썼다» 는 **그럴듯한 거짓**이라 사용자가 그대로 믿는다.
+     *
+     * `null` 은 «아직 모름» 이라 숫자 대신 대시를 그린다. 0 은 확정값이라 그대로 그린다.
      */
-    recordedCount: Int? = null,
+    recordedCount: Int?,
     onImageClick: () -> Unit = {},
     onCountCardClick: () -> Unit = {},
 ) {
@@ -140,6 +144,6 @@ fun WeeklySummaryGrid(
 @Composable
 private fun WeeklySummaryGridPreview() {
     AfternoteTheme {
-        WeeklySummaryGrid()
+        WeeklySummaryGrid(recordedCount = 3)
     }
 }

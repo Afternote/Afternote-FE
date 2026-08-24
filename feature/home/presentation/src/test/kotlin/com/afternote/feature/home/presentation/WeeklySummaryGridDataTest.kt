@@ -2,7 +2,6 @@ package com.afternote.feature.home.presentation
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -16,8 +15,9 @@ import org.robolectric.annotation.Config
  * 주간 요약 그리드가 자리표시자를 노출하지 않는지 (#562).
  *
  * 종전에는 파라미터 기본값이 자리표시자(`recordedCount = 7`)였고 호출부가 값을 넘기지
- * 않아, 이번 주 기록이 0건인 사용자에게도 **7** 이 그려졌다. 기본값이 화면에 도달하는
- * 구조 자체가 문제라, 값이 없을 때 무엇이 그려지는지를 고정한다.
+ * 않아, 이번 주 기록이 0건인 사용자에게도 **7** 이 그려졌다. 기본값을 없애는 것은
+ * base(#207 리뷰)가 했고, 여기서는 **어떤 값이 무엇으로 그려지는지**를 고정한다 —
+ * null 은 미상(대시), 0 은 확정값이라 숫자다.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
@@ -26,9 +26,11 @@ class WeeklySummaryGridDataTest {
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     @Test
-    fun `값을 넘기지 않으면 자리표시자 숫자가 아니라 미상 표기가 나온다`() {
+    fun `아직 모르면 자리표시자 숫자가 아니라 미상 표기가 나온다`() {
+        // 값을 안 넘기는 경우는 base(#207 리뷰)에서 필수 파라미터로 막혔다 — 컴파일이 잡는다.
+        // 여기서는 «조회 실패·조회 중» 인 null 이 무엇으로 그려지는지를 고정한다.
         composeRule.setContent {
-            AfternoteTheme { WeeklySummaryGrid(onImageClick = {}, onCountCardClick = {}) }
+            AfternoteTheme { WeeklySummaryGrid(recordedCount = null, onImageClick = {}, onCountCardClick = {}) }
         }
 
         composeRule.onNodeWithText("7").assertDoesNotExist()
