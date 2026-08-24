@@ -60,6 +60,16 @@ if [[ "${verification_output}" != *"jar verified"* ]]; then
     echo "AAB JAR 서명을 확인하지 못했습니다." >&2
     exit 1
 fi
+# 그룹 4는 chainNotValidated 하나가 아니라 hasExpiredCert·notYetValidCert 까지 한 비트에 뭉친다.
+# 실측(JDK 21·25): 자가서명 정상·만료·유효 전 인증서가 모두 exit 4 라 서명 키의 유효기간 위반을
+# exit code 로는 가를 수 없다. LC_ALL=C 로 고정한 진단 문구로 잡는다.
+case "${verification_output}" in
+    *"signer certificate has expired"* | *"signer certificate is not yet valid"*)
+        printf '%s\n' "${verification_output}" >&2
+        echo "AAB 서명 인증서의 유효기간이 지났거나 아직 시작되지 않았습니다." >&2
+        exit 1
+        ;;
+esac
 
 if command -v shasum >/dev/null 2>&1; then
     bundle_sha256="$(shasum -a 256 "${bundle_path}" | awk '{print $1}')"

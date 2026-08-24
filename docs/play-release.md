@@ -33,7 +33,7 @@
 스크립트는 다음을 수행한다.
 
 1. :app:bundleRelease를 실행하되 로컬 검증 중 Crashlytics mapping 업로드는 제외한다.
-2. app-release.aab의 필수 bundle 항목과 JAR 서명을 `jarsigner -verify -strict`로 확인한다. 자가서명 upload key가 항상 세우는 인증서 체인 경고(exit 4)만 허용하므로, 서명 뒤에 추가된 unsigned entry가 하나라도 있으면 실패한다.
+2. app-release.aab의 필수 bundle 항목과 JAR 서명을 `jarsigner -verify -strict`로 확인한다. 자가서명 upload key가 항상 세우는 인증서 체인 경고(exit 4)만 허용하므로, 서명 뒤에 추가된 unsigned entry가 하나라도 있으면 실패한다(exit 20). 그 exit 4에는 서명 인증서의 만료·유효 시작 전까지 같은 비트로 뭉쳐 있어, 유효기간 위반은 jarsigner 진단 문구로 따로 걸러 실패시킨다.
 3. R8 mapping 파일 존재 여부를 확인한다.
 4. AAB와 서명 인증서의 SHA-256을 출력한다.
 
