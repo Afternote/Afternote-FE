@@ -103,6 +103,7 @@ fun DiaryWriteScreen(
             )
         },
         modifier = modifier,
+        containerColor = Color.Transparent,
     ) { paddingValues ->
         Column(
             modifier =
