@@ -132,6 +132,7 @@ private fun HomeSummary.toHomeTabSuccess(): HomeTabUiState.Success =
         userName = userName,
         isRecipientDesignated = isRecipientDesignated,
         todayQuestionContent = todayQuestionContent,
+        weeklyRecordCount = weeklyRecordCount,
         categoryCounts =
             MindRecordCategory.entries.associateWith { category ->
                 when (category) {

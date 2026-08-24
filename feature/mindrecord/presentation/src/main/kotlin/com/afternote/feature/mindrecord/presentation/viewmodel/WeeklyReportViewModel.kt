@@ -97,7 +97,12 @@ class WeeklyReportViewModel
             // 다만 이쪽은 **사용자가 누른** 갱신이라 진행 표시를 낸다 — BE#117 전까지는
             // 재조회가 같은 FAILED 를 돌려주는 것이 기본 경로이고, 그러면 데이터가 같아
             // StateFlow 가 방출조차 하지 않아 눌러도 픽셀이 안 바뀐다.
-            refreshOnReturn(showsLoading = true)
+            // 재조회 대상 주 선택은 refreshOnReturn 과 같은 규칙을 쓴다.
+            //
+            // 다만 **#736 의 «데이터가 안 바뀌었으면 건너뛴다» 가드는 타지 않는다.** 재시도는
+            // 사용자가 누른 동작이고, 서버 분석이 그 사이에 끝났는지는 다시 물어봐야만 안다 —
+            // 그 가드를 태우면 실패 화면에서 버튼이 영영 아무 일도 하지 않는다.
+            load(targetMonday(), showsLoading = true, keepsStateOnFailure = true)
         }
 
         /**
@@ -115,15 +120,21 @@ class WeeklyReportViewModel
             if (phase is LoadPhase.Loaded && loadedVersion == changeTracker.version) return
             // 실패 상태면 **실패한 주**를 다시 시도한다. 이번 주로 되돌아가면 사용자가
             // 보려던 주차가 유실돼, 나갔다 들어와도 복구되지 않는다 (#723).
-            val current =
-                // 실패한 주도 기억해 둔다 — 재시도가 최신 주로 되돌아가면 보던 주를 잃는다 (#723).
-                when (val phase = internalState.value.loadPhase) {
-                    is LoadPhase.Loaded -> phase.monday
-                    is LoadPhase.Failed -> phase.monday
-                    LoadPhase.Loading -> weekOptions.first().monday
-                }
-            load(current, showsLoading = showsLoading, keepsStateOnFailure = true)
+            load(targetMonday(), showsLoading = showsLoading, keepsStateOnFailure = true)
         }
+
+        /**
+         * 다시 조회할 주 — 보고 있던 주를 그대로 쓴다.
+         *
+         * 실패한 주도 기억해 둔다. 최신 주로 되돌아가면 사용자가 보려던 주차가 유실돼
+         * 나갔다 들어와도 복구되지 않는다 (#723).
+         */
+        private fun targetMonday(): LocalDate =
+            when (val phase = internalState.value.loadPhase) {
+                is LoadPhase.Loaded -> phase.monday
+                is LoadPhase.Failed -> phase.monday
+                LoadPhase.Loading -> weekOptions.first().monday
+            }
 
         private fun load(
             monday: LocalDate,
