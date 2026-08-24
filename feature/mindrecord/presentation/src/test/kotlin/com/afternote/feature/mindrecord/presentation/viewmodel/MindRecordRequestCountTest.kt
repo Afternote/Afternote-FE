@@ -17,12 +17,14 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.lang.reflect.Proxy
@@ -120,6 +122,32 @@ class MindRecordRequestCountTest {
             assertEquals("탭을 처음 열 때 1회만", 1, repository.calls)
         }
 
+    @Test
+    fun `분석이 끝나지 않았으면 복귀 갱신을 막지 않는다`() =
+        runTest(dispatcher) {
+            // changeTracker 는 일기·데일리질문의 **쓰기** 성공에서만 올라간다. 감정 분석
+            // 완료는 서버가 비동기로 채우는 상태라 그 카운터가 모른다. 폴링(8회 × 8초)이
+            // 소진된 뒤 대기가 남으면 복귀 갱신이 유일한 복구 경로인데, «데이터가 그대로면
+            // 부르지 않는다» 가드가 그것까지 막으면 «분석 중» 이 앱 재시작까지 굳는다.
+            val repository = CountingWeeklyReportRepository(pendingAnalysis = true)
+            val viewModel = WeeklyReportViewModel(repository, userRepository(), changeTracker)
+            backgroundScope.launch(dispatcher) { viewModel.uiState.collect { } }
+            advanceUntilIdle()
+            advanceTimeBy(10 * 60 * 1000L)
+            advanceUntilIdle()
+            val afterPolling = repository.calls
+
+            viewModel.refreshOnReturn()
+            advanceUntilIdle()
+
+            // 갱신이 나갔는지만 본다 — 새 로드가 아직 PENDING 이면 폴링도 함께 다시 도는 것이
+            // 정상이라 «정확히 1건» 으로 조이면 그 정상 동작이 실패가 된다.
+            assertTrue(
+                "폴링이 끝나도 복귀 갱신은 통과한다",
+                repository.calls > afterPolling,
+            )
+        }
+
     // ── 테스트 도구 ───────────────────────────────────────────────────────────
 
     private fun TestScope.startDailyQuestion(repository: DailyQuestionRepository): DailyQuestionListViewModel {
@@ -158,7 +186,9 @@ class MindRecordRequestCountTest {
         override suspend fun delete(id: Long): Result<Unit> = error("호출되면 안 됨")
     }
 
-    private class CountingWeeklyReportRepository : WeeklyReportRepository {
+    private class CountingWeeklyReportRepository(
+        private val pendingAnalysis: Boolean = false,
+    ) : WeeklyReportRepository {
         var calls = 0
 
         override suspend fun getWeeklyReport(date: String): Result<WeeklyReport> {
@@ -171,7 +201,12 @@ class MindRecordRequestCountTest {
                     week = emptyList(),
                     dailyQuestions = emptyList(),
                     emotions = emptyList(),
-                    emotionAnalysis = EmotionAnalysis(total = 0, succeeded = 0, pending = 0, failed = 0),
+                    emotionAnalysis =
+                        if (pendingAnalysis) {
+                            EmotionAnalysis(total = 1, succeeded = 0, pending = 1, failed = 0)
+                        } else {
+                            EmotionAnalysis(total = 0, succeeded = 0, pending = 0, failed = 0)
+                        },
                 ),
             )
         }

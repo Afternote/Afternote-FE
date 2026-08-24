@@ -108,8 +108,16 @@ class WeeklyReportViewModel
             if (loadJob?.isActive == true) return
             // 성공해서 보고 있는 화면이라면, 데이터가 바뀌었을 때만 다시 부른다 (#736).
             // 실패 상태는 이 가드에 걸리지 않는다 — 실패한 주차를 다시 시도해야 한다 (#723).
+            //
+            // **분석 대기도 통과시킨다.** changeTracker 는 일기·데일리질문의 쓰기 성공에서만
+            // 올라가는데, 감정 분석 완료는 서버가 비동기로 채우는 상태라 그 카운터가 모른다.
+            // 폴링(8회 × 8초 ≈ 1분)이 소진된 뒤 대기가 남아 있으면 복귀 갱신이 유일한 복구
+            // 경로인데, 그것까지 막으면 «분석 중» 이 앱 재시작까지 화면에 굳는다 — PENDING
+            // 에는 재시도 버튼도 없다(카드는 FAILED 전용).
             val phase = internalState.value.loadPhase
-            if (phase is LoadPhase.Loaded && loadedVersion == changeTracker.version) return
+            val awaitsAnalysis =
+                phase is LoadPhase.Loaded && phase.report.emotionAnalysis.status == EmotionAnalysisStatus.PENDING
+            if (phase is LoadPhase.Loaded && !awaitsAnalysis && loadedVersion == changeTracker.version) return
             // 실패 상태면 **실패한 주**를 다시 시도한다. 이번 주로 되돌아가면 사용자가
             // 보려던 주차가 유실돼, 나갔다 들어와도 복구되지 않는다 (#723).
             val current =

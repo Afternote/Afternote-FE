@@ -44,12 +44,8 @@ class DailyQuestionListViewModel
             load()
         }
 
-        /**
-         * 탭 전환·작성 화면 복귀 등 사용자가 요청하지 않은 자동 갱신.
-         *
-         * 화면이 살아 있는 채로 발화하므로 로딩을 방출하지 않고(콘텐츠가 통째 교체되면
-         * 캘린더 월과 스크롤 위치가 함께 폐기된다) 실패해도 보고 있던 화면을 유지한다.
-         */
+        /** 마지막으로 성공한 조회 시점의 데이터 버전. 아직 성공한 적이 없으면 null. */
+        private var loadedVersion: Long? = null
 
         /**
          * 탭 전환·`ON_RESUME` 등 사용자가 요청하지 않은 자동 갱신.
@@ -66,9 +62,6 @@ class DailyQuestionListViewModel
             if (loadedVersion != null && loadedVersion == changeTracker.version) return
             load(showsLoading = false, keepsStateOnFailure = true)
         }
-
-        /** 마지막으로 성공한 조회 시점의 데이터 버전. 아직 성공한 적이 없으면 null. */
-        private var loadedVersion: Long? = null
 
         fun delete(id: Long) {
             viewModelScope.launch {

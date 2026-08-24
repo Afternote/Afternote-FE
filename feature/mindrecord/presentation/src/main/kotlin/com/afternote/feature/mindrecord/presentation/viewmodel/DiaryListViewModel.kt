@@ -52,15 +52,8 @@ class DiaryListViewModel
             load(yearMonth)
         }
 
-        /**
-         * 탭 전환·작성 화면 복귀 등 사용자가 요청하지 않은 자동 갱신.
-         *
-         * [selectYearMonth] 와 세 가지가 다르다.
-         * - 로딩을 방출하지 않는다. 화면이 살아 있는 채로 발화하므로 콘텐츠가 통째 교체되면
-         *   캘린더 월과 스크롤 위치가 함께 폐기된다.
-         * - 실패해도 보고 있던 화면을 유지한다.
-         * - 보고 있던 월을 그대로 다시 조회한다. 6월을 보는 중에 7월 데이터를 받으면 안 된다.
-         */
+        /** 마지막으로 성공한 조회 시점의 데이터 버전. 아직 성공한 적이 없으면 null. */
+        private var loadedVersion: Long? = null
 
         /**
          * 탭 전환·`ON_RESUME` 등 사용자가 요청하지 않은 자동 갱신.
@@ -78,9 +71,6 @@ class DiaryListViewModel
                 keepsStateOnFailure = true,
             )
         }
-
-        /** 마지막으로 성공한 조회 시점의 데이터 버전. 아직 성공한 적이 없으면 null. */
-        private var loadedVersion: Long? = null
 
         fun delete(id: Long) {
             viewModelScope.launch {
