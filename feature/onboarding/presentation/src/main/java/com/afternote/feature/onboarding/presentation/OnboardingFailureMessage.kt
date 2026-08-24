@@ -2,8 +2,8 @@ package com.afternote.feature.onboarding.presentation
 
 import androidx.annotation.StringRes
 import com.afternote.core.domain.error.EmailAlreadyRegisteredException
-import com.afternote.core.domain.error.LoginRejectedException
 import com.afternote.core.domain.error.NetworkUnavailableException
+import com.afternote.core.domain.error.SocialLoginRejectedException
 import com.afternote.core.ui.UiText
 
 /**
@@ -25,10 +25,8 @@ internal fun Throwable.toDisplayMessage(
             UiText.Resource(R.string.signup_email_already_registered)
         }
 
-        // 유일하게 서버 문구를 그대로 쓰는 갈래다 — #517 로 머지된 기존 계약이라 여기서는 유지하고,
-        // 위 원칙에 맞춰 code 기반으로 옮기는 일은 #687 이 맡는다.
-        is LoginRejectedException -> {
-            UiText.Dynamic(displayMessage)
+        is SocialLoginRejectedException -> {
+            UiText.Resource(R.string.login_social_rejected)
         }
 
         else -> {

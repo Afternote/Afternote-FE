@@ -30,11 +30,10 @@ import com.afternote.core.ui.modifierextention.addFocusCleaner
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDisplay
-import kotlinx.coroutines.flow.distinctUntilChanged
 
 // region ── PlaylistSongList (list-level composable) ──
 
-internal fun filterSongsByQuery(
+fun filterSongsByQuery(
     songs: List<PlaylistSongDisplay>,
     searchQuery: String,
 ): List<PlaylistSongDisplay> {
@@ -104,8 +103,8 @@ fun PlaylistSongList(
  *
  * [SongSearchSection] 의 레이아웃(label·입력창) 사이에 끼어 있던 상태 블록을 뽑아낸 것 — 호출부/VM 이
  * 소유한 [searchQuery] 문자열과 Compose 가 소유하는 [TextFieldState] 를 잇는다: 밖→안(외부 쿼리 변경을
- * 필드에 반영)은 [searchQuery] 키 [LaunchedEffect] 로, 안→밖(타이핑을 콜백으로)은 [snapshotFlow] +
- * [distinctUntilChanged] 로. UI 레이어가 [TextFieldState] 를 소유하고 VM 은 String 만 주고받는 경계를 지킨다.
+ * 필드에 반영)은 [searchQuery] 키 [LaunchedEffect] 로, 안→밖(타이핑을 콜백으로)은 [snapshotFlow] 로.
+ * UI 레이어가 [TextFieldState] 를 소유하고 VM 은 String 만 주고받는 경계를 지킨다.
  */
 @Composable
 private fun rememberSongSearchFieldState(
@@ -120,7 +119,6 @@ private fun rememberSongSearchFieldState(
     }
     LaunchedEffect(Unit) {
         snapshotFlow { state.text.toString() }
-            .distinctUntilChanged()
             .collect { onSearchQueryChange(it) }
     }
     return state
@@ -131,7 +129,7 @@ private fun rememberSongSearchFieldState(
  * view-only(수신자 열람)·selectable(노래 추가)이 주입한다. 관리 모드는 대신 "총 N곡" 헤더를 주입한다.
  */
 @Composable
-internal fun SongSearchSection(
+fun SongSearchSection(
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
 ) {

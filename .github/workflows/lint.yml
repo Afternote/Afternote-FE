@@ -1,8 +1,13 @@
 name: Static Analysis (Reviewdog)
 
+# base 필터를 두지 않는다 — base 변경(feat/* → develop)은 pull_request 기본 activity type 에
+# 없어 재트리거되지 않으므로, 필터가 있으면 스택 PR 이 검증을 한 번도 거치지 않고 머지된다.
 on:
   pull_request:
-    branches: [main, develop]
+
+concurrency:
+  group: static-analysis-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -14,7 +19,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      # 캐싱 소유자는 setup-gradle 하나 — setup-java 의 cache: gradle 은 정책 테스트
+      # (supply-chain-policy.test.mjs)가 금지한다. wrapper 검증도 여기서 fail-closed.
+      - name: Set up Gradle and validate wrapper
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          cache-provider: basic
+          cache-read-only: true
+          validate-wrappers: true
 
       - name: Run Ktlint
         uses: ScaCap/action-ktlint@master
@@ -26,50 +46,37 @@ jobs:
           level: warning # Warning 이상은 댓글로 표시
           ktlint_version: "1.8.0" # 로컬(libs.versions.toml)과 버전 통일
 
+      # Reviewdog 의 diff 필터는 삭제로 새로 발생한 파일 단위 위반을 놓칠 수 있다.
+      # Gradle 검사는 변경 라인과 무관하게 저장소 전체의 ktlint 규칙을 강제한다.
+      # --build-cache 는 CI 한정 — gradle.properties 의 org.gradle.caching=false 로컬 기본값은 그대로다 (#996).
+      - name: Run full Ktlint check
+        run: ./gradlew ktlintCheck --continue --parallel --build-cache
+
   android-lint:
     name: Check Project Issues (Android Lint)
     runs-on: ubuntu-latest
     steps:
       - name: Clone repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '21'
-          cache: 'gradle'
 
-      # fail-fast — secret 누락 시 Gradle 까지 가지 않고 즉시 실패
-      # secret 값은 echo 하지 않음 (env 로만 받아서 길이 검사). 누락 키 이름은 안전.
-      - name: Verify required secrets are set
-        env:
-          KAKAO_NATIVE_APP_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
-          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
-          GOOGLE_SERVICES_JSON_B64: ${{ secrets.GOOGLE_SERVICES_JSON_B64 }}
-        run: |
-          missing=""
-          [ -z "$KAKAO_NATIVE_APP_KEY" ] && missing="$missing KAKAO_NATIVE_APP_KEY"
-          [ -z "$GOOGLE_WEB_CLIENT_ID" ] && missing="$missing GOOGLE_WEB_CLIENT_ID"
-          [ -z "$GOOGLE_SERVICES_JSON_B64" ] && missing="$missing GOOGLE_SERVICES_JSON_B64"
-          if [ -n "$missing" ]; then
-            echo "::error::필수 secret 누락:$missing — Settings → Secrets and variables → Actions 에 등록"
-            exit 1
-          fi
+      - name: Set up Gradle and validate wrapper
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          cache-provider: basic
+          cache-read-only: true
+          validate-wrappers: true
 
-      # google-services plugin 이 app/google-services.json 을 요구. 파일은 .gitignore 라
-      # CI 환경엔 없음. base64 인코딩된 secret 으로 받아서 decode.
-      - name: Decode google-services.json
-        env:
-          GOOGLE_SERVICES_JSON_B64: ${{ secrets.GOOGLE_SERVICES_JSON_B64 }}
-        run: |
-          echo "$GOOGLE_SERVICES_JSON_B64" | base64 -d > app/google-services.json
+      - name: Set up CI-only app configuration
+        uses: ./.github/actions/setup-ci-config
 
       - name: Run Android Lint
-        run: ./gradlew lintDebug --continue --parallel
-        env:
-          KAKAO_NATIVE_APP_KEY: ${{ secrets.KAKAO_NATIVE_APP_KEY }}
-          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+        run: ./gradlew lintDebug --continue --parallel --build-cache
 
       # 모듈별 lint XML 을 한 파일로 합쳐 Reviewdog 가 :feature/* · :core/* 위반도
       # PR 인라인 코멘트로 띄우도록 한다. 이전엔 :app XML 한 개만 전달돼 다른 모듈 위반이

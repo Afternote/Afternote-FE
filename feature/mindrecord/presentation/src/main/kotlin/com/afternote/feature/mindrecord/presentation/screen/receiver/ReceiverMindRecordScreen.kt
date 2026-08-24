@@ -63,7 +63,10 @@ fun ReceiverMindRecordScreen(
     // 탭한 기록의 본문을 여는 시트. 목록 응답이 이미 본문을 갖고 있어 추가 조회가 없다 (#618).
     var openedRecordId by remember { mutableStateOf<Long?>(null) }
 
-    Scaffold(modifier = modifier) { paddingValues ->
+    Scaffold(
+        modifier = modifier,
+        containerColor = Color.Transparent,
+    ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {
             when (val state = uiState) {
                 ReceiverMindRecordUiState.Loading -> {
@@ -129,6 +132,8 @@ private fun SuccessContent(
         Spacer(modifier = Modifier.height(8.dp))
         PrimaryTabRow(
             selectedTabIndex = selectedIndex,
+            // 지정하지 않으면 M3 baseline surface(#FEF7FF)가 나와 시안 배경(#FAFAFA)과 어긋난다.
+            containerColor = Color.Transparent,
             divider = {},
             indicator = {
                 TabRowDefaults.PrimaryIndicator(

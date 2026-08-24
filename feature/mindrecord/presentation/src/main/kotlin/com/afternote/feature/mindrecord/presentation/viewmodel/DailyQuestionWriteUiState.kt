@@ -14,9 +14,16 @@ data class DailyQuestionWriteUiState(
     val isQuestionLoading: Boolean = true,
     val questionLoadError: UiText? = null,
     val submitState: SubmitState = SubmitState.Idle,
+    /** 툴바 "임시저장 N" 표시값. `null` 은 아직 모름(조회 중·실패) (#769). */
+    val draftCount: Int? = null,
 ) {
+    /**
+     * `questionId` 유무는 여기서 보지 않는다. 조건에 넣으면 오늘 질문 조회가 실패했을 때
+     * 저장 버튼이 그냥 죽어 있어 원인을 알 수 없다 (#565). 대신 [DailyQuestionWriteViewModel.submit]
+     * 이 눌린 시점에 사유를 알리고 조회를 재시도한다.
+     */
     val canSubmit: Boolean
-        get() = questionId != null && answer.isNotBlank() && submitState != SubmitState.InProgress
+        get() = answer.isNotBlank() && !isQuestionLoading && submitState != SubmitState.InProgress
 }
 
 sealed interface SubmitState {

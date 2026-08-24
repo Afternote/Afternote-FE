@@ -54,6 +54,7 @@ import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMe
 import com.afternote.feature.afternote.presentation.shared.detail.MessageSection
 import com.afternote.feature.afternote.presentation.shared.detail.ProcessingMethodsSection
 import com.afternote.feature.afternote.presentation.shared.model.AfternoteServiceDisplay
+import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiModel
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 
 /**
@@ -69,7 +70,7 @@ import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 @Composable
 internal fun AccountDetailRoute(
     onBack: () -> Unit,
-    onNavigateToEditor: (itemId: String) -> Unit,
+    onNavigateToEditor: (itemId: Long) -> Unit,
     viewModel: AfternoteDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -102,7 +103,7 @@ internal fun AccountDetailRoute(
                             content = model.content,
                             snackbarHostState = snackbarHostState,
                             onBackClick = onBack,
-                            onEditClick = { onNavigateToEditor(state.detailId.toString()) },
+                            onEditClick = { onNavigateToEditor(state.detailId) },
                             onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
                         )
                         if (state.isDeleting) {
@@ -120,7 +121,7 @@ internal fun AccountDetailRoute(
 }
 
 /**
- * 소셜 네트워크 애프터노트 상세 화면.
+ * 소셜 네트워크·비즈니스 애프터노트 공용 상세 화면.
  */
 @Composable
 fun AccountDetailScreen(
@@ -211,13 +212,13 @@ private fun AccountDetailScrollContent(
                 password = content.password,
             )
             ProcessingMethodsSection(methods = content.processingMethods)
-            MessageSection(message = content.message)
+            MessageSection(blocks = content.messageBlocks)
         }
     }
 }
 
 /**
- * 소셜 네트워크 상세 전용 ACCOUNT(아이디·비밀번호) 섹션.
+ * 소셜 네트워크·비즈니스 상세 공용 ACCOUNT(아이디·비밀번호) 섹션.
  *
  * 섹션 뼈대는 공용 [DetailSection], 행 레이아웃은 [DetailInfoRow] 를 쓰고,
  * 비밀번호 표시 토글 상태·동작만 이 블록에 둔다.
@@ -287,7 +288,15 @@ private val PreviewAccountInstaContent =
         accountId = "qwerty123",
         password = "qwerty123",
         processingMethods = listOf("게시물 내리기", "추모 게시물 올리기", "추모 계정으로 전환하기"),
-        message = "이 계정에는 우리 가족 여행 사진이 많아.\n계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
+        // 시안이 블록 2개 상태를 규격으로 두므로 프리뷰(스크린샷 baseline)도 제목 있는 블록과 없는 블록을 함께 담는다.
+        messageBlocks =
+            listOf(
+                MessageBlockUiModel(
+                    title = "가족에게",
+                    body = "이 계정에는 우리 가족 여행 사진이 많아.\n계정 삭제하지 말고 꼭 추모 계정으로 남겨줘!",
+                ),
+                MessageBlockUiModel(body = "비밀번호는 주기적으로 바뀌니 메모 앱도 함께 확인해 줘."),
+            ),
         finalWriteDate = "2025.11.26",
         afternoteEditReceivers =
             listOf(

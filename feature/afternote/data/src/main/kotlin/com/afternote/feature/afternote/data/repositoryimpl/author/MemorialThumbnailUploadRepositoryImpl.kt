@@ -37,6 +37,8 @@ class MemorialThumbnailUploadRepositoryImpl
                             PresignedUrlRequestDto(
                                 directory = DIRECTORY_AFTERNOTES,
                                 extension = EXTENSION_JPG,
+                                // 메모리에 이미 바이트가 있어 그대로 크기를 보낸다 (#950).
+                                contentLength = jpegBytes.size.toLong(),
                             ),
                         ).requireData()
 
