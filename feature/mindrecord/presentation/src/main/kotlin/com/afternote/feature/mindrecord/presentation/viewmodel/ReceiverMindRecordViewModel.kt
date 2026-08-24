@@ -2,9 +2,12 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.network.model.ApiException
+import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.MindRecordSummary
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
+import com.afternote.feature.mindrecord.presentation.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -62,9 +65,7 @@ class ReceiverMindRecordViewModel
                                 ).withDerived()
                     }.onFailure { e ->
                         _uiState.value =
-                            ReceiverMindRecordUiState.Error(
-                                message = e.message ?: "마음의 기록을 불러오지 못했습니다.",
-                            )
+                            ReceiverMindRecordUiState.Error(message = e.toDomainMessage())
                     }
             }
         }
@@ -103,3 +104,19 @@ class ReceiverMindRecordViewModel
                 }
         }
     }
+
+/**
+ * 서버 실패를 **도메인 문구**로 바꾼다 (#614).
+ *
+ * 전달 조건 미충족(403 / code 2009)은 수신자가 할 수 있는 일이 없는 상태다 — 발신자가
+ * 전달 조건을 설정해야 풀린다. 그래서 원문("아직 전달 조건이 충족되지 않았습니다") 대신
+ * 무슨 상황이고 무엇을 기다리는지 알려 준다.
+ */
+internal fun Throwable.toDomainMessage(): UiText =
+    when ((this as? ApiException)?.code) {
+        DELIVERY_CONDITION_NOT_MET -> UiText.Resource(R.string.mindrecord_receiver_delivery_not_ready)
+        else -> UiText.Resource(R.string.mindrecord_receiver_load_failed)
+    }
+
+/** 전달 조건 미충족 — `403 {"code":2009}`. */
+private const val DELIVERY_CONDITION_NOT_MET = 2009

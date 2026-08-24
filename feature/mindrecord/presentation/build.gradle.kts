@@ -15,6 +15,7 @@ dependencies {
     implementation(projects.feature.mindrecord.domain)
     implementation(projects.core.common)
     implementation(projects.core.domain)
+    implementation(projects.core.network)
     implementation(projects.core.ui)
     implementation(projects.core.model)
     implementation(libs.coil.compose)
