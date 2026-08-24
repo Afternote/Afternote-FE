@@ -18,6 +18,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -98,14 +101,9 @@ private fun DiaryListContent(
     onDelete: (Long) -> Unit = {},
     onYearMonthChanged: (YearMonth) -> Unit = {},
 ) {
-    if (isListView && diaries.isEmpty()) {
-        MindRecordEmptyState(
-            modifier = modifier,
-            title = stringResource(R.string.mindrecord_diary_empty_state_title),
-            description = stringResource(R.string.mindrecord_diary_empty_state_description),
-        )
-        return
-    }
+    // 기록이 없다고 조기 반환하지 않는다. 종전에는 빈 상태가 캘린더를 통째로 대체해
+    // 월 이동 버튼까지 사라졌고, 기록이 있는 달로 돌아갈 방법이 없었다 (#724).
+    var selectedDay by remember(yearMonth) { mutableStateOf<Int?>(null) }
 
     val currentMonthDiaries =
         diaries.filter { it.date.year == yearMonth.year && it.date.monthValue == yearMonth.monthValue }
@@ -114,6 +112,11 @@ private fun DiaryListContent(
         currentMonthDiaries
             .mapNotNull { diary -> diary.emotion?.let { diary.date.dayOfMonth to it } }
             .toMap()
+
+    // 날짜를 고르면 그 날 기록만, 안 고르면 그 달 전체를 보여준다.
+    val visibleDiaries =
+        selectedDay?.let { day -> currentMonthDiaries.filter { it.date.dayOfMonth == day } }
+            ?: currentMonthDiaries
 
     if (isListView) {
         LazyColumn(modifier = modifier) {
@@ -126,6 +129,9 @@ private fun DiaryListContent(
                     onNextMonth = { onYearMonthChanged(yearMonth.plusMonths(1)) },
                     answeredDays = answeredDays,
                     emotionByDay = emotionByDay,
+                    selectedDay = selectedDay,
+                    // 같은 날을 다시 누르면 선택을 푼다 — 그 달 전체로 돌아올 수단이 필요하다.
+                    onDayClick = { day -> selectedDay = if (selectedDay == day) null else day },
                 )
                 Spacer(modifier = Modifier.height(10.dp))
             }
@@ -145,7 +151,16 @@ private fun DiaryListContent(
                 Spacer(modifier = Modifier.height(10.dp))
             }
 
-            items(diaries, key = { it.id }) { diary ->
+            if (visibleDiaries.isEmpty()) {
+                item {
+                    MindRecordEmptyState(
+                        title = stringResource(R.string.mindrecord_diary_empty_state_title),
+                        description = stringResource(R.string.mindrecord_diary_empty_state_description),
+                    )
+                }
+            }
+
+            items(visibleDiaries, key = { it.id }) { diary ->
                 DiaryComponent(
                     diary = diary,
                     modifier = Modifier.padding(vertical = 8.dp),
