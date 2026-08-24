@@ -44,6 +44,7 @@ import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftListViewModel
+import com.afternote.feature.mindrecord.presentation.viewmodel.MindRecordDraftLoader
 import com.afternote.feature.mindrecord.presentation.viewmodel.ReceiverMindRecordFilter
 import com.afternote.feature.mindrecord.presentation.viewmodel.ReceiverMindRecordUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.ReceiverMindRecordViewModel
@@ -149,7 +150,12 @@ class MindRecordLifecycleAndroidTest {
                         ),
                     ),
             )
-        val viewModel = DraftListViewModel(diaryRepository, dailyQuestionRepository)
+        val viewModel =
+            DraftListViewModel(
+                loader = MindRecordDraftLoader(diaryRepository, dailyQuestionRepository),
+                diaryRepository = diaryRepository,
+                dailyQuestionRepository = dailyQuestionRepository,
+            )
 
         composeRule.setContent {
             AfternoteTheme {
@@ -174,7 +180,7 @@ class MindRecordLifecycleAndroidTest {
         assertTrue(diaryRepository.deleteCalls.isEmpty())
 
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
-            (viewModel.uiState.value as? DraftListUiState.Success)?.deleteCompleted == false
+            (viewModel.uiState.value as? DraftListUiState.Success)?.deleteOutcome == null
         }
         composeRule.onNodeWithText("선택").performClick()
         composeRule.onNodeWithText("전체 삭제").performClick()
@@ -216,12 +222,14 @@ class MindRecordLifecycleAndroidTest {
                                 diaryId = 301L,
                                 day = wednesday.dayOfMonth,
                                 isDiary = true,
+                                countsAsRecord = true,
                                 emotion = TodayMood.HAPPY,
                             ),
                             WeeklyReportDay(
                                 diaryId = 302L,
                                 day = wednesday.dayOfMonth,
                                 isDiary = false,
+                                countsAsRecord = true,
                                 emotion = null,
                             ),
                         ),
@@ -240,7 +248,7 @@ class MindRecordLifecycleAndroidTest {
         val success = viewModel.uiState.value as WeeklyReportUiState.Success
         assertEquals(7, success.weekDays.size)
         assertEquals(DayOfWeek.entries.toList(), success.weekDays.map { it.dayOfWeek })
-        assertEquals(DayContent.EmojiWithDot("😊"), success.weekDays[2].content)
+        assertEquals(DayContent.EmojiOnly("😊"), success.weekDays[2].content)
         assertEquals(DayBackground.Green, success.weekDays[2].background)
         assertEquals(2, success.recordedDays)
         assertEquals(emptyList<Any>(), success.emotionKeywords)
@@ -379,12 +387,12 @@ private class PrivateDailyQuestionRepository(
 
     override suspend fun getToday(): Result<TodayDailyQuestion> = error("Unexpected today question load")
 
-    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Unit> = error("Unexpected question create")
+    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> = error("Unexpected question create")
 
     override suspend fun update(
         id: Long,
         payload: DailyQuestionUpdatePayload,
-    ): Result<Unit> = error("Unexpected question update")
+    ): Result<Long> = error("Unexpected question update")
 
     override suspend fun delete(id: Long): Result<Unit> {
         deleteCalls += id
