@@ -4,7 +4,6 @@ import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -56,20 +55,29 @@ class DiaryUpdateRequestTest {
 
     @Test
     fun `나머지 필드는 그대로 실린다`() {
-        val request =
-            DiaryUpdatePayload(
-                title = "제목",
-                content = "<p>본문</p>",
-                isDraft = true,
-                todayMood = TodayMood.SAD,
-                imageUrl = "https://cdn.example.com/a.png",
-                receiverIds = listOf(17L),
-            ).toRequest()
+        val body =
+            json.encodeToString(
+                DiaryUpdatePayload(
+                    title = "제목",
+                    content = "<p>본문</p>",
+                    isDraft = true,
+                    todayMood = TodayMood.SAD,
+                    receiverIds = listOf(17L),
+                ).toRequest(),
+            )
 
-        assertEquals("제목", request.title)
-        assertEquals("<p>본문</p>", request.content)
-        assertTrue(request.isDraft)
-        assertEquals("https://cdn.example.com/a.png", request.imageUrl)
-        assertEquals(listOf(17L), request.receiverIds)
+        assertTrue(body.contains("\"title\":\"제목\""))
+        assertTrue(body.contains("\"content\":\"<p>본문</p>\""))
+        assertTrue(body.contains("\"isDraft\":true"))
+        assertTrue(body.contains("\"todayMood\":\"SAD\""))
+        assertTrue(body.contains("\"receiverIds\":[17]"))
+    }
+
+    @Test
+    fun `서버 스키마에 없는 imageUrl 도 보내지 않는다`() {
+        // date 를 뺀 근거가 그대로 적용된다 — BE `DiaryUpdateRequest` 는
+        // [title, content, isDraft, todayMood, receiverIds] 뿐이고 `Diary.imageUrl` 에
+        // 대입하는 코드도 없다. 화면이 이미지를 붙인 편집에서만 실려 나가던 자리다.
+        assertFalse(bodyOf(null).contains("\"imageUrl\""))
     }
 }
