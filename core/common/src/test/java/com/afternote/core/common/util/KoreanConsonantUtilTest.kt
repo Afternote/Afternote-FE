@@ -43,12 +43,23 @@ class KoreanConsonantUtilTest {
     }
 
     @Test
-    fun `getInitialConsonant - 쌍자음 초성`() {
-        assertEquals('ㄲ', KoreanConsonantUtil.getInitialConsonant("까"))
-        assertEquals('ㄸ', KoreanConsonantUtil.getInitialConsonant("뜨"))
-        assertEquals('ㅃ', KoreanConsonantUtil.getInitialConsonant("뽀"))
-        assertEquals('ㅆ', KoreanConsonantUtil.getInitialConsonant("쓰"))
-        assertEquals('ㅉ', KoreanConsonantUtil.getInitialConsonant("쪼"))
+    fun `getInitialConsonant - 쌍자음은 기본 자음 섹션으로 접힌다`() {
+        // 인덱스 바 라벨이 기본 자음뿐이라, ㄲ 섹션을 따로 만들면 점프도 하이라이트도 안 된다.
+        assertEquals('ㄱ', KoreanConsonantUtil.getInitialConsonant("까"))
+        assertEquals('ㄷ', KoreanConsonantUtil.getInitialConsonant("뜨"))
+        assertEquals('ㅂ', KoreanConsonantUtil.getInitialConsonant("뽀"))
+        assertEquals('ㅅ', KoreanConsonantUtil.getInitialConsonant("쓰"))
+        assertEquals('ㅈ', KoreanConsonantUtil.getInitialConsonant("쪼"))
+    }
+
+    @Test
+    fun `getInitialConsonant - NFD 조합형 자모도 완성형으로 정규화해 판정`() {
+        // macOS·iOS 경로로 들어온 이름은 U+1100 블록 조합형이라 완성형 범위 밖으로 떨어진다.
+        val nfdGang = "\u1100\u1161\u11BC" // 조합형 '강'
+        assertEquals('ㄱ', KoreanConsonantUtil.getInitialConsonant(nfdGang))
+
+        val nfdHana = "\u1112\u1161\u1102\u1161" // 조합형 '하나'
+        assertEquals('ㅎ', KoreanConsonantUtil.getInitialConsonant(nfdHana))
     }
 
     @Test
@@ -115,5 +126,46 @@ class KoreanConsonantUtilTest {
 
         assertEquals(listOf(Item("강아지")), result['ㄱ'])
         assertEquals(listOf(Item("나무")), result['ㄴ'])
+    }
+
+    @Test
+    fun `groupByInitialConsonant - 그룹 내부가 가나다 순`() {
+        // 서버는 이름순을 보장하지 않는다. 입력 순서가 그대로 새면 초성 점프 UI 에서 섹션 안이 무순서가 된다.
+        val items = listOf("김영희", "강민", "고은", "나래", "김철수")
+
+        val result = KoreanConsonantUtil.groupByInitialConsonant(items) { it }
+
+        assertEquals(listOf("강민", "고은", "김영희", "김철수"), result['ㄱ'])
+        assertEquals(listOf("나래"), result['ㄴ'])
+    }
+
+    @Test
+    fun `groupByInitialConsonant - 쌍자음 이름도 기본 자음 그룹에 가나다 순으로 섞인다`() {
+        val items = listOf("까치", "강민", "김영희")
+
+        val result = KoreanConsonantUtil.groupByInitialConsonant(items) { it }
+
+        assertEquals(listOf('ㄱ'), result.keys.toList())
+        assertEquals(listOf("강민", "김영희", "까치"), result['ㄱ'])
+    }
+
+    @Test
+    fun `groupByInitialConsonant - NFD 조합형 이름도 같은 그룹에 정렬돼 들어간다`() {
+        val nfdGo = "\u1100\u1169\u110B\u1173\u11AB" // 조합형 '고은'
+        val items = listOf("김영희", nfdGo, "강민")
+
+        val result = KoreanConsonantUtil.groupByInitialConsonant(items) { it }
+
+        assertEquals(listOf('ㄱ'), result.keys.toList())
+        assertEquals(listOf("강민", nfdGo, "김영희"), result['ㄱ'])
+    }
+
+    @Test
+    fun `groupByInitialConsonant - # 그룹 내부도 정렬된다`() {
+        val items = listOf("zoe", "123", "alice")
+
+        val result = KoreanConsonantUtil.groupByInitialConsonant(items) { it }
+
+        assertEquals(listOf("123", "alice", "zoe"), result['#'])
     }
 }
