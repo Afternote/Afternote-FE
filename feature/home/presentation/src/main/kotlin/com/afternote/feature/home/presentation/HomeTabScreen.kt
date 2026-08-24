@@ -146,7 +146,8 @@ fun HomeTabScreen(
                 is HomeTabUiState.Loading -> {
                     HomeTabScrollContent(
                         userName = uiState.cachedUserName ?: "\u2026",
-                        isRecipientDesignated = false,
+                        // 조회 전이다 — 지정 여부를 결과로 확정하지 않는다 (#698).
+                        isRecipientDesignated = null,
                         categoryCounts = MindRecordCategory.entries.associateWith { 0 },
                         categoryCountsLoading = true,
                         todayDateText = todayDateText,
@@ -202,7 +203,8 @@ fun HomeTabScreen(
 @Composable
 private fun HomeTabScrollContent(
     userName: String,
-    isRecipientDesignated: Boolean,
+    /** null 이면 아직 조회 전 — 배지를 어느 쪽으로도 확정하지 않는다 (#698). */
+    isRecipientDesignated: Boolean?,
     categoryCounts: Map<MindRecordCategory, Int>,
     categoryCountsLoading: Boolean,
     todayDateText: String,
@@ -232,12 +234,20 @@ private fun HomeTabScrollContent(
 
             RecipientDesignationBadge(
                 state =
-                    if (isRecipientDesignated) {
-                        RecipientDesignationBadgeState.Completed
-                    } else {
-                        RecipientDesignationBadgeState.Incomplete(
-                            onClick = actions::onRecipientChipClick,
-                        )
+                    when (isRecipientDesignated) {
+                        null -> {
+                            RecipientDesignationBadgeState.Unknown
+                        }
+
+                        true -> {
+                            RecipientDesignationBadgeState.Completed
+                        }
+
+                        false -> {
+                            RecipientDesignationBadgeState.Incomplete(
+                                onClick = actions::onRecipientChipClick,
+                            )
+                        }
                     },
             )
 

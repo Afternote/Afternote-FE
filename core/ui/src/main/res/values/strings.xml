@@ -17,6 +17,11 @@
 
     <string name="core_ui_recipient_designated">수신인 지정 완료</string>
     <string name="core_ui_recipient_not_designated">수신인 지정 미완료</string>
+    <!--
+      조회 전 자리 표시. shimmer 가 덮으므로 문구 자체는 보이지 않지만, 폭을 잡고
+      TalkBack 이 읽을 것이 있어야 한다 — 확정 문구("완료"·"미완료")를 쓰면 안 된다 (#698).
+    -->
+    <string name="core_ui_recipient_designation_unknown">수신인 지정 여부 확인 중</string>
 
     <string name="core_ui_network_error_title">네트워크 연결 오류</string>
     <string name="core_ui_network_error_description">인터넷 연결을 확인한 후 다시 시도해 주세요.</string>
