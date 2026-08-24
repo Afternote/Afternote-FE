@@ -15,7 +15,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import javax.inject.Inject
 import javax.inject.Named
 
-// DIRECTORY_AFTERNOTES 는 같은 패키지 [MemorialPhotoUploadRepositoryImpl] 의 internal const 공유.
+// DIRECTORY_AFTERNOTES 는 같은 패키지 [MemorialMediaUploadRepositoryImpl] 의 internal const 공유.
 private const val EXTENSION_JPG = "jpg"
 private const val CONTENT_TYPE_JPEG = "image/jpeg"
 
@@ -37,6 +37,8 @@ class MemorialThumbnailUploadRepositoryImpl
                             PresignedUrlRequestDto(
                                 directory = DIRECTORY_AFTERNOTES,
                                 extension = EXTENSION_JPG,
+                                // 메모리에 이미 바이트가 있어 그대로 크기를 보낸다 (#950).
+                                contentLength = jpegBytes.size.toLong(),
                             ),
                         ).requireData()
 

@@ -16,22 +16,19 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.YearMonth
 import javax.inject.Inject
 
 /**
  * 임시저장 목록 ViewModel.
  *
- * 두 카테고리 모두 백엔드가 제공하는 `draftOnly=true` 쿼리로 조회한다 — 전체를 받아 클라에서 거르면
- * 서버가 페이징을 붙였을 때 draft 가 뒤 페이지로 밀려 누락될 수 있다.
- *
- * 조회 범위는 일기가 이번 달 한정(`yearMonth`)인 반면 데일리질문은 전체 기간이다. 데일리질문 API 의
- * `date` 는 특정 하루만 받아 "이번 달" 을 표현할 수 없어 맞추지 못했다.
+ * 조회 범위는 [MindRecordDraftLoader] 가 정본으로 들고 있다 — 작성 툴바의 카운트가 같은 범위를
+ * 봐야 목록 건수와 어긋나지 않는다 (#769).
  */
 @HiltViewModel
 class DraftListViewModel
     @Inject
     constructor(
+        private val loader: MindRecordDraftLoader,
         private val diaryRepository: DiaryRepository,
         private val dailyQuestionRepository: DailyQuestionRepository,
     ) : ViewModel() {
@@ -53,39 +50,57 @@ class DraftListViewModel
                 _uiState.update {
                     if (it is DraftListUiState.Success) it.copy(isDeleting = true) else it
                 }
-                coroutineScope {
-                    items
-                        .map { item ->
-                            async {
-                                when (item.category) {
-                                    DraftCategory.Diary -> diaryRepository.delete(item.id)
+                // 항목별 결과를 항목과 짝지어 받는다 — 무엇이 실패했는지 알아야 다시 선택해 줄 수 있다.
+                val results =
+                    coroutineScope {
+                        items
+                            .map { item -> async { item to deleteOne(item) } }
+                            .awaitAll()
+                    }
+                val failed = results.filter { (_, result) -> result.isFailure }.map { (item, _) -> item }
 
-                                    DraftCategory.DailyQuestion -> dailyQuestionRepository.delete(item.id)
-
-                                    // All 은 필터 라벨용 — 실제 항목 카테고리로는 등장하지 않는다.
-                                    DraftCategory.All -> Result.success(Unit)
-                                }
-                            }
-                        }.awaitAll()
-                }
                 val refreshed = collectDrafts()
                 _uiState.value =
                     if (refreshed != null) {
-                        DraftListUiState.Success(items = refreshed, deleteCompleted = true)
+                        // 실패했지만 재조회에서도 사라진 항목은 알리지 않는다 — 이미 없는 것을 지우려다
+                        // 404 가 난 경우가 여기다. 사용자가 원한 결과는 이뤄졌고, 남아 있지도 않은 항목을
+                        // 다시 선택해 주면 "목록은 비었는데 1개 선택" 같은 상태가 된다.
+                        val remainingKeys = refreshed.mapTo(mutableSetOf()) { it.category to it.id }
+                        val actionableFailures = failed.filter { (it.category to it.id) in remainingKeys }
+
+                        DraftListUiState.Success(
+                            items = refreshed,
+                            deleteOutcome =
+                                if (actionableFailures.isEmpty()) {
+                                    DraftDeleteOutcome.AllDeleted
+                                } else {
+                                    DraftDeleteOutcome.SomeFailed(actionableFailures)
+                                },
+                        )
                     } else {
                         DraftListUiState.Error(UiText.Resource(R.string.mindrecord_error_generic))
                     }
             }
         }
 
+        private suspend fun deleteOne(item: DraftItem): Result<Unit> =
+            when (item.category) {
+                DraftCategory.Diary -> diaryRepository.delete(item.id)
+
+                DraftCategory.DailyQuestion -> dailyQuestionRepository.delete(item.id)
+
+                // All 은 필터 라벨용 — 실제 항목 카테고리로는 등장하지 않는다.
+                DraftCategory.All -> Result.success(Unit)
+            }
+
         fun deleteAll() {
             val current = _uiState.value as? DraftListUiState.Success ?: return
             delete(current.items)
         }
 
-        fun consumeDeleteCompleted() {
+        fun consumeDeleteOutcome() {
             _uiState.update {
-                if (it is DraftListUiState.Success) it.copy(deleteCompleted = false) else it
+                if (it is DraftListUiState.Success) it.copy(deleteOutcome = null) else it
             }
         }
 
@@ -103,29 +118,12 @@ class DraftListViewModel
         }
 
         private suspend fun collectDrafts(): List<DraftItem>? =
-            runCatching {
-                coroutineScope {
-                    val yearMonth = YearMonth.now().toString()
-                    // 조회 실패는 예외로 올려 바깥 runCatching 이 잡게 한다.
-                    // getOrNull().orEmpty() 로 흡수하면 "실패" 와 "0건" 이 같은 빈 화면이 되어
-                    // Error 상태가 도달 불가능한 죽은 경로가 된다.
-                    val draftDiariesDeferred =
-                        async {
-                            diaryRepository
-                                .getList(yearMonth = yearMonth, draftOnly = true)
-                                .getOrThrow()
-                                .diaries
-                        }
-                    val draftDailyQuestionsDeferred =
-                        async {
-                            dailyQuestionRepository
-                                .getList(draftOnly = true)
-                                .getOrThrow()
-                        }
-
+            loader
+                .load()
+                .map { drafts ->
                     val diaryItems =
                         // 날짜를 못 정한 항목은 toUi() 가 null 을 돌린다 — 정렬 키가 없어 뺀다.
-                        draftDiariesDeferred.await().mapNotNull { diary ->
+                        drafts.diaries.mapNotNull { diary ->
                             val ui = diary.toUi() ?: return@mapNotNull null
                             DraftItem(
                                 id = ui.id,
@@ -136,8 +134,9 @@ class DraftListViewModel
                             )
                         }
                     val dailyQuestionItems =
-                        draftDailyQuestionsDeferred.await().map { question ->
-                            val ui = question.toUi()
+                        // 날짜를 못 정한 항목은 toUi() 가 null 을 돌린다 — 정렬 키가 없어 뺀다 (#751).
+                        drafts.dailyQuestions.mapNotNull { question ->
+                            val ui = question.toUi() ?: return@mapNotNull null
                             DraftItem(
                                 id = ui.id,
                                 category = DraftCategory.DailyQuestion,
@@ -146,8 +145,6 @@ class DraftListViewModel
                                 date = ui.date,
                             )
                         }
-
                     (diaryItems + dailyQuestionItems).sortedByDescending { it.date }
-                }
-            }.getOrNull()
+                }.getOrNull()
     }

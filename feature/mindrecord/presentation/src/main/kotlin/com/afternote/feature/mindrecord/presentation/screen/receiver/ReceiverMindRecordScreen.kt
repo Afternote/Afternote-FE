@@ -60,7 +60,10 @@ fun ReceiverMindRecordScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var filterSheetVisible by remember { mutableStateOf(false) }
 
-    Scaffold(modifier = modifier) { paddingValues ->
+    Scaffold(
+        modifier = modifier,
+        containerColor = Color.Transparent,
+    ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {
             when (val state = uiState) {
                 ReceiverMindRecordUiState.Loading -> {
@@ -115,6 +118,8 @@ private fun SuccessContent(
         Spacer(modifier = Modifier.height(8.dp))
         PrimaryTabRow(
             selectedTabIndex = selectedIndex,
+            // 지정하지 않으면 M3 baseline surface(#FEF7FF)가 나와 시안 배경(#FAFAFA)과 어긋난다.
+            containerColor = Color.Transparent,
             divider = {},
             indicator = {
                 TabRowDefaults.PrimaryIndicator(

@@ -6,14 +6,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
+import com.afternote.core.common.result.runCatchingCancellable
+import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationException
 import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationKind
-import com.afternote.feature.afternote.domain.model.author.AuthorReceiverEntry
 import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.SaveAfternoteCommand
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
-import com.afternote.feature.afternote.domain.repository.author.AuthorReceiverRepository
 import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
@@ -186,7 +186,7 @@ class AfternoteEditorViewModel
     @Inject
     constructor(
         private val savedStateHandle: SavedStateHandle,
-        private val authorReceiverRepository: AuthorReceiverRepository,
+        private val userRepository: UserRepository,
         private val afternoteRepository: AfternoteRepository,
         private val memorialThumbnailUploadRepository: MemorialThumbnailUploadRepository,
         private val resolveMemorialMediaForSave: ResolveMemorialMediaForSaveUseCase,
@@ -267,14 +267,6 @@ class AfternoteEditorViewModel
         ) = mutateForm { it.withProcessingMethodEdited(localId = localId, newText = newText) }
 
         init {
-            viewModelScope.launch {
-                authorReceiverRepository
-                    .observeReceivers()
-                    .map { it.toAfternoteEditorReceivers() }
-                    .collect { mapped ->
-                        internalState.update { it.copy(authorReceivers = mapped) }
-                    }
-            }
             readEditItemId()?.let(::loadExistingAfternoteForEdit)
         }
 
@@ -298,9 +290,21 @@ class AfternoteEditorViewModel
             }
         }
 
+        /**
+         * 작성자가 등록한 수신자 전체를 받아 [InternalState.authorReceivers] 에 채운다.
+         *
+         * 신규 작성 진입 시 1회 호출된다. 폼이 비어 있으면 화면이 이 목록으로 수신자를 채우고
+         * (`AfternoteNavGraphEditor` 의 `replaceReceiversIfEmpty`), 사용자는 불필요한 수신자를 지운다.
+         * 수정 진입은 상세 응답 prefill 이 지정 수신자를 채우므로 이 목록을 쓰지 않는다.
+         */
         fun refreshAuthorReceivers() {
             viewModelScope.launch {
-                authorReceiverRepository.refreshReceivers()
+                runCatchingCancellable { userRepository.getReceivers() }
+                    .onSuccess { receivers ->
+                        internalState.update { it.copy(authorReceivers = receivers.toAfternoteEditorReceivers()) }
+                    }.onFailure { e ->
+                        errorReporter.recordAfternoteFailure(AfternoteFailureStage.AUTHOR_RECEIVER_LOAD, e)
+                    }
             }
         }
 
@@ -551,7 +555,8 @@ class AfternoteEditorViewModel
             }
         }
 
-        fun getReceiverById(id: Long): AuthorReceiverEntry? = authorReceiverRepository.currentReceivers().find { it.receiverId == id }
+        /** 수신자 선택 결과(id)를 폼에 넣기 위해 [refreshAuthorReceivers] 로 받아 둔 목록에서 이름·관계를 찾는다. */
+        fun getReceiverById(id: Long): AfternoteEditorReceiver? = internalState.value.authorReceivers.find { it.id == id.toString() }
 
         // region Internal state shaping
 

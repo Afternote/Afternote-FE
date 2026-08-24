@@ -34,19 +34,23 @@ class DailyQuestionRepositoryImpl
                 api.getTodayDailyQuestion().requireData().toDomain()
             }
 
-        override suspend fun create(payload: DailyQuestionCreatePayload): Result<Unit> =
+        override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> =
             runCatchingCancellable {
-                api.createDailyQuestion(payload.toRequest()).requireStatus()
+                api
+                    .createDailyQuestion(payload.toRequest())
+                    .requireData()
+                    .userDailyQuestionId
             }
 
         override suspend fun update(
             id: Long,
             payload: DailyQuestionUpdatePayload,
-        ): Result<Unit> =
+        ): Result<Long> =
             runCatchingCancellable {
                 api
                     .updateDailyQuestion(userDailyQuestionId = id, request = payload.toRequest())
-                    .requireStatus()
+                    .requireData()
+                    .userDailyQuestionId
             }
 
         override suspend fun delete(id: Long): Result<Unit> =
