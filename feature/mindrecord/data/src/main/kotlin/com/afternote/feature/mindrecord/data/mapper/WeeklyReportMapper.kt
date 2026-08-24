@@ -1,9 +1,11 @@
 package com.afternote.feature.mindrecord.data.mapper
 
+import com.afternote.feature.mindrecord.data.dto.EmotionAnalysisSummaryDto
 import com.afternote.feature.mindrecord.data.dto.WeeklyReportDailyQuestionDto
 import com.afternote.feature.mindrecord.data.dto.WeeklyReportDayDto
 import com.afternote.feature.mindrecord.data.dto.WeeklyReportDto
 import com.afternote.feature.mindrecord.data.dto.WeeklyReportEmotionDto
+import com.afternote.feature.mindrecord.domain.model.EmotionAnalysis
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDailyQuestion
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDay
@@ -17,6 +19,7 @@ fun WeeklyReportDto.toDomain(): WeeklyReport =
         week = week.map { it.toDomain() },
         dailyQuestions = dailyQuestions.map { it.toDomain() },
         emotions = emotions.map { it.toDomain() },
+        emotionAnalysis = emotionAnalysis?.toDomain(),
     )
 
 /** `week[].type` 중 일기를 뜻하는 값. 나머지(`DAILY_QUESTION`·`DEEP_THOUGHT`·미래 종류)는 일기가 아니다. */
@@ -50,6 +53,14 @@ fun WeeklyReportDailyQuestionDto.toDomain(): WeeklyReportDailyQuestion =
         title = title,
         content = content,
         date = date,
+    )
+
+fun EmotionAnalysisSummaryDto.toDomain(): EmotionAnalysis =
+    EmotionAnalysis(
+        total = total,
+        succeeded = succeeded,
+        pending = pending,
+        failed = failed,
     )
 
 fun WeeklyReportEmotionDto.toDomain(): WeeklyReportEmotion =
