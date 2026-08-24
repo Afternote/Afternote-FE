@@ -1,5 +1,6 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -90,8 +91,23 @@ class DiaryWriteViewModel
 
         fun submit(isDraft: Boolean = false) {
             val state = _uiState.value
-            if (!state.canSubmit) return
-            val mood = state.mood ?: return
+            // 임시저장과 정식 등록의 조건을 가른다. 무엇이 막고 있는지도 알린다 —
+            // 종전에는 사유 없이 return 해 버튼이 고장 난 것처럼 보였다 (#722).
+            if (isDraft) {
+                if (!state.canSaveDraft) {
+                    failSubmit(R.string.mindrecord_write_draft_empty)
+                    return
+                }
+            } else {
+                val missing = state.missingForSubmit()
+                if (missing != null) {
+                    failSubmit(missing)
+                    return
+                }
+                if (!state.canSubmit) return
+            }
+            // 임시저장은 기분 없이도 저장한다 — 미완성 보존이 목적이다.
+            val mood = state.mood ?: TodayMood.SOSO
 
             viewModelScope.launch {
                 _uiState.update { it.copy(submitState = SubmitState.InProgress) }
@@ -145,6 +161,14 @@ class DiaryWriteViewModel
         }
 
         // 실패해도 수신자 행이 "수신자 설정하기" 로 남을 뿐 작성 자체는 가능 — 에러는 조용히 무시.
+        private fun failSubmit(
+            @StringRes messageRes: Int,
+        ) {
+            _uiState.update {
+                it.copy(submitState = SubmitState.Failed(UiText.Resource(messageRes)))
+            }
+        }
+
         private fun loadReceivers() {
             viewModelScope.launch {
                 runCatching { userRepository.getReceivers() }

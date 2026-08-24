@@ -1,6 +1,7 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import com.afternote.core.ui.UiText
+import com.afternote.feature.mindrecord.presentation.util.isHtmlBlank
 
 data class DailyQuestionWriteUiState(
     val questionId: Long? = null,
@@ -21,7 +22,9 @@ data class DailyQuestionWriteUiState(
      * 이 눌린 시점에 사유를 알리고 조회를 재시도한다.
      */
     val canSubmit: Boolean
-        get() = answer.isNotBlank() && !isQuestionLoading && submitState != SubmitState.InProgress
+        // 리치 에디터는 빈 문단도 `<p></p>`·`<br>` 로 직렬화한다. isNotBlank() 로 판정하면
+        // 화면이 비어 있어도 통과해 빈 답변이 저장되고 작성 화면이 pop 됐다 (#722).
+        get() = !answer.isHtmlBlank() && !isQuestionLoading && submitState != SubmitState.InProgress
 }
 
 sealed interface SubmitState {
