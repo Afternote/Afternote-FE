@@ -136,12 +136,12 @@ private class FakeDailyQuestionDraftRepository(
 
     override suspend fun getToday(): Result<TodayDailyQuestion> = error("호출되면 안 됨")
 
-    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Unit> = error("호출되면 안 됨")
+    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> = error("호출되면 안 됨")
 
     override suspend fun update(
         id: Long,
         payload: DailyQuestionUpdatePayload,
-    ): Result<Unit> = error("호출되면 안 됨")
+    ): Result<Long> = error("호출되면 안 됨")
 
     override suspend fun delete(id: Long): Result<Unit> {
         if (removesOnDelete) remaining.removeAll { it.dailyQuestionId == id }

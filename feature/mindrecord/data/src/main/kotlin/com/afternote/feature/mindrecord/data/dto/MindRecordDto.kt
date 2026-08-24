@@ -17,6 +17,9 @@ data class ReceiverDailyQuestionItemDto(
     @SerialName("content") val content: String,
     // "yyyy.MM.dd 요일" 형식.
     @SerialName("createdAt") val createdAt: String,
+    // 수신자 응답도 발신자와 같은 `DailyQuestionListResponse` 스키마를 재사용한다 — 계약에
+    // 있는 값이라 기본값을 두지 않는다 (#956).
+    @SerialName("isDraft") val isDraft: Boolean,
     // Swagger `DailyQuestionListResponse` 계약에 없는 필드 — 기본값을 유지한다 (#789).
     @SerialName("imageUrl") val imageUrl: String? = null,
 )
