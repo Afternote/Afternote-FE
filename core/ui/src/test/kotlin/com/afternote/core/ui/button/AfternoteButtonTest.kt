@@ -124,6 +124,7 @@ class AfternoteButtonTest {
             assertTrue(secondaryClicked)
         }
     }
+
     @Test
     fun `dual-action 좌우 절반이 접근성 트리에 버튼으로 잡힌다`() {
         // 절반씩 독립 클릭인데 Role.Button 이 없으면 스크린리더가 눌 수 있는 요소로 읽지
