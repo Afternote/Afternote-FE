@@ -94,10 +94,12 @@ class DiaryWriteViewModel
             // 임시저장과 정식 등록의 조건을 가른다. 무엇이 막고 있는지도 알린다 —
             // 종전에는 사유 없이 return 해 버튼이 고장 난 것처럼 보였다 (#722).
             if (isDraft) {
-                if (!state.canSaveDraft) {
-                    failSubmit(R.string.mindrecord_write_draft_empty)
+                val missing = state.missingForDraft()
+                if (missing != null) {
+                    failSubmit(missing)
                     return
                 }
+                if (!state.canSaveDraft) return
             } else {
                 val missing = state.missingForSubmit()
                 if (missing != null) {
@@ -106,8 +108,10 @@ class DiaryWriteViewModel
                 }
                 if (!state.canSubmit) return
             }
-            // 임시저장은 기분 없이도 저장한다 — 미완성 보존이 목적이다.
-            val mood = state.mood ?: TodayMood.SOSO
+            // 고르지 않은 기분을 지어내지 않는다. 지어내면 그것이 사용자 데이터가 되고
+            // (이어쓰기로 열면 «그냥그래» 가 이미 선택돼 보인다) 주간리포트 집계와 감정
+            // 분석 입력에도 그대로 들어간다. 위 가드가 미선택을 이미 막는다.
+            val mood = state.mood ?: return
 
             viewModelScope.launch {
                 _uiState.update { it.copy(submitState = SubmitState.InProgress) }

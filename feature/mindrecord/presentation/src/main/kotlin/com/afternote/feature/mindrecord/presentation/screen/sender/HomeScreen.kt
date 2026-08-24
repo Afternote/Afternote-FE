@@ -146,7 +146,11 @@ fun HomeScreen(
                 categories.forEachIndexed { index, category ->
                     Tab(
                         selected = selectedIndex == index,
-                        onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
+                        // scrollToPage 는 중간 페이지를 거치지 않는다. animate 로 넘기면
+                        // 0 → 2 이동이 1번을 지나며 그 화면이 컴포즈되고, hiltViewModel() 이
+                        // VM 을 만들며 init 조회가 나간다 — 바로 아래 단(#736)이 «열지도 않은
+                        // 탭의 조회를 없앤다» 로 줄여 둔 요청이 탭 이동마다 되살아난다.
+                        onClick = { scope.launch { pagerState.scrollToPage(index) } },
                         text = {
                             Text(
                                 text = stringResource(category.titleRes),

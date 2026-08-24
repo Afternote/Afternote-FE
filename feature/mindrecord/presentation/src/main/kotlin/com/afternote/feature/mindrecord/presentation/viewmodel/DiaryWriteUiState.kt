@@ -29,13 +29,27 @@ data class DiaryWriteUiState(
         get() = missingForSubmit() == null && isReady
 
     /**
-     * 임시저장 조건 — **정식 등록과 분리한다** (#722).
+     * 임시저장 조건.
      *
-     * 미완성 내용을 보존하는 것이 임시저장의 목적인데, 종전에는 정식 등록과 같은
-     * `canSubmit` 을 써서 완성된 글에서만 동작했다. 제목·본문 중 하나라도 있으면 저장한다.
+     * «미완성 보존» 이 목적이라 제목·본문 중 하나만 있어도 저장하려 했지만, **서버가
+     * 임시저장에도 제목·본문·기분을 모두 요구한다** — 실서버 실측(2026-08-24):
+     *
+     * ```
+     * POST /diary {"title":"제목만","content":"","isDraft":true,…}   → 400 "내용은 필수입니다."
+     * POST /diary {"title":"","content":"<p>본문만</p>",…}           → 400 "제목은 필수입니다."
+     * POST /diary {"title":"제목","content":"<p>본문</p>"}            → 400 "오늘의 기분은 필수입니다."
+     * ```
+     *
+     * 보내면 400 이 되는 조건을 «저장 가능» 으로 표시하면 버튼이 고장 난 것과 같아진다.
+     * 서버가 `isDraft=true` 에서 검증을 완화해 주기 전까지는 같은 조건을 요구한다 (#1065).
+     *
+     * 정식 등록과 갈리는 지점은 남는다 — 실패 사유를 각각 다른 문구로 알린다.
      */
     val canSaveDraft: Boolean
-        get() = (title.isNotBlank() || !content.isHtmlBlank()) && isReady
+        get() = missingForDraft() == null && isReady
+
+    /** 임시저장을 막는 첫 번째 누락 항목 (없으면 null). 현재는 정식 등록과 같은 세 가지다. */
+    fun missingForDraft(): Int? = missingForSubmit()
 
     private val isReady: Boolean
         get() = submitState != SubmitState.InProgress && !isDraftLoading
