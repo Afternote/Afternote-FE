@@ -116,6 +116,9 @@ class AuthRepositoryImpl
                         ?: error("리프레시 토큰이 존재하지 않습니다.")
                 val response = tokenApiService.reissue(ReissueRequestDto(refreshToken))
                 val tokenBundleResult = AuthMapper.toRotateTokenResult(response.requireData())
+                check(tokenBundleResult.accessToken.isNotEmpty()) {
+                    "Token rotation returned an empty access token"
+                }
                 updateTokens(
                     accessToken = tokenBundleResult.accessToken,
                     refreshToken = tokenBundleResult.refreshToken,
