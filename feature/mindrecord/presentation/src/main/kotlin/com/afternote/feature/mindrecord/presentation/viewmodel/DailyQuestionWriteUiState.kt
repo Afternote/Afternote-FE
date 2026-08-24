@@ -30,7 +30,13 @@ data class DailyQuestionWriteUiState(
      * 이 눌린 시점에 사유를 알리고 조회를 재시도한다.
      */
     val canSubmit: Boolean
-        get() = answer.isNotBlank() && !isQuestionLoading && submitState != SubmitState.InProgress
+        get() =
+            answer.isNotBlank() &&
+                !isQuestionLoading &&
+                // 이어쓸 본문이 도착하기 전에 저장하면 draftId 가 아직 null 이라 POST 로 나가고,
+                // 서버가 questionId upsert 라 기존 임시저장 본문이 덮인다 — #923 과 같은 유실이다.
+                !isResumingDraft &&
+                submitState != SubmitState.InProgress
 }
 
 sealed interface SubmitState {

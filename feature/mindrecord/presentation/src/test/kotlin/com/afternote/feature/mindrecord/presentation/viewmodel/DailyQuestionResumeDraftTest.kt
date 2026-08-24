@@ -58,31 +58,79 @@ class DailyQuestionResumeDraftTest {
 
     @Test
     fun `이어쓸 본문을 불러오는 동안에는 저장할 수 없다`() {
-        val state = DailyQuestionWriteUiState(answer = "무언가", isResumingDraft = true)
+        // isQuestionLoading 을 명시하지 않으면 기본값(true)만으로 canSubmit 이 false 가 돼
+        // isResumingDraft 를 통째로 지워도 통과하는 공허한 단언이 된다 (리뷰 지적).
+        // 실기 순서상 loadTodayQuestion 이 isQuestionLoading=false 를 먼저 커밋한 뒤
+        // resumeDraft 가 돌므로, 그 창을 그대로 재현한다.
+        val state =
+            DailyQuestionWriteUiState(
+                answer = "무언가",
+                isQuestionLoading = false,
+                isResumingDraft = true,
+            )
 
         assertEquals(false, state.canSubmit)
     }
 
-    private fun viewModel(currentAnswerFromEditor: String): DailyQuestionWriteViewModel {
-        val repository =
-            FakeResumeRepository(
-                today =
-                    TodayDailyQuestion(
-                        questionId = 1L,
-                        day = 16,
-                        content = "질문",
-                        isAnswered = false,
-                        isDraft = true,
-                    ),
-                draft =
-                    DailyQuestion(
-                        dailyQuestionId = 7L,
-                        title = "질문",
-                        content = "<p>이어쓸 본문</p>",
-                        createdAt = "2026.08.23 일",
-                        isDraft = true,
-                    ),
+    @Test
+    fun `불러오기가 끝나면 저장이 다시 열린다`() {
+        // 차단만 걸고 복귀를 빠뜨리면 저장이 영구히 잠긴다.
+        val state =
+            DailyQuestionWriteUiState(
+                answer = "무언가",
+                isQuestionLoading = false,
+                isResumingDraft = false,
             )
+
+        assertEquals(true, state.canSubmit)
+    }
+
+    @Test
+    fun `이어쓰기가 끝나면 불러오기 상태가 풀리고 draftId 가 남는다`() {
+        val viewModel = viewModel(currentAnswerFromEditor = "<p></p>")
+
+        assertEquals(false, viewModel.uiState.value.isResumingDraft)
+        assertEquals(7L, viewModel.uiState.value.draftId)
+    }
+
+    @Test
+    fun `임시저장만 조회한다`() {
+        // 서버는 draftOnly 없이 조회하면 임시저장을 제외한 답변만 내려준다 —
+        // 인자를 흘리면 이어쓰기가 조용히 무산된다.
+        val repository = fakeRepository()
+        val viewModel =
+            DailyQuestionWriteViewModel(
+                repository = repository,
+                photoUploadRepository = PhotoUploadRepository { _, _ -> Result.success("") },
+            )
+        viewModel.onAnswerChanged("<p></p>")
+        repository.releaseDraft()
+
+        assertEquals(true, repository.lastDraftOnly)
+    }
+
+    private fun fakeRepository(): FakeResumeRepository =
+        FakeResumeRepository(
+            today =
+                TodayDailyQuestion(
+                    questionId = 1L,
+                    day = 16,
+                    content = "질문",
+                    isAnswered = false,
+                    isDraft = true,
+                ),
+            draft =
+                DailyQuestion(
+                    dailyQuestionId = 7L,
+                    title = "질문",
+                    content = "<p>이어쓸 본문</p>",
+                    createdAt = "2026.08.23 일",
+                    isDraft = true,
+                ),
+        )
+
+    private fun viewModel(currentAnswerFromEditor: String): DailyQuestionWriteViewModel {
+        val repository = fakeRepository()
         val viewModel =
             DailyQuestionWriteViewModel(
                 repository = repository,
@@ -109,10 +157,17 @@ private class FakeResumeRepository(
         todayArrived.complete(Unit)
     }
 
+    /** 마지막으로 받은 `draftOnly` — 인자를 흘리지 않는지 테스트가 본다. */
+    var lastDraftOnly: Boolean? = null
+        private set
+
     override suspend fun getList(
         date: String?,
         draftOnly: Boolean?,
-    ): Result<List<DailyQuestion>> = Result.success(listOf(draft))
+    ): Result<List<DailyQuestion>> {
+        lastDraftOnly = draftOnly
+        return Result.success(listOf(draft))
+    }
 
     override suspend fun getToday(): Result<TodayDailyQuestion> {
         todayArrived.await()

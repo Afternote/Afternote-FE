@@ -25,10 +25,23 @@ fun String.htmlToPlainText(): String =
  * [htmlToPlainText] 와 달리 Android 에 의존하지 않는다 — ViewModel 판정에 쓰이므로 순수
  * JVM 단위 테스트로 돌아야 한다.
  */
-fun String.isHtmlBlank(): Boolean =
-    replace(HTML_TAG, "")
-        .replace(HTML_ENTITY) { match -> if (match.value == "&nbsp;") " " else "" }
+fun String.isHtmlBlank(): Boolean {
+    // 태그를 통째로 걷으면 이미지·링크처럼 **태그 자체가 내용인** 본문이 빈 것으로 접힌다.
+    // 사진만 첨부한 상태에서 이어쓰기가 도착하면 그 이미지가 draft 로 덮인다 (리뷰 지적).
+    if (HTML_MEDIA_TAG.containsMatchIn(this)) return false
+
+    return replace(HTML_TAG, "")
+        // 공백 엔티티만 공백으로, 나머지 엔티티는 **가시 문자 한 자**로 친다. 종전에는
+        // 전부 지워 `<p>&lt;</p>` 같은 본문이 빈 것으로 판정됐다.
+        .replace(HTML_ENTITY) { match -> if (match.value in HTML_SPACE_ENTITIES) " " else "\uFFFD" }
         .isBlank()
+}
 
 private val HTML_TAG = Regex("<[^>]*>")
 private val HTML_ENTITY = Regex("&[a-zA-Z]+;|&#\\d+;")
+
+/** 태그 자체가 내용인 것들 — 걷어내면 «비었다» 로 뒤집힌다. */
+private val HTML_MEDIA_TAG = Regex("""<(img|video|audio|iframe|embed)\b""", RegexOption.IGNORE_CASE)
+
+/** 공백으로 렌더되는 엔티티. 나머지는 가시 문자로 본다. */
+private val HTML_SPACE_ENTITIES = setOf("&nbsp;", "&#160;", "&ensp;", "&emsp;", "&thinsp;")
