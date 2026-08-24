@@ -56,7 +56,6 @@ fun ReceiverMindRecordScreen(
     modifier: Modifier = Modifier,
     viewModel: ReceiverMindRecordViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
-    onRecordClick: (Long) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var filterSheetVisible by remember { mutableStateOf(false) }
@@ -81,10 +80,11 @@ fun ReceiverMindRecordScreen(
                     SuccessContent(
                         state = state,
                         onFilterClick = { filterSheetVisible = true },
-                        onRecordClick = { id ->
-                            openedRecordId = id
-                            onRecordClick(id)
-                        },
+                        // 카드 탭의 목적지는 이 화면 안의 시트다. 종전에는 화면이 받아 두고
+                        // 아무도 넘기지 않는 `onRecordClick` 파라미터가 있었는데(#618 이 지목한
+                        // 그 콜백), 남겨 두면 나중에 실제 네비게이션이 붙는 순간 시트가 열리며
+                        // 화면까지 전환된다. 소유자를 하나로 둔다.
+                        onRecordClick = { id -> openedRecordId = id },
                     )
                 }
             }

@@ -81,7 +81,14 @@ class ReceiverRecordDetailTest {
     @Test
     fun `필터로 목록에서 빠진 항목은 열리지 않는다`() {
         // 시트가 열린 채 필터가 바뀌면 자연히 닫힌다 — 없는 기록을 계속 붙들지 않는다.
-        assertNull(findOpenedRecord(success(), 999L))
+        // 목록에 없던 id 를 넣으면 위의 «못 찾으면 null» 을 한 번 더 밟을 뿐이므로,
+        // **방금까지 열려 있던** 11L 을 그대로 두고 그 항목이 빠진 목록을 넣는다.
+        val openedId = 11L
+        assertEquals(diary, findOpenedRecord(success(), openedId))
+
+        val filtered = success().copy(diaries = emptyList())
+
+        assertNull(findOpenedRecord(filtered, openedId))
     }
 
     @Test
