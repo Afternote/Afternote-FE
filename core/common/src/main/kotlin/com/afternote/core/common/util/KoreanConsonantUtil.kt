@@ -70,6 +70,10 @@ object KoreanConsonantUtil {
      *
      * 그룹 내부는 가나다 순입니다 — 한글 완성형은 코드포인트 순서가 곧 가나다 순이라 별도 `Collator` 가 필요 없습니다.
      *
+     * 다만 [NON_KOREAN_SECTION] 그룹에는 영문이 섞이는데, 코드포인트 순은 대문자를 전부 소문자 앞으로 몰아
+     * `Benny` · `anna` · `carol` 처럼 늘어선다. 대소문자를 무시해야 사람이 기대하는 순서가 된다.
+     * 한글에는 대소문자가 없어 이 비교기를 써도 위의 가나다 순이 그대로 유지된다.
+     *
      * @param items 그룹화할 아이템 리스트
      * @param keySelector 초성을 추출할 문자열을 반환하는 함수
      * @return 초성을 키로 하고 해당 초성으로 시작하는 아이템 리스트를 값으로 하는 Map
@@ -80,7 +84,7 @@ object KoreanConsonantUtil {
     ): Map<Char, List<T>> =
         items
             .map { it to normalize(keySelector(it)) }
-            .sortedBy { (_, name) -> name }
+            .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { (_, name) -> name })
             .groupBy({ (_, name) -> sectionKeyOf(name) }) { (item, _) -> item }
             .toSortedMap(
                 compareBy {

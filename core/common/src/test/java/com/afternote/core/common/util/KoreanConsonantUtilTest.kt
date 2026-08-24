@@ -168,4 +168,23 @@ class KoreanConsonantUtilTest {
 
         assertEquals(listOf("123", "alice", "zoe"), result['#'])
     }
+
+    @Test
+    fun `groupByInitialConsonant - # 그룹은 대소문자를 무시하고 정렬된다`() {
+        // 코드포인트 순으로 두면 대문자가 전부 소문자 앞으로 몰려 Benny · anna · carol 로 늘어선다.
+        val items = listOf("carol", "Benny", "anna")
+
+        val result = KoreanConsonantUtil.groupByInitialConsonant(items) { it }
+
+        assertEquals(listOf("anna", "Benny", "carol"), result['#'])
+    }
+
+    @Test
+    fun `groupByInitialConsonant - 대소문자 무시 비교기가 한글 가나다 순을 바꾸지 않는다`() {
+        val items = listOf("김영희", "강민", "까치", "고은")
+
+        val result = KoreanConsonantUtil.groupByInitialConsonant(items) { it }
+
+        assertEquals(listOf("강민", "고은", "김영희", "까치"), result['ㄱ'])
+    }
 }
