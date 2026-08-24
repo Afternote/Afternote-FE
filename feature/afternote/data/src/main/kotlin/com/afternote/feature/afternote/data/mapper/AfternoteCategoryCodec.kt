@@ -26,4 +26,4 @@ private val afternoteTypeByIncomingCategory: Map<String, AfternoteType> =
 
 internal fun AfternoteType.toServerCategory(): String? = serverCategoryByType[this]
 
-internal fun afternoteTypeFromServerCategory(value: String): AfternoteType? = afternoteTypeByIncomingCategory[value.uppercase()]
+fun afternoteTypeFromServerCategory(value: String): AfternoteType? = afternoteTypeByIncomingCategory[value.uppercase()]

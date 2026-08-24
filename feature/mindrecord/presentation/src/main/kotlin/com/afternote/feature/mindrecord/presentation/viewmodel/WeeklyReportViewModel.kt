@@ -2,6 +2,7 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.TodayMood
@@ -89,7 +90,7 @@ class WeeklyReportViewModel
                         internalState.update { it.copy(loadPhase = LoadPhase.Loading) }
                     }
                     val result =
-                        runCatching {
+                        runCatchingCancellable {
                             coroutineScope {
                                 val reportDeferred =
                                     async {
@@ -101,8 +102,9 @@ class WeeklyReportViewModel
                                 reportDeferred.await() to profileDeferred.await()
                             }
                         }
-                    // runCatching 이 CancellationException 까지 실패로 잡는다.
                     // 새 로드가 이 Job 을 취소했다면 상태는 그쪽이 결정하므로 여기서 멈춘다.
+                    // `runCatchingCancellable` 이 취소를 다시 던지므로 위에서 이미 빠져나가지만,
+                    // `await()` 사이에 취소가 들어온 경우를 위해 남겨 둔다.
                     ensureActive()
                     result
                         .onSuccess { (report, profile) ->

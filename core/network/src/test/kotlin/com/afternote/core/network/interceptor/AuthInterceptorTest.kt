@@ -2,6 +2,7 @@ package com.afternote.core.network.interceptor
 
 import com.afternote.core.model.TokenBundle
 import com.afternote.core.network.FakeAuthRepository
+import com.afternote.core.network.FakeErrorReporter
 import com.afternote.core.network.token.AccessTokenExpiryTracker
 import com.afternote.core.network.token.TokenReissuer
 import okhttp3.Authenticator
@@ -52,7 +53,7 @@ class AuthInterceptorTest {
         AuthInterceptor(
             authRepository = { repository },
             expiryTracker = tracker,
-            tokenReissuer = TokenReissuer({ repository }, tracker),
+            tokenReissuer = TokenReissuer({ repository }, tracker, FakeErrorReporter()),
         )
 
     @Test

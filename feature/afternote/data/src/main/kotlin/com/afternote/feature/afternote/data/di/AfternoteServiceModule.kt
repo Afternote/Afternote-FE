@@ -2,8 +2,6 @@ package com.afternote.feature.afternote.data.di
 
 import com.afternote.feature.afternote.data.service.AfternoteApiService
 import com.afternote.feature.afternote.data.service.MusicApiService
-import com.afternote.feature.afternote.data.service.ReceiverAfternoteApiService
-import com.afternote.feature.afternote.data.service.ReceiverAuthApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -22,12 +20,4 @@ object AfternoteServiceModule {
     @Provides
     @Singleton
     fun provideMusicApiService(retrofit: Retrofit): MusicApiService = retrofit.create<MusicApiService>()
-
-    @Provides
-    @Singleton
-    fun provideReceiverAfternoteApiService(retrofit: Retrofit): ReceiverAfternoteApiService = retrofit.create<ReceiverAfternoteApiService>()
-
-    @Provides
-    @Singleton
-    fun provideReceiverAuthApiService(retrofit: Retrofit): ReceiverAuthApiService = retrofit.create<ReceiverAuthApiService>()
 }
