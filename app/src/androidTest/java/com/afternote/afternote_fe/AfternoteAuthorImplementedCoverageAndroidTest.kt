@@ -206,13 +206,11 @@ class AfternoteAuthorImplementedCoverageAndroidTest {
                         songs =
                             listOf(
                                 MemorialSongPayload(
-                                    id = 91L,
                                     title = "첫 번째 노래",
                                     artist = "가수 A",
                                     coverUrl = "https://cdn.test/cover-a.jpg",
                                 ),
                                 MemorialSongPayload(
-                                    id = null,
                                     title = "두 번째 노래",
                                     artist = "가수 B",
                                     coverUrl = null,
