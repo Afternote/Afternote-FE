@@ -32,7 +32,7 @@ import com.afternote.feature.afternote.presentation.shared.model.PlaylistSongDis
  * @param topBarActions [DetailTopBar] 우측 액션 슬롯 (예: 관리 화면의 편집 모드 토글 연필)
  */
 @Composable
-internal fun SongPlaylistScaffold(
+fun SongPlaylistScaffold(
     title: String,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
