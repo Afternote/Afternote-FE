@@ -37,6 +37,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.asString
+import com.afternote.core.ui.button.AfternoteButton
+import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.button.AfternoteCircularCheckbox
 import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.theme.AfternoteDesign
@@ -212,11 +214,16 @@ private fun SuccessContent(
             }
         }
 
-        // Figma 2372:24660 — 선택 모드 하단 "전체 삭제 | 선택 삭제" 바
+        // Figma 2372:24660 — 선택 모드 하단 "전체 삭제 | 선택 삭제" 바.
+        // core 정본을 쓴다. 자체 구현은 같은 시안을 근거로 적었는데 코너·라벨·divider·여백이
+        // 4/4 어긋나 있었고, core 는 4/4 일치한다 (#634).
         if (selectionMode) {
-            DeleteActionBar(
-                onDeleteAll = onDeleteAll,
-                onDeleteSelected = onDeleteSelected,
+            AfternoteButton(
+                text = stringResource(MindRecordR.string.mindrecord_draft_list_delete_all),
+                onClick = onDeleteAll,
+                type = AfternoteButtonType.Variant5,
+                secondaryText = stringResource(MindRecordR.string.mindrecord_draft_list_delete_selected),
+                onSecondaryClick = onDeleteSelected,
                 modifier =
                     Modifier
                         .align(Alignment.BottomCenter)
@@ -287,56 +294,6 @@ private fun DraftRow(
 }
 
 @Composable
-private fun DeleteActionBar(
-    onDeleteAll: () -> Unit,
-    onDeleteSelected: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(10.dp))
-                .background(AfternoteDesign.colors.gray9)
-                .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .clickable(role = Role.Button, onClick = onDeleteAll)
-                    .padding(vertical = 12.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = stringResource(MindRecordR.string.mindrecord_draft_list_delete_all),
-                style = AfternoteDesign.typography.bodySmallB,
-                color = AfternoteDesign.colors.white,
-            )
-        }
-        VerticalDivider(
-            modifier = Modifier.height(16.dp),
-            color = AfternoteDesign.colors.gray6,
-        )
-        Box(
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .clickable(role = Role.Button, onClick = onDeleteSelected)
-                    .padding(vertical = 12.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = stringResource(MindRecordR.string.mindrecord_draft_list_delete_selected),
-                style = AfternoteDesign.typography.bodySmallB,
-                color = AfternoteDesign.colors.white,
-            )
-        }
-    }
-}
-
-@Composable
 private fun DeletedToast(modifier: Modifier = Modifier) {
     Box(
         modifier =
@@ -383,7 +340,13 @@ private fun DraftRowPreview() {
                 selected = true,
                 onToggleSelect = {},
             )
-            DeleteActionBar(onDeleteAll = {}, onDeleteSelected = {})
+            AfternoteButton(
+                text = "전체 삭제",
+                onClick = {},
+                type = AfternoteButtonType.Variant5,
+                secondaryText = "선택 삭제",
+                onSecondaryClick = {},
+            )
         }
     }
 }

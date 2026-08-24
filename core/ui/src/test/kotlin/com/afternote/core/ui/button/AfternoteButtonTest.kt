@@ -1,7 +1,9 @@
 package com.afternote.core.ui.button
 
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -120,6 +122,30 @@ class AfternoteButtonTest {
         composeRule.runOnIdle {
             assertTrue(primaryClicked)
             assertTrue(secondaryClicked)
+        }
+    }
+    @Test
+    fun `dual-action 좌우 절반이 접근성 트리에 버튼으로 잡힌다`() {
+        // 절반씩 독립 클릭인데 Role.Button 이 없으면 스크린리더가 눌 수 있는 요소로 읽지
+        // 않는다. mindrecord 자체 구현에는 있고 core 에는 없던 결함이다 (#634).
+        composeRule.setContent {
+            AfternoteTheme {
+                AfternoteButton(
+                    text = "전체 삭제",
+                    onClick = {},
+                    type = AfternoteButtonType.Variant5,
+                    secondaryText = "선택 삭제",
+                    onSecondaryClick = {},
+                )
+            }
+        }
+
+        listOf("전체 삭제", "선택 삭제").forEach { label ->
+            composeRule
+                .onNodeWithText(label)
+                .assert(
+                    SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button),
+                )
         }
     }
 }

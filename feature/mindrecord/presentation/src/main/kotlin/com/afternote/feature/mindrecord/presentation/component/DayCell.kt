@@ -37,7 +37,7 @@ fun DayCell(
     // - NONE/UNANSWERED: 투명 배경 + 회색 글자, 인디케이터 없음
     val bgColor =
         when (model.state) {
-            DayState.TODAY -> Color(0xFF1A1A1A)
+            DayState.TODAY -> AfternoteDesign.colors.gray9
             else -> Color.Transparent
         }
     val textColor =

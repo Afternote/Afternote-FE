@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -222,7 +223,9 @@ private fun RowScope.DualActionLabel(
         modifier =
             Modifier
                 .weight(1f)
-                .clickable(onClick = onClick)
+                // 절반씩 독립 클릭이라 접근성 트리에도 버튼으로 잡혀야 한다. 없으면
+                // 스크린리더가 이 영역을 눌 수 있는 요소로 읽지 않는다 (#634).
+                .clickable(role = Role.Button, onClick = onClick)
                 .padding(vertical = AfternoteButtonVerticalPadding),
         contentAlignment = Alignment.Center,
     ) {

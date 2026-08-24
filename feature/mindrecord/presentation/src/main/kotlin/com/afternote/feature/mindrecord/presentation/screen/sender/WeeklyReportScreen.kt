@@ -23,6 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.AfternoteSectionHeader
 import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -100,7 +101,7 @@ private fun WeeklyReportContent(
                 modifier = Modifier.padding(vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                SectionHeader(title = "TOP KEYWORDS")
+                AfternoteSectionHeader(title = "TOP KEYWORDS")
                 EmotionKeywordCard(
                     keywords = state.emotionKeywords,
                     descriptionText =
@@ -116,7 +117,7 @@ private fun WeeklyReportContent(
         // HISTORY 섹션 — gap=12 (divider + 다이어리 카드들).
         item {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                SectionHeader(title = "HISTORY")
+                AfternoteSectionHeader(title = "HISTORY")
                 state.dailyQuestions.forEach { dailyQuestion ->
                     DailyQuestionListCard(answer = dailyQuestion)
                 }
@@ -156,21 +157,6 @@ private fun recordedSummary(
             }
             append(suffix)
         }
-    }
-}
-
-@Composable
-private fun SectionHeader(title: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = title,
-            style = AfternoteDesign.typography.mono,
-            color = AfternoteDesign.colors.black.copy(alpha = 0.4f),
-        )
-        HorizontalDivider(modifier = Modifier.padding(start = 12.dp))
     }
 }
 
