@@ -12,11 +12,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.afternote.domain.error.ReceiverEmailAuthException
-import com.afternote.feature.afternote.presentation.receiver.deliveryverification.DocumentSlot
-import com.afternote.feature.afternote.presentation.receiver.deliveryverification.DocumentUploadViewModel
-import com.afternote.feature.afternote.presentation.receiver.deliveryverification.IdentityVerificationEmailScreen
-import com.afternote.feature.afternote.presentation.receiver.deliveryverification.IdentityVerificationViewModel
+import com.afternote.feature.receiver.domain.error.ReceiverEmailAuthException
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
 import com.afternote.feature.receiver.domain.model.ReceiverAuthPresignedUrl
@@ -26,6 +22,10 @@ import com.afternote.feature.receiver.domain.model.SenderMessageInfo
 import com.afternote.feature.receiver.domain.repository.IdentityVerificationRepository
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import com.afternote.feature.receiver.domain.repository.ReceiverDeliveryDocumentUploadRepository
+import com.afternote.feature.receiver.presentation.deliveryverification.DocumentSlot
+import com.afternote.feature.receiver.presentation.deliveryverification.DocumentUploadViewModel
+import com.afternote.feature.receiver.presentation.deliveryverification.IdentityVerificationEmailScreen
+import com.afternote.feature.receiver.presentation.deliveryverification.IdentityVerificationViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
