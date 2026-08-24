@@ -41,6 +41,11 @@ enum class TimeLetterStatus {
     SENT,
 }
 
+enum class TimeLetterDeliveryMode {
+    DATE,
+    POST_DEATH,
+}
+
 enum class TimeLetterBlockType {
     TEXT,
     IMAGE,
