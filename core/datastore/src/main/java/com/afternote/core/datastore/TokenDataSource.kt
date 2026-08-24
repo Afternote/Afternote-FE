@@ -54,12 +54,6 @@ class TokenDataSource
             }
         }
 
-        suspend fun clearTokens() {
-            dataStore.edit { prefs ->
-                prefs.clear()
-            }
-        }
-
         suspend fun updateTokens(
             accessToken: String,
             refreshToken: String,
