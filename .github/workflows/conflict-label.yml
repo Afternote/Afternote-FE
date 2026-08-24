@@ -1,0 +1,56 @@
+name: Conflict Label
+
+# 충돌 PR 은 `pull_request` 워크플로가 트리거되지 않는다 (#1028) — GitHub 이 base 와 head 를
+# 합친 `refs/pull/<N>/merge` 를 만들지 못하기 때문이다. 그래서 이 워크플로는 `pull_request` 를
+# 쓰지 않는다.
+#
+# **지금은 수동 실행 전용이다.** 도입 시점에 이미 충돌 PR 이 10건이라, 자동 트리거를 켜면 첫
+# 실행에서 라벨과 안내 코멘트가 한꺼번에 쏟아진다. 먼저 `dry_run` 으로 실제 러너 환경에서
+# 판정을 확인하고, 결과를 보고 아래 두 트리거를 여는 후속 PR 을 낸다.
+#
+# ```yaml
+# push:
+#   branches: [develop]      # 충돌을 만들어 내는 쪽 — develop 이 움직인 직후
+# schedule:
+#   - cron: '23 * * * *'     # 보조. 정각 부하를 피해 매시 23분
+# ```
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "라벨·코멘트를 쓰지 않고 계획만 출력"
+        required: false
+        # 자동 트리거가 없는 동안의 기본값은 안전한 쪽이다. 실제로 쓰려면 끄고 실행한다.
+        default: true
+        type: boolean
+
+# 실행이 겹치면 같은 PR 에 코멘트가 두 번 달릴 수 있다. 취소하지 않고 줄을 세운다.
+concurrency:
+  group: conflict-label
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  label:
+    name: Label conflicting pull requests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Run script tests
+        run: node --test .github/scripts/label-conflicting-prs.test.mjs
+
+      - name: Label conflicting pull requests
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          DRY_RUN: ${{ inputs.dry_run == true && 'true' || 'false' }}
+        run: node .github/scripts/label-conflicting-prs.mjs

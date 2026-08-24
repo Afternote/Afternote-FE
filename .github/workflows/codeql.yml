@@ -49,12 +49,16 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      # 읽기 전용이다 — push 에서도 쓰지 않는다. 이 job 은 --build-cache 를 쓸 수 없어
+      # (아래 주석) build-cache-1 이 빈 Gradle User Home 을 저장하게 되는데, Actions 캐시는
+      # 같은 키를 덮어쓰지 못하므로 그것이 먼저 저장되면 build-cache-warm.yml 이 채운
+      # 캐시가 올라갈 자리를 잃는다. develop push 의 캐시 writer 는 그 워크플로 하나다 (#996).
       - name: Set up Gradle and validate wrapper
         if: matrix.build_mode == 'manual'
         uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         with:
           cache-provider: basic
-          cache-read-only: ${{ github.event_name == 'pull_request' }}
+          cache-read-only: true
           validate-wrappers: true
 
       - name: Set up CI-only app configuration
@@ -68,14 +72,23 @@ jobs:
           build-mode: ${{ matrix.build_mode }}
 
       # Java/Kotlin extraction observes compiler invocations, so a clean manual build is the
-      # contract. assembleDebug covers every Android leaf; the two pure JVM leaves need classes.
+      # contract. compileDebugSources covers every Android leaf; the two pure JVM leaves need classes.
+      #
+      # 추출에 필요한 것은 컴파일러 호출이지 APK 가 아니다. assembleDebug 는 그 뒤로
+      # dex 병합(R8)까지 끌고 갔고, 그 :app:mergeExtDexDebug 가 GitHub 러너(7GB)에서
+      # 힙을 넘겨 CodeQL 을 산발적으로 실패시켰다 — 코드 결함과 구분되지 않는 빨간불이었다.
+      # compileDebugSources 는 같은 114개 컴파일 task 를 그대로 돌리면서 dex·packaging 만
+      # 뺀다 (#1023).
+      #
+      # 이 워크플로는 #996 의 --build-cache 예외이기도 하다. compile task 가 FROM-CACHE 로
+      # 넘어가면 컴파일러가 아예 실행되지 않아 추출기가 소스를 담지 못하고, 아래 verify
+      # 스텝이 빈 database 로 실패한다. lint·unit-test·screenshot 에는 이 제약이 없다.
       - name: Compile Android and pure JVM Kotlin sources
         if: matrix.build_mode == 'manual'
         run: >-
-          ./gradlew assembleDebug
+          ./gradlew compileDebugSources
           :feature:onboarding:domain:classes
           :feature:setting:domain:classes
-          --build-cache
           --no-configuration-cache
           --stacktrace
           --console=plain

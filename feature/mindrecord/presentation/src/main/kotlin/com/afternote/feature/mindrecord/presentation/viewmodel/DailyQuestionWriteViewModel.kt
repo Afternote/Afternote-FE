@@ -24,12 +24,23 @@ class DailyQuestionWriteViewModel
     constructor(
         private val repository: DailyQuestionRepository,
         private val photoUploadRepository: PhotoUploadRepository,
+        private val draftLoader: MindRecordDraftLoader,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(DailyQuestionWriteUiState())
         val uiState: StateFlow<DailyQuestionWriteUiState> = _uiState.asStateFlow()
 
         init {
             loadTodayQuestion()
+            loadDraftCount()
+        }
+
+        /** 툴바 카운트는 화면 장식이라 실패해도 화면을 막지 않고 '모름' 으로 남긴다. */
+        private fun loadDraftCount() {
+            viewModelScope.launch {
+                draftLoader.count().onSuccess { count ->
+                    _uiState.update { it.copy(draftCount = count) }
+                }
+            }
         }
 
         private fun loadTodayQuestion() {
@@ -162,8 +173,19 @@ class DailyQuestionWriteViewModel
                         )
                     }
                 result
-                    .onSuccess {
-                        _uiState.update { it.copy(submitState = SubmitState.Succeeded) }
+                    .onSuccess { savedId ->
+                        _uiState.update {
+                            it.copy(
+                                submitState = SubmitState.Succeeded,
+                                // 서버가 돌려준 "내 답변" 식별자를 그대로 든다 (#573).
+                                // 임시저장 뒤 이어서 저장하면 목록을 다시 뒤지지 않고 이 값으로 PATCH 한다 —
+                                // 종전에는 응답을 버려 `resumeDraft()` 가 목록을 재조회해 첫 draft 를
+                                // 추측으로 골랐다.
+                                draftId = if (isDraft) savedId else null,
+                            )
+                        }
+                        // 임시저장이 하나 늘었으니 툴바 숫자도 따라가야 한다 (#769).
+                        if (isDraft) loadDraftCount()
                     }.onFailure { e ->
                         _uiState.update {
                             it.copy(
