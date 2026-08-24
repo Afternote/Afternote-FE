@@ -84,6 +84,19 @@ fun RecordDetailScreen(
                     }
                 }
 
+                RecordDetailUiState.NotFound -> {
+                    // 통신 실패와 구분한다 — 여기서는 재시도가 의미 없고 목록으로 돌아가야 한다.
+                    Box(
+                        modifier = Modifier.fillMaxSize().padding(20.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.mindrecord_detail_not_found),
+                            color = AfternoteDesign.colors.gray9,
+                        )
+                    }
+                }
+
                 is RecordDetailUiState.Error -> {
                     Box(
                         modifier = Modifier.fillMaxSize().padding(20.dp),
@@ -210,11 +223,15 @@ private fun DetailHero(state: RecordDetailUiState.Success) {
                 } else {
                     Box(modifier = Modifier)
                 }
-                Text(
-                    text = state.date.format(DetailDateFormatter),
-                    style = AfternoteDesign.typography.footnoteCaption,
-                    color = metaColor,
-                )
+                // 날짜를 못 구하면 줄을 그리지 않는다 — 지어낸 날짜를 그리면 사용자는 그
+                // 기록이 실제로 그 날 쓰인 것으로 읽는다 (#759 리뷰).
+                state.date?.let { date ->
+                    Text(
+                        text = date.format(DetailDateFormatter),
+                        style = AfternoteDesign.typography.footnoteCaption,
+                        color = metaColor,
+                    )
+                }
             }
         }
     }

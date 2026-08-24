@@ -23,11 +23,13 @@ import java.time.YearMonth
 fun NavGraphBuilder.mindRecordNavGraph(actions: MindRecordNavActions) {
     composable<Route.MindRecord> {
         HomeScreen(
-            onRecordClick = { recordId, isDiary ->
+            onRecordClick = { recordId, isDiary, yearMonth ->
+                // 목록이 보고 있던 달을 그대로 넘긴다. 이번 달로 고정하면 지난달 기록이
+                // 상세에서 조회되지 않아 통째로 열리지 않는다 (#759 리뷰).
                 actions.onOpenRecordDetail(
                     recordId = recordId,
                     isDiary = isDiary,
-                    yearMonth = YearMonth.now().toString(),
+                    yearMonth = yearMonth.toString(),
                 )
             },
             onWriteClick = { category ->

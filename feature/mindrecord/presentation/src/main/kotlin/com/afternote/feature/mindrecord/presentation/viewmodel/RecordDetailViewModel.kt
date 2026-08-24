@@ -26,6 +26,10 @@ import javax.inject.Inject
  *
  * 목록이 이미 본문을 갖고 있지만, 화면을 옮기면 그 상태가 따라오지 않으므로 같은 목록
  * API 로 다시 불러 대상 하나를 고른다 — 작성 화면의 프리필과 같은 방식이다.
+ *
+ * **단건 조회 API 가 없어서** 목록 전체를 받는다. 요청 수를 줄이는 방향(#736)과 반대로
+ * 보이지만 대안이 없다 — `GET /diary`·`GET /daily-questions` 만 있고 `/{id}` 가 없다.
+ * 서버에 단건 조회가 생기면 이 왕복이 사라진다.
  */
 @HiltViewModel
 class RecordDetailViewModel
@@ -48,14 +52,18 @@ class RecordDetailViewModel
             viewModelScope.launch {
                 diaryRepository
                     .getList(yearMonth = route.yearMonth ?: YearMonth.now().toString(), draftOnly = null)
-                    .mapCatching { list -> list.diaries.first { it.diaryId == route.recordId } }
+                    .map { list -> list.diaries.firstOrNull { it.diaryId == route.recordId } }
                     .onSuccess { diary ->
+                        if (diary == null) {
+                            _uiState.value = RecordDetailUiState.NotFound
+                            return@onSuccess
+                        }
                         val ui = diary.toUi()
                         val blocks = diary.content.toRecordContentBlocks()
                         _uiState.value =
                             RecordDetailUiState.Success(
                                 title = diary.title,
-                                date = ui?.date ?: YearMonth.now().atDay(1),
+                                date = ui?.date,
                                 receiverNames = diary.receiverNames,
                                 heroImageUrl = blocks.firstImageUrl(),
                                 blocks = blocks,
@@ -69,8 +77,12 @@ class RecordDetailViewModel
             viewModelScope.launch {
                 dailyQuestionRepository
                     .getList()
-                    .mapCatching { list -> list.first { it.dailyQuestionId == route.recordId } }
+                    .map { list -> list.firstOrNull { it.dailyQuestionId == route.recordId } }
                     .onSuccess { answer ->
+                        if (answer == null) {
+                            _uiState.value = RecordDetailUiState.NotFound
+                            return@onSuccess
+                        }
                         val ui = answer.toUi()
                         val blocks = answer.content.toRecordContentBlocks()
                         _uiState.value =

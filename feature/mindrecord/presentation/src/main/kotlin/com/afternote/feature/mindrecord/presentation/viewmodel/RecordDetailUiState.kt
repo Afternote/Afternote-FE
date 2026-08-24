@@ -15,7 +15,12 @@ sealed interface RecordDetailUiState {
 
     data class Success(
         val title: String,
-        val date: LocalDate,
+        /**
+         * 기록 날짜. **없으면 null 이고 그 줄을 그리지 않는다** — 지어낸 날짜를 그리면
+         * 사용자는 그 기록이 실제로 그 날 쓰인 것으로 읽는다. 상세에서 날짜는 부수
+         * 정보가 아니라 기록을 식별하는 값이다 (#759 리뷰).
+         */
+        val date: LocalDate?,
         /** "수신인 OOO" 로 보여줄 이름들. 지정하지 않았으면 빈 목록이라 줄 자체를 그리지 않는다. */
         val receiverNames: List<String>,
         /**
@@ -31,4 +36,13 @@ sealed interface RecordDetailUiState {
     data class Error(
         val message: UiText,
     ) : RecordDetailUiState
+
+    /**
+     * 목록에 그 기록이 없다 — 지워졌거나 다른 달에 있다.
+     *
+     * 통신 실패와 구분한다. 사용자가 할 일이 다르기 때문이다 — 통신 실패는 «다시 시도»,
+     * 없는 기록은 «목록으로». 종전에는 둘이 같은 화면으로 수렴해 재시도를 아무리 눌러도
+     * 같은 결과였다 (#759 리뷰).
+     */
+    data object NotFound : RecordDetailUiState
 }
