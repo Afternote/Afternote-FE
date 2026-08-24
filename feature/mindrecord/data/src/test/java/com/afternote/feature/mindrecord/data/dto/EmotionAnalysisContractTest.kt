@@ -28,7 +28,8 @@ class EmotionAnalysisContractTest {
         val body =
             """
             { "status": 200, "code": 200, "data": {
-              "week": [], "emotions": [], "summaryText": "",
+              "dailyQuestionAmount": 0, "diaryAmount": 0, "summaryText": "",
+              "daily-question": [], "week": [], "emotions": [],
               "emotionAnalysis": $analysisJson } }
             """.trimIndent()
         return json
@@ -92,8 +93,9 @@ class EmotionAnalysisContractTest {
         // null 로 받아 «모른다» 로 옮긴다 — 확정하지 않는다는 목적은 그대로다.
         val body =
             """
-            { "status": 200, "code": 200,
-              "data": { "week": [], "emotions": [], "summaryText": "" } }
+            { "status": 200, "code": 200, "data": {
+              "dailyQuestionAmount": 0, "diaryAmount": 0, "summaryText": "",
+              "daily-question": [], "week": [], "emotions": [] } }
             """.trimIndent()
 
         val report =
@@ -112,8 +114,8 @@ class EmotionAnalysisContractTest {
         val body =
             """
             { "status": 200, "code": 200, "data": {
-              "week": [], "emotions": [], "summaryText": "이번 주 요약",
-              "dailyQuestionAmount": 2, "diaryAmount": 1 } }
+              "dailyQuestionAmount": 2, "diaryAmount": 1, "summaryText": "이번 주 요약",
+              "daily-question": [], "week": [], "emotions": [] } }
             """.trimIndent()
 
         val report =

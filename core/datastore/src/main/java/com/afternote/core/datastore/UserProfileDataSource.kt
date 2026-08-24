@@ -57,10 +57,4 @@ class UserProfileDataSource
                 prefs[Keys.IS_PASSKEY_REGISTERED] = registered
             }
         }
-
-        suspend fun clear() {
-            dataStore.edit { prefs ->
-                prefs.clear()
-            }
-        }
     }

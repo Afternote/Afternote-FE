@@ -35,6 +35,7 @@ import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepositor
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
+import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 import com.afternote.feature.mindrecord.presentation.model.DayBackground
 import com.afternote.feature.mindrecord.presentation.model.DayContent
 import com.afternote.feature.mindrecord.presentation.screen.receiver.ReceiverMindRecordScreen
@@ -45,6 +46,7 @@ import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryListViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftListUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftListViewModel
+import com.afternote.feature.mindrecord.presentation.viewmodel.MindRecordDraftLoader
 import com.afternote.feature.mindrecord.presentation.viewmodel.ReceiverMindRecordFilter
 import com.afternote.feature.mindrecord.presentation.viewmodel.ReceiverMindRecordUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.ReceiverMindRecordViewModel
@@ -87,11 +89,11 @@ class MindRecordLifecycleAndroidTest {
                 lists[PrivateDiaryQuery(previousMonth.toString(), null)] =
                     DiaryList(listOf(previousPublished), 1, TodayMood.SOSO)
             }
-        val viewModel = DiaryListViewModel(repository)
+        val viewModel = DiaryListViewModel(repository, MindRecordChangeTracker())
 
         composeRule.setContent {
             AfternoteTheme {
-                DiaryScreen(viewModel = viewModel)
+                DiaryScreen(viewModel = viewModel, onItemClick = { _, _ -> })
             }
         }
 
@@ -150,7 +152,12 @@ class MindRecordLifecycleAndroidTest {
                         ),
                     ),
             )
-        val viewModel = DraftListViewModel(diaryRepository, dailyQuestionRepository)
+        val viewModel =
+            DraftListViewModel(
+                loader = MindRecordDraftLoader(diaryRepository, dailyQuestionRepository),
+                diaryRepository = diaryRepository,
+                dailyQuestionRepository = dailyQuestionRepository,
+            )
 
         composeRule.setContent {
             AfternoteTheme {
@@ -175,7 +182,7 @@ class MindRecordLifecycleAndroidTest {
         assertTrue(diaryRepository.deleteCalls.isEmpty())
 
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
-            (viewModel.uiState.value as? DraftListUiState.Success)?.deleteCompleted == false
+            (viewModel.uiState.value as? DraftListUiState.Success)?.deleteOutcome == null
         }
         composeRule.onNodeWithText("선택").performClick()
         composeRule.onNodeWithText("전체 삭제").performClick()
@@ -192,7 +199,7 @@ class MindRecordLifecycleAndroidTest {
         val repository = PrivateWeeklyReportRepository()
         repository.results.addLast(Result.failure(IllegalStateException("weekly offline")))
         val userRepository = privateProfileRepository("테스트 사용자")
-        val viewModel = WeeklyReportViewModel(repository, userRepository)
+        val viewModel = WeeklyReportViewModel(repository, userRepository, MindRecordChangeTracker())
 
         composeRule.setContent {
             AfternoteTheme {
@@ -217,19 +224,21 @@ class MindRecordLifecycleAndroidTest {
                                 diaryId = 301L,
                                 day = wednesday.dayOfMonth,
                                 isDiary = true,
+                                countsAsRecord = true,
                                 emotion = TodayMood.HAPPY,
                             ),
                             WeeklyReportDay(
                                 diaryId = 302L,
                                 day = wednesday.dayOfMonth,
                                 isDiary = false,
+                                countsAsRecord = true,
                                 emotion = null,
                             ),
                         ),
                     dailyQuestions =
                         listOf(
-                            WeeklyReportDailyQuestion("같은 날 질문", "답변 A", wednesday.toString()),
-                            WeeklyReportDailyQuestion("다른 날 질문", "답변 B", friday.toString()),
+                            WeeklyReportDailyQuestion("같은 날 질문", "답변 A", wednesday),
+                            WeeklyReportDailyQuestion("다른 날 질문", "답변 B", friday),
                         ),
                     emotions = emptyList(),
                     // 이 테스트들은 분석 상태를 보지 않는다 — 완료로 고정한다 (#725).
@@ -243,7 +252,7 @@ class MindRecordLifecycleAndroidTest {
         val success = viewModel.uiState.value as WeeklyReportUiState.Success
         assertEquals(7, success.weekDays.size)
         assertEquals(DayOfWeek.entries.toList(), success.weekDays.map { it.dayOfWeek })
-        assertEquals(DayContent.EmojiWithDot("😊"), success.weekDays[2].content)
+        assertEquals(DayContent.EmojiOnly("😊"), success.weekDays[2].content)
         assertEquals(DayBackground.Green, success.weekDays[2].background)
         assertEquals(2, success.recordedDays)
         assertEquals(emptyList<Any>(), success.emotionKeywords)
@@ -382,12 +391,12 @@ private class PrivateDailyQuestionRepository(
 
     override suspend fun getToday(): Result<TodayDailyQuestion> = error("Unexpected today question load")
 
-    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Unit> = error("Unexpected question create")
+    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> = error("Unexpected question create")
 
     override suspend fun update(
         id: Long,
         payload: DailyQuestionUpdatePayload,
-    ): Result<Unit> = error("Unexpected question update")
+    ): Result<Long> = error("Unexpected question update")
 
     override suspend fun delete(id: Long): Result<Unit> {
         deleteCalls += id

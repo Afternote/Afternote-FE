@@ -12,9 +12,13 @@
 
     <!-- MemorySpace 화면 -->
     <string name="mindrecord_memory_space_title">MEMORY SPACE</string>
-    <string name="mindrecord_memory_space_subtitle">마우스를 움직여 공간을 탐색하세요</string>
+    <string name="mindrecord_memory_space_subtitle">화면을 드래그해 공간을 둘러보세요</string>
     <string name="mindrecord_memory_space_back">돌아가기</string>
     <string name="mindrecord_read_again">그날의 기록 다시 읽기</string>
+    <string name="mindrecord_memory_space_loading">기록을 불러오는 중이에요…</string>
+    <string name="mindrecord_memory_space_empty">아직 담긴 기록이 없어요.\n일기나 데일리 질문을 남기면 이곳에 쌓입니다.</string>
+    <string name="mindrecord_error_memory_space_failed">기록을 불러오지 못했습니다.</string>
+    <string name="mindrecord_memory_space_retry">다시 시도하기</string>
 
     <!-- Common action labels -->
     <string name="mindrecord_action_register">등록</string>
@@ -64,7 +68,11 @@
     <string name="mindrecord_calendar_day_label_thu">목</string>
     <string name="mindrecord_calendar_day_label_fri">금</string>
     <string name="mindrecord_calendar_day_label_sat">토</string>
-    <string name="mindrecord_calendar_send_date_title">발송 날짜</string>
+    <!--
+      "발송" 이 아니라 "기록" 이다 — 이 날짜는 과거 일기를 몰아 쓰기 위한 기록 날짜이지
+      발송 시점이 아니다. 시안이 2026-08-05 에 "기록 날짜" 로 수정됐다 (#760).
+    -->
+    <string name="mindrecord_calendar_record_date_title">기록 날짜</string>
 
     <!-- Daily question -->
     <string name="mindrecord_daily_question_default_thanks">오늘 하루, \n누구에게 가장 고마웠나요?</string>
@@ -81,9 +89,11 @@
     <string name="mindrecord_weekly_report_avg_mood_good">😊 좋음</string>
     <string name="mindrecord_weekly_report_label_format">%1$d월 %2$d주차 리포트</string>
     <string name="mindrecord_weekly_report_label_fallback">11월 2주차 리포트</string>
-    <string name="mindrecord_weekly_report_recorded_prefix">이번 주, </string>
-    <string name="mindrecord_weekly_report_recorded_middle">님은 </string>
-    <string name="mindrecord_weekly_report_recorded_suffix">의 마음을 기록하셨네요.</string>
+    <!--
+      한 문장으로 둔다. 조각으로 나눠 앞뒤 공백을 리소스에 두면 aapt2 가 그 공백을 지워
+      APK 에서 "이번 주,박서연님은3일의…" 로 붙는다 (#732). %1$s = 이름, %2$s = "N일".
+    -->
+    <string name="mindrecord_weekly_report_recorded">이번 주, %1$s 님은 %2$s의 마음을 기록하셨네요.</string>
     <string name="mindrecord_weekly_report_days_format">%d일</string>
     <string name="mindrecord_weekly_report_summary_preview">이번 주는 차분히 마음을 정리한 한 주였어요.</string>
 
@@ -115,9 +125,11 @@
     <string name="mindrecord_diary_empty_state_title">아직 등록된 일기가 없어요.</string>
     <string name="mindrecord_diary_empty_state_description">일기를 작성해 나의 매일을 기록해 보아요.</string>
 
-    <!-- Memories card sample question/answer -->
-    <string name="mindrecord_memories_card_question">\"내 인생에서 가장 소중했던 순간은?\"</string>
-    <string name="mindrecord_memories_card_answer">- 아이가 태어났을 때...</string>
+    <!--
+      Memories card. 질문·답변은 사용자의 실제 기록으로 채운다 (MemoriesCardViewModel).
+      0건 상태 문구는 두지 않는다 — 시안(Figma 109:15028)에 해당 변형이 없어 임의 문구를
+      넣으면 미확정 상태가 제품 동작으로 굳는다. 확정되면 여기에 추가한다 (#559).
+    -->
 
     <!-- Draft list screen -->
     <string name="mindrecord_draft_list_title">임시 저장된 기록</string>
@@ -132,6 +144,8 @@
     <string name="mindrecord_draft_list_delete_all">전체 삭제</string>
     <string name="mindrecord_draft_list_delete_selected">선택 삭제</string>
     <string name="mindrecord_draft_list_deleted_toast">임시 저장된 기록이 삭제 되었습니다</string>
+    <!-- %1$d = 삭제하지 못한 항목 수 -->
+    <string name="mindrecord_draft_list_delete_failed_toast">%1$d개를 삭제하지 못했어요. 다시 시도해 주세요.</string>
     <string name="mindrecord_draft_list_empty">임시 저장된 항목이 없습니다.</string>
 
     <!-- Keyboard toolbar -->
@@ -151,7 +165,6 @@
     <string name="mindrecord_toolbar_align_left_cd">왼쪽 정렬</string>
     <string name="mindrecord_toolbar_align_center_cd">가운데 정렬</string>
     <string name="mindrecord_toolbar_align_right_cd">오른쪽 정렬</string>
-    <string name="mindrecord_toolbar_close_cd">닫기</string>
     <string name="mindrecord_toolbar_draft_count">임시저장 %d</string>
     <string name="mindrecord_toolbar_draft_label">임시저장</string>
     <string name="mindrecord_toolbar_text_settings">텍스트 설정</string>
@@ -165,7 +178,6 @@
     <string name="mindrecord_write_field_character_count">%d 글자</string>
 
     <!-- Tags / common -->
-    <string name="mindrecord_back_cd">뒤로가기</string>
     <string name="mindrecord_more_cd">더보기</string>
 
     <!-- VM/Domain error messages -->
@@ -185,11 +197,15 @@
     <!-- 링크 입력 검증 (#722) -->
     <string name="mindrecord_link_sheet_invalid">http:// 또는 https:// 로 시작하는 주소를 입력해 주세요.</string>
     <!-- 작성 검증 안내 (#722) -->
-    <string name="mindrecord_write_answer_required">답변 내용을 입력해 주세요.</string>
     <string name="mindrecord_write_diary_missing_title">제목을 입력해 주세요.</string>
     <string name="mindrecord_write_diary_missing_content">본문을 입력해 주세요.</string>
     <string name="mindrecord_write_diary_missing_mood">오늘의 기분을 골라 주세요.</string>
     <string name="mindrecord_write_draft_empty">임시저장할 내용이 없어요.</string>
+    <!-- 수신자 열람 실패 (#614) — 서버 원문 대신 도메인 문구 -->
+    <string name="mindrecord_receiver_delivery_not_ready">아직 열람할 수 있는 기록이 없어요.\n작성자가 전달 시점을 정하면 이곳에서 볼 수 있어요.</string>
+    <string name="mindrecord_receiver_load_failed">마음의 기록을 불러오지 못했어요.</string>
+    <string name="mindrecord_receiver_retry">다시 시도</string>
+    <string name="mindrecord_receiver_title">마음의 기록</string>
     <!-- 기록 상세 화면 (#759) -->
     <string name="mindrecord_detail_receiver">수신인</string>
     <string name="mindrecord_detail_mood">오늘의 기분</string>

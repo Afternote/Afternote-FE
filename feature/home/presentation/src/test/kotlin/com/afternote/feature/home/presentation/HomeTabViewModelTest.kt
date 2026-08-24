@@ -467,12 +467,12 @@ private class FakeDailyQuestionRepository : DailyQuestionRepository {
         draftOnly: Boolean?,
     ): Result<List<DailyQuestion>> = unexpected("DailyQuestionRepository.getList")
 
-    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Unit> = unexpected("DailyQuestionRepository.create")
+    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> = unexpected("DailyQuestionRepository.create")
 
     override suspend fun update(
         id: Long,
         payload: DailyQuestionUpdatePayload,
-    ): Result<Unit> = unexpected("DailyQuestionRepository.update")
+    ): Result<Long> = unexpected("DailyQuestionRepository.update")
 
     override suspend fun delete(id: Long): Result<Unit> = unexpected("DailyQuestionRepository.delete")
 }
@@ -490,8 +490,6 @@ private class FakeUserProfileRepository : UserProfileRepository {
     override suspend fun saveUserName(name: String) {
         savedUserNames += name
     }
-
-    override suspend fun clear() = unexpected("clear")
 }
 
 private class RecordingErrorReporter : ErrorReporter {

@@ -23,13 +23,32 @@ class DiaryDraftConditionTest {
     ) = DiaryWriteUiState(title = title, content = content, mood = mood)
 
     @Test
-    fun `제목만 있어도 임시저장은 된다`() {
-        assertTrue(state(title = "쓰다 만 제목").canSaveDraft)
+    fun `제목만으로는 임시저장할 수 없다`() {
+        // 서버가 임시저장에도 제목·본문·기분을 모두 요구한다 — 실측 400 (#1065).
+        // 보내면 실패하는 조건을 «저장 가능» 으로 표시하면 버튼이 고장 난 것과 같다.
+        assertFalse(state(title = "쓰다 만 제목").canSaveDraft)
     }
 
     @Test
-    fun `본문만 있어도 임시저장은 된다`() {
-        assertTrue(state(content = "<p>쓰다 만 본문</p>").canSaveDraft)
+    fun `본문만으로도 임시저장할 수 없다`() {
+        assertFalse(state(content = "<p>쓰다 만 본문</p>").canSaveDraft)
+    }
+
+    @Test
+    fun `셋이 다 있으면 임시저장된다`() {
+        assertTrue(
+            state(title = "제목", content = "<p>본문</p>", mood = TodayMood.HAPPY).canSaveDraft,
+        )
+    }
+
+    @Test
+    fun `임시저장도 무엇이 빠졌는지 알려준다`() {
+        // 조용히 막으면 버튼이 죽은 것과 구분되지 않는다.
+        assertEquals(R.string.mindrecord_write_diary_missing_title, state().missingForDraft())
+        assertEquals(
+            R.string.mindrecord_write_diary_missing_mood,
+            state(title = "제목", content = "<p>본문</p>").missingForDraft(),
+        )
     }
 
     @Test

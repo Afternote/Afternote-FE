@@ -40,6 +40,7 @@ class DiaryWriteViewModel
         private val repository: DiaryRepository,
         private val photoUploadRepository: PhotoUploadRepository,
         private val userRepository: UserRepository,
+        private val draftLoader: MindRecordDraftLoader,
     ) : ViewModel() {
         private val route = savedStateHandle.toRoute<MindRecordRoute.DiaryWriteRoute>()
         private val editingDraftId: Long? = route.draftId
@@ -49,7 +50,17 @@ class DiaryWriteViewModel
 
         init {
             loadReceivers()
+            loadDraftCount()
             editingDraftId?.let { loadDraft(it, route.draftYearMonth) }
+        }
+
+        /** 툴바 카운트는 화면 장식이라 실패해도 화면을 막지 않고 '모름' 으로 남긴다. */
+        private fun loadDraftCount() {
+            viewModelScope.launch {
+                draftLoader.count().onSuccess { count ->
+                    _uiState.update { it.copy(draftCount = count) }
+                }
+            }
         }
 
         fun onTitleChanged(value: String) {
@@ -94,10 +105,12 @@ class DiaryWriteViewModel
             // 임시저장과 정식 등록의 조건을 가른다. 무엇이 막고 있는지도 알린다 —
             // 종전에는 사유 없이 return 해 버튼이 고장 난 것처럼 보였다 (#722).
             if (isDraft) {
-                if (!state.canSaveDraft) {
-                    failSubmit(R.string.mindrecord_write_draft_empty)
+                val missing = state.missingForDraft()
+                if (missing != null) {
+                    failSubmit(missing)
                     return
                 }
+                if (!state.canSaveDraft) return
             } else {
                 val missing = state.missingForSubmit()
                 if (missing != null) {
@@ -106,8 +119,10 @@ class DiaryWriteViewModel
                 }
                 if (!state.canSubmit) return
             }
-            // 임시저장은 기분 없이도 저장한다 — 미완성 보존이 목적이다.
-            val mood = state.mood ?: TodayMood.SOSO
+            // 고르지 않은 기분을 지어내지 않는다. 지어내면 그것이 사용자 데이터가 되고
+            // (이어쓰기로 열면 «그냥그래» 가 이미 선택돼 보인다) 주간리포트 집계와 감정
+            // 분석 입력에도 그대로 들어간다. 위 가드가 미선택을 이미 막는다.
+            val mood = state.mood ?: return
 
             viewModelScope.launch {
                 _uiState.update { it.copy(submitState = SubmitState.InProgress) }
@@ -133,13 +148,15 @@ class DiaryWriteViewModel
                                 isDraft = isDraft,
                                 todayMood = mood,
                                 imageUrl = state.imageUrl,
-                                receiverIds = state.selectedReceiverIds.toList().takeIf { it.isNotEmpty() },
+                                receiverIds = state.selectedReceiverIds.toList(),
                             ),
                         )
                     }
                 result
                     .onSuccess {
                         _uiState.update { it.copy(submitState = SubmitState.Succeeded) }
+                        // 임시저장이 하나 늘었으니 툴바 숫자도 따라가야 한다 (#769).
+                        if (isDraft) loadDraftCount()
                     }.onFailure { e ->
                         _uiState.update {
                             it.copy(

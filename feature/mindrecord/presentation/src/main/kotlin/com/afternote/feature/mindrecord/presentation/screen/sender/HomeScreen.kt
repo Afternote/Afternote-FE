@@ -123,6 +123,7 @@ fun HomeScreen(
                 )
             }
         },
+        containerColor = Color.Transparent,
     ) { paddingValues ->
         Column(
             modifier =
@@ -132,6 +133,8 @@ fun HomeScreen(
         ) {
             PrimaryScrollableTabRow(
                 selectedTabIndex = selectedIndex,
+                // 지정하지 않으면 M3 baseline surface(#FEF7FF)가 나와 시안 배경(#FAFAFA)과 어긋난다.
+                containerColor = Color.Transparent,
                 edgePadding = 0.dp,
                 divider = {},
                 indicator = {
@@ -142,14 +145,18 @@ fun HomeScreen(
                                 matchContentSize = false,
                             ),
                         width = 80.dp,
-                        color = Color(0xFF1F1F1F),
+                        color = AfternoteDesign.colors.gray9,
                     )
                 },
             ) {
                 categories.forEachIndexed { index, category ->
                     Tab(
                         selected = selectedIndex == index,
-                        onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
+                        // scrollToPage 는 중간 페이지를 거치지 않는다. animate 로 넘기면
+                        // 0 → 2 이동이 1번을 지나며 그 화면이 컴포즈되고, hiltViewModel() 이
+                        // VM 을 만들며 init 조회가 나간다 — 바로 아래 단(#736)이 «열지도 않은
+                        // 탭의 조회를 없앤다» 로 줄여 둔 요청이 탭 이동마다 되살아난다.
+                        onClick = { scope.launch { pagerState.scrollToPage(index) } },
                         text = {
                             Text(
                                 text = stringResource(category.titleRes),

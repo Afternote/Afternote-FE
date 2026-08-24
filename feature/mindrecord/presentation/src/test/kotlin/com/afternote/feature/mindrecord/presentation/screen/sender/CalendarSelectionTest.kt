@@ -1,6 +1,8 @@
 package com.afternote.feature.mindrecord.presentation.screen.sender
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -45,6 +47,7 @@ class CalendarSelectionTest {
             }
         }
 
+        composeRule.onAllNodesWithText("12")[0].assertHasClickAction()
         composeRule.onAllNodesWithText("12")[0].performClick()
 
         assertEquals(12, clicked)
@@ -65,7 +68,7 @@ class CalendarSelectionTest {
             }
         }
 
-        composeRule.onAllNodesWithText("12")[0].assertIsDisplayed()
+        composeRule.onAllNodesWithText("12")[0].assertHasNoClickAction()
     }
 
     @Test

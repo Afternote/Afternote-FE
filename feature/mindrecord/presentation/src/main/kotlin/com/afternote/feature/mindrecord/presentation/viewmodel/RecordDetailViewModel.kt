@@ -83,12 +83,14 @@ class RecordDetailViewModel
                             _uiState.value = RecordDetailUiState.NotFound
                             return@onSuccess
                         }
+                        // 날짜를 해석하지 못하면 toUi 가 null 을 준다 — 오늘로 메우지 않고
+                        // 날짜 줄만 비운다 (#751). 본문·수신인은 그대로 보여 준다.
                         val ui = answer.toUi()
                         val blocks = answer.content.toRecordContentBlocks()
                         _uiState.value =
                             RecordDetailUiState.Success(
                                 title = answer.title,
-                                date = ui.date,
+                                date = ui?.date,
                                 receiverNames = answer.receiverNames,
                                 heroImageUrl = blocks.firstImageUrl(),
                                 blocks = blocks,

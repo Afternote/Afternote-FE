@@ -144,7 +144,8 @@ fun HomeTabScreen(
                 is HomeTabUiState.Loading -> {
                     HomeTabScrollContent(
                         userName = uiState.cachedUserName ?: "\u2026",
-                        isRecipientDesignated = false,
+                        // 조회 전이다 — 지정 여부를 결과로 확정하지 않는다 (#698).
+                        recipientBadgeState = RecipientDesignationBadgeState.Unknown,
                         categoryCounts = MindRecordCategory.entries.associateWith { 0 },
                         categoryCountsLoading = true,
                         todayDateText = todayDateText,
@@ -159,7 +160,12 @@ fun HomeTabScreen(
                 is HomeTabUiState.Success -> {
                     HomeTabScrollContent(
                         userName = uiState.userName,
-                        isRecipientDesignated = uiState.isRecipientDesignated,
+                        recipientBadgeState =
+                            if (uiState.isRecipientDesignated) {
+                                RecipientDesignationBadgeState.Completed
+                            } else {
+                                RecipientDesignationBadgeState.Incomplete(onClick = actions::onRecipientChipClick)
+                            },
                         categoryCounts = uiState.categoryCounts,
                         categoryCountsLoading = false,
                         todayDateText = todayDateText,
@@ -203,7 +209,13 @@ fun HomeTabScreen(
 @Composable
 private fun HomeTabScrollContent(
     userName: String,
-    isRecipientDesignated: Boolean,
+    /**
+     * 수신인 지정 배지 상태.
+     *
+     * `Boolean?` 로 좁혔다 다시 펼치지 않는다 — 「null = 미결정」이 주석으로만 유지되는
+     * 약속이 되고, 「널+폴백 대신 값으로 명시」(#934) 와도 어긋난다 (#698 리뷰).
+     */
+    recipientBadgeState: RecipientDesignationBadgeState,
     categoryCounts: Map<MindRecordCategory, Int>,
     categoryCountsLoading: Boolean,
     todayDateText: String,
@@ -233,16 +245,7 @@ private fun HomeTabScrollContent(
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            RecipientDesignationBadge(
-                state =
-                    if (isRecipientDesignated) {
-                        RecipientDesignationBadgeState.Completed
-                    } else {
-                        RecipientDesignationBadgeState.Incomplete(
-                            onClick = actions::onRecipientChipClick,
-                        )
-                    },
-            )
+            RecipientDesignationBadge(state = recipientBadgeState)
 
             Spacer(Modifier.height(32.dp))
         }

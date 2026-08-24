@@ -51,6 +51,7 @@ import com.afternote.feature.mindrecord.domain.model.WeeklyReportEmotion
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
+import com.afternote.feature.mindrecord.domain.sync.MindRecordChangeTracker
 import com.afternote.feature.mindrecord.presentation.screen.memoryspace.MemorySpaceScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestionAnswerListScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestionWriteScreen
@@ -62,7 +63,9 @@ import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionList
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionWriteViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryWriteViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftListViewModel
+import com.afternote.feature.mindrecord.presentation.viewmodel.MemorySpaceUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.MemorySpaceViewModel
+import com.afternote.feature.mindrecord.presentation.viewmodel.MindRecordDraftLoader
 import com.afternote.feature.mindrecord.presentation.viewmodel.SubmitState
 import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportUiState
 import com.afternote.feature.mindrecord.presentation.viewmodel.WeeklyReportViewModel
@@ -331,11 +334,11 @@ class TimeLetterMindRecordCompletionAndroidTest {
     fun mindRecordHome_dailyQuestionLoadingEmptyAndErrorRetrySuccess_areRendered() {
         val emptyGate = CompletableDeferred<Result<List<DailyQuestion>>>()
         val emptyRepository = CompletionDailyQuestionRepository(nextListGate = emptyGate)
-        var activeViewModel by mutableStateOf(DailyQuestionListViewModel(emptyRepository))
+        var activeViewModel by mutableStateOf(DailyQuestionListViewModel(emptyRepository, MindRecordChangeTracker()))
 
         composeRule.setContent {
             AfternoteTheme {
-                DailyQuestionAnswerListScreen(viewModel = activeViewModel)
+                DailyQuestionAnswerListScreen(viewModel = activeViewModel, onItemClick = { _, _ -> })
             }
         }
 
@@ -355,7 +358,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
             CompletionDailyQuestionRepository().apply {
                 listResults.addLast(Result.failure(IllegalStateException("home offline")))
             }
-        val retryViewModel = DailyQuestionListViewModel(retryRepository)
+        val retryViewModel = DailyQuestionListViewModel(retryRepository, MindRecordChangeTracker())
         composeRule.runOnIdle { activeViewModel = retryViewModel }
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
             retryViewModel.uiState.value is DailyQuestionListUiState.Error
@@ -383,7 +386,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
     @Test
     fun dailyQuestionWrite_successRefreshesExistingListWithCreatedAnswer() {
         val repository = CompletionDailyQuestionRepository()
-        val listViewModel = DailyQuestionListViewModel(repository)
+        val listViewModel = DailyQuestionListViewModel(repository, MindRecordChangeTracker())
         var writeViewModel by mutableStateOf<DailyQuestionWriteViewModel?>(null)
         var submitSuccessCalls = 0
 
@@ -391,7 +394,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
             val activeWriteViewModel = writeViewModel
             AfternoteTheme {
                 if (activeWriteViewModel == null) {
-                    DailyQuestionAnswerListScreen(viewModel = listViewModel)
+                    DailyQuestionAnswerListScreen(viewModel = listViewModel, onItemClick = { _, _ -> })
                 } else {
                     DailyQuestionWriteScreen(
                         viewModel = activeWriteViewModel,
@@ -415,6 +418,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
                 DailyQuestionWriteViewModel(
                     repository = repository,
                     photoUploadRepository = CompletionPhotoUploadRepository,
+                    draftLoader = MindRecordDraftLoader(CompletionDiaryRepository(mutableListOf()), repository),
                 )
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
@@ -459,10 +463,12 @@ class TimeLetterMindRecordCompletionAndroidTest {
                         ),
                     ),
             )
+        val draftDailyQuestionRepository = CompletionDailyQuestionRepository()
         val draftListViewModel =
             DraftListViewModel(
+                loader = MindRecordDraftLoader(repository, draftDailyQuestionRepository),
                 diaryRepository = repository,
-                dailyQuestionRepository = CompletionDailyQuestionRepository(),
+                dailyQuestionRepository = draftDailyQuestionRepository,
             )
         var routedArguments: Pair<Long, String>? = null
         var writeViewModel by mutableStateOf<DiaryWriteViewModel?>(null)
@@ -488,6 +494,8 @@ class TimeLetterMindRecordCompletionAndroidTest {
                                     repository = repository,
                                     photoUploadRepository = CompletionPhotoUploadRepository,
                                     userRepository = FakeUserRepository(),
+                                    draftLoader =
+                                        MindRecordDraftLoader(repository, draftDailyQuestionRepository),
                                 )
                         },
                     )
@@ -535,7 +543,24 @@ class TimeLetterMindRecordCompletionAndroidTest {
 
     @Test
     fun memorySpace_supportedSuccess_opensAndClosesDetailThenNavigatesBack() {
-        val viewModel = MemorySpaceViewModel()
+        val memoryDate = LocalDate.now()
+        val diaryRepository =
+            CompletionDiaryRepository(
+                drafts =
+                    mutableListOf(
+                        Diary(
+                            diaryId = 501L,
+                            title = "추억이 된 하루",
+                            content = "이 순간은 나에게 특별한 의미가 있었습니다.",
+                            date = memoryDate.toString(),
+                            createdAt = memoryDate.toString(),
+                            todayMood = TodayMood.HAPPY,
+                            imageUrl = "https://afternote.test/memory.jpg",
+                            isDraft = false,
+                        ),
+                    ),
+            )
+        val viewModel = MemorySpaceViewModel(diaryRepository, CompletionDailyQuestionRepository())
         var backCalls = 0
 
         composeRule.setContent {
@@ -548,11 +573,15 @@ class TimeLetterMindRecordCompletionAndroidTest {
         }
 
         composeRule.onNodeWithText("MEMORY SPACE").assertIsDisplayed()
-        composeRule.onNodeWithContentDescription("기억 1").performClick()
+        composeRule.waitUntil(timeoutMillis = TIMEOUT) {
+            viewModel.uiState.value is MemorySpaceUiState.Success
+        }
+        composeRule.onNodeWithContentDescription("추억이 된 하루").performClick()
         composeRule
             .onNodeWithText("이 순간은 나에게 특별한 의미가 있었습니다.", substring = true)
             .assertIsDisplayed()
-        composeRule.onNodeWithText("#평온").assertIsDisplayed()
+        // 태그는 사용자가 고른 오늘의 기분 이모지다 — 종전 더미의 `#평온` 은 출처가 없었다 (#559).
+        composeRule.onNodeWithText("#😊").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("닫기").performClick()
         composeRule
             .onNodeWithText("이 순간은 나에게 특별한 의미가 있었습니다.", substring = true)
@@ -573,7 +602,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
                 profile = User("주간 사용자", "weekly@afternote.local", null, null),
                 receivers = emptyList(),
             )
-        val viewModel = WeeklyReportViewModel(repository, userRepository)
+        val viewModel = WeeklyReportViewModel(repository, userRepository, MindRecordChangeTracker())
 
         composeRule.setContent {
             AfternoteTheme {
@@ -764,11 +793,12 @@ private class CompletionDailyQuestionRepository(
         return Result.success(today)
     }
 
-    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Unit> {
+    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> {
         createCalls += payload
+        val createdId = 800L + createCalls.size
         storedAnswers +=
             DailyQuestion(
-                dailyQuestionId = 800L + createCalls.size,
+                dailyQuestionId = createdId,
                 title = today.content,
                 content = payload.content,
                 createdAt = "2026-08-22",
@@ -776,13 +806,13 @@ private class CompletionDailyQuestionRepository(
                 isDraft = payload.isDraft,
             )
         today = today.copy(isAnswered = !payload.isDraft, isDraft = payload.isDraft)
-        return Result.success(Unit)
+        return Result.success(createdId)
     }
 
     override suspend fun update(
         id: Long,
         payload: DailyQuestionUpdatePayload,
-    ): Result<Unit> {
+    ): Result<Long> {
         updateCalls += id to payload
         storedAnswers.replaceAll { answer ->
             if (answer.dailyQuestionId == id) {
@@ -795,7 +825,7 @@ private class CompletionDailyQuestionRepository(
                 answer
             }
         }
-        return Result.success(Unit)
+        return Result.success(id)
     }
 
     override suspend fun delete(id: Long): Result<Unit> {
@@ -934,6 +964,7 @@ private fun completeWeeklyReport(monday: LocalDate): WeeklyReport =
                     diaryId = 91L,
                     day = monday.dayOfMonth,
                     isDiary = true,
+                    countsAsRecord = true,
                     emotion = TodayMood.HAPPY,
                 ),
             ),
@@ -942,7 +973,7 @@ private fun completeWeeklyReport(monday: LocalDate): WeeklyReport =
                 WeeklyReportDailyQuestion(
                     title = "화요일의 질문",
                     content = "화요일의 답변",
-                    date = monday.plusDays(1).toString(),
+                    date = monday.plusDays(1),
                 ),
             ),
         emotions =

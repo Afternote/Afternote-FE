@@ -26,6 +26,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.ui.AfternoteSectionHeader
 import com.afternote.core.ui.asString
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -133,7 +134,7 @@ private fun WeeklyReportContent(
                 modifier = Modifier.padding(vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                SectionHeader(title = "TOP KEYWORDS")
+                AfternoteSectionHeader(title = "TOP KEYWORDS")
                 EmotionKeywordCard(
                     keywords = state.emotionKeywords,
                     descriptionText = emotionCardDescription(state),
@@ -146,7 +147,7 @@ private fun WeeklyReportContent(
         // HISTORY 섹션 — gap=12 (divider + 다이어리 카드들).
         item {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                SectionHeader(title = "HISTORY")
+                AfternoteSectionHeader(title = "HISTORY")
                 state.dailyQuestions.forEach { dailyQuestion ->
                     DailyQuestionListCard(answer = dailyQuestion)
                 }
@@ -160,48 +161,49 @@ private fun recordedSummary(
     userName: String,
     recordedDays: Int,
 ): androidx.compose.ui.text.AnnotatedString {
-    val prefix = stringResource(R.string.mindrecord_weekly_report_recorded_prefix)
-    val middle = stringResource(R.string.mindrecord_weekly_report_recorded_middle)
     val daysText = stringResource(R.string.mindrecord_weekly_report_days_format, recordedDays)
-    val suffix = stringResource(R.string.mindrecord_weekly_report_recorded_suffix)
+    val sentence = stringResource(R.string.mindrecord_weekly_report_recorded, userName, daysText)
+    val highlights = recordedSummaryHighlights(sentence, userName, daysText)
+    val base = AfternoteDesign.typography.bodyLargeB
     return buildAnnotatedString {
-        withStyle(style = AfternoteDesign.typography.bodyLargeB.toSpanStyle()) {
-            append(prefix)
-            withStyle(
-                style =
-                    AfternoteDesign.typography.bodyLargeB
-                        .copy(color = AfternoteDesign.colors.b1)
-                        .toSpanStyle(),
-            ) {
-                append(userName)
-            }
-            append(middle)
-            withStyle(
-                style =
-                    AfternoteDesign.typography.bodyLargeB
-                        .copy(color = AfternoteDesign.colors.b1)
-                        .toSpanStyle(),
-            ) {
-                append(daysText)
-            }
-            append(suffix)
+        append(sentence)
+        addStyle(base.toSpanStyle(), 0, sentence.length)
+        highlights.forEach { range ->
+            addStyle(
+                base.copy(color = AfternoteDesign.colors.b1).toSpanStyle(),
+                range.first,
+                range.last + 1,
+            )
         }
     }
 }
 
-@Composable
-private fun SectionHeader(title: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = title,
-            style = AfternoteDesign.typography.mono,
-            color = AfternoteDesign.colors.black.copy(alpha = 0.4f),
-        )
-        HorizontalDivider(modifier = Modifier.padding(start = 12.dp))
-    }
+/**
+ * 완성된 문장에서 강조할 구간(이름·기록일수)을 찾는다.
+ *
+ * 문장을 조각으로 나눠 이어 붙이지 않고 한 리소스로 두기 위한 것이다 — 조각 방식은 리소스
+ * 앞뒤 공백에 의존하는데, aapt2 가 그 공백을 지워 APK 에서 문구가 붙어 버렸다 (#732).
+ *
+ * 이름을 먼저 찾고 기록일수는 그 뒤에서 찾는다. 이름에 "3일" 같은 문자열이 들어 있어도
+ * 강조 구간이 겹치지 않는다. 찾지 못하면 강조를 생략한다 — 문장은 그대로 보인다.
+ */
+internal fun recordedSummaryHighlights(
+    sentence: String,
+    userName: String,
+    daysText: String,
+): List<IntRange> {
+    val ranges = mutableListOf<IntRange>()
+    val nameStart = sentence.indexOf(userName).takeIf { it >= 0 && userName.isNotEmpty() }
+    val searchFrom =
+        if (nameStart != null) {
+            ranges += nameStart until (nameStart + userName.length)
+            nameStart + userName.length
+        } else {
+            0
+        }
+    val daysStart = sentence.indexOf(daysText, startIndex = searchFrom).takeIf { it >= 0 && daysText.isNotEmpty() }
+    if (daysStart != null) ranges += daysStart until (daysStart + daysText.length)
+    return ranges
 }
 
 @Composable
