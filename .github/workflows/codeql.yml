@@ -69,13 +69,16 @@ jobs:
 
       # Java/Kotlin extraction observes compiler invocations, so a clean manual build is the
       # contract. assembleDebug covers every Android leaf; the two pure JVM leaves need classes.
+      #
+      # 그래서 이 워크플로는 #996 의 --build-cache 예외다. compile task 가 FROM-CACHE 로
+      # 넘어가면 컴파일러가 아예 실행되지 않아 추출기가 소스를 담지 못하고, 아래 verify
+      # 스텝이 빈 database 로 실패한다. lint·unit-test·screenshot 에는 이 제약이 없다.
       - name: Compile Android and pure JVM Kotlin sources
         if: matrix.build_mode == 'manual'
         run: >-
           ./gradlew assembleDebug
           :feature:onboarding:domain:classes
           :feature:setting:domain:classes
-          --build-cache
           --no-configuration-cache
           --stacktrace
           --console=plain
