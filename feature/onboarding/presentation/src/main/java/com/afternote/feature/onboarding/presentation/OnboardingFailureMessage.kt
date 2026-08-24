@@ -13,7 +13,18 @@ import com.afternote.core.ui.UiText
  */
 internal fun Throwable.toDisplayMessage(
     @StringRes fallbackResId: Int,
-): UiText = UiText.Resource((this as? CoreAuthFailure)?.displayMessageResOrNull() ?: fallbackResId)
+): UiText = UiText.Resource(displayMessageResOrFallback(fallbackResId))
+
+/**
+ * [toDisplayMessage] 와 같은 매핑을 리소스 ID 로 준다.
+ *
+ * `UiText.asString()` 은 `@Composable` 이라 코루틴 콜백 안에서는 부를 수 없다. 그런 자리(소셜 로그인
+ * 결과 처리 등)는 이걸로 ID 를 받아 `context.getString` 으로 푼다 — 매핑을 복제하지 않기 위한 것이다.
+ */
+@StringRes
+internal fun Throwable.displayMessageResOrFallback(
+    @StringRes fallbackResId: Int,
+): Int = (this as? CoreAuthFailure)?.displayMessageResOrNull() ?: fallbackResId
 
 /**
  * 사유에 대응하는 전용 문구. 루트로 좁혀 `when` 을 exhaustive 하게 만든다 — 사유가 늘면 여기가
