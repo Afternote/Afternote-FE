@@ -15,7 +15,7 @@ fun BottomSheetCalendar(
     CoreBottomSheetCalendar(
         onDismiss = onDismiss,
         onDateSelect = onDateSelect,
-        title = stringResource(R.string.mindrecord_calendar_send_date_title),
+        title = stringResource(R.string.mindrecord_calendar_record_date_title),
         initialDate = initialDate,
     )
 }

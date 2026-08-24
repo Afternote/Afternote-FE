@@ -11,7 +11,7 @@ data class AfternoteCreateGalleryRequestDto(
     @EncodeDefault @SerialName("category") val category: String = "GALLERY",
     @SerialName("title") val title: String,
     @SerialName("actions") val processingMethods: List<String>,
-    @SerialName("leaveMessage") val leaveMessage: String? = null,
+    @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
     @SerialName("receivers") val receivers: List<AfternoteReceiverRefDto>,
 )
 
@@ -30,7 +30,7 @@ data class AfternoteCreateAccountRequestDto(
     @SerialName("category") val category: String,
     @SerialName("title") val title: String,
     @SerialName("actions") val processingMethods: List<String>,
-    @SerialName("leaveMessage") val leaveMessage: String? = null,
+    @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
     @SerialName("credentials") val credentials: AfternoteCredentialsDto? = null,
     @SerialName("receivers") val receivers: List<AfternoteReceiverRefDto> = emptyList(),
 )
@@ -40,7 +40,7 @@ data class AfternoteUpdateRequestDto(
     @SerialName("category") val category: String,
     @SerialName("title") val title: String,
     @SerialName("actions") val processingMethods: List<String>? = null,
-    @SerialName("leaveMessage") val leaveMessage: String? = null,
+    @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
     @SerialName("credentials") val credentials: AfternoteCredentialsDto? = null,
     @SerialName("receivers") val receivers: List<AfternoteReceiverRefDto>? = null,
     @SerialName("playlist") val memorial: AfternotePlaylistDto? = null,
@@ -56,7 +56,7 @@ data class AfternoteDetailDto(
     @SerialName("credentials") val credentials: AfternoteCredentialsDto? = null,
     @SerialName("receivers") val receivers: List<AfternoteDetailReceiverDto>? = null,
     @SerialName("actions") val processingMethods: List<String>? = null,
-    @SerialName("leaveMessage") val leaveMessage: String? = null,
+    @SerialName("leaveMessage") val leaveMessage: List<LeaveMessageBlockDto>? = null,
     @SerialName("playlist") val memorial: AfternotePlaylistDto? = null,
 )
 

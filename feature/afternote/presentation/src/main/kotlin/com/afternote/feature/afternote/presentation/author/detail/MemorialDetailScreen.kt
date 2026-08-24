@@ -74,7 +74,7 @@ import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 @Composable
 internal fun MemorialDetailRoute(
     onBack: () -> Unit,
-    onNavigateToEditor: (itemId: String) -> Unit,
+    onNavigateToEditor: (itemId: Long) -> Unit,
     viewModel: AfternoteDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -107,7 +107,7 @@ internal fun MemorialDetailRoute(
                             content = model.content,
                             snackbarHostState = snackbarHostState,
                             onBackClick = onBack,
-                            onEditClick = { onNavigateToEditor(state.detailId.toString()) },
+                            onEditClick = { onNavigateToEditor(state.detailId) },
                             onDeleteConfirm = { viewModel.deleteAfternote(state.detailId) },
                         )
                         if (state.isDeleting) {

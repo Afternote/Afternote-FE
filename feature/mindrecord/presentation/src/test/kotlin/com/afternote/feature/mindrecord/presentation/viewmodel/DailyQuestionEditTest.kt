@@ -5,8 +5,12 @@ import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
+import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
+import com.afternote.feature.mindrecord.domain.model.DiaryList
+import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
+import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -150,6 +154,13 @@ class DailyQuestionEditTest {
             handle,
             repository,
             PhotoUploadRepository { _, _ -> error("업로드는 이 시나리오에서 호출되면 안 됨") },
+            // 툴바 카운트는 이 시나리오의 관심사가 아니다 — **다른** 저장소를 넘긴다.
+            // 같은 fake 를 넘기면 카운트 조회의 draftOnly=true 가 프리필 조회 기록에 섞여
+            // «어느 목록을 봤는가» 단언이 무너진다 (#769·#770).
+            MindRecordDraftLoader(
+                diaryRepository = EditTestEmptyDiaryRepository,
+                dailyQuestionRepository = EditTestEmptyDailyQuestionRepository,
+            ),
         )
     }
 
@@ -188,20 +199,56 @@ class DailyQuestionEditTest {
             )
         }
 
-        override suspend fun create(payload: DailyQuestionCreatePayload): Result<Unit> {
+        override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> {
             createCalls++
-            return Result.success(Unit)
+            return Result.success(1L)
         }
 
         override suspend fun update(
             id: Long,
             payload: DailyQuestionUpdatePayload,
-        ): Result<Unit> {
+        ): Result<Long> {
             updatedIds += id
             updatedPayloads += payload
-            return Result.success(Unit)
+            return Result.success(id)
         }
 
         override suspend fun delete(id: Long): Result<Unit> = error("delete 는 이 시나리오에서 호출되면 안 됨")
     }
+}
+
+/** 툴바 카운트 조회만 받아 주는 빈 일기 저장소. */
+private object EditTestEmptyDiaryRepository : DiaryRepository {
+    override suspend fun getList(
+        yearMonth: String,
+        draftOnly: Boolean?,
+    ): Result<DiaryList> = Result.success(DiaryList(diaries = emptyList(), monthDiaryCount = 0, weeklyDominantMood = null))
+
+    override suspend fun create(payload: DiaryCreatePayload): Result<Unit> = error("호출되면 안 됨")
+
+    override suspend fun update(
+        id: Long,
+        payload: DiaryUpdatePayload,
+    ): Result<Unit> = error("호출되면 안 됨")
+
+    override suspend fun delete(id: Long): Result<Unit> = error("호출되면 안 됨")
+}
+
+/** 툴바 카운트 조회만 받아 주는 빈 데일리질문 저장소. */
+private object EditTestEmptyDailyQuestionRepository : DailyQuestionRepository {
+    override suspend fun getList(
+        date: String?,
+        draftOnly: Boolean?,
+    ): Result<List<DailyQuestion>> = Result.success(emptyList())
+
+    override suspend fun getToday(): Result<TodayDailyQuestion> = error("호출되면 안 됨")
+
+    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> = error("호출되면 안 됨")
+
+    override suspend fun update(
+        id: Long,
+        payload: DailyQuestionUpdatePayload,
+    ): Result<Long> = error("호출되면 안 됨")
+
+    override suspend fun delete(id: Long): Result<Unit> = error("호출되면 안 됨")
 }

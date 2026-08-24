@@ -151,5 +151,9 @@ fun LoginEntry(
         snackbarHostState = snackbarHostState,
         modifier = modifier,
         isLoading = uiState.isLoading,
+        hasCredentialError = uiState.hasCredentialError,
+        showNetworkErrorPopup = uiState.showNetworkErrorPopup,
+        onRetryLogin = viewModel::retryLogin,
+        onNetworkErrorDismiss = viewModel::onNetworkErrorDismissed,
     )
 }

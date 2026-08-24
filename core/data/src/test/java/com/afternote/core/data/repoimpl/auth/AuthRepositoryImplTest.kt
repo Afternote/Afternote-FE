@@ -3,9 +3,12 @@ package com.afternote.core.data.repoimpl.auth
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
+import com.afternote.core.datastore.LocalStoreRegistry
+import com.afternote.core.datastore.StoreScope
 import com.afternote.core.datastore.TokenDataSource
-import com.afternote.core.domain.error.LoginRejectedException
+import com.afternote.core.domain.error.InvalidLoginCredentialsException
 import com.afternote.core.domain.error.NetworkUnavailableException
+import com.afternote.core.domain.error.SocialLoginRejectedException
 import com.afternote.core.network.dto.LoginDto
 import com.afternote.core.network.dto.LoginRequestDto
 import com.afternote.core.network.dto.LogoutRequestDto
@@ -30,28 +33,43 @@ import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * [AuthRepositoryImpl] 의 선제 reissue deadline 관리 계약 회귀 가드 (#408, PR #411 리뷰 반영).
- * 로그인 경로의 실패 매핑 계약(#517)도 함께 가드한다 — 전송 계층 IO 실패 →
- * [NetworkUnavailableException], 사유 확인된 거절 → [LoginRejectedException],
- * 그 밖의 서버 실패는 치환하지 않아 소비처에서 일반 문구로 내려앉는다.
+ * 로그인 경로의 실패 매핑 계약(#628)도 함께 가드한다 — 전송 계층 IO 실패 →
+ * [NetworkUnavailableException], 자격 거절(1201·1202) → [InvalidLoginCredentialsException],
+ * 소셜 거절(1208·1209) → [SocialLoginRejectedException], 그 밖의 서버 실패는 치환하지 않아
+ * 소비처에서 일반 문구로 내려앉는다. 서버 `message` 는 판정에 쓰지 않는다(BE#92).
  *
  * 계약 — 발급(로그인) 응답의 `expiresIn` 은 기록하고, 생략(null)이면 이전 토큰 기준 stale
  * deadline 이 새 세션에 적용되지 않게 비우며(`TokenReissuer` 회전 경로와 같은 규칙),
- * 세션 종료(`logout`/`clearSession`)는 로컬 토큰과 deadline 을 함께 정리한다.
+ * 세션 종료(`logout`/`clearSession`)는 SESSION 스코프 저장소 일괄 정리(#912)와 deadline
+ * 정리를 함께 수행한다.
  *
  * [AccessTokenExpiryTracker] 는 실물 사용 — 시계(SystemClock)는 `isReturnDefaultValues` 로
  * 0 에 고정되므로, 잔여 30초 기록 = 임박 true / 비움 = false 로 상태를 관찰한다 (임계 60초).
  */
 class AuthRepositoryImplTest {
     private val tracker = AccessTokenExpiryTracker()
-    private val tokenDataSource = TokenDataSource(InMemoryPreferencesDataStore())
+    private val tokenStore = InMemoryPreferencesDataStore()
+    private val tokenDataSource = TokenDataSource(tokenStore)
 
-    private fun repository(authApiService: AuthApiService = FakeAuthApiService()) =
-        AuthRepositoryImpl(
-            tokenDataSource = tokenDataSource,
-            authApiService = authApiService,
-            tokenApiService = FakeTokenApiService(),
-            expiryTracker = tracker,
+    // 실제 레지스트리처럼 SESSION 정리가 토큰 저장소를 비우게 흉내 낸다 — 그래야 아래
+    // 토큰 잔존·서버 호출 순서(정리가 먼저면 refresh 가 없어 서버 호출 불가) 단언이 유효하다.
+    private val localStoreRegistry =
+        FakeLocalStoreRegistry(
+            onClearScope = { scope ->
+                if (scope == StoreScope.SESSION) tokenStore.updateData { emptyPreferences() }
+            },
         )
+
+    private fun repository(
+        authApiService: AuthApiService = FakeAuthApiService(),
+        tokenApiService: TokenApiService = FakeTokenApiService(),
+    ) = AuthRepositoryImpl(
+        tokenDataSource = tokenDataSource,
+        authApiService = authApiService,
+        tokenApiService = tokenApiService,
+        expiryTracker = tracker,
+        localStoreRegistry = localStoreRegistry,
+    )
 
     @Test
     fun `defaultLogin - 발급 응답 expiresIn 을 deadline 으로 기록`() {
@@ -101,7 +119,7 @@ class AuthRepositoryImplTest {
     }
 
     @Test
-    fun `logout - 저장돼 있던 refresh 로 서버 호출 후 로컬 토큰·deadline 정리`() {
+    fun `logout - 저장돼 있던 refresh 로 서버 호출 후 SESSION 스코프·deadline 정리`() {
         runBlocking { tokenDataSource.saveTokens(accessToken = "access", refreshToken = "stored-refresh") }
         tracker.record(expiresInSeconds = 30)
         val authApiService = FakeAuthApiService()
@@ -109,13 +127,15 @@ class AuthRepositoryImplTest {
         val result = runBlocking { repository(authApiService).logout() }
 
         assertTrue(result.isSuccess)
+        // 정리가 서버 호출보다 먼저였다면 refresh 가 이미 없어 이 요청 자체가 못 나간다 (순서 가드).
         assertEquals(listOf(LogoutRequestDto("stored-refresh")), authApiService.logoutRequests)
+        assertEquals(listOf(StoreScope.SESSION), localStoreRegistry.clearedScopes)
         assertNull(runBlocking { tokenDataSource.getRefreshToken() })
         assertFalse(tracker.isExpiringSoon())
     }
 
     @Test
-    fun `logout - 서버 호출 실패해도 (best-effort) 토큰·deadline 정리는 진행`() {
+    fun `logout - 서버 호출 실패해도 (best-effort) SESSION 스코프·deadline 정리는 진행`() {
         runBlocking { tokenDataSource.saveTokens(accessToken = "access", refreshToken = "stored-refresh") }
         tracker.record(expiresInSeconds = 30)
         val authApiService =
@@ -126,20 +146,40 @@ class AuthRepositoryImplTest {
         val result = runBlocking { repository(authApiService).logout() }
 
         assertTrue(result.isSuccess)
+        assertEquals(listOf(StoreScope.SESSION), localStoreRegistry.clearedScopes)
         assertNull(runBlocking { tokenDataSource.getRefreshToken() })
         assertFalse(tracker.isExpiringSoon())
     }
 
     @Test
-    fun `clearSession - 로컬 토큰·deadline 함께 정리`() {
+    fun `clearSession - SESSION 스코프·deadline 함께 정리 (탈퇴 경로도 이 메서드를 쓴다)`() {
         runBlocking { tokenDataSource.saveTokens(accessToken = "access", refreshToken = "refresh") }
         tracker.record(expiresInSeconds = 30)
 
         val result = runBlocking { repository().clearSession() }
 
         assertTrue(result.isSuccess)
+        assertEquals(listOf(StoreScope.SESSION), localStoreRegistry.clearedScopes)
         assertNull(runBlocking { tokenDataSource.getAccessToken() })
         assertFalse(tracker.isExpiringSoon())
+    }
+
+    @Test
+    fun `rotateToken - 빈 액세스 토큰 응답은 기존 토큰을 덮어쓰지 않고 실패`() {
+        runBlocking { tokenDataSource.saveTokens(accessToken = "old-access", refreshToken = "old-refresh") }
+        val repository =
+            repository(
+                tokenApiService =
+                    FakeTokenApiService {
+                        success(ReissueDto(accessToken = "", refreshToken = "new-refresh"))
+                    },
+            )
+
+        val result = runBlocking { repository.rotateToken() }
+
+        assertTrue(result.exceptionOrNull() is IllegalStateException)
+        assertEquals("old-access", runBlocking { tokenDataSource.getAccessToken() })
+        assertEquals("old-refresh", runBlocking { tokenDataSource.getRefreshToken() })
     }
 
     @Test
@@ -159,20 +199,19 @@ class AuthRepositoryImplTest {
     }
 
     @Test
-    fun `defaultLogin - 사유 확인된 거절(1202)은 LoginRejectedException 으로 치환 (서버 문구 운반)`() {
-        val serverMessage = "아이디 또는 비밀번호가 일치하지 않습니다."
+    fun `defaultLogin - 자격 거절(1202)은 InvalidLoginCredentialsException 으로 치환 (원인 보존)`() {
         val repository =
             repository(
                 FakeAuthApiService(
-                    onLogin = { throw ApiException(status = 400, code = 1202, serverMessage = serverMessage, message = serverMessage) },
+                    onLogin = { throw ApiException(status = 401, code = 1202, serverMessage = "서버 문구", message = "서버 문구") },
                 ),
             )
 
         val result = runBlocking { repository.defaultLogin("user@example.com", "pw") }
 
         val exception = result.exceptionOrNull()
-        assertTrue(exception is LoginRejectedException)
-        assertEquals(serverMessage, (exception as LoginRejectedException).displayMessage)
+        assertTrue(exception is InvalidLoginCredentialsException)
+        assertTrue(exception?.cause is ApiException)
     }
 
     @Test
@@ -192,22 +231,21 @@ class AuthRepositoryImplTest {
     }
 
     @Test
-    fun `defaultLogin - allowlist 코드라도 서버 message 가 없으면 치환하지 않음`() {
+    fun `defaultLogin - 서버 message 가 없어도 code 만으로 치환 (message 비의존)`() {
         val repository =
             repository(
                 FakeAuthApiService(
-                    onLogin = { throw ApiException(status = 400, code = 1201, serverMessage = null, message = "클라 폴백 문구") },
+                    onLogin = { throw ApiException(status = 401, code = 1201, serverMessage = null, message = "클라 폴백 문구") },
                 ),
             )
 
         val result = runBlocking { repository.defaultLogin("user@example.com", "pw") }
 
-        assertTrue(result.exceptionOrNull() is ApiException)
+        assertTrue(result.exceptionOrNull() is InvalidLoginCredentialsException)
     }
 
     @Test
-    fun `socialLogin - 사유 확인된 거절(1208)은 소셜 경로에도 적용`() {
-        val serverMessage = "소셜 로그인에 실패했습니다."
+    fun `socialLogin - 소셜 거절(1208)은 SocialLoginRejectedException 으로 치환`() {
         val repository =
             repository(
                 FakeAuthApiService(
@@ -215,8 +253,8 @@ class AuthRepositoryImplTest {
                         throw ApiException(
                             status = 400,
                             code = 1208,
-                            serverMessage = serverMessage,
-                            message = serverMessage,
+                            serverMessage = "소셜 로그인에 실패했습니다.",
+                            message = "소셜 로그인에 실패했습니다.",
                         )
                     },
                 ),
@@ -224,7 +262,7 @@ class AuthRepositoryImplTest {
 
         val result = runBlocking { repository.kakaoLogin("oauth-token") }
 
-        assertEquals(serverMessage, (result.exceptionOrNull() as LoginRejectedException).displayMessage)
+        assertTrue(result.exceptionOrNull() is SocialLoginRejectedException)
     }
 
     @Test
@@ -303,8 +341,29 @@ private class FakeAuthApiService(
     }
 }
 
-private class FakeTokenApiService : TokenApiService {
-    override suspend fun reissue(body: ReissueRequestDto): BaseResponse<ReissueDto> = error("reissue 는 이 시나리오에서 호출되면 안 됨")
+private class FakeTokenApiService(
+    private val onReissue: (ReissueRequestDto) -> BaseResponse<ReissueDto> = {
+        error("reissue 는 이 시나리오에서 호출되면 안 됨")
+    },
+) : TokenApiService {
+    override suspend fun reissue(body: ReissueRequestDto): BaseResponse<ReissueDto> = onReissue(body)
+}
+
+/** [LocalStoreRegistry] 테스트 대역 — clearScope 호출을 기록하고, 주입된 동작으로 실제 정리를 흉내 낸다. */
+private class FakeLocalStoreRegistry(
+    private val onClearScope: suspend (StoreScope) -> Unit = {},
+) : LocalStoreRegistry {
+    val clearedScopes = mutableListOf<StoreScope>()
+
+    override fun store(
+        name: String,
+        scope: StoreScope,
+    ): DataStore<Preferences> = error("store 는 이 테스트에서 호출되면 안 됨")
+
+    override suspend fun clearScope(scope: StoreScope) {
+        clearedScopes += scope
+        onClearScope(scope)
+    }
 }
 
 /** 단위 테스트용 in-memory `DataStore<Preferences>` — 디스크 없이 [TokenDataSource] 실물을 구동한다. */

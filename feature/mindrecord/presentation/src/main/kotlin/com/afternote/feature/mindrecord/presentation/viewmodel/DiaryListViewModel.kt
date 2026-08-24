@@ -71,14 +71,27 @@ class DiaryListViewModel
             )
         }
 
+        /** 조회 실패 화면의 재시도 — 로딩을 보여도 잃을 것이 없다(보고 있던 것이 오류 문구뿐). */
+        fun retry() = load(yearMonth = internalState.value.yearMonth)
+
         fun delete(id: Long) {
             viewModelScope.launch {
-                repository.delete(id).onSuccess {
-                    // 삭제는 사용자가 요청했지만 뒤따르는 재조회는 아니다. 로딩을 방출하면
-                    // 목록이 통째 교체되며 LazyColumn 스크롤이 맨 위로 돌아간다.
-                    // 다만 재조회가 실패하면 삭제한 항목이 그대로 남아 보이므로 에러는 드러낸다.
-                    load(internalState.value.yearMonth, showsLoading = false)
-                }
+                repository
+                    .delete(id)
+                    .onSuccess {
+                        // 지난 실패 문구를 함께 걷는다. 남겨 두면 «항목은 사라졌는데 실패
+                        // 안내는 그대로» 인 화면이 VM 수명 내내 유지된다 (리뷰 지적).
+                        internalState.update { it.copy(deleteError = null) }
+                        // 삭제는 사용자가 요청했지만 뒤따르는 재조회는 아니다. 로딩을 방출하면
+                        // 목록이 통째 교체되며 LazyColumn 스크롤이 맨 위로 돌아간다.
+                        // 다만 재조회가 실패하면 삭제한 항목이 그대로 남아 보이므로 에러는 드러낸다.
+                        load(internalState.value.yearMonth, showsLoading = false)
+                    }.onFailure {
+                        // 실패를 무시하면 항목이 그대로 남은 채 아무 안내도 없어 고장처럼 보인다 (#716).
+                        internalState.update {
+                            it.copy(deleteError = UiText.Resource(R.string.mindrecord_error_delete_failed))
+                        }
+                    }
             }
         }
 
@@ -97,12 +110,18 @@ class DiaryListViewModel
                         )
                     }
                     val listResult = repository.getList(yearMonth = yearMonth.toString(), draftOnly = null)
-                    // repository 가 runCatching 으로 감싸 CancellationException 까지 실패로 바꿔 돌려준다.
                     // 새 로드가 이 Job 을 취소했다면 상태는 그쪽이 결정하므로 여기서 멈춘다.
+                    // repository 는 `runCatchingCancellable` 로 취소를 다시 던지므로 대개 여기 오기 전에
+                    // 빠져나가지만, 조회가 끝난 뒤 취소가 들어온 경우를 위해 남겨 둔다.
                     ensureActive()
                     listResult
                         .onSuccess { result ->
-                            internalState.update { it.copy(loadPhase = LoadPhase.Loaded(result)) }
+                            internalState.update {
+                                // 목록을 새로 받아 왔으면 옛 삭제 실패 안내도 걷는다. 남겨 두면
+                                // «새로 받아 왔는데 실패 안내는 그대로» 가 되어 #716 이 고치려는
+                                // «고장처럼 보인다» 와 같은 성질이 된다 (리뷰 지적).
+                                it.copy(loadPhase = LoadPhase.Loaded(result), deleteError = null)
+                            }
                         }.onFailure { e ->
                             internalState.update { current ->
                                 if (keepsStateOnFailure && current.loadPhase is LoadPhase.Loaded) {
@@ -111,10 +130,7 @@ class DiaryListViewModel
                                     current.copy(
                                         loadPhase =
                                             LoadPhase.Failed(
-                                                UiText.DynamicOrResource(
-                                                    value = e.message,
-                                                    fallbackResId = R.string.mindrecord_error_diary_list_failed,
-                                                ),
+                                                UiText.Resource(R.string.mindrecord_error_diary_list_failed),
                                             ),
                                     )
                                 }
@@ -128,6 +144,7 @@ class DiaryListViewModel
             // 로딩으로 콘텐츠가 교체될 때 함께 폐기된다.
             val yearMonth: YearMonth = YearMonth.now(),
             val loadPhase: LoadPhase = LoadPhase.Loading,
+            val deleteError: UiText? = null,
         )
 
         private sealed interface LoadPhase {
@@ -150,10 +167,18 @@ class DiaryListViewModel
 
                 is LoadPhase.Loaded -> {
                     DiaryListUiState.Success(
-                        diaries = phase.list.diaries.map { it.toUi() },
+                        // 임시저장은 캘린더 목록에 섞지 않는다. 서버는 `draftOnly` 를 생략하면
+                        // 그 달 전체(임시저장 포함)를 내려주므로 여기서 걸러야 한다 — 같은 모듈의
+                        // DailyQuestionListViewModel·ReceiverMindRecordViewModel 과 같은 규칙이다.
+                        // 날짜를 못 정한 항목은 toUi() 가 null 을 돌려 함께 빠진다.
+                        diaries =
+                            phase.list.diaries
+                                .filterNot { it.isDraft }
+                                .mapNotNull { it.toUi() },
                         yearMonth = yearMonth,
                         monthDiaryCount = phase.list.monthDiaryCount,
                         weeklyDominantMood = phase.list.weeklyDominantMood,
+                        deleteError = deleteError,
                     )
                 }
 

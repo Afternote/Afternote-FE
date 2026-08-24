@@ -98,9 +98,53 @@ keytool -exportcert -alias afternote-debug-shared -keystore ~/afternote-debug-sh
 
 ## 배포 (매 회)
 
-### 자동 — `main` push 시 (기본 경로)
+모든 배포의 릴리스 노트에는 `포함 이슈`와 `QA 포인트`가 필요하다. 둘 중 하나라도 비어 있거나 포함 이슈에 `#123` 형식의 번호가 없으면 Firebase 업로드 전에 실패한다.
 
-`develop` → `main` 머지가 push 되면 GitHub Actions 워크플로 [`release-distribution.yml`](.github/workflows/release-distribution.yml) 가 자동 실행 → APK 빌드 → Firebase App Distribution 업로드 → 테스터 그룹 `afternote` 전원에게 자동 이메일 발송. 운영 정책 *"main 머지된 상태만 배포"* 와 일치.
+### 배포 판단 기준
+
+배포 시점은 일 단위 주기가 아니라 `develop`에 머지된 변경 묶음의 크기와 위험도로 정한다.
+
+- 인증·온보딩·데이터 손실·API 계약·빌드/서명처럼 영향이 큰 변경은 다른 변경을 기다리지 않고 단독 배포한다.
+- 작은 변경은 하나의 QA 세션에서 회귀 원인을 구분할 수 있는 범위까지만 묶는다. 서로 다른 사용자 흐름을 한꺼번에 확인해야 하거나 함께 롤백하기 어려워지는 시점이 배포 경계다.
+- 수정 결과를 테스터가 확인해야 하는 결함이 머지되면, 묶음 크기와 관계없이 확인 가능한 빌드를 배포한다.
+- 현재 묶음의 모든 QA 포인트가 통과한 뒤 `develop`을 `main`으로 승격한다.
+
+### 릴리스 PR 범위 자동 산출
+
+배포 시점은 위 기준에 따라 사람이 정한다 — `develop` → `main` 릴리스 PR을 여는 것이 곧 배포 결정이다.
+
+릴리스 PR이 열리거나 head가 갱신되면 [`release-scope.yml`](.github/workflows/release-scope.yml)이 마지막 성공 배포 이후 `develop`에 머지된 PR과 그 연결 이슈를 모아 PR 본문의 `## 포함 이슈`를 채운다. head가 움직일 때마다 다시 채우므로 머지 직전에 목록을 손으로 대조할 필요가 없다.
+
+`## QA 포인트`는 비어 있을 때만 구성 PR 본문에서 모은 초안으로 채우고, 사람이 쓴 문장이 있으면 건드리지 않는다. 두 섹션은 main push 시 그대로 릴리스 노트가 되므로 배포 전에 테스터가 실행할 문장으로 다듬는다.
+
+별도 API나 유료 AI를 호출하지 않으며 기존 GitHub Actions 실행량만 사용한다. Actions의 **Collect Release Scope**에서 릴리스 PR 번호를 입력해 다시 산출할 수도 있다.
+
+### QA 배포 — `develop` → Firebase App Distribution (수동, 기본 경로)
+
+GitHub Actions의 **Release Distribution**에서 `Run workflow`를 누르고 ref를 `develop`으로 선택한 뒤 다음 값을 입력한다.
+
+- `issue_numbers`: 포함된 이슈 번호. 예: `#716, #723`
+- `qa_points`: 확인할 동작과 기대 결과. 여러 건은 세미콜론(`;`)으로 구분
+
+워크플로가 위 입력을 릴리스 노트로 만들어 APK를 빌드하고 Firebase App Distribution의 `afternote` 그룹에 배포한다.
+
+### 릴리스 후보 배포 — `main` → Firebase App Distribution (자동)
+
+여기서 릴리스 후보 배포는 검증할 `main` 빌드를 Firebase 테스터에게 전달하는 단계이며, Play Store 프로덕션 릴리스를 뜻하지 않는다.
+
+`develop` → `main` 릴리스 PR 본문에 다음 섹션을 채운다.
+
+```markdown
+## 포함 이슈
+- #716
+- #723
+
+## QA 포인트
+- 오프라인에서 오류 안내와 재시도 수단이 표시되는지 확인
+- 주차를 변경한 뒤 최신 리포트가 표시되는지 확인
+```
+
+PR이 `main`에 머지되면 워크플로가 두 섹션을 릴리스 노트로 사용한다. 연결된 PR이나 필수 섹션을 찾지 못하면 배포하지 않는다.
 
 CI 가 사용하는 GitHub Secrets (Settings → Secrets and variables → Actions):
 
@@ -111,17 +155,29 @@ CI 가 사용하는 GitHub Secrets (Settings → Secrets and variables → Actio
 | `RELEASE_KEY_ALIAS` | key alias (`afternote-release`) |
 | `RELEASE_KEY_PASSWORD` | key 비밀번호 |
 | `FIREBASE_SERVICE_ACCOUNT_JSON` | App Distribution Admin 권한 부여된 service account JSON 원문 |
-| `KAKAO_NATIVE_APP_KEY` · `GOOGLE_WEB_CLIENT_ID` · `GOOGLE_SERVICES_JSON_B64` | `local.properties` 키 (`lint.yml` 과 공유) |
+| `KAKAO_NATIVE_APP_KEY` · `GOOGLE_WEB_CLIENT_ID` · `GOOGLE_SERVICES_JSON_B64` | 배포 APK용 실서비스 앱 설정 (`release-distribution.yml` 전용) |
 
 > base64 인코딩: `base64 -i ~/afternote-release.jks | pbcopy` (macOS)
 
-### 수동 — 1hyok 머신 (fallback / 긴급 시)
+PR 검증용 lint·unit-test·screenshot은 repository secret 대신
+`.github/actions/setup-ci-config`가 만드는 결정적 CI 전용 placeholder를 사용한다. 이 fixture는
+배포에 사용할 수 없으며, `release-distribution.yml`은 계속 승인된 환경의 위 secret만 사용한다.
+
+### 로컬 — 1hyok 머신 (fallback / 긴급 시)
 
 ```bash
-./gradlew assembleRelease appDistributionUploadRelease
+EVENT_NAME=workflow_dispatch \
+ISSUE_NUMBERS="#716, #723" \
+QA_POINTS="오프라인 오류 안내 확인;주차 변경 후 재시도 확인" \
+SOURCE_REF=develop \
+SOURCE_SHA="$(git rev-parse HEAD)" \
+bash .github/scripts/render-distribution-release-notes.sh /tmp/afternote-release-notes.txt
+
+./gradlew assembleRelease appDistributionUploadRelease \
+  --releaseNotesFile=/tmp/afternote-release-notes.txt
 ```
 
-→ 동일하게 APK 빌드 + Firebase 업로드. CI 장애 시 또는 main 머지 없이 임시 배포 필요할 때 사용.
+→ 동일하게 APK 빌드 + Firebase 업로드. CI 장애 시에만 사용한다.
 
 > 같은 `versionCode` 로 재업로드하면 기존 release 갱신. 새 release 만들려면 `app/build.gradle.kts` 의 `versionCode` 증가.
 
@@ -166,20 +222,6 @@ docker run --rm -v "$PWD":/workspace -w /workspace afternote-screenshot:latest \
 ## 호스트 직접 실행은 더 이상 권장하지 않음
 
 `./gradlew :<module>:updateScreenshotTest` 를 host 에서 직접 실행하면 macOS / Linux / JDK 마이너 버전 / 폰트 캐시 차이로 CI 와 baseline 이 어긋난다. docker 환경 통일이 root fix.
-
-# 🤖 (옵션) Claude Code 워크플로 참고
-
-`docs/claude/` 에 **1hyok** 이 본 repo 에서 [Claude Code](https://claude.com/claude-code) 를 쓰면서 누적한 hook · `CLAUDE.md` 샘플 · 메모리 템플릿이 있다. **강제 아니고 참고용**.
-
-본인 Claude Code 워크플로에 도입하고 싶으면:
-
-```bash
-./scripts/install-claude-hooks.sh
-```
-
-→ `docs/claude/hooks/*.sh` 를 자기 `.claude/hooks/` 로 symlink (기존 파일 있으면 skip — 덮어쓰기 0). hook 등록·`CLAUDE.md` 일부 가져가기·메모리 도입 등 자세한 가이드는 [`docs/claude/README.md`](docs/claude/README.md) 참고.
-
-본인 `.claude/` 는 `.gitignore` 그대로라 본 폴더와 무관 — 어느 쪽도 다른 쪽을 강제하지 않는다.
 
 # 💻 코딩 컨벤션
 

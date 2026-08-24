@@ -1,7 +1,5 @@
 package com.afternote.core.network.service
 
-import com.afternote.core.network.dto.DeliveryConditionDto
-import com.afternote.core.network.dto.DeliveryConditionRequestDto
 import com.afternote.core.network.dto.ReceiverDetailDto
 import com.afternote.core.network.dto.ReceiverListDto
 import com.afternote.core.network.dto.SocialAccountLinkRequestDto
@@ -108,16 +106,6 @@ interface UserApiService {
     suspend fun unlinkConnectedAccount(
         @Path("provider") provider: String,
     ): BaseResponse<UserConnectedAccountDto>
-
-    // 전달 조건 조회
-    @GET("users/delivery-condition")
-    suspend fun getDeliveryCondition(): BaseResponse<DeliveryConditionDto>
-
-    // 전달 조건 수정
-    @PATCH("users/delivery-condition")
-    suspend fun updateDeliveryCondition(
-        @Body request: DeliveryConditionRequestDto,
-    ): BaseResponse<DeliveryConditionDto>
 
     /**
      * 수신자별 전달조건 조회 — 특정 수신자(receiverId)에게 **콘텐츠 종류마다** 다르게 건 전달 조건 목록.

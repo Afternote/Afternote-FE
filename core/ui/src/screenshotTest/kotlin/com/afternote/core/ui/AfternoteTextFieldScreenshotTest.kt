@@ -66,3 +66,16 @@ internal fun afternoteTextFieldVariant8Screenshot() {
         )
     }
 }
+
+@PreviewTest
+@Preview(showBackground = true)
+@Composable
+internal fun afternoteTextFieldErrorScreenshot() {
+    AfternoteTheme {
+        AfternoteTextField(
+            state = rememberTextFieldState(),
+            placeholder = "비밀번호",
+            isError = true,
+        )
+    }
+}

@@ -16,7 +16,7 @@ import com.afternote.core.network.model.requireStatus
 import com.afternote.core.network.service.AccountApiService
 import javax.inject.Inject
 
-class AccountRepositoryImpl
+internal class AccountRepositoryImpl
     @Inject
     constructor(
         private val accountApiService: AccountApiService,

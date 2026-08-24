@@ -2,8 +2,6 @@ package com.afternote.core.domain.repository
 
 import com.afternote.core.model.delivery.DeliveryConditionItem
 import com.afternote.core.model.delivery.ReceiverDeliveryConditions
-import com.afternote.core.model.user.DeliveryCondition
-import com.afternote.core.model.user.DeliveryConditionType
 import com.afternote.core.model.user.Receiver
 import com.afternote.core.model.user.ReceiverCreated
 import com.afternote.core.model.user.ReceiverDetail
@@ -82,16 +80,6 @@ interface UserRepository {
 
     // 소셜 계정 연결 해제
     suspend fun unlinkConnectedAccount(provider: String): UserConnectedAccount
-
-    // 전달 조건 조회
-    suspend fun getDeliveryCondition(): DeliveryCondition
-
-    // 전달 조건 수정
-    suspend fun updateDeliveryCondition(
-        conditionType: DeliveryConditionType,
-        inactivityPeriodDays: Int?,
-        specificDate: String?,
-    ): DeliveryCondition
 
     // 수신자별 전달조건 조회 (콘텐츠별)
     suspend fun getReceiverDeliveryConditions(receiverId: Long): ReceiverDeliveryConditions
