@@ -11,9 +11,7 @@ import com.afternote.feature.receiver.data.dto.ReceiverAuthVerifyRequestDto
 import com.afternote.feature.receiver.data.dto.ReceiverEmailAuthVerifyRequestDto
 import com.afternote.feature.receiver.data.dto.toDomain
 import com.afternote.feature.receiver.data.service.ReceiverAuthApiService
-import com.afternote.feature.receiver.domain.error.ReceiverDeliveryVerificationException
-import com.afternote.feature.receiver.domain.error.ReceiverEmailAuthException
-import com.afternote.feature.receiver.domain.error.ReceiverMasterKeyException
+import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.ReceiverAuthPresignedUrl
 import com.afternote.feature.receiver.domain.model.ReceiverEmailAuthResult
@@ -43,7 +41,7 @@ class ReceiverAuthRepositoryImpl
                 try {
                     api.verifyMasterKey(ReceiverAuthVerifyRequestDto(authCode)).requireData().toDomain()
                 } catch (e: ApiException) {
-                    throw ReceiverMasterKeyException(status = e.status, serverMessage = e.serverMessage, serverCode = e.code)
+                    throw ReceiverFailure.ServerRejection(status = e.status, serverMessage = e.serverMessage, serverCode = e.code)
                 }
             }
 
@@ -52,7 +50,7 @@ class ReceiverAuthRepositoryImpl
                 try {
                     api.sendEmailAuthCode(ReceiverAuthCodeEmailSendRequestDto(email)).requireStatus()
                 } catch (e: ApiException) {
-                    throw ReceiverEmailAuthException(status = e.status, serverMessage = e.serverMessage, serverCode = e.code)
+                    throw ReceiverFailure.ServerRejection(status = e.status, serverMessage = e.serverMessage, serverCode = e.code)
                 }
             }
 
@@ -68,7 +66,7 @@ class ReceiverAuthRepositoryImpl
                         ).requireData()
                         .toDomain()
                 } catch (e: ApiException) {
-                    throw ReceiverEmailAuthException(status = e.status, serverMessage = e.serverMessage, serverCode = e.code)
+                    throw ReceiverFailure.ServerRejection(status = e.status, serverMessage = e.serverMessage, serverCode = e.code)
                 }
             }
 
@@ -92,7 +90,7 @@ class ReceiverAuthRepositoryImpl
                         ).requireData()
                         .toDomain()
                 } catch (e: ApiException) {
-                    throw ReceiverDeliveryVerificationException(
+                    throw ReceiverFailure.ServerRejection(
                         status = e.status,
                         serverMessage = e.serverMessage,
                         serverCode = e.code,

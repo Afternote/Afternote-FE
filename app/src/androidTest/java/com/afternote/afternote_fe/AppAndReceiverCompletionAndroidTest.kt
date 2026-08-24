@@ -49,7 +49,7 @@ import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.home.presentation.HomeTabActions
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
-import com.afternote.feature.receiver.domain.error.ReceiverEmailAuthException
+import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import com.afternote.feature.receiver.domain.model.AfterNoteListItem
 import com.afternote.feature.receiver.domain.model.AfterNotesListResult
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
@@ -344,7 +344,7 @@ class ReceiverRuntimeCompletionAndroidTest {
         val authRepository = CompletionReceiverAuthRepository()
         authRepository.verifyEmailResults.addLast(
             Result.failure(
-                ReceiverEmailAuthException(
+                ReceiverFailure.ServerRejection(
                     status = 400,
                     serverMessage = "인증번호가 만료되었습니다. 다시 발급해 주세요.",
                     serverCode = 1902,
