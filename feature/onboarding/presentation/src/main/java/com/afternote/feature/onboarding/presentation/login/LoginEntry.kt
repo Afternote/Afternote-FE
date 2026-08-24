@@ -11,6 +11,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.credentials.CredentialManager
 import androidx.credentials.exceptions.NoCredentialException
@@ -51,6 +52,11 @@ fun LoginEntry(
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val credentialManager = remember(context) { CredentialManager.create(context) }
+
+    // 코루틴 콜백 안에서 여는 문구는 `LocalResources` 로 조회한다 — `LocalContext.current` 경유
+    // `getString` 은 로케일·구성이 바뀌어도 옛 문자열을 물고, lint 가 막는다
+    // (LocalContextGetResourceValueCall). 여기 `context` 는 Activity·Credential Manager 용이다.
+    val resources = LocalResources.current
 
     val googleNoCredentialsMessage = stringResource(R.string.login_google_no_credentials)
     val screenUnavailableMessage = stringResource(R.string.login_screen_unavailable)
@@ -111,7 +117,7 @@ fun LoginEntry(
                                 if (exception is CoreAuthFailure.UserCancelledAuth) return@onFailure
                                 viewModel.onSocialTokenRequestFailed(AuthProvider.KAKAO, exception)
                                 showErrorSnackbar(
-                                    context.getString(
+                                    resources.getString(
                                         exception.displayMessageResOrFallback(R.string.login_kakao_failed),
                                     ),
                                 )
@@ -147,7 +153,7 @@ fun LoginEntry(
                                 }
 
                                 else -> {
-                                    context.getString(
+                                    resources.getString(
                                         exception.displayMessageResOrFallback(R.string.login_google_failed),
                                     )
                                 }

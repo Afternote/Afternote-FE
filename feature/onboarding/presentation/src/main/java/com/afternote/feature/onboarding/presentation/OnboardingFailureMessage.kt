@@ -19,7 +19,8 @@ internal fun Throwable.toDisplayMessage(
  * [toDisplayMessage] 와 같은 매핑을 리소스 ID 로 준다.
  *
  * `UiText.asString()` 은 `@Composable` 이라 코루틴 콜백 안에서는 부를 수 없다. 그런 자리(소셜 로그인
- * 결과 처리 등)는 이걸로 ID 를 받아 `context.getString` 으로 푼다 — 매핑을 복제하지 않기 위한 것이다.
+ * 결과 처리 등)는 이걸로 ID 를 받아 `LocalResources.current` 의 `getString` 으로 푼다 — 매핑을 복제하지
+ * 않기 위한 것이다. `LocalContext.current` 로 조회하지 않는다(lint LocalContextGetResourceValueCall).
  */
 @StringRes
 internal fun Throwable.displayMessageResOrFallback(
