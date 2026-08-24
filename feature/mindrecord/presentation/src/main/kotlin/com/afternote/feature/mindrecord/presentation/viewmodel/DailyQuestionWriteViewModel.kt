@@ -31,25 +31,36 @@ class DailyQuestionWriteViewModel
         private val _uiState = MutableStateFlow(DailyQuestionWriteUiState())
         val uiState: StateFlow<DailyQuestionWriteUiState> = _uiState.asStateFlow()
 
-        /** 수정 대상 답변 ID. 목록의 "수정하기" 로 들어오면 채워진다 (#582). */
-        private val editingAnswerId: Long? =
-            savedStateHandle.toRoute<MindRecordRoute.DailyQuestionWriteRoute>().answerId
+        private val route = savedStateHandle.toRoute<MindRecordRoute.DailyQuestionWriteRoute>()
+
+        /** 프리필 대상 레코드 ID. 목록의 "수정하기"(#582)·임시저장 목록 탭(#770)이 채운다. */
+        private val editingAnswerId: Long? = route.answerId
 
         init {
-            if (editingAnswerId != null) loadAnswer(editingAnswerId) else loadTodayQuestion()
+            if (editingAnswerId != null) {
+                loadAnswer(editingAnswerId, route.isDraft)
+            } else {
+                loadTodayQuestion()
+            }
         }
 
         /**
-         * 정식 답변을 프리필한다 (#582).
+         * 대상 레코드를 프리필한다 (#582·#770).
          *
-         * 오늘 질문을 다시 묻지 않는다 — 수정 대상은 이미 특정된 레코드이고, 저장은
+         * 오늘 질문을 다시 묻지 않는다 — 대상은 이미 특정된 레코드이고, 저장은
          * `PATCH /daily-questions/{id}` 로 나간다. `questionId` 도 그래서 필요 없다.
+         * 임시저장 이어쓰기든 정식 답변 수정이든 조회하는 목록의 `draftOnly` 만 다르다.
          */
-        private fun loadAnswer(answerId: Long) {
+        private fun loadAnswer(
+            answerId: Long,
+            isDraft: Boolean,
+        ) {
             viewModelScope.launch {
                 _uiState.update { it.copy(isQuestionLoading = true, questionLoadError = null) }
                 repository
-                    .getList()
+                    // 임시저장은 draftOnly=true 로만 내려온다. 당일이 지난 draft 는 이 경로가
+                    // 유일한 진입 수단이다 (#770).
+                    .getList(draftOnly = if (isDraft) true else null)
                     .mapCatching { list -> list.first { it.dailyQuestionId == answerId } }
                     .onSuccess { answer ->
                         _uiState.update {

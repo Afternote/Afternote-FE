@@ -57,6 +57,7 @@ fun NavGraphBuilder.mindRecordNavGraph(actions: MindRecordNavActions) {
         DraftListScreen(
             onBackClick = actions::onDraftListBack,
             onDiaryDraftClick = actions::onEditDiaryDraft,
+            onDailyQuestionDraftClick = actions::onEditDailyQuestionDraft,
         )
     }
 }

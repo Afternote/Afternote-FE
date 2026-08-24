@@ -65,6 +65,8 @@ fun DraftListScreen(
     onBackClick: () -> Unit = {},
     /** 일기 draft 탭 → 이어쓰기. (draftId, 해당 달 `yyyy-MM`) 전달. */
     onDiaryDraftClick: (Long, String) -> Unit = { _, _ -> },
+    /** 데일리질문 draft 탭 → 이어쓰기. 당일이 지난 draft 는 이 경로로만 열 수 있다 (#770). */
+    onDailyQuestionDraftClick: (Long) -> Unit = {},
     viewModel: DraftListViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -144,9 +146,19 @@ fun DraftListScreen(
                             viewModel.delete(state.items.filter { it.key() in selectedKeys })
                         },
                         onItemClick = { item ->
-                            // 이어쓰기는 일기만 지원.
-                            if (item.category == DraftCategory.Diary) {
-                                onDiaryDraftClick(item.id, YearMonth.from(item.date).toString())
+                            when (item.category) {
+                                DraftCategory.Diary -> {
+                                    onDiaryDraftClick(item.id, YearMonth.from(item.date).toString())
+                                }
+
+                                DraftCategory.DailyQuestion -> {
+                                    onDailyQuestionDraftClick(item.id)
+                                }
+
+                                // 목록에 담기는 항목은 두 종류뿐이라 도달하지 않는다.
+                                DraftCategory.All -> {
+                                    Unit
+                                }
                             }
                         },
                     )
