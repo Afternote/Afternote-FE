@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 /** `GET /receiver-auth/daily-question` 응답 (`data`). */
 @Serializable
 data class ReceiverDailyQuestionListDto(
-    @SerialName("dailyQuestions") val dailyQuestions: List<ReceiverDailyQuestionItemDto> = emptyList(),
+    @SerialName("dailyQuestions") val dailyQuestions: List<ReceiverDailyQuestionItemDto>,
 )
 
 @Serializable
@@ -17,26 +17,35 @@ data class ReceiverDailyQuestionItemDto(
     @SerialName("content") val content: String,
     // "yyyy.MM.dd 요일" 형식.
     @SerialName("createdAt") val createdAt: String,
+    // 수신자 응답도 발신자와 같은 `DailyQuestionListResponse` 스키마를 재사용한다 — 계약에
+    // 있는 값이라 기본값을 두지 않는다 (#956).
+    @SerialName("isDraft") val isDraft: Boolean,
+    // Swagger `DailyQuestionListResponse` 계약에 없는 필드 — 기본값을 유지한다 (#789).
     @SerialName("imageUrl") val imageUrl: String? = null,
 )
 
 /** `GET /receiver-auth/diary` 응답 (`data`). */
 @Serializable
 data class ReceiverDiaryListDto(
-    @SerialName("diaries") val diaries: List<ReceiverDiaryItemDto> = emptyList(),
+    @SerialName("diaries") val diaries: List<ReceiverDiaryItemDto>,
 )
 
+/**
+ * 수신자용 일기 항목. 발신자 목록과 **같은 `DiaryResponse` 계약**을 쓰므로
+ * nullability 와 기본값도 [DiaryListItemDto] 와 동일하게 맞춘다 (#789).
+ */
 @Serializable
 data class ReceiverDiaryItemDto(
     @SerialName("diaryId") val diaryId: Long,
     @SerialName("title") val title: String,
     @SerialName("content") val content: String,
-    @SerialName("isDraft") val isDraft: Boolean = false,
+    @SerialName("isDraft") val isDraft: Boolean,
+    // 응답 계약에 없는 필드 — 기본값을 유지한다.
     @SerialName("imageUrl") val imageUrl: String? = null,
-    @SerialName("todayMood") val todayMood: TodayMoodDto? = null,
+    @SerialName("todayMood") val todayMood: TodayMoodDto,
     // 작성일 (yyyy-MM-dd).
-    @SerialName("date") val date: String = "",
+    @SerialName("date") val date: String,
     // "yyyy.MM.dd 요일" 형식.
-    @SerialName("createdAt") val createdAt: String = "",
-    @SerialName("updatedAt") val updatedAt: String = "",
+    @SerialName("createdAt") val createdAt: String,
+    @SerialName("updatedAt") val updatedAt: String,
 )
