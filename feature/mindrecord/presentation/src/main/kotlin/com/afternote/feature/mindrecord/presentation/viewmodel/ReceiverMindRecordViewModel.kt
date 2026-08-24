@@ -2,8 +2,8 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.afternote.core.network.model.ApiException
 import com.afternote.core.ui.UiText
+import com.afternote.feature.mindrecord.domain.error.DeliveryNotReadyException
 import com.afternote.feature.mindrecord.domain.model.MindRecordSummary
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
@@ -106,17 +106,14 @@ class ReceiverMindRecordViewModel
     }
 
 /**
- * 서버 실패를 **도메인 문구**로 바꾼다 (#614).
+ * 실패를 화면 문구로 바꾼다 (#614).
  *
- * 전달 조건 미충족(403 / code 2009)은 수신자가 할 수 있는 일이 없는 상태다 — 발신자가
- * 전달 조건을 설정해야 풀린다. 그래서 원문("아직 전달 조건이 충족되지 않았습니다") 대신
- * 무슨 상황이고 무엇을 기다리는지 알려 준다.
+ * 서버 에러 코드는 보지 않는다 — 그 판정은 data 계층(`mapReceiverFailure`)이 하고 여기는
+ * 도메인 예외 타입만 본다. 전달 조건 미충족은 수신자가 할 수 있는 일이 없는 상태라
+ * (발신자가 조건을 설정해야 풀린다) 원문 대신 무엇을 기다리는지 알려 준다.
  */
 internal fun Throwable.toDomainMessage(): UiText =
-    when ((this as? ApiException)?.code) {
-        DELIVERY_CONDITION_NOT_MET -> UiText.Resource(R.string.mindrecord_receiver_delivery_not_ready)
+    when (this) {
+        is DeliveryNotReadyException -> UiText.Resource(R.string.mindrecord_receiver_delivery_not_ready)
         else -> UiText.Resource(R.string.mindrecord_receiver_load_failed)
     }
-
-/** 전달 조건 미충족 — `403 {"code":2009}`. */
-private const val DELIVERY_CONDITION_NOT_MET = 2009

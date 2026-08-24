@@ -25,5 +25,5 @@ class MindRecordReceiverRepositoryImpl
                         diaries = diariesDeferred.await().diaries.map { it.toDomain() },
                     )
                 }
-            }
+            }.mapReceiverFailure()
     }

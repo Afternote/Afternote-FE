@@ -100,6 +100,10 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
                 navController.popBackStack()
             }
 
+            override fun onReceiverMindRecordBack() {
+                navController.popBackStack()
+            }
+
             override fun onWriteDailyQuestion() {
                 navController.navigate(MindRecordRoute.DailyQuestionWriteRoute)
             }
