@@ -19,7 +19,7 @@ fun WeeklyReportDto.toDomain(): WeeklyReport =
         week = week.map { it.toDomain() },
         dailyQuestions = dailyQuestions.map { it.toDomain() },
         emotions = emotions.map { it.toDomain() },
-        emotionAnalysis = emotionAnalysis.toDomain(),
+        emotionAnalysis = emotionAnalysis?.toDomain(),
     )
 
 /** `week[].type` 중 일기를 뜻하는 값. 나머지(`DAILY_QUESTION`·`DEEP_THOUGHT`·미래 종류)는 일기가 아니다. */

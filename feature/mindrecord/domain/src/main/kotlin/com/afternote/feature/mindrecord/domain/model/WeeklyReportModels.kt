@@ -7,7 +7,8 @@ data class WeeklyReport(
     val week: List<WeeklyReportDay>,
     val dailyQuestions: List<WeeklyReportDailyQuestion>,
     val emotions: List<WeeklyReportEmotion>,
-    val emotionAnalysis: EmotionAnalysis,
+    /** 서버가 주지 않으면 null — 상태는 [EmotionAnalysisStatus.UNKNOWN] 이 된다 (#725). */
+    val emotionAnalysis: EmotionAnalysis?,
 )
 
 /**
@@ -49,6 +50,14 @@ enum class EmotionAnalysisStatus {
 
     /** 분석이 끝났다. 키워드가 0건이면 실제로 0건인 것이다. */
     COMPLETED,
+
+    /**
+     * 서버가 진행 상태를 주지 않았다 — 0건인지 분석 중인지 알 수 없다.
+     *
+     * 계약상 오지 않을 자리지만, 그렇다고 화면 전체를 오류로 만들 이유는 없다. 확정만
+     * 하지 않으면 되므로 카드 한 장이 «모른다» 를 표시하고 나머지는 그대로 그린다.
+     */
+    UNKNOWN,
 }
 
 data class WeeklyReportDay(

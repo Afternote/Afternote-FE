@@ -197,25 +197,44 @@ private fun ErrorBox(
  * 키워드가 없을 때 무엇을 적을지는 **분석 상태**가 정한다. 종전에는 빈 목록이면 무조건
  * "키워드가 나오지 않았어요" 를 적어, 분석 대기·실패까지 정상 빈 상태로 확정했다 (#725).
  *
- * 키워드가 있으면 서버 요약을 그대로 쓴다 — 분석이 끝난 뒤에만 도달하는 자리다.
+ * **상태를 키워드보다 먼저 본다.** 부분 성공(일부 완료 + 일부 대기)에서는 완료분 키워드가
+ * `emotions` 에 실려 내려오므로(BE `buildTopEmotions` 에 완료 게이트가 없다), 키워드 유무를
+ * 먼저 보면 아직 분석 중인데도 폴백 요약이 최종 요약처럼 확정된다.
+ *
+ * 그래서 대기 중에는 키워드가 이미 몇 개 있어도 «분석 중» 임을 알린다 — 지금 보이는 것이
+ * 전부가 아니라는 사실이 요약 문구보다 중요하다.
  */
 @Composable
-private fun emotionCardDescription(state: WeeklyReportUiState.Success): String =
-    when {
-        state.emotionKeywords.isNotEmpty() -> {
-            state.summaryText
+internal fun emotionCardDescription(state: WeeklyReportUiState.Success): String =
+    when (state.emotionAnalysisStatus) {
+        EmotionAnalysisStatus.PENDING -> {
+            if (state.emotionKeywords.isEmpty()) {
+                stringResource(R.string.mindrecord_emotion_card_pending_description)
+            } else {
+                // 일부는 이미 나왔다 — 이 요약이 최종이 아니라는 것만 덧붙인다.
+                stringResource(R.string.mindrecord_weekly_report_summary_pending)
+            }
         }
 
-        state.emotionAnalysisStatus == EmotionAnalysisStatus.PENDING -> {
-            stringResource(R.string.mindrecord_emotion_card_pending_description)
-        }
-
-        state.emotionAnalysisStatus == EmotionAnalysisStatus.FAILED -> {
+        EmotionAnalysisStatus.FAILED -> {
             stringResource(R.string.mindrecord_emotion_card_failed_description)
         }
 
+        EmotionAnalysisStatus.UNKNOWN -> {
+            // 0 건인지 분석 중인지 모른다 — 어느 쪽으로도 확정하지 않는다.
+            if (state.emotionKeywords.isEmpty()) {
+                stringResource(R.string.mindrecord_emotion_card_unknown_description)
+            } else {
+                state.summaryText
+            }
+        }
+
         else -> {
-            stringResource(R.string.mindrecord_emotion_card_empty_description, state.userName)
+            if (state.emotionKeywords.isNotEmpty()) {
+                state.summaryText
+            } else {
+                stringResource(R.string.mindrecord_emotion_card_empty_description, state.userName)
+            }
         }
     }
 

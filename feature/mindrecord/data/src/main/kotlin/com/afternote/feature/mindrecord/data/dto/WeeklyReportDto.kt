@@ -12,9 +12,14 @@ data class WeeklyReportDto(
     // 서버 JSON 키가 kebab-case (`daily-question`).
     @SerialName("daily-question") val dailyQuestions: List<WeeklyReportDailyQuestionDto> = emptyList(),
     @SerialName("emotions") val emotions: List<WeeklyReportEmotionDto> = emptyList(),
-    // 기본값을 두지 않는다 — 이 필드가 없으면 "분석 대기" 와 "분석할 것이 없음" 이 다시
+    // 보정형 기본값을 두지 않는다 — 0 으로 접으면 "분석 대기" 와 "분석할 것이 없음" 이 다시
     // 구분 불가능해져 이 이슈가 고치려는 상태 소실이 그대로 재현된다 (#725).
-    @SerialName("emotionAnalysis") val emotionAnalysis: EmotionAnalysisSummaryDto,
+    //
+    // 다만 **필수로 두지도 않는다.** 필수면 이 필드 하나가 빠졌을 때 MissingFieldException 이
+    // 나 주간리포트 탭 전체가 오류 화면이 되고, 예외 원문까지 노출된다. null 은 0 이 아니라
+    // "모른다"(UNKNOWN) 로 옮겨지므로 확정하지 않는다는 목적은 그대로 지키면서 실패 반경이
+    // 카드 한 장으로 줄어든다.
+    @SerialName("emotionAnalysis") val emotionAnalysis: EmotionAnalysisSummaryDto? = null,
 )
 
 /**

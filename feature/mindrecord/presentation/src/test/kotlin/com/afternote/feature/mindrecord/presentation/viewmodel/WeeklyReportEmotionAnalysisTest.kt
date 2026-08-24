@@ -138,8 +138,8 @@ class WeeklyReportEmotionAnalysisTest {
         runTest(dispatcher) {
             // 실측처럼 계속 pending 인 경우 — 폴링이 멈추고 화면은 대기 상태로 남는다.
             var calls = 0
-            val viewModel =
-                viewModel(generateSequence { report(total = 1, pending = 1) }.take(50).toList()) { calls++ }
+            // fake 는 마지막 응답을 반복하므로 한 건이면 충분하다.
+            val viewModel = viewModel(listOf(report(total = 1, pending = 1))) { calls++ }
             collectUiState(viewModel)
             advanceUntilIdle()
             val callsAfterPolling = calls
@@ -148,7 +148,34 @@ class WeeklyReportEmotionAnalysisTest {
             advanceUntilIdle()
 
             assertEquals("폴링이 끝난 뒤에는 더 조회하지 않는다", callsAfterPolling, calls)
-            assertTrue("최초 조회 + 제한된 재조회만 있어야 한다", calls in 2..12)
+            // 결정적인 값이다 — 최초 1회 + 폴링 8회. 범위로 두면 폴링을 3회로 줄이거나
+            // 11회로 늘려도 통과해 회귀를 못 잡는다.
+            assertEquals("최초 조회 1회 + 폴링 8회", 9, calls)
+        }
+
+    @Test
+    fun `성공분 키워드가 이미 있어도 대기 중이면 대기로 알린다`() =
+        runTest(dispatcher) {
+            // 부분 성공에서는 완료분 키워드가 emotions 에 실려 내려온다(BE buildTopEmotions 에
+            // 완료 게이트 없음). 키워드 유무를 상태보다 먼저 보면 폴백 요약이 최종처럼 확정된다.
+            val viewModel =
+                viewModel(
+                    listOf(
+                        report(
+                            total = 2,
+                            succeeded = 1,
+                            pending = 1,
+                            emotions = listOf(WeeklyReportEmotion(keyword = "가족", percentage = 60)),
+                        ),
+                    ),
+                ) {}
+            collectUiState(viewModel)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value as WeeklyReportUiState.Success
+
+            assertTrue("성공분 키워드는 그대로 보여준다", state.emotionKeywords.isNotEmpty())
+            assertEquals(EmotionAnalysisStatus.PENDING, state.emotionAnalysisStatus)
         }
 
     // ── 테스트 도구 ───────────────────────────────────────────────────────────
