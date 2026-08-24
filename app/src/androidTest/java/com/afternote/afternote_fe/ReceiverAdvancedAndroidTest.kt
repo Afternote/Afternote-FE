@@ -298,10 +298,6 @@ private class AdvancedReceiverRepository : ReceiverRepository {
         authCode.value = code
     }
 
-    override suspend fun clearAuthCode() {
-        authCode.value = null
-    }
-
     override fun getPagedReceivedAfternotes(): Flow<PagingData<AfterNoteListItem>> = flowOf(PagingData.empty())
 
     override suspend fun getReceivedAfterNotes(): Result<AfterNotesListResult> =
