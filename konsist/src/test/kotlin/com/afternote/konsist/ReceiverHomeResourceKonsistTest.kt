@@ -23,7 +23,11 @@ class ReceiverHomeResourceKonsistTest {
             .files
             .withPackage("com.afternote.feature.receiver.presentation.home..")
             .assertFalse { file ->
-                file.imports.any { import -> FOREIGN_FEATURE_RESOURCE.matches(import.name) }
+                file.imports.any { import -> FOREIGN_FEATURE_RESOURCE.matches(import.name) } ||
+                    // import 만 보면 FQN 참조가 그대로 빠져나간다 — 이 패키지의 screenshotTest 가
+                    // 실제로 `com.afternote.core.ui.R.drawable.…` 를 FQN 으로 쓰는 손버릇이라,
+                    // 같은 손버릇으로 형제 feature 의 R 을 쓰면 가드가 침묵한다. 본문도 본다.
+                    FOREIGN_FEATURE_RESOURCE_REFERENCE.containsMatchIn(file.text)
             }
     }
 
@@ -31,5 +35,9 @@ class ReceiverHomeResourceKonsistTest {
         /** 수신자 자신이 아닌 feature 의 `R` (또는 그 하위 참조). */
         val FOREIGN_FEATURE_RESOURCE =
             Regex("""^com\.afternote\.feature\.(?!receiver\.)[a-z]+\.presentation\.R(\..*)?$""")
+
+        /** 같은 참조를 본문 어디서든 — FQN 으로 쓴 자리를 잡는다. 주석·문자열 오탐은 감수한다. */
+        val FOREIGN_FEATURE_RESOURCE_REFERENCE =
+            Regex("""com\.afternote\.feature\.(?!receiver\.)[a-z]+\.presentation\.R\.""")
     }
 }

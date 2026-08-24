@@ -3,7 +3,7 @@ package com.afternote.feature.receiver.presentation.home
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.receiver.presentation.home.model.AfternoteSourceIcon
+import com.afternote.core.ui.icon.AfternoteSourceIcon
 import com.afternote.feature.receiver.presentation.home.model.MindRecordSummary
 import com.afternote.feature.receiver.presentation.home.model.ReceiverHomeUiState
 import com.afternote.feature.receiver.presentation.home.model.SenderMessage
@@ -50,7 +50,7 @@ internal fun receiverHomeScreenSuccessScreenshot() {
                     afternoteTotalCount = 5,
                     afternoteIcons =
                         listOf(
-                            AfternoteSourceIcon(drawableResId = com.afternote.core.ui.R.drawable.core_ui_ic_tabler_search),
+                            AfternoteSourceIcon.SocialNetwork,
                         ),
                 ),
             onEvent = {},
