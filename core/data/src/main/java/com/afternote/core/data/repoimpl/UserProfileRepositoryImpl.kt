@@ -5,7 +5,7 @@ import com.afternote.core.domain.repository.UserProfileRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-class UserProfileRepositoryImpl
+internal class UserProfileRepositoryImpl
     @Inject
     constructor(
         private val dataSource: UserProfileDataSource,

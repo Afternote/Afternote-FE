@@ -24,7 +24,7 @@ import kotlinx.coroutines.flow.Flow
 import java.io.IOException
 import javax.inject.Inject
 
-class AuthRepositoryImpl
+internal class AuthRepositoryImpl
     @Inject
     constructor(
         private val tokenDataSource: TokenDataSource,

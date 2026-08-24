@@ -1,6 +1,5 @@
-package com.afternote.core.di
+package com.afternote.core.common.di
 
-import com.afternote.core.common.di.IoDispatcher
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
