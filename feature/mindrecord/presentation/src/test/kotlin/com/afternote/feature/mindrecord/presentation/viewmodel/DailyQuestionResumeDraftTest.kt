@@ -199,3 +199,20 @@ private class FakeResumeRepository(
 
     override suspend fun delete(id: Long): Result<Unit> = error("호출되면 안 됨")
 }
+
+/** 툴바 카운트 조회만 받아 주는 빈 일기 저장소. 같은 패키지에 동명 fake 가 있어 이름을 달리한다. */
+private object NoDiaryDraftsRepository : DiaryRepository {
+    override suspend fun getList(
+        yearMonth: String,
+        draftOnly: Boolean?,
+    ): Result<DiaryList> = Result.success(DiaryList(diaries = emptyList(), monthDiaryCount = 0, weeklyDominantMood = null))
+
+    override suspend fun create(payload: DiaryCreatePayload): Result<Unit> = error("호출되면 안 됨")
+
+    override suspend fun update(
+        id: Long,
+        payload: DiaryUpdatePayload,
+    ): Result<Unit> = error("호출되면 안 됨")
+
+    override suspend fun delete(id: Long): Result<Unit> = error("호출되면 안 됨")
+}
