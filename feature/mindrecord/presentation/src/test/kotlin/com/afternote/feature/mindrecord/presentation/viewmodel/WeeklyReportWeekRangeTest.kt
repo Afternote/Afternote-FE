@@ -6,6 +6,7 @@ import com.afternote.feature.mindrecord.domain.model.EmotionAnalysis
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDailyQuestion
 import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
@@ -94,6 +95,13 @@ class WeeklyReportWeekRangeTest {
 
             assertEquals("같은 날 2건은 목록에 2건", 2, state.dailyQuestions.size)
             assertEquals("기록일수는 날짜 단위라 1일", 1, state.recordedDays)
+            // 최상단 카드도 같은 목록을 센다. 서버 원본(dailyQuestionAmount = 3)을 그대로
+            // 쓰면 목록 2건 · 카드 3 으로 갈려, 같은 불일치가 방향만 뒤집힌 채 남는다.
+            assertEquals(
+                "카드 수치도 필터를 탄다",
+                2,
+                state.counts.first { it.second == MindRecordCategoryUi.DailyQuestion }.first,
+            )
         }
 
     // ── 테스트 도구 ───────────────────────────────────────────────────────────

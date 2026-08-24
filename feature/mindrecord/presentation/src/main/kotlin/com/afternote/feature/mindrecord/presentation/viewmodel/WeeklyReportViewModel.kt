@@ -272,7 +272,11 @@ class WeeklyReportViewModel
                     ),
                 counts =
                     listOf(
-                        report.dailyQuestionAmount to MindRecordCategoryUi.DailyQuestion,
+                        // 서버 원본(`dailyQuestionAmount`) 이 아니라 **화면이 실제로 그리는 목록**을
+                        // 센다. 원본을 쓰면 범위 밖 항목이나 날짜를 해석하지 못해 빠진 항목이
+                        // 목록에는 없는데 수치에만 남는다 — 방향만 뒤집힌 같은 불일치다 (#547).
+                        dailyQuestionsInWeek.size to MindRecordCategoryUi.DailyQuestion,
+                        // 일기는 이 화면에 대응 목록이 없어 서버 수치를 그대로 쓴다.
                         report.diaryAmount to MindRecordCategoryUi.Diary,
                     ),
                 emotionAnalysisStatus = report.emotionAnalysis.status,
@@ -317,7 +321,5 @@ class WeeklyReportViewModel
                     date = date,
                     content = content,
                 )
-
-            // 서버는 "yyyy.MM.dd 요일" 또는 ISO 포맷으로 내려옴 — 둘 다 허용.
         }
     }
