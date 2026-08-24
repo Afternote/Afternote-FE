@@ -16,22 +16,19 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.YearMonth
 import javax.inject.Inject
 
 /**
  * 임시저장 목록 ViewModel.
  *
- * 두 카테고리 모두 백엔드가 제공하는 `draftOnly=true` 쿼리로 조회한다 — 전체를 받아 클라에서 거르면
- * 서버가 페이징을 붙였을 때 draft 가 뒤 페이지로 밀려 누락될 수 있다.
- *
- * 조회 범위는 일기가 이번 달 한정(`yearMonth`)인 반면 데일리질문은 전체 기간이다. 데일리질문 API 의
- * `date` 는 특정 하루만 받아 "이번 달" 을 표현할 수 없어 맞추지 못했다.
+ * 조회 범위는 [MindRecordDraftLoader] 가 정본으로 들고 있다 — 작성 툴바의 카운트가 같은 범위를
+ * 봐야 목록 건수와 어긋나지 않는다 (#769).
  */
 @HiltViewModel
 class DraftListViewModel
     @Inject
     constructor(
+        private val loader: MindRecordDraftLoader,
         private val diaryRepository: DiaryRepository,
         private val dailyQuestionRepository: DailyQuestionRepository,
     ) : ViewModel() {
@@ -103,29 +100,12 @@ class DraftListViewModel
         }
 
         private suspend fun collectDrafts(): List<DraftItem>? =
-            runCatching {
-                coroutineScope {
-                    val yearMonth = YearMonth.now().toString()
-                    // 조회 실패는 예외로 올려 바깥 runCatching 이 잡게 한다.
-                    // getOrNull().orEmpty() 로 흡수하면 "실패" 와 "0건" 이 같은 빈 화면이 되어
-                    // Error 상태가 도달 불가능한 죽은 경로가 된다.
-                    val draftDiariesDeferred =
-                        async {
-                            diaryRepository
-                                .getList(yearMonth = yearMonth, draftOnly = true)
-                                .getOrThrow()
-                                .diaries
-                        }
-                    val draftDailyQuestionsDeferred =
-                        async {
-                            dailyQuestionRepository
-                                .getList(draftOnly = true)
-                                .getOrThrow()
-                        }
-
+            loader
+                .load()
+                .map { drafts ->
                     val diaryItems =
                         // 날짜를 못 정한 항목은 toUi() 가 null 을 돌린다 — 정렬 키가 없어 뺀다.
-                        draftDiariesDeferred.await().mapNotNull { diary ->
+                        drafts.diaries.mapNotNull { diary ->
                             val ui = diary.toUi() ?: return@mapNotNull null
                             DraftItem(
                                 id = ui.id,
@@ -136,7 +116,7 @@ class DraftListViewModel
                             )
                         }
                     val dailyQuestionItems =
-                        draftDailyQuestionsDeferred.await().map { question ->
+                        drafts.dailyQuestions.map { question ->
                             val ui = question.toUi()
                             DraftItem(
                                 id = ui.id,
@@ -146,8 +126,6 @@ class DraftListViewModel
                                 date = ui.date,
                             )
                         }
-
                     (diaryItems + dailyQuestionItems).sortedByDescending { it.date }
-                }
-            }.getOrNull()
+                }.getOrNull()
     }

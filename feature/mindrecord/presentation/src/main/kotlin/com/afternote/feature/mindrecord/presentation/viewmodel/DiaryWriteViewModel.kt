@@ -39,6 +39,7 @@ class DiaryWriteViewModel
         private val repository: DiaryRepository,
         private val photoUploadRepository: PhotoUploadRepository,
         private val userRepository: UserRepository,
+        private val draftLoader: MindRecordDraftLoader,
     ) : ViewModel() {
         private val route = savedStateHandle.toRoute<MindRecordRoute.DiaryWriteRoute>()
         private val editingDraftId: Long? = route.draftId
@@ -48,7 +49,17 @@ class DiaryWriteViewModel
 
         init {
             loadReceivers()
+            loadDraftCount()
             editingDraftId?.let { loadDraft(it, route.draftYearMonth) }
+        }
+
+        /** 툴바 카운트는 화면 장식이라 실패해도 화면을 막지 않고 '모름' 으로 남긴다. */
+        private fun loadDraftCount() {
+            viewModelScope.launch {
+                draftLoader.count().onSuccess { count ->
+                    _uiState.update { it.copy(draftCount = count) }
+                }
+            }
         }
 
         fun onTitleChanged(value: String) {
@@ -124,6 +135,8 @@ class DiaryWriteViewModel
                 result
                     .onSuccess {
                         _uiState.update { it.copy(submitState = SubmitState.Succeeded) }
+                        // 임시저장이 하나 늘었으니 툴바 숫자도 따라가야 한다 (#769).
+                        if (isDraft) loadDraftCount()
                     }.onFailure { e ->
                         _uiState.update {
                             it.copy(
