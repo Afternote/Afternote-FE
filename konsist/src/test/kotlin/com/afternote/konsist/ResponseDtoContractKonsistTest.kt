@@ -29,8 +29,8 @@ import org.junit.Test
  * non-null 로 선언해 놓고 기본값으로 누락을 메우는, 서로 모순된 조합뿐이다.
  *
  * ### [KNOWN_COERCING_DEFAULTS]
- * #676 실측 시점에 남아 있던 38건. 모듈별 적용 이슈가 해소하며 목록에서 뺀다.
- * **목록에 있는데 이미 고쳐진 항목도 실패**시킨다 — 그래야 목록이 썩지 않는다.
+ * 실측 시점에 남아 있던 잔여. 모듈별 적용 이슈가 해소하며 목록에서 뺀다.
+ * 이미 고쳐진 항목이 목록에 남아 있으면 **경고만** 낸다 — 이유는 아래 「해소된 항목은 경고로 알린다」 주석 참고.
  */
 class ResponseDtoContractKonsistTest {
     @Test
@@ -49,18 +49,30 @@ class ResponseDtoContractKonsistTest {
         }
     }
 
+    /**
+     * 해소된 항목이 목록에 남아 있으면 **경고만** 낸다.
+     *
+     * 실패시키면 「항목을 해소하는 PR」 과 「목록에서 빼는 PR」 이 서로를 깨뜨린다. 둘은 다른
+     * 브랜치라 충돌도 나지 않고, 어느 쪽이 먼저 머지되든 그 순간부터 develop 의 `:konsist:test`
+     * 가 red 가 된다. 필수 체크가 `guard` 하나뿐이라 머지를 막지도 못한 채 red 만 남는다.
+     * #933(#789 의 26건 해소)과 이 목록 사이에서 실제로 그렇게 됐다.
+     *
+     * 목록이 썩는 것을 막는 값어치는 「신규 추가 금지」 쪽이 이미 담당한다 — 순서와 무관하게
+     * 작동하는 그쪽만 실패시키고, 이쪽은 갱신 시점을 알리는 데 그친다.
+     */
     @Test
-    fun `해소된 항목은 예외 목록에서 뺀다`() {
+    fun `해소된 항목은 경고로 알린다`() {
         val stale = KNOWN_COERCING_DEFAULTS - coercingDefaults()
+        if (stale.isEmpty()) return
 
-        check(stale.isEmpty()) {
+        println(
             buildString {
-                appendLine("KNOWN_COERCING_DEFAULTS 에 이미 해소된 항목이 남아 있다 (${stale.size}건).")
+                appendLine("[경고] KNOWN_COERCING_DEFAULTS 에 이미 해소된 항목이 남아 있다 (${stale.size}건).")
                 appendLine("목록에서 지워야 다음 위반이 이 자리에 숨지 않는다.")
                 appendLine()
                 stale.sorted().forEach { appendLine("  $it") }
-            }
-        }
+            },
+        )
     }
 
     private fun coercingDefaults(): Set<String> =
@@ -88,37 +100,6 @@ class ResponseDtoContractKonsistTest {
         /** 아웃바운드. `receivers = emptyList()`("미선택 = 빈 배열 전송") 같은 의도된 기본값이라 제외. */
         const val REQUEST_DTO = "Request"
 
-        /** #789 — mindrecord (PR #933 진행 중, 26건) */
-        private val MINDRECORD =
-            setOf(
-                "WeeklyReportDto.dailyQuestionAmount",
-                "WeeklyReportDto.diaryAmount",
-                "WeeklyReportDto.summaryText",
-                "WeeklyReportDto.week",
-                "WeeklyReportDto.dailyQuestions",
-                "WeeklyReportDto.emotions",
-                "WeeklyReportDailyQuestionDto.title",
-                "WeeklyReportDailyQuestionDto.content",
-                "WeeklyReportDailyQuestionDto.date",
-                "WeeklyReportEmotionDto.keyword",
-                "WeeklyReportEmotionDto.percentage",
-                "DiaryListItemDto.title",
-                "DiaryListItemDto.content",
-                "DiaryListItemDto.createdAt",
-                "DiaryListItemDto.isDraft",
-                "DiaryListDto.diaries",
-                "DiaryListDto.monthDiaryCount",
-                "ReceiverDailyQuestionListDto.dailyQuestions",
-                "ReceiverDiaryListDto.diaries",
-                "ReceiverDiaryItemDto.isDraft",
-                "ReceiverDiaryItemDto.date",
-                "ReceiverDiaryItemDto.createdAt",
-                "ReceiverDiaryItemDto.updatedAt",
-                "DailyQuestionListItemDto.isDraft",
-                "TodayDailyQuestionDto.isAnswered",
-                "TodayDailyQuestionDto.isDraft",
-            )
-
         /** #957 — afternote (11건). `AfternoteDetailDto.createdAt` 은 #676 에서 해소(BE 응답에 없는 필드라 삭제). */
         private val AFTERNOTE =
             setOf(
@@ -138,6 +119,6 @@ class ResponseDtoContractKonsistTest {
         /** #790 — timeletter (1건) */
         private val TIMELETTER = setOf("ReceivedTimeLetterDto.blocks")
 
-        val KNOWN_COERCING_DEFAULTS = MINDRECORD + AFTERNOTE + TIMELETTER
+        val KNOWN_COERCING_DEFAULTS = AFTERNOTE + TIMELETTER
     }
 }
