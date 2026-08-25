@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.afternote.core.model.user.Receiver
@@ -50,6 +51,9 @@ fun ReceiverSelectBottomSheet(
     onToggle: (Long) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    /** 조회 실패 문구. null 이면 «아직 등록 안 함» 이다 — 둘을 같은 빈 화면으로 보이지 않게 한다 (#1019). */
+    loadError: String? = null,
+    onRetry: (() -> Unit)? = null,
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -69,6 +73,8 @@ fun ReceiverSelectBottomSheet(
         ReceiverSelectContent(
             receivers = receivers,
             selectedReceiverIds = selectedReceiverIds,
+            loadError = loadError,
+            onRetry = onRetry,
             onToggle = onToggle,
             onConfirm = onDismiss,
             modifier = modifier,
@@ -83,6 +89,8 @@ private fun ReceiverSelectContent(
     onToggle: (Long) -> Unit,
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier,
+    loadError: String? = null,
+    onRetry: (() -> Unit)? = null,
 ) {
     Column(
         modifier =
@@ -105,18 +113,29 @@ private fun ReceiverSelectContent(
         }
 
         if (receivers.isEmpty()) {
-            Box(
+            Column(
                 modifier =
                     Modifier
                         .fillMaxWidth()
                         .padding(vertical = 40.dp),
-                contentAlignment = Alignment.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                // 조회 실패와 «아직 등록 안 함» 은 같은 빈 목록이지만 사용자가 할 일이 다르다 —
+                // 실패는 다시 시도, 미등록은 등록이다. 문구로 갈라 준다 (#1019).
                 Text(
-                    text = stringResource(R.string.mindrecord_write_receiver_empty),
+                    text = loadError ?: stringResource(R.string.mindrecord_write_receiver_empty),
                     style = AfternoteDesign.typography.captionLargeR,
                     color = AfternoteDesign.colors.gray6,
                 )
+                if (loadError != null && onRetry != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = stringResource(R.string.mindrecord_write_receiver_retry),
+                        style = AfternoteDesign.typography.captionLargeR,
+                        color = AfternoteDesign.colors.gray9,
+                        modifier = Modifier.clickable(role = Role.Button, onClick = onRetry),
+                    )
+                }
             }
         } else {
             LazyColumn {
