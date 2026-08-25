@@ -107,13 +107,21 @@ internal fun rememberMemorialMediaSourceState(
         rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { captured: Boolean ->
             val uri = pendingPhotoCapture.value?.toUri()
             pendingPhotoCapture.value = null
-            if (captured && uri != null) onPhotoSelected(uri.toString()) else discardMemorialCapture(context, uri)
+            when {
+                uri == null -> Unit
+                captured -> onPhotoSelected(uri.toString())
+                else -> discardMemorialCapture(context, uri)
+            }
         }
     val videoCaptureLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.CaptureVideo()) { captured: Boolean ->
             val uri = pendingVideoCapture.value?.toUri()
             pendingVideoCapture.value = null
-            if (captured && uri != null) onVideoSelected(uri.toString()) else discardMemorialCapture(context, uri)
+            when {
+                uri == null -> Unit
+                captured -> onVideoSelected(uri.toString())
+                else -> discardMemorialCapture(context, uri)
+            }
         }
 
     return remember(openTarget) {

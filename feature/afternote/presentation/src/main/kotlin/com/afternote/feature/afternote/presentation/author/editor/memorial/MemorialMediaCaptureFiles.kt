@@ -39,11 +39,13 @@ internal fun createMemorialCaptureUri(
  *
  * 캐시라 방치해도 OS 가 언젠가 회수하지만, 취소를 반복하면 0바이트 파일이 계속 쌓인다.
  * 삭제 실패는 무시한다 — 지우지 못해도 사용자에게 알릴 것이 없다.
+ *
+ * "지울 것이 없다" 는 호출부가 아는 사실이라 여기서 받지 않는다 — [uri] 가 non-null 인 덕에
+ * 이 함수는 "지운다" 하나만 한다.
  */
 internal fun discardMemorialCapture(
     context: Context,
-    uri: Uri?,
+    uri: Uri,
 ) {
-    if (uri == null) return
     runCatching { context.contentResolver.delete(uri, null, null) }
 }
