@@ -119,18 +119,11 @@ keytool -exportcert -alias afternote-debug-shared -keystore ~/afternote-debug-sh
 
 별도 API나 유료 AI를 호출하지 않으며 기존 GitHub Actions 실행량만 사용한다. Actions의 **Collect Release Scope**에서 릴리스 PR 번호를 입력해 다시 산출할 수도 있다.
 
-### QA 배포 — `develop` → Firebase App Distribution (수동, 기본 경로)
+### 배포 — `main` → Firebase App Distribution (자동, 유일한 경로)
 
-GitHub Actions의 **Release Distribution**에서 `Run workflow`를 누르고 ref를 `develop`으로 선택한 뒤 다음 값을 입력한다.
+여기서 배포는 검증할 `main` 빌드를 Firebase 테스터에게 전달하는 단계이며, Play Store 프로덕션 릴리스를 뜻하지 않는다.
 
-- `issue_numbers`: 포함된 이슈 번호. 예: `#716, #723`
-- `qa_points`: 확인할 동작과 기대 결과. 여러 건은 세미콜론(`;`)으로 구분
-
-워크플로가 위 입력을 릴리스 노트로 만들어 APK를 빌드하고 Firebase App Distribution의 `afternote` 그룹에 배포한다.
-
-### 릴리스 후보 배포 — `main` → Firebase App Distribution (자동)
-
-여기서 릴리스 후보 배포는 검증할 `main` 빌드를 Firebase 테스터에게 전달하는 단계이며, Play Store 프로덕션 릴리스를 뜻하지 않는다.
+`develop` 수동 배포(`workflow_dispatch`)도 있었으나 #1029에서 제거했다. 도착지와 산출물 버전이 main 경로와 같아 실익이 PR 생성 한 단계뿐이었던 반면, release keystore와 service account를 임의 ref에 노출하는 표면이었다.
 
 `develop` → `main` 릴리스 PR 본문에 다음 섹션을 채운다.
 
