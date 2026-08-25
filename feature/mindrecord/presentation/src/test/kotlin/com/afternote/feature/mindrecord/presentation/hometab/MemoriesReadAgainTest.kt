@@ -29,12 +29,15 @@ class MemoriesReadAgainTest {
     @Test
     fun `버튼을 누르면 카드와 같은 목적지로 간다`() {
         var clicks = 0
+        // MutableInteractionSource 는 @RememberInComposition 이라 컴포지션 안에서 맨손으로
+        // 만들 수 없다 — 컴포지션마다 새 인스턴스가 생겨 상호작용 상태가 유실된다.
+        val interactionSource = MutableInteractionSource()
         composeRule.setContent {
             AfternoteTheme {
                 MemoriesSectionContent(
                     onMemoriesSectionClick = { clicks += 1 },
                     clickLabel = "추억 공간 열기",
-                    interactionSource = MutableInteractionSource(),
+                    interactionSource = interactionSource,
                     question = "가장 소중했던 순간은?",
                     answer = "아이가 태어났을 때.",
                 )

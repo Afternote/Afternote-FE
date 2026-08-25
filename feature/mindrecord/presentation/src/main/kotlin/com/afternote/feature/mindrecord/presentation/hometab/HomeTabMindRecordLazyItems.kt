@@ -1,5 +1,6 @@
 package com.afternote.feature.mindrecord.presentation.hometab
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -117,6 +118,7 @@ private fun HomeTabMindRecordMemoriesItem(
     )
 }
 
+@VisibleForTesting
 @Composable
 internal fun MemoriesSectionContent(
     onMemoriesSectionClick: () -> Unit,
