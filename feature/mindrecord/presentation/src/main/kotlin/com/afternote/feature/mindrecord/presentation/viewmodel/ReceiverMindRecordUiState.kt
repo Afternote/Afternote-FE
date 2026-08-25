@@ -1,5 +1,6 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
+import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.model.MindRecordSummary
 
 /**
@@ -16,8 +17,15 @@ sealed interface ReceiverMindRecordUiState {
         val filter: ReceiverMindRecordFilter = ReceiverMindRecordFilter(),
     ) : ReceiverMindRecordUiState
 
+    /**
+     * 조회 실패.
+     *
+     * [message] 는 **도메인 문구**다. 종전에는 서버 응답의 `message` 를 그대로 실어
+     * "아직 전달 조건이 충족되지 않았습니다" 같은 원문이 화면 문구가 됐다 — 사용자는
+     * "전달 조건" 이 무엇인지, 자기가 무엇을 해야 하는지 알 수 없었다 (#614).
+     */
     data class Error(
-        val message: String,
+        val message: UiText,
     ) : ReceiverMindRecordUiState
 }
 
