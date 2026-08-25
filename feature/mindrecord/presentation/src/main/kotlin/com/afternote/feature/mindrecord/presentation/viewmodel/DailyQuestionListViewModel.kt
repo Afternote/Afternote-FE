@@ -56,9 +56,25 @@ class DailyQuestionListViewModel
             load(showsLoading = false, keepsStateOnFailure = true)
         }
 
+        /** 조회 실패 화면의 재시도 — 로딩을 보여도 잃을 것이 없다(보고 있던 것이 오류 문구뿐). */
+        fun retry() = load()
+
         fun delete(id: Long) {
             viewModelScope.launch {
-                repository.delete(id).onSuccess { load() }
+                repository
+                    .delete(id)
+                    .onSuccess {
+                        // 지난 실패 문구를 함께 걷는다. 남겨 두면 «항목은 사라졌는데 실패
+                        // 안내는 그대로» 인 화면이 VM 수명 내내 유지된다 (리뷰 지적).
+                        internalState.update { it.copy(deleteError = null) }
+                        load()
+                    }
+                    // 실패를 무시하면 항목이 그대로 남은 채 아무 안내도 없어 고장처럼 보인다 (#716).
+                    .onFailure {
+                        internalState.update {
+                            it.copy(deleteError = UiText.Resource(R.string.mindrecord_error_delete_failed))
+                        }
+                    }
             }
         }
 
@@ -75,8 +91,9 @@ class DailyQuestionListViewModel
 
                     val today = repository.getToday().getOrNull()
                     val listResult = repository.getList()
-                    // repository 가 runCatching 으로 감싸 CancellationException 까지 실패로 바꿔 돌려준다.
                     // 새 로드가 이 Job 을 취소했다면 상태는 그쪽이 결정하므로 여기서 멈춘다.
+                    // repository 는 `runCatchingCancellable` 로 취소를 다시 던지므로 대개 여기 오기 전에
+                    // 빠져나가지만, 조회가 끝난 뒤 취소가 들어온 경우를 위해 남겨 둔다.
                     ensureActive()
                     // 서버는 draftOnly 없이 조회하면 임시저장을 제외해 내려주지만, 파라미터를 무시하는
                     // 서버를 만나도 임시저장이 답변 목록에 새지 않도록 한 겹 더 거른다.
@@ -86,10 +103,7 @@ class DailyQuestionListViewModel
                     // today 만 성공했을 때 "답변 0개" 로 보여 실패가 화면에서 사라진다.
                     if (listResult.isFailure) {
                         val message =
-                            UiText.DynamicOrResource(
-                                value = listResult.exceptionOrNull()?.message,
-                                fallbackResId = R.string.mindrecord_error_daily_question_list_failed,
-                            )
+                            UiText.Resource(R.string.mindrecord_error_daily_question_list_failed)
                         internalState.update { current ->
                             if (keepsStateOnFailure && current.loadPhase is LoadPhase.Loaded) {
                                 current
@@ -98,13 +112,19 @@ class DailyQuestionListViewModel
                             }
                         }
                     } else {
-                        internalState.update { it.copy(loadPhase = LoadPhase.Loaded(today, list)) }
+                        internalState.update {
+                            // 목록을 새로 받아 왔으면 옛 삭제 실패 안내도 걷는다. 남겨 두면
+                            // «새로 받아 왔는데 실패 안내는 그대로» 가 되어 #716 이 고치려는
+                            // «고장처럼 보인다» 와 같은 성질이 된다 (리뷰 지적).
+                            it.copy(loadPhase = LoadPhase.Loaded(today, list), deleteError = null)
+                        }
                     }
                 }
         }
 
         private data class InternalState(
             val loadPhase: LoadPhase = LoadPhase.Loading,
+            val deleteError: UiText? = null,
         )
 
         private sealed interface LoadPhase {
@@ -132,11 +152,14 @@ class DailyQuestionListViewModel
                             phase.today?.let {
                                 TodayQuestionUi(
                                     questionId = it.questionId,
+                                    day = it.day,
                                     content = it.content,
                                     isAnswered = it.isAnswered,
                                 )
                             },
-                        answers = phase.answers.map { it.toUi() },
+                        // 날짜를 못 정한 항목은 toUi() 가 null 을 돌린다 — 정렬 키가 없어 카드로 만들지 않는다 (#751).
+                        answers = phase.answers.mapNotNull { it.toUi() },
+                        deleteError = deleteError,
                     )
                 }
 

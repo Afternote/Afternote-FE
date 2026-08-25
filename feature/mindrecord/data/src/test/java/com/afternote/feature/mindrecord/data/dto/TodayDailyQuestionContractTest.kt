@@ -82,4 +82,30 @@ class TodayDailyQuestionContractTest {
         assertEquals(true, dto.isAnswered)
         assertEquals(true, dto.isDraft)
     }
+
+    @Test
+    fun `isAnswered 키가 빠지면 미답변으로 접히지 않고 실패한다`() {
+        // 기본값 `false` 를 두면 #548 같은 키 불일치가 다시 나도 "아직 답 안 함" 인
+        // 정상 응답으로 조용히 통과한다 — 오늘의 질문 카드가 계속 미답변으로 보인다 (#789).
+        assertThrows(MissingFieldException::class.java) {
+            decode(
+                """
+                { "status": 200, "code": 200,
+                  "data": { "questionId": 32, "day": 13, "content": "q", "isDraft": false } }
+                """.trimIndent(),
+            )
+        }
+    }
+
+    @Test
+    fun `isDraft 키가 빠지면 실패한다`() {
+        assertThrows(MissingFieldException::class.java) {
+            decode(
+                """
+                { "status": 200, "code": 200,
+                  "data": { "questionId": 32, "day": 13, "content": "q", "isAnswered": false } }
+                """.trimIndent(),
+            )
+        }
+    }
 }
