@@ -1,7 +1,7 @@
 package com.afternote.feature.receiver.presentation.detail
 
-import com.afternote.core.model.AlbumCover
 import com.afternote.feature.afternote.domain.AfternoteType
+import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.toMessageBlockUiModels
 import com.afternote.feature.receiver.domain.model.ReceivedAfternoteDetail
 

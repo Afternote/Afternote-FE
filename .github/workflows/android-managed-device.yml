@@ -54,7 +54,7 @@ jobs:
 
       - name: Upload androidTest reports and failure evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android-managed-device-results-${{ github.run_attempt }}
           if-no-files-found: warn
