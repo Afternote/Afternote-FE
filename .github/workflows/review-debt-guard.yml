@@ -19,7 +19,13 @@ permissions:
 
 jobs:
   debt-check:
-    if: github.event.action != 'review_request_removed'
+    # draft 는 닫지 않는다. 리뷰를 미룬 사람이라도 작업을 시작할 수는 있어야 하고,
+    # draft 에는 review-request-all 이 요청을 걸지 않으므로 남의 미처리를 늘리지도
+    # 않는다. ready_for_review 로 올리는 시점에 이 가드가 다시 돌기 때문에,
+    # 정식 PR 로 전환하려면 결국 밀린 리뷰를 끝내야 한다.
+    if: >-
+      github.event.action != 'review_request_removed' &&
+      github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
       - name: 미처리 리뷰 요청 검사
