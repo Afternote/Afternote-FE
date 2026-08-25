@@ -35,6 +35,45 @@
 360×800dp 라도 160dpi(mdpi)로 만들면 다른 `drawable`/`dimen` 이 선택돼 기준으로 쓸 수 없다.
 보유 AVD 중 `KUIT_7th_Device` 가 360×800dp @160dpi 라 이 이유로 부적합하다.
 
+## 실측 전에 두 가지를 확정한다
+
+### 1. 화면
+
+`status` 로 실효 dp 를 확인한다 — 아래 override 항목을 볼 것.
+
+### 2. 앱이 어느 커밋인가
+
+**증거 대장은 파일 이름이 커밋 sha 다**(`.codex/qa-evidence/emulator/<sha>.json`). 증거를 남긴다는
+것은 "이 커밋의 앱을 돌렸다"는 선언이므로, 돌린 앱의 출처가 확정돼야 한다.
+
+그런데 지금 앱은 커밋 정보를 들고 있지 않다. `versionCode` 는 Play 워크플로가 주입할 때만 바뀌고,
+`versionName` 은 `"1.0"` 하드코딩이다.
+
+```
+$ adb shell dumpsys package com.afternote.afternote_fe | grep versionName
+    versionName=1.0
+```
+
+그래서 **이미 깔려 있는 앱을 그냥 켜서 QA 하면 그 결과를 어느 sha 에도 붙일 수 없다.** 실제로
+2026-08-25 좁은 화면 QA 를 그렇게 돌렸다가 증거를 남기지 못했다. 같은 날 다른 세션이 QA 도중
+APK 를 재설치한 정황(`lastUpdateTime` 갱신)까지 겹쳤지만, 앱에 커밋이 없어 무엇이 바뀌었는지
+대조할 수도 없었다.
+
+증거로 남길 QA 는 **대상 커밋을 직접 빌드해 설치하고 시작한다.** 워크트리는 이 레포 규약대로
+`.claude/worktrees/<이름>` 아래에 만든다.
+
+```bash
+git worktree add .claude/worktrees/qa-dev --detach origin/develop
+cp app/google-services.json .claude/worktrees/qa-dev/app/
+./gradlew -p .claude/worktrees/qa-dev :app:assembleDebug
+adb install -r .claude/worktrees/qa-dev/app/build/outputs/apk/debug/app-debug.apk
+```
+
+`google-services.json` 은 gitignore 라 새 워크트리에 없다 — 복사하지 않으면 빌드가 깨진다.
+`-r` 재설치는 DataStore 를 지우지 않으므로 QA 계정 세션이 그대로 유지된다.
+
+앱이 커밋을 들고 다니게 되면(#1135) 이 단계는 "설치된 앱의 sha 를 읽어 확인"으로 줄어든다.
+
 ### override 는 세션 도중 풀린다
 
 2026-08-25 QA 에서 `compact` 로 전환해 검사하던 중 override 가 두 번 조용히 사라져 화면이
