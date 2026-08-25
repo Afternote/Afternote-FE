@@ -58,6 +58,16 @@ internal fun createBiometricCryptoObject(): BiometricPrompt.CryptoObject? =
  *
  * [cipher] 가 null 인 경로(API 26~29 폴백)는 검증할 대상이 없으므로 통과시킨다.
  * 실패 원인을 호출 측이 기록할 수 있도록 예외를 삼키지 않고 [Result] 로 실어 보낸다.
+ *
+ * **거부는 `UserNotAuthenticatedException` 으로 오지 않는다.** API 35 실측(2026-08-26)에서
+ * 인증 없이 연산했을 때 다음 모양으로 왔다.
+ *
+ * ```
+ * javax.crypto.IllegalBlockSizeException
+ *   <- android.security.KeyStoreException(Key user not authenticated, Keystore code: -26)
+ * ```
+ *
+ * 그래서 [runCatching] 으로 전부 받는다 — 좁은 catch 로 바꾸면 그 예외가 그대로 앱을 타고 올라간다.
  */
 internal fun confirmWithCryptoOperation(cipher: Cipher?): Result<Unit> {
     if (cipher == null) return Result.success(Unit)
