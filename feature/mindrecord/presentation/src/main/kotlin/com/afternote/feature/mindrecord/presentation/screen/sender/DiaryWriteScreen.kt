@@ -291,17 +291,16 @@ fun DiaryWriteScreen(
                 )
             }
 
-            // draft 프리필은 비동기 완료 — draftLoaded 전환 시 에디터를 재생성해 content 를 다시 시드한다.
-            key(uiState.draftLoaded) {
-                WriteTextField(
-                    value = uiState.content,
-                    onValueChange = viewModel::onContentChanged,
-                    onSaveDraftClick = { viewModel.submit(isDraft = true) },
-                    onDraftCountClick = onDraftListClick,
-                    draftCount = uiState.draftCount,
-                    onImagePicked = viewModel::uploadImage,
-                )
-            }
+            // 프리필이 늦게 도착해도 WriteTextField 가 value 변경에 반응해 다시 시드한다 —
+            // key() 로 컴포넌트를 재생성하지 않는다 (#1018).
+            WriteTextField(
+                value = uiState.content,
+                onValueChange = viewModel::onContentChanged,
+                onSaveDraftClick = { viewModel.submit(isDraft = true) },
+                onDraftCountClick = onDraftListClick,
+                draftCount = uiState.draftCount,
+                onImagePicked = viewModel::uploadImage,
+            )
         }
 
         if (showReceiverSheet) {
