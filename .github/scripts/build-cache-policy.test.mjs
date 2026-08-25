@@ -97,11 +97,13 @@ test("the local Gradle default stays uncached", async () => {
     assert.match(properties, /^org\.gradle\.caching=false$/m);
 });
 
-// actions/setup-java 가 gradle 캐시 키를 만들 때 해시하는 glob 정본.
-// https://github.com/actions/setup-java/blob/main/src/cache.ts
+// setup-gradle 이 basic 캐시 키를 만들 때 해시하는 glob 정본 — 이 워크플로가 고정한 v6.3.0 기준.
+// https://github.com/gradle/actions/blob/v6.3.0/sources/src/cache-service-basic.ts
+//
+// 키 프리픽스가 `setup-java` 라 setup-java 의 목록(gradle.properties 포함)으로 착각하기 쉽다.
+// 둘은 다르다. 이 워크플로에서 캐시를 만드는 쪽은 setup-gradle 이므로 정본은 이쪽이다.
 const CACHE_KEY_INPUTS = [
     "**/*.gradle*",
-    "**/gradle.properties",
     "**/gradle-wrapper.properties",
     "buildSrc/**/Versions.kt",
     "buildSrc/**/Dependencies.kt",
