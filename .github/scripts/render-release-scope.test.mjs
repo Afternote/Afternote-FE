@@ -129,3 +129,28 @@ test("leaves no heading inside the rendered sections", () => {
         [],
     );
 });
+
+test("keeps an issue list already in the body when nothing new was collected", () => {
+    const body = ["## 포함 이슈", "", "- #506", "- #618", "", "## QA 포인트", "", "- 사람이 쓴 문장"].join("\n");
+
+    const updated = applyReleaseScopeToBody(body, {
+        issueSection: renderIssueSection([]),
+        qaSection: "- 자동 초안",
+        overwriteIssues: false,
+    });
+
+    assert.match(updated, /- #506\n- #618/);
+    assert.doesNotMatch(updated, /연결된 이슈 없음/);
+});
+
+test("still fills an empty issue section when nothing was collected", () => {
+    const body = ["## 포함 이슈", "", "## QA 포인트", "", "- 사람이 쓴 문장"].join("\n");
+
+    const updated = applyReleaseScopeToBody(body, {
+        issueSection: renderIssueSection([]),
+        qaSection: "- 자동 초안",
+        overwriteIssues: false,
+    });
+
+    assert.match(updated, /## 포함 이슈\n\n- 연결된 이슈 없음/);
+});
