@@ -13,7 +13,7 @@ import com.afternote.feature.receiver.data.dto.ReceiverEmailAuthVerifyDto
 import com.afternote.feature.receiver.data.dto.ReceiverEmailAuthVerifyRequestDto
 import com.afternote.feature.receiver.data.dto.ReceiverMessageDto
 import com.afternote.feature.receiver.data.service.ReceiverAuthApiService
-import com.afternote.feature.receiver.domain.error.ReceiverEmailAuthException
+import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -25,7 +25,7 @@ import org.junit.Test
 import java.io.IOException
 
 /**
- * 이메일 인증 두 endpoint 의 `ApiException` → [ReceiverEmailAuthException] 도메인 예외 변환 회귀 가드 (#407).
+ * 이메일 인증 두 endpoint 의 `ApiException` → [ReceiverFailure.ServerRejection] 도메인 예외 변환 회귀 가드 (#407).
  *
  * presentation 은 core:network 의 ApiException 을 직접 알면 안 되므로 (layer 규약)
  * Impl 이 serverMessage 를 보존해 변환하는지가 계약. 에러 메시지·code 값은
@@ -55,8 +55,8 @@ class ReceiverAuthRepositoryImplEmailAuthTest {
         val result = runBlocking { repository.sendEmailAuthCode("none@example.com") }
 
         val exception = result.exceptionOrNull()
-        assertTrue(exception is ReceiverEmailAuthException)
-        exception as ReceiverEmailAuthException
+        assertTrue(exception is ReceiverFailure.ServerRejection)
+        exception as ReceiverFailure.ServerRejection
         assertEquals("등록된 수신자 이메일이 아닙니다.", exception.serverMessage)
         assertEquals(404, exception.status)
     }
@@ -80,8 +80,8 @@ class ReceiverAuthRepositoryImplEmailAuthTest {
         val result = runBlocking { repository.verifyEmailAuthCode("a@b.com", "123456") }
 
         val exception = result.exceptionOrNull()
-        assertTrue(exception is ReceiverEmailAuthException)
-        exception as ReceiverEmailAuthException
+        assertTrue(exception is ReceiverFailure.ServerRejection)
+        exception as ReceiverFailure.ServerRejection
         assertEquals("인증번호가 만료되었거나 존재하지 않습니다. 다시 요청해주세요.", exception.serverMessage)
         assertEquals(400, exception.status)
     }
