@@ -5,9 +5,7 @@ import com.afternote.core.data.mapper.auth.AuthMapper
 import com.afternote.core.datastore.LocalStoreRegistry
 import com.afternote.core.datastore.StoreScope
 import com.afternote.core.datastore.TokenDataSource
-import com.afternote.core.domain.error.InvalidLoginCredentialsException
-import com.afternote.core.domain.error.NetworkUnavailableException
-import com.afternote.core.domain.error.SocialLoginRejectedException
+import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.model.Session
 import com.afternote.core.model.TokenBundle
@@ -69,8 +67,6 @@ internal class AuthRepositoryImpl
                 refreshToken = refreshToken,
             )
         }
-
-        // TODO:레거시 레포에 있던 authApiService 관련이고 리팩토링해야 하는지 검사 필요
 
         override suspend fun defaultLogin(
             email: String,
@@ -155,9 +151,8 @@ internal class AuthRepositoryImpl
         }
     }
 
-// BE `ErrorCode.java` 대조 — `AuthService.login()`·`socialLogin()` 이 실제로 던지는 거절만 담았다.
-// 대역 판정(4xx 통과)으로 바꾸지 말 것: [ApiException.code] 는 HTTP 상태가 아니라 본문의
-// 비즈니스 코드고, BE 에는 5xx 에 붙는 코드도 있다(1904).
+// [ApiException.code] 는 HTTP 상태가 아니라 응답 본문의 비즈니스 코드다 — 대역 판정(4xx 통과)으로
+// 바꾸지 말 것. 5xx 에 붙는 코드도 있어 대역으로는 사용자 거절과 장애가 갈리지 않는다.
 private const val CODE_USER_NOT_FOUND = 1201
 private const val CODE_PASSWORD_MISMATCH = 1202
 private const val CODE_SOCIAL_LOGIN_FAILED = 1208
@@ -177,11 +172,11 @@ private fun <T> Result<T>.mapLoginFailure(): Result<T> =
         is ApiException -> {
             when (exception.code) {
                 CODE_USER_NOT_FOUND, CODE_PASSWORD_MISMATCH -> {
-                    Result.failure(InvalidLoginCredentialsException(exception))
+                    Result.failure(CoreAuthFailure.InvalidLoginCredentials(exception))
                 }
 
                 CODE_SOCIAL_LOGIN_FAILED, CODE_UNSUPPORTED_SOCIAL_LOGIN -> {
-                    Result.failure(SocialLoginRejectedException(exception))
+                    Result.failure(CoreAuthFailure.SocialLoginRejected(exception))
                 }
 
                 else -> {
@@ -191,10 +186,10 @@ private fun <T> Result<T>.mapLoginFailure(): Result<T> =
         }
 
         is IOException -> {
-            Result.failure(NetworkUnavailableException(exception))
+            Result.failure(CoreAuthFailure.NetworkUnavailable(exception))
         }
 
         else -> {
-            this // 성공·그 외 예외 모두 통과
+            this
         }
     }

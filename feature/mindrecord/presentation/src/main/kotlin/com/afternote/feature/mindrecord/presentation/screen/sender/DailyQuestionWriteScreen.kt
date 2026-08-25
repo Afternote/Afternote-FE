@@ -155,19 +155,16 @@ fun DailyQuestionWriteScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            // 프리필(이어쓰기·수정)이 비동기로 끝나므로 에디터를 다시 만들어 본문을 다시
-            // 시드한다 — WriteTextField 는 value 를 초기 시드로만 받는다 (#923·#582).
-            // 두 경로가 같은 재시드를 요구하므로 키 하나로 묶는다.
-            key(uiState.draftLoaded, uiState.contentLoaded) {
-                WriteTextField(
-                    value = uiState.answer,
-                    onValueChange = viewModel::onAnswerChanged,
-                    onSaveDraftClick = { viewModel.submit(isDraft = true) },
-                    onDraftCountClick = onDraftListClick,
-                    draftCount = uiState.draftCount,
-                    onImagePicked = viewModel::uploadImage,
-                )
-            }
+            // 프리필이 늦게 도착해도 WriteTextField 가 value 변경에 반응해 다시 시드한다 —
+            // key() 로 컴포넌트를 재생성하지 않는다 (#1018).
+            WriteTextField(
+                value = uiState.answer,
+                onValueChange = viewModel::onAnswerChanged,
+                onSaveDraftClick = { viewModel.submit(isDraft = true) },
+                onDraftCountClick = onDraftListClick,
+                draftCount = uiState.draftCount,
+                onImagePicked = viewModel::uploadImage,
+            )
         }
     }
 }

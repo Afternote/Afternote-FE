@@ -208,4 +208,6 @@
     <string name="mindrecord_receiver_load_failed">마음의 기록을 불러오지 못했어요.</string>
     <string name="mindrecord_receiver_retry">다시 시도</string>
     <string name="mindrecord_receiver_title">마음의 기록</string>
+    <!-- 카테고리 카드 기록 수를 아직 모를 때. en dash — 수신자 홈·주간 요약과 같은 표기 (#700·#952·#562). -->
+    <string name="mindrecord_home_category_count_unavailable">–</string>
 </resources>
