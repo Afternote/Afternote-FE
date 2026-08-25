@@ -12,12 +12,14 @@ import com.afternote.core.model.user.User
 import com.afternote.core.model.user.UserConnectedAccount
 import com.afternote.core.model.user.UserPushSetting
 import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
+import com.afternote.feature.timeletter.domain.model.RecordedAudio
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterDeliveryMode
 import com.afternote.feature.timeletter.domain.model.TimeLetterList
 import com.afternote.feature.timeletter.domain.model.TimeLetterStatus
 import com.afternote.feature.timeletter.domain.repository.FileMetadataRepository
 import com.afternote.feature.timeletter.domain.repository.TimeLetterRepository
+import com.afternote.feature.timeletter.domain.repository.VoiceRecorderRepository
 import com.afternote.feature.timeletter.domain.usecase.CreateTimeLetterUseCase
 import com.afternote.feature.timeletter.domain.usecase.ResolveTimeLetterBlocksUseCase
 import kotlinx.coroutines.CancellationException
@@ -141,6 +143,7 @@ class TimeLetterWriteViewModelTest {
             timeLetterRepository = repository,
             userRepository = FakeUserRepository,
             fileMetadataRepository = FakeFileMetadataRepository,
+            voiceRecorderRepository = FakeVoiceRecorderRepository,
             savedStateHandle = SavedStateHandle(mapOf("timeLetterId" to null)),
         )
     }
@@ -204,6 +207,20 @@ private object FakeFileMetadataRepository : FileMetadataRepository {
     override suspend fun getFileName(uriString: String): String = error("getFileName should not be called")
 
     override suspend fun getMimeType(uriString: String): String? = error("getMimeType should not be called")
+}
+
+private object FakeVoiceRecorderRepository : VoiceRecorderRepository {
+    override suspend fun start(): Result<Unit> = error("start should not be called")
+
+    override suspend fun stop(): Result<RecordedAudio> = error("stop should not be called")
+
+    override suspend fun discard() = Unit
+
+    override fun retainRecordedFile() = Unit
+
+    override suspend fun deleteRecordedFile(uriString: String) = Unit
+
+    override fun release() = Unit
 }
 
 private object FakeUserRepository : UserRepository {

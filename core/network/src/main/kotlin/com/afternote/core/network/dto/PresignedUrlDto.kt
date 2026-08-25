@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 data class PresignedUrlRequestDto(
     val directory: String,
     val extension: String,
+    val fileSize: Long,
 )
 
 @Serializable

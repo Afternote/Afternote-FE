@@ -39,15 +39,6 @@ class VideoUploadRepositoryImpl
                 val uri = uriString.toUri()
                 val extension = videoExtensionFromUri(uri)
 
-                val presigned =
-                    imageApi
-                        .getPresignedUrl(
-                            PresignedUrlRequestDto(
-                                directory = directory,
-                                extension = extension,
-                            ),
-                        ).requireData()
-
                 val tempFile =
                     withContext(ioDispatcher) {
                         val file = File.createTempFile("video_upload_", ".$extension", context.cacheDir)
@@ -58,6 +49,15 @@ class VideoUploadRepositoryImpl
                     }
 
                 try {
+                    val presigned =
+                        imageApi
+                            .getPresignedUrl(
+                                PresignedUrlRequestDto(
+                                    directory = directory,
+                                    extension = extension,
+                                    fileSize = tempFile.length(),
+                                ),
+                            ).requireData()
                     val contentType = presigned.contentType.ifBlank { "video/$extension" }
                     val requestBody = tempFile.asRequestBody(contentType.toMediaType())
 

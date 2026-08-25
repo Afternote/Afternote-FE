@@ -25,6 +25,7 @@ class VoiceRecorderRepositoryImpl
         private val recorderLock = Any()
         private var recorder: MediaRecorder? = null
         private var outputFile: File? = null
+        private val retainedFiles = linkedSetOf<File>()
         private var startedAtMillis: Long = 0L
 
         override suspend fun start(): Result<Unit> =
@@ -35,14 +36,20 @@ class VoiceRecorderRepositoryImpl
                         val directory = File(context.filesDir, AUDIO_DIRECTORY).apply { mkdirs() }
                         val file = File(directory, "${UUID.randomUUID()}.$AUDIO_EXTENSION")
                         val mediaRecorder = createMediaRecorder()
-                        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC)
-                        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-                        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-                        mediaRecorder.setAudioEncodingBitRate(AUDIO_BIT_RATE)
-                        mediaRecorder.setAudioSamplingRate(AUDIO_SAMPLE_RATE)
-                        mediaRecorder.setOutputFile(file.absolutePath)
-                        mediaRecorder.prepare()
-                        mediaRecorder.start()
+                        try {
+                            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC)
+                            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                            mediaRecorder.setAudioEncodingBitRate(AUDIO_BIT_RATE)
+                            mediaRecorder.setAudioSamplingRate(AUDIO_SAMPLE_RATE)
+                            mediaRecorder.setOutputFile(file.absolutePath)
+                            mediaRecorder.prepare()
+                            mediaRecorder.start()
+                        } catch (failure: Throwable) {
+                            mediaRecorder.runCatching { release() }
+                            file.delete()
+                            throw failure
+                        }
                         recorder = mediaRecorder
                         outputFile = file
                         startedAtMillis = SystemClock.elapsedRealtime()
@@ -86,7 +93,10 @@ class VoiceRecorderRepositoryImpl
         }
 
         override fun retainRecordedFile() {
-            synchronized(recorderLock) { outputFile = null }
+            synchronized(recorderLock) {
+                outputFile?.let(retainedFiles::add)
+                outputFile = null
+            }
         }
 
         override suspend fun deleteRecordedFile(uriString: String) {
@@ -94,14 +104,25 @@ class VoiceRecorderRepositoryImpl
                 val uri = android.net.Uri.parse(uriString)
                 if (uri.authority != "${context.packageName}.timeletter.fileprovider") return@withContext
                 val fileName = uri.lastPathSegment?.substringAfterLast('/') ?: return@withContext
-                File(File(context.filesDir, AUDIO_DIRECTORY), fileName).delete()
+                val file = File(File(context.filesDir, AUDIO_DIRECTORY), fileName)
+                synchronized(recorderLock) { retainedFiles.remove(file) }
+                file.delete()
             }
         }
 
         override fun release() {
-            val fileToDelete = synchronized(recorderLock) { releaseRecorder() }
-            fileToDelete?.let { file ->
-                ioDispatcher.dispatch(EmptyCoroutineContext) { file.delete() }
+            val filesToDelete =
+                synchronized(recorderLock) {
+                    buildList {
+                        releaseRecorder()?.let(::add)
+                        addAll(retainedFiles)
+                        retainedFiles.clear()
+                    }
+                }
+            if (filesToDelete.isNotEmpty()) {
+                ioDispatcher.dispatch(EmptyCoroutineContext) {
+                    filesToDelete.forEach(File::delete)
+                }
             }
         }
 

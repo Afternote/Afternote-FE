@@ -67,6 +67,7 @@ fun NavGraphBuilder.timeLetterNavGraph(
                 onDateSelected = { viewModel.setSendAt(it) },
                 onTimeSelected = { h, m -> viewModel.setSendTime(h, m) },
                 onAddImageBlock = { uri -> viewModel.addImageBlock(uri) },
+                onAddAudioBlock = { uri -> viewModel.addAudioBlock(uri) },
                 onAddFileBlock = { uri -> viewModel.addFileBlock(uri) },
                 onAddLinkBlock = { url -> viewModel.addLinkBlock(url) },
                 onRemoveBlock = { id -> viewModel.removeBlock(id) },

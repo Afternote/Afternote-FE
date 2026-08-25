@@ -37,6 +37,7 @@ class MemorialThumbnailUploadRepositoryImpl
                             PresignedUrlRequestDto(
                                 directory = DIRECTORY_AFTERNOTES,
                                 extension = EXTENSION_JPG,
+                                fileSize = jpegBytes.size.toLong(),
                             ),
                         ).requireData()
 

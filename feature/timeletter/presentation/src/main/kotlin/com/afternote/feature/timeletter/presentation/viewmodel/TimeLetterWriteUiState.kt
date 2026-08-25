@@ -2,7 +2,6 @@ package com.afternote.feature.timeletter.presentation.viewmodel
 
 import android.net.Uri
 import androidx.compose.ui.text.style.TextAlign
-import com.afternote.core.ui.UiText
 import com.afternote.feature.timeletter.domain.model.RecordedAudio
 
 data class TimeLetterWriteUiState(
@@ -19,7 +18,7 @@ data class TimeLetterWriteUiState(
     val draftCount: Int = 0,
     val isSaving: Boolean = false,
     val textAlign: TextAlign = TextAlign.Start,
-    val errorMessage: UiText? = null,
+    val error: TimeLetterWriteError? = null,
     val editorBlocks: List<EditorBlock> = listOf(EditorBlock.Text(id = 0L)),
     val focusedBlockId: Long? = 0L,
     val nextBlockId: Long = 1L,
@@ -29,6 +28,15 @@ data class TimeLetterWriteUiState(
     val voiceRecordingState: VoiceRecordingState = VoiceRecordingState.Idle,
     val showFreePlanLimitPopup: Boolean = false,
 )
+
+enum class TimeLetterWriteError {
+    SEND_DATE_REQUIRED,
+    LOAD_FAILED,
+    RECIPIENT_REQUIRED,
+    SAVE_FAILED,
+    VOICE_RECORDING_START_FAILED,
+    VOICE_RECORDING_STOP_FAILED,
+}
 
 sealed interface VoiceRecordingState {
     data object Idle : VoiceRecordingState

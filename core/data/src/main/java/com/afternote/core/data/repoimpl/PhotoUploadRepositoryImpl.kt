@@ -78,15 +78,6 @@ class PhotoUploadRepositoryImpl
                 val extension = resolveExtension(mime)
                 android.util.Log.d("PhotoUpload", "mime=$mime → extension=$extension")
 
-                val presigned =
-                    imageApi
-                        .getPresignedUrl(
-                            PresignedUrlRequestDto(
-                                directory = directory,
-                                extension = extension,
-                            ),
-                        ).requireData()
-
                 val tempFile =
                     withContext(ioDispatcher) {
                         val file = File.createTempFile("photo_upload_", ".$extension", context.cacheDir)
@@ -97,6 +88,15 @@ class PhotoUploadRepositoryImpl
                     }
 
                 try {
+                    val presigned =
+                        imageApi
+                            .getPresignedUrl(
+                                PresignedUrlRequestDto(
+                                    directory = directory,
+                                    extension = extension,
+                                    fileSize = tempFile.length(),
+                                ),
+                            ).requireData()
                     val contentType = presigned.contentType.ifBlank { DEFAULT_CONTENT_TYPE }
                     val requestBody = tempFile.asRequestBody(contentType.toMediaType())
 
