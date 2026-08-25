@@ -100,17 +100,23 @@ function sectionHasContent(lines, section) {
 }
 
 /**
- * `## 포함 이슈` 는 항상 산출값으로 덮어쓰고, `## QA 포인트` 는 비어 있을 때만 초안을 채운다.
- * 사람이 다시 쓴 QA 문구와 나머지 섹션은 건드리지 않는다.
+ * 산출된 목록이 있으면 `## 포함 이슈` 를 덮어쓰고, 비었으면 이미 적힌 목록을 남긴다 —
+ * 이미 배포된 릴리스 PR 을 다시 산출할 때 누적 PR 이 0건이라, 덮어쓰면 사람이 확인한
+ * 릴리스 노트 입력을 지우게 된다.
+ * `## QA 포인트` 는 항상 비어 있을 때만 초안을 채워 사람이 쓴 문장을 덮지 않는다.
+ * 섹션 자체가 없으면 둘 다 자리를 만든다 — 비어 있으면 배포가 중단되기 때문이다.
  */
-export function applyReleaseScopeToBody(body, { issueSection, qaSection }) {
+export function applyReleaseScopeToBody(body, { issueSection, qaSection, overwriteIssues = true }) {
     let lines = String(body ?? "").split(/\r?\n/);
 
-    const replaceSection = (heading, content) => {
+    const writeSection = (heading, content, { onlyWhenEmpty }) => {
         const section = findSection(lines, heading);
         if (!section) {
             const tail = lines.length > 0 && lines.at(-1).trim() === "" ? [] : [""];
             lines = [...lines, ...tail, `## ${heading}`, "", ...content.split("\n"), ""];
+            return;
+        }
+        if (onlyWhenEmpty && sectionHasContent(lines, section)) {
             return;
         }
         lines = [
@@ -122,12 +128,8 @@ export function applyReleaseScopeToBody(body, { issueSection, qaSection }) {
         ];
     };
 
-    replaceSection(ISSUE_HEADING, issueSection);
-
-    const qa = findSection(lines, QA_HEADING);
-    if (!qa || !sectionHasContent(lines, qa)) {
-        replaceSection(QA_HEADING, qaSection);
-    }
+    writeSection(ISSUE_HEADING, issueSection, { onlyWhenEmpty: !overwriteIssues });
+    writeSection(QA_HEADING, qaSection, { onlyWhenEmpty: true });
 
     return lines.join("\n").replace(/\n{3,}/g, "\n\n").trimEnd() + "\n";
 }
@@ -144,6 +146,7 @@ async function main() {
         body: applyReleaseScopeToBody(context.releasePullRequest?.body, {
             issueSection: renderIssueSection(scope.includedIssues),
             qaSection: renderQaDraftSection(scope),
+            overwriteIssues: scope.includedIssues.length > 0,
         }),
     };
     await fs.mkdir(path.dirname(outputPath), { recursive: true });

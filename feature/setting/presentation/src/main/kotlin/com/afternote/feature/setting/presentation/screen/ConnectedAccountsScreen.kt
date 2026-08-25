@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.credentials.CredentialManager
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.ui.findActivity
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.topbar.DetailTopBar
@@ -30,7 +31,6 @@ import com.afternote.feature.setting.presentation.BuildConfig
 import com.afternote.feature.setting.presentation.R
 import com.afternote.feature.setting.presentation.component.SocialAccountRow
 import com.afternote.feature.setting.presentation.social.KakaoAuthResult
-import com.afternote.feature.setting.presentation.social.UserCancelledAuthException
 import com.afternote.feature.setting.presentation.social.requestGoogleIdToken
 import com.afternote.feature.setting.presentation.social.requestKakaoAccessToken
 import com.afternote.feature.setting.presentation.social.toKakaoAuthResult
@@ -87,7 +87,7 @@ fun ConnectedAccountsScreen(
                                 serverClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID,
                             ).onSuccess { token -> viewModel.link("google", token) }
                                 .onFailure { e ->
-                                    if (e !is UserCancelledAuthException) {
+                                    if (e !is CoreAuthFailure.UserCancelledAuth) {
                                         viewModel.notifyLinkError(
                                             googleAccountLinkFailedMessage,
                                         )
