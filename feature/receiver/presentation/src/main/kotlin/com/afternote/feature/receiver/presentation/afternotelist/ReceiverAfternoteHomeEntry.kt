@@ -30,11 +30,13 @@ fun ReceiverAfternoteHomeEntry(
     val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
     val items = viewModel.pagedAfternotes.collectAsLazyPagingItems()
     // 이미 그려 둔 목록이 있으면 유지한다 — 전면 교체는 보여 줄 것이 전무할 때만 (작성자 화면과 같은 규칙).
+    val refreshState = items.loadState.refresh
     val listError =
-        (items.loadState.refresh as? LoadState.Error)
-            ?.error
-            ?.toListError(R.string.receiver_afternote_list_not_deliverable_message)
-            ?.takeIf { items.itemCount == 0 }
+        if (refreshState is LoadState.Error && items.itemCount == 0) {
+            refreshState.error.toListError(R.string.receiver_afternote_list_not_deliverable_message)
+        } else {
+            null
+        }
 
     when (listError) {
         is ReceiverAfternoteListError.NotDeliverable -> {
