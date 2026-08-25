@@ -25,8 +25,8 @@ data class DiaryCreateRequestDto(
     @SerialName("content") val content: String,
     @SerialName("isDraft") val isDraft: Boolean,
     @SerialName("todayMood") val todayMood: TodayMoodDto,
-    // 응답 계약에 없는 필드 — 타입만 nullable 로 두고 기본값은 두지 않는다 (#789).
-    @SerialName("imageUrl") val imageUrl: String?,
+    // imageUrl 은 계약에 없어 걷었다 — 보내도 서버가 버리고 응답에도 키가 없다. 목록
+    // 썸네일은 본문 HTML 의 첫 img 에서 뽑는다 (#1024, 데일리질문 #549 와 같은 규칙).
     // 생성 API 에서 `null` 과 빈 목록은 모두 "수신자 없음" 으로 정규화되고, 작성 UI 는 항상
     // 목록을 갖고 있다. 빈 목록을 그대로 보내면 되므로 nullable 로 낮추지 않는다 (#789).
     @SerialName("receiverIds") val receiverIds: List<Long>,
@@ -38,8 +38,8 @@ data class DiaryUpdateRequestDto(
     @SerialName("content") val content: String,
     @SerialName("isDraft") val isDraft: Boolean,
     @SerialName("todayMood") val todayMood: TodayMoodDto,
-    @SerialName("date") val date: String,
-    @SerialName("imageUrl") val imageUrl: String?,
+    /** null 이면 기존 수신자 유지, 빈 목록이면 전체 해제 (서버 규칙). */
+    @SerialName("receiverIds") val receiverIds: List<Long>? = null,
 )
 
 /**

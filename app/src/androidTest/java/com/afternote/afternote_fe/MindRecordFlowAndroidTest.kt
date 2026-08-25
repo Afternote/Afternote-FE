@@ -109,6 +109,7 @@ class MindRecordFlowAndroidTest {
         repository.createResults.addLast(Result.success(1L))
         val viewModel =
             DailyQuestionWriteViewModel(
+                savedStateHandle = SavedStateHandle(emptyMap()),
                 repository = repository,
                 photoUploadRepository = PhotoUploadRepository { _, _ -> Result.success("https://cdn.test/question.jpg") },
                 draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
