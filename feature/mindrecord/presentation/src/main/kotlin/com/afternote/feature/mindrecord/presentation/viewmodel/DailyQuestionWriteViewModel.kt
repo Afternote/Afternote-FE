@@ -13,7 +13,7 @@ import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepositor
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.mindrecord.presentation.util.isHtmlBlank
-import com.afternote.feature.mindrecord.presentation.util.toUploadedFileKey
+import com.afternote.feature.mindrecord.presentation.util.toWireContent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -207,16 +207,6 @@ class DailyQuestionWriteViewModel
         }
 
         /**
-         * 제출 직전, **이번 작성 중 업로드한** 이미지의 `src` 만 fileKey 로 바꾼다.
-         *
-         * 이미 저장돼 본문에 들어 있는 영구 URL 은 건드리지 않는다 — 서버가 그대로 통과시키고
-         * (실측 확인), 키로 바꾸면 이미 옮겨진 파일을 다시 옮기려다 실패한다. 그래서 경로
-         * 패턴으로 훑지 않고 이번에 받은 URL 만 정확히 치환한다.
-         */
-        private fun String.toWireContent(): String =
-            uploadedImageUrls.fold(this) { content, url -> content.replace(url, url.toUploadedFileKey()) }
-
-        /**
          * 저장(`isDraft=false`) / 임시저장(`isDraft=true`).
          *
          * 중단할 때는 반드시 사유를 [SubmitState.Failed] 로 남긴다. 종전에는 `questionId` 가
@@ -265,7 +255,7 @@ class DailyQuestionWriteViewModel
                             id = state.draftId,
                             payload =
                                 DailyQuestionUpdatePayload(
-                                    content = state.answer.toWireContent(),
+                                    content = state.answer.toWireContent(uploadedImageUrls),
                                     isDraft = isDraft,
                                     questionId = questionId,
                                 ),
@@ -273,7 +263,7 @@ class DailyQuestionWriteViewModel
                     } else {
                         repository.create(
                             DailyQuestionCreatePayload(
-                                content = state.answer.toWireContent(),
+                                content = state.answer.toWireContent(uploadedImageUrls),
                                 isDraft = isDraft,
                                 // 생성 경로는 questionId 가 반드시 있다 — 위 가드가 null 을 걸렀다.
                                 questionId = requireNotNull(questionId),
