@@ -16,13 +16,7 @@ import java.io.IOException
 class ReceiverAfternoteListErrorTest {
     @Test
     fun `전달 조건 미충족은 서버 문구를 실은 전용 갈래로 간다`() {
-        val notDeliverable =
-            ReceiverFailure.ServerRejection(
-                status = 403,
-                serverMessage = "아직 전달 조건이 충족되지 않았습니다.",
-                serverCode = 2009,
-                cause = CAUSE,
-            )
+        val notDeliverable = ReceiverFailure.DeliveryConditionNotMet("아직 전달 조건이 충족되지 않았습니다.", CAUSE)
 
         assertEquals(
             ReceiverAfternoteListError.NotDeliverable(ErrorPayload.Text("아직 전달 조건이 충족되지 않았습니다.")),

@@ -94,14 +94,8 @@ class ErrorPayloadTest {
      * 사용자 안내라 그대로 노출한다.
      */
     @Test
-    fun `전달 조건 미충족 2009 는 서버 문구를 그대로 노출한다`() {
-        val notDeliverable =
-            ReceiverFailure.ServerRejection(
-                status = 403,
-                serverMessage = "아직 전달 조건이 충족되지 않았습니다.",
-                serverCode = DELIVERY_CONDITION_NOT_MET,
-                cause = CAUSE,
-            )
+    fun `전달 조건 미충족은 allowlist 를 묻지 않고 서버 문구를 노출한다`() {
+        val notDeliverable = ReceiverFailure.DeliveryConditionNotMet("아직 전달 조건이 충족되지 않았습니다.", CAUSE)
 
         assertEquals(
             ErrorPayload.Text("아직 전달 조건이 충족되지 않았습니다."),
@@ -111,19 +105,13 @@ class ErrorPayloadTest {
 
     @Test
     fun `전달 조건 미충족만 재시도 불가로 갈린다`() {
-        val notDeliverable =
-            ReceiverFailure.ServerRejection(
-                status = 403,
-                serverMessage = "아직 전달 조건이 충족되지 않았습니다.",
-                serverCode = DELIVERY_CONDITION_NOT_MET,
-                cause = CAUSE,
-            )
+        val notDeliverable = ReceiverFailure.DeliveryConditionNotMet("아직 전달 조건이 충족되지 않았습니다.", CAUSE)
 
         assertTrue(notDeliverable.isDeliveryConditionNotMet())
     }
 
     @Test
-    fun `같은 403 이라도 다른 사유 code 는 재시도 경로에 남는다`() {
+    fun `사유를 가르지 않은 403 은 재시도 경로에 남는다`() {
         val otherRejection =
             ReceiverFailure.ServerRejection(status = 403, serverMessage = "권한이 없습니다.", serverCode = 1903, cause = CAUSE)
 

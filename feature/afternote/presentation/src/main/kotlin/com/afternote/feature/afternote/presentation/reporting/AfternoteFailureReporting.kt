@@ -146,6 +146,11 @@ private fun ReceiverFailure.isExpectedUserRejection(): Boolean =
         is ReceiverFailure.NetworkUnavailable -> {
             false
         }
+
+        // 서버가 사유를 확인해 거절한 4xx 다 — status·문구를 되짚을 것 없이 타입이 이미 그 사실이다.
+        is ReceiverFailure.DeliveryConditionNotMet -> {
+            true
+        }
     }
 
 /** 4xx = 요청을 보낸 쪽 문제. 이 대역 밖(5xx·그 외)은 서버 문구가 실려 와도 장애로 보고 기록한다. */

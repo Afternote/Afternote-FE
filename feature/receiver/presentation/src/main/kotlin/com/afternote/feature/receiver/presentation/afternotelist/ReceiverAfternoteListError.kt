@@ -15,8 +15,8 @@ import com.afternote.feature.receiver.presentation.error.toErrorPayload
  */
 internal sealed interface ReceiverAfternoteListError {
     /**
-     * 발신자가 세운 전달 조건이 아직 충족되지 않았다(403 / 서버 code 2009).
-     * 재시도로는 풀리지 않으므로 화면이 재시도 수단을 주지 않는다.
+     * 발신자가 세운 전달 조건이 아직 충족되지 않았다. 재시도로는 풀리지 않으므로 화면이 재시도
+     * 수단을 주지 않는다. 어느 서버 사유였는지는 data 계층이 이미 타입으로 해석했다.
      */
     data class NotDeliverable(
         val payload: ErrorPayload,

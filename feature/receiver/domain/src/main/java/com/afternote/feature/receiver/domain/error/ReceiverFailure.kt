@@ -64,4 +64,24 @@ sealed class ReceiverFailure(
     class NetworkUnavailable(
         cause: Throwable,
     ) : ReceiverFailure("receiver request failed before any response", cause)
+
+    /**
+     * 발신자가 세운 전달 조건이 아직 충족되지 않아 거절됐다는 사실
+     * (BE `ErrorCode.DELIVERY_CONDITION_NOT_MET` — 403).
+     *
+     * [ServerRejection] 에서 갈라 **타입으로** 세운 이유 — 소비처가 화면 분기와 문구 노출을 모두
+     * 이 사유에 걸어야 하는데, 그때마다 `serverCode == 2009` 를 보게 하면 BE 의 code 체계가
+     * presentation 까지 샌다. 어느 번호였는지는 data 계층만 알면 된다.
+     *
+     * @property serverMessage 서버가 내려준 안내. 이 사유는 서버 문구 자체가 사용자 안내라
+     *   소비처가 allowlist 를 다시 묻지 않고 그대로 쓴다. **null 이면 서버가 message 미제공** —
+     *   그때는 호출처가 정적 리소스로 폴백한다.
+     */
+    class DeliveryConditionNotMet(
+        val serverMessage: String?,
+        cause: Throwable,
+    ) : ReceiverFailure(
+            serverMessage ?: "delivery condition not met",
+            cause,
+        )
 }

@@ -50,6 +50,12 @@ private fun ReceiverFailure.displayTextOrNull(): String? =
         is ReceiverFailure.NetworkUnavailable -> {
             null
         }
+
+        // data 가 사유를 확인해 타입으로 세운 거절이다 — 그 사유의 서버 문구가 곧 사용자 안내라
+        // allowlist 를 다시 묻지 않는다. 물으려면 이 계층이 서버 code 를 알아야 한다.
+        is ReceiverFailure.DeliveryConditionNotMet -> {
+            serverMessage?.takeIf { it.isNotBlank() }
+        }
     }
 
 /**
@@ -67,26 +73,16 @@ private val DISPLAYABLE_CLIENT_ERROR_RANGE = 400..499
  * 서버는 표시 가능 여부를 알려주지 않는다 — BE `ErrorCode` 의 실제 문구가 사용자 안내인 것만 골라
  * 등재한 목록이다. 신규 code 는 문구를 확인한 뒤에만 더한다. 미등재 기본값은 폴백.
  */
-private val USER_DISPLAYABLE_SERVER_CODES = setOf(1900, 1901, 1902, 1903, 2008, DELIVERY_CONDITION_NOT_MET)
-
-/**
- * 전달 조건 미충족 — BE `ErrorCode.DELIVERY_CONDITION_NOT_MET` (403 / 2009,
- * "아직 전달 조건이 충족되지 않았습니다."). 발신자가 수신자별 전달 조건을 아직 세우지 않았거나
- * 조건이 충족되지 않은 상태다.
- *
- * 다른 등재 code 와 달리 이름을 붙인 건 [USER_DISPLAYABLE_SERVER_CODES] 말고도 소비처가 있어서다 —
- * 목록 화면은 이 실패를 «재시도로 풀리는 실패» 와 갈라 그린다([isDeliveryConditionNotMet]).
- */
-internal const val DELIVERY_CONDITION_NOT_MET = 2009
+private val USER_DISPLAYABLE_SERVER_CODES = setOf(1900, 1901, 1902, 1903, 2008)
 
 /**
  * 전달 조건이 아직 충족되지 않아 거절된 실패인가.
  *
- * 재시도로 풀리지 않는 유일한 목록 실패라 화면이 이 하나만 따로 가른다 — 나머지(네트워크·5xx·기타
- * 4xx)는 재시도가 유효하므로 종전 경로에 남는다. 사유가 더 늘면 그때 sealed 로 올린다.
+ * 판정은 타입 하나로 끝난다 — 어느 서버 code 였는지는 data 계층
+ * (`ReceiverFailureTranslation`)이 이미 해석했다. 재시도로 풀리지 않는 유일한 목록 실패라
+ * 화면이 이 하나만 따로 가른다.
  */
-internal fun Throwable.isDeliveryConditionNotMet(): Boolean =
-    this is ReceiverFailure.ServerRejection && serverCode == DELIVERY_CONDITION_NOT_MET
+internal fun Throwable.isDeliveryConditionNotMet(): Boolean = this is ReceiverFailure.DeliveryConditionNotMet
 
 /**
  * 화면에 그릴 최종 문자열. 리소스 해석에 Context 가 필요해 VM 에서는 못 풀고 여기서 한 번에 푼다 —

@@ -29,16 +29,34 @@ import java.io.IOException
  * `<-- 403` `{"status":403,"code":2009,"message":"아직 전달 조건이 충족되지 않았습니다."}`.
  */
 class ReceiverAfternotePagingSourceTest {
+    /**
+     * 사유를 아는 거절은 **타입** 으로 나온다 — 소비처가 `serverCode == 2009` 를 되짚지 않아도 되게,
+     * 서버 code 지식을 이 계층에 가둔 결과다.
+     */
     @Test
-    fun `전달 조건 미충족 403 은 사유 code 를 보존한 도메인 실패로 나온다`() {
+    fun `전달 조건 미충족 403 은 전용 도메인 타입으로 나온다`() {
         val result = loadWith { throw DELIVERY_CONDITION_NOT_MET_EXCEPTION }
 
         val error = (result as PagingSource.LoadResult.Error).throwable
-        assertTrue("도메인 실패로 번역돼야 한다: $error", error is ReceiverFailure.ServerRejection)
+        assertTrue("전용 타입으로 번역돼야 한다: $error", error is ReceiverFailure.DeliveryConditionNotMet)
+        val notMet = error as ReceiverFailure.DeliveryConditionNotMet
+        assertEquals("아직 전달 조건이 충족되지 않았습니다.", notMet.serverMessage)
+        assertEquals(DELIVERY_CONDITION_NOT_MET_EXCEPTION, notMet.cause)
+    }
+
+    @Test
+    fun `사유를 가르지 않은 서버 거절은 code 를 실은 ServerRejection 으로 남는다`() {
+        val otherRejection =
+            ApiException(status = 400, code = 1902, serverMessage = "인증번호가 만료되었습니다.", message = "만료")
+
+        val result = loadWith { throw otherRejection }
+
+        val error = (result as PagingSource.LoadResult.Error).throwable
+        assertTrue("ServerRejection 이어야 한다: $error", error is ReceiverFailure.ServerRejection)
         val rejection = error as ReceiverFailure.ServerRejection
-        assertEquals(403, rejection.status)
-        assertEquals(2009, rejection.serverCode)
-        assertEquals("아직 전달 조건이 충족되지 않았습니다.", rejection.serverMessage)
+        assertEquals(400, rejection.status)
+        assertEquals(1902, rejection.serverCode)
+        assertEquals(otherRejection, rejection.cause)
     }
 
     /**
@@ -51,7 +69,7 @@ class ReceiverAfternotePagingSourceTest {
         val result = loadWith { throw DELIVERY_CONDITION_NOT_MET_EXCEPTION }
 
         val error = (result as PagingSource.LoadResult.Error).throwable
-        assertTrue("연결 실패로 뭉개졌다: $error", error is ReceiverFailure.ServerRejection)
+        assertTrue("연결 실패로 뭉개졌다: $error", error is ReceiverFailure.DeliveryConditionNotMet)
     }
 
     @Test
