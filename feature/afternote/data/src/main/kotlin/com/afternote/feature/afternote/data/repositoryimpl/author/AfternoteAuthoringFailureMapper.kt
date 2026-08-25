@@ -1,9 +1,8 @@
 package com.afternote.feature.afternote.data.repositoryimpl.author
 
-import com.afternote.core.domain.error.NetworkUnavailableException
 import com.afternote.core.network.model.ApiException
-import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationException
 import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationKind
+import com.afternote.feature.afternote.domain.error.AfternoteFailure
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import retrofit2.HttpException
@@ -23,11 +22,11 @@ private data class ApiErrorBodyDto(
  * 저장 API 실패를 presentation이 네트워크·서버·검증 오류로 타입 분기할 수 있는 도메인 예외로 치환한다.
  */
 internal fun mapAuthoringFailure(throwable: Throwable): Throwable {
-    if (throwable is AfternoteAuthoringValidationException) return throwable
+    if (throwable is AfternoteFailure.AuthoringValidation) return throwable
 
     if (throwable is ApiException) {
         return if (throwable.code == RECEIVERS_REQUIRED_SERVER_CODE) {
-            AfternoteAuthoringValidationException(AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED)
+            AfternoteFailure.AuthoringValidation(AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED)
         } else {
             // ApiException도 IOException의 하위 타입이므로 서버 응답 실패를 네트워크 단절로 오분류하지 않는다.
             throwable
@@ -41,12 +40,12 @@ internal fun mapAuthoringFailure(throwable: Throwable): Throwable {
                 apiErrorJson.decodeFromString<ApiErrorBodyDto>(body)
             }.getOrNull()
         if (parsed?.code == RECEIVERS_REQUIRED_SERVER_CODE) {
-            return AfternoteAuthoringValidationException(AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED)
+            return AfternoteFailure.AuthoringValidation(AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED)
         }
     }
 
     if (throwable is IOException) {
-        return NetworkUnavailableException(throwable)
+        return AfternoteFailure.NetworkUnavailable(throwable)
     }
 
     return throwable

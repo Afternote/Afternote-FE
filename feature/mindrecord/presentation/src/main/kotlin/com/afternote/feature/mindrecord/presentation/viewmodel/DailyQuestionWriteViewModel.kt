@@ -9,6 +9,8 @@ import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionUpdatePayload
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.presentation.R
+import com.afternote.feature.mindrecord.presentation.util.isHtmlBlank
+import com.afternote.feature.mindrecord.presentation.util.toUploadedFileKey
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,12 +26,23 @@ class DailyQuestionWriteViewModel
     constructor(
         private val repository: DailyQuestionRepository,
         private val photoUploadRepository: PhotoUploadRepository,
+        private val draftLoader: MindRecordDraftLoader,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(DailyQuestionWriteUiState())
         val uiState: StateFlow<DailyQuestionWriteUiState> = _uiState.asStateFlow()
 
         init {
             loadTodayQuestion()
+            loadDraftCount()
+        }
+
+        /** 툴바 카운트는 화면 장식이라 실패해도 화면을 막지 않고 '모름' 으로 남긴다. */
+        private fun loadDraftCount() {
+            viewModelScope.launch {
+                draftLoader.count().onSuccess { count ->
+                    _uiState.update { it.copy(draftCount = count) }
+                }
+            }
         }
 
         private fun loadTodayQuestion() {
@@ -52,10 +65,7 @@ class DailyQuestionWriteViewModel
                             it.copy(
                                 isQuestionLoading = false,
                                 questionLoadError =
-                                    UiText.DynamicOrResource(
-                                        value = e.message,
-                                        fallbackResId = R.string.mindrecord_error_daily_question_today_failed,
-                                    ),
+                                    UiText.Resource(R.string.mindrecord_error_daily_question_today_failed),
                             )
                         }
                     }
@@ -80,35 +90,85 @@ class DailyQuestionWriteViewModel
          * (없으면 재제출이 POST 로 나가 이어쓰기가 안 된다).
          */
         private suspend fun resumeDraft() {
+            _uiState.update { it.copy(isResumingDraft = true) }
             val draft =
                 repository
                     .getList(date = LocalDate.now().toString(), draftOnly = true)
                     .getOrNull()
                     ?.firstOrNull { it.isDraft }
-                    ?: return
+                    ?: run {
+                        _uiState.update { it.copy(isResumingDraft = false) }
+                        return
+                    }
             _uiState.update {
+                // 빈 에디터는 `<p></p>` 를 내보내므로 `isBlank()` 로는 "비어 있음" 을 판정할 수
+                // 없다. 태그를 걷어 낸 본문으로 판단해야 사용자가 아무것도 안 쓴 상태에서
+                // 이어쓸 내용이 실린다 (#923).
+                val appliesDraft = it.answer.isHtmlBlank()
                 it.copy(
                     draftId = draft.dailyQuestionId,
-                    answer = if (it.answer.isBlank()) draft.content else it.answer,
-                    imageUrl = it.imageUrl ?: draft.imageUrl,
+                    answer = if (appliesDraft) draft.content else it.answer,
+                    isResumingDraft = false,
+                    // 화면이 이 전환을 보고 에디터를 재생성해 본문을 다시 싣는다 (#923).
+                    // **다시 실을 값이 있을 때만** 뒤집는다 — 사용자가 이미 쓴 내용을 보존한
+                    // 경우까지 재생성하면 커서·포커스·IME 조합만 리셋되고, 진행 중이던
+                    // 업로드가 끊길 수 있다 (리뷰 지적).
+                    draftLoaded = it.draftLoaded || appliesDraft,
                 )
             }
         }
+
+        /** 이번 작성 중 업로드한 이미지의 원본 URL. 제출 시 fileKey 로 바꿀 대상이다 (#549). */
+        private val uploadedImageUrls = mutableSetOf<String>()
 
         fun onAnswerChanged(text: String) {
             _uiState.update { it.copy(answer = text) }
         }
 
         /**
-         * 에디터에서 고른 이미지를 presigned URL 로 업로드하고 영구 URL 을 반환한다 (실패 시 null).
-         * 첫 업로드 이미지는 등록 payload 의 `imageUrl` (목록 카드 썸네일) 로도 쓴다.
+         * 에디터에서 고른 이미지를 업로드하고 **미리보기에 쓸 URL** 을 반환한다 (실패 시 null).
+         *
+         * 반환한 URL 은 에디터가 본문 HTML 에 `<img src>` 로 삽입한다 — 그것이 서버에
+         * 이미지가 남는 유일한 경로다. 종전에는 이 URL 을 등록 payload 의 `imageUrl` 로도
+         * 실어 보냈지만, 그 필드는 계약에 없어 서버가 통째로 무시했다 (#549).
+         *
+         * 다만 **저장 시 나가는 값은 이 URL 이 아니다.** 서버는 본문의 `img src` 에서 fileKey
+         * 를 기대하므로, 여기서 받은 URL 을 [uploadedImageUrls] 에 기억해 뒀다가 제출 직전에
+         * 키 형태로 바꾼다 ([toWireContent]). 미리보기는 전체 URL 이라야 뜬다.
          */
-        suspend fun uploadImage(uriString: String): String? =
-            photoUploadRepository
+        suspend fun uploadImage(uriString: String): String? {
+            _uiState.update { it.copy(isUploadingImage = true, imageUploadError = null) }
+            return photoUploadRepository
                 .upload(uriString = uriString, directory = MIND_RECORD_UPLOAD_DIRECTORY)
                 .onSuccess { url ->
-                    _uiState.update { if (it.imageUrl == null) it.copy(imageUrl = url) else it }
+                    // 계약에 imageUrl 이 없어 상태로 들지 않는다 — 본문 img 로 들어가고,
+                    // 제출 직전 fileKey 로 바뀔 수 있게 기억만 해 둔다 (#549).
+                    uploadedImageUrls += url
+                    _uiState.update { it.copy(isUploadingImage = false) }
+                }.onFailure {
+                    // null 로 흡수하면 사용자는 이미지가 붙은 줄 알고 저장한다 (#716).
+                    _uiState.update {
+                        it.copy(
+                            isUploadingImage = false,
+                            imageUploadError = UiText.Resource(R.string.mindrecord_error_image_upload_failed),
+                        )
+                    }
                 }.getOrNull()
+        }
+
+        fun consumeImageUploadError() {
+            _uiState.update { it.copy(imageUploadError = null) }
+        }
+
+        /**
+         * 제출 직전, **이번 작성 중 업로드한** 이미지의 `src` 만 fileKey 로 바꾼다.
+         *
+         * 이미 저장돼 본문에 들어 있는 영구 URL 은 건드리지 않는다 — 서버가 그대로 통과시키고
+         * (실측 확인), 키로 바꾸면 이미 옮겨진 파일을 다시 옮기려다 실패한다. 그래서 경로
+         * 패턴으로 훑지 않고 이번에 받은 URL 만 정확히 치환한다.
+         */
+        private fun String.toWireContent(): String =
+            uploadedImageUrls.fold(this) { content, url -> content.replace(url, url.toUploadedFileKey()) }
 
         /**
          * 저장(`isDraft=false`) / 임시저장(`isDraft=true`).
@@ -120,6 +180,16 @@ class DailyQuestionWriteViewModel
         fun submit(isDraft: Boolean = false) {
             val state = _uiState.value
             if (state.submitState == SubmitState.InProgress) return
+
+            // 하단 툴바 임시저장은 `enabled` 없는 clickable 이라 canSubmit 을 우회한다.
+            // 차단은 화면이 아니라 여기서 지킨다.
+            if (state.isResumingDraft) return
+            // 업로드가 끝나기 전에 나가면 이미지 없는 기록이 저장된다 — 일기 화면은
+            // submit() 초입의 canSubmit 가드로 이미 막고 있다 (리뷰 지적).
+            if (state.isUploadingImage) {
+                failSubmit(R.string.mindrecord_error_image_uploading)
+                return
+            }
 
             if (state.answer.isBlank()) {
                 failSubmit(R.string.mindrecord_error_daily_question_answer_required)
@@ -145,34 +215,44 @@ class DailyQuestionWriteViewModel
                             id = state.draftId,
                             payload =
                                 DailyQuestionUpdatePayload(
-                                    content = state.answer,
+                                    content = state.answer.toWireContent(),
                                     isDraft = isDraft,
                                     questionId = questionId,
-                                    imageUrl = state.imageUrl,
                                 ),
                         )
                     } else {
                         repository.create(
                             DailyQuestionCreatePayload(
-                                content = state.answer,
+                                content = state.answer.toWireContent(),
                                 isDraft = isDraft,
                                 questionId = questionId,
-                                imageUrl = state.imageUrl,
                             ),
                         )
                     }
                 result
-                    .onSuccess {
-                        _uiState.update { it.copy(submitState = SubmitState.Succeeded) }
+                    .onSuccess { savedId ->
+                        _uiState.update {
+                            it.copy(
+                                submitState = SubmitState.Succeeded,
+                                // 서버가 돌려준 "내 답변" 식별자를 그대로 든다 (#573).
+                                // 임시저장 뒤 이어서 저장하면 목록을 다시 뒤지지 않고 이 값으로 PATCH 한다 —
+                                // 종전에는 응답을 버려 `resumeDraft()` 가 목록을 재조회해 첫 draft 를
+                                // 추측으로 골랐다.
+                                draftId = if (isDraft) savedId else null,
+                            )
+                        }
+                        // 임시저장이 하나 늘었으니 툴바 숫자도 따라가야 한다 (#769).
+                        if (isDraft) loadDraftCount()
+                        // 제출이 성공하면 staging 키는 이미 permanent 로 옮겨졌다. 남겨 두면
+                        // 같은 ViewModel 로 두 번 제출될 때(예: 임시저장 뒤 화면에 머무는 흐름)
+                        // 이미 옮겨진 파일을 다시 옮기려다 실패한다 (#549).
+                        uploadedImageUrls.clear()
                     }.onFailure { e ->
                         _uiState.update {
                             it.copy(
                                 submitState =
                                     SubmitState.Failed(
-                                        UiText.DynamicOrResource(
-                                            value = e.message,
-                                            fallbackResId = R.string.mindrecord_error_daily_question_submit_failed,
-                                        ),
+                                        UiText.Resource(R.string.mindrecord_error_daily_question_submit_failed),
                                     ),
                             )
                         }

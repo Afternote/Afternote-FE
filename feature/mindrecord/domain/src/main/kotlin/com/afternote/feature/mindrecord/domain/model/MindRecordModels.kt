@@ -22,4 +22,10 @@ data class MindRecordSummary(
     /** 서버 원본 표기 (`yyyy.MM.dd 요일`) — 카드에 그대로 노출. */
     val createdAt: String,
     val imageUrl: String? = null,
+    /**
+     * 작성자가 고른 오늘의 기분. 일기에만 있고 데일리질문에는 없다.
+     *
+     * 종전에는 목록이 이 값을 버려서, 수신자가 본문과 함께 볼 수 없었다 (#618).
+     */
+    val todayMood: TodayMood? = null,
 )
