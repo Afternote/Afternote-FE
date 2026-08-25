@@ -1,6 +1,7 @@
 package com.afternote.feature.mindrecord.data.api
 
 import com.afternote.core.network.model.BaseResponse
+import com.afternote.feature.mindrecord.data.dto.DailyQuestionAnswerResponseDto
 import com.afternote.feature.mindrecord.data.dto.DailyQuestionCreateRequestDto
 import com.afternote.feature.mindrecord.data.dto.DailyQuestionListItemDto
 import com.afternote.feature.mindrecord.data.dto.DailyQuestionUpdateRequestDto
@@ -27,13 +28,13 @@ interface DailyQuestionApiService {
     @POST("daily-questions")
     suspend fun createDailyQuestion(
         @Body request: DailyQuestionCreateRequestDto,
-    ): BaseResponse<Unit>
+    ): BaseResponse<DailyQuestionAnswerResponseDto>
 
     @PATCH("daily-questions/{userDailyQuestionId}")
     suspend fun updateDailyQuestion(
         @Path("userDailyQuestionId") userDailyQuestionId: Long,
         @Body request: DailyQuestionUpdateRequestDto,
-    ): BaseResponse<Unit>
+    ): BaseResponse<DailyQuestionAnswerResponseDto>
 
     @DELETE("daily-questions/{userDailyQuestionId}")
     suspend fun deleteDailyQuestion(

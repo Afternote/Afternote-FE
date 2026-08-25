@@ -23,7 +23,7 @@ import javax.inject.Named
 /** MIME 타입에서 확장자를 못 뽑았을 때 폴백. 대부분의 안드로이드 영상이 mp4 라 합리적 디폴트. */
 private const val DEFAULT_VIDEO_EXTENSION = "mp4"
 
-class VideoUploadRepositoryImpl
+internal class VideoUploadRepositoryImpl
     @Inject
     constructor(
         @param:ApplicationContext private val context: Context,
@@ -39,6 +39,7 @@ class VideoUploadRepositoryImpl
                 val uri = uriString.toUri()
                 val extension = videoExtensionFromUri(uri)
 
+                // presigned 요청에 파일 크기가 필수라 임시 파일을 먼저 만든다 (#950).
                 val tempFile =
                     withContext(ioDispatcher) {
                         val file = File.createTempFile("video_upload_", ".$extension", context.cacheDir)
@@ -48,16 +49,22 @@ class VideoUploadRepositoryImpl
                         file
                     }
 
-                try {
-                    val presigned =
+                val presigned =
+                    try {
                         imageApi
                             .getPresignedUrl(
                                 PresignedUrlRequestDto(
                                     directory = directory,
                                     extension = extension,
-                                    fileSize = tempFile.length(),
+                                    contentLength = tempFile.length(),
                                 ),
                             ).requireData()
+                    } catch (e: Throwable) {
+                        tempFile.delete()
+                        throw e
+                    }
+
+                try {
                     val contentType = presigned.contentType.ifBlank { "video/$extension" }
                     val requestBody = tempFile.asRequestBody(contentType.toMediaType())
 
