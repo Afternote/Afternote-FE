@@ -168,5 +168,21 @@ schema 1 로 기록된 기존 24건은 당시 화면 값을 복원할 수 없으
 `minSdk = 26` 을 지원한다고 선언하고 있으므로, 그 경계에서 한 번은 확인한다. `SDK_INT` 분기가
 없으니 매 PR 검증은 필요 없다.
 
+**이미지는 `google_apis` 쪽을 쓴다.** 2026-08-25 구글 저장소 실측 기준, API 26 의 ABI 는 이렇다.
+
+| 이미지 | API 26 의 ABI |
+|---|---|
+| `system-images;android-26;google_apis` | **arm64-v8a**, x86, x86_64 |
+| `system-images;android-26;google_apis_playstore` | x86 만 (arm64 는 API 28부터) |
+
+Apple Silicon 에서 Play Store 이미지를 고르면 x86 뿐이라 Rosetta 에뮬레이션으로 느려진다.
+`google_apis` 는 arm64 네이티브로 돌고 Google Play Services 도 들어 있어 FCM 검증까지 된다
+(Play Store 앱만 없다 — 카카오톡 설치가 필요한 검증은 어차피 실기기 몫이다).
+
+```bash
+sdkmanager --install "system-images;android-26;google_apis;arm64-v8a"
+avdmanager create avd -n Afternote_QA_API26 -k "system-images;android-26;google_apis;arm64-v8a"
+```
+
 - [ ] API 26 에뮬레이터에 설치·기동
 - [ ] 로그인 → 홈 진입까지 종단 1회
