@@ -67,25 +67,21 @@ jobs:
 
           # 남은 것에서 «이미 응답받은» PR 을 걸러낸다.
           #
-          # 1. «누가» 봤는지는 따지지 않는다. 다른 사람이 이미 판정을 냈으면 끝이다.
-          # 2. 병합 커밋은 «새 코드» 로 치지 않는다. develop 전파만 쌓인 PR 이
-          #    미응답으로 잡히면, 이미 승인해 둔 스택 PR 이 통째로 빚이 된다.
-          #    parents 가 둘 이상인 커밋을 빼고 마지막 실질 변경 시각을 잡는다.
+          # «누가», «언제» 봤는지는 따지지 않는다. 판정(APPROVED·CHANGES_REQUESTED)이
+          # 한 번이라도 나왔으면 그 PR 에 대한 리뷰 의무는 끝난 것이다. 승인 뒤에
+          # 작성자가 손보는 것은 작성자 몫이고, 그 변경을 다시 봐 줄 의무는 누구에게도
+          # 없다. 리뷰가 필요하면 작성자가 요청을 다시 걸면 된다.
           debt_file=$(mktemp)
           while IFS=$'\t' read -r pn created title; do
             [ -n "$pn" ] || continue
 
-            changed_at=$(gh api "repos/$REPO/pulls/$pn/commits?per_page=100" --paginate \
-              --jq '[.[] | select((.parents | length) < 2)] | last | .commit.committer.date' 2>/dev/null || true)
-            [ -n "$changed_at" ] && [ "$changed_at" != "null" ] || changed_at="1970-01-01T00:00:00Z"
-
             judged=$(gh api "repos/$REPO/pulls/$pn/reviews" --paginate \
-              --jq "[.[] | select(.submitted_at > \"$changed_at\") | select(.state == \"APPROVED\" or .state == \"CHANGES_REQUESTED\")] | length" 2>/dev/null || true)
+              --jq '[.[] | select(.state == "APPROVED" or .state == "CHANGES_REQUESTED")] | length' 2>/dev/null || true)
 
             if [ "${judged:-0}" -eq 0 ]; then
               printf '%s\t%s\t%s\n' "$pn" "$created" "$title" >> "$debt_file"
             else
-              echo "#$pn — 이미 응답됨(판정 ${judged}건), 빚 아님"
+              echo "#$pn — 이미 판정 ${judged}건, 빚 아님"
             fi
           done <<< "$open_prs"
 
@@ -101,7 +97,7 @@ jobs:
           {
             echo "## 🚧 리뷰 적체 가드 — 이 PR 을 닫습니다"
             echo
-            echo "@$AUTHOR 님이 아직 리뷰하지 않았고 **다른 누구도 응답하지 않은** PR 이 **${count}건** 있습니다."
+            echo "**아무도 리뷰하지 않은** PR 이 **${count}건** 남아 있습니다."
             echo
             echo "| PR | 열린 날 | 경과 | 제목 |"
             echo "|---|---|---|---|"
@@ -114,7 +110,7 @@ jobs:
             echo
             echo "이 저장소는 아무도 응답하지 않은 PR 이 1건이라도 남아 있으면 새 PR 을 열 수 없습니다 (#1136)."
             echo
-            echo "각 PR 에 필요한 리뷰는 **한 건**입니다 — 팀에서 누구든 먼저 판정을 내면 그 PR 은 모두의 목록에서 빠집니다. 리뷰 요청이 나에게 걸렸는지는 무관합니다."
+            echo "각 PR 에 필요한 리뷰는 **한 건**입니다 — 누구든 한 번 판정을 내면 그 PR 은 모두의 목록에서 빠집니다. 승인 뒤에 올라온 변경을 다시 봐 줄 의무는 없습니다."
             echo
             echo "### 되살리는 법"
             echo
