@@ -17,7 +17,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeAuthRepository
 import com.afternote.afternote_fe.test.FakeUserRepository
-import com.afternote.core.domain.error.NetworkUnavailableException
+import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.model.Session
@@ -83,7 +83,7 @@ class AppOnboardingCanaryTest {
     @Test
     fun emailLogin_networkFailureThenRetry_entersHomeOnce() {
         fakeAuth.emailLoginResults.addLast(
-            Result.failure(NetworkUnavailableException(IOException("offline"))),
+            Result.failure(CoreAuthFailure.NetworkUnavailable(IOException("offline"))),
         )
         fakeAuth.emailLoginResults.addLast(
             Result.success(Session.DefaultSession("access", "refresh")),

@@ -36,13 +36,18 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.afternote.core.ui.asString
+import com.afternote.core.ui.button.AfternoteButton
+import com.afternote.core.ui.button.AfternoteButtonType
 import com.afternote.core.ui.button.AfternoteCircularCheckbox
 import com.afternote.core.ui.button.CheckboxState
 import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.DetailTopBar
+import com.afternote.feature.mindrecord.presentation.component.MindRecordErrorBox
 import com.afternote.feature.mindrecord.presentation.util.htmlToPlainText
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftCategory
 import com.afternote.feature.mindrecord.presentation.viewmodel.DraftDeleteOutcome
@@ -72,6 +77,25 @@ fun DraftListScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var selectionMode by remember { mutableStateOf(false) }
     var selectedKeys by remember { mutableStateOf(setOf<String>()) }
+
+    // 화면을 떠났다 돌아오면 다시 조회한다 — 작성·삭제하고 복귀했을 때 목록이 낡은 채로
+    // 남지 않게 한다. 마인드레코드 홈이 쓰는 결선과 같다 (#702).
+    //
+    // ON_RESUME 은 화면 off/on·홈 버튼 복귀에서도 발화하므로 로딩을 방출하지 않는
+    // `refreshOnReturn()` 을 쓴다. 최초 진입의 중복 호출은 VM 이 진행 중인 Job 으로 막는다.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refreshOnReturn()
+    }
+
+    // 갱신으로 사라진 항목의 키가 선택에 남으면 "총 N개 선택" 이 과대 표시되고, 선택
+    // 삭제가 빈 목록으로 나간다. 선택은 화면 remember 라 갱신에도 살아남는다 (리뷰 지적).
+    val visibleKeys = (uiState as? DraftListUiState.Success)?.items?.map { it.key() }?.toSet()
+    LaunchedEffect(visibleKeys) {
+        if (visibleKeys != null) {
+            selectedKeys = selectedKeys intersect visibleKeys
+            if (selectedKeys.isEmpty()) selectionMode = false
+        }
+    }
 
     val deleteOutcome = (uiState as? DraftListUiState.Success)?.deleteOutcome
     LaunchedEffect(deleteOutcome) {
@@ -142,9 +166,10 @@ fun DraftListScreen(
                 }
 
                 is DraftListUiState.Error -> {
-                    Box(modifier = Modifier.fillMaxSize().padding(20.dp), contentAlignment = Alignment.Center) {
-                        Text(text = state.message.asString(), color = AfternoteDesign.colors.gray9)
-                    }
+                    MindRecordErrorBox(
+                        message = state.message.asString(),
+                        onRetry = viewModel::retry,
+                    )
                 }
 
                 is DraftListUiState.Success -> {
@@ -249,12 +274,19 @@ private fun SuccessContent(
             }
         }
 
-        // Figma 2372:24660 — 선택 모드 하단 "전체 삭제 | 선택 삭제" 바
+        // Figma 2372:24660 — 선택 모드 하단 "전체 삭제 | 선택 삭제" 바.
+        // core 정본을 쓴다. 자체 구현은 같은 시안을 근거로 적었는데 코너·라벨·divider·여백이
+        // 4/4 어긋나 있었고, core 는 4/4 일치한다 (#634).
         if (selectionMode) {
-            DeleteActionBar(
-                onDeleteAll = onDeleteAll,
-                onDeleteSelected = onDeleteSelected,
-                isDeleteSelectedEnabled = isDeleteSelectedEnabled,
+            AfternoteButton(
+                text = stringResource(MindRecordR.string.mindrecord_draft_list_delete_all),
+                onClick = onDeleteAll,
+                type = AfternoteButtonType.Variant5,
+                secondaryText = stringResource(MindRecordR.string.mindrecord_draft_list_delete_selected),
+                onSecondaryClick = onDeleteSelected,
+                // 0개 선택 상태에서 빈 목록으로 삭제를 부르지 않도록 막는다 (#442).
+                // 정본이 이 상태를 담게 해서 수렴과 방어가 함께 성립한다.
+                isSecondaryEnabled = isDeleteSelectedEnabled,
                 modifier =
                     Modifier
                         .align(Alignment.BottomCenter)
@@ -320,61 +352,6 @@ private fun DraftRow(
                 color = AfternoteDesign.colors.gray9,
             )
             HorizontalDivider(thickness = 0.5.dp, color = AfternoteDesign.colors.gray3)
-        }
-    }
-}
-
-@Composable
-private fun DeleteActionBar(
-    onDeleteAll: () -> Unit,
-    onDeleteSelected: () -> Unit,
-    modifier: Modifier = Modifier,
-    /** 0개 선택 상태에서는 빈 목록으로 삭제를 부르지 않도록 막는다 (#442). */
-    isDeleteSelectedEnabled: Boolean = true,
-) {
-    Row(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(10.dp))
-                .background(AfternoteDesign.colors.gray9)
-                .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .clickable(role = Role.Button, onClick = onDeleteAll)
-                    .padding(vertical = 12.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = stringResource(MindRecordR.string.mindrecord_draft_list_delete_all),
-                style = AfternoteDesign.typography.bodySmallB,
-                color = AfternoteDesign.colors.white,
-            )
-        }
-        VerticalDivider(
-            modifier = Modifier.height(16.dp),
-            color = AfternoteDesign.colors.gray6,
-        )
-        Box(
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .clickable(
-                        role = Role.Button,
-                        enabled = isDeleteSelectedEnabled,
-                        onClick = onDeleteSelected,
-                    ).padding(vertical = 12.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = stringResource(MindRecordR.string.mindrecord_draft_list_delete_selected),
-                style = AfternoteDesign.typography.bodySmallB,
-                color = if (isDeleteSelectedEnabled) AfternoteDesign.colors.white else AfternoteDesign.colors.gray6,
-            )
         }
     }
 }
@@ -458,7 +435,13 @@ private fun DraftRowPreview() {
                 selected = true,
                 onToggleSelect = {},
             )
-            DeleteActionBar(onDeleteAll = {}, onDeleteSelected = {})
+            AfternoteButton(
+                text = "전체 삭제",
+                onClick = {},
+                type = AfternoteButtonType.Variant5,
+                secondaryText = "선택 삭제",
+                onSecondaryClick = {},
+            )
         }
     }
 }
