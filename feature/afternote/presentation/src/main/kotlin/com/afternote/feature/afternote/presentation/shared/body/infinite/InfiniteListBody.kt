@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.paging.PagingData
@@ -25,6 +26,7 @@ fun InfiniteListBody(
     selectedCategory: AfternoteType?,
     onCategorySelected: (AfternoteType?) -> Unit,
     onListItemClick: (id: Long, type: AfternoteType) -> Unit,
+    headerDescription: String,
     modifier: Modifier = Modifier,
     nextStepText: String = "",
     onNextStepClick: () -> Unit = {},
@@ -35,6 +37,7 @@ fun InfiniteListBody(
     ) {
         Spacer(Modifier.height(8.dp))
         HomeHeaderSection(
+            description = headerDescription,
             nextStepText = nextStepText,
             onNextStepClick = onNextStepClick,
         )
@@ -80,6 +83,7 @@ private fun InfiniteListBodyPreview() {
                 ),
             ).collectAsLazyPagingItems()
         InfiniteListBody(
+            headerDescription = stringResource(R.string.afternote_home_header_description),
             nextStepText =
                 "가족들의 '주거래 은행' 정보를\n" +
                     "입력하신 건 확인하셨나요?",

@@ -61,5 +61,6 @@ fun AfternoteHomeEntry(
         },
         onFabClick = { navigateToAdd(selectedCategory) },
         onSettingClick = onSettingClick,
+        headerDescription = stringResource(R.string.afternote_home_header_description),
     )
 }
