@@ -69,6 +69,7 @@ fun AfternoteEditorScreen(
     onNavigateToSelectReceiver: () -> Unit,
     onThumbnailBytesReady: (ByteArray?) -> Unit,
     onThumbnailExtractionFailed: (Throwable) -> Unit,
+    onCaptureFailed: (Throwable) -> Unit,
     onThumbnailUploadErrorConsumed: () -> Unit,
     onValidationErrorConsumed: () -> Unit,
     modifier: Modifier = Modifier,
@@ -159,6 +160,7 @@ fun AfternoteEditorScreen(
             snackbarHostState = snackbarHostState,
             onPhotoSelected = state.setMemorialPhoto,
             onVideoSelected = state.setMemorialVideo,
+            onCaptureFailed = onCaptureFailed,
         )
 
     // 작성 도중 이탈 가드: 진입 시점 스냅샷 대비 변경이 있으면 뒤로가기 시 이탈 확인 팝업을 띄운다.
