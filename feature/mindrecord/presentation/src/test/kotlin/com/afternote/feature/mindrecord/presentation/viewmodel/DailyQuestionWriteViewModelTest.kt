@@ -304,13 +304,13 @@ private object NoopPhotoUploadRepository : PhotoUploadRepository {
 private const val CREATED_ANSWER_ID = 19L
 
 /** 툴바 카운트는 이 테스트의 관심사가 아니다 — 0건으로 고정한다 (#769). */
-private fun noopDraftLoader() =
+internal fun noopDraftLoader() =
     MindRecordDraftLoader(
         diaryRepository = EmptyDraftDiaryRepository,
         dailyQuestionRepository = EmptyDraftDailyQuestionRepository,
     )
 
-private object EmptyDraftDiaryRepository : DiaryRepository {
+internal object EmptyDraftDiaryRepository : DiaryRepository {
     override suspend fun getList(
         yearMonth: String,
         draftOnly: Boolean?,
@@ -326,7 +326,7 @@ private object EmptyDraftDiaryRepository : DiaryRepository {
     override suspend fun delete(id: Long): Result<Unit> = error("호출되면 안 됨")
 }
 
-private object EmptyDraftDailyQuestionRepository : DailyQuestionRepository {
+internal object EmptyDraftDailyQuestionRepository : DailyQuestionRepository {
     override suspend fun getList(
         date: String?,
         draftOnly: Boolean?,
