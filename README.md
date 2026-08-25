@@ -193,19 +193,25 @@ bash .github/scripts/render-distribution-release-notes.sh /tmp/afternote-release
 docker build -t afternote-screenshot:latest -f Dockerfile.screenshot .
 docker run --rm -v "$PWD":/workspace -w /workspace afternote-screenshot:latest \
   ./gradlew :core:ui:updateScreenshotTest \
-            :app:updateScreenshotTest \
+            :feature:home:presentation:updateScreenshotTest \
+            :feature:receiver:presentation:updateScreenshotTest \
             :feature:onboarding:presentation:updateScreenshotTest \
             :feature:afternote:presentation:updateScreenshotTest
 ```
 
 → 변경된 PNG 가 각 모듈 `src/screenshotTestDebug/reference/...` 에 갱신. `git add` 후 commit.
 
+> 실패한 모듈만 갱신하려면 그 모듈 태스크만 지정한다 — 예: `./gradlew :feature:home:presentation:updateScreenshotTest`
+>
+> **대상 모듈 목록의 정본은 [`.github/workflows/screenshot.yml`](.github/workflows/screenshot.yml) 이다.** 모듈을 추가·이전했다면 워크플로와 이 문서를 함께 갱신한다.
+
 ## 로컬 baseline 검증 (CI 실패 재현)
 
 ```bash
 docker run --rm -v "$PWD":/workspace -w /workspace afternote-screenshot:latest \
   ./gradlew :core:ui:validateScreenshotTest \
-            :app:validateScreenshotTest \
+            :feature:home:presentation:validateScreenshotTest \
+            :feature:receiver:presentation:validateScreenshotTest \
             :feature:onboarding:presentation:validateScreenshotTest \
             :feature:afternote:presentation:validateScreenshotTest
 ```
