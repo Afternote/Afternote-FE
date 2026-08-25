@@ -31,6 +31,15 @@ interface MindRecordNavActions {
 
     fun onDraftListBack()
 
+    /** 목록의 "수정하기" — 정식 데일리질문 답변을 프리필한 작성 화면으로 연다 (#582). */
+    fun onEditDailyQuestion(answerId: Long)
+
+    /** 목록의 "수정하기" — 정식 일기를 프리필한 작성 화면으로 연다 (#582). */
+    fun onEditDiary(
+        diaryId: Long,
+        yearMonth: String,
+    )
+
     /** 임시저장 목록에서 일기 draft 를 탭 — 일기 작성 화면을 이어쓰기 모드로 연다. */
     fun onEditDiaryDraft(
         draftId: Long,

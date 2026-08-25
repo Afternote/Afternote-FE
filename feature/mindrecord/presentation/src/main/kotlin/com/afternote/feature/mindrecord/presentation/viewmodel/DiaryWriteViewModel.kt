@@ -28,8 +28,9 @@ import javax.inject.Inject
  * 일기 작성/이어쓰기 ViewModel.
  *
  * - 신규 작성: `POST /diary` (+ 선택한 수신자 ID 를 `receiverIds` 로 함께 전송).
- * - 이어쓰기: 라우트의 `draftId` 로 해당 달 draft 목록에서 항목을 찾아 프리필하고,
- *   저장 시 `PATCH /diary/{diaryId}` 로 수정한다 (등록 시 isDraft=false 로 전환).
+ * - 수정: 라우트의 `recordId` 로 해당 달 목록에서 항목을 찾아 프리필하고, 저장 시
+ *   `PATCH /diary/{diaryId}` 로 수정한다. 임시저장 이어쓰기(`isDraft=true`)와 정식 기록
+ *   수정(`isDraft=false`)이 같은 경로를 쓰며, 조회하는 목록의 `draftOnly` 만 다르다 (#582).
  */
 @HiltViewModel
 class DiaryWriteViewModel
@@ -42,18 +43,22 @@ class DiaryWriteViewModel
         private val draftLoader: MindRecordDraftLoader,
     ) : ViewModel() {
         private val route = savedStateHandle.toRoute<MindRecordRoute.DiaryWriteRoute>()
-        private val editingDraftId: Long? = route.draftId
+
+        /** 수정 대상 일기 ID. 임시저장 이어쓰기와 정식 기록 수정이 같은 값을 쓴다 (#582). */
+        private val editingDiaryId: Long? = route.recordId
 
         private val _uiState = MutableStateFlow(DiaryWriteUiState())
         val uiState: StateFlow<DiaryWriteUiState> = _uiState.asStateFlow()
 
         init {
-            if (editingDraftId != null) {
+            // 이어쓰기(임시저장)일 때만 «이어쓰는 중» 으로 표시한다 — 정식 기록 수정은 아니다 (#582).
+            if (editingDiaryId != null && route.isDraft) {
                 _uiState.update { it.copy(isEditingDraft = true) }
             }
             loadReceivers()
             loadDraftCount()
-            editingDraftId?.let { loadDraft(it, route.draftYearMonth) }
+            // 라우트가 draftId/draftYearMonth → recordId/yearMonth/isDraft 로 일반화됐다 (#582).
+            editingDiaryId?.let { loadExisting(it, route.yearMonth, route.isDraft) }
         }
 
         /** 툴바 카운트는 화면 장식이라 실패해도 화면을 막지 않고 '모름' 으로 남긴다. */
@@ -127,9 +132,9 @@ class DiaryWriteViewModel
             viewModelScope.launch {
                 _uiState.update { it.copy(submitState = SubmitState.InProgress) }
                 val result =
-                    if (editingDraftId != null) {
+                    if (editingDiaryId != null) {
                         repository.update(
-                            id = editingDraftId,
+                            id = editingDiaryId,
                             payload =
                                 DiaryUpdatePayload(
                                     title = state.title,
@@ -185,15 +190,25 @@ class DiaryWriteViewModel
         }
 
         // 단건 조회 엔드포인트가 없어 해당 달의 draft 목록에서 id 로 찾는다.
-        private fun loadDraft(
-            draftId: Long,
+
+        /**
+         * 수정 대상 일기를 프리필한다.
+         *
+         * 임시저장과 정식 기록은 **같은 목록 API 의 `draftOnly` 만 다르다.** 종전에는 임시저장
+         * 경로만 있어서 목록의 "수정하기" 가 갈 곳이 없었다 (#582).
+         */
+        private fun loadExisting(
+            diaryId: Long,
             yearMonth: String?,
+            isDraft: Boolean,
         ) {
             viewModelScope.launch {
                 _uiState.update { it.copy(isDraftLoading = true, draftLoadError = null) }
                 repository
-                    .getList(yearMonth = yearMonth ?: YearMonth.now().toString(), draftOnly = true)
-                    .mapCatching { list -> list.diaries.first { it.diaryId == draftId } }
+                    .getList(
+                        yearMonth = yearMonth ?: YearMonth.now().toString(),
+                        draftOnly = if (isDraft) true else null,
+                    ).mapCatching { list -> list.diaries.first { it.diaryId == diaryId } }
                     .onSuccess { draft ->
                         _uiState.update {
                             it.copy(

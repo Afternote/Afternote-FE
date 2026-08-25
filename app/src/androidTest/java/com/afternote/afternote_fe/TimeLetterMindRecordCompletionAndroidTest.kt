@@ -415,6 +415,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
         composeRule.runOnIdle {
             writeViewModel =
                 DailyQuestionWriteViewModel(
+                    savedStateHandle = SavedStateHandle(emptyMap()),
                     repository = repository,
                     photoUploadRepository = CompletionPhotoUploadRepository,
                     draftLoader = MindRecordDraftLoader(CompletionDiaryRepository(mutableListOf()), repository),
