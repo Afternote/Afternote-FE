@@ -15,14 +15,19 @@ function truncate(value, limit = MAX_BODY_LENGTH) {
     return text.length <= limit ? text : `${text.slice(0, limit)}\n...[truncated]`;
 }
 
-export function assertMergedDevelopPullRequest(pullRequest) {
-    if (!pullRequest?.merged_at || !pullRequest?.merge_commit_sha) {
-        throw new Error(`PR #${pullRequest?.number ?? "?"} is not merged`);
-    }
-    if (pullRequest.base?.ref !== "develop") {
+export function assertReleasePullRequest(pullRequest) {
+    if (pullRequest?.base?.ref !== "main") {
         throw new Error(
-            `PR #${pullRequest.number} targets ${pullRequest.base?.ref ?? "<unknown>"}, not develop`,
+            `PR #${pullRequest?.number ?? "?"} targets ${pullRequest?.base?.ref ?? "<unknown>"}, not main`,
         );
+    }
+    if (pullRequest.head?.ref !== "develop") {
+        throw new Error(
+            `PR #${pullRequest.number} ships ${pullRequest.head?.ref ?? "<unknown>"}, not develop`,
+        );
+    }
+    if (!pullRequest.head?.sha) {
+        throw new Error(`PR #${pullRequest.number} has no head SHA`);
     }
 }
 
@@ -326,14 +331,14 @@ function gitCommitExists(commitSha) {
 async function main() {
     const token = process.env.GITHUB_TOKEN;
     const repository = process.env.GITHUB_REPOSITORY;
-    const targetPullRequestNumber = Number(process.env.TARGET_PR_NUMBER);
-    const outputPath = process.env.DEPLOYMENT_CONTEXT_PATH;
+    const targetPullRequestNumber = Number(process.env.RELEASE_PR_NUMBER);
+    const outputPath = process.env.RELEASE_SCOPE_CONTEXT_PATH;
     const apiUrl = process.env.GITHUB_API_URL ?? "https://api.github.com";
     const graphqlUrl = process.env.GITHUB_GRAPHQL_URL ?? "https://api.github.com/graphql";
 
     if (!token || !repository || !targetPullRequestNumber || !outputPath) {
         throw new Error(
-            "GITHUB_TOKEN, GITHUB_REPOSITORY, TARGET_PR_NUMBER, and DEPLOYMENT_CONTEXT_PATH are required",
+            "GITHUB_TOKEN, GITHUB_REPOSITORY, RELEASE_PR_NUMBER, and RELEASE_SCOPE_CONTEXT_PATH are required",
         );
     }
 
@@ -341,7 +346,8 @@ async function main() {
         `${apiUrl}/repos/${repository}/pulls/${targetPullRequestNumber}`,
         token,
     );
-    assertMergedDevelopPullRequest(targetPullRequest);
+    assertReleasePullRequest(targetPullRequest);
+    const releaseHeadSha = targetPullRequest.head.sha;
 
     const workflowRunsQuery = new URLSearchParams({ status: "success", per_page: "100" });
     const workflowRuns = await requestJson(
@@ -353,7 +359,7 @@ async function main() {
         apiUrl,
         repository,
         successfulRuns,
-        targetPullRequest.merge_commit_sha,
+        releaseHeadSha,
         token,
     );
     const covered = relevantDistribution?.relation === "covered";
@@ -367,12 +373,12 @@ async function main() {
         : selectMergedPullRequestsByAncestry(
               allPullRequests,
               baselineSha,
-              targetPullRequest.merge_commit_sha,
+              releaseHeadSha,
               gitIsAncestor,
           );
     if (selectedPullRequests.length > MAX_PULL_REQUESTS) {
         throw new Error(
-            `${selectedPullRequests.length} PRs accumulated since the baseline; refusing a truncated decision`,
+            `${selectedPullRequests.length} PRs accumulated since the baseline; refusing a truncated scope`,
         );
     }
 
@@ -382,13 +388,14 @@ async function main() {
         normalizedPullRequests.push(normalizePullRequest(pullRequest, issues));
     }
 
-    const decisionContext = {
+    const scopeContext = {
         repository,
-        targetPullRequest: normalizePullRequest(
-            targetPullRequest,
-            await loadClosingIssues(graphqlUrl, repository, targetPullRequest, token),
-        ),
-        targetCoveredBySuccessfulDistribution: covered,
+        releasePullRequest: {
+            number: targetPullRequest.number,
+            headSha: releaseHeadSha,
+            body: truncate(targetPullRequest.body),
+        },
+        alreadyDistributed: covered,
         baselineDistribution: relevantDistribution
             ? {
                   id: relevantDistribution.run.id,
@@ -405,7 +412,7 @@ async function main() {
     };
 
     await fs.mkdir(path.dirname(outputPath), { recursive: true });
-    await fs.writeFile(outputPath, `${JSON.stringify(decisionContext, null, 2)}\n`, "utf8");
+    await fs.writeFile(outputPath, `${JSON.stringify(scopeContext, null, 2)}\n`, "utf8");
 }
 
 const invokedPath = process.argv[1] ? pathToFileURL(path.resolve(process.argv[1])).href : "";

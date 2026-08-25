@@ -41,6 +41,7 @@ import com.afternote.feature.mindrecord.domain.model.Diary
 import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DiaryList
 import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
+import com.afternote.feature.mindrecord.domain.model.EmotionAnalysis
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
@@ -800,7 +801,6 @@ private class CompletionDailyQuestionRepository(
                 title = today.content,
                 content = payload.content,
                 createdAt = "2026-08-22",
-                imageUrl = payload.imageUrl,
                 isDraft = payload.isDraft,
             )
         today = today.copy(isAnswered = !payload.isDraft, isDraft = payload.isDraft)
@@ -816,7 +816,6 @@ private class CompletionDailyQuestionRepository(
             if (answer.dailyQuestionId == id) {
                 answer.copy(
                     content = payload.content ?: answer.content,
-                    imageUrl = payload.imageUrl ?: answer.imageUrl,
                     isDraft = payload.isDraft ?: answer.isDraft,
                 )
             } else {
@@ -947,6 +946,8 @@ private fun emptyWeeklyReport(): WeeklyReport =
         week = emptyList(),
         dailyQuestions = emptyList(),
         emotions = emptyList(),
+        // 이 테스트들은 분석 상태를 보지 않는다 — 완료로 고정한다 (#725).
+        emotionAnalysis = EmotionAnalysis(total = 0, succeeded = 0, pending = 0, failed = 0),
     )
 
 private fun completeWeeklyReport(monday: LocalDate): WeeklyReport =
@@ -977,4 +978,6 @@ private fun completeWeeklyReport(monday: LocalDate): WeeklyReport =
                 WeeklyReportEmotion(keyword = "가족", percentage = 25),
                 WeeklyReportEmotion(keyword = "감사", percentage = 75),
             ),
+        // 키워드가 나온 완료 상태 — 1건 분석해 1건 성공 (#725).
+        emotionAnalysis = EmotionAnalysis(total = 1, succeeded = 1, pending = 0, failed = 0),
     )

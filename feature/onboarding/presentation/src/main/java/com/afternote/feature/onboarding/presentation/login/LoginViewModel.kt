@@ -3,8 +3,7 @@ package com.afternote.feature.onboarding.presentation.login
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.error.InvalidLoginCredentialsException
-import com.afternote.core.domain.error.NetworkUnavailableException
+import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.usecase.auth.LoginType
 import com.afternote.core.domain.usecase.auth.LoginUseCase
 import com.afternote.feature.onboarding.presentation.R
@@ -124,7 +123,7 @@ class LoginViewModel
                         if (exception is CancellationException) throw exception
                         // 자격 거절은 계측하지 않는다 — 비밀번호 오타는 사용자의 정상적인 입력 실수다
                         // (아이디 찾기 인증번호 오타와 같은 판단, FindIdViewModel.verifyCode).
-                        if (exception !is InvalidLoginCredentialsException) {
+                        if (exception !is CoreAuthFailure.InvalidLoginCredentials) {
                             errorReporter.recordAuthFailure(
                                 stage = AuthFailureStage.LOGIN,
                                 throwable = exception,
@@ -132,16 +131,24 @@ class LoginViewModel
                             )
                         }
                         _uiState.update {
-                            when (exception) {
-                                is InvalidLoginCredentialsException -> {
+                            // 루트로 좁혀 `when` 을 exhaustive 하게 만든다 — 사유가 늘면 여기가 컴파일 에러로
+                            // 잡힌다. `else` 로 뭉개 두면 인라인·팝업으로 갈라야 할 새 사유가 조용히 문구 하나로
+                            // 흘러간다. 사유를 확인하지 못한 실패(null)는 계속 문구 매핑에 맡긴다.
+                            when (exception as? CoreAuthFailure) {
+                                is CoreAuthFailure.InvalidLoginCredentials -> {
                                     it.copy(isLoading = false, hasCredentialError = true)
                                 }
 
-                                is NetworkUnavailableException -> {
+                                is CoreAuthFailure.NetworkUnavailable -> {
                                     it.copy(isLoading = false, showNetworkErrorPopup = true)
                                 }
 
-                                else -> {
+                                is CoreAuthFailure.EmailAlreadyRegistered,
+                                is CoreAuthFailure.EmailVerification,
+                                is CoreAuthFailure.SocialLoginRejected,
+                                is CoreAuthFailure.UserCancelledAuth,
+                                null,
+                                -> {
                                     it.copy(isLoading = false, errorMessage = exception.toDisplayMessage(R.string.login_failed))
                                 }
                             }
