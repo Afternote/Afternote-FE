@@ -37,7 +37,7 @@ import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeAuthRepository
 import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.error.InvalidLoginCredentialsException
+import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.repository.UserProfileRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
 import com.afternote.core.model.MindRecordCategory
@@ -142,7 +142,7 @@ class AppAndReceiverCompletionAndroidTest {
     @Test
     fun invalidCredentials_correctedPasswordThenRetry_entersHomeWithoutReportingUserError() {
         fakeAuth.emailLoginResults.addLast(
-            Result.failure(InvalidLoginCredentialsException(IllegalStateException("rejected"))),
+            Result.failure(CoreAuthFailure.InvalidLoginCredentials(IllegalStateException("rejected"))),
         )
         fakeAuth.emailLoginResults.addLast(
             Result.success(Session.DefaultSession("access", "refresh")),

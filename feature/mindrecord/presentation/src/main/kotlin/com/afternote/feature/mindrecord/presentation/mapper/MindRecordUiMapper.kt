@@ -5,6 +5,7 @@ import com.afternote.feature.mindrecord.domain.model.Diary
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.presentation.model.DailyDiary
 import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
+import com.afternote.feature.mindrecord.presentation.util.firstHtmlImageSrcOrNull
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion as DailyQuestionDomain
@@ -38,7 +39,8 @@ fun DailyQuestionDomain.toUi(): DailyQuestion? {
         title = title,
         date = resolvedDate,
         content = content,
-        imageUrl = imageUrl,
+        // 서버 계약에 `imageUrl` 이 없다 — 썸네일은 본문 HTML 의 첫 img 에서 뽑는다 (#549).
+        imageUrl = content.firstHtmlImageSrcOrNull(),
     )
 }
 
