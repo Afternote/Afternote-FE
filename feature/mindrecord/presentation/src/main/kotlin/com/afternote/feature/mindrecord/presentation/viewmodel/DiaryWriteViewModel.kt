@@ -49,6 +49,9 @@ class DiaryWriteViewModel
         val uiState: StateFlow<DiaryWriteUiState> = _uiState.asStateFlow()
 
         init {
+            if (editingDraftId != null) {
+                _uiState.update { it.copy(isEditingDraft = true) }
+            }
             loadReceivers()
             loadDraftCount()
             editingDraftId?.let { loadDraft(it, route.draftYearMonth) }
@@ -100,13 +103,31 @@ class DiaryWriteViewModel
          * 전체 URL 을 받으면 호스트를 한 번 더 붙여 403 이 된다. 그래서 받은 URL 을 기억해 두고
          * 제출 직전에 키로 바꾼다 ([toWireContent]). 미리보기는 전체 URL 이라야 뜬다 (#1016).
          */
-        suspend fun uploadImage(uriString: String): String? =
-            photoUploadRepository
+        suspend fun uploadImage(uriString: String): String? {
+            _uiState.update { it.copy(isUploadingImage = true, imageUploadError = null) }
+            return photoUploadRepository
                 .upload(uriString = uriString, directory = MIND_RECORD_UPLOAD_DIRECTORY)
                 .onSuccess { url ->
+                    // 제출 직전 fileKey 로 바꿀 대상이다 (#1016).
                     uploadedImageUrls += url
-                    _uiState.update { if (it.imageUrl == null) it.copy(imageUrl = url) else it }
+                    _uiState.update {
+                        val withUrl = if (it.imageUrl == null) it.copy(imageUrl = url) else it
+                        withUrl.copy(isUploadingImage = false)
+                    }
+                }.onFailure {
+                    // null 로 흡수하면 사용자는 이미지가 붙은 줄 알고 저장한다 (#716).
+                    _uiState.update {
+                        it.copy(
+                            isUploadingImage = false,
+                            imageUploadError = UiText.Resource(R.string.mindrecord_error_image_upload_failed),
+                        )
+                    }
                 }.getOrNull()
+        }
+
+        fun consumeImageUploadError() {
+            _uiState.update { it.copy(imageUploadError = null) }
+        }
 
         fun submit(isDraft: Boolean = false) {
             val state = _uiState.value
@@ -153,10 +174,7 @@ class DiaryWriteViewModel
                             it.copy(
                                 submitState =
                                     SubmitState.Failed(
-                                        UiText.DynamicOrResource(
-                                            value = e.message,
-                                            fallbackResId = R.string.mindrecord_error_diary_submit_failed,
-                                        ),
+                                        UiText.Resource(R.string.mindrecord_error_diary_submit_failed),
                                     ),
                             )
                         }
@@ -208,10 +226,7 @@ class DiaryWriteViewModel
                             it.copy(
                                 isDraftLoading = false,
                                 draftLoadError =
-                                    UiText.DynamicOrResource(
-                                        value = e.message,
-                                        fallbackResId = R.string.mindrecord_error_diary_draft_load_failed,
-                                    ),
+                                    UiText.Resource(R.string.mindrecord_error_diary_draft_load_failed),
                             )
                         }
                     }
