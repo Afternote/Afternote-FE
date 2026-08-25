@@ -11,6 +11,13 @@ android {
     buildFeatures {
         buildConfig = true
     }
+    testOptions {
+        unitTests {
+            // Robolectric 이 이 모듈의 *병합된* 매니페스트를 읽게 한다. 끄면 패키지가
+            // `org.robolectric.default` 로 떨어져 FileProvider authority 가 매니페스트와 어긋난다 (#369).
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
