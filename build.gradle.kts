@@ -47,13 +47,15 @@ plugins {
     alias(libs.plugins.firebase.crashlytics) apply false
 }
 
-// 빌드·테스트 클래스패스의 보안 하한(#921·#975~#985·#1058). 상류가 취약 버전을 물고 있고 상류 최신판도
-// 아직 패치 버전 미만이라 constraint 로 올린다 — Robolectric 4.15.1(bcprov 1.80)·AGP 9.2.1(bcprov
-// 1.79·commons-lang3 3.16.0·jose4j 0.9.5·jdom2 2.0.6)·AGP UTP 설정(netty — unified-test-platform-core
-// 가 4.1.93, -host-emulator-control 이 4.1.110). androidLintTool·UTP 처럼 AGP 가 뒤늦게 만드는
-// configuration 까지 잡도록 configureEach 로 걸고, require 시맨틱이라 상류가 하한 이상을 선언하게 되면
-// 그쪽이 이긴다. 여기 목록은 전부 빌드 도구 경유라 APK 산출물에는 없다(releaseRuntimeClasspath 0건
-// 실측). build-logic 은 별도 빌드라 build-logic/build.gradle.kts 가 같은 하한을 선언한다.
+// 빌드·테스트 클래스패스의 보안 하한(#921·#975~#985·#1058·#1072). 상류가 취약 버전을 물고 있고 상류
+// 최신판도 아직 패치 버전 미만이라 constraint 로 올린다 — Robolectric 4.15.1(bcprov 1.80)·AGP
+// 9.2.1(bcprov 1.79·commons-lang3 3.16.0·jose4j 0.9.5·jdom2 2.0.6)·Firebase App Distribution 5.3.0
+// 과 AGP UTP 설정(netty — unified-test-platform-core 가 4.1.93, -host-emulator-control 이 4.1.110)
+// ·AGP androidLintTool 과 UTP(httpclient 4.5.6)·ktlint CLI(logback 1.3.16)·Kakao SDK 2.23.2(okhttp
+// 4.9.2→okio 2.8.0). androidLintTool·UTP 처럼 AGP 가 뒤늦게 만드는 configuration 까지 잡도록
+// configureEach 로 걸고, require 시맨틱이라 상류가 하한 이상을 선언하게 되면 그쪽이 이긴다. okhttp 를
+// 뺀 나머지는 빌드 도구 경유라 APK 산출물에는 없다(releaseRuntimeClasspath 실측). build-logic 은
+// 별도 빌드라 build-logic/build.gradle.kts 가 같은 하한을 선언한다.
 data class SecurityFloor(
     val module: String,
     val version: String,
@@ -103,7 +105,32 @@ val securityFloors =
                 version = libs.versions.jdom2.get(),
                 because = "GHSA-2363-cqg2-863c — 2.0.6.1 미만 취약 — #985",
             ),
-        )
+            SecurityFloor(
+                module = "org.apache.httpcomponents:httpclient",
+                version = libs.versions.httpclient.get(),
+                because = "GHSA-7r82-7xv7-xcpj — 4.5.13 미만 취약 — #1072",
+            ),
+        ) +
+        // logback-core 만 취약하지만 classic 은 core 와 같은 버전이라야 동작해 함께 올린다.
+        listOf("logback-core", "logback-classic").map { artifact ->
+            SecurityFloor(
+                module = "ch.qos.logback:$artifact",
+                version = libs.versions.logback.get(),
+                because = "GHSA-jhq6-gfmj-v8fx 등 3건 — 1.5.34 미만 취약 — #1072",
+            )
+        } +
+        // okio 2.8.0(GHSA-w33c-445m-f8w7)이 Kakao SDK 경유 okhttp 4.9.2 로 딸려 온다. okhttp 4.9.x 는
+        // okio 2.x API 를 쓰므로 okio 만 3.x 로 올리면 런타임이 깨진다. 그래서 okio 가 아니라 okhttp 를
+        // 카탈로그 버전으로 정렬해 okio 를 함께 끌어올린다 — :app 최종 조합이 이미 그 짝(okhttp 5.4.0 +
+        // okio-jvm 3.17.0)이라, 카탈로그 okhttp 를 직접 의존하지 않는 feature 모듈의 컴파일 클래스패스만
+        // 뒤처져 있던 것을 맞추는 셈이다. logging-interceptor 는 okhttp 와 같은 버전이라야 한다.
+        listOf("okhttp", "logging-interceptor").map { artifact ->
+            SecurityFloor(
+                module = "com.squareup.okhttp3:$artifact",
+                version = libs.versions.okhttp.get(),
+                because = "GHSA-w33c-445m-f8w7 — okhttp 4.9.2 가 물고 오는 okio 2.8.0 취약 — #1072",
+            )
+        }
 
 fun Project.securityFloorConstraintSet() =
     securityFloors.map { floor ->
