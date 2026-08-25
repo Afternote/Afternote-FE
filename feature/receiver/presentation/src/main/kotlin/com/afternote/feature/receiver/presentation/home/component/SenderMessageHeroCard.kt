@@ -71,7 +71,7 @@ fun SenderMessageHeroCard(
  *
  * 본 화면 1회용 + 다른 화면 (예: [HeroCard]) 의 그라데이션과 색 조합이 달라 디자인 시스템
  * 토큰으로 추상화하면 재사용성보다 SSOT 위반 비용이 큼.
- * 디자인 시스템 룰 (`feedback_use_theme_colors`) 의 예외로 본 한 곳에 고정.
+ * 공용 색상 토큰으로 일반화하기 어려운 화면 전용 예외라 이 한 곳에 고정.
  */
 private fun heroGradient(): Brush =
     Brush.linearGradient(

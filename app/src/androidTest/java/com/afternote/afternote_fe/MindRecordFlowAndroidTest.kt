@@ -14,13 +14,13 @@ import androidx.compose.ui.test.waitUntilAtLeastOneExists
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
-import com.afternote.afternote_fe.test.FakeDailyQuestionRepository
-import com.afternote.afternote_fe.test.FakeDiaryRepository
 import com.afternote.afternote_fe.test.FakeUserRepository
 import com.afternote.core.domain.model.UploadedFile
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.domain.model.TodayMood
+import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
 import com.afternote.feature.mindrecord.presentation.screen.sender.DiaryWriteScreen
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionWriteViewModel
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryWriteViewModel
@@ -47,8 +47,15 @@ class MindRecordFlowAndroidTest {
     @Test
     fun diaryFailureThenRetry_preservesInputAndSendsExactPayload() {
         val repository = FakeDiaryRepository()
-        repository.createResults.addLast(Result.failure(IllegalStateException("temporary")))
-        repository.createResults.addLast(Result.success(Unit))
+        // 첫 저장은 실패, 재시도는 성공 — 입력이 남는지와 정확한 payload 를 본다.
+        val createResults =
+            ArrayDeque(
+                listOf(
+                    Result.failure<Unit>(IllegalStateException("temporary")),
+                    Result.success(Unit),
+                ),
+            )
+        repository.onCreate = { createResults.removeFirst() }
         val viewModel = diaryViewModel(repository)
         var successCalls = 0
 
@@ -106,10 +113,18 @@ class MindRecordFlowAndroidTest {
     @Test
     fun dailyQuestion_failureThenRetry_keepsAnswerAndAvoidsDuplicateSuccess() {
         val repository = FakeDailyQuestionRepository()
-        repository.createResults.addLast(Result.failure(IllegalStateException("offline")))
-        repository.createResults.addLast(Result.success(1L))
+        // 첫 저장은 실패, 재시도는 성공 — 실패 후 답변이 남는지와 중복 성공이 없는지를 본다.
+        val createResults =
+            ArrayDeque(
+                listOf(
+                    Result.failure<Long>(IllegalStateException("offline")),
+                    Result.success(FakeDailyQuestionRepository.FIRST_CREATED_ID),
+                ),
+            )
+        repository.onCreate = { createResults.removeFirst() }
         val viewModel =
             DailyQuestionWriteViewModel(
+                savedStateHandle = SavedStateHandle(emptyMap()),
                 repository = repository,
                 photoUploadRepository =
                     PhotoUploadRepository { _, _ ->
