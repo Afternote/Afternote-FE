@@ -68,8 +68,8 @@ fun OnboardingTermsScreen(
     modifier: Modifier = Modifier,
 ) {
     FlowStepScaffold(
-        topBarTitle = stringResource(R.string.signup_title),
-        actionButtonText = stringResource(R.string.signup_next),
+        topBarTitle = stringResource(R.string.onboarding_signup_title),
+        actionButtonText = stringResource(R.string.onboarding_signup_next),
         onBackClick = onBackClick,
         onActionClick = onNextClick,
         modifier = modifier,
@@ -84,7 +84,7 @@ fun OnboardingTermsScreen(
             // 로고
             Image(
                 painter = painterResource(CommonR.drawable.core_common_logo),
-                contentDescription = stringResource(R.string.welcome_logo_description),
+                contentDescription = stringResource(R.string.onboarding_welcome_logo_description),
                 modifier = Modifier.height(55.dp),
                 contentScale = ContentScale.FillHeight,
             )
@@ -93,7 +93,7 @@ fun OnboardingTermsScreen(
 
             // 환영 텍스트
             Text(
-                text = stringResource(R.string.terms_welcome),
+                text = stringResource(R.string.onboarding_terms_welcome),
                 style = AfternoteDesign.typography.h1,
                 color = AfternoteDesign.colors.black,
             )
@@ -101,7 +101,7 @@ fun OnboardingTermsScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             Text(
-                text = stringResource(R.string.terms_description),
+                text = stringResource(R.string.onboarding_terms_description),
                 style =
                     AfternoteDesign.typography.bodySmallB,
                 color = AfternoteDesign.colors.gray9,
@@ -118,7 +118,7 @@ fun OnboardingTermsScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 TermsRow(
-                    title = stringResource(R.string.terms_agree_all),
+                    title = stringResource(R.string.onboarding_terms_agree_all),
                     isChecked = termsState.isAllAgreed,
                     onToggle = { onToggleAll(!termsState.isAllAgreed) },
                     titleStyle = AfternoteDesign.typography.bodyBase,
@@ -131,7 +131,7 @@ fun OnboardingTermsScreen(
 
                 // 서비스 이용 약관 (필수)
                 TermsRow(
-                    title = stringResource(R.string.terms_service),
+                    title = stringResource(R.string.onboarding_terms_service),
                     isChecked = termsState.isTermsAgreed,
                     onToggle = { onTermsToggle(!termsState.isTermsAgreed) },
                     titleStyle = AfternoteDesign.typography.bodySmallB,
@@ -139,7 +139,7 @@ fun OnboardingTermsScreen(
 
                 // 개인정보 수집 및 이용 동의서 (필수)
                 TermsRow(
-                    title = stringResource(R.string.terms_privacy),
+                    title = stringResource(R.string.onboarding_terms_privacy),
                     isChecked = termsState.isPrivacyAgreed,
                     onToggle = { onPrivacyToggle(!termsState.isPrivacyAgreed) },
                     titleStyle = AfternoteDesign.typography.bodySmallB,
@@ -147,7 +147,7 @@ fun OnboardingTermsScreen(
 
                 // 마케팅 수신 동의 (선택)
                 TermsRow(
-                    title = stringResource(R.string.terms_marketing),
+                    title = stringResource(R.string.onboarding_terms_marketing),
                     isChecked = termsState.isMarketingAgreed,
                     onToggle = { onMarketingToggle(!termsState.isMarketingAgreed) },
                     isOptional = true,
@@ -206,7 +206,7 @@ private fun TermsRow(
                 if (isOptional) {
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = stringResource(R.string.terms_marketing_description),
+                        text = stringResource(R.string.onboarding_terms_marketing_description),
                         style = AfternoteDesign.typography.captionLargeR,
                         color = AfternoteDesign.colors.gray4,
                     )
@@ -218,7 +218,7 @@ private fun TermsRow(
         if (onViewDetailClick != null) {
             Spacer(Modifier.weight(1f))
             Text(
-                text = stringResource(R.string.terms_view_detail),
+                text = stringResource(R.string.onboarding_terms_view_detail),
                 style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray6,
                 modifier = Modifier.clickable(role = Role.Button, onClick = onViewDetailClick),
