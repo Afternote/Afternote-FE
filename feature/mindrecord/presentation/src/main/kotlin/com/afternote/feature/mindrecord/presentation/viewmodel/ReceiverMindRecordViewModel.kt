@@ -96,7 +96,14 @@ class ReceiverMindRecordViewModel
                             // 유가족이 «지금 못 여는» 상황이라 읽기 실패지만 승격 대상이다 —
                             // 재현할 계정도 조건도 우리 손에 없어 실기 QA 로는 잡히지 않는다 (#964).
                             // 재진입 갱신 실패도 기록한다. 화면은 유지되지만 서버 상태는 실패다.
-                            errorReporter.recordMindRecordFailure(MindRecordFailureStage.RECEIVER_RECORD_LOAD, e)
+                            //
+                            // 다만 전달 조건 미충족은 **정상 상태**다 — 서버도 기기도 멀쩡하고
+                            // 발신자가 조건을 정해야 풀린다. 전달을 기다리는 수신자는 앱을 열
+                            // 때마다 이 경로를 타므로, 기록하면 보관 한도(최근 8건)를 그 잡음이
+                            // 채워 정작 잡아야 할 열람 실패를 밀어낸다 (#964 판단 기준: 유지).
+                            if (e !is DeliveryNotReadyException) {
+                                errorReporter.recordMindRecordFailure(MindRecordFailureStage.RECEIVER_RECORD_LOAD, e)
+                            }
                             // 재진입 갱신 실패는 보고 있던 화면을 유지한다.
                             if (showsLoading) {
                                 // 서버 원문을 화면 문구로 쓰지 않는다 — 타입에서 막는다 (#614).

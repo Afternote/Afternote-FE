@@ -78,14 +78,17 @@ class DraftListViewModel
                             .map { item -> async { item to deleteOne(item) } }
                             .awaitAll()
                     }
-                val failed = results.filter { (_, result) -> result.isFailure }.map { (item, _) -> item }
                 // 되돌릴 수 없는 동작이고, 부분 실패는 목록과 서버 상태를 어긋나게 둔다 —
                 // 화면은 사용자에게 알리지만 콘솔에는 아무 흔적도 남지 않았다 (#964).
-                results.forEach { (_, result) ->
-                    result.exceptionOrNull()?.let { throwable ->
-                        errorReporter.recordMindRecordFailure(MindRecordFailureStage.DRAFT_DELETE, throwable)
-                    }
-                }
+                // 계측과 «실패 목록» 을 한 순회에 둔다 — 갈라 두면 나중에 한쪽만 고친다.
+                val failed =
+                    results
+                        .onEach { (_, result) ->
+                            result.exceptionOrNull()?.let { throwable ->
+                                errorReporter.recordMindRecordFailure(MindRecordFailureStage.DRAFT_DELETE, throwable)
+                            }
+                        }.filter { (_, result) -> result.isFailure }
+                        .map { (item, _) -> item }
 
                 val refreshed = collectDrafts()
                 _uiState.value =
