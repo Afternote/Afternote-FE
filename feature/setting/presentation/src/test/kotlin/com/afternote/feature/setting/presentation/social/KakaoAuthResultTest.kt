@@ -1,5 +1,6 @@
 package com.afternote.feature.setting.presentation.social
 
+import com.afternote.core.domain.error.CoreAuthFailure
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -13,7 +14,7 @@ class KakaoAuthResultTest {
 
     @Test
     fun `user cancellation is cancelled`() {
-        val result = Result.failure<String>(UserCancelledAuthException()).toKakaoAuthResult()
+        val result = Result.failure<String>(CoreAuthFailure.UserCancelledAuth()).toKakaoAuthResult()
 
         assertEquals(KakaoAuthResult.Cancelled, result)
     }
