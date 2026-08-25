@@ -5,11 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserProfileRepository
-import com.afternote.core.model.HomeSummary
-import com.afternote.core.model.MindRecordCategory
 import com.afternote.feature.home.presentation.reporting.HomeFailureStage
 import com.afternote.feature.home.presentation.reporting.recordHomeFailure
 import com.afternote.feature.home.presentation.usecase.GetHomeSummaryUseCase
+import com.afternote.feature.home.presentation.usecase.HomeSummary
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
