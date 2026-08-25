@@ -18,12 +18,15 @@ data class DailyQuestionWriteUiState(
      */
     val draftLoaded: Boolean = false,
     val answer: String = "",
-    val imageUrl: String? = null,
     val isQuestionLoading: Boolean = true,
     val questionLoadError: UiText? = null,
     /** 이어쓸 임시저장 본문을 불러오는 중 (#923). */
     val isResumingDraft: Boolean = false,
     val submitState: SubmitState = SubmitState.Idle,
+    /** 이미지 업로드 진행 중 — 끝나기 전에 저장하면 이미지 없이 기록이 먼저 올라간다 (#716). */
+    val isUploadingImage: Boolean = false,
+    /** 이미지 업로드 실패 안내. 조용히 null 로 흡수하지 않는다 (#716). */
+    val imageUploadError: UiText? = null,
     /** 툴바 "임시저장 N" 표시값. `null` 은 아직 모름(조회 중·실패) (#769). */
     val draftCount: Int? = null,
 ) {
@@ -41,7 +44,8 @@ data class DailyQuestionWriteUiState(
                 // 이어쓸 본문이 도착하기 전에 저장하면 draftId 가 아직 null 이라 POST 로 나가고,
                 // 서버가 questionId upsert 라 기존 임시저장 본문이 덮인다 — #923 과 같은 유실이다.
                 !isResumingDraft &&
-                submitState != SubmitState.InProgress
+                submitState != SubmitState.InProgress &&
+                !isUploadingImage
 }
 
 sealed interface SubmitState {

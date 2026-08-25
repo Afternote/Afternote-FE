@@ -31,6 +31,7 @@ import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionBanner
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionListCard
 import com.afternote.feature.mindrecord.presentation.component.MindRecordEmptyState
+import com.afternote.feature.mindrecord.presentation.component.MindRecordErrorBox
 import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListUiState
@@ -64,18 +65,36 @@ fun DailyQuestionAnswerListScreen(
         }
 
         is DailyQuestionListUiState.Error -> {
-            ErrorBox(message = state.message.asString(), modifier = modifier)
+            MindRecordErrorBox(
+                message = state.message.asString(),
+                onRetry = viewModel::retry,
+                modifier = modifier,
+            )
         }
 
         is DailyQuestionListUiState.Success -> {
-            DailyQuestionListContent(
-                modifier = modifier,
-                isListView = isListView,
-                todayQuestion = state.todayQuestion,
-                answers = state.answers,
-                onItemClick = onItemClick,
-                onDelete = viewModel::delete,
-            )
+            // 배너와 리스트를 형제 루트 2개로 내보내면 안 된다 — 이 화면들의 유일한 호출부가
+            // HorizontalPager 페이지라, 다중 placeable 이 가로로 순차 배치돼 배너가 뜨는 순간
+            // 리스트가 배너 폭만큼 밀려 페이지 밖으로 잘린다 (리뷰 지적).
+            Column(modifier = modifier) {
+                // 삭제 실패 안내 — 항목이 남은 채 아무 말이 없으면 고장처럼 보인다 (#716).
+                val deleteError = state.deleteError?.asString()
+                if (deleteError != null) {
+                    Text(
+                        text = deleteError,
+                        color = AfternoteDesign.colors.error,
+                        style = AfternoteDesign.typography.captionLargeR,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                    )
+                }
+                DailyQuestionListContent(
+                    isListView = isListView,
+                    todayQuestion = state.todayQuestion,
+                    answers = state.answers,
+                    onItemClick = onItemClick,
+                    onDelete = viewModel::delete,
+                )
+            }
         }
     }
 }
@@ -177,16 +196,6 @@ private fun DailyQuestionListContent(
 private fun LoadingBox(modifier: Modifier = Modifier) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         CircularProgressIndicator()
-    }
-}
-
-@Composable
-private fun ErrorBox(
-    message: String,
-    modifier: Modifier = Modifier,
-) {
-    Box(modifier = modifier.fillMaxSize().padding(20.dp), contentAlignment = Alignment.Center) {
-        Text(text = message, color = AfternoteDesign.colors.gray9)
     }
 }
 

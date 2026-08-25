@@ -802,7 +802,6 @@ private class CompletionDailyQuestionRepository(
                 title = today.content,
                 content = payload.content,
                 createdAt = "2026-08-22",
-                imageUrl = payload.imageUrl,
                 isDraft = payload.isDraft,
             )
         today = today.copy(isAnswered = !payload.isDraft, isDraft = payload.isDraft)
@@ -818,7 +817,6 @@ private class CompletionDailyQuestionRepository(
             if (answer.dailyQuestionId == id) {
                 answer.copy(
                     content = payload.content ?: answer.content,
-                    imageUrl = payload.imageUrl ?: answer.imageUrl,
                     isDraft = payload.isDraft ?: answer.isDraft,
                 )
             } else {
