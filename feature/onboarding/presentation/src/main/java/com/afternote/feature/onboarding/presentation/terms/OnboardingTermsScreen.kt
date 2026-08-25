@@ -181,9 +181,13 @@ private fun TermsRow(
         Row(
             modifier =
                 Modifier
-                    // 제목이 길면 남는 폭 안에서 줄바꿈한다. weight 가 없으면 무제약으로 측정돼
-                    // 「전체보기」 자리까지 밀고 들어가고, 좁은 화면에서 그쪽이 세로로 깨진다.
-                    .weight(1f, fill = false)
+                    // 「전체보기」가 폭을 먼저 가져가고, 제목은 남는 폭 안에서 줄바꿈한다.
+                    // weight 가 없으면 제목이 순서상 앞이라 폭을 먼저 다 먹어, 「전체보기」가
+                    // 좁은 폭에 갇혀 세로로 깨진다.
+                    //
+                    // fill 은 기본값(true) 이다 — 남는 폭까지 토글 영역이 되어 행의 빈 곳을
+                    // 눌러도 체크된다. 리스트 행 체크박스의 통상 동작이다.
+                    .weight(1f)
                     .toggleable(
                         value = isChecked,
                         role = Role.Checkbox,
