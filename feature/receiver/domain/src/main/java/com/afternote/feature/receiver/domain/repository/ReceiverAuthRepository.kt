@@ -21,7 +21,7 @@ interface ReceiverAuthRepository {
      * 발신자가 발급한 마스터 키([authCode])로 수신자 신원을 확인한다.
      *
      * 성공하면 이 키가 이후 요청의 `X-Auth-Code` 헤더로 재사용된다 (사실상 수신자 세션).
-     * 실패는 `ReceiverMasterKeyException` 으로 매핑된다.
+     * 실패는 `ReceiverFailure.ServerRejection` 으로 매핑된다.
      */
     suspend fun verifyMasterKey(authCode: String): Result<ReceiverIdentity>
 
@@ -29,14 +29,14 @@ interface ReceiverAuthRepository {
      * 수신자 본인 확인 — 수신자 레코드에 등록된 [email] 로 6자리 인증번호 발송.
      *
      * 발신자가 수신자 등록 시 email 을 넣지 않았으면 서버가 거절한다 (RECEIVER_EMAIL_NOT_FOUND).
-     * 실패는 `ReceiverEmailAuthException` 으로 매핑되어 serverMessage 에 안내 문구가 담긴다.
+     * 실패는 `ReceiverFailure.ServerRejection` 으로 매핑되어 serverMessage 에 안내 문구가 담긴다.
      */
     suspend fun sendEmailAuthCode(email: String): Result<Unit>
 
     /**
      * 수신자 본인 확인 — [email] 로 발송된 6자리 [authCode] 검증.
      *
-     * 실패(만료/불일치 등)는 `ReceiverEmailAuthException` 으로 매핑된다.
+     * 실패(만료/불일치 등)는 `ReceiverFailure.ServerRejection` 으로 매핑된다.
      */
     suspend fun verifyEmailAuthCode(
         email: String,
