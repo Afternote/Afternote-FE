@@ -22,6 +22,7 @@ import com.afternote.feature.mindrecord.domain.model.Diary
 import com.afternote.feature.mindrecord.domain.model.DiaryCreatePayload
 import com.afternote.feature.mindrecord.domain.model.DiaryList
 import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
+import com.afternote.feature.mindrecord.domain.model.EmotionAnalysis
 import com.afternote.feature.mindrecord.domain.model.MindRecordSummary
 import com.afternote.feature.mindrecord.domain.model.MindRecordType
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
@@ -239,6 +240,8 @@ class MindRecordLifecycleAndroidTest {
                             WeeklyReportDailyQuestion("다른 날 질문", "답변 B", friday.toString()),
                         ),
                     emotions = emptyList(),
+                    // 이 테스트들은 분석 상태를 보지 않는다 — 완료로 고정한다 (#725).
+                    emotionAnalysis = EmotionAnalysis(total = 0, succeeded = 0, pending = 0, failed = 0),
                 ),
             ),
         )

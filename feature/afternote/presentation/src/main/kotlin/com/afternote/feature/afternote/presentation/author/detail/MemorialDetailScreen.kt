@@ -43,7 +43,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.afternote.core.model.AlbumCover
 import com.afternote.core.ui.ProfileImage
 import com.afternote.core.ui.modifierextention.FadingEdgeDirection
 import com.afternote.core.ui.modifierextention.horizontalFadingEdge
@@ -55,6 +54,7 @@ import com.afternote.feature.afternote.presentation.shared.detail.DeleteConfirmD
 import com.afternote.feature.afternote.presentation.shared.detail.EditDropdownMenu
 import com.afternote.feature.afternote.presentation.shared.detail.InfoCard
 import com.afternote.feature.afternote.presentation.shared.detail.ReceiversCard
+import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 
 /**
