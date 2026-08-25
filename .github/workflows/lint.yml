@@ -79,32 +79,15 @@ jobs:
       - name: Run Android Lint
         run: ./gradlew lintDebug --continue --parallel --build-cache
 
-      # 모듈별 lint XML 을 한 파일로 합쳐 Reviewdog 가 :feature/* · :core/* 위반도
-      # PR 인라인 코멘트로 띄우도록 한다. 이전엔 :app XML 한 개만 전달돼 다른 모듈 위반이
-      # Actions step 로그(수만 줄)에 묻혔다.
-      - name: Merge module lint XMLs into one
+      # 모듈별 lint XML 을 job summary 한 곳에 모은다 — :feature/* · :core/* 위반이
+      # Actions step 로그(수만 줄)에 묻히던 문제(#279)를 여기서 푼다.
+      #
+      # 예전엔 이 자리에서 XML 을 합쳐 reviewdog(dvdandroid/action-android-lint)에 넘겼다.
+      # 그 도커 액션은 매 run 마다 reviewdog 을 `wget -q … | sh` 로 받는데, 설치가 실패해도
+      # 파이프 exit status 는 sh 의 것이라 이미지 빌드는 성공하고 entrypoint 에서
+      # `reviewdog: not found` 로 죽었다 — lint 위반이 0건이어도 required check 가 red 가
+      # 됐다. 이미지는 job 당 한 번만 빌드되므로 스텝 재시도로는 풀리지 않는다 (#1093).
+      # 인라인 코멘트를 job summary 로 대체한 판단은 ktlint 쪽과 같다 (#1012).
+      - name: Summarize Android Lint violations
         if: always()
-        run: |
-          set -e
-          out=app/build/reports/lint-results-merged.xml
-          mkdir -p app/build/reports
-          {
-            echo '<?xml version="1.0" encoding="UTF-8"?>'
-            echo '<issues format="6" by="lint" client="gradle" type="baseline" name="merged">'
-            find . -path '*/build/reports/lint-results-debug.xml' -print | while read -r xml; do
-              xmllint --xpath '//issue' "$xml" 2>/dev/null || true
-            done
-            echo '</issues>'
-          } > "$out"
-          modules=$(find . -path '*/build/reports/lint-results-debug.xml' | wc -l)
-          issues=$(grep -c '<issue ' "$out" || echo 0)
-          echo "merged $issues issues from $modules modules → $out"
-
-      - name: Report Android Lint (Reviewdog)
-        if: always()
-        uses: dvdandroid/action-android-lint@21c9fa6500c10caa12d8c581d9e280925f39510d # v1.3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-pr-review
-          level: warning
-          lint_xml_file: app/build/reports/lint-results-merged.xml
+        run: node .github/scripts/render-android-lint-summary.mjs
