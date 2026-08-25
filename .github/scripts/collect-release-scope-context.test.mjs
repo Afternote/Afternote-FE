@@ -2,31 +2,38 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
-    assertMergedDevelopPullRequest,
+    assertReleasePullRequest,
     distributionRelationForCompareStatus,
     extractClosingIssueNumbers,
     isTargetCoveredByCompareStatus,
     selectMergedPullRequestsByAncestry,
     sortDistributionRuns,
     sourceShaForDistributionRun,
-} from "./collect-deployment-decision-context.mjs";
+} from "./collect-release-scope-context.mjs";
 
-test("accepts only merged PRs targeting develop", () => {
+test("accepts only develop -> main release PRs, merged or not", () => {
     assert.doesNotThrow(() =>
-        assertMergedDevelopPullRequest({
-            number: 726,
-            merged_at: "2026-08-04T01:00:00Z",
-            merge_commit_sha: "abc",
-            base: { ref: "develop" },
+        assertReleasePullRequest({
+            number: 1025,
+            base: { ref: "main" },
+            head: { ref: "develop", sha: "release-head" },
         }),
     );
     assert.throws(
         () =>
-            assertMergedDevelopPullRequest({
-                number: 726,
-                merged_at: "2026-08-04T01:00:00Z",
-                merge_commit_sha: "abc",
+            assertReleasePullRequest({
+                number: 1026,
+                base: { ref: "develop" },
+                head: { ref: "fix/940", sha: "abc" },
+            }),
+        /not main/,
+    );
+    assert.throws(
+        () =>
+            assertReleasePullRequest({
+                number: 1027,
                 base: { ref: "main" },
+                head: { ref: "hotfix/urgent", sha: "abc" },
             }),
         /not develop/,
     );

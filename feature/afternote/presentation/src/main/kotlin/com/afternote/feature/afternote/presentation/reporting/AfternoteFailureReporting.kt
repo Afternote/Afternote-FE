@@ -111,8 +111,11 @@ fun ErrorReporter.recordAfternoteFailure(
  *
  * 사유 code 로 좁히지 않은 이유 — 서버의 code 체계가 사용자 오류와 장애를 아직 분리하지 않는다.
  *
- * 화면 노출 게이트(`toErrorPayload`)는 이 술어를 쓰지 않는다 — 노출은 사유 code allowlist 로 더 좁게
- * 가른다. 그쪽을 넓히더라도 이 판정을 따라 넓히지 말 것.
+ * 다른 흐름에는 쓰지 않는다. 회원가입 이메일 인증은 사용자 오류가 code 1207 하나로만 와서 호출부가
+ * 타입(`CoreAuthFailure.EmailVerification`)만 보고 거른다 — 문구 유무를 따질 필요가 없다.
+ *
+ * 화면 노출 게이트(`toErrorPayload`, DocumentUploadUiState.kt)는 이 술어를 쓰지 않는다 — 노출은
+ * 사유 code allowlist 로 더 좁게 가른다. 그쪽을 넓히더라도 이 판정을 따라 넓히지 말 것.
  */
 fun Throwable.shouldReportInReceiverFlow(): Boolean =
     when (this) {
