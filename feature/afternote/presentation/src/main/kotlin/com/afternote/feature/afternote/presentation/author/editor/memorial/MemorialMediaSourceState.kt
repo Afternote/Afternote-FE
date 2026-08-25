@@ -78,14 +78,14 @@ internal class MemorialMediaSourceState(
  * 이 인텐트를 쏠 때 Android 는 런타임 권한을 요구하지 않는다 — 촬영은 카메라 앱의 프로세스에서 일어나고
  * 우리는 결과 파일만 받는다. 반대로 선언해 두면 그 순간부터 런타임 권한이 *필수* 가 된다.
  *
- * @param onPhotoSelected 영정 사진 확정 URI. 갤러리 취소는 기존 동작을 유지해 null 로 전달된다.
+ * @param onPhotoSelected 영정사진 확정 URI. 취소·실패에는 호출되지 않는다 — 슬롯의 기존 값이 그대로 남는다.
  * @param onVideoSelected 장례식에 남길 영상 확정 URI. 위와 같다.
  */
 @Composable
 internal fun rememberMemorialMediaSourceState(
     snackbarHostState: SnackbarHostState,
-    onPhotoSelected: (String?) -> Unit,
-    onVideoSelected: (String?) -> Unit,
+    onPhotoSelected: (String) -> Unit,
+    onVideoSelected: (String) -> Unit,
 ): MemorialMediaSourceState {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -97,11 +97,11 @@ internal fun rememberMemorialMediaSourceState(
 
     val photoGalleryLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
-            onPhotoSelected(uri?.toString())
+            uri?.let { onPhotoSelected(it.toString()) }
         }
     val videoGalleryLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
-            onVideoSelected(uri?.toString())
+            uri?.let { onVideoSelected(it.toString()) }
         }
     val photoCaptureLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { captured: Boolean ->
