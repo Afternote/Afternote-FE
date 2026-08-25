@@ -7,27 +7,26 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonNames
 
+/**
+ * `POST /daily-questions` 요청 (Swagger `DailyQuestionAnswerRequest`).
+ *
+ * **`imageUrl` 필드는 없다.** 요청·응답 계약 어디에도 없고, 보내도 서버가 무시한다
+ * (2026-08-23 실측). 본문 이미지는 [content] HTML 의 `img` 태그로 담긴다 (#549).
+ */
 @Serializable
 data class DailyQuestionCreateRequestDto(
     @SerialName("content") val content: String,
     @SerialName("isDraft") val isDraft: Boolean,
     @SerialName("questionId") val questionId: Long,
-    // 응답/요청 계약에 없는 필드라 타입은 nullable 로 두되 기본값은 두지 않는다.
-    // 매퍼가 항상 명시적으로 넘기므로 생략이 조용히 통과할 자리가 없다 (#789).
-    @SerialName("imageUrl") val imageUrl: String?,
 )
 
-/**
- * `PATCH /daily-questions/{id}` 요청. 선택 필드라 nullable 은 유지하되 기본값은 두지 않는다 —
- * 모든 생성 인자를 명시해야 "보내지 않음" 과 "명시적 null" 이 호출부 코드에서 구분된다 (#789).
- */
+/** `PATCH /daily-questions/{id}` 요청. [DailyQuestionCreateRequestDto] 와 같은 이유로 `imageUrl` 이 없다. */
 @Serializable
 data class DailyQuestionUpdateRequestDto(
-    @SerialName("content") val content: String?,
-    @SerialName("isDraft") val isDraft: Boolean?,
-    @SerialName("date") val date: String?,
-    @SerialName("questionId") val questionId: Long?,
-    @SerialName("imageUrl") val imageUrl: String?,
+    @SerialName("content") val content: String? = null,
+    @SerialName("isDraft") val isDraft: Boolean? = null,
+    @SerialName("date") val date: String? = null,
+    @SerialName("questionId") val questionId: Long? = null,
 )
 
 @Serializable
@@ -41,9 +40,9 @@ data class DailyQuestionListItemDto(
     @SerialName("title") val title: String,
     @SerialName("content") val content: String,
     @SerialName("createdAt") val createdAt: String,
-    // Swagger `DailyQuestionListResponse` 응답 계약에 없는 필드 — 서버가 주기 시작하면 쓰이고,
-    // 아니면 계속 null. 계약에 없으므로 여기서만 기본값을 유지한다 (#789).
-    @SerialName("imageUrl") val imageUrl: String? = null,
+    // `imageUrl` 은 응답 계약에 없고 실서버도 키 자체를 내려주지 않는다 — 항상 null 인
+    // 필드를 읽느라 목록 카드 썸네일이 영영 뜨지 않았다. 썸네일은 표시 단계에서
+    // `content` 의 첫 img 로 뽑는다 (#549).
     // Swagger `DailyQuestionListResponse` 및 실서버 응답 모두 와이어 키는 `isDraft`.
     // 과거 QA logcat 에서 `draft` 로 관측된 적이 있어 대체 키도 함께 허용한다.
     //

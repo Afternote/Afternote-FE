@@ -79,7 +79,6 @@ class FakeDailyQuestionRepository(
                 title = today.content,
                 content = payload.content,
                 createdAt = DEFAULT_CREATED_AT,
-                imageUrl = payload.imageUrl,
                 isDraft = payload.isDraft,
             )
         today = today.copy(isAnswered = !payload.isDraft, isDraft = payload.isDraft)
@@ -96,7 +95,6 @@ class FakeDailyQuestionRepository(
             if (answer.dailyQuestionId == id) {
                 answer.copy(
                     content = payload.content ?: answer.content,
-                    imageUrl = payload.imageUrl ?: answer.imageUrl,
                     isDraft = payload.isDraft ?: answer.isDraft,
                 )
             } else {
