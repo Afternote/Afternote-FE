@@ -1,6 +1,7 @@
 package com.afternote.feature.setting.presentation.social
 
 import android.app.Activity
+import com.afternote.core.domain.error.CoreAuthFailure
 import com.kakao.sdk.auth.model.OAuthToken
 import com.kakao.sdk.common.model.ClientError
 import com.kakao.sdk.common.model.ClientErrorCause
@@ -16,7 +17,7 @@ suspend fun requestKakaoAccessToken(activity: Activity): Result<String> =
                     error != null -> {
                         val failure =
                             if (error is ClientError && error.reason == ClientErrorCause.Cancelled) {
-                                UserCancelledAuthException()
+                                CoreAuthFailure.UserCancelledAuth()
                             } else {
                                 error
                             }
@@ -39,7 +40,7 @@ suspend fun requestKakaoAccessToken(activity: Activity): Result<String> =
                 if (error != null) {
                     if (error is ClientError && error.reason == ClientErrorCause.Cancelled) {
                         if (continuation.isActive) {
-                            continuation.resume(Result.failure(UserCancelledAuthException()))
+                            continuation.resume(Result.failure(CoreAuthFailure.UserCancelledAuth()))
                         }
                         return@loginWithKakaoTalk
                     }
