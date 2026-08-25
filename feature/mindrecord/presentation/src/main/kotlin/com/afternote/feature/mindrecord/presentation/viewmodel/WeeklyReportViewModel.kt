@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.ui.UiText
+import com.afternote.feature.mindrecord.domain.model.EmotionAnalysisStatus
 import com.afternote.feature.mindrecord.domain.model.TodayMood
 import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDailyQuestion
@@ -23,6 +24,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -31,6 +34,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
@@ -64,18 +68,41 @@ class WeeklyReportViewModel
         fun selectWeek(monday: LocalDate) = load(monday)
 
         /**
+         * 감정 분석 실패 상태에서 사용자가 누르는 재시도.
+         *
+         * FE 가 할 수 있는 것은 **재조회**뿐이다 — 서버 측 재분석 트리거는 Afternote-BE#117
+         * 소관이다. 보고 있던 주를 그대로 다시 불러 상태를 갱신한다 (#725).
+         */
+        fun retryEmotionAnalysis() {
+            // 재조회 정책(로딩·실패 유지·중복 가드)이 한 곳에만 있도록 위임한다.
+            // 다만 이쪽은 **사용자가 누른** 갱신이라 진행 표시를 낸다 — BE#117 전까지는
+            // 재조회가 같은 FAILED 를 돌려주는 것이 기본 경로이고, 그러면 데이터가 같아
+            // StateFlow 가 방출조차 하지 않아 눌러도 픽셀이 안 바뀐다.
+            refreshOnReturn(showsLoading = true)
+        }
+
+        /**
          * 탭 전환·작성 화면 복귀 등 사용자가 요청하지 않은 자동 갱신.
          *
          * 화면이 살아 있는 채로 발화하므로 로딩을 방출하지 않고, 실패해도 보고 있던
          * 화면을 유지한다. 보고 있던 주를 그대로 다시 조회한다.
          */
-        fun refreshOnReturn() {
+        fun refreshOnReturn(showsLoading: Boolean = false) {
             // 진입 직후의 ON_RESUME 은 init 로드와 겹친다 — 진행 중이면 건너뛴다.
             if (loadJob?.isActive == true) return
             val current =
                 (internalState.value.loadPhase as? LoadPhase.Loaded)?.monday
                     ?: weekOptions.first().monday
-            load(current, showsLoading = false, keepsStateOnFailure = true)
+            load(current, showsLoading = showsLoading, keepsStateOnFailure = true)
+        }
+
+        /** 조회 실패 화면의 재시도 — 로딩을 보여도 잃을 것이 없다(보고 있던 것이 오류 문구뿐). */
+        fun retry() {
+            // 실패 상태에서는 Loaded 가 없다 — 마지막으로 보던 주가 없으면 최신 주로 되돌린다.
+            val monday =
+                (internalState.value.loadPhase as? LoadPhase.Loaded)?.monday
+                    ?: weekOptions.first().monday
+            load(monday)
         }
 
         private fun load(
@@ -111,6 +138,7 @@ class WeeklyReportViewModel
                             internalState.update {
                                 it.copy(loadPhase = LoadPhase.Loaded(monday, report, profile.name))
                             }
+                            awaitEmotionAnalysis(monday, report.analysisStatus)
                         }.onFailure { e ->
                             internalState.update { current ->
                                 if (keepsStateOnFailure && current.loadPhase is LoadPhase.Loaded) {
@@ -119,16 +147,68 @@ class WeeklyReportViewModel
                                     current.copy(
                                         loadPhase =
                                             LoadPhase.Failed(
-                                                UiText.DynamicOrResource(
-                                                    value = e.message,
-                                                    fallbackResId = R.string.mindrecord_error_weekly_report_failed,
-                                                ),
+                                                UiText.Resource(R.string.mindrecord_error_weekly_report_failed),
                                             ),
                                     )
                                 }
                             }
                         }
                 }
+        }
+
+        /**
+         * 감정 분석이 끝나기를 화면에 머무른 채 기다린다.
+         *
+         * 분석은 저장 직후 비동기로 돌고 완료 신호를 주는 채널이 없어서, 탭에 머무르는 동안
+         * 결과가 반영되려면 제한된 재조회가 필요하다 (#725). 무한 폴링은 하지 않는다 —
+         * [EMOTION_ANALYSIS_POLL_ATTEMPTS] 회만 시도하고, 그 뒤에는 화면 이탈·복귀
+         * ([refreshOnReturn])나 사용자의 재시도에 맡긴다.
+         *
+         * 이 로직은 [load] 의 코루틴 안에서 돈다. 사용자가 다른 주를 고르면 그 `loadJob`
+         * 취소가 이 대기까지 함께 끊는다.
+         */
+        private suspend fun awaitEmotionAnalysis(
+            monday: LocalDate,
+            initialStatus: EmotionAnalysisStatus,
+        ) {
+            // 폴링 근거는 "저장 직후 비동기 분석" 이라 이번 주에만 성립한다. 지난 주를
+            // 골라 보는 동안 8초마다 조회가 나갈 이유가 없다.
+            if (monday != LocalDate.now().with(DayOfWeek.MONDAY)) return
+
+            var status = initialStatus
+            repeat(EMOTION_ANALYSIS_POLL_ATTEMPTS) {
+                if (status != EmotionAnalysisStatus.PENDING) return
+                delay(EMOTION_ANALYSIS_POLL_INTERVAL_MILLIS)
+                val report =
+                    repository
+                        .getWeeklyReport(date = monday.format(API_DATE_FORMATTER))
+                        .getOrNull()
+                currentCoroutineContext().ensureActive()
+                // 한 번 실패했다고 남은 시도를 전부 버리지 않는다 — PENDING 화면에는
+                // 재시도 수단이 없어(카드는 FAILED 전용) 화면에 머무는 동안 복구할 길이
+                // 사라진다. 이번 시도만 소모하고 다음 간격을 기다린다.
+                if (report == null) return@repeat
+                status = report.analysisStatus
+                internalState.update { current ->
+                    val phase = current.loadPhase
+                    // 그 사이 다른 주로 옮겨갔으면 덮어쓰지 않는다.
+                    if (phase is LoadPhase.Loaded && phase.monday == monday) {
+                        current.copy(loadPhase = phase.copy(report = report))
+                    } else {
+                        current
+                    }
+                }
+            }
+        }
+
+        private fun buildWeekOptions(
+            today: LocalDate,
+            count: Int,
+        ): List<WeekOption> {
+            val thisMonday = today.with(DayOfWeek.MONDAY)
+            return (0 until count).map { weeksAgo ->
+                WeekOption(monday = thisMonday.minusWeeks(weeksAgo.toLong()))
+            }
         }
 
         /**
@@ -216,6 +296,7 @@ class WeeklyReportViewModel
                         report.dailyQuestionAmount to MindRecordCategoryUi.DailyQuestion,
                         report.diaryAmount to MindRecordCategoryUi.Diary,
                     ),
+                emotionAnalysisStatus = report.analysisStatus,
                 weekDays = mapWeekDays(monday, report.week),
                 emotionKeywords = mapEmotionKeywords(report.emotions),
                 summaryText = report.summaryText,
@@ -224,6 +305,13 @@ class WeeklyReportViewModel
         }
 
         companion object {
+            private const val WEEK_OPTION_COUNT = 5
+
+            // 분석 완료 신호를 주는 채널이 없어 재조회로 기다린다. 8초 × 8회 ≈ 1분 —
+            // 그 뒤에는 화면 이탈·복귀나 사용자의 재시도에 맡긴다 (#725).
+            private const val EMOTION_ANALYSIS_POLL_ATTEMPTS = 8
+            private const val EMOTION_ANALYSIS_POLL_INTERVAL_MILLIS = 8_000L
+
             private val API_DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
             private val RANGE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd.")
 
@@ -281,3 +369,7 @@ class WeeklyReportViewModel
             }
         }
     }
+
+/** 서버가 진행 상태를 주지 않았으면 «모른다» — 0 건으로 확정하지 않는다 (#725). */
+private val WeeklyReport.analysisStatus: EmotionAnalysisStatus
+    get() = emotionAnalysis?.status ?: EmotionAnalysisStatus.UNKNOWN
