@@ -5,20 +5,6 @@ import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorFormPrefill
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiver
 
-/**
- * 비동기 검증 실패 시 발생하는 예외 (예: API를 통한 GALLERY 수신자 확인 등).
- * [AfternoteEditorError.Validation]으로 변환해 [AfternoteValidationError.messageResId] 기반 UI 메시지를 표시합니다.
- *
- * [message]는 로깅·Crashlytics 등에서 원인 파악용으로 [validationError] 이름을 담습니다.
- *
- * 현재 이 예외를 던지는 곳은 없다 — 저장 전 로컬 검증은 `AfternoteEditorValidator` 결과를
- * [AfternoteEditorUiState.error]에 바로 넣고 반환하는 경로를 쓴다. 서버가 거절한 검증(수신자 필수 등)은
- * domain 의 `AfternoteFailure.AuthoringValidation` 이 맡는다.
- */
-class AfternoteValidationException(
-    val validationError: AfternoteValidationError,
-) : Exception("Validation failed: ${validationError.name}")
-
 /** 저장 전 필수 필드 검증에 대한 실패 유형. */
 enum class AfternoteValidationError(
     @param:StringRes val messageResId: Int,
@@ -34,12 +20,6 @@ enum class AfternoteValidationError(
 
     /** 수신자 최소 1명 필요 (모든 카테고리). API 400/475와 동일 메시지. */
     RECEIVERS_REQUIRED(R.string.afternote_validation_receivers_required),
-
-    /**
-     * 갤러리 수신자 서버 확인용 — 사용처 0건. [AfternoteValidationException] 과 짝인데 그 비동기 검증
-     * 자체가 미구현이라 함께 떠 있다. 지우지 말고 그 경로가 붙을 때 같이 살린다.
-     */
-    GALLERY_RECEIVERS_REQUIRED(R.string.afternote_validation_gallery_receivers_required),
 
     /**
      * 남기실 말씀에 제목만 쓰고 본문을 비운 블록이 있을 때. 서버가 본문을 필수로 검증해
