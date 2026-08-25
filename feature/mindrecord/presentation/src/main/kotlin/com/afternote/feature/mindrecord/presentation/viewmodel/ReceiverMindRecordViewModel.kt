@@ -2,12 +2,15 @@ package com.afternote.feature.mindrecord.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.ui.UiText
 import com.afternote.feature.mindrecord.domain.error.DeliveryNotReadyException
 import com.afternote.feature.mindrecord.domain.model.MindRecordSummary
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
 import com.afternote.feature.mindrecord.presentation.R
+import com.afternote.feature.mindrecord.presentation.reporting.MindRecordFailureStage
+import com.afternote.feature.mindrecord.presentation.reporting.recordMindRecordFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +31,7 @@ class ReceiverMindRecordViewModel
     @Inject
     constructor(
         private val repository: MindRecordReceiverRepository,
+        private val errorReporter: ErrorReporter,
     ) : ViewModel() {
         private val rawRecords = MutableStateFlow<ReceiverMindRecords?>(null)
         private val _uiState = MutableStateFlow<ReceiverMindRecordUiState>(ReceiverMindRecordUiState.Loading)
@@ -89,6 +93,10 @@ class ReceiverMindRecordViewModel
                                         filter = currentFilter,
                                     ).withDerived()
                         }.onFailure { e ->
+                            // 유가족이 «지금 못 여는» 상황이라 읽기 실패지만 승격 대상이다 —
+                            // 재현할 계정도 조건도 우리 손에 없어 실기 QA 로는 잡히지 않는다 (#964).
+                            // 재진입 갱신 실패도 기록한다. 화면은 유지되지만 서버 상태는 실패다.
+                            errorReporter.recordMindRecordFailure(MindRecordFailureStage.RECEIVER_RECORD_LOAD, e)
                             // 재진입 갱신 실패는 보고 있던 화면을 유지한다.
                             if (showsLoading) {
                                 // 서버 원문을 화면 문구로 쓰지 않는다 — 타입에서 막는다 (#614).
