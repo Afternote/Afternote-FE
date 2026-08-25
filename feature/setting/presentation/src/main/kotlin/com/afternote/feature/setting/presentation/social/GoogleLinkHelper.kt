@@ -7,6 +7,7 @@ import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
+import com.afternote.core.domain.error.CoreAuthFailure
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -71,7 +72,7 @@ private suspend fun requestWithOption(
             Result.failure(IllegalStateException("지원되지 않는 인증 형식입니다."))
         }
     } catch (e: GetCredentialCancellationException) {
-        Result.failure(UserCancelledAuthException())
+        Result.failure(CoreAuthFailure.UserCancelledAuth())
     } catch (e: GetCredentialException) {
         Result.failure(e)
     }
