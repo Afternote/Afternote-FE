@@ -140,6 +140,12 @@ private fun ReceiverFailure.isExpectedUserRejection(): Boolean =
         is ReceiverFailure.ServerRejection -> {
             status in CLIENT_ERROR_STATUS_RANGE && !serverMessage.isNullOrBlank()
         }
+
+        // 서버가 예상하고 거절한 것이 아니라 서버에 닿지도 못한 실패다. 이 타입이 생기기 전에도
+        // IO 예외는 위 `else -> true` 로 기록됐으므로(#611) 기록 대상을 그대로 유지한다.
+        is ReceiverFailure.NetworkUnavailable -> {
+            false
+        }
     }
 
 /** 4xx = 요청을 보낸 쪽 문제. 이 대역 밖(5xx·그 외)은 서버 문구가 실려 와도 장애로 보고 기록한다. */

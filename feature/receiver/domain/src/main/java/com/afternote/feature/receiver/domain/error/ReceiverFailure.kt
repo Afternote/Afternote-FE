@@ -1,14 +1,17 @@
 package com.afternote.feature.receiver.domain.error
 
 /**
- * 수신자 흐름(본인 확인 이메일 인증·마스터 키 검증·전달 자격 심사)의 도메인 실패 루트.
- * Retrofit·`BaseResponse` 같은 인프라 디테일은 Data 계층이 해석한 뒤 이 계열로 통일한다.
+ * 수신자 흐름(본인 확인 이메일 인증·마스터 키 검증·전달 자격 심사)의 실패 중 **사유가 확인된 것**의
+ * 도메인 루트. Retrofit·`BaseResponse` 같은 인프라 디테일은 Data 계층이 해석한 뒤 이 계열로 통일한다.
  *
  * 소비처는 이 루트로 좁힌 뒤 `when` 으로 가른다 — 실패 유형이 늘면 컴파일러가 소비처를 잡아준다.
+ * 사유를 확인하지 못한 실패는 번역하지 않고 원본 그대로 흘려보내므로, 소비처의 «루트가 아닌
+ * Throwable» 분기는 계속 필요하다 ([com.afternote.core.domain.error.CoreAuthFailure] 와 같은 규약).
  */
 sealed class ReceiverFailure(
     message: String?,
-) : Exception(message) {
+    cause: Throwable? = null,
+) : Exception(message, cause) {
     /**
      * 서버가 응답을 내려주며 거절한 실패.
      *
@@ -34,4 +37,18 @@ sealed class ReceiverFailure(
     ) : ReceiverFailure(
             serverMessage ?: "receiver request rejected (status=$status, serverCode=$serverCode)",
         )
+
+    /**
+     * 서버 응답 없이 전송 계층에서 끝난 실패(DNS 해석 불가·타임아웃·연결 거부 등)의 도메인 표현.
+     *
+     * [ServerRejection] 과 갈라 두는 이유 — 서버가 거절한 것이 아니라 **닿지도 못한** 것이라
+     * `status`·`serverCode` 가 존재하지 않고, 화면 안내도 "연결을 확인하라" 로 갈린다.
+     * presentation 은 core:network 에 의존하지 않으므로 이 타입 하나로 그 분기를 한다.
+     *
+     * 원인 예외는 `cause` 로 보존한다(로그 진단용) — 표시 문구로 쓰지 않는다. 영문 기술 원문
+     * (`java.net.UnknownHostException: Unable to resolve host ...`)이 화면에 실리기 때문이다.
+     */
+    class NetworkUnavailable(
+        cause: Throwable,
+    ) : ReceiverFailure("receiver request failed before any response", cause)
 }

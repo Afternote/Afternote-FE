@@ -45,6 +45,11 @@ private fun ReceiverFailure.displayTextOrNull(): String? =
         is ReceiverFailure.ServerRejection -> {
             serverMessage?.takeIf { isUserDisplayableRejection() && it.isNotBlank() }
         }
+
+        // 서버에 닿지 못한 실패라 노출할 서버 문구가 없다. 안내는 화면이 정적 리소스로 그린다.
+        is ReceiverFailure.NetworkUnavailable -> {
+            null
+        }
     }
 
 /**

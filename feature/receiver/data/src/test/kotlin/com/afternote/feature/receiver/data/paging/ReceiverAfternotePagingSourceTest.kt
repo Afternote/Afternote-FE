@@ -41,13 +41,38 @@ class ReceiverAfternotePagingSourceTest {
         assertEquals("아직 전달 조건이 충족되지 않았습니다.", rejection.serverMessage)
     }
 
+    /**
+     * 순서 회귀 가드 — [ApiException] 은 [IOException] 의 **하위 타입**이다(OkHttp Interceptor 가
+     * 4xx·5xx 를 가로채 던질 때 전파되어야 해서). 변환의 IO 갈래를 위에 두면 서버가 내려준 거절이
+     * 통째로 «연결 없음» 으로 뭉개진다.
+     */
     @Test
-    fun `서버 봉투가 아닌 실패는 그대로 흘려보낸다`() {
-        val offline = IOException("offline")
+    fun `서버 거절은 IOException 하위여도 연결 실패로 뭉개지지 않는다`() {
+        val result = loadWith { throw DELIVERY_CONDITION_NOT_MET_EXCEPTION }
+
+        val error = (result as PagingSource.LoadResult.Error).throwable
+        assertTrue("연결 실패로 뭉개졌다: $error", error is ReceiverFailure.ServerRejection)
+    }
+
+    @Test
+    fun `서버에 닿지 못한 실패는 연결 없음으로 옮기고 원인을 보존한다`() {
+        val offline = IOException("Unable to resolve host")
 
         val result = loadWith { throw offline }
 
-        assertEquals(offline, (result as PagingSource.LoadResult.Error).throwable)
+        val error = (result as PagingSource.LoadResult.Error).throwable
+        assertTrue("연결 실패로 번역돼야 한다: $error", error is ReceiverFailure.NetworkUnavailable)
+        assertEquals(offline, error.cause)
+    }
+
+    /** 사유를 확인하지 못한 실패는 감싸지 않는다 — 없는 status·code 를 지어내지 않기 위해서다. */
+    @Test
+    fun `분류 대상이 아닌 실패는 원본 그대로 흘려보낸다`() {
+        val unexpected = IllegalStateException("boom")
+
+        val result = loadWith { throw unexpected }
+
+        assertEquals(unexpected, (result as PagingSource.LoadResult.Error).throwable)
     }
 
     @Test

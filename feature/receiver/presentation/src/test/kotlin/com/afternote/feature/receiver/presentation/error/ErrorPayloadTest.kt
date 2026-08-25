@@ -124,6 +124,14 @@ class ErrorPayloadTest {
         assertFalse(IOException("offline").isDeliveryConditionNotMet())
     }
 
+    @Test
+    fun `연결 실패는 노출할 서버 문구가 없어 fallback 리소스로 폴백한다`() {
+        val offline = ReceiverFailure.NetworkUnavailable(IOException("Unable to resolve host"))
+
+        assertEquals(ErrorPayload.Res(FALLBACK_RES), offline.toErrorPayload(FALLBACK_RES))
+        assertFalse(offline.isDeliveryConditionNotMet())
+    }
+
     private companion object {
         const val FALLBACK_RES = 1
     }
