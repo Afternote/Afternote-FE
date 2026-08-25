@@ -52,21 +52,48 @@ jobs:
             *,review-debt-exempt,*) echo "review-debt-exempt 라벨 — 건너뜀"; exit 0 ;;
           esac
 
-          # 작성자에게 걸린 미처리 리뷰 요청. 자기가 만든 PR 은 자신이 리뷰어가
-          # 될 수 없으므로 이 검색에 잡히지 않는다.
-          if ! debt=$(gh api -X GET search/issues \
-                -f q="is:open is:pr repo:$REPO review-requested:$AUTHOR" \
+          # 작성자에게 걸린 리뷰 요청. 자기가 만든 PR 은 자신이 리뷰어가 될 수
+          # 없으므로 이 검색에 잡히지 않는다. --paginate 없이는 30건에서 잘린다.
+          if ! requested=$(gh api -X GET search/issues \
+                -f q="is:open is:pr repo:$REPO review-requested:$AUTHOR" --paginate \
                 --jq '.items[] | "\(.number)\t\(.created_at[0:10])\t\(.title)"'); then
             echo "::error::리뷰 요청 조회에 실패했다 — 근거 없이 PR 을 닫지 않는다. 재실행할 것"
             exit 1
           fi
 
-          if [ -z "$debt" ]; then
+          # 요청이 걸렸다고 다 빚은 아니다. 두 가지를 걸러낸다.
+          #
+          # 1. «누가» 봤는지는 따지지 않는다. PR 하나에 필요한 리뷰는 한 건이므로,
+          #    다른 사람이 이미 판정을 냈으면 내 몫은 끝난 것으로 본다. 요청을
+          #    전원에게 거는 것은 «누구든 먼저 보라» 는 뜻이지 «둘 다 보라» 가 아니다.
+          # 2. 병합 커밋은 «새 코드» 로 치지 않는다. develop 전파만 쌓인 PR 이
+          #    미리뷰로 잡히면, 이미 승인해 둔 스택 PR 이 통째로 빚이 된다.
+          #    parents 가 둘 이상인 커밋을 빼고 마지막 실질 변경 시각을 잡는다.
+          debt_file=$(mktemp)
+          while IFS=$'\t' read -r pn created title; do
+            [ -n "$pn" ] || continue
+
+            changed_at=$(gh api "repos/$REPO/pulls/$pn/commits?per_page=100" --paginate \
+              --jq '[.[] | select((.parents | length) < 2)] | last | .commit.committer.date' 2>/dev/null || true)
+            [ -n "$changed_at" ] && [ "$changed_at" != "null" ] || changed_at="1970-01-01T00:00:00Z"
+
+            judged=$(gh api "repos/$REPO/pulls/$pn/reviews" --paginate \
+              --jq "[.[] | select(.submitted_at > \"$changed_at\") | select(.state == \"APPROVED\" or .state == \"CHANGES_REQUESTED\")] | length" 2>/dev/null || true)
+
+            if [ "${judged:-0}" -eq 0 ]; then
+              printf '%s\t%s\t%s\n' "$pn" "$created" "$title" >> "$debt_file"
+            else
+              echo "#$pn — 최신 코드에 이미 판정이 있음(${judged}건), 빚 아님"
+            fi
+          done <<< "$requested"
+
+          if [ ! -s "$debt_file" ]; then
             echo "미처리 리뷰 요청 없음 — 통과"
             exit 0
           fi
 
-          count=$(printf '%s\n' "$debt" | wc -l | tr -d ' ')
+          debt=$(cat "$debt_file")
+          count=$(wc -l < "$debt_file" | tr -d ' ')
           today=$(date -u +%s)
 
           {
@@ -84,6 +111,8 @@ jobs:
             done <<< "$debt"
             echo
             echo "이 저장소는 미처리 리뷰 요청이 1건이라도 있으면 새 PR 을 열 수 없습니다 (#1136)."
+            echo
+            echo "각 PR 에 필요한 리뷰는 **한 건**입니다 — 다른 사람이 먼저 판정을 내면 그 PR 은 목록에서 빠집니다."
             echo
             echo "### 되살리는 법"
             echo
