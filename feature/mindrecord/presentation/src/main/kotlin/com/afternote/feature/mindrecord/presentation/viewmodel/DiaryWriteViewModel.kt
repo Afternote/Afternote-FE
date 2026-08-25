@@ -77,10 +77,6 @@ class DiaryWriteViewModel
             _uiState.update { it.copy(mood = mood) }
         }
 
-        fun onDateSelected(date: LocalDate) {
-            _uiState.update { it.copy(date = date) }
-        }
-
         fun onReceiverToggled(receiverId: Long) {
             _uiState.update {
                 val selected = it.selectedReceiverIds
