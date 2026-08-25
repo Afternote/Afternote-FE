@@ -7,10 +7,6 @@ data class User(
     val profileImageUrl: String?,
 )
 
-data class ReceiverList(
-    val receivers: List<Receiver>,
-)
-
 data class Receiver(
     val receiverId: Long,
     val name: String,

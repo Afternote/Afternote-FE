@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.Flow
 
 /**
  * 작성/수정 호출의 서버 검증 실패는
- * [com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationException]으로
+ * [com.afternote.feature.afternote.domain.error.AfternoteFailure.AuthoringValidation]으로
  * Result.failure에 담겨 전달된다.
  */
 interface AfternoteRepository {
