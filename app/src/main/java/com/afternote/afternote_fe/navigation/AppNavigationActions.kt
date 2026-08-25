@@ -379,7 +379,9 @@ fun rememberHomeTabActions(
             override fun onAnswerClick() {
                 // 카드 문구가 "데일리질문 답변하기" 라 답변 작성 화면으로 보낸다.
                 // 기록 탭의 작성 진입(`MindRecordNavActions.onWriteDailyQuestion`)과 같은 목적지다.
-                appState.navController.navigate(MindRecordRoute.DailyQuestionWriteRoute)
+                // 라우트가 data class 라 **인스턴스**를 넘겨야 한다 — 클래스 참조로 넘기면
+                // 이동이 조용히 무산되고 홈의 이 버튼이 눌리지 않는다 (#770).
+                appState.navController.navigate(MindRecordRoute.DailyQuestionWriteRoute())
             }
 
             override fun onNextStepClick() {
