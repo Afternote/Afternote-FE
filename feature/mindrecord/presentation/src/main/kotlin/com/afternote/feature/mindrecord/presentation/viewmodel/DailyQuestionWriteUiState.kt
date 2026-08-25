@@ -8,7 +8,11 @@ data class DailyQuestionWriteUiState(
     /** "Day N" 배너 표기용 — 오늘의 질문이 서비스 기준 몇 일차인지. */
     val questionDay: Int? = null,
     val questionContent: String = "",
-    /** 오늘 이미 임시저장된 답변 레코드 ID — null 이 아니면 제출 시 POST 대신 PATCH 로 전환한다. */
+    /**
+     * 수정 대상 답변 레코드 ID — null 이 아니면 제출 시 POST 대신 PATCH 로 전환한다.
+     *
+     * 오늘의 임시저장 이어쓰기와 목록의 "수정하기" 가 같은 값을 쓴다 (#582).
+     */
     val draftId: Long? = null,
     /**
      * 이어쓸 임시저장 본문이 도착했는지.
@@ -18,12 +22,20 @@ data class DailyQuestionWriteUiState(
      */
     val draftLoaded: Boolean = false,
     val answer: String = "",
-    val imageUrl: String? = null,
+    /**
+     * 본문이 서버에서 채워졌는지. 리치 에디터는 [answer] 를 **초기 시드로만** 읽으므로,
+     * 비동기 프리필이 끝난 뒤 에디터를 다시 만들어야 내용이 보인다 (#582).
+     */
+    val contentLoaded: Boolean = false,
     val isQuestionLoading: Boolean = true,
     val questionLoadError: UiText? = null,
     /** 이어쓸 임시저장 본문을 불러오는 중 (#923). */
     val isResumingDraft: Boolean = false,
     val submitState: SubmitState = SubmitState.Idle,
+    /** 이미지 업로드 진행 중 — 끝나기 전에 저장하면 이미지 없이 기록이 먼저 올라간다 (#716). */
+    val isUploadingImage: Boolean = false,
+    /** 이미지 업로드 실패 안내. 조용히 null 로 흡수하지 않는다 (#716). */
+    val imageUploadError: UiText? = null,
     /** 툴바 "임시저장 N" 표시값. `null` 은 아직 모름(조회 중·실패) (#769). */
     val draftCount: Int? = null,
 ) {
@@ -37,11 +49,15 @@ data class DailyQuestionWriteUiState(
             // 리치 에디터는 빈 문단도 `<p></p>`·`<br>` 로 직렬화한다. isNotBlank() 로 판정하면
             // 화면이 비어 있어도 통과해 빈 답변이 저장되고 작성 화면이 pop 됐다 (#722).
             !answer.isHtmlBlank() &&
-                !isQuestionLoading &&
+                // 수정·이어쓰기 모드는 오늘 질문을 부르지 않아 questionId 가 없다 — 대상 레코드가
+                // 있으면 PATCH 로 나가므로 질문 조회를 기다릴 이유가 없다 (#582·#770).
+                (draftId != null || !isQuestionLoading) &&
                 // 이어쓸 본문이 도착하기 전에 저장하면 draftId 가 아직 null 이라 POST 로 나가고,
                 // 서버가 questionId upsert 라 기존 임시저장 본문이 덮인다 — #923 과 같은 유실이다.
                 !isResumingDraft &&
-                submitState != SubmitState.InProgress
+                submitState != SubmitState.InProgress &&
+                // 업로드 중 저장하면 본문에 아직 안 들어간 이미지가 빠진 채 나간다 (#716).
+                !isUploadingImage
 }
 
 sealed interface SubmitState {

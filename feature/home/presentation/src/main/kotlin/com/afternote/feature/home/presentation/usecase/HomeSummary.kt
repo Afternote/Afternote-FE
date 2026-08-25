@@ -1,4 +1,4 @@
-package com.afternote.core.model
+package com.afternote.feature.home.presentation.usecase
 
 data class HomeSummary(
     val userName: String,

@@ -5,13 +5,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.navigation.NavController
-import com.afternote.core.model.MindRecordCategory
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.bottombar.BottomNavTab
 import com.afternote.feature.afternote.presentation.author.editor.model.EditorCategory
 import com.afternote.feature.afternote.presentation.author.navigation.AfternoteNavActions
 import com.afternote.feature.afternote.presentation.author.navigation.model.AfternoteRoute
 import com.afternote.feature.home.presentation.HomeTabActions
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordNavActions
 import com.afternote.feature.mindrecord.presentation.navigation.MindRecordRoute
 import com.afternote.feature.onboarding.presentation.navigation.OnboardingNavActions
@@ -105,7 +105,7 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
             }
 
             override fun onWriteDailyQuestion() {
-                navController.navigate(MindRecordRoute.DailyQuestionWriteRoute)
+                navController.navigate(MindRecordRoute.DailyQuestionWriteRoute())
             }
 
             override fun onWriteDiary() {
@@ -142,12 +142,36 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
                 )
             }
 
+            override fun onEditDailyQuestion(answerId: Long) {
+                navController.navigate(MindRecordRoute.DailyQuestionWriteRoute(answerId = answerId))
+            }
+
+            override fun onEditDiary(
+                diaryId: Long,
+                yearMonth: String,
+            ) {
+                navController.navigate(
+                    MindRecordRoute.DiaryWriteRoute(
+                        recordId = diaryId,
+                        yearMonth = yearMonth,
+                        // 정식 기록이라 draft 목록이 아닌 전체 목록에서 찾는다 (#582).
+                        isDraft = false,
+                    ),
+                )
+            }
+
+            override fun onEditDailyQuestionDraft(draftId: Long) {
+                navController.navigate(
+                    MindRecordRoute.DailyQuestionWriteRoute(answerId = draftId, isDraft = true),
+                )
+            }
+
             override fun onEditDiaryDraft(
                 draftId: Long,
                 draftYearMonth: String,
             ) {
                 navController.navigate(
-                    MindRecordRoute.DiaryWriteRoute(draftId = draftId, draftYearMonth = draftYearMonth),
+                    MindRecordRoute.DiaryWriteRoute(recordId = draftId, yearMonth = draftYearMonth),
                 )
             }
         }
@@ -369,7 +393,9 @@ fun rememberHomeTabActions(
             override fun onAnswerClick() {
                 // 카드 문구가 "데일리질문 답변하기" 라 답변 작성 화면으로 보낸다.
                 // 기록 탭의 작성 진입(`MindRecordNavActions.onWriteDailyQuestion`)과 같은 목적지다.
-                appState.navController.navigate(MindRecordRoute.DailyQuestionWriteRoute)
+                // 라우트가 data class 라 **인스턴스**를 넘겨야 한다 — 클래스 참조로 넘기면
+                // 이동이 조용히 무산되고 홈의 이 버튼이 눌리지 않는다 (#770).
+                appState.navController.navigate(MindRecordRoute.DailyQuestionWriteRoute())
             }
 
             override fun onNextStepClick() {

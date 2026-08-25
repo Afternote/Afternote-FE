@@ -15,7 +15,6 @@ fun DailyQuestionListItemDto.toDomain(): DailyQuestion =
         title = title,
         content = content,
         createdAt = createdAt,
-        imageUrl = imageUrl,
         isDraft = isDraft,
         receiverNames = receivers.map { it.name },
     )
@@ -34,7 +33,6 @@ fun DailyQuestionCreatePayload.toRequest(): DailyQuestionCreateRequestDto =
         content = content,
         isDraft = isDraft,
         questionId = questionId,
-        imageUrl = imageUrl,
     )
 
 fun DailyQuestionUpdatePayload.toRequest(): DailyQuestionUpdateRequestDto =
@@ -43,5 +41,4 @@ fun DailyQuestionUpdatePayload.toRequest(): DailyQuestionUpdateRequestDto =
         isDraft = isDraft,
         date = date,
         questionId = questionId,
-        imageUrl = imageUrl,
     )

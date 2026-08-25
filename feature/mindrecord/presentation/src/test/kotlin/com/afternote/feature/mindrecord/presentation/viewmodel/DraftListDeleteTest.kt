@@ -10,6 +10,7 @@ import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
+import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -37,6 +38,24 @@ class DraftListDeleteTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+    }
+
+    @Test
+    fun `삭제 실패는 텔레메트리에도 남는다`() {
+        // 화면은 사용자에게 알리지만, 종전에는 콘솔에 아무 흔적도 남지 않아 릴리즈에서
+        // «지워지지 않는다» 는 제보를 받아도 재현 지점을 찾을 수 없었다 (#964).
+        val repository =
+            FakeDailyQuestionDraftRepository(
+                drafts = listOf(dailyQuestion(id = 1L)),
+                deleteResult = Result.failure(IllegalStateException("서버 거절")),
+                removesOnDelete = false,
+            )
+        val reporter = RecordingErrorReporter()
+        val viewModel = viewModel(repository, reporter)
+
+        viewModel.delete((viewModel.uiState.value as DraftListUiState.Success).items)
+
+        assertEquals(listOf("draft_delete"), reporter.stages)
     }
 
     @Test
@@ -98,7 +117,10 @@ class DraftListDeleteTest {
         assertTrue(state.items.isEmpty())
     }
 
-    private fun viewModel(dailyQuestionRepository: DailyQuestionRepository): DraftListViewModel =
+    private fun viewModel(
+        dailyQuestionRepository: DailyQuestionRepository,
+        errorReporter: RecordingErrorReporter = RecordingErrorReporter(),
+    ): DraftListViewModel =
         DraftListViewModel(
             // #769 가 목록 조회를 loader 로 뽑아낸 뒤 생성자가 3개로 늘었다. 같은 두
             // 저장소를 넘겨 종전과 같은 조회 경로를 그대로 태운다.
@@ -109,6 +131,7 @@ class DraftListDeleteTest {
                 ),
             diaryRepository = EmptyDiaryDraftRepository,
             dailyQuestionRepository = dailyQuestionRepository,
+            errorReporter = errorReporter,
         )
 
     private fun dailyQuestion(id: Long) =
@@ -118,7 +141,6 @@ class DraftListDeleteTest {
             content = "임시저장 본문",
             createdAt = "2026-08-23T10:00:00",
             isDraft = true,
-            imageUrl = null,
         )
 }
 

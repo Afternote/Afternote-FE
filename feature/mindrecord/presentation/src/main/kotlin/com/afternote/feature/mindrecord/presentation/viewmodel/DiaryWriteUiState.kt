@@ -22,7 +22,13 @@ data class DiaryWriteUiState(
     /** draft 프리필 완료 플래그. 에디터(content) 재시드 트리거로 사용. */
     val draftLoaded: Boolean = false,
     val draftLoadError: UiText? = null,
+    /** 이미지 업로드 진행 중 — 끝나기 전에 저장하면 이미지 없이 기록이 먼저 올라간다 (#716). */
+    val isUploadingImage: Boolean = false,
+    /** 이미지 업로드 실패 안내. 조용히 null 로 흡수하지 않는다 (#716). */
+    val imageUploadError: UiText? = null,
     val submitState: SubmitState = SubmitState.Idle,
+    /** 이어쓰기(기존 draft PATCH) 진입인지. 신규 작성이면 덮어쓸 기존 내용이 없다. */
+    val isEditingDraft: Boolean = false,
     /** 툴바 "임시저장 N" 표시값. `null` 은 아직 모름(조회 중·실패) (#769). */
     val draftCount: Int? = null,
 ) {
@@ -54,7 +60,14 @@ data class DiaryWriteUiState(
     fun missingForDraft(): Int? = missingForSubmit()
 
     private val isReady: Boolean
-        get() = submitState != SubmitState.InProgress && !isDraftLoading
+        get() =
+            submitState != SubmitState.InProgress &&
+                !isDraftLoading &&
+                // 업로드 중 저장하면 본문에 아직 안 들어간 이미지가 빠진 채 나간다 (#716).
+                !isUploadingImage &&
+                // 프리필이 실패했는데 저장하면, 보지 못한 기존 draft 내용을 빈 폼으로 PATCH 해
+                // 덮어쓴다. 이어쓰기 진입에서 프리필이 실패한 동안은 저장을 막는다 (#716).
+                !(isEditingDraft && draftLoadError != null)
 
     /**
      * 등록을 막는 첫 번째 누락 항목 (없으면 null).

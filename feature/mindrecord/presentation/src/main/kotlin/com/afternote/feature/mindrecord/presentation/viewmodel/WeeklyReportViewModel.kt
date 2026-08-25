@@ -73,16 +73,19 @@ class WeeklyReportViewModel
         fun selectWeek(monday: LocalDate) = load(monday)
 
         /**
-         * 실패한 주차를 그대로 다시 조회한다 (#723).
+         * 조회 실패 화면의 재시도 — **실패한 주차를 그대로** 다시 부른다 (#723).
          *
-         * 실패 상태에서도 화면에 남은 재시도 수단이다. 실패 이력이 없으면 보고 있던 주를
-         * 다시 부른다.
+         * 이번 주로 되돌리면 사용자가 보려던 주차가 유실돼, 나갔다 들어와도 복구되지 않는다.
+         * 로딩을 보여도 잃을 것이 없다 — 보고 있던 것이 오류 문구뿐이다.
          */
         fun retry() {
             val target =
                 when (val phase = internalState.value.loadPhase) {
                     is LoadPhase.Failed -> phase.monday
+
                     is LoadPhase.Loaded -> phase.monday
+
+                    // 아직 첫 조회가 끝나지 않았다 — 겹쳐 부르지 않는다.
                     LoadPhase.Loading -> return
                 }
             load(target)

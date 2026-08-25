@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
+import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.user.User
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -157,6 +158,7 @@ class MindRecordLifecycleAndroidTest {
                 loader = MindRecordDraftLoader(diaryRepository, dailyQuestionRepository),
                 diaryRepository = diaryRepository,
                 dailyQuestionRepository = dailyQuestionRepository,
+                errorReporter = FakeErrorReporter(),
             )
 
         composeRule.setContent {
@@ -282,7 +284,7 @@ class MindRecordLifecycleAndroidTest {
                             ),
                     ),
             )
-        val viewModel = ReceiverMindRecordViewModel(repository)
+        val viewModel = ReceiverMindRecordViewModel(repository, FakeErrorReporter())
 
         composeRule.setContent {
             AfternoteTheme {

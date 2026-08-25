@@ -5,11 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserProfileRepository
-import com.afternote.core.model.HomeSummary
-import com.afternote.core.model.MindRecordCategory
 import com.afternote.feature.home.presentation.reporting.HomeFailureStage
 import com.afternote.feature.home.presentation.reporting.recordHomeFailure
 import com.afternote.feature.home.presentation.usecase.GetHomeSummaryUseCase
+import com.afternote.feature.home.presentation.usecase.HomeSummary
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -133,12 +133,8 @@ private fun HomeSummary.toHomeTabSuccess(): HomeTabUiState.Success =
         isRecipientDesignated = isRecipientDesignated,
         todayQuestionContent = todayQuestionContent,
         weeklyRecordCount = weeklyRecordCount,
-        categoryCounts =
-            MindRecordCategory.entries.associateWith { category ->
-                when (category) {
-                    MindRecordCategory.DIARY -> diaryCategoryCount
-                    MindRecordCategory.DAILY_QUESTION -> 0
-                    MindRecordCategory.WEEKLY_REPORT -> 0
-                }
-            },
+        // **실제로 값을 아는 카테고리만 담는다.** 종전에는 enum 전체를 돌며 데일리질문·주간
+        // 리포트에 0 을 박아 넣었다. 화면이 일기 카드만 그려 안 보일 뿐, 카드가 늘면 그 0 이
+        // 그대로 «기록 0건» 으로 노출된다 — 0 은 그럴듯한 거짓이라 사용자가 믿는다 (#700).
+        categoryCounts = mapOf(MindRecordCategory.DIARY to diaryCategoryCount),
     )

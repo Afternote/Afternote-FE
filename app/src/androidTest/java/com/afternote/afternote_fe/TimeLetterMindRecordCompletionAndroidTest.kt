@@ -29,6 +29,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
+import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.afternote_fe.test.FakeUserRepository
 import com.afternote.afternote_fe.test.testReceiver
 import com.afternote.core.domain.repository.PhotoUploadRepository
@@ -416,6 +417,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
         composeRule.runOnIdle {
             writeViewModel =
                 DailyQuestionWriteViewModel(
+                    savedStateHandle = SavedStateHandle(emptyMap()),
                     repository = repository,
                     photoUploadRepository = CompletionPhotoUploadRepository,
                     draftLoader = MindRecordDraftLoader(CompletionDiaryRepository(mutableListOf()), repository),
@@ -469,6 +471,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
                 loader = MindRecordDraftLoader(repository, draftDailyQuestionRepository),
                 diaryRepository = repository,
                 dailyQuestionRepository = draftDailyQuestionRepository,
+                errorReporter = FakeErrorReporter(),
             )
         var routedArguments: Pair<Long, String>? = null
         var writeViewModel by mutableStateOf<DiaryWriteViewModel?>(null)
@@ -534,8 +537,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
         assertEquals("<p>완성한 본문</p>", update.second.content)
         assertEquals(false, update.second.isDraft)
         assertEquals(TodayMood.SOSO, update.second.todayMood)
-        assertEquals(draftDate.toString(), update.second.date)
-        assertEquals("https://afternote.test/draft.jpg", update.second.imageUrl)
+        // date·imageUrl 은 수정 요청 계약에 없어 페이로드에서 걷었다 (#955).
         assertTrue(repository.createCalls.isEmpty())
         assertEquals(2, repository.listCalls.size)
         assertTrue(repository.listCalls.all { it == currentMonth.toString() to true })
@@ -802,7 +804,6 @@ private class CompletionDailyQuestionRepository(
                 title = today.content,
                 content = payload.content,
                 createdAt = "2026-08-22",
-                imageUrl = payload.imageUrl,
                 isDraft = payload.isDraft,
             )
         today = today.copy(isAnswered = !payload.isDraft, isDraft = payload.isDraft)
@@ -818,7 +819,6 @@ private class CompletionDailyQuestionRepository(
             if (answer.dailyQuestionId == id) {
                 answer.copy(
                     content = payload.content ?: answer.content,
-                    imageUrl = payload.imageUrl ?: answer.imageUrl,
                     isDraft = payload.isDraft ?: answer.isDraft,
                 )
             } else {
@@ -871,9 +871,7 @@ private class CompletionDiaryRepository(
                 diary.copy(
                     title = payload.title,
                     content = payload.content,
-                    date = payload.date,
                     todayMood = payload.todayMood,
-                    imageUrl = payload.imageUrl,
                     isDraft = payload.isDraft,
                 )
             } else {

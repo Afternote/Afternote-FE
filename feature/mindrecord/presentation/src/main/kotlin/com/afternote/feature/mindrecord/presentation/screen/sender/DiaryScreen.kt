@@ -2,6 +2,7 @@ package com.afternote.feature.mindrecord.presentation.screen.sender
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -40,6 +41,7 @@ import com.afternote.feature.mindrecord.presentation.component.DiaryCard
 import com.afternote.feature.mindrecord.presentation.component.DiaryComponent
 import com.afternote.feature.mindrecord.presentation.component.DiaryReportCard
 import com.afternote.feature.mindrecord.presentation.component.MindRecordEmptyState
+import com.afternote.feature.mindrecord.presentation.component.MindRecordErrorBox
 import com.afternote.feature.mindrecord.presentation.mapper.toEmoji
 import com.afternote.feature.mindrecord.presentation.model.DailyDiary
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
@@ -61,6 +63,11 @@ fun DiaryScreen(
     onItemClick: (Long, YearMonth) -> Unit,
     modifier: Modifier = Modifier,
     isListView: Boolean = true,
+    /**
+     * «수정하기» — 기록 ID 와 **보고 있는 달**. 달을 빼면 프리필이 이번 달 목록에서 그
+     * 기록을 찾다 실패하고, 빈 화면에서 저장하면 원본을 덮어쓸 수 있다 (#582 리뷰).
+     */
+    onEditClick: (Long, YearMonth) -> Unit = { _, _ -> },
     viewModel: DiaryListViewModel = hiltViewModel(),
 ) {
     // 갱신을 이 화면이 직접 건다. HomeScreen 이 VM 을 호이스팅해 대신 걸어 주면, 탭에
@@ -77,21 +84,40 @@ fun DiaryScreen(
         }
 
         is DiaryListUiState.Error -> {
-            ErrorBox(message = state.message.asString(), modifier = modifier)
+            MindRecordErrorBox(
+                message = state.message.asString(),
+                onRetry = viewModel::retry,
+                modifier = modifier,
+            )
         }
 
         is DiaryListUiState.Success -> {
-            DiaryListContent(
-                modifier = modifier,
-                isListView = isListView,
-                diaries = state.diaries,
-                yearMonth = state.yearMonth,
-                monthDiaryCount = state.monthDiaryCount,
-                weeklyMoodEmoji = state.weeklyDominantMood?.toEmoji(),
-                onItemClick = onItemClick,
-                onDelete = viewModel::delete,
-                onYearMonthChanged = viewModel::selectYearMonth,
-            )
+            // 배너와 리스트를 형제 루트 2개로 내보내면 안 된다 — 이 화면들의 유일한 호출부가
+            // HorizontalPager 페이지라, 다중 placeable 이 가로로 순차 배치돼 배너가 뜨는 순간
+            // 리스트가 배너 폭만큼 밀려 페이지 밖으로 잘린다 (리뷰 지적).
+            Column(modifier = modifier) {
+                // 삭제 실패 안내 — 항목이 남은 채 아무 말이 없으면 고장처럼 보인다 (#716).
+                val deleteError = state.deleteError?.asString()
+                if (deleteError != null) {
+                    Text(
+                        text = deleteError,
+                        color = AfternoteDesign.colors.error,
+                        style = AfternoteDesign.typography.captionLargeR,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                    )
+                }
+                DiaryListContent(
+                    isListView = isListView,
+                    diaries = state.diaries,
+                    yearMonth = state.yearMonth,
+                    monthDiaryCount = state.monthDiaryCount,
+                    weeklyMoodEmoji = state.weeklyDominantMood?.toEmoji(),
+                    onItemClick = onItemClick,
+                    onEdit = onEditClick,
+                    onDelete = viewModel::delete,
+                    onYearMonthChanged = viewModel::selectYearMonth,
+                )
+            }
         }
     }
 }
@@ -107,7 +133,10 @@ internal fun DiaryListContent(
     modifier: Modifier = Modifier,
     monthDiaryCount: Int = 0,
     weeklyMoodEmoji: String? = null,
+    /** 항목 탭 — 저장된 기록 본문을 여는 상세 화면 (#759). */
     onItemClick: (Long, YearMonth) -> Unit = { _, _ -> },
+    /** «수정하기» — 기록 ID 와 이 화면이 보고 있는 달. 달은 여기서만 알 수 있다 (#582). */
+    onEdit: (Long, YearMonth) -> Unit = { _, _ -> },
     onDelete: (Long) -> Unit = {},
     onYearMonthChanged: (YearMonth) -> Unit = {},
 ) {
@@ -164,6 +193,7 @@ internal fun DiaryListContent(
 
             items(visibleDiaries, key = { it.id }) { diary ->
                 DiaryComponent(
+                    onEdit = { onEdit(diary.id, yearMonth) },
                     diary = diary,
                     onClick = { onItemClick(diary.id, yearMonth) },
                     modifier = Modifier.padding(vertical = 8.dp),
@@ -188,6 +218,7 @@ internal fun DiaryListContent(
             }
             gridItems(diaries, key = { it.id }) { diary ->
                 DiaryCard(
+                    onEdit = { onEdit(diary.id, yearMonth) },
                     diary = diary,
                     onClick = { onItemClick(diary.id, yearMonth) },
                     onDelete = { onDelete(diary.id) },
@@ -201,16 +232,6 @@ internal fun DiaryListContent(
 private fun LoadingBox(modifier: Modifier = Modifier) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         CircularProgressIndicator()
-    }
-}
-
-@Composable
-private fun ErrorBox(
-    message: String,
-    modifier: Modifier = Modifier,
-) {
-    Box(modifier = modifier.fillMaxSize().padding(20.dp), contentAlignment = Alignment.Center) {
-        Text(text = message, color = AfternoteDesign.colors.gray9)
     }
 }
 

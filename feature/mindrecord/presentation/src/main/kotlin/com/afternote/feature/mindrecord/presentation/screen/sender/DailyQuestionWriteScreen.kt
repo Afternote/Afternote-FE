@@ -119,19 +119,52 @@ fun DailyQuestionWriteScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-            // draft 프리필은 비동기 완료 — WriteTextField 는 value 를 초기 시드로만 받으므로
-            // draftLoaded 전환 시 에디터를 재생성해 본문을 다시 싣는다. 일기 화면과 같다 (#923).
-            key(uiState.draftLoaded) {
-                WriteTextField(
-                    value = uiState.answer,
-                    onValueChange = viewModel::onAnswerChanged,
-                    onSaveDraftClick = { viewModel.submit(isDraft = true) },
-                    onDraftCountClick = onDraftListClick,
-                    draftCount = uiState.draftCount,
-                    onImagePicked = viewModel::uploadImage,
+            // 저장·업로드 진행 상태를 알린다 — 종전에는 액션만 잠기고 표시가 없어
+            // 사용자가 무반응으로 인식했다 (#716).
+            val progressText =
+                when {
+                    uiState.submitState is SubmitState.InProgress -> {
+                        stringResource(R.string.mindrecord_write_saving)
+                    }
+
+                    uiState.isUploadingImage -> {
+                        stringResource(R.string.mindrecord_write_uploading_image)
+                    }
+
+                    else -> {
+                        null
+                    }
+                }
+            if (progressText != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = progressText,
+                    color = AfternoteDesign.colors.gray6,
+                    style = AfternoteDesign.typography.captionLargeR,
                 )
             }
+
+            val uploadError = uiState.imageUploadError?.asString()
+            if (uploadError != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = uploadError,
+                    color = AfternoteDesign.colors.error,
+                    style = AfternoteDesign.typography.captionLargeR,
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            // 프리필이 늦게 도착해도 WriteTextField 가 value 변경에 반응해 다시 시드한다 —
+            // key() 로 컴포넌트를 재생성하지 않는다 (#1018).
+            WriteTextField(
+                value = uiState.answer,
+                onValueChange = viewModel::onAnswerChanged,
+                onSaveDraftClick = { viewModel.submit(isDraft = true) },
+                onDraftCountClick = onDraftListClick,
+                draftCount = uiState.draftCount,
+                onImagePicked = viewModel::uploadImage,
+            )
         }
     }
 }

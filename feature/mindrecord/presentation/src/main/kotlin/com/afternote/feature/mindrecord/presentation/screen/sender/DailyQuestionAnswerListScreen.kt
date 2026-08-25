@@ -30,7 +30,9 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionBanner
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionListCard
+import com.afternote.feature.mindrecord.presentation.component.DeleteConfirmDialog
 import com.afternote.feature.mindrecord.presentation.component.MindRecordEmptyState
+import com.afternote.feature.mindrecord.presentation.component.MindRecordErrorBox
 import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.viewmodel.DailyQuestionListUiState
@@ -48,6 +50,7 @@ fun DailyQuestionAnswerListScreen(
     onItemClick: (Long, YearMonth) -> Unit,
     modifier: Modifier = Modifier,
     isListView: Boolean = true,
+    onEditClick: (Long) -> Unit = {},
     viewModel: DailyQuestionListViewModel = hiltViewModel(),
 ) {
     // 갱신을 이 화면이 직접 건다. HomeScreen 이 VM 을 호이스팅해 대신 걸어 주면, 탭에
@@ -57,6 +60,17 @@ fun DailyQuestionAnswerListScreen(
     }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var pendingDeleteId by remember { mutableStateOf<Long?>(null) }
+
+    pendingDeleteId?.let { id ->
+        DeleteConfirmDialog(
+            onConfirm = {
+                pendingDeleteId = null
+                viewModel.delete(id)
+            },
+            onDismiss = { pendingDeleteId = null },
+        )
+    }
 
     when (val state = uiState) {
         DailyQuestionListUiState.Loading -> {
@@ -64,18 +78,38 @@ fun DailyQuestionAnswerListScreen(
         }
 
         is DailyQuestionListUiState.Error -> {
-            ErrorBox(message = state.message.asString(), modifier = modifier)
+            MindRecordErrorBox(
+                message = state.message.asString(),
+                onRetry = viewModel::retry,
+                modifier = modifier,
+            )
         }
 
         is DailyQuestionListUiState.Success -> {
-            DailyQuestionListContent(
-                modifier = modifier,
-                isListView = isListView,
-                todayQuestion = state.todayQuestion,
-                answers = state.answers,
-                onItemClick = onItemClick,
-                onDelete = viewModel::delete,
-            )
+            // 배너와 리스트를 형제 루트 2개로 내보내면 안 된다 — 이 화면들의 유일한 호출부가
+            // HorizontalPager 페이지라, 다중 placeable 이 가로로 순차 배치돼 배너가 뜨는 순간
+            // 리스트가 배너 폭만큼 밀려 페이지 밖으로 잘린다 (리뷰 지적).
+            Column(modifier = modifier) {
+                // 삭제 실패 안내 — 항목이 남은 채 아무 말이 없으면 고장처럼 보인다 (#716).
+                val deleteError = state.deleteError?.asString()
+                if (deleteError != null) {
+                    Text(
+                        text = deleteError,
+                        color = AfternoteDesign.colors.error,
+                        style = AfternoteDesign.typography.captionLargeR,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                    )
+                }
+                DailyQuestionListContent(
+                    isListView = isListView,
+                    todayQuestion = state.todayQuestion,
+                    answers = state.answers,
+                    onItemClick = onItemClick,
+                    onEdit = onEditClick,
+                    // 삭제는 되돌릴 수 없다 — 종전에는 메뉴를 누르는 즉시 실행됐다 (#582).
+                    onDelete = { pendingDeleteId = it },
+                )
+            }
         }
     }
 }
@@ -86,7 +120,10 @@ private fun DailyQuestionListContent(
     answers: List<DailyQuestion>,
     modifier: Modifier = Modifier,
     todayQuestion: TodayQuestionUi? = null,
+    /** 항목 탭 — 저장된 기록 본문을 여는 상세 화면 (#759). */
     onItemClick: (Long, YearMonth) -> Unit = { _, _ -> },
+    /** «수정하기» — 정식 답변을 프리필한 작성 화면으로 (#582). */
+    onEdit: (Long) -> Unit = {},
     onDelete: (Long) -> Unit = {},
 ) {
     var yearMonth by remember { mutableStateOf(YearMonth.now()) }
@@ -167,6 +204,7 @@ private fun DailyQuestionListContent(
             DailyQuestionListCard(
                 answer = answer,
                 onClick = { onItemClick(answer.id, yearMonth) },
+                onEdit = { onEdit(answer.id) },
                 onDelete = { onDelete(answer.id) },
             )
         }
@@ -177,16 +215,6 @@ private fun DailyQuestionListContent(
 private fun LoadingBox(modifier: Modifier = Modifier) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         CircularProgressIndicator()
-    }
-}
-
-@Composable
-private fun ErrorBox(
-    message: String,
-    modifier: Modifier = Modifier,
-) {
-    Box(modifier = modifier.fillMaxSize().padding(20.dp), contentAlignment = Alignment.Center) {
-        Text(text = message, color = AfternoteDesign.colors.gray9)
     }
 }
 
