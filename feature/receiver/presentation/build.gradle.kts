@@ -21,7 +21,6 @@ dependencies {
     implementation(projects.feature.mindrecord.domain)
     implementation(projects.feature.timeletter.domain)
     implementation(projects.core.domain)
-    implementation(projects.core.model)
     implementation(projects.core.common)
     implementation(projects.core.ui)
     implementation(libs.androidx.activity.compose)
