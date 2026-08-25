@@ -6,13 +6,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationException
+import com.afternote.core.common.result.runCatchingCancellable
+import com.afternote.core.domain.repository.UserRepository
 import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationKind
-import com.afternote.feature.afternote.domain.model.author.AuthorReceiverEntry
+import com.afternote.feature.afternote.domain.error.AfternoteFailure
 import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.SaveAfternoteCommand
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
-import com.afternote.feature.afternote.domain.repository.author.AuthorReceiverRepository
 import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.domain.repository.author.MemorialThumbnailUploadRepository
 import com.afternote.feature.afternote.domain.usecase.editor.ResolveMemorialMediaForSaveUseCase
@@ -194,7 +194,7 @@ class AfternoteEditorViewModel
     @Inject
     constructor(
         private val savedStateHandle: SavedStateHandle,
-        private val authorReceiverRepository: AuthorReceiverRepository,
+        private val userRepository: UserRepository,
         private val afternoteRepository: AfternoteRepository,
         private val memorialThumbnailUploadRepository: MemorialThumbnailUploadRepository,
         private val resolveMemorialMediaForSave: ResolveMemorialMediaForSaveUseCase,
@@ -272,14 +272,6 @@ class AfternoteEditorViewModel
         ) = mutateForm { it.withProcessingMethodEdited(itemId = itemId, newText = newText) }
 
         init {
-            viewModelScope.launch {
-                authorReceiverRepository
-                    .observeReceivers()
-                    .map { it.toAfternoteEditorReceivers() }
-                    .collect { mapped ->
-                        internalState.update { it.copy(authorReceivers = mapped) }
-                    }
-            }
             val editItemId = readEditItemId()
             if (editItemId == null) {
                 savedStateHandle.remove<String>(EDITOR_ORIGINAL_CATEGORY_FOR_API_KEY)
@@ -307,9 +299,21 @@ class AfternoteEditorViewModel
             }
         }
 
+        /**
+         * 작성자가 등록한 수신자 전체를 받아 [InternalState.authorReceivers] 에 채운다.
+         *
+         * 신규 작성 진입 시 1회 호출된다. 폼이 비어 있으면 화면이 이 목록으로 수신자를 채우고
+         * (`AfternoteNavGraphEditor` 의 `replaceReceiversIfEmpty`), 사용자는 불필요한 수신자를 지운다.
+         * 수정 진입은 상세 응답 prefill 이 지정 수신자를 채우므로 이 목록을 쓰지 않는다.
+         */
         fun refreshAuthorReceivers() {
             viewModelScope.launch {
-                authorReceiverRepository.refreshReceivers()
+                runCatchingCancellable { userRepository.getReceivers() }
+                    .onSuccess { receivers ->
+                        internalState.update { it.copy(authorReceivers = receivers.toAfternoteEditorReceivers()) }
+                    }.onFailure { e ->
+                        errorReporter.recordAfternoteFailure(AfternoteFailureStage.AUTHOR_RECEIVER_LOAD, e)
+                    }
             }
         }
 
@@ -517,12 +521,8 @@ class AfternoteEditorViewModel
         private fun handleSaveFailure(e: Throwable) {
             val validationError =
                 when (e) {
-                    is AfternoteAuthoringValidationException -> {
-                        when (e.kind) {
-                            AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED -> {
-                                AfternoteValidationError.RECEIVERS_REQUIRED
-                            }
-                        }
+                    is AfternoteFailure -> {
+                        e.toValidationError()
                     }
 
                     is AfternoteValidationException -> {
@@ -555,7 +555,8 @@ class AfternoteEditorViewModel
             }
         }
 
-        fun getReceiverById(id: Long): AuthorReceiverEntry? = authorReceiverRepository.currentReceivers().find { it.receiverId == id }
+        /** 수신자 선택 결과(id)를 폼에 넣기 위해 [refreshAuthorReceivers] 로 받아 둔 목록에서 이름·관계를 찾는다. */
+        fun getReceiverById(id: Long): AfternoteEditorReceiver? = internalState.value.authorReceivers.find { it.id == id.toString() }
 
         private fun readOriginalCategoryForApiFromSavedState(): EditorCategory? =
             savedStateHandle
@@ -614,4 +615,26 @@ class AfternoteEditorViewModel
         }
 
         // endregion
+    }
+
+/**
+ * 루트로 좁혀 `when` 을 exhaustive 하게 만든다 — 실패 유형이 늘면 여기가 컴파일 에러로 잡힌다.
+ * `else` 로 뭉개 두면 새 유형이 검증 실패로도 장애로도 분류되지 않은 채 조용히 흘러간다.
+ *
+ * null 은 "입력 검증 실패가 아님" 을 뜻한다 — 호출부가 그 경우에만 텔레메트리에 기록한다.
+ */
+private fun AfternoteFailure.toValidationError(): AfternoteValidationError? =
+    when (this) {
+        is AfternoteFailure.AuthoringValidation -> {
+            when (kind) {
+                AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED -> {
+                    AfternoteValidationError.RECEIVERS_REQUIRED
+                }
+            }
+        }
+
+        // 미디어 해석 실패는 사용자가 입력을 고쳐 푸는 검증 실패가 아니라 업로드 장애다 — 기록 대상.
+        is AfternoteFailure.MediaSave -> {
+            null
+        }
     }
