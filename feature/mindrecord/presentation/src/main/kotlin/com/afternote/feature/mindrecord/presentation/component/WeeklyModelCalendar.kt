@@ -125,26 +125,6 @@ private fun DayCell(
                     }
                 }
 
-                is DayContent.EmojiWithDot -> {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        Text(
-                            text = content.emoji,
-                            fontSize = 20.sp,
-                        )
-                        Spacer(modifier = Modifier.height(1.dp))
-                        Box(
-                            modifier =
-                                Modifier
-                                    .size(4.dp)
-                                    .clip(CircleShape)
-                                    .background(AfternoteDesign.colors.gray8),
-                        )
-                    }
-                }
-
                 is DayContent.EmojiOnly -> {
                     Text(
                         text = content.emoji,
@@ -173,7 +153,7 @@ private fun defaultPreviewDays(): List<DayItem> =
         DayItem(DayOfWeek.MONDAY, DayContent.NumberOnly(10)),
         DayItem(DayOfWeek.TUESDAY, DayContent.NumberWithDot(2)),
         DayItem(DayOfWeek.WEDNESDAY, DayContent.NumberOnly(12)),
-        DayItem(DayOfWeek.THURSDAY, DayContent.EmojiWithDot("😊"), DayBackground.Green),
+        DayItem(DayOfWeek.THURSDAY, DayContent.EmojiOnly("😊"), DayBackground.Green),
         DayItem(DayOfWeek.FRIDAY, DayContent.EmojiOnly("😊"), DayBackground.Green),
         DayItem(DayOfWeek.SATURDAY, DayContent.NumberWithDot(2)),
         DayItem(DayOfWeek.SUNDAY, DayContent.EmojiOnly("🥹"), DayBackground.Pink),
