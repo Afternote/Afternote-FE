@@ -11,6 +11,13 @@ import com.afternote.core.model.user.UserPushSetting
 import kotlinx.coroutines.flow.Flow
 
 interface UserRepository {
+    /**
+     * 수신인 목록. 조회 실패를 예외로 올리지 않고 마지막으로 성공한 목록(첫 조회부터 실패했다면 빈 목록)을 낸다.
+     *
+     * **빈 목록은 «수신인이 없음» 을 뜻하지 않는다 — 실패도 같은 모양으로 들어온다.** 화면이 이 값만 보고
+     * «등록된 수신인이 없어요» 를 확정하면 오프라인에서 그 거짓을 사용자에게 보여 주게 된다. 실패와 없음을
+     * 가르려면 별도 신호가 필요하고, 그 표기는 #714 범위다.
+     */
     val receiverListFlow: Flow<List<Receiver>>
 
     // 수신자 목록 조회

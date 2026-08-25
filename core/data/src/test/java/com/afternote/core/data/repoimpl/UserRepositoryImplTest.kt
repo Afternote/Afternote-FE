@@ -223,6 +223,46 @@ class UserRepositoryImplTest {
             assertEquals(listOf("조회 1", "조회 2"), emissions.map { it.single().name })
             assertEquals(2, requestCount)
         }
+
+    /**
+     * 크래시를 막자고 «보고 있던 목록» 을 지우면 안 된다. 첫 조회 실패는 아직 아무것도 못 본 상태라
+     * 빈 목록이 맞지만(위 테스트들), 두 번째부터의 실패는 화면에 떠 있던 수신인을 0명으로 바꾼다.
+     */
+    @Test
+    fun `receiverListFlow - 갱신이 실패해도 마지막으로 성공한 목록을 유지한다`() =
+        runBlocking {
+            var requestCount = 0
+            val repository =
+                repository(
+                    onGetReceivers = {
+                        requestCount += 1
+                        if (requestCount == 1) {
+                            dataResponse(listOf(receiverDto("계정 A")))
+                        } else {
+                            throw UnknownHostException("Unable to resolve host")
+                        }
+                    },
+                    onCreateReceiver = { dataResponse(UserCreateReceiverDto(receiverId = 2L, authCode = "AUTH-2")) },
+                )
+            val emissions = mutableListOf<List<Receiver>>()
+            val collector =
+                launch(start = CoroutineStart.UNDISPATCHED) {
+                    repository.receiverListFlow.take(2).toList(emissions)
+                }
+
+            repository.createReceiver(
+                name = "새 수신자",
+                relation = "친구",
+                phone = null,
+                email = null,
+                message = null,
+            )
+            collector.join()
+
+            assertEquals(listOf("계정 A"), emissions[0].map { it.name })
+            assertEquals(listOf("계정 A"), emissions[1].map { it.name })
+            assertEquals(2, requestCount)
+        }
 }
 
 private fun success() = BaseResponse<Unit>(status = 200, code = 200)

@@ -41,13 +41,19 @@ class UserRepositoryImpl
     ) : UserRepository {
         private val receiverRefreshRevision = MutableStateFlow(0L)
 
-        // 조회 실패를 예외로 흘리면 구독 중인 화면이 미처리 예외로 죽는다. 빈 목록으로 낮춰 흐름을 유지한다 —
-        // 화면의 오류 표시·재시도는 #714 범위다.
+        // 마지막으로 조회에 성공한 목록. 갱신 실패가 «이미 보고 있던 목록» 을 지우지 않도록 붙들어 둔다.
+        // 구독자마다 map 이 따로 돌아 쓰기와 읽기가 다른 스레드에서 일어나므로 가시성을 @Volatile 로 준다.
+        @Volatile
+        private var lastKnownReceivers: List<Receiver> = emptyList()
+
+        // 조회 실패를 예외로 흘리면 구독 중인 화면이 미처리 예외로 죽는다. 마지막 성공 목록으로 낮춰 흐름을
+        // 유지한다 — 화면의 오류 표시·재시도는 #714 범위다.
         override val receiverListFlow: Flow<List<Receiver>> =
             receiverRefreshRevision.map {
                 runCatchingCancellable { getReceivers() }
                     .onFailure { Log.e("UserRepository", "수신인 목록 조회 실패: ${it.javaClass.name}") }
-                    .getOrDefault(emptyList())
+                    .getOrDefault(lastKnownReceivers)
+                    .also { lastKnownReceivers = it }
             }
 
         override suspend fun getReceivers(): List<Receiver> =
