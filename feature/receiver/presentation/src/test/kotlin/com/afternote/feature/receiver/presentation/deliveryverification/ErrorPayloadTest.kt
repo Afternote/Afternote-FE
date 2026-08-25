@@ -1,8 +1,6 @@
 package com.afternote.feature.receiver.presentation.deliveryverification
 
-import com.afternote.feature.receiver.domain.error.ReceiverDeliveryVerificationException
-import com.afternote.feature.receiver.domain.error.ReceiverEmailAuthException
-import com.afternote.feature.receiver.domain.error.ReceiverMasterKeyException
+import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.io.IOException
@@ -18,7 +16,7 @@ class ErrorPayloadTest {
     @Test
     fun `allowlist 에 등재된 4xx 사유 code 는 서버 문구를 그대로 노출한다`() {
         val rejection =
-            ReceiverEmailAuthException(
+            ReceiverFailure.ServerRejection(
                 status = 400,
                 serverMessage = "인증번호가 만료되었거나 존재하지 않습니다. 다시 요청해주세요.",
                 serverCode = 1902,
@@ -33,7 +31,7 @@ class ErrorPayloadTest {
     @Test
     fun `allowlist 미등재 4xx 는 서버 문구가 있어도 fallback 리소스로 폴백한다`() {
         val validationRejection =
-            ReceiverMasterKeyException(
+            ReceiverFailure.ServerRejection(
                 status = 400,
                 serverMessage = "인증번호는 UUID 형식이어야 합니다.",
                 serverCode = 400,
@@ -45,7 +43,7 @@ class ErrorPayloadTest {
     @Test
     fun `5xx 는 서버 문구가 실려 있어도 fallback 리소스로 폴백한다`() {
         val outage =
-            ReceiverDeliveryVerificationException(
+            ReceiverFailure.ServerRejection(
                 status = 500,
                 serverMessage = "서버 내부 오류: could not execute statement",
                 serverCode = 1500,
@@ -57,7 +55,7 @@ class ErrorPayloadTest {
     @Test
     fun `allowlist 에 등재된 code 라도 5xx 봉투면 fallback 리소스로 폴백한다`() {
         val outageWithKnownCode =
-            ReceiverDeliveryVerificationException(
+            ReceiverFailure.ServerRejection(
                 status = 500,
                 serverMessage = "internal error while checking pending verification",
                 serverCode = 2008,
@@ -69,7 +67,7 @@ class ErrorPayloadTest {
     @Test
     fun `서버 문구 없는 4xx 는 등재 code 라도 fallback 리소스로 폴백한다`() {
         val silentRejection =
-            ReceiverMasterKeyException(
+            ReceiverFailure.ServerRejection(
                 status = 404,
                 serverMessage = null,
                 serverCode = 1900,
