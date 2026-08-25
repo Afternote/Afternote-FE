@@ -162,7 +162,6 @@ class DiaryWriteViewModel
                                 content = state.content.toWireContent(uploadedImageUrls),
                                 isDraft = isDraft,
                                 todayMood = mood,
-                                imageUrl = state.imageUrl,
                                 receiverIds = state.selectedReceiverIds.toList(),
                             ),
                         )
