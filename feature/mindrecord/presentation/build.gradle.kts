@@ -27,6 +27,7 @@ dependencies {
     }
 
     testImplementation(libs.coroutines.test)
+    testImplementation(testFixtures(projects.feature.mindrecord.domain))
 
     // 컴파일된 리소스로 문구를 검증한다 — aapt2 의 앞뒤 공백 제거는 소스 XML 만 봐서는 잡히지 않는다 (#732).
     // 열린 주차 메뉴의 스크롤·최하단 선택도 JVM 에서 그대로 재현한다 (#729).

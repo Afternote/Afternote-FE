@@ -49,9 +49,9 @@ import com.afternote.feature.mindrecord.domain.model.WeeklyReport
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDailyQuestion
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportDay
 import com.afternote.feature.mindrecord.domain.model.WeeklyReportEmotion
-import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
-import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
-import com.afternote.feature.mindrecord.domain.repository.WeeklyReportRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeWeeklyReportRepository
 import com.afternote.feature.mindrecord.presentation.screen.memoryspace.MemorySpaceScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestionAnswerListScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestionWriteScreen
@@ -333,7 +333,16 @@ class TimeLetterMindRecordCompletionAndroidTest {
     @Test
     fun mindRecordHome_dailyQuestionLoadingEmptyAndErrorRetrySuccess_areRendered() {
         val emptyGate = CompletableDeferred<Result<List<DailyQuestion>>>()
-        val emptyRepository = CompletionDailyQuestionRepository(nextListGate = emptyGate)
+        val emptyRepository =
+            FakeDailyQuestionRepository(today = completionToday()).apply {
+                // 첫 조회를 붙잡아 로딩 상태를 만든다. 그 뒤 조회는 저장소 기본 동작(0건).
+                var gate: CompletableDeferred<Result<List<DailyQuestion>>>? = emptyGate
+                onGetList = { _, _ ->
+                    val pending = gate
+                    gate = null
+                    pending?.await() ?: Result.success(emptyList())
+                }
+            }
         var activeViewModel by mutableStateOf(DailyQuestionListViewModel(emptyRepository))
 
         composeRule.setContent {
@@ -342,7 +351,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
             }
         }
 
-        composeRule.waitUntil(timeoutMillis = TIMEOUT) { emptyRepository.listCalls == 1 }
+        composeRule.waitUntil(timeoutMillis = TIMEOUT) { emptyRepository.listQueries.size == 1 }
         assertEquals(DailyQuestionListUiState.Loading, activeViewModel.uiState.value)
         composeRule
             .onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate))
@@ -354,9 +363,13 @@ class TimeLetterMindRecordCompletionAndroidTest {
         }
         composeRule.onNodeWithText("아직 등록된 답변이 없어요.").assertIsDisplayed()
 
+        val listResults =
+            ArrayDeque<Result<List<DailyQuestion>>>().apply {
+                addLast(Result.failure(IllegalStateException("home offline")))
+            }
         val retryRepository =
-            CompletionDailyQuestionRepository().apply {
-                listResults.addLast(Result.failure(IllegalStateException("home offline")))
+            FakeDailyQuestionRepository(today = completionToday()).apply {
+                onGetList = { _, _ -> listResults.removeFirst() }
             }
         val retryViewModel = DailyQuestionListViewModel(retryRepository)
         composeRule.runOnIdle { activeViewModel = retryViewModel }
@@ -365,7 +378,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
         }
         composeRule.onNodeWithText("home offline").assertIsDisplayed()
 
-        retryRepository.listResults.addLast(
+        listResults.addLast(
             Result.success(
                 listOf(
                     dailyQuestion(id = 81L, title = "재시도로 돌아온 답변"),
@@ -379,13 +392,13 @@ class TimeLetterMindRecordCompletionAndroidTest {
         }
         composeRule.onNodeWithText("재시도로 돌아온 답변").assertIsDisplayed()
         composeRule.onNodeWithText("노출되면 안 되는 임시답변").assertDoesNotExist()
-        assertEquals(2, retryRepository.listCalls)
-        assertEquals(2, retryRepository.todayCalls)
+        assertEquals(2, retryRepository.listQueries.size)
+        assertEquals(2, retryRepository.getTodayCalls)
     }
 
     @Test
     fun dailyQuestionWrite_successRefreshesExistingListWithCreatedAnswer() {
-        val repository = CompletionDailyQuestionRepository()
+        val repository = FakeDailyQuestionRepository(today = completionToday())
         val listViewModel = DailyQuestionListViewModel(repository)
         var writeViewModel by mutableStateOf<DailyQuestionWriteViewModel?>(null)
         var submitSuccessCalls = 0
@@ -419,7 +432,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
                     savedStateHandle = SavedStateHandle(emptyMap()),
                     repository = repository,
                     photoUploadRepository = CompletionPhotoUploadRepository,
-                    draftLoader = MindRecordDraftLoader(CompletionDiaryRepository(mutableListOf()), repository),
+                    draftLoader = MindRecordDraftLoader(FakeDiaryRepository(), repository),
                 )
         }
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
@@ -437,11 +450,11 @@ class TimeLetterMindRecordCompletionAndroidTest {
         }
         composeRule.onNodeWithText("오늘의 테스트 질문").assertIsDisplayed()
         composeRule.onNodeWithText("작성 후 목록에 반영될 답변").assertIsDisplayed()
-        assertEquals(1, repository.createCalls.size)
-        assertEquals(71L, repository.createCalls.single().questionId)
-        assertEquals(false, repository.createCalls.single().isDraft)
-        assertEquals(2, repository.listCalls)
-        assertEquals(3, repository.todayCalls)
+        assertEquals(1, repository.createdPayloads.size)
+        assertEquals(71L, repository.createdPayloads.single().questionId)
+        assertEquals(false, repository.createdPayloads.single().isDraft)
+        assertEquals(2, repository.listQueries.size)
+        assertEquals(3, repository.getTodayCalls)
     }
 
     @Test
@@ -449,9 +462,9 @@ class TimeLetterMindRecordCompletionAndroidTest {
         val currentMonth = YearMonth.now()
         val draftDate = currentMonth.atDay(12)
         val repository =
-            CompletionDiaryRepository(
-                drafts =
-                    mutableListOf(
+            FakeDiaryRepository(
+                initialDiaries =
+                    listOf(
                         Diary(
                             diaryId = 612L,
                             title = "이어 쓸 일기",
@@ -464,7 +477,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
                         ),
                     ),
             )
-        val draftDailyQuestionRepository = CompletionDailyQuestionRepository()
+        val draftDailyQuestionRepository = FakeDailyQuestionRepository(today = completionToday())
         val draftListViewModel =
             DraftListViewModel(
                 loader = MindRecordDraftLoader(repository, draftDailyQuestionRepository),
@@ -530,25 +543,27 @@ class TimeLetterMindRecordCompletionAndroidTest {
         composeRule.onNode(hasText("등록") and hasClickAction()).performClick()
         composeRule.waitUntil(timeoutMillis = TIMEOUT) { submitSuccessCalls == 1 }
 
-        val update = repository.updateCalls.single()
+        val update = repository.updatedPayloads.single()
         assertEquals(612L, update.first)
         assertEquals("완성한 일기", update.second.title)
         assertEquals("<p>완성한 본문</p>", update.second.content)
         assertEquals(false, update.second.isDraft)
         assertEquals(TodayMood.SOSO, update.second.todayMood)
         // date·imageUrl 은 수정 요청 계약에 없어 페이로드에서 걷었다 (#955).
-        assertTrue(repository.createCalls.isEmpty())
-        assertEquals(2, repository.listCalls.size)
-        assertTrue(repository.listCalls.all { it == currentMonth.toString() to true })
+        assertTrue(repository.createdPayloads.isEmpty())
+        assertEquals(2, repository.listQueries.size)
+        assertTrue(
+            repository.listQueries.all { it == FakeDiaryRepository.ListQuery(currentMonth.toString(), true) },
+        )
     }
 
     @Test
     fun memorySpace_supportedSuccess_opensAndClosesDetailThenNavigatesBack() {
         val memoryDate = LocalDate.now()
         val diaryRepository =
-            CompletionDiaryRepository(
-                drafts =
-                    mutableListOf(
+            FakeDiaryRepository(
+                initialDiaries =
+                    listOf(
                         Diary(
                             diaryId = 501L,
                             title = "추억이 된 하루",
@@ -561,7 +576,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
                         ),
                     ),
             )
-        val viewModel = MemorySpaceViewModel(diaryRepository, CompletionDailyQuestionRepository())
+        val viewModel = MemorySpaceViewModel(diaryRepository, FakeDailyQuestionRepository())
         var backCalls = 0
 
         composeRule.setContent {
@@ -595,7 +610,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
     @Test
     fun weeklyReport_errorRetryThenEmptyAndComplete_preservesRequestedWeekContract() {
         val repository =
-            CompletionWeeklyReportRepository().apply {
+            FakeWeeklyReportRepository().apply {
                 results.addLast(Result.failure(IllegalStateException("weekly offline")))
             }
         val userRepository =
@@ -766,135 +781,8 @@ private object CompletionFileMetadataRepository : FileMetadataRepository {
     override suspend fun getMimeType(uriString: String): String? = error("Unexpected MIME lookup: $uriString")
 }
 
-private class CompletionDailyQuestionRepository(
-    var nextListGate: CompletableDeferred<Result<List<DailyQuestion>>>? = null,
-) : DailyQuestionRepository {
-    val listResults = ArrayDeque<Result<List<DailyQuestion>>>()
-    val storedAnswers = mutableListOf<DailyQuestion>()
-    val createCalls = mutableListOf<DailyQuestionCreatePayload>()
-    val updateCalls = mutableListOf<Pair<Long, DailyQuestionUpdatePayload>>()
-    var today = TodayDailyQuestion(71L, 71, "오늘의 테스트 질문", false)
-    var listCalls = 0
-        private set
-    var todayCalls = 0
-        private set
-
-    override suspend fun getList(
-        date: String?,
-        draftOnly: Boolean?,
-    ): Result<List<DailyQuestion>> {
-        listCalls += 1
-        val gate = nextListGate
-        nextListGate = null
-        return gate?.await() ?: listResults.removeFirstOrNull() ?: Result.success(storedAnswers.toList())
-    }
-
-    override suspend fun getToday(): Result<TodayDailyQuestion> {
-        todayCalls += 1
-        return Result.success(today)
-    }
-
-    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> {
-        createCalls += payload
-        val createdId = 800L + createCalls.size
-        storedAnswers +=
-            DailyQuestion(
-                dailyQuestionId = createdId,
-                title = today.content,
-                content = payload.content,
-                createdAt = "2026-08-22",
-                isDraft = payload.isDraft,
-            )
-        today = today.copy(isAnswered = !payload.isDraft, isDraft = payload.isDraft)
-        return Result.success(createdId)
-    }
-
-    override suspend fun update(
-        id: Long,
-        payload: DailyQuestionUpdatePayload,
-    ): Result<Long> {
-        updateCalls += id to payload
-        storedAnswers.replaceAll { answer ->
-            if (answer.dailyQuestionId == id) {
-                answer.copy(
-                    content = payload.content ?: answer.content,
-                    isDraft = payload.isDraft ?: answer.isDraft,
-                )
-            } else {
-                answer
-            }
-        }
-        return Result.success(id)
-    }
-
-    override suspend fun delete(id: Long): Result<Unit> {
-        storedAnswers.removeAll { it.dailyQuestionId == id }
-        return Result.success(Unit)
-    }
-}
-
-private class CompletionDiaryRepository(
-    val drafts: MutableList<Diary>,
-) : DiaryRepository {
-    val listCalls = mutableListOf<Pair<String, Boolean?>>()
-    val createCalls = mutableListOf<DiaryCreatePayload>()
-    val updateCalls = mutableListOf<Pair<Long, DiaryUpdatePayload>>()
-
-    override suspend fun getList(
-        yearMonth: String,
-        draftOnly: Boolean?,
-    ): Result<DiaryList> {
-        listCalls += yearMonth to draftOnly
-        val matching = drafts.filter { draftOnly == null || it.isDraft == draftOnly }
-        return Result.success(
-            DiaryList(
-                diaries = matching,
-                monthDiaryCount = matching.size,
-                weeklyDominantMood = matching.firstOrNull()?.todayMood,
-            ),
-        )
-    }
-
-    override suspend fun create(payload: DiaryCreatePayload): Result<Unit> {
-        createCalls += payload
-        return Result.success(Unit)
-    }
-
-    override suspend fun update(
-        id: Long,
-        payload: DiaryUpdatePayload,
-    ): Result<Unit> {
-        updateCalls += id to payload
-        drafts.replaceAll { diary ->
-            if (diary.diaryId == id) {
-                diary.copy(
-                    title = payload.title,
-                    content = payload.content,
-                    todayMood = payload.todayMood,
-                    isDraft = payload.isDraft,
-                )
-            } else {
-                diary
-            }
-        }
-        return Result.success(Unit)
-    }
-
-    override suspend fun delete(id: Long): Result<Unit> {
-        drafts.removeAll { it.diaryId == id }
-        return Result.success(Unit)
-    }
-}
-
-private class CompletionWeeklyReportRepository : WeeklyReportRepository {
-    val results = ArrayDeque<Result<WeeklyReport>>()
-    val requestedDates = mutableListOf<String>()
-
-    override suspend fun getWeeklyReport(date: String): Result<WeeklyReport> {
-        requestedDates += date
-        return requireNotNull(results.removeFirstOrNull()) { "Missing weekly response for $date" }
-    }
-}
+/** 이 파일의 데일리질문 시나리오가 공유하는 "오늘의 질문". `questionId` 를 단언하는 곳이 있다. */
+private fun completionToday() = TodayDailyQuestion(71L, 71, "오늘의 테스트 질문", false)
 
 private fun dailyQuestion(
     id: Long,
