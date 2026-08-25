@@ -23,7 +23,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.afternote.core.model.MindRecordCategory
 import com.afternote.core.ui.AfternoteSectionHeader
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_home_tab_memories_section_click_label
@@ -31,6 +30,7 @@ import com.afternote.feature.mindrecord.presentation.R.string.mindrecord_home_ta
 import com.afternote.feature.mindrecord.presentation.component.MemoriesCard
 import com.afternote.feature.mindrecord.presentation.component.TodayQuestionCard
 import com.afternote.feature.mindrecord.presentation.component.hometab.RecordCategoryCard
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import com.afternote.feature.mindrecord.presentation.model.MindRecordCategoryUi
 import com.afternote.feature.mindrecord.presentation.util.htmlToPlainText
 import com.afternote.feature.mindrecord.presentation.viewmodel.MemoriesCardViewModel
@@ -73,7 +73,8 @@ fun LazyListScope.homeTabMindRecordQuestionAndCategories(
                 iconResId = CoreUiR.drawable.core_ui_ic_diary,
                 title = stringResource(MindRecordCategoryUi.Diary.titleRes),
                 subtitle = stringResource(MindRecordCategoryUi.Diary.descriptionRes),
-                totalCount = categoryCounts[MindRecordCategory.DIARY] ?: 0,
+                // 키가 없으면 «모름» 이다 — 0 으로 접지 않는다 (#700).
+                totalCount = categoryCounts[MindRecordCategory.DIARY],
                 onClick = { onRecordCategoryClick(MindRecordCategory.DIARY) },
                 useDiaryIconLayout = true,
                 isCountLoading = isCategoryCountLoading,
