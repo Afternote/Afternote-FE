@@ -1,8 +1,6 @@
 package com.afternote.feature.afternote.presentation.reporting
 
-import com.afternote.feature.receiver.domain.error.ReceiverDeliveryVerificationException
-import com.afternote.feature.receiver.domain.error.ReceiverEmailAuthException
-import com.afternote.feature.receiver.domain.error.ReceiverMasterKeyException
+import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -18,7 +16,7 @@ class ReceiverFlowReportingTest {
     @Test
     fun `4xx 에 서버 문구가 실렸으면 사용자 오류라 제외한다`() {
         val rejection =
-            ReceiverEmailAuthException(
+            ReceiverFailure.ServerRejection(
                 status = 400,
                 serverMessage = "인증번호가 만료되었거나 존재하지 않습니다. 다시 요청해주세요.",
                 serverCode = 1902,
@@ -30,7 +28,7 @@ class ReceiverFlowReportingTest {
     @Test
     fun `5xx 는 서버 문구가 실려 있어도 기록 대상이다`() {
         val outage =
-            ReceiverMasterKeyException(
+            ReceiverFailure.ServerRejection(
                 status = 500,
                 serverMessage = "서버 내부 오류: could not execute statement",
                 serverCode = 1500,
@@ -42,7 +40,7 @@ class ReceiverFlowReportingTest {
     @Test
     fun `4xx 라도 서버 문구가 없으면 기록 대상이다`() {
         val silentRejection =
-            ReceiverDeliveryVerificationException(
+            ReceiverFailure.ServerRejection(
                 status = 409,
                 serverMessage = null,
                 serverCode = 1700,

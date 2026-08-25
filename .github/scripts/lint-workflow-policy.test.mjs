@@ -31,9 +31,19 @@ test("ktlint violations are rendered into the job summary even when the check fa
     assert.match(lintWorkflow, summaryStep);
 });
 
-test("Android Lint keeps its inline reporting — it reuses the XML instead of re-running", () => {
-    // #279 가 푼 문제(모듈별 위반이 수만 줄 로그에 묻힘)를 되돌리지 않는다. lintDebug 가
-    // 만든 XML 을 재활용하므로 검사가 두 번 돌지 않는다.
-    assert.match(lintWorkflow, /lint_xml_file:\s*app\/build\/reports\/lint-results-merged\.xml/);
-    assert.match(lintWorkflow, /\.\/gradlew lintDebug/);
+test("Android Lint runs exactly once per pull request", () => {
+    const gradleInvocations = lintWorkflow.match(/^\s*run:.*lintDebug/gm) ?? [];
+    assert.equal(gradleInvocations.length, 1);
+    assert.match(lintWorkflow, /\.\/gradlew lintDebug[^\n]*--continue/);
+});
+
+test("Android Lint reports through the job summary, not a Docker reviewdog action", () => {
+    // #279 가 푼 문제(모듈별 위반이 수만 줄 로그에 묻힘)를 되돌리지 않는다 — 자리만 PR
+    // 인라인 코멘트에서 job summary 로 옮겼다. 그 도커 액션은 매 run 마다 reviewdog 을
+    // 네트워크에서 받아 설치했고, 설치가 조용히 실패하면 lint 위반이 0건이어도 required
+    // check 가 red 가 됐다. 이미지는 job 당 한 번만 빌드돼 재시도로도 풀리지 않는다 (#1093).
+    assert.match(lintWorkflow, /render-android-lint-summary\.mjs/);
+    assert.match(lintWorkflow, /- name: Summarize Android Lint violations\n\s+if: always\(\)/);
+    // 주석은 이력이라 남기고, 실제로 액션을 부르는 uses 줄만 금지한다.
+    assert.doesNotMatch(lintWorkflow, /^\s*uses:\s*dvdandroid\/action-android-lint/m);
 });

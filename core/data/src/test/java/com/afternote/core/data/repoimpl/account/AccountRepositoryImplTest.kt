@@ -1,6 +1,6 @@
 package com.afternote.core.data.repoimpl.account
 
-import com.afternote.core.domain.error.EmailVerificationException
+import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.network.dto.EmailFindDto
 import com.afternote.core.network.dto.EmailFindRequestDto
 import com.afternote.core.network.dto.FindSendCodeRequestDto
@@ -20,7 +20,7 @@ import org.junit.Test
 /**
  * [AccountRepositoryImpl.verifyEmail] 의 예외 번역 계약 회귀 가드 (#472).
  *
- * 계약 — 서버가 인증번호 무효(code 1207)로 거절하면 [EmailVerificationException] 으로
+ * 계약 — 서버가 인증번호 무효(code 1207)로 거절하면 [CoreAuthFailure.EmailVerification] 으로
  * 번역해 Presentation 이 타입으로 분기(인라인 표시)할 수 있게 하고, 그 외 실패
  * (네트워크·서버 오류 등)는 원본 예외를 유지해 기존 스낵바 경로로 흐르게 한다.
  */
@@ -28,7 +28,7 @@ class AccountRepositoryImplTest {
     private fun repository(accountApiService: AccountApiService) = AccountRepositoryImpl(accountApiService)
 
     @Test
-    fun `verifyEmail - 인증번호 무효(1207)는 EmailVerificationException 으로 번역`() {
+    fun `verifyEmail - 인증번호 무효(1207)는 EmailVerification 으로 번역`() {
         val repository =
             repository(
                 FakeAccountApiService(
@@ -46,7 +46,7 @@ class AccountRepositoryImplTest {
         val result = runBlocking { repository.verifyEmail("user@example.com", "000000") }
 
         val error = result.exceptionOrNull()
-        assertTrue(error is EmailVerificationException)
+        assertTrue(error is CoreAuthFailure.EmailVerification)
     }
 
     @Test
