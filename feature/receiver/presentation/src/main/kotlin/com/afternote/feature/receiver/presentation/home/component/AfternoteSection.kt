@@ -48,14 +48,10 @@ fun AfternoteSection(
         title = stringResource(R.string.receiver_home_afternote_section_title),
         description = stringResource(R.string.receiver_home_afternote_section_desc),
         countLine =
-            if (totalCount == null) {
-                unavailableCountLine()
-            } else {
-                rememberCountLine(
-                    prefix = "${totalCount}개",
-                    suffix = "의 애프터노트가 있습니다.",
-                )
-            },
+            rememberCountLine(
+                prefix = "${countText(totalCount)}개",
+                suffix = "의 애프터노트가 있습니다.",
+            ),
         buttonText = stringResource(R.string.receiver_home_afternote_section_button),
         onButtonClick = onGoClick,
         middleContent = {

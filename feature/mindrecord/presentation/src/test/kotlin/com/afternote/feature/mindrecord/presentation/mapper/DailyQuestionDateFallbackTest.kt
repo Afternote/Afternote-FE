@@ -58,6 +58,5 @@ class DailyQuestionDateFallbackTest {
             content = "답변",
             createdAt = createdAt,
             isDraft = false,
-            imageUrl = null,
         )
 }

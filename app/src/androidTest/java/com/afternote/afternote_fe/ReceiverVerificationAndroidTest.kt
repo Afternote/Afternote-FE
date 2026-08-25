@@ -12,7 +12,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.core.ui.theme.AfternoteTheme
-import com.afternote.feature.receiver.domain.error.ReceiverEmailAuthException
+import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
 import com.afternote.feature.receiver.domain.model.DeliveryVerificationStatus
 import com.afternote.feature.receiver.domain.model.ReceiverAuthPresignedUrl
@@ -51,7 +51,7 @@ class ReceiverVerificationAndroidTest {
         val auth = FakeReceiverAuthRepository()
         auth.verifyEmailResults.addLast(
             Result.failure(
-                ReceiverEmailAuthException(
+                ReceiverFailure.ServerRejection(
                     status = 400,
                     serverMessage = "인증번호가 일치하지 않습니다.",
                     serverCode = 1903,
