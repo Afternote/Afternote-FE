@@ -74,11 +74,32 @@ adb install -r .claude/worktrees/qa-dev/app/build/outputs/apk/debug/app-debug.ap
 
 앱이 커밋을 들고 다니게 되면(#1135) 이 단계는 "설치된 앱의 sha 를 읽어 확인"으로 줄어든다.
 
+### 3. 기기를 나 혼자 쓰는가
+
+에이전트 세션 여러 개가 같은 개발 머신에서 돌면 **에뮬레이터 한 대를 공유하게 된다.** 2026-08-25
+이 저장소 작업 중에는 세션 17개가 `emulator-5554` 하나를 함께 쓰고 있었고, 좁은 화면 QA 도중
+다른 세션이 APK 를 재설치하고(`lastUpdateTime` 갱신), 토큰을 비우고(로그아웃), 화면 override 를
+풀었다. **아무 신호도 없다** — 검사 결과만 조용히 오염된다.
+
+증거로 남길 QA 는 기기를 따로 띄워서 한다.
+
+```bash
+$ANDROID_HOME/emulator/emulator -avd <AVD 이름> -no-snapshot-load &
+adb devices          # 새로 붙은 serial 확인 (emulator-5556 …)
+```
+
+그 뒤 모든 명령에 `-s <serial>` 을 붙인다. 붙이지 않으면 기기가 여러 대일 때 어디로 갔는지
+알 수 없다. 검사 전후로 `lastUpdateTime` 을 대조하면 그 사이 누가 앱을 갈아끼웠는지 확인할 수 있다.
+
+```bash
+adb -s <serial> shell dumpsys package com.afternote.afternote_fe | grep lastUpdateTime
+```
+
 ### override 는 세션 도중 풀린다
 
 2026-08-25 QA 에서 `compact` 로 전환해 검사하던 중 override 가 두 번 조용히 사라져 화면이
-411×914dp 로 되돌아갔다. 앱 재시작·다른 세션의 조작 등으로 풀릴 수 있고, **풀려도 아무 신호가
-없다.** 화면이 바뀐 채로 이어서 검사하면 그 결과는 좁은 화면 근거가 아니게 된다.
+411×914dp 로 되돌아갔다. 원인은 위의 기기 공유였다 — 같은 기기를 쓰던 다른 세션이 화면을
+되돌렸다. 앱 재시작으로도 풀릴 수 있고, **풀려도 아무 신호가 없다.** 화면이 바뀐 채로 이어서 검사하면 그 결과는 좁은 화면 근거가 아니게 된다.
 
 그래서 좁은 화면 QA 는 **검사 단위마다** `status` 로 확인하고, 화면 캡처와 함께 그때의 실효 dp 를
 남긴다. `uiautomator dump` 의 노드 bounds 범위(720×1600 인지 1080×2400 인지)로도 사후에 판별할
