@@ -55,11 +55,8 @@ class MemorialMediaCaptureFilesTest {
         assertEquals(2, dir.listFiles().orEmpty().size)
 
         // (4) 취소 시 폐기하면 0바이트 파일이 남지 않는다.
+        //     "지울 것이 없는" 경우(pending 이 비어 있음)는 호출부가 거르므로 여기 갈래가 없다 — non-null 파라미터.
         discardMemorialCapture(context, video)
         assertEquals(listOf("jpg"), dir.listFiles().orEmpty().map { it.extension })
-
-        // (5) 결과 콜백은 pending URI 가 비어 있는 상태로도 올 수 있다(프로세스 복원 실패 등).
-        discardMemorialCapture(context, null)
-        assertEquals(1, dir.listFiles().orEmpty().size)
     }
 }

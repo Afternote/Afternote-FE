@@ -80,12 +80,15 @@ internal class MemorialMediaSourceState(
  *
  * @param onPhotoSelected 영정사진 확정 URI. 취소·실패에는 호출되지 않는다 — 슬롯의 기존 값이 그대로 남는다.
  * @param onVideoSelected 장례식에 남길 영상 확정 URI. 위와 같다.
+ * @param onCaptureFailed 촬영 인텐트를 띄우지 못한 사유. 화면 문구는 두 갈래가 같아 사유가 지워지므로
+ *   호출처가 텔레메트리로 남긴다.
  */
 @Composable
 internal fun rememberMemorialMediaSourceState(
     snackbarHostState: SnackbarHostState,
     onPhotoSelected: (String) -> Unit,
     onVideoSelected: (String) -> Unit,
+    onCaptureFailed: (Throwable) -> Unit,
 ): MemorialMediaSourceState {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -107,13 +110,21 @@ internal fun rememberMemorialMediaSourceState(
         rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { captured: Boolean ->
             val uri = pendingPhotoCapture.value?.toUri()
             pendingPhotoCapture.value = null
-            if (captured && uri != null) onPhotoSelected(uri.toString()) else discardMemorialCapture(context, uri)
+            when {
+                uri == null -> Unit
+                captured -> onPhotoSelected(uri.toString())
+                else -> discardMemorialCapture(context, uri)
+            }
         }
     val videoCaptureLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.CaptureVideo()) { captured: Boolean ->
             val uri = pendingVideoCapture.value?.toUri()
             pendingVideoCapture.value = null
-            if (captured && uri != null) onVideoSelected(uri.toString()) else discardMemorialCapture(context, uri)
+            when {
+                uri == null -> Unit
+                captured -> onVideoSelected(uri.toString())
+                else -> discardMemorialCapture(context, uri)
+            }
         }
 
     return remember(openTarget) {
@@ -150,7 +161,8 @@ internal fun rememberMemorialMediaSourceState(
                         MemorialMediaTarget.PHOTO -> PHOTO_CAPTURE_EXTENSION
                         MemorialMediaTarget.VIDEO -> VIDEO_CAPTURE_EXTENSION
                     }
-                launchCapture(context, pending, extension, launch) {
+                launchCapture(context, pending, extension, launch) { failure ->
+                    onCaptureFailed(failure)
                     scope.launch { snackbarHostState.showSnackbar(captureUnavailableMessage) }
                 }
             },
@@ -161,6 +173,9 @@ internal fun rememberMemorialMediaSourceState(
 /**
  * 결과 파일을 만들고 촬영 인텐트를 쏜다. 실패하면 만들다 만 파일을 되돌리고 [onUnavailable] 로 알린다.
  *
+ * 예외를 통째로 넘기는 이유: 사용자에게 나가는 문구는 두 갈래가 같아도, 제보가 왔을 때 어느 쪽인지
+ * 가르려면 사유가 남아 있어야 한다. 문구는 호출부가 만들고 기록은 호출부가 위로 올린다.
+ *
  * 실패 갈래는 둘뿐이다 — 캐시에 파일을 못 만들거나(저장공간), 촬영을 받아 줄 앱이 없거나
  * ([ActivityNotFoundException] — 카메라 없는 기기·에뮬레이터). 둘 다 "지금은 촬영할 수 없다" 로 같은 안내를
  * 준다. 조용히 삼키면 눌러도 아무 일이 없는 버튼이 된다.
@@ -170,22 +185,22 @@ private inline fun launchCapture(
     pending: MutableState<String?>,
     extension: String,
     launch: (Uri) -> Unit,
-    onUnavailable: () -> Unit,
+    onUnavailable: (Throwable) -> Unit,
 ) {
     val uri =
         try {
             createMemorialCaptureUri(context, extension)
-        } catch (_: IOException) {
-            onUnavailable()
+        } catch (e: IOException) {
+            onUnavailable(e)
             return
         }
     pending.value = uri.toString()
     try {
         launch(uri)
-    } catch (_: ActivityNotFoundException) {
+    } catch (e: ActivityNotFoundException) {
         pending.value = null
         discardMemorialCapture(context, uri)
-        onUnavailable()
+        onUnavailable(e)
     }
 }
 
