@@ -29,6 +29,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
+import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.afternote_fe.test.FakeUserRepository
 import com.afternote.afternote_fe.test.testReceiver
 import com.afternote.core.domain.repository.PhotoUploadRepository
@@ -469,6 +470,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
                 loader = MindRecordDraftLoader(repository, draftDailyQuestionRepository),
                 diaryRepository = repository,
                 dailyQuestionRepository = draftDailyQuestionRepository,
+                errorReporter = FakeErrorReporter(),
             )
         var routedArguments: Pair<Long, String>? = null
         var writeViewModel by mutableStateOf<DiaryWriteViewModel?>(null)
