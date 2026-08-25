@@ -2,8 +2,8 @@ package com.afternote.feature.receiver.presentation.detail
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
-import com.afternote.core.model.AlbumCover
 import com.afternote.core.ui.theme.AfternoteTheme
+import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiModel
 import com.android.tools.screenshot.PreviewTest
 

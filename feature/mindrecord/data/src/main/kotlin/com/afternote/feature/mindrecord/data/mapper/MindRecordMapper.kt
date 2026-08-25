@@ -30,4 +30,5 @@ fun ReceiverDiaryItemDto.toDomain(): MindRecordSummary =
         isDraft = isDraft,
         createdAt = createdAt,
         imageUrl = imageUrl,
+        todayMood = todayMood?.toDomain(),
     )
