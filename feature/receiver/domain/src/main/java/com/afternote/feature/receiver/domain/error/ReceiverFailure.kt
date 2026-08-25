@@ -7,10 +7,16 @@ package com.afternote.feature.receiver.domain.error
  * 소비처는 이 루트로 좁힌 뒤 `when` 으로 가른다 — 실패 유형이 늘면 컴파일러가 소비처를 잡아준다.
  * 사유를 확인하지 못한 실패는 번역하지 않고 원본 그대로 흘려보내므로, 소비처의 «루트가 아닌
  * Throwable» 분기는 계속 필요하다 ([com.afternote.core.domain.error.CoreAuthFailure] 와 같은 규약).
+ *
+ * `message` 는 **리포팅 콘솔용 정적 진단 문구**다 — 화면에 싣지 않는다(표시 문구는 사유별 매핑이
+ * 갖는다). 파라미터를 non-null 로 좁혀 하위 타입이 빠뜨릴 수 없게 했다: 비워 두면 `Exception` 이
+ * `cause.toString()`(`java.net.UnknownHostException: Unable to resolve host ...` 같은 영문 기술
+ * 원문)을 message 로 앉힌다. `cause` 도 기본값을 두지 않아, 원인 예외가 없는 하위 타입이 그 사실을
+ * `null` 로 명시하게 한다.
  */
 sealed class ReceiverFailure(
-    message: String?,
-    cause: Throwable? = null,
+    message: String,
+    cause: Throwable?,
 ) : Exception(message, cause) {
     /**
      * 서버가 응답을 내려주며 거절한 실패.
@@ -36,6 +42,7 @@ sealed class ReceiverFailure(
         val serverMessage: String?,
     ) : ReceiverFailure(
             serverMessage ?: "receiver request rejected (status=$status, serverCode=$serverCode)",
+            null,
         )
 
     /**
