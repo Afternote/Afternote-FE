@@ -1,7 +1,7 @@
 package com.afternote.feature.receiver.presentation.detail
 
 import androidx.compose.runtime.Immutable
-import com.afternote.core.model.AlbumCover
+import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.MessageBlockUiModel
 
 /**
