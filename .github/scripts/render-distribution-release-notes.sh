@@ -43,8 +43,10 @@ print_main_pr_format() {
 }
 
 case "$event_name" in
+    # develop QA 배포는 #1029 에서 없앴다. 남은 dispatch 호출자는 WIF canary(firebase-wif-canary.yml)와
+    # README 의 로컬 fallback 절차뿐이라 제목을 그 실체에 맞춘다.
     workflow_dispatch)
-        distribution_title="Afternote QA 배포"
+        distribution_title="Afternote 수동 배포"
         qa_points="$(printf '%s\n' "$qa_points" | tr ';' '\n')"
         ;;
     push)

@@ -12,14 +12,13 @@ name: Unit Test
 #     머지 전 어디서도 검출되지 않았다(#936 — develop 컴파일 실패 44건). 에뮬레이터 없이 컴파일만 검증.
 # lint.yml 과 setup 이 거의 동일하지만 분리 — lint 실패가 test 결과를 가리지 않도록 fail-fast 독립.
 
-# base 필터를 두지 않는다 — base 변경(feat/* → develop)은 pull_request 기본 activity type 에
-# 없어 재트리거되지 않으므로, 필터가 있으면 스택 PR 이 검증을 한 번도 거치지 않고 머지된다.
+# PR 검증은 pr-validation.yml 이 한 번에 부르고, 그 워크플로의 ci-gate job 이 결과를
+# 모아 단일 required check 로 만든다. concurrency 도 그쪽이 PR 단위로 건다 (#848).
+#
+# 트리거를 workflow_call 하나로 두는 것이 요점이다 — on: pull_request 를 함께 남기면
+# 같은 검증이 PR 마다 두 벌씩 돌고, ci-gate 가 보지 않는 쪽이 별개 체크로 남는다.
 on:
-  pull_request:
-
-concurrency:
-  group: unit-test-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  workflow_call:
 
 permissions:
   contents: read
@@ -30,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone repo
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Fetch pull request history for changed-module coverage
         env:
@@ -48,7 +47,7 @@ jobs:
         run: node --test .github/scripts/*.test.mjs
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -68,7 +67,7 @@ jobs:
 
       - name: Upload Kover coverage reports
         id: kover-artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: kover-jvm-coverage
           path: build/reports/kover/
@@ -85,7 +84,7 @@ jobs:
       # 실패한 테스트의 HTML/XML 리포트를 PR artifact 로 보존 — CI 로그에서 stack trace 추적이 빠름.
       - name: Upload test reports on failure
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: unit-test-reports
           path: |

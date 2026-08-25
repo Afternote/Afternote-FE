@@ -1,23 +1,16 @@
 package com.afternote.feature.afternote.domain.usecase.editor
 
+import com.afternote.feature.afternote.domain.error.AfternoteFailure
 import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.domain.repository.author.MediaKind
 import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
 import javax.inject.Inject
 
-class MemorialVideoSaveException(
-    cause: Throwable,
-) : Exception("영상 업로드에 실패했습니다.", cause)
-
-class MemorialPhotoSaveException(
-    cause: Throwable,
-) : Exception("영정 사진 업로드에 실패했습니다.", cause)
-
 /**
  * 추모 영상·영정 사진의 *서버 저장 직전 정리* 도메인 로직.
  *
  * 호출부가 로컬/원격을 확정한 [MediaInput] 을 Repository 가 저장 페이로드에 실을 URL 로 해석해 주고,
- * 본 UseCase 는 그 실패를 매체별 도메인 예외로 wrap 한다. 도메인 본문이 `"content://"` 같은 인프라
+ * 본 UseCase 는 그 실패를 [AfternoteFailure.MediaSave] 로 wrap 한다. 도메인 본문이 `"content://"` 같은 인프라
  * 형식 디테일 문자열을 직접 비교하지 않는다.
  */
 class ResolveMemorialMediaForSaveUseCase
@@ -38,12 +31,12 @@ class ResolveMemorialMediaForSaveUseCase
             val resolvedVideoUrl =
                 memorialMediaUploadRepository
                     .resolve(video, MediaKind.VIDEO)
-                    .getOrElse { return Result.failure(MemorialVideoSaveException(it)) }
+                    .getOrElse { return Result.failure(AfternoteFailure.MediaSave(MediaKind.VIDEO, it)) }
 
             val resolvedPhotoUrl =
                 memorialMediaUploadRepository
                     .resolve(photo, MediaKind.PHOTO)
-                    .getOrElse { return Result.failure(MemorialPhotoSaveException(it)) }
+                    .getOrElse { return Result.failure(AfternoteFailure.MediaSave(MediaKind.PHOTO, it)) }
 
             return Result.success(
                 ResolvedMemorialMediaForSave(
