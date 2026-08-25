@@ -8,8 +8,8 @@ import androidx.navigation.toRoute
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.common.result.runCatchingCancellable
 import com.afternote.core.domain.repository.UserRepository
-import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationException
 import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationKind
+import com.afternote.feature.afternote.domain.error.AfternoteFailure
 import com.afternote.feature.afternote.domain.model.author.CreateAfternoteInput
 import com.afternote.feature.afternote.domain.model.author.SaveAfternoteCommand
 import com.afternote.feature.afternote.domain.repository.author.AfternoteRepository
@@ -521,12 +521,8 @@ class AfternoteEditorViewModel
         private fun handleSaveFailure(e: Throwable) {
             val validationError =
                 when (e) {
-                    is AfternoteAuthoringValidationException -> {
-                        when (e.kind) {
-                            AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED -> {
-                                AfternoteValidationError.RECEIVERS_REQUIRED
-                            }
-                        }
+                    is AfternoteFailure -> {
+                        e.toValidationError()
                     }
 
                     is AfternoteValidationException -> {
@@ -619,4 +615,26 @@ class AfternoteEditorViewModel
         }
 
         // endregion
+    }
+
+/**
+ * 루트로 좁혀 `when` 을 exhaustive 하게 만든다 — 실패 유형이 늘면 여기가 컴파일 에러로 잡힌다.
+ * `else` 로 뭉개 두면 새 유형이 검증 실패로도 장애로도 분류되지 않은 채 조용히 흘러간다.
+ *
+ * null 은 "입력 검증 실패가 아님" 을 뜻한다 — 호출부가 그 경우에만 텔레메트리에 기록한다.
+ */
+private fun AfternoteFailure.toValidationError(): AfternoteValidationError? =
+    when (this) {
+        is AfternoteFailure.AuthoringValidation -> {
+            when (kind) {
+                AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED -> {
+                    AfternoteValidationError.RECEIVERS_REQUIRED
+                }
+            }
+        }
+
+        // 미디어 해석 실패는 사용자가 입력을 고쳐 푸는 검증 실패가 아니라 업로드 장애다 — 기록 대상.
+        is AfternoteFailure.MediaSave -> {
+            null
+        }
     }

@@ -3,7 +3,7 @@ package com.afternote.feature.onboarding.presentation.signup
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.error.EmailVerificationException
+import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.repository.account.AccountRepository
 import com.afternote.core.domain.usecase.auth.LoginType
 import com.afternote.core.domain.usecase.auth.LoginUseCase
@@ -154,7 +154,7 @@ class SignUpViewModel
         /**
          * Step 1 "다음" 클릭 시점에 호출.
          * 이메일/인증번호를 서버에 검증해 성공 시 [SignUpUiState.shouldNavigateToResidentNumber] = true,
-         * 인증번호 무효([EmailVerificationException] — 불일치/만료/미존재)는
+         * 인증번호 무효([CoreAuthFailure.EmailVerification] — 불일치/만료/미존재)는
          * [SignUpUiState.hasVerificationError] (인라인 문구), 그 외 실패는
          * [SignUpUiState.errorMessage] (스낵바) 로 set. 만료 판정은 서버가 한다.
          */
@@ -172,7 +172,7 @@ class SignUpViewModel
                     }.onFailure { error ->
                         // 취소는 장애가 아니다 — 기록·UI 소비 전에 되던져 전파를 보존한다(전수 정정은 #661).
                         if (error is CancellationException) throw error
-                        if (error is EmailVerificationException) {
+                        if (error is CoreAuthFailure.EmailVerification) {
                             // 표시 문구는 화면의 고정 리소스 — 이 값은 인라인 표시 트리거 + 디버깅용 원문.
                             // 인증번호 불일치·만료는 정상적인 사용자 입력 오류라 리포팅하지 않는다.
                             // 스낵바 신호를 함께 내린다 — 이번 실패는 인라인으로 알리므로,
