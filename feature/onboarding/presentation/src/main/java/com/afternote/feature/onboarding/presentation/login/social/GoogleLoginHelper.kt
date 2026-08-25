@@ -7,6 +7,7 @@ import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
+import com.afternote.core.domain.error.CoreAuthFailure
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -19,7 +20,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
  *
  * @param serverClientId Google Cloud Console에서 발급받은 Web Client ID.
  *                       노출 방지를 위해 로컬 설정(`local.properties`)이나 DI로 주입하는 것을 권장한다.
- * @return 성공 시 Google ID Token, 사용자가 취소한 경우 [UserCancelledAuthException] 실패 Result.
+ * @return 성공 시 Google ID Token, 사용자가 취소한 경우 [CoreAuthFailure.UserCancelledAuth] 실패 Result.
  */
 suspend fun requestGoogleIdToken(
     context: Context,
@@ -81,7 +82,7 @@ private suspend fun requestWithOption(
             Result.failure(IllegalStateException("지원되지 않는 인증 형식입니다."))
         }
     } catch (e: GetCredentialCancellationException) {
-        Result.failure(UserCancelledAuthException())
+        Result.failure(CoreAuthFailure.UserCancelledAuth())
     } catch (e: GetCredentialException) {
         Result.failure(e)
     }

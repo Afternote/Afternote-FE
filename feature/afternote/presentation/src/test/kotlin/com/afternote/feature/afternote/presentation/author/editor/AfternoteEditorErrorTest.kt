@@ -1,10 +1,8 @@
 package com.afternote.feature.afternote.presentation.author.editor
 
-import com.afternote.core.domain.error.NetworkUnavailableException
-import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationException
 import com.afternote.feature.afternote.domain.error.AfternoteAuthoringValidationKind
-import com.afternote.feature.afternote.domain.usecase.editor.MemorialPhotoSaveException
-import com.afternote.feature.afternote.domain.usecase.editor.MemorialVideoSaveException
+import com.afternote.feature.afternote.domain.error.AfternoteFailure
+import com.afternote.feature.afternote.domain.repository.author.MediaKind
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationException
@@ -25,7 +23,7 @@ class AfternoteEditorErrorTest {
 
     @Test
     fun `서버 검증 실패는 Validation으로 변환`() {
-        val failure = AfternoteAuthoringValidationException(AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED)
+        val failure = AfternoteFailure.AuthoringValidation(AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED)
 
         assertEquals(
             AfternoteEditorError.Validation(AfternoteValidationError.RECEIVERS_REQUIRED),
@@ -35,14 +33,14 @@ class AfternoteEditorErrorTest {
 
     @Test
     fun `네트워크 단절은 Network로 변환`() {
-        val failure = NetworkUnavailableException(IOException("timeout"))
+        val failure = AfternoteFailure.NetworkUnavailable(IOException("timeout"))
 
         assertEquals(AfternoteEditorError.Network, failure.toAfternoteEditorError())
     }
 
     @Test
     fun `저장 중 영상 업로드 실패는 SAVE_MEDIA Upload로 변환`() {
-        val failure = MemorialVideoSaveException(IOException("upload failed"))
+        val failure = AfternoteFailure.MediaSave(MediaKind.VIDEO, IOException("upload failed"))
 
         assertEquals(
             AfternoteEditorError.Upload(AfternoteEditorError.Upload.Target.SAVE_MEDIA),
@@ -52,7 +50,7 @@ class AfternoteEditorErrorTest {
 
     @Test
     fun `저장 중 사진 업로드 실패는 SAVE_MEDIA Upload로 변환`() {
-        val failure = MemorialPhotoSaveException(IOException("upload failed"))
+        val failure = AfternoteFailure.MediaSave(MediaKind.PHOTO, IOException("upload failed"))
 
         assertEquals(
             AfternoteEditorError.Upload(AfternoteEditorError.Upload.Target.SAVE_MEDIA),
