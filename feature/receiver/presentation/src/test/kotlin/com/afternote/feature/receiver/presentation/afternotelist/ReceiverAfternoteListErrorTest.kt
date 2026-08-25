@@ -1,7 +1,6 @@
 package com.afternote.feature.receiver.presentation.afternotelist
 
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
-import com.afternote.feature.receiver.presentation.error.ErrorPayload
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -15,20 +14,17 @@ import java.io.IOException
  */
 class ReceiverAfternoteListErrorTest {
     @Test
-    fun `전달 조건 미충족은 서버 문구를 실은 전용 갈래로 간다`() {
-        val notDeliverable = ReceiverFailure.DeliveryConditionNotMet("아직 전달 조건이 충족되지 않았습니다.", CAUSE)
+    fun `전달 조건 미충족은 전용 갈래로 간다`() {
+        val notDeliverable = ReceiverFailure.DeliveryConditionNotMet(CAUSE)
 
-        assertEquals(
-            ReceiverAfternoteListError.NotDeliverable(ErrorPayload.Text("아직 전달 조건이 충족되지 않았습니다.")),
-            notDeliverable.toListError(FALLBACK_RES),
-        )
+        assertEquals(ReceiverAfternoteListError.NotDeliverable, notDeliverable.toListError())
     }
 
     @Test
     fun `연결 실패는 전용 갈래로 간다`() {
         val offline = ReceiverFailure.NetworkUnavailable(IOException("timeout"))
 
-        assertEquals(ReceiverAfternoteListError.NetworkUnavailable, offline.toListError(FALLBACK_RES))
+        assertEquals(ReceiverAfternoteListError.NetworkUnavailable, offline.toListError())
     }
 
     /** null 은 «갈라 그릴 것이 없다» 다 — 재시도가 유효하다는 점에서 일반 실패와 처리가 같다. */
@@ -39,13 +35,9 @@ class ReceiverAfternoteListErrorTest {
         val otherRejection =
             ReceiverFailure.ServerRejection(status = 403, serverMessage = "권한이 없습니다.", serverCode = 1903, cause = CAUSE)
 
-        assertNull(serverOutage.toListError(FALLBACK_RES))
-        assertNull(otherRejection.toListError(FALLBACK_RES))
-        assertNull(IllegalStateException("boom").toListError(FALLBACK_RES))
-    }
-
-    private companion object {
-        const val FALLBACK_RES = 1
+        assertNull(serverOutage.toListError())
+        assertNull(otherRejection.toListError())
+        assertNull(IllegalStateException("boom").toListError())
     }
 }
 

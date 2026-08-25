@@ -28,8 +28,9 @@
     <string name="receiver_home_error_message">정보를 불러오지 못했습니다.</string>
     <string name="receiver_home_retry">다시 시도</string>
     <!--
-      전달 조건 미충족(403 / BE ErrorCode 2009) 안내. 서버가 사유 문구를 실어 보내면 그것을 쓰고
-      (allowlist 등재분), 이 값은 서버 message 미제공 시 폴백이다.
+      전달 조건 미충족 안내. 서버도 같은 뜻의 문구를 내려주지만 싣지 않는다 — 사유가 도메인 타입으로
+      특정돼 있어 표시 문구는 여기가 갖는 것이 맞고(BE#92 — 서버 message 는 사용자 노출용이라는
+      규정이 없다), BE 쪽 문구도 ErrorCode enum 상수라 실을 만한 동적 정보가 없다.
     -->
     <string name="receiver_afternote_list_not_deliverable_message">아직 열람할 수 없는 상태입니다.</string>
     <!--

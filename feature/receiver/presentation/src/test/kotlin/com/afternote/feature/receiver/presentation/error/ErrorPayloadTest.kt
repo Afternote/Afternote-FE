@@ -88,24 +88,17 @@ class ErrorPayloadTest {
         assertEquals(ErrorPayload.Res(FALLBACK_RES), IOException("timeout").toErrorPayload(FALLBACK_RES))
     }
 
-    /**
-     * 등재 근거 — BE `ErrorCode.DELIVERY_CONDITION_NOT_MET(HttpStatus.FORBIDDEN, 2009,
-     * "아직 전달 조건이 충족되지 않았습니다.")` (Afternote-BE `ErrorCode.java` 실코드). 문구 자체가
-     * 사용자 안내라 그대로 노출한다.
-     */
+    /** 사유가 타입으로 특정된 거절은 서버 문구를 싣지 않는다 — 표시 문구는 호출처 리소스가 갖는다. */
     @Test
-    fun `전달 조건 미충족은 allowlist 를 묻지 않고 서버 문구를 노출한다`() {
-        val notDeliverable = ReceiverFailure.DeliveryConditionNotMet("아직 전달 조건이 충족되지 않았습니다.", CAUSE)
+    fun `전달 조건 미충족은 서버 문구 대신 호출처 리소스로 내려앉는다`() {
+        val notDeliverable = ReceiverFailure.DeliveryConditionNotMet(CAUSE)
 
-        assertEquals(
-            ErrorPayload.Text("아직 전달 조건이 충족되지 않았습니다."),
-            notDeliverable.toErrorPayload(FALLBACK_RES),
-        )
+        assertEquals(ErrorPayload.Res(FALLBACK_RES), notDeliverable.toErrorPayload(FALLBACK_RES))
     }
 
     @Test
     fun `전달 조건 미충족만 재시도 불가로 갈린다`() {
-        val notDeliverable = ReceiverFailure.DeliveryConditionNotMet("아직 전달 조건이 충족되지 않았습니다.", CAUSE)
+        val notDeliverable = ReceiverFailure.DeliveryConditionNotMet(CAUSE)
 
         assertTrue(notDeliverable.isDeliveryConditionNotMet())
     }

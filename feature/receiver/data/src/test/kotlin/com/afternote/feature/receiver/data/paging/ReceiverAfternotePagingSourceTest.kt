@@ -39,9 +39,7 @@ class ReceiverAfternotePagingSourceTest {
 
         val error = (result as PagingSource.LoadResult.Error).throwable
         assertTrue("전용 타입으로 번역돼야 한다: $error", error is ReceiverFailure.DeliveryConditionNotMet)
-        val notMet = error as ReceiverFailure.DeliveryConditionNotMet
-        assertEquals("아직 전달 조건이 충족되지 않았습니다.", notMet.serverMessage)
-        assertEquals(DELIVERY_CONDITION_NOT_MET_EXCEPTION, notMet.cause)
+        assertEquals(DELIVERY_CONDITION_NOT_MET_EXCEPTION, error.cause)
     }
 
     @Test

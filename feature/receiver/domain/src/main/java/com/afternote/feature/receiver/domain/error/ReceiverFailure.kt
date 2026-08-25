@@ -68,15 +68,12 @@ sealed class ReceiverFailure(
      * 이 사유에 걸어야 하는데, 그때마다 사유 code 를 비교하게 하면 BE 의 code 체계가 presentation
      * 까지 샌다. 어느 번호였는지는 Data 계층(`ReceiverFailureTranslation`)만 안다.
      *
-     * @property serverMessage 서버가 내려준 안내. 이 사유는 서버 문구 자체가 사용자 안내라
-     *   소비처가 allowlist 를 다시 묻지 않고 그대로 쓴다. **null 이면 서버가 message 미제공** —
-     *   그때는 호출처가 정적 리소스로 폴백한다.
+     * **서버 문구를 싣지 않는다.** 사유가 타입으로 특정된 이상 표시 문구는 호출처 리소스가 가지면
+     * 되고, 그쪽이 [com.afternote.core.domain.error.CoreAuthFailure] 의 규약이다(BE#92 — 서버
+     * `message` 는 사용자 노출용이라는 규정이 없다). BE 쪽 문구도 `ErrorCode` enum 상수라 실을 만한
+     * 동적 정보가 없다.
      */
     class DeliveryConditionNotMet(
-        val serverMessage: String?,
         cause: Throwable,
-    ) : ReceiverFailure(
-            serverMessage ?: "delivery condition not met",
-            cause,
-        )
+    ) : ReceiverFailure("delivery condition not met", cause)
 }

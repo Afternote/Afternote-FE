@@ -35,7 +35,7 @@ internal fun Throwable.toReceiverFailure(): Throwable =
  */
 private fun ApiException.toReceiverRejection(): ReceiverFailure =
     when (code) {
-        DELIVERY_CONDITION_NOT_MET -> ReceiverFailure.DeliveryConditionNotMet(serverMessage, this)
+        DELIVERY_CONDITION_NOT_MET -> ReceiverFailure.DeliveryConditionNotMet(this)
         else -> toServerRejection()
     }
 

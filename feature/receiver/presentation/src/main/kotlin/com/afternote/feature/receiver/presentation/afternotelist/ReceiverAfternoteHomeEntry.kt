@@ -10,7 +10,6 @@ import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.afternote.feature.afternote.presentation.author.home.AfternoteHomeScreen
 import com.afternote.feature.receiver.presentation.R
-import com.afternote.feature.receiver.presentation.error.asDisplayText
 import com.afternote.core.ui.R as CoreUiR
 
 /**
@@ -33,15 +32,15 @@ fun ReceiverAfternoteHomeEntry(
     val refreshState = items.loadState.refresh
     val listError =
         if (refreshState is LoadState.Error && items.itemCount == 0) {
-            refreshState.error.toListError(R.string.receiver_afternote_list_not_deliverable_message)
+            refreshState.error.toListError()
         } else {
             null
         }
 
     when (listError) {
-        is ReceiverAfternoteListError.NotDeliverable -> {
+        ReceiverAfternoteListError.NotDeliverable -> {
             ReceiverAfternoteListErrorBody(
-                title = listError.payload.asDisplayText(),
+                title = stringResource(R.string.receiver_afternote_list_not_deliverable_message),
                 description = stringResource(R.string.receiver_afternote_list_not_deliverable_description),
                 modifier = modifier,
             )

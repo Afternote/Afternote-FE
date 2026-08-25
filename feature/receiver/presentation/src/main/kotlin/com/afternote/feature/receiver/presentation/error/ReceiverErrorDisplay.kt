@@ -51,10 +51,9 @@ private fun ReceiverFailure.displayTextOrNull(): String? =
             null
         }
 
-        // data 가 사유를 확인해 타입으로 세운 거절이다 — 그 사유의 서버 문구가 곧 사용자 안내라
-        // allowlist 를 다시 묻지 않는다. 물으려면 이 계층이 서버 code 를 알아야 한다.
+        // 사유가 타입으로 특정된 거절이라 서버 문구를 싣지 않는다 — 표시 문구는 호출처 리소스가 갖는다.
         is ReceiverFailure.DeliveryConditionNotMet -> {
-            serverMessage?.takeIf { it.isNotBlank() }
+            null
         }
     }
 
