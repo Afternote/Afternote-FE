@@ -28,7 +28,7 @@ jobs:
           REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           AUTHOR: ${{ github.event.pull_request.user.login }}
-          ASSOCIATION: ${{ github.event.pull_request.author_association }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
           LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
         run: |
           # 조회 실패를 "빚 없음" 으로 오인해 통과시키지 않는다. 다만 판정 근거를
@@ -40,11 +40,29 @@ jobs:
             *'[bot]'|dependabot|github-actions) echo "봇 PR — 건너뜀"; exit 0 ;;
           esac
 
-          # 외부 기여자는 대상이 아니다. fork PR 은 토큰이 read-only 라
-          # 닫지도 못하고, 팀 리뷰 적체와도 무관하다.
-          case "$ASSOCIATION" in
-            OWNER|MEMBER|COLLABORATOR) ;;
-            *) echo "외부 기여자($ASSOCIATION) — 건너뜀"; exit 0 ;;
+          # fork PR 은 대상이 아니다 — 토큰이 read-only 라 닫지도 못하고, 팀 리뷰
+          # 적체와도 무관하다. 원래 걸러내려던 것이 이것이므로 head 저장소로 가른다.
+          if [ "$HEAD_REPO" != "$REPO" ]; then
+            echo "fork PR($HEAD_REPO) — 건너뜀"
+            exit 0
+          fi
+
+          # 팀원 여부는 author_association 으로 가리지 않는다. 웹훅 페이로드는 조직
+          # 멤버십이 비공개면 MEMBER 대신 CONTRIBUTOR 를 내리는데 이 조직은 공개
+          # 멤버가 0명이다. 그래서 레포에 직접 초대된 한 계정만 COLLABORATOR 로 찍혀
+          # 검사를 받고, 나머지 팀원은 전원 «외부 기여자» 로 건너뛰어졌다 — 8/25 에
+          # #1152·#1154 가 그렇게 통과했고 12분 뒤 같은 빚으로 #1112 만 닫혔다.
+          # REST 로 조회하면 MEMBER 로 보여 눈으로는 잡히지 않는다. 실권한을 묻는다.
+          if ! perm=$(gh api "repos/$REPO/collaborators/$AUTHOR/permission" --jq '.permission'); then
+            echo "::error::권한 조회에 실패했다 — 근거 없이 통과시키지 않는다. 재실행할 것"
+            exit 1
+          fi
+
+          # 빈 값·예상 밖 값을 «권한 없음» 으로 접으면 조회 실패가 통과로 둔갑한다.
+          case "$perm" in
+            admin|maintain|write) ;;
+            read|none) echo "쓰기 권한 없음($perm) — 건너뜀"; exit 0 ;;
+            *) echo "::error::권한 값을 알 수 없다($perm) — 재실행할 것"; exit 1 ;;
           esac
 
           # 긴급 우회 라벨.
