@@ -1,11 +1,11 @@
 package com.afternote.feature.afternote.presentation.author.detail
 
-import com.afternote.core.model.AlbumCover
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.author.Detail
 import com.afternote.feature.afternote.domain.model.author.DetailContent
 import com.afternote.feature.afternote.domain.model.author.DetailCredentials
 import com.afternote.feature.afternote.presentation.author.detail.account.AccountDetailContent
+import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 import com.afternote.feature.afternote.presentation.shared.model.ReceiverUiModel
 import com.afternote.feature.afternote.presentation.shared.model.toMessageBlockUiModels
 

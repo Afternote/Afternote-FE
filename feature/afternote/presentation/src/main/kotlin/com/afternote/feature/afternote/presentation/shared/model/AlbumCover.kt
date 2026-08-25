@@ -1,4 +1,4 @@
-package com.afternote.core.model
+package com.afternote.feature.afternote.presentation.shared.model
 
 /**
  * 플레이리스트 앨범 커버 표시용 (작성·수신·상세 공통).
