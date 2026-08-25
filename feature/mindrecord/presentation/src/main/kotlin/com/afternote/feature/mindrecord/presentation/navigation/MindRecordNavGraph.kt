@@ -10,6 +10,7 @@ import com.afternote.feature.mindrecord.presentation.screen.sender.DailyQuestion
 import com.afternote.feature.mindrecord.presentation.screen.sender.DiaryWriteScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.DraftListScreen
 import com.afternote.feature.mindrecord.presentation.screen.sender.HomeScreen
+import java.time.YearMonth
 
 /**
  * 마인드레코드 피처의 루트 [NavHost] 등록 묶음.
@@ -27,6 +28,11 @@ fun NavGraphBuilder.mindRecordNavGraph(actions: MindRecordNavActions) {
                     MindRecordCategoryUi.WeeklyReport -> Unit
                 }
             },
+            onEditDailyQuestion = actions::onEditDailyQuestion,
+            // 목록은 보고 있는 달의 항목만 담으므로, 그 달을 함께 넘겨 프리필 조회 범위를 좁힌다.
+            // 목록이 보고 있던 달을 그대로 넘긴다. 이번 달로 고정하면 지난달 일기의
+            // «수정하기» 가 프리필 없이 열리고, 그대로 저장하면 원본을 덮어쓴다 (#582 리뷰).
+            onEditDiary = { diaryId, yearMonth -> actions.onEditDiary(diaryId, yearMonth.toString()) },
         )
     }
     composable<Route.MemorySpace> {

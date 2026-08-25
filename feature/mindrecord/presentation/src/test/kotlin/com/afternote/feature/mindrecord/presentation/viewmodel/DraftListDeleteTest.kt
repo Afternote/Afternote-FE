@@ -5,8 +5,10 @@ import com.afternote.feature.mindrecord.domain.model.Diary
 import com.afternote.feature.mindrecord.domain.model.DiaryList
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
+import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.testing.FakeDiaryRepository
+import com.afternote.feature.mindrecord.presentation.reporting.RecordingErrorReporter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -34,6 +36,24 @@ class DraftListDeleteTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+    }
+
+    @Test
+    fun `삭제 실패는 텔레메트리에도 남는다`() {
+        // 화면은 사용자에게 알리지만, 종전에는 콘솔에 아무 흔적도 남지 않아 릴리즈에서
+        // «지워지지 않는다» 는 제보를 받아도 재현 지점을 찾을 수 없었다 (#964).
+        val repository =
+            FakeDailyQuestionRepository(
+                initialAnswers = listOf(dailyQuestion(id = 1L)),
+                // 서버가 거절해 항목이 그대로 남는 상황 — 저장소에서 지우지 않는다.
+                onDelete = { Result.failure(IllegalStateException("서버 거절")) },
+            )
+        val reporter = RecordingErrorReporter()
+        val viewModel = viewModel(repository, reporter)
+
+        viewModel.delete((viewModel.uiState.value as DraftListUiState.Success).items)
+
+        assertEquals(listOf("draft_delete"), reporter.stages)
     }
 
     @Test
@@ -93,7 +113,10 @@ class DraftListDeleteTest {
         assertTrue(state.items.isEmpty())
     }
 
-    private fun viewModel(dailyQuestionRepository: DailyQuestionRepository): DraftListViewModel =
+    private fun viewModel(
+        dailyQuestionRepository: DailyQuestionRepository,
+        errorReporter: RecordingErrorReporter = RecordingErrorReporter(),
+    ): DraftListViewModel =
         DraftListViewModel(
             // #769 가 목록 조회를 loader 로 뽑아낸 뒤 생성자가 3개로 늘었다. 같은 두
             // 저장소를 넘겨 종전과 같은 조회 경로를 그대로 태운다.
@@ -104,6 +127,7 @@ class DraftListDeleteTest {
                 ),
             diaryRepository = emptyDiaryDrafts(),
             dailyQuestionRepository = dailyQuestionRepository,
+            errorReporter = errorReporter,
         )
 
     private fun dailyQuestion(id: Long) =

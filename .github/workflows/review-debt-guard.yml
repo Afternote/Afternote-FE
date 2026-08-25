@@ -1,0 +1,195 @@
+# 리뷰 적체 가드 (#1136)
+#
+# 리뷰 요청을 받아 놓고 처리하지 않는 사람이 새 PR 을 계속 여는 것을 막는다.
+# GitHub 네이티브에는 PR 생성을 막는 수단이 없어(ruleset·branch protection 은
+# push·merge 만 통제) 열린 직후 조회해 미처리 리뷰 요청이 1건이라도 있으면
+# 그 PR 을 닫는다. 브랜치는 남으므로 리뷰를 끝낸 뒤 되살릴 수 있다.
+#
+# 우회가 설계에 남아 있다 — #796 에서 자동 reviewer 요청을 없애 리뷰 요청은
+# 전부 수동이고, 리뷰어가 자기에게 걸린 요청을 스스로 떼면 이 가드를 통과한다.
+# 막지는 못하므로 review_request_removed 를 함께 받아 기록만 남긴다.
+name: review-debt-guard
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, review_request_removed]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  debt-check:
+    if: github.event.action != 'review_request_removed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 미처리 리뷰 요청 검사
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          ASSOCIATION: ${{ github.event.pull_request.author_association }}
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: |
+          # 조회 실패를 "빚 없음" 으로 오인해 통과시키지 않는다. 다만 판정 근거를
+          # 얻지 못한 상태로 남의 PR 을 닫지도 않는다 — 아래에서 명시적으로 나눈다.
+          set -euo pipefail
+
+          # 봇 PR 은 대상이 아니다.
+          case "$AUTHOR" in
+            *'[bot]'|dependabot|github-actions) echo "봇 PR — 건너뜀"; exit 0 ;;
+          esac
+
+          # 외부 기여자는 대상이 아니다. fork PR 은 토큰이 read-only 라
+          # 닫지도 못하고, 팀 리뷰 적체와도 무관하다.
+          case "$ASSOCIATION" in
+            OWNER|MEMBER|COLLABORATOR) ;;
+            *) echo "외부 기여자($ASSOCIATION) — 건너뜀"; exit 0 ;;
+          esac
+
+          # 긴급 우회 라벨.
+          case ",$LABELS," in
+            *,review-debt-exempt,*) echo "review-debt-exempt 라벨 — 건너뜀"; exit 0 ;;
+          esac
+
+          # 빚의 기준은 «나에게 요청이 걸렸는가» 가 아니라 «아무도 응하지 않은 PR 이
+          # 남아 있는가» 다. 리뷰 요청은 알림 수단이지 담당 배정이 아니다 —
+          # 누구에게 걸렸든 팀에서 한 사람이 보면 그 PR 의 리뷰는 끝난 것이다.
+          # 그래서 요청 목록이 아니라 열린 PR 전체를 훑는다.
+          #
+          # 자기 PR 은 자신이 리뷰할 수 없으므로 뺀다. draft 는 리뷰를 받을 상태가
+          # 아니므로 뺀다(review-request-all 도 draft 에는 요청을 걸지 않는다).
+          if ! open_prs=$(gh api "repos/$REPO/pulls?state=open&per_page=100" --paginate \
+                --jq ".[] | select(.draft == false) | select(.user.login != \"$AUTHOR\") | \"\(.number)\t\(.created_at[0:10])\t\(.title)\""); then
+            echo "::error::열린 PR 조회에 실패했다 — 근거 없이 PR 을 닫지 않는다. 재실행할 것"
+            exit 1
+          fi
+
+          # 남은 것에서 «리뷰어의 공이 아닌» PR 을 걸러낸다. «누가» 봤는지는 따지지
+          # 않는다 — 팀에서 한 사람이 보면 그 PR 의 리뷰는 채워진 것이다.
+          #
+          # 승인과 변경요청은 무게가 다르다.
+          #   APPROVED        머지 가능한 상태다. 그 뒤에 작성자가 손보는 것은
+          #                   작성자 몫이고, 다시 봐 줄 의무는 누구에게도 없다.
+          #   CHANGES_REQUESTED  아직 끝난 판정이 아니다. 작성자가 지적을 반영하면
+          #                   공이 리뷰어에게 돌아온다. 재리뷰가 없으면 그 PR 은
+          #                   영영 머지되지 못한다.
+          #
+          # 그래서 빚은 두 종류다. (1) 아무도 판정을 내지 않은 PR,
+          # (2) 미해소 변경요청이 있는데 작성자가 이미 반영 커밋을 올린 PR.
+          # 변경요청 뒤로 새 커밋이 없으면 공은 아직 작성자에게 있으므로 빚이 아니다.
+          # 반영 여부는 병합 커밋(parents 2개 이상)을 뺀 실질 커밋으로만 센다.
+          debt_file=$(mktemp)
+          reviews_file=$(mktemp)
+          while IFS=$'\t' read -r pn created title; do
+            [ -n "$pn" ] || continue
+
+            gh api "repos/$REPO/pulls/$pn/reviews" --paginate \
+              --jq '.[] | select(.state == "APPROVED" or .state == "CHANGES_REQUESTED")
+                        | {u: .user.login, s: .state, t: .submitted_at}' \
+              > "$reviews_file" 2>/dev/null || true
+
+            if [ ! -s "$reviews_file" ]; then
+              echo "#$pn — 아무도 판정하지 않음"
+              printf '%s\t%s\t%s\n' "$pn" "$created" "$title" >> "$debt_file"
+              continue
+            fi
+
+            # 리뷰어별 최신 판정이 CHANGES_REQUESTED 인 것 중 가장 늦은 시각.
+            blocked_at=$(jq -rs 'group_by(.u) | map(sort_by(.t) | last)
+                                 | map(select(.s == "CHANGES_REQUESTED"))
+                                 | sort_by(.t) | last | .t // empty' "$reviews_file" 2>/dev/null || true)
+
+            if [ -z "$blocked_at" ]; then
+              echo "#$pn — 승인됨, 빚 아님"
+              continue
+            fi
+
+            fixed=$(gh api "repos/$REPO/pulls/$pn/commits?per_page=100" --paginate \
+              --jq "[.[] | select((.parents | length) < 2)
+                         | select(.commit.committer.date > \"$blocked_at\")] | length" 2>/dev/null || true)
+
+            if [ "${fixed:-0}" -gt 0 ]; then
+              echo "#$pn — 변경요청 반영(${fixed}커밋) 뒤 재리뷰 없음"
+              printf '%s\t%s\t%s\n' "$pn" "$created" "$title" >> "$debt_file"
+            else
+              echo "#$pn — 변경요청 미반영, 공은 작성자에게"
+            fi
+          done <<< "$open_prs"
+
+          if [ ! -s "$debt_file" ]; then
+            echo "응답을 기다리는 PR 없음 — 통과"
+            exit 0
+          fi
+
+          debt=$(cat "$debt_file")
+          count=$(wc -l < "$debt_file" | tr -d ' ')
+          today=$(date -u +%s)
+
+          {
+            echo "## 🚧 리뷰 적체 가드 — 이 PR 을 닫습니다"
+            echo
+            echo "**아무도 리뷰하지 않은** PR 이 **${count}건** 남아 있습니다."
+            echo
+            echo "| PR | 열린 날 | 경과 | 제목 |"
+            echo "|---|---|---|---|"
+            while IFS=$'\t' read -r n created title; do
+              [ -n "$n" ] || continue
+              opened=$(date -u -d "$created" +%s 2>/dev/null || echo "$today")
+              days=$(( (today - opened) / 86400 ))
+              echo "| #$n | $created | ${days}일 | $title |"
+            done <<< "$debt"
+            echo
+            echo "이 저장소는 아무도 응답하지 않은 PR 이 1건이라도 남아 있으면 새 PR 을 열 수 없습니다 (#1136)."
+            echo
+            echo "각 PR 에 필요한 리뷰는 **한 건**입니다 — 누구든 먼저 판정을 내면 그 PR 은 모두의 목록에서 빠집니다. 승인 뒤에 올라온 변경을 다시 봐 줄 의무는 없지만, **변경요청은 작성자가 반영한 시점에 다시 리뷰어의 몫**이 됩니다."
+            echo
+            echo "### 되살리는 법"
+            echo
+            echo "위 리뷰를 끝낸 뒤 이 PR 을 다시 여세요. **브랜치는 지워지지 않았고 커밋도 그대로입니다.**"
+            echo
+            echo '```bash'
+            echo "gh pr reopen $PR_NUMBER"
+            echo '```'
+            echo
+            echo "리뷰보다 이 PR 이 급하면 \`review-debt-exempt\` 라벨을 붙이고 다시 열면 통과합니다."
+          } > /tmp/debt-comment.md
+
+          echo "미응답 ${count}건 — PR #$PR_NUMBER 를 닫는다"
+          gh pr close "$PR_NUMBER" --repo "$REPO" --comment "$(cat /tmp/debt-comment.md)"
+
+  bypass-audit:
+    # 리뷰를 남기지 않은 채 요청이 제거되면 이 가드는 그냥 통과한다.
+    # 막을 수단이 없으니 드러나게만 한다.
+    if: github.event.action == 'review_request_removed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 리뷰 없는 요청 제거 기록
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REMOVED: ${{ github.event.requested_reviewer.login }}
+          SENDER: ${{ github.event.sender.login }}
+        run: |
+          set -euo pipefail
+
+          # 팀 리뷰 요청 제거만 본다.
+          [ -n "$REMOVED" ] || { echo "리뷰어 정보 없음 — 건너뜀"; exit 0; }
+
+          reviewed=$(gh api "repos/$REPO/pulls/$PR_NUMBER/reviews" \
+            --jq "[.[] | select(.user.login == \"$REMOVED\")] | length")
+
+          if [ "$reviewed" -gt 0 ]; then
+            echo "$REMOVED 는 이미 리뷰를 남겼다 — 정상 제거"
+            exit 0
+          fi
+
+          if [ "$SENDER" = "$REMOVED" ]; then
+            note="리뷰어 본인이 직접 뗐습니다 — 리뷰 적체 가드(#1136)를 통과하게 됩니다."
+          else
+            note="@$SENDER 님이 제거했습니다."
+          fi
+
+          gh pr comment "$PR_NUMBER" --repo "$REPO" --body \
+            "🔍 **리뷰 없이 요청이 제거됨** — @$REMOVED 님은 이 PR 에 리뷰를 남기지 않은 상태입니다. $note"

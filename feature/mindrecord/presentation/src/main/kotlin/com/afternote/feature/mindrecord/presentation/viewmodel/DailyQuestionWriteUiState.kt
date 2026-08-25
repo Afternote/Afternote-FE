@@ -7,7 +7,11 @@ data class DailyQuestionWriteUiState(
     /** "Day N" 배너 표기용 — 오늘의 질문이 서비스 기준 몇 일차인지. */
     val questionDay: Int? = null,
     val questionContent: String = "",
-    /** 오늘 이미 임시저장된 답변 레코드 ID — null 이 아니면 제출 시 POST 대신 PATCH 로 전환한다. */
+    /**
+     * 수정 대상 답변 레코드 ID — null 이 아니면 제출 시 POST 대신 PATCH 로 전환한다.
+     *
+     * 오늘의 임시저장 이어쓰기와 목록의 "수정하기" 가 같은 값을 쓴다 (#582).
+     */
     val draftId: Long? = null,
     /**
      * 이어쓸 임시저장 본문이 도착했는지.
@@ -17,6 +21,11 @@ data class DailyQuestionWriteUiState(
      */
     val draftLoaded: Boolean = false,
     val answer: String = "",
+    /**
+     * 본문이 서버에서 채워졌는지. 리치 에디터는 [answer] 를 **초기 시드로만** 읽으므로,
+     * 비동기 프리필이 끝난 뒤 에디터를 다시 만들어야 내용이 보인다 (#582).
+     */
+    val contentLoaded: Boolean = false,
     val isQuestionLoading: Boolean = true,
     val questionLoadError: UiText? = null,
     /** 이어쓸 임시저장 본문을 불러오는 중 (#923). */
@@ -37,7 +46,9 @@ data class DailyQuestionWriteUiState(
     val canSubmit: Boolean
         get() =
             answer.isNotBlank() &&
-                !isQuestionLoading &&
+                // 수정 모드는 오늘 질문을 부르지 않아 questionId 가 없다 — 대상 레코드가
+                // 있으면 저장할 수 있다 (#582). 그래서 isQuestionLoading 대신 «둘 중 하나» 를 본다.
+                (questionId != null || draftId != null) &&
                 // 이어쓸 본문이 도착하기 전에 저장하면 draftId 가 아직 null 이라 POST 로 나가고,
                 // 서버가 questionId upsert 라 기존 임시저장 본문이 덮인다 — #923 과 같은 유실이다.
                 !isResumingDraft &&
