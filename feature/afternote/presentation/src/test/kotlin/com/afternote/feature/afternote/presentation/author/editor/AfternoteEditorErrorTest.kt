@@ -5,22 +5,11 @@ import com.afternote.feature.afternote.domain.error.AfternoteFailure
 import com.afternote.feature.afternote.domain.repository.author.MediaKind
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteEditorError
 import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationError
-import com.afternote.feature.afternote.presentation.author.editor.state.AfternoteValidationException
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.io.IOException
 
 class AfternoteEditorErrorTest {
-    @Test
-    fun `로컬 검증 실패는 Validation으로 보존`() {
-        val failure = AfternoteValidationException(AfternoteValidationError.TITLE_REQUIRED)
-
-        assertEquals(
-            AfternoteEditorError.Validation(AfternoteValidationError.TITLE_REQUIRED),
-            failure.toAfternoteEditorError(),
-        )
-    }
-
     @Test
     fun `서버 검증 실패는 Validation으로 변환`() {
         val failure = AfternoteFailure.AuthoringValidation(AfternoteAuthoringValidationKind.RECEIVERS_REQUIRED)
