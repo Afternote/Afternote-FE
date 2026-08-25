@@ -72,7 +72,8 @@ fun LazyListScope.homeTabMindRecordQuestionAndCategories(
                 iconResId = CoreUiR.drawable.core_ui_ic_diary,
                 title = stringResource(MindRecordCategoryUi.Diary.titleRes),
                 subtitle = stringResource(MindRecordCategoryUi.Diary.descriptionRes),
-                totalCount = categoryCounts[MindRecordCategory.DIARY] ?: 0,
+                // 키가 없으면 «모름» 이다 — 0 으로 접지 않는다 (#700).
+                totalCount = categoryCounts[MindRecordCategory.DIARY],
                 onClick = { onRecordCategoryClick(MindRecordCategory.DIARY) },
                 useDiaryIconLayout = true,
                 isCountLoading = isCategoryCountLoading,
