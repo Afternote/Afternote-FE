@@ -40,7 +40,6 @@ import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.error.InvalidLoginCredentialsException
 import com.afternote.core.domain.repository.UserProfileRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
-import com.afternote.core.model.MindRecordCategory
 import com.afternote.core.model.Session
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -49,6 +48,7 @@ import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.home.presentation.HomeTabActions
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import com.afternote.feature.receiver.domain.error.ReceiverEmailAuthException
 import com.afternote.feature.receiver.domain.model.AfterNoteListItem
 import com.afternote.feature.receiver.domain.model.AfterNotesListResult

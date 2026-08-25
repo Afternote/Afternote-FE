@@ -23,7 +23,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.afternote.core.model.MindRecordCategory
 import com.afternote.core.ui.AfternoteOutlinedCard
 import com.afternote.core.ui.AfternoteSectionHeader
 import com.afternote.core.ui.badge.RecipientDesignationBadge
@@ -34,6 +33,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.topbar.HomeTopBar
 import com.afternote.feature.mindrecord.presentation.hometab.homeTabMindRecordMemoriesSection
 import com.afternote.feature.mindrecord.presentation.hometab.homeTabMindRecordQuestionAndCategories
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
