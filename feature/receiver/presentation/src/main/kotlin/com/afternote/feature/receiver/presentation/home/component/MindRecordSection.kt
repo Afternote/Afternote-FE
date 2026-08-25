@@ -31,18 +31,15 @@ fun MindRecordSection(
         title = stringResource(R.string.receiver_home_mindrecord_section_title),
         description = stringResource(R.string.receiver_home_mindrecord_section_desc),
         countLine =
-            if (summary == null) {
-                unavailableCountLine()
-            } else {
-                rememberCountLine(
-                    prefix = "${summary.totalCount}개 ",
-                    suffix = "마음의 기록이 있습니다.",
-                )
-            },
+            rememberCountLine(
+                prefix = "${countText(summary?.totalCount)}개 ",
+                suffix = "마음의 기록이 있습니다.",
+            ),
         buttonText = stringResource(R.string.receiver_home_mindrecord_section_button),
         onButtonClick = onGoClick,
         middleContent = {
-            if (summary == null) return@HomeSectionCard
+            // 조회 실패에도 카드를 숨기지 않는다 — 섹션 레이아웃 유지가 시안 확정값이고,
+            // 통째로 사라지면 «기능이 없는 것» 과 «못 불러온 것» 이 구분되지 않는다 (#952).
             Spacer(modifier = Modifier.height(16.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -52,14 +49,14 @@ fun MindRecordSection(
                     iconResId = CoreUiR.drawable.core_ui_ic_mindrecord,
                     label = stringResource(R.string.receiver_home_mindrecord_daily_question),
                     totalLabel = totalLabel,
-                    count = summary.dailyQuestionCount,
+                    count = summary?.dailyQuestionCount,
                     modifier = Modifier.weight(1f),
                 )
                 MindRecordStatCard(
                     iconResId = CoreUiR.drawable.core_ui_ic_diary,
                     label = stringResource(R.string.receiver_home_mindrecord_diary),
                     totalLabel = totalLabel,
-                    count = summary.diaryCount,
+                    count = summary?.diaryCount,
                     modifier = Modifier.weight(1f),
                 )
             }

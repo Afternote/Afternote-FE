@@ -47,6 +47,23 @@
                 android:name="com.google.firebase.messaging.default_notification_channel_id"
                 android:value="@string/fcm_notification_channel_id" />
 
+        <!--
+          App Startup — 기동 초기화를 Initializer 로 나눠 실행한다.
+          androidx.startup 이 제공하는 provider 에 병합하는 형태라 tools:node="merge" 가 필요하다.
+        -->
+        <provider
+                android:name="androidx.startup.InitializationProvider"
+                android:authorities="${applicationId}.androidx-startup"
+                android:exported="false"
+                tools:node="merge">
+            <meta-data
+                    android:name="com.afternote.afternote_fe.startup.DailyNotificationInitializer"
+                    android:value="androidx.startup" />
+            <meta-data
+                    android:name="com.afternote.afternote_fe.startup.KakaoInitializer"
+                    android:value="androidx.startup" />
+        </provider>
+
         <service
                 android:name=".messaging.AfternoteFirebaseMessagingService"
                 android:exported="false">
