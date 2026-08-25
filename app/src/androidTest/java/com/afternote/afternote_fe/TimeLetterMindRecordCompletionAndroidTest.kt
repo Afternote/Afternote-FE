@@ -536,8 +536,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
         assertEquals("<p>완성한 본문</p>", update.second.content)
         assertEquals(false, update.second.isDraft)
         assertEquals(TodayMood.SOSO, update.second.todayMood)
-        assertEquals(draftDate.toString(), update.second.date)
-        assertEquals("https://afternote.test/draft.jpg", update.second.imageUrl)
+        // date·imageUrl 은 수정 요청 계약에 없어 페이로드에서 걷었다 (#955).
         assertTrue(repository.createCalls.isEmpty())
         assertEquals(2, repository.listCalls.size)
         assertTrue(repository.listCalls.all { it == currentMonth.toString() to true })
@@ -871,9 +870,7 @@ private class CompletionDiaryRepository(
                 diary.copy(
                     title = payload.title,
                     content = payload.content,
-                    date = payload.date,
                     todayMood = payload.todayMood,
-                    imageUrl = payload.imageUrl,
                     isDraft = payload.isDraft,
                 )
             } else {

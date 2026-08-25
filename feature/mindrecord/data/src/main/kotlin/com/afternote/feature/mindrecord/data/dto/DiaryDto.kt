@@ -38,8 +38,8 @@ data class DiaryUpdateRequestDto(
     @SerialName("content") val content: String,
     @SerialName("isDraft") val isDraft: Boolean,
     @SerialName("todayMood") val todayMood: TodayMoodDto,
-    @SerialName("date") val date: String,
-    @SerialName("imageUrl") val imageUrl: String?,
+    /** null 이면 기존 수신자 유지, 빈 목록이면 전체 해제 (서버 규칙). */
+    @SerialName("receiverIds") val receiverIds: List<Long>? = null,
 )
 
 /**

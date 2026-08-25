@@ -151,8 +151,10 @@ class DiaryWriteViewModel
                                     content = state.content.toWireContent(uploadedImageUrls),
                                     isDraft = isDraft,
                                     todayMood = mood,
-                                    date = state.date.toString(),
-                                    imageUrl = state.imageUrl,
+                                    // 생성 경로와 같은 규칙. 빈 선택을 빈 목록으로 보내면 서버가
+                                    // 전체 해제로 읽어, 수신자를 건드리지 않은 편집이 기존 지정을
+                                    // 지운다 — 목록 응답에 수신자가 없어 되살릴 수도 없다.
+                                    receiverIds = state.selectedReceiverIds.toList().takeIf { it.isNotEmpty() },
                                 ),
                         )
                     } else {
