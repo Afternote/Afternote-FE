@@ -5,21 +5,21 @@
 # push·merge 만 통제) 열린 직후 조회해 미처리 리뷰 요청이 1건이라도 있으면
 # 그 PR 을 닫는다. 브랜치는 남으므로 리뷰를 끝낸 뒤 되살릴 수 있다.
 #
-# 우회가 설계에 남아 있다 — #796 에서 자동 reviewer 요청을 없애 리뷰 요청은
-# 전부 수동이고, 리뷰어가 자기에게 걸린 요청을 스스로 떼면 이 가드를 통과한다.
-# 막지는 못하므로 review_request_removed 를 함께 받아 기록만 남긴다.
+# 빚의 기준은 «나에게 걸린 리뷰 요청» 이 아니라 «아무도 응답하지 않은 열린 PR»
+# 이다(#1148). 요청 목록을 아예 보지 않으므로, 리뷰어가 자기 요청을 스스로 떼던
+# 옛 우회로는 더 이상 통하지 않는다. 그것을 기록하던 bypass-audit job 은 발동
+# 실적 0건인 채로 죽어 있었으므로 함께 걷었다.
 name: review-debt-guard
 
 on:
   pull_request:
-    types: [opened, reopened, ready_for_review, review_request_removed]
+    types: [opened, reopened, ready_for_review]
 
 permissions:
   pull-requests: write
 
 jobs:
   debt-check:
-    if: github.event.action != 'review_request_removed'
     runs-on: ubuntu-latest
     steps:
       - name: 미처리 리뷰 요청 검사
@@ -176,38 +176,3 @@ jobs:
           echo "미응답 ${count}건 — PR #$PR_NUMBER 를 닫는다"
           gh pr close "$PR_NUMBER" --repo "$REPO" --comment "$(cat /tmp/debt-comment.md)"
 
-  bypass-audit:
-    # 리뷰를 남기지 않은 채 요청이 제거되면 이 가드는 그냥 통과한다.
-    # 막을 수단이 없으니 드러나게만 한다.
-    if: github.event.action == 'review_request_removed'
-    runs-on: ubuntu-latest
-    steps:
-      - name: 리뷰 없는 요청 제거 기록
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          REMOVED: ${{ github.event.requested_reviewer.login }}
-          SENDER: ${{ github.event.sender.login }}
-        run: |
-          set -euo pipefail
-
-          # 팀 리뷰 요청 제거만 본다.
-          [ -n "$REMOVED" ] || { echo "리뷰어 정보 없음 — 건너뜀"; exit 0; }
-
-          reviewed=$(gh api "repos/$REPO/pulls/$PR_NUMBER/reviews" \
-            --jq "[.[] | select(.user.login == \"$REMOVED\")] | length")
-
-          if [ "$reviewed" -gt 0 ]; then
-            echo "$REMOVED 는 이미 리뷰를 남겼다 — 정상 제거"
-            exit 0
-          fi
-
-          if [ "$SENDER" = "$REMOVED" ]; then
-            note="리뷰어 본인이 직접 뗐습니다 — 리뷰 적체 가드(#1136)를 통과하게 됩니다."
-          else
-            note="@$SENDER 님이 제거했습니다."
-          fi
-
-          gh pr comment "$PR_NUMBER" --repo "$REPO" --body \
-            "🔍 **리뷰 없이 요청이 제거됨** — @$REMOVED 님은 이 PR 에 리뷰를 남기지 않은 상태입니다. $note"
