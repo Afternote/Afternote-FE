@@ -1,5 +1,6 @@
 package com.afternote.feature.mindrecord.presentation.viewmodel
 
+import androidx.lifecycle.SavedStateHandle
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.feature.mindrecord.domain.model.DailyQuestion
 import com.afternote.feature.mindrecord.domain.model.DailyQuestionCreatePayload
@@ -57,7 +58,13 @@ class DailyQuestionWriteViewModelTest {
                 },
                 onGetList = { Result.success(listOf(draft(content = "서버에 남아 있던 옛 임시저장본"))) },
             )
-        val viewModel = DailyQuestionWriteViewModel(repository, NoopPhotoUploadRepository, noopDraftLoader())
+        val viewModel =
+            DailyQuestionWriteViewModel(
+                SavedStateHandle(emptyMap()),
+                repository,
+                NoopPhotoUploadRepository,
+                noopDraftLoader(),
+            )
 
         viewModel.onAnswerChanged("사용자가 방금 입력한 답변")
         viewModel.submit()
@@ -76,7 +83,13 @@ class DailyQuestionWriteViewModelTest {
                 onGetList = { Result.success(listOf(draft(content = "이어쓸 본문"))) },
             )
 
-        val viewModel = DailyQuestionWriteViewModel(repository, NoopPhotoUploadRepository, noopDraftLoader())
+        val viewModel =
+            DailyQuestionWriteViewModel(
+                SavedStateHandle(emptyMap()),
+                repository,
+                NoopPhotoUploadRepository,
+                noopDraftLoader(),
+            )
 
         assertEquals("이어쓸 본문", viewModel.uiState.value.answer)
         assertEquals(7L, viewModel.uiState.value.draftId)
@@ -99,6 +112,7 @@ class DailyQuestionWriteViewModelTest {
             )
         val viewModel =
             DailyQuestionWriteViewModel(
+                SavedStateHandle(emptyMap()),
                 repository,
                 PhotoUploadRepository { _, _ -> Result.success("https://cdn/just-picked.jpg") },
                 noopDraftLoader(),
@@ -123,6 +137,7 @@ class DailyQuestionWriteViewModelTest {
             )
         val viewModel =
             DailyQuestionWriteViewModel(
+                SavedStateHandle(emptyMap()),
                 repository,
                 PhotoUploadRepository { _, _ -> Result.success("https://cdn/picked.jpg") },
                 noopDraftLoader(),
@@ -145,7 +160,13 @@ class DailyQuestionWriteViewModelTest {
                 onGetList = { Result.success(listOf(draft(content = html))) },
             )
 
-        val viewModel = DailyQuestionWriteViewModel(repository, NoopPhotoUploadRepository, noopDraftLoader())
+        val viewModel =
+            DailyQuestionWriteViewModel(
+                SavedStateHandle(emptyMap()),
+                repository,
+                NoopPhotoUploadRepository,
+                noopDraftLoader(),
+            )
 
         assertEquals(html, viewModel.uiState.value.answer)
     }
@@ -157,7 +178,13 @@ class DailyQuestionWriteViewModelTest {
                 onGetToday = { Result.failure(IllegalStateException("네트워크 실패")) },
                 onGetList = { Result.success(emptyList()) },
             )
-        val viewModel = DailyQuestionWriteViewModel(repository, NoopPhotoUploadRepository, noopDraftLoader())
+        val viewModel =
+            DailyQuestionWriteViewModel(
+                SavedStateHandle(emptyMap()),
+                repository,
+                NoopPhotoUploadRepository,
+                noopDraftLoader(),
+            )
 
         viewModel.onAnswerChanged("답변")
         viewModel.submit()
@@ -200,6 +227,7 @@ class DailyQuestionWriteViewModelTest {
             )
         val viewModel =
             DailyQuestionWriteViewModel(
+                SavedStateHandle(emptyMap()),
                 repository,
                 PhotoUploadRepository { _, _ ->
                     Result.success("https://cdn.example.net/mindrecords/staging/13/a.png")
@@ -227,7 +255,7 @@ class DailyQuestionWriteViewModelTest {
                     Result.success(Unit)
                 },
             )
-        val viewModel = DailyQuestionWriteViewModel(repository, NoopPhotoUploadRepository, noopDraftLoader())
+        val viewModel = DailyQuestionWriteViewModel(SavedStateHandle(emptyMap()), repository, NoopPhotoUploadRepository, noopDraftLoader())
 
         viewModel.onAnswerChanged("<p>수정</p><img src=\"$permanent\" />")
         viewModel.submit()
@@ -276,13 +304,13 @@ private object NoopPhotoUploadRepository : PhotoUploadRepository {
 private const val CREATED_ANSWER_ID = 19L
 
 /** 툴바 카운트는 이 테스트의 관심사가 아니다 — 0건으로 고정한다 (#769). */
-private fun noopDraftLoader() =
+internal fun noopDraftLoader() =
     MindRecordDraftLoader(
         diaryRepository = EmptyDraftDiaryRepository,
         dailyQuestionRepository = EmptyDraftDailyQuestionRepository,
     )
 
-private object EmptyDraftDiaryRepository : DiaryRepository {
+internal object EmptyDraftDiaryRepository : DiaryRepository {
     override suspend fun getList(
         yearMonth: String,
         draftOnly: Boolean?,
@@ -298,7 +326,7 @@ private object EmptyDraftDiaryRepository : DiaryRepository {
     override suspend fun delete(id: Long): Result<Unit> = error("호출되면 안 됨")
 }
 
-private object EmptyDraftDailyQuestionRepository : DailyQuestionRepository {
+internal object EmptyDraftDailyQuestionRepository : DailyQuestionRepository {
     override suspend fun getList(
         date: String?,
         draftOnly: Boolean?,

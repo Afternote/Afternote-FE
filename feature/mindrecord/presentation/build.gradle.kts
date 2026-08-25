@@ -39,4 +39,10 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    implementation(libs.compose.rich.editor)
+
+    testImplementation(libs.coroutines.test)
+
+    // 라우트 인자 해석이 Bundle 을 타므로 실제 Android 구현이 필요하다 (#582).
+    testImplementation(libs.robolectric)
 }
