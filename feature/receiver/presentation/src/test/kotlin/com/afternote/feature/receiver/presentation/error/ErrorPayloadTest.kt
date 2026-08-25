@@ -1,7 +1,9 @@
-package com.afternote.feature.receiver.presentation.deliveryverification
+package com.afternote.feature.receiver.presentation.error
 
 import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
 
@@ -79,6 +81,47 @@ class ErrorPayloadTest {
     @Test
     fun `수신자 거절이 아닌 인프라 예외는 fallback 리소스로 폴백한다`() {
         assertEquals(ErrorPayload.Res(FALLBACK_RES), IOException("timeout").toErrorPayload(FALLBACK_RES))
+    }
+
+    /**
+     * 등재 근거 — BE `ErrorCode.DELIVERY_CONDITION_NOT_MET(HttpStatus.FORBIDDEN, 2009,
+     * "아직 전달 조건이 충족되지 않았습니다.")` (Afternote-BE `ErrorCode.java` 실코드). 문구 자체가
+     * 사용자 안내라 그대로 노출한다.
+     */
+    @Test
+    fun `전달 조건 미충족 2009 는 서버 문구를 그대로 노출한다`() {
+        val notDeliverable =
+            ReceiverFailure.ServerRejection(
+                status = 403,
+                serverMessage = "아직 전달 조건이 충족되지 않았습니다.",
+                serverCode = DELIVERY_CONDITION_NOT_MET,
+            )
+
+        assertEquals(
+            ErrorPayload.Text("아직 전달 조건이 충족되지 않았습니다."),
+            notDeliverable.toErrorPayload(FALLBACK_RES),
+        )
+    }
+
+    @Test
+    fun `전달 조건 미충족만 재시도 불가로 갈린다`() {
+        val notDeliverable =
+            ReceiverFailure.ServerRejection(
+                status = 403,
+                serverMessage = "아직 전달 조건이 충족되지 않았습니다.",
+                serverCode = DELIVERY_CONDITION_NOT_MET,
+            )
+
+        assertTrue(notDeliverable.isDeliveryConditionNotMet())
+    }
+
+    @Test
+    fun `같은 403 이라도 다른 사유 code 는 재시도 경로에 남는다`() {
+        val otherRejection =
+            ReceiverFailure.ServerRejection(status = 403, serverMessage = "권한이 없습니다.", serverCode = 1903)
+
+        assertFalse(otherRejection.isDeliveryConditionNotMet())
+        assertFalse(IOException("offline").isDeliveryConditionNotMet())
     }
 
     private companion object {

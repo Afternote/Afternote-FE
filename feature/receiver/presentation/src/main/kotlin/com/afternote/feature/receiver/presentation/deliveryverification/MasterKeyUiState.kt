@@ -1,6 +1,7 @@
 package com.afternote.feature.receiver.presentation.deliveryverification
 
 import androidx.compose.runtime.Immutable
+import com.afternote.feature.receiver.presentation.error.ErrorPayload
 
 @Immutable
 data class MasterKeyUiState(
