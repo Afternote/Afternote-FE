@@ -7,7 +7,6 @@ import com.afternote.feature.afternote.presentation.R
 import com.afternote.feature.afternote.presentation.reporting.AfternoteFailureStage
 import com.afternote.feature.afternote.presentation.reporting.recordAfternoteFailure
 import com.afternote.feature.afternote.presentation.reporting.shouldReportInReceiverFlow
-import com.afternote.feature.receiver.domain.error.ReceiverServerRejectionException
 import com.afternote.feature.receiver.domain.repository.IdentityVerificationRepository
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,10 +20,8 @@ import javax.inject.Inject
 /**
  * 수신자 본인 확인 이메일 인증(designs 3·4) ViewModel — 인증번호 발송 + 코드 검증 (이슈 #215, #407).
  *
- * [ReceiverAuthRepository.sendEmailAuthCode]·[ReceiverAuthRepository.verifyEmailAuthCode] 로
- * 실 API(`receiver-auth/email` 계열) 를 호출한다. 서버가 안내한 4xx 거절(이메일 미등록·인증번호
- * 만료/불일치 등) 의 문구는 [ReceiverServerRejectionException.serverMessage] 를 그대로 노출하고,
- * 그 외(5xx 장애·인프라 실패)는 정적 리소스로 폴백 — 판정은 [toErrorPayload] 가 가른다 (#651).
+ * [ReceiverAuthRepository.sendEmailAuthCode]·[ReceiverAuthRepository.verifyEmailAuthCode] 로 실 API 를
+ * 호출한다. 실패 문구를 서버 문구로 낼지 정적 리소스로 낼지는 [toErrorPayload] 가 가른다 (#651).
  *
  * 검증 성공 시 [IdentityVerificationRepository.markVerified] 로 캐시를 켜고 isVerified 신호 발행 →
  * UI 가 마스터 키(5) 단계로 이동. 이메일 인증은 신원 확인까지만 담당하며 마스터 키를 대신 획득하지

@@ -3,6 +3,7 @@ package com.afternote.feature.mindrecord.data.repositoryimpl
 import com.afternote.core.network.model.BaseResponse
 import com.afternote.feature.mindrecord.data.api.DailyQuestionApiService
 import com.afternote.feature.mindrecord.data.api.DiaryApiService
+import com.afternote.feature.mindrecord.data.dto.DailyQuestionAnswerResponseDto
 import com.afternote.feature.mindrecord.data.dto.DailyQuestionCreateRequestDto
 import com.afternote.feature.mindrecord.data.dto.DailyQuestionListItemDto
 import com.afternote.feature.mindrecord.data.dto.DailyQuestionUpdateRequestDto
@@ -88,12 +89,13 @@ private class NeverReturningDailyQuestionApi : DailyQuestionApiService {
 
     override suspend fun getTodayDailyQuestion(): BaseResponse<TodayDailyQuestionDto> = awaitCancellation()
 
-    override suspend fun createDailyQuestion(request: DailyQuestionCreateRequestDto): BaseResponse<Unit> = awaitCancellation()
+    override suspend fun createDailyQuestion(request: DailyQuestionCreateRequestDto): BaseResponse<DailyQuestionAnswerResponseDto> =
+        awaitCancellation()
 
     override suspend fun updateDailyQuestion(
         userDailyQuestionId: Long,
         request: DailyQuestionUpdateRequestDto,
-    ): BaseResponse<Unit> = awaitCancellation()
+    ): BaseResponse<DailyQuestionAnswerResponseDto> = awaitCancellation()
 
     override suspend fun deleteDailyQuestion(userDailyQuestionId: Long): BaseResponse<Unit> = awaitCancellation()
 }
