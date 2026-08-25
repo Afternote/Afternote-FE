@@ -1,8 +1,8 @@
 package com.afternote.feature.afternote.presentation.author.editor.memorial
 
 import androidx.compose.runtime.Stable
-import com.afternote.core.model.AlbumCover
 import com.afternote.feature.afternote.presentation.author.editor.receiver.model.AfternoteEditorReceiverSection
+import com.afternote.feature.afternote.presentation.shared.model.AlbumCover
 
 /**
  * 추억 노트 콘텐츠 파라미터

@@ -219,13 +219,15 @@ async function hasConflictComment(api, repository, number) {
     return (comments ?? []).some((comment) => (comment.body ?? "").includes(COMMENT_MARKER));
 }
 
-export async function applyPlan(api, repository, plan, { label, dryRun }) {
+// `logger` 를 받는 이유: 테스트가 실제 동작처럼 보이는 줄을 CI 로그에 찍지 않게 하기 위해서다.
+// 워크플로의 «Run script tests» 단계에 «#40 라벨 부착» 이 섞이면 무엇이 실제 조작인지 흐려진다.
+export async function applyPlan(api, repository, plan, { label, dryRun, logger = console }) {
     const failures = [];
 
     for (const pullRequest of plan.toLabel) {
         try {
             if (dryRun) {
-                console.log(`[dry-run] #${pullRequest.number} 라벨 부착 + 코멘트`);
+                logger.log(`[dry-run] #${pullRequest.number} 라벨 부착 + 코멘트`);
                 continue;
             }
             await api(`/repos/${repository}/issues/${pullRequest.number}/labels`, {
@@ -239,7 +241,7 @@ export async function applyPlan(api, repository, plan, { label, dryRun }) {
                     body: { body: renderConflictComment(pullRequest) },
                 });
             }
-            console.log(`#${pullRequest.number} 라벨 부착 (base ${pullRequest.baseRefName})`);
+            logger.log(`#${pullRequest.number} 라벨 부착 (base ${pullRequest.baseRefName})`);
         } catch (error) {
             failures.push(`#${pullRequest.number} 라벨 부착 실패: ${error.message}`);
         }
@@ -248,14 +250,14 @@ export async function applyPlan(api, repository, plan, { label, dryRun }) {
     for (const pullRequest of plan.toUnlabel) {
         try {
             if (dryRun) {
-                console.log(`[dry-run] #${pullRequest.number} 라벨 제거`);
+                logger.log(`[dry-run] #${pullRequest.number} 라벨 제거`);
                 continue;
             }
             await api(`/repos/${repository}/issues/${pullRequest.number}/labels/${encodeURIComponent(label)}`, {
                 method: "DELETE",
                 allowNotFound: true,
             });
-            console.log(`#${pullRequest.number} 라벨 제거`);
+            logger.log(`#${pullRequest.number} 라벨 제거`);
         } catch (error) {
             failures.push(`#${pullRequest.number} 라벨 제거 실패: ${error.message}`);
         }
