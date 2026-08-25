@@ -1,0 +1,71 @@
+name: PR Validation
+
+# PR 검증의 유일한 진입점이다. static analysis · unit test · screenshot ·
+# repository quality 를 reusable workflow 로 부르고, ci-gate job 이 그 결과를 모아
+# 하나의 required check 로 만든다 (#848).
+#
+# ruleset 이 개별 workflow·job 이름을 required 로 지정하면 이름이 바뀔 때마다
+# 게이트가 조용히 사라진다. 요구하는 context 를 ci-gate 하나로 고정해 그 취약성을 없앤다.
+#
+# base 필터를 두지 않는다 — base 변경(feat/* → develop)은 pull_request 기본 activity
+# type 에 없어 재트리거되지 않으므로, 필터가 있으면 스택 PR 이 검증을 한 번도 거치지
+# 않고 머지된다.
+on:
+  pull_request:
+
+# 같은 PR 의 옛 실행을 끊는다. head 가 갱신되면 이전 SHA 의 결과는 판단 근거가 아니다.
+concurrency:
+  group: pr-validation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  static-analysis:
+    name: Static Analysis
+    uses: ./.github/workflows/lint.yml
+
+  unit-test:
+    name: Unit Test
+    uses: ./.github/workflows/unit-test.yml
+
+  screenshot:
+    name: Screenshot
+    uses: ./.github/workflows/screenshot.yml
+
+  repository-quality:
+    name: Repository Quality
+    uses: ./.github/workflows/repository-quality.yml
+
+  # ruleset 이 요구하는 단 하나의 context. 선행 job 의 conclusion 을 명시적으로 검사한다.
+  ci-gate:
+    name: ci-gate
+    if: always()
+    needs: [static-analysis, unit-test, screenshot, repository-quality]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # if: always() 는 선행 job 이 실패해도 이 job 을 돌린다. 그 상태에서 아무것도
+      # 검사하지 않으면 게이트가 항상 초록이 되므로, needs 의 result 를 직접 판정한다.
+      # success 가 아닌 것은 전부 실패다 — failure·cancelled 는 물론, skipped 도
+      # 의도한 통과가 아니다(선행 job 이 조건에서 빠지면 검증되지 않은 채 머지된다).
+      - name: Require every validation job to have succeeded
+        env:
+          VALIDATION_RESULTS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+
+          failures=$(printf '%s' "$VALIDATION_RESULTS" \
+            | jq -r 'to_entries[] | select(.value.result != "success") | "\(.key) = \(.value.result)"')
+
+          if [ -n "$failures" ]; then
+            while IFS= read -r failure; do
+              echo "::error::PR 검증 실패 — $failure"
+            done <<< "$failures"
+            exit 1
+          fi
+
+          printf '%s' "$VALIDATION_RESULTS" \
+            | jq -r 'to_entries[] | "\(.key) = \(.value.result)"'
