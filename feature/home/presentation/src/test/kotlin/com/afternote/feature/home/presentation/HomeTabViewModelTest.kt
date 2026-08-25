@@ -3,7 +3,6 @@ package com.afternote.feature.home.presentation
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.repository.UserProfileRepository
 import com.afternote.core.domain.repository.UserRepository
-import com.afternote.core.model.MindRecordCategory
 import com.afternote.core.model.delivery.DeliveryConditionItem
 import com.afternote.core.model.delivery.ReceiverDeliveryConditions
 import com.afternote.core.model.user.Receiver
@@ -22,6 +21,7 @@ import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

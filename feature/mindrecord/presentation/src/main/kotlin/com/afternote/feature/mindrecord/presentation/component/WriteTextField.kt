@@ -92,8 +92,16 @@ fun WriteTextField(
     val state = rememberRichTextState()
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
-        if (!value.isNullOrEmpty()) state.setHtml(value)
+    // 외부 value 는 «화면이 먼저 뜨고 값이 나중에 도착하는» 경로(이어쓰기·수정 프리필)가
+    // 있어 첫 컴포지션 1회만 시드하면 본문이 실리지 않는다. 종전에는 호출부 둘이 각자
+    // key(draftLoaded) 로 컴포넌트를 통째로 재생성해 우회했는데, 재마운트는 진행 중인
+    // 업로드 스코프·피커 콜백·IME 조합 상태를 함께 날린다 (#1018).
+    //
+    // 에디터가 이미 들고 있는 HTML 과 같으면 다시 쓰지 않는다 — 사용자가 방금 친 글자를
+    // 되돌리지 않기 위해서다. onValueChange 로 올라간 값이 그대로 되돌아오는 것이 정상
+    // 경로이므로, 이 가드가 없으면 매 입력마다 커서가 튄다.
+    LaunchedEffect(value) {
+        if (!value.isNullOrEmpty() && value != state.toHtml()) state.setHtml(value)
     }
 
     LaunchedEffect(state.annotatedString) {
