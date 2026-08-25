@@ -62,12 +62,11 @@ class FakeDiaryRepository(
         onUpdate?.let { return it(id, payload) }
         diaries.replaceAll { diary ->
             if (diary.diaryId == id) {
+                // date·imageUrl 은 수정 요청 계약에서 빠졌다 (#955) — 기존 값을 유지한다.
                 diary.copy(
                     title = payload.title,
                     content = payload.content,
-                    date = payload.date,
                     todayMood = payload.todayMood,
-                    imageUrl = payload.imageUrl,
                     isDraft = payload.isDraft,
                 )
             } else {

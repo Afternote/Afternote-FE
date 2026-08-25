@@ -146,6 +146,12 @@ fun rememberMindRecordNavActions(navController: NavController): MindRecordNavAct
                 )
             }
 
+            override fun onEditDailyQuestionDraft(draftId: Long) {
+                navController.navigate(
+                    MindRecordRoute.DailyQuestionWriteRoute(answerId = draftId, isDraft = true),
+                )
+            }
+
             override fun onEditDiaryDraft(
                 draftId: Long,
                 draftYearMonth: String,

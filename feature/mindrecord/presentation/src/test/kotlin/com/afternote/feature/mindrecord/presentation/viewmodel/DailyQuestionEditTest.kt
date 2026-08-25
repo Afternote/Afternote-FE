@@ -94,24 +94,72 @@ class DailyQuestionEditTest {
         assertEquals("", viewModel.uiState.value.answer)
     }
 
+    @Test
+    fun `임시저장 이어쓰기는 draft 목록에서 대상을 찾는다`() {
+        // 당일이 지난 draft 는 draftOnly=true 로만 내려온다 — 이 경로가 유일한 진입 수단이다 (#770).
+        val repository =
+            FakeRepository(
+                answers = emptyList(),
+                drafts = listOf(answer(id = 11L, content = "<p>지난 임시저장</p>")),
+            )
+
+        val viewModel = editViewModel(repository, answerId = 11L, isDraft = true)
+
+        assertEquals("<p>지난 임시저장</p>", viewModel.uiState.value.answer)
+        assertEquals(11L, viewModel.uiState.value.draftId)
+        assertEquals("draft 목록을 조회해야 한다", listOf(true), repository.listDraftOnlyArgs)
+    }
+
+    @Test
+    fun `임시저장 이어쓰기를 등록하면 같은 레코드를 확정으로 바꾼다`() {
+        val repository =
+            FakeRepository(
+                answers = emptyList(),
+                drafts = listOf(answer(id = 11L, content = "<p>지난 임시저장</p>")),
+            )
+        val viewModel = editViewModel(repository, answerId = 11L, isDraft = true)
+
+        viewModel.submit(isDraft = false)
+
+        assertEquals(0, repository.createCalls)
+        assertEquals(listOf(11L), repository.updatedIds)
+        assertEquals(false, repository.updatedPayloads.single().isDraft)
+    }
+
+    @Test
+    fun `정식 수정은 draft 목록을 조회하지 않는다`() {
+        val repository = FakeRepository(answers = listOf(answer(id = 7L, content = "<p>원본</p>")))
+
+        editViewModel(repository, answerId = 7L, isDraft = false)
+
+        assertEquals(listOf<Boolean?>(null), repository.listDraftOnlyArgs)
+    }
+
     // ── 테스트 도구 ───────────────────────────────────────────────────────────
 
     private fun editViewModel(
         repository: DailyQuestionRepository,
         answerId: Long?,
+        isDraft: Boolean = false,
     ): DailyQuestionWriteViewModel {
         val handle =
             SavedStateHandle(
-                if (answerId == null) emptyMap() else mapOf("answerId" to answerId),
+                if (answerId == null) {
+                    emptyMap()
+                } else {
+                    mapOf("answerId" to answerId, "isDraft" to isDraft)
+                },
             )
         return DailyQuestionWriteViewModel(
             handle,
             repository,
             PhotoUploadRepository { _, _ -> error("업로드는 이 시나리오에서 호출되면 안 됨") },
-            // 툴바 카운트는 이 시나리오의 관심사가 아니다 (#769).
+            // 툴바 카운트는 이 시나리오의 관심사가 아니다 — **다른** 저장소를 넘긴다.
+            // 같은 fake 를 넘기면 카운트 조회의 draftOnly=true 가 프리필 조회 기록에 섞여
+            // «어느 목록을 봤는가» 단언이 무너진다 (#769·#770).
             MindRecordDraftLoader(
                 diaryRepository = EditTestEmptyDiaryRepository,
-                dailyQuestionRepository = repository,
+                dailyQuestionRepository = EditTestEmptyDailyQuestionRepository,
             ),
         )
     }
@@ -128,16 +176,21 @@ class DailyQuestionEditTest {
 
     private class FakeRepository(
         private val answers: List<DailyQuestion>,
+        private val drafts: List<DailyQuestion> = emptyList(),
     ) : DailyQuestionRepository {
         var todayCalls = 0
         var createCalls = 0
         val updatedIds = mutableListOf<Long>()
         val updatedPayloads = mutableListOf<DailyQuestionUpdatePayload>()
+        val listDraftOnlyArgs = mutableListOf<Boolean?>()
 
         override suspend fun getList(
             date: String?,
             draftOnly: Boolean?,
-        ): Result<List<DailyQuestion>> = Result.success(answers)
+        ): Result<List<DailyQuestion>> {
+            listDraftOnlyArgs += draftOnly
+            return Result.success(if (draftOnly == true) drafts else answers)
+        }
 
         override suspend fun getToday(): Result<TodayDailyQuestion> {
             todayCalls++
@@ -177,6 +230,25 @@ private object EditTestEmptyDiaryRepository : DiaryRepository {
         id: Long,
         payload: DiaryUpdatePayload,
     ): Result<Unit> = error("호출되면 안 됨")
+
+    override suspend fun delete(id: Long): Result<Unit> = error("호출되면 안 됨")
+}
+
+/** 툴바 카운트 조회만 받아 주는 빈 데일리질문 저장소. */
+private object EditTestEmptyDailyQuestionRepository : DailyQuestionRepository {
+    override suspend fun getList(
+        date: String?,
+        draftOnly: Boolean?,
+    ): Result<List<DailyQuestion>> = Result.success(emptyList())
+
+    override suspend fun getToday(): Result<TodayDailyQuestion> = error("호출되면 안 됨")
+
+    override suspend fun create(payload: DailyQuestionCreatePayload): Result<Long> = error("호출되면 안 됨")
+
+    override suspend fun update(
+        id: Long,
+        payload: DailyQuestionUpdatePayload,
+    ): Result<Long> = error("호출되면 안 됨")
 
     override suspend fun delete(id: Long): Result<Unit> = error("호출되면 안 됨")
 }

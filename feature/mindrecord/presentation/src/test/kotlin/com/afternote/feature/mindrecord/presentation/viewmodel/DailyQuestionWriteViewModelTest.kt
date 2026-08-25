@@ -268,7 +268,7 @@ private object NoopPhotoUploadRepository : PhotoUploadRepository {
 }
 
 /** 툴바 카운트는 이 테스트의 관심사가 아니다 — 0건으로 고정한다 (#769). */
-private fun noopDraftLoader() =
+internal fun noopDraftLoader() =
     MindRecordDraftLoader(
         diaryRepository =
             FakeDiaryRepository.strict().apply {

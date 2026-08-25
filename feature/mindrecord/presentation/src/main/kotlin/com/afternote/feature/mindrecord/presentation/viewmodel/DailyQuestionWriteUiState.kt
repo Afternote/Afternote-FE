@@ -46,13 +46,14 @@ data class DailyQuestionWriteUiState(
     val canSubmit: Boolean
         get() =
             answer.isNotBlank() &&
-                // 수정 모드는 오늘 질문을 부르지 않아 questionId 가 없다 — 대상 레코드가
-                // 있으면 저장할 수 있다 (#582). 그래서 isQuestionLoading 대신 «둘 중 하나» 를 본다.
-                (questionId != null || draftId != null) &&
+                // 수정·이어쓰기 모드는 오늘 질문을 부르지 않아 questionId 가 없다 — 대상 레코드가
+                // 있으면 PATCH 로 나가므로 질문 조회를 기다릴 이유가 없다 (#582·#770).
+                (draftId != null || !isQuestionLoading) &&
                 // 이어쓸 본문이 도착하기 전에 저장하면 draftId 가 아직 null 이라 POST 로 나가고,
                 // 서버가 questionId upsert 라 기존 임시저장 본문이 덮인다 — #923 과 같은 유실이다.
                 !isResumingDraft &&
                 submitState != SubmitState.InProgress &&
+                // 업로드 중 저장하면 본문에 아직 안 들어간 이미지가 빠진 채 나간다 (#716).
                 !isUploadingImage
 }
 

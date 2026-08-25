@@ -35,36 +35,39 @@ class DailyQuestionWriteViewModel
         private val _uiState = MutableStateFlow(DailyQuestionWriteUiState())
         val uiState: StateFlow<DailyQuestionWriteUiState> = _uiState.asStateFlow()
 
-        /** 수정 대상 답변 ID. 목록의 "수정하기" 로 들어오면 채워진다 (#582). */
-        private val editingAnswerId: Long? =
-            savedStateHandle.toRoute<MindRecordRoute.DailyQuestionWriteRoute>().answerId
+        private val route = savedStateHandle.toRoute<MindRecordRoute.DailyQuestionWriteRoute>()
+
+        /** 프리필 대상 레코드 ID. 목록의 "수정하기"(#582)·임시저장 목록 탭(#770)이 채운다. */
+        private val editingAnswerId: Long? = route.answerId
 
         init {
             // 수정 진입이면 대상 레코드를 프리필하고, 신규면 오늘 질문을 부른다 (#582).
-            if (editingAnswerId != null) loadAnswer(editingAnswerId) else loadTodayQuestion()
+            // 임시저장은 draftOnly=true 로만 내려오므로 어느 목록을 볼지 isDraft 로 가른다 (#770).
+            if (editingAnswerId != null) {
+                loadAnswer(editingAnswerId, route.isDraft)
+            } else {
+                loadTodayQuestion()
+            }
             loadDraftCount()
         }
 
-        /** 툴바 카운트는 화면 장식이라 실패해도 화면을 막지 않고 '모름' 으로 남긴다. */
-        private fun loadDraftCount() {
-            viewModelScope.launch {
-                draftLoader.count().onSuccess { count ->
-                    _uiState.update { it.copy(draftCount = count) }
-                }
-            }
-        }
-
         /**
-         * 정식 답변을 프리필한다 (#582).
+         * 대상 레코드를 프리필한다 (#582·#770).
          *
-         * 오늘 질문을 다시 묻지 않는다 — 수정 대상은 이미 특정된 레코드이고, 저장은
+         * 오늘 질문을 다시 묻지 않는다 — 대상은 이미 특정된 레코드이고, 저장은
          * `PATCH /daily-questions/{id}` 로 나간다. `questionId` 도 그래서 필요 없다.
+         * 임시저장 이어쓰기든 정식 답변 수정이든 조회하는 목록의 `draftOnly` 만 다르다.
          */
-        private fun loadAnswer(answerId: Long) {
+        private fun loadAnswer(
+            answerId: Long,
+            isDraft: Boolean,
+        ) {
             viewModelScope.launch {
                 _uiState.update { it.copy(isQuestionLoading = true, questionLoadError = null) }
                 repository
-                    .getList()
+                    // 임시저장은 draftOnly=true 로만 내려온다. 당일이 지난 draft 는 이 경로가
+                    // 유일한 진입 수단이다 (#770).
+                    .getList(draftOnly = if (isDraft) true else null)
                     .mapCatching { list -> list.first { it.dailyQuestionId == answerId } }
                     .onSuccess { answer ->
                         _uiState.update {
@@ -88,6 +91,15 @@ class DailyQuestionWriteViewModel
                             )
                         }
                     }
+            }
+        }
+
+        /** 툴바 카운트는 화면 장식이라 실패해도 화면을 막지 않고 '모름' 으로 남긴다. */
+        private fun loadDraftCount() {
+            viewModelScope.launch {
+                draftLoader.count().onSuccess { count ->
+                    _uiState.update { it.copy(draftCount = count) }
+                }
             }
         }
 
@@ -236,6 +248,7 @@ class DailyQuestionWriteViewModel
             // ID 만 있으면 되고 명세에도 questionId 가 없다 (#582). 그래서 «둘 다 없을 때» 만
             // 막는다 — 신규 작성인데 오늘 질문 조회가 실패한 경우다.
             val questionId = state.questionId
+            // 수정·이어쓰기 대상 레코드가 있으면 PATCH 로 나가므로 questionId 가 없어도 된다 (#582·#770).
             if (questionId == null && state.draftId == null) {
                 // 서버가 답변을 어디에 붙일지 알 수 없어 요청 자체가 불가능하다. 사유를
                 // 알리고 조회를 다시 걸어 사용자가 재시도할 수 있게 한다 (#565).
