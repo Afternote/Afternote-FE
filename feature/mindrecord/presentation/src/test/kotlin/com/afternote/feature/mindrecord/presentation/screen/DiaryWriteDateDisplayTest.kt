@@ -3,6 +3,7 @@ package com.afternote.feature.mindrecord.presentation.screen
 import com.afternote.feature.mindrecord.presentation.viewmodel.DiaryWriteViewModel
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.LocalDate
 
 /**
  * 일기 기록 날짜가 «고를 수 있지만 반영되지 않는» 상태가 아닌지 (#1008).
@@ -19,11 +20,16 @@ import org.junit.Test
 class DiaryWriteDateDisplayTest {
     @Test
     fun `날짜를 바꾸는 공개 창구가 없다`() {
-        val setters =
+        // "update" 가 "date" 를 부분 문자열로 품는다 — 날짜와 무관한 updateXxx 가 하나만
+        // 생겨도 빨개지므로, 이름 규칙이 아니라 **LocalDate 를 받는 공개 함수**로 좁힌다.
+        val dateSetters =
             DiaryWriteViewModel::class.java.methods
+                .filter {
+                    java.lang.reflect.Modifier
+                        .isPublic(it.modifiers)
+                }.filter { it.parameterTypes.any { type -> type == LocalDate::class.java } }
                 .map { it.name }
-                .filter { it.contains("Date", ignoreCase = true) }
 
-        assertTrue("날짜 변경 창구가 남아 있다: $setters", setters.isEmpty())
+        assertTrue("날짜 변경 창구가 남아 있다: $dateSetters", dateSetters.isEmpty())
     }
 }
