@@ -148,7 +148,8 @@ fun HomeTabScreen(
                         userName = uiState.cachedUserName ?: "\u2026",
                         // 조회 전이다 — 지정 여부를 결과로 확정하지 않는다 (#698).
                         recipientBadgeState = RecipientDesignationBadgeState.Unknown,
-                        categoryCounts = MindRecordCategory.entries.associateWith { 0 },
+                        // 조회 전에는 아는 값이 없다 — 0 을 채워 넣지 않는다 (#700).
+                        categoryCounts = emptyMap(),
                         categoryCountsLoading = true,
                         todayDateText = todayDateText,
                         todayQuestionContent = null,
