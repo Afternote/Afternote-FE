@@ -21,6 +21,7 @@ class ReceiverAfternoteListErrorTest {
                 status = 403,
                 serverMessage = "아직 전달 조건이 충족되지 않았습니다.",
                 serverCode = 2009,
+                cause = CAUSE,
             )
 
         assertEquals(
@@ -40,9 +41,9 @@ class ReceiverAfternoteListErrorTest {
     @Test
     fun `그 밖의 실패는 종전 목록 화면 경로에 남는다`() {
         val serverOutage =
-            ReceiverFailure.ServerRejection(status = 500, serverMessage = "internal error", serverCode = 1500)
+            ReceiverFailure.ServerRejection(status = 500, serverMessage = "internal error", serverCode = 1500, cause = CAUSE)
         val otherRejection =
-            ReceiverFailure.ServerRejection(status = 403, serverMessage = "권한이 없습니다.", serverCode = 1903)
+            ReceiverFailure.ServerRejection(status = 403, serverMessage = "권한이 없습니다.", serverCode = 1903, cause = CAUSE)
 
         assertNull(serverOutage.toListError(FALLBACK_RES))
         assertNull(otherRejection.toListError(FALLBACK_RES))
@@ -53,3 +54,9 @@ class ReceiverAfternoteListErrorTest {
         const val FALLBACK_RES = 1
     }
 }
+
+/**
+ * ServerRejection 이 나르는 원인 예외 자리. 프로덕션에서는 `ApiException` 이 들어오지만, 도메인 계약이
+ * 요구하는 것은 `Throwable` 뿐이라 이 테스트들은 core:network 를 끌어오지 않는다.
+ */
+private val CAUSE: Throwable = IOException("stub cause")

@@ -12,11 +12,14 @@ package com.afternote.feature.receiver.domain.error
  * 갖는다). 파라미터를 non-null 로 좁혀 하위 타입이 빠뜨릴 수 없게 했다: 비워 두면 `Exception` 이
  * `cause.toString()`(`java.net.UnknownHostException: Unable to resolve host ...` 같은 영문 기술
  * 원문)을 message 로 앉힌다. `cause` 도 기본값을 두지 않아, 원인 예외가 없는 하위 타입이 그 사실을
- * `null` 로 명시하게 한다.
+ * `null` 로 명시하게 한다. `cause` 도 non-null 이다 — 이 계열은 전부 인프라 예외를 옮겨 만들어지므로
+ * 원인이 없는 실패가 존재하지 않는다. 버리면 원 호출 지점의 stack trace 가 끊겨 Crashlytics 에서
+ * «어디서 난 실패인지» 를 잃는다. (`CoreAuthFailure` 루트가 nullable 인 건 사용자 취소처럼 예외에서
+ * 유래하지 않는 갈래를 갖기 때문이고, 이 계열엔 그런 갈래가 없다.)
  */
 sealed class ReceiverFailure(
     message: String,
-    cause: Throwable?,
+    cause: Throwable,
 ) : Exception(message, cause) {
     /**
      * 서버가 응답을 내려주며 거절한 실패.
@@ -31,6 +34,8 @@ sealed class ReceiverFailure(
      * @property serverCode 서버 봉투의 사유 code (BE `ErrorCode` 번호 — 1902 등). 화면 노출 게이트가
      *   표시 허용 allowlist 판정에 쓴다. 서버의 `@Valid` 바디 검증 실패는 enum code 가 아니라
      *   **리터럴 400** 으로 온다(실측) — 형식 검증 문구가 allowlist 에 못 드는 건 이 때문이다.
+     * @param cause 이 거절을 만든 인프라 예외(`ApiException`). 서버 code·status 는 위 프로퍼티가
+     *   나르지만, 원 호출 지점의 stack trace 는 이 값에만 남는다.
      * @property serverMessage 백엔드가 실제로 내려준 사용자 친화 message.
      *   **null 이면 서버가 message 미제공** — 호출처는 정적 R.string 으로 폴백한다. 클라가 만든 generic
      *   문구("알 수 없는 서버 에러" 등)는 여기 들어오지 않는다.
@@ -40,9 +45,10 @@ sealed class ReceiverFailure(
         val status: Int,
         val serverCode: Int,
         val serverMessage: String?,
+        cause: Throwable,
     ) : ReceiverFailure(
             serverMessage ?: "receiver request rejected (status=$status, serverCode=$serverCode)",
-            null,
+            cause,
         )
 
     /**

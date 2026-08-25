@@ -16,6 +16,7 @@ internal fun ApiException.toServerRejection(): ReceiverFailure.ServerRejection =
         status = status,
         serverCode = code,
         serverMessage = serverMessage,
+        cause = this,
     )
 
 /**

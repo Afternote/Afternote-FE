@@ -22,6 +22,7 @@ class ErrorPayloadTest {
                 status = 400,
                 serverMessage = "인증번호가 만료되었거나 존재하지 않습니다. 다시 요청해주세요.",
                 serverCode = 1902,
+                cause = CAUSE,
             )
 
         assertEquals(
@@ -37,6 +38,7 @@ class ErrorPayloadTest {
                 status = 400,
                 serverMessage = "인증번호는 UUID 형식이어야 합니다.",
                 serverCode = 400,
+                cause = CAUSE,
             )
 
         assertEquals(ErrorPayload.Res(FALLBACK_RES), validationRejection.toErrorPayload(FALLBACK_RES))
@@ -49,6 +51,7 @@ class ErrorPayloadTest {
                 status = 500,
                 serverMessage = "서버 내부 오류: could not execute statement",
                 serverCode = 1500,
+                cause = CAUSE,
             )
 
         assertEquals(ErrorPayload.Res(FALLBACK_RES), outage.toErrorPayload(FALLBACK_RES))
@@ -61,6 +64,7 @@ class ErrorPayloadTest {
                 status = 500,
                 serverMessage = "internal error while checking pending verification",
                 serverCode = 2008,
+                cause = CAUSE,
             )
 
         assertEquals(ErrorPayload.Res(FALLBACK_RES), outageWithKnownCode.toErrorPayload(FALLBACK_RES))
@@ -73,6 +77,7 @@ class ErrorPayloadTest {
                 status = 404,
                 serverMessage = null,
                 serverCode = 1900,
+                cause = CAUSE,
             )
 
         assertEquals(ErrorPayload.Res(FALLBACK_RES), silentRejection.toErrorPayload(FALLBACK_RES))
@@ -95,6 +100,7 @@ class ErrorPayloadTest {
                 status = 403,
                 serverMessage = "아직 전달 조건이 충족되지 않았습니다.",
                 serverCode = DELIVERY_CONDITION_NOT_MET,
+                cause = CAUSE,
             )
 
         assertEquals(
@@ -110,6 +116,7 @@ class ErrorPayloadTest {
                 status = 403,
                 serverMessage = "아직 전달 조건이 충족되지 않았습니다.",
                 serverCode = DELIVERY_CONDITION_NOT_MET,
+                cause = CAUSE,
             )
 
         assertTrue(notDeliverable.isDeliveryConditionNotMet())
@@ -118,7 +125,7 @@ class ErrorPayloadTest {
     @Test
     fun `같은 403 이라도 다른 사유 code 는 재시도 경로에 남는다`() {
         val otherRejection =
-            ReceiverFailure.ServerRejection(status = 403, serverMessage = "권한이 없습니다.", serverCode = 1903)
+            ReceiverFailure.ServerRejection(status = 403, serverMessage = "권한이 없습니다.", serverCode = 1903, cause = CAUSE)
 
         assertFalse(otherRejection.isDeliveryConditionNotMet())
         assertFalse(IOException("offline").isDeliveryConditionNotMet())
@@ -136,3 +143,9 @@ class ErrorPayloadTest {
         const val FALLBACK_RES = 1
     }
 }
+
+/**
+ * ServerRejection 이 나르는 원인 예외 자리. 프로덕션에서는 `ApiException` 이 들어오지만, 도메인 계약이
+ * 요구하는 것은 `Throwable` 뿐이라 이 테스트들은 core:network 를 끌어오지 않는다.
+ */
+private val CAUSE: Throwable = IOException("stub cause")
