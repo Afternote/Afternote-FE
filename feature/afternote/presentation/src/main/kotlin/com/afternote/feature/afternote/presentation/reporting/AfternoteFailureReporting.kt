@@ -1,7 +1,7 @@
 package com.afternote.feature.afternote.presentation.reporting
 
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.feature.receiver.domain.error.ReceiverServerRejectionException
+import com.afternote.feature.receiver.domain.error.ReceiverFailure
 
 /**
  * 애프터노트 흐름에서 실패가 발생한 지점.
@@ -76,11 +76,6 @@ enum class AfternoteFailureStage(
 
     /** 발신자 상세의 열람 인증 상태 조회. */
     SENDER_STATUS_LOAD("sender_status_load"),
-
-    // RECEIVED_EXPORT_DOWNLOAD·RECEIVED_EXPORT_SAVE 는 수신자 흐름 이전(#615)과 함께
-    // feature:receiver 의 ReceiverFailureStage(`receiver_stage` 키)로 이동 — home_stage 와의
-    // 이중 기록(#546 참고)이 그 키로 수렴된다. 위 수신자 단계들(RECEIVED_*·RECEIVER_* 등)의
-    // 이동은 열람 실패 처리 통일(#611·#614 계열)과 함께 별도 판단.
 }
 
 /**
@@ -104,30 +99,17 @@ fun ErrorReporter.recordAfternoteFailure(
  * `Receiver` 는 타입이 아니라 적용 맥락이다 — `Throwable` 확장이라 네트워크 타임아웃처럼 수신자와
  * 무관한 예외도 들어오고, 그런 실패는 기록 대상(true)이다. 타입으로 좁히는 건 아래 제외 판정뿐이다.
  *
- * 유일한 제외 대상은 "서버가 예상하고 처리한 거절"(이메일 미등록·인증번호 만료·마스터 키 오타 등)이다 —
- * 앱이 정상 동작한 결과라 고칠 것이 없고, 무엇보다 보관 한도를 사용자 오류가 차지해 실제 장애를 밀어낸다.
- * Crashlytics 는 non-fatal 을 **최근 8건만 보관하고 초과분은 오래된 것부터 버린다** — 이 수치가 코드 곳곳의
- * "보관 한도(최근 8건)" 서술의 근거다.
+ * 제외 대상은 "서버가 예상하고 처리한 거절" 하나다 — 앱이 정상 동작한 결과라 고칠 것이 없고, 무엇보다
+ * Crashlytics 가 non-fatal 을 **최근 8건만 보관하고 초과분은 오래된 것부터 버려서**(코드 곳곳의
+ * "보관 한도(최근 8건)" 서술이 이 수치를 가리킨다) 사용자 오류가 실제 장애를 밀어낸다.
  * https://firebase.google.com/docs/crashlytics/android/customize-crash-reports
  *
- * 그 판정은 **4xx + 서버 문구** 두 조건을 모두 만족할 때만 성립하고, 나머지는 전부 기록한다.
+ * 제외는 **4xx + 서버 문구** 둘 다일 때만 성립한다. 문구만 보면 5xx 장애가 통째로 빠지고(이 서버는 5xx 에도
+ * `message` 를 싣는다 — 500 body 에 내부 SQL 이 실려 온 실측 #511), status 만 보면 문구 없는 4xx —
+ * 파라미터 누락·만료 토큰 같은 FE 버그 신호 — 가 묻힌다. 판정이 빗나갈 땐 기록을 더 하는 쪽으로 빗나가야
+ * 한다: 잡음은 콘솔에 보여 나중에 좁힐 수 있지만, 제외한 건 보이지 않아 좁힐 기회조차 없다.
  *
- * | | 문구 있음 | 문구 없음 |
- * |---|---|---|
- * | 4xx | 제외 | 기록 |
- * | 5xx | 기록 | 기록 |
- *
- * 문구 유무만으로 가르지 않는 이유: 이 서버는 5xx 에도 `message` 를 싣는다 — 500 응답 body 에 내부 SQL
- * 문구가 그대로 실려 온 실측(#511)이 있다. 문구만 보면 정작 잡으려던 장애가 통째로 제외된다.
- *
- * 반대로 status 만으로도 가를 수 없다: 문구 없는 4xx 는 서버가 안내한 거절이 아니라 이쪽이 잘못된 요청을
- * 보내고 있다는 신호(파라미터 누락·잘못된 id·만료 토큰)라, 제외하면 FE 버그가 묻힌다. 이 서버는 4xx·5xx
- * 가리지 않고 문구를 싣는 것으로 관측돼(400·401·500 실측), 문구가 없다는 것 자체가 정상 경로가 아니다.
- *
- * 두 조건을 모두 요구하는 건 **확실할 때만 제외**하려는 것이다 — 판정이 빗나가면 기록을 더 하는 쪽으로
- * 빗나간다. 잡음은 콘솔에 보여서 나중에 좁힐 수 있지만, 제외한 건 보이지 않아 좁힐 기회조차 없다.
- *
- * 사유 code 로 좁히지 않은 이유: 서버의 code 체계가 사용자 오류와 장애를 아직 분리하지 않는다.
+ * 사유 code 로 좁히지 않은 이유 — 서버의 code 체계가 사용자 오류와 장애를 아직 분리하지 않는다.
  *
  * 다른 흐름에는 쓰지 않는다. 회원가입 이메일 인증은 사용자 오류가 code 1207 하나로만 와서 호출부가
  * 타입(`CoreAuthFailure.EmailVerification`)만 보고 거른다 — 문구 유무를 따질 필요가 없다.
@@ -135,13 +117,22 @@ fun ErrorReporter.recordAfternoteFailure(
  * 화면 노출 게이트(`toErrorPayload`, DocumentUploadUiState.kt)는 이 술어를 쓰지 않는다 — 노출은
  * 사유 code allowlist 로 더 좁게 가른다. 그쪽을 넓히더라도 이 판정을 따라 넓히지 말 것.
  */
-fun Throwable.shouldReportInReceiverFlow(): Boolean {
-    val isExpectedUserRejection =
-        this is ReceiverServerRejectionException &&
-            status in CLIENT_ERROR_STATUS_RANGE &&
-            !serverMessage.isNullOrBlank()
-    return !isExpectedUserRejection
-}
+fun Throwable.shouldReportInReceiverFlow(): Boolean =
+    when (this) {
+        is ReceiverFailure -> !isExpectedUserRejection()
+        else -> true
+    }
+
+/**
+ * 루트로 좁혀 `when` 을 exhaustive 하게 만든다 — 수신자 실패 유형이 늘면 여기가 컴파일 에러로 잡힌다.
+ * 판정을 빼먹은 새 유형은 조용히 기록 대상이 되므로(안전한 쪽), 놓쳐도 티가 나지 않는다.
+ */
+private fun ReceiverFailure.isExpectedUserRejection(): Boolean =
+    when (this) {
+        is ReceiverFailure.ServerRejection -> {
+            status in CLIENT_ERROR_STATUS_RANGE && !serverMessage.isNullOrBlank()
+        }
+    }
 
 /** 4xx = 요청을 보낸 쪽 문제. 이 대역 밖(5xx·그 외)은 서버 문구가 실려 와도 장애로 보고 기록한다. */
 private val CLIENT_ERROR_STATUS_RANGE = 400..499
