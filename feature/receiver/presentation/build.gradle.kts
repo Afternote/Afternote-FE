@@ -9,6 +9,7 @@ android {
     testOptions.unitTests.isIncludeAndroidResources = true
 
     namespace = "com.afternote.feature.receiver.presentation"
+    resourcePrefix = "receiver_"
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
 }
 
