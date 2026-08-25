@@ -118,7 +118,6 @@ class DraftListDeleteTest {
             content = "임시저장 본문",
             createdAt = "2026-08-23T10:00:00",
             isDraft = true,
-            imageUrl = null,
         )
 }
 

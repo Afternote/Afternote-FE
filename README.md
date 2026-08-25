@@ -109,24 +109,21 @@ keytool -exportcert -alias afternote-debug-shared -keystore ~/afternote-debug-sh
 - 수정 결과를 테스터가 확인해야 하는 결함이 머지되면, 묶음 크기와 관계없이 확인 가능한 빌드를 배포한다.
 - 현재 묶음의 모든 QA 포인트가 통과한 뒤 `develop`을 `main`으로 승격한다.
 
-### 머지별 자동 판단
+### 릴리스 PR 범위 자동 산출
 
-`develop` 대상 PR이 머지되면 [`deployment-decision.yml`](.github/workflows/deployment-decision.yml)이 마지막 성공 QA 배포 이후의 누적 PR·연결 이슈·실제 diff를 읽는다. 고위험 경로, 버그·기능 PR, 누적 이슈 수, 명시 QA 포인트 수, 영향 스코프 수를 위 기준으로 판정해 `QA 배포 권장` 또는 `QA 배포 보류`, 포함 이슈, QA 포인트를 머지된 PR에 코멘트한다. 판단만 자동화하며 APK 업로드는 실행하지 않는다.
+배포 시점은 위 기준에 따라 사람이 정한다 — `develop` → `main` 릴리스 PR을 여는 것이 곧 배포 결정이다.
 
-별도 API나 유료 AI를 호출하지 않으며 기존 GitHub Actions 실행량만 사용한다. Actions의 **Evaluate QA Distribution Candidate**에서 이미 머지된 PR 번호를 입력해 같은 규칙으로 수동 재검증할 수도 있다.
+릴리스 PR이 열리거나 head가 갱신되면 [`release-scope.yml`](.github/workflows/release-scope.yml)이 마지막 성공 배포 이후 `develop`에 머지된 PR과 그 연결 이슈를 모아 PR 본문의 `## 포함 이슈`를 채운다. head가 움직일 때마다 다시 채우므로 머지 직전에 목록을 손으로 대조할 필요가 없다.
 
-### QA 배포 — `develop` → Firebase App Distribution (수동, 기본 경로)
+`## QA 포인트`는 비어 있을 때만 구성 PR 본문에서 모은 초안으로 채우고, 사람이 쓴 문장이 있으면 건드리지 않는다. 두 섹션은 main push 시 그대로 릴리스 노트가 되므로 배포 전에 테스터가 실행할 문장으로 다듬는다.
 
-GitHub Actions의 **Release Distribution**에서 `Run workflow`를 누르고 ref를 `develop`으로 선택한 뒤 다음 값을 입력한다.
+별도 API나 유료 AI를 호출하지 않으며 기존 GitHub Actions 실행량만 사용한다. Actions의 **Collect Release Scope**에서 릴리스 PR 번호를 입력해 다시 산출할 수도 있다.
 
-- `issue_numbers`: 포함된 이슈 번호. 예: `#716, #723`
-- `qa_points`: 확인할 동작과 기대 결과. 여러 건은 세미콜론(`;`)으로 구분
+### 배포 — `main` → Firebase App Distribution (자동, 유일한 경로)
 
-워크플로가 위 입력을 릴리스 노트로 만들어 APK를 빌드하고 Firebase App Distribution의 `afternote` 그룹에 배포한다.
+여기서 배포는 검증할 `main` 빌드를 Firebase 테스터에게 전달하는 단계이며, Play Store 프로덕션 릴리스를 뜻하지 않는다.
 
-### 릴리스 후보 배포 — `main` → Firebase App Distribution (자동)
-
-여기서 릴리스 후보 배포는 검증할 `main` 빌드를 Firebase 테스터에게 전달하는 단계이며, Play Store 프로덕션 릴리스를 뜻하지 않는다.
+`develop` 수동 배포(`workflow_dispatch`)도 있었으나 #1029에서 제거했다. 도착지와 산출물 버전이 main 경로와 같아 실익이 PR 생성 한 단계뿐이었던 반면, release keystore와 service account를 임의 ref에 노출하는 표면이었다.
 
 `develop` → `main` 릴리스 PR 본문에 다음 섹션을 채운다.
 
@@ -196,19 +193,25 @@ bash .github/scripts/render-distribution-release-notes.sh /tmp/afternote-release
 docker build -t afternote-screenshot:latest -f Dockerfile.screenshot .
 docker run --rm -v "$PWD":/workspace -w /workspace afternote-screenshot:latest \
   ./gradlew :core:ui:updateScreenshotTest \
-            :app:updateScreenshotTest \
+            :feature:home:presentation:updateScreenshotTest \
+            :feature:receiver:presentation:updateScreenshotTest \
             :feature:onboarding:presentation:updateScreenshotTest \
             :feature:afternote:presentation:updateScreenshotTest
 ```
 
 → 변경된 PNG 가 각 모듈 `src/screenshotTestDebug/reference/...` 에 갱신. `git add` 후 commit.
 
+> 실패한 모듈만 갱신하려면 그 모듈 태스크만 지정한다 — 예: `./gradlew :feature:home:presentation:updateScreenshotTest`
+>
+> **대상 모듈 목록의 정본은 [`.github/workflows/screenshot.yml`](.github/workflows/screenshot.yml) 이다.** 모듈을 추가·이전했다면 워크플로와 이 문서를 함께 갱신한다.
+
 ## 로컬 baseline 검증 (CI 실패 재현)
 
 ```bash
 docker run --rm -v "$PWD":/workspace -w /workspace afternote-screenshot:latest \
   ./gradlew :core:ui:validateScreenshotTest \
-            :app:validateScreenshotTest \
+            :feature:home:presentation:validateScreenshotTest \
+            :feature:receiver:presentation:validateScreenshotTest \
             :feature:onboarding:presentation:validateScreenshotTest \
             :feature:afternote:presentation:validateScreenshotTest
 ```
