@@ -63,6 +63,11 @@ fun DiaryScreen(
     onItemClick: (Long, YearMonth) -> Unit,
     modifier: Modifier = Modifier,
     isListView: Boolean = true,
+    /**
+     * «수정하기» — 기록 ID 와 **보고 있는 달**. 달을 빼면 프리필이 이번 달 목록에서 그
+     * 기록을 찾다 실패하고, 빈 화면에서 저장하면 원본을 덮어쓸 수 있다 (#582 리뷰).
+     */
+    onEditClick: (Long, YearMonth) -> Unit = { _, _ -> },
     viewModel: DiaryListViewModel = hiltViewModel(),
 ) {
     // 갱신을 이 화면이 직접 건다. HomeScreen 이 VM 을 호이스팅해 대신 걸어 주면, 탭에
@@ -108,6 +113,7 @@ fun DiaryScreen(
                     monthDiaryCount = state.monthDiaryCount,
                     weeklyMoodEmoji = state.weeklyDominantMood?.toEmoji(),
                     onItemClick = onItemClick,
+                    onEdit = onEditClick,
                     onDelete = viewModel::delete,
                     onYearMonthChanged = viewModel::selectYearMonth,
                 )
@@ -127,7 +133,10 @@ internal fun DiaryListContent(
     modifier: Modifier = Modifier,
     monthDiaryCount: Int = 0,
     weeklyMoodEmoji: String? = null,
+    /** 항목 탭 — 저장된 기록 본문을 여는 상세 화면 (#759). */
     onItemClick: (Long, YearMonth) -> Unit = { _, _ -> },
+    /** «수정하기» — 기록 ID 와 이 화면이 보고 있는 달. 달은 여기서만 알 수 있다 (#582). */
+    onEdit: (Long, YearMonth) -> Unit = { _, _ -> },
     onDelete: (Long) -> Unit = {},
     onYearMonthChanged: (YearMonth) -> Unit = {},
 ) {
@@ -184,6 +193,7 @@ internal fun DiaryListContent(
 
             items(visibleDiaries, key = { it.id }) { diary ->
                 DiaryComponent(
+                    onEdit = { onEdit(diary.id, yearMonth) },
                     diary = diary,
                     onClick = { onItemClick(diary.id, yearMonth) },
                     modifier = Modifier.padding(vertical = 8.dp),
@@ -208,6 +218,7 @@ internal fun DiaryListContent(
             }
             gridItems(diaries, key = { it.id }) { diary ->
                 DiaryCard(
+                    onEdit = { onEdit(diary.id, yearMonth) },
                     diary = diary,
                     onClick = { onItemClick(diary.id, yearMonth) },
                     onDelete = { onDelete(diary.id) },

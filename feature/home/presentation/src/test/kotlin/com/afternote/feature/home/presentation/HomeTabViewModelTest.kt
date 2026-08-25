@@ -3,7 +3,6 @@ package com.afternote.feature.home.presentation
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.core.domain.repository.UserProfileRepository
 import com.afternote.core.domain.repository.UserRepository
-import com.afternote.core.model.MindRecordCategory
 import com.afternote.core.model.delivery.DeliveryConditionItem
 import com.afternote.core.model.delivery.ReceiverDeliveryConditions
 import com.afternote.core.model.user.Receiver
@@ -22,6 +21,7 @@ import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -520,12 +520,9 @@ private fun successState(
     HomeTabUiState.Success(
         userName = userName,
         isRecipientDesignated = isRecipientDesignated,
-        categoryCounts =
-            mapOf(
-                MindRecordCategory.DAILY_QUESTION to 0,
-                MindRecordCategory.DIARY to diaryCount,
-                MindRecordCategory.WEEKLY_REPORT to 0,
-            ),
+        // 값을 아는 카테고리만 담는다 — 데일리질문·주간 리포트는 아직 카드를 그리지 않고,
+        // 0 을 넣어 두면 카드가 늘 때 그대로 «기록 0건» 이 된다 (#700).
+        categoryCounts = mapOf(MindRecordCategory.DIARY to diaryCount),
         todayQuestionContent = questionContent,
     )
 

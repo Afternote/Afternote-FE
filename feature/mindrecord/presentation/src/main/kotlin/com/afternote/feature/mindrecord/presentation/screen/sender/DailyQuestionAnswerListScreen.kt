@@ -30,6 +30,7 @@ import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.mindrecord.presentation.component.DailyCalendar
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionBanner
 import com.afternote.feature.mindrecord.presentation.component.DailyQuestionListCard
+import com.afternote.feature.mindrecord.presentation.component.DeleteConfirmDialog
 import com.afternote.feature.mindrecord.presentation.component.MindRecordEmptyState
 import com.afternote.feature.mindrecord.presentation.component.MindRecordErrorBox
 import com.afternote.feature.mindrecord.presentation.model.DailyQuestion
@@ -49,6 +50,7 @@ fun DailyQuestionAnswerListScreen(
     onItemClick: (Long, YearMonth) -> Unit,
     modifier: Modifier = Modifier,
     isListView: Boolean = true,
+    onEditClick: (Long) -> Unit = {},
     viewModel: DailyQuestionListViewModel = hiltViewModel(),
 ) {
     // 갱신을 이 화면이 직접 건다. HomeScreen 이 VM 을 호이스팅해 대신 걸어 주면, 탭에
@@ -58,6 +60,17 @@ fun DailyQuestionAnswerListScreen(
     }
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var pendingDeleteId by remember { mutableStateOf<Long?>(null) }
+
+    pendingDeleteId?.let { id ->
+        DeleteConfirmDialog(
+            onConfirm = {
+                pendingDeleteId = null
+                viewModel.delete(id)
+            },
+            onDismiss = { pendingDeleteId = null },
+        )
+    }
 
     when (val state = uiState) {
         DailyQuestionListUiState.Loading -> {
@@ -92,7 +105,9 @@ fun DailyQuestionAnswerListScreen(
                     todayQuestion = state.todayQuestion,
                     answers = state.answers,
                     onItemClick = onItemClick,
-                    onDelete = viewModel::delete,
+                    onEdit = onEditClick,
+                    // 삭제는 되돌릴 수 없다 — 종전에는 메뉴를 누르는 즉시 실행됐다 (#582).
+                    onDelete = { pendingDeleteId = it },
                 )
             }
         }
@@ -105,7 +120,10 @@ private fun DailyQuestionListContent(
     answers: List<DailyQuestion>,
     modifier: Modifier = Modifier,
     todayQuestion: TodayQuestionUi? = null,
+    /** 항목 탭 — 저장된 기록 본문을 여는 상세 화면 (#759). */
     onItemClick: (Long, YearMonth) -> Unit = { _, _ -> },
+    /** «수정하기» — 정식 답변을 프리필한 작성 화면으로 (#582). */
+    onEdit: (Long) -> Unit = {},
     onDelete: (Long) -> Unit = {},
 ) {
     var yearMonth by remember { mutableStateOf(YearMonth.now()) }
@@ -186,6 +204,7 @@ private fun DailyQuestionListContent(
             DailyQuestionListCard(
                 answer = answer,
                 onClick = { onItemClick(answer.id, yearMonth) },
+                onEdit = { onEdit(answer.id) },
                 onDelete = { onDelete(answer.id) },
             )
         }

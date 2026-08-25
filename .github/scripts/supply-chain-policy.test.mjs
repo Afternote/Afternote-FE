@@ -12,6 +12,20 @@ async function workflows() {
   );
 }
 
+// 같은 저장소의 로컬 액션·reusable workflow 는 uses 대상이 이 저장소의 리비전이라
+// 고정 대상이 아니다. 그 밖은 전부 40자리 commit SHA 여야 한다.
+function isLocalReference(reference) {
+    return reference.startsWith("./");
+}
+
+function isPinnedToCommit(reference) {
+    return /@[0-9a-f]{40}$/.test(reference);
+}
+
+function actionReferences(source) {
+    return [...source.matchAll(/^\s*(?:-\s+)?uses:\s*(\S+)/gm)].map((match) => match[1]);
+}
+
 function requiresGradleSetup(source) {
   return source.includes('./gradlew') || /uses:\s*gradle\/actions\/setup-gradle@/.test(source);
 }
@@ -26,6 +40,65 @@ test('recognizes direct and script-delegated Gradle workflows', () => {
     requiresGradleSetup('uses: gradle/actions/dependency-submission@0123456789abcdef'),
     false,
   );
+});
+
+test('recognizes floating action references that the pinning policy must reject', () => {
+    // 정책이 실제로 무엇을 막는지 fixture 로 고정한다 — 태그·브랜치·짧은 SHA 는 전부
+    // 사후에 다른 코드로 바뀔 수 있다.
+    assert.equal(isPinnedToCommit('actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'), true);
+    assert.equal(isPinnedToCommit('actions/checkout@v7'), false);
+    assert.equal(isPinnedToCommit('ScaCap/action-ktlint@master'), false);
+    assert.equal(isPinnedToCommit('actions/checkout@3d3c42e'), false);
+    assert.equal(isLocalReference('./.github/actions/setup-ci-config'), true);
+    assert.equal(isLocalReference('actions/checkout@v7'), false);
+});
+
+test('every third-party action is pinned to an immutable commit SHA', async () => {
+    const unpinned = [];
+    for (const [name, source] of await workflows()) {
+        for (const reference of actionReferences(source)) {
+            if (isLocalReference(reference) || isPinnedToCommit(reference)) {
+                continue;
+            }
+            unpinned.push(`${name}: ${reference}`);
+        }
+    }
+
+    assert.deepEqual(unpinned, []);
+});
+
+test('every pinned action records the release it was pinned from', async () => {
+    // SHA 만 있으면 무엇을 쓰고 있는지 사람이 읽을 수 없고 Dependabot 갱신도 대조가 안 된다.
+    const undocumented = [];
+    for (const [name, source] of await workflows()) {
+        for (const line of source.split('\n')) {
+            const match = /^\s*(?:-\s+)?uses:\s*(\S+@[0-9a-f]{40})(.*)$/.exec(line);
+            if (match && !/^\s*#\s*v?\d/.test(match[2])) {
+                undocumented.push(`${name}: ${match[1]}`);
+            }
+        }
+    }
+
+    assert.deepEqual(undocumented, []);
+});
+
+test('composite actions in this repository pin their own dependencies', async () => {
+    const directory = new URL('../actions/', import.meta.url);
+    const names = await readdir(directory);
+    for (const name of names) {
+        let source;
+        try {
+            source = await readFile(new URL(`${name}/action.yml`, directory), 'utf8');
+        } catch {
+            continue;
+        }
+        for (const reference of actionReferences(source)) {
+            assert.ok(
+                isLocalReference(reference) || isPinnedToCommit(reference),
+                `${name} uses an unpinned action: ${reference}`,
+            );
+        }
+    }
 });
 
 test('every workflow that runs the Gradle wrapper uses the pinned setup-gradle action', async () => {

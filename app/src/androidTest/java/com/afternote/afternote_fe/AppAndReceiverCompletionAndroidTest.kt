@@ -37,10 +37,9 @@ import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeAuthRepository
 import com.afternote.afternote_fe.test.FakeErrorReporter
 import com.afternote.core.common.reporting.ErrorReporter
-import com.afternote.core.domain.error.InvalidLoginCredentialsException
+import com.afternote.core.domain.error.CoreAuthFailure
 import com.afternote.core.domain.repository.UserProfileRepository
 import com.afternote.core.domain.repository.auth.AuthRepository
-import com.afternote.core.model.MindRecordCategory
 import com.afternote.core.model.Session
 import com.afternote.core.ui.Route
 import com.afternote.core.ui.theme.AfternoteTheme
@@ -49,7 +48,8 @@ import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
 import com.afternote.feature.home.presentation.HomeTabActions
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
 import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
-import com.afternote.feature.receiver.domain.error.ReceiverEmailAuthException
+import com.afternote.feature.mindrecord.presentation.model.MindRecordCategory
+import com.afternote.feature.receiver.domain.error.ReceiverFailure
 import com.afternote.feature.receiver.domain.model.AfterNoteListItem
 import com.afternote.feature.receiver.domain.model.AfterNotesListResult
 import com.afternote.feature.receiver.domain.model.DeliveryVerification
@@ -142,7 +142,7 @@ class AppAndReceiverCompletionAndroidTest {
     @Test
     fun invalidCredentials_correctedPasswordThenRetry_entersHomeWithoutReportingUserError() {
         fakeAuth.emailLoginResults.addLast(
-            Result.failure(InvalidLoginCredentialsException(IllegalStateException("rejected"))),
+            Result.failure(CoreAuthFailure.InvalidLoginCredentials(IllegalStateException("rejected"))),
         )
         fakeAuth.emailLoginResults.addLast(
             Result.success(Session.DefaultSession("access", "refresh")),
@@ -344,7 +344,7 @@ class ReceiverRuntimeCompletionAndroidTest {
         val authRepository = CompletionReceiverAuthRepository()
         authRepository.verifyEmailResults.addLast(
             Result.failure(
-                ReceiverEmailAuthException(
+                ReceiverFailure.ServerRejection(
                     status = 400,
                     serverMessage = "인증번호가 만료되었습니다. 다시 발급해 주세요.",
                     serverCode = 1902,

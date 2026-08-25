@@ -1,5 +1,6 @@
 package com.afternote.feature.afternote.domain.usecase.editor
 
+import com.afternote.feature.afternote.domain.error.AfternoteFailure
 import com.afternote.feature.afternote.domain.repository.author.MediaInput
 import com.afternote.feature.afternote.domain.repository.author.MediaKind
 import com.afternote.feature.afternote.domain.repository.author.MemorialMediaUploadRepository
@@ -16,9 +17,9 @@ import org.junit.Test
  * 검증 핵심:
  * 1. 입력 [MediaInput] 과 [MediaKind] 를 Repository 에 그대로 전달하는지 (로컬/원격 확정은 호출부 책임)
  * 2. 매체별 resolve 결과를 서로 뒤바꾸지 않고 각 필드에 담는지 (null 은 미첨부)
- * 3. 영상 resolve 실패면 [MemorialVideoSaveException] 으로 wrap 하고 **사진은 resolve 하지 않은 채**
+ * 3. 영상 resolve 실패면 [AfternoteFailure.MediaSave] (media=VIDEO) 로 wrap 하고 **사진은 resolve 하지 않은 채**
  *    short-circuit 하는지 (non-local return)
- * 4. 사진 resolve 실패면 [MemorialPhotoSaveException] 으로 wrap 하고, 두 경우 모두 원본 예외를 cause 로 보존하는지
+ * 4. 사진 resolve 실패면 media=PHOTO 로 wrap 하고, 두 경우 모두 원본 예외를 cause 로 보존하는지
  *
  * 외부 라이브러리(mockk 등) 없이 호출 인자/횟수를 기록하는 직접 작성 fake를 사용한다.
  */
@@ -91,7 +92,7 @@ class ResolveMemorialMediaForSaveUseCaseTest {
     }
 
     @Test
-    fun `영상 resolve 실패면 MemorialVideoSaveException 으로 wrap 하고 사진은 resolve 하지 않음`() {
+    fun `영상 resolve 실패면 MediaSave(VIDEO) 로 wrap 하고 사진은 resolve 하지 않음`() {
         val videoError = IllegalStateException("video resolve failed")
         val repo = FakeMemorialMediaUploadRepository().apply { videoResult = Result.failure(videoError) }
 
@@ -101,14 +102,16 @@ class ResolveMemorialMediaForSaveUseCaseTest {
             }
 
         assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull() is MemorialVideoSaveException)
+        val videoFailure = result.exceptionOrNull()
+        assertTrue(videoFailure is AfternoteFailure.MediaSave)
+        assertEquals(MediaKind.VIDEO, (videoFailure as AfternoteFailure.MediaSave).media)
         assertSame(videoError, result.exceptionOrNull()?.cause) // 원본 예외를 cause 로 보존
         // short-circuit — 사진 resolve 미호출
         assertEquals(0, repo.calls.count { it.second == MediaKind.PHOTO })
     }
 
     @Test
-    fun `사진 resolve 실패면 MemorialPhotoSaveException 으로 wrap`() {
+    fun `사진 resolve 실패면 MediaSave(PHOTO) 로 wrap`() {
         val photoError = IllegalStateException("photo resolve failed")
         val repo = FakeMemorialMediaUploadRepository().apply { photoResult = Result.failure(photoError) }
 
@@ -118,7 +121,9 @@ class ResolveMemorialMediaForSaveUseCaseTest {
             }
 
         assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull() is MemorialPhotoSaveException)
+        val photoFailure = result.exceptionOrNull()
+        assertTrue(photoFailure is AfternoteFailure.MediaSave)
+        assertEquals(MediaKind.PHOTO, (photoFailure as AfternoteFailure.MediaSave).media)
         assertSame(photoError, result.exceptionOrNull()?.cause)
     }
 
