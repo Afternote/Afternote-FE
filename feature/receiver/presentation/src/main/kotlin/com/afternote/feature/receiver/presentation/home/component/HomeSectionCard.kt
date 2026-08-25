@@ -88,6 +88,12 @@ fun rememberCountLine(
         append(suffix)
     }
 
-/** 조회 실패를 정상 0건과 구분하는 중립 문구. */
+/**
+ * 개수 자리에 넣을 문자열 — 값이 있으면 숫자, 없으면 대시 (#952).
+ *
+ * 갈래를 문장이 아니라 **개수 자리 하나로** 좁힌다. 문장을 통째로 갈아 끼우면 섹션 높이와
+ * 줄 구성이 바뀌고(시안 확정값은 레이아웃 유지), 호출부마다 같은 문장이 if/else 양쪽에
+ * 두 번 적혀 한쪽만 고쳐질 자리가 된다.
+ */
 @Composable
-fun unavailableCountLine(): AnnotatedString = AnnotatedString(stringResource(R.string.receiver_home_section_count_unavailable))
+fun countText(count: Int?): String = count?.toString() ?: stringResource(R.string.receiver_home_section_count_unavailable)

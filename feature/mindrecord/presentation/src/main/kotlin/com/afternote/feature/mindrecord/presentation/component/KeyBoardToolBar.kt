@@ -35,6 +35,7 @@ import com.afternote.core.ui.theme.AfternoteDesign
 import com.afternote.feature.mindrecord.presentation.R
 import com.afternote.feature.mindrecord.presentation.model.TextStyleState
 import com.afternote.feature.mindrecord.presentation.model.TextStyleType
+import com.afternote.core.ui.R as CoreUiR
 
 @Composable
 fun BottomToolbar(
@@ -221,7 +222,7 @@ private fun CloseButton(onClick: () -> Unit) {
     ) {
         Icon(
             painter = painterResource(R.drawable.mindrecord_close),
-            contentDescription = stringResource(R.string.mindrecord_toolbar_close_cd),
+            contentDescription = stringResource(CoreUiR.string.core_ui_content_description_close),
             tint = AfternoteDesign.colors.gray9,
             modifier = Modifier.size(10.dp),
         )
