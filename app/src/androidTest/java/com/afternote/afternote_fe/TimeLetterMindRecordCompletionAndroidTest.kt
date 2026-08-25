@@ -30,6 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeUserRepository
+import com.afternote.afternote_fe.test.FakeVoiceRecorderRepository
 import com.afternote.afternote_fe.test.testReceiver
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.model.user.User
@@ -667,6 +668,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
             timeLetterRepository = repository,
             userRepository = userRepository,
             fileMetadataRepository = CompletionFileMetadataRepository,
+            voiceRecorderRepository = FakeVoiceRecorderRepository,
             savedStateHandle = SavedStateHandle(mapOf("timeLetterId" to null)),
         )
     }

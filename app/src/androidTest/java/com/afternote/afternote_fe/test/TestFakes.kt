@@ -23,8 +23,24 @@ import com.afternote.feature.mindrecord.domain.model.DiaryUpdatePayload
 import com.afternote.feature.mindrecord.domain.model.TodayDailyQuestion
 import com.afternote.feature.mindrecord.domain.repository.DailyQuestionRepository
 import com.afternote.feature.mindrecord.domain.repository.DiaryRepository
+import com.afternote.feature.timeletter.domain.model.RecordedAudio
+import com.afternote.feature.timeletter.domain.repository.VoiceRecorderRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+
+object FakeVoiceRecorderRepository : VoiceRecorderRepository {
+    override suspend fun start(): Result<Unit> = error("start should not be called")
+
+    override suspend fun stop(): Result<RecordedAudio> = error("stop should not be called")
+
+    override suspend fun discard() = Unit
+
+    override fun retainRecordedFile() = Unit
+
+    override suspend fun deleteRecordedFile(uriString: String) = Unit
+
+    override fun release() = Unit
+}
 
 class FakeAuthRepository(
     loggedIn: Boolean = false,

@@ -12,6 +12,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeUserRepository
+import com.afternote.afternote_fe.test.FakeVoiceRecorderRepository
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
@@ -133,6 +134,7 @@ class TimeLetterFlowAndroidTest {
 
                     override suspend fun getMimeType(uriString: String): String? = "application/pdf"
                 },
+            voiceRecorderRepository = FakeVoiceRecorderRepository,
             savedStateHandle = SavedStateHandle(mapOf("timeLetterId" to null)),
         )
     }

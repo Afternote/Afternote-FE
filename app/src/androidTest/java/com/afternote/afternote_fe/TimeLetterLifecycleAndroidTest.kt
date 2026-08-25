@@ -17,6 +17,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
+import com.afternote.afternote_fe.test.FakeVoiceRecorderRepository
 import com.afternote.core.domain.repository.PhotoUploadRepository
 import com.afternote.core.domain.repository.UserRepository
 import com.afternote.core.model.user.Receiver
@@ -323,6 +324,7 @@ class TimeLetterLifecycleAndroidTest {
             timeLetterRepository = repository,
             userRepository = userRepository,
             fileMetadataRepository = PrivateFileMetadataRepository,
+            voiceRecorderRepository = FakeVoiceRecorderRepository,
             savedStateHandle = SavedStateHandle(mapOf("timeLetterId" to timeLetterId)),
         )
     }
