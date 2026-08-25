@@ -2,6 +2,7 @@ plugins {
     id("afternote.android.library.compose")
     id("afternote.android.hilt")
     alias(libs.plugins.compose.screenshot)
+    id("afternote.kover")
 }
 
 android {

@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.google.services)
     alias(libs.plugins.firebase.app.distribution)
     alias(libs.plugins.firebase.crashlytics)
+    id("afternote.kover")
 }
 
 val localProperties = Properties()

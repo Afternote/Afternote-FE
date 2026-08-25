@@ -3,6 +3,7 @@ plugins {
     id("afternote.android.hilt")
     kotlin("plugin.serialization")
     alias(libs.plugins.compose.screenshot)
+    id("afternote.kover")
 }
 
 // Google Cloud Console에서 발급받은 Web Client ID.
