@@ -15,7 +15,7 @@ import com.android.tools.screenshot.PreviewTest
  */
 private val SAMPLE_SONGS =
     (1..9).map { i ->
-        PlaylistSongDisplay(id = "s$i", title = "노래 제목 $i", artist = "가수 이름")
+        PlaylistSongDisplay(selectionKey = "s$i", title = "노래 제목 $i", artist = "가수 이름")
     }
 
 @PreviewTest
