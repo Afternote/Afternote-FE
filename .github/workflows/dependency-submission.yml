@@ -1,7 +1,8 @@
 name: Gradle Dependency Submission
 
-# develop·main push 는 신뢰된 base snapshot 을 직접 제출한다. PR 은 fork 를 포함해 write token 없이
-# snapshot artifact 만 만들고, default branch 의 별도 workflow_run 이 이를 제출한다.
+# develop·main push 는 신뢰된 base snapshot 을 직접 제출한다. PR 은 의존성 입력이 바뀐 경우에만
+# fork 를 포함해 write token 없이 snapshot artifact 를 만들고, default branch 의 별도
+# workflow_run 이 이를 제출한다. 일반 소스 변경은 job 자체는 성공하되 Gradle 실행을 생략한다.
 #
 # main 이 함께 있어야 하는 이유 — dependency-review 는 PR 의 base ref 스냅샷과 head 스냅샷을
 # 짝지어 «추가된 의존성» 을 계산한다. develop 만 제출하면 릴리스 PR(develop → main)의 base 가
@@ -58,6 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      pull-requests: read
     env:
       # base(develop)·head(PR) 스냅샷이 같은 correlator 라야 compare API 가 둘을 짝짓는다.
       # job 이름을 따라 갈리면 develop base PR 에서 base 가 0 건으로 보여 그 PR 의 의존성
@@ -69,13 +71,26 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Detect dependency graph input changes
+        id: dependency-inputs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: node .github/scripts/detect-dependency-input-changes.mjs
+
+      - name: Skip unchanged dependency graph
+        if: steps.dependency-inputs.outputs.changed == 'false'
+        run: echo "No dependency graph inputs changed; skipping PR snapshot generation."
+
       - name: Set up JDK 21
+        if: steps.dependency-inputs.outputs.changed == 'true'
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Generate dependency graph artifact
+        if: steps.dependency-inputs.outputs.changed == 'true'
         uses: gradle/actions/dependency-submission@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         with:
           additional-arguments: --no-configuration-cache --stacktrace
