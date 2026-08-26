@@ -71,7 +71,7 @@ data class EditorFormState(
      */
     fun displayAlbumCovers(liveSongs: List<Song>): List<AlbumCover> =
         liveSongs.map { s ->
-            AlbumCover(id = s.id, imageUrl = s.albumCoverUrl, title = s.title)
+            AlbumCover(imageUrl = s.albumCoverUrl, title = s.title)
         }
 
     val currentServiceOptions: List<String>
