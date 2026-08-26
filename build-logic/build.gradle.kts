@@ -7,6 +7,7 @@ dependencies {
     implementation(libs.android.gradlePlugin)
     implementation(libs.kotlin.gradlePlugin)
     implementation(libs.ktlint.gradle)
+    implementation(libs.kover.gradlePlugin)
     compileOnly(libs.compose.compiler.gradle.plugin)
     compileOnly("org.jetbrains.kotlin:kotlin-serialization:${libs.versions.kotlin.get()}")
     testImplementation(libs.junit)
@@ -87,6 +88,10 @@ gradlePlugin {
         register("androidDatastore") {
             id = "afternote.android.datastore"
             implementationClass = "AndroidDatastoreConventionPlugin"
+        }
+        register("kover") {
+            id = "afternote.kover"
+            implementationClass = "AfternoteKoverConventionPlugin"
         }
     }
 }

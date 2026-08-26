@@ -149,20 +149,20 @@ class AppAndReceiverCompletionAndroidTest {
         )
 
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.welcome_start))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_welcome_start))
             .performClick()
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.login_email_label))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_login_email_label))
             .performTextInput("receiver@afternote.local")
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.login_password_label))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_login_password_label))
             .performTextInput("wrong-password")
 
         val loginButton =
-            hasText(context.getString(OnboardingR.string.login_button)) and hasClickAction()
+            hasText(context.getString(OnboardingR.string.onboarding_login_button)) and hasClickAction()
         composeRule.onNode(loginButton).performClick()
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.login_invalid_credentials))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_login_invalid_credentials))
             .assertIsDisplayed()
 
         composeRule
@@ -205,7 +205,7 @@ class AppAndReceiverCompletionAndroidTest {
     @Test
     fun welcomeCheckRecords_opensActualReceivedRecordsStartDestination() {
         composeRule
-            .onNodeWithText(context.getString(OnboardingR.string.welcome_check_records))
+            .onNodeWithText(context.getString(OnboardingR.string.onboarding_welcome_check_records))
             .assertIsDisplayed()
             .performClick()
 
@@ -660,7 +660,12 @@ class ReceiverRuntimeCompletionAndroidTest {
 
         composeRule.setContent {
             AfternoteTheme {
-                ReceivedAfternoteDetailRoute(onBack = {}, onNavigateToPlaylist = {}, viewModel = viewModel)
+                ReceivedAfternoteDetailRoute(
+                    onBack = {},
+                    onNavigateToFullList = {},
+                    onNavigateToPlaylist = {},
+                    viewModel = viewModel,
+                )
             }
         }
 
@@ -705,6 +710,7 @@ class ReceiverRuntimeCompletionAndroidTest {
             AfternoteTheme {
                 ReceivedAfternoteDetailRoute(
                     onBack = {},
+                    onNavigateToFullList = {},
                     onNavigateToPlaylist = playlistRoutes::add,
                     viewModel = viewModel,
                 )
