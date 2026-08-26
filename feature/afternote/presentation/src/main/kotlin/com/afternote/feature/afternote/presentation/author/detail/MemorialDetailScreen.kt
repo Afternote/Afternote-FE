@@ -497,10 +497,10 @@ private fun AlbumCoverItem(album: AlbumCover) {
 
 private fun memorialDetailPreviewAlbumCovers(): List<AlbumCover> =
     listOf(
-        AlbumCover(id = "1"),
-        AlbumCover(id = "2"),
-        AlbumCover(id = "3"),
-        AlbumCover(id = "4"),
+        AlbumCover(),
+        AlbumCover(),
+        AlbumCover(),
+        AlbumCover(),
     )
 
 @Preview(
