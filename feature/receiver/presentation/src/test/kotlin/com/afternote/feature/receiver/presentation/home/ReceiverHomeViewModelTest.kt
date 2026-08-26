@@ -3,7 +3,7 @@ package com.afternote.feature.receiver.presentation.home
 import com.afternote.core.common.reporting.ErrorReporter
 import com.afternote.feature.mindrecord.domain.model.MindRecordType
 import com.afternote.feature.mindrecord.domain.model.ReceiverMindRecords
-import com.afternote.feature.mindrecord.domain.repository.MindRecordReceiverRepository
+import com.afternote.feature.mindrecord.domain.testing.FakeMindRecordReceiverRepository
 import com.afternote.feature.receiver.domain.model.AfterNotesListResult
 import com.afternote.feature.receiver.domain.model.ReceivedAfternoteDetail
 import com.afternote.feature.receiver.domain.model.ReceivedExportBundle
@@ -181,12 +181,6 @@ private class FakeReceiverRepository : ReceiverRepository {
     override suspend fun saveReceivedExportToFile(bundle: ReceivedExportBundle): Result<Unit> = unexpected("saveReceivedExportToFile")
 
     override suspend fun loadSenderMessage(): Result<SenderMessageInfo?> = message
-}
-
-private class FakeMindRecordReceiverRepository : MindRecordReceiverRepository {
-    var result: Result<ReceiverMindRecords> = Result.success(mindRecords(0, 0))
-
-    override suspend fun getAll(): Result<ReceiverMindRecords> = result
 }
 
 private class FakeReceiverTimeLetterRepository : ReceiverTimeLetterRepository {
