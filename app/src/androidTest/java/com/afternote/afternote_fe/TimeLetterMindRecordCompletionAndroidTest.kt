@@ -376,7 +376,7 @@ class TimeLetterMindRecordCompletionAndroidTest {
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
             retryViewModel.uiState.value is DailyQuestionListUiState.Error
         }
-        composeRule.onNodeWithText("home offline").assertIsDisplayed()
+        composeRule.onNodeWithText("데일리 질문을 불러오지 못했습니다.").assertIsDisplayed()
 
         listResults.addLast(
             Result.success(
@@ -425,6 +425,8 @@ class TimeLetterMindRecordCompletionAndroidTest {
             (listViewModel.uiState.value as? DailyQuestionListUiState.Success)?.answers?.isEmpty() == true
         }
         composeRule.onNodeWithText("아직 등록된 답변이 없어요.").assertIsDisplayed()
+        val initialListQueryCount = repository.listQueries.size
+        val initialGetTodayCalls = repository.getTodayCalls
 
         composeRule.runOnIdle {
             writeViewModel =
@@ -448,13 +450,20 @@ class TimeLetterMindRecordCompletionAndroidTest {
             submitSuccessCalls == 1 &&
                 (listViewModel.uiState.value as? DailyQuestionListUiState.Success)?.answers?.size == 1
         }
-        composeRule.onNodeWithText("오늘의 테스트 질문").assertIsDisplayed()
+        composeRule.onAllNodes(hasText("오늘의 테스트 질문"))[0].assertIsDisplayed()
         composeRule.onNodeWithText("작성 후 목록에 반영될 답변").assertIsDisplayed()
         assertEquals(1, repository.createdPayloads.size)
         assertEquals(71L, repository.createdPayloads.single().questionId)
         assertEquals(false, repository.createdPayloads.single().isDraft)
-        assertEquals(2, repository.listQueries.size)
-        assertEquals(3, repository.getTodayCalls)
+        assertEquals(initialListQueryCount + 2, repository.listQueries.size)
+        assertEquals(
+            listOf(
+                FakeDailyQuestionRepository.ListQuery(date = null, draftOnly = true),
+                FakeDailyQuestionRepository.ListQuery(date = null, draftOnly = null),
+            ),
+            repository.listQueries.drop(initialListQueryCount),
+        )
+        assertEquals(initialGetTodayCalls + 2, repository.getTodayCalls)
     }
 
     @Test
@@ -502,8 +511,9 @@ class TimeLetterMindRecordCompletionAndroidTest {
                                     savedStateHandle =
                                         SavedStateHandle(
                                             mapOf(
-                                                "draftId" to draftId,
-                                                "draftYearMonth" to draftYearMonth,
+                                                "recordId" to draftId,
+                                                "yearMonth" to draftYearMonth,
+                                                "isDraft" to true,
                                             ),
                                         ),
                                     repository = repository,
@@ -523,6 +533,8 @@ class TimeLetterMindRecordCompletionAndroidTest {
             }
         }
 
+        composeRule.onNode(hasText("이어 쓸 일기") and hasClickAction()).assertIsDisplayed()
+        val initialDiaryQueryCount = repository.listQueries.size
         composeRule.onNode(hasText("이어 쓸 일기") and hasClickAction()).performClick()
         composeRule.waitUntil(timeoutMillis = TIMEOUT) {
             writeViewModel?.uiState?.value?.draftLoaded == true
@@ -551,30 +563,41 @@ class TimeLetterMindRecordCompletionAndroidTest {
         assertEquals(TodayMood.SOSO, update.second.todayMood)
         // date·imageUrl 은 수정 요청 계약에 없어 페이로드에서 걷었다 (#955).
         assertTrue(repository.createdPayloads.isEmpty())
-        assertEquals(2, repository.listQueries.size)
+        assertEquals(initialDiaryQueryCount + 2, repository.listQueries.size)
         assertTrue(
-            repository.listQueries.all { it == FakeDiaryRepository.ListQuery(currentMonth.toString(), true) },
+            repository.listQueries.drop(initialDiaryQueryCount).all {
+                it == FakeDiaryRepository.ListQuery(currentMonth.toString(), true)
+            },
         )
     }
 
     @Test
     fun memorySpace_supportedSuccess_opensAndClosesDetailThenNavigatesBack() {
         val memoryDate = LocalDate.now()
+        val memory =
+            Diary(
+                diaryId = 501L,
+                title = "추억이 된 하루",
+                content = "이 순간은 나에게 특별한 의미가 있었습니다.",
+                date = memoryDate.toString(),
+                createdAt = memoryDate.toString(),
+                todayMood = TodayMood.HAPPY,
+                imageUrl = "https://afternote.test/memory.jpg",
+                isDraft = false,
+            )
         val diaryRepository =
             FakeDiaryRepository(
-                initialDiaries =
-                    listOf(
-                        Diary(
-                            diaryId = 501L,
-                            title = "추억이 된 하루",
-                            content = "이 순간은 나에게 특별한 의미가 있었습니다.",
-                            date = memoryDate.toString(),
-                            createdAt = memoryDate.toString(),
-                            todayMood = TodayMood.HAPPY,
-                            imageUrl = "https://afternote.test/memory.jpg",
-                            isDraft = false,
+                onGetList = { yearMonth, _ ->
+                    val diaries =
+                        if (yearMonth == YearMonth.from(memoryDate).toString()) listOf(memory) else emptyList()
+                    Result.success(
+                        DiaryList(
+                            diaries = diaries,
+                            monthDiaryCount = diaries.size,
+                            weeklyDominantMood = diaries.firstOrNull()?.todayMood,
                         ),
-                    ),
+                    )
+                },
             )
         val viewModel = MemorySpaceViewModel(diaryRepository, FakeDailyQuestionRepository())
         var backCalls = 0
