@@ -5,6 +5,7 @@ import {
   REVIEW_DEBT_LABEL,
   STALE_LABEL,
   applyPlan,
+  lastRelevantActivityAt,
   planHygiene,
   renderSummary,
   reviewDebtReason,
@@ -19,9 +20,10 @@ function pullRequest(overrides = {}) {
     title: 'example',
     url: 'https://example.test/pull/10',
     isDraft: false,
-    updatedAt: new Date(now.getTime() - day).toISOString(),
+    createdAt: new Date(now.getTime() - day).toISOString(),
     author: 'author',
     labels: [],
+    comments: [],
     requestedReviewers: [],
     reviews: [{ author: 'reviewer', state: 'APPROVED', submittedAt: '2026-08-20T00:00:00Z' }],
     commits: [],
@@ -61,7 +63,13 @@ test('the latest decisive review controls the debt state', () => {
 test('stale is added after 14 days and reconciled away after recent activity', () => {
   const plan = planHygiene({
     pullRequests: [
-      pullRequest({ number: 11, updatedAt: new Date(now.getTime() - 15 * day).toISOString() }),
+      pullRequest({
+        number: 11,
+        createdAt: new Date(now.getTime() - 20 * day).toISOString(),
+        reviews: [
+          { author: 'reviewer', state: 'APPROVED', submittedAt: new Date(now.getTime() - 15 * day).toISOString() },
+        ],
+      }),
       pullRequest({ number: 12, labels: [STALE_LABEL] }),
     ],
     now,
@@ -73,6 +81,44 @@ test('stale is added after 14 days and reconciled away after recent activity', (
     { action: 'remove', label: STALE_LABEL, number: 12 },
   ]);
   assert.deepEqual(plan.stale.map(({ number }) => number), [11]);
+});
+
+test('automation labels and bot comments cannot reset the stale clock', () => {
+  const old = new Date(now.getTime() - 20 * day).toISOString();
+  const recent = new Date(now.getTime() - day).toISOString();
+  const pull = pullRequest({
+    number: 19,
+    createdAt: old,
+    updatedAt: recent,
+    comments: [{ author: 'github-actions[bot]', createdAt: recent }],
+    reviews: [{ author: 'reviewer', state: 'APPROVED', submittedAt: old }],
+  });
+
+  assert.equal(lastRelevantActivityAt(pull), Date.parse(old));
+  assert.deepEqual(planHygiene({ pullRequests: [pull], now }).operations, [
+    { action: 'add', label: STALE_LABEL, number: 19 },
+  ]);
+});
+
+test('a recent human comment or commit keeps a pull request active', () => {
+  const old = new Date(now.getTime() - 20 * day).toISOString();
+  const recent = new Date(now.getTime() - day).toISOString();
+  const pulls = [
+    pullRequest({
+      number: 20,
+      createdAt: old,
+      comments: [{ author: 'teammate', createdAt: recent }],
+      reviews: [],
+    }),
+    pullRequest({
+      number: 21,
+      createdAt: old,
+      reviews: [],
+      commits: [{ committedAt: recent, parentCount: 1 }],
+    }),
+  ];
+
+  assert.deepEqual(planHygiene({ pullRequests: pulls, now }).stale, []);
 });
 
 test('review debt labels are reconciled in both directions', () => {

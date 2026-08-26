@@ -29,13 +29,16 @@ query($owner: String!, $name: String!, $cursor: String) {
         title
         url
         isDraft
-        updatedAt
+        createdAt
         author { login }
         labels(first: 50) { nodes { name } }
+        comments(last: 100) {
+          nodes { author { login } createdAt }
+        }
         reviewRequests(first: 20) {
           nodes { requestedReviewer { ... on User { login } } }
         }
-        reviews(last: 100, states: [APPROVED, CHANGES_REQUESTED]) {
+        reviews(last: 100) {
           nodes { author { login } state submittedAt }
         }
         commits(last: 100) {
@@ -55,7 +58,12 @@ export function reviewDebtReason(pullRequest) {
     return null;
   }
   const reviews = [...(pullRequest.reviews ?? [])]
-    .filter((review) => review.submittedAt && review.author)
+    .filter(
+      (review) =>
+        review.submittedAt
+        && review.author
+        && ['APPROVED', 'CHANGES_REQUESTED'].includes(review.state),
+    )
     .sort((left, right) => left.submittedAt.localeCompare(right.submittedAt));
   if (reviews.length === 0) {
     return '아무도 승인/변경요청 판정을 남기지 않음';
@@ -80,6 +88,29 @@ export function reviewDebtReason(pullRequest) {
   return `@${latest.author}에게 재리뷰 요청 후 반영 커밋 ${fixes.length}개`;
 }
 
+export function lastRelevantActivityAt(pullRequest) {
+  const candidates = [pullRequest.createdAt];
+  for (const comment of pullRequest.comments ?? []) {
+    if (!isBot(comment.author)) {
+      candidates.push(comment.createdAt);
+    }
+  }
+  for (const review of pullRequest.reviews ?? []) {
+    if (!isBot(review.author)) {
+      candidates.push(review.submittedAt);
+    }
+  }
+  for (const commit of pullRequest.commits ?? []) {
+    candidates.push(commit.committedAt);
+  }
+
+  const timestamps = candidates.map(Date.parse).filter(Number.isFinite);
+  if (timestamps.length === 0) {
+    throw new Error(`#${pullRequest.number} has no valid activity timestamp`);
+  }
+  return Math.max(...timestamps);
+}
+
 export function planHygiene({ pullRequests, now = new Date(), staleDays = 14 }) {
   if (!Number.isSafeInteger(staleDays) || staleDays < 1) {
     throw new Error('staleDays must be a positive integer');
@@ -91,7 +122,7 @@ export function planHygiene({ pullRequests, now = new Date(), staleDays = 14 }) 
 
   for (const pullRequest of pullRequests) {
     const labels = new Set(pullRequest.labels ?? []);
-    const staleByAge = !isBot(pullRequest.author) && Date.parse(pullRequest.updatedAt) <= cutoff;
+    const staleByAge = !isBot(pullRequest.author) && lastRelevantActivityAt(pullRequest) <= cutoff;
     if (staleByAge) {
       stale.push(pullRequest);
     }
@@ -185,9 +216,13 @@ function normalizePullRequest(node) {
     title: node.title,
     url: node.url,
     isDraft: node.isDraft,
-    updatedAt: node.updatedAt,
+    createdAt: node.createdAt,
     author: node.author?.login ?? '',
     labels: (node.labels?.nodes ?? []).map((label) => label.name),
+    comments: (node.comments?.nodes ?? []).map((comment) => ({
+      author: comment.author?.login ?? '',
+      createdAt: comment.createdAt,
+    })),
     requestedReviewers: (node.reviewRequests?.nodes ?? [])
       .map((request) => request.requestedReviewer?.login)
       .filter(Boolean),
