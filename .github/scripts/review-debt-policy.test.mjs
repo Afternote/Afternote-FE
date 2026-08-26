@@ -45,19 +45,20 @@ test("a pull request is never counted as debt against its own author", () => {
 });
 
 test("the dead review_request_removed path is gone", () => {
-    // 빚 기준이 «아무도 응답하지 않은 열린 PR» 로 바뀌면서(#1148) 가드는 리뷰 요청
-    // 목록을 보지 않는다. 요청을 스스로 떼던 우회가 사라졌으므로, 그것을 기록하던
-    // bypass-audit job 도 걷었다 — 가드 런 19건 전부 debt-check 만 실행했고 이
-    // job 은 한 번도 발동하지 않았다. 되살리려면 우회가 되살아났는지부터 볼 것.
+    // 빚 기준은 여전히 열린 PR 전체다. 변경요청 뒤 명시적 재요청 여부를 확인하더라도
+    // 요청 제거 자체를 별도 감사하는 job 은 가드 런 19건 동안 발동한 적이 없었다.
     // 주석은 이력이라 남기고, 실제로 트리거를 걸고 job 을 세우는 자리만 금지한다.
     assert.doesNotMatch(guard, /^\s*types:[^\n]*review_request_removed/m);
     assert.doesNotMatch(guard, /^\s{2}bypass-audit:/m);
 });
 
-test("changes requested becomes debt again once the author has pushed a fix", () => {
-    // 변경요청은 끝난 판정이 아니다. 반영 뒤 재리뷰가 없으면 그 PR 은 영영 머지되지
-    // 못한다. 병합 커밋은 반영이 아니므로 parents 2개 이상은 빼고 센다.
+test("changes requested becomes debt only after explicit rerequest and a fix", () => {
+    // 수정 커밋만으로 리뷰 의무를 만들지 않는다. 변경요청을 낸 리뷰어가 현재 요청
+    // 목록에 다시 들어온 경우에만 반영 여부를 보고 빚으로 센다.
     assert.match(guard, /CHANGES_REQUESTED/);
+    assert.match(guard, /requested_reviewers\[\]\.login/);
+    assert.match(guard, /blocked_by/);
+    assert.match(guard, /명시적 재리뷰 요청 없음/);
     assert.match(guard, /\(\.parents \| length\) < 2/);
     assert.match(guard, /select\(\.commit\.committer\.date > \\"\$blocked_at\\"\)/);
 });

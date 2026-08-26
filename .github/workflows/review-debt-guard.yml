@@ -6,9 +6,8 @@
 # 그 PR 을 닫는다. 브랜치는 남으므로 리뷰를 끝낸 뒤 되살릴 수 있다.
 #
 # 빚의 기준은 «나에게 걸린 리뷰 요청» 이 아니라 «아무도 응답하지 않은 열린 PR»
-# 이다(#1148). 요청 목록을 아예 보지 않으므로, 리뷰어가 자기 요청을 스스로 떼던
-# 옛 우회로는 더 이상 통하지 않는다. 그것을 기록하던 bypass-audit job 은 발동
-# 실적 0건인 채로 죽어 있었으므로 함께 걷었다.
+# 이다(#1148). 다만 한번 변경요청을 남긴 뒤에는 작성자가 그 리뷰어에게 명시적으로
+# 재요청해야만 공이 돌아온다. 수정 커밋만으로 리뷰 의무를 만들지는 않는다(#1136).
 name: review-debt-guard
 
 on:
@@ -78,7 +77,8 @@ jobs:
           # 자기 PR 은 자신이 리뷰할 수 없으므로 뺀다. draft 는 리뷰를 받을 상태가
           # 아니므로 뺀다(review-request-all 도 draft 에는 요청을 걸지 않는다).
           if ! open_prs=$(gh api "repos/$REPO/pulls?state=open&per_page=100" --paginate \
-                --jq ".[] | select(.draft == false) | select(.user.login != \"$AUTHOR\") | \"\(.number)\t\(.created_at[0:10])\t\(.title)\""); then
+                --jq ".[] | select(.draft == false) | select(.user.login != \"$AUTHOR\")
+                           | \"\(.number)\t\(.created_at[0:10])\t\(.title)\t\([.requested_reviewers[].login | ascii_downcase] | join(\",\"))\""); then
             echo "::error::열린 PR 조회에 실패했다 — 근거 없이 PR 을 닫지 않는다. 재실행할 것"
             exit 1
           fi
@@ -89,17 +89,17 @@ jobs:
           # 승인과 변경요청은 무게가 다르다.
           #   APPROVED        머지 가능한 상태다. 그 뒤에 작성자가 손보는 것은
           #                   작성자 몫이고, 다시 봐 줄 의무는 누구에게도 없다.
-          #   CHANGES_REQUESTED  아직 끝난 판정이 아니다. 작성자가 지적을 반영하면
-          #                   공이 리뷰어에게 돌아온다. 재리뷰가 없으면 그 PR 은
-          #                   영영 머지되지 못한다.
+          #   CHANGES_REQUESTED  아직 끝난 판정이 아니다. 다만 수정 커밋만으로 리뷰
+          #                   의무가 생기지는 않는다. 작성자가 같은 리뷰어에게 명시적으로
+          #                   재요청해야 공이 돌아온다.
           #
           # 그래서 빚은 두 종류다. (1) 아무도 판정을 내지 않은 PR,
-          # (2) 미해소 변경요청이 있는데 작성자가 이미 반영 커밋을 올린 PR.
-          # 변경요청 뒤로 새 커밋이 없으면 공은 아직 작성자에게 있으므로 빚이 아니다.
+          # (2) 미해소 변경요청을 낸 리뷰어에게 재요청이 걸렸고 작성자가 이미 반영
+          # 커밋을 올린 PR. 재요청이 없거나 변경요청 뒤 새 커밋이 없으면 빚이 아니다.
           # 반영 여부는 병합 커밋(parents 2개 이상)을 뺀 실질 커밋으로만 센다.
           debt_file=$(mktemp)
           reviews_file=$(mktemp)
-          while IFS=$'\t' read -r pn created title; do
+          while IFS=$'\t' read -r pn created title requested_reviewers; do
             [ -n "$pn" ] || continue
 
             gh api "repos/$REPO/pulls/$pn/reviews" --paginate \
@@ -113,22 +113,31 @@ jobs:
               continue
             fi
 
-            # 리뷰어별 최신 판정이 CHANGES_REQUESTED 인 것 중 가장 늦은 시각.
-            blocked_at=$(jq -rs 'group_by(.u) | map(sort_by(.t) | last)
+            # 리뷰어별 최신 판정이 CHANGES_REQUESTED 이면서, 현재 그 리뷰어에게 다시
+            # 요청이 걸린 것 중 가장 늦은 판정. 리뷰 제출 시 기존 요청은 제거되므로
+            # 이 교집합은 작성자가 마지막 판정 뒤 명시적으로 재요청했다는 뜻이다.
+            blocked=$(jq -rs --arg active ",$requested_reviewers," '
+                                 group_by(.u | ascii_downcase) | map(sort_by(.t) | last)
+                                 | map(.u |= ascii_downcase)
                                  | map(select(.s == "CHANGES_REQUESTED"))
-                                 | sort_by(.t) | last | .t // empty' "$reviews_file" 2>/dev/null || true)
+                                 | map(select(.u as $reviewer
+                                              | $active | contains("," + $reviewer + ",")))
+                                 | sort_by(.t)
+                                 | if length == 0 then empty else last | [.u, .t] | @tsv end' \
+                               "$reviews_file" 2>/dev/null || true)
 
-            if [ -z "$blocked_at" ]; then
-              echo "#$pn — 승인됨, 빚 아님"
+            if [ -z "$blocked" ]; then
+              echo "#$pn — 결정 리뷰 뒤 명시적 재리뷰 요청 없음, 빚 아님"
               continue
             fi
+            IFS=$'\t' read -r blocked_by blocked_at <<< "$blocked"
 
             fixed=$(gh api "repos/$REPO/pulls/$pn/commits?per_page=100" --paginate \
               --jq "[.[] | select((.parents | length) < 2)
                          | select(.commit.committer.date > \"$blocked_at\")] | length" 2>/dev/null || true)
 
             if [ "${fixed:-0}" -gt 0 ]; then
-              echo "#$pn — 변경요청 반영(${fixed}커밋) 뒤 재리뷰 없음"
+              echo "#$pn — @$blocked_by 재리뷰 요청 뒤 변경요청 반영(${fixed}커밋), 아직 미응답"
               printf '%s\t%s\t%s\n' "$pn" "$created" "$title" >> "$debt_file"
             else
               echo "#$pn — 변경요청 미반영, 공은 작성자에게"
@@ -160,7 +169,7 @@ jobs:
             echo
             echo "이 저장소는 아무도 응답하지 않은 PR 이 1건이라도 남아 있으면 새 PR 을 열 수 없습니다 (#1136)."
             echo
-            echo "각 PR 에 필요한 리뷰는 **한 건**입니다 — 누구든 먼저 판정을 내면 그 PR 은 모두의 목록에서 빠집니다. 승인 뒤에 올라온 변경을 다시 봐 줄 의무는 없지만, **변경요청은 작성자가 반영한 시점에 다시 리뷰어의 몫**이 됩니다."
+            echo "각 PR 에 필요한 리뷰는 **한 건**입니다 — 누구든 먼저 판정을 내면 그 PR 은 모두의 목록에서 빠집니다. 승인 뒤 변경을 다시 볼 의무는 없고, **변경요청도 작성자가 같은 리뷰어에게 재요청한 뒤 반영 커밋을 올린 경우에만** 다시 리뷰어의 몫이 됩니다."
             echo
             echo "### 되살리는 법"
             echo
@@ -175,4 +184,3 @@ jobs:
 
           echo "미응답 ${count}건 — PR #$PR_NUMBER 를 닫는다"
           gh pr close "$PR_NUMBER" --repo "$REPO" --comment "$(cat /tmp/debt-comment.md)"
-
