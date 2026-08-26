@@ -9,10 +9,8 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.core.data.repoimpl.UserRepositoryImpl
-import com.afternote.core.domain.repository.UserRepository
-import com.afternote.core.domain.repository.auth.AuthRepository
-import com.afternote.core.model.Session
-import com.afternote.core.model.TokenBundle
+import com.afternote.core.domain.testing.FakeAuthRepository
+import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.core.model.delivery.ConditionState
 import com.afternote.core.model.delivery.DeliveryConditionItem
 import com.afternote.core.model.delivery.DeliveryConditionType
@@ -59,7 +57,6 @@ import com.afternote.feature.setting.presentation.viewmodel.SettingViewModel
 import com.afternote.feature.setting.presentation.viewmodel.WithdrawUiState
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
@@ -71,6 +68,13 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.ArrayDeque
+import com.afternote.core.domain.testing.FakeUserRepository.ConnectedAccountLinkCall as CompletionConnectedLinkCall
+import com.afternote.core.domain.testing.FakeUserRepository.DeliveryUpdateCall as CompletionDeliveryUpdateCall
+import com.afternote.core.domain.testing.FakeUserRepository.ProfileUpdateCall as CompletionProfileUpdateCall
+import com.afternote.core.domain.testing.FakeUserRepository.PushUpdateCall as CompletionPushUpdateCall
+import com.afternote.core.domain.testing.FakeUserRepository.ReceiverCreateCall as CompletionReceiverRegistrationCall
+import com.afternote.core.domain.testing.FakeUserRepository.ReceiverMessageCall as CompletionReceiverMessageCall
+import com.afternote.core.domain.testing.FakeUserRepository.ReceiverUpdateCall as CompletionReceiverEditCall
 
 @RunWith(AndroidJUnit4::class)
 class SettingCompletionAndroidTest {
@@ -86,8 +90,9 @@ class SettingCompletionAndroidTest {
     @Test
     fun profileUpdate_success_emitsExactPayloadAndEventAfterPendingRequest() {
         setHarnessContent()
-        val repository = CompletionUserRepository()
-        val updateGate = repository.enqueueProfileUpdate()
+        val scenario = CompletionUserScenario()
+        val repository = scenario.repository
+        val updateGate = scenario.enqueueProfileUpdate()
         val viewModel = ProfileEditViewModel(repository)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             viewModel.uiState.value is ProfileEditUiState.Success
@@ -116,10 +121,11 @@ class SettingCompletionAndroidTest {
     @Test
     fun pushUpdates_keepOptimisticSuccessAndRollbackFailureWithExactPatches() {
         setHarnessContent()
-        val repository = CompletionUserRepository()
-        val newsletterGate = repository.enqueuePushUpdate()
-        val mindRecordGate = repository.enqueuePushUpdate()
-        val afterNoteGate = repository.enqueuePushUpdate()
+        val scenario = CompletionUserScenario()
+        val repository = scenario.repository
+        val newsletterGate = scenario.enqueuePushUpdate()
+        val mindRecordGate = scenario.enqueuePushUpdate()
+        val afterNoteGate = scenario.enqueuePushUpdate()
         val viewModel =
             PushNotificationViewModel(
                 context = ApplicationProvider.getApplicationContext(),
@@ -144,7 +150,7 @@ class SettingCompletionAndroidTest {
             Result.success(COMPLETION_DEFAULT_PUSH_SETTING.copy(timeLetter = false)),
         )
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            repository.completedPushUpdates == 1
+            scenario.completedPushUpdates == 1
         }
         assertFalse(viewModel.uiState.value.isNewsletterOn)
 
@@ -164,7 +170,7 @@ class SettingCompletionAndroidTest {
 
         mindRecordGate.complete(Result.failure(IllegalStateException("offline")))
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            repository.completedPushUpdates == 2 && viewModel.uiState.value.isMindRecordOn
+            scenario.completedPushUpdates == 2 && viewModel.uiState.value.isMindRecordOn
         }
 
         assertTrue(viewModel.uiState.value.isMindRecordOn)
@@ -193,7 +199,7 @@ class SettingCompletionAndroidTest {
             Result.success(COMPLETION_DEFAULT_PUSH_SETTING.copy(timeLetter = false, afterNote = false)),
         )
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
-            repository.completedPushUpdates == 3
+            scenario.completedPushUpdates == 3
         }
 
         assertFalse(viewModel.uiState.value.isAfternoteOn)
@@ -203,9 +209,10 @@ class SettingCompletionAndroidTest {
     @Test
     fun connectedAccounts_linkThenUnlink_appliesExactPayloadAndServerState() {
         setHarnessContent()
-        val repository = CompletionUserRepository()
-        val linkGate = repository.enqueueConnectedLink()
-        val unlinkGate = repository.enqueueConnectedUnlink()
+        val scenario = CompletionUserScenario()
+        val repository = scenario.repository
+        val linkGate = scenario.enqueueConnectedLink()
+        val unlinkGate = scenario.enqueueConnectedUnlink()
         val viewModel = ConnectedAccountsViewModel(repository)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
             !viewModel.uiState.value.isLoading
@@ -268,9 +275,10 @@ class SettingCompletionAndroidTest {
     @Test
     fun receiverRegistration_failureThenRetry_succeedsWithSameNormalizedPayload() {
         setHarnessContent()
-        val repository = CompletionUserRepository()
-        val firstGate = repository.enqueueReceiverCreate()
-        val retryGate = repository.enqueueReceiverCreate()
+        val scenario = CompletionUserScenario()
+        val repository = scenario.repository
+        val firstGate = scenario.enqueueReceiverCreate()
+        val retryGate = scenario.enqueueReceiverCreate()
         val viewModel = ReceiverRegisterViewModel(repository)
         val expectedCall =
             CompletionReceiverRegistrationCall(
@@ -326,12 +334,13 @@ class SettingCompletionAndroidTest {
     @Test
     fun receiverEdit_serialFailurePartialFailureThenRetry_sendsExactPayloadOncePerAttempt() {
         setHarnessContent()
-        val repository = CompletionUserRepository()
-        val firstBasicGate = repository.enqueueReceiverUpdate()
-        val retryBasicGate = repository.enqueueReceiverUpdate()
-        val retryMessageGate = repository.enqueueReceiverMessageUpdate()
-        val finalBasicGate = repository.enqueueReceiverUpdate()
-        val finalMessageGate = repository.enqueueReceiverMessageUpdate()
+        val scenario = CompletionUserScenario()
+        val repository = scenario.repository
+        val firstBasicGate = scenario.enqueueReceiverUpdate()
+        val retryBasicGate = scenario.enqueueReceiverUpdate()
+        val retryMessageGate = scenario.enqueueReceiverMessageUpdate()
+        val finalBasicGate = scenario.enqueueReceiverUpdate()
+        val finalMessageGate = scenario.enqueueReceiverMessageUpdate()
         val viewModel =
             ReceiverEditViewModel(
                 savedStateHandle = SavedStateHandle(mapOf("receiverId" to RECEIVER_ID)),
@@ -421,12 +430,13 @@ class SettingCompletionAndroidTest {
     @Test
     fun deliveryCondition_failureThenRetry_succeedsWithExactReceiverPatch() {
         setHarnessContent()
-        val repository = CompletionUserRepository()
+        val scenario = CompletionUserScenario()
+        val repository = scenario.repository
         val initialConditions = completionDefaultDeliveryConditions()
-        repository.deliveryConditions =
+        scenario.deliveryConditions =
             ReceiverDeliveryConditions(receiverId = RECEIVER_ID, conditions = initialConditions)
-        val firstGate = repository.enqueueDeliveryUpdate()
-        val retryGate = repository.enqueueDeliveryUpdate()
+        val firstGate = scenario.enqueueDeliveryUpdate()
+        val retryGate = scenario.enqueueDeliveryUpdate()
         val viewModel =
             DeliveryConditionViewModel(
                 savedStateHandle = SavedStateHandle(mapOf("receiverId" to RECEIVER_ID)),
@@ -498,7 +508,7 @@ class SettingCompletionAndroidTest {
         val userApi = CompletionGatedWithdrawalUserApi(calls)
         val firstGate = userApi.enqueueDelete()
         val retryGate = userApi.enqueueDelete()
-        val authRepository = CompletionStatefulWithdrawalAuthRepository(calls)
+        val authRepository = completionStatefulWithdrawalAuthRepository(calls)
         val repository = UserRepositoryImpl(userApi, authRepository)
         val viewModel = SettingViewModel(authRepository, repository)
         composeRule.waitUntil(timeoutMillis = TIMEOUT_MILLIS) {
@@ -555,49 +565,6 @@ class SettingCompletionAndroidTest {
         const val RECEIVER_ID = 77L
     }
 }
-
-private data class CompletionProfileUpdateCall(
-    val name: String?,
-    val phone: String?,
-    val profileImageUrl: String?,
-)
-
-private data class CompletionPushUpdateCall(
-    val timeLetter: Boolean?,
-    val mindRecord: Boolean?,
-    val afterNote: Boolean?,
-)
-
-private data class CompletionReceiverRegistrationCall(
-    val name: String,
-    val relation: String,
-    val phone: String?,
-    val email: String?,
-    val message: String?,
-)
-
-private data class CompletionConnectedLinkCall(
-    val provider: String,
-    val accessToken: String,
-)
-
-private data class CompletionReceiverEditCall(
-    val receiverId: Long,
-    val name: String,
-    val phone: String,
-    val relation: String,
-    val email: String,
-)
-
-private data class CompletionReceiverMessageCall(
-    val receiverId: Long,
-    val message: String,
-)
-
-private data class CompletionDeliveryUpdateCall(
-    val receiverId: Long,
-    val conditions: List<DeliveryConditionItem>,
-)
 
 private val COMPLETION_DEFAULT_USER =
     User(
@@ -674,7 +641,7 @@ private fun completionDefaultDeliveryConditions() =
         ),
     )
 
-private class CompletionUserRepository : UserRepository {
+private class CompletionUserScenario {
     private val profileUpdateGates = ArrayDeque<CompletableDeferred<Result<User>>>()
     private val pushUpdateGates = ArrayDeque<CompletableDeferred<Result<UserPushSetting>>>()
     private val receiverCreateGates = ArrayDeque<CompletableDeferred<Result<ReceiverCreated>>>()
@@ -683,48 +650,58 @@ private class CompletionUserRepository : UserRepository {
     private val deliveryUpdateGates = ArrayDeque<CompletableDeferred<Result<ReceiverDeliveryConditions>>>()
     private val connectedLinkGates = ArrayDeque<CompletableDeferred<Result<UserConnectedAccount>>>()
     private val connectedUnlinkGates = ArrayDeque<CompletableDeferred<Result<UserConnectedAccount>>>()
-
-    private val recordedProfileUpdates = mutableListOf<CompletionProfileUpdateCall>()
-    private val recordedPushUpdates = mutableListOf<CompletionPushUpdateCall>()
-    private val recordedReceiverCreates = mutableListOf<CompletionReceiverRegistrationCall>()
-    private val recordedReceiverUpdates = mutableListOf<CompletionReceiverEditCall>()
-    private val recordedReceiverMessages = mutableListOf<CompletionReceiverMessageCall>()
-    private val recordedDeliveryUpdates = mutableListOf<CompletionDeliveryUpdateCall>()
-    private val recordedConnectedLinks = mutableListOf<CompletionConnectedLinkCall>()
-    private val recordedConnectedUnlinks = mutableListOf<String>()
     private var pushUpdateCompletions = 0
-
-    override val receiverListFlow: Flow<List<Receiver>> = flowOf(emptyList())
 
     var deliveryConditions =
         ReceiverDeliveryConditions(receiverId = 77L, conditions = completionDefaultDeliveryConditions())
 
-    val profileUpdateCalls: List<CompletionProfileUpdateCall>
-        get() = synchronized(this) { recordedProfileUpdates.toList() }
-
-    val pushUpdateCalls: List<CompletionPushUpdateCall>
-        get() = synchronized(this) { recordedPushUpdates.toList() }
-
     val completedPushUpdates: Int
         get() = synchronized(this) { pushUpdateCompletions }
 
-    val receiverCreateCalls: List<CompletionReceiverRegistrationCall>
-        get() = synchronized(this) { recordedReceiverCreates.toList() }
-
-    val receiverUpdateCalls: List<CompletionReceiverEditCall>
-        get() = synchronized(this) { recordedReceiverUpdates.toList() }
-
-    val receiverMessageCalls: List<CompletionReceiverMessageCall>
-        get() = synchronized(this) { recordedReceiverMessages.toList() }
-
-    val deliveryUpdateCalls: List<CompletionDeliveryUpdateCall>
-        get() = synchronized(this) { recordedDeliveryUpdates.toList() }
-
-    val connectedLinkCalls: List<CompletionConnectedLinkCall>
-        get() = synchronized(this) { recordedConnectedLinks.toList() }
-
-    val connectedUnlinkCalls: List<String>
-        get() = synchronized(this) { recordedConnectedUnlinks.toList() }
+    val repository =
+        FakeUserRepository.strict().apply {
+            onReceiverListFlow = { flowOf(emptyList()) }
+            onGetMyProfile = { COMPLETION_DEFAULT_USER }
+            onUpdateMyProfile = { _, _, _ ->
+                takeGate(profileUpdateGates, "updateMyProfile").await().getOrThrow()
+            }
+            onGetMyPushSettings = { COMPLETION_DEFAULT_PUSH_SETTING }
+            onUpdateMyPushSettings = { _, _, _ ->
+                val gate = takeGate(pushUpdateGates, "updateMyPushSettings")
+                try {
+                    gate.await().getOrThrow()
+                } finally {
+                    synchronized(this@CompletionUserScenario) { pushUpdateCompletions += 1 }
+                }
+            }
+            onCreateReceiver = { _, _, _, _, _ ->
+                takeGate(receiverCreateGates, "createReceiver").await().getOrThrow()
+            }
+            onGetReceiverDeliveryConditions = { receiverId ->
+                assertEquals(this@CompletionUserScenario.deliveryConditions.receiverId, receiverId)
+                this@CompletionUserScenario.deliveryConditions
+            }
+            onUpdateReceiverDeliveryConditions = { _, _ ->
+                takeGate(deliveryUpdateGates, "updateReceiverDeliveryConditions").await().getOrThrow()
+            }
+            onGetReceiverDetail = { receiverId ->
+                assertEquals(COMPLETION_DEFAULT_RECEIVER_DETAIL.receiverId, receiverId)
+                COMPLETION_DEFAULT_RECEIVER_DETAIL
+            }
+            onUpdateReceiver = { _, _, _, _, _ ->
+                takeGate(receiverUpdateGates, "updateReceiver").await().getOrThrow()
+            }
+            onUpdateReceiverMessage = { _, _ ->
+                takeGate(receiverMessageGates, "updateReceiverMessage").await().getOrThrow()
+            }
+            onGetConnectedAccounts = { completionConnectedAccounts() }
+            onLinkConnectedAccount = { _, _ ->
+                takeGate(connectedLinkGates, "linkConnectedAccount").await().getOrThrow()
+            }
+            onUnlinkConnectedAccount = {
+                takeGate(connectedUnlinkGates, "unlinkConnectedAccount").await().getOrThrow()
+            }
+        }
 
     fun enqueueProfileUpdate(): CompletableDeferred<Result<User>> =
         CompletableDeferred<Result<User>>().also { gate ->
@@ -766,132 +743,10 @@ private class CompletionUserRepository : UserRepository {
             synchronized(this) { connectedUnlinkGates.addLast(gate) }
         }
 
-    override suspend fun getMyProfile(): User = COMPLETION_DEFAULT_USER
-
-    override suspend fun updateMyProfile(
-        name: String?,
-        phone: String?,
-        profileImageUrl: String?,
-    ): User {
-        val gate =
-            synchronized(this) {
-                recordedProfileUpdates += CompletionProfileUpdateCall(name, phone, profileImageUrl)
-                profileUpdateGates.pollFirst() ?: error("updateMyProfile gate was not prepared")
-            }
-        return gate.await().getOrThrow()
-    }
-
-    override suspend fun getMyPushSettings(): UserPushSetting = COMPLETION_DEFAULT_PUSH_SETTING
-
-    override suspend fun updateMyPushSettings(
-        timeLetter: Boolean?,
-        mindRecord: Boolean?,
-        afterNote: Boolean?,
-    ): UserPushSetting {
-        val gate =
-            synchronized(this) {
-                recordedPushUpdates += CompletionPushUpdateCall(timeLetter, mindRecord, afterNote)
-                pushUpdateGates.pollFirst() ?: error("updateMyPushSettings gate was not prepared")
-            }
-        return try {
-            gate.await().getOrThrow()
-        } finally {
-            synchronized(this) { pushUpdateCompletions += 1 }
-        }
-    }
-
-    override suspend fun createReceiver(
-        name: String,
-        relation: String,
-        phone: String?,
-        email: String?,
-        message: String?,
-    ): ReceiverCreated {
-        val gate =
-            synchronized(this) {
-                recordedReceiverCreates += CompletionReceiverRegistrationCall(name, relation, phone, email, message)
-                receiverCreateGates.pollFirst() ?: error("createReceiver gate was not prepared")
-            }
-        return gate.await().getOrThrow()
-    }
-
-    override suspend fun getReceiverDeliveryConditions(receiverId: Long): ReceiverDeliveryConditions {
-        assertEquals(deliveryConditions.receiverId, receiverId)
-        return deliveryConditions
-    }
-
-    override suspend fun updateReceiverDeliveryConditions(
-        receiverId: Long,
-        conditions: List<DeliveryConditionItem>,
-    ): ReceiverDeliveryConditions {
-        val gate =
-            synchronized(this) {
-                recordedDeliveryUpdates += CompletionDeliveryUpdateCall(receiverId, conditions)
-                deliveryUpdateGates.pollFirst() ?: error("updateReceiverDeliveryConditions gate was not prepared")
-            }
-        return gate.await().getOrThrow()
-    }
-
-    override suspend fun getReceivers(): List<Receiver> = completionUnexpected("getReceivers")
-
-    override suspend fun getReceiverDetail(receiverId: Long): ReceiverDetail {
-        assertEquals(COMPLETION_DEFAULT_RECEIVER_DETAIL.receiverId, receiverId)
-        return COMPLETION_DEFAULT_RECEIVER_DETAIL
-    }
-
-    override suspend fun updateReceiver(
-        receiverId: Long,
-        name: String,
-        phone: String,
-        relation: String,
-        email: String,
-    ): Receiver {
-        val gate =
-            synchronized(this) {
-                recordedReceiverUpdates += CompletionReceiverEditCall(receiverId, name, phone, relation, email)
-                receiverUpdateGates.pollFirst() ?: error("updateReceiver gate was not prepared")
-            }
-        return gate.await().getOrThrow()
-    }
-
-    override suspend fun updateReceiverMessage(
-        receiverId: Long,
-        message: String,
-    ) {
-        val gate =
-            synchronized(this) {
-                recordedReceiverMessages += CompletionReceiverMessageCall(receiverId, message)
-                receiverMessageGates.pollFirst() ?: error("updateReceiverMessage gate was not prepared")
-            }
-        gate.await().getOrThrow()
-    }
-
-    override suspend fun deleteAccount() = completionUnexpected<Unit>("deleteAccount")
-
-    override suspend fun logActivity() = completionUnexpected<Unit>("logActivity")
-
-    override suspend fun getConnectedAccounts(): UserConnectedAccount = completionConnectedAccounts()
-
-    override suspend fun linkConnectedAccount(
-        provider: String,
-        accessToken: String,
-    ): UserConnectedAccount {
-        val gate =
-            synchronized(this) {
-                recordedConnectedLinks += CompletionConnectedLinkCall(provider, accessToken)
-                connectedLinkGates.pollFirst() ?: error("linkConnectedAccount gate was not prepared")
-            }
-        return gate.await().getOrThrow()
-    }
-
-    override suspend fun unlinkConnectedAccount(provider: String): UserConnectedAccount {
-        val gate =
-            synchronized(this) {
-                recordedConnectedUnlinks += provider
-                connectedUnlinkGates.pollFirst() ?: error("unlinkConnectedAccount gate was not prepared")
-            }
-        return gate.await().getOrThrow()
-    }
+    private fun <T> takeGate(
+        gates: ArrayDeque<T>,
+        method: String,
+    ): T = synchronized(this) { gates.pollFirst() ?: error("$method gate was not prepared") }
 }
 
 private class CompletionCallLedger {
@@ -997,49 +852,23 @@ private class CompletionGatedWithdrawalUserApi(
     ): BaseResponse<ReceiverDeliveryConditionDto> = completionUnexpected("updateReceiverDeliveryConditions")
 }
 
-private class CompletionStatefulWithdrawalAuthRepository(
-    private val calls: CompletionCallLedger,
-) : AuthRepository {
-    private val loggedIn = MutableStateFlow(true)
-    override val isLoggedIn: Flow<Boolean> = loggedIn
-
-    private var clearCalls = 0
-    val clearSessionCalls: Int
-        get() = synchronized(this) { clearCalls }
-
-    override suspend fun clearSession(): Result<Unit> {
-        synchronized(this) { clearCalls += 1 }
-        calls.record("clearSession")
-        loggedIn.value = false
-        return Result.success(Unit)
-    }
-
-    override suspend fun saveSession(
-        accessToken: String,
-        refreshToken: String,
-    ): Result<Unit> = completionUnexpected("saveSession")
-
-    override suspend fun updateTokens(
-        accessToken: String,
-        refreshToken: String,
-    ): Result<Unit> = completionUnexpected("updateTokens")
-
-    override suspend fun getAccessToken(): Result<String?> = Result.success("access")
-
-    override suspend fun getRefreshToken(): Result<String?> = Result.success("refresh")
-
-    override suspend fun defaultLogin(
-        email: String,
-        password: String,
-    ): Result<Session.DefaultSession> = completionUnexpected("defaultLogin")
-
-    override suspend fun kakaoLogin(oauthToken: String): Result<Session.SocialSession> = completionUnexpected("kakaoLogin")
-
-    override suspend fun googleLogin(idToken: String): Result<Session.SocialSession> = completionUnexpected("googleLogin")
-
-    override suspend fun rotateToken(): Result<TokenBundle> = completionUnexpected("rotateToken")
-
-    override suspend fun logout(): Result<Unit> = completionUnexpected("logout")
-}
+private fun completionStatefulWithdrawalAuthRepository(calls: CompletionCallLedger): FakeAuthRepository =
+    FakeAuthRepository
+        .strict(
+            loggedIn = true,
+            accessToken = "access",
+            refreshToken = "refresh",
+        ).apply {
+            onIsLoggedIn = { loggedInState }
+            onGetAccessToken = null
+            onGetRefreshToken = null
+            onClearSession = {
+                calls.record("clearSession")
+                accessToken = null
+                refreshToken = null
+                loggedIn = false
+                Result.success(Unit)
+            }
+        }
 
 private fun <T> completionUnexpected(method: String): T = error("$method must not be called by this test")

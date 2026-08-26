@@ -100,7 +100,7 @@ class ReceiverAfternotePagingSourceTest {
                     code = 200,
                     data =
                         ReceivedAfternoteListDto(
-                            afternotes = listOf(ReceivedAfternoteDto(id = 5L, title = "소셜 계정 정리 부탁해")),
+                            afternotes = listOf(ReceivedAfternoteDto(id = 5L, title = "소셜 계정 정리 부탁해", category = "SOCIAL")),
                             totalCount = 1,
                         ),
                 )
