@@ -21,7 +21,30 @@ jobs:
     name: Submit generated PR dependency graph
     runs-on: ubuntu-latest
     steps:
+      - name: Detect dependency graph artifact
+        id: dependency-graph-artifact
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const artifacts = await github.paginate(
+              github.rest.actions.listWorkflowRunArtifacts,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: context.payload.workflow_run.id,
+                per_page: 100,
+              },
+            );
+            const available = artifacts.some(
+              ({ expired, name }) => !expired && name.startsWith('dependency-graph_'),
+            );
+            core.setOutput('available', available ? 'true' : 'false');
+            if (!available) {
+              core.notice('No dependency graph artifact was generated; submission is not needed.');
+            }
+
       - name: Download and submit dependency graph
+        if: steps.dependency-graph-artifact.outputs.available == 'true'
         uses: gradle/actions/dependency-submission@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         with:
           cache-disabled: true
