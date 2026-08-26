@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.HorizontalDivider
@@ -174,11 +175,19 @@ private fun TermsRow(
         modifier =
             modifier
                 .fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         // 1. 체크박스 + 텍스트 영역 (Toggleable)
         Row(
             modifier =
                 Modifier
+                    // 「전체보기」가 폭을 먼저 가져가고, 제목은 남는 폭 안에서 줄바꿈한다.
+                    // weight 가 없으면 제목이 순서상 앞이라 폭을 먼저 다 먹어, 「전체보기」가
+                    // 좁은 폭에 갇혀 세로로 깨진다.
+                    //
+                    // fill 은 기본값(true) 이다 — 남는 폭까지 토글 영역이 되어 행의 빈 곳을
+                    // 눌러도 체크된다. 리스트 행 체크박스의 통상 동작이다.
+                    .weight(1f)
                     .toggleable(
                         value = isChecked,
                         role = Role.Checkbox,
@@ -216,12 +225,14 @@ private fun TermsRow(
 
         // 2. 전체보기 버튼 (독립된 Clickable — toggleable과 이벤트 분리)
         if (onViewDetailClick != null) {
-            Spacer(Modifier.weight(1f))
             Text(
                 text = stringResource(R.string.terms_view_detail),
                 style = AfternoteDesign.typography.captionLargeR,
                 color = AfternoteDesign.colors.gray6,
-                modifier = Modifier.clickable(role = Role.Button, onClick = onViewDetailClick),
+                modifier =
+                    Modifier
+                        .padding(start = 8.dp)
+                        .clickable(role = Role.Button, onClick = onViewDetailClick),
             )
         }
     }

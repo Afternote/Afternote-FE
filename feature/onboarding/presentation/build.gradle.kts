@@ -13,6 +13,9 @@ android {
 
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
 
+    // Robolectric 이 실제 문자열·테마를 읽어야 레이아웃이 시안대로 렌더된다.
+    testOptions.unitTests.isIncludeAndroidResources = true
+
     buildFeatures {
         buildConfig = true
     }
@@ -38,6 +41,11 @@ dependencies {
 
     // ViewModel 코루틴 테스트 — runTest 와 Main 디스패처 치환으로 viewModelScope 를 제어한다.
     testImplementation(libs.coroutines.test)
+
+    // 레이아웃 폭 배분은 픽셀이 아니라 노드 bounds 라, 스크린샷 대신 Compose 로 직접 잰다.
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     // Compose Preview Screenshot Testing (#330)
     screenshotTestImplementation(libs.screenshot.validation.api)

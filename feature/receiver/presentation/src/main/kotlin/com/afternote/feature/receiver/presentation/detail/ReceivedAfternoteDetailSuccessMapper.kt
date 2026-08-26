@@ -32,7 +32,7 @@ internal fun ReceivedAfternoteDetail.toReceivedDetailContentUiModel(): ReceivedD
 
 private fun ReceivedAfternoteDetail.toReceivedSocialNetworkDetailContent(): ReceivedSocialNetworkDetailContent =
     ReceivedSocialNetworkDetailContent(
-        serviceName = title.orEmpty(),
+        serviceName = title,
         credentials = credentials.toUiModelOrNull(),
         processingMethods = processingMethods,
         messageBlocks = leaveMessageBlocks.toMessageBlockUiModels(),
@@ -58,7 +58,7 @@ private fun ReceivedAccountCredentials?.toUiModelOrNull(): ReceivedAccountCreden
 
 private fun ReceivedAfternoteDetail.toReceivedGalleryDetailContent(): ReceivedGalleryDetailContent =
     ReceivedGalleryDetailContent(
-        serviceName = title.orEmpty(),
+        serviceName = title,
         finalWriteDate = createdAt.orEmpty(),
         processingMethods = processingMethods,
         messageBlocks = leaveMessageBlocks.toMessageBlockUiModels(),

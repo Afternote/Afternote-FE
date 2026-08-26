@@ -858,7 +858,7 @@ private fun completeWeeklyReport(monday: LocalDate): WeeklyReport =
                 WeeklyReportDailyQuestion(
                     title = "화요일의 질문",
                     content = "화요일의 답변",
-                    date = monday.plusDays(1).toString(),
+                    date = monday.plusDays(1),
                 ),
             ),
         emotions =

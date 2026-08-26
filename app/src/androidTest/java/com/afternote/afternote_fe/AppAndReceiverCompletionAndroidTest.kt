@@ -660,7 +660,12 @@ class ReceiverRuntimeCompletionAndroidTest {
 
         composeRule.setContent {
             AfternoteTheme {
-                ReceivedAfternoteDetailRoute(onBack = {}, onNavigateToPlaylist = {}, viewModel = viewModel)
+                ReceivedAfternoteDetailRoute(
+                    onBack = {},
+                    onNavigateToFullList = {},
+                    onNavigateToPlaylist = {},
+                    viewModel = viewModel,
+                )
             }
         }
 
@@ -705,6 +710,7 @@ class ReceiverRuntimeCompletionAndroidTest {
             AfternoteTheme {
                 ReceivedAfternoteDetailRoute(
                     onBack = {},
+                    onNavigateToFullList = {},
                     onNavigateToPlaylist = playlistRoutes::add,
                     viewModel = viewModel,
                 )
