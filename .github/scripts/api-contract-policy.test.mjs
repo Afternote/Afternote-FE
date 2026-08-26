@@ -40,3 +40,9 @@ test('wire smoke uses matching Testcontainers and MockServer versions', () => {
   assert.match(smoke, /\/api\/v1\/auth\/social\/login/);
   assert.match(smoke, /Authorization", "Bearer contract-token"/);
 });
+
+test('MockServer client stays alive across both contracts and closes only after the class', () => {
+  assert.match(smoke, /@BeforeClass[\s\S]*mockClient = MockServerClient/);
+  assert.match(smoke, /@AfterClass[\s\S]*mockClient\.close\(\)/);
+  assert.doesNotMatch(smoke, /@After\b[\s\S]{0,400}mockClient\.close\(\)/);
+});
