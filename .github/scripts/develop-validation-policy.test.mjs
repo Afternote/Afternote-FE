@@ -49,13 +49,19 @@ test("develop validation reuses read-only Gradle cache consumers", async () => {
 test("pull-request-only Kover context is skipped on develop pushes", async () => {
     const source = await workflow("unit-test.yml");
 
+    assert.match(
+        source,
+        /pull_request_number:\n\s+required: false\n\s+default: 0\n\s+type: number/,
+        "develop callers must default to no pull request context",
+    );
+
     for (const stepName of [
         "Fetch pull request history for changed-module coverage",
         "Summarize changed-module coverage",
     ]) {
         assert.match(
             source,
-            new RegExp(`- name: ${stepName}\\n\\s+if: github\\.event_name == 'pull_request'`),
+            new RegExp(`- name: ${stepName}\\n\\s+if: inputs\\.pull_request_number > 0`),
             `${stepName} must not read pull_request fields on a push event`,
         );
     }
