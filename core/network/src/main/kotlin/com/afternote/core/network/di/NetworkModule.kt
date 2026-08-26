@@ -15,9 +15,11 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.serialization.json.Json
+import okhttp3.Call
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -34,6 +36,23 @@ private const val IO_TIMEOUT_SECONDS = 10L
  */
 private const val CALL_TIMEOUT_SECONDS = 30L
 
+/**
+ * 주간 리포트(`GET /api/v1/mind-record`) 전용 여유.
+ *
+ * 이 엔드포인트만 유독 느리다 — 같은 계정·같은 시각에 일기 목록이 4.0초인데 이쪽은
+ * 16.9 · 20.2 · 25.9초였다(실측 2026-08-25). 10초 read timeout 에 매번 걸려 주간리포트
+ * 탭이 **항상** 실패 화면으로 떴고, 재시도도 같은 자리에서 끊겨 복구 수단이 없었다 (#1122).
+ *
+ * 전역 상한을 올리지 않는 이유: 다른 화면의 느린 실패를 늦게 알게 된다. 느린 것이 확인된
+ * 경로에만 여유를 주는 것은 업로드 경로가 이미 쓰는 방식이다.
+ *
+ * **증상 완화이지 해결이 아니다** — 응답 시간 자체는 BE 몫으로 #1122 에 남겼다.
+ */
+private const val SLOW_ENDPOINT_IO_TIMEOUT_SECONDS = 60L
+private const val SLOW_ENDPOINT_CALL_TIMEOUT_SECONDS = 90L
+
+private val SLOW_ENDPOINT_PATHS = setOf("/api/v1/mind-record")
+
 /** 업로드는 본문 크기에 비례해 길어진다 — 일반 호출과 같은 상한을 걸면 큰 파일이 전송 도중 끊긴다. */
 private const val UPLOAD_IO_TIMEOUT_SECONDS = 60L
 private const val UPLOAD_CALL_TIMEOUT_SECONDS = 10 * 60L
@@ -43,6 +62,33 @@ private fun OkHttpClient.Builder.withApiTimeouts(): OkHttpClient.Builder =
         .readTimeout(IO_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .writeTimeout(IO_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .callTimeout(CALL_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+
+/**
+ * 느린 것이 확인된 엔드포인트만 여유 있는 파생 클라이언트로 보낸다 (#1122).
+ *
+ * 인터셉터로는 `callTimeout` 을 못 늘린다 — read 만 늘려도 30초 호출 상한에 다시 걸린다.
+ * 그래서 클라이언트를 파생시키고 요청 경로로 갈라 태운다. 커넥션 풀·디스패처는 원본과
+ * 공유되므로 소켓이 두 벌 생기지 않는다.
+ *
+ * BE 응답이 정상 범위로 돌아오면 이 팩토리째로 지운다.
+ */
+internal class SlowEndpointCallFactory(
+    private val default: OkHttpClient,
+) : Call.Factory {
+    private val slow: OkHttpClient =
+        default
+            .newBuilder()
+            .readTimeout(SLOW_ENDPOINT_IO_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .callTimeout(SLOW_ENDPOINT_CALL_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .build()
+
+    override fun newCall(request: Request): Call =
+        if (request.url.encodedPath in SLOW_ENDPOINT_PATHS) {
+            slow.newCall(request)
+        } else {
+            default.newCall(request)
+        }
+}
 
 @Module // 힐트야 여기 타입별로 객체 어떻게 만드는지 적어 놓은 설명서야
 @InstallIn(SingletonComponent::class) // 앱 자체와 수명을 함께하는 창고에 이 설명서의 객체들을 보관해 줘
@@ -189,7 +235,8 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
         Retrofit
             .Builder()
             .baseUrl(BuildConfig.BASE_URL)
-            .client(okHttpClient)
+            // 느린 것이 확인된 경로만 여유 있는 파생 클라이언트로 태운다 (#1122).
+            .callFactory(SlowEndpointCallFactory(okHttpClient))
             // json과 코틀린의 dto 데이터 클래스 타입 간 번역기
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()

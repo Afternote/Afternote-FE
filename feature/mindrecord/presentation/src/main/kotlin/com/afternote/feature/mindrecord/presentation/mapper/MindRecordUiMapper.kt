@@ -62,7 +62,10 @@ fun Diary.toUi(): DailyDiary? {
         date = resolvedDate,
         content = content,
         emotion = todayMood.toEmoji(),
-        imageUrl = imageUrl,
+        // 서버 계약에 `imageUrl` 이 없다 — 요청에 실어 보내도 버려지고 응답에도 키가 없어
+        // 항상 null 이다. 데일리질문과 같은 규칙으로 본문 HTML 의 첫 img 에서 뽑는다
+        // (#1024 · #549). DTO 가 값을 주는 날이 오면 그쪽을 우선한다.
+        imageUrl = imageUrl ?: content.firstHtmlImageSrcOrNull(),
     )
 }
 

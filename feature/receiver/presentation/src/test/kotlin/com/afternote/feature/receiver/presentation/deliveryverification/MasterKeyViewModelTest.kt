@@ -14,6 +14,7 @@ import com.afternote.feature.receiver.domain.model.ReceiverIdentity
 import com.afternote.feature.receiver.domain.model.SenderMessageInfo
 import com.afternote.feature.receiver.domain.repository.ReceiverAuthRepository
 import com.afternote.feature.receiver.domain.repository.ReceiverRepository
+import com.afternote.feature.receiver.presentation.error.ErrorPayload
 import com.afternote.feature.receiver.presentation.recordsbox.SenderRegistry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

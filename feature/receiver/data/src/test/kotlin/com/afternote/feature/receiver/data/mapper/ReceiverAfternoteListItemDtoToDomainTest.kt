@@ -37,9 +37,13 @@ class ReceiverAfternoteListItemDtoToDomainTest {
     }
 
     @Test
+    fun `toDomain - 사업자는 서버가 아는 종류다 - BUSINESS 로 올라온다`() {
+        assertEquals(AfternoteType.BUSINESS, resp(category = "BUSINESS").toDomain().type)
+    }
+
+    @Test
     fun `toDomain - 서버가 모르는 category 를 보내면 type null`() {
         assertNull(resp(category = "ESTATE").toDomain().type)
-        assertNull(resp(category = "BUSINESS").toDomain().type)
     }
 
     @Test

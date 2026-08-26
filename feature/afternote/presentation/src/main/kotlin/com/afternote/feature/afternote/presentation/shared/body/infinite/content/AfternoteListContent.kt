@@ -21,6 +21,7 @@ import com.afternote.feature.afternote.presentation.author.home.AfternoteCategor
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.AfternoteList
 import com.afternote.feature.afternote.presentation.shared.body.infinite.content.list.item.ListItemUiModel
 import kotlinx.coroutines.flow.flowOf
+import com.afternote.core.ui.R as CoreUiR
 
 @Composable
 fun AfternoteListContent(
@@ -73,14 +74,14 @@ private fun AfternoteListContentPreview() {
                             id = 1L,
                             serviceName = "추억 노트",
                             date = "2025.12.01",
-                            iconResId = R.drawable.feature_afternote_img_logo,
+                            iconResId = CoreUiR.drawable.core_ui_afternote_logo,
                             type = AfternoteType.MEMORIAL,
                         ),
                         ListItemUiModel(
                             id = 2L,
                             serviceName = "인스타그램",
                             date = "2025.11.26",
-                            iconResId = R.drawable.feature_afternote_img_logo,
+                            iconResId = CoreUiR.drawable.core_ui_afternote_logo,
                             type = AfternoteType.SOCIAL_NETWORK,
                         ),
                     ),
