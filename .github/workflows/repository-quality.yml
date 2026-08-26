@@ -3,14 +3,19 @@ name: Repository Quality
 # PR 에서는 pr-validation.yml 이 부른다. develop·main push 는 여기서 직접 돈다 (#848).
 on:
   workflow_call:
+    inputs:
+      pull_request_number:
+        required: true
+        type: number
   push:
     branches: [develop, main]
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
-  group: repository-quality-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: repository-quality-${{ github.workflow }}-${{ inputs.pull_request_number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -23,12 +28,18 @@ jobs:
       # 그대로 허용하면 뒤쪽 dependency 파일이 graph/review workflow 를 우회할 수 있다.
       # 공식 문서의 상충하는 300/3,000 한도 중 보수적인 300을 fail-closed 경계로 쓴다.
       - name: Guard server-side path filter boundary
-        if: github.event_name == 'pull_request'
+        if: inputs.pull_request_number > 0
         env:
           CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
+          GH_TOKEN: ${{ github.token }}
           MAX_PATH_FILTER_FILES: 300
+          PR_NUMBER: ${{ inputs.pull_request_number }}
         run: |
           set -euo pipefail
+
+          if [ -z "$CHANGED_FILES" ]; then
+            CHANGED_FILES=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.changed_files')
+          fi
 
           if ! [[ "$CHANGED_FILES" =~ ^[0-9]+$ ]]; then
             echo "::error::PR changed_files 값이 유효하지 않습니다: $CHANGED_FILES"

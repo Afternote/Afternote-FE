@@ -1,0 +1,275 @@
+name: Apply Screenshot Baselines
+
+# PR 코드를 실행한 비권한 workflow 의 결과만 받아 경로·파일 형식·현재 HEAD 를 다시 검증한다.
+# 이 워크플로는 PR 파일의 스크립트를 실행하지 않으며 Git Data API 로 검증된 PNG 만 커밋한다.
+on:
+  workflow_run:
+    workflows: ["Generate Screenshot Baselines"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: screenshot-baseline-apply-${{ github.event.workflow_run.id }}
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'workflow_dispatch'
+    name: Validate and commit baseline patch
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Download patch from triggering run
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: screenshot-baseline-patch
+          path: ${{ runner.temp }}/screenshot-baseline
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Verify artifact metadata against current PR head
+        id: target
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          METADATA_PATH: ${{ runner.temp }}/screenshot-baseline/metadata.json
+          SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+        with:
+          script: |
+            const fs = require('node:fs');
+            const metadata = JSON.parse(fs.readFileSync(process.env.METADATA_PATH, 'utf8'));
+            const number = Number(metadata.pullRequest);
+            if (!Number.isSafeInteger(number) || number < 1) {
+              core.setFailed('Artifact has an invalid pull request number');
+              return;
+            }
+            if (String(metadata.sourceRunId) !== process.env.SOURCE_RUN_ID) {
+              core.setFailed('Artifact source run does not match the triggering run');
+              return;
+            }
+            if (!/^[0-9a-f]{40}$/.test(metadata.headSha ?? '')) {
+              core.setFailed('Artifact has an invalid head SHA');
+              return;
+            }
+
+            const { data: pullRequest } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: number,
+            });
+            if (pullRequest.state !== 'open') {
+              core.setFailed(`PR #${number} is no longer open`);
+              return;
+            }
+            if (pullRequest.head.repo?.full_name !== `${context.repo.owner}/${context.repo.repo}`) {
+              core.setFailed('Artifact points to a fork PR');
+              return;
+            }
+            if (pullRequest.head.sha !== metadata.headSha || pullRequest.head.ref !== metadata.branch) {
+              core.setFailed(`PR #${number} moved after rendering; rerun baseline generation`);
+              return;
+            }
+            core.setOutput('number', String(number));
+            core.setOutput('sha', pullRequest.head.sha);
+            core.setOutput('branch', pullRequest.head.ref);
+
+      - name: Clone exact PR head without credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.target.outputs.sha }}
+          persist-credentials: false
+
+      - name: Apply binary patch to the index
+        run: |
+          set -euo pipefail
+          patch="$RUNNER_TEMP/screenshot-baseline/screenshot-baselines.patch"
+          if [ -s "$patch" ]; then
+            git apply --index --whitespace=nowarn "$patch"
+          fi
+
+      - name: Validate PNGs and create an atomic commit
+        id: commit
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          TARGET_BRANCH: ${{ steps.target.outputs.branch }}
+          TARGET_PR: ${{ steps.target.outputs.number }}
+          TARGET_SHA: ${{ steps.target.outputs.sha }}
+        with:
+          script: |
+            const childProcess = require('node:child_process');
+            const fs = require('node:fs');
+            const path = require('node:path');
+            const roots = [
+              'core/ui/src/screenshotTestDebug/reference/',
+              'feature/home/presentation/src/screenshotTestDebug/reference/',
+              'feature/receiver/presentation/src/screenshotTestDebug/reference/',
+              'feature/onboarding/presentation/src/screenshotTestDebug/reference/',
+              'feature/afternote/presentation/src/screenshotTestDebug/reference/',
+              'feature/mindrecord/presentation/src/screenshotTestDebug/reference/',
+            ];
+            const git = (...args) => childProcess.execFileSync('git', args, {
+              cwd: process.env.GITHUB_WORKSPACE,
+              encoding: null,
+            });
+            const nulPaths = git('diff', '--cached', '--name-only', '-z');
+            const paths = nulPaths.toString('utf8').split('\0').filter(Boolean);
+
+            for (const changedPath of paths) {
+              if (!changedPath.endsWith('.png') || !roots.some((root) => changedPath.startsWith(root))) {
+                core.setFailed(`Rejected non-baseline path: ${changedPath}`);
+                return;
+              }
+              const absolute = path.join(process.env.GITHUB_WORKSPACE, changedPath);
+              if (!fs.existsSync(absolute)) {
+                continue;
+              }
+              const stat = fs.lstatSync(absolute);
+              if (!stat.isFile()) {
+                core.setFailed(`Rejected non-regular baseline: ${changedPath}`);
+                return;
+              }
+              const signature = fs.readFileSync(absolute).subarray(0, 8).toString('hex');
+              if (signature !== '89504e470d0a1a0a') {
+                core.setFailed(`Rejected non-PNG content: ${changedPath}`);
+                return;
+              }
+            }
+
+            if (paths.length === 0) {
+              core.setOutput('sha', process.env.TARGET_SHA);
+              core.setOutput('changed', 'false');
+              core.setOutput('files', '0');
+              return;
+            }
+
+            const { data: current } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: Number(process.env.TARGET_PR),
+            });
+            if (current.head.sha !== process.env.TARGET_SHA || current.head.ref !== process.env.TARGET_BRANCH) {
+              core.setFailed('PR head moved while validating the patch; rerun baseline generation');
+              return;
+            }
+
+            const entries = [];
+            for (const changedPath of paths) {
+              const absolute = path.join(process.env.GITHUB_WORKSPACE, changedPath);
+              if (!fs.existsSync(absolute)) {
+                entries.push({ path: changedPath, mode: '100644', type: 'blob', sha: null });
+                continue;
+              }
+              const { data: blob } = await github.rest.git.createBlob({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                content: fs.readFileSync(absolute).toString('base64'),
+                encoding: 'base64',
+              });
+              entries.push({ path: changedPath, mode: '100644', type: 'blob', sha: blob.sha });
+            }
+
+            const { data: parent } = await github.rest.git.getCommit({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: process.env.TARGET_SHA,
+            });
+            const { data: tree } = await github.rest.git.createTree({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              base_tree: parent.tree.sha,
+              tree: entries,
+            });
+            const { data: commit } = await github.rest.git.createCommit({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              message: 'test: update screenshot baselines in CI',
+              tree: tree.sha,
+              parents: [process.env.TARGET_SHA],
+            });
+            await github.rest.git.updateRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `heads/${process.env.TARGET_BRANCH}`,
+              sha: commit.sha,
+              force: false,
+            });
+            core.setOutput('sha', commit.sha);
+            core.setOutput('changed', 'true');
+            core.setOutput('files', String(paths.length));
+
+      - name: Dispatch required checks on the resulting SHA
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          TARGET_BRANCH: ${{ steps.target.outputs.branch }}
+          TARGET_PR: ${{ steps.target.outputs.number }}
+        with:
+          script: |
+            const common = {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: process.env.TARGET_BRANCH,
+            };
+            await github.rest.actions.createWorkflowDispatch({
+              ...common,
+              workflow_id: 'pr-validation.yml',
+              inputs: { pull_request_number: process.env.TARGET_PR },
+            });
+            await github.rest.actions.createWorkflowDispatch({
+              ...common,
+              workflow_id: 'codeql.yml',
+            });
+            await github.rest.actions.createWorkflowDispatch({
+              ...common,
+              workflow_id: 'merge-order-guard.yml',
+              inputs: { pull_request_number: process.env.TARGET_PR },
+            });
+
+      - name: Comment result on the pull request
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          BASELINE_CHANGED: ${{ steps.commit.outputs.changed }}
+          BASELINE_FILES: ${{ steps.commit.outputs.files }}
+          RESULT_SHA: ${{ steps.commit.outputs.sha }}
+          TARGET_PR: ${{ steps.target.outputs.number }}
+        with:
+          script: |
+            const marker = '<!-- screenshot-baseline-bot -->';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.payload.workflow_run.id}`;
+            const changed = process.env.BASELINE_CHANGED === 'true';
+            const body = [
+              marker,
+              changed
+                ? `📸 CI 표준 환경에서 screenshot baseline ${process.env.BASELINE_FILES}개를 생성·검증해 \`${process.env.RESULT_SHA.slice(0, 7)}\` 로 커밋했습니다.`
+                : '📸 CI 표준 환경에서 다시 렌더했지만 변경할 screenshot baseline 이 없습니다.',
+              '',
+              `실행 로그·생성 artifact: ${runUrl}`,
+              changed ? '이미지 내용은 이 PR의 PNG diff에서 눈으로 최종 확인해 주세요. 필수 검사도 새 SHA에 다시 요청했습니다.' : '',
+            ].filter(Boolean).join('\n');
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: Number(process.env.TARGET_PR),
+              per_page: 100,
+            });
+            const existing = comments.find((comment) => comment.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: Number(process.env.TARGET_PR),
+                body,
+              });
+            }
