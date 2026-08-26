@@ -141,7 +141,7 @@ class AfternoteEditorFormPrefillTest {
     ) = Detail(
         id = 1L,
         serviceName = serviceName,
-        timestamps = DetailTimestamps(createdAt = "2026-08-21", updatedAt = "2026-08-21"),
+        timestamps = DetailTimestamps(updatedAt = "2026-08-21"),
         receivers = emptyList(),
         leaveMessageBlocks = leaveMessageBlocks,
         content = content,
