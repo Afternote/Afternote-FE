@@ -53,6 +53,7 @@ import com.afternote.feature.receiver.presentation.deliveryverification.componen
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_HEADER_SPACING
 import com.afternote.feature.receiver.presentation.deliveryverification.component.RECEIVER_VERIFY_TOTAL_STEPS
 import com.afternote.feature.receiver.presentation.deliveryverification.component.ReceiverVerifyStep
+import com.afternote.feature.receiver.presentation.error.asDisplayText
 
 /**
  * 증빙 서류 업로드 화면(designs 6·7·8) — 사망진단서 + 가족관계증명서 첨부 후 열람 신청 제출 (이슈 #215).
@@ -121,12 +122,7 @@ fun DocumentUploadScreen(
 
     // sealed ErrorPayload 분기 — 타입 자체가 "Res / Text 중 하나" 강제, 우선순위 로직 불필요.
     val errorMessage =
-        uiState.error?.let { err ->
-            when (err) {
-                is ErrorPayload.Res -> stringResource(err.id)
-                is ErrorPayload.Text -> err.message
-            }
-        }
+        uiState.error?.asDisplayText()
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
             snackbarHostState.showSnackbar(errorMessage)
