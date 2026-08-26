@@ -8,6 +8,7 @@ import com.afternote.feature.receiver.data.dto.ReceivedPlaylistDto
 import com.afternote.feature.receiver.data.dto.ReceivedSongDto
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 /**
@@ -34,13 +35,20 @@ class ReceivedAfternoteDetailMapperTest {
     }
 
     @Test
+    fun `toDomain - category 를 해석할 수 없으면 실패다 - 임의의 종류로 메우지 않는다`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            ReceivedAfternoteDetailDto(id = 1L, serviceName = "제목", category = null).toDomain()
+        }
+    }
+
+    @Test
     fun `toDomain - createdAt null이면 createdAt null`() {
-        assertNull(ReceivedAfternoteDetailDto(id = 1L, category = "SOCIAL", createdAt = null).toDomain().createdAt)
+        assertNull(ReceivedAfternoteDetailDto(id = 1L, serviceName = "제목", category = "SOCIAL", createdAt = null).toDomain().createdAt)
     }
 
     @Test
     fun `toDomain - playlist null이면 null`() {
-        assertNull(ReceivedAfternoteDetailDto(id = 1L, category = "GALLERY", playlist = null).toDomain().playlist)
+        assertNull(ReceivedAfternoteDetailDto(id = 1L, serviceName = "제목", category = "SOCIAL", playlist = null).toDomain().playlist)
     }
 
     @Test
@@ -48,7 +56,8 @@ class ReceivedAfternoteDetailMapperTest {
         val result =
             ReceivedAfternoteDetailDto(
                 id = 1L,
-                category = "PLAYLIST",
+                serviceName = "제목",
+                category = "SOCIAL",
                 playlist =
                     ReceivedPlaylistDto(
                         atmosphere = "차분",
@@ -69,6 +78,7 @@ class ReceivedAfternoteDetailMapperTest {
         val result =
             ReceivedAfternoteDetailDto(
                 id = 1L,
+                serviceName = "제목",
                 category = "SOCIAL",
                 credentials = ReceivedCredentialsDto(id = "u", password = "p"),
             ).toDomain()

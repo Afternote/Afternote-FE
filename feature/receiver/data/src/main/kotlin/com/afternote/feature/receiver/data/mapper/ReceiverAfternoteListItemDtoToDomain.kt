@@ -1,6 +1,6 @@
 package com.afternote.feature.receiver.data.mapper
 
-import com.afternote.feature.afternote.data.mapper.categoryToAfternoteType
+import com.afternote.feature.afternote.data.mapper.afternoteTypeFromServerCategory
 import com.afternote.feature.afternote.data.mapper.formatDateFromServer
 import com.afternote.feature.receiver.data.dto.ReceivedAfternoteDto
 import com.afternote.feature.receiver.data.dto.ReceivedAfternoteListDto
@@ -11,7 +11,7 @@ fun ReceivedAfternoteDto.toDomain(): AfterNoteListItem =
     AfterNoteListItem(
         id = id,
         serviceName = title,
-        type = categoryToAfternoteType(category),
+        type = afternoteTypeFromServerCategory(category),
         lastUpdatedAt = createdAt?.let { formatDateFromServer(it) },
     )
 
