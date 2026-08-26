@@ -2,8 +2,8 @@ package com.afternote.feature.receiver.presentation.home
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
-import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.core.ui.icon.AfternoteSourceIcon
+import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.receiver.presentation.home.model.MindRecordSummary
 import com.afternote.feature.receiver.presentation.home.model.ReceiverHomeUiState
 import com.afternote.feature.receiver.presentation.home.model.SenderMessage
