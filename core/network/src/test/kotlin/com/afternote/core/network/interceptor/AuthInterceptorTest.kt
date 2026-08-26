@@ -1,9 +1,10 @@
 package com.afternote.core.network.interceptor
 
+import com.afternote.core.domain.testing.FakeAuthRepository
 import com.afternote.core.model.TokenBundle
-import com.afternote.core.network.FakeAuthRepository
 import com.afternote.core.network.FakeErrorReporter
 import com.afternote.core.network.FakeInterceptorChain
+import com.afternote.core.network.networkFakeAuthRepository
 import com.afternote.core.network.token.AccessTokenExpiryTracker
 import com.afternote.core.network.token.TokenReissuer
 import okhttp3.ResponseBody.Companion.toResponseBody
@@ -41,7 +42,7 @@ class AuthInterceptorTest {
 
     @Test
     fun `기록된 deadline 없음 - reissue 없이 저장된 토큰 부착`() {
-        val repository = FakeAuthRepository(accessToken = "stored-token")
+        val repository = networkFakeAuthRepository(accessToken = "stored-token")
         val chain = FakeInterceptorChain()
 
         interceptor(repository).intercept(chain)
@@ -54,7 +55,7 @@ class AuthInterceptorTest {
     fun `만료 임박 - 요청 전 선제 reissue 후 새 토큰 부착`() {
         tracker.record(expiresInSeconds = 30)
         val repository =
-            FakeAuthRepository(
+            networkFakeAuthRepository(
                 accessToken = "stale-token",
                 onRotateToken = {
                     accessToken = "fresh-token"
@@ -75,7 +76,7 @@ class AuthInterceptorTest {
     fun `선제 reissue 실패 - 기존 토큰으로 진행하고 deadline 폐기`() {
         tracker.record(expiresInSeconds = 30)
         val repository =
-            FakeAuthRepository(
+            networkFakeAuthRepository(
                 accessToken = "stored-token",
                 onRotateToken = { Result.failure(IllegalStateException("일시적 네트워크 오류")) },
             )
@@ -93,7 +94,7 @@ class AuthInterceptorTest {
     fun `선제 reissue 가 refresh 거절 - 락 안에서 세션 정리까지 끝난다`() {
         tracker.record(expiresInSeconds = 30)
         val repository =
-            FakeAuthRepository(
+            networkFakeAuthRepository(
                 accessToken = "stored-token",
                 onRotateToken = {
                     Result.failure(HttpException(RetrofitResponse.error<Unit>(400, "".toResponseBody())))
@@ -114,7 +115,7 @@ class AuthInterceptorTest {
     @Test
     fun `토큰 부재 - 헤더 미부착 및 stale deadline 폐기`() {
         tracker.record(expiresInSeconds = 30)
-        val repository = FakeAuthRepository(accessToken = null)
+        val repository = networkFakeAuthRepository(accessToken = null)
         val chain = FakeInterceptorChain()
 
         interceptor(repository).intercept(chain)

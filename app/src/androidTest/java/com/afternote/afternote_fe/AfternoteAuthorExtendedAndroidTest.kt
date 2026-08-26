@@ -42,7 +42,7 @@ import androidx.paging.PagingState
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.afternote.afternote_fe.test.FailureArtifactRule
 import com.afternote.afternote_fe.test.FakeErrorReporter
-import com.afternote.afternote_fe.test.FakeUserRepository
+import com.afternote.afternote_fe.test.appTestUserRepository
 import com.afternote.core.ui.theme.AfternoteTheme
 import com.afternote.feature.afternote.domain.AfternoteType
 import com.afternote.feature.afternote.domain.model.LeaveMessageBlock
@@ -525,7 +525,7 @@ private fun detailViewModel(
     AfternoteDetailViewModel(
         savedStateHandle = SavedStateHandle(mapOf("itemId" to itemId)),
         afternoteRepository = repository,
-        userRepository = FakeUserRepository(),
+        userRepository = appTestUserRepository(),
         errorReporter = FakeErrorReporter(),
     )
 
@@ -535,7 +535,7 @@ private fun editorViewModel(
 ): AfternoteEditorViewModel =
     AfternoteEditorViewModel(
         savedStateHandle = SavedStateHandle(mapOf("itemId" to itemId)),
-        userRepository = FakeUserRepository(),
+        userRepository = appTestUserRepository(),
         afternoteRepository = repository,
         memorialThumbnailUploadRepository =
             MemorialThumbnailUploadRepository {
