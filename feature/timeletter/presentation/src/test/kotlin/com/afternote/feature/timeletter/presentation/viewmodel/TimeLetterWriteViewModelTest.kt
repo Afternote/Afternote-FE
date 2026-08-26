@@ -1,16 +1,8 @@
 package com.afternote.feature.timeletter.presentation.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
-import com.afternote.core.domain.repository.PhotoUploadRepository
-import com.afternote.core.domain.repository.UserRepository
-import com.afternote.core.model.delivery.DeliveryConditionItem
-import com.afternote.core.model.delivery.ReceiverDeliveryConditions
-import com.afternote.core.model.user.Receiver
-import com.afternote.core.model.user.ReceiverCreated
-import com.afternote.core.model.user.ReceiverDetail
-import com.afternote.core.model.user.User
-import com.afternote.core.model.user.UserConnectedAccount
-import com.afternote.core.model.user.UserPushSetting
+import com.afternote.core.domain.testing.FakePhotoUploadRepository
+import com.afternote.core.domain.testing.FakeUserRepository
 import com.afternote.feature.timeletter.domain.model.NewTimeLetterBlock
 import com.afternote.feature.timeletter.domain.model.TimeLetter
 import com.afternote.feature.timeletter.domain.model.TimeLetterDeliveryMode
@@ -23,7 +15,6 @@ import com.afternote.feature.timeletter.domain.usecase.ResolveTimeLetterBlocksUs
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -148,12 +139,16 @@ class TimeLetterWriteViewModelTest {
         }
 
     private fun viewModel(repository: FakeTimeLetterRepository): TimeLetterWriteViewModel {
-        val resolveUseCase = ResolveTimeLetterBlocksUseCase(FakePhotoUploadRepository)
+        val resolveUseCase = ResolveTimeLetterBlocksUseCase(FakePhotoUploadRepository.strict())
         return TimeLetterWriteViewModel(
             createTimeLetterUseCase = CreateTimeLetterUseCase(repository, resolveUseCase),
             resolveTimeLetterBlocksUseCase = resolveUseCase,
             timeLetterRepository = repository,
-            userRepository = FakeUserRepository,
+            userRepository =
+                FakeUserRepository.strict().apply {
+                    onReceiverListFlow = { flowOf(emptyList()) }
+                    onGetReceivers = { emptyList() }
+                },
             fileMetadataRepository = FakeFileMetadataRepository,
             savedStateHandle = SavedStateHandle(mapOf("timeLetterId" to null)),
         )
@@ -207,82 +202,8 @@ private class FakeTimeLetterRepository(
     override suspend fun deleteAllTemporary() = error("deleteAllTemporary should not be called")
 }
 
-private object FakePhotoUploadRepository : PhotoUploadRepository {
-    override suspend fun upload(
-        uriString: String,
-        directory: String,
-    ): Result<String> = error("upload should not be called")
-}
-
 private object FakeFileMetadataRepository : FileMetadataRepository {
     override suspend fun getFileName(uriString: String): String = error("getFileName should not be called")
 
     override suspend fun getMimeType(uriString: String): String? = error("getMimeType should not be called")
-}
-
-private object FakeUserRepository : UserRepository {
-    override val receiverListFlow: Flow<List<Receiver>> = flowOf(emptyList())
-
-    override suspend fun getReceivers(): List<Receiver> = emptyList()
-
-    override suspend fun createReceiver(
-        name: String,
-        relation: String,
-        phone: String?,
-        email: String?,
-        message: String?,
-    ): ReceiverCreated = error("createReceiver should not be called")
-
-    override suspend fun getReceiverDetail(receiverId: Long): ReceiverDetail = error("getReceiverDetail should not be called")
-
-    override suspend fun updateReceiver(
-        receiverId: Long,
-        name: String,
-        phone: String,
-        relation: String,
-        email: String,
-    ): Receiver = error("updateReceiver should not be called")
-
-    override suspend fun updateReceiverMessage(
-        receiverId: Long,
-        message: String,
-    ) = error("updateReceiverMessage should not be called")
-
-    override suspend fun getMyProfile(): User = error("getMyProfile should not be called")
-
-    override suspend fun updateMyProfile(
-        name: String?,
-        phone: String?,
-        profileImageUrl: String?,
-    ): User = error("updateMyProfile should not be called")
-
-    override suspend fun deleteAccount() = error("deleteAccount should not be called")
-
-    override suspend fun logActivity() = error("logActivity should not be called")
-
-    override suspend fun getMyPushSettings(): UserPushSetting = error("getMyPushSettings should not be called")
-
-    override suspend fun updateMyPushSettings(
-        timeLetter: Boolean?,
-        mindRecord: Boolean?,
-        afterNote: Boolean?,
-    ): UserPushSetting = error("updateMyPushSettings should not be called")
-
-    override suspend fun getConnectedAccounts(): UserConnectedAccount = error("getConnectedAccounts should not be called")
-
-    override suspend fun linkConnectedAccount(
-        provider: String,
-        accessToken: String,
-    ): UserConnectedAccount = error("linkConnectedAccount should not be called")
-
-    override suspend fun unlinkConnectedAccount(provider: String): UserConnectedAccount =
-        error("unlinkConnectedAccount should not be called")
-
-    override suspend fun getReceiverDeliveryConditions(receiverId: Long): ReceiverDeliveryConditions =
-        error("getReceiverDeliveryConditions should not be called")
-
-    override suspend fun updateReceiverDeliveryConditions(
-        receiverId: Long,
-        conditions: List<DeliveryConditionItem>,
-    ): ReceiverDeliveryConditions = error("updateReceiverDeliveryConditions should not be called")
 }
