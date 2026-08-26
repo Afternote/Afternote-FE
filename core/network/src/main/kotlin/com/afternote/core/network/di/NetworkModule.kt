@@ -192,8 +192,11 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
             .addInterceptor(loggingInterceptor)
             .build()
 
-    /** Coil 전용. 인증 헤더 없이 이미지 호스트만 다루며, 모든 이미지 요청에 동일한 `User-Agent` 를 부착해
-     *  presentation 의 ImageRequest 별 부착 boilerplate 를 제거한다. */
+    /**
+     * Coil 전용. 인증 헤더가 붙지 않는 이미지 호스트만 다룬다.
+     * Coil 기본 로더를 그냥 쓰지 않는 이유는 이 두 가지뿐 — base 파생이라 커넥션 풀·디스패처를
+     * 공유하면서, 이미지 요청에도 디버그 로깅과 호출 상한([CALL_TIMEOUT_SECONDS])이 걸린다.
+     */
     @Provides
     @Singleton
     @Named("CoilImage")
@@ -203,15 +206,7 @@ object NetworkModule { // 이 모듈은 오브젝트 클래스 선언해서 딱 
     ): OkHttpClient =
         baseClient
             .newBuilder()
-            .addInterceptor { chain ->
-                chain.proceed(
-                    chain
-                        .request()
-                        .newBuilder()
-                        .header("User-Agent", "Afternote Android App")
-                        .build(),
-                )
-            }.addInterceptor(loggingInterceptor)
+            .addInterceptor(loggingInterceptor)
             .build()
 
     @Provides
