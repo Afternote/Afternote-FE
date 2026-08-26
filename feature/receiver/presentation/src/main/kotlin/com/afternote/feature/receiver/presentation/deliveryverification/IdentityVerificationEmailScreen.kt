@@ -100,6 +100,13 @@ internal fun IdentityVerificationEmailScreenContent(
     onVerifyAndProceed: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val requestCodeText =
+        if (uiState.isSendingCode) {
+            stringResource(R.string.receiver_verify_code_requesting)
+        } else {
+            stringResource(R.string.receiver_verify_request_code)
+        }
+
     FlowStepScaffold(
         topBarTitle = stringResource(R.string.receiver_verify_title),
         actionButtonText = stringResource(R.string.receiver_verify_next_button),
@@ -133,7 +140,7 @@ internal fun IdentityVerificationEmailScreenContent(
                     state = emailState,
                     type =
                         TextFieldType.Variant7(
-                            text = stringResource(R.string.receiver_verify_request_code),
+                            text = requestCodeText,
                             onClick = onRequestCode,
                             enabled = uiState.isEmailFormatValid && !uiState.isSendingCode,
                         ),

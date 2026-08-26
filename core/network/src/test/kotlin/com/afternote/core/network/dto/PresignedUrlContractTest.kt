@@ -1,6 +1,7 @@
 package com.afternote.core.network.dto
 
 import kotlinx.serialization.json.Json
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -28,6 +29,27 @@ class PresignedUrlContractTest {
         assertTrue(encoded.contains("\"directory\":\"mindrecords\""))
         assertTrue(encoded.contains("\"extension\":\"png\""))
         assertTrue("파일 크기가 빠지면 서버가 400 으로 거절한다", encoded.contains("\"contentLength\":357"))
+    }
+
+    @Test
+    fun `응답의 fileKey 와 fileUrl 을 둘 다 읽는다`() {
+        // 업로드 결과를 쓰는 쪽은 미리보기용 전체 URL 과 파일 키를 둘 다 필요로 한다. 한쪽만 읽으면
+        // 나머지를 문자열로 역산하게 되고, 호스트 뒤에 경로가 더 붙는 순간 어긋난다 (#1017).
+        val decoded =
+            json.decodeFromString(
+                PresignedUrlDto.serializer(),
+                """
+                {
+                  "presignedUrl": "https://s3.example/put?sig=abc",
+                  "fileKey": "mindrecords/staging/13/uuid.png",
+                  "fileUrl": "https://cdn.example/assets/mindrecords/staging/13/uuid.png",
+                  "contentType": "image/png"
+                }
+                """,
+            )
+
+        assertEquals("mindrecords/staging/13/uuid.png", decoded.fileKey)
+        assertEquals("https://cdn.example/assets/mindrecords/staging/13/uuid.png", decoded.fileUrl)
     }
 
     @Test

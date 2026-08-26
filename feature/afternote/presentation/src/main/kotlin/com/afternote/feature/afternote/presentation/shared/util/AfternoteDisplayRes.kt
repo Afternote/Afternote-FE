@@ -8,12 +8,13 @@ import com.afternote.core.ui.R as CoreUiR
 
 /**
  * 종류 필터 탭 순서. `null` 은 "전체" 탭이다.
- * 비즈니스·재산 처리는 목록 조회 미지원(Afternote-BE#110, #491)이라 빠져 있다.
+ * 재산 처리는 서버 category enum 미지원(Afternote-BE#491)이라 빠져 있다.
  */
 val TYPE_FILTER_TABS: List<AfternoteType?> =
     listOf(
         null,
         AfternoteType.SOCIAL_NETWORK,
+        AfternoteType.BUSINESS,
         AfternoteType.GALLERY_AND_FILES,
         AfternoteType.MEMORIAL,
     )
