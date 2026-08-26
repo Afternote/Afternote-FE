@@ -8,6 +8,8 @@ bundle_path="${repo_root}/app/build/outputs/bundle/release/app-release.aab"
 mapping_path="${repo_root}/app/build/outputs/mapping/release/mapping.txt"
 rules_path="${repo_root}/app/proguard-rules.pro"
 
+"${repo_root}/scripts/test-jarsigner-verification-policy.sh"
+
 [[ -s "${bundle_path}" && -s "${mapping_path}" ]] || {
     echo "Run the successful release preflight before negative fixtures." >&2
     exit 1
@@ -57,7 +59,10 @@ prepare_verifier_fixture() {
         "${root}/scripts" \
         "${root}/app/build/outputs/bundle/release" \
         "${root}/app/build/outputs/mapping/release"
-    cp "${repo_root}/scripts/verify-play-release-bundle.sh" "${root}/scripts/"
+    cp \
+        "${repo_root}/scripts/jarsigner-verification-policy.sh" \
+        "${repo_root}/scripts/verify-play-release-bundle.sh" \
+        "${root}/scripts/"
     cp "${positive_bundle}" "${root}/app/build/outputs/bundle/release/app-release.aab"
     cp "${positive_mapping}" "${root}/app/build/outputs/mapping/release/mapping.txt"
     printf '%s' "${root}"
