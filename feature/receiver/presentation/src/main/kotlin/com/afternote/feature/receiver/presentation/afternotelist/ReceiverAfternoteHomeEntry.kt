@@ -65,6 +65,8 @@ fun ReceiverAfternoteHomeEntry(
                 selectedCategory = selectedTab,
                 onCategorySelected = viewModel::selectTab,
                 onListItemClick = { id, _ -> navigateToDetail(id) },
+                // NEXT STEP 은 «내가 남길 기록» 을 재촉하는 발신자용 카드다. 수신자 목록에는 없다.
+                nextStep = null,
                 modifier = modifier,
             )
         }

@@ -92,7 +92,7 @@ fun LoginScreen(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             DetailTopBar(
-                title = stringResource(R.string.login_top_bar_title),
+                title = stringResource(R.string.onboarding_login_top_bar_title),
                 onBackClick = {
                     focusManager.clearFocus()
                     onBackClick()
@@ -139,7 +139,7 @@ fun LoginScreen(
                     state = emailState,
                     modifier =
                         Modifier.semantics { contentType = ContentType.Username },
-                    placeholder = stringResource(R.string.login_email_label),
+                    placeholder = stringResource(R.string.onboarding_login_email_label),
                     keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Next,
                 )
@@ -151,7 +151,7 @@ fun LoginScreen(
                         state = passwordState,
                         modifier =
                             Modifier.semantics { contentType = ContentType.Password },
-                        placeholder = stringResource(R.string.login_password_label),
+                        placeholder = stringResource(R.string.onboarding_login_password_label),
                         keyboardType = KeyboardType.Password,
                         imeAction = ImeAction.Done,
                         onImeAction = {
@@ -165,7 +165,7 @@ fun LoginScreen(
 
                     if (hasCredentialError) {
                         Text(
-                            text = stringResource(R.string.login_invalid_credentials),
+                            text = stringResource(R.string.onboarding_login_invalid_credentials),
                             style = AfternoteDesign.typography.captionLargeB,
                             color = AfternoteDesign.colors.error,
                         )
@@ -177,7 +177,7 @@ fun LoginScreen(
 
             // 로그인 버튼
             AfternoteButton(
-                text = stringResource(R.string.login_button),
+                text = stringResource(R.string.onboarding_login_button),
                 onClick = {
                     if (!isLoading) {
                         focusManager.clearFocus()
@@ -222,7 +222,7 @@ private fun SocialLoginGroup(
     ) {
         // 간편 회원가입하기 버튼
         AfternoteButton(
-            text = stringResource(R.string.login_signup_simple),
+            text = stringResource(R.string.onboarding_login_signup_simple),
             type = AfternoteButtonType.Plain,
             onClick = {
                 focusManager.clearFocus()
@@ -251,8 +251,8 @@ private fun SocialLoginGroup(
             contentPadding = PaddingValues(0.dp),
         ) {
             Image(
-                painter = painterResource(R.drawable.kakao_login_large_wide_1),
-                contentDescription = stringResource(R.string.login_kakao),
+                painter = painterResource(R.drawable.onboarding_kakao_login_large_wide_1),
+                contentDescription = stringResource(R.string.onboarding_login_kakao),
                 modifier = Modifier.fillMaxWidth(),
                 contentScale = ContentScale.FillBounds,
             )
@@ -284,13 +284,13 @@ private fun SocialLoginGroup(
             ) {
                 Image(
                     painter = painterResource(com.afternote.core.ui.R.drawable.core_ui_img_google_logo),
-                    contentDescription = stringResource(R.string.content_description_google_login),
+                    contentDescription = stringResource(R.string.onboarding_content_description_google_login),
                     modifier = Modifier.size(20.dp),
                 )
             }
 
             Text(
-                text = stringResource(R.string.login_google),
+                text = stringResource(R.string.onboarding_login_google),
                 style = AfternoteDesign.typography.captionLargeB,
                 color = AfternoteDesign.colors.gray8,
             )
@@ -301,7 +301,7 @@ private fun SocialLoginGroup(
 
         // 아이디/비밀번호 찾기
         Text(
-            text = stringResource(R.string.login_find_account),
+            text = stringResource(R.string.onboarding_login_find_account),
             style =
                 AfternoteDesign.typography.captionLargeR.copy(
                     color = AfternoteDesign.colors.gray6,

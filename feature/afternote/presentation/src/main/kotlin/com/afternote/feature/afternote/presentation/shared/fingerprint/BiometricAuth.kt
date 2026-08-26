@@ -12,7 +12,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 
-private const val LOG_TAG = "FingerprintLogin"
+internal const val LOG_TAG = "FingerprintLogin"
 
 /**
  * 생체 인식 프롬프트에 노출할 상황별 문구.
@@ -24,6 +24,7 @@ data class BiometricMessages(
     val noneEnrolled: String,
     val hwUnavailable: String,
     val notAvailable: String,
+    val verificationFailed: String,
 )
 
 /**
@@ -53,6 +54,8 @@ sealed interface BiometricAuthResult {
  *   `MainActivity`는 반드시 `FragmentActivity`(또는 `AppCompatActivity`)를 상속해야 한다.
  * - [BiometricPrompt]는 UI 컴포넌트이므로 본문을 [Dispatchers.Main.immediate]에서 실행해,
  *   호출 코루틴이 백그라운드 디스패처에 있어도 초기화·실행이 메인 스레드로 수렴하도록 한다.
+ * - 성공은 콜백의 boolean 이 아니라 [confirmWithCryptoOperation] 의 암호 연산 성사로 확정한다.
+ *   프롬프트를 거치지 않고 성공 콜백만 가로챈 경우 사용자 인증에 묶인 키를 쓸 수 없어 연산이 실패한다.
  */
 suspend fun FragmentActivity.authenticateBiometric(
     title: String,
@@ -66,6 +69,10 @@ suspend fun FragmentActivity.authenticateBiometric(
 
             when (biometricManager.canAuthenticate(authenticators)) {
                 BiometricManager.BIOMETRIC_SUCCESS -> {
+                    // API 26~29 에서는 DEVICE_CREDENTIAL 허용자와 CryptoObject 를 함께 쓸 수 없다.
+                    // 이때는 관문 없이 인증하고, 성공 확정은 cipher 부재로 통과시킨다.
+                    val cryptoObject = if (isBiometricCryptoSupported) createBiometricCryptoObject() else null
+
                     val promptInfo =
                         BiometricPrompt.PromptInfo
                             .Builder()
@@ -80,8 +87,13 @@ suspend fun FragmentActivity.authenticateBiometric(
                             ContextCompat.getMainExecutor(this@authenticateBiometric),
                             object : BiometricPrompt.AuthenticationCallback() {
                                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                                    if (continuation.isActive) {
+                                    if (!continuation.isActive) return
+                                    val confirmation = confirmWithCryptoOperation(result.cryptoObject?.cipher)
+                                    if (confirmation.isSuccess) {
                                         continuation.resume(BiometricAuthResult.Success)
+                                    } else {
+                                        Log.w(LOG_TAG, "인증 후 암호 연산 실패", confirmation.exceptionOrNull())
+                                        continuation.resume(BiometricAuthResult.Error(messages.verificationFailed))
                                     }
                                 }
 
@@ -115,7 +127,11 @@ suspend fun FragmentActivity.authenticateBiometric(
                     }
 
                     try {
-                        biometricPrompt.authenticate(promptInfo)
+                        if (cryptoObject != null) {
+                            biometricPrompt.authenticate(promptInfo, cryptoObject)
+                        } else {
+                            biometricPrompt.authenticate(promptInfo)
+                        }
                     } catch (e: Throwable) {
                         Log.e(LOG_TAG, "BiometricPrompt init failed", e)
                         if (continuation.isActive) {
