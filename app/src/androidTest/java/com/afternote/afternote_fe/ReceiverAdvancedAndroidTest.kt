@@ -189,7 +189,7 @@ class ReceiverAdvancedAndroidTest {
         composeRule.setContent {
             AfternoteTheme {
                 ReceivedAfternoteDetailRoute(
-                    onBack = {},
+                    onNavigateBack = {},
                     onNavigateToFullList = {},
                     onNavigateToPlaylist = {},
                     viewModel = viewModel,
