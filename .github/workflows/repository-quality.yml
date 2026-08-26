@@ -19,6 +19,27 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
+      # GitHub 의 server-side paths 평가는 유한한 diff 앞부분만 보므로, 그 경계를 넘는 PR 을
+      # 그대로 허용하면 뒤쪽 dependency 파일이 graph/review workflow 를 우회할 수 있다.
+      # 공식 문서의 상충하는 300/3,000 한도 중 보수적인 300을 fail-closed 경계로 쓴다.
+      - name: Guard server-side path filter boundary
+        if: github.event_name == 'pull_request'
+        env:
+          CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
+          MAX_PATH_FILTER_FILES: 300
+        run: |
+          set -euo pipefail
+
+          if ! [[ "$CHANGED_FILES" =~ ^[0-9]+$ ]]; then
+            echo "::error::PR changed_files 값이 유효하지 않습니다: $CHANGED_FILES"
+            exit 1
+          fi
+
+          if (( CHANGED_FILES > MAX_PATH_FILTER_FILES )); then
+            echo "::error::PR 변경 파일 ${CHANGED_FILES}개가 paths 안전 경계 ${MAX_PATH_FILTER_FILES}개를 초과했습니다. PR을 분리하세요."
+            exit 1
+          fi
+
       - name: Clone repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
