@@ -3,6 +3,7 @@ package com.afternote.feature.afternote.presentation.shared.model
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import com.afternote.feature.afternote.presentation.R
+import com.afternote.core.ui.R as CoreUiR
 
 /** UI service titles and their label/icon resources. */
 enum class AfternoteService(
@@ -18,12 +19,12 @@ enum class AfternoteService(
     GALLERY(
         displayKey = "갤러리",
         stringResId = R.string.receiver_afternote_item_gallery,
-        iconResId = R.drawable.feature_afternote_ic_gallery_pattern,
+        iconResId = CoreUiR.drawable.core_ui_afternote_gallery_pattern,
     ),
     MEMORIAL_GUIDELINE(
         displayKey = "추억 노트",
         stringResId = R.string.receiver_afternote_item_memorial_guideline,
-        iconResId = R.drawable.feature_afternote_ic_memorial_guideline,
+        iconResId = CoreUiR.drawable.core_ui_afternote_memorial_guideline,
     ),
     NAVER_MAIL(
         displayKey = "네이버 메일",
@@ -128,7 +129,7 @@ enum class AfternoteService(
     FILES(
         displayKey = "파일",
         stringResId = R.string.receiver_afternote_item_gallery,
-        iconResId = R.drawable.feature_afternote_ic_gallery_pattern,
+        iconResId = CoreUiR.drawable.core_ui_afternote_gallery_pattern,
     ),
     ;
 

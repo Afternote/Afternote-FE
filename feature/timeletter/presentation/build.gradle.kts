@@ -2,6 +2,7 @@ plugins {
     id("afternote.android.library.compose")
     id("afternote.android.hilt")
     id("afternote.android.navigation")
+    id("afternote.kover")
 }
 
 android {
